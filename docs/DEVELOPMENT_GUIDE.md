@@ -9,44 +9,61 @@ This is the canonical source for local setup, commands, debugging, and validatio
 - Docker Engine with the `docker compose` subcommand.
 - Git for normal development workflows. Git is not required to start the services.
 
-The repository's `requirements.txt` contains runtime Python dependencies. It does not declare all development tools used by CI, including pytest, Ruff, Black, and MyPy. Do not assume those commands are available until the tools are installed in the active environment.
+The repository's `requirements.txt` contains runtime Python dependencies. Install the `dev` optional dependency set from `pyproject.toml` for pytest, Ruff, Black, and MyPy.
 
 ## Environment configuration
 
-The backend reads process environment variables and an optional root `.env` file. The repository does not currently contain `.env.example`.
+The backend reads process environment variables and an optional root `.env` file. Copy the tracked `.env.example` to `.env` and replace its local-development secret; `.env` is ignored by Git.
 
 Key settings are:
 
 | Variable | Code default | Local-host guidance |
 | --- | --- | --- |
 | `SECRET_KEY` | none; required | Set a non-production development value before importing the backend |
+| `AUTH_REQUIRED` | `false` | Set `true` outside trusted-local mode; then every chat/memory request needs a signed user token |
 | `DEBUG` | `false` | Must be a valid boolean; an existing host `DEBUG` value overrides `.env` |
 | `POSTGRES_USER` | `postgres` | Match the Compose database |
 | `POSTGRES_PASSWORD` | `password` | Development Compose value only |
 | `POSTGRES_DB` | `anios_db` | Match the Compose database |
 | `POSTGRES_HOST` | `db` | Use `localhost` when the backend runs on the host |
 | `POSTGRES_PORT` | `5432` | Compose host port |
-| `REDIS_HOST` | `redis` | Use `localhost` when the backend runs on the host |
-| `REDIS_PORT` | `6379` | Compose host port |
-| `LLM_BASE_URL` | `http://localhost:1234/v1` | `SCAFFOLDED`; not used by the current conversation path |
-| `LLM_MODEL` | `local-model` | `SCAFFOLDED` |
-| `LLM_API_KEY` | `lm-studio` | `SCAFFOLDED` |
+| `LLM_BASE_URL` | `http://127.0.0.1:1234` | LM Studio server root; the chat and embedding adapters append their endpoint paths |
+| `LLM_MODEL` | `google/gemma-4-12b` | Use the model key reported by `GET /api/v1/models` |
+| `LLM_REASONING_EFFORT` | `none` | LM Studio OpenAI-compatible reasoning control; `none` is required for the current Gemma chat acceptance path |
+| `LLM_API_KEY` | none | Optional Bearer token when LM Studio authentication is enabled |
+| `LLM_TIMEOUT_SECONDS` | `120` | Provider request timeout in seconds |
+| `EMBEDDING_MODEL` | `text-embedding-nomic-embed-text-v1.5` | LM Studio embedding model key |
+| `EMBEDDING_MODEL_VERSION` | `nomic-embed-text-v1.5` | Version label persisted with new semantic/tool embeddings |
+| `EMBEDDING_DIMENSION` | `768` | Must match the embedding response and pgvector column |
+| `MEMORY_SEMANTIC_MAX_COSINE_DISTANCE` | `0.35` | Maximum distance admitted to semantic/tool discovery |
+| `MEMORY_SEMANTIC_MAX_RESULTS` | `5` | Hard retrieval result limit |
+| `MEMORY_SEMANTIC_MAX_CONTENT_CHARS` | `4000` | Hard semantic prompt-content character budget |
+| `CONVERSATION_HISTORY_TURNS` | `10` | Number of newest same-user turns sent to the model; valid range is 0 through 50 |
 
 For host development, a minimal root `.env` is:
 
 ```dotenv
 SECRET_KEY=local-development-only
+AUTH_REQUIRED=false
 DEBUG=false
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=password
 POSTGRES_DB=anios_db
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
-REDIS_HOST=localhost
-REDIS_PORT=6379
+LLM_BASE_URL=http://127.0.0.1:1234
+LLM_MODEL=google/gemma-4-12b
+LLM_REASONING_EFFORT=none
+EMBEDDING_MODEL=text-embedding-nomic-embed-text-v1.5
+EMBEDDING_MODEL_VERSION=nomic-embed-text-v1.5
+EMBEDDING_DIMENSION=768
+MEMORY_SEMANTIC_MAX_COSINE_DISTANCE=0.35
+MEMORY_SEMANTIC_MAX_RESULTS=5
+MEMORY_SEMANTIC_MAX_CONTENT_CHARS=4000
+CONVERSATION_HISTORY_TURNS=10
 ```
 
-Do not use the Compose credentials or example secret in production. Because process environment variables have precedence, inspect and correct a pre-existing `DEBUG`, `POSTGRES_HOST`, or `REDIS_HOST` variable when local imports behave unexpectedly.
+Do not use the Compose credentials or example secret in production. Because process environment variables have precedence, inspect and correct a pre-existing `DEBUG` or `POSTGRES_HOST` variable when local imports behave unexpectedly.
 
 ## Git checkpoints and recovery
 
@@ -125,6 +142,12 @@ Backend runtime dependencies:
 python -m pip install -r requirements.txt
 ```
 
+Backend development dependencies:
+
+```bash
+python -m pip install -e ".[dev]"
+```
+
 Frontend dependencies:
 
 ```bash
@@ -195,9 +218,31 @@ cd frontend
 npm run build
 ```
 
-Backend tests are located under `backend/tests`:
+Install the Playwright browser once after frontend dependencies are installed:
 
 ```bash
+cd frontend
+npx playwright install chromium
+```
+
+Run deterministic browser chat coverage:
+
+```bash
+cd frontend
+npm run test:e2e
+```
+
+With the backend and a configured LM Studio model running, opt into the live-provider path:
+
+```powershell
+$env:ANIOS_E2E_LIVE='1'
+npm.cmd run test:e2e:live
+```
+
+Backend tests are located under `backend/tests`:
+
+```powershell
+$env:POSTGRES_HOST='127.0.0.1'
 python -m pytest -p no:cacheprovider backend/tests
 ```
 
@@ -206,9 +251,9 @@ The `-p no:cacheprovider` option avoids writing `.pytest_cache`; it does not alt
 When the corresponding development tools are installed, the configured static checks are:
 
 ```bash
-ruff check .
-black --check .
-mypy backend
+python -m ruff check backend migrations debug_test.py
+python -m black --check backend migrations debug_test.py
+python -m mypy backend
 ```
 
 Do not substitute `pytest tests/`; there is no root `tests/` directory.
@@ -231,7 +276,7 @@ Tests must prove behavior at the lowest useful layer and must collectively cover
 - When persistence is part of the goal, browser tests must reload or navigate and confirm that expected state is restored.
 - Endpoint reachability, static HTML, module transformation, API-only tests, and DOM snapshots without interaction are insufficient proof of UI functionality.
 
-The repository currently has no frontend `test` or `test:e2e` script and no browser automation framework. Browser automation is `PLANNED`; do not invent a test command or call UI behavior verified until the harness exists and the workflow passes. Until then, use the documented manual browser procedure below and report it separately from automated coverage.
+The repository has Playwright `test:e2e` and `test:e2e:live` scripts. The deterministic suite intercepts the chat boundary for repeatability; the live suite is skipped unless `ANIOS_E2E_LIVE=1` and must contact the configured backend/provider. Passing deterministic tests does not prove live-model connectivity.
 
 ### Deterministic and live LLM validation
 
@@ -256,6 +301,8 @@ A successful Alembic command does not prove application tables exist. Verify the
 ```bash
 docker compose exec -T db psql -U postgres -d anios_db -c "\dt"
 ```
+
+The current migration head is `20260716_0007`. Revisions `0004` through `0007` add structured facts, retention/embedding metadata, provenance idempotency, and safe tool-memory tables. Revision `20260716_0002` intentionally refuses to change vector dimensions when legacy semantic rows exist; export or explicitly migrate those vectors instead of deleting or silently truncating them.
 
 Create or reset migrations only as part of an explicitly approved schema task. Treat deletion of the `pgdata` volume as destructive.
 
@@ -294,7 +341,7 @@ Exercise the actual chat request:
 ```bash
 curl -i -N -X POST http://localhost:8000/api/v1/chat \
   -H "Content-Type: application/json" \
-  -d '{"user_id":"validation_user","query":"Reply with: validation ok","metadata":{}}'
+  -d '{"user_id":"validation_user","conversation_id":"11111111-1111-4111-8111-111111111111","query":"Reply with: validation ok","metadata":{}}'
 ```
 
 The repository also contains a diagnostic client:
@@ -302,6 +349,15 @@ The repository also contains a diagnostic client:
 ```bash
 python debug_test.py
 ```
+
+To validate auth-enabled mode, set `AUTH_REQUIRED=true`, issue a short-lived token, and expose the same token to the frontend process:
+
+```powershell
+$token = python -m backend.cli.issue_token --user dev_user_001 --ttl-seconds 3600
+$env:VITE_AUTH_TOKEN = $token
+```
+
+Send `Authorization: Bearer <token>` on direct API requests. The token subject must exactly match the body/path `user_id`; never commit or log a real token.
 
 Validate all applicable acceptance properties:
 
@@ -312,6 +368,36 @@ Validate all applicable acceptance properties:
 - logs contain no server exception;
 - expected records or other side effects exist;
 - invalid input produces an intentional error.
+
+The successful chat stream is framed as `start`, zero or more `delta`, an optional non-persisted `memory_proposal`, and `done` SSE events. The frontend treats missing start/done events, malformed frames, unexpected content types, and an `error` event as failures. A server-side streaming exception must expose only the generic error message to the client.
+
+For the supported preferred-name workflow, submit a statement such as `My preferred name is Validation Name.` The proposal does not write memory. Approve it through the browser or `POST /api/v1/memory/{user_id}/profile/preferred-name` with the proposed `name`, `source_conversation_id`, and `source_trace_id`; an optional timezone-aware future `expires_at` is accepted. Clear the value and all of its fact versions with `DELETE` on the same path. Verify the fact list/profile before rejection, after approval, after correction, after expiry, and after deletion, then start a new conversation to prove durable recall.
+
+To validate conversation history, send two requests with the same `user_id` and `conversation_id`, put a unique fact only in the first query, and require the second response to reproduce it. Confirm the two rows share that conversation ID, the traces differ per request, and the second prompt itself does not contain the expected fact.
+
+Personal-memory examples for the local development user:
+
+```powershell
+$profile = @{
+  name = 'Ani'
+  preferences = @{ response_style = 'concise' }
+} | ConvertTo-Json
+Invoke-RestMethod -Method Put -Uri 'http://localhost:8000/api/v1/memory/dev_user_001/profile' -ContentType 'application/json' -Body $profile
+
+$memory = @{
+  content = 'The user prefers jasmine tea.'
+  metadata = @{ source = 'manual' }
+} | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri 'http://localhost:8000/api/v1/memory/dev_user_001/semantic' -ContentType 'application/json' -Body $memory
+
+Invoke-RestMethod 'http://localhost:8000/api/v1/memory/dev_user_001'
+Invoke-RestMethod 'http://localhost:8000/api/v1/memory/dev_user_001/search?query=preferred%20tea&top_k=5'
+Invoke-RestMethod 'http://localhost:8000/api/v1/memory/dev_user_001/export'
+```
+
+`PUT /api/v1/memory/{user_id}/{episodic|semantic}/{memory_id}` corrects an explicit record and re-embeds semantic content. `DELETE /api/v1/memory/{user_id}` removes that user's conversations, profile, facts, episodic/semantic records, and tool descriptors/preferences/outcomes. It is destructive and the UI requires confirmation. Do not expose auth-disabled mode beyond the trusted local development environment.
+
+Tool-memory routes live below `/api/v1/memory/{user_id}/tools`. They accept only canonical safe descriptors, allowlisted approved preferences, and outcome categories; they never accept raw tool arguments or outputs. Discovery is a hint only and cannot authorize or invoke an MCP tool.
 
 ### 4. Frontend evidence
 

@@ -1,5 +1,8 @@
+from collections.abc import Generator
+
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+
 from backend.config.settings import settings
 from backend.core.logging_config import get_logger
 
@@ -15,9 +18,12 @@ engine = create_engine(
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-Base = declarative_base()
 
-def get_db():
+class Base(DeclarativeBase):
+    pass
+
+
+def get_db() -> Generator[Session, None, None]:
     """Dependency to yield a database session."""
     db = SessionLocal()
     try:

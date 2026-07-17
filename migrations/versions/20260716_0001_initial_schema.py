@@ -5,19 +5,17 @@ Revises:
 Create Date: 2026-07-16
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
+from pgvector.sqlalchemy import Vector
 from sqlalchemy.dialects import postgresql
 
-from backend.models.memory import Vector
-
-
 revision: str = "20260716_0001"
-down_revision: Union[str, Sequence[str], None] = None
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = None
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -29,7 +27,9 @@ def upgrade() -> None:
         sa.Column("user_id", sa.String(length=50), nullable=False),
         sa.Column("query", sa.Text(), nullable=False),
         sa.Column("response", sa.Text(), nullable=False),
-        sa.Column("created_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False
+        ),
         sa.Column("extra_data", postgresql.JSON(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -41,7 +41,9 @@ def upgrade() -> None:
         sa.Column("user_id", sa.String(length=50), nullable=False),
         sa.Column("name", sa.String(length=100), nullable=True),
         sa.Column("preferences", postgresql.JSON(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "updated_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
@@ -55,7 +57,9 @@ def upgrade() -> None:
         "episodic_memory",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("user_id", sa.String(length=50), nullable=False),
-        sa.Column("timestamp", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "timestamp", sa.DateTime(), server_default=sa.text("now()"), nullable=False
+        ),
         sa.Column("content", sa.Text(), nullable=False),
         sa.Column("extra_data", postgresql.JSON(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
@@ -68,7 +72,9 @@ def upgrade() -> None:
         sa.Column("content", sa.Text(), nullable=False),
         sa.Column("embedding", Vector(1536), nullable=False),
         sa.Column("extra_data", postgresql.JSON(), nullable=False),
-        sa.Column("created_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(), server_default=sa.text("now()"), nullable=False
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
 

@@ -1,36 +1,72 @@
-from fastapi import APIRouter, Request
+import json
+import logging
+from collections.abc import AsyncGenerator
+from typing import Any
+
+from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
+
+from backend.api.v1.memory import router as memory_router
+from backend.api.v1.tool_memory import router as tool_memory_router
+from backend.core.auth import (
+    IdentityDependency,
+    authorize_user,
+)
 from backend.core.dependencies import DependencyConversationService
+from backend.models.schemas import ChatRequest, ChatStreamEvent
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
 # Explicitly define the name expected by main.py
 api_router = router
+router.include_router(tool_memory_router)
+router.include_router(memory_router)
+
 
 @router.get("/")
-async def root():
+async def root() -> dict[str, str]:
     return {"message": "Welcome to AniOS API v1"}
+
 
 @router.post("/chat")
 async def chat(
-    request: Request,
-    service: DependencyConversationService
-):
-    """
-    Endpoint to interact with the AniOS Conversation Engine.
-    Bypasses Pydantic models entirely for diagnostic verification.
-    """
-    body = await request.json()
-    print(f"DEBUG_RAW_PAYLOAD: {body}")
-    
-    user_id = body.get("user_id")
-    query = body.get("query")
-    
-    if not user_id or not query:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=400, detail="Missing user_id or query in request body")
-
+    body: ChatRequest,
+    service: DependencyConversationService,
+    identity: IdentityDependency,
+) -> StreamingResponse:
+    authorize_user(body.user_id, identity)
     return StreamingResponse(
-        service.process_request(user_id, query),
-        media_type="text/event-stream"
+        _encode_sse(
+            service.process_request(
+                body.user_id,
+                body.query,
+                str(body.conversation_id) if body.conversation_id else None,
+                body.metadata,
+            )
+        ),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
     )
+
+
+async def _encode_sse(
+    events: AsyncGenerator[ChatStreamEvent, None],
+) -> AsyncGenerator[str, None]:
+    try:
+        async for item in events:
+            yield _sse_event(item["event"], item["data"])
+    except Exception:
+        logger.exception("Chat stream failed")
+        yield _sse_event(
+            "error",
+            {"message": "Unable to complete the chat request."},
+        )
+
+
+def _sse_event(event: str, data: dict[str, Any]) -> str:
+    return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"

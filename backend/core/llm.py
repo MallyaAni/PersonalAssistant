@@ -1,29 +1,162 @@
+import json
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any
+from collections.abc import Iterator
+from contextlib import contextmanager
+from typing import Any, cast
+
+import httpx
+
 
 class LLMClient(ABC):
     """Abstract base class for all LLM providers."""
-    
-    @abstractmethod
-    def generate_text(self, prompt: str, max_tokens: int = 512) -> str:
-        pass
 
     @abstractmethod
-    def chat(self, messages: List[Dict[str, str]], max_tokens: int = 512) -> Dict[str, Any]:
-        pass
+    def generate_text(self, prompt: str, max_tokens: int = 1024) -> str: ...
+
+    @abstractmethod
+    def chat(
+        self, messages: list[dict[str, str]], max_tokens: int = 1024
+    ) -> dict[str, Any]: ...
+
+    @abstractmethod
+    def stream_chat(
+        self,
+        messages: list[dict[str, str]],
+        max_tokens: int = 1024,
+    ) -> Iterator[str]: ...
+
 
 # Example of a concrete implementation for LM Studio / OpenAI compatible APIs
-class OpenAICompatibleLLM(LLMClient):
-    def __init__(self, base_url: str, api_key: str, model: str):
-        self.base_url = base_url
+class LMStudioLLM(LLMClient):
+    """Client for LM Studio's OpenAI-compatible chat completions API."""
+
+    def __init__(
+        self,
+        base_url: str,
+        model: str,
+        api_key: str | None = None,
+        timeout_seconds: float = 120.0,
+        reasoning_effort: str = "none",
+        client: httpx.Client | None = None,
+    ) -> None:
+        self.base_url = base_url.rstrip("/")
         self.api_key = api_key
         self.model = model
-        # In a real implementation, we would initialize the LangChain/OpenAI client here
+        self.timeout_seconds = timeout_seconds
+        self.reasoning_effort = reasoning_effort
+        self.client = client
 
-    def generate_text(self, prompt: str, max_tokens: int = 512) -> str:
-        # Implementation using actual LLM library
-        pass
+    def generate_text(self, prompt: str, max_tokens: int = 1024) -> str:
+        result = self.chat(
+            [{"role": "user", "content": prompt}],
+            max_tokens=max_tokens,
+        )
+        return cast(str, result["content"])
 
-    def chat(self, messages: List[Dict[str, str]], max_tokens: int = 512) -> Dict[str, Any]:
-        # Implementation using actual LLM library
-        pass
+    def chat(
+        self, messages: list[dict[str, str]], max_tokens: int = 1024
+    ) -> dict[str, Any]:
+        payload = self._build_payload(messages, max_tokens)
+        response = self._post(payload)
+        response.raise_for_status()
+        result = cast(dict[str, Any], response.json())
+        choices = cast(list[dict[str, Any]], result.get("choices", []))
+        content_value = (
+            choices[0].get("message", {}).get("content", "") if choices else ""
+        )
+        if not isinstance(content_value, str) or not content_value.strip():
+            raise ValueError("LM Studio response did not contain a message output")
+
+        return {**result, "content": content_value.strip()}
+
+    def stream_chat(
+        self,
+        messages: list[dict[str, str]],
+        max_tokens: int = 1024,
+    ) -> Iterator[str]:
+        payload = {**self._build_payload(messages, max_tokens), "stream": True}
+        saw_message = False
+        saw_done = False
+
+        with self._stream(payload) as response:
+            response.raise_for_status()
+            for line in response.iter_lines():
+                if not line.startswith("data: "):
+                    continue
+                data = line[6:]
+                if data == "[DONE]":
+                    saw_done = True
+                    continue
+                event = cast(dict[str, Any], json.loads(data))
+                if event.get("error"):
+                    raise RuntimeError(event["error"])
+                choices = event.get("choices", [])
+                content = (
+                    choices[0].get("delta", {}).get("content") if choices else None
+                )
+                if content:
+                    saw_message = True
+                    yield content
+
+        if not saw_message:
+            raise ValueError("LM Studio stream did not contain a message output")
+        if not saw_done:
+            raise ValueError("LM Studio stream ended before [DONE]")
+
+    def _build_payload(
+        self,
+        messages: list[dict[str, str]],
+        max_tokens: int,
+    ) -> dict[str, Any]:
+        if not any(message.get("role") == "user" for message in messages):
+            raise ValueError("LM Studio chat requires at least one user message")
+
+        return {
+            "model": self.model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "reasoning_effort": self.reasoning_effort,
+        }
+
+    def _headers(self) -> dict[str, str]:
+        headers = {"Content-Type": "application/json"}
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+        return headers
+
+    def _post(self, payload: dict[str, Any]) -> httpx.Response:
+        if self.client is not None:
+            return self.client.post(
+                f"{self.base_url}/v1/chat/completions",
+                headers=self._headers(),
+                json=payload,
+            )
+        with httpx.Client(timeout=self.timeout_seconds) as client:
+            return client.post(
+                f"{self.base_url}/v1/chat/completions",
+                headers=self._headers(),
+                json=payload,
+            )
+
+    @contextmanager
+    def _stream(self, payload: dict[str, Any]) -> Iterator[httpx.Response]:
+        if self.client is not None:
+            with self.client.stream(
+                "POST",
+                f"{self.base_url}/v1/chat/completions",
+                headers=self._headers(),
+                json=payload,
+            ) as response:
+                yield response
+            return
+
+        with (
+            httpx.Client(timeout=self.timeout_seconds) as client,
+            client.stream(
+                "POST",
+                f"{self.base_url}/v1/chat/completions",
+                headers=self._headers(),
+                json=payload,
+            ) as response,
+        ):
+            yield response

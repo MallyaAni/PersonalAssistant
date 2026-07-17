@@ -1,6 +1,6 @@
 import logging
 import sys
-from typing import Any
+
 
 def setup_logging(level: str = "INFO") -> None:
     """Configures the global logging settings."""
@@ -11,6 +11,7 @@ def setup_logging(level: str = "INFO") -> None:
             logging.StreamHandler(sys.stdout),
         ],
     )
+
 
 def get_logger(name: str) -> logging.Logger:
     return logging.getLogger(name)

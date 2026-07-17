@@ -1,0 +1,32 @@
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# Frontend dependencies and generated output
+frontend/node_modules/
+frontend/dist/
+frontend/test-results/
+frontend/playwright-report/
+
+# Editor and operating-system files
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Runtime output
+*.log

@@ -7,7 +7,7 @@ The repository contains:
 - a FastAPI backend;
 - a React and Vite developer console;
 - Docker Compose definitions for PostgreSQL with pgvector, Redis, and the backend;
-- interfaces and scaffolding for conversation, memory, retrieval, LLM, and agent components.
+- a model-backed conversation path, PostgreSQL/pgvector personal memory, and a small LangGraph agent boundary.
 
 See [the current session handoff](docs/NEXT_SESSION.md) for verified runtime state and active blockers. See [the roadmap](docs/ROADMAP.md) for milestone status and explicitly planned capabilities.
 
@@ -21,6 +21,7 @@ Common entry points are:
 Backend health:  http://localhost:8000/health
 OpenAPI UI:      http://localhost:8000/docs
 Frontend:        http://localhost:5173
+Memory API:      http://localhost:8000/api/v1/memory/{user_id}
 ```
 
 These addresses being reachable does not prove chat or persistence works. Follow the functional validation protocol in the development guide.

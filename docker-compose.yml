@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: pgvector/pgvector:pg16
@@ -34,7 +32,6 @@ services:
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=anios_db
       - POSTGRES_HOST=db
-      - REDIS_HOST=redis
       - SECRET_KEY=your-super-secret-key-here
     depends_on:
       db:

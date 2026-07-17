@@ -17,10 +17,12 @@ The absence of one of these labels does not imply runtime verification.
 | Service | Implementation | Host port | Current architectural role |
 | --- | --- | --- | --- |
 | `backend` | FastAPI/Uvicorn image built from the root `Dockerfile` | `8000` | HTTP API |
-| `db` | `pgvector/pgvector:pg16` | `5432` | PostgreSQL and future vector persistence |
+| `db` | `pgvector/pgvector:pg16` | `5432` | PostgreSQL conversation/personal-memory persistence and pgvector semantic search |
 | `redis` | `redis:7-alpine` | `6379` | `SCAFFOLDED`: container exists; backend code does not use a Redis client |
 
 The frontend is not a Compose service. It runs separately from `frontend/` with Vite on port `5173`. The backend image has no source bind mount and does not use reload mode, so source changes require an image rebuild for container validation.
+
+LM Studio is an external local process rather than a Compose service. The host-source backend defaults to `http://127.0.0.1:1234`, selects `google/gemma-4-12b` for chat, and selects `text-embedding-nomic-embed-text-v1.5` for 768-dimensional embeddings.
 
 ## Backend boundaries
 
@@ -31,7 +33,9 @@ The frontend is not a Compose service. It runs separately from `frontend/` with 
 `backend/api/v1/api.py` defines:
 
 - `GET /api/v1/`;
-- `POST /api/v1/chat`, which accepts a raw JSON request and returns a `StreamingResponse` declaration.
+- `POST /api/v1/chat`, which validates a typed `ChatRequest` and returns Server-Sent Events named `start`, `delta`, optional `memory_proposal`, and `done`. A streaming failure is logged server-side and returned as a sanitized `error` event.
+
+`backend/api/v1/memory.py` defines user-scoped profile, preferred-name approval/deletion, episodic/semantic create-correct-search-delete, export, and delete-all endpoints beneath `/api/v1/memory/{user_id}`. Preferred-name approval writes a `memory_facts` version containing approval/lifecycle state and source conversation/trace provenance while retaining `user_profiles.name` as a compatibility projection. Correction supersedes the previous fact version; name deletion removes all name-fact versions and clears the projection. Personal delete-all also propagates to conversation and tool-memory tables.
 
 Authentication is not implemented on these routes.
 
@@ -39,49 +43,55 @@ Authentication is not implemented on these routes.
 
 `backend/core/dependencies.py` assembles `ConversationService` and its collaborators through FastAPI dependencies.
 
-The collaborators have different maturity levels:
+The active collaborators are:
 
 | Component | Status | Implemented reality |
 | --- | --- | --- |
-| `ConversationService` | `SCAFFOLDED` | Loads memory context, invokes the fixed placeholder graph, persists a turn, and yields one response chunk |
-| `PostgresMemoryService` | `SCAFFOLDED` | Profile and episodic reads use the injected synchronous session; semantic retrieval returns an empty list; broader memory writes remain incomplete |
-| `SQLAlchemyConversationRepository` | `SCAFFOLDED` | Saves and reads conversation records; metadata is not mapped correctly because the model field is named `extra_data` |
-| Knowledge service | `MOCKED` | Returns no knowledge results |
-| Internet service | `MOCKED` | Returns no search results |
-| Notification service | `MOCKED` | Performs no action |
-| Tool service | `MOCKED` | Returns a fixed mock result |
-| Context builder | `MOCKED` | Returns only the user ID and query |
-| Tracer | `MOCKED` | Generates a UUID and prints trace steps |
-| Streamer | `MOCKED` | Wrapper exists but is not used by `ConversationService.process_request` |
+| `ConversationService` | implemented local boundary | Loads profile/episodic/semantic context plus bounded same-user conversation history, streams an injected model through LangGraph, accumulates the response, and persists it under a stable conversation ID |
+| `PostgresMemoryService` | implemented local boundary | Supports profile upsert, episodic save/read, live embedding generation, pgvector semantic save/search, snapshots, and scoped deletion |
+| `SQLAlchemyConversationRepository` | implemented local boundary | Saves turns under stable conversation IDs and reads a configured newest-turn window filtered by both conversation ID and user ID, returned in chronological order |
+| `LoggingConversationTracer` | implemented local boundary | Generates a new trace UUID for each request and records lifecycle events through application logging |
+
+Earlier no-op knowledge, internet, notification, tool, context-builder, and streamer collaborators are not part of current dependency assembly. Those capabilities remain `PLANNED`, not mocked runtime behavior.
+
+Preferred-name capture is a narrow implemented approval boundary. The conversation service recognizes supported “my name is”/“call me” statements and emits a proposal only after the conversation turn is saved; the proposal itself is not persisted. The frontend explicitly approves or rejects it. Approval writes the existing user profile name while preserving preferences, correction overwrites that value, and deletion clears only the name. General fact extraction remains `PLANNED`.
 
 ### Agent orchestration
 
-LangGraph is present, but the graph is `MOCKED`. `backend/agents/graph.py` contains one assistant node that returns the fixed text `Thinking...`. Tool executor, researcher, reflection, and multi-agent nodes are `PLANNED`.
+LangGraph currently contains one model-backed assistant node. The node receives bounded profile/preferences plus episodic/semantic content as explicitly untrusted data, followed by the configured chronological conversation-history window and current query. It calls the injected LLM client and publishes message deltas with LangGraph's custom stream writer. Tool executor, researcher, reflection, sub-agent, and multi-agent nodes remain `PLANNED`.
 
 ### LLM integration
 
-`backend/core/llm.py` defines an abstraction and an OpenAI-compatible class, but the concrete generation methods have no implementation and no LLM client is injected into the conversation path. LM Studio and other OpenAI-compatible providers are `SCAFFOLDED`; model-backed answers are `PLANNED`.
+`backend/core/llm.py` implements LM Studio's OpenAI-compatible `/v1/chat/completions` contract for buffered and streamed generation. Dependency assembly injects this client into the graph. The client preserves the complete ordered `messages` list so system, prior user/assistant, and current-user messages reach Gemma, explicitly configures `reasoning_effort` (default `none`) so the local reasoning model reserves output for a visible answer, yields only assistant content deltas, and requires terminal `[DONE]`. Other providers remain `PLANNED`.
+
+`backend/embeddings/lm_studio.py` implements LM Studio's OpenAI-compatible `/v1/embeddings` boundary. Nomic document/query task prefixes are applied and the configured 768-value dimension is validated before persistence or search.
 
 ### Persistence
 
 SQLAlchemy models exist for conversations, profiles, episodic memory, and semantic memory. Persistence is `SCAFFOLDED`:
 
 - all models use `backend.database.session.Base`;
-- Alembic targets that metadata and includes initial revision `20260716_0001` for PostgreSQL and pgvector;
+- Alembic targets that metadata; revisions `20260716_0002` and `20260716_0003` add user-scoped 768-dimensional semantic vectors and stable conversation IDs;
 - the current conversation path uses a synchronous SQLAlchemy session consistently;
-- some broader memory write methods still use incorrect `metadata` constructor names, and semantic retrieval is not operational.
+- episodic and semantic writers map caller metadata to the models' `extra_data` columns;
+- semantic embedding and cosine-distance retrieval are operational through the injected provider;
+- profile, episodic, and semantic records expose user-scoped deletion paths.
 
-PostgreSQL and pgvector infrastructure exist. A conversation turn can be persisted through the current placeholder chat path, but complete conversation retrieval and personal-memory behavior remain `SCAFFOLDED`.
+The FastAPI handlers are asynchronous but the current SQLAlchemy session and repository operations are synchronous. That is acceptable for the verified local scaffold but can block the event loop under concurrent production load. Async database access, service-level transaction boundaries, and concurrency/load validation remain production requirements.
+
+PostgreSQL and pgvector persist conversations, personal memory, safe MCP tool descriptors, approved tool preferences, and sanitized tool outcomes. Semantic and tool-descriptor searches apply user scope, active/expiry filters, cosine-distance thresholds, and result limits before context use. `backend/core/auth.py` provides optional expiring HMAC-signed local tokens; with `AUTH_REQUIRED=true`, the token subject must match every chat body or memory path user ID. Auth-disabled local development retains caller-supplied logical scoping.
 
 ## Frontend
 
-The React frontend is `SCAFFOLDED`. It contains a sidebar, chat window, composer, message list, and an unused developer panel with mock metrics. `frontend/src/services/api.ts` sends JSON to `/api/v1/chat` and reads response bytes as a stream. It uses `VITE_API_URL` with `http://localhost:8000` as the default. The composer clears its loading state on completion and renders a user-visible message for handled request failures. A TypeScript project configuration supports the production build.
+The React frontend contains a responsive light-neutral shell with a search-first chat view and Personal Memory view. Empty chat centers one dominant query composer; active chat presents each user query and assistant response as a left-aligned result flow rather than opposing message bubbles. Request trace/conversation identifiers remain available through an answer-level three-dot metadata popover instead of the primary answer text. The native font stack selects SF Pro through the Apple system aliases where available and the platform `system-ui` font elsewhere; the composer explicitly inherits that same stack. The memory screen explicitly applies user changes, cancels obsolete reads, edits profile/preferences, lists and deletes records, confirms delete-all, and keeps manual event/fact creation behind an advanced plain-language disclosure. Chat parses the SSE contract, appends message deltas, persists a conversation ID across reloads/views, keeps the in-memory transcript mounted across Chat/Memory view switches, rotates it through `New conversation`, and clears the visible transcript when either the user or conversation changes.
 
-Conversation history navigation, configuration screens, memory logs, and complete multi-chunk accumulation are not implemented. Each received chunk currently replaces the assistant message content instead of appending to it.
+The trusted-local developer UI defaults a missing or legacy `dev_user_001` browser identity to `ani.mallya` and rotates the legacy conversation ID. Any other stored user/conversation identity is preserved. This is local UI convenience, not authentication.
+
+Conversation history restoration after a full browser reload and configuration screens are not implemented.
 
 ## Automated validation
 
-Backend tests under `backend/tests` include targeted chat API and service coverage, while the older memory-service module still fails during fixture setup. The frontend package defines `dev`, `build`, and `preview` scripts only. It has no component-test script, browser automation dependency, browser configuration, or committed end-to-end UI test.
+Backend tests cover LM Studio chat/embedding contracts, streaming, bounded same-user chronological history, conversation identity, memory services/APIs, PostgreSQL/pgvector persistence, scoping, and deletion. Playwright covers deterministic chat/memory workflows and separately gated live Gemma/Nomic acceptance, including real same-conversation recall. There is no component-test framework.
 
 The intended validation layers are:
 
@@ -89,8 +99,8 @@ The intended validation layers are:
 | --- | --- | --- |
 | Backend unit and integration tests | `SCAFFOLDED` | Validate service behavior, API boundaries, streaming, and persistence with controlled dependencies |
 | Frontend component tests | `PLANNED` | Validate rendering and interaction states in isolated components |
-| Automated browser tests | `PLANNED` | Exercise complete user workflows, network behavior, rendered results, console errors, and persistence across navigation or reload |
-| Live-provider acceptance | `PLANNED` | Separately prove that a configured non-mock LLM provider is called and returns a non-placeholder result |
+| Automated browser tests | implemented | Playwright covers chat success/failure, conversation identity, memory management, and loading cleanup |
+| Live-provider acceptance | implemented opt-in | Proves Gemma streaming and same-conversation recall plus Nomic persistence, reload, recall, and deletion |
 
 Deterministic browser tests should use a controlled backend or fake LLM response for repeatability. That proves application behavior, not live-model connectivity; live-provider verification remains a separate acceptance layer.
 
@@ -104,15 +114,15 @@ Frontend -> POST /api/v1/chat -> FastAPI dependency assembly
          -> conversation repository -> streamed response
 ```
 
-Current host-source validation completes this flow through the fixed placeholder graph and conversation persistence. It does not establish live-model integration or complete memory behavior. Current runtime evidence and failures are recorded in [NEXT_SESSION.md](NEXT_SESSION.md).
+Current host-source validation completes this flow through Gemma, a bounded same-user history window, and personal memory. Current runtime evidence is recorded in [NEXT_SESSION.md](NEXT_SESSION.md).
 
 ## Capability boundaries
 
-- Personal profile and episodic memory: `SCAFFOLDED`.
-- Semantic memory and embeddings: `SCAFFOLDED`; operational vector retrieval is `PLANNED`.
-- RAG, ingestion, hybrid retrieval, reranking, and GraphRAG: `PLANNED`; only abstract retriever/embedding structures exist.
-- Authentication and user management: `PLANNED`.
-- Internet search, notifications, calendar, email, voice, mobile clients, autonomous agents, and multi-agent workflows: `PLANNED`.
+- Personal profile, episodic memory, relevance-gated semantic search, management/export/correction/deletion UI, and optional signed user authentication: functionally implemented; auth is disabled by default for trusted-local development.
+- RAG, ingestion, hybrid retrieval, reranking, and GraphRAG: `PLANNED`; an embedding-provider boundary exists for personal memory, but there is no document retriever or RAG pipeline.
+- Signed local-user route ownership: implemented when enabled. Password login, account management, token revocation, and external identity providers: `PLANNED`.
+- Internet search, its privacy decision gate, notifications, calendar, email, voice, mobile clients, autonomous agents, and multi-agent workflows: `PLANNED`.
+- Semantic safe-descriptor discovery and user-scoped approved preference/sanitized outcome memory: implemented. MCP connectivity, authoritative live-registry synchronization, permissions, and invocation remain `PLANNED`; tool memory cannot authorize execution.
 
 ## Architectural decision
 

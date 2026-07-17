@@ -1,0 +1,28 @@
+[
+  {
+    "name": "relevant exact match",
+    "distances": [0.0, 0.8],
+    "expected_contents": ["relevant exact match"]
+  },
+  {
+    "name": "threshold edge included",
+    "distances": [0.35, 0.350001],
+    "expected_contents": ["threshold edge included"]
+  },
+  {
+    "name": "all irrelevant",
+    "distances": [0.7, 1.0],
+    "expected_contents": []
+  },
+  {
+    "name": "result count bounded",
+    "distances": [0.01, 0.02, 0.03, 0.04, 0.05, 0.06],
+    "expected_contents": [
+      "result count bounded",
+      "candidate 1",
+      "candidate 2",
+      "candidate 3",
+      "candidate 4"
+    ]
+  }
+]

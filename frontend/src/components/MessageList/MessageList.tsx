@@ -6,12 +6,27 @@ interface Message {
   content: string;
 }
 
-const MessageList: React.FC<{ messages: Message[] }> = ({ messages }) => {
+interface MessageListProps {
+  messages: Message[];
+  isThinking: boolean;
+}
+
+const MessageList: React.FC<MessageListProps> = ({ messages, isThinking }) => {
+  const lastMessageIsAssistant = messages[messages.length - 1]?.role === 'assistant'
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-7">
       {messages.map((msg, idx) => (
-        <MessageBubble key={idx} role={msg.role} content={msg.content} />
+        <MessageBubble
+          key={idx}
+          role={msg.role}
+          content={msg.content}
+          isThinking={isThinking && lastMessageIsAssistant && idx === messages.length - 1}
+        />
       ))}
+      {isThinking && !lastMessageIsAssistant && (
+        <MessageBubble role="assistant" content="" isThinking />
+      )}
     </div>
   )
 }
