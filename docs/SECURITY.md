@@ -14,10 +14,18 @@ This document separates current security facts from future requirements. A contr
 - Database-at-rest encryption, application-level encryption, encrypted backups, certificate pinning, scoped service credentials, and an audit log are not implemented by this repository.
 - Redis and PostgreSQL ports are published to the host by the development Compose configuration.
 - Personal-memory REST/UI deletion is implemented and queries filter by user ID. This is an authorization boundary only when signed-token authentication is enabled; auth-disabled mode is trusted-local logical scoping.
+- Agent-memory tables for cache, working state, procedures, entities/relations, knowledge, and summaries are user-scoped and covered by export/delete-all and scoped record deletion. A dry-run/apply service and CLI purge expired application rows; external scheduling and backup deletion are not implemented.
+- `MemoryCoordinatorAgent` receives only typed store methods. It selects bounded context deterministically and does not give Gemma SQL, raw table, durable-write, tool-invocation, or authorization capabilities.
+- Retrieved personal, knowledge, procedure, entity, summary, and toolbox values are placed in a prompt section labeled as untrusted literal data. This is a defense-in-depth prompt boundary, not a complete prompt-injection sandbox.
 - The developer UI stores its active user and conversation IDs in browser local storage. Missing or legacy `dev_user_001` state now defaults to `ani.mallya`, but this convenience identifier is not authentication or proof of identity; production-like use must enable signed ownership checks.
-- Preferred-name proposals are not persisted before explicit UI approval. When auth is enabled, approval, correction, export, and deletion are constrained to the token subject; auth-disabled mode remains caller-user-ID scoped.
+- Assistant text is treated as untrusted CommonMark. ReactMarkdown creates approved React elements without enabling raw HTML parsing; browser acceptance proves an injected image/event handler creates no element and executes no script. User messages remain literal text.
+- Preferred-name and response-style proposals are not persisted before explicit UI approval. Generic fact approval, correction, export, and deletion are constrained to the token subject when auth is enabled; auth-disabled mode remains caller-user-ID scoped.
 - Semantic memory content is sent over local HTTP to the LM Studio embedding process. The configured embedding endpoint does not request provider-side storage, but LM Studio process logging/configuration must still be reviewed for sensitive use.
+- Knowledge chunks, procedures, entities, summaries, tool descriptors, and semantic-cache queries are also sent to the configured local embedding process. Do not ingest secrets or private documents until LM Studio logging, retention, host access, and backup policy are acceptable for that data.
 - No internet-search tool or outbound-search decision policy is implemented. Current chat traffic is sent only to the configured LM Studio endpoint; future search would add a separate external disclosure boundary.
+- The maintainer architecture-candidate command sends the selected canonical diagram, maintainer request, and explicitly selected repository text to LM Studio. It accepts only loopback endpoints; bounds file roots, types, counts, and sizes; rejects traversal and common secret filenames; labels repository text as untrusted evidence; and cannot overwrite canonical diagrams. These controls do not detect every secret inside an otherwise allowed source file, so maintainers must inspect selected context and LM Studio logging before use.
+- Raster uploads accept only actual single-frame PNG, JPEG, or WebP content within configured byte and pixel limits; declared MIME must match decoded content. Validated bytes are stored under opaque hashed user namespaces with atomic writes, SHA-256/size integrity metadata, signed-user ownership when auth is enabled, private/no-store content responses, and file-plus-row deletion. The browser fetches private bytes through the authenticated API and uses a temporary object URL that is revoked on unmount. Automated retention, encrypted storage/backups, malware scanning, and redacted media audit events are not implemented.
+- Validated image bytes and a bounded user prompt are sent over loopback HTTP to Gemma in LM Studio for vision analysis. They are not sent to ComfyUI or an internet provider, but LM Studio process logging, host access, and retention still require review before sensitive images are used.
 
 AniOS is therefore a local development scaffold, not a hardened system for sensitive production data.
 
@@ -37,7 +45,7 @@ The following controls are requirements for future milestones, not current featu
 
 - `VERIFIED`: optional signed local user authentication and route ownership checks; password-based login, token revocation, and account administration remain `PLANNED`;
 - `PLANNED`: scoped API and service tokens with expiration and revocation;
-- `VERIFIED`: subject ownership checks cover current chat, conversation export/deletion, personal-memory, and tool-memory routes when auth is enabled; future documents and live tool execution still require authorization work;
+- `VERIFIED`: subject ownership checks cover current chat, conversation snapshot/export/deletion, personal-memory, tool-memory, visual-artifact, generated-image, upload, content, and image-analysis routes when auth is enabled; live tool execution still requires authorization work;
 - `PLANNED`: OS keychain or dedicated secret-store integration;
 - `PLANNED`: encryption at rest and encrypted, tested backups;
 - `PLANNED`: structured audit events with trace IDs and sensitive-data redaction;
@@ -51,8 +59,10 @@ The following controls are requirements for future milestones, not current featu
 - `PLANNED`: user review of the sanitized query whenever useful search depends on private or materially identifying context; if a safe query cannot be formed, no request is sent;
 - `PLANNED`: treat search results as untrusted content, isolate them from system/tool instructions, cite sources, and record a redacted decision audit without retaining the sensitive source text;
 - `PLANNED`: TLS and outbound-provider trust controls;
+- `VERIFIED`: diagram artifacts have logical user ownership, conversation/trace provenance, allowlisted type/size/line validation, strict browser rendering with HTML labels disabled, sanitized failure events, scoped listing/deletion, and local Mermaid/SVG download. Auth remains disabled by default for trusted-local development;
+- `VERIFIED`: upload MIME/signature/size/pixel limits, single-frame enforcement, opaque local binary-file isolation, integrity checks, private content responses, media file-plus-row deletion, and generated-image disconnect cancellation with terminal state and provider interruption. Binary retention/export, encryption/backups, malware scanning, and process-crash reconciliation remain `PLANNED`; diagram-stream disconnect cleanup is also `VERIFIED`;
 - `PLANNED`: mobile token storage and biometric integration;
-- `VERIFIED`: application-level expiry, JSON export, correction, per-record deletion, and delete-all propagation across current PostgreSQL tables; cache/log/backup deletion and encrypted backup lifecycle remain `PLANNED`.
+- `VERIFIED`: application-level expiry, deterministic scoped purge, JSON export, correction, scoped record deletion, and delete-all propagation across current PostgreSQL tables; external scheduling, log/backup deletion, and encrypted backup lifecycle remain `PLANNED` and are intentionally deferred to the final security subsystem.
 
 ## Security review for a change
 

@@ -1,7 +1,12 @@
 import json
+import os
 from pathlib import Path
 
 import pytest
+
+os.environ["DEBUG"] = "false"
+os.environ.setdefault("SECRET_KEY", "test-secret-key-only-for-testing")
+os.environ["POSTGRES_HOST"] = "localhost"
 
 from backend.memory.retrieval import SemanticRetrievalPolicy
 from backend.models.memory import SemanticMemory

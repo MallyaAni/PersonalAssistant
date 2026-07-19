@@ -1,0 +1,47 @@
+flowchart TB
+    Maintainer([Maintainer]) --> CLI[generate_architecture_candidate CLI]
+    CLI --> LocalGate{Loopback LM Studio endpoint?}
+    LocalGate -->|no| RejectRemote[Reject remote provider]
+    LocalGate -->|yes| ContextGuard[Explicit context allowlist<br/>path, type, count, and size limits]
+
+    ContextGuard --> Canonical[(Registered canonical .mmd<br/>read-only exemplar)]
+    ContextGuard --> Source[Explicit repository source files]
+    ContextGuard -->|traversal, secrets, or unsupported file| RejectContext[Reject context]
+    Canonical --> Normalize[Normalize legacy HTML line breaks<br/>for strict prompt evidence]
+    Normalize --> CandidateService[ArchitectureCandidateService]
+    Source --> CandidateService
+    Request[Maintainer change request<br/>plus required visible labels] --> CandidateService
+
+    CandidateService --> Agent[DiagramAgent]
+    Agent --> Graph[LangGraph generate_diagram node]
+    Graph --> Provider[LLMDiagramProvider]
+    Provider --> Gemma[Local LM Studio Gemma]
+    Gemma --> Validate[Passive Mermaid validator<br/>type, size, lines, and active-content rejection]
+    Validate --> Labels{Required labels present?}
+    Labels -->|no; once| Correction[Bounded semantic correction<br/>previous source plus missing labels]
+    Correction --> Agent
+    Labels -->|no after retry| RejectCandidate[Reject candidate]
+    Labels -->|yes| OutputGuard{New .candidate.mmd path?}
+
+    OutputGuard -->|canonical or existing path| RejectOutput[Reject output]
+    OutputGuard -->|new review path| CandidateMMD[(Candidate Mermaid source)]
+    CandidateMMD --> Renderer[Pinned Mermaid CLI<br/>Chromium render]
+    Renderer --> CandidateSVG[(Candidate SVG)]
+    CandidateMMD --> Review[Technical and visual review]
+    CandidateSVG --> Review
+    Review -->|approved manual edit or promotion| Updated[(Reviewed canonical .mmd and SVG)]
+    Review -->|rejected| Revise[Revise evidence or request<br/>and run the command again]
+
+    Protection[No automatic canonical overwrite<br/>no persistence or hardware authority]
+    CandidateService -.-> Protection
+
+    classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
+    classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
+    classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
+    classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
+    classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
+    class Maintainer,Request,Source,Review,Revise interface;
+    class CLI,LocalGate,ContextGuard,Normalize,CandidateService,Agent,Graph,Provider,Validate,Labels,Correction,OutputGuard,Renderer application;
+    class Canonical,CandidateMMD,CandidateSVG,Updated data;
+    class Gemma external;
+    class RejectRemote,RejectContext,RejectCandidate,RejectOutput,Protection warning;

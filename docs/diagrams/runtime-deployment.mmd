@@ -1,0 +1,56 @@
+flowchart LR
+    User([Primary user])
+
+    subgraph BrowserHost[Browser and developer host]
+        Browser[Chromium or browser]
+        Frontend[React and Vite dev server<br/>127.0.0.1:5173]
+        LMStudio[LM Studio<br/>Gemma chat and vision plus Nomic embeddings<br/>127.0.0.1:1234]
+        ComfyUI[ComfyUI 0.28<br/>HiDream-O1 Dev FP8<br/>127.0.0.1:8188]
+        BinaryStore[(Local artifact bytes<br/>data/artifacts)]
+        DiagramCLI[Architecture candidate CLI<br/>loopback model only]
+        Candidate[(Review candidate<br/>Mermaid and SVG)]
+    end
+
+    subgraph ApplicationRuntime[AniOS application runtime]
+        Backend[FastAPI and Uvicorn<br/>127.0.0.1:8000]
+        Dependencies[FastAPI dependency assembly<br/>async request sessions]
+        Auth[Optional signed-user ownership<br/>disabled by default locally]
+    end
+
+    subgraph Compose[Docker Compose]
+        Postgres[(PostgreSQL 16 and pgvector<br/>host port 5432)]
+        Redis[(Redis 7<br/>host port 6379<br/>scaffolded and unused)]
+        Maintenance[Opt-in memory-maintenance<br/>hourly profile]
+    end
+
+    Source[Repository source]
+    Canonical[(Canonical diagram suite)]
+    Migration[Alembic<br/>synchronous migration engine]
+
+    User --> Browser
+    Browser --> Frontend
+    Frontend -->|HTTP, JSON, and chat SSE| Backend
+    Backend --> Auth
+    Auth --> Dependencies
+    Dependencies -->|asyncpg transactions| Postgres
+    Dependencies -->|OpenAI-compatible HTTP| LMStudio
+    Dependencies -->|ComfyUI prompt, history, and view HTTP| ComfyUI
+    Dependencies -->|opaque keys and atomic file writes| BinaryStore
+    Maintenance -->|asyncpg maintenance cycle| Postgres
+    Maintenance -->|optional re-embedding| LMStudio
+    Migration -->|psycopg2 schema changes| Postgres
+    Source -->|host-source run or image build| Backend
+    Source -->|explicit allowlisted context| DiagramCLI
+    Canonical -->|read-only exemplar| DiagramCLI
+    DiagramCLI -->|OpenAI-compatible HTTP| LMStudio
+    DiagramCLI -->|pinned Mermaid render| Candidate
+    Candidate -.->|review then manual promotion| Canonical
+
+    classDef user fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
+    classDef process fill:#e8f1fb,stroke:#5e8fc4,color:#102a43,stroke-width:1.5px;
+    classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b,stroke-width:1.5px;
+    classDef scaffold fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
+    class User,Source user;
+    class Browser,Frontend,LMStudio,ComfyUI,Backend,Dependencies,Auth,Maintenance,Migration,DiagramCLI process;
+    class Postgres,BinaryStore,Candidate,Canonical data;
+    class Redis scaffold;

@@ -18,6 +18,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
 from backend.database.session import Base
+from backend.models.vector import VECTOR_DIMENSION
 
 
 class UserProfile(Base):
@@ -75,13 +76,21 @@ class EpisodicMemory(Base):
 
 class SemanticMemory(Base):
     __tablename__ = "semantic_memory"
+    __table_args__ = (
+        Index(
+            "ix_semantic_memory_embedding_hnsw",
+            "embedding",
+            postgresql_using="hnsw",
+            postgresql_ops={"embedding": "vector_cosine_ops"},
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     user_id: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    embedding: Mapped[list[float]] = mapped_column(Vector(768))
+    embedding: Mapped[list[float]] = mapped_column(Vector(VECTOR_DIMENSION))
     purpose: Mapped[str] = mapped_column(
         String(100), nullable=False, default="user_explicit"
     )

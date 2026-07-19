@@ -1,17 +1,28 @@
 import React from 'react'
 import MessageBubble from '../MessageBubble/MessageBubble'
+import type { VisualArtifact } from '../../services/api'
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+  artifact?: VisualArtifact;
+  artifactStatus?: 'generating' | 'failed';
+  artifactError?: string;
+  artifactActivity?: string;
 }
 
 interface MessageListProps {
   messages: Message[];
   isThinking: boolean;
+  onArtifactDeleted?: (artifactId: string) => void;
 }
 
-const MessageList: React.FC<MessageListProps> = ({ messages, isThinking }) => {
+// Render the ordered transcript and route owned artifact actions upward.
+const MessageList: React.FC<MessageListProps> = ({
+  messages,
+  isThinking,
+  onArtifactDeleted,
+}) => {
   const lastMessageIsAssistant = messages[messages.length - 1]?.role === 'assistant'
 
   return (
@@ -22,6 +33,11 @@ const MessageList: React.FC<MessageListProps> = ({ messages, isThinking }) => {
           role={msg.role}
           content={msg.content}
           isThinking={isThinking && lastMessageIsAssistant && idx === messages.length - 1}
+          artifact={msg.artifact}
+          artifactStatus={msg.artifactStatus}
+          artifactError={msg.artifactError}
+          artifactActivity={msg.artifactActivity}
+          onArtifactDeleted={onArtifactDeleted}
         />
       ))}
       {isThinking && !lastMessageIsAssistant && (

@@ -1,12 +1,22 @@
 import React from 'react'
 import { MoreHorizontal, Search, Sparkles } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import DiagramArtifact from '../DiagramArtifact/DiagramArtifact'
+import ImageArtifact from '../ImageArtifact/ImageArtifact'
+import type { VisualArtifact } from '../../services/api'
 
 interface MessageProps {
   role: 'user' | 'assistant';
   content: string;
   isThinking?: boolean;
+  artifact?: VisualArtifact;
+  artifactStatus?: 'generating' | 'failed';
+  artifactError?: string;
+  artifactActivity?: string;
+  onArtifactDeleted?: (artifactId: string) => void;
 }
 
+// Separate trace metadata from the visible assistant answer.
 const parseAssistantEnvelope = (content: string) => {
   const match = content.match(
     /^Trace: ([^\n]+)\nConversation: ([^\n]+)\nResponse: ?([\s\S]*)$/,
@@ -19,11 +29,21 @@ const parseAssistantEnvelope = (content: string) => {
   }
 }
 
-const MessageBubble: React.FC<MessageProps> = ({ role, content, isThinking = false }) => {
+// Render one user or assistant message with its optional visual artifact.
+const MessageBubble: React.FC<MessageProps> = ({
+  role,
+  content,
+  isThinking = false,
+  artifact,
+  artifactStatus,
+  artifactError,
+  artifactActivity,
+  onArtifactDeleted,
+}) => {
   const isUser = role === 'user';
   const envelope = isUser ? null : parseAssistantEnvelope(content)
   const visibleContent = isThinking ? 'Thinking...' : (envelope?.answer ?? content)
-  
+
   return (
     <article aria-label={isUser ? 'Your question' : (isThinking ? 'AniOS is thinking' : 'AniOS answer')} className={isUser ? 'border-b border-black/[0.07] pb-7' : 'rounded-[26px] border border-black/[0.06] bg-white p-5 shadow-[0_12px_40px_rgba(0,0,0,0.055)] md:p-7'}>
       <div className="mb-3 flex items-start justify-between gap-3">
@@ -56,13 +76,33 @@ const MessageBubble: React.FC<MessageProps> = ({ role, content, isThinking = fal
           </details>
         )}
       </div>
-      <p
-        role={isThinking ? 'status' : undefined}
-        aria-live={isThinking ? 'polite' : undefined}
-        className={`whitespace-pre-wrap ${isUser ? 'text-[22px] font-semibold leading-[1.28] tracking-[-0.025em] text-[#1d1d1f] md:text-[28px]' : 'text-[16px] leading-7 text-[#333336] md:text-[17px]'} ${isThinking ? 'animate-pulse text-[#6e6e73]' : ''}`}
-      >
-        {visibleContent}
-      </p>
+      {isUser || isThinking ? (
+        <p
+          role={isThinking ? 'status' : undefined}
+          aria-live={isThinking ? 'polite' : undefined}
+          className={`whitespace-pre-wrap ${isUser ? 'text-[22px] font-semibold leading-[1.28] tracking-[-0.025em] text-[#1d1d1f] md:text-[28px]' : 'text-[16px] leading-7 text-[#333336] md:text-[17px]'} ${isThinking ? 'animate-pulse text-[#6e6e73]' : ''}`}
+        >
+          {visibleContent}
+        </p>
+      ) : (
+        <div className="assistant-markdown text-[16px] leading-7 text-[#333336] md:text-[17px]">
+          <ReactMarkdown>{visibleContent}</ReactMarkdown>
+        </div>
+      )}
+      {!isUser && artifactStatus === 'generating' && (
+        <p role="status" className="mt-4 animate-pulse text-sm text-[#6e6e73]">
+          {artifactActivity || 'Creating visual artifact...'}
+        </p>
+      )}
+      {!isUser && artifactStatus === 'failed' && (
+        <p role="alert" className="mt-4 text-sm text-[#c9342f]">
+          {artifactError || 'Unable to create the visual artifact.'}
+        </p>
+      )}
+      {!isUser && artifact?.kind === 'diagram' && <DiagramArtifact artifact={artifact} />}
+      {!isUser && artifact && artifact.kind !== 'diagram' && (
+        <ImageArtifact artifact={artifact} onDeleted={onArtifactDeleted} />
+      )}
     </article>
   )
 }

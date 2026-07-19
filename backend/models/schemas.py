@@ -22,5 +22,13 @@ class ChatRequest(BaseModel):
 
 
 class ChatStreamEvent(TypedDict):
-    event: Literal["start", "delta", "memory_proposal", "done"]
+    event: Literal[
+        "start",
+        "delta",
+        "memory_proposal",
+        "artifact_started",
+        "artifact_ready",
+        "artifact_error",
+        "done",
+    ]
     data: dict[str, Any]

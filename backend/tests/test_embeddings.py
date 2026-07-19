@@ -1,4 +1,7 @@
 import json
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
 
 import httpx
 import pytest
@@ -72,3 +75,36 @@ def test_lm_studio_embedding_provider_rejects_dimension_mismatch():
             match="LM Studio embedding dimension mismatch: expected 3, received 2",
         ):
             provider.embed_query("query")
+
+
+# Verify one shared provider limits concurrent LM Studio embedding requests.
+def test_lm_studio_embedding_provider_bounds_concurrency() -> None:
+    active = 0
+    peak = 0
+    lock = threading.Lock()
+
+    # Hold each mock provider request long enough to observe overlap.
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal active, peak
+        with lock:
+            active += 1
+            peak = max(peak, active)
+        time.sleep(0.02)
+        with lock:
+            active -= 1
+        return httpx.Response(200, json={"data": [{"embedding": [1.0]}]})
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        provider = LMStudioEmbeddingProvider(
+            base_url="http://127.0.0.1:1234",
+            model="test-model",
+            dimension=1,
+            max_concurrency=1,
+            client=client,
+        )
+        with ThreadPoolExecutor(max_workers=6) as executor:
+            results = list(executor.map(provider.embed_query, map(str, range(6))))
+
+    assert results == [[1.0]] * 6
+    assert peak == 1
+    assert active == 0

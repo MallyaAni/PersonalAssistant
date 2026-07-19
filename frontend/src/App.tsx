@@ -1,50 +1,79 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Menu, Plus } from 'lucide-react'
 import ChatWindow from './components/ChatWindow/ChatWindow'
 import Sidebar from './components/Sidebar/Sidebar'
 import MemoryPanel from './components/MemoryPanel/MemoryPanel'
+import ArtifactPanel from './components/ArtifactPanel/ArtifactPanel'
 
 const DEFAULT_USER_ID = 'ani.mallya'
 const LEGACY_DEFAULT_USER_ID = 'dev_user_001'
 
-const getInitialUserId = () => {
-  const stored = localStorage.getItem('anios_user_id')
-  if (stored && stored !== LEGACY_DEFAULT_USER_ID) return stored
-
-  localStorage.setItem('anios_user_id', DEFAULT_USER_ID)
-  localStorage.removeItem('anios_conversation_id')
-  return DEFAULT_USER_ID
+interface ActiveConversation {
+  id: string;
+  restore: boolean;
 }
 
+interface ActiveSession {
+  userId: string;
+  conversation: ActiveConversation;
+}
+
+// Read one initial session without mutating storage during React initialization.
+const getInitialSession = (): ActiveSession => {
+  const storedUser = localStorage.getItem('anios_user_id')
+  const migrateUser = !storedUser || storedUser === LEGACY_DEFAULT_USER_ID
+  const userId = migrateUser ? DEFAULT_USER_ID : storedUser as string
+  const storedConversation = migrateUser
+    ? null
+    : localStorage.getItem('anios_conversation_id')
+  return {
+    userId,
+    conversation: storedConversation
+      ? { id: storedConversation, restore: true }
+      : { id: crypto.randomUUID(), restore: false },
+  }
+}
+
+// Coordinate the active user, conversation, and primary application view.
 function App() {
   const [isSidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 768)
-  const [activeView, setActiveView] = useState<'chat' | 'memory'>('chat')
-  const [userId, setUserId] = useState(getInitialUserId)
-  const [conversationId, setConversationId] = useState(() => {
-    const stored = localStorage.getItem('anios_conversation_id')
-    if (stored) return stored
-    const created = crypto.randomUUID()
-    localStorage.setItem('anios_conversation_id', created)
-    return created
-  })
+  const [activeView, setActiveView] = useState<'chat' | 'memory' | 'artifacts'>('chat')
+  const [session, setSession] = useState(getInitialSession)
+  const { userId, conversation } = session
 
+  // Persist the committed session after React finishes initialization.
+  useEffect(() => {
+    localStorage.setItem('anios_user_id', userId)
+    localStorage.setItem('anios_conversation_id', conversation.id)
+  }, [conversation.id, userId])
+
+  // Start a new empty conversation and persist its identifier for later reloads.
   const rotateConversation = () => {
     const created = crypto.randomUUID()
-    setConversationId(created)
+    setSession(current => ({
+      ...current,
+      conversation: { id: created, restore: false },
+    }))
     localStorage.setItem('anios_conversation_id', created)
   }
 
+  // Open a new chat without changing the active user.
   const startNewConversation = () => {
     rotateConversation()
     setActiveView('chat')
   }
 
+  // Change the logical local user and isolate them in a new conversation.
   const updateUserId = (nextUserId: string) => {
     const normalized = nextUserId.trim()
     if (!normalized || normalized === userId) return
-    setUserId(normalized)
+    const created = crypto.randomUUID()
+    setSession({
+      userId: normalized,
+      conversation: { id: created, restore: false },
+    })
     localStorage.setItem('anios_user_id', normalized)
-    rotateConversation()
+    localStorage.setItem('anios_conversation_id', created)
   }
 
   return (
@@ -84,14 +113,16 @@ function App() {
         </header>
         <div className={activeView === 'chat' ? 'flex flex-1 min-h-0' : 'hidden'}>
           <ChatWindow
-            key={`${userId}:${conversationId}`}
+            key={`${userId}:${conversation.id}`}
             userId={userId}
-            conversationId={conversationId}
+            conversationId={conversation.id}
+            restoreConversation={conversation.restore}
           />
         </div>
         {activeView === 'memory' && (
           <MemoryPanel userId={userId} onUserIdChange={updateUserId} />
         )}
+        {activeView === 'artifacts' && <ArtifactPanel userId={userId} />}
       </main>
     </div>
   )

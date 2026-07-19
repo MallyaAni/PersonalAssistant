@@ -1,0 +1,77 @@
+flowchart TB
+    Browser([Browser]) --> App[React App shell]
+
+    subgraph Session[Local session and navigation]
+        direction LR
+        Identity[localStorage identity<br/>ani.mallya default]
+        ConversationID[localStorage conversation UUID]
+        Navigation[Sidebar and New chat<br/>Chat, Artifacts, Memory]
+        Persistence[Chat stays mounted across views;<br/>stored conversation restores on reload]
+
+        Identity --> Navigation
+        ConversationID --> Navigation --> Persistence
+    end
+
+    App --> Identity
+    App --> ConversationID
+
+    subgraph Views[Primary application views]
+        direction LR
+        ChatView[ChatWindow<br/>transcript, thinking, approvals,<br/>conversation hydration]
+        Composer[Composer modes<br/>Chat, Create image, Analyze image<br/>progress, cancel, retry]
+        ArtifactView[ArtifactPanel<br/>owned diagram and image history<br/>refresh, download, delete]
+        MemoryView[MemoryPanel<br/>personal, agent, and tool snapshots<br/>approve, edit, export, delete]
+
+        ChatView --> Composer
+    end
+
+    Navigation --> ChatView
+    Navigation --> ArtifactView
+    Navigation --> MemoryView
+    Persistence --> ChatView
+
+    subgraph Visuals[Strict local visual rendering]
+        direction LR
+        DiagramCard[DiagramArtifact<br/>lazy strict Mermaid SVG<br/>editable source and export]
+        ImageCard[ImageArtifact<br/>private preview and Gemma text<br/>download and owned deletion]
+    end
+
+    ChatView --> DiagramCard
+    ChatView --> ImageCard
+    ArtifactView --> DiagramCard
+    ArtifactView --> ImageCard
+
+    subgraph Client[Typed client and trust boundary]
+        direction LR
+        ChatClient[streamChat<br/>validated SSE lifecycle]
+        VisualClient[JSON generation and multipart upload<br/>private authenticated image fetch]
+        DataClient[JSON memory, history,<br/>snapshot, and deletion requests]
+        Validation[Runtime response validation<br/>visible safe errors]
+        Auth[Optional VITE_AUTH_TOKEN]
+
+        ChatClient --> Validation
+        VisualClient --> Validation
+        DataClient --> Validation
+        Auth --> ChatClient
+        Auth --> VisualClient
+        Auth --> DataClient
+    end
+
+    Composer --> ChatClient
+    Composer --> VisualClient
+    ImageCard --> VisualClient
+    ChatView --> DataClient
+    ArtifactView --> DataClient
+    MemoryView --> DataClient
+
+    Backend[FastAPI v1 API<br/>localhost:8000]
+    Validation --> Backend
+
+    classDef shell fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
+    classDef component fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
+    classDef boundary fill:#eef7ee,stroke:#5f9562,color:#183b1b;
+    classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
+    class Browser,App,Identity,ConversationID,Navigation,Persistence shell;
+    class ChatView,Composer,ArtifactView,MemoryView,DiagramCard,ImageCard component;
+    class ChatClient,VisualClient,DataClient,Validation,Auth boundary;
+    class Backend external;

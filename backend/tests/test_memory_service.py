@@ -2,12 +2,14 @@ import os
 import uuid
 
 import pytest
+import pytest_asyncio
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 # Inject a mock secret key for testing purposes to satisfy Pydantic validation
 os.environ["SECRET_KEY"] = "test_secret_key_only_for_testing"
 
-from backend.database.session import SessionLocal, engine
+from backend.database.session import async_engine
 from backend.embeddings.base import EmbeddingProvider
 from backend.memory.retrieval import SemanticRetrievalPolicy
 from backend.models.memory import SemanticMemory, UserProfile
@@ -26,19 +28,25 @@ class DeterministicEmbeddingProvider(EmbeddingProvider):
         return vector(0.0, 1.0) if "coffee" in query else vector(1.0)
 
 
-@pytest.fixture
-def db_session():
-    connection = engine.connect()
-    transaction = connection.begin()
-    session = SessionLocal(bind=connection)
+# Yield an async session whose committed work is rolled back after each test.
+@pytest_asyncio.fixture
+async def db_session():
+    connection = await async_engine.connect()
+    transaction = await connection.begin()
+    session = AsyncSession(
+        bind=connection,
+        expire_on_commit=False,
+        join_transaction_mode="create_savepoint",
+    )
     try:
         yield session
     finally:
-        session.close()
-        transaction.rollback()
-        connection.close()
+        await session.close()
+        await transaction.rollback()
+        await connection.close()
 
 
+# Build the memory service with the rollback-scoped async session.
 @pytest.fixture
 def memory_service(db_session):
     return PostgresMemoryService(db_session, DeterministicEmbeddingProvider())
@@ -103,8 +111,10 @@ async def test_save_semantic_memory(memory_service, db_session):
         {"type": "preference"},
     )
 
-    saved = db_session.execute(
-        select(SemanticMemory).where(SemanticMemory.content == content)
+    saved = (
+        await db_session.execute(
+            select(SemanticMemory).where(SemanticMemory.content == content)
+        )
     ).scalar_one()
     assert saved.user_id == user_id
     assert saved.content == content

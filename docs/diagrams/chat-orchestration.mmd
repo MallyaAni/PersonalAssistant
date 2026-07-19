@@ -1,0 +1,54 @@
+flowchart TB
+    User([User message]) --> Composer[Composer]
+    Composer -->|POST /api/v1/chat| ChatAPI[FastAPI chat route]
+    ChatAPI --> Ownership[Optional signed-user ownership]
+    Ownership --> Service[ConversationService]
+    Service --> Trace[New request trace ID]
+    Service --> Route{Explicit diagram request?}
+
+    Route -->|yes| Artifact[DiagramArtifactService<br/>separate detailed diagram]
+    Artifact --> DiagramAgent[DiagramAgent<br/>specialized LangGraph workflow]
+    DiagramAgent --> DiagramProvider[LLMDiagramProvider<br/>bounded JSON and Mermaid]
+    DiagramProvider --> DiagramGemma[LM Studio Gemma]
+    Artifact --> SSE
+
+    Route -->|no| Plan[MemoryCoordinatorAgent<br/>deterministic query plan]
+    Plan --> Personal[Profile plus episodic and semantic]
+    Plan --> Typed[Working, entity, knowledge,<br/>summary, procedure, toolbox]
+    Service --> History[ConversationRepository<br/>bounded same-user history]
+    Personal --> Context[Bounded context assembly]
+    Typed --> Context
+    History --> State[Typed AgentState]
+    Context --> State
+    State --> Graph[LangGraph<br/>one assistant node]
+    Graph --> Prompt[System prompt plus literal memory,<br/>history, and current query]
+    Prompt --> Gemma[LM Studio Gemma<br/>stream_chat]
+    Gemma -->|message.delta| Graph
+    Graph --> Persist[Persist completed conversation turn]
+    Persist --> Lifecycle[Update working state and<br/>periodic conversation summary]
+    Persist --> Proposal[At most one deterministic<br/>memory proposal]
+    Proposal --> SSE[SSE encoder]
+    Lifecycle --> SSE
+    Graph --> SSE
+    SSE -->|start, delta, optional proposal or artifact, done| Parser[Frontend stream parser]
+    Parser --> Answer[Visible answer, metadata,<br/>proposal, or artifact]
+
+    Reload([Full browser reload]) --> SnapshotAPI[GET owned conversation snapshot]
+    SnapshotAPI --> Ownership
+    Ownership --> RestoreHistory[Persisted turns and artifacts]
+    RestoreHistory --> RestoreUI[Rebuilt transcript and diagram cards]
+
+    Failure[Unexpected stream failure] -->|sanitized error event| SSE
+    Disconnect[Client disconnect after artifact_started] --> CancelCleanup[Shielded cancelled terminal write]
+    CancelCleanup --> Artifact
+
+    classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
+    classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
+    classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
+    classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
+    classDef failure fill:#fff3cd,stroke:#b78b20,color:#4d3900;
+    class User,Composer,Parser,Answer,Reload,RestoreUI,Disconnect interface;
+    class ChatAPI,SnapshotAPI,Ownership,Service,Trace,Route,Plan,Context,State,Graph,Prompt,Persist,Lifecycle,Proposal,SSE,Artifact,DiagramAgent,DiagramProvider,CancelCleanup application;
+    class Personal,Typed,History,RestoreHistory data;
+    class Gemma,DiagramGemma external;
+    class Failure failure;

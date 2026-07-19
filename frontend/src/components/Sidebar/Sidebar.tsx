@@ -1,9 +1,9 @@
 import React from 'react'
-import { BrainCircuit, MessageCircle } from 'lucide-react'
+import { BrainCircuit, Image, MessageCircle } from 'lucide-react'
 
 interface SidebarProps {
-  activeView: 'chat' | 'memory'
-  onViewChange: (view: 'chat' | 'memory') => void
+  activeView: 'chat' | 'memory' | 'artifacts'
+  onViewChange: (view: 'chat' | 'memory' | 'artifacts') => void
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange }) => {
@@ -20,6 +20,14 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange }) => {
         >
           <MessageCircle size={19} className={activeView === 'chat' ? 'text-[#0071e3]' : ''} />
           <span className="hidden lg:inline">Conversations</span>
+        </button>
+        <button
+          aria-label="Visual artifacts"
+          onClick={() => onViewChange('artifacts')}
+          className={`flex h-12 w-full items-center justify-center gap-3 rounded-2xl px-3 text-sm font-medium lg:justify-start ${activeView === 'artifacts' ? 'bg-[#f5f5f7] text-[#1d1d1f] shadow-sm' : 'text-[#6e6e73] hover:bg-[#f5f5f7] hover:text-[#1d1d1f]'}`}
+        >
+          <Image size={19} className={activeView === 'artifacts' ? 'text-[#0071e3]' : ''} />
+          <span className="hidden lg:inline">Artifacts</span>
         </button>
         <button
           aria-label="Memory"

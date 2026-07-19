@@ -1,0 +1,71 @@
+flowchart LR
+    User([Primary user])
+    Maintainer([Maintainer])
+
+    subgraph Interface[Local interface]
+        Frontend[React and Vite frontend<br/>chat, image create/analyze, private rendering,<br/>visual history and export; localhost:5173]
+        API[FastAPI v1 API<br/>localhost:8000]
+    end
+
+    subgraph Application[Application and orchestration]
+        Conversation[ConversationService]
+        DiagramArtifacts[DiagramArtifactService<br/>bounded Mermaid lifecycle]
+        ImageArtifacts[ImageArtifactService<br/>generation, upload, integrity, deletion]
+        Vision[VisionAnalysisService<br/>grounded image understanding]
+        DiagramAgent[DiagramAgent<br/>specialized LangGraph workflow]
+        Candidate[Architecture candidate service<br/>review-only repository context]
+        Coordinator[MemoryCoordinatorAgent<br/>deterministic policy]
+        Graph[LangGraph<br/>one Gemma assistant node]
+        Memory[Typed personal and agent memory services]
+        Toolbox[Safe tool-memory service<br/>discovery only]
+    end
+
+    subgraph Infrastructure[Local infrastructure]
+        Database[(PostgreSQL and pgvector<br/>conversations, memory, and visual artifacts)]
+        LMStudio[LM Studio<br/>Gemma 4 12B and Nomic embeddings]
+        ComfyUI[ComfyUI and HiDream-O1 Dev<br/>local raster generation]
+        BinaryStore[(Opaque local binary artifact store)]
+        Redis[(Redis<br/>scaffolded and unused)]
+        Diagrams[(Canonical Mermaid suite<br/>plus review candidates)]
+    end
+
+    User --> Frontend
+    Maintainer --> Candidate
+    Frontend -->|JSON, multipart, private image bytes,<br/>chat SSE, and conversation restore| API
+    API --> Conversation
+    API --> Memory
+    API --> Toolbox
+    Conversation --> Coordinator
+    Conversation --> Graph
+    Conversation -->|explicit diagram lifecycle| DiagramArtifacts
+    DiagramArtifacts --> DiagramAgent
+    API -->|POST images/generate| ImageArtifacts
+    API -->|bounded multipart upload| Vision
+    Vision --> ImageArtifacts
+    Vision -->|validated image plus bounded prompt| LMStudio
+    ImageArtifacts -->|typed generation request| ComfyUI
+    ImageArtifacts --> BinaryStore
+    Candidate --> DiagramAgent
+    Candidate -->|read canonical and explicit source context| Diagrams
+    Candidate -->|new candidate only; manual review required| Diagrams
+    Conversation --> Database
+    Coordinator --> Memory
+    Coordinator --> Toolbox
+    Graph -->|chat completions| LMStudio
+    DiagramAgent -->|bounded diagram specification| LMStudio
+    DiagramArtifacts --> Database
+    ImageArtifacts --> Database
+    Memory --> Database
+    Memory -->|embedding requests| LMStudio
+    Toolbox --> Database
+    Toolbox -->|safe descriptor embeddings| LMStudio
+
+    classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f,stroke-width:1.5px;
+    classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43,stroke-width:1.5px;
+    classDef infrastructure fill:#eef7ee,stroke:#5f9562,color:#183b1b,stroke-width:1.5px;
+    classDef scaffold fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-width:1.5px,stroke-dasharray:5 4;
+    class Frontend,API interface;
+    class User,Maintainer interface;
+    class Conversation,DiagramArtifacts,ImageArtifacts,Vision,DiagramAgent,Candidate,Coordinator,Graph,Memory,Toolbox application;
+    class Database,LMStudio,ComfyUI,BinaryStore,Diagrams infrastructure;
+    class Redis scaffold;

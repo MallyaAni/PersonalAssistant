@@ -5,6 +5,17 @@ from sqlalchemy import engine_from_config, pool
 
 from backend.config.settings import settings
 from backend.database.session import Base
+from backend.models.agent_memory import (
+    ConversationSummary,
+    KnowledgeChunk,
+    KnowledgeDocument,
+    MemoryEntity,
+    MemoryEntityRelation,
+    ProcedureMemory,
+    SemanticCacheEntry,
+    WorkingMemoryItem,
+)
+from backend.models.artifact import VisualArtifact
 from backend.models.conversation import Conversation
 from backend.models.memory import (
     EpisodicMemory,
@@ -23,6 +34,15 @@ _MODELS = (
     ToolDescriptor,
     ToolPreference,
     ToolUsageOutcome,
+    SemanticCacheEntry,
+    WorkingMemoryItem,
+    ProcedureMemory,
+    MemoryEntity,
+    MemoryEntityRelation,
+    KnowledgeDocument,
+    KnowledgeChunk,
+    ConversationSummary,
+    VisualArtifact,
 )
 
 # This is the Alembic Config object, which provides

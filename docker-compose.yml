@@ -33,11 +33,37 @@ services:
       - POSTGRES_DB=anios_db
       - POSTGRES_HOST=db
       - SECRET_KEY=your-super-secret-key-here
+      - IMAGE_PROVIDER_BASE_URL=http://host.docker.internal:8188
+      - ARTIFACT_STORAGE_ROOT=/app/data/artifacts
+    volumes:
+      - artifactdata:/app/data/artifacts
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_started
 
+  memory-maintenance:
+    build: .
+    profiles: ["maintenance"]
+    command:
+      - python
+      - -m
+      - backend.cli.run_memory_maintenance
+      - --all-users
+      - --strict
+      - --interval-seconds
+      - "3600"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=anios_db
+      - POSTGRES_HOST=db
+      - SECRET_KEY=your-super-secret-key-here
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   pgdata:
+  artifactdata:

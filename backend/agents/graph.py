@@ -44,6 +44,23 @@ def _build_system_prompt(context_data: dict[str, Any]) -> str:
     if memory_contents:
         personal_context["memories"] = memory_contents
 
+    context_fields = {
+        "working": ("memory_key", "value", "purpose"),
+        "entities": ("entity_type", "canonical_name", "attributes"),
+        "knowledge": ("content", "document", "retrieval"),
+        "summaries": ("conversation_id", "content", "through_turn_count"),
+        "procedures": ("name", "description", "steps"),
+        "toolbox": ("server_id", "tool_name", "description", "input_purpose"),
+    }
+    for context_name, allowed_fields in context_fields.items():
+        values = []
+        for item in (context_data.get(context_name) or [])[:3]:
+            values.append(
+                {field: item[field] for field in allowed_fields if field in item}
+            )
+        if values:
+            personal_context[context_name] = values
+
     if not personal_context:
         return prompt
 

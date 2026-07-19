@@ -5,9 +5,10 @@ from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import delete, or_, update
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import Session
 
+from backend.database.locks import transaction_advisory_lock
 from backend.embeddings.base import EmbeddingProvider
 from backend.memory.retrieval import SemanticRetrievalPolicy
 from backend.models.tool_memory import (
@@ -33,7 +34,7 @@ def reject_sensitive_tool_memory(value: str) -> str:
 class ToolMemoryService:
     def __init__(
         self,
-        session: Session,
+        session: AsyncSession,
         embeddings: EmbeddingProvider,
         retrieval_policy: SemanticRetrievalPolicy,
         embedding_version: str,
@@ -60,15 +61,25 @@ class ToolMemoryService:
             f"risk={risk_classification}"
         )
         embedding = await asyncio.to_thread(self.embeddings.embed_text, canonical)
-        existing = self.session.execute(
-            select(ToolDescriptor).where(
-                ToolDescriptor.user_id == user_id,
-                ToolDescriptor.server_id == server_id,
-                ToolDescriptor.tool_name == tool_name,
-                ToolDescriptor.schema_fingerprint == schema_fingerprint,
+        await transaction_advisory_lock(
+            self.session,
+            "tool_descriptor",
+            user_id,
+            server_id,
+            tool_name,
+            schema_fingerprint,
+        )
+        existing = (
+            await self.session.execute(
+                select(ToolDescriptor).where(
+                    ToolDescriptor.user_id == user_id,
+                    ToolDescriptor.server_id == server_id,
+                    ToolDescriptor.tool_name == tool_name,
+                    ToolDescriptor.schema_fingerprint == schema_fingerprint,
+                )
             )
         ).scalar_one_or_none()
-        self.session.execute(
+        await self.session.execute(
             update(ToolDescriptor)
             .where(
                 ToolDescriptor.user_id == user_id,
@@ -101,11 +112,12 @@ class ToolMemoryService:
             existing.tool_version = tool_version
             existing.risk_classification = risk_classification
             existing.embedding = embedding
+            existing.embedding_model = getattr(self.embeddings, "model", "unknown")
             existing.embedding_version = self.embedding_version
             existing.embedding_dimension = len(embedding)
             existing.active = True
-        self.session.commit()
-        self.session.refresh(existing)
+        await self.session.commit()
+        await self.session.refresh(existing)
         return existing.to_dict()
 
     async def search_descriptors(
@@ -120,11 +132,13 @@ class ToolMemoryService:
         filters = [ToolDescriptor.user_id == user_id, ToolDescriptor.active.is_(True)]
         if server_id:
             filters.append(ToolDescriptor.server_id == server_id)
-        rows = self.session.execute(
-            select(ToolDescriptor, distance.label("cosine_distance"))
-            .where(*filters, distance <= self.retrieval_policy.max_cosine_distance)
-            .order_by(distance, ToolDescriptor.id)
-            .limit(min(top_k, self.retrieval_policy.max_results))
+        rows = (
+            await self.session.execute(
+                select(ToolDescriptor, distance.label("cosine_distance"))
+                .where(*filters, distance <= self.retrieval_policy.max_cosine_distance)
+                .order_by(distance, ToolDescriptor.id)
+                .limit(min(top_k, self.retrieval_policy.max_results))
+            )
         ).all()
         results = []
         for descriptor, score in rows:
@@ -136,15 +150,17 @@ class ToolMemoryService:
             results.append(item)
         return results
 
-    def _require_active_descriptor(
+    async def _require_active_descriptor(
         self, user_id: str, server_id: str, tool_name: str
     ) -> ToolDescriptor:
-        descriptor = self.session.execute(
-            select(ToolDescriptor).where(
-                ToolDescriptor.user_id == user_id,
-                ToolDescriptor.server_id == server_id,
-                ToolDescriptor.tool_name == tool_name,
-                ToolDescriptor.active.is_(True),
+        descriptor = (
+            await self.session.execute(
+                select(ToolDescriptor).where(
+                    ToolDescriptor.user_id == user_id,
+                    ToolDescriptor.server_id == server_id,
+                    ToolDescriptor.tool_name == tool_name,
+                    ToolDescriptor.active.is_(True),
+                )
             )
         ).scalar_one_or_none()
         if descriptor is None:
@@ -162,13 +178,15 @@ class ToolMemoryService:
         source_trace_id: str,
         expires_at: datetime | None,
     ) -> dict[str, Any]:
-        self._require_active_descriptor(user_id, server_id, tool_name)
-        preference = self.session.execute(
-            select(ToolPreference).where(
-                ToolPreference.user_id == user_id,
-                ToolPreference.server_id == server_id,
-                ToolPreference.tool_name == tool_name,
-                ToolPreference.preference_key == preference_key,
+        await self._require_active_descriptor(user_id, server_id, tool_name)
+        preference = (
+            await self.session.execute(
+                select(ToolPreference).where(
+                    ToolPreference.user_id == user_id,
+                    ToolPreference.server_id == server_id,
+                    ToolPreference.tool_name == tool_name,
+                    ToolPreference.preference_key == preference_key,
+                )
             )
         ).scalar_one_or_none()
         if preference is None:
@@ -190,8 +208,8 @@ class ToolMemoryService:
             preference.approval_state = "approved"
             preference.source_trace_id = uuid.UUID(source_trace_id)
             preference.expires_at = expires_at
-        self.session.commit()
-        self.session.refresh(preference)
+        await self.session.commit()
+        await self.session.refresh(preference)
         return preference.to_dict()
 
     async def record_outcome(
@@ -202,7 +220,7 @@ class ToolMemoryService:
         outcome_category: str,
         source_trace_id: str,
     ) -> dict[str, Any]:
-        self._require_active_descriptor(user_id, server_id, tool_name)
+        await self._require_active_descriptor(user_id, server_id, tool_name)
         outcome = ToolUsageOutcome(
             user_id=user_id,
             server_id=server_id,
@@ -212,34 +230,40 @@ class ToolMemoryService:
             extra_data={},
         )
         self.session.add(outcome)
-        self.session.commit()
-        self.session.refresh(outcome)
+        await self.session.commit()
+        await self.session.refresh(outcome)
         return outcome.to_dict()
 
     async def snapshot(self, user_id: str) -> dict[str, Any]:
         now = datetime.now(UTC)
-        descriptors = self.session.execute(
-            select(ToolDescriptor)
-            .where(ToolDescriptor.user_id == user_id)
-            .order_by(ToolDescriptor.created_at)
-        ).scalars()
-        preferences = self.session.execute(
-            select(ToolPreference)
-            .where(
-                ToolPreference.user_id == user_id,
-                ToolPreference.approval_state == "approved",
-                or_(
-                    ToolPreference.expires_at.is_(None),
-                    ToolPreference.expires_at > now,
-                ),
+        descriptors = (
+            await self.session.execute(
+                select(ToolDescriptor)
+                .where(ToolDescriptor.user_id == user_id)
+                .order_by(ToolDescriptor.created_at)
             )
-            .order_by(ToolPreference.created_at)
         ).scalars()
-        outcomes = self.session.execute(
-            select(ToolUsageOutcome)
-            .where(ToolUsageOutcome.user_id == user_id)
-            .order_by(ToolUsageOutcome.created_at.desc())
-            .limit(50)
+        preferences = (
+            await self.session.execute(
+                select(ToolPreference)
+                .where(
+                    ToolPreference.user_id == user_id,
+                    ToolPreference.approval_state == "approved",
+                    or_(
+                        ToolPreference.expires_at.is_(None),
+                        ToolPreference.expires_at > now,
+                    ),
+                )
+                .order_by(ToolPreference.created_at)
+            )
+        ).scalars()
+        outcomes = (
+            await self.session.execute(
+                select(ToolUsageOutcome)
+                .where(ToolUsageOutcome.user_id == user_id)
+                .order_by(ToolUsageOutcome.created_at.desc())
+                .limit(50)
+            )
         ).scalars()
         return {
             "descriptors": [item.to_dict() for item in descriptors],
@@ -254,7 +278,33 @@ class ToolMemoryService:
             ("preferences", ToolPreference),
             ("descriptors", ToolDescriptor),
         ):
-            result = self.session.execute(delete(model).where(model.user_id == user_id))
+            result = await self.session.execute(
+                delete(model).where(model.user_id == user_id)
+            )
             counts[name] = int(getattr(result, "rowcount", 0))
-        self.session.commit()
+        await self.session.commit()
         return counts
+
+    # Delete one user-owned record from a supported tool-memory store.
+    async def delete_record(
+        self,
+        user_id: str,
+        memory_type: str,
+        memory_id: str,
+    ) -> bool:
+        models: dict[str, Any] = {
+            "descriptors": ToolDescriptor,
+            "preferences": ToolPreference,
+            "outcomes": ToolUsageOutcome,
+        }
+        model = models.get(memory_type)
+        if model is None:
+            return False
+        result = await self.session.execute(
+            delete(model).where(
+                model.user_id == user_id,
+                model.id == uuid.UUID(memory_id),
+            )
+        )
+        await self.session.commit()
+        return int(getattr(result, "rowcount", 0)) == 1

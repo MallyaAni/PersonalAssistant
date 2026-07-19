@@ -44,6 +44,10 @@ class StubConversationRepository(ConversationRepository):
     ) -> None:
         return None
 
+    # Report no persisted turns for tests that use this repository double.
+    async def count_turns(self, conversation_id: str, user_id: str) -> int:
+        return 0
+
 
 class StubTracer(ConversationTracer):
     def start_trace(self, user_id: str) -> str:

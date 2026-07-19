@@ -5,10 +5,14 @@ import {
   deleteAllMemory,
   deleteMemory,
   exportMemory,
+  getAgentMemorySnapshot,
   getMemorySnapshot,
+  getToolMemorySnapshot,
   saveProfile,
   updateMemory,
+  type AgentMemorySnapshot,
   type MemorySnapshot,
+  type ToolMemorySnapshot,
 } from '../../services/api'
 
 interface MemoryPanelProps {
@@ -16,6 +20,7 @@ interface MemoryPanelProps {
   onUserIdChange: (userId: string) => void
 }
 
+// Build an empty personal-memory snapshot for a user.
 const emptySnapshot = (userId: string): MemorySnapshot => ({
   profile: { user_id: userId, preferences: {} },
   episodic: [],
@@ -23,8 +28,28 @@ const emptySnapshot = (userId: string): MemorySnapshot => ({
   facts: [],
 })
 
+const emptyAgentSnapshot: AgentMemorySnapshot = {
+  semantic_cache: 0,
+  working: 0,
+  procedures: 0,
+  entities: 0,
+  entity_relations: 0,
+  knowledge_documents: 0,
+  knowledge_chunks: 0,
+  summaries: 0,
+}
+
+const emptyToolSnapshot: ToolMemorySnapshot = {
+  descriptors: [],
+  preferences: [],
+  outcomes: [],
+}
+
+// Render memory controls and summaries for the active user.
 const MemoryPanel: React.FC<MemoryPanelProps> = ({ userId, onUserIdChange }) => {
   const [snapshot, setSnapshot] = useState<MemorySnapshot>(() => emptySnapshot(userId))
+  const [agentSnapshot, setAgentSnapshot] = useState<AgentMemorySnapshot>(emptyAgentSnapshot)
+  const [toolSnapshot, setToolSnapshot] = useState<ToolMemorySnapshot>(emptyToolSnapshot)
   const [draftUserId, setDraftUserId] = useState(userId)
   const [name, setName] = useState('')
   const [responseStyle, setResponseStyle] = useState('')
@@ -39,6 +64,7 @@ const MemoryPanel: React.FC<MemoryPanelProps> = ({ userId, onUserIdChange }) => 
   } | null>(null)
   const activeUserRef = useRef(userId)
 
+  // Apply a loaded snapshot to the panel and editable profile fields.
   const applySnapshot = (next: MemorySnapshot) => {
     setSnapshot(next)
     setName(next.profile.name || '')
@@ -49,14 +75,24 @@ const MemoryPanel: React.FC<MemoryPanelProps> = ({ userId, onUserIdChange }) => 
     activeUserRef.current = userId
     setDraftUserId(userId)
     setSnapshot(emptySnapshot(userId))
+    setAgentSnapshot(emptyAgentSnapshot)
+    setToolSnapshot(emptyToolSnapshot)
     setName('')
     setResponseStyle('')
     const controller = new AbortController()
     setIsLoading(true)
     setError('')
 
-    void getMemorySnapshot(userId, controller.signal)
-      .then(next => applySnapshot(next))
+    void Promise.all([
+      getMemorySnapshot(userId, controller.signal),
+      getAgentMemorySnapshot(userId, controller.signal),
+      getToolMemorySnapshot(userId, controller.signal),
+    ])
+      .then(([next, nextAgent, nextTools]) => {
+        applySnapshot(next)
+        setAgentSnapshot({ ...emptyAgentSnapshot, ...nextAgent })
+        setToolSnapshot({ ...emptyToolSnapshot, ...nextTools })
+      })
       .catch(err => {
         if (err instanceof DOMException && err.name === 'AbortError') return
         setError(err instanceof Error ? err.message : 'Unable to load memory.')
@@ -68,6 +104,7 @@ const MemoryPanel: React.FC<MemoryPanelProps> = ({ userId, onUserIdChange }) => 
     return () => controller.abort()
   }, [userId])
 
+  // Run a memory mutation and refresh all visible memory categories.
   const run = async (action: () => Promise<unknown>, clear?: () => void) => {
     const actionUserId = userId
     setIsLoading(true)
@@ -75,8 +112,16 @@ const MemoryPanel: React.FC<MemoryPanelProps> = ({ userId, onUserIdChange }) => 
     try {
       await action()
       clear?.()
-      const next = await getMemorySnapshot(actionUserId)
-      if (activeUserRef.current === actionUserId) applySnapshot(next)
+      const [next, nextAgent, nextTools] = await Promise.all([
+        getMemorySnapshot(actionUserId),
+        getAgentMemorySnapshot(actionUserId),
+        getToolMemorySnapshot(actionUserId),
+      ])
+      if (activeUserRef.current === actionUserId) {
+        applySnapshot(next)
+        setAgentSnapshot({ ...emptyAgentSnapshot, ...nextAgent })
+        setToolSnapshot({ ...emptyToolSnapshot, ...nextTools })
+      }
     } catch (err) {
       if (activeUserRef.current === actionUserId) {
         setError(err instanceof Error ? err.message : 'Memory operation failed.')
@@ -86,6 +131,7 @@ const MemoryPanel: React.FC<MemoryPanelProps> = ({ userId, onUserIdChange }) => 
     }
   }
 
+  // Download the active user's memory export as JSON.
   const downloadExport = async () => {
     setIsLoading(true)
     setError('')
@@ -168,6 +214,39 @@ const MemoryPanel: React.FC<MemoryPanelProps> = ({ userId, onUserIdChange }) => 
         </form>
 
       </div>
+
+      <section aria-labelledby="agent-memory-map-heading" className="space-y-4">
+        <div>
+          <h3 id="agent-memory-map-heading" className="text-xl font-semibold">Agent memory map</h3>
+          <p className="mt-1 text-sm text-slate-400">
+            Short-term state is managed automatically. Durable memory is user-scoped, exportable, and deletable.
+          </p>
+        </div>
+        <div className="grid gap-4 xl:grid-cols-2">
+          <MemoryGroup
+            title="Short term"
+            items={[
+              ['LLM context window', 'Bounded runtime context'],
+              ['Session based', `${agentSnapshot.working} active items`],
+              ['Semantic cache', `${agentSnapshot.semantic_cache} cached plans`],
+            ]}
+          />
+          <MemoryGroup
+            title="Long term"
+            items={[
+              ['Procedural / workflow', `${agentSnapshot.procedures} approved procedures`],
+              ['Toolbox', `${toolSnapshot.descriptors?.length || 0} tool descriptors`],
+              ['Entity memory', `${agentSnapshot.entities} entities, ${agentSnapshot.entity_relations} relations`],
+              ['Knowledge base', `${agentSnapshot.knowledge_documents} documents, ${agentSnapshot.knowledge_chunks} chunks`],
+              ['Persona', `${snapshot.facts.length + (snapshot.profile.name ? 1 : 0)} approved profile facts`],
+              ['Semantic', `${snapshot.semantic.length} facts and preferences`],
+              ['Episodic', `${snapshot.episodic.length} events and experiences`],
+              ['Summaries', `${agentSnapshot.summaries} conversation digests`],
+              ['Conversational', 'Persistent user-scoped turn history'],
+            ]}
+          />
+        </div>
+      </section>
 
       <details className="rounded border border-slate-800 bg-slate-900/30 p-4">
         <summary className="cursor-pointer font-semibold">Advanced: add memory manually</summary>
@@ -280,3 +359,20 @@ const MemoryPanel: React.FC<MemoryPanelProps> = ({ userId, onUserIdChange }) => 
 }
 
 export default MemoryPanel
+
+const MemoryGroup: React.FC<{
+  title: string
+  items: Array<[string, string]>
+}> = ({ title, items }) => (
+  <div className="rounded border border-slate-800 bg-slate-900/50 p-4">
+    <h4 className="font-semibold">{title}</h4>
+    <dl className="mt-3 grid gap-3 sm:grid-cols-2">
+      {items.map(([label, value]) => (
+        <div key={label} className="rounded-xl bg-white/70 p-3 shadow-sm">
+          <dt className="text-sm font-medium text-[#1d1d1f]">{label}</dt>
+          <dd className="mt-1 text-xs text-[#6e6e73]">{value}</dd>
+        </div>
+      ))}
+    </dl>
+  </div>
+)

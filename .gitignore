@@ -30,3 +30,4 @@ Thumbs.db
 
 # Runtime output
 *.log
+data/

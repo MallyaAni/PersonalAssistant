@@ -23,6 +23,7 @@ Read [Security](docs/SECURITY.md) when a task affects data, credentials, authent
 - Reproduce a failure, identify the first failing boundary, test one evidence-backed hypothesis, make one targeted change, and repeat the original acceptance path.
 - After three unsuccessful targeted hypotheses, stop editing and report the evidence, attempts, and next investigation needed.
 - Keep business logic separate from framework and infrastructure details where the existing architecture supports it.
+- Add a brief, plain-language comment immediately above every newly written function or method explaining what it accomplishes. This includes production code, local helpers, API handlers, frontend functions, tests, CLI entry points, and migration functions. Put the comment above any decorators, and update it whenever the function's purpose changes.
 - Do not hardcode production secrets or log credentials, tokens, or unnecessary personal data.
 - Explicit user instructions, including read-only requests, override routine documentation-update procedures.
 
@@ -63,6 +64,11 @@ If functional validation cannot be performed, do not label the behavior verified
 - `docs/NEXT_SESSION.md`: frequently rewritten verified handoff and next atomic task.
 - `docs/CHANGELOG.md`: append-only history of meaningful verified changes.
 - `docs/SECURITY.md`: current security posture and planned controls.
+- `docs/diagrams/`: canonical architecture-as-code sources and their generated sharing formats.
 - `docs/adr/`: durable architectural decisions.
 
 After implementation or debugging, rewrite `NEXT_SESSION.md` when runtime evidence or the next task changed. Update other documents only when facts within their ownership changed. Never record code as complete in the changelog unless its intended behavior passed functional validation.
+
+For every modifying task, assess both the full-system view and each detailed subsystem view that owns the changed code. Update every affected canonical Mermaid source and regenerate its SVG when a change adds or removes a component, agent, persistent store, external dependency, deployment/trust boundary, ownership boundary, or cross-component data flow. If an architectural subsystem has no detailed view, add a source/rendered pair and register it in the diagram catalog and renderer suite. Do not churn diagrams for internal refactors, bug fixes, styling, tests, or implementation details that leave those relationships unchanged.
+
+Every modifying completion report must name the result exactly as `Diagram impact: UPDATED — <diagram names>` or `Diagram impact: NONE — <reason>`. Follow the ownership map and validation procedure in [docs/DEVELOPMENT_GUIDE.md](docs/DEVELOPMENT_GUIDE.md#architecture-diagram-maintenance).

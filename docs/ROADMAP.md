@@ -15,14 +15,15 @@ This document is the canonical milestone tracker. It records durable status at a
 
 Goal: provide a locally runnable frontend and backend that complete a real chat request, stream a meaningful response, and persist the conversation.
 
-Current evidence as of 2026-07-16:
+Current evidence as of 2026-07-18:
 
 - `VERIFIED`: PostgreSQL and Redis start in Compose; PostgreSQL reported healthy while the backend ran from current host source.
 - `VERIFIED`: the documented chat payload returns `200 text/event-stream`, reaches `ConversationService` and the injected LM Studio Gemma model through LangGraph, emits multiple message deltas, terminates, and creates a conversation row with the completed response.
 - `VERIFIED`: initial Alembic revision `20260716_0001` creates the four application tables and `alembic check` reports no pending operations.
 - `VERIFIED`: Playwright Chromium covers deterministic chat success/failure; its opt-in live path verified a unique Gemma response, response content appearing while loading remained active, stream termination, loading cleanup, and clean Console/Network state.
-- `VERIFIED`: the visible transcript survives navigation between Chat and Memory for the active conversation; starting a new conversation from Memory returns to a fresh Chat view. Full-reload transcript restoration remains planned.
+- `VERIFIED`: the visible transcript survives navigation between Chat and Memory for the active conversation; starting a new conversation from Memory returns to a fresh Chat view; a bounded owned transcript and ready diagram restore from the stored active conversation after a full reload.
 - `VERIFIED`: the responsive light-neutral frontend presents an empty search-first state and an active question/result layout, keeps request identifiers behind an accessible answer-level three-dot popover, uses one native system font stack in the composer and shell, and passes deterministic narrow-viewport plus live-provider browser acceptance.
+- `VERIFIED`: assistant CommonMark renders as semantic styled headings, paragraphs, emphasis, lists, links, quotes, and code while raw HTML interpretation remains disabled and user messages remain literal.
 - `VERIFIED`: targeted provider/chat/API tests, deterministic and live browser tests, and the frontend TypeScript/Vite production build pass.
 - `VERIFIED`: the complete backend suite passes 27 tests; memory and conversation-history integration tests use isolated users and cleanup boundaries.
 
@@ -43,13 +44,13 @@ Milestone 1 validation work still required:
 - `SCAFFOLDED`: deterministic backend/API coverage exists for the current model-backed conversation path;
 - `PLANNED`: frontend component coverage for loading, streaming, success, and failure states;
 - `VERIFIED`: browser end-to-end coverage for deterministic success/failure and a separate opt-in live-LLM acceptance check;
-- `PLANNED`: component-level frontend coverage and conversation restoration after reload.
+- `PLANNED`: component-level frontend coverage and conversation selection/history browsing beyond active-conversation reload restoration.
 
 Do not mark this milestone complete from health checks alone.
 
 ## Milestone 2: personal memory — SCAFFOLDED
 
-Current evidence as of 2026-07-16:
+Current evidence as of 2026-07-17:
 
 - `VERIFIED`: profile upsert/readback, user-scoped episodic memory, metadata persistence, Nomic embedding generation, 768-dimensional pgvector storage, and semantic similarity retrieval pass integration tests.
 - `VERIFIED`: the graph consumes bounded profile, episodic, and semantic context labeled as untrusted data.
@@ -63,18 +64,32 @@ Current evidence as of 2026-07-16:
 - `VERIFIED`: explicit memories carry purpose and optional expiry; semantic records also carry embedding model/version/dimension. Expired semantic records are excluded from retrieval while remaining exportable.
 - `VERIFIED`: optional expiring HMAC-signed local user tokens bind chat and every memory/tool-memory route to the token subject when `AUTH_REQUIRED=true`; missing, invalid, expired, and cross-user requests are rejected before service access.
 - `VERIFIED`: safe MCP tool descriptors can be embedded and discovered by user/server with schema-fingerprint invalidation; approved allowlisted preferences and sanitized outcome categories are stored separately, while secret-shaped descriptor/preference input is rejected.
-- `UNVERIFIED`: at-rest/backup encryption, tested backup/restore, token revocation/password-based login, non-blocking database access, load/concurrency behavior, and operational monitoring.
-- `UNVERIFIED`: approval-based capture for durable facts other than preferred name, automatic extraction, and a general structured-memory policy.
+- `VERIFIED`: a typed `AgentMemoryManager` persists semantic-cache, session-working, procedural/workflow, entity/relation, knowledge-document/chunk, and conversation-summary records. Current Alembic head `20260718_0011` includes binary visual metadata; the memory stores introduced through `0009` retain pgvector HNSW indexes and source-request provenance.
+- `VERIFIED`: the deterministic `MemoryCoordinatorAgent` caches a typed query plan, retrieves only selected user-scoped stores, includes the latest conversation digest, bounds prompt fields, and keeps retrieved values as untrusted literal data. Completed turns update expiring session state and create a rolling digest every configured interval.
+- `VERIFIED`: a live Gemma/Nomic acceptance seeded unique entity, knowledge, summary, procedure, and toolbox codes; one chat query retrieved and reproduced all five codes, terminated with `done`, and cleanup returned all scoped agent-memory counts to zero.
+- `VERIFIED`: the browser Memory screen renders all short- and long-term memory forms with live personal, agent, and toolbox counts; 15 deterministic and 6 live Chromium workflows pass.
+- `VERIFIED`: response-style chat proposals require approval; generic structured-fact APIs provide provenance idempotency, normalized deduplication, contradiction supersession/versioning, correction, key/record deletion, and profile projection.
+- `VERIFIED`: deterministic dry-run/apply retention, resumable same-dimension re-embedding across every vector store, natural-key transaction locks, concurrent write tests, a pgvector retrieval benchmark, and user-scoped operational inspection/CLI checks pass.
+- `VERIFIED`: FastAPI, conversation, memory, coordinator, and operational persistence use SQLAlchemy `AsyncSession` through `asyncpg` with a bounded runtime pool. Six concurrent real PostgreSQL waits through a two-connection test pool preserved an event-loop heartbeat, never exceeded two checkouts, and drained completely; direct SSE chat and all live browser workflows passed through the same async repositories.
+- `VERIFIED`: a configurable mixed live soak completed 6,526 public operations in 60.758 seconds with concurrency four: 66 terminal chat streams plus 6,460 working-memory/operations calls, zero failures, 63.044 ms p95 overall latency, and scoped cleanup. Transaction-abort and pool-checkout-timeout tests prove database recovery.
+- `VERIFIED`: a shared configurable embedding concurrency limit prevents LM Studio's observed concurrent-request HTTP 400 failures; the unchanged soak passed after the targeted fix.
+- `VERIFIED`: an opt-in Compose maintenance runner schedules retention, optional re-embedding, and final health inspection; it emits JSON/exit-code alert signals, continues after transient interval failures, and the API exposes Prometheus-compatible non-content metrics.
+- `VERIFIED`: vector dimension is runtime-configured, and an offline resumable shadow-column migrator covers all seven vector stores. An isolated PostgreSQL acceptance forced a wrong-dimension failure that preserved both original `vector(3)` values, then retried, changed the column to `vector(2)`, and rebuilt HNSW; a production dry run confirmed every real store remains `vector(768)` with no shadow columns.
+- `VERIFIED`: chat deterministically proposes explicit person/relationship, reusable workflow, and titled-reference memory in addition to preferred name and response style. Rejection performs no write; browser approval uses typed APIs with conversation/trace provenance. Live new-conversation checks recalled an approved dentist name plus unique workflow and reference codes, then cleanup removed the scoped data.
+- `UNVERIFIED`: long-duration production-capacity/HNSW recall testing and delivery into a selected external alert platform.
+- `PLANNED` by explicit user direction as the final subsystem: at-rest/backup encryption, tested backup/restore, token revocation/password-based login, redacted audits, and backup/log deletion.
 
 Delivered local-development capabilities include:
 
 - user profile storage and retrieval;
 - episodic memory with user scoping;
 - semantic memory backed by embeddings and pgvector;
+- typed semantic cache, working memory, procedures, entities/relations, knowledge, summaries, and toolbox metadata;
+- deterministic memory-aware retrieval and rolling conversation digests;
 - migration coverage and integration tests;
 - privacy controls and deletion behavior.
 
-Explicitly saved memory, bounded same-conversation recall, structured approval-based preferred-name capture, relevance-gated semantic retrieval, lifecycle controls, optional signed ownership, and the safe tool-memory store work. The milestone is not complete until normal chat supports additional approved fact types and the remaining operational/encryption gates below pass. With auth disabled, caller-supplied user IDs remain only logical scope; production-like deployment must enable auth and protect the signing secret.
+Explicitly saved memory, bounded same-conversation recall, structured approval-based profile/entity/procedure/knowledge capture, generic fact lifecycle controls, relevance-gated semantic retrieval, retention/re-embedding/dimension-migration operations, non-blocking database access, optional signed ownership, and the safe tool-memory store work. The milestone is not complete until the remaining deployment-scale and deliberately deferred security gates below pass. With auth disabled, caller-supplied user IDs remain only logical scope; production-like deployment must enable auth and protect the signing secret.
 
 Production-grade memory completion gates:
 
@@ -86,20 +101,38 @@ Production-grade memory completion gates:
 - embedding-model/version metadata plus a tested re-embedding and vector-dimension migration path;
 - non-blocking database access, service-level transaction boundaries, idempotent writes, indexes, concurrency/load tests, failure recovery, and operational monitoring.
 
-These are remaining requirements, not claims about the current local scaffold. They should be delivered in separately verified atomic stages.
+The verified items above satisfy parts of these gates; the explicit `UNVERIFIED` and `PLANNED` items remain requirements. They should be delivered in separately verified atomic stages.
 
-## Milestone 3: knowledge and RAG — PLANNED
+## Milestone 3: knowledge and RAG — SCAFFOLDED
 
-- document ingestion and chunking;
-- framework-independent retrieval contracts;
-- semantic and metadata retrieval;
+- `VERIFIED`: user-scoped text document ingestion, content-hash idempotency, deterministic paragraph chunking, Nomic embedding, pgvector HNSW search, coordinator prompt delivery, export, and deletion;
+- `VERIFIED`: live Gemma reproduced a unique fact retrieved from an ingested validation document;
+- `PLANNED`: file/connector ingestion, background jobs, parsing beyond plain text, and source lifecycle refresh;
 - hybrid search and reranking;
 - evaluation of retrieval quality;
+- citation and source-display policy;
 - optional RAGFlow, parent-document, GraphRAG, MultiQuery, and HyDE experiments.
 
-The embedding-provider boundary used by personal memory does not constitute a document retriever or working RAG system.
+The local knowledge store is a working semantic retrieval path, but it is not yet a production RAG system. The remaining items above require separate functional acceptance.
 
-## Milestone 4: tools and specialized agents — PLANNED
+## Milestone 4: multimodal artifacts and visual generation — SCAFFOLDED
+
+Goal: let one AniOS conversation create editable technical diagrams and locally generated visual media while keeping models, renderers, storage, and scarce hardware replaceable behind typed orchestration boundaries.
+
+- `VERIFIED`: eight canonical Mermaid/SVG views, render-input synchronization checks, architecture-change governance, and a local review-only Gemma candidate command are present. The candidate path reads bounded explicit repository evidence, refuses remote endpoints and canonical overwrite, validates passive source plus required labels, renders an SVG, and still requires technical/visual review before manual promotion.
+- `PLANNED`: a manager-facing presentation layer with plain-language titles, legends, numbered primary flows, slide-readable aspect ratios, and simplified overview views; the current synchronized diagrams remain detailed engineering references rather than verified first-contact manager material.
+- `VERIFIED`: explicit diagram requests create user-scoped PostgreSQL artifact records with pending/ready/failed lifecycle, conversation/trace provenance, provider/model metadata, recent owned history, scoped deletion, active-conversation transcript/artifact restoration after full reload, local Mermaid/SVG downloads, and shielded failed/cancelled terminal cleanup after client disconnect. Retention cleanup remains `PLANNED`.
+- `VERIFIED`: deterministic application policy routes explicit diagram requests through a specialized typed `DiagramAgent` LangGraph workflow plus provider/repository contracts; Gemma produces only a bounded specification and cannot select providers, write storage, or control hardware. Raster generation and vision now use focused provider/service contracts; autonomous image agents and multi-agent visual workers remain `PLANNED`.
+- `VERIFIED`: the local Mermaid provider validates allowlisted passive source, performs one bounded format-correction retry, streams artifact lifecycle events, and lazily renders editable source as strict SVG in chat with visible generation/render failure states.
+- `PLANNED`: a hardware-resource manager that leases GPU capacity, drains active inference safely, selects configured context profiles, and restores the primary Gemma provider after a model transition or failure.
+- `VERIFIED`: free local ComfyUI 0.28 plus MIT-licensed HiDream-O1 Dev FP8 generates 2048x2048 PNGs through a typed provider and one-job concurrency gate. Direct RTX 5080 acceptance completed in 35.01 seconds under exclusive residency and 35.061 seconds while Gemma remained loaded at its 256k/parallel-4 profile; the immediate post-generation Gemma chat stream also completed. Live browser cancellation now interrupts the exact ComfyUI prompt, records `failed/cancelled`, clears loading, and produces no backend exception. Broader quality, crash recovery, and sustained-load benchmarks remain `PLANNED`; paid APIs, subscriptions, credits, and automatic cloud fallback remain excluded.
+- `VERIFIED`: generated and uploaded images use user-scoped PostgreSQL pending/ready/failed lifecycle plus opaque atomic local storage, SHA-256/size integrity checks, owned content reads, scoped file-plus-row deletion, and sanitized invalid-input/provider failures. Automated retention/export and crash reconciliation remain `PLANNED`.
+- `VERIFIED`: bounded PNG/JPEG/WebP multipart upload validation and real Gemma 4 12B image understanding are implemented. Live acceptance correctly identified a unique magenta geometric fox and its light-green circular platform; malformed bytes returned 422 and created no record. Dedicated multimodal embeddings remain `PLANNED`; Nomic remains text-only.
+- `VERIFIED`: deterministic and live Chromium acceptance covers diagrams, real ComfyUI image generation, multipart Gemma analysis, private image rendering, progress/cancellation, retry, 413/422/502/503 failure display, navigation and reload restoration, history, download, owned deletion, clean successful Network/Console behavior, and terminal loading state.
+
+Gemma remains the primary logical reasoning model, but no model owns orchestration state or its own lifecycle. The application owns policy, durable jobs, resource leases, and provider recovery so specialized workers and future multi-agent graphs can scale without coupling the system to the current RTX 5080 or planned DGX Spark.
+
+## Milestone 5: tools and specialized agents — PLANNED
 
 - MCP client connections with explicit server trust, authentication, and per-user authorization scopes;
 - real tool registry and permission model;
@@ -111,7 +144,7 @@ The embedding-provider boundary used by personal memory does not constitute a do
 - reflection and multi-agent orchestration;
 - traceable tool execution with user control.
 
-The current one-node graph is model-backed but is not multi-agent orchestration. Researcher and tool-executor agents are not implemented.
+The current graph still has one model-backed assistant node. The deterministic memory coordinator is a policy/service boundary, not a spawned LLM sub-agent or multi-agent graph. Researcher and tool-executor agents are not implemented.
 
 Internet-search policy and acceptance gates:
 
@@ -138,7 +171,7 @@ MCP tool discovery and memory acceptance gates:
 
 Safe tool-descriptor embeddings plus approved preference/sanitized outcome memory are `VERIFIED` as persistence and discovery boundaries. Live MCP connectivity, authoritative `tools/list` refresh/change notifications, permission-aware invocation, and pre-invocation registry re-resolution remain `PLANNED`; a stored descriptor never authorizes a call.
 
-## Milestone 5: additional interfaces and automation — PLANNED
+## Milestone 6: additional interfaces and automation — PLANNED
 
 - notifications;
 - calendar and email integrations;

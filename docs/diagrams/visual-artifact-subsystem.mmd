@@ -1,0 +1,107 @@
+flowchart TB
+    User([User])
+
+    subgraph Entry[Authenticated visual APIs]
+        direction TB
+        ChatAPI[POST /api/v1/chat<br/>diagram request]
+        ImageAPI[POST /api/v1/images/generate<br/>prompt plus resolution]
+        VisionAPI[POST /api/v1/vision/analyze<br/>image plus prompt]
+        ArtifactAPI[GET content, list,<br/>snapshot, and DELETE]
+    end
+
+    User --> ChatAPI
+    User --> ImageAPI
+    User --> VisionAPI
+    User --> ArtifactAPI
+
+    subgraph DiagramPath[1. Editable architecture and flowchart path]
+        direction TB
+        DiagramRoute[ConversationService<br/>deterministic diagram branch]
+        DiagramAgent[DiagramAgent LangGraph<br/>bounded orchestration]
+        DiagramLLM[LM Studio Gemma<br/>structured Mermaid]
+        MermaidCheck[Passive Mermaid validation<br/>plus one correction attempt]
+        DiagramState[PostgreSQL artifact<br/>pending, ready, or failed]
+        DiagramStream[SSE lifecycle<br/>started, ready/error, done]
+
+        DiagramRoute --> DiagramAgent --> DiagramLLM --> MermaidCheck
+        MermaidCheck -->|valid source| DiagramState --> DiagramStream
+        MermaidCheck -->|invalid twice| DiagramState
+        DiagramRoute -. disconnect .-> DiagramState
+    end
+
+    ChatAPI --> DiagramRoute
+
+    subgraph RasterPath[2. Generated raster-image path]
+        direction TB
+        ImageLifecycle[ImageArtifactService<br/>durable pending lifecycle]
+        DisconnectMonitor[HTTP disconnect monitor<br/>cancel task and terminalize state]
+        ImageProvider[ComfyUIImageProvider<br/>one-job concurrency gate]
+        ComfyUI[ComfyUI 0.28<br/>HiDream-I1 Dev FP8]
+        OutputCheck[PNG signature, MIME,<br/>size, pixels, and frame check]
+        GeneratedState[Binary plus PostgreSQL metadata<br/>ready or sanitized failed]
+
+        ImageLifecycle --> DisconnectMonitor --> ImageProvider --> ComfyUI --> OutputCheck --> GeneratedState
+        DisconnectMonitor -. client leaves .-> ImageProvider
+        ImageProvider -. timeout, error,<br/>or cancellation .-> GeneratedState
+    end
+
+    ImageAPI --> ImageLifecycle
+
+    subgraph VisionPath[3. Upload and image-understanding path]
+        direction TB
+        UploadCheck[Bounded multipart read<br/>and image validation]
+        UploadState[Persist owned upload<br/>before inference]
+        VisionService[VisionAnalysisService]
+        VisionLLM[LM Studio Gemma 4 12B<br/>image plus bounded prompt]
+        AnalysisState[Persist text, model, usage,<br/>and analysis status]
+
+        UploadCheck --> UploadState --> VisionService --> VisionLLM --> AnalysisState
+        VisionLLM -. provider failure preserves upload .-> AnalysisState
+    end
+
+    VisionAPI --> UploadCheck
+
+    subgraph Persistence[Shared private artifact boundary]
+        direction TB
+        Ownership[Signed user ownership<br/>checked on every read/delete]
+        Repository[BinaryArtifactRepository]
+        Postgres[(PostgreSQL visual_artifacts<br/>provenance and lifecycle)]
+        BinaryStore[(Opaque local binary store<br/>atomic write plus SHA-256)]
+
+        Ownership --> Repository --> Postgres
+        Repository --> BinaryStore
+    end
+
+    DiagramState --> Repository
+    GeneratedState --> Repository
+    UploadState --> Repository
+    AnalysisState --> Repository
+    ArtifactAPI --> Ownership
+
+    subgraph Frontend[Verified visual UI boundary]
+        direction TB
+        SSEParser[Typed SSE parser]
+        DiagramCard[Diagram card<br/>strict SVG plus editable source]
+        ImageComposer[Chat composer modes<br/>create, analyze, cancel, and retry]
+        ImageCard[Private image card<br/>preview, analysis, download, delete]
+        ExistingUI[Reload, navigation, history,<br/>export, and owned deletion]
+
+        SSEParser --> DiagramCard --> ExistingUI
+        ImageComposer --> ImageAPI
+        ImageComposer --> VisionAPI
+        ImageAPI --> ImageCard --> ExistingUI
+        VisionAPI --> ImageCard
+    end
+
+    DiagramStream --> SSEParser
+    Ownership --> ExistingUI
+
+    classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
+    classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
+    classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
+    classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
+    classDef planned fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
+    class User,ChatAPI,ImageAPI,VisionAPI,ArtifactAPI,DiagramStream,SSEParser,DiagramCard,ImageComposer,ImageCard,ExistingUI interface;
+    class DiagramRoute,DiagramAgent,MermaidCheck,ImageLifecycle,DisconnectMonitor,ImageProvider,OutputCheck,UploadCheck,UploadState,VisionService,AnalysisState,Ownership,Repository application;
+    class DiagramState,GeneratedState,Postgres,BinaryStore data;
+    class DiagramLLM,ComfyUI,VisionLLM external;

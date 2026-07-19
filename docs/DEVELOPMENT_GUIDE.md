@@ -11,6 +11,67 @@ This is the canonical source for local setup, commands, debugging, and validatio
 
 The repository's `requirements.txt` contains runtime Python dependencies. Install the `dev` optional dependency set from `pyproject.toml` for pytest, Ruff, Black, and MyPy.
 
+## Function comments
+
+Every newly written function or method must have a brief, plain-language comment immediately above it that explains what it accomplishes. This applies to production code, local helpers, API handlers, frontend functions, tests, CLI entry points, and migration functions. Put the comment above decorators so it remains visible before the full declaration, and update the comment whenever the function's purpose changes.
+
+Keep these comments short and purpose-focused. They should help a reader understand why the function exists without restating its signature or narrating each implementation step.
+
+## Architecture diagram maintenance
+
+The source of truth for the high-level system and detailed subsystem diagrams is the Mermaid suite listed in `docs/diagrams/README.md`; each `.mmd` file has a generated `.svg` sharing format. From `frontend/`, render and then verify the complete suite with:
+
+```powershell
+npm.cmd run docs:diagram
+npm.cmd run docs:diagram:check
+```
+
+The commands use the pinned Mermaid CLI and the Chromium installed for Playwright. After a fresh dependency install, install that browser when it is absent:
+
+```powershell
+npx.cmd playwright install chromium
+```
+
+The renderer maintains the full-system, runtime/deployment, chat, memory, tool-memory, visual-artifact, architecture-maintenance, and frontend diagrams in one pass. The check compares a cross-platform fingerprint of each normalized source, the shared render configuration, and pinned Mermaid CLI version stored in its SVG, then performs a fresh syntax render for every source. It intentionally does not compare generated SVG bytes because renderer-generated identifiers and metadata may vary without changing the diagram.
+
+For every modifying task, use this process:
+
+1. Read the [diagram catalog](diagrams/README.md) and map the changed code to the full-system view and every affected detailed subsystem view.
+2. Decide whether components, agents, persistent stores, external dependencies, deployment/trust boundaries, ownership boundaries, or cross-component data flows changed.
+3. When they changed, edit each affected authoritative `.mmd` source. If a new architectural subsystem has no detailed view, add its `.mmd`/`.svg` pair and register its basename in the renderer suite and catalog.
+4. Run `npm.cmd run docs:diagram` and `npm.cmd run docs:diagram:check` from `frontend/` so the complete checked-in suite remains synchronized.
+5. Visually inspect every affected SVG for clipped text, unreadable routing, and incorrect relationships.
+6. Report exactly `Diagram impact: UPDATED — <diagram names>` or `Diagram impact: NONE — <reason>`.
+
+Gemma can create a review candidate from the current canonical source and explicitly selected implementation evidence. Run this command from the repository root, use only files needed to prove the requested relationships, and require important implementation labels:
+
+```powershell
+python -m backend.cli.generate_architecture_candidate `
+  --diagram visual-artifact-subsystem `
+  --request "Show the dedicated diagram agent and reviewed candidate workflow." `
+  --context backend/agents/diagram.py `
+  --context backend/architecture/candidates.py `
+  --require-label DiagramAgent `
+  --require-label ArchitectureCandidateService `
+  --output "$env:TEMP\visual-artifact-subsystem.candidate.mmd"
+```
+
+The command reads only bounded explicit text files under approved repository roots, rejects traversal, common secret files, remote model endpoints, unsupported file types, existing outputs, and canonical output paths, then applies passive Mermaid validation, one bounded required-label correction, and the pinned Chromium render. It writes a new `.candidate.mmd` plus `.candidate.svg`; `canonical_updated` remains false. Review the source against the implementation and inspect the SVG before manually editing or promoting canonical source. Required labels prove only that named concepts are present, not that every relationship is correct.
+
+Use this ownership map when selecting affected views:
+
+| Changed area | Detailed view to assess | Also assess the full-system view when |
+| --- | --- | --- |
+| Deployment, configuration, database/session infrastructure, ports, protocols, or external processes | Runtime and deployment | A major component, external dependency, or deployment boundary changes |
+| Chat API, SSE protocol, LangGraph routing, provider calls, or conversation persistence | Chat orchestration | A major component, agent, dependency, or cross-subsystem flow changes |
+| Memory forms, coordinator policy, retrieval, lifecycle, vector search, or memory operations | Memory subsystem | A store, agent, dependency, ownership boundary, or cross-subsystem flow changes |
+| Tool metadata, tool retrieval, or the MCP execution boundary | Tool memory | A store, external dependency, trust boundary, or cross-subsystem flow changes |
+| Artifact classification, providers, persistence, lifecycle, or rendering | Visual artifacts | A component, model dependency, store, or cross-subsystem flow changes |
+| Repository context collection, LLM diagram candidates, candidate validation/rendering, or canonical review | Architecture maintenance | A maintainer process, model dependency, trust boundary, or canonical ownership flow changes |
+| Browser state, frontend components, API client behavior, SSE parsing, or client rendering | Frontend | A major component or frontend/backend ownership flow changes |
+
+Internal refactors, bug fixes, styling, tests, and field-level implementation details do not trigger a diagram edit when those architectural relationships remain unchanged. The synchronization check still validates every registered pair, while visual inspection may stay limited to diagrams whose source changed.
+
 ## Environment configuration
 
 The backend reads process environment variables and an optional root `.env` file. Copy the tracked `.env.example` to `.env` and replace its local-development secret; `.env` is ignored by Git.
@@ -27,6 +88,10 @@ Key settings are:
 | `POSTGRES_DB` | `anios_db` | Match the Compose database |
 | `POSTGRES_HOST` | `db` | Use `localhost` when the backend runs on the host |
 | `POSTGRES_PORT` | `5432` | Compose host port |
+| `DATABASE_POOL_SIZE` | `5` | Persistent async connections retained by the runtime pool |
+| `DATABASE_MAX_OVERFLOW` | `5` | Temporary async connections allowed above the pool size |
+| `DATABASE_POOL_TIMEOUT_SECONDS` | `30` | Maximum wait for an available pooled connection |
+| `DATABASE_USE_NULL_POOL` | `false` | Keep `false` in runtime; tests set it to `true` because pytest creates multiple event loops |
 | `LLM_BASE_URL` | `http://127.0.0.1:1234` | LM Studio server root; the chat and embedding adapters append their endpoint paths |
 | `LLM_MODEL` | `google/gemma-4-12b` | Use the model key reported by `GET /api/v1/models` |
 | `LLM_REASONING_EFFORT` | `none` | LM Studio OpenAI-compatible reasoning control; `none` is required for the current Gemma chat acceptance path |
@@ -35,10 +100,24 @@ Key settings are:
 | `EMBEDDING_MODEL` | `text-embedding-nomic-embed-text-v1.5` | LM Studio embedding model key |
 | `EMBEDDING_MODEL_VERSION` | `nomic-embed-text-v1.5` | Version label persisted with new semantic/tool embeddings |
 | `EMBEDDING_DIMENSION` | `768` | Must match the embedding response and pgvector column |
+| `EMBEDDING_MAX_CONCURRENCY` | `1` | Shared in-process LM Studio embedding request limit; increase only after provider load validation |
 | `MEMORY_SEMANTIC_MAX_COSINE_DISTANCE` | `0.35` | Maximum distance admitted to semantic/tool discovery |
 | `MEMORY_SEMANTIC_MAX_RESULTS` | `5` | Hard retrieval result limit |
 | `MEMORY_SEMANTIC_MAX_CONTENT_CHARS` | `4000` | Hard semantic prompt-content character budget |
 | `CONVERSATION_HISTORY_TURNS` | `10` | Number of newest same-user turns sent to the model; valid range is 0 through 50 |
+| `CONVERSATION_SUMMARY_INTERVAL` | `10` | Completed-turn interval for rolling conversation digests; valid range is 2 through 100 |
+| `IMAGE_PROVIDER_BASE_URL` | `http://127.0.0.1:8188` | Loopback ComfyUI server root; Compose uses `http://host.docker.internal:8188` |
+| `IMAGE_PROVIDER_NAME` | `comfyui` | Provider label persisted with generated artifacts |
+| `IMAGE_MODEL` | `hidream_o1_image_dev_fp8_scaled.safetensors` | Exact checkpoint filename exposed by ComfyUI |
+| `IMAGE_PROVIDER_TIMEOUT_SECONDS` | `600` | Whole image-job timeout including queue, sampling, and output fetch |
+| `IMAGE_PROVIDER_POLL_SECONDS` | `0.5` | Bounded terminal-history polling interval |
+| `IMAGE_MAX_CONCURRENCY` | `1` | Shared in-process image-generation gate for the current RTX 5080 |
+| `ARTIFACT_STORAGE_ROOT` | `data/artifacts` | Opaque local binary root; ignored by Git and volume-mounted in Compose |
+| `IMAGE_MAX_UPLOAD_BYTES` | `10485760` | Maximum accepted uploaded image bytes |
+| `IMAGE_MAX_OUTPUT_BYTES` | `41943040` | Maximum accepted generated output bytes |
+| `IMAGE_MAX_PIXELS` | `20000000` | Maximum decoded pixels for uploaded/generated images |
+| `VISION_MODEL` | `google/gemma-4-12b` | Local VLM model key; independently replaceable from the chat setting |
+| `VISION_MAX_TOKENS` | `512` | Maximum grounded analysis output tokens |
 
 For host development, a minimal root `.env` is:
 
@@ -51,19 +130,71 @@ POSTGRES_PASSWORD=password
 POSTGRES_DB=anios_db
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
+DATABASE_POOL_SIZE=5
+DATABASE_MAX_OVERFLOW=5
+DATABASE_POOL_TIMEOUT_SECONDS=30
+DATABASE_USE_NULL_POOL=false
 LLM_BASE_URL=http://127.0.0.1:1234
 LLM_MODEL=google/gemma-4-12b
 LLM_REASONING_EFFORT=none
 EMBEDDING_MODEL=text-embedding-nomic-embed-text-v1.5
 EMBEDDING_MODEL_VERSION=nomic-embed-text-v1.5
 EMBEDDING_DIMENSION=768
+EMBEDDING_MAX_CONCURRENCY=1
 MEMORY_SEMANTIC_MAX_COSINE_DISTANCE=0.35
 MEMORY_SEMANTIC_MAX_RESULTS=5
 MEMORY_SEMANTIC_MAX_CONTENT_CHARS=4000
 CONVERSATION_HISTORY_TURNS=10
+CONVERSATION_SUMMARY_INTERVAL=10
 ```
 
 Do not use the Compose credentials or example secret in production. Because process environment variables have precedence, inspect and correct a pre-existing `DEBUG` or `POSTGRES_HOST` variable when local imports behave unexpectedly.
+
+FastAPI request handling uses SQLAlchemy's async engine and `asyncpg`. Runtime uses a
+bounded async queue pool configured by the four database-pool variables above. The
+synchronous psycopg2 engine remains only for Alembic and explicit inspection code.
+Pytest selects `NullPool` before importing backend settings so independently created
+test event loops never reuse an async connection owned by another loop.
+
+Confirm and, when needed, load both LM Studio models through its local management API:
+
+```powershell
+Invoke-RestMethod 'http://127.0.0.1:1234/api/v1/models'
+$chatModel = @{ model = 'google/gemma-4-12b' } | ConvertTo-Json
+Invoke-RestMethod 'http://127.0.0.1:1234/api/v1/models/load' -Method Post -ContentType 'application/json' -Body $chatModel
+$embeddingModel = @{ model = 'text-embedding-nomic-embed-text-v1.5' } | ConvertTo-Json
+Invoke-RestMethod 'http://127.0.0.1:1234/api/v1/models/load' -Method Post -ContentType 'application/json' -Body $embeddingModel
+```
+
+The management response must report `status: loaded`; the model catalog alone does not prove an instance is loaded.
+
+### Install and run the free local image provider
+
+The verified Windows host uses ComfyUI 0.28.0, Python 3.14, PyTorch CUDA 13.0, and the official HiDream-O1 Dev FP8 checkpoint. Keep this runtime outside the repository and bound to loopback:
+
+```powershell
+$comfyRoot = 'E:\AI\ComfyUI'
+git clone https://github.com/Comfy-Org/ComfyUI.git $comfyRoot
+C:\Python314\python.exe -m venv "$comfyRoot\.venv"
+$env:PIP_CACHE_DIR = 'E:\AI\pip-cache'
+& "$comfyRoot\.venv\Scripts\python.exe" -m pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu130
+& "$comfyRoot\.venv\Scripts\python.exe" -m pip install -r "$comfyRoot\requirements.txt"
+
+$env:HF_HOME = 'E:\AI\huggingface-cache'
+$env:HF_XET_CACHE = 'E:\AI\huggingface-xet-cache'
+& "$comfyRoot\.venv\Scripts\hf.exe" download Comfy-Org/HiDream-O1-Image checkpoints/hidream_o1_image_dev_fp8_scaled.safetensors --local-dir "$comfyRoot\models"
+& "$comfyRoot\.venv\Scripts\hf.exe" download Comfy-Org/gemma-4 text_encoders/gemma4_e4b_it_fp8_scaled.safetensors --local-dir "$comfyRoot\models"
+```
+
+Verify the checkpoint SHA-256 is `7cbf53a475e0a13f92f2ec08bcffdb9b9de4305ef3b6f35cdd784d09dcd8d0cc` and the prompt encoder is `bf0b4fa2e41a25684dc9e9b256cd505564f02fed09be3da95ce024e653e2c52b`. Start the runtime without opening a visible helper window:
+
+```powershell
+$comfyArgs = @('main.py', '--listen', '127.0.0.1', '--port', '8188', '--disable-auto-launch')
+Start-Process -FilePath "$comfyRoot\.venv\Scripts\python.exe" -ArgumentList $comfyArgs -WorkingDirectory $comfyRoot -WindowStyle Hidden -RedirectStandardOutput "$comfyRoot\comfyui.stdout.log" -RedirectStandardError "$comfyRoot\comfyui.stderr.log"
+Invoke-RestMethod 'http://127.0.0.1:8188/system_stats'
+```
+
+`/system_stats` must report the NVIDIA device and CUDA PyTorch runtime. Reachability alone does not verify generation. ComfyUI can release cached weights through `POST /free` with `{"unload_models":true,"free_memory":true}`; do not unload LM Studio or ComfyUI during an active request.
 
 ## Git checkpoints and recovery
 
@@ -274,6 +405,7 @@ Tests must prove behavior at the lowest useful layer and must collectively cover
 - Component tests should cover rendering, input, loading, success, empty, streaming, and failure states.
 - Browser end-to-end tests must open the application, perform the real interaction, observe required network traffic, assert rendered results, and fail on page exceptions or blocking console errors.
 - When persistence is part of the goal, browser tests must reload or navigate and confirm that expected state is restored.
+- For assistant formatting changes, stream a controlled CommonMark fixture and require semantic heading, emphasis, and list elements rather than visible marker characters. Include raw HTML in the fixture and prove that it neither creates an element nor executes an event handler. Keep user-message rendering literal.
 - Endpoint reachability, static HTML, module transformation, API-only tests, and DOM snapshots without interaction are insufficient proof of UI functionality.
 
 The repository has Playwright `test:e2e` and `test:e2e:live` scripts. The deterministic suite intercepts the chat boundary for repeatability; the live suite is skipped unless `ANIOS_E2E_LIVE=1` and must contact the configured backend/provider. Passing deterministic tests does not prove live-model connectivity.
@@ -302,7 +434,7 @@ A successful Alembic command does not prove application tables exist. Verify the
 docker compose exec -T db psql -U postgres -d anios_db -c "\dt"
 ```
 
-The current migration head is `20260716_0007`. Revisions `0004` through `0007` add structured facts, retention/embedding metadata, provenance idempotency, and safe tool-memory tables. Revision `20260716_0002` intentionally refuses to change vector dimensions when legacy semantic rows exist; export or explicitly migrate those vectors instead of deleting or silently truncating them.
+The current migration head is `20260718_0011`. Revision `0011` adds generated/uploaded artifact kinds plus opaque storage key, byte size, SHA-256, width, and height. Revision `0010` adds user-scoped visual artifacts with pending/ready/failed lifecycle, conversation/trace provenance, provider/model metadata, editable source, and indexes. Revision `0009` adds source-conversation provenance to procedures plus approval and source-request provenance to knowledge documents. Revision `0008` adds semantic-cache, working-memory, procedure, entity/relation, knowledge-document/chunk, and conversation-summary tables plus pgvector HNSW cosine indexes for vector-bearing memory. Revisions `0004` through `0007` add structured facts, retention/embedding metadata, provenance idempotency, and safe tool-memory tables. Revision `20260716_0002` intentionally refuses to change vector dimensions when legacy semantic rows exist; export or explicitly migrate those vectors instead of deleting or silently truncating them.
 
 Create or reset migrations only as part of an explicitly approved schema task. Treat deletion of the `pgdata` volume as destructive.
 
@@ -369,9 +501,59 @@ Validate all applicable acceptance properties:
 - expected records or other side effects exist;
 - invalid input produces an intentional error.
 
-The successful chat stream is framed as `start`, zero or more `delta`, an optional non-persisted `memory_proposal`, and `done` SSE events. The frontend treats missing start/done events, malformed frames, unexpected content types, and an `error` event as failures. A server-side streaming exception must expose only the generic error message to the client.
+The successful chat stream is framed as `start`, zero or more `delta`, an optional non-persisted `memory_proposal`, optional `artifact_started`/`artifact_ready`/`artifact_error`, and `done` SSE events. The frontend treats missing start/done events, malformed frames, unexpected content types, and an `error` event as failures. A server-side streaming exception must expose only the generic error message to the client.
 
-For the supported preferred-name workflow, submit a statement such as `My preferred name is Validation Name.` The proposal does not write memory. Approve it through the browser or `POST /api/v1/memory/{user_id}/profile/preferred-name` with the proposed `name`, `source_conversation_id`, and `source_trace_id`; an optional timezone-aware future `expires_at` is accepted. Clear the value and all of its fact versions with `DELETE` on the same path. Verify the fact list/profile before rejection, after approval, after correction, after expiry, and after deletion, then start a new conversation to prove durable recall.
+For a diagram acceptance, change the query to an explicit request such as `Create a flowchart showing DiagramStart to ValidateArtifact to DiagramComplete.` Verify `artifact_started` precedes either `artifact_ready` or `artifact_error`, `done` terminates the stream, and the artifact list reflects the terminal lifecycle:
+
+```text
+GET /api/v1/artifacts/{user_id}/conversations/{conversation_id}
+GET /api/v1/artifacts/{user_id}
+DELETE /api/v1/artifacts/{user_id}/{artifact_id}
+```
+
+Then submit a unique diagram request through Chromium. Require a rendered SVG, editable Mermaid source, visible generation failure behavior, enabled/cleared composer after termination, retention while switching views, the expected chat network response, and no blocking Console or page errors. Reload the page and require `GET /api/v1/conversations/{user_id}/{conversation_id}` to restore the persisted question, response, rendered diagram, and editable source without a visible restoration failure. Open Visual Artifacts, verify the owned history request, download both `.mmd` and `.svg`, delete the record, and require the empty state.
+
+For disconnect recovery, open the chat stream with a client that can stop reading immediately after the `artifact_started` data frame. Close the response, then list the scoped artifacts and require the new record to be `failed` with `error_code=cancelled`, no source, and no remaining `pending` record. Inspect logs for the same trace's `cancelled` lifecycle entry and delete the scoped validation record.
+
+For raster generation, keep both LM Studio and ComfyUI running and submit an allowlisted HiDream training resolution. The body is piped to `curl.exe` because Windows PowerShell 5 can mishandle large or completed `Invoke-WebRequest` responses:
+
+```powershell
+$imageBody = @{
+  user_id = 'image_validation'
+  conversation_id = '33333333-3333-4333-8333-333333333333'
+  prompt = 'A cobalt glass apple on a white pedestal, studio lighting, no text'
+  width = 2048
+  height = 2048
+  seed = 7182026
+} | ConvertTo-Json -Compress
+$imageBody | curl.exe -sS -D - -X POST 'http://127.0.0.1:8000/api/v1/images/generate' -H 'Content-Type: application/json' --data-binary '@-'
+```
+
+Require HTTP 201, `kind=generated_image`, terminal `status=ready`, `content_available=true`, provider/model/job metadata, dimensions, byte size, and SHA-256. Fetch `GET /api/v1/artifacts/{user_id}/{artifact_id}/content`, verify its decoded image and hash, require another user to receive 404, and delete through `DELETE /api/v1/artifacts/{user_id}/{artifact_id}`. Confirm both the exact file and row are gone. Unsupported resolutions must return 422 before a provider request.
+
+For real image understanding, upload a validated image to Gemma:
+
+```powershell
+curl.exe -sS -D - -X POST 'http://127.0.0.1:8000/api/v1/vision/analyze' `
+  -F 'user_id=vision_validation' `
+  -F 'conversation_id=44444444-4444-4444-8444-444444444444' `
+  -F 'prompt=State the main subject, dominant color, material, and setting.' `
+  -F 'image=@E:\AI\validation.png;type=image/png'
+```
+
+Require HTTP 201, `kind=uploaded_image`, ready binary integrity metadata, `analysis_status=ready`, the configured vision model, and grounded content unique to the image. Fake bytes, animation, MIME mismatch, excess size, or excess pixels must return a visible 413/422 and create no artifact. A provider failure returns 502 with the preserved upload artifact ID and `analysis_status=failed`.
+
+For browser acceptance, use Create image and Analyze image in the composer and inspect Network and Console. Require visible progress, a terminal ready image and grounded analysis, enabled/cleared controls, navigation and full-reload restoration, artifact-history rendering, download/deletion, visible 413/422/502/503 errors, and successful retry. Run the reusable live provider checks explicitly:
+
+```powershell
+cd frontend
+npx.cmd playwright test --grep "@live visual generation"
+npx.cmd playwright test --grep "@live cancelled image"
+```
+
+The cancellation check waits until the owned row is `pending`, presses Cancel, then requires `failed` with `error_code=cancelled`, a matching ComfyUI `/interrupt`, no backend exception, cleared UI loading, and scoped cleanup.
+
+For the supported preferred-name workflow, submit a statement such as `My preferred name is Validation Name.` For response style, use a narrow statement such as `Please be concise.` Neither proposal writes memory. Approve through the browser; preferred names use `/profile/preferred-name`, while response style uses the generic `/facts` endpoint. Verify rejection-without-write, approval, correction/supersession, projection, expiry, and deletion.
 
 To validate conversation history, send two requests with the same `user_id` and `conversation_id`, put a unique fact only in the first query, and require the second response to reproduce it. Confirm the two rows share that conversation ID, the traces differ per request, and the second prompt itself does not contain the expected fact.
 
@@ -395,9 +577,66 @@ Invoke-RestMethod 'http://localhost:8000/api/v1/memory/dev_user_001/search?query
 Invoke-RestMethod 'http://localhost:8000/api/v1/memory/dev_user_001/export'
 ```
 
-`PUT /api/v1/memory/{user_id}/{episodic|semantic}/{memory_id}` corrects an explicit record and re-embeds semantic content. `DELETE /api/v1/memory/{user_id}` removes that user's conversations, profile, facts, episodic/semantic records, and tool descriptors/preferences/outcomes. It is destructive and the UI requires confirmation. Do not expose auth-disabled mode beyond the trusted local development environment.
+`POST /api/v1/memory/{user_id}/facts` explicitly approves a structured fact. Repeating a normalized value deduplicates; a contradictory value creates a superseding version. `PUT /facts/{fact_id}` corrects, `DELETE /facts/{fact_id}` removes one version, and `DELETE /facts/key/{fact_key}` removes the key history and supported profile projection. `PUT /api/v1/memory/{user_id}/{episodic|semantic}/{memory_id}` corrects an explicit record and re-embeds semantic content. `GET /api/v1/memory/{user_id}/agent` returns typed-store counts. `DELETE /api/v1/memory/{user_id}` removes that user's conversations and all personal, tool, and agent-memory records. It is destructive and the UI requires confirmation.
 
 Tool-memory routes live below `/api/v1/memory/{user_id}/tools`. They accept only canonical safe descriptors, allowlisted approved preferences, and outcome categories; they never accept raw tool arguments or outputs. Discovery is a hint only and cannot authorize or invoke an MCP tool.
+
+Agent-memory route groups are:
+
+- `/agent/cache` for expiring cached coordinator plans;
+- `/agent/working` for expiring conversation-scoped session state;
+- `/agent/procedures` for explicitly approved versioned workflows;
+- `/agent/entities` and `/agent/entity-relations` for approved entity memory;
+- `/agent/knowledge` for plain-text ingestion, deterministic chunking, semantic search, and document deletion;
+- `/agent/summaries` for conversation digests.
+- `/agent/retention/purge` for scoped dry-run/apply expiry cleanup;
+- `/agent/reembedding` for stale-vector inventory and scoped batch migration;
+- `/agent/operations` for counts, backlog, vector, invariant, and DB state;
+- `/agent/operations/metrics` for Prometheus-compatible non-content gauges.
+
+Operational commands default to safe/read-only behavior where applicable:
+
+```powershell
+python -m backend.cli.purge_memory --user-id ani.mallya
+python -m backend.cli.purge_memory --user-id ani.mallya --apply
+python -m backend.cli.reembed_memory --user-id ani.mallya
+python -m backend.cli.reembed_memory --user-id ani.mallya --apply --batch-size 50
+python -m backend.cli.migrate_vector_dimension --target-dimension 768 --target-model text-embedding-nomic-embed-text-v1.5 --target-version nomic-embed-text-v1.5
+python -m backend.cli.check_memory_operations --user-id ani.mallya --strict
+python -m backend.cli.run_memory_maintenance --user-id ani.mallya --strict
+python -m backend.cli.run_memory_maintenance --all-users --strict --interval-seconds 3600
+python -m backend.cli.soak_memory --duration-seconds 60 --concurrency 4 --chat-every 20
+python -m backend.cli.evaluate_memory_retrieval --user-id ani.mallya --query 'unique query' --expected-content 'expected text'
+```
+
+Apply across all users requires the explicit `--all-users` flag. Re-embedding is resumable by stale metadata and rejects provider dimensions other than the configured 768 before committing a batch. The maintenance command applies retention, optionally re-embeds with `--reembed`, performs final health inspection, emits one non-content JSON event per cycle, survives transient failures in interval mode, and returns monitoring-friendly exit codes in one-shot mode. `docker compose --profile maintenance up` enables the opt-in hourly runner. Deployments can scrape the metrics route and alert on `anios_memory_healthy == 0`; delivery to a particular external alert service remains deployment configuration.
+
+The soak command uses an isolated user, mixes real SSE chat with public working-memory reads/writes and operations inspection, checks every stream for `delta` plus terminal `done`, reports latency/failures as JSON, and deletes its scoped data unless `--keep-data` is supplied.
+
+### Change vector dimensions
+
+Dimension migration is a maintenance-window operation across all seven vector-bearing stores. First run the command above without `--apply`; it inventories the declared live and resumable shadow dimensions and calls no embedding provider. To migrate:
+
+1. Load and probe the target embedding model in LM Studio.
+2. Stop every chat, memory, maintenance, and ingestion writer.
+3. Run the migration command with the new model, version, and dimension plus `--apply --confirm-offline`.
+4. If embedding fails, leave the shadow columns in place, correct the provider, and repeat the same command; committed batches resume while the old `embedding` columns remain authoritative.
+5. After a successful atomic switch, set `EMBEDDING_MODEL`, `EMBEDDING_MODEL_VERSION`, and `EMBEDDING_DIMENSION` to the target values and restart the application.
+6. Run Alembic drift, operations inventory, retrieval evaluation, direct chat, and browser acceptance before reopening writers.
+
+The final switch locks all affected tables and, in one PostgreSQL transaction, verifies every shadow value, replaces the old columns, updates vector metadata, and recreates every HNSW cosine index. Do not use `--confirm-offline` while writers are still active.
+
+Normal chat manages cache, working state, and periodic rolling summaries automatically. Durable procedures, entities, knowledge, persona facts, and tool preferences require explicit user/API action; the model does not receive arbitrary store or SQL access.
+
+Chat offers approval cards for these explicit forms:
+
+- `My preferred name is Ani.` or `Call me Ani.`
+- `Please be concise.` or `I prefer responses to be detailed.`
+- `Remember that Avery Chen is my dentist.`
+- `Remember this workflow: Morning launch. Steps: Open dashboard; review alerts.`
+- `Remember this reference: Studio access | The marker is violet seven.`
+
+Nothing durable is written until the user presses the proposal's approval button. `Not now` dismisses it without a memory API write. The entity, procedure, and knowledge approvals retain the source conversation and trace identifiers. This explicit grammar is intentional: AniOS does not silently extract arbitrary model-inferred facts.
 
 ### 4. Frontend evidence
 
@@ -438,6 +677,7 @@ Every implementation handoff should state:
 - `VERIFIED`, `FAILED`, and `UNVERIFIED` checks;
 - functional evidence, not only startup evidence;
 - documentation updated;
+- `Diagram impact: UPDATED — <diagram names>` or `Diagram impact: NONE — <reason>`;
 - remaining blockers and the next atomic task.
 
 Rewrite [NEXT_SESSION.md](NEXT_SESSION.md) with the latest evidence. Append to [CHANGELOG.md](CHANGELOG.md) only when a meaningful change has passed functional validation.

@@ -29,6 +29,7 @@ class ToolDescriptorRequest(BaseModel):
     tool_version: str = Field(min_length=1, max_length=100)
     risk_classification: Literal["read_only", "write", "high_impact"]
 
+    # Reject descriptor text that appears to contain sensitive data.
     @field_validator(
         "server_id", "tool_name", "description", "input_purpose", "tool_version"
     )
@@ -36,6 +37,7 @@ class ToolDescriptorRequest(BaseModel):
     def reject_sensitive_descriptor_text(cls, value: str) -> str:
         return reject_sensitive_tool_memory(value)
 
+    # Require a normalized SHA-256 schema fingerprint.
     @field_validator("schema_fingerprint")
     @classmethod
     def require_sha256_fingerprint(cls, value: str) -> str:
@@ -55,11 +57,13 @@ class ToolPreferenceRequest(BaseModel):
     source_trace_id: uuid.UUID
     expires_at: datetime | None = None
 
+    # Reject tool preference text that appears to contain sensitive data.
     @field_validator("server_id", "tool_name", "value", "purpose")
     @classmethod
     def reject_sensitive_preference_text(cls, value: str) -> str:
         return reject_sensitive_tool_memory(value)
 
+    # Require an optional tool preference expiry to be valid and future-dated.
     @field_validator("expires_at")
     @classmethod
     def require_future_expiry(cls, value: datetime | None) -> datetime | None:
@@ -81,6 +85,7 @@ class ToolOutcomeRequest(BaseModel):
     source_trace_id: uuid.UUID
 
 
+# Store or update a safe MCP tool descriptor.
 @router.post("/{user_id}/tools/descriptors", status_code=201)
 async def upsert_tool_descriptor(
     user_id: UserId,
@@ -90,6 +95,7 @@ async def upsert_tool_descriptor(
     return await service.upsert_descriptor(user_id, **body.model_dump())
 
 
+# Find tool descriptors relevant to a user's query.
 @router.get("/{user_id}/tools/search")
 async def search_tool_descriptors(
     user_id: UserId,
@@ -105,6 +111,7 @@ async def search_tool_descriptors(
     }
 
 
+# Save an explicit user preference for a tool.
 @router.post("/{user_id}/tools/preferences", status_code=201)
 async def save_tool_preference(
     user_id: UserId,
@@ -126,6 +133,7 @@ async def save_tool_preference(
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
+# Record the safe outcome metadata from a tool execution.
 @router.post("/{user_id}/tools/outcomes", status_code=201)
 async def record_tool_outcome(
     user_id: UserId,
@@ -144,6 +152,7 @@ async def record_tool_outcome(
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
+# Return all tool-memory categories for one user.
 @router.get("/{user_id}/tools")
 async def get_tool_memory(
     user_id: UserId,
@@ -152,9 +161,23 @@ async def get_tool_memory(
     return await service.snapshot(user_id)
 
 
+# Delete all tool-memory records owned by one user.
 @router.delete("/{user_id}/tools")
 async def delete_tool_memory(
     user_id: UserId,
     service: DependencyToolMemoryService,
 ) -> dict[str, Any]:
     return {"deleted": await service.delete_all(user_id)}
+
+
+# Delete one tool-memory record owned by the requested user.
+@router.delete("/{user_id}/tools/{memory_type}/{memory_id}")
+async def delete_tool_memory_record(
+    user_id: UserId,
+    memory_type: Literal["descriptors", "preferences", "outcomes"],
+    memory_id: uuid.UUID,
+    service: DependencyToolMemoryService,
+) -> dict[str, bool]:
+    if not await service.delete_record(user_id, memory_type, str(memory_id)):
+        raise HTTPException(status_code=404, detail="Tool memory record not found")
+    return {"deleted": True}

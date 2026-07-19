@@ -1,3 +1,4 @@
+import threading
 from typing import Any, cast
 
 import httpx
@@ -8,6 +9,7 @@ from backend.embeddings.base import EmbeddingProvider
 class LMStudioEmbeddingProvider(EmbeddingProvider):
     """Generate embeddings through LM Studio's OpenAI-compatible endpoint."""
 
+    # Configure one provider and its bounded concurrent request slots.
     def __init__(
         self,
         base_url: str,
@@ -15,6 +17,7 @@ class LMStudioEmbeddingProvider(EmbeddingProvider):
         dimension: int,
         api_key: str | None = None,
         timeout_seconds: float = 120.0,
+        max_concurrency: int = 1,
         client: httpx.Client | None = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
@@ -23,6 +26,7 @@ class LMStudioEmbeddingProvider(EmbeddingProvider):
         self.api_key = api_key
         self.timeout_seconds = timeout_seconds
         self.client = client
+        self._request_slots = threading.BoundedSemaphore(max_concurrency)
 
     def embed_text(self, text: str) -> list[float]:
         return self._embed(f"search_document: {text}")
@@ -36,19 +40,20 @@ class LMStudioEmbeddingProvider(EmbeddingProvider):
             headers["Authorization"] = f"Bearer {self.api_key}"
         payload = {"model": self.model, "input": text}
 
-        if self.client is not None:
-            response = self.client.post(
-                f"{self.base_url}/v1/embeddings",
-                headers=headers,
-                json=payload,
-            )
-        else:
-            with httpx.Client(timeout=self.timeout_seconds) as client:
-                response = client.post(
+        with self._request_slots:
+            if self.client is not None:
+                response = self.client.post(
                     f"{self.base_url}/v1/embeddings",
                     headers=headers,
                     json=payload,
                 )
+            else:
+                with httpx.Client(timeout=self.timeout_seconds) as client:
+                    response = client.post(
+                        f"{self.base_url}/v1/embeddings",
+                        headers=headers,
+                        json=payload,
+                    )
 
         response.raise_for_status()
         result = cast(dict[str, Any], response.json())

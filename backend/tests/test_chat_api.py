@@ -28,6 +28,14 @@ class CapturingConversationRepository(StubConversationRepository):
     async def save_turn(self, conversation_id, turn):
         self.saved_turns.append((conversation_id, turn))
 
+    # Return the number of turns saved by this chat repository double.
+    async def count_turns(self, conversation_id, user_id):
+        return sum(
+            turn["user_id"] == user_id
+            for saved_conversation_id, turn in self.saved_turns
+            if saved_conversation_id == conversation_id
+        )
+
 
 class StubLLM(LLMClient):
     def __init__(self):

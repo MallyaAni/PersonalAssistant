@@ -1,0 +1,44 @@
+flowchart TB
+    Caller([Trusted local caller]) --> ToolAPI[Tool-memory API<br/>/memory/user/tools]
+    ToolAPI --> Ownership[Optional signed-user ownership]
+    Ownership --> Schema[Pydantic allowlists and size limits]
+    Schema --> Sensitive[Sensitive-marker rejection<br/>no credentials, arguments, outputs, or resources]
+    Sensitive --> Service[ToolMemoryService]
+
+    Service --> DescriptorPath[Descriptor path]
+    DescriptorPath --> Identity[Canonical server, tool, version,<br/>and schema fingerprint]
+    Identity --> Deactivate[Deactivate prior descriptor<br/>when schema fingerprint changes]
+    Deactivate --> Embed[Embed safe descriptor text]
+    Embed --> Nomic[LM Studio Nomic]
+    Nomic --> Descriptors[(tool_descriptors<br/>active flag and HNSW cosine index)]
+
+    Service --> PreferencePath[Approved preference path]
+    PreferencePath --> Preferences[(tool_preferences<br/>allowlisted keys, provenance, optional expiry)]
+    Service --> OutcomePath[Sanitized outcome path]
+    OutcomePath --> Outcomes[(tool_usage_outcomes<br/>category and bounded metadata)]
+
+    Coordinator[MemoryCoordinatorAgent] -->|semantic descriptor search| Service
+    Descriptors --> Service
+    Preferences --> Service
+    Outcomes --> Service
+    Service --> Toolbox[Bounded toolbox context<br/>untrusted literal metadata]
+    Toolbox --> Gemma[Gemma prompt context]
+
+    Database[(PostgreSQL and pgvector)]
+    Descriptors --> Database
+    Preferences --> Database
+    Outcomes --> Database
+
+    Boundary[Current safety boundary:<br/>discovery and memory only<br/>no MCP connection, permission, or execution]
+    Service -.-> Boundary
+
+    classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
+    classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
+    classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
+    classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
+    classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
+    class Caller,ToolAPI interface;
+    class Ownership,Schema,Sensitive,Service,DescriptorPath,Identity,Deactivate,Embed,PreferencePath,OutcomePath,Coordinator,Toolbox application;
+    class Descriptors,Preferences,Outcomes,Database data;
+    class Nomic,Gemma external;
+    class Boundary warning;

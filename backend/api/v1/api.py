@@ -6,8 +6,13 @@ from typing import Any
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
+from backend.api.v1.agent_memory import router as agent_memory_router
+from backend.api.v1.artifacts import router as artifacts_router
+from backend.api.v1.conversations import router as conversations_router
+from backend.api.v1.images import router as images_router
 from backend.api.v1.memory import router as memory_router
 from backend.api.v1.tool_memory import router as tool_memory_router
+from backend.api.v1.vision import router as vision_router
 from backend.core.auth import (
     IdentityDependency,
     authorize_user,
@@ -22,7 +27,12 @@ router = APIRouter()
 # Explicitly define the name expected by main.py
 api_router = router
 router.include_router(tool_memory_router)
+router.include_router(agent_memory_router)
 router.include_router(memory_router)
+router.include_router(artifacts_router)
+router.include_router(conversations_router)
+router.include_router(images_router)
+router.include_router(vision_router)
 
 
 @router.get("/")

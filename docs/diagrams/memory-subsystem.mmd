@@ -1,0 +1,101 @@
+flowchart TB
+    subgraph Entry[Entry points and write authority]
+        Chat[ConversationService]
+        UI[Personal Memory UI]
+        APIs[Personal, agent, and tool-memory APIs]
+        Approval[Explicit user approval<br/>for durable chat proposals]
+        MaintenanceCLI[Maintenance and operations CLI]
+    end
+
+    subgraph Policy[Application-owned memory policy]
+        Coordinator[MemoryCoordinatorAgent<br/>deterministic plan, selected retrieval,<br/>bounded context curation]
+        PersonalService[PostgresMemoryService<br/>personal forms]
+        AgentManager[AgentMemoryManager<br/>typed store facade]
+        ToolService[ToolMemoryService<br/>safe metadata only]
+        ConversationRepo[ConversationRepository<br/>same-user bounded history]
+    end
+
+    subgraph Forms[Implemented memory forms]
+        Short[(Short-term persisted coordination<br/>Semantic cache: expiring plans<br/>Working: expiring conversation state)]
+        Personal[(Personal long term<br/>Profile and approved facts: persona<br/>Episodic: events and experiences<br/>Semantic: facts and preferences)]
+        Agent[(Agent long term<br/>Procedures: approved and versioned<br/>Entities and relations: approved<br/>Knowledge documents and chunks<br/>Conversation summaries)]
+        Conversation[(Conversational<br/>persistent user-scoped turns)]
+        Tools[(Toolbox<br/>safe descriptors and embeddings<br/>approved preferences<br/>sanitized outcomes)]
+    end
+
+    subgraph Retrieval[Retrieval and model-context boundary]
+        VectorPolicy[User scope, approval, active and expiry filters,<br/>cosine threshold, result limits]
+        Literal[Curated prompt values<br/>untrusted literal data, never instructions]
+        Context[Bounded ephemeral Gemma context window]
+    end
+
+    subgraph Lifecycle[Lifecycle and operational controls]
+        Retention[Retention<br/>dry-run or atomic expiry purge]
+        Reembed[Re-embedding<br/>seven vector stores, bounded batches]
+        Dimension[Offline dimension migration<br/>shadow columns and atomic switch]
+        Operations[Operations and metrics<br/>counts, backlog, stale vectors,<br/>invariants, DB pool and latency]
+        Control[Correction, supersession,<br/>JSON export, scoped and delete-all]
+    end
+
+    Embeddings[LM Studio Nomic<br/>document/query task prefixes<br/>dimension validation and serialized calls]
+    Database[(PostgreSQL and pgvector<br/>asyncpg transactions<br/>advisory locks and HNSW cosine indexes)]
+
+    Chat --> Coordinator
+    Chat --> Approval
+    UI --> APIs
+    Approval --> APIs
+    APIs --> PersonalService
+    APIs --> AgentManager
+    APIs --> ToolService
+    Coordinator --> PersonalService
+    Coordinator --> AgentManager
+    Coordinator --> ToolService
+    Coordinator --> ConversationRepo
+
+    Coordinator --> Short
+    PersonalService --> Personal
+    AgentManager --> Short
+    AgentManager --> Agent
+    ConversationRepo --> Conversation
+    ToolService --> Tools
+
+    Personal --> VectorPolicy
+    Agent --> VectorPolicy
+    Conversation --> Literal
+    Tools --> VectorPolicy
+    Short --> Literal
+    VectorPolicy --> Literal
+    Literal --> Context
+
+    PersonalService --> Embeddings
+    AgentManager --> Embeddings
+    ToolService --> Embeddings
+    Embeddings --> Database
+    Short --> Database
+    Personal --> Database
+    Agent --> Database
+    Conversation --> Database
+    Tools --> Database
+
+    MaintenanceCLI --> Retention
+    MaintenanceCLI --> Reembed
+    MaintenanceCLI --> Dimension
+    MaintenanceCLI --> Operations
+    APIs --> Control
+    Retention --> Database
+    Reembed --> Embeddings
+    Reembed --> Database
+    Dimension --> Database
+    Operations --> Database
+    Control --> Database
+
+    classDef entry fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
+    classDef policy fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
+    classDef form fill:#eef7ee,stroke:#5f9562,color:#183b1b;
+    classDef retrieval fill:#fff3cd,stroke:#b78b20,color:#4d3900;
+    classDef lifecycle fill:#f1edff,stroke:#8872c6,color:#2e2450;
+    class Chat,UI,APIs,Approval,MaintenanceCLI entry;
+    class Coordinator,PersonalService,AgentManager,ToolService,ConversationRepo policy;
+    class Short,Personal,Agent,Conversation,Tools,Database form;
+    class VectorPolicy,Literal,Context retrieval;
+    class Retention,Reembed,Dimension,Operations,Control,Embeddings lifecycle;

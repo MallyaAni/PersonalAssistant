@@ -2,7 +2,7 @@ import asyncio
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.interfaces import MemoryService
 from backend.embeddings.base import EmbeddingProvider
@@ -14,7 +14,7 @@ from backend.models.memory import UserProfile
 class PostgresMemoryService(MemoryService):
     def __init__(
         self,
-        session: Session,
+        session: AsyncSession,
         embeddings: EmbeddingProvider,
         retrieval_policy: SemanticRetrievalPolicy | None = None,
         embedding_model_version: str = "unknown",
@@ -55,14 +55,80 @@ class PostgresMemoryService(MemoryService):
         source_trace_id: str,
         expires_at: datetime | None = None,
     ) -> dict[str, Any]:
-        profile, fact = await self.repo.approve_preferred_name_fact(
+        profile, fact, deduplicated = await self.repo.approve_preferred_name_fact(
             user_id,
             name,
             source_conversation_id,
             source_trace_id,
             expires_at,
         )
-        return {"profile": profile.to_dict(), "fact": fact.to_dict()}
+        return {
+            "profile": profile.to_dict(),
+            "fact": fact.to_dict(),
+            "deduplicated": deduplicated,
+        }
+
+    # Approve a typed fact and return its serialized record.
+    async def approve_fact(
+        self,
+        *,
+        user_id: str,
+        fact_type: str,
+        fact_key: str,
+        value: str,
+        purpose: str,
+        source_conversation_id: str | None,
+        source_trace_id: str,
+        expires_at: datetime | None,
+        metadata: dict[str, Any],
+    ) -> dict[str, Any]:
+        fact, deduplicated = await self.repo.approve_fact(
+            user_id=user_id,
+            fact_type=fact_type,
+            fact_key=fact_key,
+            value=value,
+            purpose=purpose,
+            source_conversation_id=source_conversation_id,
+            source_trace_id=source_trace_id,
+            expires_at=expires_at,
+            extra_data=metadata,
+        )
+        return {"fact": fact.to_dict(), "deduplicated": deduplicated}
+
+    # Delete one user-owned fact.
+    async def delete_fact(self, user_id: str, fact_id: str) -> bool:
+        return await self.repo.delete_fact(user_id, fact_id)
+
+    # Replace an existing fact with a new approved version.
+    async def correct_fact(
+        self,
+        *,
+        user_id: str,
+        fact_id: str,
+        value: str,
+        source_conversation_id: str | None,
+        source_trace_id: str,
+        expires_at: datetime | None,
+        metadata: dict[str, Any],
+    ) -> dict[str, Any] | None:
+        existing = await self.repo.get_fact(user_id, fact_id)
+        if existing is None:
+            return None
+        return await self.approve_fact(
+            user_id=user_id,
+            fact_type=existing.fact_type,
+            fact_key=existing.fact_key,
+            value=value,
+            purpose=existing.purpose,
+            source_conversation_id=source_conversation_id,
+            source_trace_id=source_trace_id,
+            expires_at=expires_at,
+            metadata=metadata,
+        )
+
+    # Delete all facts stored under one key for a user.
+    async def clear_fact_key(self, user_id: str, fact_key: str) -> int:
+        return await self.repo.clear_fact_key(user_id, fact_key)
 
     async def clear_preferred_name(self, user_id: str) -> dict[str, Any]:
         profile = await self.repo.clear_preferred_name_facts(user_id)

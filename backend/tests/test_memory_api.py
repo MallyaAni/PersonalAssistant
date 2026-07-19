@@ -133,7 +133,17 @@ def test_memory_api_persists_searches_scopes_and_deletes_personal_memory():
 
             export = client.get(f"/api/v1/memory/{user_id}/export")
             assert export.status_code == 200
-            assert export.json()["schema_version"] == 1
+            assert export.json()["schema_version"] == 2
+            assert export.json()["agent_memory"] == {
+                "semantic_cache": [],
+                "working": [],
+                "procedures": [],
+                "entities": [],
+                "entity_relations": [],
+                "knowledge_documents": [],
+                "knowledge_chunks": [],
+                "summaries": [],
+            }
             assert export.json()["user_id"] == user_id
             assert export.json()["memory"]["semantic"][0]["content"] == (
                 "The user likes coffee."
@@ -168,6 +178,14 @@ def test_memory_api_persists_searches_scopes_and_deletes_personal_memory():
                 "episodic": 0,
                 "semantic": 1,
                 "conversations": 0,
+                "entity_relations": 0,
+                "knowledge_chunks": 0,
+                "summaries": 0,
+                "working": 0,
+                "semantic_cache": 0,
+                "procedures": 0,
+                "entities": 0,
+                "knowledge_documents": 0,
             }
 
             empty_snapshot = client.get(f"/api/v1/memory/{user_id}").json()

@@ -17,6 +17,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
 from backend.database.session import Base
+from backend.models.vector import VECTOR_DIMENSION
 
 
 class ToolDescriptor(Base):
@@ -35,6 +36,12 @@ class ToolDescriptor(Base):
             "server_id",
             "active",
         ),
+        Index(
+            "ix_tool_descriptor_embedding_hnsw",
+            "embedding",
+            postgresql_using="hnsw",
+            postgresql_ops={"embedding": "vector_cosine_ops"},
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -48,7 +55,9 @@ class ToolDescriptor(Base):
     schema_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
     tool_version: Mapped[str] = mapped_column(String(100), nullable=False)
     risk_classification: Mapped[str] = mapped_column(String(30), nullable=False)
-    embedding: Mapped[list[float]] = mapped_column(Vector(768), nullable=False)
+    embedding: Mapped[list[float]] = mapped_column(
+        Vector(VECTOR_DIMENSION), nullable=False
+    )
     embedding_model: Mapped[str] = mapped_column(String(200), nullable=False)
     embedding_version: Mapped[str] = mapped_column(String(100), nullable=False)
     embedding_dimension: Mapped[int] = mapped_column(Integer, nullable=False)
