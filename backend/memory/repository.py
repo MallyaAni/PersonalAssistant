@@ -84,7 +84,9 @@ class MemoryRepository:
         )
         return bool((await self.session.execute(stmt)).scalar_one())
 
-    async def list_memory_facts(self, user_id: str) -> list[MemoryFact]:
+    async def list_memory_facts(
+        self, user_id: str, limit: int | None = None
+    ) -> list[MemoryFact]:
         stmt = (
             select(MemoryFact)
             .where(MemoryFact.user_id == user_id)
@@ -93,6 +95,8 @@ class MemoryRepository:
                 MemoryFact.version.desc(),
             )
         )
+        if limit is not None:
+            stmt = stmt.limit(limit)
         return list((await self.session.execute(stmt)).scalars().all())
 
     # Return one fact when it belongs to the requested user.
@@ -410,21 +414,29 @@ class MemoryRepository:
         await self.session.refresh(new_mem)
         return new_mem
 
-    async def list_semantic_memories(self, user_id: str) -> list[SemanticMemory]:
+    async def list_semantic_memories(
+        self, user_id: str, limit: int | None = None
+    ) -> list[SemanticMemory]:
         stmt = (
             select(SemanticMemory)
             .where(SemanticMemory.user_id == user_id)
             .order_by(SemanticMemory.created_at.desc())
         )
+        if limit is not None:
+            stmt = stmt.limit(limit)
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def list_conversations(self, user_id: str) -> list[Conversation]:
+    async def list_conversations(
+        self, user_id: str, limit: int | None = None
+    ) -> list[Conversation]:
         stmt = (
             select(Conversation)
             .where(Conversation.user_id == user_id)
             .order_by(Conversation.created_at, Conversation.id)
         )
+        if limit is not None:
+            stmt = stmt.limit(limit)
         return list((await self.session.execute(stmt)).scalars().all())
 
     async def update_memory(

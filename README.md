@@ -9,7 +9,7 @@ The repository contains:
 - Docker Compose definitions for PostgreSQL with pgvector, Redis, and the backend;
 - a model-backed conversation path, PostgreSQL/pgvector personal memory, and focused LangGraph assistant and diagram-agent boundaries;
 - an explicit chat-to-Mermaid diagram path with user-scoped PostgreSQL artifact persistence and strict in-browser SVG rendering;
-- free local HiDream/ComfyUI image generation plus validated Gemma vision analysis in the chat composer, with private previews, retry/cancel, reload restoration, history, download, and owned deletion;
+- free local HiDream/ComfyUI image generation plus validated Gemma vision analysis in the chat composer, with private previews, retry/cancel, reload restoration, history, download, owned deletion, and threaded followup questions on any owned image;
 - a local-only, review-first command that uses Gemma and explicit repository evidence to generate architecture-diagram candidates without automatically overwriting canonical documentation.
 
 See [the current session handoff](docs/NEXT_SESSION.md) for verified runtime state and active blockers. See [the roadmap](docs/ROADMAP.md) for milestone status and explicitly planned capabilities.
@@ -30,6 +30,7 @@ Artifacts API:   http://localhost:8000/api/v1/artifacts/{user_id}/conversations/
 Artifact history: http://localhost:8000/api/v1/artifacts/{user_id}
 Image generation: http://localhost:8000/api/v1/images/generate
 Image analysis:   http://localhost:8000/api/v1/vision/analyze
+Image followup:   http://localhost:8000/api/v1/vision/artifacts/{artifact_id}/ask
 Conversation:    http://localhost:8000/api/v1/conversations/{user_id}/{conversation_id}
 ```
 

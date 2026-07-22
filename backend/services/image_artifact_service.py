@@ -1,14 +1,19 @@
 import asyncio
 import hashlib
+import logging
 from typing import Any
 
 from backend.artifacts.image import validate_image_bytes
 from backend.artifacts.types import ImageGenerationRequest
 from backend.core.interfaces import (
+    ArtifactEmbeddingStore,
     BinaryArtifactRepository,
     BinaryArtifactStore,
     ImageProvider,
+    VisionEmbeddingProvider,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class ImageArtifactService:
@@ -22,6 +27,9 @@ class ImageArtifactService:
         model_name: str,
         max_upload_bytes: int,
         max_pixels: int,
+        vision_embeddings: VisionEmbeddingProvider | None = None,
+        embedding_store: ArtifactEmbeddingStore | None = None,
+        vision_embedding_model: str = "",
     ) -> None:
         self.provider = provider
         self.repository = repository
@@ -30,6 +38,42 @@ class ImageArtifactService:
         self.model_name = model_name
         self.max_upload_bytes = max_upload_bytes
         self.max_pixels = max_pixels
+        self.vision_embeddings = vision_embeddings
+        self.embedding_store = embedding_store
+        self.vision_embedding_model = vision_embedding_model
+
+    # Embed one stored image so it is retrievable by meaning, not just caption.
+    # Runs for generated and uploaded images alike; the pixels are what change,
+    # so this happens once at store time and never on a followup question.
+    async def _index_embedding(
+        self,
+        user_id: str,
+        artifact_id: str,
+        content: bytes,
+    ) -> None:
+        if self.vision_embeddings is None or self.embedding_store is None:
+            return
+        if not self.vision_embeddings.is_enabled():
+            return
+        try:
+            # ONNX inference is blocking, so keep it off the event loop.
+            vector = await asyncio.to_thread(
+                self.vision_embeddings.embed_image,
+                content,
+            )
+            await self.embedding_store.set_embedding(
+                artifact_id,
+                user_id,
+                vector,
+                self.vision_embedding_model,
+            )
+        except Exception:
+            # An unembedded image is still a usable image; never fail the turn.
+            logger.warning(
+                "Failed to embed image artifact %s",
+                artifact_id,
+                exc_info=True,
+            )
 
     # Generate and persist one ready image or leave a sanitized terminal failure.
     async def generate(
@@ -62,7 +106,7 @@ class ImageArtifactService:
                 generated.content,
             )
             storage_key = stored.storage_key
-            return await self.repository.mark_binary_ready(
+            ready_generated = await self.repository.mark_binary_ready(
                 artifact_id=artifact_id,
                 user_id=user_id,
                 stored=stored,
@@ -74,6 +118,8 @@ class ImageArtifactService:
                     "provider_job_id": generated.provider_job_id,
                 },
             )
+            await self._index_embedding(user_id, artifact_id, generated.content)
+            return ready_generated
         except asyncio.CancelledError:
             if storage_key:
                 await self.store.delete(storage_key)
@@ -154,6 +200,7 @@ class ImageArtifactService:
                 height=validated.height,
                 metadata={"analysis_status": "pending"},
             )
+            await self._index_embedding(user_id, artifact_id, content)
             return ready, content
         except Exception:
             if storage_key:

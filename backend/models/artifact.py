@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import BigInteger, CheckConstraint, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -53,6 +54,12 @@ class VisualArtifact(Base):
     provider: Mapped[str] = mapped_column(String(80), nullable=False)
     model: Mapped[str | None] = mapped_column(String(160), nullable=True)
     error_code: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    # Aligned image vector. Ordering is meaningful against text queries, but
+    # cross-modal magnitudes are not comparable to text-text scores, so this is
+    # searched and thresholded separately from semantic_memory.
+    embedding: Mapped[list[float] | None] = mapped_column(Vector(768), nullable=True)
+    embedding_model: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    embedding_dimension: Mapped[int | None] = mapped_column(Integer, nullable=True)
     extra_data: Mapped[dict[str, Any]] = mapped_column(
         JSON, default=dict, nullable=False
     )

@@ -16,6 +16,7 @@ const diagramNames = [
   "runtime-deployment",
   "chat-orchestration",
   "memory-subsystem",
+  "memory-overview",
   "tool-memory-subsystem",
   "visual-artifact-subsystem",
   "architecture-maintenance-subsystem",

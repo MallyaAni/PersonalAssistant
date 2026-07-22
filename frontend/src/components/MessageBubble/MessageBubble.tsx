@@ -3,7 +3,7 @@ import { MoreHorizontal, Search, Sparkles } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import DiagramArtifact from '../DiagramArtifact/DiagramArtifact'
 import ImageArtifact from '../ImageArtifact/ImageArtifact'
-import type { VisualArtifact } from '../../services/api'
+import type { ImageArtifact as ImageArtifactRecord, VisualArtifact } from '../../services/api'
 
 interface MessageProps {
   role: 'user' | 'assistant';
@@ -13,6 +13,7 @@ interface MessageProps {
   artifactStatus?: 'generating' | 'failed';
   artifactError?: string;
   artifactActivity?: string;
+  imageMatches?: ImageArtifactRecord[];
   onArtifactDeleted?: (artifactId: string) => void;
 }
 
@@ -38,6 +39,7 @@ const MessageBubble: React.FC<MessageProps> = ({
   artifactStatus,
   artifactError,
   artifactActivity,
+  imageMatches,
   onArtifactDeleted,
 }) => {
   const isUser = role === 'user';
@@ -102,6 +104,22 @@ const MessageBubble: React.FC<MessageProps> = ({
       {!isUser && artifact?.kind === 'diagram' && <DiagramArtifact artifact={artifact} />}
       {!isUser && artifact && artifact.kind !== 'diagram' && (
         <ImageArtifact artifact={artifact} onDeleted={onArtifactDeleted} />
+      )}
+      {!isUser && imageMatches && imageMatches.length > 0 && (
+        <section className="mt-4 space-y-3" aria-label="Matching images">
+          <p className="text-xs font-medium uppercase tracking-[0.08em] text-[#86868b]">
+            {imageMatches.length === 1
+              ? '1 matching image from your library'
+              : `${imageMatches.length} matching images from your library`}
+          </p>
+          {imageMatches.map(match => (
+            <ImageArtifact
+              key={match.id}
+              artifact={match}
+              onDeleted={onArtifactDeleted}
+            />
+          ))}
+        </section>
       )}
     </article>
   )

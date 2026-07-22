@@ -126,8 +126,12 @@ class ToolMemoryService:
         query: str,
         server_id: str | None,
         top_k: int,
+        query_embedding: list[float] | None = None,
     ) -> list[dict[str, Any]]:
-        query_embedding = await asyncio.to_thread(self.embeddings.embed_query, query)
+        if query_embedding is None:
+            query_embedding = await asyncio.to_thread(
+                self.embeddings.embed_query, query
+            )
         distance = ToolDescriptor.embedding.cosine_distance(query_embedding)
         filters = [ToolDescriptor.user_id == user_id, ToolDescriptor.active.is_(True)]
         if server_id:

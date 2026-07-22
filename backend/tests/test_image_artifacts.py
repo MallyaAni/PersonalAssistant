@@ -19,6 +19,7 @@ from backend.artifacts.types import (
 )
 from backend.services.image_artifact_service import ImageArtifactService
 from backend.services.vision_analysis_service import (
+    ArtifactNotFoundError,
     VisionAnalysisError,
     VisionAnalysisService,
 )
@@ -179,6 +180,178 @@ class FailingVisionProvider:
         mime_type: str,
     ) -> VisionAnalysis:
         raise RuntimeError("private vision provider detail")
+
+
+class ThreadVisionProvider:
+    # Record each threaded call and echo a deterministic grounded answer.
+    def __init__(self) -> None:
+        self.calls: list[dict[str, Any]] = []
+
+    async def analyze_thread(
+        self,
+        content: bytes,
+        mime_type: str,
+        history: list[dict[str, str]],
+        prompt: str,
+    ) -> VisionAnalysis:
+        self.calls.append(
+            {
+                "history": [dict(entry) for entry in history],
+                "prompt": prompt,
+                "mime_type": mime_type,
+                "content": content,
+            }
+        )
+        return VisionAnalysis(
+            content=f"answer to: {prompt}",
+            model="thread-model",
+            metadata={},
+        )
+
+
+class FailingThreadVisionProvider:
+    # Raise a private provider error for followup-failure state validation.
+    async def analyze_thread(
+        self,
+        content: bytes,
+        mime_type: str,
+        history: list[dict[str, str]],
+        prompt: str,
+    ) -> VisionAnalysis:
+        raise RuntimeError("private thread provider detail")
+
+
+# Generate one ready owned image and return the vision service under test.
+async def _ready_image_and_vision(
+    tmp_path: Path,
+    provider: Any,
+    *,
+    thread_context_turns: int = 8,
+    thread_max_stored: int = 40,
+) -> tuple[dict[str, Any], VisionAnalysisService, CapturingBinaryRepository]:
+    repository = CapturingBinaryRepository()
+    image_service = ImageArtifactService(
+        StaticImageProvider(),
+        repository,  # type: ignore[arg-type]
+        LocalBinaryArtifactStore(tmp_path),
+        "test-provider",
+        "test-model",
+        1024 * 1024,
+        1000,
+    )
+    ready = await image_service.generate(
+        "vision-user",
+        "11111111-1111-4111-8111-111111111111",
+        "22222222-2222-4222-8222-222222222222",
+        ImageGenerationRequest("blue square", 2048, 2048, 42),
+    )
+    service = VisionAnalysisService(
+        image_service,
+        repository,  # type: ignore[arg-type]
+        provider,
+        thread_context_turns=thread_context_turns,
+        thread_max_stored=thread_max_stored,
+    )
+    return ready, service, repository
+
+
+# Verify followups on a generated image accumulate a persisted question thread.
+@pytest.mark.asyncio
+async def test_followup_accumulates_thread_and_replays_history(tmp_path: Path) -> None:
+    provider = ThreadVisionProvider()
+    ready, service, repository = await _ready_image_and_vision(tmp_path, provider)
+
+    first = await service.ask_about_artifact("vision-user", ready["id"], "What color?")
+    assert first["analysis"] == "answer to: What color?"
+    assert provider.calls[0]["history"] == []
+    assert provider.calls[0]["content"] == _png_bytes()
+
+    await service.ask_about_artifact("vision-user", ready["id"], "How many shapes?")
+    assert provider.calls[1]["history"] == [
+        {
+            "prompt": "What color?",
+            "answer": "answer to: What color?",
+            "model": "thread-model",
+        }
+    ]
+
+    assert repository.record is not None
+    thread = repository.record["metadata"]["analysis_thread"]
+    assert [entry["prompt"] for entry in thread] == ["What color?", "How many shapes?"]
+    assert repository.record["metadata"]["analysis"] == "answer to: How many shapes?"
+
+
+# Verify the replayed context and stored thread are both bounded independently.
+@pytest.mark.asyncio
+async def test_followup_thread_context_and_storage_are_bounded(tmp_path: Path) -> None:
+    provider = ThreadVisionProvider()
+    ready, service, repository = await _ready_image_and_vision(
+        tmp_path,
+        provider,
+        thread_context_turns=2,
+        thread_max_stored=3,
+    )
+
+    for index in range(5):
+        await service.ask_about_artifact("vision-user", ready["id"], f"Q{index}")
+
+    # The final call replays only the two most recent prior answers.
+    assert [entry["prompt"] for entry in provider.calls[-1]["history"]] == ["Q2", "Q3"]
+    assert repository.record is not None
+    stored = repository.record["metadata"]["analysis_thread"]
+    assert [entry["prompt"] for entry in stored] == ["Q2", "Q3", "Q4"]
+
+
+# Verify a prior flat analysis seeds the thread as the first question/answer pair.
+@pytest.mark.asyncio
+async def test_followup_seeds_thread_from_legacy_analysis(tmp_path: Path) -> None:
+    provider = ThreadVisionProvider()
+    ready, service, repository = await _ready_image_and_vision(tmp_path, provider)
+    assert repository.record is not None
+    repository.record["metadata"] = {
+        "analysis": "A small blue rectangle.",
+        "analysis_model": "legacy-model",
+    }
+
+    await service.ask_about_artifact("vision-user", ready["id"], "Is it centered?")
+
+    assert provider.calls[0]["history"][0]["answer"] == "A small blue rectangle."
+    stored = repository.record["metadata"]["analysis_thread"]
+    assert [entry["prompt"] for entry in stored] == [
+        "Describe this image.",
+        "Is it centered?",
+    ]
+
+
+# Verify unowned or unknown artifacts raise a not-found signal without provider work.
+@pytest.mark.asyncio
+async def test_followup_rejects_unowned_or_unknown_image(tmp_path: Path) -> None:
+    provider = ThreadVisionProvider()
+    ready, service, _ = await _ready_image_and_vision(tmp_path, provider)
+
+    with pytest.raises(ArtifactNotFoundError):
+        await service.ask_about_artifact("vision-user", str(uuid.uuid4()), "Q")
+    with pytest.raises(ArtifactNotFoundError):
+        await service.ask_about_artifact("other-user", ready["id"], "Q")
+    assert provider.calls == []
+
+
+# Verify a failed followup surfaces safely and leaves the prior thread intact.
+@pytest.mark.asyncio
+async def test_followup_failure_preserves_existing_thread(tmp_path: Path) -> None:
+    ready, service, repository = await _ready_image_and_vision(
+        tmp_path, ThreadVisionProvider()
+    )
+    await service.ask_about_artifact("vision-user", ready["id"], "First question")
+    assert repository.record is not None
+    thread_before = list(repository.record["metadata"]["analysis_thread"])
+
+    service.provider = FailingThreadVisionProvider()  # type: ignore[assignment]
+    with pytest.raises(VisionAnalysisError) as failure:
+        await service.ask_about_artifact("vision-user", ready["id"], "Second question")
+
+    assert failure.value.artifact_id == ready["id"]
+    assert repository.record["metadata"]["analysis_thread"] == thread_before
 
 
 class DisconnectedRequest:

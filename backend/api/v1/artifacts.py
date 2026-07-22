@@ -3,11 +3,14 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
+from backend.config.settings import settings
 from backend.core.auth import IdentityDependency, authorize_user
 from backend.core.dependencies import (
     ImageArtifactDependency,
+    MemoryDependency,
     get_artifact_repository,
 )
+from backend.search.image_retrieval import ImageRetrievalPolicy
 from backend.services.artifact_repository import SQLAlchemyArtifactRepository
 
 router = APIRouter(prefix="/artifacts/{user_id}", tags=["artifacts"])
@@ -16,6 +19,37 @@ ArtifactRepositoryDependency = Annotated[
     SQLAlchemyArtifactRepository,
     Depends(get_artifact_repository),
 ]
+
+
+# Find owned images whose pixels match a text query, using the aligned space.
+# This is deliberately a separate route from text memory search: cross-modal
+# cosine scores are not comparable to text-text scores, so the two rankings
+# cannot be merged into one list by raw distance.
+@router.get("/search/images")
+async def search_images(
+    user_id: str,
+    repository: ArtifactRepositoryDependency,
+    memory: MemoryDependency,
+    identity: IdentityDependency,
+    query: Annotated[str, Query(min_length=1, max_length=500)],
+    limit: Annotated[int, Query(ge=1, le=50)] = 10,
+) -> list[dict[str, Any]]:
+    authorize_user(user_id, identity)
+    # The text embedder applies the search_query prefix Nomic requires for
+    # multimodal retrieval, placing the query in the shared image/text space.
+    vector = await memory.embed_query(query)
+    # Over-fetch so the policy can inspect the runner up before filtering.
+    policy = ImageRetrievalPolicy(
+        max_distance=settings.VISION_SEARCH_MAX_COSINE_DISTANCE,
+        min_margin=settings.VISION_SEARCH_MIN_MARGIN,
+    )
+    ranked = await repository.search_by_embedding(
+        user_id,
+        vector,
+        max(limit, 2),
+        ImageRetrievalPolicy.CANDIDATE_CEILING,
+    )
+    return policy.select(ranked)[:limit]
 
 
 # List recent visual artifacts owned by one user across conversations.

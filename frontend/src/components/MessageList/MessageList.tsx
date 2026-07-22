@@ -1,6 +1,6 @@
 import React from 'react'
 import MessageBubble from '../MessageBubble/MessageBubble'
-import type { VisualArtifact } from '../../services/api'
+import type { ImageArtifact, VisualArtifact } from '../../services/api'
 
 interface Message {
   role: 'user' | 'assistant';
@@ -9,6 +9,7 @@ interface Message {
   artifactStatus?: 'generating' | 'failed';
   artifactError?: string;
   artifactActivity?: string;
+  imageMatches?: ImageArtifact[];
 }
 
 interface MessageListProps {
@@ -33,6 +34,7 @@ const MessageList: React.FC<MessageListProps> = ({
           role={msg.role}
           content={msg.content}
           isThinking={isThinking && lastMessageIsAssistant && idx === messages.length - 1}
+          imageMatches={msg.imageMatches}
           artifact={msg.artifact}
           artifactStatus={msg.artifactStatus}
           artifactError={msg.artifactError}

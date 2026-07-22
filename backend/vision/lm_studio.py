@@ -25,6 +25,25 @@ class LMStudioVisionProvider(VisionProvider):
         self.reasoning_effort = reasoning_effort
         self.max_tokens = max_tokens
 
+    # Build the multimodal user message that anchors one image to a prompt.
+    def _image_message(
+        self,
+        prompt: str,
+        content: bytes,
+        mime_type: str,
+    ) -> dict[str, Any]:
+        encoded = base64.b64encode(content).decode("ascii")
+        return {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": prompt},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:{mime_type};base64,{encoded}"},
+                },
+            ],
+        }
+
     # Send one validated image and bounded prompt to the configured local VLM.
     async def analyze(
         self,
@@ -32,21 +51,38 @@ class LMStudioVisionProvider(VisionProvider):
         content: bytes,
         mime_type: str,
     ) -> VisionAnalysis:
-        encoded = base64.b64encode(content).decode("ascii")
+        return await self._complete([self._image_message(prompt, content, mime_type)])
+
+    # Answer a new question about one image given prior question/answer context.
+    async def analyze_thread(
+        self,
+        content: bytes,
+        mime_type: str,
+        history: list[dict[str, str]],
+        prompt: str,
+    ) -> VisionAnalysis:
+        anchor_prompt = (
+            "The following image is the subject of this conversation. "
+            "Answer questions about it using only what is visible."
+        )
+        messages: list[dict[str, Any]] = [
+            self._image_message(anchor_prompt, content, mime_type)
+        ]
+        for pair in history:
+            question = pair.get("prompt", "").strip()
+            answer = pair.get("answer", "").strip()
+            if question:
+                messages.append({"role": "user", "content": question})
+            if answer:
+                messages.append({"role": "assistant", "content": answer})
+        messages.append({"role": "user", "content": prompt})
+        return await self._complete(messages)
+
+    # Post one prepared message list to the local VLM and return grounded text.
+    async def _complete(self, messages: list[dict[str, Any]]) -> VisionAnalysis:
         payload = {
             "model": self.model,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt},
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": f"data:{mime_type};base64,{encoded}"},
-                        },
-                    ],
-                }
-            ],
+            "messages": messages,
             "max_tokens": self.max_tokens,
             "reasoning_effort": self.reasoning_effort,
         }

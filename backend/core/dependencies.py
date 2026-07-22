@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from functools import lru_cache
 from typing import Annotated
 
@@ -9,12 +10,18 @@ from backend.artifacts.diagram import LLMDiagramProvider
 from backend.artifacts.image import ComfyUIImageProvider
 from backend.artifacts.storage import LocalBinaryArtifactStore
 from backend.config.settings import settings
+from backend.core.interfaces import SearchProvider, VisionEmbeddingProvider
 from backend.core.llm import LLMClient, LMStudioLLM
 from backend.database.session import get_db
 from backend.embeddings.base import EmbeddingProvider
 from backend.embeddings.lm_studio import LMStudioEmbeddingProvider
+from backend.embeddings.nomic_vision import NomicVisionEmbeddingProvider
 from backend.memory.coordinator import MemoryCoordinatorAgent
 from backend.memory.retrieval import SemanticRetrievalPolicy
+from backend.search.image_retrieval import ImageRetrievalPolicy
+from backend.search.image_routing import ImageRecallPolicy
+from backend.search.routing import SearchRoutingPolicy
+from backend.search.tavily import TavilySearchProvider
 from backend.services.agent_memory_manager import AgentMemoryManager
 from backend.services.artifact_repository import SQLAlchemyArtifactRepository
 from backend.services.conversation_service import ConversationService
@@ -44,10 +51,27 @@ def get_embedding_provider() -> EmbeddingProvider:
     )
 
 
+# Reuse one configured search adapter; it is disabled when no key is present.
+@lru_cache(maxsize=1)
+def get_search_provider() -> SearchProvider:
+    return TavilySearchProvider(
+        base_url=settings.SEARCH_BASE_URL,
+        api_key=settings.SEARCH_API_KEY,
+        max_results=settings.SEARCH_MAX_RESULTS,
+        timeout_seconds=settings.SEARCH_TIMEOUT_SECONDS,
+        max_content_chars=settings.SEARCH_MAX_CONTENT_CHARS,
+        search_depth=settings.SEARCH_DEPTH,
+    )
+
+
 DbDependency = Annotated[AsyncSession, Depends(get_db)]
 EmbeddingDependency = Annotated[
     EmbeddingProvider,
     Depends(get_embedding_provider),
+]
+SearchDependency = Annotated[
+    SearchProvider,
+    Depends(get_search_provider),
 ]
 
 
@@ -113,6 +137,22 @@ ArtifactRepositoryDependency = Annotated[
 ]
 
 
+# Reuse one ONNX session across requests; loading 358MB per request is not viable.
+@lru_cache(maxsize=1)
+def get_vision_embedding_provider() -> VisionEmbeddingProvider:
+    return NomicVisionEmbeddingProvider(
+        model_path=settings.VISION_EMBEDDING_MODEL_PATH,
+        dimension=settings.VISION_EMBEDDING_DIMENSION,
+        intra_op_threads=settings.VISION_EMBEDDING_THREADS,
+    )
+
+
+VisionEmbeddingDependency = Annotated[
+    VisionEmbeddingProvider,
+    Depends(get_vision_embedding_provider),
+]
+
+
 # Reuse one opaque local binary store across application requests.
 @lru_cache(maxsize=1)
 def get_binary_artifact_store() -> LocalBinaryArtifactStore:
@@ -150,6 +190,7 @@ def get_image_artifact_service(
     provider: ImageProviderDependency,
     repository: ArtifactRepositoryDependency,
     store: BinaryArtifactStoreDependency,
+    vision_embeddings: VisionEmbeddingDependency,
 ) -> ImageArtifactService:
     return ImageArtifactService(
         provider=provider,
@@ -159,6 +200,9 @@ def get_image_artifact_service(
         model_name=settings.IMAGE_MODEL,
         max_upload_bytes=settings.IMAGE_MAX_UPLOAD_BYTES,
         max_pixels=settings.IMAGE_MAX_PIXELS,
+        vision_embeddings=vision_embeddings,
+        embedding_store=repository,
+        vision_embedding_model=settings.VISION_EMBEDDING_MODEL,
     )
 
 
@@ -192,8 +236,16 @@ def get_vision_analysis_service(
     images: ImageArtifactDependency,
     repository: ArtifactRepositoryDependency,
     provider: VisionProviderDependency,
+    memory: MemoryDependency,
 ) -> VisionAnalysisService:
-    return VisionAnalysisService(images, repository, provider)
+    return VisionAnalysisService(
+        images,
+        repository,
+        provider,
+        thread_context_turns=settings.VISION_THREAD_CONTEXT_TURNS,
+        thread_max_stored=settings.VISION_THREAD_MAX_STORED,
+        memory=memory,
+    )
 
 
 VisionAnalysisDependency = Annotated[
@@ -344,6 +396,8 @@ def get_memory_coordinator(
         stores,
         toolbox,
         summary_interval=settings.CONVERSATION_SUMMARY_INTERVAL,
+        max_context_items=settings.MEMORY_CONTEXT_MAX_ITEMS,
+        max_context_chars=settings.MEMORY_CONTEXT_MAX_CHARS,
     )
 
 
@@ -353,6 +407,30 @@ MemoryCoordinatorDependency = Annotated[
 
 
 # Assemble the conversation service with model, memory, and repository dependencies.
+# Reuse one deterministic image-recall policy; the model never selects it.
+@lru_cache(maxsize=1)
+def get_image_recall_policy() -> ImageRecallPolicy:
+    return ImageRecallPolicy()
+
+
+ImageRecallDependency = Annotated[
+    ImageRecallPolicy,
+    Depends(get_image_recall_policy),
+]
+
+
+# Reuse one deterministic routing policy; the model never selects this path.
+@lru_cache(maxsize=1)
+def get_search_routing_policy() -> SearchRoutingPolicy:
+    return SearchRoutingPolicy(current_year=datetime.now(UTC).year)
+
+
+SearchRoutingDependency = Annotated[
+    SearchRoutingPolicy,
+    Depends(get_search_routing_policy),
+]
+
+
 def get_conversation_service(
     memory: MemoryDependency,
     llm: LlmDependency,
@@ -360,6 +438,10 @@ def get_conversation_service(
     tracer: TracerDependency,
     memory_coordinator: MemoryCoordinatorDependency,
     diagram_artifacts: DiagramArtifactDependency,
+    search: SearchDependency,
+    search_routing: SearchRoutingDependency,
+    artifacts: ArtifactRepositoryDependency,
+    image_recall: ImageRecallDependency,
 ) -> ConversationService:
     return ConversationService(
         memory=memory,
@@ -369,6 +451,15 @@ def get_conversation_service(
         history_turn_limit=settings.CONVERSATION_HISTORY_TURNS,
         memory_coordinator=memory_coordinator,
         diagram_artifacts=diagram_artifacts,
+        search=search,
+        search_routing=search_routing,
+        image_recall=image_recall,
+        image_search=artifacts,
+        image_search_limit=settings.VISION_SEARCH_MAX_RESULTS,
+        image_retrieval=ImageRetrievalPolicy(
+            max_distance=settings.VISION_SEARCH_MAX_COSINE_DISTANCE,
+            min_margin=settings.VISION_SEARCH_MIN_MARGIN,
+        ),
     )
 
 

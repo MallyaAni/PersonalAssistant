@@ -49,6 +49,7 @@ interface ChatEvent {
     | 'memory_proposal'
     | 'artifact_started'
     | 'artifact_ready'
+    | 'image_matches'
     | 'artifact_error'
     | 'done'
     | 'error';
@@ -158,6 +159,7 @@ export type ChatStreamUpdate =
   | { type: 'memory_proposal'; proposal: MemoryProposal }
   | { type: 'artifact_started'; artifactId: string }
   | { type: 'artifact_ready'; artifact: VisualArtifact }
+  | { type: 'image_matches'; artifacts: ImageArtifact[] }
   | { type: 'artifact_error'; artifactId: string; message: string }
 
 // Send a JSON API request and surface server errors as exceptions.
@@ -462,6 +464,59 @@ export async function analyzeImage(
   return artifact
 }
 
+// Ask one followup question about an already-owned generated or uploaded image.
+export async function askAboutImage(
+  userId: string,
+  artifactId: string,
+  prompt: string,
+  signal?: AbortSignal,
+) {
+  const result = await apiRequest<Record<string, unknown>>(
+    `/api/v1/vision/artifacts/${encodeURIComponent(artifactId)}/ask`,
+    {
+      method: 'POST',
+      signal,
+      body: JSON.stringify({ user_id: userId, prompt }),
+    },
+  )
+  if (!result.artifact || typeof result.artifact !== 'object' || Array.isArray(result.artifact)) {
+    throw new Error('Image question response is invalid')
+  }
+  const artifact = parseVisualArtifact(result.artifact as Record<string, unknown>)
+  if (artifact.kind !== 'generated_image' && artifact.kind !== 'uploaded_image') {
+    throw new Error('Image question returned an unexpected artifact')
+  }
+  return artifact
+}
+
+// One persisted question/answer pair from an image's analysis thread.
+export interface ImageAnalysisTurn {
+  prompt: string;
+  answer: string;
+  model?: string;
+}
+
+// Read the persisted question/answer thread from one image artifact's metadata.
+export function readAnalysisThread(artifact: ImageArtifact): ImageAnalysisTurn[] {
+  const raw = artifact.metadata.analysis_thread
+  if (Array.isArray(raw)) {
+    return raw
+      .filter((entry): entry is Record<string, unknown> =>
+        !!entry && typeof entry === 'object' && !Array.isArray(entry))
+      .map(entry => ({
+        prompt: typeof entry.prompt === 'string' ? entry.prompt : '',
+        answer: typeof entry.answer === 'string' ? entry.answer : '',
+        model: typeof entry.model === 'string' ? entry.model : undefined,
+      }))
+      .filter(entry => entry.answer)
+  }
+  const legacy = artifact.metadata.analysis
+  if (typeof legacy === 'string' && legacy.trim()) {
+    return [{ prompt: 'Describe this image.', answer: legacy.trim() }]
+  }
+  return []
+}
+
 // Load private image bytes with the same optional authorization as API requests.
 export async function getArtifactImage(
   userId: string,
@@ -663,6 +718,24 @@ export async function* streamChat(userId: string, conversationId: string, query:
           type: 'artifact_ready',
           artifact: parseVisualArtifact(event.data),
         } satisfies ChatStreamUpdate
+      } else if (event.event === 'image_matches') {
+        const { artifacts } = event.data as { artifacts?: unknown }
+        if (!Array.isArray(artifacts)) {
+          throw new Error('Image match event is invalid')
+        }
+        // Reuse the shared parser, then keep only binary image kinds; a
+        // diagram cannot be embedded and must never appear as a pixel match.
+        const matched = artifacts
+          .map(record => parseVisualArtifact(record as Record<string, unknown>))
+          .filter(
+            (artifact): artifact is ImageArtifact =>
+              artifact.kind === 'generated_image' ||
+              artifact.kind === 'uploaded_image',
+          )
+        yield {
+          type: 'image_matches',
+          artifacts: matched,
+        } satisfies ChatStreamUpdate
       } else if (event.event === 'artifact_error') {
         const { id, message } = event.data
         if (typeof id !== 'string' || typeof message !== 'string') {
@@ -708,6 +781,7 @@ function parseChatEvent(frame: string): ChatEvent {
     'artifact_started',
     'artifact_ready',
     'artifact_error',
+    'image_matches',
     'done',
     'error',
   ].includes(eventName)) {

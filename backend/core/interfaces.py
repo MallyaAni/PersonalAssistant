@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import Any
 
 from backend.artifacts.types import (
@@ -8,6 +9,7 @@ from backend.artifacts.types import (
     StoredBinary,
     VisionAnalysis,
 )
+from backend.search.types import SearchResults
 
 
 class MemoryService(ABC):
@@ -27,7 +29,12 @@ class MemoryService(ABC):
         user_id: str,
         query: str,
         top_k: int = 5,
+        query_embedding: list[float] | None = None,
     ) -> list[dict[str, Any]]: ...
+
+    # Embed one retrieval query so a turn can reuse the vector across stores.
+    @abstractmethod
+    async def embed_query(self, query: str) -> list[float]: ...
 
 
 class ConversationRepository(ABC):
@@ -205,3 +212,95 @@ class VisionProvider(ABC):
         content: bytes,
         mime_type: str,
     ) -> VisionAnalysis: ...
+
+    # Answer a new question about one image given prior question/answer context.
+    @abstractmethod
+    async def analyze_thread(
+        self,
+        content: bytes,
+        mime_type: str,
+        history: list[dict[str, str]],
+        prompt: str,
+    ) -> VisionAnalysis: ...
+
+
+class SearchProvider(ABC):
+    """Replaceable web-search backend returning untrusted third-party results."""
+
+    # Report whether the provider is configured; callers must skip search if not.
+    @abstractmethod
+    def is_enabled(self) -> bool: ...
+
+    # Execute one bounded query and return ranked, truncated results.
+    @abstractmethod
+    async def search(
+        self,
+        query: str,
+        max_results: int | None = None,
+    ) -> SearchResults: ...
+
+
+class SemanticMemoryWriter(ABC):
+    """Write side of semantic memory, segregated from the read-only contract.
+
+    Kept separate so read-only consumers are not forced to implement writes, and
+    so a derived-index writer cannot be mistaken for the approval-gated path
+    that persists user-stated facts.
+    """
+
+    # Persist one embedded semantic memory under an explicit purpose.
+    @abstractmethod
+    async def save_semantic_memory(
+        self,
+        user_id: str,
+        content: str,
+        metadata: dict[str, Any],
+        purpose: str = "user_explicit",
+        expires_at: datetime | None = None,
+    ) -> dict[str, Any]: ...
+
+
+class VisionEmbeddingProvider(ABC):
+    """Embeds images into the same latent space as the text embedder.
+
+    Alignment is the contract: a text query embedded by the text provider must
+    be directly comparable to an image embedded here, so both can share one
+    vector column, one index, and one distance threshold.
+    """
+
+    # Report whether local weights are present; callers must skip indexing if not.
+    @abstractmethod
+    def is_enabled(self) -> bool: ...
+
+    # Embed one validated image into a unit-length vector.
+    @abstractmethod
+    def embed_image(self, content: bytes) -> list[float]: ...
+
+
+class ArtifactEmbeddingStore(ABC):
+    """Persistence and search for aligned image vectors.
+
+    Segregated from the artifact repository contract so existing consumers are
+    unaffected, and so image search keeps its own threshold: cross-modal cosine
+    scores are not comparable to text-text scores.
+    """
+
+    # Attach one aligned vector to an owned artifact.
+    @abstractmethod
+    async def set_embedding(
+        self,
+        artifact_id: str,
+        user_id: str,
+        embedding: list[float],
+        model: str,
+    ) -> None: ...
+
+    # Rank one user's embedded images against a query vector by cosine distance.
+    @abstractmethod
+    async def search_by_embedding(
+        self,
+        user_id: str,
+        embedding: list[float],
+        limit: int,
+        max_distance: float,
+    ) -> list[dict[str, Any]]: ...

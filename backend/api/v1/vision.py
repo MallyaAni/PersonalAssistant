@@ -7,7 +7,11 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
 from backend.config.settings import settings
 from backend.core.auth import IdentityDependency, authorize_user
 from backend.core.dependencies import TracerDependency, VisionAnalysisDependency
-from backend.services.vision_analysis_service import VisionAnalysisError
+from backend.models.image import ImageQuestionBody
+from backend.services.vision_analysis_service import (
+    ArtifactNotFoundError,
+    VisionAnalysisError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -90,4 +94,43 @@ async def analyze_image_upload(
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Unable to store the uploaded image.",
+        ) from exc
+
+
+# Answer one followup question about an already-owned generated or uploaded image.
+@router.post("/artifacts/{artifact_id}/ask", status_code=status.HTTP_200_OK)
+async def ask_about_image(
+    artifact_id: UUID,
+    body: ImageQuestionBody,
+    service: VisionAnalysisDependency,
+    tracer: TracerDependency,
+    identity: IdentityDependency,
+) -> dict[str, Any]:
+    authorize_user(body.user_id, identity)
+    trace_id = tracer.start_trace(body.user_id)
+    try:
+        return await service.ask_about_artifact(
+            user_id=body.user_id,
+            artifact_id=str(artifact_id),
+            prompt=body.prompt,
+        )
+    except ArtifactNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Image not found.",
+        ) from exc
+    except VisionAnalysisError as exc:
+        logger.exception("Vision followup failed", extra={"trace_id": trace_id})
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={
+                "message": "Unable to answer the question about this image.",
+                "artifact_id": exc.artifact_id,
+            },
+        ) from exc
+    except Exception as exc:
+        logger.exception("Image followup failed", extra={"trace_id": trace_id})
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Unable to process the question about this image.",
         ) from exc

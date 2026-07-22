@@ -22,6 +22,7 @@ interface Message {
   artifactStatus?: 'generating' | 'failed';
   artifactError?: string;
   artifactActivity?: string;
+  imageMatches?: ImageArtifact[];
 }
 
 interface ChatWindowProps {
@@ -268,6 +269,21 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   }
 
   // Attach a completed generated or uploaded image to its running placeholder.
+  // Attach pixel-matched images to the assistant turn that requested them.
+  const handleImageMatches = (artifacts: ImageArtifact[]) => {
+    if (artifacts.length === 0) return
+    setMessages(prev => {
+      const next = [...prev]
+      for (let index = next.length - 1; index >= 0; index -= 1) {
+        if (next[index].role === 'assistant') {
+          next[index] = { ...next[index], imageMatches: artifacts }
+          return next
+        }
+      }
+      return [...next, { role: 'assistant', content: '', imageMatches: artifacts }]
+    })
+  }
+
   const handleVisualReady = (artifact: ImageArtifact) => {
     setMessages(prev => {
       const next = [...prev]
@@ -434,6 +450,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             onVisualStarted={handleVisualStarted}
             onVisualReady={handleVisualReady}
             onVisualError={handleVisualError}
+            onImageMatches={handleImageMatches}
           />
           {hasMessages && (
             <p className="mt-2 text-center text-[11px] text-[#86868b]">AniOS can make mistakes. Check important information.</p>

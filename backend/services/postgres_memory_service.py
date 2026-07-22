@@ -4,14 +4,14 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.core.interfaces import MemoryService
+from backend.core.interfaces import MemoryService, SemanticMemoryWriter
 from backend.embeddings.base import EmbeddingProvider
 from backend.memory.repository import MemoryRepository
 from backend.memory.retrieval import SemanticRetrievalPolicy
 from backend.models.memory import UserProfile
 
 
-class PostgresMemoryService(MemoryService):
+class PostgresMemoryService(MemoryService, SemanticMemoryWriter):
     def __init__(
         self,
         session: AsyncSession,
@@ -144,13 +144,21 @@ class PostgresMemoryService(MemoryService):
         memories = await self.repo.get_episodic_memories(user_id, limit=5)
         return [m.to_dict() for m in memories]
 
+    # Embed one retrieval query so a single turn can reuse the vector everywhere.
+    async def embed_query(self, query: str) -> list[float]:
+        return await asyncio.to_thread(self.embeddings.embed_query, query)
+
     async def get_semantic_memory(
         self,
         user_id: str,
         query: str,
         top_k: int = 5,
+        query_embedding: list[float] | None = None,
     ) -> list[dict[str, Any]]:
-        query_embedding = await asyncio.to_thread(self.embeddings.embed_query, query)
+        if query_embedding is None:
+            query_embedding = await asyncio.to_thread(
+                self.embeddings.embed_query, query
+            )
         memories = await self.repo.get_semantic_memories(
             user_id,
             query_embedding,
@@ -219,17 +227,23 @@ class PostgresMemoryService(MemoryService):
         )
         return memory.to_dict() if memory else None
 
-    async def get_memory_snapshot(self, user_id: str) -> dict[str, Any]:
+    # Return a personal-memory snapshot, bounded for the display path.
+    async def get_memory_snapshot(
+        self, user_id: str, limit: int | None = None
+    ) -> dict[str, Any]:
         profile = await self.get_user_profile(user_id)
         episodic = [
             memory.to_dict()
-            for memory in await self.repo.get_episodic_memories(user_id)
+            for memory in await self.repo.get_episodic_memories(user_id, limit=limit)
         ]
         semantic = [
             memory.to_dict()
-            for memory in await self.repo.list_semantic_memories(user_id)
+            for memory in await self.repo.list_semantic_memories(user_id, limit=limit)
         ]
-        facts = [fact.to_dict() for fact in await self.repo.list_memory_facts(user_id)]
+        facts = [
+            fact.to_dict()
+            for fact in await self.repo.list_memory_facts(user_id, limit=limit)
+        ]
         return {
             "profile": profile,
             "episodic": episodic,
@@ -237,9 +251,10 @@ class PostgresMemoryService(MemoryService):
             "facts": facts,
         }
 
+    # Export the complete owned memory graph; export must not silently truncate.
     async def get_user_export(self, user_id: str) -> dict[str, Any]:
         return {
-            "memory": await self.get_memory_snapshot(user_id),
+            "memory": await self.get_memory_snapshot(user_id, limit=None),
             "conversations": [
                 conversation.to_dict()
                 for conversation in await self.repo.list_conversations(user_id)

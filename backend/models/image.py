@@ -44,3 +44,19 @@ class ImageGenerationBody(BaseModel):
                 "resolution is not supported by the configured image model"
             )
         return self
+
+
+class ImageQuestionBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    user_id: str = Field(min_length=1, max_length=50)
+    prompt: str = Field(min_length=1, max_length=2_000)
+
+    # Trim identifiers and prompts while refusing whitespace-only values.
+    @field_validator("user_id", "prompt")
+    @classmethod
+    def reject_blank_text(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("must not be blank")
+        return value

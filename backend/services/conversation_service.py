@@ -10,9 +10,11 @@ from backend.agents.graph import build_assistant_graph
 from backend.agents.state import AgentState
 from backend.artifacts.diagram import is_diagram_request
 from backend.core.interfaces import (
+    ArtifactEmbeddingStore,
     ConversationRepository,
     ConversationTracer,
     MemoryService,
+    SearchProvider,
 )
 from backend.core.llm import LLMClient
 from backend.memory.coordinator import MemoryCoordinatorAgent
@@ -24,6 +26,9 @@ from backend.memory.proposals import (
     propose_response_style,
 )
 from backend.models.schemas import ChatStreamEvent
+from backend.search.image_retrieval import ImageRetrievalPolicy
+from backend.search.image_routing import ImageRecallPolicy
+from backend.search.routing import SearchRoutingPolicy
 from backend.services.diagram_artifact_service import DiagramArtifactService
 
 logger = logging.getLogger(__name__)
@@ -78,6 +83,12 @@ class ConversationService:
         history_turn_limit: int = 10,
         memory_coordinator: MemoryCoordinatorAgent | None = None,
         diagram_artifacts: DiagramArtifactService | None = None,
+        search: SearchProvider | None = None,
+        search_routing: SearchRoutingPolicy | None = None,
+        image_recall: ImageRecallPolicy | None = None,
+        image_search: ArtifactEmbeddingStore | None = None,
+        image_search_limit: int = 5,
+        image_retrieval: ImageRetrievalPolicy | None = None,
     ):
         self.memory = memory
         self.assistant_graph = build_assistant_graph(llm)
@@ -86,6 +97,111 @@ class ConversationService:
         self.history_turn_limit = history_turn_limit
         self.memory_coordinator = memory_coordinator
         self.diagram_artifacts = diagram_artifacts
+        self.search = search
+        self.search_routing = search_routing
+        self.image_recall = image_recall
+        self.image_search = image_search
+        self.image_search_limit = image_search_limit
+        self.image_retrieval = image_retrieval or ImageRetrievalPolicy(
+            max_distance=0.96,
+            min_margin=0.015,
+        )
+
+    # Find stored images whose pixels match the request, when the deterministic
+    # policy says this turn is a recall. Image vectors share the text latent
+    # space, so the query is embedded once by the ordinary text embedder.
+    async def _load_image_matches(
+        self,
+        user_id: str,
+        query: str,
+        trace_id: str,
+        query_embedding: list[float] | None,
+    ) -> list[dict[str, Any]]:
+        if self.image_recall is None or self.image_search is None:
+            return []
+        decision = self.image_recall.decide(query)
+        if not decision.should_search:
+            return []
+
+        logger.info(
+            "Trace %s routing to image search (reason=%s)", trace_id, decision.reason
+        )
+        try:
+            vector = query_embedding or await self.memory.embed_query(query)
+            # Over-fetch so the policy can inspect the runner up before filtering.
+            ranked = await self.image_search.search_by_embedding(
+                user_id,
+                vector,
+                max(self.image_search_limit, 2),
+                ImageRetrievalPolicy.CANDIDATE_CEILING,
+            )
+            return self.image_retrieval.select(ranked)[: self.image_search_limit]
+        except Exception:
+            # A retrieval failure degrades the answer; it must not fail the turn.
+            logger.warning("Trace %s image search failed", trace_id, exc_info=True)
+            return []
+
+    # Attach optional retrieved context in place and return matched images so
+    # the caller can also stream them to the interface.
+    async def _attach_retrieved_context(
+        self,
+        context: dict[str, Any],
+        user_id: str,
+        query: str,
+        trace_id: str,
+        query_embedding: list[float] | None,
+    ) -> list[dict[str, Any]]:
+        search_results = await self._load_search_context(query, trace_id)
+        if search_results:
+            context["search"] = search_results
+
+        image_matches = await self._load_image_matches(
+            user_id,
+            query,
+            trace_id,
+            query_embedding,
+        )
+        if image_matches:
+            # Tell the model the images exist and are already shown, so it
+            # describes them rather than claiming it cannot display images.
+            context["images"] = [
+                {
+                    "kind": match.get("kind"),
+                    "title": match.get("title"),
+                    "created_at": match.get("created_at"),
+                    "description": (match.get("metadata") or {}).get("analysis"),
+                }
+                for match in image_matches
+            ]
+        return image_matches
+
+    # Fetch live results only when the deterministic policy asks for them.
+    async def _load_search_context(
+        self,
+        query: str,
+        trace_id: str,
+    ) -> list[dict[str, Any]]:
+        if self.search is None or self.search_routing is None:
+            return []
+        if not self.search.is_enabled():
+            return []
+        decision = self.search_routing.decide(query)
+        if not decision.should_search:
+            return []
+
+        logger.info(
+            "Trace %s routing to web search (reason=%s)", trace_id, decision.reason
+        )
+        try:
+            found = await self.search.search(query)
+        except Exception:
+            # A search outage degrades the answer; it must not fail the turn.
+            logger.warning("Trace %s web search failed", trace_id, exc_info=True)
+            return []
+        return [
+            {"title": item.title, "url": item.url, "content": item.content}
+            for item in found.results
+        ]
 
     # Stream either ordinary assistant text or an explicit diagram artifact request.
     async def process_request(
@@ -115,6 +231,16 @@ class ConversationService:
         if self.memory_coordinator is not None:
             plan_result = await self.memory_coordinator.plan(user_id, query)
         plan = plan_result[0] if plan_result is not None else None
+
+        # Embed the query once and reuse the vector across every vector store.
+        need_personal_semantic = plan is None or plan.use_semantic
+        need_agent_vector = self.memory_coordinator is not None and (
+            plan is None or plan.needs_vector()
+        )
+        query_embedding = None
+        if need_personal_semantic or need_agent_vector:
+            query_embedding = await self.memory.embed_query(query)
+
         profile = await self.memory.get_user_profile(user_id)
         episodic = (
             await self.memory.get_episodic_memory(user_id, query)
@@ -122,8 +248,10 @@ class ConversationService:
             else []
         )
         semantic = (
-            await self.memory.get_semantic_memory(user_id, query)
-            if plan is None or plan.use_semantic
+            await self.memory.get_semantic_memory(
+                user_id, query, query_embedding=query_embedding
+            )
+            if need_personal_semantic
             else []
         )
         history = await self.repository.get_history(
@@ -133,13 +261,20 @@ class ConversationService:
         )
 
         # 2. Build Context and State
-        context = {
+        context: dict[str, Any] = {
             "user_id": user_id,
             "query": query,
             "profile": profile,
             "episodic": episodic,
             "semantic": semantic,
         }
+        image_matches = await self._attach_retrieved_context(
+            context,
+            user_id,
+            query,
+            trace_id,
+            query_embedding,
+        )
         if self.memory_coordinator is not None:
             context = await self.memory_coordinator.prepare_context(
                 user_id,
@@ -148,6 +283,7 @@ class ConversationService:
                 trace_id,
                 context,
                 plan_result,
+                query_embedding=query_embedding,
             )
 
         initial_state = AgentState(
@@ -169,6 +305,10 @@ class ConversationService:
                 "conversation_id": initial_state.conversation_id,
             },
         }
+        if image_matches:
+            # Emit before the answer streams so the UI can show the images the
+            # assistant is about to describe.
+            yield {"event": "image_matches", "data": {"artifacts": image_matches}}
         async for event in self.assistant_graph.astream(
             initial_state.model_dump(),
             stream_mode="custom",

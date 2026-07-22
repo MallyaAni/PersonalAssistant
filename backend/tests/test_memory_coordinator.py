@@ -1,6 +1,6 @@
 import os
 from collections.abc import Iterator
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Any, cast
 
 import pytest
@@ -98,7 +98,11 @@ class FakeVectorStore:
 
     # Record a query and return one labeled result.
     async def search(
-        self, user_id: str, query: str, top_k: int
+        self,
+        user_id: str,
+        query: str,
+        top_k: int,
+        query_embedding: list[float] | None = None,
     ) -> list[dict[str, str]]:
         self.queries.append((user_id, query, top_k))
         return [{"content": self.label}]
@@ -121,7 +125,11 @@ class FakeSummaryStore(FakeVectorStore):
 
     # Record a summary query and return one result.
     async def search(
-        self, user_id: str, query: str, top_k: int
+        self,
+        user_id: str,
+        query: str,
+        top_k: int,
+        query_embedding: list[float] | None = None,
     ) -> list[dict[str, str]]:
         self.queries.append((user_id, query, top_k))
         return [{"id": "search", "content": self.label}]
@@ -157,6 +165,10 @@ class FakeStores:
         self.summaries = FakeSummaryStore()
         self.procedures = FakeVectorStore("procedure")
 
+    # Return a deterministic query vector so the coordinator embeds only once.
+    async def embed_query(self, query: str) -> list[float]:
+        return [0.1, 0.2, 0.3]
+
 
 class FakeToolbox:
     # Create a fake tool-descriptor search store.
@@ -170,6 +182,7 @@ class FakeToolbox:
         query: str,
         server_id: str | None,
         top_k: int,
+        query_embedding: list[float] | None = None,
     ) -> list[dict[str, str]]:
         self.queries.append((user_id, query, server_id, top_k))
         return [{"tool_name": "calendar"}]
@@ -195,15 +208,14 @@ def test_query_plan_routes_explicit_intent(query: str, enabled: str) -> None:
     assert plan.use_semantic is True
 
 
-# Verify query plans are cached and only selected stores are searched.
+# Verify the deterministic plan queries only its selected stores.
 @pytest.mark.asyncio
-async def test_coordinator_caches_plan_and_queries_only_selected_stores() -> None:
+async def test_coordinator_plans_and_queries_only_selected_stores() -> None:
     stores = FakeStores()
     toolbox = FakeToolbox()
     coordinator = MemoryCoordinatorAgent(
         cast(Any, stores),
         cast(Any, toolbox),
-        cache_ttl=timedelta(minutes=5),
     )
     query = (
         "Remember and recap who is on the project, what the reference document "
@@ -223,7 +235,7 @@ async def test_coordinator_caches_plan_and_queries_only_selected_stores() -> Non
 
     assert first_plan[1] is False
     assert second_plan == first_plan[0]
-    assert cache_hit is True
+    assert cache_hit is False
     assert context["memory_plan"]["semantic_cache_hit"] is False
     assert context["profile"] == {"name": "Ani"}
     assert context["working"][0]["memory_key"] == "memory_query_plan"
@@ -243,6 +255,37 @@ async def test_coordinator_caches_plan_and_queries_only_selected_stores() -> Non
     )
     assert toolbox.queries
     assert stores.working.items[0]["expires_at"] > datetime.now(UTC)
+
+
+# Verify the shared budget dedups repeated content and caps total items.
+def test_context_budget_dedups_and_caps_items() -> None:
+    coordinator = MemoryCoordinatorAgent(
+        cast(Any, FakeStores()),
+        cast(Any, FakeToolbox()),
+        max_context_items=2,
+        max_context_chars=10_000,
+    )
+    context = {
+        "semantic": [
+            {"content": "alpha", "retrieval": {"relevance_score": 0.9}},
+            {"content": "beta", "retrieval": {"relevance_score": 0.5}},
+        ],
+        "knowledge": [
+            {"content": "alpha", "retrieval": {"relevance_score": 0.8}},
+            {"content": "gamma", "retrieval": {"relevance_score": 0.7}},
+        ],
+    }
+
+    result = coordinator._apply_context_budget(context)
+
+    # The higher-scored "alpha" survives once; the lower-scored duplicate is dropped.
+    assert result["semantic"] == [
+        {"content": "alpha", "retrieval": {"relevance_score": 0.9}}
+    ]
+    # Only two items fit the budget, so "gamma" (0.7) beats "beta" (0.5).
+    assert result["knowledge"] == [
+        {"content": "gamma", "retrieval": {"relevance_score": 0.7}}
+    ]
 
 
 # Verify completed turns update working memory and periodic summaries.
@@ -307,7 +350,11 @@ class RecordingMemory(StubMemoryService):
 
     # Record a semantic retrieval and return a fixed result.
     async def get_semantic_memory(
-        self, user_id: str, query: str, top_k: int = 5
+        self,
+        user_id: str,
+        query: str,
+        top_k: int = 5,
+        query_embedding: list[float] | None = None,
     ) -> list[dict[str, str]]:
         self.semantic_calls += 1
         return [{"content": "semantic result"}]
@@ -330,6 +377,7 @@ class SelectiveCoordinator:
         trace_id: str,
         base_context: dict[str, Any],
         plan_result: tuple[MemoryQueryPlan, bool] | None = None,
+        query_embedding: list[float] | None = None,
     ) -> dict[str, Any]:
         return base_context
 

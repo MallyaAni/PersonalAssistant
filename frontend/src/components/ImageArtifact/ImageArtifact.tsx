@@ -1,9 +1,13 @@
-import { useEffect, useState } from 'react'
-import { Download, RefreshCw, Trash2 } from 'lucide-react'
+import { useEffect, useState, type FormEvent } from 'react'
+import { Download, RefreshCw, Send, Trash2 } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
 
 import {
+  askAboutImage,
   deleteArtifact,
   getArtifactImage,
+  readAnalysisThread,
+  type ImageAnalysisTurn,
   type ImageArtifact as ImageArtifactRecord,
 } from '../../services/api'
 
@@ -22,15 +26,23 @@ const downloadImage = (url: string, artifact: ImageArtifactRecord) => {
   link.click()
 }
 
-// Render, download, retry, and delete one owned generated or uploaded image.
+// Render, download, question, retry, and delete one owned generated or uploaded image.
 const ImageArtifact = ({ artifact, onDeleted, onRetry }: ImageArtifactProps) => {
   const [imageUrl, setImageUrl] = useState('')
   const [loadError, setLoadError] = useState('')
   const [deleteError, setDeleteError] = useState('')
   const [isDeleting, setIsDeleting] = useState(false)
-  const analysis = typeof artifact.metadata.analysis === 'string'
-    ? artifact.metadata.analysis
-    : ''
+  const [thread, setThread] = useState<ImageAnalysisTurn[]>(() => readAnalysisThread(artifact))
+  const [question, setQuestion] = useState('')
+  const [isAsking, setIsAsking] = useState(false)
+  const [askError, setAskError] = useState('')
+
+  // Resynchronize the visible thread whenever a different image is shown.
+  useEffect(() => {
+    setThread(readAnalysisThread(artifact))
+    setQuestion('')
+    setAskError('')
+  }, [artifact.id])
 
   // Fetch private image bytes and release their browser URL after use.
   useEffect(() => {
@@ -76,6 +88,24 @@ const ImageArtifact = ({ artifact, onDeleted, onRetry }: ImageArtifactProps) => 
       setDeleteError(error instanceof Error ? error.message : 'Unable to delete image.')
     } finally {
       setIsDeleting(false)
+    }
+  }
+
+  // Send one followup question about this image and append the grounded answer.
+  const submitQuestion = async (event: FormEvent) => {
+    event.preventDefault()
+    const trimmed = question.trim()
+    if (!trimmed || isAsking) return
+    setIsAsking(true)
+    setAskError('')
+    try {
+      const updated = await askAboutImage(artifact.user_id, artifact.id, trimmed)
+      setThread(readAnalysisThread(updated))
+      setQuestion('')
+    } catch (error) {
+      setAskError(error instanceof Error ? error.message : 'Unable to answer the question.')
+    } finally {
+      setIsAsking(false)
     }
   }
 
@@ -132,12 +162,49 @@ const ImageArtifact = ({ artifact, onDeleted, onRetry }: ImageArtifactProps) => 
         ) : (
           <p role="status" className="animate-pulse text-sm text-[#6e6e73]">Loading image…</p>
         )}
-        {analysis && (
-          <div className="mt-4 rounded-xl bg-[#f5f5f7] p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#86868b]">Gemma analysis</p>
-            <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#333336]">{analysis}</p>
+        {thread.length > 0 && (
+          <div className="mt-4 space-y-3" aria-live="polite">
+            {thread.map((turn, index) => (
+              <div key={index} className="rounded-xl bg-[#f5f5f7] p-4">
+                {turn.prompt && (
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#86868b]">
+                    {turn.prompt}
+                  </p>
+                )}
+                {/* Vision answers use the same Markdown rendering as chat replies. */}
+                <div className="assistant-markdown mt-2 text-sm leading-6 text-[#333336]">
+                  <ReactMarkdown>{turn.answer}</ReactMarkdown>
+                </div>
+              </div>
+            ))}
           </div>
         )}
+        <form onSubmit={submitQuestion} className="mt-4 flex items-end gap-2">
+          <textarea
+            value={question}
+            onChange={event => setQuestion(event.target.value)}
+            onKeyDown={event => {
+              if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault()
+                void submitQuestion(event)
+              }
+            }}
+            rows={1}
+            maxLength={2000}
+            disabled={isAsking}
+            placeholder="Ask about this image…"
+            aria-label="Ask a question about this image"
+            className="min-h-[40px] flex-1 resize-y rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-[#1d1d1f] placeholder:text-[#a1a1a6] focus:border-black/25 focus:outline-none disabled:bg-[#f5f5f7]"
+          />
+          <button
+            type="submit"
+            disabled={isAsking || !question.trim()}
+            className="flex items-center gap-1.5 rounded-full bg-[#1d1d1f] px-4 py-2 text-xs font-medium text-white hover:bg-[#000] disabled:bg-[#c7c7cc]"
+          >
+            <Send size={13} /> {isAsking ? 'Asking…' : 'Ask'}
+          </button>
+        </form>
+        {askError && <p role="alert" className="mt-2 text-sm text-[#c9342f]">{askError}</p>}
         {deleteError && <p role="alert" className="mt-3 text-sm text-[#c9342f]">{deleteError}</p>}
       </div>
     </section>

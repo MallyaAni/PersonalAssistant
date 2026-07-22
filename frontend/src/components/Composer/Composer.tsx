@@ -24,6 +24,7 @@ interface ComposerProps {
   onVisualStarted: (mode: 'generate' | 'analyze') => void;
   onVisualReady: (artifact: ImageArtifact) => void;
   onVisualError: (message: string) => void;
+  onImageMatches: (artifacts: ImageArtifact[]) => void;
 }
 
 // Render the chat input and stream submitted messages.
@@ -40,6 +41,7 @@ const Composer: React.FC<ComposerProps> = ({
   onVisualStarted,
   onVisualReady,
   onVisualError,
+  onImageMatches,
 }) => {
   const [input, setInput] = useState('')
   const [isSending, setIsSending] = useState(false)
@@ -52,7 +54,13 @@ const Composer: React.FC<ComposerProps> = ({
   // Submit the active chat, image-generation, or image-analysis request.
   const handleSend = async () => {
     const prompt = input.trim()
-    if (!prompt || isSending || (mode === 'analyze' && !selectedImage)) return
+    if (!prompt || isSending) return
+    // Analyze mode needs an image. Selecting one is cleared after each send, so
+    // explain the blocked send instead of silently discarding the keypress.
+    if (mode === 'analyze' && !selectedImage) {
+      setVisualError('Choose an image to analyze, or switch to Chat to send text.')
+      return
+    }
     setIsSending(true)
     setVisualError('')
     onSendMessage('user', input)
@@ -92,6 +100,8 @@ const Composer: React.FC<ComposerProps> = ({
         } else if (update.type === 'artifact_ready') {
           onThinkingChange(false)
           onArtifactReady(update.artifact)
+        } else if (update.type === 'image_matches') {
+          onImageMatches(update.artifacts)
         } else {
           onThinkingChange(false)
           onArtifactError(update.artifactId, update.message)

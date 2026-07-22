@@ -24,8 +24,12 @@ class StubMemoryService(MemoryService):
         user_id: str,
         query: str,
         top_k: int = 5,
+        query_embedding: list[float] | None = None,
     ) -> list[dict[str, Any]]:
         return []
+
+    async def embed_query(self, query: str) -> list[float]:
+        return [0.0, 0.0, 0.0]
 
 
 class StubConversationRepository(ConversationRepository):

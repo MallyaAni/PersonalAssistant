@@ -61,9 +61,23 @@ class _VectorStore:
     async def _embed_text(self, text: str) -> list[float]:
         return await asyncio.to_thread(self.embeddings.embed_text, text)
 
+    # Embed several documents in one call so ingestion avoids sequential requests.
+    async def _embed_texts(self, texts: list[str]) -> list[list[float]]:
+        return await asyncio.to_thread(self.embeddings.embed_texts, texts)
+
     # Generate an embedding for a retrieval query.
     async def _embed_query(self, query: str) -> list[float]:
         return await asyncio.to_thread(self.embeddings.embed_query, query)
+
+    # Reuse a precomputed query vector so one turn embeds the query only once.
+    async def _resolve_query_embedding(
+        self,
+        query: str,
+        query_embedding: list[float] | None,
+    ) -> list[float]:
+        if query_embedding is not None:
+            return query_embedding
+        return await self._embed_query(query)
 
     # Describe the model and dimensions used for an embedding.
     def _embedding_metadata(self, embedding: list[float]) -> dict[str, Any]:
@@ -320,8 +334,9 @@ class ProcedureStore(_VectorStore):
         user_id: str,
         query: str,
         top_k: int,
+        query_embedding: list[float] | None = None,
     ) -> list[dict[str, Any]]:
-        embedding = await self._embed_query(query)
+        embedding = await self._resolve_query_embedding(query, query_embedding)
         distance = ProcedureMemory.embedding.cosine_distance(embedding)
         rows = (
             await self.session.execute(
@@ -419,8 +434,9 @@ class EntityStore(_VectorStore):
         user_id: str,
         query: str,
         top_k: int,
+        query_embedding: list[float] | None = None,
     ) -> list[dict[str, Any]]:
-        embedding = await self._embed_query(query)
+        embedding = await self._resolve_query_embedding(query, query_embedding)
         distance = MemoryEntity.embedding.cosine_distance(embedding)
         rows = (
             await self.session.execute(
@@ -562,7 +578,7 @@ class KnowledgeStore(_VectorStore):
         self.session.add(document)
         await self.session.flush()
         chunks = self._chunks(content)
-        embeddings = [await self._embed_text(chunk) for chunk in chunks]
+        embeddings = await self._embed_texts(chunks)
         for position, (chunk, embedding) in enumerate(
             zip(chunks, embeddings, strict=True)
         ):
@@ -606,8 +622,9 @@ class KnowledgeStore(_VectorStore):
         user_id: str,
         query: str,
         top_k: int,
+        query_embedding: list[float] | None = None,
     ) -> list[dict[str, Any]]:
-        embedding = await self._embed_query(query)
+        embedding = await self._resolve_query_embedding(query, query_embedding)
         distance = KnowledgeChunk.embedding.cosine_distance(embedding)
         rows = (
             await self.session.execute(
@@ -720,8 +737,9 @@ class SummaryStore(_VectorStore):
         user_id: str,
         query: str,
         top_k: int,
+        query_embedding: list[float] | None = None,
     ) -> list[dict[str, Any]]:
-        embedding = await self._embed_query(query)
+        embedding = await self._resolve_query_embedding(query, query_embedding)
         distance = ConversationSummary.embedding.cosine_distance(embedding)
         rows = (
             await self.session.execute(
@@ -749,6 +767,7 @@ class AgentMemoryManager:
         embedding_version: str,
     ) -> None:
         self.session = session
+        self.embeddings = embeddings
         args = (session, embeddings, retrieval_policy, embedding_version)
         self.semantic_cache = SemanticCacheStore(*args)
         self.working = WorkingMemoryStore(session)
@@ -756,6 +775,10 @@ class AgentMemoryManager:
         self.entities = EntityStore(*args)
         self.knowledge = KnowledgeStore(*args)
         self.summaries = SummaryStore(*args)
+
+    # Embed one retrieval query so a single turn can reuse the vector everywhere.
+    async def embed_query(self, query: str) -> list[float]:
+        return await asyncio.to_thread(self.embeddings.embed_query, query)
 
     # Count each agent-memory record type for one user.
     async def snapshot(self, user_id: str) -> dict[str, Any]:

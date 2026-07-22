@@ -13,3 +13,8 @@ class EmbeddingProvider(ABC):
     def embed_query(self, query: str) -> list[float]:
         """Convert a search query into a vector."""
         ...
+
+    # Embed several documents in one call, preserving input order.
+    def embed_texts(self, texts: list[str]) -> list[list[float]]:
+        """Embed a batch of documents; default falls back to sequential calls."""
+        return [self.embed_text(text) for text in texts]

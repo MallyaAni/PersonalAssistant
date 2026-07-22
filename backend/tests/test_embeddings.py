@@ -44,7 +44,7 @@ def test_lm_studio_embedding_provider_uses_model_task_prefix_and_auth():
             "authorization": "Bearer test-token",
             "payload": {
                 "model": "text-embedding-nomic-embed-text-v1.5",
-                "input": "search_document: The user likes jasmine tea.",
+                "input": ["search_document: The user likes jasmine tea."],
             },
         },
         {
@@ -52,10 +52,43 @@ def test_lm_studio_embedding_provider_uses_model_task_prefix_and_auth():
             "authorization": "Bearer test-token",
             "payload": {
                 "model": "text-embedding-nomic-embed-text-v1.5",
-                "input": "search_query: preferred drink",
+                "input": ["search_query: preferred drink"],
             },
         },
     ]
+
+
+# Verify a batch embeds every document in one request and preserves input order.
+def test_lm_studio_embedding_provider_batches_documents_in_order() -> None:
+    observed: list[dict[str, object]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        payload = json.loads(request.content)
+        observed.append(payload)
+        rows = [
+            {"index": position, "embedding": [float(position), 0.0]}
+            for position, _ in enumerate(payload["input"])
+        ]
+        # Return the rows out of order to prove index-based reassembly.
+        return httpx.Response(200, json={"data": list(reversed(rows))})
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        provider = LMStudioEmbeddingProvider(
+            base_url="http://127.0.0.1:1234",
+            model="test-model",
+            dimension=2,
+            client=client,
+        )
+        vectors = provider.embed_texts(["first", "second", "third"])
+
+    assert vectors == [[0.0, 0.0], [1.0, 0.0], [2.0, 0.0]]
+    assert len(observed) == 1
+    assert observed[0]["input"] == [
+        "search_document: first",
+        "search_document: second",
+        "search_document: third",
+    ]
+    assert provider.embed_texts([]) == []
 
 
 def test_lm_studio_embedding_provider_rejects_dimension_mismatch():

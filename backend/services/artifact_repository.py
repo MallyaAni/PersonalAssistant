@@ -5,11 +5,11 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.artifacts.types import DiagramSpecification, StoredBinary
-from backend.core.interfaces import BinaryArtifactRepository
+from backend.core.interfaces import ArtifactEmbeddingStore, BinaryArtifactRepository
 from backend.models.artifact import VisualArtifact
 
 
-class SQLAlchemyArtifactRepository(BinaryArtifactRepository):
+class SQLAlchemyArtifactRepository(BinaryArtifactRepository, ArtifactEmbeddingStore):
     # Bind artifact persistence to the request's asynchronous transaction session.
     def __init__(self, session: AsyncSession):
         self.session = session
@@ -158,6 +158,47 @@ class SQLAlchemyArtifactRepository(BinaryArtifactRepository):
         await self.session.commit()
         await self.session.refresh(artifact)
         return artifact.to_dict()
+
+    # Attach one aligned image vector to an owned artifact.
+    async def set_embedding(
+        self,
+        artifact_id: str,
+        user_id: str,
+        embedding: list[float],
+        model: str,
+    ) -> None:
+        artifact = await self._owned_artifact(artifact_id, user_id)
+        if artifact is None:
+            raise LookupError("Artifact was not found")
+        artifact.embedding = embedding
+        artifact.embedding_model = model
+        artifact.embedding_dimension = len(embedding)
+        await self.session.commit()
+
+    # Rank one user's embedded images against a query vector by cosine distance.
+    async def search_by_embedding(
+        self,
+        user_id: str,
+        embedding: list[float],
+        limit: int,
+        max_distance: float,
+    ) -> list[dict[str, Any]]:
+        distance = VisualArtifact.embedding.cosine_distance(embedding)
+        result = await self.session.execute(
+            select(VisualArtifact, distance.label("distance"))
+            .where(
+                VisualArtifact.user_id == user_id,
+                VisualArtifact.embedding.is_not(None),
+                VisualArtifact.status == "ready",
+                distance <= max_distance,
+            )
+            .order_by(distance)
+            .limit(limit)
+        )
+        return [
+            {**artifact.to_dict(), "distance": float(value)}
+            for artifact, value in result.all()
+        ]
 
     # List artifacts owned by one user conversation in creation order.
     async def list_for_conversation(

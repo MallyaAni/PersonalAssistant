@@ -5,6 +5,7 @@ from typing import Annotated, Any, Literal
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from backend.config.settings import settings
 from backend.core.auth import authorize_path_user
 from backend.core.dependencies import (
     DependencyAgentMemoryManager,
@@ -144,7 +145,9 @@ async def get_memory_snapshot(
     user_id: UserId,
     service: DependencyMemoryService,
 ) -> dict[str, Any]:
-    return await service.get_memory_snapshot(user_id)
+    return await service.get_memory_snapshot(
+        user_id, limit=settings.MEMORY_SNAPSHOT_MAX_ITEMS
+    )
 
 
 # Export all personal, agent, and tool memory for one user.

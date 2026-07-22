@@ -5,13 +5,15 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: anios_db
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-anios_db}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres", "-d", "anios_db"]
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$${POSTGRES_USER:-postgres}" -d "$${POSTGRES_DB:-anios_db}"
       interval: 5s
       timeout: 5s
       retries: 5
@@ -28,13 +30,25 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=anios_db
+      # Credentials come from .env; the container-only values below stay literal
+      # because .env holds host-oriented ones (POSTGRES_HOST=localhost).
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_DB=${POSTGRES_DB:-anios_db}
       - POSTGRES_HOST=db
-      - SECRET_KEY=your-super-secret-key-here
+      # No default: a missing secret must fail the run, never fall back to a
+      # committed placeholder that would sign real auth tokens.
+      - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (see .env.example)}
+      # LM Studio runs on the host; reach it from inside the container.
+      - LLM_BASE_URL=http://host.docker.internal:1234
+      # Points at the host ComfyUI install (E:/AI/ComfyUI), started with
+      # --listen 0.0.0.0 so the container can reach it. To use the sibling
+      # `comfyui` service instead, run `--profile comfyui` and set this to
+      # http://comfyui:8188 (that GPU image build needs ~10-20 GB free on C:).
       - IMAGE_PROVIDER_BASE_URL=http://host.docker.internal:8188
       - ARTIFACT_STORAGE_ROOT=/app/data/artifacts
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - artifactdata:/app/data/artifacts
     depends_on:
@@ -42,6 +56,42 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: anios_frontend
+    ports:
+      - "5173:5173"
+    environment:
+      # Poll the bind-mounted source so hot reload fires across the Docker mount.
+      - VITE_USE_POLLING=true
+    volumes:
+      - ./frontend:/app
+      # Keep the image's installed node_modules instead of the host's (if any).
+      - /app/node_modules
+    depends_on:
+      - backend
+
+  comfyui:
+    build:
+      context: ./docker/comfyui
+    container_name: anios_comfyui
+    # Opt-in: heavy GPU image build. Start with `docker compose --profile comfyui up`.
+    profiles: ["comfyui"]
+    ports:
+      - "8188:8188"
+    volumes:
+      # Bind-mount your existing ComfyUI install (code, custom nodes, and models).
+      - ${COMFYUI_HOST_PATH:-E:/AI/ComfyUI}:/comfyui
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
 
   memory-maintenance:
     build: .
@@ -55,11 +105,11 @@ services:
       - --interval-seconds
       - "3600"
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=anios_db
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_DB=${POSTGRES_DB:-anios_db}
       - POSTGRES_HOST=db
-      - SECRET_KEY=your-super-secret-key-here
+      - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (see .env.example)}
     depends_on:
       db:
         condition: service_healthy

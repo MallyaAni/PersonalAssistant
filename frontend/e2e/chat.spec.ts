@@ -1544,6 +1544,89 @@ test('generates, restores, and deletes an owned image artifact', async ({ page }
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
+// Verify a followup question about a generated image threads a grounded answer.
+test('asks a followup question about a generated image and threads the answer', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const artifactId = '78787878-7878-4878-8878-787878787878'
+  const prompt = 'Create deterministic cobalt origami whale'
+  const question = 'What is in this image?'
+  const answer = 'The image shows a single cobalt origami whale.'
+  let conversationId = ''
+  let artifact: ReturnType<typeof imageArtifactRecord> | null = null
+
+  await page.route('http://localhost:8000/api/v1/images/generate', async route => {
+    const payload = route.request().postDataJSON()
+    conversationId = String(payload.conversation_id)
+    artifact = imageArtifactRecord('generated_image', artifactId, conversationId, {
+      seed: 42,
+      steps: 28,
+    })
+    await route.fulfill({
+      status: 201,
+      contentType: 'application/json',
+      body: JSON.stringify(artifact),
+    })
+  })
+  await page.route(
+    `http://localhost:8000/api/v1/artifacts/ani.mallya/${artifactId}/content`,
+    route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
+  )
+  await page.route('http://localhost:8000/api/v1/conversations/ani.mallya/**', route =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ conversation_id: conversationId, turns: [], artifacts: [] }),
+    }),
+  )
+
+  let askBody: Record<string, unknown> = {}
+  await page.route(
+    `http://localhost:8000/api/v1/vision/artifacts/${artifactId}/ask`,
+    async route => {
+      askBody = route.request().postDataJSON()
+      const updated = imageArtifactRecord('generated_image', artifactId, conversationId, {
+        seed: 42,
+        steps: 28,
+        analysis_status: 'ready',
+        analysis: answer,
+        analysis_model: 'google/gemma-4-12b',
+        analysis_thread: [
+          { prompt: String(askBody.prompt), answer, model: 'google/gemma-4-12b' },
+        ],
+      })
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ artifact: updated, analysis: answer, model: 'google/gemma-4-12b' }),
+      })
+    },
+  )
+
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Create image', exact: true }).click()
+  const textarea = page.getByLabel('Message AniOS')
+  await textarea.fill(prompt)
+  await page.getByRole('button', { name: 'Generate image' }).click()
+
+  const imageCard = page.getByLabel('Image: Generated image')
+  await expect(imageCard).toBeVisible()
+  await expect(imageCard.getByAltText('Generated visual result')).toBeVisible()
+
+  const askInput = imageCard.getByLabel('Ask a question about this image')
+  await askInput.fill(question)
+  const askResponse = page.waitForResponse(
+    `http://localhost:8000/api/v1/vision/artifacts/${artifactId}/ask`,
+  )
+  await imageCard.getByRole('button', { name: 'Ask' }).click()
+  expect((await askResponse).status()).toBe(200)
+
+  await expect(imageCard.getByText(answer, { exact: true })).toBeVisible()
+  await expect(imageCard.getByText(question, { exact: true })).toBeVisible()
+  await expect(askInput).toHaveValue('')
+  expect(askBody).toMatchObject({ user_id: 'ani.mallya', prompt: question })
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
 // Verify an uploaded image reaches the VLM and displays its grounded analysis.
 test('uploads and analyzes an image with visible progress and result', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
