@@ -238,9 +238,31 @@ Server metadata is untrusted. Three properties follow:
   should do is attempting tool poisoning, and indexing it would place that text
   in front of the model during discovery.
 
-Discovery is not authorization. A descriptor is a hint for narrowing
-candidates; invocation is `PLANNED` and must re-resolve the selected tool
-against the live catalogue, schema and permissions before any call.
+Discovery is not authorization. A descriptor narrows candidates; the call
+itself passes through gates that treat storage as a hint and the live server as
+the truth. Every invocation, in order:
+
+1. Resolves the server from local configuration, never from the request.
+2. Requires explicit confirmation unless the operator classified the server
+   `trusted` or `read_only`. A wrong read is recoverable; a wrong write is not.
+3. Re-reads the live catalogue and refuses a tool that is no longer offered, so
+   a stale vector cannot authorize a call.
+4. Compares the live fingerprint with the descriptor that was selected and
+   refuses a changed contract.
+5. Re-inspects the live description, because a server may have rewritten it
+   since indexing.
+6. Validates arguments against the declared schema. A wrong tool usually cannot
+   accept the right tool's arguments, so this is the cheapest signal that
+   similarity chose badly.
+7. Screens every string argument through `OutboundPrivacyPolicy`, the same gate
+   web search uses.
+
+Results are bounded and inspected. Instruction-shaped output is flagged and
+rendered to the model as quoted, clearly attributed data with an explicit note
+not to follow it. Verified against a live server: a valid call returns, while
+unknown arguments, wrong types, a credential-bearing argument, a stale
+fingerprint, a withdrawn tool and an unconfirmed consequential server are each
+refused before any request reaches it.
 
 ## Backend boundaries
 

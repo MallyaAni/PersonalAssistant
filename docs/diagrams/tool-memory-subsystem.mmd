@@ -6,6 +6,16 @@ flowchart TB
     Poison -->|no| Service
     Discovery -. fingerprint covers description<br/>to detect rug pulls .-> Service
 
+    Invoke([Explicit tool call]) --> Gates{Invocation gates}
+    Gates -->|server from local config| G1[Confirmation unless<br/>trusted or read_only]
+    G1 --> G2[Re-read live catalogue<br/>refuse withdrawn tool]
+    G2 --> G3[Fingerprint match<br/>refuse changed contract]
+    G3 --> G4[Re-inspect description]
+    G4 --> G5[Validate arguments<br/>against declared schema]
+    G5 --> G6[Screen arguments<br/>OutboundPrivacyPolicy]
+    G6 --> Server[[MCP server]]
+    Server --> Bounded[Bounded result, inspected,<br/>quoted as untrusted data]
+
     Caller([Trusted local caller]) --> ToolAPI[Tool-memory API<br/>/memory/user/tools]
     ToolAPI --> Ownership[Optional signed-user ownership]
     Ownership --> Schema[Pydantic allowlists and size limits]

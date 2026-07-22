@@ -18,6 +18,9 @@ from backend.database.session import get_db
 from backend.embeddings.base import EmbeddingProvider
 from backend.embeddings.lm_studio import LMStudioEmbeddingProvider
 from backend.embeddings.nomic_vision import NomicVisionEmbeddingProvider
+from backend.mcp.client import StdioMCPToolLister
+from backend.mcp.invocation import StdioMCPToolInvoker
+from backend.mcp.types import MCPServerConfig
 from backend.memory.coordinator import MemoryCoordinatorAgent
 from backend.memory.retrieval import SemanticRetrievalPolicy
 from backend.search.cascade import CascadingSearchRouter
@@ -29,6 +32,7 @@ from backend.services.artifact_repository import SQLAlchemyArtifactRepository
 from backend.services.conversation_service import ConversationService
 from backend.services.diagram_artifact_service import DiagramArtifactService
 from backend.services.image_artifact_service import ImageArtifactService
+from backend.services.mcp_invocation_service import MCPInvocationService
 from backend.services.memory_operations_service import MemoryOperationsService
 from backend.services.memory_reembedding_service import MemoryReembeddingService
 from backend.services.memory_retention_service import MemoryRetentionService
@@ -66,6 +70,49 @@ def get_search_provider() -> SearchProvider:
         search_depth=settings.SEARCH_DEPTH,
     )
 
+
+# Parse configured MCP servers once. Trust is declared here by the operator and
+# is never taken from a server describing itself.
+@lru_cache(maxsize=1)
+def get_mcp_servers() -> tuple[MCPServerConfig, ...]:
+    import json
+
+    try:
+        raw = json.loads(settings.MCP_SERVERS_JSON or "[]")
+    except ValueError:
+        return ()
+    servers = []
+    for entry in raw if isinstance(raw, list) else []:
+        if not isinstance(entry, dict) or not entry.get("server_id"):
+            continue
+        if not entry.get("command"):
+            continue
+        servers.append(
+            MCPServerConfig(
+                server_id=str(entry["server_id"]),
+                command=str(entry["command"]),
+                args=tuple(str(a) for a in entry.get("args", [])),
+                risk_classification=str(entry.get("risk_classification", "untrusted")),
+                enabled=bool(entry.get("enabled", True)),
+            )
+        )
+    return tuple(servers)
+
+
+# Reuse one invocation service; every call re-reads the live catalogue anyway.
+@lru_cache(maxsize=1)
+def get_mcp_invocation_service() -> MCPInvocationService:
+    return MCPInvocationService(
+        StdioMCPToolInvoker(timeout_seconds=settings.MCP_LIST_TIMEOUT_SECONDS),
+        StdioMCPToolLister(timeout_seconds=settings.MCP_LIST_TIMEOUT_SECONDS),
+        get_mcp_servers(),
+    )
+
+
+MCPInvocationDependency = Annotated[
+    MCPInvocationService,
+    Depends(get_mcp_invocation_service),
+]
 
 DbDependency = Annotated[AsyncSession, Depends(get_db)]
 EmbeddingDependency = Annotated[
