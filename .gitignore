@@ -31,3 +31,6 @@ Thumbs.db
 # Runtime output
 *.log
 data/
+
+# Editable-install build metadata
+*.egg-info/
