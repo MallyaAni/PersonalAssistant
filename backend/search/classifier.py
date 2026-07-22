@@ -46,8 +46,6 @@ def _build_messages(query: str) -> list[dict[str, str]]:
     return messages
 
 
-
-
 class QueryFreshnessClassifier(ABC):
     """Judges whether one question depends on post-training information."""
 
