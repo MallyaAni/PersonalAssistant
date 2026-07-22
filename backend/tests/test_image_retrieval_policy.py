@@ -1,6 +1,6 @@
 import pytest
 
-from backend.search.image_retrieval import ImageRetrievalPolicy
+from backend.artifacts.image_retrieval import ImageRetrievalPolicy
 
 
 def _hit(distance: float, name: str = "a") -> dict[str, object]:

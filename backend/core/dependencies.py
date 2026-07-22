@@ -8,6 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.agents.diagram import DiagramAgent
 from backend.artifacts.diagram import LLMDiagramProvider
 from backend.artifacts.image import ComfyUIImageProvider
+from backend.artifacts.image_retrieval import ImageRetrievalPolicy
+from backend.artifacts.image_routing import ImageRecallPolicy
 from backend.artifacts.storage import LocalBinaryArtifactStore
 from backend.config.settings import settings
 from backend.core.interfaces import SearchProvider, VisionEmbeddingProvider
@@ -20,8 +22,6 @@ from backend.memory.coordinator import MemoryCoordinatorAgent
 from backend.memory.retrieval import SemanticRetrievalPolicy
 from backend.search.cascade import CascadingSearchRouter
 from backend.search.classifier import LMStudioFreshnessClassifier
-from backend.search.image_retrieval import ImageRetrievalPolicy
-from backend.search.image_routing import ImageRecallPolicy
 from backend.search.routing import SearchRoutingPolicy
 from backend.search.tavily import TavilySearchProvider
 from backend.services.agent_memory_manager import AgentMemoryManager

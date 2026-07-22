@@ -10,6 +10,9 @@ from anyio import CancelScope
 from backend.agents.graph import build_assistant_graph
 from backend.agents.state import AgentState
 from backend.artifacts.diagram import is_diagram_request
+from backend.artifacts.image_retrieval import ImageRetrievalPolicy
+from backend.artifacts.image_routing import ImageRecallPolicy
+from backend.core.egress import OutboundPrivacyPolicy
 from backend.core.interfaces import (
     ArtifactEmbeddingStore,
     ConversationRepository,
@@ -28,9 +31,6 @@ from backend.memory.proposals import (
 )
 from backend.models.schemas import ChatStreamEvent
 from backend.search.cascade import CascadingSearchRouter
-from backend.search.image_retrieval import ImageRetrievalPolicy
-from backend.search.image_routing import ImageRecallPolicy
-from backend.search.privacy import SearchPrivacyPolicy
 from backend.services.diagram_artifact_service import DiagramArtifactService
 
 logger = logging.getLogger(__name__)
@@ -106,7 +106,7 @@ class ConversationService:
         image_search: ArtifactEmbeddingStore | None = None,
         image_search_limit: int = 5,
         image_retrieval: ImageRetrievalPolicy | None = None,
-        search_privacy: SearchPrivacyPolicy | None = None,
+        search_privacy: OutboundPrivacyPolicy | None = None,
     ):
         self.memory = memory
         self.assistant_graph = build_assistant_graph(llm)
@@ -122,7 +122,7 @@ class ConversationService:
         self.image_search_limit = image_search_limit
         # Screening is not optional: a missing policy would mean raw queries
         # leaving the machine, so one is always constructed.
-        self.search_privacy = search_privacy or SearchPrivacyPolicy()
+        self.search_privacy = search_privacy or OutboundPrivacyPolicy()
         self.image_retrieval = image_retrieval or ImageRetrievalPolicy(
             max_distance=0.96,
             min_margin=0.015,

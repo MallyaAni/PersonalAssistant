@@ -1,6 +1,6 @@
 import pytest
 
-from backend.search.image_routing import ImageRecallPolicy
+from backend.artifacts.image_routing import ImageRecallPolicy
 
 
 @pytest.fixture

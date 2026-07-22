@@ -3,6 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
+from backend.artifacts.image_retrieval import ImageRetrievalPolicy
 from backend.config.settings import settings
 from backend.core.auth import IdentityDependency, authorize_user
 from backend.core.dependencies import (
@@ -10,7 +11,6 @@ from backend.core.dependencies import (
     MemoryDependency,
     get_artifact_repository,
 )
-from backend.search.image_retrieval import ImageRetrievalPolicy
 from backend.services.artifact_repository import SQLAlchemyArtifactRepository
 
 router = APIRouter(prefix="/artifacts/{user_id}", tags=["artifacts"])

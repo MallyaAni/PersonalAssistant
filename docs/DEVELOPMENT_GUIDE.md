@@ -74,6 +74,19 @@ Use this ownership map when selecting affected views:
 
 Internal refactors, bug fixes, styling, tests, and field-level implementation details do not trigger a diagram edit when those architectural relationships remain unchanged. The synchronization check still validates every registered pair, while visual inspection may stay limited to diagrams whose source changed.
 
+## Module boundaries
+
+`backend/mcp` owns the protocol, `backend/search` owns web search only,
+`backend/artifacts` owns visual artifacts including image retrieval, and
+`backend/core/egress` owns screening of anything leaving the machine.
+Orchestration that composes them lives in `backend/services`.
+
+`backend/tests/test_architecture_boundaries.py` enforces this: it fails when a
+lower layer imports the API or a service, when a module unrelated to web search
+appears under `search`, or when a second outbound-screening policy is defined
+anywhere. Run it like any other test; a refactor that crosses a boundary will
+fail there before review.
+
 ## Environment configuration
 
 The backend reads process environment variables and an optional root `.env` file. Copy the tracked `.env.example` to `.env` and replace its local-development secret; `.env` is ignored by Git.

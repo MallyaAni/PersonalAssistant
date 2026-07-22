@@ -90,8 +90,12 @@ class SanitizedQuery:
         return self.minimized
 
 
-class SearchPrivacyPolicy:
-    """Screens and minimizes a query before any outbound search request.
+class OutboundPrivacyPolicy:
+    """Screens and minimizes text before it leaves the machine.
+
+    Applies to any outbound request, not only web search: a tool argument sent
+    to a third-party MCP server carries the same disclosure risk as a search
+    query, and both must pass the same gate.
 
     Two outcomes are possible. A query containing a secret or an account
     identifier is blocked outright: no rewrite makes an API key safe to send.

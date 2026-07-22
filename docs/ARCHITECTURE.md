@@ -183,6 +183,31 @@ list on failure, so the interface retracts its indicator instead of spinning.
 The browser renders the indicator and then the cited sources beneath the answer,
 so a reader can check what grounded it.
 
+### Module boundaries
+
+Packages are separated by what they own rather than by when they were written,
+and the separation is enforced by tests rather than convention:
+
+| Package | Owns |
+| --- | --- |
+| `backend/mcp` | The protocol: server configuration, stdio transport, tool metadata, and inspection of untrusted server text |
+| `backend/search` | Web search only: the provider, routing patterns, the classifier cascade |
+| `backend/artifacts` | Visual artifacts, including image recall routing and margin-bounded image retrieval |
+| `backend/core/egress` | Screening any text before it leaves the machine |
+| `backend/services` | Orchestration that composes the layers above |
+
+`backend/mcp` imports nothing from `backend/services` or `backend/api`, so the
+transport can be replaced or exercised without the application around it.
+
+Two placements are deliberate. Image recall and image retrieval sit with the
+artifacts they serve rather than under `search`, where "search" had come to
+mean web search, image retrieval and outbound screening at once. The screening
+policy sits in `core/egress` because it governs every outbound request: a tool
+argument sent to a third-party MCP server carries the same disclosure risk as a
+search query, and a second implementation is how the first gets bypassed.
+`test_architecture_boundaries.py` fails on a crossed boundary, a stray module
+under `search`, or a duplicate screening policy.
+
 ### MCP tool discovery
 
 Configured MCP servers are listed over stdio and their live catalogues indexed

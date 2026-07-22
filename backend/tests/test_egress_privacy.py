@@ -1,11 +1,11 @@
 import pytest
 
-from backend.search.privacy import SearchPrivacyPolicy
+from backend.core.egress import OutboundPrivacyPolicy
 
 
 @pytest.fixture
-def policy() -> SearchPrivacyPolicy:
-    return SearchPrivacyPolicy()
+def policy() -> OutboundPrivacyPolicy:
+    return OutboundPrivacyPolicy()
 
 
 @pytest.mark.parametrize(
