@@ -12,7 +12,7 @@ flowchart TB
     DiagramProvider --> DiagramGemma[LM Studio Gemma]
     Artifact --> SSE
 
-    Route -->|no| Retrieval{Deterministic retrieval routing<br/>application owned, model never selects}
+    Route -->|no| Retrieval{Retrieval routing cascade<br/>free patterns, then bounded classifier<br/>application owned, model never selects}
     Retrieval -->|volatile-shape signal| WebSearch[TavilySearchProvider<br/>relevance floor, untrusted results]
     Retrieval -->|image recall signal| ImageSearch[Aligned image vector search<br/>ceiling plus best-to-runner-up margin]
     WebSearch --> Context

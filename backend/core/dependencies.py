@@ -18,6 +18,8 @@ from backend.embeddings.lm_studio import LMStudioEmbeddingProvider
 from backend.embeddings.nomic_vision import NomicVisionEmbeddingProvider
 from backend.memory.coordinator import MemoryCoordinatorAgent
 from backend.memory.retrieval import SemanticRetrievalPolicy
+from backend.search.cascade import CascadingSearchRouter
+from backend.search.classifier import LMStudioFreshnessClassifier
 from backend.search.image_retrieval import ImageRetrievalPolicy
 from backend.search.image_routing import ImageRecallPolicy
 from backend.search.routing import SearchRoutingPolicy
@@ -420,15 +422,28 @@ ImageRecallDependency = Annotated[
 ]
 
 
-# Reuse one deterministic routing policy; the model never selects this path.
+# Compose free deterministic patterns with a bounded classifier fallback. The
+# classifier returns a judgement about the question, never a tool call, so the
+# application keeps ownership of routing.
 @lru_cache(maxsize=1)
-def get_search_routing_policy() -> SearchRoutingPolicy:
-    return SearchRoutingPolicy(current_year=datetime.now(UTC).year)
+def get_search_router() -> CascadingSearchRouter:
+    classifier = (
+        LMStudioFreshnessClassifier(
+            get_llm_client(),
+            max_tokens=settings.SEARCH_CLASSIFIER_MAX_TOKENS,
+        )
+        if settings.SEARCH_CLASSIFIER_ENABLED
+        else None
+    )
+    return CascadingSearchRouter(
+        patterns=SearchRoutingPolicy(current_year=datetime.now(UTC).year),
+        classifier=classifier,
+    )
 
 
 SearchRoutingDependency = Annotated[
-    SearchRoutingPolicy,
-    Depends(get_search_routing_policy),
+    CascadingSearchRouter,
+    Depends(get_search_router),
 ]
 
 

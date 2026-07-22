@@ -329,6 +329,13 @@ for the measured bands. Re-measure both after the stored library grows
 substantially, using a labelled set of visually distinct images plus deliberate
 distractor queries that should return nothing.
 
+The routing classifier runs on the configured chat model by default
+(`SEARCH_CLASSIFIER_ENABLED`, `SEARCH_CLASSIFIER_MAX_TOKENS`). It is a
+`QueryFreshnessClassifier` behind a contract, so pointing it at a smaller,
+faster local model is a constructor change rather than a rewrite; a sub-billion
+parameter model is ample for a one-word judgement and frees the chat model.
+Set `SEARCH_CLASSIFIER_ENABLED=false` to fall back to patterns alone.
+
 Web search is opt-in in the same way: set `SEARCH_API_KEY` to a Tavily key to
 enable it, and leave it empty to disable search entirely. Routing still runs and
 logs its decision, so `reason=` lines appear in the backend log before any query

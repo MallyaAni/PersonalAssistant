@@ -26,9 +26,9 @@ from backend.memory.proposals import (
     propose_response_style,
 )
 from backend.models.schemas import ChatStreamEvent
+from backend.search.cascade import CascadingSearchRouter
 from backend.search.image_retrieval import ImageRetrievalPolicy
 from backend.search.image_routing import ImageRecallPolicy
-from backend.search.routing import SearchRoutingPolicy
 from backend.services.diagram_artifact_service import DiagramArtifactService
 
 logger = logging.getLogger(__name__)
@@ -84,7 +84,7 @@ class ConversationService:
         memory_coordinator: MemoryCoordinatorAgent | None = None,
         diagram_artifacts: DiagramArtifactService | None = None,
         search: SearchProvider | None = None,
-        search_routing: SearchRoutingPolicy | None = None,
+        search_routing: CascadingSearchRouter | None = None,
         image_recall: ImageRecallPolicy | None = None,
         image_search: ArtifactEmbeddingStore | None = None,
         image_search_limit: int = 5,
@@ -153,7 +153,7 @@ class ConversationService:
         trace_id: str,
         query_embedding: list[float] | None,
     ) -> AsyncGenerator[ChatStreamEvent, None]:
-        if self._should_search(query):
+        if await self._should_search(query, trace_id):
             yield {"event": "search_started", "data": {"query": query}}
             search_results = await self._load_search_context(query, trace_id)
             if search_results:
@@ -190,13 +190,22 @@ class ConversationService:
             ]
             yield {"event": "image_matches", "data": {"artifacts": image_matches}}
 
-    # Report whether this turn will search, without issuing the query.
-    def _should_search(self, query: str) -> bool:
+    # Report whether this turn will search, without issuing the query. The
+    # decision may consult a bounded classifier, so it is awaited once and the
+    # result reused rather than recomputed for the provider call.
+    async def _should_search(self, query: str, trace_id: str) -> bool:
         if self.search is None or self.search_routing is None:
             return False
         if not self.search.is_enabled():
             return False
-        return self.search_routing.decide(query).should_search
+        decision = await self.search_routing.decide(query)
+        if decision.should_search:
+            logger.info(
+                "Trace %s routing to web search (reason=%s)",
+                trace_id,
+                decision.reason,
+            )
+        return decision.should_search
 
     # Fetch live results only when the deterministic policy asks for them.
     async def _load_search_context(
@@ -204,17 +213,8 @@ class ConversationService:
         query: str,
         trace_id: str,
     ) -> list[dict[str, Any]]:
-        if self.search is None or self.search_routing is None:
+        if self.search is None:
             return []
-        if not self.search.is_enabled():
-            return []
-        decision = self.search_routing.decide(query)
-        if not decision.should_search:
-            return []
-
-        logger.info(
-            "Trace %s routing to web search (reason=%s)", trace_id, decision.reason
-        )
         try:
             found = await self.search.search(query)
         except Exception:

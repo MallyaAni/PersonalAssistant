@@ -116,7 +116,25 @@ stale. `ImageRecallPolicy` performs the equivalent routing for image recall and
 explicitly refuses creation requests. Search results and image descriptions both
 enter the prompt as untrusted quoted data.
 
-Routing matches volatile *shapes*, not just temporal vocabulary. An earlier
+Routing is a cascade. Deterministic patterns answer the obvious cases for free
+and cannot drift; whatever they do not match is referred to a bounded local
+classifier that returns a single word. The classifier judges the *question*, not
+what to do about it, so the application keeps ownership of routing and a
+confused answer can at worst cause one unnecessary search. An unavailable
+classifier leaves the deterministic answer standing rather than turning every
+turn into a search.
+
+Measured against FreshQA, which labels 600 questions fast-changing,
+slow-changing or never-changing, patterns alone recalled 45.6% of questions
+whose answers move, because volatility is rarely phrased explicitly: "When did
+OpenAI release GPT-5?" needs live data and contains no temporal marker. The
+cascade raises that to 91.7% and overall accuracy from 62.3% to 82.5%, at the
+cost of specificity falling to 61.1%. That trade is deliberate: an unnecessary
+search costs a second, while a missed one produces a confident stale answer.
+Few-shot examples in the classifier prompt carry most of the gain - the same
+cascade scored only 59.5% recall zero-shot.
+
+Pattern coverage matches volatile *shapes*, not just temporal vocabulary. An earlier
 pattern set keyed on words like "latest" and "current" and reached only 11 of 18
 volatile queries in a 30-query labelled set: "who is the CEO of OpenAI",
 "how much does a Tesla Model 3 cost" and "is it raining in Seattle" all fell

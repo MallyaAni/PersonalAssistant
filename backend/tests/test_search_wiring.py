@@ -3,6 +3,7 @@ from collections.abc import Iterator
 import pytest
 
 from backend.core.llm import LLMClient
+from backend.search.cascade import CascadingSearchRouter
 from backend.search.routing import SearchRoutingPolicy
 from backend.search.types import SearchResult, SearchResults
 from backend.services.conversation_service import ConversationService
@@ -88,7 +89,9 @@ def _service(search: RecordingSearch, llm: RecordingLLM) -> ConversationService:
         repository=StubConversationRepository(),
         tracer=StubTracer(),
         search=search,  # type: ignore[arg-type]
-        search_routing=SearchRoutingPolicy(current_year=2026),
+        search_routing=CascadingSearchRouter(
+            patterns=SearchRoutingPolicy(current_year=2026),
+        ),
     )
 
 

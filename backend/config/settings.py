@@ -110,6 +110,13 @@ class Settings(BaseSettings):
     # nothing, because the prompt tells the model to prefer web results over its
     # own knowledge for time-sensitive facts.
     SEARCH_MIN_SCORE: float = Field(default=0.4, ge=0, le=1)
+    # Deterministic patterns recall only 45.6% of FreshQA questions whose
+    # answers change, because volatility is rarely phrased explicitly. A bounded
+    # local classifier judges whatever the patterns do not match, raising recall
+    # to 91.7% and accuracy to 82.5%. It costs one short model call on unmatched
+    # queries only; disable it to fall back to patterns alone.
+    SEARCH_CLASSIFIER_ENABLED: bool = True
+    SEARCH_CLASSIFIER_MAX_TOKENS: int = Field(default=4, ge=1, le=16)
 
     # JWT Authentication
     SECRET_KEY: str = Field(..., alias="SECRET_KEY")
