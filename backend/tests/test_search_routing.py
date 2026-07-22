@@ -101,3 +101,40 @@ def test_system_prompt_omits_search_block_when_results_lack_urls():
     prompt = _build_system_prompt(context, now=datetime(2026, 7, 21, tzinfo=UTC))
 
     assert "Search results:" not in prompt
+
+
+@pytest.mark.parametrize(
+    ("query", "reason"),
+    [
+        # Volatile facts carrying no temporal word at all.
+        ("who is the CEO of OpenAI", "role_holder"),
+        ("who is the prime minister of Canada", "role_holder"),
+        ("how much does a Tesla Model 3 cost", "cost_query"),
+        ("what is the stock price of Apple", "market_data"),
+        ("what happened with the Nvidia earnings", "market_data"),
+        ("is it raining in Seattle", "weather"),
+        ("what time does the game start", "schedule"),
+        ("when is the next SpaceX launch", "schedule"),
+        ("how many users does Threads have", "live_metric"),
+    ],
+)
+def test_volatile_queries_without_temporal_words_still_route(policy, query, reason):
+    decision = policy.decide(query)
+
+    assert decision.should_search is True
+    assert decision.reason == reason
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        # Stable questions that resemble the volatile patterns above.
+        "who wrote Pride and Prejudice",
+        "what is the derivative of x squared",
+        "translate hello into Spanish",
+        "explain the difference between TCP and UDP",
+        "what is my name",
+    ],
+)
+def test_broadened_patterns_do_not_trigger_on_stable_questions(policy, query):
+    assert policy.decide(query).should_search is False

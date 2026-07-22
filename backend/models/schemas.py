@@ -30,6 +30,8 @@ class ChatStreamEvent(TypedDict):
         "artifact_ready",
         "artifact_error",
         "image_matches",
+        "search_started",
+        "search_results",
         "done",
     ]
     data: dict[str, Any]

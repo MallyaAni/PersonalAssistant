@@ -141,19 +141,34 @@ class ConversationService:
             logger.warning("Trace %s image search failed", trace_id, exc_info=True)
             return []
 
-    # Attach optional retrieved context in place and return matched images so
-    # the caller can also stream them to the interface.
-    async def _attach_retrieved_context(
+    # Attach optional retrieved context in place, streaming progress so the
+    # interface can show a search happening and cite what it used. Search runs
+    # against a remote provider and is the slowest step, so it is announced
+    # before it starts rather than reported only once it returns.
+    async def _stream_retrieved_context(
         self,
         context: dict[str, Any],
         user_id: str,
         query: str,
         trace_id: str,
         query_embedding: list[float] | None,
-    ) -> list[dict[str, Any]]:
-        search_results = await self._load_search_context(query, trace_id)
-        if search_results:
-            context["search"] = search_results
+    ) -> AsyncGenerator[ChatStreamEvent, None]:
+        if self._should_search(query):
+            yield {"event": "search_started", "data": {"query": query}}
+            search_results = await self._load_search_context(query, trace_id)
+            if search_results:
+                context["search"] = search_results
+            # Sources are always reported, including an empty list, so the
+            # interface can retract the indicator instead of leaving it running.
+            yield {
+                "event": "search_results",
+                "data": {
+                    "sources": [
+                        {"title": item["title"], "url": item["url"]}
+                        for item in search_results
+                    ]
+                },
+            }
 
         image_matches = await self._load_image_matches(
             user_id,
@@ -173,7 +188,15 @@ class ConversationService:
                 }
                 for match in image_matches
             ]
-        return image_matches
+            yield {"event": "image_matches", "data": {"artifacts": image_matches}}
+
+    # Report whether this turn will search, without issuing the query.
+    def _should_search(self, query: str) -> bool:
+        if self.search is None or self.search_routing is None:
+            return False
+        if not self.search.is_enabled():
+            return False
+        return self.search_routing.decide(query).should_search
 
     # Fetch live results only when the deterministic policy asks for them.
     async def _load_search_context(
@@ -268,13 +291,24 @@ class ConversationService:
             "episodic": episodic,
             "semantic": semantic,
         }
-        image_matches = await self._attach_retrieved_context(
+        # The turn is announced before retrieval so the interface can show a
+        # search running rather than sitting silent through the slowest step.
+        yield {
+            "event": "start",
+            "data": {
+                "trace_id": trace_id,
+                "conversation_id": resolved_conversation_id,
+            },
+        }
+        async for retrieval_event in self._stream_retrieved_context(
             context,
             user_id,
             query,
             trace_id,
             query_embedding,
-        )
+        ):
+            yield retrieval_event
+
         if self.memory_coordinator is not None:
             context = await self.memory_coordinator.prepare_context(
                 user_id,
@@ -298,17 +332,6 @@ class ConversationService:
         # 3. Execute AssistantGraph
         self.tracer.log_step(trace_id, "graph_execution", {"status": "started"})
         response_chunks = []
-        yield {
-            "event": "start",
-            "data": {
-                "trace_id": trace_id,
-                "conversation_id": initial_state.conversation_id,
-            },
-        }
-        if image_matches:
-            # Emit before the answer streams so the UI can show the images the
-            # assistant is about to describe.
-            yield {"event": "image_matches", "data": {"artifacts": image_matches}}
         async for event in self.assistant_graph.astream(
             initial_state.model_dump(),
             stream_mode="custom",

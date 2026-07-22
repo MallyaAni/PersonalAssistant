@@ -25,6 +25,7 @@ class TavilySearchProvider(SearchProvider):
         max_results: int,
         timeout_seconds: float,
         max_content_chars: int,
+        min_score: float = 0.0,
         search_depth: str = "basic",
         client: httpx.AsyncClient | None = None,
     ) -> None:
@@ -33,6 +34,7 @@ class TavilySearchProvider(SearchProvider):
         self.max_results = max_results
         self.timeout_seconds = timeout_seconds
         self.max_content_chars = max_content_chars
+        self.min_score = min_score
         self.search_depth = search_depth
         self._client = client
 
@@ -101,7 +103,9 @@ class TavilySearchProvider(SearchProvider):
         parsed: list[SearchResult] = []
         for raw in raw_results or []:
             result = self._parse_result(raw)
-            if result is not None:
+            # Low-relevance hits are dropped rather than quoted to the model as
+            # authoritative web data.
+            if result is not None and result.score >= self.min_score:
                 parsed.append(result)
 
         return SearchResults(

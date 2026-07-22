@@ -143,3 +143,65 @@ async def test_search_propagates_provider_http_errors():
     async with client:
         with pytest.raises(httpx.HTTPStatusError):
             await provider.search("q")
+
+
+@pytest.mark.asyncio
+async def test_low_relevance_results_are_dropped_before_the_prompt():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "results": [
+                    {
+                        "title": "Real hit",
+                        "url": "https://e.test/a",
+                        "content": "x",
+                        "score": 0.90,
+                    },
+                    {
+                        "title": "Weak hit",
+                        "url": "https://e.test/b",
+                        "content": "x",
+                        "score": 0.42,
+                    },
+                    {
+                        "title": "Dictionary noise",
+                        "url": "https://e.test/c",
+                        "content": "x",
+                        "score": 0.12,
+                    },
+                    {"title": "No score", "url": "https://e.test/d", "content": "x"},
+                ]
+            },
+        )
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = TavilySearchProvider(
+        base_url="https://api.tavily.com",
+        api_key="tvly-test-key",
+        max_results=10,
+        timeout_seconds=5.0,
+        max_content_chars=100,
+        min_score=0.4,
+        client=client,
+    )
+    async with client:
+        results = await provider.search("q")
+
+    # Noise scoring below the floor must never be quoted as authoritative.
+    assert [r.title for r in results.results] == ["Real hit", "Weak hit"]
+
+
+@pytest.mark.asyncio
+async def test_score_floor_defaults_to_accepting_everything():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "results": [{"title": "t", "url": "https://e.test/x", "score": 0.01}]
+            },
+        )
+
+    provider, client = _provider(handler)
+    async with client:
+        assert len((await provider.search("q")).results) == 1

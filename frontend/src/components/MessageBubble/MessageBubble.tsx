@@ -3,7 +3,11 @@ import { MoreHorizontal, Search, Sparkles } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import DiagramArtifact from '../DiagramArtifact/DiagramArtifact'
 import ImageArtifact from '../ImageArtifact/ImageArtifact'
-import type { ImageArtifact as ImageArtifactRecord, VisualArtifact } from '../../services/api'
+import type {
+  ImageArtifact as ImageArtifactRecord,
+  SearchSource,
+  VisualArtifact,
+} from '../../services/api'
 
 interface MessageProps {
   role: 'user' | 'assistant';
@@ -14,6 +18,8 @@ interface MessageProps {
   artifactError?: string;
   artifactActivity?: string;
   imageMatches?: ImageArtifactRecord[];
+  isSearching?: boolean;
+  searchSources?: SearchSource[];
   onArtifactDeleted?: (artifactId: string) => void;
 }
 
@@ -40,6 +46,8 @@ const MessageBubble: React.FC<MessageProps> = ({
   artifactError,
   artifactActivity,
   imageMatches,
+  isSearching,
+  searchSources,
   onArtifactDeleted,
 }) => {
   const isUser = role === 'user';
@@ -91,6 +99,11 @@ const MessageBubble: React.FC<MessageProps> = ({
           <ReactMarkdown>{visibleContent}</ReactMarkdown>
         </div>
       )}
+      {!isUser && isSearching && (
+        <p role="status" aria-live="polite" className="mb-3 flex items-center gap-1.5 text-sm text-[#6e6e73]">
+          <Search size={13} className="animate-pulse" /> Searching the web...
+        </p>
+      )}
       {!isUser && artifactStatus === 'generating' && (
         <p role="status" className="mt-4 animate-pulse text-sm text-[#6e6e73]">
           {artifactActivity || 'Creating visual artifact...'}
@@ -104,6 +117,29 @@ const MessageBubble: React.FC<MessageProps> = ({
       {!isUser && artifact?.kind === 'diagram' && <DiagramArtifact artifact={artifact} />}
       {!isUser && artifact && artifact.kind !== 'diagram' && (
         <ImageArtifact artifact={artifact} onDeleted={onArtifactDeleted} />
+      )}
+      {!isUser && searchSources && searchSources.length > 0 && (
+        <section className="mt-4" aria-label="Web sources used">
+          <p className="text-xs font-medium uppercase tracking-[0.08em] text-[#86868b]">
+            Sources
+          </p>
+          <ol className="mt-2 space-y-1.5">
+            {searchSources.map((source, index) => (
+              <li key={`${source.url}-${index}`} className="flex gap-2 text-sm leading-6">
+                <span className="tabular-nums text-[#86868b]">{index + 1}.</span>
+                <a
+                  href={source.url}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="min-w-0 truncate text-[#0066cc] hover:underline"
+                  title={source.url}
+                >
+                  {source.title}
+                </a>
+              </li>
+            ))}
+          </ol>
+        </section>
       )}
       {!isUser && imageMatches && imageMatches.length > 0 && (
         <section className="mt-4 space-y-3" aria-label="Matching images">

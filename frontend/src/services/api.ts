@@ -50,6 +50,8 @@ interface ChatEvent {
     | 'artifact_started'
     | 'artifact_ready'
     | 'image_matches'
+    | 'search_started'
+    | 'search_results'
     | 'artifact_error'
     | 'done'
     | 'error';
@@ -75,6 +77,11 @@ export interface DiagramArtifact extends ArtifactBase {
   source: string;
   mime_type: 'image/svg+xml';
   metadata: { diagram_type: string };
+}
+
+export interface SearchSource {
+  title: string;
+  url: string;
 }
 
 export interface ImageArtifact extends ArtifactBase {
@@ -160,6 +167,8 @@ export type ChatStreamUpdate =
   | { type: 'artifact_started'; artifactId: string }
   | { type: 'artifact_ready'; artifact: VisualArtifact }
   | { type: 'image_matches'; artifacts: ImageArtifact[] }
+  | { type: 'search_started' }
+  | { type: 'search_sources'; sources: SearchSource[] }
   | { type: 'artifact_error'; artifactId: string; message: string }
 
 // Send a JSON API request and surface server errors as exceptions.
@@ -718,6 +727,22 @@ export async function* streamChat(userId: string, conversationId: string, query:
           type: 'artifact_ready',
           artifact: parseVisualArtifact(event.data),
         } satisfies ChatStreamUpdate
+      } else if (event.event === 'search_started') {
+        yield { type: 'search_started' } satisfies ChatStreamUpdate
+      } else if (event.event === 'search_results') {
+        const { sources } = event.data as { sources?: unknown }
+        if (!Array.isArray(sources)) {
+          throw new Error('Search results event is invalid')
+        }
+        // Sources are untrusted third-party strings; keep only well-formed
+        // entries and let the renderer escape them.
+        const parsed = sources.flatMap(entry => {
+          const record = entry as Record<string, unknown>
+          return typeof record?.title === 'string' && typeof record?.url === 'string'
+            ? [{ title: record.title, url: record.url }]
+            : []
+        })
+        yield { type: 'search_sources', sources: parsed } satisfies ChatStreamUpdate
       } else if (event.event === 'image_matches') {
         const { artifacts } = event.data as { artifacts?: unknown }
         if (!Array.isArray(artifacts)) {
@@ -782,6 +807,8 @@ function parseChatEvent(frame: string): ChatEvent {
     'artifact_ready',
     'artifact_error',
     'image_matches',
+    'search_started',
+    'search_results',
     'done',
     'error',
   ].includes(eventName)) {

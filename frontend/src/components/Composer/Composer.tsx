@@ -6,6 +6,7 @@ import {
   streamChat,
   type ImageArtifact,
   type MemoryProposal,
+  type SearchSource,
   type VisualArtifact,
 } from '../../services/api'
 
@@ -25,6 +26,8 @@ interface ComposerProps {
   onVisualReady: (artifact: ImageArtifact) => void;
   onVisualError: (message: string) => void;
   onImageMatches: (artifacts: ImageArtifact[]) => void;
+  onSearchStarted: () => void;
+  onSearchSources: (sources: SearchSource[]) => void;
 }
 
 // Render the chat input and stream submitted messages.
@@ -42,6 +45,8 @@ const Composer: React.FC<ComposerProps> = ({
   onVisualReady,
   onVisualError,
   onImageMatches,
+  onSearchStarted,
+  onSearchSources,
 }) => {
   const [input, setInput] = useState('')
   const [isSending, setIsSending] = useState(false)
@@ -102,6 +107,10 @@ const Composer: React.FC<ComposerProps> = ({
           onArtifactReady(update.artifact)
         } else if (update.type === 'image_matches') {
           onImageMatches(update.artifacts)
+        } else if (update.type === 'search_started') {
+          onSearchStarted()
+        } else if (update.type === 'search_sources') {
+          onSearchSources(update.sources)
         } else {
           onThinkingChange(false)
           onArtifactError(update.artifactId, update.message)

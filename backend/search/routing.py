@@ -19,8 +19,44 @@ _SIGNALS: tuple[tuple[str, str], ...] = (
     (r"\bas\s+of\b", "as_of"),
     (r"\bup[-\s]?to[-\s]?date\b", "up_to_date"),
     (r"\b(news|headline|headlines)\b", "news"),
-    (r"\b(price|stock|share\s+price|exchange\s+rate)\b", "market_data"),
+    # Whoever holds a role changes over time, so the question is volatile even
+    # with no temporal word. Restricted to roles that actually turn over: a
+    # question like "who is the author of" is stable and must not match.
+    (
+        r"\bwho\s+(is|are)\s+the\s+(current\s+|present\s+)?"
+        r"(ceo|cto|cfo|president|prime\s+minister|chancellor|governor|mayor|"
+        r"chair|chairman|chairwoman|head\s+coach|manager|owner|leader)\b",
+        "role_holder",
+    ),
+    (
+        r"\b(price|stock|shares?|share\s+price|exchange\s+rate|earnings|revenue|"
+        r"market\s+cap|valuation|ipo)\b",
+        "market_data",
+    ),
+    # "how much does X cost" carries no temporal marker but prices move.
+    (
+        r"\bhow\s+much\s+(does|do|is|are|was|were)\b.*\b(cost|worth|charge|pay)\b"
+        r"|\b(cost|price)\s+of\b",
+        "cost_query",
+    ),
     (r"\b(weather|forecast)\b", "weather"),
+    # Conditions phrased without the word "weather".
+    (
+        r"\bis\s+it\s+(raining|snowing|sunny|cloudy|windy|hot|cold|warm|freezing)\b",
+        "weather",
+    ),
+    # Schedules and upcoming events are only knowable from live data.
+    (
+        r"\bwhat\s+time\s+(does|do|is|are)\b|\bwhen\s+(is|does|are)\s+the\s+next\b",
+        "schedule",
+    ),
+    # Counts of a live population move constantly; bounded to volatile nouns so
+    # a stable question such as "how many bones are in the body" is unaffected.
+    (
+        r"\bhow\s+many\s+(users|subscribers|customers|employees|downloads|"
+        r"followers|installs|members)\b",
+        "live_metric",
+    ),
     (r"\b(release[ds]?\s+date|released|launch(?:ed|es)?)\b", "release_timing"),
     (r"\b(score|standings|fixtures?|results?)\s+(for|of|in)\b", "live_results"),
     (r"\b(version|latest\s+version)\s+of\b", "version_query"),

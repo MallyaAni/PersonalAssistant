@@ -60,6 +60,7 @@ def get_search_provider() -> SearchProvider:
         max_results=settings.SEARCH_MAX_RESULTS,
         timeout_seconds=settings.SEARCH_TIMEOUT_SECONDS,
         max_content_chars=settings.SEARCH_MAX_CONTENT_CHARS,
+        min_score=settings.SEARCH_MIN_SCORE,
         search_depth=settings.SEARCH_DEPTH,
     )
 

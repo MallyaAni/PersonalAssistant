@@ -11,6 +11,7 @@ import {
   getConversationSnapshot,
   type MemoryProposal,
   type ImageArtifact,
+  type SearchSource,
   type VisualArtifact,
 } from '../../services/api'
 
@@ -23,6 +24,8 @@ interface Message {
   artifactError?: string;
   artifactActivity?: string;
   imageMatches?: ImageArtifact[];
+  isSearching?: boolean;
+  searchSources?: SearchSource[];
 }
 
 interface ChatWindowProps {
@@ -269,6 +272,34 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   }
 
   // Attach a completed generated or uploaded image to its running placeholder.
+  // Mark the pending assistant turn as searching so the interface can say so.
+  const handleSearchStarted = () => {
+    setMessages(prev => {
+      const next = [...prev]
+      for (let index = next.length - 1; index >= 0; index -= 1) {
+        if (next[index].role === 'assistant') {
+          next[index] = { ...next[index], isSearching: true }
+          return next
+        }
+      }
+      return [...next, { role: 'assistant', content: '', isSearching: true }]
+    })
+  }
+
+  // Replace the searching indicator with the sources actually consulted.
+  const handleSearchSources = (sources: SearchSource[]) => {
+    setMessages(prev => {
+      const next = [...prev]
+      for (let index = next.length - 1; index >= 0; index -= 1) {
+        if (next[index].role === 'assistant') {
+          next[index] = { ...next[index], isSearching: false, searchSources: sources }
+          return next
+        }
+      }
+      return next
+    })
+  }
+
   // Attach pixel-matched images to the assistant turn that requested them.
   const handleImageMatches = (artifacts: ImageArtifact[]) => {
     if (artifacts.length === 0) return
@@ -451,6 +482,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             onVisualReady={handleVisualReady}
             onVisualError={handleVisualError}
             onImageMatches={handleImageMatches}
+            onSearchStarted={handleSearchStarted}
+            onSearchSources={handleSearchSources}
           />
           {hasMessages && (
             <p className="mt-2 text-center text-[11px] text-[#86868b]">AniOS can make mistakes. Check important information.</p>

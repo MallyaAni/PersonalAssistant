@@ -13,9 +13,10 @@ flowchart TB
     Artifact --> SSE
 
     Route -->|no| Retrieval{Deterministic retrieval routing<br/>application owned, model never selects}
-    Retrieval -->|recency signal| WebSearch[TavilySearchProvider<br/>untrusted third-party results]
+    Retrieval -->|volatile-shape signal| WebSearch[TavilySearchProvider<br/>relevance floor, untrusted results]
     Retrieval -->|image recall signal| ImageSearch[Aligned image vector search<br/>ceiling plus best-to-runner-up margin]
     WebSearch --> Context
+    WebSearch --> SSE
     ImageSearch --> Context
     ImageSearch --> SSE
     Retrieval --> Plan[MemoryCoordinatorAgent<br/>deterministic query plan]
@@ -36,8 +37,8 @@ flowchart TB
     Proposal --> SSE[SSE encoder]
     Lifecycle --> SSE
     Graph --> SSE
-    SSE -->|start, delta, optional proposal,<br/>artifact or image_matches, done| Parser[Frontend stream parser]
-    Parser --> Answer[Visible answer, metadata, proposal,<br/>artifact, or matched image cards]
+    SSE -->|start, search_started, search_results,<br/>delta, optional proposal, artifact<br/>or image_matches, done| Parser[Frontend stream parser]
+    Parser --> Answer[Visible answer, searching indicator,<br/>cited sources, metadata, proposal,<br/>artifact, or matched image cards]
 
     Reload([Full browser reload]) --> SnapshotAPI[GET owned conversation snapshot]
     SnapshotAPI --> Ownership

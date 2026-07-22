@@ -59,6 +59,18 @@ class RecordingSearch:
         )
 
 
+async def _events(service: ConversationService, query: str) -> list[dict]:
+    return [
+        event
+        async for event in service.process_request(
+            "search_user",
+            query,
+            "33333333-3333-4333-8333-333333333333",
+            {"source": "test"},
+        )
+    ]
+
+
 async def _run(service: ConversationService, query: str) -> None:
     async for _ in service.process_request(
         "search_user",
@@ -140,3 +152,46 @@ async def test_service_without_search_configured_still_answers():
     await _run(service, "what is the latest python release")
 
     assert "Search results:" not in llm.messages[0]["content"]
+
+
+@pytest.mark.asyncio
+async def test_search_is_announced_before_it_runs_and_sources_are_streamed():
+    search = RecordingSearch()
+    llm = RecordingLLM()
+
+    events = await _events(_service(search, llm), "what is the latest python release")
+    names = [event["event"] for event in events]
+
+    # The interface must be able to show the search running, so the
+    # announcement precedes the provider call and the first answer token.
+    assert names.index("search_started") < names.index("search_results")
+    assert names.index("search_results") < names.index("delta")
+    sources = [event for event in events if event["event"] == "search_results"][0][
+        "data"
+    ]["sources"]
+    assert sources == [{"title": "Result", "url": "https://example.test/a"}]
+
+
+@pytest.mark.asyncio
+async def test_no_search_events_are_emitted_for_a_timeless_query():
+    search = RecordingSearch()
+    llm = RecordingLLM()
+
+    events = await _events(_service(search, llm), "explain how a b-tree works")
+    names = [event["event"] for event in events]
+
+    assert "search_started" not in names
+    assert "search_results" not in names
+
+
+@pytest.mark.asyncio
+async def test_sources_are_reported_empty_so_the_indicator_can_be_retracted():
+    search = RecordingSearch(fail=True)
+    llm = RecordingLLM()
+
+    events = await _events(_service(search, llm), "what is the latest python release")
+    reported = [e for e in events if e["event"] == "search_results"]
+
+    # A failed search still reports, otherwise the indicator would spin forever.
+    assert len(reported) == 1
+    assert reported[0]["data"]["sources"] == []

@@ -108,12 +108,37 @@ silently bypasses the margin check; that regression is covered by a test.
 Because these bounds are calibrated rather than derived, they should be
 re-measured as a library grows: more images shrink inter-image margins.
 
-Web search is an opt-in Tavily HTTP provider behind `SearchProvider`. A
-deterministic `SearchRoutingPolicy` owned by the application decides when a turn
-needs live data; the model never selects the path, because a model cannot detect
-that its own training data is stale. `ImageRecallPolicy` performs the equivalent
-routing for image recall and explicitly refuses creation requests. Search results
-and image descriptions both enter the prompt as untrusted quoted data.
+Web search is an opt-in Tavily HTTP provider behind `SearchProvider`, enabled by
+`SEARCH_API_KEY` and inert without it. A deterministic `SearchRoutingPolicy`
+owned by the application decides when a turn needs live data; the model never
+selects the path, because a model cannot detect that its own training data is
+stale. `ImageRecallPolicy` performs the equivalent routing for image recall and
+explicitly refuses creation requests. Search results and image descriptions both
+enter the prompt as untrusted quoted data.
+
+Routing matches volatile *shapes*, not just temporal vocabulary. An earlier
+pattern set keyed on words like "latest" and "current" and reached only 11 of 18
+volatile queries in a 30-query labelled set: "who is the CEO of OpenAI",
+"how much does a Tesla Model 3 cost" and "is it raining in Seattle" all fell
+through and were answered from stale training data. Patterns for role holders,
+cost questions, market events, schedules, live metrics and unworded weather
+raised that to 18 of 18 while the 12 stable queries stayed correctly unrouted.
+Role matching is restricted to roles that actually turn over, so "who is the
+author of" remains stable.
+
+Results are filtered by provider relevance before reaching the prompt.
+Measured across 40 real results the score distribution is bimodal: usable hits
+scored 0.561-0.923 and dictionary-definition noise scored 0.046-0.346, with an
+empty band between, so `SEARCH_MIN_SCORE` sits at `0.4`. Admitting that noise
+would be worse than returning nothing, because the prompt instructs the model to
+prefer web results over its own recollection for time-sensitive facts.
+
+A searching turn is visible and auditable. `search_started` is emitted before
+the provider call rather than after it, since search is the slowest step, and
+`search_results` always follows with the sources consulted - including an empty
+list on failure, so the interface retracts its indicator instead of spinning.
+The browser renders the indicator and then the cited sources beneath the answer,
+so a reader can check what grounded it.
 
 ## Backend boundaries
 
