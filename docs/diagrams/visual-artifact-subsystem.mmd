@@ -6,12 +6,14 @@ flowchart TB
         ChatAPI[POST /api/v1/chat<br/>diagram request]
         ImageAPI[POST /api/v1/images/generate<br/>prompt plus resolution]
         VisionAPI[POST /api/v1/vision/analyze<br/>image plus prompt]
+        AskAPI[POST /api/v1/vision/artifacts/:id/ask<br/>owned image plus question]
         ArtifactAPI[GET content, list,<br/>snapshot, and DELETE]
     end
 
     User --> ChatAPI
     User --> ImageAPI
     User --> VisionAPI
+    User --> AskAPI
     User --> ArtifactAPI
 
     subgraph DiagramPath[1. Editable architecture and flowchart path]
@@ -22,6 +24,10 @@ flowchart TB
         MermaidCheck[Passive Mermaid validation<br/>plus one correction attempt]
         DiagramState[PostgreSQL artifact<br/>pending, ready, or failed]
         DiagramStream[SSE lifecycle<br/>started, ready/error, done]
+        VisionEmbed[NomicVisionEmbeddingProvider<br/>ONNX on CPU, aligned 768-dim<br/>generated and uploaded images at store time]
+        ImageVectors[(visual_artifacts.embedding<br/>own HNSW index and bounds)]
+        RetrievalPolicy[ImageRetrievalPolicy<br/>distance ceiling plus<br/>best-to-runner-up margin]
+        VisionEmbed --> ImageVectors --> RetrievalPolicy
 
         DiagramRoute --> DiagramAgent --> DiagramLLM --> MermaidCheck
         MermaidCheck -->|valid source| DiagramState --> DiagramStream
@@ -47,19 +53,22 @@ flowchart TB
 
     ImageAPI --> ImageLifecycle
 
-    subgraph VisionPath[3. Upload and image-understanding path]
+    subgraph VisionPath[3. Upload, understanding, and followup path]
         direction TB
         UploadCheck[Bounded multipart read<br/>and image validation]
         UploadState[Persist owned upload<br/>before inference]
-        VisionService[VisionAnalysisService]
-        VisionLLM[LM Studio Gemma 4 12B<br/>image plus bounded prompt]
-        AnalysisState[Persist text, model, usage,<br/>and analysis status]
+        FollowupRead[Read owned image bytes<br/>size and SHA-256 checked]
+        VisionService[VisionAnalysisService<br/>bounded thread context]
+        VisionLLM[LM Studio Gemma 4 12B<br/>image plus prompt or thread]
+        AnalysisState[Persist text, model, usage,<br/>status, and question thread]
 
-        UploadCheck --> UploadState --> VisionService --> VisionLLM --> AnalysisState
-        VisionLLM -. provider failure preserves upload .-> AnalysisState
+        UploadCheck --> UploadState --> VisionService
+        FollowupRead --> VisionService --> VisionLLM --> AnalysisState
+        VisionLLM -. provider failure preserves image and thread .-> AnalysisState
     end
 
     VisionAPI --> UploadCheck
+    AskAPI --> FollowupRead
 
     subgraph Persistence[Shared private artifact boundary]
         direction TB
@@ -76,6 +85,7 @@ flowchart TB
     GeneratedState --> Repository
     UploadState --> Repository
     AnalysisState --> Repository
+    BinaryStore -. owned bytes .-> FollowupRead
     ArtifactAPI --> Ownership
 
     subgraph Frontend[Verified visual UI boundary]
@@ -83,7 +93,7 @@ flowchart TB
         SSEParser[Typed SSE parser]
         DiagramCard[Diagram card<br/>strict SVG plus editable source]
         ImageComposer[Chat composer modes<br/>create, analyze, cancel, and retry]
-        ImageCard[Private image card<br/>preview, analysis, download, delete]
+        ImageCard[Private image card<br/>preview, threaded ask, download, delete]
         ExistingUI[Reload, navigation, history,<br/>export, and owned deletion]
 
         SSEParser --> DiagramCard --> ExistingUI
@@ -91,6 +101,7 @@ flowchart TB
         ImageComposer --> VisionAPI
         ImageAPI --> ImageCard --> ExistingUI
         VisionAPI --> ImageCard
+        ImageCard --> AskAPI
     end
 
     DiagramStream --> SSEParser
@@ -101,7 +112,7 @@ flowchart TB
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef planned fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
-    class User,ChatAPI,ImageAPI,VisionAPI,ArtifactAPI,DiagramStream,SSEParser,DiagramCard,ImageComposer,ImageCard,ExistingUI interface;
-    class DiagramRoute,DiagramAgent,MermaidCheck,ImageLifecycle,DisconnectMonitor,ImageProvider,OutputCheck,UploadCheck,UploadState,VisionService,AnalysisState,Ownership,Repository application;
+    class User,ChatAPI,ImageAPI,VisionAPI,AskAPI,ArtifactAPI,DiagramStream,SSEParser,DiagramCard,ImageComposer,ImageCard,ExistingUI interface;
+    class DiagramRoute,DiagramAgent,MermaidCheck,ImageLifecycle,DisconnectMonitor,ImageProvider,OutputCheck,UploadCheck,UploadState,FollowupRead,VisionService,AnalysisState,Ownership,Repository application;
     class DiagramState,GeneratedState,Postgres,BinaryStore data;
     class DiagramLLM,ComfyUI,VisionLLM external;

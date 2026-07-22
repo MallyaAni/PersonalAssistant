@@ -1,41 +1,45 @@
 flowchart LR
     User([Primary user])
 
-    subgraph BrowserHost[Browser and developer host]
+    subgraph Host[Developer host processes]
         Browser[Chromium or browser]
-        Frontend[React and Vite dev server<br/>127.0.0.1:5173]
-        LMStudio[LM Studio<br/>Gemma chat and vision plus Nomic embeddings<br/>127.0.0.1:1234]
-        ComfyUI[ComfyUI 0.28<br/>HiDream-O1 Dev FP8<br/>127.0.0.1:8188]
-        BinaryStore[(Local artifact bytes<br/>data/artifacts)]
+        LMStudio[LM Studio<br/>Gemma chat and vision plus Nomic embeddings<br/>host 127.0.0.1:1234]
         DiagramCLI[Architecture candidate CLI<br/>loopback model only]
         Candidate[(Review candidate<br/>Mermaid and SVG)]
+        ComfyInstall[(Host ComfyUI install and models<br/>E:/AI/ComfyUI)]
     end
 
-    subgraph ApplicationRuntime[AniOS application runtime]
-        Backend[FastAPI and Uvicorn<br/>127.0.0.1:8000]
+    subgraph Compose[Docker Compose stack]
+        Frontend[React and Vite dev server container<br/>source bind-mount with polling HMR<br/>host port 5173]
+        Backend[FastAPI and Uvicorn container<br/>host port 8000]
+        VisionEmbed[Nomic Embed Vision v1.5<br/>in-process ONNX on CPU<br/>aligned to the text latent space]
         Dependencies[FastAPI dependency assembly<br/>async request sessions]
         Auth[Optional signed-user ownership<br/>disabled by default locally]
-    end
-
-    subgraph Compose[Docker Compose]
-        Postgres[(PostgreSQL 16 and pgvector<br/>host port 5432)]
-        Redis[(Redis 7<br/>host port 6379<br/>scaffolded and unused)]
+        ComfyUI[ComfyUI container, comfyui profile<br/>GPU passthrough, mounts host install<br/>HiDream-O1 Dev FP8, host port 8188]
+        Postgres[(PostgreSQL 16 and pgvector<br/>text memory plus aligned image vectors<br/>host port 5432)]
+        Redis[(Redis 7, host port 6379<br/>scaffolded and unused)]
         Maintenance[Opt-in memory-maintenance<br/>hourly profile]
+        BinaryStore[(Local artifact bytes<br/>artifactdata volume)]
     end
 
+    WebSearch[[Tavily web search<br/>external vendor, untrusted results<br/>opt-in via SEARCH_API_KEY]]
     Source[Repository source]
     Canonical[(Canonical diagram suite)]
     Migration[Alembic<br/>synchronous migration engine]
 
     User --> Browser
-    Browser --> Frontend
-    Frontend -->|HTTP, JSON, and chat SSE| Backend
+    Browser -->|page load, localhost:5173| Frontend
+    Browser -->|HTTP, JSON, and chat SSE, localhost:8000| Backend
+    Frontend -. bind-mounted source .-> Source
     Backend --> Auth
     Auth --> Dependencies
     Dependencies -->|asyncpg transactions| Postgres
-    Dependencies -->|OpenAI-compatible HTTP| LMStudio
-    Dependencies -->|ComfyUI prompt, history, and view HTTP| ComfyUI
+    Dependencies -->|image bytes, aligned 768-dim vector| VisionEmbed
+    Dependencies -->|deterministic routing, untrusted results| WebSearch
+    Dependencies -->|OpenAI-compatible HTTP, host.docker.internal:1234| LMStudio
+    Dependencies -->|ComfyUI HTTP, comfyui:8188| ComfyUI
     Dependencies -->|opaque keys and atomic file writes| BinaryStore
+    ComfyUI -. bind-mounts .-> ComfyInstall
     Maintenance -->|asyncpg maintenance cycle| Postgres
     Maintenance -->|optional re-embedding| LMStudio
     Migration -->|psycopg2 schema changes| Postgres
@@ -51,6 +55,6 @@ flowchart LR
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b,stroke-width:1.5px;
     classDef scaffold fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
     class User,Source user;
-    class Browser,Frontend,LMStudio,ComfyUI,Backend,Dependencies,Auth,Maintenance,Migration,DiagramCLI process;
-    class Postgres,BinaryStore,Candidate,Canonical data;
+    class Browser,Frontend,LMStudio,ComfyUI,Backend,Dependencies,Auth,Maintenance,Migration,DiagramCLI,VisionEmbed process;
+    class Postgres,BinaryStore,Candidate,Canonical,ComfyInstall data;
     class Redis scaffold;

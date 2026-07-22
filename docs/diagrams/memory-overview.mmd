@@ -1,0 +1,46 @@
+---
+title: AniOS Memory — Manager Overview
+---
+flowchart TB
+    User([You send a message])
+
+    subgraph Turn[What happens on every message · numbered path]
+        direction TB
+        Step1["1 · Decide which memories could help<br/>fast keyword routing, no AI call"]
+        Step2["2 · Understand the question once<br/>a single reusable meaning lookup"]
+        Step3["3 · Pull only relevant, permitted memories<br/>your data only, freshness and expiry checked"]
+        Step4["4 · Keep the best few<br/>rank across stores, drop duplicates and overflow"]
+        Step5["5 · Assistant answers<br/>memories are treated as facts, never as commands"]
+
+        Step1 --> Step2 --> Step3 --> Step4 --> Step5
+    end
+
+    Consent{"Learn something new?<br/>saved only with your explicit approval"}
+
+    subgraph Stores[Where memories live]
+        direction TB
+        ShortTerm["Short-term · auto-expires<br/>scratch notes and a response cache for this chat"]
+        LongTerm["Long-term · kept until you delete it<br/>who you are and approved facts<br/>past events, documents, how-to steps, people"]
+    end
+
+    Privacy["Your data stays yours:<br/>view, export, and delete anything"]
+
+    User --> Step1
+    Step5 --> User
+    Step3 -. reads .-> Stores
+    Step5 -. may propose .-> Consent
+    Consent -. only after you approve .-> LongTerm
+    Stores --- Privacy
+
+    Legend["Legend<br/>rounded = you · box = automatic step<br/>diamond = your decision · cylinder-style = stored memory"]
+
+    classDef person fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
+    classDef step fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
+    classDef gate fill:#fff3cd,stroke:#b78b20,color:#4d3900;
+    classDef store fill:#eef7ee,stroke:#5f9562,color:#183b1b;
+    classDef note fill:#f1edff,stroke:#8872c6,color:#2e2450;
+    class User person;
+    class Step1,Step2,Step3,Step4,Step5 step;
+    class Consent gate;
+    class ShortTerm,LongTerm store;
+    class Privacy,Legend note;

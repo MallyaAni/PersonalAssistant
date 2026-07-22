@@ -11,6 +11,8 @@ This is the canonical source for local setup, commands, debugging, and validatio
 
 The repository's `requirements.txt` contains runtime Python dependencies. Install the `dev` optional dependency set from `pyproject.toml` for pytest, Ruff, Black, and MyPy.
 
+`pyproject.toml` pins `[tool.setuptools.packages.find]` to `backend*`. The repository root is a flat layout holding `data/`, `docker/`, `frontend/`, and `migrations/` beside the package, and without that pin setuptools auto-discovery finds multiple top-level packages and refuses to build, which breaks `pip install -e ".[dev]"` for everyone.
+
 ## Function comments
 
 Every newly written function or method must have a brief, plain-language comment immediately above it that explains what it accomplishes. This applies to production code, local helpers, API handlers, frontend functions, tests, CLI entry points, and migration functions. Put the comment above decorators so it remains visible before the full declaration, and update the comment whenever the function's purpose changes.
@@ -302,7 +304,37 @@ docker compose ps
 docker compose logs --tail 100 backend
 ```
 
-Compose starts `db`, `redis`, and `backend`. Re-run `docker compose up --build -d backend` after backend source changes because the container does not bind-mount the repository.
+Compose starts `db`, `redis`, `backend`, and the `frontend` dev container. Re-run `docker compose up --build -d backend` after backend source changes because the backend container does not bind-mount the repository. The `frontend` container **does** bind-mount `./frontend` and hot-reloads, so frontend source changes need no rebuild. The container backend reaches host LM Studio at `http://host.docker.internal:1234`.
+
+Multimodal image retrieval needs local encoder weights, which are not committed.
+Download them once into the gitignored `data/` tree:
+
+```bash
+mkdir -p data/models/nomic-embed-vision-v1.5
+curl -L -o data/models/nomic-embed-vision-v1.5/model.onnx   https://huggingface.co/nomic-ai/nomic-embed-vision-v1.5/resolve/main/onnx/model.onnx
+```
+
+Without the file the provider reports `is_enabled() == False`, images are simply
+never embedded, and every other path still works. After adding it, backfill any
+images stored earlier:
+
+```bash
+docker compose exec backend python -m backend.cli.backfill_image_embeddings   --user-id <user> --apply
+```
+
+Image retrieval bounds are calibrated, not derived. `VISION_SEARCH_MAX_COSINE_DISTANCE`
+is a coarse ceiling and `VISION_SEARCH_MIN_MARGIN` is the discriminator that
+separates a real match from the merely nearest image; see the architecture notes
+for the measured bands. Re-measure both after the stored library grows
+substantially, using a labelled set of visually distinct images plus deliberate
+distractor queries that should return nothing.
+
+Web search is opt-in in the same way: set `SEARCH_API_KEY` to a Tavily key to
+enable it, and leave it empty to disable search entirely. Routing still runs and
+logs its decision, so `reason=` lines appear in the backend log before any query
+is ever spent.
+
+Compose requires a root `.env` with `SECRET_KEY` set; it is interpolated rather than hardcoded, so a missing value fails the run instead of silently signing tokens with a placeholder. `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` are interpolated too and fall back to their local defaults. The remaining container values stay literal in `docker-compose.yml` because `.env` holds host-oriented equivalents (`POSTGRES_HOST=localhost`, loopback `LLM_BASE_URL`) that would break container networking if passed through.
 
 Stop the stack with:
 
@@ -311,6 +343,22 @@ docker compose down
 ```
 
 Do not add `--volumes` unless deleting local PostgreSQL data is intentional and approved.
+
+#### Optional: ComfyUI image generation in Compose (`comfyui` profile)
+
+ComfyUI is opt-in because its image build downloads a multi-GB Blackwell-capable CUDA 12.8 PyTorch base and requires an NVIDIA GPU. Point `COMFYUI_HOST_PATH` at your existing ComfyUI install (default `E:/AI/ComfyUI`; it is bind-mounted read-write with its custom nodes and the HiDream checkpoint), then:
+
+```bash
+docker compose --profile comfyui up --build -d comfyui
+docker compose logs --tail 100 comfyui
+```
+
+The first boot also `pip install`s the mounted install's `requirements.txt` (excluding torch) into the container, so it can take a while and may need per-custom-node dependency fixes. Requirements:
+
+- **Free space on the Docker Desktop disk** (the WSL2 image, by default on `C:`) — the CUDA/PyTorch layers are several GB; a full disk causes an `input/output error` build failure and can crash Docker Desktop.
+- The `nvidia` container runtime available to Docker (`docker info` lists it) and a working `nvidia-smi` on the host.
+
+When the `comfyui` service is running, the container backend uses `IMAGE_PROVIDER_BASE_URL=http://comfyui:8188` (already set in Compose). When you instead run ComfyUI directly on the host, a container backend uses `http://host.docker.internal:8188` and a host-source backend uses `http://127.0.0.1:8188`.
 
 ### Mode B: infrastructure in Compose, backend on the host
 
@@ -329,14 +377,14 @@ python -m uvicorn backend.main:app --host 127.0.0.1 --port 8001
 
 ## Run the frontend
 
-In a separate terminal:
+Mode A already runs the `frontend` dev container (bind-mounted, hot-reloading) at `http://127.0.0.1:5173`, so a separate command is not needed there. For Mode B, or to run the console on the host without Docker, use a separate terminal:
 
 ```bash
 cd frontend
 npm run dev -- --host 127.0.0.1
 ```
 
-Vite serves the application at `http://127.0.0.1:5173`. The API client defaults to `http://localhost:8000`; set `VITE_API_URL` before starting Vite when the backend uses another address.
+Do not run the host Vite and the `frontend` container at the same time; they both bind port `5173`. Vite serves the application at `http://127.0.0.1:5173`. The API client defaults to `http://localhost:8000`; set `VITE_API_URL` before starting Vite when the backend uses another address.
 
 Starting Vite successfully is only a startup check. Open the application in a browser and inspect both the Console and Network panels before reporting frontend behavior verified.
 

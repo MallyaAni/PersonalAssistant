@@ -8,7 +8,7 @@ flowchart TB
     end
 
     subgraph Policy[Application-owned memory policy]
-        Coordinator[MemoryCoordinatorAgent<br/>deterministic plan, selected retrieval,<br/>bounded context curation]
+        Coordinator[MemoryCoordinatorAgent<br/>deterministic plan, one query embedding per turn,<br/>selected retrieval, relevance budget and dedup]
         PersonalService[PostgresMemoryService<br/>personal forms]
         AgentManager[AgentMemoryManager<br/>typed store facade]
         ToolService[ToolMemoryService<br/>safe metadata only]
@@ -16,7 +16,7 @@ flowchart TB
     end
 
     subgraph Forms[Implemented memory forms]
-        Short[(Short-term persisted coordination<br/>Semantic cache: expiring plans<br/>Working: expiring conversation state)]
+        Short[(Short-term persisted coordination<br/>Semantic cache: expiring response cache<br/>Working: expiring conversation state)]
         Personal[(Personal long term<br/>Profile and approved facts: persona<br/>Episodic: events and experiences<br/>Semantic: facts and preferences)]
         Agent[(Agent long term<br/>Procedures: approved and versioned<br/>Entities and relations: approved<br/>Knowledge documents and chunks<br/>Conversation summaries)]
         Conversation[(Conversational<br/>persistent user-scoped turns)]
@@ -25,6 +25,7 @@ flowchart TB
 
     subgraph Retrieval[Retrieval and model-context boundary]
         VectorPolicy[User scope, approval, active and expiry filters,<br/>cosine threshold, result limits]
+        Budget[Cross-store relevance budget<br/>global ranking, dedup, item and char caps]
         Literal[Curated prompt values<br/>untrusted literal data, never instructions]
         Context[Bounded ephemeral Gemma context window]
     end
@@ -32,6 +33,7 @@ flowchart TB
     subgraph Lifecycle[Lifecycle and operational controls]
         Retention[Retention<br/>dry-run or atomic expiry purge]
         Reembed[Re-embedding<br/>seven vector stores, bounded batches]
+        VisionIndex[Vision analysis indexing<br/>purpose visual_artifact_analysis<br/>derived, not approval-gated user facts]
         Dimension[Offline dimension migration<br/>shadow columns and atomic switch]
         Operations[Operations and metrics<br/>counts, backlog, stale vectors,<br/>invariants, DB pool and latency]
         Control[Correction, supersession,<br/>JSON export, scoped and delete-all]
@@ -64,7 +66,8 @@ flowchart TB
     Conversation --> Literal
     Tools --> VectorPolicy
     Short --> Literal
-    VectorPolicy --> Literal
+    VectorPolicy --> Budget
+    Budget --> Literal
     Literal --> Context
 
     PersonalService --> Embeddings
@@ -97,5 +100,5 @@ flowchart TB
     class Chat,UI,APIs,Approval,MaintenanceCLI entry;
     class Coordinator,PersonalService,AgentManager,ToolService,ConversationRepo policy;
     class Short,Personal,Agent,Conversation,Tools,Database form;
-    class VectorPolicy,Literal,Context retrieval;
+    class VectorPolicy,Budget,Literal,Context retrieval;
     class Retention,Reembed,Dimension,Operations,Control,Embeddings lifecycle;

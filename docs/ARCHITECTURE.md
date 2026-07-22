@@ -14,7 +14,7 @@ The absence of one of these labels does not imply runtime verification.
 
 ![AniOS current system architecture](diagrams/anios-system.svg)
 
-The editable source is [anios-system.mmd](diagrams/anios-system.mmd). It describes current implemented and explicitly scaffolded relationships only, including editable diagrams, generated and uploaded raster artifacts, local binary storage, ComfyUI, Gemma vision analysis, and their browser integration. Multimodal embeddings, durable queues, GPU leases, and multi-agent workers remain outside the current diagram until their runtime boundaries exist. The render/check procedure is documented in [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md#architecture-diagram-maintenance).
+The editable source is [anios-system.mmd](diagrams/anios-system.mmd). It describes current implemented and explicitly scaffolded relationships only, including editable diagrams, generated and uploaded raster artifacts, local binary storage, ComfyUI, Gemma vision analysis, and their browser integration. Aligned multimodal image embeddings and opt-in web search are now included. Durable queues, GPU leases, and multi-agent workers remain outside the current diagram until their runtime boundaries exist. The render/check procedure is documented in [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md#architecture-diagram-maintenance).
 
 ## Detailed subsystem diagrams
 
@@ -23,26 +23,97 @@ AniOS currently has a modular FastAPI backend rather than independently deployed
 | Current view | Technical scope | Source | SVG |
 | --- | --- | --- | --- |
 | Runtime and deployment | Processes, ports, protocols, Compose, LM Studio, database sessions, migration and maintenance paths | [source](diagrams/runtime-deployment.mmd) | [view](diagrams/runtime-deployment.svg) |
-| Chat orchestration | Request ownership, routing, memory planning, history, LangGraph/Gemma streaming, persistence, proposals, artifact branch, SSE | [source](diagrams/chat-orchestration.mmd) | [view](diagrams/chat-orchestration.svg) |
+| Chat orchestration | Request ownership, deterministic web-search and image-recall routing, memory planning, history, LangGraph/Gemma streaming, persistence, proposals, artifact branch, SSE | [source](diagrams/chat-orchestration.mmd) | [view](diagrams/chat-orchestration.svg) |
 | Memory subsystem | All short/long-term forms, write authority, coordinator, typed services, pgvector retrieval, lifecycle and operations | [source](diagrams/memory-subsystem.mmd) | [view](diagrams/memory-subsystem.svg) |
+| Memory overview (manager) | Plain-language first-contact walkthrough of a memory turn, the approval gate, short-term vs long-term stores, and user data control | [source](diagrams/memory-overview.mmd) | [view](diagrams/memory-overview.svg) |
 | Tool memory | Safe descriptors, approved preferences, sanitized outcomes, embeddings, toolbox context, non-execution boundary | [source](diagrams/tool-memory-subsystem.mmd) | [view](diagrams/tool-memory-subsystem.svg) |
-| Visual artifacts | Diagram classification/rendering, HiDream generation, validated uploads, opaque binary storage, integrity/deletion, and Gemma vision analysis | [source](diagrams/visual-artifact-subsystem.mmd) | [view](diagrams/visual-artifact-subsystem.svg) |
+| Visual artifacts | Diagram classification/rendering, HiDream generation, validated uploads, opaque binary storage, integrity/deletion, Gemma vision analysis, threaded followup questions, aligned image embeddings and margin-bounded retrieval | [source](diagrams/visual-artifact-subsystem.mmd) | [view](diagrams/visual-artifact-subsystem.svg) |
 | Architecture maintenance | Explicit repository evidence, local Gemma candidate generation, passive/required-label validation, pinned rendering, review, and manual canonical promotion | [source](diagrams/architecture-maintenance-subsystem.mmd) | [view](diagrams/architecture-maintenance-subsystem.svg) |
 | Frontend | Identity/conversation state, view lifecycle, chat components, memory management, typed API/SSE client, diagram rendering | [source](diagrams/frontend-subsystem.mmd) | [view](diagrams/frontend-subsystem.svg) |
 
 ## Runtime topology
 
-`docker-compose.yml` defines three services:
+`docker-compose.yml` defines these services:
 
 | Service | Implementation | Host port | Current architectural role |
 | --- | --- | --- | --- |
 | `backend` | FastAPI/Uvicorn image built from the root `Dockerfile` | `8000` | HTTP API |
+| `frontend` | React/Vite dev-server container built from `frontend/Dockerfile.dev` | `5173` | Developer console with bind-mounted source and hot reload |
 | `db` | `pgvector/pgvector:pg16` | `5432` | PostgreSQL conversation/personal-memory persistence and pgvector semantic search |
 | `redis` | `redis:7-alpine` | `6379` | `SCAFFOLDED`: container exists; backend code does not use a Redis client |
+| `comfyui` | CUDA/PyTorch image (`docker/comfyui/`) that bind-mounts the host ComfyUI install | `8188` | Opt-in (`comfyui` profile) GPU image generation |
+| image embeddings | `nomic-embed-vision-v1.5` ONNX, in-process on CPU | n/a | Aligned 768-dim image vectors for multimodal retrieval |
+| web search | Tavily HTTP API behind `SearchProvider` | n/a | Opt-in live results; disabled without `SEARCH_API_KEY` |
 
-The frontend is not a Compose service. It runs separately from `frontend/` with Vite on port `5173`. The backend image has no source bind mount and does not use reload mode, so source changes require an image rebuild for container validation.
+The `frontend` container bind-mounts `./frontend` and runs Vite with polling so hot reload works across the Docker mount; its browser page still calls the backend at `localhost:8000`. The backend image has no source bind mount and does not use reload mode, so backend source changes require an image rebuild for container validation; a host-source Uvicorn run remains supported for backend development and must not share port `8000` with the Compose backend.
 
-LM Studio is an external local process rather than a Compose service. The host-source backend defaults to `http://127.0.0.1:1234`, selects `google/gemma-4-12b` for chat and validated image understanding, and selects `text-embedding-nomic-embed-text-v1.5` for 768-dimensional text embeddings. ComfyUI is a second external loopback process at `127.0.0.1:8188`; the selected local provider is `hidream_o1_image_dev_fp8_scaled.safetensors`. Generated and uploaded bytes live below the configurable opaque local artifact root; Compose mounts `/app/data/artifacts` from the `artifactdata` volume.
+LM Studio is an external host process rather than a Compose service; the container backend reaches it at `http://host.docker.internal:1234` (host-source runs use `http://127.0.0.1:1234`). It selects `google/gemma-4-12b` for chat and validated image understanding and `text-embedding-nomic-embed-text-v1.5` for 768-dimensional text embeddings. ComfyUI now runs as the opt-in `comfyui` Compose service: it bind-mounts the existing host install (`COMFYUI_HOST_PATH`, default `E:/AI/ComfyUI`, including the `hidream_o1_image_dev_fp8_scaled.safetensors` checkpoint), requests the NVIDIA GPU through Compose device reservations, and provides a Blackwell-capable CUDA 12.8 PyTorch runtime; the container backend reaches it at `http://comfyui:8188`, while a host-run ComfyUI uses `http://host.docker.internal:8188`. Generated and uploaded bytes live below the configurable opaque local artifact root; Compose mounts `/app/data/artifacts` from the `artifactdata` volume. Because the `comfyui` image build downloads a multi-GB CUDA/PyTorch base, it needs sufficient free space on the Docker Desktop disk (the WSL2 image, by default on `C:`).
+
+### Aligned image embeddings and web search
+
+Images are embedded locally by `nomic-embed-vision-v1.5`, run in-process through
+ONNX Runtime on CPU from `data/models/` (weights are not committed; see the
+development guide). The encoder is aligned to the latent space of
+`nomic-embed-text-v1.5`, so image vectors share the same 768 dimensions as text
+memory and a text query embedded by the ordinary text embedder retrieves images
+directly.
+
+Alignment gives comparable *ordering*, not comparable *magnitude*. Measured on
+this system, a matching text-to-text pair scores about `0.73` cosine similarity
+while a matching text-to-image pair scores about `0.08` - the modality gap. Image
+vectors therefore live in their own `visual_artifacts.embedding` column with
+their own HNSW index and their own bounds; they are never ranked in one list
+against text memory by raw distance, because every unrelated text memory would
+outrank every matching image. Generated and uploaded images are embedded once at
+store time; a followup question does not re-embed, because the pixels have not
+changed. Diagrams hold Mermaid source rather than pixels and are excluded.
+
+Two retrieval paths reach stored images. Vision analysis text is embedded into
+`semantic_memory` under the dedicated `visual_artifact_analysis` purpose, which
+keeps derived model output separate from the approval-gated path that persists
+user-stated facts; that makes an image findable by what was said about it. The
+aligned image vector makes it findable by what it actually depicts, including
+detail no caption mentioned. Generated images have no analysis text, so the
+vector is their only index.
+
+In chat, `ImageRecallPolicy` decides when a turn is a recall request and
+explicitly refuses creation requests, so "draw me a fox" can never be answered
+with an archived fox. Matches stream to the interface as an `image_matches` SSE
+event before the answer, and enter the prompt as untrusted quoted data telling
+the model the images are already displayed.
+
+`ImageRetrievalPolicy` decides which ranked hits are real matches, and it needs
+two bounds because a distance ceiling alone is provably insufficient. Measured
+over an 18-query labelled set against eight generated images, relevant queries
+placed the correct image first every time at distances of `0.9090`-`0.9419`,
+while unrelated queries returned their nearest image at `0.9518`-`0.9699`. Those
+bands look separable, but a genuine weak match measured `0.9531` on other data,
+inside the distractor range: no absolute cutoff separates them.
+
+The discriminating signal is the margin between the best hit and the runner up.
+A real match pulls clearly ahead (`0.0211` minimum observed) while an unrelated
+query leaves every image roughly equidistant (`0.0107` maximum, and exactly
+`0.0000` for one query). The policy therefore applies
+`VISION_SEARCH_MAX_COSINE_DISTANCE` (`0.96`) as a coarse ceiling and
+`VISION_SEARCH_MIN_MARGIN` (`0.015`) as the discriminator. With both bounds the
+labelled set scores 14/14 correct top-1 results and 4/4 distractors correctly
+returning nothing; with the ceiling alone every distractor produced a false
+positive.
+
+Candidates must be fetched **without** a distance pre-filter
+(`ImageRetrievalPolicy.CANDIDATE_CEILING`). Filtering in SQL first can discard
+the runner up, which leaves a single row that looks like a lone result and
+silently bypasses the margin check; that regression is covered by a test.
+
+Because these bounds are calibrated rather than derived, they should be
+re-measured as a library grows: more images shrink inter-image margins.
+
+Web search is an opt-in Tavily HTTP provider behind `SearchProvider`. A
+deterministic `SearchRoutingPolicy` owned by the application decides when a turn
+needs live data; the model never selects the path, because a model cannot detect
+that its own training data is stale. `ImageRecallPolicy` performs the equivalent
+routing for image recall and explicitly refuses creation requests. Search results
+and image descriptions both enter the prompt as untrusted quoted data.
 
 ## Backend boundaries
 
@@ -59,7 +130,7 @@ LM Studio is an external local process rather than a Compose service. The host-s
 
 `backend/api/v1/artifacts.py` lists recent owned artifacts, returns owned binary content with private/no-store and nosniff headers, and deletes both the database row and binary file. Explicit diagram requests create a pending record before provider work and stream a sanitized terminal success or failure lifecycle. If the client disconnects after pending persistence, the application shields only the terminal cleanup write, marks the record failed with `cancelled`, and re-raises cancellation.
 
-`backend/api/v1/images.py` accepts a bounded prompt and one allowlisted HiDream training resolution, then returns a terminal generated-image artifact. `backend/api/v1/vision.py` streams a bounded multipart upload, validates actual PNG/JPEG/WebP content, rejects animation, MIME mismatch, excess bytes, and excess pixels, persists the owned upload, and sends only the validated image plus bounded prompt to the configured local vision provider. Invalid uploads create no artifact; VLM failure preserves the valid upload with `analysis_status=failed` for later deletion or retry work.
+`backend/api/v1/images.py` accepts a bounded prompt and one allowlisted HiDream training resolution, then returns a terminal generated-image artifact. `backend/api/v1/vision.py` streams a bounded multipart upload, validates actual PNG/JPEG/WebP content, rejects animation, MIME mismatch, excess bytes, and excess pixels, persists the owned upload, and sends only the validated image plus bounded prompt to the configured local vision provider. Invalid uploads create no artifact; VLM failure preserves the valid upload with `analysis_status=failed` for later deletion or retry work. `POST /api/v1/vision/artifacts/{artifact_id}/ask` accepts a bounded question about any owned ready generated or uploaded image, re-reads the integrity-checked stored bytes rather than requiring a new upload, replays a bounded prior question/answer context to the same vision provider, appends the grounded answer to a size-bounded thread persisted in artifact metadata, and returns 404 for unowned or non-ready images without invoking the provider. This threaded analysis lives only on the artifact record; it is not written into the memory subsystem, and multimodal embeddings remain `PLANNED`.
 
 The image-generation handler monitors HTTP disconnects around provider work. A browser cancellation cancels the service task, interrupts the matching ComfyUI prompt, shields the terminal `failed/cancelled` write, and finishes without an application exception. The React composer exposes Chat, Create image, and Analyze image modes with progress, cancellation, retained retry input, visible API failures, and bounded file selection. `ImageArtifact` fetches private bytes with the optional auth header, renders a temporary object URL, exposes grounded Gemma text, and supports local download and owned deletion. Conversation hydration and artifact history restore both diagrams and binary images.
 
@@ -78,13 +149,13 @@ The active collaborators are:
 | `ConversationService` | implemented local boundary | Obtains a memory query plan, loads selected context plus bounded same-user history, streams an injected model through LangGraph, persists the response, and updates memory lifecycle state |
 | `PostgresMemoryService` | implemented local boundary | Supports profile upsert, episodic save/read, live embedding generation, pgvector semantic save/search, snapshots, and scoped deletion |
 | `AgentMemoryManager` | implemented typed store facade | Owns user-scoped semantic-cache, working, procedure, entity/relation, knowledge, and summary stores without exposing raw tables to the coordinator or model |
-| `MemoryCoordinatorAgent` | implemented deterministic policy boundary | Classifies memory intent, caches the typed plan, queries only selected stores, curates bounded prompt context, writes expiring session state, and periodically rolls conversation digests |
+| `MemoryCoordinatorAgent` | implemented deterministic policy boundary | Classifies memory intent with deterministic keyword routing, embeds the query once per turn and reuses that vector across every selected store, queries only selected stores, applies one cross-store relevance budget with dedup and item/character caps, writes expiring session state, and periodically rolls conversation digests |
 | `ToolMemoryService` | implemented safe metadata boundary | Stores and retrieves user-scoped safe tool descriptors, approved preferences, and sanitized outcomes; it cannot invoke or authorize tools |
 | `DiagramAgent` | implemented specialized LangGraph boundary | Runs one typed `generate_diagram` node around the replaceable provider; it has no persistence, authorization, or hardware-management authority |
 | `DiagramArtifactService` | implemented local artifact boundary | Coordinates pending/ready/failed diagram records, invokes a replaceable bounded diagram provider, and never gives the model persistence authority |
 | `ImageArtifactService` | implemented local binary artifact boundary | Coordinates generated/uploaded pending/ready/failed records, opaque atomic file storage, SHA-256/size integrity checks, owned content reads, and file-plus-row deletion |
 | `ComfyUIImageProvider` | implemented free local provider | Submits a pinned HiDream-O1 Dev workflow through ComfyUI, polls terminal history, fetches one output, validates it, and limits concurrent jobs to one |
-| `VisionAnalysisService` | implemented local VLM boundary | Persists a validated upload before sending its bytes and bounded prompt through the replaceable Gemma vision adapter, then records ready/failed analysis metadata |
+| `VisionAnalysisService` | implemented local VLM boundary | Persists a validated upload before sending its bytes and bounded prompt through the replaceable Gemma vision adapter, records ready/failed analysis metadata, and answers bounded followup questions on any owned image by re-reading stored bytes and maintaining a bounded persisted question/answer thread |
 | `ArchitectureCandidateService` | implemented review-only maintenance boundary | Combines registered canonical source with bounded explicit repository evidence, requires selected visible labels, and returns a candidate without canonical write authority |
 | `SQLAlchemyArtifactRepository` | implemented user-scoped persistence boundary | Stores diagram source, lifecycle, conversation/trace provenance, provider/model metadata, and supports conversation listing plus individual deletion |
 | `SQLAlchemyConversationRepository` | implemented local boundary | Saves and counts turns under stable conversation IDs and reads a configured newest-turn window filtered by both conversation ID and user ID, returned in chronological order |
@@ -106,7 +177,7 @@ Explicit diagram requests bypass ordinary memory retrieval and the assistant gra
 
 The maintainer-only architecture candidate command uses the same agent/provider boundary but remains outside the HTTP runtime. `ArchitectureCandidateService` reads the registered canonical source plus only explicitly selected, bounded repository text. The CLI requires a loopback LM Studio endpoint; rejects traversal, common secret-bearing names, unsupported types, existing outputs, and canonical output paths; can require implementation-backed visible labels with one bounded semantic correction; and invokes the pinned Mermaid renderer. Output is a new review candidate only. Technical and visual review, followed by an explicit manual canonical edit or promotion, remains mandatory because label presence and syntax cannot prove relationship accuracy.
 
-`backend/embeddings/lm_studio.py` implements LM Studio's OpenAI-compatible `/v1/embeddings` boundary. Nomic document/query task prefixes are applied and the configured 768-value dimension is validated before persistence or search.
+`backend/embeddings/lm_studio.py` implements LM Studio's OpenAI-compatible `/v1/embeddings` boundary. Nomic document/query task prefixes are applied and the configured 768-value dimension is validated before persistence or search. The provider also supports a batch `embed_texts` call that embeds many documents in one request with index-ordered reassembly; knowledge ingestion uses it so a multi-chunk document embeds in a single call instead of one request per chunk. Because the local provider still serializes concurrent calls, a chat turn now embeds the query exactly once and reuses that vector across personal semantic, entity, knowledge, procedure, summary, and toolbox retrieval rather than re-embedding the same query per store.
 
 ### Persistence
 
@@ -179,7 +250,7 @@ Current host-source validation completes this flow through Gemma, a bounded same
 - Local knowledge-document ingestion, deterministic chunking, embedding, semantic retrieval, prompt curation, export, and deletion: implemented. Hybrid retrieval, reranking, source-citation policy, file connectors, ingestion jobs, and GraphRAG remain `PLANNED`.
 - Signed local-user route ownership: implemented when enabled. Password login, account management, token revocation, and external identity providers: `PLANNED`.
 - Internet search, its privacy decision gate, notifications, calendar, email, voice, mobile clients, autonomous agents, and multi-agent workflows: `PLANNED`.
-- Explicit Mermaid diagram generation through a dedicated diagram graph, user-scoped lifecycle/history/deletion, strict rendering, reload restoration, local Mermaid/SVG export, and disconnect recovery: implemented and browser/direct-client verified. Free local raster generation, bounded upload, opaque binary storage, owned content/deletion, Gemma image understanding, browser progress/retry/cancel, private rendering, navigation/reload restoration, history, download, and deletion are implemented and direct/live-browser verified. Review-only local Gemma architecture candidates remain implemented and never update canonical source automatically. Automated retention/export, multimodal embeddings, durable queues, GPU resource leasing/transitions, and generalized image agents remain `PLANNED`.
+- Explicit Mermaid diagram generation through a dedicated diagram graph, user-scoped lifecycle/history/deletion, strict rendering, reload restoration, local Mermaid/SVG export, and disconnect recovery: implemented and browser/direct-client verified. Free local raster generation, bounded upload, opaque binary storage, owned content/deletion, Gemma image understanding, browser progress/retry/cancel, private rendering, navigation/reload restoration, history, download, and deletion are implemented and direct/live-browser verified. Threaded followup questions on owned generated or uploaded images reuse the stored bytes and the same vision boundary with a bounded, persisted question/answer thread; this is deterministic-browser and backend/unit verified, while a live Gemma followup session and any memory-subsystem indexing of image content remain `PLANNED`. Review-only local Gemma architecture candidates remain implemented and never update canonical source automatically. Automated retention/export, multimodal embeddings, durable queues, GPU resource leasing/transitions, and generalized image agents remain `PLANNED`.
 - Semantic safe-descriptor discovery and user-scoped approved preference/sanitized outcome memory: implemented. MCP connectivity, authoritative live-registry synchronization, permissions, and invocation remain `PLANNED`; tool memory cannot authorize execution.
 
 ## Architectural decision

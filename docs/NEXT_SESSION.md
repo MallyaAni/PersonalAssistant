@@ -2,7 +2,7 @@
 
 Frequently rewrite this file from fresh evidence. Verified history belongs in [CHANGELOG.md](CHANGELOG.md), durable milestone status in [ROADMAP.md](ROADMAP.md), and stable architecture facts in [ARCHITECTURE.md](ARCHITECTURE.md).
 
-Last updated: 2026-07-18, America/New_York
+Last updated: 2026-07-21, America/New_York
 
 ## Current milestone
 
@@ -14,6 +14,8 @@ AniOS now exposes three visual workflows through one browser composer:
 - Create image sends a bounded prompt to the local ComfyUI/HiDream provider, shows progress, supports cancellation and retry, and renders the owned result.
 - Analyze image validates a bounded PNG/JPEG/WebP upload, stores it privately, sends only that image plus a bounded prompt to local Gemma vision, and renders the grounded analysis.
 
+Any owned generated or uploaded image now also accepts threaded followup questions from its private card: the backend re-reads the integrity-checked stored bytes, replays a bounded prior question/answer context to the same Gemma vision boundary, and persists a size-bounded thread on the artifact record.
+
 Generated and uploaded images restore through active-conversation hydration and recent artifact history. Private bytes are fetched with the current authorization header, rendered from temporary object URLs, and can be downloaded or deleted. Cancelling an active generation aborts the browser request, interrupts the matching ComfyUI prompt, and changes the persisted artifact from `pending` to terminal `failed/cancelled` without a backend exception.
 
 This verifies the current synchronous local slice. It does not verify or imply durable jobs, crash reconciliation, multi-process GPU leases, automated binary retention, multimodal embeddings, or production security.
@@ -21,14 +23,19 @@ This verifies the current synchronous local slice. It does not verify or imply d
 ## Git and runtime state
 
 - Branch: `main`.
-- Starting and final `HEAD`: `aa8b1b218e98b543d5e1ebea018e5b258425d2ac`.
-- Working tree: dirty with extensive pre-existing uncommitted memory, diagram, backend, frontend, dependency, and generated-cache changes plus the current visual-browser changes. Preserve unrelated changes.
-- No commit, tag, branch, worktree, stash, reset, restore, checkout, push, or recovery operation was created.
-- Current host-source processes during acceptance: Uvicorn PID `17632` on `127.0.0.1:8000`, Vite PID `13668` on `127.0.0.1:5173`, ComfyUI PID `24644` on `127.0.0.1:8188`, LM Studio on `127.0.0.1:1234`, and PostgreSQL in Docker on `5432`.
-- Uvicorn stdout: `E:\AI\anios-ui-backend.stdout.log`; stderr: `E:\AI\anios-ui-backend.stderr.log`.
-- Alembic is at `20260718_0011 (head)` and `alembic check` reports no pending operations.
+- Working tree: dirty with pre-existing uncommitted changes plus this session's image-followup changes (settings, vision provider/interface, `VisionAnalysisService`, `ImageQuestionBody`, `vision.py` ask route, dependency wiring, `ImageArtifact` card, `api.ts`, backend and Playwright tests, `visual-artifact-subsystem` diagram source/SVG, and the ARCHITECTURE/README/ROADMAP/CHANGELOG updates). Preserve unrelated changes.
+- No commit, tag, branch, worktree, stash, reset, restore, checkout, push, or recovery operation was created; there is no verified commit SHA for this work.
+- This session did not run a live host-source Uvicorn/Vite/ComfyUI acceptance session. The PostgreSQL `db` container was started with `docker compose up -d db` (reported healthy) to run the DB-backed suite; LM Studio was reachable on `127.0.0.1:1234` but was not exercised for a live followup.
+- No new migration was added; the visual-artifact schema already carries the JSON `extra_data` metadata column that stores the analysis thread, so no Alembic change was required.
 
 ## VERIFIED
+
+### Image followup questions (this session)
+
+- The full backend suite passed `138 passed` in 14.37 seconds with the PostgreSQL container healthy. The earlier run without a `db` container produced 28 failures and 9 errors that were all DB-connection errors in memory-subsystem tests; bringing the container up turned the representative subset green (`test_memory_service` and `test_tool_memory_api`: 10 passed), confirming those failures were infrastructure, not this change.
+- Five new `VisionAnalysisService` tests pass: thread accumulation with prior-answer replay, independent context/storage bounding, legacy flat-analysis seeding, unowned/non-ready rejection before any provider call, and a failed followup that preserves the prior thread and raises the sanitized `VisionAnalysisError`.
+- A new deterministic Chromium test drives the private image card ask box: it generates an image, types a question, posts to `/api/v1/vision/artifacts/{id}/ask`, and asserts the threaded question and grounded answer render, the input clears, the request body carries the owning user and prompt, and no blocking Console or page errors occur. The full deterministic suite passed `26 passed` in 26.9 seconds.
+- Ruff and strict MyPy pass on the changed backend modules; the frontend `tsc` check passes; `architecture-diagram.mjs check` reports all eight Mermaid/SVG pairs synchronized after the `visual-artifact-subsystem` view gained the followup path.
 
 ### Direct generated-image API and logs
 
@@ -93,12 +100,26 @@ This verifies the current synchronous local slice. It does not verify or imply d
 - Durable Redis-backed jobs, cross-process concurrency control, GPU leases, provider auto-restart, model-transition recovery, sustained concurrent generation benchmarks, and DGX Spark profiles are not implemented or runtime verified.
 - Automated binary retention/export, storage quotas, backup/restore, encryption, malware scanning, and redacted media audit events are not implemented.
 - Dedicated multimodal embeddings and image-to-image vector retrieval are not implemented. Nomic remains text-only.
+- Image followup analysis is not indexed into the memory subsystem. The question/answer thread lives only on the artifact record; the memory coordinator cannot retrieve image content, and the main `/api/v1/chat` path remains image-blind, so followups work only from the artifact card, not from ordinary later conversation.
+- A live Gemma followup session for `/api/v1/vision/artifacts/{id}/ask` was not run this session. The followup path is deterministic-browser and backend/unit verified only; live-provider acceptance and a concurrent-followup guard on the shared vision provider remain deferred.
 - Generalized autonomous image workers and broader multi-agent orchestration remain planned; the current provider/service boundaries are deterministic application orchestration.
 - Security remains intentionally deferred as the final subsystem. Trusted-local defaults are not production authentication, secret management, network isolation, encrypted storage, or hardened authorization.
 - The current uncommitted tree has no verified commit SHA.
 
-## Next atomic task
+## Memory production-hardening (this session)
 
-Implement process-crash and stale-pending reconciliation for visual artifacts without introducing the larger durable-queue/GPU-lease subsystem.
+Wave 1 of the memory production-grade pass is implemented and `VERIFIED`:
 
-Acceptance for that stage: create a unique pending generation through the public API; terminate the exact current-source backend process during provider work; restart the same source; prove startup or bounded periodic reconciliation changes the orphaned record to a sanitized terminal failure, interrupts or otherwise accounts for the provider job where possible, leaves no partial binary file, exposes the failure through list/reload UI, and permits owned retry/deletion. Inspect backend and ComfyUI logs, run the focused crash-recovery test plus full regressions/build, and clean only scoped validation data. Stop after that atomic reliability boundary is verified.
+- One query embedding per turn, reused across every vector store; removed the embedding-backed plan cache; batch `embed_texts` for knowledge ingest; one cross-store relevance budget with dedup and item/char caps; bounded display snapshot with the export path left complete.
+- Full backend suite `140 passed` with PostgreSQL up; new embedding-batch and context-budget tests; Ruff, strict MyPy (81 files), Black, and the nine-diagram render/synchronization check pass. The manager `memory-overview` diagram was added and the detailed `memory-subsystem` view updated.
+
+## Next atomic task — memory hardening wave 2
+
+Sequence these as separate verified increments (do not bundle; each has its own migration/decision surface):
+
+1. **Episodic relevance ranking.** Add a nullable `embedding` plus `embedding_next` shadow column and the three embedding-metadata columns to `episodic_memory`, an HNSW cosine index, and register episodic in `STORES` (re-embedding) and the offline dimension-migration inventory. Embed content on save; retrieve by cosine relevance when a query is present and fall back to recency for un-embedded rows. Acceptance: a semantically matching later query surfaces the right episodic row under scope/threshold/budget; re-embedding and dimension migration cover episodic; full regressions pass.
+2. **Redis-backed working memory.** Move only the TTL key-value working store to the scaffolded Redis service; keep the semantic cache in Postgres because it needs pgvector similarity. Update dependency wiring, retention/operations that count working rows, and tests. Keep a Postgres fallback path if Redis is unavailable.
+3. **Enforced authentication.** Strengthen and test the signed-user boundary on every memory/chat/artifact route; keep `AUTH_REQUIRED` off by default for trusted-local dev (flipping it breaks the current UX and browser tests) and document the production enablement path.
+4. **Encryption at rest.** Prefer volume/disk encryption plus TLS to Postgres as the primary posture; optionally add app-level encryption for specific PII columns behind a flag, accepting that encrypted columns lose text search. This needs a key-management decision before implementation.
+
+Still open, deferred (independent tracks): index image-derived text into semantic memory (multimodal-memory Tier 1, caption-to-text bridge, tagged by `artifact_id`); and process-crash/stale-pending reconciliation for visual artifacts. Sequence all of the above by priority.

@@ -26,6 +26,7 @@ flowchart LR
         ComfyUI[ComfyUI and HiDream-O1 Dev<br/>local raster generation]
         BinaryStore[(Opaque local binary artifact store)]
         Redis[(Redis<br/>scaffolded and unused)]
+        VisionEmbed[Nomic Embed Vision v1.5<br/>in-process ONNX, aligned image vectors]
         Diagrams[(Canonical Mermaid suite<br/>plus review candidates)]
     end
 
@@ -57,6 +58,9 @@ flowchart LR
     ImageArtifacts --> Database
     Memory --> Database
     Memory -->|embedding requests| LMStudio
+    ImageArtifacts -->|image bytes at store time| VisionEmbed
+    VisionEmbed -->|aligned 768-dim vectors| Database
+    Graph -->|deterministic routing only<br/>untrusted results| WebSearch
     Toolbox --> Database
     Toolbox -->|safe descriptor embeddings| LMStudio
 
@@ -67,5 +71,6 @@ flowchart LR
     class Frontend,API interface;
     class User,Maintainer interface;
     class Conversation,DiagramArtifacts,ImageArtifacts,Vision,DiagramAgent,Candidate,Coordinator,Graph,Memory,Toolbox application;
-    class Database,LMStudio,ComfyUI,BinaryStore,Diagrams infrastructure;
+    WebSearch[[Tavily web search<br/>external vendor, opt-in, untrusted]]
+    class Database,LMStudio,ComfyUI,BinaryStore,Diagrams,VisionEmbed infrastructure;
     class Redis scaffold;

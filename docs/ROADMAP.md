@@ -127,7 +127,19 @@ Goal: let one AniOS conversation create editable technical diagrams and locally 
 - `PLANNED`: a hardware-resource manager that leases GPU capacity, drains active inference safely, selects configured context profiles, and restores the primary Gemma provider after a model transition or failure.
 - `VERIFIED`: free local ComfyUI 0.28 plus MIT-licensed HiDream-O1 Dev FP8 generates 2048x2048 PNGs through a typed provider and one-job concurrency gate. Direct RTX 5080 acceptance completed in 35.01 seconds under exclusive residency and 35.061 seconds while Gemma remained loaded at its 256k/parallel-4 profile; the immediate post-generation Gemma chat stream also completed. Live browser cancellation now interrupts the exact ComfyUI prompt, records `failed/cancelled`, clears loading, and produces no backend exception. Broader quality, crash recovery, and sustained-load benchmarks remain `PLANNED`; paid APIs, subscriptions, credits, and automatic cloud fallback remain excluded.
 - `VERIFIED`: generated and uploaded images use user-scoped PostgreSQL pending/ready/failed lifecycle plus opaque atomic local storage, SHA-256/size integrity checks, owned content reads, scoped file-plus-row deletion, and sanitized invalid-input/provider failures. Automated retention/export and crash reconciliation remain `PLANNED`.
-- `VERIFIED`: bounded PNG/JPEG/WebP multipart upload validation and real Gemma 4 12B image understanding are implemented. Live acceptance correctly identified a unique magenta geometric fox and its light-green circular platform; malformed bytes returned 422 and created no record. Dedicated multimodal embeddings remain `PLANNED`; Nomic remains text-only.
+- `VERIFIED`: bounded PNG/JPEG/WebP multipart upload validation and real Gemma 4 12B image understanding are implemented. Live acceptance correctly identified a unique magenta geometric fox and its light-green circular platform; malformed bytes returned 422 and created no record. Dedicated multimodal embeddings are now `VERIFIED`: `nomic-embed-vision-v1.5`
+runs locally through ONNX and is aligned to the text latent space, generated and
+uploaded images are embedded at store time, and a text query retrieves them by
+pixel content through `GET /api/v1/artifacts/{user_id}/search/images` and through
+deterministic image recall in chat. Cross-modal scores are not comparable to
+text-text scores, so image vectors keep a separate column, index, and calibrated
+threshold rather than sharing one ranked list. Retrieval quality is measured
+rather than assumed: an 18-query labelled evaluation returns 14/14 correct
+top-1 matches and rejects 4/4 distractor queries, using a distance ceiling plus
+a required best-to-runner-up margin. A committed evaluation harness equivalent
+to `evaluate_memory_retrieval.py` remains `PLANNED`; the calibration run was
+performed manually.
+- `VERIFIED` (deterministic): threaded followup questions about any owned generated or uploaded image reuse the integrity-checked stored bytes and the same Gemma vision boundary, replay a bounded question/answer context, persist a size-bounded thread in artifact metadata, seed from a prior flat analysis, and reject unowned or non-ready images with 404 before any provider call. Deterministic Chromium plus backend/unit coverage pass; a live Gemma followup session remains `UNVERIFIED`. The thread lives only on the artifact record — chat-path image awareness and multimodal-memory retrieval of image content remain `PLANNED`.
 - `VERIFIED`: deterministic and live Chromium acceptance covers diagrams, real ComfyUI image generation, multipart Gemma analysis, private image rendering, progress/cancellation, retry, 413/422/502/503 failure display, navigation and reload restoration, history, download, owned deletion, clean successful Network/Console behavior, and terminal loading state.
 
 Gemma remains the primary logical reasoning model, but no model owns orchestration state or its own lifecycle. The application owns policy, durable jobs, resource leases, and provider recovery so specialized workers and future multi-agent graphs can scale without coupling the system to the current RTX 5080 or planned DGX Spark.
