@@ -11,13 +11,13 @@ class StubLLM:
     def __init__(self, reply: str = "YES", fail: bool = False) -> None:
         self.reply = reply
         self.fail = fail
-        self.calls: list[tuple[str, int]] = []
+        self.calls: list[tuple[list[dict[str, str]], int]] = []
 
-    def generate_text(self, prompt: str, max_tokens: int = 1024) -> str:
-        self.calls.append((prompt, max_tokens))
+    def chat(self, messages, max_tokens: int = 1024):
+        self.calls.append((messages, max_tokens))
         if self.fail:
             raise RuntimeError("model unavailable")
-        return self.reply
+        return {"content": self.reply}
 
 
 class CountingClassifier:
@@ -80,10 +80,13 @@ async def test_classifier_reply_is_bounded_to_a_few_tokens():
 
     await classifier.requires_current_information("who won today")
 
-    prompt, max_tokens = llm.calls[0]
+    messages, max_tokens = llm.calls[0]
     # Only one word is ever needed, so the reply stays cheap.
     assert max_tokens == 4
-    assert "who won today" in prompt
+    # Few-shot examples are real turns, and the query is the final user message.
+    assert messages[0]["role"] == "system"
+    assert messages[-1] == {"role": "user", "content": "who won today"}
+    assert any(m["role"] == "assistant" and m["content"] == "YES" for m in messages)
 
 
 @pytest.mark.asyncio

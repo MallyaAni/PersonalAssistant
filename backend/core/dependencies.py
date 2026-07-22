@@ -422,6 +422,21 @@ ImageRecallDependency = Annotated[
 ]
 
 
+# Serve the routing classifier from a dedicated model when one is configured,
+# otherwise reuse the chat model.
+@lru_cache(maxsize=1)
+def get_classifier_llm() -> LLMClient:
+    if not settings.SEARCH_CLASSIFIER_MODEL:
+        return get_llm_client()
+    return LMStudioLLM(
+        base_url=settings.LLM_BASE_URL,
+        model=settings.SEARCH_CLASSIFIER_MODEL,
+        api_key=settings.LLM_API_KEY,
+        timeout_seconds=settings.LLM_TIMEOUT_SECONDS,
+        reasoning_effort=settings.LLM_REASONING_EFFORT,
+    )
+
+
 # Compose free deterministic patterns with a bounded classifier fallback. The
 # classifier returns a judgement about the question, never a tool call, so the
 # application keeps ownership of routing.
@@ -429,7 +444,7 @@ ImageRecallDependency = Annotated[
 def get_search_router() -> CascadingSearchRouter:
     classifier = (
         LMStudioFreshnessClassifier(
-            get_llm_client(),
+            get_classifier_llm(),
             max_tokens=settings.SEARCH_CLASSIFIER_MAX_TOKENS,
         )
         if settings.SEARCH_CLASSIFIER_ENABLED

@@ -9,29 +9,43 @@ logger = logging.getLogger(__name__)
 # Bounded instruction returning a single token. The model is asked only for a
 # judgement about the question; it never selects a tool, so a compromised or
 # confused answer can at worst cause one unnecessary search.
-_INSTRUCTION = (
-    "You decide whether a question should be answered using a web search.\n"
-    "Answer YES if the correct answer could have changed recently, depends on "
-    "current events, or concerns anything that happened close to now. Questions "
-    "about records, holders of a role, releases, prices, counts, schedules and "
-    "'most recent' anything are YES even when they sound historical, because "
-    "the answer may have moved since you were trained.\n"
-    "Answer NO only when the answer is fixed forever: mathematics, definitions, "
-    "grammar, code, creative writing, or long-settled history.\n"
-    "When unsure, answer YES.\n"
-    "Reply with exactly one word.\n\n"
-    # Few-shot examples chosen for the hard boundary: superficially historical
-    # questions whose answers still move, against genuinely fixed ones.
-    "Question: What is the capital of France?\nAnswer: NO\n\n"
-    "Question: When did OpenAI release GPT-5?\nAnswer: YES\n\n"
-    "Question: Write a haiku about rain.\nAnswer: NO\n\n"
-    "Question: Who holds the world record in the marathon?\nAnswer: YES\n\n"
-    "Question: What is the derivative of x squared?\nAnswer: NO\n\n"
-    "Question: When did Taylor Swift win her first Golden Globe?\nAnswer: YES\n\n"
-    "Question: Explain how a b-tree works.\nAnswer: NO\n\n"
-    "Question: How many countries use the euro?\nAnswer: YES\n\n"
-    "Question: {query}\nAnswer:"
+_SYSTEM = (
+    "Classify whether a question needs a web search.\n"
+    "YES means the correct answer can change over time: current events, "
+    "prices, weather, scores, schedules, releases, statistics, or whoever "
+    "currently holds a role, title or record.\n"
+    "NO means the answer is already fixed and cannot change: past events with "
+    "a settled outcome, mathematics, definitions, grammar, code, explanations "
+    "and creative writing.\n"
+    "Reply with one word: YES or NO."
 )
+
+# Few-shot examples as real conversation turns. A completion-style prompt blob
+# is reinterpreted by a chat template, and a small model then answers
+# conversationally instead of classifying; structured turns keep the format
+# unambiguous for any chat model.
+_EXAMPLES: tuple[tuple[str, str], ...] = (
+    ("What is the capital of France?", "NO"),
+    ("When did OpenAI release GPT-5?", "YES"),
+    ("Write a haiku about rain.", "NO"),
+    ("Who holds the world record in the marathon?", "YES"),
+    ("What is the derivative of x squared?", "NO"),
+    ("When did Taylor Swift win her first Golden Globe?", "YES"),
+    ("Explain how a b-tree works.", "NO"),
+    ("How many countries use the euro?", "YES"),
+)
+
+
+# Build the classification conversation for one query.
+def _build_messages(query: str) -> list[dict[str, str]]:
+    messages = [{"role": "system", "content": _SYSTEM}]
+    for example, answer in _EXAMPLES:
+        messages.append({"role": "user", "content": example})
+        messages.append({"role": "assistant", "content": answer})
+    messages.append({"role": "user", "content": query.strip()})
+    return messages
+
+
 
 
 class QueryFreshnessClassifier(ABC):
@@ -52,14 +66,14 @@ class LMStudioFreshnessClassifier(QueryFreshnessClassifier):
 
     # Ask for one word and accept only an unambiguous answer.
     async def requires_current_information(self, query: str) -> bool | None:
-        prompt = _INSTRUCTION.format(query=query.strip())
         try:
             # The client is synchronous, so keep it off the event loop.
-            raw = await asyncio.to_thread(
-                self.llm.generate_text,
-                prompt,
+            result = await asyncio.to_thread(
+                self.llm.chat,
+                _build_messages(query),
                 self.max_tokens,
             )
+            raw = str(result.get("content", ""))
         except Exception:
             # An outage must not decide routing; the caller falls back.
             logger.warning("Freshness classifier call failed", exc_info=True)

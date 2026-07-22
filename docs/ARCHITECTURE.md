@@ -128,11 +128,23 @@ Measured against FreshQA, which labels 600 questions fast-changing,
 slow-changing or never-changing, patterns alone recalled 45.6% of questions
 whose answers move, because volatility is rarely phrased explicitly: "When did
 OpenAI release GPT-5?" needs live data and contains no temporal marker. The
-cascade raises that to 91.7% and overall accuracy from 62.3% to 82.5%, at the
-cost of specificity falling to 61.1%. That trade is deliberate: an unnecessary
+cascade raises that to 86.9% and overall accuracy from 62.3% to 81.7%, at the
+cost of specificity falling to 69.4%. That trade is deliberate: an unnecessary
 search costs a second, while a missed one produces a confident stale answer.
-Few-shot examples in the classifier prompt carry most of the gain - the same
-cascade scored only 59.5% recall zero-shot.
+
+The prompt dominates the result, more than model size does. Zero-shot the same
+cascade recalled 59.5%; few-shot examples supplied as real conversation turns
+carry the gain. A completion-style prompt blob is silently reinterpreted by a
+chat template, and small models then answer conversationally instead of
+classifying, so the examples are sent as alternating user/assistant turns.
+
+Smaller local classifiers were measured and rejected. Against an "always
+search" baseline that ignores the question entirely and scores 70.0% accuracy,
+qwen3-1.7b also scored 70.0% and qwen3-0.6b 70.8%: both were effectively
+constant-YES answers costing a dependency and latency for nothing. The 12B chat
+model reached 81.7% because it was the only candidate that discriminated.
+`SEARCH_CLASSIFIER_MODEL` keeps the choice configurable should a better small
+model appear.
 
 Pattern coverage matches volatile *shapes*, not just temporal vocabulary. An earlier
 pattern set keyed on words like "latest" and "current" and reached only 11 of 18

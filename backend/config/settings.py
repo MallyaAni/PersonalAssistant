@@ -117,6 +117,12 @@ class Settings(BaseSettings):
     # queries only; disable it to fall back to patterns alone.
     SEARCH_CLASSIFIER_ENABLED: bool = True
     SEARCH_CLASSIFIER_MAX_TOKENS: int = Field(default=4, ge=1, le=16)
+    # Empty uses LLM_MODEL. Smaller local models were measured on FreshQA and
+    # rejected: qwen3-1.7b scored 70.0% accuracy against a 70.0% "always search"
+    # baseline, contributing nothing over a constant answer, and qwen3-0.6b
+    # reached 70.8%. The 12B chat model reached 81.7% because it is the only
+    # candidate that actually discriminated.
+    SEARCH_CLASSIFIER_MODEL: str = ""
 
     # JWT Authentication
     SECRET_KEY: str = Field(..., alias="SECRET_KEY")
