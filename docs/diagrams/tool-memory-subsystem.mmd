@@ -1,4 +1,11 @@
 flowchart TB
+    MCPServers[[Configured MCP servers<br/>untrusted metadata, locally assigned trust]]
+    MCPServers -->|stdio tools/list, paginated| Discovery[MCPRegistryService]
+    Discovery --> Poison{Instruction-shaped description?}
+    Poison -->|yes| Quarantine[Quarantined, never indexed]
+    Poison -->|no| Service
+    Discovery -. fingerprint covers description<br/>to detect rug pulls .-> Service
+
     Caller([Trusted local caller]) --> ToolAPI[Tool-memory API<br/>/memory/user/tools]
     ToolAPI --> Ownership[Optional signed-user ownership]
     Ownership --> Schema[Pydantic allowlists and size limits]

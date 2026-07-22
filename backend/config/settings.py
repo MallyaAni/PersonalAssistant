@@ -124,6 +124,21 @@ class Settings(BaseSettings):
     # candidate that actually discriminated.
     SEARCH_CLASSIFIER_MODEL: str = ""
 
+    # MCP servers, as a JSON array of objects with server_id, command, args,
+    # and an operator-assigned risk_classification. Trust is declared here and
+    # never read from a server's own description of itself.
+    MCP_SERVERS_JSON: str = "[]"
+    MCP_LIST_TIMEOUT_SECONDS: float = Field(default=30.0, gt=0, le=300)
+    # Tool descriptors are short structured text, so a natural-language query
+    # sits further from them than memory text sits from memory text. Measured
+    # against a live catalogue, correct matches landed at 0.295-0.437 while
+    # unrelated questions sat at 0.477+, so the general memory threshold of
+    # 0.35 silently discarded correct tools.
+    TOOL_SEARCH_MAX_COSINE_DISTANCE: float = Field(default=0.45, ge=0, le=2)
+    # Retrieve a handful rather than the whole catalogue: published results put
+    # naive exposure of 100+ tools near random selection.
+    TOOL_SEARCH_MAX_RESULTS: int = Field(default=5, ge=1, le=20)
+
     # JWT Authentication
     SECRET_KEY: str = Field(..., alias="SECRET_KEY")
     AUTH_REQUIRED: bool = False

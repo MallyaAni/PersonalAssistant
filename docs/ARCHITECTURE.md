@@ -183,6 +183,40 @@ list on failure, so the interface retracts its indicator instead of spinning.
 The browser renders the indicator and then the cited sources beneath the answer,
 so a reader can check what grounded it.
 
+### MCP tool discovery
+
+Configured MCP servers are listed over stdio and their live catalogues indexed
+into `tool_descriptors`, so a large registry can be narrowed by meaning before
+anything reaches the model. Published results make the reason concrete: naive
+exposure of 100+ tools drops selection accuracy to roughly 13%, against about
+43% when tools are retrieved, and beyond a few hundred tools selection
+approaches random. Retrieval returns a handful (`TOOL_SEARCH_MAX_RESULTS`).
+
+Tool descriptors need their own retrieval bound. A natural-language question
+sits further from short structured tool text than memory text sits from memory
+text: measured against a live catalogue, correct tools landed at 0.295-0.437
+while unrelated questions sat at 0.477 and above, so the general memory
+threshold of 0.35 silently discarded correct matches. Tool search therefore uses
+`TOOL_SEARCH_MAX_COSINE_DISTANCE`, calibrated to 0.45. This is the third store
+in the system to need its own bound, after personal memory and image vectors.
+
+Server metadata is untrusted. Three properties follow:
+
+- **Trust is assigned locally.** `risk_classification` comes from the operator's
+  configuration, never from the server describing itself.
+- **The fingerprint covers the description, not only the schema.** A server that
+  keeps its contract but rewrites its description can smuggle instructions to
+  the model without changing anything a schema hash would notice - the rug-pull
+  window that opens when a server is approved once and trusted afterwards.
+- **Instruction-shaped descriptions are quarantined, not indexed.** A tool
+  description exists to say what a tool does. One that says what the *model*
+  should do is attempting tool poisoning, and indexing it would place that text
+  in front of the model during discovery.
+
+Discovery is not authorization. A descriptor is a hint for narrowing
+candidates; invocation is `PLANNED` and must re-resolve the selected tool
+against the live catalogue, schema and permissions before any call.
+
 ## Backend boundaries
 
 ### Presentation

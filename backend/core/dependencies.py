@@ -308,9 +308,12 @@ def get_tool_memory_service(
     return ToolMemoryService(
         db,
         embeddings,
+        # Tool descriptors need their own bound: a natural-language query sits
+        # further from short structured tool text than memory text sits from
+        # memory text, so the general memory threshold discards correct tools.
         SemanticRetrievalPolicy(
-            max_cosine_distance=settings.MEMORY_SEMANTIC_MAX_COSINE_DISTANCE,
-            max_results=settings.MEMORY_SEMANTIC_MAX_RESULTS,
+            max_cosine_distance=settings.TOOL_SEARCH_MAX_COSINE_DISTANCE,
+            max_results=settings.TOOL_SEARCH_MAX_RESULTS,
             max_content_chars=settings.MEMORY_SEMANTIC_MAX_CONTENT_CHARS,
         ),
         settings.EMBEDDING_MODEL_VERSION,

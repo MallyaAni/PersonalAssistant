@@ -181,6 +181,13 @@ MCP tool discovery and memory acceptance gates:
 - The selection policy combines semantic relevance with deterministic capability, risk, permission, freshness, and user-preference filters. High-impact, destructive, external-communication, purchase, account, or sensitive-data actions remain visible and approval-gated.
 - Acceptance must cover semantic tool discovery, direct selection for small registries, user preference learning and correction, cross-user/server isolation, stale-index invalidation, schema drift, prompt injection, secret/PII non-persistence, denied permissions, approval, failure feedback, and complete deletion.
 
+Live MCP discovery over stdio is now `VERIFIED`: configured servers are listed,
+paginated, and indexed into `tool_descriptors` for semantic retrieval, with
+locally assigned trust, description-inclusive fingerprints that expose rug
+pulls, and quarantine for instruction-shaped descriptions. Verified against a
+real server: 13 tools discovered and indexed, and natural-language queries
+retrieve the correct tool while unrelated questions return nothing.
+
 Safe tool-descriptor embeddings plus approved preference/sanitized outcome memory are `VERIFIED` as persistence and discovery boundaries. Live MCP connectivity, authoritative `tools/list` refresh/change notifications, permission-aware invocation, and pre-invocation registry re-resolution remain `PLANNED`; a stored descriptor never authorizes a call.
 
 ## Milestone 6: additional interfaces and automation — PLANNED

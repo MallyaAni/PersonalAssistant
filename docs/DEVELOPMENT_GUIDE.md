@@ -336,6 +336,24 @@ faster local model is a constructor change rather than a rewrite; a sub-billion
 parameter model is ample for a one-word judgement and frees the chat model.
 Set `SEARCH_CLASSIFIER_ENABLED=false` to fall back to patterns alone.
 
+MCP servers are configured as a JSON array in `MCP_SERVERS_JSON`, each entry
+giving `server_id`, `command`, `args` and an operator-assigned
+`risk_classification`. Discover and index their tools with:
+
+```bash
+docker compose exec backend python -m backend.cli.sync_mcp_tools --user-id <user>
+docker compose exec backend python -m backend.cli.sync_mcp_tools --user-id <user> --list-only
+```
+
+`--list-only` reports the live catalogue without writing anything.
+
+**Pin server versions.** Fetching a server with `npx -y <package>` resolves to
+whatever is published at that moment, which is the rug-pull vector: a server
+approved once is not the same server after an update. Pin an exact version in
+`args`. The descriptor fingerprint covers the tool description as well as its
+schema, so a rewritten description changes the fingerprint and is visible as a
+new descriptor rather than silently replacing the approved one.
+
 Web search is opt-in in the same way: set `SEARCH_API_KEY` to a Tavily key to
 enable it, and leave it empty to disable search entirely. Routing still runs and
 logs its decision, so `reason=` lines appear in the backend log before any query
