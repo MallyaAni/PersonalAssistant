@@ -26,7 +26,8 @@ interface ComposerProps {
   onVisualReady: (artifact: ImageArtifact) => void;
   onVisualError: (message: string) => void;
   onImageMatches: (artifacts: ImageArtifact[]) => void;
-  onSearchStarted: () => void;
+  onSearchStarted: (minimized: boolean) => void;
+  onSearchBlocked: (categories: string[]) => void;
   onSearchSources: (sources: SearchSource[]) => void;
 }
 
@@ -46,6 +47,7 @@ const Composer: React.FC<ComposerProps> = ({
   onVisualError,
   onImageMatches,
   onSearchStarted,
+  onSearchBlocked,
   onSearchSources,
 }) => {
   const [input, setInput] = useState('')
@@ -108,7 +110,9 @@ const Composer: React.FC<ComposerProps> = ({
         } else if (update.type === 'image_matches') {
           onImageMatches(update.artifacts)
         } else if (update.type === 'search_started') {
-          onSearchStarted()
+          onSearchStarted(update.minimized)
+        } else if (update.type === 'search_blocked') {
+          onSearchBlocked(update.categories)
         } else if (update.type === 'search_sources') {
           onSearchSources(update.sources)
         } else {

@@ -1,5 +1,5 @@
 import React from 'react'
-import { MoreHorizontal, Search, Sparkles } from 'lucide-react'
+import { MoreHorizontal, Search, ShieldAlert, Sparkles } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import DiagramArtifact from '../DiagramArtifact/DiagramArtifact'
 import ImageArtifact from '../ImageArtifact/ImageArtifact'
@@ -20,6 +20,8 @@ interface MessageProps {
   imageMatches?: ImageArtifactRecord[];
   isSearching?: boolean;
   searchSources?: SearchSource[];
+  searchMinimized?: boolean;
+  searchBlocked?: string[];
   onArtifactDeleted?: (artifactId: string) => void;
 }
 
@@ -58,6 +60,8 @@ const MessageBubble: React.FC<MessageProps> = ({
   imageMatches,
   isSearching,
   searchSources,
+  searchMinimized,
+  searchBlocked,
   onArtifactDeleted,
 }) => {
   const isUser = role === 'user';
@@ -116,7 +120,20 @@ const MessageBubble: React.FC<MessageProps> = ({
       )}
       {!isUser && isSearching && (
         <p role="status" aria-live="polite" className="mb-3 flex items-center gap-1.5 text-sm text-[#6e6e73]">
-          <Search size={13} className="animate-pulse" /> Searching the web...
+          <Search size={13} className="animate-pulse" />
+          {searchMinimized
+            ? 'Searching the web with personal details removed...'
+            : 'Searching the web...'}
+        </p>
+      )}
+      {!isUser && searchBlocked && searchBlocked.length > 0 && (
+        <p role="status" className="mb-3 flex items-start gap-1.5 text-sm text-[#6e6e73]">
+          <ShieldAlert size={13} className="mt-1 flex-none" />
+          <span>
+            Web search skipped: the question contained{' '}
+            {searchBlocked.map(c => c.replace(/_/g, ' ')).join(' and ')} that
+            must not be sent to a search provider. Answered from local knowledge.
+          </span>
         </p>
       )}
       {!isUser && artifactStatus === 'generating' && (

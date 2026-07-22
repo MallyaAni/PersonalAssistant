@@ -26,6 +26,8 @@ interface Message {
   imageMatches?: ImageArtifact[];
   isSearching?: boolean;
   searchSources?: SearchSource[];
+  searchMinimized?: boolean;
+  searchBlocked?: string[];
 }
 
 interface ChatWindowProps {
@@ -273,16 +275,30 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
   // Attach a completed generated or uploaded image to its running placeholder.
   // Mark the pending assistant turn as searching so the interface can say so.
-  const handleSearchStarted = () => {
+  const handleSearchStarted = (minimized: boolean) => {
     setMessages(prev => {
       const next = [...prev]
       for (let index = next.length - 1; index >= 0; index -= 1) {
         if (next[index].role === 'assistant') {
-          next[index] = { ...next[index], isSearching: true }
+          next[index] = { ...next[index], isSearching: true, searchMinimized: minimized }
           return next
         }
       }
-      return [...next, { role: 'assistant', content: '', isSearching: true }]
+      return [...next, { role: 'assistant', content: '', isSearching: true, searchMinimized: minimized }]
+    })
+  }
+
+  // Report that a search was withheld because the query carried private data.
+  const handleSearchBlocked = (categories: string[]) => {
+    setMessages(prev => {
+      const next = [...prev]
+      for (let index = next.length - 1; index >= 0; index -= 1) {
+        if (next[index].role === 'assistant') {
+          next[index] = { ...next[index], isSearching: false, searchBlocked: categories }
+          return next
+        }
+      }
+      return [...next, { role: 'assistant', content: '', searchBlocked: categories }]
     })
   }
 
@@ -483,6 +499,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             onVisualError={handleVisualError}
             onImageMatches={handleImageMatches}
             onSearchStarted={handleSearchStarted}
+            onSearchBlocked={handleSearchBlocked}
             onSearchSources={handleSearchSources}
           />
           {hasMessages && (

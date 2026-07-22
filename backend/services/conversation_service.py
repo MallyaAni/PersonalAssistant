@@ -30,6 +30,7 @@ from backend.models.schemas import ChatStreamEvent
 from backend.search.cascade import CascadingSearchRouter
 from backend.search.image_retrieval import ImageRetrievalPolicy
 from backend.search.image_routing import ImageRecallPolicy
+from backend.search.privacy import SearchPrivacyPolicy
 from backend.services.diagram_artifact_service import DiagramArtifactService
 
 logger = logging.getLogger(__name__)
@@ -105,6 +106,7 @@ class ConversationService:
         image_search: ArtifactEmbeddingStore | None = None,
         image_search_limit: int = 5,
         image_retrieval: ImageRetrievalPolicy | None = None,
+        search_privacy: SearchPrivacyPolicy | None = None,
     ):
         self.memory = memory
         self.assistant_graph = build_assistant_graph(llm)
@@ -118,6 +120,9 @@ class ConversationService:
         self.image_recall = image_recall
         self.image_search = image_search
         self.image_search_limit = image_search_limit
+        # Screening is not optional: a missing policy would mean raw queries
+        # leaving the machine, so one is always constructed.
+        self.search_privacy = search_privacy or SearchPrivacyPolicy()
         self.image_retrieval = image_retrieval or ImageRetrievalPolicy(
             max_distance=0.96,
             min_margin=0.015,
@@ -170,8 +175,36 @@ class ConversationService:
         query_embedding: list[float] | None,
     ) -> AsyncGenerator[ChatStreamEvent, None]:
         if await self._should_search(query, trace_id):
-            yield {"event": "search_started", "data": {"query": query}}
-            search_results = await self._load_search_context(query, trace_id)
+            screened = self.search_privacy.sanitize(query)
+            if not screened.allowed:
+                # Categories are logged, never the text that triggered them.
+                logger.info(
+                    "Trace %s blocked an outbound search (categories=%s)",
+                    trace_id,
+                    ",".join(screened.categories),
+                )
+                yield {
+                    "event": "search_blocked",
+                    "data": {"categories": list(screened.categories)},
+                }
+                search_results = []
+            else:
+                if screened.was_rewritten:
+                    logger.info(
+                        "Trace %s minimized an outbound search (categories=%s)",
+                        trace_id,
+                        ",".join(screened.categories),
+                    )
+                yield {
+                    "event": "search_started",
+                    "data": {
+                        "query": screened.query,
+                        "minimized": screened.was_rewritten,
+                    },
+                }
+                search_results = await self._load_search_context(
+                    screened.query, trace_id
+                )
             if search_results:
                 context["search"] = search_results
             # Sources are always reported, including an empty list, so the

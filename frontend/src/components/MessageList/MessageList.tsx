@@ -12,6 +12,8 @@ interface Message {
   imageMatches?: ImageArtifact[];
   isSearching?: boolean;
   searchSources?: SearchSource[];
+  searchMinimized?: boolean;
+  searchBlocked?: string[];
 }
 
 interface MessageListProps {
@@ -39,6 +41,8 @@ const MessageList: React.FC<MessageListProps> = ({
           imageMatches={msg.imageMatches}
           isSearching={msg.isSearching}
           searchSources={msg.searchSources}
+          searchMinimized={msg.searchMinimized}
+          searchBlocked={msg.searchBlocked}
           artifact={msg.artifact}
           artifactStatus={msg.artifactStatus}
           artifactError={msg.artifactError}

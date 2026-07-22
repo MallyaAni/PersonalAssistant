@@ -52,6 +52,7 @@ interface ChatEvent {
     | 'image_matches'
     | 'search_started'
     | 'search_results'
+    | 'search_blocked'
     | 'artifact_error'
     | 'done'
     | 'error';
@@ -168,7 +169,8 @@ export type ChatStreamUpdate =
   | { type: 'artifact_started'; artifactId: string }
   | { type: 'artifact_ready'; artifact: VisualArtifact }
   | { type: 'image_matches'; artifacts: ImageArtifact[] }
-  | { type: 'search_started' }
+  | { type: 'search_started'; minimized: boolean }
+  | { type: 'search_blocked'; categories: string[] }
   | { type: 'search_sources'; sources: SearchSource[] }
   | { type: 'artifact_error'; artifactId: string; message: string }
 
@@ -729,7 +731,19 @@ export async function* streamChat(userId: string, conversationId: string, query:
           artifact: parseVisualArtifact(event.data),
         } satisfies ChatStreamUpdate
       } else if (event.event === 'search_started') {
-        yield { type: 'search_started' } satisfies ChatStreamUpdate
+        const { minimized } = event.data as { minimized?: unknown }
+        yield {
+          type: 'search_started',
+          minimized: minimized === true,
+        } satisfies ChatStreamUpdate
+      } else if (event.event === 'search_blocked') {
+        const { categories } = event.data as { categories?: unknown }
+        yield {
+          type: 'search_blocked',
+          categories: Array.isArray(categories)
+            ? categories.filter((c): c is string => typeof c === 'string')
+            : [],
+        } satisfies ChatStreamUpdate
       } else if (event.event === 'search_results') {
         const { sources } = event.data as { sources?: unknown }
         if (!Array.isArray(sources)) {
@@ -815,6 +829,7 @@ function parseChatEvent(frame: string): ChatEvent {
     'image_matches',
     'search_started',
     'search_results',
+    'search_blocked',
     'done',
     'error',
   ].includes(eventName)) {

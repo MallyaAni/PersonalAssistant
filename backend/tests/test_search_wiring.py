@@ -204,3 +204,41 @@ async def test_sources_are_reported_empty_so_the_indicator_can_be_retracted():
     # A failed search still reports, otherwise the indicator would spin forever.
     assert len(reported) == 1
     assert reported[0]["data"]["sources"] == []
+
+
+@pytest.mark.asyncio
+async def test_a_credential_bearing_query_never_reaches_the_provider():
+    search = RecordingSearch()
+    llm = RecordingLLM()
+
+    events = await _events(
+        _service(search, llm),
+        "is my latest api key sk-abcdef0123456789abcdef valid",
+    )
+    names = [event["event"] for event in events]
+
+    # No network call is made at all, and the turn still answers.
+    assert search.queries == []
+    assert "search_started" not in names
+    blocked = [e for e in events if e["event"] == "search_blocked"][0]
+    assert "credential" in blocked["data"]["categories"]
+
+
+@pytest.mark.asyncio
+async def test_personal_framing_is_stripped_before_the_provider_sees_it():
+    search = RecordingSearch()
+    llm = RecordingLLM()
+
+    events = await _events(
+        _service(search, llm),
+        "what is the latest treatment for my psoriasis",
+    )
+
+    # The provider receives the public topic, never the user's framing. The
+    # exact wording is not the contract; the absence of the possessive is.
+    sent = search.queries[0]
+    assert "psoriasis" in sent
+    assert "my" not in sent.split()
+    started = [e for e in events if e["event"] == "search_started"][0]
+    assert started["data"]["minimized"] is True
+    assert "my" not in started["data"]["query"].split()

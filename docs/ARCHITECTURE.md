@@ -156,6 +156,19 @@ raised that to 18 of 18 while the 12 stable queries stayed correctly unrouted.
 Role matching is restricted to roles that actually turn over, so "who is the
 author of" remains stable.
 
+Every query is screened by `SearchPrivacyPolicy` before it leaves the machine,
+which the roadmap requires and the first implementation omitted: the raw user
+query was sent verbatim. Two outcomes exist. A query carrying a secret or an
+account identifier is blocked outright and no request is made, because no
+rewrite makes an API key, email address or card number safe to send. A query
+that merely attaches a sensitive topic to the user is minimized instead: "what
+should I do about my psoriasis flare-up" is sent as "psoriasis flare-up",
+because the search value lives in the topic rather than in whose topic it is.
+Screening is deterministic and runs outside the model, since a model asked to
+redact its own prompt can be argued out of it. Only the category and trace ID
+are logged, never the text that triggered them, and the interface reports both
+outcomes so a withheld or rewritten search is visible rather than silent.
+
 Results are filtered by provider relevance before reaching the prompt.
 Measured across 40 real results the score distribution is bimodal: usable hits
 scored 0.561-0.923 and dictionary-definition noise scored 0.046-0.346, with an
