@@ -47,6 +47,9 @@ services:
       # http://comfyui:8188 (that GPU image build needs ~10-20 GB free on C:).
       - IMAGE_PROVIDER_BASE_URL=http://host.docker.internal:8188
       - ARTIFACT_STORAGE_ROOT=/app/data/artifacts
+      # Opt-in web search. Empty disables it: routing still runs and logs its
+      # decision, but no query is ever sent.
+      - SEARCH_API_KEY=${SEARCH_API_KEY:-}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
