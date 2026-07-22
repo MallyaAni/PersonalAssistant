@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import re
 import uuid
 from collections.abc import AsyncGenerator
 from typing import Any
@@ -32,6 +33,21 @@ from backend.search.image_routing import ImageRecallPolicy
 from backend.services.diagram_artifact_service import DiagramArtifactService
 
 logger = logging.getLogger(__name__)
+
+# Snippet length shown beneath each cited source in the interface.
+_SNIPPET_CHARS = 240
+
+# Extracted page text arrives with Markdown headings, emphasis and list markers.
+# A citation is displayed as plain prose, so the syntax is stripped rather than
+# rendered: these snippets are untrusted third-party text and must never be
+# interpreted as formatting.
+_MARKDOWN_NOISE = re.compile(r"[#*_`>\[\]]+")
+
+
+# Flatten extracted page text into one readable line for display.
+def _plain_snippet(content: str) -> str:
+    cleaned = _MARKDOWN_NOISE.sub(" ", content)
+    return " ".join(cleaned.split())[:_SNIPPET_CHARS]
 
 
 # Build at most one explicit, non-persisted memory proposal for a chat request.
@@ -164,7 +180,14 @@ class ConversationService:
                 "event": "search_results",
                 "data": {
                     "sources": [
-                        {"title": item["title"], "url": item["url"]}
+                        {
+                            "title": item["title"],
+                            "url": item["url"],
+                            # A short snippet lets the reader judge a source
+                            # without opening it; the full text stays in the
+                            # prompt rather than being shipped to the browser.
+                            "snippet": _plain_snippet(item["content"]),
+                        }
                         for item in search_results
                     ]
                 },

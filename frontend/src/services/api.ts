@@ -82,6 +82,7 @@ export interface DiagramArtifact extends ArtifactBase {
 export interface SearchSource {
   title: string;
   url: string;
+  snippet: string;
 }
 
 export interface ImageArtifact extends ArtifactBase {
@@ -738,9 +739,14 @@ export async function* streamChat(userId: string, conversationId: string, query:
         // entries and let the renderer escape them.
         const parsed = sources.flatMap(entry => {
           const record = entry as Record<string, unknown>
-          return typeof record?.title === 'string' && typeof record?.url === 'string'
-            ? [{ title: record.title, url: record.url }]
-            : []
+          if (typeof record?.title !== 'string' || typeof record?.url !== 'string') {
+            return []
+          }
+          return [{
+            title: record.title,
+            url: record.url,
+            snippet: typeof record.snippet === 'string' ? record.snippet : '',
+          }]
         })
         yield { type: 'search_sources', sources: parsed } satisfies ChatStreamUpdate
       } else if (event.event === 'image_matches') {

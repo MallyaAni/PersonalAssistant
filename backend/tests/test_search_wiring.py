@@ -172,7 +172,13 @@ async def test_search_is_announced_before_it_runs_and_sources_are_streamed():
     sources = [event for event in events if event["event"] == "search_results"][0][
         "data"
     ]["sources"]
-    assert sources == [{"title": "Result", "url": "https://example.test/a"}]
+    assert sources == [
+        {
+            "title": "Result",
+            "url": "https://example.test/a",
+            "snippet": "fresh fact",
+        }
+    ]
 
 
 @pytest.mark.asyncio

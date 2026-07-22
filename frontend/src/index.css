@@ -261,3 +261,11 @@ summary:focus-visible {
     transform: scale(0.97);
   }
 }
+
+/* Clamp a source snippet to two lines, as a search result does. */
+.source-snippet {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

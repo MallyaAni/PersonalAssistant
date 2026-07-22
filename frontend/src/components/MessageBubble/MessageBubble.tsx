@@ -36,6 +36,16 @@ const parseAssistantEnvelope = (content: string) => {
   }
 }
 
+// Present a source by its site rather than its full URL, the way a search
+// result does, falling back to the raw value when it is not a parsable URL.
+const displayDomain = (url: string): string => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return url
+  }
+}
+
 // Render one user or assistant message with its optional visual artifact.
 const MessageBubble: React.FC<MessageProps> = ({
   role,
@@ -99,6 +109,11 @@ const MessageBubble: React.FC<MessageProps> = ({
           <ReactMarkdown>{visibleContent}</ReactMarkdown>
         </div>
       )}
+      {!isUser && !isSearching && searchSources && searchSources.length > 0 && (
+        <p className="mb-3 flex items-center gap-1.5 text-xs font-medium text-[#6e6e73]">
+          <Search size={12} /> Answered using web search
+        </p>
+      )}
       {!isUser && isSearching && (
         <p role="status" aria-live="polite" className="mb-3 flex items-center gap-1.5 text-sm text-[#6e6e73]">
           <Search size={13} className="animate-pulse" /> Searching the web...
@@ -119,23 +134,29 @@ const MessageBubble: React.FC<MessageProps> = ({
         <ImageArtifact artifact={artifact} onDeleted={onArtifactDeleted} />
       )}
       {!isUser && searchSources && searchSources.length > 0 && (
-        <section className="mt-4" aria-label="Web sources used">
+        <section className="mt-5" aria-label="Web sources used">
           <p className="text-xs font-medium uppercase tracking-[0.08em] text-[#86868b]">
-            Sources
+            {searchSources.length} web {searchSources.length === 1 ? 'result' : 'results'}
           </p>
-          <ol className="mt-2 space-y-1.5">
+          <ol className="mt-3 space-y-4">
             {searchSources.map((source, index) => (
-              <li key={`${source.url}-${index}`} className="flex gap-2 text-sm leading-6">
-                <span className="tabular-nums text-[#86868b]">{index + 1}.</span>
+              <li key={`${source.url}-${index}`}>
+                <p className="truncate text-xs text-[#6e6e73]" title={source.url}>
+                  {displayDomain(source.url)}
+                </p>
                 <a
                   href={source.url}
                   target="_blank"
                   rel="noopener noreferrer nofollow"
-                  className="min-w-0 truncate text-[#0066cc] hover:underline"
-                  title={source.url}
+                  className="mt-0.5 block text-[15px] leading-6 text-[#1a0dab] hover:underline dark:text-[#8ab4f8]"
                 >
                   {source.title}
                 </a>
+                {source.snippet && (
+                  <p className="source-snippet mt-0.5 text-sm leading-6 text-[#4d5156]">
+                    {source.snippet}
+                  </p>
+                )}
               </li>
             ))}
           </ol>
