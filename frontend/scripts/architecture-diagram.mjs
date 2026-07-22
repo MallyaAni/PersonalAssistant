@@ -7,6 +7,11 @@ import { fileURLToPath } from "node:url";
 
 import { chromium } from "@playwright/test";
 
+import {
+  buildArchitecturePage,
+  checkArchitecturePage,
+} from "./architecture-page.mjs";
+
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const frontendDirectory = path.resolve(scriptDirectory, "..");
 const repositoryDirectory = path.resolve(frontendDirectory, "..");
@@ -160,6 +165,8 @@ function renderAllDiagrams() {
     stampRenderedDiagram(sourcePath, outputPath);
     console.log(`Rendered docs\\diagrams\\${diagramName}.svg`);
   }
+  // The published page embeds these renders, so it is rebuilt with them.
+  buildArchitecturePage();
 }
 
 // Check synchronization and Mermaid syntax for the complete diagram suite.
@@ -169,6 +176,7 @@ function checkAllDiagrams() {
     checkRenderedDiagram(diagramName, sourcePath, outputPath);
   }
   console.log(`${diagramNames.length} architecture diagrams are synchronized.`);
+  checkArchitecturePage();
 }
 
 // Render one unregistered review candidate without stamping canonical metadata.
