@@ -349,9 +349,15 @@ faster local model is a constructor change rather than a rewrite; a sub-billion
 parameter model is ample for a one-word judgement and frees the chat model.
 Set `SEARCH_CLASSIFIER_ENABLED=false` to fall back to patterns alone.
 
-MCP servers are configured as a JSON array in `MCP_SERVERS_JSON`, each entry
-giving `server_id`, `command`, `args` and an operator-assigned
-`risk_classification`. Discover and index their tools with:
+MCP servers are configured as a JSON array in `MCP_SERVERS_JSON`. Each entry
+gives a `server_id`, an operator-assigned `risk_classification`, and a
+transport. A `stdio` server gives `command` and `args` and is launched as a
+subprocess, so its runtime (for example Node, for `npx` servers) must be
+available wherever the backend runs - which is the host today, since the
+backend image ships no Node. An `http` server gives a `url` and optional
+`headers` and connects to an already-running service, which is the transport to
+use for a deployed sibling container or a remote vendor and needs nothing extra
+in the image. Discover and index their tools with:
 
 ```bash
 docker compose exec backend python -m backend.cli.sync_mcp_tools --user-id <user>

@@ -10,13 +10,34 @@ class MCPServerConfig:
 
     Trust is declared locally, never taken from the server, because a server
     describing itself is untrusted input like any other.
+
+    Two transports are supported. `stdio` launches the server as a local
+    subprocess, which is how most servers are distributed today and how local
+    development runs. `http` connects to an already-running server over
+    streamable HTTP, which is what a deployed sibling service or a remote
+    vendor offers, and needs no language runtime inside this image.
     """
 
     server_id: str
-    command: str
+    transport: str = "stdio"
+    # stdio transport
+    command: str = ""
     args: tuple[str, ...] = ()
+    # http transport
+    url: str = ""
+    headers: tuple[tuple[str, str], ...] = ()
     risk_classification: str = "untrusted"
     enabled: bool = True
+
+    # Reject a configuration that cannot be connected to, rather than failing
+    # later with a confusing transport error.
+    def __post_init__(self) -> None:
+        if self.transport == "stdio" and not self.command:
+            raise ValueError(f"{self.server_id}: stdio transport requires a command")
+        if self.transport == "http" and not self.url:
+            raise ValueError(f"{self.server_id}: http transport requires a url")
+        if self.transport not in {"stdio", "http"}:
+            raise ValueError(f"{self.server_id}: unknown transport {self.transport}")
 
 
 @dataclass(frozen=True, slots=True)

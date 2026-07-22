@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any
 
+from backend.mcp.session import open_session
 from backend.mcp.types import MCPServerConfig, MCPTool
 
 logger = logging.getLogger(__name__)
@@ -46,8 +47,8 @@ class MCPToolInvoker(ABC):
     ) -> ToolCallResult: ...
 
 
-class StdioMCPToolInvoker(MCPToolInvoker):
-    """Invokes a tool on a server launched as a local subprocess.
+class SessionMCPToolInvoker(MCPToolInvoker):
+    """Invokes a tool over whichever transport a server is configured to use.
 
     The catalogue is re-read on every call rather than trusted from storage.
     A stored descriptor records what a server offered when it was indexed; it
@@ -59,22 +60,14 @@ class StdioMCPToolInvoker(MCPToolInvoker):
     def __init__(self, timeout_seconds: float = 60.0) -> None:
         self.timeout_seconds = timeout_seconds
 
-    # Connect, re-resolve the tool, then call it.
+    # Connect over the configured transport, re-resolve, then call.
     async def call_tool(
         self,
         server: MCPServerConfig,
         tool_name: str,
         arguments: dict[str, Any],
     ) -> ToolCallResult:
-        from mcp import ClientSession, StdioServerParameters
-        from mcp.client.stdio import stdio_client
-
-        params = StdioServerParameters(command=server.command, args=list(server.args))
-        async with (
-            stdio_client(params) as (read, write),
-            ClientSession(read, write) as session,
-        ):
-            await session.initialize()
+        async with open_session(server, self.timeout_seconds) as session:
             live = await session.list_tools()
             match = next((t for t in live.tools if t.name == tool_name), None)
             if match is None:

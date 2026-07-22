@@ -23,6 +23,8 @@ flowchart LR
     end
 
     WebSearch[[Tavily web search<br/>external vendor, untrusted results<br/>opt-in via SEARCH_API_KEY]]
+    MCPStdio[[MCP stdio servers<br/>subprocess, needs local runtime]]
+    MCPHttp[[MCP http servers<br/>sibling or remote, no runtime in image]]
     Source[Repository source]
     Canonical[(Canonical diagram suite)]
     Migration[Alembic<br/>synchronous migration engine]
@@ -36,6 +38,8 @@ flowchart LR
     Dependencies -->|asyncpg transactions| Postgres
     Dependencies -->|image bytes, aligned 768-dim vector| VisionEmbed
     Dependencies -->|deterministic routing, untrusted results| WebSearch
+    Dependencies -->|discover, then invoke behind gates| MCPStdio
+    Dependencies -->|discover, then invoke behind gates| MCPHttp
     Dependencies -->|OpenAI-compatible HTTP, host.docker.internal:1234| LMStudio
     Dependencies -->|ComfyUI HTTP, comfyui:8188| ComfyUI
     Dependencies -->|opaque keys and atomic file writes| BinaryStore

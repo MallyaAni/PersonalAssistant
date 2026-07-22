@@ -6,7 +6,8 @@ from collections.abc import Sequence
 from backend.config.settings import settings
 from backend.core.dependencies import get_embedding_provider
 from backend.database.session import AsyncSessionLocal
-from backend.mcp.client import StdioMCPToolLister
+from backend.mcp.client import SessionMCPToolLister
+from backend.mcp.config import _parse_server_entry
 from backend.mcp.types import MCPServerConfig
 from backend.memory.retrieval import SemanticRetrievalPolicy
 from backend.services.mcp_registry_service import MCPRegistryService
@@ -16,24 +17,8 @@ from backend.services.tool_memory_service import ToolMemoryService
 # Read configured servers, rejecting entries that do not declare an identity.
 def load_servers() -> tuple[MCPServerConfig, ...]:
     raw = json.loads(settings.MCP_SERVERS_JSON or "[]")
-    servers = []
-    for entry in raw:
-        if not isinstance(entry, dict):
-            continue
-        server_id = entry.get("server_id")
-        command = entry.get("command")
-        if not server_id or not command:
-            continue
-        servers.append(
-            MCPServerConfig(
-                server_id=str(server_id),
-                command=str(command),
-                args=tuple(str(a) for a in entry.get("args", [])),
-                risk_classification=str(entry.get("risk_classification", "untrusted")),
-                enabled=bool(entry.get("enabled", True)),
-            )
-        )
-    return tuple(servers)
+    parsed = (_parse_server_entry(e) for e in (raw if isinstance(raw, list) else []))
+    return tuple(server for server in parsed if server is not None)
 
 
 # Define safe command-line options for tool discovery.
@@ -56,7 +41,7 @@ async def run(user_id: str, list_only: bool) -> dict[str, object]:
     if not servers:
         return {"error": "no MCP servers configured in MCP_SERVERS_JSON"}
 
-    lister = StdioMCPToolLister(timeout_seconds=settings.MCP_LIST_TIMEOUT_SECONDS)
+    lister = SessionMCPToolLister(timeout_seconds=settings.MCP_LIST_TIMEOUT_SECONDS)
     if list_only:
         catalogue = []
         for server in servers:

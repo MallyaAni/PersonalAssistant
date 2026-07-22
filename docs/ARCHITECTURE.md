@@ -210,7 +210,17 @@ under `search`, or a duplicate screening policy.
 
 ### MCP tool discovery
 
-Configured MCP servers are listed over stdio and their live catalogues indexed
+Configured MCP servers are reached over one of two transports, chosen per
+server. `stdio` launches the server as a local subprocess, which is how most
+servers are distributed and how local development runs, but requires the
+server's runtime to be present. `http` connects to an already-running service
+over streamable HTTP, which is what a deployed sibling container or a remote
+vendor exposes and needs no extra runtime in this image. The transport is
+resolved in one place (`backend/mcp/session.py`); discovery and invocation never
+learn which is in use, so adding Google Drive as an HTTP sibling changes
+configuration, not code.
+
+Their live catalogues are indexed
 into `tool_descriptors`, so a large registry can be narrowed by meaning before
 anything reaches the model. Published results make the reason concrete: naive
 exposure of 100+ tools drops selection accuracy to roughly 13%, against about

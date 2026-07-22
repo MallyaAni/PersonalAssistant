@@ -18,8 +18,8 @@ from backend.database.session import get_db
 from backend.embeddings.base import EmbeddingProvider
 from backend.embeddings.lm_studio import LMStudioEmbeddingProvider
 from backend.embeddings.nomic_vision import NomicVisionEmbeddingProvider
-from backend.mcp.client import StdioMCPToolLister
-from backend.mcp.invocation import StdioMCPToolInvoker
+from backend.mcp.client import SessionMCPToolLister
+from backend.mcp.invocation import SessionMCPToolInvoker
 from backend.mcp.types import MCPServerConfig
 from backend.memory.coordinator import MemoryCoordinatorAgent
 from backend.memory.retrieval import SemanticRetrievalPolicy
@@ -103,8 +103,8 @@ def get_mcp_servers() -> tuple[MCPServerConfig, ...]:
 @lru_cache(maxsize=1)
 def get_mcp_invocation_service() -> MCPInvocationService:
     return MCPInvocationService(
-        StdioMCPToolInvoker(timeout_seconds=settings.MCP_LIST_TIMEOUT_SECONDS),
-        StdioMCPToolLister(timeout_seconds=settings.MCP_LIST_TIMEOUT_SECONDS),
+        SessionMCPToolInvoker(timeout_seconds=settings.MCP_LIST_TIMEOUT_SECONDS),
+        SessionMCPToolLister(timeout_seconds=settings.MCP_LIST_TIMEOUT_SECONDS),
         get_mcp_servers(),
     )
 

@@ -1,6 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 
+from backend.mcp.session import open_session
 from backend.mcp.types import MCPServerConfig, MCPTool
 
 logger = logging.getLogger(__name__)
@@ -20,11 +21,11 @@ class MCPToolLister(ABC):
     async def list_tools(self, server: MCPServerConfig) -> list[MCPTool]: ...
 
 
-class StdioMCPToolLister(MCPToolLister):
-    """Lists tools from a server launched as a local subprocess.
+class SessionMCPToolLister(MCPToolLister):
+    """Lists tools over whichever transport a server is configured to use.
 
     The connection is opened per call and closed immediately. Discovery is
-    infrequent, and a long-lived subprocess per configured server would be a
+    infrequent, and holding a session open per configured server would be a
     standing resource cost for no benefit at this stage.
     """
 
@@ -32,22 +33,10 @@ class StdioMCPToolLister(MCPToolLister):
     def __init__(self, timeout_seconds: float = 30.0) -> None:
         self.timeout_seconds = timeout_seconds
 
-    # Connect, initialize, and page through the catalogue.
+    # Connect over the configured transport and page through the catalogue.
     async def list_tools(self, server: MCPServerConfig) -> list[MCPTool]:
-        # Imported lazily so the package remains importable without a server.
-        from mcp import ClientSession, StdioServerParameters
-        from mcp.client.stdio import stdio_client
-
-        params = StdioServerParameters(
-            command=server.command,
-            args=list(server.args),
-        )
         collected: list[MCPTool] = []
-        async with (
-            stdio_client(params) as (read, write),
-            ClientSession(read, write) as session,
-        ):
-            await session.initialize()
+        async with open_session(server, self.timeout_seconds) as session:
             cursor: str | None = None
             for _ in range(_MAX_PAGES):
                 page = await session.list_tools(cursor)

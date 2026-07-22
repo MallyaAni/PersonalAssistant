@@ -173,3 +173,49 @@ def test_instruction_shaped_metadata_is_detected(text, marker):
 )
 def test_ordinary_descriptions_are_not_flagged(text):
     assert inspect_untrusted_text(text) == ()
+
+
+def test_stdio_transport_requires_a_command():
+    with pytest.raises(ValueError, match="stdio"):
+        MCPServerConfig(server_id="s", transport="stdio")
+
+
+def test_http_transport_requires_a_url():
+    with pytest.raises(ValueError, match="http"):
+        MCPServerConfig(server_id="s", transport="http")
+
+
+def test_http_transport_config_is_accepted():
+    server = MCPServerConfig(
+        server_id="drive",
+        transport="http",
+        url="http://mcp-gdrive:8080/mcp",
+        headers=(("authorization", "Bearer x"),),
+    )
+
+    assert server.transport == "http"
+    assert server.url.endswith("/mcp")
+
+
+def test_an_unknown_transport_is_rejected():
+    with pytest.raises(ValueError, match="unknown transport"):
+        MCPServerConfig(server_id="s", transport="carrier-pigeon", command="x")
+
+
+def test_config_parser_reads_both_transports():
+    from backend.mcp.config import _parse_server_entry
+
+    stdio = _parse_server_entry(
+        {"server_id": "local", "command": "npx", "args": ["-y", "pkg"]}
+    )
+    http = _parse_server_entry(
+        {"server_id": "remote", "transport": "http", "url": "http://x/mcp"}
+    )
+    broken = _parse_server_entry({"server_id": "bad", "transport": "http"})
+
+    assert stdio is not None
+    assert stdio.transport == "stdio"
+    assert http is not None
+    assert http.transport == "http"
+    # A misconfigured entry is skipped, not fatal.
+    assert broken is None
