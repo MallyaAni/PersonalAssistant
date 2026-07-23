@@ -17,7 +17,7 @@ The browser shows `Using <tool> via <server>...` while a call is active and a te
 ## Git and runtime state
 
 - Starting Git state: branch `main` at `df00a085621326ec746018fc003452cf5f2b68dd`; the MCP implementation and documentation were unstaged. Git was located explicitly at `C:\Program Files\Git\cmd\git.exe` because it is not on this shell's `PATH`.
-- The user authorized a commit after acceptance. The verified implementation checkpoint SHA is recorded below after creation; no tag, branch, stash, reset, restore, checkout, push, or recovery operation was created.
+- Verified implementation checkpoint: `0337be05251348fb7816ea96e352ab4bd14428ad` (`feat: add Gemma-driven MCP tool execution`). Its runtime-affecting source is the exact source exercised by the direct API, live browser, backend, frontend, and static acceptance evidence below. No tag, branch, stash, reset, restore, checkout, push, or recovery operation was created.
 - Final exercised backend image: `sha256:e90212c69db88bc67af3718b69aabc041166644de90339ea057410a9e8f6bcba`, started at `2026-07-23T02:34:08Z`.
 - Docker `backend`, `frontend`, `db`, and `redis` were running for final acceptance. LM Studio served `google/gemma-4-12b` through `host.docker.internal:1234`.
 - Root `.env` and `.env.example` select `SEARCH_PROVIDER_NAME=mcp` and configure the built-in `local_utility` and `internet` stdio servers. The search credential remains a separate environment value and is inherited by the internet child only through its variable-name allowlist.
