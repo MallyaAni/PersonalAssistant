@@ -258,3 +258,62 @@ def test_shared_config_parser_preserves_context_forwarding_flag():
     )
 
     assert servers[0].forward_context is True
+
+
+def test_child_environment_forwards_only_named_variables(monkeypatch):
+    from backend.mcp.session import build_child_environment
+
+    monkeypatch.setenv("WANTED_VAR", "yes")
+    monkeypatch.setenv("UNWANTED_VAR", "no")
+    server = MCPServerConfig(
+        server_id="srv", command="noop", inherit_env=("WANTED_VAR",)
+    )
+
+    child = build_child_environment(server, {"BASE": "kept"})
+
+    assert child["WANTED_VAR"] == "yes"
+    assert child["BASE"] == "kept"
+    # A variable the server does not name is never handed to the subprocess.
+    assert "UNWANTED_VAR" not in child
+
+
+def test_child_environment_falls_back_to_loaded_configuration(monkeypatch):
+    from backend.mcp.session import build_child_environment
+
+    # pydantic-settings reads .env into the settings object without exporting
+    # to os.environ, so a subprocess reading os.environ would see nothing.
+    monkeypatch.delenv("LLM_MODEL", raising=False)
+    server = MCPServerConfig(
+        server_id="srv", command="noop", inherit_env=("LLM_MODEL",)
+    )
+
+    child = build_child_environment(server, {})
+
+    assert child["LLM_MODEL"]
+
+
+def test_process_environment_overrides_loaded_configuration(monkeypatch):
+    from backend.mcp.session import build_child_environment
+
+    monkeypatch.setenv("LLM_MODEL", "override-model")
+    server = MCPServerConfig(
+        server_id="srv", command="noop", inherit_env=("LLM_MODEL",)
+    )
+
+    # An operator setting a variable for one run must win over configuration.
+    assert build_child_environment(server, {})["LLM_MODEL"] == "override-model"
+
+
+def test_an_unset_variable_is_not_forwarded_as_empty(monkeypatch):
+    from backend.mcp.session import build_child_environment
+
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    server = MCPServerConfig(
+        server_id="srv", command="noop", inherit_env=("GOOGLE_API_KEY",)
+    )
+
+    child = build_child_environment(server, {})
+
+    # An empty key must stay absent so the provider reports itself disabled
+    # rather than authenticating with a blank credential.
+    assert "GOOGLE_API_KEY" not in child
