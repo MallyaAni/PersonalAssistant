@@ -48,8 +48,19 @@ class RecordingInvoker:
         )
 
 
-def _service(invoker, lister=None, risk="read_only") -> MCPInvocationService:
-    server = MCPServerConfig(server_id="srv", command="noop", risk_classification=risk)
+# Build an invocation service with configurable trust and context forwarding.
+def _service(
+    invoker,
+    lister=None,
+    risk="read_only",
+    forward_context=False,
+) -> MCPInvocationService:
+    server = MCPServerConfig(
+        server_id="srv",
+        command="noop",
+        risk_classification=risk,
+        forward_context=forward_context,
+    )
     return MCPInvocationService(
         invoker,  # type: ignore[arg-type]
         lister or StubLister(),  # type: ignore[arg-type]
@@ -65,6 +76,53 @@ async def test_a_valid_call_reaches_the_server():
 
     assert result.content == "hello"
     assert invoker.calls == [("echo", {"message": "hi"})]
+
+
+class ContextRecordingInvoker:
+    """Capture request metadata forwarded to an explicitly local server."""
+
+    # Record the tool arguments and application-owned metadata.
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, dict, dict | None]] = []
+
+    # Return a fixed result after capturing the metadata boundary.
+    async def call_tool(
+        self,
+        server,
+        tool_name,
+        arguments,
+        request_meta=None,
+    ):
+        self.calls.append((tool_name, arguments, request_meta))
+        return ToolCallResult(server.server_id, tool_name, "ok")
+
+
+# Verify identity context reaches only a server that explicitly opts into it.
+@pytest.mark.asyncio
+async def test_request_context_is_forwarded_only_to_opted_in_server():
+    context = {
+        "anios_user_id": "ani.mallya",
+        "anios_conversation_id": "11111111-1111-4111-8111-111111111111",
+        "anios_trace_id": "22222222-2222-4222-8222-222222222222",
+    }
+    local_invoker = ContextRecordingInvoker()
+    await _service(local_invoker, forward_context=True).invoke(
+        "srv",
+        "echo",
+        {"message": "hi"},
+        request_context=context,
+    )
+
+    assert local_invoker.calls == [("echo", {"message": "hi"}, context)]
+
+    external_invoker = RecordingInvoker()
+    await _service(external_invoker).invoke(
+        "srv",
+        "echo",
+        {"message": "hi"},
+        request_context=context,
+    )
+    assert external_invoker.calls == [("echo", {"message": "hi"})]
 
 
 @pytest.mark.asyncio

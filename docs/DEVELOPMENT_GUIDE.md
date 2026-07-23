@@ -365,7 +365,10 @@ variables that child needs; values stay outside JSON and are not indexed or
 shown to Gemma. An `http` server gives a `url` and optional
 `headers` and connects to an already-running service, which is the transport to
 use for a deployed sibling container or a remote vendor and needs nothing extra
-in the image. Discover and index their tools with:
+in the image. `forward_context` defaults to `false`. Set it only for an
+application-owned local server that requires AniOS user, conversation, and
+trace metadata outside its model-visible tool schema; do not enable it for an
+arbitrary remote server. Discover and index configured tools with:
 
 ```bash
 docker compose exec backend python -m backend.cli.sync_mcp_tools --user-id <user>
@@ -381,12 +384,26 @@ SEARCH_PROVIDER_NAME=mcp
 MCP_SERVERS_JSON=[{"server_id":"local_utility","command":"python","args":["-m","backend.mcp.servers.local_utility"],"risk_classification":"read_only"},{"server_id":"internet","command":"python","args":["-m","backend.mcp.servers.internet"],"inherit_env":["SEARCH_API_KEY","SEARCH_BASE_URL","SEARCH_MAX_RESULTS","SEARCH_TIMEOUT_SECONDS","SEARCH_MAX_CONTENT_CHARS","SEARCH_MIN_SCORE","SEARCH_DEPTH"],"risk_classification":"read_only"}]
 ```
 
+The default example also registers the Compose `local-capabilities` sidecar:
+
+```dotenv
+MCP_SERVERS_JSON=[{"server_id":"local_visual","transport":"http","url":"http://local-capabilities:8001/mcp","forward_context":true,"risk_classification":"untrusted"}]
+```
+
+It exposes `generate_diagram`, `generate_image`, `ask_about_image`, and
+`get_artifact` over streamable HTTP while reusing the existing application
+services and shared artifact volume. The tool schemas contain no user,
+conversation, or trace fields, and results contain public artifact metadata
+only. It is intentionally `untrusted`: explicit calls require
+`confirmed=true`, and ordinary Gemma chat selection does not receive these
+consequential tools until approval/resume UI exists.
+
 Compose passes these settings into the backend. Rebuild it, then sync descriptors
 for each chat user before expecting Gemma selection; fixed deterministic internet
 routing does not depend on descriptor sync:
 
 ```powershell
-docker compose up -d --build backend
+docker compose up -d --build local-capabilities backend
 docker compose exec backend python -m backend.cli.sync_mcp_tools --user-id ani.mallya
 ```
 
@@ -645,7 +662,7 @@ $imageBody = @{
 $imageBody | curl.exe -sS -D - -X POST 'http://127.0.0.1:8000/api/v1/images/generate' -H 'Content-Type: application/json' --data-binary '@-'
 ```
 
-Require HTTP 201, `kind=generated_image`, terminal `status=ready`, `content_available=true`, provider/model/job metadata, dimensions, byte size, and SHA-256. Fetch `GET /api/v1/artifacts/{user_id}/{artifact_id}/content`, verify its decoded image and hash, require another user to receive 404, and delete through `DELETE /api/v1/artifacts/{user_id}/{artifact_id}`. Confirm both the exact file and row are gone. Unsupported resolutions must return 422 before a provider request.
+Require HTTP 201, `kind=generated_image`, terminal `status=ready`, `content_available=true`, provider/model/job metadata, `metadata.generation_prompt`, dimensions, byte size, and SHA-256. Fetch `GET /api/v1/artifacts/{user_id}/{artifact_id}/content`, verify its decoded image and hash, require another user to receive 404, and delete through `DELETE /api/v1/artifacts/{user_id}/{artifact_id}`. Confirm both the exact file and row are gone. Unsupported resolutions must return 422 before a provider request.
 
 For real image understanding, upload a validated image to Gemma:
 
@@ -659,12 +676,15 @@ curl.exe -sS -D - -X POST 'http://127.0.0.1:8000/api/v1/vision/analyze' `
 
 Require HTTP 201, `kind=uploaded_image`, ready binary integrity metadata, `analysis_status=ready`, the configured vision model, and grounded content unique to the image. Fake bytes, animation, MIME mismatch, excess size, or excess pixels must return a visible 413/422 and create no artifact. A provider failure returns 502 with the preserved upload artifact ID and `analysis_status=failed`.
 
-For browser acceptance, use Create image and Analyze image in the composer and inspect Network and Console. Require visible progress, a terminal ready image and grounded analysis, enabled/cleared controls, navigation and full-reload restoration, artifact-history rendering, download/deletion, visible 413/422/502/503 errors, and successful retry. Run the reusable live provider checks explicitly:
+For browser acceptance, also submit `create an image of ...` while Chat is selected. Require exactly one `/images/generate` request and the selected mode to change to Create image. Without changing that mode manually, ask a historical question such as `what car did we create an image of?`; require `/chat`, no second generation request, a grounded answer, terminal `done`, and cleared loading/input. Then explicitly ask to search the internet for that image, require image recall before the visible internet MCP lifecycle, and require source cards only when the provider returned non-empty results. Inspect Network and Console throughout. The Memory screen must not fetch the full export before a map-card click; selecting Semantic cache must return the owned export and display a bounded detail region without embedding vectors.
+
+Use Create image and Analyze image for the remaining visual checks. Require visible progress, a terminal ready image and grounded analysis, enabled/cleared controls, navigation and full-reload restoration, artifact-history rendering, download/deletion, visible 413/422/502/503 errors, and successful retry. Run the reusable live provider checks explicitly:
 
 ```powershell
 cd frontend
 npx.cmd playwright test --grep "@live visual generation"
 npx.cmd playwright test --grep "@live cancelled image"
+npx.cmd playwright test --grep "image conversation routes through generation"
 ```
 
 The cancellation check waits until the owned row is `pending`, presses Cancel, then requires `failed` with `error_code=cancelled`, a matching ComfyUI `/interrupt`, no backend exception, cleared UI loading, and scoped cleanup.
@@ -711,6 +731,35 @@ The live user must have fresh descriptors from `sync_mcp_tools`. Require the
 transient and terminal tool states, HTTP 200 SSE responses, terminal `done`,
 source cards for internet search, cleared Thinking/composer state, and no page
 or blocking Console errors.
+
+For direct local-visual MCP acceptance, use a disposable user and a real UUID
+conversation, then call the same public invocation boundary:
+
+```powershell
+$conversationId = [guid]::NewGuid()
+$body = @{
+  server_id = 'local_visual'
+  tool_name = 'generate_diagram'
+  arguments = @{
+    prompt = 'Create a flowchart from Agent to MCP Facade to Artifact Service.'
+  }
+  conversation_id = $conversationId
+  confirmed = $true
+} | ConvertTo-Json -Depth 5
+Invoke-RestMethod `
+  -Method Post `
+  -Uri 'http://localhost:8000/api/v1/tools/visual_validation/call' `
+  -ContentType 'application/json' `
+  -Body $body
+```
+
+Require a non-error result containing a terminal ready artifact handle, then
+read the owned artifact through `/api/v1/artifacts/visual_validation`. Repeat
+with `generate_image`, fetch the private content, and use its artifact ID with
+`ask_about_image` and `get_artifact`. Confirm that omitting `confirmed=true`
+returns HTTP 409, no MCP result contains bytes or `_storage_key`, backend and
+sidecar logs contain no credential or raw image content, and scoped cleanup
+removes the disposable artifacts.
 
 Agent-memory route groups are:
 

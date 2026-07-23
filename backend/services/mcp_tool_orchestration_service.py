@@ -186,10 +186,15 @@ class MCPToolOrchestrationService:
         return self._parse_plan(message, aliases)
 
     # Execute a selected plan through the existing live validation and privacy gates.
-    async def execute(self, plan: MCPToolPlan) -> ToolCallResult:
+    async def execute(
+        self,
+        plan: MCPToolPlan,
+        request_context: dict[str, Any] | None = None,
+    ) -> ToolCallResult:
         return await self.invocation.invoke(
             plan.server_id,
             plan.tool_name,
             plan.arguments,
             expected_fingerprint=plan.expected_fingerprint,
+            request_context=request_context,
         )

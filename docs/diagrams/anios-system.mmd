@@ -19,7 +19,9 @@ flowchart LR
         Memory[Typed personal and agent memory services]
         Toolbox[Safe tool-memory service<br/>semantic descriptor shortlist]
         ToolOrchestration[MCP tool orchestration<br/>Gemma native selection, app-owned execution]
+        LLMQueue[Shared Gemma chat-client queue<br/>one local generation at a time]
         MCPInvocation[MCP invocation gates<br/>live contract, policy, privacy]
+        VisualMCP[Local visual FastMCP facade<br/>diagram, image, vision, artifact handles]
     end
 
     subgraph Infrastructure[Local infrastructure]
@@ -34,7 +36,7 @@ flowchart LR
 
     User --> Frontend
     Maintainer --> Candidate
-    Frontend -->|JSON, multipart, private image bytes,<br/>chat SSE, and conversation restore| API
+    Frontend -->|Intent-routed JSON, multipart, private image bytes,<br/>chat SSE, memory drilldown, and restore| API
     API --> Conversation
     API --> Memory
     API --> Toolbox
@@ -49,6 +51,7 @@ flowchart LR
     Vision -->|validated image plus bounded prompt| LMStudio
     ImageArtifacts -->|typed generation request| ComfyUI
     ImageArtifacts --> BinaryStore
+    ImageArtifacts -->|bounded prompt provenance<br/>for referenced-image context| Conversation
     Candidate --> DiagramAgent
     Candidate -->|read canonical and explicit source context| Diagrams
     Candidate -->|new candidate only; manual review required| Diagrams
@@ -56,14 +59,19 @@ flowchart LR
     Coordinator --> Memory
     Coordinator --> Toolbox
     ToolOrchestration --> Toolbox
-    ToolOrchestration -->|bounded native tool definitions| LMStudio
+    ToolOrchestration -->|bounded native tool definitions| LLMQueue
     ToolOrchestration --> MCPInvocation
     Conversation -->|freshness and privacy policy| InternetMCP
     InternetMCP --> MCPInvocation
     MCPInvocation --> MCPServers
+    MCPInvocation -->|streamable HTTP plus hidden<br/>user, conversation, and trace context| VisualMCP
+    VisualMCP --> DiagramArtifacts
+    VisualMCP --> ImageArtifacts
+    VisualMCP --> Vision
     InternetMCP -->|read-only search_web| WebSearch
-    Graph -->|chat completions| LMStudio
-    DiagramAgent -->|bounded diagram specification| LMStudio
+    Graph -->|chat completions| LLMQueue
+    DiagramAgent -->|bounded diagram specification| LLMQueue
+    LLMQueue --> LMStudio
     DiagramArtifacts --> Database
     ImageArtifacts --> Database
     Memory --> Database
@@ -79,7 +87,7 @@ flowchart LR
     classDef scaffold fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-width:1.5px,stroke-dasharray:5 4;
     class Frontend,API interface;
     class User,Maintainer interface;
-    class Conversation,DiagramArtifacts,ImageArtifacts,Vision,DiagramAgent,Candidate,Coordinator,Graph,Memory,Toolbox,ToolOrchestration,MCPInvocation application;
+    class Conversation,DiagramArtifacts,ImageArtifacts,Vision,DiagramAgent,Candidate,Coordinator,Graph,Memory,Toolbox,ToolOrchestration,LLMQueue,MCPInvocation,VisualMCP application;
     InternetMCP[[Built-in internet MCP server<br/>stdio, read-only]]
     MCPServers[[Configured MCP servers<br/>stdio or streamable HTTP]]
     WebSearch[[Tavily web search<br/>external vendor, opt-in, untrusted]]

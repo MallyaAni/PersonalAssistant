@@ -100,6 +100,7 @@ class MCPInvocationService:
         arguments: dict[str, Any],
         expected_fingerprint: str | None = None,
         confirmed: bool = False,
+        request_context: dict[str, Any] | None = None,
     ) -> ToolCallResult:
         server = self.servers.get(server_id)
         if server is None or not server.enabled:
@@ -122,7 +123,15 @@ class MCPInvocationService:
             tool_name,
             len(screened),
         )
-        result = await self.invoker.call_tool(server, tool_name, screened)
+        if server.forward_context and request_context:
+            result = await self.invoker.call_tool(
+                server,
+                tool_name,
+                screened,
+                request_meta=request_context,
+            )
+        else:
+            result = await self.invoker.call_tool(server, tool_name, screened)
 
         # The result is untrusted content, so it is inspected before it can be
         # placed in front of the model.

@@ -1,10 +1,11 @@
 from typing import Annotated, Any
+from uuid import UUID
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from backend.core.auth import IdentityDependency, authorize_user
-from backend.core.dependencies import MCPInvocationDependency
+from backend.core.dependencies import MCPInvocationDependency, TracerDependency
 from backend.mcp.invocation import MCPInvocationError
 
 router = APIRouter(prefix="/tools/{user_id}", tags=["tools"])
@@ -19,6 +20,7 @@ class ToolCallRequest(BaseModel):
     # Sent back from a stored descriptor so the call can be refused when the
     # live contract no longer matches what was indexed.
     schema_fingerprint: str | None = Field(default=None, max_length=64)
+    conversation_id: UUID | None = None
     # An explicit human decision, never inferred from the request itself.
     confirmed: bool = False
 
@@ -43,9 +45,11 @@ async def call_tool(
     user_id: str,
     request: ToolCallRequest,
     service: MCPInvocationDependency,
+    tracer: TracerDependency,
     identity: IdentityDependency,
 ) -> dict[str, Any]:
     authorize_user(user_id, identity)
+    trace_id = tracer.start_trace(user_id)
     try:
         result = await service.invoke(
             server_id=request.server_id,
@@ -53,6 +57,13 @@ async def call_tool(
             arguments=request.arguments,
             expected_fingerprint=request.schema_fingerprint,
             confirmed=request.confirmed,
+            request_context={
+                "anios_user_id": user_id,
+                "anios_conversation_id": (
+                    str(request.conversation_id) if request.conversation_id else ""
+                ),
+                "anios_trace_id": trace_id,
+            },
         )
     except MCPInvocationError as exc:
         raise HTTPException(

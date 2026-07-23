@@ -67,7 +67,7 @@ Current evidence as of 2026-07-17:
 - `VERIFIED`: a typed `AgentMemoryManager` persists semantic-cache, session-working, procedural/workflow, entity/relation, knowledge-document/chunk, and conversation-summary records. Current Alembic head `20260718_0011` includes binary visual metadata; the memory stores introduced through `0009` retain pgvector HNSW indexes and source-request provenance.
 - `VERIFIED`: the deterministic `MemoryCoordinatorAgent` caches a typed query plan, retrieves only selected user-scoped stores, includes the latest conversation digest, bounds prompt fields, and keeps retrieved values as untrusted literal data. Completed turns update expiring session state and create a rolling digest every configured interval.
 - `VERIFIED`: a live Gemma/Nomic acceptance seeded unique entity, knowledge, summary, procedure, and toolbox codes; one chat query retrieved and reproduced all five codes, terminated with `done`, and cleanup returned all scoped agent-memory counts to zero.
-- `VERIFIED`: the browser Memory screen renders all short- and long-term memory forms with live personal, agent, and toolbox counts; 15 deterministic and 6 live Chromium workflows pass.
+- `VERIFIED`: the browser Memory screen renders all short- and long-term memory forms with live personal, agent, and toolbox counts. Every map card opens an on-demand owned detail view; full export is not fetched until a card is selected, displayed records are bounded, and embedding/storage internals are omitted.
 - `VERIFIED`: response-style chat proposals require approval; generic structured-fact APIs provide provenance idempotency, normalized deduplication, contradiction supersession/versioning, correction, key/record deletion, and profile projection.
 - `VERIFIED`: deterministic dry-run/apply retention, resumable same-dimension re-embedding across every vector store, natural-key transaction locks, concurrent write tests, a pgvector retrieval benchmark, and user-scoped operational inspection/CLI checks pass.
 - `VERIFIED`: FastAPI, conversation, memory, coordinator, and operational persistence use SQLAlchemy `AsyncSession` through `asyncpg` with a bounded runtime pool. Six concurrent real PostgreSQL waits through a two-connection test pool preserved an event-loop heartbeat, never exceeded two checkouts, and drained completely; direct SSE chat and all live browser workflows passed through the same async repositories.
@@ -139,7 +139,9 @@ top-1 matches and rejects 4/4 distractor queries, using a distance ceiling plus
 a required best-to-runner-up margin. A committed evaluation harness equivalent
 to `evaluate_memory_retrieval.py` remains `PLANNED`; the calibration run was
 performed manually.
-- `VERIFIED` (deterministic): threaded followup questions about any owned generated or uploaded image reuse the integrity-checked stored bytes and the same Gemma vision boundary, replay a bounded question/answer context, persist a size-bounded thread in artifact metadata, seed from a prior flat analysis, and reject unowned or non-ready images with 404 before any provider call. Deterministic Chromium plus backend/unit coverage pass; a live Gemma followup session remains `UNVERIFIED`. The thread lives only on the artifact record — chat-path image awareness and multimodal-memory retrieval of image content remain `PLANNED`.
+- `VERIFIED`: threaded followup questions about any owned generated or uploaded image reuse the integrity-checked stored bytes and the same Gemma vision boundary, replay a bounded question/answer context, persist a size-bounded thread in artifact metadata, seed from a prior flat analysis, and reject unowned or non-ready images with 404 before any provider call. Deterministic Chromium plus backend/unit coverage pass, and a live Gemma followup completed through the local visual MCP facade. The thread lives only on the artifact record; embedding VLM analysis text into personal memory remains `PLANNED`.
+- `VERIFIED`: natural-language new-image requests submitted from Chat select the image-generation path, while historical questions submitted with Create image selected switch back to ordinary chat without creating another image. Generated artifacts retain prompt provenance; deterministic image recall uses it to ground later questions.
+- `VERIFIED`: an explicit internet search about a recalled image runs image retrieval first, appends only a bounded prompt/analysis description to the normalized subject, privacy-screens the combined query, invokes the read-only internet MCP tool, and never sends image bytes. Real Chromium verified generation, grounded followup, visible search-tool lifecycle, terminal streaming, cleared loading/input, and memory-map drilldown.
 - `VERIFIED`: deterministic and live Chromium acceptance covers diagrams, real ComfyUI image generation, multipart Gemma analysis, private image rendering, progress/cancellation, retry, 413/422/502/503 failure display, navigation and reload restoration, history, download, owned deletion, clean successful Network/Console behavior, and terminal loading state.
 
 Gemma remains the primary logical reasoning model, but no model owns orchestration state or its own lifecycle. The application owns policy, durable jobs, resource leases, and provider recovery so specialized workers and future multi-agent graphs can scale without coupling the system to the current RTX 5080 or planned DGX Spark.
@@ -147,6 +149,10 @@ Gemma remains the primary logical reasoning model, but no model owns orchestrati
 ## Milestone 5: tools and specialized agents — IN PROGRESS
 
 - `VERIFIED`: stdio and streamable-HTTP MCP client connections with locally assigned server trust;
+- `VERIFIED`: a dedicated local FastMCP sidecar exposes existing diagram,
+  image-generation, image-followup, and artifact-status services as four
+  metadata-only tools with application-owned identity outside model-visible
+  schemas;
 - `VERIFIED`: live-list/fingerprint/argument/privacy/risk invocation gates; consequential calls remain approval-gated but chat approval/resume is not implemented;
 - `VERIFIED`: semantic discovery over safe, versioned MCP tool descriptors and native Gemma selection from a bounded live-validated shortlist;
 - `VERIFIED`: user-scoped tool preference and usage-outcome memory;
@@ -156,7 +162,7 @@ Gemma remains the primary logical reasoning model, but no model owns orchestrati
 - reflection and multi-agent orchestration;
 - `VERIFIED`: trace-correlated tool execution with visible running/success/refusal/failure status; durable audit and consequential-call approval UI remain planned.
 
-The current graph still has one model-backed assistant node. The deterministic memory coordinator is a policy/service boundary, not a spawned LLM sub-agent or multi-agent graph. Researcher and tool-executor agents are not implemented.
+The current graph still has one model-backed assistant node. The deterministic memory coordinator is a policy/service boundary, not a spawned LLM sub-agent or multi-agent graph. The visual MCP facade is an application-capability adapter, not a new autonomous agent. Its `untrusted` classification keeps artifact-producing calls outside ordinary autonomous chat selection until proposal/approval/resume is implemented. Researcher and tool-executor agents are not implemented.
 
 Internet-search policy and acceptance gates:
 
@@ -188,7 +194,7 @@ pulls, and quarantine for instruction-shaped descriptions. Verified against a
 real server: 13 tools discovered and indexed, and natural-language queries
 retrieve the correct tool while unrelated questions return nothing.
 
-Safe tool-descriptor embeddings, approved preference/sanitized outcome memory, live MCP connectivity, native Gemma tool selection, permission-aware invocation, and pre-invocation registry re-resolution are `VERIFIED`. Automatic registry refresh/change notifications, durable execution audit, per-server user authorization scopes, and chat approval/resume for consequential tools remain `PLANNED`; a stored descriptor never authorizes a call.
+Safe tool-descriptor embeddings, approved preference/sanitized outcome memory, live MCP connectivity, native Gemma tool selection, permission-aware invocation, pre-invocation registry re-resolution, and the local visual FastMCP capability facade are `VERIFIED`. Automatic registry refresh/change notifications, durable execution audit, per-server user authorization scopes, and chat approval/resume for consequential tools remain `PLANNED`; a stored descriptor never authorizes a call.
 
 ## Milestone 6: additional interfaces and automation — PLANNED
 

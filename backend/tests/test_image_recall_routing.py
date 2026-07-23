@@ -17,6 +17,14 @@ def policy() -> ImageRecallPolicy:
         ("which image had the wooden table", "which_image"),
         ("the picture of my dog", "descriptive_reference"),
         ("open my photos", "possessive"),
+        (
+            "what car did we create an image of?",
+            "creation_history_question",
+        ),
+        (
+            "can you search the internet for that car to get its model?",
+            "referential_image",
+        ),
     ],
 )
 def test_recall_requests_route_to_image_search(policy, query, reason):

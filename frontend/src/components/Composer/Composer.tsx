@@ -13,6 +13,32 @@ import {
 
 type ComposerMode = 'chat' | 'generate' | 'analyze';
 
+// Detect questions about an existing image before creation verbs can reroute them.
+const asksAboutExistingImage = (prompt: string): boolean => {
+  const normalized = prompt.trim().toLowerCase()
+  const isQuestion = normalized.endsWith('?')
+    || /^(what|which|who|where|when|why|how|is|are|was|were|did|does|do|can|could|would|will)\b/.test(normalized)
+  const referencesExistingVisual = /\b(this|that|the|last|previous|existing|create|created|generate|generated|make|made)\b/.test(normalized)
+    && /\b(image|picture|photo|artwork|illustration|car|vehicle|it)\b/.test(normalized)
+  return isQuestion && referencesExistingVisual
+}
+
+// Detect an explicit request to create a new image without treating history questions as creation.
+const requestsImageCreation = (prompt: string): boolean => {
+  if (asksAboutExistingImage(prompt)) return false
+  const normalized = prompt.trim().toLowerCase()
+  return /\b(create|generate|make|design)\b.{0,60}\b(image|picture|photo|artwork|illustration)\b/.test(normalized)
+    || /\b(draw|paint|sketch|render)\b/.test(normalized)
+}
+
+// Choose the action for this turn while preserving deliberate Analyze mode requests.
+const resolveComposerMode = (selectedMode: ComposerMode, prompt: string): ComposerMode => {
+  if (selectedMode === 'analyze') return selectedMode
+  if (requestsImageCreation(prompt)) return 'generate'
+  if (selectedMode === 'generate' && asksAboutExistingImage(prompt)) return 'chat'
+  return selectedMode
+}
+
 interface ComposerProps {
   userId: string;
   conversationId: string;
@@ -67,23 +93,25 @@ const Composer: React.FC<ComposerProps> = ({
   const handleSend = async () => {
     const prompt = input.trim()
     if (!prompt || isSending) return
+    const requestMode = resolveComposerMode(mode, prompt)
     // Analyze mode needs an image. Selecting one is cleared after each send, so
     // explain the blocked send instead of silently discarding the keypress.
-    if (mode === 'analyze' && !selectedImage) {
+    if (requestMode === 'analyze' && !selectedImage) {
       setVisualError('Choose an image to analyze, or switch to Chat to send text.')
       return
     }
+    setMode(requestMode)
     setIsSending(true)
     setVisualError('')
-    onSendMessage('user', input)
+    onSendMessage('user', prompt)
 
     try {
-      if (mode !== 'chat') {
+      if (requestMode !== 'chat') {
         onThinkingChange(false)
-        onVisualStarted(mode)
+        onVisualStarted(requestMode)
         const controller = new AbortController()
         requestController.current = controller
-        const artifact = mode === 'generate'
+        const artifact = requestMode === 'generate'
           ? await generateImage(userId, conversationId, prompt, controller.signal)
           : await analyzeImage(
               userId,
@@ -99,7 +127,7 @@ const Composer: React.FC<ComposerProps> = ({
       }
 
       onThinkingChange(true)
-      for await (const update of streamChat(userId, conversationId, input)) {
+      for await (const update of streamChat(userId, conversationId, prompt)) {
         if (update.type === 'start') onStreamUpdate(update.content)
         else if (update.type === 'content') {
           onThinkingChange(false)
@@ -132,7 +160,7 @@ const Composer: React.FC<ComposerProps> = ({
       setInput('')
     } catch (err) {
       onThinkingChange(false)
-      if (mode === 'chat') {
+      if (requestMode === 'chat') {
         console.warn('Chat request failed:', err)
         onStreamUpdate('Unable to send message. Please try again.')
       } else {

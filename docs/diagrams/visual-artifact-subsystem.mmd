@@ -1,5 +1,6 @@
 flowchart TB
     User([User])
+    ExplicitCaller([Confirmed local tool caller])
 
     subgraph Entry[Authenticated visual APIs]
         direction TB
@@ -8,6 +9,7 @@ flowchart TB
         VisionAPI[POST /api/v1/vision/analyze<br/>image plus prompt]
         AskAPI[POST /api/v1/vision/artifacts/:id/ask<br/>owned image plus question]
         ArtifactAPI[GET content, list,<br/>snapshot, and DELETE]
+        ToolAPI[POST /api/v1/tools/:user/call<br/>confirmation and invocation gates]
     end
 
     User --> ChatAPI
@@ -15,10 +17,24 @@ flowchart TB
     User --> VisionAPI
     User --> AskAPI
     User --> ArtifactAPI
+    ExplicitCaller --> ToolAPI
+
+    subgraph MCPFacade[Agent-facing local capability facade]
+        direction TB
+        VisualMCP[FastMCP streamable HTTP sidecar<br/>model schemas omit ownership IDs]
+        HiddenContext[Application-owned metadata<br/>user, conversation, and trace]
+        VisualTools[generate_diagram, generate_image,<br/>ask_about_image, get_artifact]
+        Handles[Bounded JSON artifact handles<br/>no bytes or storage keys]
+
+        HiddenContext --> VisualMCP --> VisualTools --> Handles
+    end
+
+    ToolAPI -->|confirmed untrusted call| HiddenContext
 
     subgraph DiagramPath[1. Editable architecture and flowchart path]
         direction TB
         DiagramRoute[ConversationService<br/>deterministic diagram branch]
+        DiagramService[DiagramArtifactService<br/>owned pending, ready, or failed lifecycle]
         DiagramAgent[DiagramAgent LangGraph<br/>bounded orchestration]
         DiagramLLM[LM Studio Gemma<br/>structured Mermaid]
         MermaidCheck[Passive Mermaid validation<br/>plus one correction attempt]
@@ -29,13 +45,14 @@ flowchart TB
         RetrievalPolicy[ImageRetrievalPolicy<br/>distance ceiling plus<br/>best-to-runner-up margin]
         VisionEmbed --> ImageVectors --> RetrievalPolicy
 
-        DiagramRoute --> DiagramAgent --> DiagramLLM --> MermaidCheck
+        DiagramRoute --> DiagramService --> DiagramAgent --> DiagramLLM --> MermaidCheck
         MermaidCheck -->|valid source| DiagramState --> DiagramStream
         MermaidCheck -->|invalid twice| DiagramState
         DiagramRoute -. disconnect .-> DiagramState
     end
 
     ChatAPI --> DiagramRoute
+    VisualTools --> DiagramService
 
     subgraph RasterPath[2. Generated raster-image path]
         direction TB
@@ -44,7 +61,7 @@ flowchart TB
         ImageProvider[ComfyUIImageProvider<br/>one-job concurrency gate]
         ComfyUI[ComfyUI 0.28<br/>HiDream-I1 Dev FP8]
         OutputCheck[PNG signature, MIME,<br/>size, pixels, and frame check]
-        GeneratedState[Binary plus PostgreSQL metadata<br/>ready or sanitized failed]
+        GeneratedState[Binary plus PostgreSQL metadata<br/>prompt provenance; ready or sanitized failed]
 
         ImageLifecycle --> DisconnectMonitor --> ImageProvider --> ComfyUI --> OutputCheck --> GeneratedState
         DisconnectMonitor -. client leaves .-> ImageProvider
@@ -52,8 +69,21 @@ flowchart TB
     end
 
     ImageAPI --> ImageLifecycle
+    VisualTools --> ImageLifecycle
 
-    subgraph VisionPath[3. Upload, understanding, and followup path]
+    subgraph RecallPath[3. Stored-image conversation and comparison path]
+        direction TB
+        ReferencedQuestion[Chat question about<br/>a prior image or depicted object]
+        RecallPolicy[ImageRecallPolicy<br/>historical and referential signals;<br/>new creation excluded]
+        PromptContext[Bounded analysis or generation prompt<br/>as untrusted model context]
+        OutboundGate[Explicit web request only<br/>normalize and privacy-screen<br/>description; never send pixels]
+        InternetMCP[Read-only internet MCP search]
+
+        ReferencedQuestion --> RecallPolicy --> RetrievalPolicy --> PromptContext
+        PromptContext -. explicit comparison .-> OutboundGate --> InternetMCP
+    end
+
+    subgraph VisionPath[4. Upload, understanding, and followup path]
         direction TB
         UploadCheck[Bounded multipart read<br/>and image validation]
         UploadState[Persist owned upload<br/>before inference]
@@ -69,6 +99,8 @@ flowchart TB
 
     VisionAPI --> UploadCheck
     AskAPI --> FollowupRead
+    VisualTools --> FollowupRead
+    VisualTools --> Ownership
 
     subgraph Persistence[Shared private artifact boundary]
         direction TB
@@ -92,7 +124,7 @@ flowchart TB
         direction TB
         SSEParser[Typed SSE parser]
         DiagramCard[Diagram card<br/>strict SVG plus editable source]
-        ImageComposer[Chat composer modes<br/>create, analyze, cancel, and retry]
+        ImageComposer[Chat composer intent and modes<br/>create, follow up, analyze, cancel, retry]
         ImageCard[Private image card<br/>preview, threaded ask, download, delete]
         ExistingUI[Reload, navigation, history,<br/>export, and owned deletion]
 
@@ -112,7 +144,7 @@ flowchart TB
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef planned fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
-    class User,ChatAPI,ImageAPI,VisionAPI,AskAPI,ArtifactAPI,DiagramStream,SSEParser,DiagramCard,ImageComposer,ImageCard,ExistingUI interface;
-    class DiagramRoute,DiagramAgent,MermaidCheck,ImageLifecycle,DisconnectMonitor,ImageProvider,OutputCheck,UploadCheck,UploadState,FollowupRead,VisionService,AnalysisState,Ownership,Repository application;
+    class User,ExplicitCaller,ChatAPI,ImageAPI,VisionAPI,AskAPI,ArtifactAPI,ToolAPI,ReferencedQuestion,DiagramStream,SSEParser,DiagramCard,ImageComposer,ImageCard,ExistingUI interface;
+    class VisualMCP,HiddenContext,VisualTools,Handles,DiagramRoute,DiagramService,DiagramAgent,MermaidCheck,ImageLifecycle,DisconnectMonitor,ImageProvider,OutputCheck,RecallPolicy,PromptContext,OutboundGate,UploadCheck,UploadState,FollowupRead,VisionService,AnalysisState,Ownership,Repository application;
     class DiagramState,GeneratedState,Postgres,BinaryStore data;
-    class DiagramLLM,ComfyUI,VisionLLM external;
+    class DiagramLLM,ComfyUI,VisionLLM,InternetMCP external;

@@ -12,6 +12,7 @@ flowchart LR
     subgraph Compose[Docker Compose stack]
         Frontend[React and Vite dev server container<br/>source bind-mount with polling HMR<br/>host port 5173]
         Backend[FastAPI and Uvicorn container<br/>host port 8000]
+        VisualMCP[Local visual FastMCP sidecar<br/>streamable HTTP, host port 8001<br/>four metadata-only visual tools]
         VisionEmbed[Nomic Embed Vision v1.5<br/>in-process ONNX on CPU<br/>aligned to the text latent space]
         Dependencies[FastAPI dependency assembly<br/>async request sessions]
         Auth[Optional signed-user ownership<br/>disabled by default locally]
@@ -39,6 +40,11 @@ flowchart LR
     Dependencies -->|image bytes, aligned 768-dim vector| VisionEmbed
     Dependencies -->|discover, then invoke behind gates| MCPStdio
     Dependencies -->|discover, then invoke behind gates| MCPHttp
+    Backend -->|streamable HTTP; application-owned<br/>user, conversation, and trace metadata| VisualMCP
+    VisualMCP -->|per-call asyncpg sessions| Postgres
+    VisualMCP -->|diagram and vision requests| LMStudio
+    VisualMCP -->|image-generation requests| ComfyUI
+    VisualMCP -->|opaque artifact bytes| BinaryStore
     MCPStdio -->|built-in read-only internet/search_web| WebSearch
     Dependencies -->|OpenAI-compatible HTTP, host.docker.internal:1234| LMStudio
     Dependencies -->|ComfyUI HTTP, comfyui:8188| ComfyUI
@@ -47,7 +53,8 @@ flowchart LR
     Maintenance -->|asyncpg maintenance cycle| Postgres
     Maintenance -->|optional re-embedding| LMStudio
     Migration -->|psycopg2 schema changes| Postgres
-    Source -->|host-source run or image build| Backend
+    Source -->|image build| Backend
+    Source -->|same image, dedicated command| VisualMCP
     Source -->|explicit allowlisted context| DiagramCLI
     Canonical -->|read-only exemplar| DiagramCLI
     DiagramCLI -->|OpenAI-compatible HTTP| LMStudio
@@ -59,6 +66,6 @@ flowchart LR
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b,stroke-width:1.5px;
     classDef scaffold fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
     class User,Source user;
-    class Browser,Frontend,LMStudio,ComfyUI,Backend,Dependencies,Auth,Maintenance,Migration,DiagramCLI,VisionEmbed process;
+    class Browser,Frontend,LMStudio,ComfyUI,Backend,VisualMCP,Dependencies,Auth,Maintenance,Migration,DiagramCLI,VisionEmbed process;
     class Postgres,BinaryStore,Candidate,Canonical,ComfyInstall data;
     class Redis scaffold;

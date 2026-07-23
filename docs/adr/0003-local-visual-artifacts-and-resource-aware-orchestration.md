@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted and partially implemented. Architecture maintenance, the dedicated diagram graph, editable Mermaid artifacts, free local HiDream raster generation, opaque generated/uploaded binary storage, validated image upload, Gemma image understanding, and browser image integration are implemented. Multimodal embeddings, durable queues, automated retention, GPU leases/model transitions, and generalized multi-agent visual workers remain `PLANNED`.
+Accepted and partially implemented. Architecture maintenance, the dedicated diagram graph, editable Mermaid artifacts, free local HiDream raster generation, opaque generated/uploaded binary storage, validated image upload, Gemma image understanding, aligned multimodal image embeddings, browser image integration, and an agent-facing local FastMCP facade are implemented. Durable queues, automated retention, GPU leases/model transitions, embedding VLM analysis text into personal memory, and generalized multi-agent visual workers remain `PLANNED`.
 
 ## Context
 
@@ -23,8 +23,25 @@ The user requires a free approach: no subscriptions, paid API credits, or automa
 7. Model context size is a configurable resource profile selected by application policy. Normal chat, long-context work, and visual-job preparation can use different profiles without changing conversation or memory ownership.
 8. Free local providers are mandatory. Paid endpoints and automatic cloud fallback are excluded. Candidate models must pass pinned-license review and local quality, latency, VRAM, cancellation, and recovery acceptance before selection.
 9. Multi-agent expansion uses typed nodes and bounded messages over durable application-owned state. Specialized diagram, image, research, coding, and tool workers may be introduced incrementally; they do not receive raw database, permission, secret, or hardware-management authority merely because they are agents.
-10. Image understanding and multimodal vector retrieval are separate capabilities. Gemma now provides validated image understanding through a focused adapter, while dedicated multimodal embeddings remain planned and are not inferred from Nomic text embeddings or HiDream generation.
+10. Image understanding and multimodal vector retrieval are separate capabilities. Gemma provides validated image understanding through a focused adapter. Nomic Embed Vision and its aligned text encoder provide bounded image retrieval in a distinct vector index; these vectors are not inferred from Nomic text-memory embeddings or HiDream generation.
 11. Repository architecture generation is LLM-assisted rather than LLM-authoritative. The application selects explicit bounded context, validates passive Mermaid and required implementation labels, renders a new candidate, and refuses canonical overwrite. Technical and visual review must precede an explicit manual canonical change.
+12. Existing visual application services are exposed to future agents through a
+    dedicated local FastMCP adapter rather than duplicated tool
+    implementations. Model-visible schemas contain task arguments only;
+    application-owned user, conversation, and trace context travels as
+    opt-in request metadata. Tool results return bounded artifact handles, not
+    binary content or storage keys. Artifact-producing calls remain
+    confirmation-gated until a visible approval/resume workflow is implemented.
+13. Generated images retain their bounded generation prompt as provenance.
+    Deterministic application routing distinguishes a request for a new image
+    from a question about a prior image. If the user explicitly asks for web
+    comparison, AniOS may append one bounded stored analysis or generation
+    prompt only after image recall and before outbound privacy screening; it
+    never sends image bytes to search.
+14. Calls made through the shared local Gemma chat client are serialized because
+    the current LM Studio runtime can terminate an in-flight generation when
+    another call overlaps it. This lock is a local safety boundary; durable
+    queues, multi-process scheduling, and resource leases remain planned.
 
 ## Consequences
 
@@ -36,6 +53,8 @@ Benefits:
 - exclusive GPU use and simultaneous residency can both be supported from measured capacity;
 - provider failure cannot erase conversation, memory, or durable job state;
 - future multi-agent workers inherit explicit authority and lifecycle boundaries.
+- browser APIs and agent-facing MCP tools share one set of visual lifecycle and
+  ownership services instead of diverging implementations.
 
 Costs and risks:
 
@@ -44,6 +63,9 @@ Costs and risks:
 - generated diagram specifications and uploaded media are untrusted inputs and require bounded validation;
 - local open-weight licenses, hardware requirements, and runtime support must be checked for each pinned model version;
 - durable job coordination may eventually require a real queue, but Redis is not considered implemented until application code and acceptance evidence use it.
+- the local FastMCP sidecar has application-service access and therefore needs
+  future service authentication and process/network hardening; it is an
+  adapter boundary, not a sandbox.
 
 ## Alternatives considered
 

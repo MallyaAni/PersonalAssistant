@@ -29,6 +29,8 @@ class MCPServerConfig:
     # http transport
     url: str = ""
     headers: tuple[tuple[str, str], ...] = ()
+    # Forward application-owned request identity only to explicitly local servers.
+    forward_context: bool = False
     risk_classification: str = "untrusted"
     enabled: bool = True
 

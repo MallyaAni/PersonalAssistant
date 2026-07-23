@@ -43,6 +43,7 @@ logger = logging.getLogger(__name__)
 
 # Snippet length shown beneath each cited source in the interface.
 _SNIPPET_CHARS = 240
+_IMAGE_DESCRIPTION_CHARS = 500
 
 # Extracted page text arrives with Markdown headings, emphasis and list markers.
 # A citation is displayed as plain prose, so the syntax is stripped rather than
@@ -55,6 +56,28 @@ _MARKDOWN_NOISE = re.compile(r"[#*_`>\[\]]+")
 def _plain_snippet(content: str) -> str:
     cleaned = _MARKDOWN_NOISE.sub(" ", content)
     return " ".join(cleaned.split())[:_SNIPPET_CHARS]
+
+
+# Return the best bounded text provenance available for one stored image.
+def _image_description(match: dict[str, Any]) -> str:
+    metadata = match.get("metadata") or {}
+    description = metadata.get("analysis") or metadata.get("generation_prompt") or ""
+    return " ".join(str(description).split())[:_IMAGE_DESCRIPTION_CHARS]
+
+
+# Add matched-image context only after the user explicitly asks for web search.
+def _image_aware_search_query(
+    query: str,
+    image_matches: list[dict[str, Any]],
+) -> str:
+    normalized = normalize_search_query(query)
+    if not image_matches:
+        return normalized
+    description = _image_description(image_matches[0])
+    if not description:
+        return normalized
+    subject = normalized.rstrip(" .?!")
+    return f"{subject}. Referenced image description: {description}"
 
 
 # Build at most one explicit, non-persisted memory proposal for a chat request.
@@ -142,6 +165,7 @@ class ConversationService:
         context: dict[str, Any],
         user_id: str,
         query: str,
+        conversation_id: str,
         trace_id: str,
         query_embedding: list[float] | None,
     ) -> AsyncGenerator[ChatStreamEvent, None]:
@@ -183,7 +207,14 @@ class ConversationService:
             },
         }
         try:
-            result = await self.tool_orchestration.execute(plan)
+            result = await self.tool_orchestration.execute(
+                plan,
+                request_context={
+                    "anios_user_id": user_id,
+                    "anios_conversation_id": conversation_id,
+                    "anios_trace_id": trace_id,
+                },
+            )
         except MCPInvocationError as exc:
             logger.warning(
                 "Trace %s MCP call %s/%s was refused (%s)",
@@ -276,6 +307,7 @@ class ConversationService:
         context: dict[str, Any],
         user_id: str,
         query: str,
+        conversation_id: str,
         trace_id: str,
         query_embedding: list[float] | None,
     ) -> AsyncGenerator[ChatStreamEvent, None]:
@@ -291,6 +323,7 @@ class ConversationService:
             context,
             user_id,
             query,
+            conversation_id,
             trace_id,
             query_embedding,
         ):
@@ -330,10 +363,8 @@ class ConversationService:
             logger.warning("Trace %s image search failed", trace_id, exc_info=True)
             return []
 
-    # Attach optional retrieved context in place, streaming progress so the
-    # interface can show a search happening and cite what it used. Search runs
-    # against a remote provider and is the slowest step, so it is announced
-    # before it starts rather than reported only once it returns.
+    # Attach optional image and search context in place, streaming progress so
+    # the interface can show retrieval and cite what it used.
     async def _stream_retrieved_context(
         self,
         context: dict[str, Any],
@@ -342,9 +373,33 @@ class ConversationService:
         trace_id: str,
         query_embedding: list[float] | None,
     ) -> AsyncGenerator[ChatStreamEvent, None]:
+        image_matches = await self._load_image_matches(
+            user_id,
+            query,
+            trace_id,
+            query_embedding,
+        )
+        if image_matches:
+            # Tell the model the images exist and are already shown, so it
+            # describes them rather than claiming it cannot display images.
+            context["images"] = [
+                {
+                    "kind": match.get("kind"),
+                    "title": match.get("title"),
+                    "created_at": match.get("created_at"),
+                    "description": _image_description(match),
+                    "generation_prompt": (match.get("metadata") or {}).get(
+                        "generation_prompt"
+                    ),
+                }
+                for match in image_matches
+            ]
+            yield {"event": "image_matches", "data": {"artifacts": image_matches}}
+
         if await self._should_search(query, trace_id):
             search_results: list[dict[str, Any]]
-            screened = self.search_privacy.sanitize(normalize_search_query(query))
+            outbound_query = _image_aware_search_query(query, image_matches)
+            screened = self.search_privacy.sanitize(outbound_query)
             if not screened.allowed:
                 # Categories are logged, never the text that triggered them.
                 logger.info(
@@ -417,26 +472,6 @@ class ConversationService:
                     ]
                 },
             }
-
-        image_matches = await self._load_image_matches(
-            user_id,
-            query,
-            trace_id,
-            query_embedding,
-        )
-        if image_matches:
-            # Tell the model the images exist and are already shown, so it
-            # describes them rather than claiming it cannot display images.
-            context["images"] = [
-                {
-                    "kind": match.get("kind"),
-                    "title": match.get("title"),
-                    "created_at": match.get("created_at"),
-                    "description": (match.get("metadata") or {}).get("analysis"),
-                }
-                for match in image_matches
-            ]
-            yield {"event": "image_matches", "data": {"artifacts": image_matches}}
 
     # Report whether this turn will search, without issuing the query. The
     # decision may consult a bounded classifier, so it is awaited once and the
@@ -555,6 +590,7 @@ class ConversationService:
             context,
             user_id,
             query,
+            resolved_conversation_id,
             trace_id,
             query_embedding,
         ):

@@ -1,7 +1,7 @@
 flowchart TB
     subgraph Entry[Entry points and write authority]
         Chat[ConversationService]
-        UI[Personal Memory UI]
+        UI[Personal Memory UI<br/>live counts plus on-demand store drilldown]
         APIs[Personal, agent, and tool-memory APIs]
         Approval[Explicit user approval<br/>for durable chat proposals]
         MaintenanceCLI[Maintenance and operations CLI]
@@ -36,7 +36,7 @@ flowchart TB
         VisionIndex[Vision analysis indexing<br/>purpose visual_artifact_analysis<br/>derived, not approval-gated user facts]
         Dimension[Offline dimension migration<br/>shadow columns and atomic switch]
         Operations[Operations and metrics<br/>counts, backlog, stale vectors,<br/>invariants, DB pool and latency]
-        Control[Correction, supersession,<br/>JSON export, scoped and delete-all]
+        Control[Card-detail export, correction, supersession,<br/>JSON export, scoped and delete-all]
     end
 
     Embeddings[LM Studio Nomic<br/>document/query task prefixes<br/>dimension validation and serialized calls]

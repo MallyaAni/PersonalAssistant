@@ -18,11 +18,13 @@ flowchart TB
     subgraph Views[Primary application views]
         direction LR
         ChatView[ChatWindow<br/>transcript, thinking, approvals,<br/>conversation hydration]
-        Composer[Composer modes<br/>Chat, Create image, Analyze image<br/>progress, cancel, retry]
+        Composer[Composer modes plus per-turn intent<br/>new images route to Create image;<br/>history questions route to Chat]
         ArtifactView[ArtifactPanel<br/>owned diagram and image history<br/>refresh, download, delete]
-        MemoryView[MemoryPanel<br/>personal, agent, and tool snapshots<br/>approve, edit, export, delete]
+        MemoryView[MemoryPanel<br/>personal, agent, and tool snapshots<br/>clickable store details and controls]
+        MemoryDetails[On-demand owned export<br/>bounded readable store records<br/>vectors and storage keys hidden]
 
         ChatView --> Composer
+        MemoryView --> MemoryDetails
     end
 
     Navigation --> ChatView
@@ -45,7 +47,7 @@ flowchart TB
         direction LR
         ChatClient[streamChat<br/>validated SSE lifecycle<br/>renders search and MCP tool status,<br/>cited sources and image_matches cards]
         VisualClient[JSON generation and multipart upload<br/>private authenticated image fetch]
-        DataClient[JSON memory, history,<br/>snapshot, and deletion requests]
+        DataClient[JSON memory, history, export,<br/>snapshot, and deletion requests]
         Validation[Runtime response validation<br/>visible safe errors]
         Auth[Optional VITE_AUTH_TOKEN]
 
@@ -63,6 +65,7 @@ flowchart TB
     ChatView --> DataClient
     ArtifactView --> DataClient
     MemoryView --> DataClient
+    MemoryDetails --> DataClient
 
     Backend[FastAPI v1 API<br/>localhost:8000]
     Validation --> Backend
@@ -72,6 +75,6 @@ flowchart TB
     classDef boundary fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
     class Browser,App,Identity,ConversationID,Navigation,Persistence shell;
-    class ChatView,Composer,ArtifactView,MemoryView,DiagramCard,ImageCard component;
+    class ChatView,Composer,ArtifactView,MemoryView,MemoryDetails,DiagramCard,ImageCard component;
     class ChatClient,VisualClient,DataClient,Validation,Auth boundary;
     class Backend external;

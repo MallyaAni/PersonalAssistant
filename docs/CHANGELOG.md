@@ -294,3 +294,61 @@ This file is append-only history for meaningful, verified changes. It must not c
 - Added streamed tool lifecycle events and browser status for running, succeeded, refused, and failed calls without displaying arguments or raw results. Search continues to render its source cards.
 - Verified the final rebuilt backend image through a direct documented chat payload, backend logs, real Gemma tool selection, real Tavily-backed MCP search, and a live Chromium workflow that observed transient and terminal tool state, source cards, stream completion, loading cleanup, and no blocking Console/page errors.
 - Verified 339 backend tests, Ruff, Black over 155 files, strict MyPy over 109 source files, all 28 deterministic Chromium workflows, the TypeScript/Vite production build, and nine synchronized architecture diagrams. `alembic check` still reports unrelated pre-existing metadata drift for `ix_visual_artifacts_embedding_hnsw`; it is not claimed clean.
+
+## 2026-07-22 — Local visual FastMCP capability facade verified
+
+- Added a dedicated streamable-HTTP FastMCP sidecar that reuses the existing
+  diagram, image-generation, vision-followup, artifact-repository, and binary
+  storage services through four agent-facing tools. Tool schemas omit
+  ownership identifiers and results return bounded public artifact handles
+  without binary data or storage keys.
+- Added opt-in application-context forwarding at the MCP invocation boundary.
+  AniOS supplies user, conversation, and trace values only to a configured
+  `forward_context` server; the local visual server validates those values
+  outside model-selected arguments and remains confirmation-gated as
+  `untrusted`.
+- Live direct acceptance discovered and indexed all four visual tools, created
+  a ready Mermaid artifact with Gemma, generated a ready 2048×2048 image with
+  ComfyUI, answered a grounded followup with Gemma vision, read the artifact
+  handle, and refused the same unconfirmed server with HTTP 409. Scoped cleanup
+  removed both artifacts and all six disposable descriptors.
+- Repaired the live browser visual test's machine-specific upload path by
+  analyzing the image it had just generated, and changed its stale raw-Markdown
+  assertion to verify rendered semantic content. Real Chromium then completed
+  generation, rendering, navigation/reload restoration, upload analysis,
+  loading cleanup, deletion, and clean Console/page state.
+- Verified 348 backend tests, Ruff, Black over 172 files, strict MyPy over 111
+  source files, all 28 deterministic Chromium workflows, the focused live
+  visual browser workflow, the TypeScript/Vite production build, and all nine
+  synchronized architecture diagrams. `alembic check` still reports the
+  pre-existing `ix_visual_artifacts_embedding_hnsw` metadata drift and is not
+  claimed clean.
+
+## 2026-07-23 — Referenced-image conversation and memory drilldown verified
+
+- Added deterministic composer intent so natural-language new-image requests
+  submitted from Chat invoke the existing image API and select Create image,
+  while historical questions submitted from Create image switch to chat
+  without generating again.
+- Persisted bounded generation-prompt provenance on ready images and extended
+  image recall to historical and referential questions. Explicit web comparison
+  now recalls the image first, appends one bounded description, privacy-screens
+  the combined query, and invokes the read-only internet MCP tool without image
+  bytes.
+- Made every Agent memory map card clickable. Details load only after selection
+  through the owned export boundary, show bounded readable records, and omit
+  embedding vectors and private storage keys.
+- Serialized shared Gemma chat-client requests after live browser evidence
+  showed LM Studio terminating an overlapping stream. A concurrency regression
+  test proves provider calls through that client do not overlap.
+- Direct live API checks generated a real ComfyUI image with prompt provenance,
+  answered a grounded historical question, and completed an image-aware Tavily
+  search with image/search/tool SSE evidence. Real Chromium then completed
+  natural generation, chat followup, search lifecycle, terminal loading/input
+  cleanup, and memory drilldown with clean Console, page, and required-network
+  evidence.
+- Verified 353 backend tests, Ruff, Black over 158 files, strict MyPy over 111
+  source files, all 30 deterministic Chromium workflows, the focused live
+  referenced-image workflow, the TypeScript/Vite production build, and all nine
+  synchronized architecture diagrams with five affected views visually
+  inspected.

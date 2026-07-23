@@ -101,7 +101,7 @@ async def test_generated_image_is_embedded_at_store_time():
 
     await _service(embeddings, repository).generate(USER, CONVERSATION, TRACE, REQUEST)
 
-    # Generated images carry no caption, so the vector is their only index.
+    # Pixels remain the semantic index even though prompt provenance is stored.
     assert embeddings.calls == 1
     assert len(repository.embeddings) == 1
     assert repository.embeddings[0]["dimension"] == 768

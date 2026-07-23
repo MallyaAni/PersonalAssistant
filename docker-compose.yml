@@ -24,6 +24,32 @@ services:
     ports:
       - "6379:6379"
 
+  local-capabilities:
+    build: .
+    container_name: anios_local_capabilities
+    command:
+      - python
+      - -m
+      - backend.capabilities.visual_mcp
+    ports:
+      - "8001:8001"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_DB=${POSTGRES_DB:-anios_db}
+      - POSTGRES_HOST=db
+      - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (see .env.example)}
+      - LLM_BASE_URL=http://host.docker.internal:1234
+      - IMAGE_PROVIDER_BASE_URL=http://host.docker.internal:8188
+      - ARTIFACT_STORAGE_ROOT=/app/data/artifacts
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - artifactdata:/app/data/artifacts
+    depends_on:
+      db:
+        condition: service_healthy
+
   backend:
     build: .
     container_name: anios_backend
@@ -62,6 +88,8 @@ services:
       db:
         condition: service_healthy
       redis:
+        condition: service_started
+      local-capabilities:
         condition: service_started
 
   frontend:

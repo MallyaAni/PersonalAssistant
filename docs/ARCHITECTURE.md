@@ -115,8 +115,18 @@ legacy direct adapter remains configurable. Search is enabled by
 owned by the application decides when a turn needs live data; the model never
 selects the path, because a model cannot detect that its own training data is
 stale. `ImageRecallPolicy` performs the equivalent routing for image recall and
-explicitly refuses creation requests. Search results and image descriptions both
-enter the prompt as untrusted quoted data.
+explicitly refuses new creation requests while recognizing historical questions
+and referential phrases such as "that car." Generated-image metadata retains a
+bounded generation prompt, so a later chat turn can answer what was requested
+without pretending to inspect absent pixels. Search results and image
+descriptions both enter the prompt as untrusted quoted data.
+
+When the user explicitly requests web search about a matched image, image recall
+runs first. AniOS appends at most one bounded stored analysis or generation
+prompt to the normalized search subject, screens the combined text with
+`OutboundPrivacyPolicy`, and only then calls the internet MCP tool. Image bytes
+never cross the outbound-search boundary. A blocked description blocks the
+whole provider call rather than falling back to the less useful raw question.
 
 Routing is a cascade. Deterministic patterns answer the obvious cases for free
 and cannot drift; whatever they do not match is referred to a bounded local
@@ -196,6 +206,7 @@ and the separation is enforced by tests rather than convention:
 | Package | Owns |
 | --- | --- |
 | `backend/mcp` | The protocol: server configuration, stdio/streamable-HTTP sessions, built-in servers, tool metadata, and inspection of untrusted server text |
+| `backend/capabilities` | Agent-facing application adapters, including the local visual FastMCP facade over existing services |
 | `backend/search` | Web search only: direct/MCP provider adapters, query normalization, routing patterns, and the classifier cascade |
 | `backend/artifacts` | Visual artifacts, including image recall routing and margin-bounded image retrieval |
 | `backend/core/egress` | Screening any text before it leaves the machine |
@@ -203,6 +214,9 @@ and the separation is enforced by tests rather than convention:
 
 `backend/mcp` imports nothing from `backend/services` or `backend/api`, so the
 transport can be replaced or exercised without the application around it.
+The higher-level `backend/capabilities` package may compose application
+services; this keeps the generic protocol package independent while allowing
+local capabilities to use the same business logic as browser APIs.
 
 Two placements are deliberate. Image recall and image retrieval sit with the
 artifacts they serve rather than under `search`, where "search" had come to
@@ -294,6 +308,18 @@ operator-allowlisted search environment names. It emits compact valid JSON
 below the generic MCP result cap. Internet eligibility remains deterministic
 application policy; it is not delegated to Gemma.
 
+The Compose `local-capabilities` sidecar exposes the existing visual
+application services as four streamable-HTTP FastMCP tools:
+`generate_diagram`, `generate_image`, `ask_about_image`, and `get_artifact`.
+Their model-visible schemas contain task arguments only. The backend attaches
+user, conversation, and trace ownership as MCP request metadata only because
+this locally configured server opts into `forward_context`; other servers
+receive no application context by default. Results contain bounded public
+artifact metadata, never binary image data or private storage keys. The server
+is classified `untrusted`, so calls require explicit confirmation and are not
+offered to ordinary autonomous chat selection until a browser
+proposal/approval/resume lifecycle exists.
+
 ## Backend boundaries
 
 ### Presentation
@@ -309,11 +335,21 @@ application policy; it is not delegated to Gemma.
 
 `backend/api/v1/artifacts.py` lists recent owned artifacts, returns owned binary content with private/no-store and nosniff headers, and deletes both the database row and binary file. Explicit diagram requests create a pending record before provider work and stream a sanitized terminal success or failure lifecycle. If the client disconnects after pending persistence, the application shields only the terminal cleanup write, marks the record failed with `cancelled`, and re-raises cancellation.
 
-`backend/api/v1/images.py` accepts a bounded prompt and one allowlisted HiDream training resolution, then returns a terminal generated-image artifact. `backend/api/v1/vision.py` streams a bounded multipart upload, validates actual PNG/JPEG/WebP content, rejects animation, MIME mismatch, excess bytes, and excess pixels, persists the owned upload, and sends only the validated image plus bounded prompt to the configured local vision provider. Invalid uploads create no artifact; VLM failure preserves the valid upload with `analysis_status=failed` for later deletion or retry work. `POST /api/v1/vision/artifacts/{artifact_id}/ask` accepts a bounded question about any owned ready generated or uploaded image, re-reads the integrity-checked stored bytes rather than requiring a new upload, replays a bounded prior question/answer context to the same vision provider, appends the grounded answer to a size-bounded thread persisted in artifact metadata, and returns 404 for unowned or non-ready images without invoking the provider. This threaded analysis lives only on the artifact record; it is not written into the memory subsystem, and multimodal embeddings remain `PLANNED`.
+`backend/api/v1/images.py` accepts a bounded prompt and one allowlisted HiDream training resolution, then returns a terminal generated-image artifact. `backend/api/v1/vision.py` streams a bounded multipart upload, validates actual PNG/JPEG/WebP content, rejects animation, MIME mismatch, excess bytes, and excess pixels, persists the owned upload, and sends only the validated image plus bounded prompt to the configured local vision provider. Invalid uploads create no artifact; VLM failure preserves the valid upload with `analysis_status=failed` for later deletion or retry work. `POST /api/v1/vision/artifacts/{artifact_id}/ask` accepts a bounded question about any owned ready generated or uploaded image, re-reads the integrity-checked stored bytes rather than requiring a new upload, replays a bounded prior question/answer context to the same vision provider, appends the grounded answer to a size-bounded thread persisted in artifact metadata, and returns 404 for unowned or non-ready images without invoking the provider. This threaded analysis lives only on the artifact record; it is not written into the memory subsystem. Generated and uploaded pixels are embedded in an aligned Nomic image/text space for bounded image retrieval, but VLM analysis text and threads are not independently embedded as personal memory.
 
-The image-generation handler monitors HTTP disconnects around provider work. A browser cancellation cancels the service task, interrupts the matching ComfyUI prompt, shields the terminal `failed/cancelled` write, and finishes without an application exception. The React composer exposes Chat, Create image, and Analyze image modes with progress, cancellation, retained retry input, visible API failures, and bounded file selection. `ImageArtifact` fetches private bytes with the optional auth header, renders a temporary object URL, exposes grounded Gemma text, and supports local download and owned deletion. Conversation hydration and artifact history restore both diagrams and binary images.
+`backend/api/v1/tools.py` exposes explicit policy-gated MCP invocation. For a
+configured context-aware local server, it starts a trace and forwards the
+authorized path user plus optional conversation ID as hidden request metadata;
+those ownership values are not part of the tool arguments selected by a model.
+
+The image-generation handler monitors HTTP disconnects around provider work. A browser cancellation cancels the service task, interrupts the matching ComfyUI prompt, shields the terminal `failed/cancelled` write, and finishes without an application exception. The React composer exposes Chat, Create image, and Analyze image modes with progress, cancellation, retained retry input, visible API failures, and bounded file selection. Per-turn deterministic intent sends an explicit new-image request from Chat to the image API and sends a historical question from Create image back through chat, so the selected mode follows the action actually taken. `ImageArtifact` fetches private bytes with the optional auth header, renders a temporary object URL, exposes grounded Gemma text, and supports local download and owned deletion. Conversation hydration and artifact history restore both diagrams and binary images.
 
 `backend/api/v1/conversations.py` returns a bounded, user-owned conversation snapshot containing persisted turns and their conversation artifacts. The frontend uses that read boundary to reconstruct the active transcript and ready/failed diagram cards after a full reload.
+
+The Memory panel loads only bounded counts and snapshots initially. Every
+memory-map card is an accessible detail action; selecting a durable store makes
+an explicit owned export request, shows readable records on demand, bounds the
+rendered list, and omits embedding vectors and private storage keys.
 
 Every chat and memory route applies the optional signed-user ownership boundary. Authentication is disabled by default for trusted-local development; when enabled, the token subject must equal the body or path user ID.
 
@@ -333,6 +369,7 @@ The active collaborators are:
 | `MCPToolOrchestrationService` | implemented model-selection boundary | Gives Gemma a bounded live-validated shortlist, accepts at most one native tool call, and produces an application-owned plan without execution authority |
 | `MCPInvocationService` | implemented execution-policy boundary | Re-resolves live contracts, enforces local risk policy, validates and privacy-screens arguments, invokes stdio/HTTP tools, and bounds results as untrusted |
 | `MCPWebSearchProvider` | implemented read-only search boundary | Invokes the fixed internet MCP tool after deterministic routing and privacy minimization, then validates and filters compact result JSON |
+| `VisualCapabilityRuntime` | implemented local FastMCP adapter | Reuses diagram, image, vision, repository, and binary-store services in a dedicated streamable-HTTP process; validates hidden ownership context and returns metadata-only artifact handles |
 | `DiagramAgent` | implemented specialized LangGraph boundary | Runs one typed `generate_diagram` node around the replaceable provider; it has no persistence, authorization, or hardware-management authority |
 | `DiagramArtifactService` | implemented local artifact boundary | Coordinates pending/ready/failed diagram records, invokes a replaceable bounded diagram provider, and never gives the model persistence authority |
 | `ImageArtifactService` | implemented local binary artifact boundary | Coordinates generated/uploaded pending/ready/failed records, opaque atomic file storage, SHA-256/size integrity checks, owned content reads, and file-plus-row deletion |
@@ -349,11 +386,11 @@ Chat memory capture is a narrow deterministic approval boundary. The conversatio
 
 ### Agent orchestration
 
-AniOS has two focused LangGraph workflows: the ordinary assistant graph contains one streaming Gemma node, while `DiagramAgent` contains one asynchronous `generate_diagram` node around `DiagramProvider`. Before the assistant graph runs, the deterministic memory coordinator retrieves bounded context and the separate MCP orchestration service may ask Gemma for one native tool selection. The application owns live revalidation, privacy, risk policy, invocation, and result attribution. Retrieved values and tool results are untrusted literal data; they cannot grant permissions. Researcher, reflection, image-worker, A2A, and general multi-agent graph nodes remain `PLANNED`.
+AniOS has two focused LangGraph workflows: the ordinary assistant graph contains one streaming Gemma node, while `DiagramAgent` contains one asynchronous `generate_diagram` node around `DiagramProvider`. Before the assistant graph runs, the deterministic memory coordinator retrieves bounded context and the separate MCP orchestration service may ask Gemma for one native tool selection. The application owns live revalidation, privacy, risk policy, invocation, and result attribution. Existing visual capabilities are now available through the same application-owned MCP invocation boundary for confirmed callers, but remain withheld from autonomous chat because they create or access owned artifacts. Retrieved values and tool results are untrusted literal data; they cannot grant permissions. Researcher, reflection, image-worker, A2A, and general multi-agent graph nodes remain `PLANNED`.
 
 ### LLM integration
 
-`backend/core/llm.py` implements LM Studio's OpenAI-compatible `/v1/chat/completions` contract for buffered, streamed, and native tool-call generation. Dependency assembly injects this client into the graph and MCP selector. The client preserves ordered messages, exposes only application-supplied tool schemas, configures `reasoning_effort`, yields assistant deltas, and requires terminal `[DONE]` for streams. Other providers remain `PLANNED`.
+`backend/core/llm.py` implements LM Studio's OpenAI-compatible `/v1/chat/completions` contract for buffered, streamed, and native tool-call generation. Dependency assembly injects this shared client into the graph and MCP selector. The client preserves ordered messages, exposes only application-supplied tool schemas, configures `reasoning_effort`, yields assistant deltas, and requires terminal `[DONE]` for streams. It serializes calls made through the shared client because the loaded local LM Studio model was observed terminating one in-flight stream when another generation overlapped. This is a single-process safety boundary, not a durable distributed scheduler. Other providers remain `PLANNED`.
 
 Explicit diagram requests bypass ordinary memory retrieval and the assistant graph, then run through the dedicated `DiagramAgent` graph. `LLMDiagramProvider` asks the same configured local model for a bounded JSON/Mermaid specification, performs one correction retry for malformed local-model formatting, and accepts only allowlisted diagram declarations and passive source within size/line limits. The provider is behind `DiagramProvider`; the application owns routing, validation, persistence, and lifecycle events.
 
@@ -431,10 +468,10 @@ Current host-source validation completes this flow through Gemma, a bounded same
 - Personal profile, episodic memory, relevance-gated semantic search, management/export/correction/deletion UI, and optional signed user authentication: functionally implemented; auth is disabled by default for trusted-local development.
 - Local knowledge-document ingestion, deterministic chunking, embedding, semantic retrieval, prompt curation, export, and deletion: implemented. Hybrid retrieval, reranking, source-citation policy, file connectors, ingestion jobs, and GraphRAG remain `PLANNED`.
 - Signed local-user route ownership: implemented when enabled. Password login, account management, token revocation, and external identity providers: `PLANNED`.
-- Deterministic internet routing, outbound privacy minimization/blocking, MCP-backed Tavily search, untrusted prompt attribution, source cards, and visible failure state: implemented and direct/live-browser verified. Sensitive-query review, redacted audit storage, and provider hardening remain `PLANNED`.
-- Explicit Mermaid diagram generation through a dedicated diagram graph, user-scoped lifecycle/history/deletion, strict rendering, reload restoration, local Mermaid/SVG export, and disconnect recovery: implemented and browser/direct-client verified. Free local raster generation, bounded upload, opaque binary storage, owned content/deletion, Gemma image understanding, browser progress/retry/cancel, private rendering, navigation/reload restoration, history, download, and deletion are implemented and direct/live-browser verified. Threaded followup questions on owned generated or uploaded images reuse the stored bytes and the same vision boundary with a bounded, persisted question/answer thread; this is deterministic-browser and backend/unit verified, while a live Gemma followup session and any memory-subsystem indexing of image content remain `PLANNED`. Review-only local Gemma architecture candidates remain implemented and never update canonical source automatically. Automated retention/export, multimodal embeddings, durable queues, GPU resource leasing/transitions, and generalized image agents remain `PLANNED`.
+- Deterministic internet routing, outbound privacy minimization/blocking, MCP-backed Tavily search, untrusted prompt attribution, source cards, visible failure state, and explicit referenced-image search enriched only with a screened bounded description: implemented and direct/live-browser verified. Sensitive-query review, redacted audit storage, and provider hardening remain `PLANNED`.
+- Explicit Mermaid diagram generation through a dedicated diagram graph, user-scoped lifecycle/history/deletion, strict rendering, reload restoration, local Mermaid/SVG export, and disconnect recovery: implemented and browser/direct-client verified. Free local raster generation, bounded upload, opaque binary storage, owned content/deletion, aligned multimodal image embeddings, Gemma image understanding, browser progress/retry/cancel, private rendering, navigation/reload restoration, history, download, and deletion are implemented and direct/live-browser verified. Threaded followup questions on owned generated or uploaded images reuse the stored bytes and the same vision boundary with a bounded, persisted question/answer thread; deterministic browser/backend coverage and a live Gemma call through the visual MCP facade are verified, while embedding VLM analysis text into personal memory remains `PLANNED`. The same diagram, image, followup, and artifact-status services are exposed through a confirmed, metadata-only local FastMCP facade; autonomous consequential-call approval/resume remains `PLANNED`. Review-only local Gemma architecture candidates remain implemented and never update canonical source automatically. Automated binary retention/export, durable queues, GPU resource leasing/transitions, and generalized image agents remain `PLANNED`.
 - Semantic safe-descriptor discovery, approved preference/sanitized outcome memory, stdio/streamable-HTTP connectivity, native Gemma selection, live pre-invocation re-resolution, guarded execution, and UI lifecycle status: implemented. Automatic registry refresh/change notifications, consequential-call approval/resume, per-server user credentials/scopes, durable execution audit, A2A, and multi-agent scheduling remain `PLANNED`; tool memory never authorizes execution.
 
 ## Architectural decision
 
-The project has adopted clean-architecture and dependency-inversion principles as a design direction. [ADR 0001](adr/0001-clean-architecture-and-modular-structure.md) records that direction. [ADR 0002](adr/0002-typed-agent-memory-manager-and-pgvector-indexes.md) records the typed store-manager/coordinator boundary and the pgvector HNSW indexing choice. [ADR 0003](adr/0003-local-visual-artifacts-and-resource-aware-orchestration.md) records the local-only visual-artifact, GPU-resource, and scalable orchestration direction; editable diagrams, raster generation, binary storage, upload validation, VLM analysis, and browser integration are implemented while deterministic resource orchestration remains `PLANNED`.
+The project has adopted clean-architecture and dependency-inversion principles as a design direction. [ADR 0001](adr/0001-clean-architecture-and-modular-structure.md) records that direction. [ADR 0002](adr/0002-typed-agent-memory-manager-and-pgvector-indexes.md) records the typed store-manager/coordinator boundary and the pgvector HNSW indexing choice. [ADR 0003](adr/0003-local-visual-artifacts-and-resource-aware-orchestration.md) records the local-only visual-artifact, GPU-resource, and scalable orchestration direction; editable diagrams, raster generation, binary storage, upload validation, VLM analysis, aligned image retrieval, browser integration, and the local visual FastMCP facade are implemented while deterministic resource orchestration remains `PLANNED`.

@@ -1,4 +1,7 @@
 import json
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
 
 import httpx
 import pytest
@@ -135,3 +138,45 @@ def test_lm_studio_stream_chat_rejects_truncated_stream():
             match=r"LM Studio stream ended before \[DONE\]",
         ):
             list(llm.stream_chat([{"role": "user", "content": "Hello"}]))
+
+
+# Verify one local model never receives overlapping requests from this process.
+def test_lm_studio_serializes_concurrent_requests():
+    active = 0
+    max_active = 0
+    counter_lock = threading.Lock()
+
+    # Hold each mock request briefly so any overlap becomes observable.
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal active, max_active
+        with counter_lock:
+            active += 1
+            max_active = max(max_active, active)
+        time.sleep(0.05)
+        with counter_lock:
+            active -= 1
+        return httpx.Response(
+            200,
+            json={"choices": [{"message": {"content": "queued"}}]},
+        )
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        llm = LMStudioLLM(
+            base_url="http://127.0.0.1:1234",
+            model="google/gemma-4-12b",
+            client=client,
+        )
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            calls = [
+                executor.submit(
+                    llm.chat,
+                    [{"role": "user", "content": f"request {index}"}],
+                )
+                for index in range(2)
+            ]
+            assert [call.result()["content"] for call in calls] == [
+                "queued",
+                "queued",
+            ]
+
+    assert max_active == 1

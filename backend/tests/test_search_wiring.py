@@ -2,6 +2,7 @@ from collections.abc import Iterator
 
 import pytest
 
+from backend.artifacts.image_routing import ImageRecallPolicy
 from backend.core.llm import LLMClient
 from backend.search.cascade import CascadingSearchRouter
 from backend.search.routing import SearchRoutingPolicy
@@ -69,6 +70,48 @@ class RecordingMCPSearch(RecordingSearch):
         return "internet", "search_web"
 
 
+class RecordingImageSearch:
+    """Return one strong image match with generation provenance."""
+
+    def __init__(self, generation_prompt: str) -> None:
+        self.generation_prompt = generation_prompt
+        self.calls: list[dict[str, object]] = []
+
+    # Record the semantic lookup and return a discriminating best match.
+    async def search_by_embedding(
+        self,
+        user_id: str,
+        embedding: list[float],
+        limit: int,
+        max_distance: float,
+    ) -> list[dict]:
+        self.calls.append(
+            {
+                "user_id": user_id,
+                "embedding": embedding,
+                "limit": limit,
+                "max_distance": max_distance,
+            }
+        )
+        return [
+            {
+                "id": "88888888-8888-4888-8888-888888888888",
+                "kind": "generated_image",
+                "title": "Generated image",
+                "created_at": "2026-07-23T12:00:00Z",
+                "metadata": {"generation_prompt": self.generation_prompt},
+                "distance": 0.90,
+            },
+            {
+                "id": "99999999-9999-4999-8999-999999999999",
+                "kind": "generated_image",
+                "title": "Generated image",
+                "metadata": {},
+                "distance": 0.94,
+            },
+        ]
+
+
 async def _events(service: ConversationService, query: str) -> list[dict]:
     return [
         event
@@ -91,7 +134,11 @@ async def _run(service: ConversationService, query: str) -> None:
         pass
 
 
-def _service(search: RecordingSearch, llm: RecordingLLM) -> ConversationService:
+def _service(
+    search: RecordingSearch,
+    llm: RecordingLLM,
+    image_search: RecordingImageSearch | None = None,
+) -> ConversationService:
     return ConversationService(
         memory=StubMemoryService(),
         llm=llm,
@@ -101,6 +148,8 @@ def _service(search: RecordingSearch, llm: RecordingLLM) -> ConversationService:
         search_routing=CascadingSearchRouter(
             patterns=SearchRoutingPolicy(current_year=2026),
         ),
+        image_recall=ImageRecallPolicy() if image_search else None,
+        image_search=image_search,  # type: ignore[arg-type]
     )
 
 
@@ -285,3 +334,45 @@ async def test_search_control_words_are_removed_before_provider_call():
     )
 
     assert search.queries == ["the latest stable Python release"]
+
+
+# Verify referenced-image search includes safe prompt provenance.
+@pytest.mark.asyncio
+async def test_referenced_image_context_enriches_explicit_search():
+    search = RecordingSearch()
+    llm = RecordingLLM()
+    image_search = RecordingImageSearch("A sleek cobalt sports car at sunset")
+
+    events = await _events(
+        _service(search, llm, image_search),
+        "can you search the internet for that car to get its model?",
+    )
+
+    names = [event["event"] for event in events]
+    assert names.index("image_matches") < names.index("search_started")
+    assert search.queries == [
+        "that car to get its model. "
+        "Referenced image description: A sleek cobalt sports car at sunset"
+    ]
+    system = llm.messages[0]["content"]
+    assert "A sleek cobalt sports car at sunset" in system
+    assert "https://example.test/a" in system
+
+
+# Verify sensitive image provenance is blocked before any provider call.
+@pytest.mark.asyncio
+async def test_sensitive_referenced_image_context_never_leaves_the_machine():
+    search = RecordingSearch()
+    llm = RecordingLLM()
+    image_search = RecordingImageSearch(
+        "A car with api key sk-abcdef0123456789abcdef on the dashboard"
+    )
+
+    events = await _events(
+        _service(search, llm, image_search),
+        "search the internet for that car",
+    )
+
+    assert search.queries == []
+    blocked = [event for event in events if event["event"] == "search_blocked"]
+    assert blocked[0]["data"]["categories"] == ["credential"]

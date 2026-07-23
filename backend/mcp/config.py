@@ -23,6 +23,7 @@ def _parse_server_entry(entry: object) -> MCPServerConfig | None:
                 if isinstance(headers, dict)
                 else ()
             ),
+            forward_context=bool(entry.get("forward_context", False)),
             risk_classification=str(entry.get("risk_classification", "untrusted")),
             enabled=bool(entry.get("enabled", True)),
         )

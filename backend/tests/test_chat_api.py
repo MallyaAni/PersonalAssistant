@@ -91,6 +91,7 @@ class FixedToolOrchestration:
     def __init__(self, error: MCPInvocationError | None = None) -> None:
         self.error = error
         self.selected_embeddings = []
+        self.request_contexts = []
 
     # Return one deterministic tool plan and capture the reused query vector.
     async def select(self, user_id, query, query_embedding=None):
@@ -103,7 +104,8 @@ class FixedToolOrchestration:
         )
 
     # Return one result or raise the configured application-owned refusal.
-    async def execute(self, plan):
+    async def execute(self, plan, request_context=None):
+        self.request_contexts.append(request_context)
         if self.error is not None:
             raise self.error
         return ToolCallResult(
@@ -375,6 +377,9 @@ async def test_conversation_streams_tool_lifecycle_and_grounds_the_answer():
     names = [event["event"] for event in events]
     assert names.index("tool_started") < names.index("tool_finished")
     assert names.index("tool_finished") < names.index("delta")
+    assert tools.request_contexts[0]["anios_user_id"] == "ani.mallya"
+    assert tools.request_contexts[0]["anios_conversation_id"]
+    assert tools.request_contexts[0]["anios_trace_id"]
     assert [e for e in events if e["event"] == "tool_finished"][0]["data"] == {
         "server_id": "weather",
         "tool_name": "current_weather",

@@ -1,6 +1,9 @@
 flowchart TB
     User([User message]) --> Composer[Composer]
-    Composer -->|POST /api/v1/chat| ChatAPI[FastAPI chat route]
+    Composer --> Intent{New image request?<br/>historical image questions stay chat}
+    Intent -->|yes| ImageAPI[POST /api/v1/images/generate]
+    ImageAPI --> ImageAnswer[Ready private image card<br/>mode follows selected action]
+    Intent -->|no| ChatAPI[FastAPI chat route]
     ChatAPI --> Ownership[Optional signed-user ownership]
     Ownership --> Service[ConversationService]
     Service --> Trace[New request trace ID]
@@ -18,6 +21,7 @@ flowchart TB
     InternetMCP --> SearchGates[MCP live validation and invocation gates]
     SearchGates --> WebSearch[TavilySearchProvider<br/>relevance floor, untrusted results]
     Retrieval -->|image recall signal| ImageSearch[Aligned image vector search<br/>ceiling plus best-to-runner-up margin]
+    ImageSearch -->|explicit web request only:<br/>append bounded prompt or analysis| SearchPolicy
     WebSearch --> Context
     WebSearch --> SSE
     ImageSearch --> Context
@@ -40,7 +44,8 @@ flowchart TB
     Context --> State
     State --> Graph[LangGraph<br/>one assistant node]
     Graph --> Prompt[System prompt: current date, literal memory,<br/>quoted untrusted web, tool and image results,<br/>history, and current query]
-    Prompt --> Gemma[LM Studio Gemma<br/>stream_chat]
+    Prompt --> LLMQueue[Shared chat-model request queue<br/>prevents overlapping local generations]
+    LLMQueue --> Gemma[LM Studio Gemma<br/>stream_chat]
     Gemma -->|message.delta| Graph
     Graph --> Persist[Persist completed conversation turn]
     Persist --> Lifecycle[Update working state and<br/>periodic conversation summary]
@@ -65,8 +70,8 @@ flowchart TB
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef failure fill:#fff3cd,stroke:#b78b20,color:#4d3900;
-    class User,Composer,Parser,Answer,Reload,RestoreUI,Disconnect interface;
-    class ChatAPI,SnapshotAPI,Ownership,Service,Trace,Route,Retrieval,SearchPolicy,InternetMCP,SearchGates,Plan,Context,State,Graph,Prompt,Persist,Lifecycle,Proposal,SSE,Artifact,DiagramAgent,DiagramProvider,CancelCleanup,ToolShortlist,LiveResolve,ToolGemma,ToolGates,ToolContext application;
+    class User,Composer,ImageAnswer,Parser,Answer,Reload,RestoreUI,Disconnect interface;
+    class Intent,ImageAPI,ChatAPI,SnapshotAPI,Ownership,Service,Trace,Route,Retrieval,SearchPolicy,InternetMCP,SearchGates,Plan,Context,State,Graph,Prompt,LLMQueue,Persist,Lifecycle,Proposal,SSE,Artifact,DiagramAgent,DiagramProvider,CancelCleanup,ToolShortlist,LiveResolve,ToolGemma,ToolGates,ToolContext application;
     class Personal,Typed,History,RestoreHistory data;
     class Gemma,DiagramGemma,WebSearch,MCPServer external;
     class Failure failure;

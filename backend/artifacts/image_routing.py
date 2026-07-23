@@ -19,6 +19,18 @@ _RECALL_SIGNALS: tuple[tuple[str, str], ...] = (
     (r"\b(which|what)\s+(image|images|picture|pictures|photo|photos)\b", "which_image"),
     (r"\b(image|picture|photo)\s+(of|with|showing)\b", "descriptive_reference"),
     (r"\bmy\s+(image|images|picture|pictures|photo|photos|pic|pics)\b", "possessive"),
+    (
+        r"\b(this|that|the|last|previous)\s+"
+        r"(image|picture|photo|car|vehicle|object|scene)\b",
+        "referential_image",
+    ),
+)
+
+_HISTORICAL_CREATION_PATTERN = re.compile(
+    r"\b(what|which|who|where|when|why|how|did|does|do|is|are|was|were)\b.*"
+    r"\b(create|created|generate|generated|make|made)\b.*"
+    r"\b(image|images|picture|pictures|photo|photos|pic|pics)\b",
+    re.IGNORECASE,
 )
 
 _COMPILED: tuple[tuple[re.Pattern[str], str], ...] = tuple(
@@ -27,7 +39,8 @@ _COMPILED: tuple[tuple[re.Pattern[str], str], ...] = tuple(
 
 # Requests to produce a new image must never be answered with an old one.
 _CREATION_PATTERN = re.compile(
-    r"\b(generate|create|draw|make|paint|render|design)\b",
+    r"\b(generate|create|draw|make|paint|render|design)\b.{0,80}"
+    r"\b(image|picture|photo|illustration|artwork)\b",
     re.IGNORECASE,
 )
 
@@ -52,7 +65,12 @@ class ImageRecallPolicy:
             return ImageRecallDecision(should_search=False, reason="disabled")
         if not query or not query.strip():
             return ImageRecallDecision(should_search=False, reason="empty_query")
-        # Creation wins outright; "generate a picture of a fox" is not a recall.
+        # Only a historical creation question precedes the creation rule.
+        if _HISTORICAL_CREATION_PATTERN.search(query):
+            return ImageRecallDecision(
+                should_search=True,
+                reason="creation_history_question",
+            )
         if _CREATION_PATTERN.search(query):
             return ImageRecallDecision(should_search=False, reason="creation_request")
 

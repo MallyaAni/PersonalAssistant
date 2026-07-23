@@ -11,6 +11,7 @@ import {
   saveProfile,
   updateMemory,
   type AgentMemorySnapshot,
+  type MemoryExport,
   type MemorySnapshot,
   type ToolMemorySnapshot,
 } from '../../services/api'
@@ -18,6 +19,31 @@ import {
 interface MemoryPanelProps {
   userId: string
   onUserIdChange: (userId: string) => void
+}
+
+type MemoryDetailKey =
+  | 'llm_context'
+  | 'working'
+  | 'semantic_cache'
+  | 'procedures'
+  | 'toolbox'
+  | 'entities'
+  | 'knowledge'
+  | 'persona'
+  | 'semantic'
+  | 'episodic'
+  | 'summaries'
+  | 'conversations'
+
+interface MemoryMapItem {
+  key: MemoryDetailKey
+  label: string
+  value: string
+  explanation: string
+}
+
+interface SelectedMemoryDetail extends MemoryMapItem {
+  records: Array<Record<string, unknown>>
 }
 
 // Build an empty personal-memory snapshot for a user.
@@ -45,6 +71,85 @@ const emptyToolSnapshot: ToolMemorySnapshot = {
   outcomes: [],
 }
 
+// Prefix records when one card combines several related stores.
+const categorizedRecords = (
+  category: string,
+  records: Array<Record<string, unknown>>,
+): Array<Record<string, unknown>> => records.map(record => ({
+  category,
+  ...record,
+}))
+
+// Select the user-readable records represented by one memory-map card.
+const recordsForDetail = (
+  key: MemoryDetailKey,
+  exported: MemoryExport,
+  toolSnapshot: ToolMemorySnapshot,
+): Array<Record<string, unknown>> => {
+  const agent = exported.agent_memory
+  switch (key) {
+    case 'working':
+      return agent.working || []
+    case 'semantic_cache':
+      return agent.semantic_cache || []
+    case 'procedures':
+      return agent.procedures || []
+    case 'toolbox':
+      return [
+        ...categorizedRecords('descriptor', toolSnapshot.descriptors || []),
+        ...categorizedRecords('preference', toolSnapshot.preferences || []),
+        ...categorizedRecords('outcome', toolSnapshot.outcomes || []),
+      ]
+    case 'entities':
+      return [
+        ...categorizedRecords('entity', agent.entities || []),
+        ...categorizedRecords('relation', agent.entity_relations || []),
+      ]
+    case 'knowledge':
+      return [
+        ...categorizedRecords('document', agent.knowledge_documents || []),
+        ...categorizedRecords('chunk', agent.knowledge_chunks || []),
+      ]
+    case 'persona':
+      return [
+        { category: 'profile', ...exported.memory.profile },
+        ...categorizedRecords('fact', exported.memory.facts || []),
+      ]
+    case 'semantic':
+      return (exported.memory.semantic || []).map(record => ({ ...record }))
+    case 'episodic':
+      return (exported.memory.episodic || []).map(record => ({ ...record }))
+    case 'summaries':
+      return agent.summaries || []
+    case 'conversations':
+      return exported.conversations || []
+    case 'llm_context':
+      return []
+  }
+  return []
+}
+
+// Hide bulky vector and storage fields while retaining useful record details.
+const visibleRecordEntries = (
+  record: Record<string, unknown>,
+): Array<[string, unknown]> => Object.entries(record).filter(([key]) => (
+  !key.toLowerCase().includes('embedding')
+  && key !== '_storage_key'
+))
+
+// Format one detail value without reducing nested provenance to "[object Object]".
+const formatDetailValue = (value: unknown): string => {
+  if (value === null || value === undefined) return '—'
+  if (typeof value === 'string') return value
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  return JSON.stringify(value, null, 2)
+}
+
+// Turn an internal field name into a compact readable label.
+const formatDetailLabel = (key: string): string => (
+  key.replace(/_/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase())
+)
+
 // Render memory controls and summaries for the active user.
 const MemoryPanel: React.FC<MemoryPanelProps> = ({ userId, onUserIdChange }) => {
   const [snapshot, setSnapshot] = useState<MemorySnapshot>(() => emptySnapshot(userId))
@@ -57,6 +162,10 @@ const MemoryPanel: React.FC<MemoryPanelProps> = ({ userId, onUserIdChange }) => 
   const [semantic, setSemantic] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [selectedDetail, setSelectedDetail] = useState<SelectedMemoryDetail | null>(null)
+  const [detailLoading, setDetailLoading] = useState(false)
+  const [detailError, setDetailError] = useState('')
+  const [cachedExport, setCachedExport] = useState<MemoryExport | null>(null)
   const [editing, setEditing] = useState<{
     type: 'episodic' | 'semantic'
     id: string
@@ -77,6 +186,9 @@ const MemoryPanel: React.FC<MemoryPanelProps> = ({ userId, onUserIdChange }) => 
     setSnapshot(emptySnapshot(userId))
     setAgentSnapshot(emptyAgentSnapshot)
     setToolSnapshot(emptyToolSnapshot)
+    setSelectedDetail(null)
+    setDetailError('')
+    setCachedExport(null)
     setName('')
     setResponseStyle('')
     const controller = new AbortController()
@@ -112,6 +224,8 @@ const MemoryPanel: React.FC<MemoryPanelProps> = ({ userId, onUserIdChange }) => 
     try {
       await action()
       clear?.()
+      setCachedExport(null)
+      setSelectedDetail(null)
       const [next, nextAgent, nextTools] = await Promise.all([
         getMemorySnapshot(actionUserId),
         getAgentMemorySnapshot(actionUserId),
@@ -150,6 +264,34 @@ const MemoryPanel: React.FC<MemoryPanelProps> = ({ userId, onUserIdChange }) => 
       setError(err instanceof Error ? err.message : 'Unable to export memory.')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  // Load and show the owned records behind one selected memory-map card.
+  const openMemoryDetail = async (item: MemoryMapItem) => {
+    setDetailError('')
+    if (item.key === 'llm_context') {
+      setSelectedDetail({ ...item, records: [] })
+      return
+    }
+
+    const detailUserId = userId
+    setSelectedDetail({ ...item, records: [] })
+    setDetailLoading(true)
+    try {
+      const exported = cachedExport || await exportMemory(detailUserId)
+      if (activeUserRef.current !== detailUserId) return
+      setCachedExport(exported)
+      setSelectedDetail({
+        ...item,
+        records: recordsForDetail(item.key, exported, toolSnapshot),
+      })
+    } catch (err) {
+      if (activeUserRef.current === detailUserId) {
+        setDetailError(err instanceof Error ? err.message : 'Unable to load memory details.')
+      }
+    } finally {
+      if (activeUserRef.current === detailUserId) setDetailLoading(false)
     }
   }
 
@@ -226,26 +368,140 @@ const MemoryPanel: React.FC<MemoryPanelProps> = ({ userId, onUserIdChange }) => 
           <MemoryGroup
             title="Short term"
             items={[
-              ['LLM context window', 'Bounded runtime context'],
-              ['Session based', `${agentSnapshot.working} active items`],
-              ['Semantic cache', `${agentSnapshot.semantic_cache} cached plans`],
+              {
+                key: 'llm_context',
+                label: 'LLM context window',
+                value: 'Bounded runtime context',
+                explanation: 'The temporary prompt assembled for the current turn. It is not a durable store.',
+              },
+              {
+                key: 'working',
+                label: 'Session based',
+                value: `${agentSnapshot.working} active items`,
+                explanation: 'Active goals and facts kept available while work is in progress.',
+              },
+              {
+                key: 'semantic_cache',
+                label: 'Semantic cache',
+                value: `${agentSnapshot.semantic_cache} cached plans`,
+                explanation: 'Reusable plans matched by meaning so repeated requests can avoid duplicate reasoning.',
+              },
             ]}
+            onSelect={item => void openMemoryDetail(item)}
           />
           <MemoryGroup
             title="Long term"
             items={[
-              ['Procedural / workflow', `${agentSnapshot.procedures} approved procedures`],
-              ['Toolbox', `${toolSnapshot.descriptors?.length || 0} tool descriptors`],
-              ['Entity memory', `${agentSnapshot.entities} entities, ${agentSnapshot.entity_relations} relations`],
-              ['Knowledge base', `${agentSnapshot.knowledge_documents} documents, ${agentSnapshot.knowledge_chunks} chunks`],
-              ['Persona', `${snapshot.facts.length + (snapshot.profile.name ? 1 : 0)} approved profile facts`],
-              ['Semantic', `${snapshot.semantic.length} facts and preferences`],
-              ['Episodic', `${snapshot.episodic.length} events and experiences`],
-              ['Summaries', `${agentSnapshot.summaries} conversation digests`],
-              ['Conversational', 'Persistent user-scoped turn history'],
+              {
+                key: 'procedures',
+                label: 'Procedural / workflow',
+                value: `${agentSnapshot.procedures} approved procedures`,
+                explanation: 'Approved reusable steps for completing recurring work.',
+              },
+              {
+                key: 'toolbox',
+                label: 'Toolbox',
+                value: `${toolSnapshot.descriptors?.length || 0} tool descriptors`,
+                explanation: 'Known tool descriptions, user preferences, and observed outcomes.',
+              },
+              {
+                key: 'entities',
+                label: 'Entity memory',
+                value: `${agentSnapshot.entities} entities, ${agentSnapshot.entity_relations} relations`,
+                explanation: 'Named people, places, projects, and the relationships between them.',
+              },
+              {
+                key: 'knowledge',
+                label: 'Knowledge base',
+                value: `${agentSnapshot.knowledge_documents} documents, ${agentSnapshot.knowledge_chunks} chunks`,
+                explanation: 'Durable source documents and their retrievable passages.',
+              },
+              {
+                key: 'persona',
+                label: 'Persona',
+                value: `${snapshot.facts.length + (snapshot.profile.name ? 1 : 0)} approved profile facts`,
+                explanation: 'The active user profile and explicitly approved personal facts.',
+              },
+              {
+                key: 'semantic',
+                label: 'Semantic',
+                value: `${snapshot.semantic.length} facts and preferences`,
+                explanation: 'Durable facts and preferences recalled by meaning.',
+              },
+              {
+                key: 'episodic',
+                label: 'Episodic',
+                value: `${snapshot.episodic.length} events and experiences`,
+                explanation: 'User-specific events and experiences with their provenance.',
+              },
+              {
+                key: 'summaries',
+                label: 'Summaries',
+                value: `${agentSnapshot.summaries} conversation digests`,
+                explanation: 'Bounded conversation digests used when full history is too large.',
+              },
+              {
+                key: 'conversations',
+                label: 'Conversational',
+                value: 'Persistent user-scoped turn history',
+                explanation: 'Persisted conversation turns and their identifiers.',
+              },
             ]}
+            onSelect={item => void openMemoryDetail(item)}
           />
         </div>
+        {selectedDetail && (
+          <section
+            aria-label={`${selectedDetail.label} details`}
+            className="rounded-2xl border border-black/[0.08] bg-white p-4 shadow-sm md:p-5"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h4 className="text-lg font-semibold text-[#1d1d1f]">{selectedDetail.label}</h4>
+                <p className="mt-1 text-sm text-[#6e6e73]">{selectedDetail.explanation}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedDetail(null)}
+                className="rounded-full px-3 py-1.5 text-sm font-medium text-[#0066cc] hover:bg-[#f5f5f7]"
+              >
+                Close
+              </button>
+            </div>
+            {detailLoading && <p className="mt-4 text-sm text-[#6e6e73]">Loading details...</p>}
+            {detailError && <p role="alert" className="mt-4 text-sm text-[#c9342f]">{detailError}</p>}
+            {!detailLoading && !detailError && selectedDetail.key === 'llm_context' && (
+              <p className="mt-4 rounded-xl bg-[#f5f5f7] p-3 text-sm text-[#424245]">
+                This context is assembled only while a message runs, then discarded. Durable inputs are shown in the other memory stores.
+              </p>
+            )}
+            {!detailLoading && !detailError && selectedDetail.key !== 'llm_context' && selectedDetail.records.length === 0 && (
+              <p className="mt-4 text-sm text-[#6e6e73]">No records are stored in this category.</p>
+            )}
+            {!detailLoading && !detailError && selectedDetail.records.length > 0 && (
+              <div className="mt-4 space-y-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-[#86868b]">
+                  {selectedDetail.records.length} {selectedDetail.records.length === 1 ? 'record' : 'records'}
+                </p>
+                {selectedDetail.records.slice(0, 50).map((record, index) => (
+                  <dl key={String(record.id || index)} className="grid gap-2 rounded-xl bg-[#f5f5f7] p-3 sm:grid-cols-2">
+                    {visibleRecordEntries(record).map(([key, value]) => (
+                      <div key={key} className="min-w-0">
+                        <dt className="text-xs font-medium text-[#6e6e73]">{formatDetailLabel(key)}</dt>
+                        <dd className="mt-0.5 whitespace-pre-wrap break-words text-sm text-[#1d1d1f]">
+                          {formatDetailValue(value)}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                ))}
+                {selectedDetail.records.length > 50 && (
+                  <p className="text-xs text-[#86868b]">Showing the first 50 records. Export memory to review the full set.</p>
+                )}
+              </div>
+            )}
+          </section>
+        )}
       </section>
 
       <details className="rounded border border-slate-800 bg-slate-900/30 p-4">
@@ -360,19 +616,27 @@ const MemoryPanel: React.FC<MemoryPanelProps> = ({ userId, onUserIdChange }) => 
 
 export default MemoryPanel
 
+// Render one group of clickable memory-store summary cards.
 const MemoryGroup: React.FC<{
   title: string
-  items: Array<[string, string]>
-}> = ({ title, items }) => (
+  items: MemoryMapItem[]
+  onSelect: (item: MemoryMapItem) => void
+}> = ({ title, items, onSelect }) => (
   <div className="rounded border border-slate-800 bg-slate-900/50 p-4">
     <h4 className="font-semibold">{title}</h4>
-    <dl className="mt-3 grid gap-3 sm:grid-cols-2">
-      {items.map(([label, value]) => (
-        <div key={label} className="rounded-xl bg-white/70 p-3 shadow-sm">
-          <dt className="text-sm font-medium text-[#1d1d1f]">{label}</dt>
-          <dd className="mt-1 text-xs text-[#6e6e73]">{value}</dd>
-        </div>
+    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+      {items.map(item => (
+        <button
+          type="button"
+          key={item.key}
+          aria-label={`View ${item.label} details`}
+          onClick={() => onSelect(item)}
+          className="rounded-xl bg-white/70 p-3 text-left shadow-sm transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0071e3]"
+        >
+          <span className="block text-sm font-medium text-[#1d1d1f]">{item.label}</span>
+          <span className="mt-1 block text-xs text-[#6e6e73]">{item.value}</span>
+        </button>
       ))}
-    </dl>
+    </div>
   </div>
 )

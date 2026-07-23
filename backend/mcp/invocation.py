@@ -44,6 +44,7 @@ class MCPToolInvoker(ABC):
         server: MCPServerConfig,
         tool_name: str,
         arguments: dict[str, Any],
+        request_meta: dict[str, Any] | None = None,
     ) -> ToolCallResult: ...
 
 
@@ -66,6 +67,7 @@ class SessionMCPToolInvoker(MCPToolInvoker):
         server: MCPServerConfig,
         tool_name: str,
         arguments: dict[str, Any],
+        request_meta: dict[str, Any] | None = None,
     ) -> ToolCallResult:
         async with open_session(server, self.timeout_seconds) as session:
             live = await session.list_tools()
@@ -78,7 +80,11 @@ class SessionMCPToolInvoker(MCPToolInvoker):
                     f"{server.server_id} no longer offers {tool_name}",
                 )
 
-            response = await session.call_tool(tool_name, arguments)
+            response = await session.call_tool(
+                tool_name,
+                arguments,
+                meta=request_meta,
+            )
             parts: list[str] = []
             for item in response.content:
                 text = getattr(item, "text", None)

@@ -42,6 +42,15 @@ export interface ToolMemorySnapshot {
   outcomes: Array<Record<string, unknown>>;
 }
 
+export interface MemoryExport {
+  schema_version: number;
+  exported_at: string;
+  user_id: string;
+  agent_memory: Record<string, Array<Record<string, unknown>>>;
+  memory: MemorySnapshot;
+  conversations: Array<Record<string, unknown>>;
+}
+
 interface ChatEvent {
   event:
     | 'start'
@@ -400,14 +409,7 @@ export function updateMemory(
 
 // Export all memory categories for one user.
 export function exportMemory(userId: string) {
-  return apiRequest<{
-    schema_version: number;
-    exported_at: string;
-    user_id: string;
-    agent_memory: Record<string, Array<Record<string, unknown>>>;
-    memory: MemorySnapshot;
-    conversations: Array<Record<string, unknown>>;
-  }>(`/api/v1/memory/${encodeURIComponent(userId)}/export`)
+  return apiRequest<MemoryExport>(`/api/v1/memory/${encodeURIComponent(userId)}/export`)
 }
 
 // Delete all memory categories owned by one user.

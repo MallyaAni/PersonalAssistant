@@ -427,6 +427,7 @@ async def test_image_artifact_service_completes_binary_lifecycle(
 
     assert ready["status"] == "ready"
     assert ready["byte_size"] == len(_png_bytes())
+    assert ready["metadata"]["generation_prompt"] == "blue square"
     restored = await service.read_owned("image-user", ready["id"])
     assert restored is not None
     assert restored[1] == _png_bytes()

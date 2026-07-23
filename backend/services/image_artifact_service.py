@@ -116,6 +116,7 @@ class ImageArtifactService:
                 metadata={
                     **generated.metadata,
                     "provider_job_id": generated.provider_job_id,
+                    "generation_prompt": request.prompt,
                 },
             )
             await self._index_embedding(user_id, artifact_id, generated.content)

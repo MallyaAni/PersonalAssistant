@@ -3,7 +3,8 @@
 import re
 
 _LEADING_CONTROL = re.compile(
-    r"^\s*(?:please\s+)?(?:search|browse|google|look\s+up)"
+    r"^\s*(?:please\s+)?(?:(?:can|could|would)\s+you\s+)?"
+    r"(?:search|browse|google|look\s+up)"
     r"(?:\s+(?:the\s+)?(?:web|internet|online))?(?:\s+for)?\s+",
     re.IGNORECASE,
 )

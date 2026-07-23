@@ -246,3 +246,15 @@ def test_shared_config_parser_preserves_stdio_environment_allowlist():
     )
 
     assert servers[0].inherit_env == ("SEARCH_API_KEY", "SEARCH_BASE_URL")
+
+
+# Verify application identity forwarding is opt-in per configured server.
+def test_shared_config_parser_preserves_context_forwarding_flag():
+    from backend.mcp.config import parse_server_configs
+
+    servers = parse_server_configs(
+        '[{"server_id":"visual","transport":"http",'
+        '"url":"http://visual/mcp","forward_context":true}]'
+    )
+
+    assert servers[0].forward_context is True
