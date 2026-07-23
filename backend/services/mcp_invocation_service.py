@@ -12,7 +12,7 @@ from backend.mcp.invocation import (
     assert_descriptor_is_current,
     validate_arguments,
 )
-from backend.mcp.types import MCPServerConfig
+from backend.mcp.types import MCPServerConfig, MCPTool
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +62,36 @@ class MCPInvocationService:
             screened[name] = result.query
         return screened
 
+    # Report whether local policy permits autonomous calls to one server.
+    def can_auto_invoke(self, server_id: str) -> bool:
+        server = self.servers.get(server_id)
+        return bool(
+            server and server.enabled and server.risk_classification in _AUTO_INVOCABLE
+        )
+
+    # Resolve one indexed descriptor against the server's current live contract.
+    async def resolve_tool(
+        self,
+        server_id: str,
+        tool_name: str,
+        expected_fingerprint: str | None = None,
+    ) -> MCPTool:
+        server = self.servers.get(server_id)
+        if server is None or not server.enabled:
+            raise MCPInvocationError("server_unavailable", server_id)
+
+        live_tools = await self.lister.list_tools(server)
+        live = next((tool for tool in live_tools if tool.name == tool_name), None)
+        if live is None:
+            raise MCPInvocationError("tool_not_offered", f"{server_id}/{tool_name}")
+        if expected_fingerprint:
+            assert_descriptor_is_current(live, expected_fingerprint)
+
+        markers = inspect_untrusted_text(live.description)
+        if markers:
+            raise MCPInvocationError("descriptor_poisoned", ",".join(markers))
+        return live
+
     # Invoke one tool for a user, or refuse with a reason that can be shown.
     async def invoke(
         self,
@@ -81,19 +111,7 @@ class MCPInvocationService:
                 f"{server_id} is classified {server.risk_classification}",
             )
 
-        live_tools = await self.lister.list_tools(server)
-        live = next((t for t in live_tools if t.name == tool_name), None)
-        if live is None:
-            raise MCPInvocationError("tool_not_offered", f"{server_id}/{tool_name}")
-
-        if expected_fingerprint:
-            assert_descriptor_is_current(live, expected_fingerprint)
-
-        # The live description is read again at call time: a server may have
-        # rewritten it since indexing.
-        markers = inspect_untrusted_text(live.description)
-        if markers:
-            raise MCPInvocationError("descriptor_poisoned", ",".join(markers))
+        live = await self.resolve_tool(server_id, tool_name, expected_fingerprint)
 
         validate_arguments(live.input_schema, arguments)
         screened = self._screen_arguments(arguments)

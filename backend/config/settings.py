@@ -94,7 +94,7 @@ class Settings(BaseSettings):
     VISION_SEARCH_MIN_MARGIN: float = Field(default=0.015, ge=0, le=1)
 
     # Web search (Tavily HTTP API). Results are untrusted third-party content.
-    SEARCH_PROVIDER_NAME: str = "tavily"
+    SEARCH_PROVIDER_NAME: Literal["tavily", "mcp"] = "tavily"
     SEARCH_BASE_URL: str = "https://api.tavily.com"
     # Empty disables search rather than failing startup; callers check is_enabled.
     SEARCH_API_KEY: str | None = Field(None, alias="SEARCH_API_KEY")
@@ -123,6 +123,9 @@ class Settings(BaseSettings):
     # reached 70.8%. The 12B chat model reached 81.7% because it is the only
     # candidate that actually discriminated.
     SEARCH_CLASSIFIER_MODEL: str = ""
+    # Fixed read-only MCP boundary used after deterministic search routing.
+    SEARCH_MCP_SERVER_ID: str = "internet"
+    SEARCH_MCP_TOOL_NAME: str = "search_web"
 
     # MCP servers, as a JSON array of objects with server_id, command, args,
     # and an operator-assigned risk_classification. Trust is declared here and

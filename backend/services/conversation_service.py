@@ -21,6 +21,7 @@ from backend.core.interfaces import (
     SearchProvider,
 )
 from backend.core.llm import LLMClient
+from backend.mcp.invocation import MCPInvocationError
 from backend.memory.coordinator import MemoryCoordinatorAgent
 from backend.memory.proposals import (
     propose_entity,
@@ -31,7 +32,12 @@ from backend.memory.proposals import (
 )
 from backend.models.schemas import ChatStreamEvent
 from backend.search.cascade import CascadingSearchRouter
+from backend.search.query import normalize_search_query
 from backend.services.diagram_artifact_service import DiagramArtifactService
+from backend.services.mcp_tool_orchestration_service import (
+    MCPToolOrchestrationService,
+    MCPToolSelectionError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -107,6 +113,7 @@ class ConversationService:
         image_search_limit: int = 5,
         image_retrieval: ImageRetrievalPolicy | None = None,
         search_privacy: OutboundPrivacyPolicy | None = None,
+        tool_orchestration: MCPToolOrchestrationService | None = None,
     ):
         self.memory = memory
         self.assistant_graph = build_assistant_graph(llm)
@@ -127,6 +134,167 @@ class ConversationService:
             max_distance=0.96,
             min_margin=0.015,
         )
+        self.tool_orchestration = tool_orchestration
+
+    # Select and execute at most one safe MCP tool while streaming its lifecycle.
+    async def _stream_tool_context(
+        self,
+        context: dict[str, Any],
+        user_id: str,
+        query: str,
+        trace_id: str,
+        query_embedding: list[float] | None,
+    ) -> AsyncGenerator[ChatStreamEvent, None]:
+        if self.tool_orchestration is None:
+            return
+        try:
+            plan = await self.tool_orchestration.select(
+                user_id,
+                query,
+                query_embedding=query_embedding,
+            )
+        except MCPToolSelectionError:
+            logger.warning(
+                "Trace %s MCP tool selection failed",
+                trace_id,
+                exc_info=True,
+            )
+            context.setdefault("tool_notices", []).append(
+                {"status": "failed", "message": "Tool selection failed."}
+            )
+            yield {
+                "event": "tool_finished",
+                "data": {
+                    "server_id": "",
+                    "tool_name": "Tool selection",
+                    "status": "failed",
+                    "message": "AniOS could not select a tool. Answering without it.",
+                },
+            }
+            return
+        if plan is None:
+            return
+
+        yield {
+            "event": "tool_started",
+            "data": {
+                "server_id": plan.server_id,
+                "tool_name": plan.tool_name,
+            },
+        }
+        try:
+            result = await self.tool_orchestration.execute(plan)
+        except MCPInvocationError as exc:
+            logger.warning(
+                "Trace %s MCP call %s/%s was refused (%s)",
+                trace_id,
+                plan.server_id,
+                plan.tool_name,
+                exc.reason,
+            )
+            refused = exc.reason.endswith("required") or (
+                exc.reason == "argument_withheld"
+            )
+            status = "refused" if refused else "failed"
+            message = (
+                "Tool call was withheld by AniOS privacy or approval controls."
+                if status == "refused"
+                else "The tool could not complete its request."
+            )
+            context.setdefault("tool_notices", []).append(
+                {
+                    "server_id": plan.server_id,
+                    "tool_name": plan.tool_name,
+                    "status": status,
+                    "message": message,
+                }
+            )
+            yield {
+                "event": "tool_finished",
+                "data": {
+                    "server_id": plan.server_id,
+                    "tool_name": plan.tool_name,
+                    "status": status,
+                    "message": message,
+                },
+            }
+            return
+        except Exception:
+            logger.warning(
+                "Trace %s MCP call %s/%s failed",
+                trace_id,
+                plan.server_id,
+                plan.tool_name,
+                exc_info=True,
+            )
+            context.setdefault("tool_notices", []).append(
+                {
+                    "server_id": plan.server_id,
+                    "tool_name": plan.tool_name,
+                    "status": "failed",
+                    "message": "The tool could not complete its request.",
+                }
+            )
+            yield {
+                "event": "tool_finished",
+                "data": {
+                    "server_id": plan.server_id,
+                    "tool_name": plan.tool_name,
+                    "status": "failed",
+                    "message": "The tool could not complete its request.",
+                },
+            }
+            return
+
+        status = "failed" if result.is_error else "succeeded"
+        context.setdefault("tool_results", []).append(
+            {
+                "server_id": result.server_id,
+                "tool_name": result.tool_name,
+                "content": result.content,
+                "status": status,
+                "warning_markers": list(result.markers),
+            }
+        )
+        yield {
+            "event": "tool_finished",
+            "data": {
+                "server_id": result.server_id,
+                "tool_name": result.tool_name,
+                "status": status,
+                "message": (
+                    "Tool completed."
+                    if status == "succeeded"
+                    else "The tool returned an error."
+                ),
+            },
+        }
+
+    # Stream every optional retrieval and tool event into one prompt context.
+    async def _stream_optional_context(
+        self,
+        context: dict[str, Any],
+        user_id: str,
+        query: str,
+        trace_id: str,
+        query_embedding: list[float] | None,
+    ) -> AsyncGenerator[ChatStreamEvent, None]:
+        async for event in self._stream_retrieved_context(
+            context,
+            user_id,
+            query,
+            trace_id,
+            query_embedding,
+        ):
+            yield event
+        async for event in self._stream_tool_context(
+            context,
+            user_id,
+            query,
+            trace_id,
+            query_embedding,
+        ):
+            yield event
 
     # Find stored images whose pixels match the request, when the deterministic
     # policy says this turn is a recall. Image vectors share the text latent
@@ -175,7 +343,8 @@ class ConversationService:
         query_embedding: list[float] | None,
     ) -> AsyncGenerator[ChatStreamEvent, None]:
         if await self._should_search(query, trace_id):
-            screened = self.search_privacy.sanitize(query)
+            search_results: list[dict[str, Any]]
+            screened = self.search_privacy.sanitize(normalize_search_query(query))
             if not screened.allowed:
                 # Categories are logged, never the text that triggered them.
                 logger.info(
@@ -202,9 +371,32 @@ class ConversationService:
                         "minimized": screened.was_rewritten,
                     },
                 }
-                search_results = await self._load_search_context(
+                tool_identity = getattr(self.search, "tool_identity", None)
+                if tool_identity:
+                    yield {
+                        "event": "tool_started",
+                        "data": {
+                            "server_id": tool_identity[0],
+                            "tool_name": tool_identity[1],
+                        },
+                    }
+                search_results, search_succeeded = await self._load_search_context(
                     screened.query, trace_id
                 )
+                if tool_identity:
+                    yield {
+                        "event": "tool_finished",
+                        "data": {
+                            "server_id": tool_identity[0],
+                            "tool_name": tool_identity[1],
+                            "status": ("succeeded" if search_succeeded else "failed"),
+                            "message": (
+                                "Tool completed."
+                                if search_succeeded
+                                else "The tool could not complete its request."
+                            ),
+                        },
+                    }
             if search_results:
                 context["search"] = search_results
             # Sources are always reported, including an empty list, so the
@@ -268,19 +460,22 @@ class ConversationService:
         self,
         query: str,
         trace_id: str,
-    ) -> list[dict[str, Any]]:
+    ) -> tuple[list[dict[str, Any]], bool]:
         if self.search is None:
-            return []
+            return [], False
         try:
             found = await self.search.search(query)
         except Exception:
             # A search outage degrades the answer; it must not fail the turn.
             logger.warning("Trace %s web search failed", trace_id, exc_info=True)
-            return []
-        return [
-            {"title": item.title, "url": item.url, "content": item.content}
-            for item in found.results
-        ]
+            return [], False
+        return (
+            [
+                {"title": item.title, "url": item.url, "content": item.content}
+                for item in found.results
+            ],
+            True,
+        )
 
     # Stream either ordinary assistant text or an explicit diagram artifact request.
     async def process_request(
@@ -356,7 +551,7 @@ class ConversationService:
                 "conversation_id": resolved_conversation_id,
             },
         }
-        async for retrieval_event in self._stream_retrieved_context(
+        async for retrieval_event in self._stream_optional_context(
             context,
             user_id,
             query,

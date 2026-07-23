@@ -7,7 +7,7 @@ from backend.config.settings import settings
 from backend.core.dependencies import get_embedding_provider
 from backend.database.session import AsyncSessionLocal
 from backend.mcp.client import SessionMCPToolLister
-from backend.mcp.config import _parse_server_entry
+from backend.mcp.config import parse_server_configs
 from backend.mcp.types import MCPServerConfig
 from backend.memory.retrieval import SemanticRetrievalPolicy
 from backend.services.mcp_registry_service import MCPRegistryService
@@ -16,9 +16,7 @@ from backend.services.tool_memory_service import ToolMemoryService
 
 # Read configured servers, rejecting entries that do not declare an identity.
 def load_servers() -> tuple[MCPServerConfig, ...]:
-    raw = json.loads(settings.MCP_SERVERS_JSON or "[]")
-    parsed = (_parse_server_entry(e) for e in (raw if isinstance(raw, list) else []))
-    return tuple(server for server in parsed if server is not None)
+    return parse_server_configs(settings.MCP_SERVERS_JSON)
 
 
 # Define safe command-line options for tool discovery.

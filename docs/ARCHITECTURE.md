@@ -26,7 +26,7 @@ AniOS currently has a modular FastAPI backend rather than independently deployed
 | Chat orchestration | Request ownership, deterministic web-search and image-recall routing, memory planning, history, LangGraph/Gemma streaming, persistence, proposals, artifact branch, SSE | [source](diagrams/chat-orchestration.mmd) | [view](diagrams/chat-orchestration.svg) |
 | Memory subsystem | All short/long-term forms, write authority, coordinator, typed services, pgvector retrieval, lifecycle and operations | [source](diagrams/memory-subsystem.mmd) | [view](diagrams/memory-subsystem.svg) |
 | Memory overview (manager) | Plain-language first-contact walkthrough of a memory turn, the approval gate, short-term vs long-term stores, and user data control | [source](diagrams/memory-overview.mmd) | [view](diagrams/memory-overview.svg) |
-| Tool memory | Safe descriptors, approved preferences, sanitized outcomes, embeddings, toolbox context, non-execution boundary | [source](diagrams/tool-memory-subsystem.mmd) | [view](diagrams/tool-memory-subsystem.svg) |
+| Tool memory and MCP execution | Safe descriptors, approved preferences, sanitized outcomes, semantic tool discovery, Gemma selection, policy-gated invocation, and bounded untrusted results | [source](diagrams/tool-memory-subsystem.mmd) | [view](diagrams/tool-memory-subsystem.svg) |
 | Visual artifacts | Diagram classification/rendering, HiDream generation, validated uploads, opaque binary storage, integrity/deletion, Gemma vision analysis, threaded followup questions, aligned image embeddings and margin-bounded retrieval | [source](diagrams/visual-artifact-subsystem.mmd) | [view](diagrams/visual-artifact-subsystem.svg) |
 | Architecture maintenance | Explicit repository evidence, local Gemma candidate generation, passive/required-label validation, pinned rendering, review, and manual canonical promotion | [source](diagrams/architecture-maintenance-subsystem.mmd) | [view](diagrams/architecture-maintenance-subsystem.svg) |
 | Frontend | Identity/conversation state, view lifecycle, chat components, memory management, typed API/SSE client, diagram rendering | [source](diagrams/frontend-subsystem.mmd) | [view](diagrams/frontend-subsystem.svg) |
@@ -108,7 +108,9 @@ silently bypasses the margin check; that regression is covered by a test.
 Because these bounds are calibrated rather than derived, they should be
 re-measured as a library grows: more images shrink inter-image margins.
 
-Web search is an opt-in Tavily HTTP provider behind `SearchProvider`, enabled by
+Web search is an opt-in Tavily provider reached through the built-in read-only
+`internet/search_web` stdio MCP server when `SEARCH_PROVIDER_NAME=mcp`; the
+legacy direct adapter remains configurable. Search is enabled by
 `SEARCH_API_KEY` and inert without it. A deterministic `SearchRoutingPolicy`
 owned by the application decides when a turn needs live data; the model never
 selects the path, because a model cannot detect that its own training data is
@@ -156,7 +158,9 @@ raised that to 18 of 18 while the 12 stable queries stayed correctly unrouted.
 Role matching is restricted to roles that actually turn over, so "who is the
 author of" remains stable.
 
-Every query is screened by `SearchPrivacyPolicy` before it leaves the machine,
+Search-control wording such as "search online for" and "cite the source" is
+removed before provider submission so Tavily receives the factual subject.
+Every query is then screened by `OutboundPrivacyPolicy` before it leaves the machine,
 which the roadmap requires and the first implementation omitted: the raw user
 query was sent verbatim. Two outcomes exist. A query carrying a secret or an
 account identifier is blocked outright and no request is made, because no
@@ -176,12 +180,13 @@ empty band between, so `SEARCH_MIN_SCORE` sits at `0.4`. Admitting that noise
 would be worse than returning nothing, because the prompt instructs the model to
 prefer web results over its own recollection for time-sensitive facts.
 
-A searching turn is visible and auditable. `search_started` is emitted before
+A searching turn is visible and auditable. `search_started` and
+`tool_started` are emitted before an MCP-backed provider call,
 the provider call rather than after it, since search is the slowest step, and
 `search_results` always follows with the sources consulted - including an empty
 list on failure, so the interface retracts its indicator instead of spinning.
-The browser renders the indicator and then the cited sources beneath the answer,
-so a reader can check what grounded it.
+The browser renders search and tool lifecycle status, then the cited sources
+beneath the answer, so a reader can check what grounded it.
 
 ### Module boundaries
 
@@ -190,8 +195,8 @@ and the separation is enforced by tests rather than convention:
 
 | Package | Owns |
 | --- | --- |
-| `backend/mcp` | The protocol: server configuration, stdio transport, tool metadata, and inspection of untrusted server text |
-| `backend/search` | Web search only: the provider, routing patterns, the classifier cascade |
+| `backend/mcp` | The protocol: server configuration, stdio/streamable-HTTP sessions, built-in servers, tool metadata, and inspection of untrusted server text |
+| `backend/search` | Web search only: direct/MCP provider adapters, query normalization, routing patterns, and the classifier cascade |
 | `backend/artifacts` | Visual artifacts, including image recall routing and margin-bounded image retrieval |
 | `backend/core/egress` | Screening any text before it leaves the machine |
 | `backend/services` | Orchestration that composes the layers above |
@@ -208,7 +213,7 @@ search query, and a second implementation is how the first gets bypassed.
 `test_architecture_boundaries.py` fails on a crossed boundary, a stray module
 under `search`, or a duplicate screening policy.
 
-### MCP tool discovery
+### MCP tool discovery and chat invocation
 
 Configured MCP servers are reached over one of two transports, chosen per
 server. `stdio` launches the server as a local subprocess, which is how most
@@ -234,6 +239,14 @@ while unrelated questions sat at 0.477 and above, so the general memory
 threshold of 0.35 silently discarded correct matches. Tool search therefore uses
 `TOOL_SEARCH_MAX_COSINE_DISTANCE`, calibrated to 0.45. This is the third store
 in the system to need its own bound, after personal memory and image vectors.
+
+For an ordinary chat turn, `MCPToolOrchestrationService` searches that
+user-scoped descriptor index, discards consequential servers, re-resolves each
+candidate against the live catalogue, and exposes at most five current schemas
+to Gemma through LM Studio's native OpenAI-compatible `tool_calls` contract.
+Gemma may select at most one call and supply schema-shaped arguments; it never
+receives an invocation handle. AniOS converts the selected alias into an
+application-owned plan and executes it only through the gates below.
 
 Server metadata is untrusted. Three properties follow:
 
@@ -274,6 +287,13 @@ unknown arguments, wrong types, a credential-bearing argument, a stale
 fingerprint, a withdrawn tool and an unconfirmed consequential server are each
 refused before any request reaches it.
 
+The built-in `local_utility/current_time` server is the live acceptance fixture
+for Gemma-selected MCP use. The built-in `internet/search_web` server receives
+only an already normalized and privacy-screened query and inherits only
+operator-allowlisted search environment names. It emits compact valid JSON
+below the generic MCP result cap. Internet eligibility remains deterministic
+application policy; it is not delegated to Gemma.
+
 ## Backend boundaries
 
 ### Presentation
@@ -283,7 +303,7 @@ refused before any request reaches it.
 `backend/api/v1/api.py` defines:
 
 - `GET /api/v1/`;
-- `POST /api/v1/chat`, which validates a typed `ChatRequest` and returns Server-Sent Events named `start`, `delta`, optional `memory_proposal`, optional `artifact_started`/`artifact_ready`/`artifact_error`, and `done`. A streaming failure is logged server-side and returned as a sanitized `error` event.
+- `POST /api/v1/chat`, which validates a typed `ChatRequest` and returns Server-Sent Events named `start`, `delta`, optional search/tool/memory/artifact/image lifecycle events, and `done`. A streaming failure is logged server-side and returned as a sanitized `error` event.
 
 `backend/api/v1/memory.py` defines user-scoped profile, generic approved-fact lifecycle, preferred-name approval/deletion, episodic/semantic create-correct-search-delete, export, and delete-all endpoints beneath `/api/v1/memory/{user_id}`. `backend/api/v1/agent_memory.py` adds typed semantic-cache, working-memory, procedure, entity/relation, knowledge-document/chunk, conversation-summary, retention, re-embedding, operations, and per-record deletion routes beneath `/api/v1/memory/{user_id}/agent`. Approved facts carry source conversation/trace provenance; normalization deduplicates equal values, contradictions create a superseding version, and supported `preferred_name`/`response_style` keys project into `user_profiles`. Export and delete-all cover conversation, personal, tool, and agent-memory tables.
 
@@ -309,7 +329,10 @@ The active collaborators are:
 | `PostgresMemoryService` | implemented local boundary | Supports profile upsert, episodic save/read, live embedding generation, pgvector semantic save/search, snapshots, and scoped deletion |
 | `AgentMemoryManager` | implemented typed store facade | Owns user-scoped semantic-cache, working, procedure, entity/relation, knowledge, and summary stores without exposing raw tables to the coordinator or model |
 | `MemoryCoordinatorAgent` | implemented deterministic policy boundary | Classifies memory intent with deterministic keyword routing, embeds the query once per turn and reuses that vector across every selected store, queries only selected stores, applies one cross-store relevance budget with dedup and item/character caps, writes expiring session state, and periodically rolls conversation digests |
-| `ToolMemoryService` | implemented safe metadata boundary | Stores and retrieves user-scoped safe tool descriptors, approved preferences, and sanitized outcomes; it cannot invoke or authorize tools |
+| `ToolMemoryService` | implemented safe metadata boundary | Stores and retrieves user-scoped safe tool descriptors, approved preferences, and sanitized outcomes; invocation and authorization remain owned by the separate orchestration and policy boundaries |
+| `MCPToolOrchestrationService` | implemented model-selection boundary | Gives Gemma a bounded live-validated shortlist, accepts at most one native tool call, and produces an application-owned plan without execution authority |
+| `MCPInvocationService` | implemented execution-policy boundary | Re-resolves live contracts, enforces local risk policy, validates and privacy-screens arguments, invokes stdio/HTTP tools, and bounds results as untrusted |
+| `MCPWebSearchProvider` | implemented read-only search boundary | Invokes the fixed internet MCP tool after deterministic routing and privacy minimization, then validates and filters compact result JSON |
 | `DiagramAgent` | implemented specialized LangGraph boundary | Runs one typed `generate_diagram` node around the replaceable provider; it has no persistence, authorization, or hardware-management authority |
 | `DiagramArtifactService` | implemented local artifact boundary | Coordinates pending/ready/failed diagram records, invokes a replaceable bounded diagram provider, and never gives the model persistence authority |
 | `ImageArtifactService` | implemented local binary artifact boundary | Coordinates generated/uploaded pending/ready/failed records, opaque atomic file storage, SHA-256/size integrity checks, owned content reads, and file-plus-row deletion |
@@ -320,17 +343,17 @@ The active collaborators are:
 | `SQLAlchemyConversationRepository` | implemented local boundary | Saves and counts turns under stable conversation IDs and reads a configured newest-turn window filtered by both conversation ID and user ID, returned in chronological order |
 | `LoggingConversationTracer` | implemented local boundary | Generates a new trace UUID for each request and records lifecycle events through application logging |
 
-Internet, notification, tool-execution, and external-agent collaborators are not part of current dependency assembly. Knowledge ingestion/retrieval is implemented as a local memory store; a complete RAG pipeline remains `SCAFFOLDED`.
+Notification and external-agent collaborators are not part of current dependency assembly. Internet search and guarded MCP execution are assembled; knowledge ingestion/retrieval is implemented as a local memory store, while a complete RAG pipeline remains `SCAFFOLDED`.
 
 Chat memory capture is a narrow deterministic approval boundary. The conversation service recognizes explicit preferred-name, response-style, person/relationship, reusable workflow, and titled-reference statements and emits at most one typed proposal only after the conversation turn is saved; the proposal itself is not persisted. The frontend explicitly approves or rejects it. Approval uses the existing typed store API with source conversation/trace provenance. The model never receives a durable-write tool, and unrestricted implicit fact extraction remains intentionally unsupported.
 
 ### Agent orchestration
 
-AniOS has two focused LangGraph workflows: the ordinary assistant graph contains one streaming Gemma node, while `DiagramAgent` contains one asynchronous `generate_diagram` node around `DiagramProvider`. Before the assistant graph runs, the deterministic `MemoryCoordinatorAgent` produces a typed query plan and retrieves bounded working, episodic, semantic, entity, knowledge, summary, procedure, and toolbox context as applicable. Retrieved values are serialized as untrusted literal data; they cannot add instructions or grant permissions. Neither graph owns persistence or hardware policy. Tool executor, researcher, reflection, image worker, and general multi-agent graph nodes remain `PLANNED`.
+AniOS has two focused LangGraph workflows: the ordinary assistant graph contains one streaming Gemma node, while `DiagramAgent` contains one asynchronous `generate_diagram` node around `DiagramProvider`. Before the assistant graph runs, the deterministic memory coordinator retrieves bounded context and the separate MCP orchestration service may ask Gemma for one native tool selection. The application owns live revalidation, privacy, risk policy, invocation, and result attribution. Retrieved values and tool results are untrusted literal data; they cannot grant permissions. Researcher, reflection, image-worker, A2A, and general multi-agent graph nodes remain `PLANNED`.
 
 ### LLM integration
 
-`backend/core/llm.py` implements LM Studio's OpenAI-compatible `/v1/chat/completions` contract for buffered and streamed generation. Dependency assembly injects this client into the graph. The client preserves the complete ordered `messages` list so system, prior user/assistant, and current-user messages reach Gemma, explicitly configures `reasoning_effort` (default `none`) so the local reasoning model reserves output for a visible answer, yields only assistant content deltas, and requires terminal `[DONE]`. Other providers remain `PLANNED`.
+`backend/core/llm.py` implements LM Studio's OpenAI-compatible `/v1/chat/completions` contract for buffered, streamed, and native tool-call generation. Dependency assembly injects this client into the graph and MCP selector. The client preserves ordered messages, exposes only application-supplied tool schemas, configures `reasoning_effort`, yields assistant deltas, and requires terminal `[DONE]` for streams. Other providers remain `PLANNED`.
 
 Explicit diagram requests bypass ordinary memory retrieval and the assistant graph, then run through the dedicated `DiagramAgent` graph. `LLMDiagramProvider` asks the same configured local model for a bounded JSON/Mermaid specification, performs one correction retry for malformed local-model formatting, and accepts only allowlisted diagram declarations and passive source within size/line limits. The provider is behind `DiagramProvider`; the application owns routing, validation, persistence, and lifecycle events.
 
@@ -360,7 +383,7 @@ The model vector type follows the validated `EMBEDDING_DIMENSION` setting. Offli
 
 ## Frontend
 
-The React frontend contains a responsive light-neutral shell with search-first Chat, Personal Memory, and Visual Artifacts views. Empty chat centers one dominant query composer; active chat presents each user query and assistant response as a left-aligned result flow rather than opposing message bubbles. Request trace/conversation identifiers remain available through an answer-level three-dot metadata popover instead of the primary answer text. The native font stack selects SF Pro through the Apple system aliases where available and the platform `system-ui` font elsewhere; the composer explicitly inherits that same stack. The memory screen explicitly applies user changes, cancels obsolete reads, edits profile/preferences, lists and deletes records, confirms delete-all, keeps manual event/fact creation behind an advanced plain-language disclosure, and renders live counts for every implemented short- and long-term memory form. Chat parses the text, memory-proposal, and artifact SSE lifecycles. Assistant text is rendered as styled CommonMark through ReactMarkdown with raw HTML interpretation disabled, while user messages remain literal text. Chat lazily loads Mermaid only for ready diagrams, renders under strict settings with HTML labels disabled, exposes editable source, and shows generation/render failures. The Artifacts view lists recent owned ready diagrams, reuses strict rendering, downloads Mermaid or the locally rendered SVG without another provider call, exposes refresh/load failures, and deletes owned records. The browser persists a conversation ID across reloads/views, keeps the in-memory transcript mounted across view switches, restores a bounded owned transcript and its diagram artifacts after a full reload, rotates it through `New conversation`, and clears the visible transcript when either the user or conversation changes.
+The React frontend contains a responsive light-neutral shell with search-first Chat, Personal Memory, and Visual Artifacts views. Empty chat centers one dominant query composer; active chat presents each user query and assistant response as a left-aligned result flow rather than opposing message bubbles. Request trace/conversation identifiers remain available through an answer-level three-dot metadata popover instead of the primary answer text. The native font stack selects SF Pro through the Apple system aliases where available and the platform `system-ui` font elsewhere; the composer explicitly inherits that same stack. The memory screen explicitly applies user changes, cancels obsolete reads, edits profile/preferences, lists and deletes records, confirms delete-all, keeps manual event/fact creation behind an advanced plain-language disclosure, and renders live counts for every implemented short- and long-term memory form. Chat validates text, memory, search, MCP tool, image, and artifact SSE lifecycles; each tool shows running, succeeded, refused, or failed state without exposing arguments or results. Assistant text is rendered as styled CommonMark through ReactMarkdown with raw HTML interpretation disabled, while user messages remain literal text. Chat lazily loads Mermaid only for ready diagrams, renders under strict settings with HTML labels disabled, exposes editable source, and shows generation/render failures. The Artifacts view lists recent owned ready diagrams, reuses strict rendering, downloads Mermaid or the locally rendered SVG without another provider call, exposes refresh/load failures, and deletes owned records. The browser persists a conversation ID across reloads/views, keeps the in-memory transcript mounted across view switches, restores a bounded owned transcript and its diagram artifacts after a full reload, rotates it through `New conversation`, and clears the visible transcript when either the user or conversation changes.
 
 The trusted-local developer UI defaults a missing or legacy `dev_user_001` browser identity to `ani.mallya` and rotates the legacy conversation ID. Any other stored user/conversation identity is preserved. This is local UI convenience, not authentication.
 
@@ -408,9 +431,9 @@ Current host-source validation completes this flow through Gemma, a bounded same
 - Personal profile, episodic memory, relevance-gated semantic search, management/export/correction/deletion UI, and optional signed user authentication: functionally implemented; auth is disabled by default for trusted-local development.
 - Local knowledge-document ingestion, deterministic chunking, embedding, semantic retrieval, prompt curation, export, and deletion: implemented. Hybrid retrieval, reranking, source-citation policy, file connectors, ingestion jobs, and GraphRAG remain `PLANNED`.
 - Signed local-user route ownership: implemented when enabled. Password login, account management, token revocation, and external identity providers: `PLANNED`.
-- Internet search, its privacy decision gate, notifications, calendar, email, voice, mobile clients, autonomous agents, and multi-agent workflows: `PLANNED`.
+- Deterministic internet routing, outbound privacy minimization/blocking, MCP-backed Tavily search, untrusted prompt attribution, source cards, and visible failure state: implemented and direct/live-browser verified. Sensitive-query review, redacted audit storage, and provider hardening remain `PLANNED`.
 - Explicit Mermaid diagram generation through a dedicated diagram graph, user-scoped lifecycle/history/deletion, strict rendering, reload restoration, local Mermaid/SVG export, and disconnect recovery: implemented and browser/direct-client verified. Free local raster generation, bounded upload, opaque binary storage, owned content/deletion, Gemma image understanding, browser progress/retry/cancel, private rendering, navigation/reload restoration, history, download, and deletion are implemented and direct/live-browser verified. Threaded followup questions on owned generated or uploaded images reuse the stored bytes and the same vision boundary with a bounded, persisted question/answer thread; this is deterministic-browser and backend/unit verified, while a live Gemma followup session and any memory-subsystem indexing of image content remain `PLANNED`. Review-only local Gemma architecture candidates remain implemented and never update canonical source automatically. Automated retention/export, multimodal embeddings, durable queues, GPU resource leasing/transitions, and generalized image agents remain `PLANNED`.
-- Semantic safe-descriptor discovery and user-scoped approved preference/sanitized outcome memory: implemented. MCP connectivity, authoritative live-registry synchronization, permissions, and invocation remain `PLANNED`; tool memory cannot authorize execution.
+- Semantic safe-descriptor discovery, approved preference/sanitized outcome memory, stdio/streamable-HTTP connectivity, native Gemma selection, live pre-invocation re-resolution, guarded execution, and UI lifecycle status: implemented. Automatic registry refresh/change notifications, consequential-call approval/resume, per-server user credentials/scopes, durable execution audit, A2A, and multi-agent scheduling remain `PLANNED`; tool memory never authorizes execution.
 
 ## Architectural decision
 

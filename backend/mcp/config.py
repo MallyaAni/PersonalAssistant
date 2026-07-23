@@ -1,5 +1,7 @@
 """Parse configured MCP servers from their JSON representation."""
 
+import json
+
 from backend.mcp.types import MCPServerConfig
 
 
@@ -14,6 +16,7 @@ def _parse_server_entry(entry: object) -> MCPServerConfig | None:
             transport=str(entry.get("transport", "stdio")),
             command=str(entry.get("command", "")),
             args=tuple(str(a) for a in entry.get("args", [])),
+            inherit_env=tuple(str(name) for name in entry.get("inherit_env", [])),
             url=str(entry.get("url", "")),
             headers=(
                 tuple((str(k), str(v)) for k, v in headers.items())
@@ -26,3 +29,15 @@ def _parse_server_entry(entry: object) -> MCPServerConfig | None:
     except ValueError:
         # A misconfigured transport is skipped rather than crashing discovery.
         return None
+
+
+# Parse every usable server entry from the operator-owned JSON setting.
+def parse_server_configs(raw: str) -> tuple[MCPServerConfig, ...]:
+    try:
+        decoded = json.loads(raw or "[]")
+    except ValueError:
+        return ()
+    if not isinstance(decoded, list):
+        return ()
+    parsed = (_parse_server_entry(entry) for entry in decoded)
+    return tuple(server for server in parsed if server is not None)

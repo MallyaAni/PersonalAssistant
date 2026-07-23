@@ -13,7 +13,10 @@ flowchart TB
     Artifact --> SSE
 
     Route -->|no| Retrieval{Retrieval routing cascade<br/>free patterns, then bounded classifier<br/>application owned, model never selects}
-    Retrieval -->|volatile-shape signal| WebSearch[TavilySearchProvider<br/>relevance floor, untrusted results]
+    Retrieval -->|volatile-shape signal| SearchPolicy[Normalize and privacy-screen query]
+    SearchPolicy --> InternetMCP[Internet MCP adapter<br/>fixed read-only search_web]
+    InternetMCP --> SearchGates[MCP live validation and invocation gates]
+    SearchGates --> WebSearch[TavilySearchProvider<br/>relevance floor, untrusted results]
     Retrieval -->|image recall signal| ImageSearch[Aligned image vector search<br/>ceiling plus best-to-runner-up margin]
     WebSearch --> Context
     WebSearch --> SSE
@@ -25,10 +28,18 @@ flowchart TB
     Service --> History[ConversationRepository<br/>bounded same-user history]
     Personal --> Context[Bounded context assembly]
     Typed --> Context
+    Typed --> ToolShortlist[Semantic MCP descriptor shortlist]
+    ToolShortlist --> LiveResolve[Re-read live schemas<br/>exclude consequential servers]
+    LiveResolve --> ToolGemma[Gemma native tool_calls<br/>at most one bounded candidate]
+    ToolGemma --> ToolGates[MCP contract, argument,<br/>privacy and trust gates]
+    ToolGates --> MCPServer[[Configured MCP server]]
+    MCPServer --> ToolContext[Bounded result as<br/>untrusted prompt data]
+    ToolContext --> Context
+    ToolGates --> SSE
     History --> State[Typed AgentState]
     Context --> State
     State --> Graph[LangGraph<br/>one assistant node]
-    Graph --> Prompt[System prompt: current date, literal memory,<br/>quoted untrusted web results and matched images,<br/>history, and current query]
+    Graph --> Prompt[System prompt: current date, literal memory,<br/>quoted untrusted web, tool and image results,<br/>history, and current query]
     Prompt --> Gemma[LM Studio Gemma<br/>stream_chat]
     Gemma -->|message.delta| Graph
     Graph --> Persist[Persist completed conversation turn]
@@ -37,8 +48,8 @@ flowchart TB
     Proposal --> SSE[SSE encoder]
     Lifecycle --> SSE
     Graph --> SSE
-    SSE -->|start, search_started, search_results,<br/>delta, optional proposal, artifact<br/>or image_matches, done| Parser[Frontend stream parser]
-    Parser --> Answer[Visible answer, searching indicator,<br/>cited sources, metadata, proposal,<br/>artifact, or matched image cards]
+    SSE -->|start, search and tool lifecycles,<br/>delta, optional proposal, artifact,<br/>image_matches, done| Parser[Frontend stream parser]
+    Parser --> Answer[Visible answer, tool status, search status,<br/>cited sources, metadata, proposal,<br/>artifact, or matched image cards]
 
     Reload([Full browser reload]) --> SnapshotAPI[GET owned conversation snapshot]
     SnapshotAPI --> Ownership
@@ -55,7 +66,7 @@ flowchart TB
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef failure fill:#fff3cd,stroke:#b78b20,color:#4d3900;
     class User,Composer,Parser,Answer,Reload,RestoreUI,Disconnect interface;
-    class ChatAPI,SnapshotAPI,Ownership,Service,Trace,Route,Plan,Context,State,Graph,Prompt,Persist,Lifecycle,Proposal,SSE,Artifact,DiagramAgent,DiagramProvider,CancelCleanup application;
+    class ChatAPI,SnapshotAPI,Ownership,Service,Trace,Route,Retrieval,SearchPolicy,InternetMCP,SearchGates,Plan,Context,State,Graph,Prompt,Persist,Lifecycle,Proposal,SSE,Artifact,DiagramAgent,DiagramProvider,CancelCleanup,ToolShortlist,LiveResolve,ToolGemma,ToolGates,ToolContext application;
     class Personal,Typed,History,RestoreHistory data;
-    class Gemma,DiagramGemma external;
+    class Gemma,DiagramGemma,WebSearch,MCPServer external;
     class Failure failure;

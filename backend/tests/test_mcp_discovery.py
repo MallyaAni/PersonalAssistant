@@ -219,3 +219,30 @@ def test_config_parser_reads_both_transports():
     assert http.transport == "http"
     # A misconfigured entry is skipped, not fatal.
     assert broken is None
+
+
+# Verify the shared runtime parser preserves HTTP connection settings.
+def test_shared_config_parser_preserves_http_transport():
+    from backend.mcp.config import parse_server_configs
+
+    servers = parse_server_configs(
+        '[{"server_id":"remote","transport":"http",'
+        '"url":"http://x/mcp","headers":{"x-token":"value"}}]'
+    )
+
+    assert len(servers) == 1
+    assert servers[0].transport == "http"
+    assert servers[0].url == "http://x/mcp"
+    assert servers[0].headers == (("x-token", "value"),)
+
+
+# Verify stdio configuration carries only environment names, never values.
+def test_shared_config_parser_preserves_stdio_environment_allowlist():
+    from backend.mcp.config import parse_server_configs
+
+    servers = parse_server_configs(
+        '[{"server_id":"internet","command":"python",'
+        '"inherit_env":["SEARCH_API_KEY","SEARCH_BASE_URL"]}]'
+    )
+
+    assert servers[0].inherit_env == ("SEARCH_API_KEY", "SEARCH_BASE_URL")

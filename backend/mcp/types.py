@@ -23,6 +23,9 @@ class MCPServerConfig:
     # stdio transport
     command: str = ""
     args: tuple[str, ...] = ()
+    # Names of process variables explicitly inherited by this child. Values
+    # stay outside JSON configuration so credentials are never indexed or shown.
+    inherit_env: tuple[str, ...] = ()
     # http transport
     url: str = ""
     headers: tuple[tuple[str, str], ...] = ()

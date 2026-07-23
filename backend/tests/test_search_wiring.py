@@ -60,6 +60,15 @@ class RecordingSearch:
         )
 
 
+class RecordingMCPSearch(RecordingSearch):
+    """Expose the fixed MCP identity used by the web-search adapter."""
+
+    # Return the server and tool shown in the chat lifecycle.
+    @property
+    def tool_identity(self) -> tuple[str, str]:
+        return "internet", "search_web"
+
+
 async def _events(service: ConversationService, query: str) -> list[dict]:
     return [
         event
@@ -242,3 +251,37 @@ async def test_personal_framing_is_stripped_before_the_provider_sees_it():
     started = [e for e in events if e["event"] == "search_started"][0]
     assert started["data"]["minimized"] is True
     assert "my" not in started["data"]["query"].split()
+
+
+# Verify MCP-backed internet search emits both search and tool transparency events.
+@pytest.mark.asyncio
+async def test_mcp_search_provider_streams_tool_lifecycle():
+    search = RecordingMCPSearch()
+    llm = RecordingLLM()
+
+    events = await _events(_service(search, llm), "what is the latest python release")
+    names = [event["event"] for event in events]
+
+    assert names.index("search_started") < names.index("tool_started")
+    assert names.index("tool_started") < names.index("tool_finished")
+    assert names.index("tool_finished") < names.index("search_results")
+    assert [e for e in events if e["event"] == "tool_finished"][0]["data"] == {
+        "server_id": "internet",
+        "tool_name": "search_web",
+        "status": "succeeded",
+        "message": "Tool completed.",
+    }
+
+
+# Verify search-control wording is not sent as part of the factual query.
+@pytest.mark.asyncio
+async def test_search_control_words_are_removed_before_provider_call():
+    search = RecordingSearch()
+    llm = RecordingLLM()
+
+    await _run(
+        _service(search, llm),
+        "Search online for the latest stable Python release and cite the source.",
+    )
+
+    assert search.queries == ["the latest stable Python release"]

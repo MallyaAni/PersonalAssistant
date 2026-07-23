@@ -6,7 +6,14 @@ flowchart TB
     Poison -->|no| Service
     Discovery -. fingerprint covers description<br/>to detect rug pulls .-> Service
 
-    Invoke([Explicit tool call]) --> Gates{Invocation gates}
+    Chat([Chat request]) --> SearchDescriptors[Semantic descriptor shortlist]
+    SearchDescriptors --> Service
+    Service --> LiveSelection[Resolve current live schemas]
+    LiveSelection --> GemmaSelect[Gemma native tool_calls<br/>at most one call]
+    GemmaSelect --> Invoke[Application-owned call plan]
+
+    Explicit([Explicit tool API call]) --> Gates{Invocation gates}
+    Invoke --> Gates
     Gates -->|server from local config| G1[Confirmation unless<br/>trusted or read_only]
     G1 --> G2[Re-read live catalogue<br/>refuse withdrawn tool]
     G2 --> G3[Fingerprint match<br/>refuse changed contract]
@@ -15,6 +22,8 @@ flowchart TB
     G5 --> G6[Screen arguments<br/>OutboundPrivacyPolicy]
     G6 --> Server[[MCP server]]
     Server --> Bounded[Bounded result, inspected,<br/>quoted as untrusted data]
+    Bounded --> Prompt[Final Gemma answer context]
+    Bounded --> ToolEvents[tool_started and tool_finished SSE]
 
     Caller([Trusted local caller]) --> ToolAPI[Tool-memory API<br/>/memory/user/tools]
     ToolAPI --> Ownership[Optional signed-user ownership]
@@ -46,16 +55,16 @@ flowchart TB
     Preferences --> Database
     Outcomes --> Database
 
-    Boundary[Current safety boundary:<br/>discovery and memory only<br/>no MCP connection, permission, or execution]
-    Service -.-> Boundary
+    Boundary[Autonomous boundary:<br/>only locally trusted or read_only servers;<br/>consequential calls stay confirmation-gated]
+    Gates -.-> Boundary
 
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
     classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
-    class Caller,ToolAPI interface;
-    class Ownership,Schema,Sensitive,Service,DescriptorPath,Identity,Deactivate,Embed,PreferencePath,OutcomePath,Coordinator,Toolbox application;
+    class Caller,ToolAPI,Chat,Explicit,ToolEvents interface;
+    class Ownership,Schema,Sensitive,Service,DescriptorPath,Identity,Deactivate,Embed,PreferencePath,OutcomePath,Coordinator,Toolbox,SearchDescriptors,LiveSelection,GemmaSelect,Invoke,Gates,G1,G2,G3,G4,G5,G6,Bounded,Prompt application;
     class Descriptors,Preferences,Outcomes,Database data;
     class Nomic,Gemma external;
     class Boundary warning;

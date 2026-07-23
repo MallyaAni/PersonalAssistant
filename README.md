@@ -8,6 +8,7 @@ The repository contains:
 - a React and Vite developer console;
 - Docker Compose definitions for PostgreSQL with pgvector, Redis, and the backend;
 - a model-backed conversation path, PostgreSQL/pgvector personal memory, and focused LangGraph assistant and diagram-agent boundaries;
+- Gemma-native MCP tool selection over a semantic live-validated shortlist, guarded execution, visible chat status, and a read-only internet-search MCP server;
 - an explicit chat-to-Mermaid diagram path with user-scoped PostgreSQL artifact persistence and strict in-browser SVG rendering;
 - free local HiDream/ComfyUI image generation plus validated Gemma vision analysis in the chat composer, with private previews, retry/cancel, reload restoration, history, download, owned deletion, and threaded followup questions on any owned image;
 - a local-only, review-first command that uses Gemma and explicit repository evidence to generate architecture-diagram candidates without automatically overwriting canonical documentation.

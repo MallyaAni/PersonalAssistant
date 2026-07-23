@@ -53,6 +53,8 @@ interface ChatEvent {
     | 'search_started'
     | 'search_results'
     | 'search_blocked'
+    | 'tool_started'
+    | 'tool_finished'
     | 'artifact_error'
     | 'done'
     | 'error';
@@ -84,6 +86,13 @@ export interface SearchSource {
   title: string;
   url: string;
   snippet: string;
+}
+
+export interface ToolActivity {
+  serverId: string;
+  toolName: string;
+  status: 'running' | 'succeeded' | 'refused' | 'failed';
+  message?: string;
 }
 
 export interface ImageArtifact extends ArtifactBase {
@@ -172,6 +181,8 @@ export type ChatStreamUpdate =
   | { type: 'search_started'; minimized: boolean }
   | { type: 'search_blocked'; categories: string[] }
   | { type: 'search_sources'; sources: SearchSource[] }
+  | { type: 'tool_started'; activity: ToolActivity }
+  | { type: 'tool_finished'; activity: ToolActivity }
   | { type: 'artifact_error'; artifactId: string; message: string }
 
 // Send a JSON API request and surface server errors as exceptions.
@@ -763,6 +774,38 @@ export async function* streamChat(userId: string, conversationId: string, query:
           }]
         })
         yield { type: 'search_sources', sources: parsed } satisfies ChatStreamUpdate
+      } else if (event.event === 'tool_started') {
+        const { server_id, tool_name } = event.data
+        if (typeof server_id !== 'string' || typeof tool_name !== 'string') {
+          throw new Error('Tool start event is invalid')
+        }
+        yield {
+          type: 'tool_started',
+          activity: {
+            serverId: server_id,
+            toolName: tool_name,
+            status: 'running',
+          },
+        } satisfies ChatStreamUpdate
+      } else if (event.event === 'tool_finished') {
+        const { server_id, tool_name, status, message } = event.data
+        if (
+          typeof server_id !== 'string' ||
+          typeof tool_name !== 'string' ||
+          !['succeeded', 'refused', 'failed'].includes(String(status)) ||
+          typeof message !== 'string'
+        ) {
+          throw new Error('Tool finish event is invalid')
+        }
+        yield {
+          type: 'tool_finished',
+          activity: {
+            serverId: server_id,
+            toolName: tool_name,
+            status: status as ToolActivity['status'],
+            message,
+          },
+        } satisfies ChatStreamUpdate
       } else if (event.event === 'image_matches') {
         const { artifacts } = event.data as { artifacts?: unknown }
         if (!Array.isArray(artifacts)) {
@@ -830,6 +873,8 @@ function parseChatEvent(frame: string): ChatEvent {
     'search_started',
     'search_results',
     'search_blocked',
+    'tool_started',
+    'tool_finished',
     'done',
     'error',
   ].includes(eventName)) {

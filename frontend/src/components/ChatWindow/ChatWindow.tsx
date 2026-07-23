@@ -12,6 +12,7 @@ import {
   type MemoryProposal,
   type ImageArtifact,
   type SearchSource,
+  type ToolActivity,
   type VisualArtifact,
 } from '../../services/api'
 
@@ -28,6 +29,7 @@ interface Message {
   searchSources?: SearchSource[];
   searchMinimized?: boolean;
   searchBlocked?: string[];
+  toolActivities?: ToolActivity[];
 }
 
 interface ChatWindowProps {
@@ -316,6 +318,39 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     })
   }
 
+  // Show a running MCP tool on the assistant response that owns the turn.
+  const handleToolStarted = (activity: ToolActivity) => {
+    setMessages(prev => {
+      const next = [...prev]
+      const index = latestAssistantIndex(next)
+      if (index >= 0) {
+        next[index] = {
+          ...next[index],
+          toolActivities: [...(next[index].toolActivities || []), activity],
+        }
+      }
+      return next
+    })
+  }
+
+  // Replace one running tool with its visible terminal outcome.
+  const handleToolFinished = (activity: ToolActivity) => {
+    setMessages(prev => {
+      const next = [...prev]
+      const index = latestAssistantIndex(next)
+      if (index < 0) return next
+      const current = next[index].toolActivities || []
+      const match = current.findIndex(item => (
+        item.serverId === activity.serverId && item.toolName === activity.toolName
+      ))
+      const toolActivities = [...current]
+      if (match >= 0) toolActivities[match] = activity
+      else toolActivities.push(activity)
+      next[index] = { ...next[index], toolActivities }
+      return next
+    })
+  }
+
   // Attach pixel-matched images to the assistant turn that requested them.
   const handleImageMatches = (artifacts: ImageArtifact[]) => {
     if (artifacts.length === 0) return
@@ -501,6 +536,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             onSearchStarted={handleSearchStarted}
             onSearchBlocked={handleSearchBlocked}
             onSearchSources={handleSearchSources}
+            onToolStarted={handleToolStarted}
+            onToolFinished={handleToolFinished}
           />
           {hasMessages && (
             <p className="mt-2 text-center text-[11px] text-[#86868b]">AniOS can make mistakes. Check important information.</p>

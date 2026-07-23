@@ -52,7 +52,15 @@ def test_search_package_holds_only_web_search():
     # "search" mean three unrelated things.
     names = {p.stem for p in (BACKEND / "search").glob("*.py") if p.stem != "__init__"}
 
-    assert names == {"cascade", "classifier", "routing", "tavily", "types"}
+    assert names == {
+        "cascade",
+        "classifier",
+        "mcp",
+        "query",
+        "routing",
+        "tavily",
+        "types",
+    }
 
 
 def test_the_outbound_gate_is_shared_rather_than_search_specific():

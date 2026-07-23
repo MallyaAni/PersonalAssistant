@@ -50,6 +50,10 @@ services:
       # Opt-in web search. Empty disables it: routing still runs and logs its
       # decision, but no query is ever sent.
       - SEARCH_API_KEY=${SEARCH_API_KEY:-}
+      - SEARCH_PROVIDER_NAME=${SEARCH_PROVIDER_NAME:-tavily}
+      - SEARCH_MCP_SERVER_ID=${SEARCH_MCP_SERVER_ID:-internet}
+      - SEARCH_MCP_TOOL_NAME=${SEARCH_MCP_TOOL_NAME:-search_web}
+      - MCP_SERVERS_JSON=${MCP_SERVERS_JSON:-[]}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:

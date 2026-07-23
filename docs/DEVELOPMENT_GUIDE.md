@@ -133,6 +133,13 @@ Key settings are:
 | `IMAGE_MAX_PIXELS` | `20000000` | Maximum decoded pixels for uploaded/generated images |
 | `VISION_MODEL` | `google/gemma-4-12b` | Local VLM model key; independently replaceable from the chat setting |
 | `VISION_MAX_TOKENS` | `512` | Maximum grounded analysis output tokens |
+| `SEARCH_PROVIDER_NAME` | `tavily` | Set `mcp` to route approved internet searches through the built-in read-only MCP server |
+| `SEARCH_API_KEY` | none | Tavily credential inherited only by the internet MCP child when allowlisted |
+| `SEARCH_MCP_SERVER_ID` | `internet` | Fixed server identity used after deterministic search routing |
+| `SEARCH_MCP_TOOL_NAME` | `search_web` | Fixed read-only MCP search tool name |
+| `MCP_SERVERS_JSON` | `[]` | Operator-owned stdio/HTTP connections, local trust, and optional environment-name allowlists |
+| `MCP_LIST_TIMEOUT_SECONDS` | `30` | Bound for live catalogue and tool sessions |
+| `TOOL_SEARCH_MAX_RESULTS` | `5` | Maximum live-validated schemas exposed to Gemma per turn |
 
 For host development, a minimal root `.env` is:
 
@@ -353,8 +360,9 @@ MCP servers are configured as a JSON array in `MCP_SERVERS_JSON`. Each entry
 gives a `server_id`, an operator-assigned `risk_classification`, and a
 transport. A `stdio` server gives `command` and `args` and is launched as a
 subprocess, so its runtime (for example Node, for `npx` servers) must be
-available wherever the backend runs - which is the host today, since the
-backend image ships no Node. An `http` server gives a `url` and optional
+available wherever the backend runs. `inherit_env` may name only the process
+variables that child needs; values stay outside JSON and are not indexed or
+shown to Gemma. An `http` server gives a `url` and optional
 `headers` and connects to an already-running service, which is the transport to
 use for a deployed sibling container or a remote vendor and needs nothing extra
 in the image. Discover and index their tools with:
@@ -366,6 +374,22 @@ docker compose exec backend python -m backend.cli.sync_mcp_tools --user-id <user
 
 `--list-only` reports the live catalogue without writing anything.
 
+To use the built-in free read-only servers and MCP-backed web search, configure:
+
+```dotenv
+SEARCH_PROVIDER_NAME=mcp
+MCP_SERVERS_JSON=[{"server_id":"local_utility","command":"python","args":["-m","backend.mcp.servers.local_utility"],"risk_classification":"read_only"},{"server_id":"internet","command":"python","args":["-m","backend.mcp.servers.internet"],"inherit_env":["SEARCH_API_KEY","SEARCH_BASE_URL","SEARCH_MAX_RESULTS","SEARCH_TIMEOUT_SECONDS","SEARCH_MAX_CONTENT_CHARS","SEARCH_MIN_SCORE","SEARCH_DEPTH"],"risk_classification":"read_only"}]
+```
+
+Compose passes these settings into the backend. Rebuild it, then sync descriptors
+for each chat user before expecting Gemma selection; fixed deterministic internet
+routing does not depend on descriptor sync:
+
+```powershell
+docker compose up -d --build backend
+docker compose exec backend python -m backend.cli.sync_mcp_tools --user-id ani.mallya
+```
+
 **Pin server versions.** Fetching a server with `npx -y <package>` resolves to
 whatever is published at that moment, which is the rug-pull vector: a server
 approved once is not the same server after an update. Pin an exact version in
@@ -373,10 +397,10 @@ approved once is not the same server after an update. Pin an exact version in
 schema, so a rewritten description changes the fingerprint and is visible as a
 new descriptor rather than silently replacing the approved one.
 
-Web search is opt-in in the same way: set `SEARCH_API_KEY` to a Tavily key to
-enable it, and leave it empty to disable search entirely. Routing still runs and
-logs its decision, so `reason=` lines appear in the backend log before any query
-is ever spent.
+Web search is opt-in in the same way: set `SEARCH_API_KEY` to a Tavily key and
+`SEARCH_PROVIDER_NAME=mcp` for the guarded MCP route. Leave the key empty to
+disable search entirely. Deterministic routing, normalization, and privacy
+screening happen before the MCP call; Gemma never owns outbound eligibility.
 
 Compose requires a root `.env` with `SECRET_KEY` set; it is interpolated rather than hardcoded, so a missing value fails the run instead of silently signing tokens with a placeholder. `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` are interpolated too and fall back to their local defaults. The remaining container values stay literal in `docker-compose.yml` because `.env` holds host-oriented equivalents (`POSTGRES_HOST=localhost`, loopback `LLM_BASE_URL`) that would break container networking if passed through.
 
@@ -671,7 +695,22 @@ Invoke-RestMethod 'http://localhost:8000/api/v1/memory/dev_user_001/export'
 
 `POST /api/v1/memory/{user_id}/facts` explicitly approves a structured fact. Repeating a normalized value deduplicates; a contradictory value creates a superseding version. `PUT /facts/{fact_id}` corrects, `DELETE /facts/{fact_id}` removes one version, and `DELETE /facts/key/{fact_key}` removes the key history and supported profile projection. `PUT /api/v1/memory/{user_id}/{episodic|semantic}/{memory_id}` corrects an explicit record and re-embeds semantic content. `GET /api/v1/memory/{user_id}/agent` returns typed-store counts. `DELETE /api/v1/memory/{user_id}` removes that user's conversations and all personal, tool, and agent-memory records. It is destructive and the UI requires confirmation.
 
-Tool-memory routes live below `/api/v1/memory/{user_id}/tools`. They accept only canonical safe descriptors, allowlisted approved preferences, and outcome categories; they never accept raw tool arguments or outputs. Discovery is a hint only and cannot authorize or invoke an MCP tool.
+Tool-memory routes live below `/api/v1/memory/{user_id}/tools`. They accept only canonical safe descriptors, allowlisted approved preferences, and outcome categories; they never accept raw tool arguments or outputs. Discovery is a hint only. Chat re-resolves shortlisted schemas, lets Gemma return at most one native tool call, and then sends the application-owned plan through the same live contract, risk, argument, and privacy gates as `POST /api/v1/tools/{user_id}/call`.
+
+Run deterministic and real-browser MCP acceptance with:
+
+```powershell
+cd frontend
+npx.cmd playwright test --grep "MCP tool|MCP refusal"
+$env:RUN_LIVE_TOOL_TESTS='1'
+$env:ANIOS_LIVE_TOOL_USER='live_tool_browser_user'
+npx.cmd playwright test --grep "@live uses a Gemma-selected MCP tool"
+```
+
+The live user must have fresh descriptors from `sync_mcp_tools`. Require the
+transient and terminal tool states, HTTP 200 SSE responses, terminal `done`,
+source cards for internet search, cleared Thinking/composer state, and no page
+or blocking Console errors.
 
 Agent-memory route groups are:
 

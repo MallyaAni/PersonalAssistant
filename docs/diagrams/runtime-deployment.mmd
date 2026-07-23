@@ -37,9 +37,9 @@ flowchart LR
     Auth --> Dependencies
     Dependencies -->|asyncpg transactions| Postgres
     Dependencies -->|image bytes, aligned 768-dim vector| VisionEmbed
-    Dependencies -->|deterministic routing, untrusted results| WebSearch
     Dependencies -->|discover, then invoke behind gates| MCPStdio
     Dependencies -->|discover, then invoke behind gates| MCPHttp
+    MCPStdio -->|built-in read-only internet/search_web| WebSearch
     Dependencies -->|OpenAI-compatible HTTP, host.docker.internal:1234| LMStudio
     Dependencies -->|ComfyUI HTTP, comfyui:8188| ComfyUI
     Dependencies -->|opaque keys and atomic file writes| BinaryStore

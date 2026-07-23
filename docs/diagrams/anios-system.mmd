@@ -17,7 +17,9 @@ flowchart LR
         Coordinator[MemoryCoordinatorAgent<br/>deterministic policy]
         Graph[LangGraph<br/>one Gemma assistant node]
         Memory[Typed personal and agent memory services]
-        Toolbox[Safe tool-memory service<br/>discovery only]
+        Toolbox[Safe tool-memory service<br/>semantic descriptor shortlist]
+        ToolOrchestration[MCP tool orchestration<br/>Gemma native selection, app-owned execution]
+        MCPInvocation[MCP invocation gates<br/>live contract, policy, privacy]
     end
 
     subgraph Infrastructure[Local infrastructure]
@@ -38,6 +40,7 @@ flowchart LR
     API --> Toolbox
     Conversation --> Coordinator
     Conversation --> Graph
+    Conversation --> ToolOrchestration
     Conversation -->|explicit diagram lifecycle| DiagramArtifacts
     DiagramArtifacts --> DiagramAgent
     API -->|POST images/generate| ImageArtifacts
@@ -52,6 +55,13 @@ flowchart LR
     Conversation --> Database
     Coordinator --> Memory
     Coordinator --> Toolbox
+    ToolOrchestration --> Toolbox
+    ToolOrchestration -->|bounded native tool definitions| LMStudio
+    ToolOrchestration --> MCPInvocation
+    Conversation -->|freshness and privacy policy| InternetMCP
+    InternetMCP --> MCPInvocation
+    MCPInvocation --> MCPServers
+    InternetMCP -->|read-only search_web| WebSearch
     Graph -->|chat completions| LMStudio
     DiagramAgent -->|bounded diagram specification| LMStudio
     DiagramArtifacts --> Database
@@ -60,7 +70,6 @@ flowchart LR
     Memory -->|embedding requests| LMStudio
     ImageArtifacts -->|image bytes at store time| VisionEmbed
     VisionEmbed -->|aligned 768-dim vectors| Database
-    Graph -->|deterministic routing only<br/>untrusted results| WebSearch
     Toolbox --> Database
     Toolbox -->|safe descriptor embeddings| LMStudio
 
@@ -70,7 +79,9 @@ flowchart LR
     classDef scaffold fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-width:1.5px,stroke-dasharray:5 4;
     class Frontend,API interface;
     class User,Maintainer interface;
-    class Conversation,DiagramArtifacts,ImageArtifacts,Vision,DiagramAgent,Candidate,Coordinator,Graph,Memory,Toolbox application;
+    class Conversation,DiagramArtifacts,ImageArtifacts,Vision,DiagramAgent,Candidate,Coordinator,Graph,Memory,Toolbox,ToolOrchestration,MCPInvocation application;
+    InternetMCP[[Built-in internet MCP server<br/>stdio, read-only]]
+    MCPServers[[Configured MCP servers<br/>stdio or streamable HTTP]]
     WebSearch[[Tavily web search<br/>external vendor, opt-in, untrusted]]
     class Database,LMStudio,ComfyUI,BinaryStore,Diagrams,VisionEmbed infrastructure;
     class Redis scaffold;

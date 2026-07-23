@@ -7,6 +7,7 @@ import {
   type ImageArtifact,
   type MemoryProposal,
   type SearchSource,
+  type ToolActivity,
   type VisualArtifact,
 } from '../../services/api'
 
@@ -29,6 +30,8 @@ interface ComposerProps {
   onSearchStarted: (minimized: boolean) => void;
   onSearchBlocked: (categories: string[]) => void;
   onSearchSources: (sources: SearchSource[]) => void;
+  onToolStarted: (activity: ToolActivity) => void;
+  onToolFinished: (activity: ToolActivity) => void;
 }
 
 // Render the chat input and stream submitted messages.
@@ -49,6 +52,8 @@ const Composer: React.FC<ComposerProps> = ({
   onSearchStarted,
   onSearchBlocked,
   onSearchSources,
+  onToolStarted,
+  onToolFinished,
 }) => {
   const [input, setInput] = useState('')
   const [isSending, setIsSending] = useState(false)
@@ -115,6 +120,10 @@ const Composer: React.FC<ComposerProps> = ({
           onSearchBlocked(update.categories)
         } else if (update.type === 'search_sources') {
           onSearchSources(update.sources)
+        } else if (update.type === 'tool_started') {
+          onToolStarted(update.activity)
+        } else if (update.type === 'tool_finished') {
+          onToolFinished(update.activity)
         } else {
           onThinkingChange(false)
           onArtifactError(update.artifactId, update.message)

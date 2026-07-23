@@ -1,4 +1,5 @@
 import contextlib
+import os
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -35,9 +36,17 @@ async def open_session(
         return
 
     from mcp import StdioServerParameters
-    from mcp.client.stdio import stdio_client
+    from mcp.client.stdio import get_default_environment, stdio_client
 
-    params = StdioServerParameters(command=server.command, args=list(server.args))
+    child_env = get_default_environment()
+    child_env.update(
+        {name: os.environ[name] for name in server.inherit_env if name in os.environ}
+    )
+    params = StdioServerParameters(
+        command=server.command,
+        args=list(server.args),
+        env=child_env,
+    )
     async with (
         stdio_client(params) as (read, write),
         ClientSession(read, write) as session,

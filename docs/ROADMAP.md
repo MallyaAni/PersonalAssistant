@@ -144,17 +144,17 @@ performed manually.
 
 Gemma remains the primary logical reasoning model, but no model owns orchestration state or its own lifecycle. The application owns policy, durable jobs, resource leases, and provider recovery so specialized workers and future multi-agent graphs can scale without coupling the system to the current RTX 5080 or planned DGX Spark.
 
-## Milestone 5: tools and specialized agents — PLANNED
+## Milestone 5: tools and specialized agents — IN PROGRESS
 
-- MCP client connections with explicit server trust, authentication, and per-user authorization scopes;
-- real tool registry and permission model;
-- semantic discovery over safe, versioned MCP tool descriptors;
-- user-scoped tool preference and usage-outcome memory;
+- `VERIFIED`: stdio and streamable-HTTP MCP client connections with locally assigned server trust;
+- `VERIFIED`: live-list/fingerprint/argument/privacy/risk invocation gates; consequential calls remain approval-gated but chat approval/resume is not implemented;
+- `VERIFIED`: semantic discovery over safe, versioned MCP tool descriptors and native Gemma selection from a bounded live-validated shortlist;
+- `VERIFIED`: user-scoped tool preference and usage-outcome memory;
 - deterministic, testable LangGraph workflows;
-- privacy-preserving internet research and synthesis;
+- `VERIFIED`: deterministic privacy-preserving MCP internet search with visible tool/search status and source cards;
 - coding, finance, and scheduling capabilities;
 - reflection and multi-agent orchestration;
-- traceable tool execution with user control.
+- `VERIFIED`: trace-correlated tool execution with visible running/success/refusal/failure status; durable audit and consequential-call approval UI remain planned.
 
 The current graph still has one model-backed assistant node. The deterministic memory coordinator is a policy/service boundary, not a spawned LLM sub-agent or multi-agent graph. Researcher and tool-executor agents are not implemented.
 
@@ -168,7 +168,7 @@ Internet-search policy and acceptance gates:
 - Log the decision, reason category, domains, and trace ID with redaction; do not log the sensitive source text or raw private query.
 - Deterministic tests must cover required-search, no-search, sanitization, approval, denial, prompt-injection, provider failure, citation, and no-network-on-block cases. Real-browser acceptance must make search use and failures visible to the user.
 
-Search routing and privacy enforcement are both `PLANNED`; Gemma must not receive direct unrestricted network access, and a prompt instruction alone will not satisfy these gates.
+Search routing, query normalization, privacy enforcement, read-only MCP execution, untrusted result isolation, visible status, and source provenance are `VERIFIED`. Gemma has no unrestricted network access. Review/approval when a useful query needs materially identifying context, broader PII classification, durable redacted decision audit, and claim-level citation evaluation remain `PLANNED`.
 
 MCP tool discovery and memory acceptance gates:
 
@@ -188,7 +188,7 @@ pulls, and quarantine for instruction-shaped descriptions. Verified against a
 real server: 13 tools discovered and indexed, and natural-language queries
 retrieve the correct tool while unrelated questions return nothing.
 
-Safe tool-descriptor embeddings plus approved preference/sanitized outcome memory are `VERIFIED` as persistence and discovery boundaries. Live MCP connectivity, authoritative `tools/list` refresh/change notifications, permission-aware invocation, and pre-invocation registry re-resolution remain `PLANNED`; a stored descriptor never authorizes a call.
+Safe tool-descriptor embeddings, approved preference/sanitized outcome memory, live MCP connectivity, native Gemma tool selection, permission-aware invocation, and pre-invocation registry re-resolution are `VERIFIED`. Automatic registry refresh/change notifications, durable execution audit, per-server user authorization scopes, and chat approval/resume for consequential tools remain `PLANNED`; a stored descriptor never authorizes a call.
 
 ## Milestone 6: additional interfaces and automation — PLANNED
 

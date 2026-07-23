@@ -19,12 +19,14 @@ from backend.embeddings.base import EmbeddingProvider
 from backend.embeddings.lm_studio import LMStudioEmbeddingProvider
 from backend.embeddings.nomic_vision import NomicVisionEmbeddingProvider
 from backend.mcp.client import SessionMCPToolLister
+from backend.mcp.config import parse_server_configs
 from backend.mcp.invocation import SessionMCPToolInvoker
 from backend.mcp.types import MCPServerConfig
 from backend.memory.coordinator import MemoryCoordinatorAgent
 from backend.memory.retrieval import SemanticRetrievalPolicy
 from backend.search.cascade import CascadingSearchRouter
 from backend.search.classifier import LMStudioFreshnessClassifier
+from backend.search.mcp import MCPWebSearchProvider
 from backend.search.routing import SearchRoutingPolicy
 from backend.search.tavily import TavilySearchProvider
 from backend.services.agent_memory_manager import AgentMemoryManager
@@ -33,6 +35,7 @@ from backend.services.conversation_service import ConversationService
 from backend.services.diagram_artifact_service import DiagramArtifactService
 from backend.services.image_artifact_service import ImageArtifactService
 from backend.services.mcp_invocation_service import MCPInvocationService
+from backend.services.mcp_tool_orchestration_service import MCPToolOrchestrationService
 from backend.services.memory_operations_service import MemoryOperationsService
 from backend.services.memory_reembedding_service import MemoryReembeddingService
 from backend.services.memory_retention_service import MemoryRetentionService
@@ -60,6 +63,15 @@ def get_embedding_provider() -> EmbeddingProvider:
 # Reuse one configured search adapter; it is disabled when no key is present.
 @lru_cache(maxsize=1)
 def get_search_provider() -> SearchProvider:
+    if settings.SEARCH_PROVIDER_NAME == "mcp":
+        return MCPWebSearchProvider(
+            get_mcp_invocation_service(),
+            settings.SEARCH_MCP_SERVER_ID,
+            settings.SEARCH_MCP_TOOL_NAME,
+            settings.SEARCH_MAX_RESULTS,
+            settings.SEARCH_MAX_CONTENT_CHARS,
+            settings.SEARCH_MIN_SCORE,
+        )
     return TavilySearchProvider(
         base_url=settings.SEARCH_BASE_URL,
         api_key=settings.SEARCH_API_KEY,
@@ -75,28 +87,7 @@ def get_search_provider() -> SearchProvider:
 # is never taken from a server describing itself.
 @lru_cache(maxsize=1)
 def get_mcp_servers() -> tuple[MCPServerConfig, ...]:
-    import json
-
-    try:
-        raw = json.loads(settings.MCP_SERVERS_JSON or "[]")
-    except ValueError:
-        return ()
-    servers = []
-    for entry in raw if isinstance(raw, list) else []:
-        if not isinstance(entry, dict) or not entry.get("server_id"):
-            continue
-        if not entry.get("command"):
-            continue
-        servers.append(
-            MCPServerConfig(
-                server_id=str(entry["server_id"]),
-                command=str(entry["command"]),
-                args=tuple(str(a) for a in entry.get("args", [])),
-                risk_classification=str(entry.get("risk_classification", "untrusted")),
-                enabled=bool(entry.get("enabled", True)),
-            )
-        )
-    return tuple(servers)
+    return parse_server_configs(settings.MCP_SERVERS_JSON)
 
 
 # Reuse one invocation service; every call re-reads the live catalogue anyway.
@@ -372,6 +363,31 @@ DependencyToolMemoryService = Annotated[
 ]
 
 
+# Compose Gemma's bounded tool selection with the guarded MCP invocation boundary.
+def get_mcp_tool_orchestration_service(
+    toolbox: DependencyToolMemoryService,
+    invocation: MCPInvocationDependency,
+    llm: LlmDependency,
+) -> MCPToolOrchestrationService:
+    return MCPToolOrchestrationService(
+        toolbox,
+        invocation,
+        llm,
+        top_k=settings.TOOL_SEARCH_MAX_RESULTS,
+        excluded_tools=(
+            frozenset({(settings.SEARCH_MCP_SERVER_ID, settings.SEARCH_MCP_TOOL_NAME)})
+            if settings.SEARCH_PROVIDER_NAME == "mcp"
+            else frozenset()
+        ),
+    )
+
+
+MCPToolOrchestrationDependency = Annotated[
+    MCPToolOrchestrationService,
+    Depends(get_mcp_tool_orchestration_service),
+]
+
+
 # Build the typed manager for all agent-memory stores.
 def get_agent_memory_manager(
     db: DbDependency,
@@ -523,6 +539,7 @@ def get_conversation_service(
     search_routing: SearchRoutingDependency,
     artifacts: ArtifactRepositoryDependency,
     image_recall: ImageRecallDependency,
+    tool_orchestration: MCPToolOrchestrationDependency,
 ) -> ConversationService:
     return ConversationService(
         memory=memory,
@@ -541,6 +558,7 @@ def get_conversation_service(
             max_distance=settings.VISION_SEARCH_MAX_COSINE_DISTANCE,
             min_margin=settings.VISION_SEARCH_MIN_MARGIN,
         ),
+        tool_orchestration=tool_orchestration,
     )
 
 

@@ -1,11 +1,12 @@
 import React from 'react'
-import { MoreHorizontal, Search, ShieldAlert, Sparkles } from 'lucide-react'
+import { CheckCircle2, MoreHorizontal, Search, ShieldAlert, Sparkles, Wrench, XCircle } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import DiagramArtifact from '../DiagramArtifact/DiagramArtifact'
 import ImageArtifact from '../ImageArtifact/ImageArtifact'
 import type {
   ImageArtifact as ImageArtifactRecord,
   SearchSource,
+  ToolActivity,
   VisualArtifact,
 } from '../../services/api'
 
@@ -22,6 +23,7 @@ interface MessageProps {
   searchSources?: SearchSource[];
   searchMinimized?: boolean;
   searchBlocked?: string[];
+  toolActivities?: ToolActivity[];
   onArtifactDeleted?: (artifactId: string) => void;
 }
 
@@ -62,6 +64,7 @@ const MessageBubble: React.FC<MessageProps> = ({
   searchSources,
   searchMinimized,
   searchBlocked,
+  toolActivities,
   onArtifactDeleted,
 }) => {
   const isUser = role === 'user';
@@ -135,6 +138,35 @@ const MessageBubble: React.FC<MessageProps> = ({
             must not be sent to a search provider. Answered from local knowledge.
           </span>
         </p>
+      )}
+      {!isUser && toolActivities && toolActivities.length > 0 && (
+        <section className="mb-3 space-y-1.5" aria-label="Tool activity">
+          {toolActivities.map((activity, index) => {
+            const isRunning = activity.status === 'running'
+            const isSuccessful = activity.status === 'succeeded'
+            const Icon = isRunning ? Wrench : isSuccessful ? CheckCircle2 : XCircle
+            const label = isRunning
+              ? `Using ${activity.toolName} via ${activity.serverId}...`
+              : isSuccessful
+                ? `Used ${activity.toolName} via ${activity.serverId}`
+                : `${activity.toolName}: ${activity.message || 'Tool call failed.'}`
+            return (
+              <p
+                key={`${activity.serverId}-${activity.toolName}-${index}`}
+                role={isRunning ? 'status' : activity.status === 'failed' ? 'alert' : 'status'}
+                aria-live="polite"
+                className={`flex items-center gap-1.5 text-sm ${
+                  activity.status === 'failed' || activity.status === 'refused'
+                    ? 'text-[#c9342f]'
+                    : 'text-[#6e6e73]'
+                }`}
+              >
+                <Icon size={13} className={isRunning ? 'animate-pulse' : ''} />
+                {label}
+              </p>
+            )
+          })}
+        </section>
       )}
       {!isUser && artifactStatus === 'generating' && (
         <p role="status" className="mt-4 animate-pulse text-sm text-[#6e6e73]">

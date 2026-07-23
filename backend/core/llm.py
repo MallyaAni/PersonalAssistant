@@ -25,6 +25,15 @@ class LLMClient(ABC):
         max_tokens: int = 1024,
     ) -> Iterator[str]: ...
 
+    # Ask a compatible model to choose from bounded application-supplied tools.
+    def chat_with_tools(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]],
+        max_tokens: int = 256,
+    ) -> dict[str, Any]:
+        raise NotImplementedError("This LLM provider does not support tool calling")
+
 
 # Example of a concrete implementation for LM Studio / OpenAI compatible APIs
 class LMStudioLLM(LLMClient):
@@ -68,6 +77,30 @@ class LMStudioLLM(LLMClient):
             raise ValueError("LM Studio response did not contain a message output")
 
         return {**result, "content": content_value.strip()}
+
+    # Return the provider message so the application can inspect native tool calls.
+    def chat_with_tools(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]],
+        max_tokens: int = 256,
+    ) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "model": self.model,
+            "messages": messages,
+            "tools": tools,
+            "tool_choice": "auto",
+            "max_tokens": max_tokens,
+            "reasoning_effort": self.reasoning_effort,
+        }
+        response = self._post(payload)
+        response.raise_for_status()
+        result = cast(dict[str, Any], response.json())
+        choices = cast(list[dict[str, Any]], result.get("choices", []))
+        message = choices[0].get("message") if choices else None
+        if not isinstance(message, dict):
+            raise ValueError("LM Studio response did not contain a tool decision")
+        return cast(dict[str, Any], message)
 
     def stream_chat(
         self,

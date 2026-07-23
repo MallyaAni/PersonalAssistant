@@ -116,6 +116,38 @@ function chatEventStream(
   return frames.join('\n')
 }
 
+// Build one deterministic MCP lifecycle followed by a completed chat answer.
+function toolEventStream(
+  conversationId: string,
+  status: 'succeeded' | 'refused' | 'failed',
+) {
+  return [
+    'event: start',
+    `data: ${JSON.stringify({ trace_id: 'tool-trace', conversation_id: conversationId })}`,
+    '',
+    'event: tool_started',
+    `data: ${JSON.stringify({ server_id: 'weather', tool_name: 'current_weather' })}`,
+    '',
+    'event: tool_finished',
+    `data: ${JSON.stringify({
+      server_id: 'weather',
+      tool_name: 'current_weather',
+      status,
+      message: status === 'succeeded'
+        ? 'Tool completed.'
+        : 'Tool call was withheld by AniOS privacy or approval controls.',
+    })}`,
+    '',
+    'event: delta',
+    `data: ${JSON.stringify({ content: status === 'succeeded' ? 'Raleigh is 72 F.' : 'I answered locally.' })}`,
+    '',
+    'event: done',
+    'data: {}',
+    '',
+    '',
+  ].join('\n')
+}
+
 // Build one deterministic diagram artifact lifecycle for browser acceptance tests.
 function diagramEventStream(
   traceId: string,
@@ -341,6 +373,58 @@ test('renders a completed deterministic chat stream and clears loading state', a
   expect((requestPayload as { conversation_id: string }).conversation_id).toMatch(
     /^[0-9a-f-]{36}$/,
   )
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// Verify successful MCP use remains visible after the answer finishes.
+test('shows the MCP tool used for a completed chat answer', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  let requestPayload: { conversation_id: string } | undefined
+  await page.route('http://localhost:8000/api/v1/chat', async route => {
+    requestPayload = route.request().postDataJSON()
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body: toolEventStream(requestPayload!.conversation_id, 'succeeded'),
+    })
+  })
+
+  await page.goto('/')
+  const { textarea, sendButton } = chatControls(page)
+  await textarea.fill('Use the weather tool for Raleigh')
+  await sendButton.click()
+
+  const answer = latestAssistantAnswer(page)
+  await expect(answer.getByText('Used current_weather via weather')).toBeVisible()
+  await expect(answer.getByText('Raleigh is 72 F.')).toBeVisible()
+  await expect(page.getByText('Thinking...', { exact: true })).not.toBeVisible()
+  await expect(textarea).toBeEnabled()
+  await expect(textarea).toHaveValue('')
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// Verify a refused MCP call is visible and does not leave chat loading.
+test('shows an MCP refusal while the local answer still completes', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.route('http://localhost:8000/api/v1/chat', async route => {
+    const payload = route.request().postDataJSON()
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body: toolEventStream(payload.conversation_id, 'refused'),
+    })
+  })
+
+  await page.goto('/')
+  const { textarea, sendButton } = chatControls(page)
+  await textarea.fill('Send private data through a tool')
+  await sendButton.click()
+
+  const answer = latestAssistantAnswer(page)
+  await expect(answer.getByText(/withheld by AniOS privacy/)).toBeVisible()
+  await expect(answer.getByText('I answered locally.')).toBeVisible()
+  await expect(page.getByText('Thinking...', { exact: true })).not.toBeVisible()
+  await expect(textarea).toBeEnabled()
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
@@ -1451,6 +1535,88 @@ test('@live renders a real Gemma response through AniOS', async ({ page }) => {
     expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
   } finally {
     await page.request.delete(`http://localhost:8000/api/v1/memory/${userId}`)
+  }
+})
+
+// Verify Gemma selects a live MCP tool and the browser exposes its full lifecycle.
+test('@live uses a Gemma-selected MCP tool in chat', async ({ page }) => {
+  test.setTimeout(120_000)
+  test.skip(process.env.RUN_LIVE_TOOL_TESTS !== '1', 'requires configured live MCP servers')
+  const errors = observeBlockingBrowserErrors(page)
+  const apiUrl = 'http://localhost:8000'
+  const userId = process.env.ANIOS_LIVE_TOOL_USER || 'live_tool_browser_user'
+  const conversationId = '78787878-7878-4878-8878-787878787878'
+  const query = `Invoke local_utility/current_time with no arguments and report its returned UTC JSON. Browser marker ${Date.now()}`
+
+  await page.addInitScript(({ user, conversation }) => {
+    localStorage.setItem('anios_user_id', user)
+    localStorage.setItem('anios_conversation_id', conversation)
+  }, { user: userId, conversation: conversationId })
+
+  try {
+    await page.goto('/')
+    await page.evaluate(() => {
+      const trackedWindow = window as Window & {
+        sawMcpToolRunning?: boolean;
+        sawInternetToolRunning?: boolean;
+      }
+      trackedWindow.sawMcpToolRunning = false
+      trackedWindow.sawInternetToolRunning = false
+      const observer = new MutationObserver(() => {
+        if (document.body.innerText.includes('Using current_time via local_utility...')) {
+          trackedWindow.sawMcpToolRunning = true
+        }
+        if (document.body.innerText.includes('Using search_web via internet...')) {
+          trackedWindow.sawInternetToolRunning = true
+        }
+      })
+      observer.observe(document.body, { childList: true, subtree: true, characterData: true })
+    })
+    const { textarea, sendButton } = chatControls(page)
+    const responsePromise = page.waitForResponse(response => (
+      response.url() === `${apiUrl}/api/v1/chat` &&
+      response.request().method() === 'POST'
+    ))
+    await textarea.fill(query)
+    await sendButton.click()
+
+    const response = await responsePromise
+    expect(response.status()).toBe(200)
+    expect(response.headers()['content-type']).toContain('text/event-stream')
+    expect(await response.finished()).toBeNull()
+
+    const answer = latestAssistantAnswer(page)
+    await expect(answer.getByText('Used current_time via local_utility')).toBeVisible()
+    await expect(answer).toContainText('UTC')
+    expect(await page.evaluate(() => (
+      window as Window & { sawMcpToolRunning?: boolean }
+    ).sawMcpToolRunning)).toBe(true)
+    await expect(page.getByText('Thinking...', { exact: true })).not.toBeVisible()
+    await expect(textarea).toBeEnabled()
+    await expect(textarea).toHaveValue('')
+
+    const internetResponsePromise = page.waitForResponse(response => (
+      response.url() === `${apiUrl}/api/v1/chat` &&
+      response.request().method() === 'POST'
+    ))
+    await textarea.fill('Search online for the latest stable Python release and cite the source.')
+    await sendButton.click()
+    const internetResponse = await internetResponsePromise
+    expect(internetResponse.status()).toBe(200)
+    expect(await internetResponse.finished()).toBeNull()
+
+    const internetAnswer = latestAssistantAnswer(page)
+    await expect(internetAnswer.getByText('Used search_web via internet')).toBeVisible()
+    await expect(internetAnswer.getByLabel('Web sources used')).toBeVisible()
+    expect(await page.evaluate(() => (
+      window as Window & { sawInternetToolRunning?: boolean }
+    ).sawInternetToolRunning)).toBe(true)
+    await expect(page.getByText('Thinking...', { exact: true })).not.toBeVisible()
+    await expect(textarea).toBeEnabled()
+    await expect(textarea).toHaveValue('')
+    expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+  } finally {
+    await page.request.delete(`${apiUrl}/api/v1/memory/${userId}`)
   }
 })
 
