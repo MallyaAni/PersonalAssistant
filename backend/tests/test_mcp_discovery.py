@@ -307,13 +307,27 @@ def test_process_environment_overrides_loaded_configuration(monkeypatch):
 def test_an_unset_variable_is_not_forwarded_as_empty(monkeypatch):
     from backend.mcp.session import build_child_environment
 
-    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    # A name that exists in neither the environment nor configuration, so the
+    # result does not depend on what this machine happens to have set.
+    monkeypatch.delenv("NEVER_CONFIGURED_KEY", raising=False)
     server = MCPServerConfig(
-        server_id="srv", command="noop", inherit_env=("GOOGLE_API_KEY",)
+        server_id="srv", command="noop", inherit_env=("NEVER_CONFIGURED_KEY",)
     )
 
     child = build_child_environment(server, {})
 
-    # An empty key must stay absent so the provider reports itself disabled
-    # rather than authenticating with a blank credential.
-    assert "GOOGLE_API_KEY" not in child
+    # An absent or empty value must stay absent so a provider reports itself
+    # disabled rather than authenticating with a blank credential.
+    assert "NEVER_CONFIGURED_KEY" not in child
+
+
+def test_an_empty_configured_value_is_not_forwarded(monkeypatch):
+    from backend.mcp import session
+
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.setattr(session.settings, "GEMINI_API_KEY", "", raising=False)
+    server = MCPServerConfig(
+        server_id="srv", command="noop", inherit_env=("GEMINI_API_KEY",)
+    )
+
+    assert "GEMINI_API_KEY" not in session.build_child_environment(server, {})
