@@ -21,6 +21,8 @@ def _build_search_provider() -> HybridSearchProvider:
     max_content_chars = int(os.getenv("SEARCH_MAX_CONTENT_CHARS", "2000"))
     google = GoogleADKSearchProvider(
         api_key=os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY"),
+        enabled=os.getenv("GOOGLE_SEARCH_ENABLED", "false").strip().lower()
+        in {"1", "true", "yes", "on"},
         model=os.getenv("GOOGLE_SEARCH_MODEL", "gemini-3.6-flash"),
         timeout_seconds=float(os.getenv("GOOGLE_SEARCH_TIMEOUT_SECONDS", "30")),
         max_results=max_results,

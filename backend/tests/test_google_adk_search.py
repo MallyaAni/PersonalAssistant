@@ -240,3 +240,43 @@ async def test_release_never_drives_the_counter_below_zero(tmp_path):
     ).fetchone()
     connection.close()
     assert used[0] == 0
+
+
+# Holding a key is not evidence the project carries grounding entitlement.
+def test_a_key_alone_does_not_enable_grounding():
+    from backend.search.quota import SQLiteDailySearchQuota
+
+    quota = SQLiteDailySearchQuota(path="unused", provider="google", daily_limit=1)
+    disabled = GoogleADKSearchProvider(
+        api_key="a-real-looking-key",
+        model="gemini-3.6-flash",
+        timeout_seconds=5.0,
+        max_results=3,
+        max_content_chars=100,
+        quota=quota,
+        enabled=False,
+    )
+
+    # Google Search grounding is billed separately, so a free-tier project with
+    # a valid key still returns 429 on its first grounded request. Attempting it
+    # would cost latency on every search for a call that cannot succeed.
+    assert disabled.is_enabled() is False
+
+
+@pytest.mark.asyncio
+async def test_a_disabled_provider_refuses_before_spending_quota():
+    from backend.search.quota import SQLiteDailySearchQuota
+
+    quota = SQLiteDailySearchQuota(path="unused", provider="google", daily_limit=1)
+    disabled = GoogleADKSearchProvider(
+        api_key="a-real-looking-key",
+        model="gemini-3.6-flash",
+        timeout_seconds=5.0,
+        max_results=3,
+        max_content_chars=100,
+        quota=quota,
+        enabled=False,
+    )
+
+    with pytest.raises(RuntimeError, match="not configured"):
+        await disabled.search("anything")

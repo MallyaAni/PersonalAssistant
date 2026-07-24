@@ -55,7 +55,10 @@ def test_search_package_holds_only_web_search():
     assert names == {
         "cascade",
         "classifier",
+        "google_adk",
+        "hybrid",
         "mcp",
+        "quota",
         "query",
         "routing",
         "tavily",

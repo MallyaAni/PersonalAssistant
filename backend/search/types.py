@@ -13,7 +13,8 @@ class SearchResult:
     title: str
     url: str
     content: str
-    score: float
+    score: float | None
+    provider: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

@@ -30,6 +30,7 @@ def _render_search_context(results: list[dict[str, Any]]) -> str:
             "title": item.get("title"),
             "url": item.get("url"),
             "content": item.get("content"),
+            "provider": item.get("provider"),
         }
         for item in results
         if item.get("url")

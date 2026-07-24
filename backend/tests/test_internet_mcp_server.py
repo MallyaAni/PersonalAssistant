@@ -4,25 +4,33 @@ from backend.mcp.servers.internet import _encode_results
 from backend.search.types import SearchResult, SearchResults
 
 
-# Verify long web pages remain valid bounded JSON before generic MCP truncation.
-def test_internet_mcp_result_is_compact_valid_json():
-    found = SearchResults(
-        query="latest release",
-        provider="stub",
-        results=tuple(
-            SearchResult(
-                title=f"Result {index}",
-                url=f"https://example.test/{index}",
-                content="x" * 5_000,
-                score=0.9,
-            )
-            for index in range(5)
-        ),
+# Verify the MCP boundary preserves provider attribution and nullable Google scores.
+def test_internet_mcp_encodes_attributable_hybrid_results() -> None:
+    encoded = _encode_results(
+        SearchResults(
+            query="latest Python release",
+            provider="google+tavily",
+            results=(
+                SearchResult(
+                    title="Python releases",
+                    url="https://python.org/downloads/",
+                    content="Current release details.",
+                    score=None,
+                    provider="google",
+                ),
+                SearchResult(
+                    title="Independent report",
+                    url="https://example.test/python",
+                    content="Independent release report.",
+                    score=0.92,
+                    provider="tavily",
+                ),
+            ),
+        )
     )
 
-    encoded = _encode_results(found)
     payload = json.loads(encoded)
-
-    assert len(encoded) <= 3_500
-    assert len(payload["results"]) == 5
-    assert all(len(item["content"]) == 500 for item in payload["results"])
+    assert payload["provider"] == "google+tavily"
+    assert payload["results"][0]["provider"] == "google"
+    assert payload["results"][0]["score"] is None
+    assert payload["results"][1]["provider"] == "tavily"

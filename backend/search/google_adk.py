@@ -122,6 +122,7 @@ class GoogleADKSearchProvider(SearchProvider):
         max_results: int,
         max_content_chars: int,
         quota: SQLiteDailySearchQuota,
+        enabled: bool = True,
         max_output_tokens: int = 1_024,
         runner_factory: Callable[[str, int], ResearchRunner] = _default_runner_factory,
     ) -> None:
@@ -131,12 +132,16 @@ class GoogleADKSearchProvider(SearchProvider):
         self.max_results = max_results
         self.max_content_chars = max_content_chars
         self.quota = quota
+        self.enabled = enabled
         self.max_output_tokens = max_output_tokens
         self.runner_factory = runner_factory
 
-    # Enable the cloud researcher only when an operator supplied a Google key.
+    # Enable the cloud researcher only when an operator supplied a Google key
+    # and confirmed the project actually carries Search-grounding entitlement.
+    # Holding a key is not evidence of that: grounding is billed separately and
+    # a free-tier project returns 429 on its first grounded request.
     def is_enabled(self) -> bool:
-        return bool(self.api_key)
+        return bool(self.api_key) and self.enabled
 
     # Execute one isolated ADK session and return only grounded public sources.
     async def search(

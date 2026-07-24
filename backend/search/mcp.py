@@ -45,6 +45,7 @@ class MCPWebSearchProvider(SearchProvider):
         url = raw.get("url")
         content = raw.get("content")
         score = raw.get("score")
+        provider = raw.get("provider")
         if not isinstance(title, str) or not isinstance(url, str):
             return None
         return SearchResult(
@@ -53,7 +54,8 @@ class MCPWebSearchProvider(SearchProvider):
             content=(content if isinstance(content, str) else "")[
                 : self.max_content_chars
             ],
-            score=float(score) if isinstance(score, (int, float)) else 0.0,
+            score=float(score) if isinstance(score, (int, float)) else None,
+            provider=provider if isinstance(provider, str) else None,
         )
 
     # Execute the fixed search tool and convert its bounded JSON result.
@@ -77,13 +79,20 @@ class MCPWebSearchProvider(SearchProvider):
         except ValueError as exc:
             raise RuntimeError("The MCP internet-search result was invalid.") from exc
         raw_results = payload.get("results") if isinstance(payload, dict) else None
+        raw_provider = payload.get("provider") if isinstance(payload, dict) else None
         parsed = []
         for raw in raw_results if isinstance(raw_results, list) else []:
             item = self._parse_result(raw)
-            if item is not None and item.score >= self.min_score:
+            if item is not None and (
+                item.score is None or item.score >= self.min_score
+            ):
                 parsed.append(item)
         return SearchResults(
             query=query,
             results=tuple(parsed[:bounded]),
-            provider=f"mcp:{self.server_id}/{self.tool_name}",
+            provider=(
+                str(raw_provider)
+                if isinstance(raw_provider, str) and raw_provider
+                else f"mcp:{self.server_id}/{self.tool_name}"
+            ),
         )

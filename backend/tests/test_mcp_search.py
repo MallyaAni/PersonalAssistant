@@ -20,6 +20,7 @@ class RecordingInvocation:
                         "url": "https://example.test/current",
                         "content": "fresh facts",
                         "score": 0.9,
+                        "provider": "google",
                     },
                     {
                         "title": "Noise",
@@ -67,6 +68,7 @@ async def test_mcp_search_invokes_fixed_tool_and_returns_bounded_results():
     assert found.provider == "mcp:internet/search_web"
     assert [item.title for item in found.results] == ["Current result"]
     assert found.results[0].content == "fresh facts"
+    assert found.results[0].provider == "google"
 
 
 # Verify local risk policy disables the outbound provider before any call.

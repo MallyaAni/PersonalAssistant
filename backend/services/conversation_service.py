@@ -463,6 +463,11 @@ class ConversationService:
                         {
                             "title": item["title"],
                             "url": item["url"],
+                            **(
+                                {"provider": item["provider"]}
+                                if item.get("provider")
+                                else {}
+                            ),
                             # A short snippet lets the reader judge a source
                             # without opening it; the full text stays in the
                             # prompt rather than being shipped to the browser.
@@ -506,7 +511,12 @@ class ConversationService:
             return [], False
         return (
             [
-                {"title": item.title, "url": item.url, "content": item.content}
+                {
+                    "title": item.title,
+                    "url": item.url,
+                    "content": item.content,
+                    **({"provider": item.provider} if item.provider else {}),
+                }
                 for item in found.results
             ],
             True,

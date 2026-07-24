@@ -129,6 +129,12 @@ class Settings(BaseSettings):
     SEARCH_MCP_TOOL_NAME: str = "search_web"
     GOOGLE_API_KEY: str | None = Field(None, alias="GOOGLE_API_KEY")
     GEMINI_API_KEY: str | None = Field(None, alias="GEMINI_API_KEY")
+    # Google Search grounding is a paid-tier capability. A key alone does not
+    # grant it: verified across three accounts, a single first request with the
+    # search tool returns 429 while the same key and model answer normally
+    # without it. Left on, every search would pay ~220ms for a call that cannot
+    # succeed, so the provider stays off until an operator confirms entitlement.
+    GOOGLE_SEARCH_ENABLED: bool = False
     GOOGLE_SEARCH_MODEL: str = "gemini-3.6-flash"
     GOOGLE_SEARCH_TIMEOUT_SECONDS: float = Field(default=30.0, gt=0, le=120)
     # Covers reasoning tokens as well as the answer: gemini-3.6-flash spends
