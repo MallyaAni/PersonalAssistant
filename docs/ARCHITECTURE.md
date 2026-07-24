@@ -193,6 +193,22 @@ raised that to 18 of 18 while the 12 stable queries stayed correctly unrouted.
 Role matching is restricted to roles that actually turn over, so "who is the
 author of" remains stable.
 
+A bare temporal word is not a reliable signal on its own, because it attaches
+equally to an information need ("what shipped last month") and to a statement
+about the user's own life ("I graduated last month"); the difference is intent,
+not vocabulary, so no pattern can separate them. Rather than enumerate the
+unbounded ways a person phrases their life - a losing game - the policy detects
+the one thing here that is finite and stable, self-reference (`I/me/my/we/our`),
+and treats a weak temporal-or-year signal as authoritative only when the query
+is not about the user. When self-reference accompanies only a weak signal the
+patterns abstain (`ambiguous_self_reference`) and the cascade defers to the
+classifier, which judges intent holistically: "I moved to Seattle last month"
+and "what did I do last week" resolve to no search, while "what is the latest
+treatment for my psoriasis" still searches the public topic. A strong topic
+signal (weather, price, a role holder) still resolves deterministically even in
+a first-person sentence, and a temporal query with no self-reference still
+routes on its own, so the fast path is unchanged for the common case.
+
 Search-control wording such as "search online for" and "cite the source" is
 removed before provider submission so the selected provider receives the factual subject.
 Every query is then screened by `OutboundPrivacyPolicy` before it leaves the machine,

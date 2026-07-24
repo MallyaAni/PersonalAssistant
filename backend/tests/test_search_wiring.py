@@ -5,6 +5,7 @@ import pytest
 from backend.artifacts.image_routing import ImageRecallPolicy
 from backend.core.llm import LLMClient
 from backend.search.cascade import CascadingSearchRouter
+from backend.search.classifier import QueryFreshnessClassifier
 from backend.search.routing import SearchRoutingPolicy
 from backend.search.types import SearchResult, SearchResults
 from backend.services.conversation_service import ConversationService
@@ -134,10 +135,22 @@ async def _run(service: ConversationService, query: str) -> None:
         pass
 
 
+class StubFreshnessClassifier(QueryFreshnessClassifier):
+    """Force one classifier verdict, so an egress test can drive a
+    self-referential query past routing to the screening it means to check."""
+
+    def __init__(self, answer: bool | None) -> None:
+        self.answer = answer
+
+    async def requires_current_information(self, query: str) -> bool | None:
+        return self.answer
+
+
 def _service(
     search: RecordingSearch,
     llm: RecordingLLM,
     image_search: RecordingImageSearch | None = None,
+    classifier: QueryFreshnessClassifier | None = None,
 ) -> ConversationService:
     return ConversationService(
         memory=StubMemoryService(),
@@ -147,6 +160,7 @@ def _service(
         search=search,  # type: ignore[arg-type]
         search_routing=CascadingSearchRouter(
             patterns=SearchRoutingPolicy(current_year=2026),
+            classifier=classifier,
         ),
         image_recall=ImageRecallPolicy() if image_search else None,
         image_search=image_search,  # type: ignore[arg-type]
@@ -269,8 +283,10 @@ async def test_a_credential_bearing_query_never_reaches_the_provider():
     search = RecordingSearch()
     llm = RecordingLLM()
 
+    # The classifier says this needs search, so the credential reaches the
+    # egress screen - which is exactly the layer this test exercises.
     events = await _events(
-        _service(search, llm),
+        _service(search, llm, classifier=StubFreshnessClassifier(True)),
         "is my latest api key sk-abcdef0123456789abcdef valid",
     )
     names = [event["event"] for event in events]
@@ -287,8 +303,11 @@ async def test_personal_framing_is_stripped_before_the_provider_sees_it():
     search = RecordingSearch()
     llm = RecordingLLM()
 
+    # "my psoriasis" is self-referential, so routing defers; the classifier
+    # judges the public topic (latest treatment) to need search, and egress then
+    # strips the personal framing before the provider sees it.
     events = await _events(
-        _service(search, llm),
+        _service(search, llm, classifier=StubFreshnessClassifier(True)),
         "what is the latest treatment for my psoriasis",
     )
 

@@ -1,9 +1,14 @@
 import logging
 
 from backend.search.classifier import QueryFreshnessClassifier
-from backend.search.routing import SearchDecision, SearchRoutingPolicy
+from backend.search.routing import DEFER_REASON, SearchDecision, SearchRoutingPolicy
 
 logger = logging.getLogger(__name__)
+
+# Deterministic outcomes that are an abstention, not an answer: the patterns
+# found nothing decisive, so the classifier is consulted. Everything else -
+# an explicit signal or a disabled/empty policy - is already settled.
+_DEFER_REASONS = frozenset({"no_signal", DEFER_REASON})
 
 
 class CascadingSearchRouter:
@@ -34,8 +39,10 @@ class CascadingSearchRouter:
         deterministic = self.patterns.decide(query)
         if deterministic.should_search:
             return deterministic
-        # Blank input and a disabled policy are settled, not merely unmatched.
-        if deterministic.reason != "no_signal" or self.classifier is None:
+        # Blank input and a disabled policy are settled, not merely unmatched. An
+        # abstention (no signal, or a weak signal about the user) goes on to the
+        # classifier, which judges intent rather than vocabulary.
+        if deterministic.reason not in _DEFER_REASONS or self.classifier is None:
             return deterministic
 
         judgement = await self.classifier.requires_current_information(query)

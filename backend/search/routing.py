@@ -69,48 +69,26 @@ _COMPILED: tuple[tuple[re.Pattern[str], str], ...] = tuple(
 # A four-digit year at or after this is treated as beyond any local model's data.
 _YEAR_PATTERN = re.compile(r"\b(20[2-9][0-9])\b")
 
-# Signals that rest on a bare temporal word alone. A first-person account of the
-# user's own life ("I moved to Seattle last month") trips these without being an
-# information request, so a personal narration is allowed to veto them - but only
-# them. A genuine info word (news, weather, price) stays authoritative even in a
-# first-person sentence, so this never suppresses a real search need.
+# Signals that rest on a bare temporal word alone. These are ambiguous: "last
+# month" attaches equally to an information need ("what shipped last month") and
+# to a personal statement ("I graduated last month"). The difference is intent,
+# not vocabulary, so no pattern can separate them - the classifier must. A weak
+# signal is therefore authoritative only when nothing marks the query as being
+# about the user (see below); otherwise it defers.
 _WEAK_TEMPORAL = frozenset({"recency_term", "time_term", "relative_period"})
 
-# An optional adverb may sit between "I" and the verb ("I recently moved"), so
-# both detectors below tolerate one without letting it swallow the verb.
-_ADVERB = r"(?:(?:\w+ly|just|already|then|once|later|even|never|also|still)\s+)?"
+# Reason returned when a weak signal is present but the query is about the user,
+# so the deterministic layer abstains and the cascade consults the classifier.
+DEFER_REASON = "ambiguous_self_reference"
 
-# The user telling us about their own life. Past-tense verbs (regular `-ed` plus
-# common irregulars) and a few stative present verbs both count. A question or an
-# explicit request ("I need/want/am looking for ...") does not, so this stays a
-# statement detector rather than a catch-all for the pronoun "I".
-_PERSONAL_NARRATION = re.compile(
-    r"\bI\s+" + _ADVERB + r"(?:"
-    r"\w+ed|"
-    r"went|saw|met|got|had|was|were|did|made|took|came|found|felt|told|gave|"
-    r"began|ran|drove|flew|left|bought|built|read|wrote|spoke|spent|won|lost|"
-    r"ate|slept|heard|sent|paid|"
-    r"live|work|study|own|feel|like|love|prefer"
-    r")\b",
+# Self-reference is the one thing here that is finite and stable, unlike the
+# unbounded ways a person can phrase a statement about their life. Its presence
+# alongside only a weak temporal signal is what marks the ambiguous zone; the
+# actual intent judgement is left to the classifier, not enumerated in regex.
+_SELF_REFERENCE = re.compile(
+    r"\b(?:i|me|my|mine|myself|we|us|our|ours|ourselves)\b",
     re.IGNORECASE,
 )
-
-# A request is checked first, because `\w+ed` above also matches "need": the user
-# asking for something is never a statement, whatever verb form it takes.
-_PERSONAL_REQUEST = re.compile(
-    r"\bI\s+" + _ADVERB + r"(?:need|want|require|wonder|was\s+wondering|"
-    r"would\s+like|'d\s+like|(?:'m|\s*am)\s+(?:looking|searching|trying|"
-    r"wondering|hoping))\b",
-    re.IGNORECASE,
-)
-
-
-def _is_personal_narration(query: str) -> bool:
-    if "?" in query:
-        return False
-    if _PERSONAL_REQUEST.search(query):
-        return False
-    return bool(_PERSONAL_NARRATION.search(query))
 
 
 @dataclass(frozen=True, slots=True)
@@ -141,10 +119,9 @@ class SearchRoutingPolicy:
         if not query or not query.strip():
             return SearchDecision(should_search=False, reason="empty_query")
 
-        narration = _is_personal_narration(query)
-
-        # A strong signal wins immediately, even inside a personal statement. A
-        # weak temporal signal is only remembered, so a narration can veto it.
+        # A strong signal names a volatile topic and wins immediately, even in a
+        # sentence about the user. A weak temporal signal is only remembered,
+        # because whether it warrants a search depends on intent.
         weak_match: str | None = None
         for pattern, reason in _COMPILED:
             if pattern.search(query):
@@ -158,13 +135,14 @@ class SearchRoutingPolicy:
             for match in _YEAR_PATTERN.finditer(query)
         )
 
-        # The user narrating their own life is not a web query, even when it
-        # names a time or a year; the strong-signal check above already ran.
-        if narration and (weak_match or year_hit):
-            return SearchDecision(should_search=False, reason="personal_statement")
-        if weak_match:
-            return SearchDecision(should_search=True, reason=weak_match)
-        if year_hit:
-            return SearchDecision(should_search=True, reason="current_or_future_year")
+        if weak_match or year_hit:
+            # Ambiguous: a bare time word about the user is not a web query, but
+            # only the classifier can tell "I graduated last month" from "what
+            # shipped last month". Abstain so the cascade decides; without a
+            # self-reference the temporal signal stands on its own.
+            if _SELF_REFERENCE.search(query):
+                return SearchDecision(should_search=False, reason=DEFER_REASON)
+            reason = weak_match or "current_or_future_year"
+            return SearchDecision(should_search=True, reason=reason)
 
         return SearchDecision(should_search=False, reason="no_signal")

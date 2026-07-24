@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 import pytest
 
 from backend.agents.graph import _build_system_prompt
-from backend.search.routing import SearchRoutingPolicy
+from backend.search.routing import DEFER_REASON, SearchRoutingPolicy
 
 
 @pytest.fixture
@@ -54,40 +54,46 @@ def test_timeless_queries_do_not_route_to_search(policy, query):
     assert decision.reason in {"no_signal", "empty_query"}
 
 
-# A first-person account of the user's own life is not a web query, even when it
-# mentions a time or a year. This is the case that made a narrated event ("I
-# graduated last month") spuriously search.
+# A weak temporal signal about the user is ambiguous - "I graduated last month"
+# reads like "what shipped last month" to a pattern - so the deterministic layer
+# abstains and defers the intent judgement to the classifier rather than guessing.
 @pytest.mark.parametrize(
     "query",
     [
         "I graduated from university last month",
         "I moved to Seattle last year",
-        "I visited the Grand Canyon last week and it was amazing",
-        "I saw a great film yesterday",
+        "I'm currently reading a great novel",
+        "my sister got married last month",
         "I started a new job in 2026",
-        "I recently adopted a dog",
+        "what did I do last month",
+        "what did I eat yesterday",
     ],
 )
-def test_personal_narration_does_not_route_to_search(policy, query):
+def test_self_referential_temporal_queries_defer_to_the_classifier(policy, query):
     decision = policy.decide(query)
 
+    # Patterns abstain (no search on their own); the reason marks it for the
+    # classifier, which the cascade consults.
     assert decision.should_search is False
-    assert decision.reason == "personal_statement"
+    assert decision.reason == DEFER_REASON
 
 
-# The veto is narrow: a genuine information signal still wins inside a
-# first-person sentence, and an explicit request or question is never a statement.
+# The abstention is narrow: a strong topic signal (weather, news, price) still
+# resolves deterministically even inside a self-referential sentence, and a
+# temporal query with no self-reference still routes to search on its own.
 @pytest.mark.parametrize(
     ("query", "reason"),
     [
         ("I moved to Seattle last month, what is the weather there now", "weather"),
         ("I read the news yesterday about the merger", "news"),
-        ("I want the latest python version", "recency_term"),
-        ("I am looking for this week's headlines", "news"),
-        ("what did I miss this week", "relative_period"),
+        ("I want to know the current bitcoin price", "market_data"),
+        ("what is the latest python version", "recency_term"),
+        ("what happened this week in tech", "relative_period"),
     ],
 )
-def test_personal_narration_veto_stays_narrow(policy, query, reason):
+def test_strong_and_impersonal_signals_still_resolve_deterministically(
+    policy, query, reason
+):
     decision = policy.decide(query)
 
     assert decision.should_search is True

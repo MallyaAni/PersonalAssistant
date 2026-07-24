@@ -10,13 +10,16 @@ logger = logging.getLogger(__name__)
 # judgement about the question; it never selects a tool, so a compromised or
 # confused answer can at worst cause one unnecessary search.
 _SYSTEM = (
-    "Classify whether a question needs a web search.\n"
+    "Classify whether a message needs a web search.\n"
     "YES means the correct answer can change over time: current events, "
     "prices, weather, scores, schedules, releases, statistics, or whoever "
     "currently holds a role, title or record.\n"
     "NO means the answer is already fixed and cannot change: past events with "
     "a settled outcome, mathematics, definitions, grammar, code, explanations "
     "and creative writing.\n"
+    "NO also includes anything about the user's own life, plans or memory - a "
+    "statement about themselves, or a question about what they said or did - "
+    "because that is personal, not public information.\n"
     "Reply with one word: YES or NO."
 )
 
@@ -31,6 +34,10 @@ _EXAMPLES: tuple[tuple[str, str], ...] = (
     ("Who holds the world record in the marathon?", "YES"),
     ("What is the derivative of x squared?", "NO"),
     ("When did Taylor Swift win her first Golden Globe?", "YES"),
+    # A statement about the user's own life is personal, not a web query.
+    ("I moved to a new city last month.", "NO"),
+    # A question about the user's own history is answered from memory, not search.
+    ("What did I do last weekend?", "NO"),
     ("Explain how a b-tree works.", "NO"),
     ("How many countries use the euro?", "YES"),
 )

@@ -486,3 +486,31 @@ This file is append-only history for meaningful, verified changes. It must not c
   latest Python version this month" still searches.
 - Verified with the full suite: 435 backend tests, Ruff, Black, and strict MyPy
   over 122 source files pass.
+
+## 2026-07-24 — Search routing defers ambiguous personal queries to the classifier
+
+- Replaced the regex approach to personal statements (added earlier the same
+  day) with a structural fix, after it proved to be whack-a-mole: enumerating
+  how people phrase their lives could never be complete, missing contractions
+  ("I'm currently reading"), third-person subjects ("my sister got married last
+  month") and questions about oneself ("what did I do last month").
+- A bare temporal word is now treated as ambiguous, because it attaches equally
+  to an information need and to a statement about the user; the difference is
+  intent, not vocabulary. The policy detects the one finite, stable thing here -
+  self-reference (`I/me/my/we/our`) - and when it accompanies only a weak
+  temporal-or-year signal, the patterns abstain (`ambiguous_self_reference`) and
+  the cascade defers to the freshness classifier, which judges intent. A strong
+  topic signal (weather, price, role holder) still resolves deterministically
+  inside a first-person sentence, and a temporal query with no self-reference
+  still routes on its own, so the fast path is unchanged.
+- Anchored the classifier for this judgement with a system-prompt clause and two
+  examples: a statement about the user's life and a question about their own
+  history both classify as NO (personal, not public).
+- Live-verified through the full cascade with the 12B classifier: "I'm currently
+  reading a great novel", "my sister got married last month", "what did I do
+  last month" and "what did I eat yesterday" no longer search, while "what is
+  the latest treatment for my psoriasis" and "what is the latest Python version
+  this month" still search. Patterns-mode specificity stays 1.0 over the 52-case
+  set.
+- Verified with the full suite: 436 backend tests, Ruff, Black, and strict MyPy
+  over 122 source files pass.
