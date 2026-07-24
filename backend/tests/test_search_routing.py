@@ -54,6 +54,46 @@ def test_timeless_queries_do_not_route_to_search(policy, query):
     assert decision.reason in {"no_signal", "empty_query"}
 
 
+# A first-person account of the user's own life is not a web query, even when it
+# mentions a time or a year. This is the case that made a narrated event ("I
+# graduated last month") spuriously search.
+@pytest.mark.parametrize(
+    "query",
+    [
+        "I graduated from university last month",
+        "I moved to Seattle last year",
+        "I visited the Grand Canyon last week and it was amazing",
+        "I saw a great film yesterday",
+        "I started a new job in 2026",
+        "I recently adopted a dog",
+    ],
+)
+def test_personal_narration_does_not_route_to_search(policy, query):
+    decision = policy.decide(query)
+
+    assert decision.should_search is False
+    assert decision.reason == "personal_statement"
+
+
+# The veto is narrow: a genuine information signal still wins inside a
+# first-person sentence, and an explicit request or question is never a statement.
+@pytest.mark.parametrize(
+    ("query", "reason"),
+    [
+        ("I moved to Seattle last month, what is the weather there now", "weather"),
+        ("I read the news yesterday about the merger", "news"),
+        ("I want the latest python version", "recency_term"),
+        ("I am looking for this week's headlines", "news"),
+        ("what did I miss this week", "relative_period"),
+    ],
+)
+def test_personal_narration_veto_stays_narrow(policy, query, reason):
+    decision = policy.decide(query)
+
+    assert decision.should_search is True
+    assert decision.reason == reason
+
+
 def test_blank_and_disabled_paths_never_search():
     enabled = SearchRoutingPolicy(current_year=2026)
     disabled = SearchRoutingPolicy(current_year=2026, enabled=False)

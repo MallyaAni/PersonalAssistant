@@ -79,4 +79,17 @@ ROUTING_CASES: tuple[RoutingCase, ...] = (
     RoutingCase("what is my name", False, "private_memory"),
     RoutingCase("summarise our last conversation", False, "private_memory"),
     RoutingCase("what did I tell you about my project", False, "private_memory"),
+    # --- the user narrating their own life: a time word does not make this a
+    #     web query, which is the failure that sent "I graduated last month"
+    #     to the internet -------------------------------------------------------
+    RoutingCase("I graduated from university last month", False, "personal_statement"),
+    RoutingCase("I moved to Seattle last year", False, "personal_statement"),
+    RoutingCase("I visited the Grand Canyon last week", False, "personal_statement"),
+    RoutingCase("I saw a great film yesterday", False, "personal_statement"),
+    RoutingCase("I started a new job in 2026", False, "personal_statement"),
+    RoutingCase("I recently adopted a rescue dog", False, "personal_statement"),
+    # A real information signal still wins inside a first-person sentence.
+    RoutingCase(
+        "I moved to Lisbon, what is the weather there now", True, "personal_statement"
+    ),
 )

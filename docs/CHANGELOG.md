@@ -465,3 +465,24 @@ This file is append-only history for meaningful, verified changes. It must not c
 - Verified with new proposer tests plus the full suite: 424 backend tests, Ruff,
   Black, and strict MyPy over 122 source files, and the frontend production
   build pass.
+
+## 2026-07-24 — Personal narration no longer triggers a spurious web search
+
+- Fixed a search-routing false positive surfaced by episodic capture: a
+  first-person account of the user's own life ("I graduated last month", "I
+  moved to Seattle last year") matched the bare `relative_period` temporal
+  signal and was routed to the web. A narrated statement is now allowed to veto
+  the weak temporal-and-year-only signals (`recency_term`, `time_term`,
+  `relative_period`, current/future year) and returns `personal_statement`.
+- Kept the veto narrow: a genuine information signal (news, weather, price,
+  role holder, schedule, explicit request) still wins inside a first-person
+  sentence, and a question or an explicit request ("I need/want/am looking
+  for ...") is never treated as a statement. Past-tense and stative verbs both
+  count, tolerating an intervening adverb ("I recently adopted a dog").
+- Added the narration cases to the committed routing evaluation set (now 52
+  labelled cases); patterns-mode specificity is 1.0 with no unnecessary
+  searches. Live-verified: "I moved to Seattle last month for a new job" no
+  longer searches (and still proposes the episodic memory), while "what is the
+  latest Python version this month" still searches.
+- Verified with the full suite: 435 backend tests, Ruff, Black, and strict MyPy
+  over 122 source files pass.
