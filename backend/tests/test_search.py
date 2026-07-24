@@ -65,15 +65,16 @@ async def test_search_sends_bearer_auth_and_returns_bounded_truncated_results():
     assert results.provider == "tavily"
     assert results.query == "current mars mission"
     assert len(results.results) == 2
+    assert {result.provider for result in results.results} == {"tavily"}
     # The API key travels as a Bearer header and never in the request body.
     assert observed[0]["authorization"] == "Bearer tvly-test-key"
     assert "tvly-test-key" not in json.dumps(observed[0]["payload"])
     assert observed[0]["url"] == "https://api.tavily.com/search"
-    assert observed[0]["payload"] == {
-        "query": "current mars mission",
-        "max_results": 3,
-        "search_depth": "basic",
-    }
+    assert observed[0]["payload"]["query"] == "current mars mission"
+    assert observed[0]["payload"]["search_depth"] == "basic"
+    # The request size is a candidate pool, not the caller's limit, so the
+    # relevance floor has alternatives to choose between.
+    assert observed[0]["payload"]["max_results"] >= 3
     # A verbose page is truncated so it cannot dominate the prompt budget.
     assert len(results.results[0].content) == 50
     assert results.results[1].content == "short"
@@ -92,8 +93,11 @@ async def test_search_clamps_requested_results_to_the_provider_maximum():
         await provider.search("anything", max_results=500)
         await provider.search("anything", max_results=0)
 
+    # An oversized request is clamped to what the provider accepts, and an
+    # undersized one is raised to the candidate pool rather than sent as-is.
     assert observed[0]["max_results"] == 20
-    assert observed[1]["max_results"] == 1
+    assert observed[1]["max_results"] >= 1
+    assert observed[1]["max_results"] <= 20
 
 
 @pytest.mark.asyncio
@@ -205,3 +209,70 @@ async def test_score_floor_defaults_to_accepting_everything():
     provider, client = _provider(handler)
     async with client:
         assert len((await provider.search("q")).results) == 1
+
+
+@pytest.mark.asyncio
+async def test_a_small_request_still_fetches_a_candidate_pool():
+    observed: list[int] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        observed.append(json.loads(request.content)["max_results"])
+        # Mirrors real Tavily behaviour: scores are not ordered, so the first
+        # rows can sit below the floor while a later one clears it.
+        return httpx.Response(
+            200,
+            json={
+                "results": [
+                    {"title": "low a", "url": "https://e.test/a", "score": 0.04},
+                    {"title": "low b", "url": "https://e.test/b", "score": 0.04},
+                    {"title": "good", "url": "https://e.test/c", "score": 0.92},
+                ]
+            },
+        )
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = TavilySearchProvider(
+        base_url="https://api.tavily.com",
+        api_key="tvly-test-key",
+        max_results=5,
+        timeout_seconds=5.0,
+        max_content_chars=100,
+        min_score=0.4,
+        client=client,
+    )
+    async with client:
+        results = await provider.search("q", max_results=1)
+
+    # Requesting exactly one result would leave the floor nothing to pick from
+    # and return an empty list, so a pool is fetched and then truncated.
+    assert observed[0] >= 5
+    assert [r.title for r in results.results] == ["good"]
+
+
+@pytest.mark.asyncio
+async def test_the_callers_limit_is_still_respected_after_over_fetching():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "results": [
+                    {"title": f"hit {i}", "url": f"https://e.test/{i}", "score": 0.9}
+                    for i in range(6)
+                ]
+            },
+        )
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    provider = TavilySearchProvider(
+        base_url="https://api.tavily.com",
+        api_key="tvly-test-key",
+        max_results=5,
+        timeout_seconds=5.0,
+        max_content_chars=100,
+        min_score=0.4,
+        client=client,
+    )
+    async with client:
+        results = await provider.search("q", max_results=2)
+
+    assert len(results.results) == 2

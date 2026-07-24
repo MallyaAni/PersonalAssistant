@@ -93,7 +93,8 @@ class Settings(BaseSettings):
     # unrelated ones a 0.0107 maximum, so 0.015 separates them cleanly.
     VISION_SEARCH_MIN_MARGIN: float = Field(default=0.015, ge=0, le=1)
 
-    # Web search (Tavily HTTP API). Results are untrusted third-party content.
+    # Web search. The MCP server prefers Google Grounding and falls back to
+    # Tavily; both return untrusted third-party content.
     SEARCH_PROVIDER_NAME: Literal["tavily", "mcp"] = "tavily"
     SEARCH_BASE_URL: str = "https://api.tavily.com"
     # Empty disables search rather than failing startup; callers check is_enabled.
@@ -126,6 +127,18 @@ class Settings(BaseSettings):
     # Fixed read-only MCP boundary used after deterministic search routing.
     SEARCH_MCP_SERVER_ID: str = "internet"
     SEARCH_MCP_TOOL_NAME: str = "search_web"
+    GOOGLE_API_KEY: str | None = Field(None, alias="GOOGLE_API_KEY")
+    GEMINI_API_KEY: str | None = Field(None, alias="GEMINI_API_KEY")
+    GOOGLE_SEARCH_MODEL: str = "gemini-3.6-flash"
+    GOOGLE_SEARCH_TIMEOUT_SECONDS: float = Field(default=30.0, gt=0, le=120)
+    # Covers reasoning tokens as well as the answer: gemini-3.6-flash spends
+    # roughly 500-700 tokens thinking before it writes, so a 1024 budget
+    # leaves a long grounded answer at risk of being truncated to nothing.
+    GOOGLE_SEARCH_MAX_OUTPUT_TOKENS: int = Field(default=2_048, ge=128, le=8_192)
+    # Bound local Google calls independently of the provider account quota.
+    GOOGLE_SEARCH_DAILY_LIMIT: int = Field(default=450, ge=1, le=500)
+    # Stores provider/day/count only; no queries or result content are retained.
+    GOOGLE_SEARCH_QUOTA_DB_PATH: str = "data/search/google_search_quota.sqlite3"
 
     # MCP servers, as a JSON array of objects with server_id, command, args,
     # and an operator-assigned risk_classification. Trust is declared here and

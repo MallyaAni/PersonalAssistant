@@ -352,3 +352,32 @@ This file is append-only history for meaningful, verified changes. It must not c
   referenced-image workflow, the TypeScript/Vite production build, and all nine
   synchronized architecture diagrams with five affected views visually
   inspected.
+
+## 2026-07-23 — Hybrid Google and Tavily web research implemented
+
+- Added a pinned Google ADK 2.5.0 research worker using Gemini 2.5 Flash and
+  native Google Search Grounding. Each request uses a new single-turn in-memory
+  session and receives only the normalized, privacy-screened public query—no
+  AniOS identity, conversation history, memory, documents, image bytes,
+  credentials, or general tools.
+- Added application-owned provider policy: Google is primary when configured,
+  Tavily handles disabled/failed/empty/quota-exhausted fallback, and explicit
+  verify/cross-check language calls both configured providers once before
+  URL-deduplicating results.
+- Added an atomic SQLite Pacific-day Google budget containing only provider,
+  day, and count. The default 450-call cap leaves headroom below the documented
+  500-request free allowance and never enables paid usage.
+- Preserved provider attribution through compact MCP JSON, local validation,
+  untrusted prompt context, SSE, and browser source cards. Nullable scores allow
+  grounded Google sources without bypassing Tavily's relevance floor.
+- Final-image direct API trace `6d3277c4-4365-4805-8ab6-c1528dfd4227` and live
+  Chromium trace `5604e820-b892-482a-b8ac-587dbb827bb3` verified the rebuilt
+  Tavily-fallback path through real MCP, Tavily, Gemma, source rendering,
+  terminal `done`, loading cleanup, and clean blocking browser-error evidence.
+  Live Google grounding remains `UNVERIFIED` because no Google/Gemini API key
+  is configured.
+- Verified 367 backend tests, Ruff, Black, strict MyPy over 114 source files,
+  dependency integrity, all 31 deterministic Chromium workflows, the focused
+  live browser search workflow, the TypeScript/Vite production build, and ten
+  synchronized canonical diagrams. Added the dedicated search/research view and
+  ADR 0004.

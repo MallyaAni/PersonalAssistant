@@ -14,7 +14,7 @@ The absence of one of these labels does not imply runtime verification.
 
 ![AniOS current system architecture](diagrams/anios-system.svg)
 
-The editable source is [anios-system.mmd](diagrams/anios-system.mmd). It describes current implemented and explicitly scaffolded relationships only, including editable diagrams, generated and uploaded raster artifacts, local binary storage, ComfyUI, Gemma vision analysis, and their browser integration. Aligned multimodal image embeddings and opt-in web search are now included. Durable queues, GPU leases, and multi-agent workers remain outside the current diagram until their runtime boundaries exist. The render/check procedure is documented in [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md#architecture-diagram-maintenance).
+The editable source is [anios-system.mmd](diagrams/anios-system.mmd). It describes current implemented and explicitly scaffolded relationships only, including editable diagrams, generated and uploaded raster artifacts, local binary storage, ComfyUI, Gemma vision analysis, and their browser integration. Aligned multimodal image embeddings and hybrid opt-in web research are included. Durable queues, GPU leases, and general multi-agent workers remain outside the current diagram until their runtime boundaries exist. The render/check procedure is documented in [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md#architecture-diagram-maintenance).
 
 ## Detailed subsystem diagrams
 
@@ -24,6 +24,7 @@ AniOS currently has a modular FastAPI backend rather than independently deployed
 | --- | --- | --- | --- |
 | Runtime and deployment | Processes, ports, protocols, Compose, LM Studio, database sessions, migration and maintenance paths | [source](diagrams/runtime-deployment.mmd) | [view](diagrams/runtime-deployment.svg) |
 | Chat orchestration | Request ownership, deterministic web-search and image-recall routing, memory planning, history, LangGraph/Gemma streaming, persistence, proposals, artifact branch, SSE | [source](diagrams/chat-orchestration.mmd) | [view](diagrams/chat-orchestration.svg) |
+| Search and research | Query minimization, cloud-worker isolation, Google/Tavily provider policy, quota, MCP serialization, and source provenance | [source](diagrams/search-research-subsystem.mmd) | [view](diagrams/search-research-subsystem.svg) |
 | Memory subsystem | All short/long-term forms, write authority, coordinator, typed services, pgvector retrieval, lifecycle and operations | [source](diagrams/memory-subsystem.mmd) | [view](diagrams/memory-subsystem.svg) |
 | Memory overview (manager) | Plain-language first-contact walkthrough of a memory turn, the approval gate, short-term vs long-term stores, and user data control | [source](diagrams/memory-overview.mmd) | [view](diagrams/memory-overview.svg) |
 | Tool memory and MCP execution | Safe descriptors, approved preferences, sanitized outcomes, semantic tool discovery, Gemma selection, policy-gated invocation, and bounded untrusted results | [source](diagrams/tool-memory-subsystem.mmd) | [view](diagrams/tool-memory-subsystem.svg) |
@@ -43,7 +44,7 @@ AniOS currently has a modular FastAPI backend rather than independently deployed
 | `redis` | `redis:7-alpine` | `6379` | `SCAFFOLDED`: container exists; backend code does not use a Redis client |
 | `comfyui` | CUDA/PyTorch image (`docker/comfyui/`) that bind-mounts the host ComfyUI install | `8188` | Opt-in (`comfyui` profile) GPU image generation |
 | image embeddings | `nomic-embed-vision-v1.5` ONNX, in-process on CPU | n/a | Aligned 768-dim image vectors for multimodal retrieval |
-| web search | Tavily HTTP API behind `SearchProvider` | n/a | Opt-in live results; disabled without `SEARCH_API_KEY` |
+| web research | Built-in stdio MCP server; isolated Gemini 3.6 Flash/Google Search worker with Tavily fallback | n/a | Opt-in; Tavily is active with `SEARCH_API_KEY`, while Google primary requires `GOOGLE_API_KEY` or `GEMINI_API_KEY` |
 
 The `frontend` container bind-mounts `./frontend` and runs Vite with polling so hot reload works across the Docker mount; its browser page still calls the backend at `localhost:8000`. The backend image has no source bind mount and does not use reload mode, so backend source changes require an image rebuild for container validation; a host-source Uvicorn run remains supported for backend development and must not share port `8000` with the Compose backend.
 
@@ -108,18 +109,42 @@ silently bypasses the margin check; that regression is covered by a test.
 Because these bounds are calibrated rather than derived, they should be
 re-measured as a library grows: more images shrink inter-image margins.
 
-Web search is an opt-in Tavily provider reached through the built-in read-only
+Web research is reached through the built-in read-only
 `internet/search_web` stdio MCP server when `SEARCH_PROVIDER_NAME=mcp`; the
-legacy direct adapter remains configurable. Search is enabled by
-`SEARCH_API_KEY` and inert without it. A deterministic `SearchRoutingPolicy`
-owned by the application decides when a turn needs live data; the model never
-selects the path, because a model cannot detect that its own training data is
-stale. `ImageRecallPolicy` performs the equivalent routing for image recall and
+legacy direct Tavily adapter remains configurable. `HybridSearchProvider`
+prefers an isolated Google ADK worker when `GOOGLE_API_KEY` or
+`GEMINI_API_KEY` is configured, falls back to Tavily when Google is disabled,
+empty, unavailable, or over its local daily budget, and calls both providers
+only when the user explicitly asks to verify or cross-check. A deterministic
+`SearchRoutingPolicy` owned by the application decides when a turn needs live
+data; neither Gemma nor the cloud worker owns outbound eligibility.
+
+The Google worker is a request-scoped `gemini-3.6-flash` ADK `Agent` with the
+native `google_search` tool. Each call creates a random in-memory session,
+disables prior contents, and sends only the already normalized and
+privacy-screened public query under a constant anonymous worker identity. It
+receives no AniOS user/conversation ID, history, personal memory, documents,
+image bytes, MCP credentials, or execution authority. AniOS rejects a response
+without grounding metadata and attributable web sources so fallback can run.
+This is one specialized research agent behind the existing provider contract,
+not general LangGraph subagent scheduling or A2A.
+
+`SQLiteDailySearchQuota` reserves Google calls atomically across short-lived
+stdio processes. It persists only provider, Pacific calendar day, and count in
+the `searchdata` volume; it does not store query or result content. The default
+local limit is 450 calls/day. This is a safety ceiling, not proof of provider
+quota or free access. Current Gemini 3 Search Grounding availability depends on
+the Google API project's plan and billing state; AniOS never enables billing or
+switches tiers automatically. The unpaid Gemini service may use submitted
+prompts and responses to improve Google products, so the existing minimization
+boundary is mandatory and sensitive/private content must not be sent.
+
+`ImageRecallPolicy` performs the equivalent routing for image recall and
 explicitly refuses new creation requests while recognizing historical questions
 and referential phrases such as "that car." Generated-image metadata retains a
 bounded generation prompt, so a later chat turn can answer what was requested
 without pretending to inspect absent pixels. Search results and image
-descriptions both enter the prompt as untrusted quoted data.
+descriptions both enter the final Gemma prompt as untrusted quoted data.
 
 When the user explicitly requests web search about a matched image, image recall
 runs first. AniOS appends at most one bounded stored analysis or generation
@@ -169,7 +194,7 @@ Role matching is restricted to roles that actually turn over, so "who is the
 author of" remains stable.
 
 Search-control wording such as "search online for" and "cite the source" is
-removed before provider submission so Tavily receives the factual subject.
+removed before provider submission so the selected provider receives the factual subject.
 Every query is then screened by `OutboundPrivacyPolicy` before it leaves the machine,
 which the roadmap requires and the first implementation omitted: the raw user
 query was sent verbatim. Two outcomes exist. A query carrying a secret or an
@@ -183,7 +208,7 @@ redact its own prompt can be argued out of it. Only the category and trace ID
 are logged, never the text that triggered them, and the interface reports both
 outcomes so a withheld or rewritten search is visible rather than silent.
 
-Results are filtered by provider relevance before reaching the prompt.
+Scored Tavily results are filtered by provider relevance before reaching the prompt.
 Measured across 40 real results the score distribution is bimodal: usable hits
 scored 0.561-0.923 and dictionary-definition noise scored 0.046-0.346, with an
 empty band between, so `SEARCH_MIN_SCORE` sits at `0.4`. Admitting that noise
@@ -195,8 +220,8 @@ A searching turn is visible and auditable. `search_started` and
 the provider call rather than after it, since search is the slowest step, and
 `search_results` always follows with the sources consulted - including an empty
 list on failure, so the interface retracts its indicator instead of spinning.
-The browser renders search and tool lifecycle status, then the cited sources
-beneath the answer, so a reader can check what grounded it.
+The browser renders search and tool lifecycle status, then provider-attributed
+cited sources beneath the answer, so a reader can check what grounded it.
 
 ### Module boundaries
 
@@ -207,7 +232,7 @@ and the separation is enforced by tests rather than convention:
 | --- | --- |
 | `backend/mcp` | The protocol: server configuration, stdio/streamable-HTTP sessions, built-in servers, tool metadata, and inspection of untrusted server text |
 | `backend/capabilities` | Agent-facing application adapters, including the local visual FastMCP facade over existing services |
-| `backend/search` | Web search only: direct/MCP provider adapters, query normalization, routing patterns, and the classifier cascade |
+| `backend/search` | Web research only: direct/MCP provider adapters, isolated Google ADK worker, hybrid/fallback policy, non-content quota, query normalization, routing patterns, and the classifier cascade |
 | `backend/artifacts` | Visual artifacts, including image recall routing and margin-bounded image retrieval |
 | `backend/core/egress` | Screening any text before it leaves the machine |
 | `backend/services` | Orchestration that composes the layers above |
@@ -468,10 +493,18 @@ Current host-source validation completes this flow through Gemma, a bounded same
 - Personal profile, episodic memory, relevance-gated semantic search, management/export/correction/deletion UI, and optional signed user authentication: functionally implemented; auth is disabled by default for trusted-local development.
 - Local knowledge-document ingestion, deterministic chunking, embedding, semantic retrieval, prompt curation, export, and deletion: implemented. Hybrid retrieval, reranking, source-citation policy, file connectors, ingestion jobs, and GraphRAG remain `PLANNED`.
 - Signed local-user route ownership: implemented when enabled. Password login, account management, token revocation, and external identity providers: `PLANNED`.
-- Deterministic internet routing, outbound privacy minimization/blocking, MCP-backed Tavily search, untrusted prompt attribution, source cards, visible failure state, and explicit referenced-image search enriched only with a screened bounded description: implemented and direct/live-browser verified. Sensitive-query review, redacted audit storage, and provider hardening remain `PLANNED`.
+- Deterministic internet routing, outbound privacy minimization/blocking,
+  Google-first/Tavily-fallback MCP research policy, request-scoped cloud-worker
+  isolation, non-content daily quota, untrusted prompt attribution,
+  provider-attributed source cards, visible failure state, and explicit
+  referenced-image search enriched only with a screened bounded description:
+  implemented. Tavily fallback is direct/live-browser verified; the Google
+  branch is deterministically verified but a real Google request is
+  `UNVERIFIED` until a key is configured. Sensitive-query review, redacted
+  audit storage, and provider hardening remain `PLANNED`.
 - Explicit Mermaid diagram generation through a dedicated diagram graph, user-scoped lifecycle/history/deletion, strict rendering, reload restoration, local Mermaid/SVG export, and disconnect recovery: implemented and browser/direct-client verified. Free local raster generation, bounded upload, opaque binary storage, owned content/deletion, aligned multimodal image embeddings, Gemma image understanding, browser progress/retry/cancel, private rendering, navigation/reload restoration, history, download, and deletion are implemented and direct/live-browser verified. Threaded followup questions on owned generated or uploaded images reuse the stored bytes and the same vision boundary with a bounded, persisted question/answer thread; deterministic browser/backend coverage and a live Gemma call through the visual MCP facade are verified, while embedding VLM analysis text into personal memory remains `PLANNED`. The same diagram, image, followup, and artifact-status services are exposed through a confirmed, metadata-only local FastMCP facade; autonomous consequential-call approval/resume remains `PLANNED`. Review-only local Gemma architecture candidates remain implemented and never update canonical source automatically. Automated binary retention/export, durable queues, GPU resource leasing/transitions, and generalized image agents remain `PLANNED`.
 - Semantic safe-descriptor discovery, approved preference/sanitized outcome memory, stdio/streamable-HTTP connectivity, native Gemma selection, live pre-invocation re-resolution, guarded execution, and UI lifecycle status: implemented. Automatic registry refresh/change notifications, consequential-call approval/resume, per-server user credentials/scopes, durable execution audit, A2A, and multi-agent scheduling remain `PLANNED`; tool memory never authorizes execution.
 
 ## Architectural decision
 
-The project has adopted clean-architecture and dependency-inversion principles as a design direction. [ADR 0001](adr/0001-clean-architecture-and-modular-structure.md) records that direction. [ADR 0002](adr/0002-typed-agent-memory-manager-and-pgvector-indexes.md) records the typed store-manager/coordinator boundary and the pgvector HNSW indexing choice. [ADR 0003](adr/0003-local-visual-artifacts-and-resource-aware-orchestration.md) records the local-only visual-artifact, GPU-resource, and scalable orchestration direction; editable diagrams, raster generation, binary storage, upload validation, VLM analysis, aligned image retrieval, browser integration, and the local visual FastMCP facade are implemented while deterministic resource orchestration remains `PLANNED`.
+The project has adopted clean-architecture and dependency-inversion principles as a design direction. [ADR 0001](adr/0001-clean-architecture-and-modular-structure.md) records that direction. [ADR 0002](adr/0002-typed-agent-memory-manager-and-pgvector-indexes.md) records the typed store-manager/coordinator boundary and the pgvector HNSW indexing choice. [ADR 0003](adr/0003-local-visual-artifacts-and-resource-aware-orchestration.md) records the local-only visual-artifact, GPU-resource, and scalable orchestration direction; editable diagrams, raster generation, binary storage, upload validation, VLM analysis, aligned image retrieval, browser integration, and the local visual FastMCP facade are implemented while deterministic resource orchestration remains `PLANNED`. [ADR 0004](adr/0004-hybrid-free-tier-web-research.md) records the isolated Google research worker, Tavily fallback/cross-check, free-tier quota, and data-minimization boundary.

@@ -19,11 +19,20 @@ flowchart TB
     Retrieval -->|volatile-shape signal| SearchPolicy[Normalize and privacy-screen query]
     SearchPolicy --> InternetMCP[Internet MCP adapter<br/>fixed read-only search_web]
     InternetMCP --> SearchGates[MCP live validation and invocation gates]
-    SearchGates --> WebSearch[TavilySearchProvider<br/>relevance floor, untrusted results]
+    SearchGates --> HybridSearch{Hybrid research policy}
+    HybridSearch -->|normal: primary when configured| GoogleResearch[Isolated Gemini 2.5 Flash researcher<br/>single turn, no history or personal memory]
+    GoogleResearch --> GoogleGrounding[Native Google Search Grounding<br/>attributable sources required]
+    HybridSearch -->|Google unavailable, empty, failed,<br/>or daily budget exhausted| Tavily[TavilySearchProvider<br/>relevance floor]
+    HybridSearch -->|explicit verify or cross-check| Both[Run both providers once<br/>merge and deduplicate]
+    GoogleGrounding --> Both
+    Tavily --> Both
+    GoogleGrounding --> WebResults[Bounded untrusted web results<br/>provider attribution retained]
+    Tavily --> WebResults
+    Both --> WebResults
     Retrieval -->|image recall signal| ImageSearch[Aligned image vector search<br/>ceiling plus best-to-runner-up margin]
     ImageSearch -->|explicit web request only:<br/>append bounded prompt or analysis| SearchPolicy
-    WebSearch --> Context
-    WebSearch --> SSE
+    WebResults --> Context
+    WebResults --> SSE
     ImageSearch --> Context
     ImageSearch --> SSE
     Retrieval --> Plan[MemoryCoordinatorAgent<br/>deterministic query plan]
@@ -71,7 +80,7 @@ flowchart TB
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef failure fill:#fff3cd,stroke:#b78b20,color:#4d3900;
     class User,Composer,ImageAnswer,Parser,Answer,Reload,RestoreUI,Disconnect interface;
-    class Intent,ImageAPI,ChatAPI,SnapshotAPI,Ownership,Service,Trace,Route,Retrieval,SearchPolicy,InternetMCP,SearchGates,Plan,Context,State,Graph,Prompt,LLMQueue,Persist,Lifecycle,Proposal,SSE,Artifact,DiagramAgent,DiagramProvider,CancelCleanup,ToolShortlist,LiveResolve,ToolGemma,ToolGates,ToolContext application;
+    class Intent,ImageAPI,ChatAPI,SnapshotAPI,Ownership,Service,Trace,Route,Retrieval,SearchPolicy,InternetMCP,SearchGates,HybridSearch,GoogleResearch,Both,WebResults,Plan,Context,State,Graph,Prompt,LLMQueue,Persist,Lifecycle,Proposal,SSE,Artifact,DiagramAgent,DiagramProvider,CancelCleanup,ToolShortlist,LiveResolve,ToolGemma,ToolGates,ToolContext application;
     class Personal,Typed,History,RestoreHistory data;
-    class Gemma,DiagramGemma,WebSearch,MCPServer external;
+    class Gemma,DiagramGemma,GoogleGrounding,Tavily,MCPServer external;
     class Failure failure;

@@ -21,9 +21,11 @@ flowchart LR
         Redis[(Redis 7, host port 6379<br/>scaffolded and unused)]
         Maintenance[Opt-in memory-maintenance<br/>hourly profile]
         BinaryStore[(Local artifact bytes<br/>artifactdata volume)]
+        SearchQuota[(searchdata volume<br/>Google daily call count only)]
     end
 
-    WebSearch[[Tavily web search<br/>external vendor, untrusted results<br/>opt-in via SEARCH_API_KEY]]
+    GoogleResearch[[Gemini 2.5 Flash and Google Search<br/>external grounded research worker<br/>opt-in via Google or Gemini API key]]
+    WebSearch[[Tavily web search<br/>external fallback, untrusted results<br/>opt-in via SEARCH_API_KEY]]
     MCPStdio[[MCP stdio servers<br/>subprocess, needs local runtime]]
     MCPHttp[[MCP http servers<br/>sibling or remote, no runtime in image]]
     Source[Repository source]
@@ -45,7 +47,9 @@ flowchart LR
     VisualMCP -->|diagram and vision requests| LMStudio
     VisualMCP -->|image-generation requests| ComfyUI
     VisualMCP -->|opaque artifact bytes| BinaryStore
-    MCPStdio -->|built-in read-only internet/search_web| WebSearch
+    MCPStdio -->|built-in read-only internet/search_web;<br/>minimized public query only| GoogleResearch
+    MCPStdio -->|fallback or explicit cross-check| WebSearch
+    MCPStdio -->|atomic quota reservation| SearchQuota
     Dependencies -->|OpenAI-compatible HTTP, host.docker.internal:1234| LMStudio
     Dependencies -->|ComfyUI HTTP, comfyui:8188| ComfyUI
     Dependencies -->|opaque keys and atomic file writes| BinaryStore
@@ -67,5 +71,5 @@ flowchart LR
     classDef scaffold fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
     class User,Source user;
     class Browser,Frontend,LMStudio,ComfyUI,Backend,VisualMCP,Dependencies,Auth,Maintenance,Migration,DiagramCLI,VisionEmbed process;
-    class Postgres,BinaryStore,Candidate,Canonical,ComfyInstall data;
+    class Postgres,BinaryStore,SearchQuota,Candidate,Canonical,ComfyInstall data;
     class Redis scaffold;

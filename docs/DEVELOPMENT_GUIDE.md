@@ -66,6 +66,7 @@ Use this ownership map when selecting affected views:
 | --- | --- | --- |
 | Deployment, configuration, database/session infrastructure, ports, protocols, or external processes | Runtime and deployment | A major component, external dependency, or deployment boundary changes |
 | Chat API, SSE protocol, LangGraph routing, provider calls, or conversation persistence | Chat orchestration | A major component, agent, dependency, or cross-subsystem flow changes |
+| Search routing, outbound minimization, research agents, provider/fallback policy, search budgets, or source provenance | Search and research | A provider, agent, external dependency, store, trust boundary, or cross-subsystem flow changes |
 | Memory forms, coordinator policy, retrieval, lifecycle, vector search, or memory operations | Memory subsystem | A store, agent, dependency, ownership boundary, or cross-subsystem flow changes |
 | Tool metadata, tool retrieval, or the MCP execution boundary | Tool memory | A store, external dependency, trust boundary, or cross-subsystem flow changes |
 | Artifact classification, providers, persistence, lifecycle, or rendering | Visual artifacts | A component, model dependency, store, or cross-subsystem flow changes |
@@ -137,6 +138,12 @@ Key settings are:
 | `SEARCH_API_KEY` | none | Tavily credential inherited only by the internet MCP child when allowlisted |
 | `SEARCH_MCP_SERVER_ID` | `internet` | Fixed server identity used after deterministic search routing |
 | `SEARCH_MCP_TOOL_NAME` | `search_web` | Fixed read-only MCP search tool name |
+| `GOOGLE_API_KEY` / `GEMINI_API_KEY` | none | Either key enables the isolated Google ADK research worker; never configure both unless they identify the same intended project |
+| `GOOGLE_SEARCH_MODEL` | `gemini-3.6-flash` | Request-scoped grounded research model; Gemma remains the local final-answer model |
+| `GOOGLE_SEARCH_TIMEOUT_SECONDS` | `30` | Whole Google ADK research deadline before Tavily fallback |
+| `GOOGLE_SEARCH_MAX_OUTPUT_TOKENS` | `1024` | Bounded worker answer used only to build attributable result snippets |
+| `GOOGLE_SEARCH_DAILY_LIMIT` | `450` | Local Pacific-day safety cap; it does not guarantee provider quota or free access |
+| `GOOGLE_SEARCH_QUOTA_DB_PATH` | `data/search/google_search_quota.sqlite3` | SQLite counter containing provider/day/count only; Compose maps this into `searchdata` |
 | `MCP_SERVERS_JSON` | `[]` | Operator-owned stdio/HTTP connections, local trust, and optional environment-name allowlists |
 | `MCP_LIST_TIMEOUT_SECONDS` | `30` | Bound for live catalogue and tool sessions |
 | `TOOL_SEARCH_MAX_RESULTS` | `5` | Maximum live-validated schemas exposed to Gemma per turn |
@@ -381,7 +388,11 @@ To use the built-in free read-only servers and MCP-backed web search, configure:
 
 ```dotenv
 SEARCH_PROVIDER_NAME=mcp
-MCP_SERVERS_JSON=[{"server_id":"local_utility","command":"python","args":["-m","backend.mcp.servers.local_utility"],"risk_classification":"read_only"},{"server_id":"internet","command":"python","args":["-m","backend.mcp.servers.internet"],"inherit_env":["SEARCH_API_KEY","SEARCH_BASE_URL","SEARCH_MAX_RESULTS","SEARCH_TIMEOUT_SECONDS","SEARCH_MAX_CONTENT_CHARS","SEARCH_MIN_SCORE","SEARCH_DEPTH"],"risk_classification":"read_only"}]
+GOOGLE_API_KEY=
+GEMINI_API_KEY=
+GOOGLE_SEARCH_MODEL=gemini-3.6-flash
+GOOGLE_SEARCH_DAILY_LIMIT=450
+MCP_SERVERS_JSON=[{"server_id":"local_utility","command":"python","args":["-m","backend.mcp.servers.local_utility"],"risk_classification":"read_only"},{"server_id":"internet","command":"python","args":["-m","backend.mcp.servers.internet"],"inherit_env":["SEARCH_API_KEY","SEARCH_BASE_URL","SEARCH_MAX_RESULTS","SEARCH_TIMEOUT_SECONDS","SEARCH_MAX_CONTENT_CHARS","SEARCH_MIN_SCORE","SEARCH_DEPTH","GOOGLE_API_KEY","GEMINI_API_KEY","GOOGLE_SEARCH_MODEL","GOOGLE_SEARCH_TIMEOUT_SECONDS","GOOGLE_SEARCH_MAX_OUTPUT_TOKENS","GOOGLE_SEARCH_DAILY_LIMIT","GOOGLE_SEARCH_QUOTA_DB_PATH"],"risk_classification":"read_only"}]
 ```
 
 The default example also registers the Compose `local-capabilities` sidecar:
@@ -414,10 +425,48 @@ approved once is not the same server after an update. Pin an exact version in
 schema, so a rewritten description changes the fingerprint and is visible as a
 new descriptor rather than silently replacing the approved one.
 
-Web search is opt-in in the same way: set `SEARCH_API_KEY` to a Tavily key and
-`SEARCH_PROVIDER_NAME=mcp` for the guarded MCP route. Leave the key empty to
-disable search entirely. Deterministic routing, normalization, and privacy
-screening happen before the MCP call; Gemma never owns outbound eligibility.
+Web research is opt-in. Set `SEARCH_PROVIDER_NAME=mcp`, configure
+`SEARCH_API_KEY` for Tavily fallback, and optionally set either
+`GOOGLE_API_KEY` or `GEMINI_API_KEY` for Google-first grounded research.
+Without a Google key, current behavior remains Tavily-only. Without either
+provider key, search is disabled. Ordinary queries call only the first
+successful provider; explicit verify/cross-check wording calls both configured
+providers once and merges URL-deduplicated sources.
+
+The Google worker uses a fresh in-memory ADK session for every one-request call
+and receives only the normalized, privacy-screened public query. Never add
+history, user identity, personal memory, private documents, or image bytes to
+that boundary. Google's
+[unpaid-service terms](https://ai.google.dev/gemini-api/terms) say submitted
+content and responses may be used to improve products and may be human
+reviewed. The local default of 450 reservations/day is only a safety ceiling.
+Check the current
+[Google pricing](https://ai.google.dev/gemini-api/docs/pricing) and the API
+project's rate-limit page before enabling the worker: Gemini 3 Search Grounding
+may require a billing-enabled project even when Google advertises an included
+allowance. AniOS does not enable billing, paid usage, or overages.
+
+After configuring a Google key, rebuild the backend and prove the primary
+branch through both the direct and browser paths:
+
+```powershell
+docker compose up -d --build backend
+$payload = @{
+  user_id = 'google_search_validation'
+  conversation_id = '89898989-8989-4989-8989-898989898989'
+  query = 'Search online for the latest stable Python release and cite the source.'
+  metadata = @{}
+} | ConvertTo-Json -Compress
+Invoke-WebRequest 'http://localhost:8000/api/v1/chat' -Method Post `
+  -ContentType 'application/json' -Body $payload -TimeoutSec 180
+docker compose logs --since 5m backend
+```
+
+The stream must contain `search_started`, `tool_started`,
+provider-attributed sources with `"provider":"google"`, answer deltas, and
+terminal `done`. Then run the live browser search acceptance with
+`RUN_LIVE_TOOL_TESTS=1`; a `200`, health response, or Tavily fallback does not
+verify the Google branch.
 
 Compose requires a root `.env` with `SECRET_KEY` set; it is interpolated rather than hardcoded, so a missing value fails the run instead of silently signing tokens with a placeholder. `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` are interpolated too and fall back to their local defaults. The remaining container values stay literal in `docker-compose.yml` because `.env` holds host-oriented equivalents (`POSTGRES_HOST=localhost`, loopback `LLM_BASE_URL`) that would break container networking if passed through.
 

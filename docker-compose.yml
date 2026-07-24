@@ -79,11 +79,19 @@ services:
       - SEARCH_PROVIDER_NAME=${SEARCH_PROVIDER_NAME:-tavily}
       - SEARCH_MCP_SERVER_ID=${SEARCH_MCP_SERVER_ID:-internet}
       - SEARCH_MCP_TOOL_NAME=${SEARCH_MCP_TOOL_NAME:-search_web}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GOOGLE_SEARCH_MODEL=${GOOGLE_SEARCH_MODEL:-gemini-3.6-flash}
+      - GOOGLE_SEARCH_TIMEOUT_SECONDS=${GOOGLE_SEARCH_TIMEOUT_SECONDS:-30}
+      - GOOGLE_SEARCH_MAX_OUTPUT_TOKENS=${GOOGLE_SEARCH_MAX_OUTPUT_TOKENS:-2048}
+      - GOOGLE_SEARCH_DAILY_LIMIT=${GOOGLE_SEARCH_DAILY_LIMIT:-450}
+      - GOOGLE_SEARCH_QUOTA_DB_PATH=/app/data/search/google_search_quota.sqlite3
       - MCP_SERVERS_JSON=${MCP_SERVERS_JSON:-[]}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
       - artifactdata:/app/data/artifacts
+      - searchdata:/app/data/search
     depends_on:
       db:
         condition: service_healthy
@@ -152,3 +160,4 @@ services:
 volumes:
   pgdata:
   artifactdata:
+  searchdata:

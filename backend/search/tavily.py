@@ -8,6 +8,9 @@ from backend.search.types import SearchResult, SearchResults
 # Tavily accepts 0-20 results per request; clamp locally so a bad caller value
 # becomes a bounded request instead of a provider-side validation error.
 _PROVIDER_MAX_RESULTS = 20
+# Smallest candidate pool requested regardless of how few results the caller
+# wants, so the relevance floor always has alternatives to choose between.
+_MIN_CANDIDATE_POOL = 5
 
 
 class TavilySearchProvider(SearchProvider):
@@ -60,6 +63,7 @@ class TavilySearchProvider(SearchProvider):
             # Truncate so one verbose page cannot dominate the prompt budget.
             content=content[: self.max_content_chars],
             score=float(score) if isinstance(score, (int, float)) else 0.0,
+            provider="tavily",
         )
 
     # Execute one bounded query against Tavily and return ranked results.
@@ -75,9 +79,17 @@ class TavilySearchProvider(SearchProvider):
 
         requested = self.max_results if max_results is None else max_results
         bounded = max(1, min(requested, _PROVIDER_MAX_RESULTS))
+        # Ask for a candidate pool rather than exactly what the caller wants.
+        # Tavily's scores are not ordered, so a small request can return only
+        # low-scoring rows and the relevance floor then empties the list: asking
+        # for two results returned two rows scoring 0.04, and nothing survived,
+        # while asking for five returned three above the floor. Over-fetching
+        # gives the filter something to choose from; the caller's limit is
+        # applied afterwards.
+        fetch = max(bounded, _MIN_CANDIDATE_POOL)
         payload = {
             "query": query,
-            "max_results": bounded,
+            "max_results": fetch,
             "search_depth": self.search_depth,
         }
         # The key travels in the Authorization header, never in the body or logs.
@@ -105,7 +117,11 @@ class TavilySearchProvider(SearchProvider):
             result = self._parse_result(raw)
             # Low-relevance hits are dropped rather than quoted to the model as
             # authoritative web data.
-            if result is not None and result.score >= self.min_score:
+            if (
+                result is not None
+                and result.score is not None
+                and result.score >= self.min_score
+            ):
                 parsed.append(result)
 
         return SearchResults(

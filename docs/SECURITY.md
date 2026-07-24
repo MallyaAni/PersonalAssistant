@@ -22,7 +22,27 @@ This document separates current security facts from future requirements. A contr
 - Preferred-name and response-style proposals are not persisted before explicit UI approval. Generic fact approval, correction, export, and deletion are constrained to the token subject when auth is enabled; auth-disabled mode remains caller-user-ID scoped.
 - Semantic memory content is sent over local HTTP to the LM Studio embedding process. The configured embedding endpoint does not request provider-side storage, but LM Studio process logging/configuration must still be reviewed for sensitive use.
 - Knowledge chunks, procedures, entities, summaries, tool descriptors, and semantic-cache queries are also sent to the configured local embedding process. Do not ingest secrets or private documents until LM Studio logging, retention, host access, and backup policy are acceptable for that data.
-- Internet search is an explicit outbound boundary: deterministic routing and query normalization run before `OutboundPrivacyPolicy`; credential/account identifiers are blocked, personal framing is minimized, and only the resulting query reaches the read-only `internet/search_web` MCP server and Tavily. For an explicit search about a recalled image, one bounded stored analysis or generation prompt may be appended before the same screening; image bytes are never sent, and a sensitive combined query is blocked. Result text is bounded and quoted as untrusted data. Broad PII classification and approval for sensitive-but-useful queries remain incomplete.
+- Internet research is an explicit outbound boundary: deterministic routing and
+  query normalization run before `OutboundPrivacyPolicy`;
+  credential/account identifiers are blocked, personal framing is minimized,
+  and only the resulting public query reaches the read-only
+  `internet/search_web` MCP server. The provider policy prefers an isolated
+  request-isolated Gemini 3.5 Flash-Lite/Google Search worker when configured, falls back
+  to Tavily, and uses both only for explicit verification. The Google worker
+  receives no AniOS identity, history, memory, private document, image bytes,
+  credentials, or general tools. For an explicit search about a recalled image,
+  one bounded stored analysis or generation prompt may be appended before the
+  same screening; image bytes are never sent, and a sensitive combined query is
+  blocked. Result text is bounded and quoted as untrusted data. Broad PII
+  classification and approval for sensitive-but-useful queries remain
+  incomplete.
+- Google's unpaid Gemini service may use submitted prompts and responses to
+  improve its products and may subject them to human review. Do not route
+  sensitive, confidential, personal, or private-memory content to that worker.
+  The local SQLite budget stores only provider, Pacific date, and request count;
+  it contains no query or result text. Its 450/day default is a protective cap,
+  not a contractual or distributed rate limit, and AniOS never enables billing
+  automatically.
 - Gemma may choose at most one tool from a user-scoped semantic shortlist whose schemas were re-read from locally configured `trusted` or `read_only` MCP servers. Gemma cannot invoke directly: AniOS revalidates the live fingerprint, description, schema, arguments, and privacy policy. Consequential servers are not offered to autonomous chat selection.
 - The application-owned visual FastMCP server is configured `untrusted` and
   requires explicit confirmation. Its schemas omit user, conversation, and
@@ -31,7 +51,11 @@ This document separates current security facts from future requirements. A contr
   receive no application context by default. Visual tool results omit image
   bytes and private storage keys, but the sidecar still has database,
   artifact-volume, LM Studio, and ComfyUI access and is not a security sandbox.
-- Stdio MCP children receive the SDK's default safe environment plus only operator-named `inherit_env` variables. The built-in internet server inherits search configuration names; secret values are not stored in descriptor memory, MCP JSON examples, model prompts, or tool-status events.
+- Stdio MCP children receive the SDK's default safe environment plus only
+  operator-named `inherit_env` variables. The built-in internet server inherits
+  Tavily and Google search configuration names; secret values are not stored in
+  descriptor memory, MCP JSON examples, quota storage, model prompts, source
+  cards, or tool-status events.
 - The maintainer architecture-candidate command sends the selected canonical diagram, maintainer request, and explicitly selected repository text to LM Studio. It accepts only loopback endpoints; bounds file roots, types, counts, and sizes; rejects traversal and common secret filenames; labels repository text as untrusted evidence; and cannot overwrite canonical diagrams. These controls do not detect every secret inside an otherwise allowed source file, so maintainers must inspect selected context and LM Studio logging before use.
 - Raster uploads accept only actual single-frame PNG, JPEG, or WebP content within configured byte and pixel limits; declared MIME must match decoded content. Validated bytes are stored under opaque hashed user namespaces with atomic writes, SHA-256/size integrity metadata, signed-user ownership when auth is enabled, private/no-store content responses, and file-plus-row deletion. The browser fetches private bytes through the authenticated API and uses a temporary object URL that is revoked on unmount. Automated retention, encrypted storage/backups, malware scanning, and redacted media audit events are not implemented.
 - Validated image bytes and a bounded user prompt are sent over loopback HTTP to Gemma in LM Studio for vision analysis. They are not sent to ComfyUI or an internet provider, but LM Studio process logging, host access, and retention still require review before sensitive images are used.
@@ -71,7 +95,10 @@ The following controls are requirements for future milestones, not current featu
 - `VERIFIED`: a deterministic outbound-search gate decides whether current information is required before MCP search; Gemma cannot bypass or directly invoke this path;
 - `VERIFIED` (bounded): outbound query classification/minimization blocks credentials, common account identifiers, and identifying personal framing; broader PII/document classification remains `PLANNED`;
 - `PLANNED`: user review of the sanitized query whenever useful search depends on private or materially identifying context; if a safe query cannot be formed, no request is sent;
-- `VERIFIED` (runtime): search results are bounded untrusted prompt data and source cards preserve provenance; claim-level citation evaluation and a durable redacted decision audit remain `PLANNED`;
+- `VERIFIED` (Tavily runtime; Google deterministic): search results are bounded
+  untrusted prompt data and source cards preserve per-provider provenance;
+  claim-level citation evaluation, a durable redacted decision audit, and a
+  live Google-grounding acceptance remain incomplete;
 - `PLANNED`: TLS and outbound-provider trust controls;
 - `VERIFIED`: diagram artifacts have logical user ownership, conversation/trace provenance, allowlisted type/size/line validation, strict browser rendering with HTML labels disabled, sanitized failure events, scoped listing/deletion, and local Mermaid/SVG download. Auth remains disabled by default for trusted-local development;
 - `VERIFIED`: upload MIME/signature/size/pixel limits, single-frame enforcement, opaque local binary-file isolation, integrity checks, private content responses, media file-plus-row deletion, and generated-image disconnect cancellation with terminal state and provider interruption. Binary retention/export, encryption/backups, malware scanning, and process-crash reconciliation remain `PLANNED`; diagram-stream disconnect cleanup is also `VERIFIED`;

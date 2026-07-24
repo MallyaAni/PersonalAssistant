@@ -45,7 +45,7 @@ flowchart TB
 
     subgraph Client[Typed client and trust boundary]
         direction LR
-        ChatClient[streamChat<br/>validated SSE lifecycle<br/>renders search and MCP tool status,<br/>cited sources and image_matches cards]
+        ChatClient[streamChat<br/>validated SSE lifecycle<br/>renders search and MCP tool status,<br/>provider-attributed sources and image_matches cards]
         VisualClient[JSON generation and multipart upload<br/>private authenticated image fetch]
         DataClient[JSON memory, history, export,<br/>snapshot, and deletion requests]
         Validation[Runtime response validation<br/>visible safe errors]

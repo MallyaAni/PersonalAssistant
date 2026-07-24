@@ -1,0 +1,43 @@
+flowchart TB
+    Query([Chat query]) --> Route{Current or explicit<br/>internet information needed?}
+    Route -->|no| Local[Answer from local model and context]
+    Route -->|yes| Normalize[Deterministic query normalization<br/>optional bounded image description]
+    Normalize --> Privacy{OutboundPrivacyPolicy}
+    Privacy -->|sensitive and cannot minimize| Block[Visible search-blocked event<br/>no network request]
+    Privacy -->|safe minimized public query| MCP[MCP internet/search_web<br/>read-only stdio boundary]
+    MCP --> Hybrid{Application-owned provider policy}
+
+    Hybrid -->|ordinary query and key configured| Reserve{Reserve Google daily call<br/>default local cap 450}
+    Reserve -->|budget available| ADK[Google ADK Agent<br/>Gemini 2.5 Flash, single turn<br/>include_contents none]
+    Reserve -->|limit reached| Tavily
+    ADK --> Grounding[Native google_search tool<br/>grounding metadata required]
+    Grounding -->|attributable sources| GoogleResults[Google results<br/>nullable score]
+    Grounding -->|failure, empty, or unattributed| Tavily[Tavily search<br/>scored results and relevance floor]
+    Hybrid -->|Google disabled or failed| Tavily
+    Hybrid -->|explicit verify or cross-check| Dual[Call each configured provider once]
+    Dual --> ADK
+    Dual --> Tavily
+
+    Quota[(SQLite search quota<br/>provider, Pacific date, count only)] --> Reserve
+    GoogleResults --> Merge[Bound, merge, URL-deduplicate<br/>retain provider provenance]
+    Tavily --> Merge
+    Merge --> MCPJSON[Compact MCP JSON<br/>provider plus bounded sources]
+    MCPJSON --> Adapter[MCPWebSearchProvider<br/>local result validation]
+    Adapter --> Prompt[Quoted untrusted prompt context]
+    Adapter --> SSE[search and tool lifecycle SSE<br/>provider-attributed source cards]
+
+    Isolation[Cloud worker receives only:<br/>minimized query<br/><br/>Never receives:<br/>user or conversation ID, history,<br/>personal memory, image bytes,<br/>MCP credentials or execution authority]
+    ADK -. constrained by .-> Isolation
+
+    Gemma[Local Gemma coordinator and final answer] --> Route
+    Prompt --> Gemma
+
+    classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
+    classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
+    classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
+    classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
+    classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900;
+    class Query,Local,Block,SSE interface;
+    class Route,Normalize,Privacy,MCP,Hybrid,Reserve,ADK,GoogleResults,Dual,Merge,MCPJSON,Adapter,Prompt,Isolation application;
+    class Quota data;
+    class Grounding,Tavily,Gemma external;

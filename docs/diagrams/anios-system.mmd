@@ -22,6 +22,7 @@ flowchart LR
         LLMQueue[Shared Gemma chat-client queue<br/>one local generation at a time]
         MCPInvocation[MCP invocation gates<br/>live contract, policy, privacy]
         VisualMCP[Local visual FastMCP facade<br/>diagram, image, vision, artifact handles]
+        Research[Hybrid research policy<br/>Google primary, Tavily fallback,<br/>explicit dual-provider verification]
     end
 
     subgraph Infrastructure[Local infrastructure]
@@ -32,6 +33,7 @@ flowchart LR
         Redis[(Redis<br/>scaffolded and unused)]
         VisionEmbed[Nomic Embed Vision v1.5<br/>in-process ONNX, aligned image vectors]
         Diagrams[(Canonical Mermaid suite<br/>plus review candidates)]
+        SearchQuota[(Daily Google call counter<br/>provider, Pacific date, count only)]
     end
 
     User --> Frontend
@@ -68,7 +70,11 @@ flowchart LR
     VisualMCP --> DiagramArtifacts
     VisualMCP --> ImageArtifacts
     VisualMCP --> Vision
-    InternetMCP -->|read-only search_web| WebSearch
+    InternetMCP -->|read-only search_web| Research
+    Research -->|isolated minimized query;<br/>no AniOS memory or identity| GoogleResearch
+    GoogleResearch -->|native grounding tool| GoogleSearch
+    Research -->|fallback or explicit cross-check| WebSearch
+    Research --> SearchQuota
     Graph -->|chat completions| LLMQueue
     DiagramAgent -->|bounded diagram specification| LLMQueue
     LLMQueue --> LMStudio
@@ -87,9 +93,11 @@ flowchart LR
     classDef scaffold fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-width:1.5px,stroke-dasharray:5 4;
     class Frontend,API interface;
     class User,Maintainer interface;
-    class Conversation,DiagramArtifacts,ImageArtifacts,Vision,DiagramAgent,Candidate,Coordinator,Graph,Memory,Toolbox,ToolOrchestration,LLMQueue,MCPInvocation,VisualMCP application;
+    class Conversation,DiagramArtifacts,ImageArtifacts,Vision,DiagramAgent,Candidate,Coordinator,Graph,Memory,Toolbox,ToolOrchestration,LLMQueue,MCPInvocation,VisualMCP,Research application;
     InternetMCP[[Built-in internet MCP server<br/>stdio, read-only]]
     MCPServers[[Configured MCP servers<br/>stdio or streamable HTTP]]
-    WebSearch[[Tavily web search<br/>external vendor, opt-in, untrusted]]
-    class Database,LMStudio,ComfyUI,BinaryStore,Diagrams,VisionEmbed infrastructure;
+    GoogleResearch[[Gemini 2.5 Flash research worker<br/>external, opt-in by API key]]
+    GoogleSearch[[Google Search Grounding<br/>external public web]]
+    WebSearch[[Tavily web search<br/>external fallback, opt-in, untrusted]]
+    class Database,LMStudio,ComfyUI,BinaryStore,Diagrams,VisionEmbed,SearchQuota infrastructure;
     class Redis scaffold;

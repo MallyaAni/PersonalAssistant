@@ -157,12 +157,27 @@ Gemma remains the primary logical reasoning model, but no model owns orchestrati
 - `VERIFIED`: semantic discovery over safe, versioned MCP tool descriptors and native Gemma selection from a bounded live-validated shortlist;
 - `VERIFIED`: user-scoped tool preference and usage-outcome memory;
 - deterministic, testable LangGraph workflows;
-- `VERIFIED`: deterministic privacy-preserving MCP internet search with visible tool/search status and source cards;
+- `VERIFIED` (Tavily runtime; Google deterministic): deterministic
+  privacy-preserving MCP internet research with an isolated Google ADK worker,
+  Tavily fallback, explicit dual-provider verification, local non-content
+  quota protection, visible tool/search status, and provider-attributed source
+  cards. Live Google requests are `FAILED` for the tested free-only account:
+  Gemini 2.5 models reject new users and Gemini 3 Search Grounding returns zero
+  available account quota without the required plan;
 - coding, finance, and scheduling capabilities;
 - reflection and multi-agent orchestration;
 - `VERIFIED`: trace-correlated tool execution with visible running/success/refusal/failure status; durable audit and consequential-call approval UI remain planned.
 
-The current graph still has one model-backed assistant node. The deterministic memory coordinator is a policy/service boundary, not a spawned LLM sub-agent or multi-agent graph. The visual MCP facade is an application-capability adapter, not a new autonomous agent. Its `untrusted` classification keeps artifact-producing calls outside ordinary autonomous chat selection until proposal/approval/resume is implemented. Researcher and tool-executor agents are not implemented.
+The current LangGraph still has one model-backed assistant node. The
+deterministic memory coordinator is a policy/service boundary, not a spawned
+LLM sub-agent or multi-agent graph. The visual MCP facade is an
+application-capability adapter, not a new autonomous agent. Its `untrusted`
+classification keeps artifact-producing calls outside ordinary autonomous chat
+selection until proposal/approval/resume is implemented. One narrow
+request-scoped Google ADK researcher is implemented behind `SearchProvider`; it
+has no AniOS memory, identity, general MCP access, durable session, or
+authorization authority. General researcher teams, tool-executor agents,
+LangGraph multi-agent scheduling, and A2A are not implemented.
 
 Internet-search policy and acceptance gates:
 
@@ -174,7 +189,17 @@ Internet-search policy and acceptance gates:
 - Log the decision, reason category, domains, and trace ID with redaction; do not log the sensitive source text or raw private query.
 - Deterministic tests must cover required-search, no-search, sanitization, approval, denial, prompt-injection, provider failure, citation, and no-network-on-block cases. Real-browser acceptance must make search use and failures visible to the user.
 
-Search routing, query normalization, privacy enforcement, read-only MCP execution, untrusted result isolation, visible status, and source provenance are `VERIFIED`. Gemma has no unrestricted network access. Review/approval when a useful query needs materially identifying context, broader PII classification, durable redacted decision audit, and claim-level citation evaluation remain `PLANNED`.
+Search routing, query normalization, privacy enforcement, read-only MCP
+execution, Google-first/Tavily-fallback policy, explicit cross-checking,
+cloud-worker context isolation, non-content daily quota, untrusted result
+isolation, visible status, and provider source provenance are implemented.
+Deterministic coverage verifies both provider branches; direct API and real
+Chromium acceptance verify Tavily fallback. A real Google-grounded request is
+`UNVERIFIED` until an operator configures a key. Gemma has no unrestricted
+network access. Review/approval when a useful query needs materially identifying
+context, broader PII classification, durable redacted decision audit,
+distributed quota coordination, and claim-level citation evaluation remain
+`PLANNED`.
 
 MCP tool discovery and memory acceptance gates:
 
