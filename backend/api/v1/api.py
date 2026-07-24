@@ -15,7 +15,9 @@ from backend.api.v1.tool_memory import router as tool_memory_router
 from backend.api.v1.tools import router as tools_router
 from backend.api.v1.vision import router as vision_router
 from backend.core.auth import (
+    SCOPE_CHAT,
     IdentityDependency,
+    authorize_scope,
     authorize_user,
 )
 from backend.core.dependencies import DependencyConversationService
@@ -49,6 +51,7 @@ async def chat(
     identity: IdentityDependency,
 ) -> StreamingResponse:
     authorize_user(body.user_id, identity)
+    authorize_scope(identity, SCOPE_CHAT)
     return StreamingResponse(
         _encode_sse(
             service.process_request(

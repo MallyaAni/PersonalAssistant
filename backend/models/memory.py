@@ -18,6 +18,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
 from backend.database.session import Base
+from backend.database.types import EncryptedText
 from backend.models.vector import VECTOR_DIMENSION
 
 
@@ -53,7 +54,7 @@ class EpisodicMemory(Base):
     )
     user_id: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
     timestamp: Mapped[datetime] = mapped_column(server_default=func.now())
-    content: Mapped[str] = mapped_column(Text, nullable=False)
+    content: Mapped[str] = mapped_column(EncryptedText, nullable=False)
     purpose: Mapped[str] = mapped_column(
         String(100), nullable=False, default="user_explicit"
     )
@@ -89,7 +90,7 @@ class SemanticMemory(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     user_id: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
-    content: Mapped[str] = mapped_column(Text, nullable=False)
+    content: Mapped[str] = mapped_column(EncryptedText, nullable=False)
     embedding: Mapped[list[float]] = mapped_column(Vector(VECTOR_DIMENSION))
     purpose: Mapped[str] = mapped_column(
         String(100), nullable=False, default="user_explicit"

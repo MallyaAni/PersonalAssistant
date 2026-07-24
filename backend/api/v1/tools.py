@@ -4,7 +4,12 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from backend.core.auth import IdentityDependency, authorize_user
+from backend.core.auth import (
+    SCOPE_TOOLS,
+    IdentityDependency,
+    authorize_scope,
+    authorize_user,
+)
 from backend.core.dependencies import MCPInvocationDependency, TracerDependency
 from backend.mcp.invocation import MCPInvocationError
 
@@ -49,6 +54,7 @@ async def call_tool(
     identity: IdentityDependency,
 ) -> dict[str, Any]:
     authorize_user(user_id, identity)
+    authorize_scope(identity, SCOPE_TOOLS)
     trace_id = tracer.start_trace(user_id)
     try:
         result = await service.invoke(

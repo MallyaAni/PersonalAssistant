@@ -2,12 +2,13 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import String, Text
+from sqlalchemy import String
 from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
 from backend.database.session import Base
+from backend.database.types import EncryptedText
 
 
 class Conversation(Base):
@@ -22,8 +23,8 @@ class Conversation(Base):
         nullable=False,
     )
     user_id: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
-    query: Mapped[str] = mapped_column(Text, nullable=False)
-    response: Mapped[str] = mapped_column(Text, nullable=False)
+    query: Mapped[str] = mapped_column(EncryptedText, nullable=False)
+    response: Mapped[str] = mapped_column(EncryptedText, nullable=False)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     extra_data: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
 

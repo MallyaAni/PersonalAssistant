@@ -174,6 +174,13 @@ class Settings(BaseSettings):
     AUTH_REQUIRED: bool = False
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
+    # Encryption at rest. Opt-in: empty means disabled and all content is stored
+    # as plaintext, unchanged from earlier behaviour. Set a urlsafe-base64
+    # AES-256 key (see `python -m backend.cli.generate_encryption_key`) to seal
+    # conversation, memory, and image content before it reaches disk. This is
+    # defence in depth over, not a replacement for, OS full-disk encryption.
+    ENCRYPTION_KEY: str = ""
+
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
     )

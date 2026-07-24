@@ -6,6 +6,7 @@ from contextlib import suppress
 from pathlib import Path
 
 from backend.artifacts.types import StoredBinary
+from backend.core.crypto import get_field_cipher
 from backend.core.interfaces import BinaryArtifactStore
 
 _ALLOWED_EXTENSIONS = {"jpg", "png", "webp"}
@@ -51,20 +52,26 @@ class LocalBinaryArtifactStore(BinaryArtifactStore):
             raise ValueError("Unsupported artifact extension")
         user_namespace = hashlib.sha256(user_id.encode("utf-8")).hexdigest()[:24]
         storage_key = f"{user_namespace}/{artifact_id}.{normalized_extension}"
-        await asyncio.to_thread(
-            _write_atomic,
-            self._path_for_key(storage_key),
-            content,
-        )
-        return StoredBinary(
+        # Integrity is recorded over the plaintext, so the SHA-256 and size in the
+        # database describe the image regardless of whether the bytes on disk are
+        # sealed. A read decrypts before the caller re-checks, so the check holds.
+        stored = StoredBinary(
             storage_key=storage_key,
             byte_size=len(content),
             sha256=hashlib.sha256(content).hexdigest(),
         )
+        at_rest = get_field_cipher().encrypt_bytes(content)
+        await asyncio.to_thread(
+            _write_atomic,
+            self._path_for_key(storage_key),
+            at_rest,
+        )
+        return stored
 
     # Read a stored binary without blocking the request event loop.
     async def read(self, storage_key: str) -> bytes:
-        return await asyncio.to_thread(self._path_for_key(storage_key).read_bytes)
+        at_rest = await asyncio.to_thread(self._path_for_key(storage_key).read_bytes)
+        return get_field_cipher().decrypt_bytes(at_rest)
 
     # Delete a stored binary idempotently without leaving its user directory behind.
     async def delete(self, storage_key: str) -> None:

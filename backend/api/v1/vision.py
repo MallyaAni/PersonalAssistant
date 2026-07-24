@@ -5,7 +5,12 @@ from uuid import UUID
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
 
 from backend.config.settings import settings
-from backend.core.auth import IdentityDependency, authorize_user
+from backend.core.auth import (
+    SCOPE_VISION,
+    IdentityDependency,
+    authorize_scope,
+    authorize_user,
+)
 from backend.core.dependencies import TracerDependency, VisionAnalysisDependency
 from backend.models.image import ImageQuestionBody
 from backend.services.vision_analysis_service import (
@@ -53,6 +58,7 @@ async def analyze_image_upload(
     if not normalized_user_id or not normalized_prompt:
         raise HTTPException(status_code=422, detail="Text fields must not be blank")
     authorize_user(normalized_user_id, identity)
+    authorize_scope(identity, SCOPE_VISION)
     trace_id = tracer.start_trace(normalized_user_id)
     try:
         content = await _read_bounded_upload(
@@ -107,6 +113,7 @@ async def ask_about_image(
     identity: IdentityDependency,
 ) -> dict[str, Any]:
     authorize_user(body.user_id, identity)
+    authorize_scope(identity, SCOPE_VISION)
     trace_id = tracer.start_trace(body.user_id)
     try:
         return await service.ask_about_artifact(

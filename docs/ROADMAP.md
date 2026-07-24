@@ -77,7 +77,9 @@ Current evidence as of 2026-07-17:
 - `VERIFIED`: vector dimension is runtime-configured, and an offline resumable shadow-column migrator covers all seven vector stores. An isolated PostgreSQL acceptance forced a wrong-dimension failure that preserved both original `vector(3)` values, then retried, changed the column to `vector(2)`, and rebuilt HNSW; a production dry run confirmed every real store remains `vector(768)` with no shadow columns.
 - `VERIFIED`: chat deterministically proposes explicit person/relationship, reusable workflow, and titled-reference memory in addition to preferred name and response style. Rejection performs no write; browser approval uses typed APIs with conversation/trace provenance. Live new-conversation checks recalled an approved dentist name plus unique workflow and reference codes, then cleanup removed the scoped data.
 - `UNVERIFIED`: long-duration production-capacity/HNSW recall testing and delivery into a selected external alert platform.
-- `PLANNED` by explicit user direction as the final subsystem: at-rest/backup encryption, tested backup/restore, token revocation/password-based login, redacted audits, and backup/log deletion.
+- `VERIFIED` (bounded, opt-in): AES-256-GCM application-level encryption at rest for conversation, episodic/semantic memory, and image content when `ENCRYPTION_KEY` is set, with lazy plaintext migration, authenticated ciphertext, and integrity preserved over the plaintext; embeddings and deduplication columns are intentionally excluded and documented as residual exposure.
+- `VERIFIED` (bounded): least-privilege token scopes (`chat`, `memory:read`, `memory:write`, `tools:invoke`, `vision`, and `memory`/`tools` groups) enforced per route action, validated at issue time, with unscoped tokens remaining unrestricted for compatibility.
+- `PLANNED` by explicit user direction as the remaining final-subsystem work: full-store/backup encryption, tested backup/restore, token revocation/password-based login, redacted audits, and backup/log deletion.
 
 Delivered local-development capabilities include:
 
@@ -96,7 +98,7 @@ Production-grade memory completion gates:
 - authenticated ownership and authorization on every conversation and memory read/write/delete path;
 - approval-based fact capture with provenance, confidence, purpose, and timestamps rather than silent model extraction;
 - correction, versioning, contradiction handling, deduplication, export, per-record deletion, delete-all, and deletion propagation to embeddings, conversations, caches, logs, and backups;
-- retention/expiry policies, storage and backup encryption, tested backup/restore, and redacted audit events;
+- retention/expiry policies and storage encryption (opt-in content encryption at rest is implemented; full-store coverage, backup encryption, tested backup/restore, and redacted audit events remain);
 - semantic relevance thresholds, hybrid retrieval/reranking where justified, prompt-injection isolation, and a repeatable retrieval-quality/privacy evaluation set;
 - embedding-model/version metadata plus a tested re-embedding and vector-dimension migration path;
 - non-blocking database access, service-level transaction boundaries, idempotent writes, indexes, concurrency/load tests, failure recovery, and operational monitoring.

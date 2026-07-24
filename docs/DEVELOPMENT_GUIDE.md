@@ -134,6 +134,7 @@ Key settings are:
 | --- | --- | --- |
 | `SECRET_KEY` | none; required | Set a non-production development value before importing the backend |
 | `AUTH_REQUIRED` | `false` | Set `true` outside trusted-local mode; then every chat/memory request needs a signed user token |
+| `ENCRYPTION_KEY` | none; disabled | Set a urlsafe-base64 AES-256 key (from `python -m backend.cli.generate_encryption_key`) to seal conversation/memory/image content at rest; empty stores plaintext |
 | `DEBUG` | `false` | Must be a valid boolean; an existing host `DEBUG` value overrides `.env` |
 | `POSTGRES_USER` | `postgres` | Match the Compose database |
 | `POSTGRES_PASSWORD` | `password` | Development Compose value only |
@@ -713,6 +714,25 @@ $env:VITE_AUTH_TOKEN = $token
 ```
 
 Send `Authorization: Bearer <token>` on direct API requests. The token subject must exactly match the body/path `user_id`; never commit or log a real token.
+
+To issue a least-privilege token, pass `--scope` one or more times; omitting it mints an unrestricted token. Each route requires the scope matching its action, so a read-only token cannot write:
+
+```powershell
+# A token that can browse memory but not change or delete it.
+python -m backend.cli.issue_token --user dev_user_001 --scope memory:read
+# A token scoped to a single subsystem.
+python -m backend.cli.issue_token --user dev_user_001 --scope vision --scope tools:invoke
+```
+
+Grantable scopes are `chat`, `memory:read`, `memory:write`, `tools:invoke`, `vision`, and the `memory`/`tools` groups; a group grants its children. A request whose token lacks the route's scope returns 403 before the handler runs.
+
+To validate encryption at rest, generate a key, set it, and confirm content is sealed on disk:
+
+```powershell
+python -m backend.cli.generate_encryption_key   # copy the value into .env as ENCRYPTION_KEY
+```
+
+With a key set, new conversation, memory, and image content is written sealed (`enc:1:…` in the column, non-image bytes on the artifact volume) and read back transparently; existing plaintext rows keep working and are re-sealed the next time they are saved. Keep the key off the volume that holds the database backups it protects, and never lose it: once content is sealed, the key is the only way to read it back, and turning encryption off while sealed rows exist makes those reads fail rather than return ciphertext.
 
 Validate all applicable acceptance properties:
 

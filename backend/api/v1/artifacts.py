@@ -5,7 +5,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
 from backend.artifacts.image_retrieval import ImageRetrievalPolicy
 from backend.config.settings import settings
-from backend.core.auth import IdentityDependency, authorize_user
+from backend.core.auth import (
+    SCOPE_VISION,
+    IdentityDependency,
+    authorize_scope,
+    authorize_user,
+)
 from backend.core.dependencies import (
     ImageArtifactDependency,
     MemoryDependency,
@@ -35,6 +40,7 @@ async def search_images(
     limit: Annotated[int, Query(ge=1, le=50)] = 10,
 ) -> list[dict[str, Any]]:
     authorize_user(user_id, identity)
+    authorize_scope(identity, SCOPE_VISION)
     # The text embedder applies the search_query prefix Nomic requires for
     # multimodal retrieval, placing the query in the shared image/text space.
     vector = await memory.embed_query(query)
@@ -61,6 +67,7 @@ async def list_user_artifacts(
     limit: Annotated[int, Query(ge=1, le=500)] = 100,
 ) -> list[dict[str, Any]]:
     authorize_user(user_id, identity)
+    authorize_scope(identity, SCOPE_VISION)
     return await repository.list_for_user(user_id, limit)
 
 
@@ -73,6 +80,7 @@ async def list_conversation_artifacts(
     identity: IdentityDependency,
 ) -> list[dict[str, Any]]:
     authorize_user(user_id, identity)
+    authorize_scope(identity, SCOPE_VISION)
     return await repository.list_for_conversation(user_id, str(conversation_id))
 
 
@@ -85,6 +93,7 @@ async def delete_artifact(
     identity: IdentityDependency,
 ) -> dict[str, str]:
     authorize_user(user_id, identity)
+    authorize_scope(identity, SCOPE_VISION)
     if not await service.delete_owned(user_id, str(artifact_id)):
         raise HTTPException(status_code=404, detail="Artifact not found")
     return {"status": "deleted", "id": str(artifact_id)}
@@ -99,6 +108,7 @@ async def get_artifact_content(
     identity: IdentityDependency,
 ) -> Response:
     authorize_user(user_id, identity)
+    authorize_scope(identity, SCOPE_VISION)
     result = await service.read_owned(user_id, str(artifact_id))
     if result is None:
         raise HTTPException(status_code=404, detail="Artifact content not found")

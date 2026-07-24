@@ -7,7 +7,12 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Request, Response, status
 
 from backend.artifacts.types import ImageGenerationRequest
-from backend.core.auth import IdentityDependency, authorize_user
+from backend.core.auth import (
+    SCOPE_VISION,
+    IdentityDependency,
+    authorize_scope,
+    authorize_user,
+)
 from backend.core.dependencies import ImageArtifactDependency, TracerDependency
 from backend.models.image import ImageGenerationBody
 
@@ -51,6 +56,7 @@ async def generate_image(
     identity: IdentityDependency,
 ) -> dict[str, Any] | Response:
     authorize_user(body.user_id, identity)
+    authorize_scope(identity, SCOPE_VISION)
     trace_id = tracer.start_trace(body.user_id)
     seed = body.seed if body.seed is not None else secrets.randbelow(2**63)
     try:

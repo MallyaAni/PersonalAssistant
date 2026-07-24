@@ -3,7 +3,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 
-from backend.core.auth import IdentityDependency, authorize_user
+from backend.core.auth import (
+    SCOPE_MEMORY_READ,
+    IdentityDependency,
+    authorize_scope,
+    authorize_user,
+)
 from backend.core.dependencies import (
     get_artifact_repository,
     get_conversation_repository,
@@ -34,6 +39,7 @@ async def get_conversation_snapshot(
     limit: Annotated[int, Query(ge=1, le=500)] = 100,
 ) -> dict[str, Any]:
     authorize_user(user_id, identity)
+    authorize_scope(identity, SCOPE_MEMORY_READ)
     conversation_key = str(conversation_id)
     return {
         "conversation_id": conversation_key,

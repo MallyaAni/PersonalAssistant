@@ -417,3 +417,30 @@ This file is append-only history for meaningful, verified changes. It must not c
   invocation gates still run once per call.
 - Verified with seven dedicated retry tests and the full suite: 396 backend
   tests, Ruff, Black, and strict MyPy over 119 source files pass.
+
+## 2026-07-24 — Opt-in encryption at rest and least-privilege token scopes
+
+- Added `FieldCipher`, an AES-256-GCM envelope with a self-describing versioned
+  format (`enc:1:…`), a fresh per-value nonce, and authenticated ciphertext.
+  Encryption is opt-in: with no `ENCRYPTION_KEY` configured it is a transparent
+  pass-through, so zero-config local development is unchanged.
+- Applied it transparently at the persistence boundary through an
+  `EncryptedText` column type on conversation turns and episodic/semantic memory
+  content, and sealed generated/uploaded image bytes in the artifact store while
+  recording integrity over the plaintext so the existing SHA-256 re-check still
+  holds. Legacy plaintext reads back unchanged, so encryption enables without a
+  migration; a fresh nonce per value is why it is applied only to content
+  retrieved by id or vector, never to a deduplication or uniqueness column.
+- Documented the threat model honestly: this is defence in depth over OS
+  full-disk encryption for data that leaves the process without the key, not a
+  sandbox against a live compromised host; embedding vectors stay searchable and
+  therefore unencrypted, a residual disclosure vector recorded in SECURITY.md.
+- Added least-privilege token scopes (`chat`, `memory:read`, `memory:write`,
+  `tools:invoke`, `vision`, and the `memory`/`tools` groups) enforced per route
+  action, so a read token is refused a write before the handler runs. A group
+  scope grants its children, an unknown scope is rejected at issue time, and a
+  token with no scope claim stays unrestricted so existing tokens keep working.
+  Scopes narrow a valid token without replacing the ownership check.
+- Verified with new crypto, encrypted-column, binary-store, and scope tests plus
+  the full suite: 414 backend tests, Ruff, Black, and strict MyPy over 122
+  source files pass.
