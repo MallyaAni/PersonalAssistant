@@ -80,6 +80,7 @@ Current evidence as of 2026-07-17:
 - `VERIFIED` (bounded, opt-in): AES-256-GCM application-level encryption at rest for conversation, episodic/semantic memory, and image content when `ENCRYPTION_KEY` is set, with lazy plaintext migration, authenticated ciphertext, and integrity preserved over the plaintext; embeddings and deduplication columns are intentionally excluded and documented as residual exposure.
 - `VERIFIED` (bounded): least-privilege token scopes (`chat`, `memory:read`, `memory:write`, `tools:invoke`, `vision`, and `memory`/`tools` groups) enforced per route action, validated at issue time, with unscoped tokens remaining unrestricted for compatibility.
 - `PLANNED` by explicit user direction as the remaining final-subsystem work: full-store/backup encryption, tested backup/restore, token revocation/password-based login, redacted audits, and backup/log deletion.
+- `PLANNED`: automatic approval-gated episodic capture from conversations. Episodic memory is currently explicit-write-only (the "Add event or experience" action and `POST /memory/{user}/episodic`, both verified working); chat auto-captures only working memory and rolling summaries. A future step would let a turn *propose* an episodic event ("save that you visited the Grand Canyon?") through the same reject-writes-nothing approval flow used for facts, preserving the "no silent model extraction" principle.
 
 Delivered local-development capabilities include:
 
@@ -233,3 +234,38 @@ Safe tool-descriptor embeddings, approved preference/sanitized outcome memory, l
 - proactive automation with explicit permission boundaries.
 
 Security and privacy gates in [SECURITY.md](SECURITY.md) apply before these capabilities can be considered complete.
+
+## Milestone 7: multi-user identity and private per-user profiles — PLANNED
+
+The target: each person logs in, has their own profile and memory, and can view
+only their own information. The per-user data model (every store scoped by
+`user_id`) and the authorization layer (ownership binding plus least-privilege
+token scopes) already exist and are `VERIFIED`; with `AUTH_REQUIRED=true` one
+user cannot read another's data at the application layer. What remains is real
+identity, a cryptographic privacy guarantee, and session lifecycle.
+
+- `PLANNED`: real authentication. A users table, password hashing (argon2id or
+  bcrypt), a registration and `POST /login` flow that issues the existing scoped
+  tokens, and a frontend login screen replacing the dev-user `localStorage`
+  shim. Today tokens are minted by a CLI and there is no user record or password.
+- `PLANNED`: per-user encryption keys for a true "only I can read it, not even
+  the operator" guarantee. The current at-rest encryption uses a single
+  server-side key, which protects a stolen database or backup but does not stop
+  a holder of that key from reading every user's data. The privacy vision needs
+  envelope encryption: a per-user data key wrapped by a key derived from the
+  user's own password (or a KMS/HSM), so content is unreadable without the user.
+  This decision shapes the login flow, because the password must unlock the key,
+  and should be settled before more data is encrypted under the single key.
+- `PLANNED`: session lifecycle. Token revocation and logout (today tokens only
+  expire), refresh/rotation, and optional account administration.
+- `PLANNED`: per-user key rotation and recovery, including what happens to
+  a user's encrypted data on password reset (unrecoverable without a recovery
+  key or escrow), documented as an explicit product decision.
+
+Ordering note: the per-user-key decision (item two) is architectural and
+influences authentication and the encryption already in place, so it is worth
+designing before building the login flow, not after.
+
+The security and privacy gates in [SECURITY.md](SECURITY.md) apply throughout;
+enabling `AUTH_REQUIRED` and protecting the signing and encryption keys are
+prerequisites for any non-local, multi-person deployment.
