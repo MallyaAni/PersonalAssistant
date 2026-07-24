@@ -12,6 +12,7 @@ from backend.mcp.invocation import (
     assert_descriptor_is_current,
     validate_arguments,
 )
+from backend.mcp.retry import MCPRetryPolicy
 from backend.mcp.types import MCPServerConfig, MCPTool
 
 logger = logging.getLogger(__name__)
@@ -20,6 +21,10 @@ logger = logging.getLogger(__name__)
 # Anything else is consequential until a human says otherwise: a wrong read is
 # recoverable, a wrong write is not.
 _AUTO_INVOCABLE = frozenset({"trusted", "read_only"})
+# Only calls that can be replayed without effect are retried. This is the same
+# set as the auto-invocable one by design: a server the operator marked safe to
+# call without confirmation is a server whose calls are safe to repeat.
+_REPLAY_SAFE = _AUTO_INVOCABLE
 
 
 class MCPInvocationService:
@@ -39,12 +44,14 @@ class MCPInvocationService:
         lister: MCPToolLister,
         servers: tuple[MCPServerConfig, ...] = (),
         egress: OutboundPrivacyPolicy | None = None,
+        retry: MCPRetryPolicy | None = None,
     ) -> None:
         self.invoker = invoker
         self.lister = lister
         self.servers = {server.server_id: server for server in servers}
         # Screening is never optional: arguments leave the machine.
         self.egress = egress or OutboundPrivacyPolicy()
+        self.retry = retry or MCPRetryPolicy()
 
     # Screen every string argument, refusing the call if any cannot be sent.
     def _screen_arguments(self, arguments: dict[str, Any]) -> dict[str, Any]:
@@ -123,15 +130,27 @@ class MCPInvocationService:
             tool_name,
             len(screened),
         )
-        if server.forward_context and request_context:
-            result = await self.invoker.call_tool(
-                server,
-                tool_name,
-                screened,
-                request_meta=request_context,
-            )
-        else:
-            result = await self.invoker.call_tool(server, tool_name, screened)
+        # A replay-safe server may retry a dropped call; a write server may not,
+        # because a lost response does not prove the call did not execute.
+        attempts = (
+            self.retry.max_attempts if server.risk_classification in _REPLAY_SAFE else 1
+        )
+
+        async def _call() -> ToolCallResult:
+            if server.forward_context and request_context:
+                return await self.invoker.call_tool(
+                    server,
+                    tool_name,
+                    screened,
+                    request_meta=request_context,
+                )
+            return await self.invoker.call_tool(server, tool_name, screened)
+
+        result = await self.retry.run(
+            _call,
+            attempts=attempts,
+            describe=f"{server_id}/{tool_name}",
+        )
 
         # The result is untrusted content, so it is inspected before it can be
         # placed in front of the model.

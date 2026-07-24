@@ -411,7 +411,12 @@ use for a deployed sibling container or a remote vendor and needs nothing extra
 in the image. `forward_context` defaults to `false`. Set it only for an
 application-owned local server that requires AniOS user, conversation, and
 trace metadata outside its model-visible tool schema; do not enable it for an
-arbitrary remote server. Discover and index configured tools with:
+arbitrary remote server. `risk_classification` also decides retry: only
+`read_only` and `trusted` servers are retried on a transient transport error,
+because only a replay-safe call can be repeated without risking a duplicate
+write. Classify a server that mutates state as `untrusted` even if it never
+needs confirmation for another reason, so a dropped connection is never retried
+into a double-execution. Discover and index configured tools with:
 
 ```bash
 docker compose exec backend python -m backend.cli.sync_mcp_tools --user-id <user>

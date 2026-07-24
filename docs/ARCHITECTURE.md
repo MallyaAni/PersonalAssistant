@@ -336,6 +336,17 @@ the truth. Every invocation, in order:
 7. Screens every string argument through `OutboundPrivacyPolicy`, the same gate
    web search uses.
 
+A transient transport failure is retried, but only for a call that can be
+replayed without consequence. `MCPRetryPolicy` grants extra attempts solely to
+`read_only` and `trusted` servers - the same classifications that skip
+confirmation, because a call safe to make unconfirmed is safe to repeat - and
+only on genuine transport errors (`ConnectionError`, `TimeoutError`, `OSError`).
+A consequential server gets exactly one attempt: a dropped connection does not
+prove the write never reached the server, so retrying it risks doing it twice.
+A deterministic refusal - a gate rejection, a schema failure, a privacy block -
+is never retried, because re-running it would fail identically. The gates above
+still run once per call; retry wraps only the transport, never the policy.
+
 Results are bounded and inspected. Instruction-shaped output is flagged and
 rendered to the model as quoted, clearly attributed data with an explicit note
 not to follow it. Verified against a live server: a valid call returns, while

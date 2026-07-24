@@ -381,3 +381,39 @@ This file is append-only history for meaningful, verified changes. It must not c
   live browser search workflow, the TypeScript/Vite production build, and ten
   synchronized canonical diagrams. Added the dedicated search/research view and
   ADR 0004.
+
+## 2026-07-24 — Search routing measured against a committed labelled set
+
+- Replaced the informally asserted routing accuracy with a committed set of
+  labelled routing cases and a mode-aware evaluator that fails a build below
+  per-mode recall and specificity floors, so a routing regression is caught
+  rather than assumed absent.
+- Admitted the labelled-case module explicitly to the architecture-boundary
+  test's `search/` allowlist, so a new file in that package cannot slip in
+  unreviewed.
+
+## 2026-07-24 — Optional OpenTelemetry request and outbound-call tracing
+
+- Added opt-in OpenTelemetry wiring that instruments FastAPI and httpx, so every
+  outbound call—LM Studio, Tavily, an HTTP MCP server—appears as a child span
+  carrying W3C trace-context and a slow turn is attributable to the provider
+  that caused it. Tracing is off unless `OTEL_ENABLED=true`, and an unreachable
+  collector drops spans in the background rather than failing a request.
+- Wrapped, rather than replaced, the existing conversation tracer: the adapter
+  stamps the application trace id and user id onto the active request span and
+  records each step as a bounded, stringified span event, so the custom trace
+  and the OpenTelemetry trace refer to the same turn without leaking raw text.
+
+## 2026-07-24 — MCP tool-call idempotency and bounded retry
+
+- Added `MCPRetryPolicy`, which retries a transient transport failure only for a
+  server the operator classified `read_only` or `trusted`—the same set that
+  skips confirmation—because only a replay-safe call can be repeated without
+  risking a duplicate write.
+- Kept a consequential server at exactly one attempt: a dropped connection does
+  not prove the write never reached the server, so it is never retried into a
+  double-execution. A deterministic refusal—a gate rejection, schema failure, or
+  privacy block—is never retried; retry wraps only the transport, and the
+  invocation gates still run once per call.
+- Verified with seven dedicated retry tests and the full suite: 396 backend
+  tests, Ruff, Black, and strict MyPy over 119 source files pass.
