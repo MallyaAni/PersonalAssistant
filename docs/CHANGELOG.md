@@ -444,3 +444,24 @@ This file is append-only history for meaningful, verified changes. It must not c
 - Verified with new crypto, encrypted-column, binary-store, and scope tests plus
   the full suite: 414 backend tests, Ruff, Black, and strict MyPy over 122
   source files pass.
+
+## 2026-07-24 — Proactive approval-gated episodic memory capture
+
+- Added `propose_episodic`, which proactively proposes an episodic memory when a
+  chat turn narrates a first-person past-tense event. Unlike the existing
+  proposers it fires without an explicit "remember" trigger, so it is kept
+  high-precision (a curated experiential verb set, a first-person-question
+  guard, the user's own sentence retained as content) and made the lowest-
+  priority proposal, so any explicit preferred-name/style/entity/workflow/
+  reference intent still wins.
+- Reused the existing approval boundary end to end: the proposal streams as the
+  same `memory_proposal` SSE event, the frontend adds an approve/reject card for
+  it, and approval routes through the existing `POST /memory/{user}/episodic`
+  endpoint with chat conversation/trace provenance. Rejection writes nothing, so
+  the "no silent model extraction" principle holds.
+- Live-verified against the running stack: a chat turn ("I graduated from
+  university last month") emitted the episodic proposal over SSE, and the
+  approval call persisted it with `chat_approval` provenance.
+- Verified with new proposer tests plus the full suite: 424 backend tests, Ruff,
+  Black, and strict MyPy over 122 source files, and the frontend production
+  build pass.

@@ -95,6 +95,7 @@ export interface SearchSource {
   title: string;
   url: string;
   snippet: string;
+  provider?: string;
 }
 
 export interface ToolActivity {
@@ -173,12 +174,20 @@ export interface KnowledgeProposal {
   trace_id: string;
 }
 
+export interface EpisodicProposal {
+  kind: 'episodic';
+  content: string;
+  conversation_id: string;
+  trace_id: string;
+}
+
 export type MemoryProposal =
   | PreferredNameProposal
   | ResponseStyleProposal
   | EntityProposal
   | ProcedureProposal
-  | KnowledgeProposal;
+  | KnowledgeProposal
+  | EpisodicProposal;
 
 export type ChatStreamUpdate =
   | { type: 'start'; content: string }
@@ -334,6 +343,25 @@ export function approveProcedure(userId: string, proposal: ProcedureProposal) {
         source_conversation_id: proposal.conversation_id,
         source_trace_id: proposal.trace_id,
         metadata: { source: 'chat_approval' },
+      }),
+    },
+  )
+}
+
+// Approve a proactively proposed episodic memory produced during chat.
+export function approveEpisodic(userId: string, proposal: EpisodicProposal) {
+  return apiRequest<MemoryItem>(
+    `/api/v1/memory/${encodeURIComponent(userId)}/episodic`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        content: proposal.content,
+        purpose: 'chat_approval',
+        metadata: {
+          source: 'chat_approval',
+          source_conversation_id: proposal.conversation_id,
+          source_trace_id: proposal.trace_id,
+        },
       }),
     },
   )
@@ -656,7 +684,7 @@ export async function* streamChat(userId: string, conversationId: string, query:
         const proposalConversationId = event.data.conversation_id
         const proposalTraceId = event.data.trace_id
         if (
-          !['preferred_name', 'response_style', 'entity', 'procedure', 'knowledge']
+          !['preferred_name', 'response_style', 'entity', 'procedure', 'knowledge', 'episodic']
             .includes(String(kind)) ||
           typeof proposalConversationId !== 'string' ||
           typeof proposalTraceId !== 'string'
@@ -705,6 +733,17 @@ export async function* streamChat(userId: string, conversationId: string, query:
             name,
             description,
             steps: steps as Array<Record<string, unknown>>,
+            conversation_id: proposalConversationId,
+            trace_id: proposalTraceId,
+          }
+        } else if (kind === 'episodic') {
+          const { content } = event.data
+          if (typeof content !== 'string' || !content.trim()) {
+            throw new Error('Episodic memory proposal is invalid')
+          }
+          proposal = {
+            kind: 'episodic',
+            content,
             conversation_id: proposalConversationId,
             trace_id: proposalTraceId,
           }
@@ -773,6 +812,7 @@ export async function* streamChat(userId: string, conversationId: string, query:
             title: record.title,
             url: record.url,
             snippet: typeof record.snippet === 'string' ? record.snippet : '',
+            provider: typeof record.provider === 'string' ? record.provider : undefined,
           }]
         })
         yield { type: 'search_sources', sources: parsed } satisfies ChatStreamUpdate

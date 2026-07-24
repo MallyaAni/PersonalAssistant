@@ -60,6 +60,36 @@ _KNOWLEDGE_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+# Unlike the proposers above, this one fires without an explicit "remember"
+# trigger: it proactively notices that the user narrated something they did.
+# Precision matters more than recall - a noisy proposal is an annoyance - so the
+# verbs are a curated set of first-person, past-tense, experiential events, and
+# the whole thing is guarded against questions and non-events below. This is the
+# only proposer that captures unprompted, so it is also the lowest priority: any
+# explicit intent above it wins.
+_EPISODIC_TRIGGER = re.compile(
+    r"\bI\s+(?:"
+    r"went\s+to|visited|traveled\s+to|travelled\s+to|flew\s+to|drove\s+to|"
+    r"moved\s+to|relocated\s+to|"
+    r"attended|celebrated|"
+    r"started\s+(?:a|an|my|working|university|college|school)\b|"
+    r"joined|finished|completed|launched|shipped|published|"
+    r"graduated|got\s+married|got\s+engaged|adopted|"
+    r"met\s+with"
+    r")",
+    re.IGNORECASE,
+)
+
+# A first-person question ("how do I", "should I") is not a narrated event even
+# when it contains a trigger word, so it is excluded.
+_EPISODIC_QUESTION_GUARD = re.compile(
+    r"\b(?:how|should|shall|can|could|would|will|do|did|when|where|why|what)\s+I\b",
+    re.IGNORECASE,
+)
+
+_EPISODIC_MIN_CHARS = 15
+_EPISODIC_MAX_CHARS = 300
+
 
 def propose_preferred_name(query: str) -> str | None:
     """Return a narrow preferred-name proposal without persisting it."""
@@ -130,6 +160,32 @@ def propose_knowledge(query: str) -> dict[str, str] | None:
     if not title or not content:
         return None
     return {"title": title, "content": content}
+
+
+# Proactively propose a narrated first-person event as episodic memory, keeping
+# the user's own sentence as the content, without persisting anything.
+def propose_episodic(query: str) -> str | None:
+    match = _EPISODIC_TRIGGER.search(query)
+    if match is None:
+        return None
+    sentence = _sentence_around(query, match.start()).strip()
+    if not _EPISODIC_MIN_CHARS <= len(sentence) <= _EPISODIC_MAX_CHARS:
+        return None
+    # A question that merely contains a trigger word is not a narrated event.
+    if sentence.endswith("?") or _EPISODIC_QUESTION_GUARD.search(sentence):
+        return None
+    return sentence
+
+
+# Return the single sentence of `text` that contains `index`, including its
+# terminal punctuation, so an approved memory reads as the user phrased it.
+def _sentence_around(text: str, index: int) -> str:
+    start = 0
+    for boundary in re.finditer(r"[.!?]\s+", text[:index]):
+        start = boundary.end()
+    tail = re.search(r"[.!?]", text[index:])
+    end = index + tail.start() + 1 if tail else len(text)
+    return text[start:end]
 
 
 def _is_supported_name(value: str) -> bool:

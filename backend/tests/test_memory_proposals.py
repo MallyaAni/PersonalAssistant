@@ -2,6 +2,7 @@ import pytest
 
 from backend.memory.proposals import (
     propose_entity,
+    propose_episodic,
     propose_knowledge,
     propose_preferred_name,
     propose_procedure,
@@ -77,3 +78,48 @@ def test_propose_knowledge_requires_title_content_separator() -> None:
         "content": "The code is violet seven.",
     }
     assert propose_knowledge("Remember that the code is violet seven.") is None
+
+
+# Verify episodic capture fires on a narrated first-person event and keeps the
+# user's own sentence, without needing an explicit "remember" trigger.
+@pytest.mark.parametrize(
+    ("query", "expected"),
+    [
+        (
+            "I visited the Grand Canyon in July and it was breathtaking.",
+            "I visited the Grand Canyon in July and it was breathtaking.",
+        ),
+        # Only the sentence with the event is captured, not the whole message.
+        (
+            "Can you help me plan a trip? I went to Kyoto last spring. Thanks!",
+            "I went to Kyoto last spring.",
+        ),
+        (
+            "I started a new job at Anthropic today.",
+            "I started a new job at Anthropic today.",
+        ),
+        (
+            "I graduated from university last month.",
+            "I graduated from university last month.",
+        ),
+    ],
+)
+def test_propose_episodic_captures_a_narrated_event(query, expected):
+    assert propose_episodic(query) == expected
+
+
+# Verify episodic capture stays quiet on questions, plans, and non-events, so a
+# proactive proposal is not a nuisance.
+@pytest.mark.parametrize(
+    "query",
+    [
+        "Where should I go to on vacation?",
+        "How do I finish this report?",
+        "Should I visit Rome next year?",
+        "I will visit Rome next year.",
+        "I like pizza and long walks.",
+        "Can you summarize what I attended means?",
+    ],
+)
+def test_propose_episodic_ignores_non_events(query):
+    assert propose_episodic(query) is None

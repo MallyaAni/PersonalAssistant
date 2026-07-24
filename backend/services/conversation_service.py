@@ -25,6 +25,7 @@ from backend.mcp.invocation import MCPInvocationError
 from backend.memory.coordinator import MemoryCoordinatorAgent
 from backend.memory.proposals import (
     propose_entity,
+    propose_episodic,
     propose_knowledge,
     propose_preferred_name,
     propose_procedure,
@@ -115,6 +116,16 @@ def _memory_proposal(
                 "conversation_id": conversation_id,
                 "trace_id": trace_id,
             }
+    # Lowest priority: this is the only proposal made without explicit save
+    # intent, so any of the above wins over a proactively noticed event.
+    episodic = propose_episodic(query)
+    if episodic:
+        return {
+            "kind": "episodic",
+            "content": episodic,
+            "conversation_id": conversation_id,
+            "trace_id": trace_id,
+        }
     return None
 
 
