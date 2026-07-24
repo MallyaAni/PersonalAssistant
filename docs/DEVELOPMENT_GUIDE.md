@@ -75,6 +75,34 @@ Use this ownership map when selecting affected views:
 
 Internal refactors, bug fixes, styling, tests, and field-level implementation details do not trigger a diagram edit when those architectural relationships remain unchanged. The synchronization check still validates every registered pair, while visual inspection may stay limited to diagrams whose source changed.
 
+## Search routing evaluation
+
+Routing quality is measured against a committed labelled set rather than
+asserted, because the numbers quoted in commit messages are otherwise
+unverifiable and cannot fail a build:
+
+```bash
+python -m backend.cli.evaluate_search_routing --patterns-only   # deterministic, no model
+python -m backend.cli.evaluate_search_routing                   # full cascade
+```
+
+Both exit non-zero below their floor, so either can gate a pipeline. The floors
+follow the mode: patterns alone cannot reach the cascade's recall, and holding
+them to it would fail every run. Recall is weighted above specificity on
+purpose - a missed search returns a confident stale answer, while an
+unnecessary one costs about a second.
+
+Measured on the committed set: patterns alone reach 78.6% recall at 100%
+specificity, and the cascade reaches 100% recall at 94.1% specificity, with the
+weakness isolated to `implicit_volatile` - volatile questions carrying no
+temporal marker, which patterns cannot catch by construction.
+
+Treat those figures as a regression signal, not an absolute score. The set is
+curated locally and smaller than a public benchmark; the same cascade scored
+91.7% recall and 61.1% specificity against FreshQA's 600 questions. Extend
+`backend/search/routing_cases.py` when a real query is routed wrongly, so the
+set grows toward the traffic it actually sees.
+
 ## Module boundaries
 
 `backend/mcp` owns the protocol, `backend/search` owns web search only,

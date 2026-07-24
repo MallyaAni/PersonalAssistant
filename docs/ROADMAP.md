@@ -136,9 +136,10 @@ text-text scores, so image vectors keep a separate column, index, and calibrated
 threshold rather than sharing one ranked list. Retrieval quality is measured
 rather than assumed: an 18-query labelled evaluation returns 14/14 correct
 top-1 matches and rejects 4/4 distractor queries, using a distance ceiling plus
-a required best-to-runner-up margin. A committed evaluation harness equivalent
-to `evaluate_memory_retrieval.py` remains `PLANNED`; the calibration run was
-performed manually.
+a required best-to-runner-up margin. Search routing now has a committed harness,
+`backend/cli/evaluate_search_routing.py`, which scores a labelled set and exits
+non-zero below a per-mode floor. Image-retrieval calibration remains manual and
+is the next evaluation gap.
 - `VERIFIED`: threaded followup questions about any owned generated or uploaded image reuse the integrity-checked stored bytes and the same Gemma vision boundary, replay a bounded question/answer context, persist a size-bounded thread in artifact metadata, seed from a prior flat analysis, and reject unowned or non-ready images with 404 before any provider call. Deterministic Chromium plus backend/unit coverage pass, and a live Gemma followup completed through the local visual MCP facade. The thread lives only on the artifact record; embedding VLM analysis text into personal memory remains `PLANNED`.
 - `VERIFIED`: natural-language new-image requests submitted from Chat select the image-generation path, while historical questions submitted with Create image selected switch back to ordinary chat without creating another image. Generated artifacts retain prompt provenance; deterministic image recall uses it to ground later questions.
 - `VERIFIED`: an explicit internet search about a recalled image runs image retrieval first, appends only a bounded prompt/analysis description to the normalized subject, privacy-screens the combined query, invokes the read-only internet MCP tool, and never sends image bytes. Real Chromium verified generation, grounded followup, visible search-tool lifecycle, terminal streaming, cleared loading/input, and memory-map drilldown.

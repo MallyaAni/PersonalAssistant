@@ -49,7 +49,9 @@ def test_lower_layers_do_not_depend_on_the_api(layer):
 
 def test_search_package_holds_only_web_search():
     # Image retrieval and outbound screening previously lived here, which made
-    # "search" mean three unrelated things.
+    # "search" mean three unrelated things. The list is exact on purpose: every
+    # new module under search/ should be a deliberate decision, so an addition
+    # fails here first and is admitted only after review.
     names = {p.stem for p in (BACKEND / "search").glob("*.py") if p.stem != "__init__"}
 
     assert names == {
@@ -57,6 +59,7 @@ def test_search_package_holds_only_web_search():
         "classifier",
         "google_adk",
         "hybrid",
+        "routing_cases",
         "mcp",
         "quota",
         "query",
