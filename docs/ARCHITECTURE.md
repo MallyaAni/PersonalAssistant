@@ -223,6 +223,23 @@ list on failure, so the interface retracts its indicator instead of spinning.
 The browser renders search and tool lifecycle status, then provider-attributed
 cited sources beneath the answer, so a reader can check what grounded it.
 
+### Observability
+
+Tracing is OpenTelemetry, off by default and safe to enable without a
+collector: an unreachable OTLP endpoint drops spans in the background rather
+than failing a request. `configure_telemetry` instruments FastAPI so each
+request is a span, and httpx so every outbound call - LM Studio, Tavily, an
+HTTP MCP server - is an auto-propagated child span carrying W3C trace-context.
+That is what turns "the turn was slow" into "the turn spent 1.4s in the Tavily
+call", without guessing.
+
+The custom `ConversationTracer` is retained and wrapped rather than replaced.
+`OpenTelemetryConversationTracer` never opens or closes a span - the FastAPI
+instrumentation owns span lifecycle, so it cannot leak one - and instead stamps
+the application trace id onto the active request span and records each domain
+step as a span event. Step metadata is stringified and bounded, so a trace
+backend receives structure, never query, argument, or result text.
+
 ### Module boundaries
 
 Packages are separated by what they own rather than by when they were written,

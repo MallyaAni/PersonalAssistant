@@ -11,7 +11,7 @@ flowchart LR
 
     subgraph Compose[Docker Compose stack]
         Frontend[React and Vite dev server container<br/>source bind-mount with polling HMR<br/>host port 5173]
-        Backend[FastAPI and Uvicorn container<br/>host port 8000]
+        Backend[FastAPI and Uvicorn container<br/>host port 8000<br/>optional OpenTelemetry spans]
         VisualMCP[Local visual FastMCP sidecar<br/>streamable HTTP, host port 8001<br/>four metadata-only visual tools]
         VisionEmbed[Nomic Embed Vision v1.5<br/>in-process ONNX on CPU<br/>aligned to the text latent space]
         Dependencies[FastAPI dependency assembly<br/>async request sessions]

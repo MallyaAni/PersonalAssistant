@@ -103,6 +103,14 @@ curated locally and smaller than a public benchmark; the same cascade scored
 `backend/search/routing_cases.py` when a real query is routed wrongly, so the
 set grows toward the traffic it actually sees.
 
+## Tracing
+
+OpenTelemetry is off unless `OTEL_ENABLED=true`. `OTEL_EXPORTER=console` prints
+spans locally; `OTEL_EXPORTER=otlp` with `OTEL_EXPORTER_OTLP_ENDPOINT` (for
+example `http://jaeger:4318/v1/traces`) ships them to a collector. Enabling it
+never requires the collector to be reachable - spans are batched and dropped in
+the background if it is not - so it is safe to leave configured.
+
 ## Module boundaries
 
 `backend/mcp` owns the protocol, `backend/search` owns web search only,

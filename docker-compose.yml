@@ -88,6 +88,9 @@ services:
       - GOOGLE_SEARCH_DAILY_LIMIT=${GOOGLE_SEARCH_DAILY_LIMIT:-450}
       - GOOGLE_SEARCH_QUOTA_DB_PATH=/app/data/search/google_search_quota.sqlite3
       - MCP_SERVERS_JSON=${MCP_SERVERS_JSON:-[]}
+      - OTEL_ENABLED=${OTEL_ENABLED:-false}
+      - OTEL_EXPORTER=${OTEL_EXPORTER:-console}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:

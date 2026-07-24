@@ -4,10 +4,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.api.v1.api import api_router
 from backend.config.settings import settings
 from backend.core.logging_config import setup_logging
+from backend.core.telemetry import configure_telemetry
 
 setup_logging("DEBUG" if settings.DEBUG else "INFO")
 
 app = FastAPI(title=settings.APP_NAME, version="0.1.0")
+
+# Instrument the app and outbound HTTP when tracing is enabled; a no-op otherwise.
+configure_telemetry(app)
 
 origins = [
     "http://localhost:5173",

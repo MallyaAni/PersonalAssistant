@@ -161,6 +161,14 @@ class Settings(BaseSettings):
     # naive exposure of 100+ tools near random selection.
     TOOL_SEARCH_MAX_RESULTS: int = Field(default=5, ge=1, le=20)
 
+    # OpenTelemetry tracing. Off by default: turning it on never requires a
+    # collector to be reachable, since an unreachable OTLP endpoint drops spans
+    # in the background rather than failing a request.
+    OTEL_ENABLED: bool = False
+    OTEL_SERVICE_NAME: str = "anios-backend"
+    OTEL_EXPORTER: Literal["console", "otlp", "none"] = "console"
+    OTEL_EXPORTER_OTLP_ENDPOINT: str = ""
+
     # JWT Authentication
     SECRET_KEY: str = Field(..., alias="SECRET_KEY")
     AUTH_REQUIRED: bool = False

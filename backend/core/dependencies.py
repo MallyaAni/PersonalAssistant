@@ -12,7 +12,11 @@ from backend.artifacts.image_retrieval import ImageRetrievalPolicy
 from backend.artifacts.image_routing import ImageRecallPolicy
 from backend.artifacts.storage import LocalBinaryArtifactStore
 from backend.config.settings import settings
-from backend.core.interfaces import SearchProvider, VisionEmbeddingProvider
+from backend.core.interfaces import (
+    ConversationTracer,
+    SearchProvider,
+    VisionEmbeddingProvider,
+)
 from backend.core.llm import LLMClient, LMStudioLLM
 from backend.database.session import get_db
 from backend.embeddings.base import EmbeddingProvider
@@ -42,7 +46,10 @@ from backend.services.memory_retention_service import MemoryRetentionService
 from backend.services.postgres_memory_service import PostgresMemoryService
 from backend.services.repository import SQLAlchemyConversationRepository
 from backend.services.tool_memory_service import ToolMemoryService
-from backend.services.tracing import LoggingConversationTracer
+from backend.services.tracing import (
+    LoggingConversationTracer,
+    OpenTelemetryConversationTracer,
+)
 from backend.services.vision_analysis_service import VisionAnalysisService
 from backend.vision.lm_studio import LMStudioVisionProvider
 
@@ -148,8 +155,11 @@ def get_conversation_repository(
     return SQLAlchemyConversationRepository(session=db)
 
 
-def get_conversation_tracer() -> LoggingConversationTracer:
-    return LoggingConversationTracer()
+def get_conversation_tracer() -> ConversationTracer:
+    logging_tracer = LoggingConversationTracer()
+    if settings.OTEL_ENABLED:
+        return OpenTelemetryConversationTracer(logging_tracer)
+    return logging_tracer
 
 
 MemoryDependency = Annotated[
@@ -162,7 +172,7 @@ RepositoryDependency = Annotated[
     Depends(get_conversation_repository),
 ]
 TracerDependency = Annotated[
-    LoggingConversationTracer,
+    ConversationTracer,
     Depends(get_conversation_tracer),
 ]
 
