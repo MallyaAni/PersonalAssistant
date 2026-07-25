@@ -236,7 +236,9 @@ The management response must report `status: loaded`; the model catalog alone do
 
 ### Install and run the free local image provider
 
-The verified Windows host uses ComfyUI 0.28.0, Python 3.14, PyTorch CUDA 13.0, and the official HiDream-O1 Dev FP8 checkpoint. Keep this runtime outside the repository and bound to loopback:
+`scripts\start-anios.ps1` brings the whole stack up with one command: it starts host ComfyUI (if nothing is on `:8188`), runs `docker compose up -d`, and waits for the backend. Image generation needs ComfyUI running; when it is down, `POST /api/v1/images/generate` returns a `503` with `reason: image_provider_unreachable` and a message naming ComfyUI, which the composer surfaces verbatim.
+
+The verified Windows host uses ComfyUI 0.28.0, Python 3.14, PyTorch CUDA 13.0, and the official HiDream-O1 Dev FP8 checkpoint. Keep this runtime outside the repository. The backend runs in Docker and reaches ComfyUI over `host.docker.internal:8188`, so ComfyUI must listen on `0.0.0.0` (the start script uses `--listen 0.0.0.0`); a `--listen 127.0.0.1` binding is reachable only from a host-run backend, not the container.
 
 ```powershell
 $comfyRoot = 'E:\AI\ComfyUI'

@@ -214,7 +214,9 @@ def test_embedded_stores_are_always_searched(query: str) -> None:
 
 # Episodic memory has no embedding, so it alone is still selected by intent.
 def test_episodic_stays_keyword_gated_until_embedded() -> None:
-    assert build_memory_query_plan("do you remember what happened last time").use_episodic
+    assert build_memory_query_plan(
+        "do you remember what happened last time"
+    ).use_episodic
     assert not build_memory_query_plan("what is two plus two").use_episodic
 
 

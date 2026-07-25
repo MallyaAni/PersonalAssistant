@@ -4,9 +4,11 @@ import secrets
 from contextlib import suppress
 from typing import Any
 
+import httpx
 from fastapi import APIRouter, HTTPException, Request, Response, status
 
 from backend.artifacts.types import ImageGenerationRequest
+from backend.config.settings import settings
 from backend.core.auth import (
     SCOPE_VISION,
     IdentityDependency,
@@ -78,6 +80,24 @@ async def generate_image(
         )
     except ImageClientDisconnectedError:
         return Response(status_code=499)
+    except (httpx.ConnectError, httpx.ConnectTimeout) as exc:
+        # The provider process (ComfyUI) is not reachable, which is distinct from
+        # a generation failure. Name the cause so the interface can be specific.
+        logger.warning(
+            "Image provider unreachable at %s (trace=%s)",
+            settings.IMAGE_PROVIDER_BASE_URL,
+            trace_id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "reason": "image_provider_unreachable",
+                "message": (
+                    "The image generation backend (ComfyUI) isn't running. "
+                    "Start it and try again."
+                ),
+            },
+        ) from exc
     except Exception as exc:
         logger.exception("Image generation failed", extra={"trace_id": trace_id})
         raise HTTPException(
