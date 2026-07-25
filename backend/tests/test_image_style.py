@@ -26,7 +26,11 @@ class StubMemory:
         self.saved: dict[str, Any] | None = None
 
     async def get_user_profile(self, user_id: str) -> dict[str, Any]:
-        return {"user_id": user_id, "name": "Ani", "preferences": dict(self.preferences)}
+        return {
+            "user_id": user_id,
+            "name": "Ani",
+            "preferences": dict(self.preferences),
+        }
 
     async def upsert_user_profile(
         self, user_id: str, name: str | None, preferences: dict[str, Any]

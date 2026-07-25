@@ -8,7 +8,7 @@ from typing import Any
 from pydantic import TypeAdapter
 
 from backend.core.llm import LLMClient
-from backend.presentations.editing import SlideEdit, apply_slide_edit
+from backend.presentations.editing import SlideEdit
 from backend.presentations.planner import (
     DeckDraft,
     DeckPlan,
@@ -17,9 +17,10 @@ from backend.presentations.planner import (
     StreamDeckHeader,
     StreamPlannedSlide,
     compile_deck_plan,
+    compile_slide,
     requested_slide_count,
 )
-from backend.presentations.types import DeckSpec, SlideSpec
+from backend.presentations.types import DeckSpec, SlideSpec, TextElement
 
 
 class PresentationProvider(ABC):
@@ -89,6 +90,43 @@ def _slide_edit_contract() -> str:
     )
 
 
+# Describe the single-slide content grammar used when revising one slide.
+def _slide_content_contract() -> str:
+    return (
+        "Return one compact JSON object for a single slide only. Fields: title, "
+        "purpose, points, optional key_message, notes. points must contain 2 to 6 "
+        "concise strings. Do not emit coordinates, colours, element ids, layout "
+        "fields, other slides, or Markdown. Application code owns layout and native "
+        "PowerPoint objects."
+    )
+
+
+# Present one compiled slide back to the model as concise editable content, so a
+# revision rewrites content without ever handling internal element ids.
+def _slide_content_view(slide: SlideSpec) -> dict[str, Any]:
+    points = [
+        element.text
+        for element in slide.elements
+        if isinstance(element, TextElement) and "_point_" in element.element_id
+    ]
+    key_message = next(
+        (
+            element.text
+            for element in slide.elements
+            if isinstance(element, TextElement)
+            and element.element_id.endswith("_key_message")
+        ),
+        None,
+    )
+    return {
+        "title": slide.title,
+        "purpose": slide.purpose,
+        "points": points,
+        "key_message": key_message,
+        "notes": slide.notes,
+    }
+
+
 # Describe the record stream that enables application-owned progressive previews.
 def _stream_plan_contract(expected_slides: int | None) -> str:
     count = (
@@ -104,15 +142,12 @@ def _stream_plan_contract(expected_slides: int | None) -> str:
         "Then return one object per slide in index order with fields type:'slide', "
         "index, title, purpose, points (2 to 6 concise strings), optional "
         "key_message, and notes. Finish with exactly "
-        '{"type":"done"}. Application code owns all layout. '
-        + count
+        '{"type":"done"}. Application code owns all layout. ' + count
     )
 
 
-_STREAM_RECORD: TypeAdapter[
-    StreamDeckHeader | StreamPlannedSlide | StreamDeckDone
-] = TypeAdapter(
-    StreamDeckHeader | StreamPlannedSlide | StreamDeckDone
+_STREAM_RECORD: TypeAdapter[StreamDeckHeader | StreamPlannedSlide | StreamDeckDone] = (
+    TypeAdapter(StreamDeckHeader | StreamPlannedSlide | StreamDeckDone)
 )
 
 
@@ -274,14 +309,18 @@ class LLMPresentationProvider(PresentationProvider):
         )
         if selected is None:
             raise ValueError("Selected slide was not found")
+        # Regenerate the slide's semantic content and recompile it, rather than
+        # asking the model for an element-id diff. A local model reliably rewrites
+        # concise content but struggles to reference internal ids, which was making
+        # the revision fail; layout stays deterministic and application-owned.
         messages = [
             {
                 "role": "system",
                 "content": (
                     "You are AniOS PresentationAgent revising exactly one slide. "
-                    "Return only the smallest changes needed for the feedback. "
-                    "Do not modify or reproduce other slides. "
-                    + _slide_edit_contract()
+                    "Apply the user's feedback to this slide's content, keeping "
+                    "everything the feedback does not mention. Do not change other "
+                    "slides. " + _slide_content_contract()
                 ),
             },
             {
@@ -289,39 +328,33 @@ class LLMPresentationProvider(PresentationProvider):
                 "content": json.dumps(
                     {
                         "deck_title": deck.title,
-                        "theme": deck.theme.model_dump(mode="json"),
-                        "selected_slide": selected.model_dump(mode="json"),
+                        "current_slide": _slide_content_view(selected),
                         "feedback": feedback,
                     },
                     ensure_ascii=False,
                 ),
             },
         ]
-        edit = await self._validated_reply(
+        planned = await self._validated_reply(
             messages,
-            SlideEdit,
+            PlannedSlide,
             max_tokens=self.revision_max_tokens,
-            response_validator=lambda candidate: apply_slide_edit(
-                deck,
-                slide_id,
-                candidate,
-            )
-            if isinstance(candidate, SlideEdit)
-            else None,
         )
-        if not isinstance(edit, SlideEdit):
-            raise TypeError("Presentation provider returned the wrong slide edit")
-        return apply_slide_edit(deck, slide_id, edit)
+        if not isinstance(planned, PlannedSlide):
+            raise TypeError("Presentation provider returned the wrong slide content")
+        return compile_slide(planned, slide_id, deck.theme)
 
     # Validate model JSON and give one bounded correction opportunity.
     async def _validated_reply(
         self,
         messages: list[dict[str, str]],
-        response_type: type[DeckPlan] | type[SlideEdit],
+        response_type: type[DeckPlan] | type[SlideEdit] | type[PlannedSlide],
         max_tokens: int | None = None,
         expected_slide_count: int | None = None,
-        response_validator: Callable[[DeckPlan | SlideEdit], object] | None = None,
-    ) -> DeckPlan | SlideEdit:
+        response_validator: (
+            Callable[[DeckPlan | SlideEdit | PlannedSlide], object] | None
+        ) = None,
+    ) -> DeckPlan | SlideEdit | PlannedSlide:
         for attempt in range(2):
             result = await asyncio.to_thread(
                 self.llm.chat,

@@ -209,9 +209,11 @@ class PresentationService:
         revision_id = str(revision["id"])
         try:
             slides = [
-                _attach_image_to_slide(slide, artifact_id, alt_text)
-                if slide.slide_id == slide_id
-                else slide
+                (
+                    _attach_image_to_slide(slide, artifact_id, alt_text)
+                    if slide.slide_id == slide_id
+                    else slide
+                )
                 for slide in base.slides
             ]
             return await self._complete_revision(
@@ -341,8 +343,7 @@ class PresentationService:
             if (
                 artifact is None
                 or artifact.get("status") != "ready"
-                or artifact.get("kind")
-                not in {"generated_image", "uploaded_image"}
+                or artifact.get("kind") not in {"generated_image", "uploaded_image"}
                 or artifact.get("mime_type")
                 not in {"image/png", "image/jpeg", "image/webp"}
                 or not isinstance(artifact.get("_storage_key"), str)

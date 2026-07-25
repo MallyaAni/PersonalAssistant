@@ -197,11 +197,22 @@ async def test_compact_plan_retries_one_wrong_slide_count() -> None:
     assert "Expected exactly 6 slides" in llm.requests[1][0][0]["content"]
 
 
-# Verify selected-slide feedback sends only a compact edit with a small budget.
+# A revision regenerates the slide's concise content and recompiles it into
+# deterministic native objects; the model never handles internal element ids.
 @pytest.mark.asyncio
-async def test_compact_slide_edit_preserves_layout_and_updates_title() -> None:
+async def test_slide_revision_regenerates_content_deterministically() -> None:
     llm = StubPlanningLLM(
-        [{"content": json.dumps({"title": "A Better Opening"})}]
+        [
+            {
+                "content": json.dumps(
+                    {
+                        "title": "A Better Opening",
+                        "purpose": "Introduce the topic clearly",
+                        "points": ["First point", "Second point"],
+                    }
+                )
+            }
+        ]
     )
     provider = LLMPresentationProvider(
         llm,  # type: ignore[arg-type]
@@ -209,37 +220,38 @@ async def test_compact_slide_edit_preserves_layout_and_updates_title() -> None:
         plan_max_tokens=2_048,
         revision_max_tokens=1_024,
     )
-    before = _deck()
     revised = await provider.revise_slide(
-        before,
+        _deck(),
         "slide-a",
         "The current title sounds weird",
     )
 
+    assert revised.slide_id == "slide-a"
     assert revised.title == "A Better Opening"
+    # Layout and element ids are owned by the deterministic compiler, keyed to the
+    # slide id, not produced by the model.
     assert isinstance(revised.elements[0], TextElement)
+    assert revised.elements[0].element_id == "slide-a_title"
     assert revised.elements[0].text == "A Better Opening"
-    assert revised.elements[0].x == before.slides[0].elements[0].x
-    assert revised.elements[0].element_id == "title-a"
+    assert revised.elements[0].x == 0.75
     assert llm.requests[0][1] == 1_024
-    assert "never reproduce coordinates" in llm.requests[0][0][0]["content"]
 
 
-# Verify an invalid element reference receives one bounded compact correction.
+# Verify an invalid reply receives one bounded correction and then succeeds.
 @pytest.mark.asyncio
-async def test_compact_slide_edit_retries_unknown_element_reference() -> None:
+async def test_slide_revision_retries_one_invalid_reply() -> None:
     llm = StubPlanningLLM(
         [
+            {"content": "this is not json"},
             {
                 "content": json.dumps(
                     {
-                        "text_updates": [
-                            {"element_id": "missing", "text": "Wrong target"}
-                        ]
+                        "title": "Corrected opening",
+                        "purpose": "Introduce the topic",
+                        "points": ["Alpha", "Beta"],
                     }
                 )
             },
-            {"content": json.dumps({"title": "Corrected opening"})},
         ]
     )
     provider = LLMPresentationProvider(
@@ -255,7 +267,7 @@ async def test_compact_slide_edit_retries_unknown_element_reference() -> None:
 
     assert revised.title == "Corrected opening"
     assert len(llm.requests) == 2
-    assert "wrong editable type" in llm.requests[1][0][0]["content"]
+    assert "failed validation" in llm.requests[1][0][0]["content"]
 
 
 # Verify each complete semantic slide becomes visible before the model stream ends.
@@ -294,9 +306,7 @@ async def test_progressive_plan_compiles_each_streamed_slide() -> None:
             json.dumps({"type": "done"}),
         ]
     )
-    llm = StubStreamingPlanningLLM(
-        [records[:47], records[47:131], records[131:]]
-    )
+    llm = StubStreamingPlanningLLM([records[:47], records[47:131], records[131:]])
     provider = LLMPresentationProvider(
         llm,  # type: ignore[arg-type]
         max_tokens=8_192,
