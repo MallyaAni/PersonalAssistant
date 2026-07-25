@@ -106,10 +106,9 @@ def _changes(update: SlideEditModel) -> dict[str, object]:
 def _validated_updates(
     updates: Sequence[ElementUpdate],
     elements_by_id: dict[str, SlideElement],
-    expected_type: type[TextElement]
-    | type[ShapeElement]
-    | type[ChartElement]
-    | type[TableElement],
+    expected_type: (
+        type[TextElement] | type[ShapeElement] | type[ChartElement] | type[TableElement]
+    ),
 ) -> dict[str, ElementUpdate]:
     validated: dict[str, ElementUpdate] = {}
     for update in updates:
@@ -135,9 +134,7 @@ def _element_updates(
         _validated_updates(edit.table_updates, elements_by_id, TableElement),
     ]
     combined = {
-        element_id: update
-        for group in groups
-        for element_id, update in group.items()
+        element_id: update for group in groups for element_id, update in group.items()
     }
     if len(combined) != sum(len(group) for group in groups):
         raise ValueError("An element cannot receive multiple update types")
@@ -164,8 +161,7 @@ def _edit_existing_element(
         edit.purpose is not None
         and isinstance(element, TextElement)
         and (
-            element.element_id.endswith("_purpose")
-            or element.text == selected.purpose
+            element.element_id.endswith("_purpose") or element.text == selected.purpose
         )
         and element.element_id not in updates
     ):

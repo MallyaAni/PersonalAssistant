@@ -262,6 +262,7 @@ class VisualCapabilityRuntime:
                 get_presentation_agent(get_llm_client()),
                 repository,
                 get_binary_artifact_store(),
+                get_artifact_repository(session),
             )
             ready = await service.create(
                 context.user_id,
@@ -296,6 +297,7 @@ class VisualCapabilityRuntime:
                 get_presentation_agent(get_llm_client()),
                 repository,
                 get_binary_artifact_store(),
+                get_artifact_repository(session),
             )
             ready = await service.revise_slide(
                 context.user_id,
