@@ -378,15 +378,17 @@ def _attach_image_to_slide(
         else:
             elements.append(element)
     if not replaced:
+        # A square box matches the square generated image so it is not distorted,
+        # and it sits in the right column beside the text narrowed above.
         elements.append(
             ImageElement(
                 element_id=image_id,
                 artifact_id=UUID(artifact_id),
                 alt_text=alt_text,
                 x=8.45,
-                y=1.65,
-                w=4.15,
-                h=4.65,
+                y=1.95,
+                w=4.4,
+                h=4.4,
             )
         )
     return slide.model_copy(update={"elements": elements})

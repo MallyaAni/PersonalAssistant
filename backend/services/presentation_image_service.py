@@ -68,14 +68,14 @@ class PresentationImageService:
             user_id=user_id,
             conversation_id=str(presentation["conversation_id"]),
             trace_id=trace_id,
-            # HiDream-O1 only accepts its trained resolutions; 2560x1440 is the
-            # supported 16:9 size that matches a widescreen slide. Off-list sizes
-            # such as 1280x720 crash the sampler (dimensions must divide its patch
-            # factor), which surfaced as "Unable to generate imagery".
+            # HiDream-O1 is trained on 2048x2048 and produces its most realistic
+            # results there; wider sizes such as 2560x1440 look noticeably worse.
+            # A square image also matches the square slide placement box, so it is
+            # not stretched. (Off-list sizes like 1280x720 crash the sampler.)
             request=ImageGenerationRequest(
                 prompt=image_prompt,
-                width=2_560,
-                height=1_440,
+                width=2_048,
+                height=2_048,
                 seed=secrets.randbelow(2**63),
             ),
             extra_metadata={

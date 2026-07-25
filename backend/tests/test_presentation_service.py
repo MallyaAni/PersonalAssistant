@@ -394,8 +394,8 @@ async def test_image_enrichment_uses_slide_context_and_fast_dimensions() -> None
     assert result["current_revision_id"] == "revision-2"
     assert images.generated is not None
     request = images.generated["request"]
-    assert request.width == 2_560
-    assert request.height == 1_440
+    assert request.width == 2_048
+    assert request.height == 2_048
     # The prompt carries the slide's own topic and the deck's overall topic, so
     # the image matches what is being discussed.
     assert "Opening: Introduce" in request.prompt

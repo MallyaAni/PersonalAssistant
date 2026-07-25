@@ -87,6 +87,9 @@ const addElement = (pptx, slide, element, theme, images) => {
   if (element.type === 'image') {
     slide.addImage({
       ...position,
+      // Preserve the picture's aspect ratio within its box instead of stretching
+      // it, so an image is never distorted if it is not a perfect fit.
+      sizing: { type: 'contain', w: position.w, h: position.h },
       data: imageData(element.artifact_id, images),
       altText: element.alt_text,
     })
