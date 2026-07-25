@@ -55,8 +55,9 @@ class Settings(BaseSettings):
     # positive prompt. It is added only when not already present; set it empty to
     # send the user's prompt verbatim.
     IMAGE_STYLE_SUFFIX: str = (
-        "photorealistic, realistic photograph, natural lighting, "
-        "sharp focus, highly detailed, high resolution"
+        "photorealistic, realistic photograph, DSLR photo, 85mm lens, "
+        "natural soft lighting, fine detailed textures, sharp focus, "
+        "high detail, 4k, professional photography"
     )
     IMAGE_PROVIDER_TIMEOUT_SECONDS: float = Field(default=600.0, gt=0, le=3600)
     IMAGE_PROVIDER_POLL_SECONDS: float = Field(default=0.5, ge=0.1, le=10)
