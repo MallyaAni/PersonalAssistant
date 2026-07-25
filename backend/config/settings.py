@@ -50,6 +50,14 @@ class Settings(BaseSettings):
     IMAGE_PROVIDER_BASE_URL: str = "http://127.0.0.1:8188"
     IMAGE_PROVIDER_NAME: str = "comfyui"
     IMAGE_MODEL: str = "hidream_o1_image_dev_fp8_scaled.safetensors"
+    # Realism steering. HiDream-O1 runs distilled at cfg=1.0, where a negative
+    # prompt is inert, so photorealism is driven by appending this to the
+    # positive prompt. It is added only when not already present; set it empty to
+    # send the user's prompt verbatim.
+    IMAGE_STYLE_SUFFIX: str = (
+        "photorealistic, realistic photograph, natural lighting, "
+        "sharp focus, highly detailed, high resolution"
+    )
     IMAGE_PROVIDER_TIMEOUT_SECONDS: float = Field(default=600.0, gt=0, le=3600)
     IMAGE_PROVIDER_POLL_SECONDS: float = Field(default=0.5, ge=0.1, le=10)
     IMAGE_MAX_CONCURRENCY: int = Field(default=1, ge=1, le=4)

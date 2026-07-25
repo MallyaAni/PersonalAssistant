@@ -69,9 +69,11 @@ class ComfyUIImageProvider(ImageProvider):
         max_concurrency: int,
         max_output_bytes: int,
         max_pixels: int,
+        style_suffix: str = "",
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.model = model
+        self.style_suffix = style_suffix.strip().strip(",").strip()
         self.timeout_seconds = timeout_seconds
         self.poll_seconds = poll_seconds
         self.max_output_bytes = max_output_bytes
@@ -171,6 +173,14 @@ class ComfyUIImageProvider(ImageProvider):
             )
 
     # Build the pinned minimal HiDream Dev API workflow.
+    # Append the realism suffix unless the prompt already carries it, so the
+    # user's wording leads and the style steer follows.
+    def _positive_prompt(self, prompt: str) -> str:
+        text = prompt.strip()
+        if self.style_suffix and self.style_suffix.lower() not in text.lower():
+            return f"{text}, {self.style_suffix}" if text else self.style_suffix
+        return text
+
     def _workflow(self, request: ImageGenerationRequest) -> dict[str, Any]:
         return {
             "1": {
@@ -179,7 +189,10 @@ class ComfyUIImageProvider(ImageProvider):
             },
             "2": {
                 "class_type": "CLIPTextEncode",
-                "inputs": {"text": request.prompt, "clip": ["1", 1]},
+                "inputs": {
+                    "text": self._positive_prompt(request.prompt),
+                    "clip": ["1", 1],
+                },
             },
             "3": {
                 "class_type": "CLIPTextEncode",
