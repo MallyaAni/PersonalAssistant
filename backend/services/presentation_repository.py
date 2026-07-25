@@ -360,7 +360,9 @@ class SQLAlchemyPresentationRepository:
             "current_revision": (
                 current.to_dict(include_specification=True) if current else None
             ),
+            # Each revision carries its own specification so the interface can show
+            # the exact slides at any point in the history, not only the latest.
             "revisions": [
-                revision.to_dict(include_specification=False) for revision in revisions
+                revision.to_dict(include_specification=True) for revision in revisions
             ],
         }

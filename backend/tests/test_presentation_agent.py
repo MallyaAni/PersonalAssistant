@@ -270,6 +270,61 @@ async def test_slide_revision_retries_one_invalid_reply() -> None:
     assert "failed validation" in llm.requests[1][0][0]["content"]
 
 
+# A revision rewrites text but must not drop an image already on the slide.
+@pytest.mark.asyncio
+async def test_slide_revision_preserves_an_attached_image() -> None:
+    from uuid import uuid4
+
+    from backend.presentations.types import ImageElement
+
+    artifact_id = uuid4()
+    base = _deck()
+    with_image = base.slides[0].model_copy(
+        update={
+            "elements": [
+                *base.slides[0].elements,
+                ImageElement(
+                    element_id="img-a",
+                    artifact_id=artifact_id,
+                    alt_text="an attached chart",
+                    x=1.0,
+                    y=1.0,
+                    w=3.0,
+                    h=2.0,
+                ),
+            ]
+        }
+    )
+    deck = base.model_copy(update={"slides": [with_image, base.slides[1]]})
+    llm = StubPlanningLLM(
+        [
+            {
+                "content": json.dumps(
+                    {
+                        "title": "Reworded opening",
+                        "purpose": "Introduce the topic",
+                        "points": ["First", "Second"],
+                    }
+                )
+            }
+        ]
+    )
+    provider = LLMPresentationProvider(
+        llm,  # type: ignore[arg-type]
+        max_tokens=8_192,
+        revision_max_tokens=1_024,
+    )
+
+    revised = await provider.revise_slide(deck, "slide-a", "reword the title")
+
+    images = [
+        element for element in revised.elements if isinstance(element, ImageElement)
+    ]
+    assert len(images) == 1
+    assert images[0].artifact_id == artifact_id
+    assert revised.title == "Reworded opening"
+
+
 # Verify each complete semantic slide becomes visible before the model stream ends.
 @pytest.mark.asyncio
 async def test_progressive_plan_compiles_each_streamed_slide() -> None:

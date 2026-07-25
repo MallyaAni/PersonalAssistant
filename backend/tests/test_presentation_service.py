@@ -396,7 +396,36 @@ async def test_image_enrichment_uses_slide_context_and_fast_dimensions() -> None
     request = images.generated["request"]
     assert request.width == 2_560
     assert request.height == 1_440
+    # The prompt carries the slide's own topic and the deck's overall topic, so
+    # the image matches what is being discussed.
     assert "Opening: Introduce" in request.prompt
+    assert "Service acceptance" in request.prompt
+
+
+# A user's own image direction leads but is still grounded in the slide and deck.
+@pytest.mark.asyncio
+async def test_image_enrichment_keeps_user_prompt_and_adds_context() -> None:
+    presentations = StubPresentationCoordinator()
+    images = StubImageCoordinator()
+    service = PresentationImageService(
+        presentations,  # type: ignore[arg-type]
+        images,  # type: ignore[arg-type]
+    )
+
+    await service.enrich_slide(
+        "user",
+        "presentation",
+        "revision-1",
+        "slide-a",
+        "55555555-5555-4555-8555-555555555555",
+        "a vintage red convertible",
+    )
+
+    assert images.generated is not None
+    prompt = images.generated["request"].prompt
+    assert prompt.startswith("a vintage red convertible")
+    assert "Opening" in prompt
+    assert "Service acceptance" in prompt
     assert presentations.attachment is not None
     assert presentations.attachment[3] == "slide-a"
     assert presentations.attachment[4] == "44444444-4444-4444-8444-444444444444"

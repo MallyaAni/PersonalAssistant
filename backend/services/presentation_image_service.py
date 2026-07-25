@@ -45,11 +45,25 @@ class PresentationImageService:
         )
         if slide is None:
             raise LookupError("Presentation slide was not found")
-        image_prompt = (prompt or "").strip() or (
-            "Editorial presentation photograph illustrating "
-            f"{slide.title}: {slide.purpose}. "
-            "Clean composition, realistic detail, no text, no labels, no watermark."
-        )
+        # Ground every image in both the deck's overall topic and the slide's own,
+        # so the picture matches what is being discussed - a "history of cars" deck
+        # with a "progress of cars" slide asks for period-accurate cars, not a
+        # generic photo. The user's own direction, when given, still leads.
+        deck_topic = specification.title
+        slide_context = f"{slide.title}: {slide.purpose}"
+        user_prompt = (prompt or "").strip()
+        if user_prompt:
+            image_prompt = (
+                f"{user_prompt}. This illustrates the slide '{slide.title}' "
+                f"({slide.purpose}) in a presentation about {deck_topic}. "
+                "Clean composition, realistic detail, no text, no labels, no watermark."
+            )
+        else:
+            image_prompt = (
+                f"Editorial presentation photograph for a presentation about "
+                f"{deck_topic}, illustrating {slide_context}. Clean composition, "
+                "realistic detail, no text, no labels, no watermark."
+            )
         artifact = await self.images.generate(
             user_id=user_id,
             conversation_id=str(presentation["conversation_id"]),

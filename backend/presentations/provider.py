@@ -20,7 +20,14 @@ from backend.presentations.planner import (
     compile_slide,
     requested_slide_count,
 )
-from backend.presentations.types import DeckSpec, SlideSpec, TextElement
+from backend.presentations.types import (
+    ChartElement,
+    DeckSpec,
+    ImageElement,
+    SlideSpec,
+    TableElement,
+    TextElement,
+)
 
 
 class PresentationProvider(ABC):
@@ -342,7 +349,19 @@ class LLMPresentationProvider(PresentationProvider):
         )
         if not isinstance(planned, PlannedSlide):
             raise TypeError("Presentation provider returned the wrong slide content")
-        return compile_slide(planned, slide_id, deck.theme)
+        revised = compile_slide(planned, slide_id, deck.theme)
+        # Recompiling rebuilds only text and shapes, so carry over any images,
+        # charts, or tables already on the slide instead of dropping them.
+        preserved = [
+            element
+            for element in selected.elements
+            if isinstance(element, ImageElement | ChartElement | TableElement)
+        ]
+        if preserved:
+            revised = revised.model_copy(
+                update={"elements": [*revised.elements, *preserved]}
+            )
+        return revised
 
     # Validate model JSON and give one bounded correction opportunity.
     async def _validated_reply(
