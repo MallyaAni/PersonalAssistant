@@ -60,3 +60,20 @@ class ImageQuestionBody(BaseModel):
         if not value:
             raise ValueError("must not be blank")
         return value
+
+
+class ImageRefineBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    user_id: str = Field(min_length=1, max_length=50)
+    conversation_id: UUID
+    feedback: str = Field(min_length=1, max_length=2_000)
+
+    # Trim identifiers and feedback while refusing whitespace-only values.
+    @field_validator("user_id", "feedback")
+    @classmethod
+    def reject_blank_text(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("must not be blank")
+        return value

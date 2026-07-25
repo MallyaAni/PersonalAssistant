@@ -75,6 +75,19 @@ class ImageArtifactService:
                 exc_info=True,
             )
 
+    # Return one owned artifact's record (no bytes) for ownership and metadata
+    # reads such as a refinement's parent prompt.
+    async def get_owned_record(
+        self,
+        user_id: str,
+        artifact_id: str,
+    ) -> dict[str, Any] | None:
+        artifact = await self.repository.get_owned(user_id, artifact_id)
+        if artifact is None:
+            return None
+        artifact.pop("_storage_key", None)
+        return artifact
+
     # Generate and persist one ready image or leave a sanitized terminal failure.
     async def generate(
         self,
@@ -82,6 +95,7 @@ class ImageArtifactService:
         conversation_id: str,
         trace_id: str,
         request: ImageGenerationRequest,
+        extra_metadata: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         artifact = await self.repository.create_binary_pending(
             user_id=user_id,
@@ -117,6 +131,7 @@ class ImageArtifactService:
                     **generated.metadata,
                     "provider_job_id": generated.provider_job_id,
                     "generation_prompt": request.prompt,
+                    **(extra_metadata or {}),
                 },
             )
             await self._index_embedding(user_id, artifact_id, generated.content)

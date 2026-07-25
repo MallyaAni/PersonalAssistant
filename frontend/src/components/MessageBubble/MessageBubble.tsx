@@ -191,7 +191,9 @@ const MessageBubble: React.FC<MessageProps> = ({
             {searchSources.map((source, index) => (
               <li key={`${source.url}-${index}`}>
                 <p className="truncate text-xs text-[#6e6e73]" title={source.url}>
-                  {displayDomain(source.url)}
+                  {source.provider
+                    ? `${source.provider === 'google' ? 'Google' : source.provider} · ${displayDomain(source.url)}`
+                    : displayDomain(source.url)}
                 </p>
                 <a
                   href={source.url}

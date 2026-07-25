@@ -3,6 +3,7 @@ import logging
 import secrets
 from contextlib import suppress
 from typing import Any
+from uuid import UUID
 
 import httpx
 from fastapi import APIRouter, HTTPException, Request, Response, status
@@ -15,8 +16,13 @@ from backend.core.auth import (
     authorize_scope,
     authorize_user,
 )
-from backend.core.dependencies import ImageArtifactDependency, TracerDependency
-from backend.models.image import ImageGenerationBody
+from backend.core.dependencies import (
+    ImageArtifactDependency,
+    ImageRefinementDependency,
+    TracerDependency,
+)
+from backend.models.image import ImageGenerationBody, ImageRefineBody
+from backend.services.image_refinement_service import RefinementError
 
 logger = logging.getLogger(__name__)
 
@@ -103,4 +109,65 @@ async def generate_image(
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Unable to generate the image.",
+        ) from exc
+
+
+# Regenerate one owned generated image from its prompt plus the user's feedback,
+# returning a new revision linked to the original.
+@router.post(
+    "/{artifact_id}/refine",
+    status_code=status.HTTP_201_CREATED,
+    response_model=None,
+)
+async def refine_image(
+    artifact_id: UUID,
+    body: ImageRefineBody,
+    request: Request,
+    service: ImageRefinementDependency,
+    tracer: TracerDependency,
+    identity: IdentityDependency,
+) -> dict[str, Any] | Response:
+    authorize_user(body.user_id, identity)
+    authorize_scope(identity, SCOPE_VISION)
+    trace_id = tracer.start_trace(body.user_id)
+    try:
+        return await _run_until_disconnect(
+            request,
+            asyncio.create_task(
+                service.refine(
+                    user_id=body.user_id,
+                    artifact_id=str(artifact_id),
+                    feedback=body.feedback,
+                    conversation_id=str(body.conversation_id),
+                    trace_id=trace_id,
+                )
+            ),
+        )
+    except ImageClientDisconnectedError:
+        return Response(status_code=499)
+    except RefinementError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+        ) from exc
+    except (httpx.ConnectError, httpx.ConnectTimeout) as exc:
+        logger.warning(
+            "Image provider unreachable at %s (trace=%s)",
+            settings.IMAGE_PROVIDER_BASE_URL,
+            trace_id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "reason": "image_provider_unreachable",
+                "message": (
+                    "The image generation backend (ComfyUI) isn't running. "
+                    "Start it and try again."
+                ),
+            },
+        ) from exc
+    except Exception as exc:
+        logger.exception("Image refinement failed", extra={"trace_id": trace_id})
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Unable to refine the image.",
         ) from exc

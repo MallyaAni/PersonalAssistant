@@ -9,7 +9,10 @@ The repository contains:
 - Docker Compose definitions for PostgreSQL with pgvector, Redis, the backend,
   the frontend, and a local visual FastMCP sidecar;
 - a model-backed conversation path, PostgreSQL/pgvector personal memory, and focused LangGraph assistant and diagram-agent boundaries;
-- Gemma-native MCP tool selection over a semantic live-validated shortlist, guarded execution, visible chat status, and a read-only internet-search MCP server;
+- Gemma-native MCP tool selection over a semantic live-validated shortlist,
+  guarded execution, visible chat status, and a read-only internet-search MCP
+  server with an isolated Google ADK research worker, Tavily fallback, bounded
+  local quota protection and provider-attributed sources;
 - an explicit chat-to-Mermaid diagram path with user-scoped PostgreSQL artifact persistence and strict in-browser SVG rendering;
 - free local HiDream/ComfyUI image generation plus validated Gemma vision analysis in the chat composer, with natural-language creation intent, grounded historical questions, guarded referenced-image web comparison, private previews, retry/cancel, reload restoration, history, download, owned deletion, and threaded followup questions on any owned image;
 - a clickable Agent memory map whose bounded store details load on demand through the owned export boundary;
@@ -57,7 +60,7 @@ User-visible behavior is considered verified only when the intended workflow is 
 - [Next session handoff](docs/NEXT_SESSION.md)
 - [Changelog](docs/CHANGELOG.md)
 - [Security](docs/SECURITY.md)
-- [Architecture decisions](docs/adr/0001-clean-architecture-and-modular-structure.md), including [local visual artifacts and resource-aware orchestration](docs/adr/0003-local-visual-artifacts-and-resource-aware-orchestration.md)
+- [Architecture decisions](docs/adr/0001-clean-architecture-and-modular-structure.md), including [local visual artifacts and resource-aware orchestration](docs/adr/0003-local-visual-artifacts-and-resource-aware-orchestration.md) and [hybrid free-tier web research](docs/adr/0004-hybrid-free-tier-web-research.md)
 
 ## Status language
 

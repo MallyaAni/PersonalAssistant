@@ -148,6 +148,46 @@ function toolEventStream(
   ].join('\n')
 }
 
+// Build one completed internet-tool stream with attributable Google sources.
+function searchEventStream(conversationId: string) {
+  return [
+    'event: start',
+    `data: ${JSON.stringify({ trace_id: 'search-trace', conversation_id: conversationId })}`,
+    '',
+    'event: search_started',
+    `data: ${JSON.stringify({ query: 'latest Python release' })}`,
+    '',
+    'event: tool_started',
+    `data: ${JSON.stringify({ server_id: 'internet', tool_name: 'search_web' })}`,
+    '',
+    'event: tool_finished',
+    `data: ${JSON.stringify({
+      server_id: 'internet',
+      tool_name: 'search_web',
+      status: 'succeeded',
+      message: 'Tool completed.',
+    })}`,
+    '',
+    'event: search_results',
+    `data: ${JSON.stringify({
+      sources: [{
+        title: 'Python releases',
+        url: 'https://docs.python.org/3/whatsnew/',
+        snippet: 'Current Python release notes.',
+        provider: 'google',
+      }],
+    })}`,
+    '',
+    'event: delta',
+    `data: ${JSON.stringify({ content: 'Python release research completed.' })}`,
+    '',
+    'event: done',
+    'data: {}',
+    '',
+    '',
+  ].join('\n')
+}
+
 // Build one deterministic diagram artifact lifecycle for browser acceptance tests.
 function diagramEventStream(
   traceId: string,
@@ -397,6 +437,39 @@ test('shows the MCP tool used for a completed chat answer', async ({ page }) => 
   const answer = latestAssistantAnswer(page)
   await expect(answer.getByText('Used current_weather via weather')).toBeVisible()
   await expect(answer.getByText('Raleigh is 72 F.')).toBeVisible()
+  await expect(page.getByText('Thinking...', { exact: true })).not.toBeVisible()
+  await expect(textarea).toBeEnabled()
+  await expect(textarea).toHaveValue('')
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// Verify the UI attributes grounded sources and clears the internet tool lifecycle.
+test('shows Google source attribution for an internet MCP response', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+
+  await page.route('http://localhost:8000/api/v1/chat', async route => {
+    const payload = route.request().postDataJSON() as { conversation_id: string }
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body: searchEventStream(payload.conversation_id),
+    })
+  })
+
+  await page.goto('/')
+  const { textarea, sendButton } = chatControls(page)
+  await textarea.fill('Search online for the latest Python release')
+  await sendButton.click()
+
+  const answer = latestAssistantAnswer(page)
+  await expect(answer.getByText('Used search_web via internet')).toBeVisible()
+  const sources = answer.getByLabel('Web sources used')
+  await expect(sources).toBeVisible()
+  await expect(sources.getByText('Google · docs.python.org', { exact: true })).toBeVisible()
+  await expect(sources.getByRole('link', { name: 'Python releases' })).toHaveAttribute(
+    'href',
+    'https://docs.python.org/3/whatsnew/',
+  )
   await expect(page.getByText('Thinking...', { exact: true })).not.toBeVisible()
   await expect(textarea).toBeEnabled()
   await expect(textarea).toHaveValue('')
@@ -1636,7 +1709,8 @@ test('@live uses a Gemma-selected MCP tool in chat', async ({ page }) => {
       response.url() === `${apiUrl}/api/v1/chat` &&
       response.request().method() === 'POST'
     ))
-    await textarea.fill('Search online for the latest stable Python release and cite the source.')
+    const internetQuery = `Search online for the latest stable Python release and cite the source. Browser search marker ${Date.now()}`
+    await textarea.fill(internetQuery)
     await sendButton.click()
     const internetResponse = await internetResponsePromise
     expect(internetResponse.status()).toBe(200)
@@ -1644,7 +1718,72 @@ test('@live uses a Gemma-selected MCP tool in chat', async ({ page }) => {
 
     const internetAnswer = latestAssistantAnswer(page)
     await expect(internetAnswer.getByText('Used search_web via internet')).toBeVisible()
-    await expect(internetAnswer.getByLabel('Web sources used')).toBeVisible()
+    const sources = internetAnswer.getByLabel('Web sources used')
+    await expect(sources).toBeVisible()
+    await expect(sources.getByText(/^(Google|tavily) · /).first()).toBeVisible()
+    expect(await page.evaluate(() => (
+      window as Window & { sawInternetToolRunning?: boolean }
+    ).sawInternetToolRunning)).toBe(true)
+    await expect(page.getByText('Thinking...', { exact: true })).not.toBeVisible()
+    await expect(textarea).toBeEnabled()
+    await expect(textarea).toHaveValue('')
+    expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+  } finally {
+    await page.request.delete(`${apiUrl}/api/v1/memory/${userId}`)
+  }
+})
+
+// Verify the live browser completes a provider-attributed internet MCP search.
+test('@live uses the hybrid internet MCP in chat', async ({ page }) => {
+  test.setTimeout(150_000)
+  test.skip(process.env.RUN_LIVE_TOOL_TESTS !== '1', 'requires configured live MCP search')
+  const errors = observeBlockingBrowserErrors(page)
+  const apiUrl = 'http://localhost:8000'
+  const userId = process.env.ANIOS_LIVE_TOOL_USER || 'live_search_browser_user'
+  const conversationId = '79797979-7979-4979-8979-797979797979'
+  const marker = `browser-search-${Math.random().toString(36).slice(2, 10)}`
+  const query = `Search online for the latest stable Python release and cite the source. Validation ${marker}`
+
+  await page.addInitScript(({ user, conversation }) => {
+    localStorage.setItem('anios_user_id', user)
+    localStorage.setItem('anios_conversation_id', conversation)
+  }, { user: userId, conversation: conversationId })
+
+  try {
+    await page.goto('/')
+    await page.evaluate(() => {
+      const trackedWindow = window as Window & { sawInternetToolRunning?: boolean }
+      trackedWindow.sawInternetToolRunning = false
+      const observer = new MutationObserver(() => {
+        if (document.body.innerText.includes('Using search_web via internet...')) {
+          trackedWindow.sawInternetToolRunning = true
+        }
+      })
+      observer.observe(document.body, { childList: true, subtree: true, characterData: true })
+    })
+    const { textarea, sendButton } = chatControls(page)
+    const responsePromise = page.waitForResponse(response => (
+      response.url() === `${apiUrl}/api/v1/chat` &&
+      response.request().method() === 'POST'
+    ))
+    await textarea.fill(query)
+    await sendButton.click()
+
+    const response = await responsePromise
+    expect(response.status()).toBe(200)
+    expect(response.headers()['content-type']).toContain('text/event-stream')
+    expect(await response.finished()).toBeNull()
+    const stream = await response.text()
+    expect(stream).toContain('event: search_started')
+    expect(stream).toContain('event: tool_started')
+    expect(stream).toContain('event: search_results')
+    expect(stream).toContain('event: done')
+
+    const answer = latestAssistantAnswer(page)
+    await expect(answer.getByText('Used search_web via internet')).toBeVisible()
+    const sources = answer.getByLabel('Web sources used')
+    await expect(sources).toBeVisible()
+    await expect(sources.getByText(/^(Google|tavily) · /).first()).toBeVisible()
     expect(await page.evaluate(() => (
       window as Window & { sawInternetToolRunning?: boolean }
     ).sawInternetToolRunning)).toBe(true)

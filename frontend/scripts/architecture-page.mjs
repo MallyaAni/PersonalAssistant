@@ -20,21 +20,28 @@ const publishedDiagrams = [
     title: "Full system",
     scope: "Every implemented component and its trust boundaries",
     change:
-      "Added the in-process image encoder and Tavily as an external, untrusted vendor.",
+      "Added the isolated Google research worker, Tavily fallback, and non-content quota store.",
   },
   {
     name: "runtime-deployment",
     title: "Runtime & deployment",
     scope: "Processes, ports, protocols, Compose topology",
     change:
-      "Added the ONNX encoder inside the backend; Postgres now holds aligned image vectors alongside text memory.",
+      "Added Google Search as an opt-in external worker and a durable provider-count volume.",
   },
   {
     name: "chat-orchestration",
     title: "Chat orchestration",
     scope: "Routing, memory planning, streaming, SSE contract",
     change:
-      "Deterministic web-search and image-recall routing now run before the graph; the SSE contract gained image_matches.",
+      "Guarded search now selects Google, Tavily fallback, or explicit dual-provider verification.",
+  },
+  {
+    name: "search-research-subsystem",
+    title: "Search & research",
+    scope: "Privacy, provider policy, cloud-worker isolation, quota, provenance",
+    change:
+      "Added a Google ADK research subagent with Tavily fallback and deliberate cross-check mode.",
   },
   {
     name: "visual-artifact-subsystem",
@@ -55,7 +62,7 @@ const publishedDiagrams = [
     title: "Frontend",
     scope: "Client state, components, typed API and SSE client",
     change:
-      "The stream client parses image_matches and renders matched images as cards in the transcript.",
+      "Source cards now identify which research provider supplied each result.",
   },
 ];
 
@@ -70,7 +77,7 @@ const metrics = [
   { label: "Distractor queries", value: "4 / 4", note: "correctly returned nothing", good: true },
   { label: "Distance ceiling", value: "0.96", note: "coarse filter", good: false },
   { label: "Runner-up margin", value: "0.015", note: "the real discriminator", good: false },
-  { label: "Backend tests", value: "211", note: "ruff &middot; black &middot; mypy strict", good: false },
+  { label: "Backend tests", value: "367", note: "ruff &middot; black &middot; mypy strict", good: false },
 ];
 
 const pageStyles = `:root{

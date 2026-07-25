@@ -20,6 +20,7 @@ const diagramNames = [
   "anios-system",
   "runtime-deployment",
   "chat-orchestration",
+  "search-research-subsystem",
   "memory-subsystem",
   "memory-overview",
   "tool-memory-subsystem",

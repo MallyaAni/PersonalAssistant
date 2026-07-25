@@ -38,6 +38,7 @@ from backend.services.artifact_repository import SQLAlchemyArtifactRepository
 from backend.services.conversation_service import ConversationService
 from backend.services.diagram_artifact_service import DiagramArtifactService
 from backend.services.image_artifact_service import ImageArtifactService
+from backend.services.image_refinement_service import ImageRefinementService
 from backend.services.mcp_invocation_service import MCPInvocationService
 from backend.services.mcp_tool_orchestration_service import MCPToolOrchestrationService
 from backend.services.memory_operations_service import MemoryOperationsService
@@ -261,6 +262,20 @@ def get_image_artifact_service(
 ImageArtifactDependency = Annotated[
     ImageArtifactService,
     Depends(get_image_artifact_service),
+]
+
+
+# Regenerate a generated image from its prompt plus the user's feedback.
+def get_image_refinement_service(
+    images: ImageArtifactDependency,
+    llm: LlmDependency,
+) -> ImageRefinementService:
+    return ImageRefinementService(images=images, llm=llm)
+
+
+ImageRefinementDependency = Annotated[
+    ImageRefinementService,
+    Depends(get_image_refinement_service),
 ]
 
 
