@@ -366,9 +366,7 @@ async def test_attach_image_hydrates_owned_bytes_and_preserves_sibling(
     revised = DeckSpec.model_validate(result["current_revision"]["specification"])
     assert revised.slides[1] == _deck().slides[1]
     image = next(
-        element
-        for element in revised.slides[0].elements
-        if element.type == "image"
+        element for element in revised.slides[0].elements if element.type == "image"
     )
     assert str(image.artifact_id) == artifact_id
     assert renderer.images == [{artifact_id: ("image/png", b"image-bytes")}]
@@ -396,8 +394,8 @@ async def test_image_enrichment_uses_slide_context_and_fast_dimensions() -> None
     assert result["current_revision_id"] == "revision-2"
     assert images.generated is not None
     request = images.generated["request"]
-    assert request.width == 1_280
-    assert request.height == 720
+    assert request.width == 2_560
+    assert request.height == 1_440
     assert "Opening: Introduce" in request.prompt
     assert presentations.attachment is not None
     assert presentations.attachment[3] == "slide-a"
