@@ -279,8 +279,21 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [refreshKey, setRefreshKey] = useState(0)
+  const [viewedRevisionId, setViewedRevisionId] = useState<string | null>(null)
 
-  const specification = active?.current_revision?.specification || null
+  // A past revision can be viewed read-only; otherwise the latest slides show.
+  const viewedRevision = useMemo(
+    () => (viewedRevisionId
+      ? (active?.revisions || []).find(
+          revision => revision.id === viewedRevisionId && revision.specification,
+        ) || null
+      : null),
+    [viewedRevisionId, active?.revisions],
+  )
+  const isViewingHistory = viewedRevision != null
+  const specification = viewedRevision?.specification
+    || active?.current_revision?.specification
+    || null
   const selectedSlide = useMemo(
     () => specification?.slides.find(slide => slide.slide_id === selectedSlideId)
       || specification?.slides[0]
@@ -295,6 +308,11 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
       .sort((left, right) => left.revision_number - right.revision_number),
     [active?.revisions, selectedSlide?.slide_id],
   )
+
+  // Snap back to the latest slides whenever the deck or its newest revision changes.
+  useEffect(() => {
+    setViewedRevisionId(null)
+  }, [active?.id, active?.current_revision_id])
 
   // Load persisted deck summaries and restore the newest deck workspace.
   useEffect(() => {
@@ -635,7 +653,9 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                   <div>
                     <h3 className="text-xl font-semibold tracking-[-0.025em]">{active.title}</h3>
                     <p className="text-xs text-[#86868b]">
-                      Revision {active.current_revision?.revision_number} · {specification.slides.length} slides
+                      {isViewingHistory
+                        ? `Viewing revision ${viewedRevision?.revision_number} (read-only) · ${specification.slides.length} slides`
+                        : `Revision ${active.current_revision?.revision_number} · ${specification.slides.length} slides`}
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -657,6 +677,18 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                     </button>
                   </div>
                 </div>
+                {isViewingHistory && (
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#0071e3]/30 bg-[#eef6ff] px-4 py-2.5 text-xs text-[#0058b0]">
+                    <span>Viewing a past revision (read-only). Edits always apply to the latest.</span>
+                    <button
+                      type="button"
+                      onClick={() => setViewedRevisionId(null)}
+                      className="rounded-full bg-[#0071e3] px-3 py-1 font-medium text-white"
+                    >
+                      Return to latest
+                    </button>
+                  </div>
+                )}
 
                 <div className="rounded-2xl bg-[#e8e8ed] p-3 shadow-inner">
                   <SlideCanvas
@@ -729,9 +761,21 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                         </p>
                         <div className="mr-6 rounded-2xl rounded-bl-md bg-white px-3 py-2 text-xs leading-5 text-[#3a3a3c]">
                           {revision.status === 'ready' ? (
-                            <p>
-                              Applied in revision {revision.revision_number}. This slide changed; all other slides were preserved.
-                            </p>
+                            <button
+                              type="button"
+                              disabled={!revision.specification}
+                              onClick={() => setViewedRevisionId(
+                                viewedRevisionId === revision.id ? null : revision.id,
+                              )}
+                              className="text-left underline decoration-dotted underline-offset-2 hover:text-[#0071e3] disabled:no-underline"
+                            >
+                              Applied in revision {revision.revision_number}.{' '}
+                              {revision.specification
+                                ? (viewedRevisionId === revision.id
+                                    ? 'Viewing these slides — click to return to latest.'
+                                    : 'View these slides.')
+                                : 'This slide changed; all other slides were preserved.'}
+                            </button>
                           ) : revision.status === 'failed' ? (
                             <p className="text-[#c9342f]">
                               I could not apply this suggestion. The previous ready slide remains active.
