@@ -1,8 +1,9 @@
 import React, { useRef, useState } from 'react'
-import { ArrowUp, ImagePlus, Loader2, MessageCircle, ScanSearch, X } from 'lucide-react'
+import { ArrowUp, Loader2, Paperclip, X } from 'lucide-react'
 import {
   analyzeImage,
   generateImage,
+  ingestDocument,
   streamChat,
   type ImageArtifact,
   type MemoryProposal,
@@ -11,7 +12,10 @@ import {
   type VisualArtifact,
 } from '../../services/api'
 
-type ComposerMode = 'chat' | 'generate' | 'analyze';
+type ComposerAction = 'chat' | 'generate' | 'analyze' | 'ingest';
+
+// Documents are read client-side and capped to the knowledge endpoint's limit.
+const MAX_DOCUMENT_CHARS = 200_000
 
 // Detect questions about an existing image before creation verbs can reroute them.
 const asksAboutExistingImage = (prompt: string): boolean => {
@@ -31,13 +35,13 @@ const requestsImageCreation = (prompt: string): boolean => {
     || /\b(draw|paint|sketch|render)\b/.test(normalized)
 }
 
-// Choose the action for this turn while preserving deliberate Analyze mode requests.
-const resolveComposerMode = (selectedMode: ComposerMode, prompt: string): ComposerMode => {
-  if (selectedMode === 'analyze') return selectedMode
-  if (requestsImageCreation(prompt)) return 'generate'
-  if (selectedMode === 'generate' && asksAboutExistingImage(prompt)) return 'chat'
-  return selectedMode
-}
+const isImageFile = (file: File): boolean =>
+  ['image/png', 'image/jpeg', 'image/webp'].includes(file.type)
+  || /\.(png|jpe?g|webp)$/i.test(file.name)
+
+const isTextDocument = (file: File): boolean =>
+  file.type.startsWith('text/')
+  || /\.(txt|md|markdown|csv|json|log|ya?ml)$/i.test(file.name)
 
 interface ComposerProps {
   userId: string;
@@ -83,46 +87,94 @@ const Composer: React.FC<ComposerProps> = ({
 }) => {
   const [input, setInput] = useState('')
   const [isSending, setIsSending] = useState(false)
-  const [mode, setMode] = useState<ComposerMode>('chat')
-  const [selectedImage, setSelectedImage] = useState<File | null>(null)
+  const [attachedFile, setAttachedFile] = useState<File | null>(null)
+  const [visualInFlight, setVisualInFlight] = useState(false)
   const [visualError, setVisualError] = useState('')
   const requestController = useRef<AbortController | null>(null)
-  const canSend = Boolean(input.trim()) && !isSending && (mode !== 'analyze' || selectedImage !== null)
+  const fileInput = useRef<HTMLInputElement | null>(null)
+  const canSend = !isSending && (Boolean(input.trim()) || attachedFile !== null)
 
-  // Submit the active chat, image-generation, or image-analysis request.
-  const handleSend = async () => {
-    const prompt = input.trim()
-    if (!prompt || isSending) return
-    const requestMode = resolveComposerMode(mode, prompt)
-    // Analyze mode needs an image. Selecting one is cleared after each send, so
-    // explain the blocked send instead of silently discarding the keypress.
-    if (requestMode === 'analyze' && !selectedImage) {
-      setVisualError('Choose an image to analyze, or switch to Chat to send text.')
+  // Decide what a send should do: an attachment routes by file type, otherwise
+  // an explicit "draw me..." becomes generation and everything else is chat.
+  const resolveAction = (file: File | null, prompt: string): ComposerAction | 'unsupported' => {
+    if (file) {
+      if (isImageFile(file)) return 'analyze'
+      if (isTextDocument(file)) return 'ingest'
+      return 'unsupported'
+    }
+    return requestsImageCreation(prompt) ? 'generate' : 'chat'
+  }
+
+  // Read a text document and index it into memory so it can be recalled later.
+  const ingestAttachedDocument = async (file: File, note: string) => {
+    onSendMessage('user', note ? `${note}\n\n📎 ${file.name}` : `📎 ${file.name}`)
+    const content = (await file.text()).trim()
+    if (!content) {
+      onSendMessage('assistant', `"${file.name}" looks empty, so nothing was saved.`)
       return
     }
-    setMode(requestMode)
+    await ingestDocument(userId, file.name, content.slice(0, MAX_DOCUMENT_CHARS), conversationId)
+    onSendMessage(
+      'assistant',
+      `Added **${file.name}** to your knowledge — I can reference it in our conversation now.`,
+    )
+  }
+
+  // Submit the active chat, generation, analysis, or document-ingest request.
+  const handleSend = async () => {
+    const prompt = input.trim()
+    const file = attachedFile
+    if ((!prompt && !file) || isSending) return
+
+    const action = resolveAction(file, prompt)
+    if (action === 'unsupported') {
+      setVisualError('Attach an image (PNG, JPEG, WebP) or a text document for now.')
+      return
+    }
+
     setIsSending(true)
     setVisualError('')
-    onSendMessage('user', prompt)
 
     try {
-      if (requestMode !== 'chat') {
+      if (action === 'ingest') {
+        await ingestAttachedDocument(file as File, prompt)
+        setInput('')
+        setAttachedFile(null)
+        return
+      }
+
+      if (action === 'analyze') {
+        const question = prompt || 'Describe this image, including any text you can read.'
+        onSendMessage('user', prompt || `📎 ${(file as File).name}`)
         onThinkingChange(false)
-        onVisualStarted(requestMode)
+        onVisualStarted('analyze')
+        setVisualInFlight(true)
         const controller = new AbortController()
         requestController.current = controller
-        const artifact = requestMode === 'generate'
-          ? await generateImage(userId, conversationId, prompt, controller.signal)
-          : await analyzeImage(
-              userId,
-              conversationId,
-              prompt,
-              selectedImage as File,
-              controller.signal,
-            )
+        const artifact = await analyzeImage(
+          userId,
+          conversationId,
+          question,
+          file as File,
+          controller.signal,
+        )
         onVisualReady(artifact)
         setInput('')
-        setSelectedImage(null)
+        setAttachedFile(null)
+        return
+      }
+
+      onSendMessage('user', prompt)
+
+      if (action === 'generate') {
+        onThinkingChange(false)
+        onVisualStarted('generate')
+        setVisualInFlight(true)
+        const controller = new AbortController()
+        requestController.current = controller
+        const artifact = await generateImage(userId, conversationId, prompt, controller.signal)
+        onVisualReady(artifact)
+        setInput('')
         return
       }
 
@@ -160,9 +212,12 @@ const Composer: React.FC<ComposerProps> = ({
       setInput('')
     } catch (err) {
       onThinkingChange(false)
-      if (requestMode === 'chat') {
+      if (action === 'chat') {
         console.warn('Chat request failed:', err)
         onStreamUpdate('Unable to send message. Please try again.')
+      } else if (action === 'ingest') {
+        const message = err instanceof Error ? err.message : 'Unable to save the document.'
+        setVisualError(message)
       } else {
         const message = err instanceof DOMException && err.name === 'AbortError'
           ? 'Visual request cancelled.'
@@ -172,6 +227,7 @@ const Composer: React.FC<ComposerProps> = ({
       }
     } finally {
       requestController.current = null
+      setVisualInFlight(false)
       onThinkingChange(false)
       setIsSending(false)
     }
@@ -182,16 +238,8 @@ const Composer: React.FC<ComposerProps> = ({
     requestController.current?.abort()
   }
 
-  // Change composer behavior while clearing errors from the previous mode.
-  const chooseMode = (nextMode: ComposerMode) => {
-    if (isSending) return
-    setMode(nextMode)
-    setVisualError('')
-  }
-
   // Send on Enter while preserving Shift+Enter for new lines.
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // If Enter is pressed without Shift, trigger send and prevent newline
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSend()
@@ -200,53 +248,63 @@ const Composer: React.FC<ComposerProps> = ({
 
   return (
     <div>
-      <div role="group" aria-label="Composer mode" className="mb-2 flex flex-wrap gap-1.5 px-2">
-        <button type="button" onClick={() => chooseMode('chat')} disabled={isSending} aria-pressed={mode === 'chat'} className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${mode === 'chat' ? 'bg-[#1d1d1f] text-white' : 'bg-white text-[#6e6e73] hover:bg-[#e8e8ed]'}`}>
-          <MessageCircle size={13} /> Chat
-        </button>
-        <button type="button" onClick={() => chooseMode('generate')} disabled={isSending} aria-pressed={mode === 'generate'} className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${mode === 'generate' ? 'bg-[#1d1d1f] text-white' : 'bg-white text-[#6e6e73] hover:bg-[#e8e8ed]'}`}>
-          <ImagePlus size={13} /> Create image
-        </button>
-        <button type="button" onClick={() => chooseMode('analyze')} disabled={isSending} aria-pressed={mode === 'analyze'} className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${mode === 'analyze' ? 'bg-[#1d1d1f] text-white' : 'bg-white text-[#6e6e73] hover:bg-[#e8e8ed]'}`}>
-          <ScanSearch size={13} /> Analyze image
-        </button>
-      </div>
-      {mode === 'analyze' && (
-        <div className="mb-2 flex items-center gap-2 px-2 text-xs">
-          <label className="cursor-pointer rounded-full border border-black/10 bg-white px-3 py-1.5 font-medium text-[#0066cc] hover:bg-[#f5f5f7]">
-            Choose image
-            <input
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              className="sr-only"
-              onChange={event => setSelectedImage(event.target.files?.[0] ?? null)}
+      {attachedFile && (
+        <div className="mb-2 flex items-center gap-2 px-2">
+          <span className="inline-flex max-w-full items-center gap-2 rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs text-[#1d1d1f]">
+            <Paperclip size={13} className="flex-none text-[#6e6e73]" />
+            <span className="min-w-0 truncate">{attachedFile.name}</span>
+            <button
+              type="button"
+              aria-label="Remove attachment"
+              onClick={() => setAttachedFile(null)}
               disabled={isSending}
-            />
-          </label>
-          <span className="min-w-0 truncate text-[#6e6e73]">
-            {selectedImage?.name || 'PNG, JPEG, or WebP'}
+              className="flex-none rounded-full p-0.5 text-[#6e6e73] hover:bg-[#e8e8ed]"
+            >
+              <X size={13} />
+            </button>
           </span>
         </div>
       )}
-      <div className="composer-shell flex items-end gap-2 rounded-[28px] border border-black/[0.08] bg-white p-2 pl-5 focus-within:border-black/[0.16] focus-within:shadow-[0_2px_8px_rgba(0,0,0,0.05),0_14px_44px_rgba(0,0,0,0.1)]">
+      <div className="composer-shell flex items-end gap-2 rounded-[28px] border border-black/[0.08] bg-white p-2 pl-2 focus-within:border-black/[0.16] focus-within:shadow-[0_2px_8px_rgba(0,0,0,0.05),0_14px_44px_rgba(0,0,0,0.1)]">
+        <input
+          ref={fileInput}
+          type="file"
+          accept="image/png,image/jpeg,image/webp,text/plain,text/markdown,text/csv,.md,.markdown,.txt,.csv,.json,.log,.yml,.yaml"
+          className="sr-only"
+          onChange={event => {
+            setAttachedFile(event.target.files?.[0] ?? null)
+            setVisualError('')
+            event.target.value = ''
+          }}
+          disabled={isSending}
+        />
+        <button
+          type="button"
+          aria-label="Attach a file"
+          onClick={() => fileInput.current?.click()}
+          disabled={isSending}
+          className="flex h-11 w-11 flex-none items-center justify-center rounded-full text-[#6e6e73] hover:bg-[#f5f5f7] disabled:opacity-40"
+        >
+          <Paperclip size={19} />
+        </button>
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={mode === 'chat' ? 'Ask AniOS anything...' : mode === 'generate' ? 'Describe the image to create...' : 'What should AniOS inspect?'}
+          placeholder="Message AniOS — attach a file, or say &ldquo;draw me&hellip;&rdquo;"
           aria-label="Message AniOS"
           className="min-h-[44px] max-h-40 flex-1 resize-none bg-transparent py-3 text-[16px] leading-5 text-[#1d1d1f] outline-none placeholder:text-[#86868b]"
           rows={1}
           disabled={isSending}
         />
-        {isSending && mode !== 'chat' && (
+        {visualInFlight && (
           <button type="button" aria-label="Cancel visual request" onClick={cancelVisualRequest} className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-[#f5f5f7] text-[#6e6e73] hover:bg-[#e8e8ed]">
             <X size={18} />
           </button>
         )}
         <button
           type="button"
-          aria-label={mode === 'chat' ? 'Send message' : mode === 'generate' ? 'Generate image' : 'Analyze image'}
+          aria-label="Send message"
           onClick={handleSend}
           disabled={!canSend}
           className={`flex h-11 w-11 flex-none items-center justify-center rounded-full text-white ${canSend ? 'bg-[#0071e3] hover:bg-[#0077ed]' : 'bg-[#d2d2d7]'}`}
@@ -258,7 +316,7 @@ const Composer: React.FC<ComposerProps> = ({
         <div className="mt-2 flex items-center justify-between gap-3 px-2 text-sm">
           <p role="alert" className="text-[#c9342f]">{visualError}</p>
           <button type="button" onClick={() => void handleSend()} disabled={!canSend} className="flex-none rounded-full px-3 py-1.5 text-xs font-medium text-[#0066cc] hover:bg-white">
-            Retry visual request
+            Retry
           </button>
         </div>
       )}

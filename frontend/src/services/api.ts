@@ -384,6 +384,28 @@ export function approveKnowledge(userId: string, proposal: KnowledgeProposal) {
   )
 }
 
+// Ingest an uploaded text document into the user's knowledge store so it is
+// chunked, embedded, and recalled by ordinary conversation turns.
+export function ingestDocument(
+  userId: string,
+  title: string,
+  content: string,
+  conversationId: string,
+) {
+  return apiRequest<{ id: string; chunk_count?: number }>(
+    `/api/v1/memory/${encodeURIComponent(userId)}/agent/knowledge`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        title,
+        content,
+        purpose: 'uploaded_document',
+        source_conversation_id: conversationId,
+      }),
+    },
+  )
+}
+
 // Remove the user's approved preferred name.
 export function clearPreferredName(userId: string) {
   return apiRequest<MemorySnapshot['profile']>(
