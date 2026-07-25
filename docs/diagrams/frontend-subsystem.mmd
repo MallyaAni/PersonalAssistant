@@ -5,7 +5,7 @@ flowchart TB
         direction LR
         Identity[localStorage identity<br/>ani.mallya default]
         ConversationID[localStorage conversation UUID]
-        Navigation[Sidebar and New chat<br/>Chat, Artifacts, Memory]
+        Navigation[Sidebar and New chat<br/>Chat, Artifacts, Presentations, Memory]
         Persistence[Chat stays mounted across views;<br/>stored conversation restores on reload]
 
         Identity --> Navigation
@@ -22,14 +22,18 @@ flowchart TB
         ArtifactView[ArtifactPanel<br/>owned diagram and image history<br/>refresh, download, delete]
         MemoryView[MemoryPanel<br/>personal, agent, and tool snapshots<br/>clickable store details and controls]
         MemoryDetails[On-demand owned export<br/>bounded readable store records<br/>vectors and storage keys hidden]
+        PresentationView[PresentationPanel<br/>brief, deck list, slide selection,<br/>feedback, revisions, and download]
+        DeckPreview[Typed DeckSpec preview<br/>main canvas and slide thumbnails]
 
         ChatView --> Composer
         MemoryView --> MemoryDetails
+        PresentationView --> DeckPreview
     end
 
     Navigation --> ChatView
     Navigation --> ArtifactView
     Navigation --> MemoryView
+    Navigation --> PresentationView
     Persistence --> ChatView
 
     subgraph Visuals[Strict local visual rendering]
@@ -48,15 +52,18 @@ flowchart TB
         ChatClient[streamChat<br/>validated SSE lifecycle<br/>renders search and MCP tool status,<br/>provider-attributed sources and image_matches cards]
         VisualClient[JSON generation and multipart upload<br/>private authenticated image fetch]
         DataClient[JSON memory, history, export,<br/>snapshot, and deletion requests]
+        PresentationClient[Typed presentation JSON<br/>create, revise, list, delete,<br/>and authenticated PPTX download]
         Validation[Runtime response validation<br/>visible safe errors]
         Auth[Optional VITE_AUTH_TOKEN]
 
         ChatClient --> Validation
         VisualClient --> Validation
         DataClient --> Validation
+        PresentationClient --> Validation
         Auth --> ChatClient
         Auth --> VisualClient
         Auth --> DataClient
+        Auth --> PresentationClient
     end
 
     Composer --> ChatClient
@@ -66,6 +73,7 @@ flowchart TB
     ArtifactView --> DataClient
     MemoryView --> DataClient
     MemoryDetails --> DataClient
+    PresentationView --> PresentationClient
 
     Backend[FastAPI v1 API<br/>localhost:8000]
     Validation --> Backend
@@ -75,6 +83,6 @@ flowchart TB
     classDef boundary fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
     class Browser,App,Identity,ConversationID,Navigation,Persistence shell;
-    class ChatView,Composer,ArtifactView,MemoryView,MemoryDetails,DiagramCard,ImageCard component;
-    class ChatClient,VisualClient,DataClient,Validation,Auth boundary;
+    class ChatView,Composer,ArtifactView,MemoryView,MemoryDetails,PresentationView,DeckPreview,DiagramCard,ImageCard component;
+    class ChatClient,VisualClient,DataClient,PresentationClient,Validation,Auth boundary;
     class Backend external;

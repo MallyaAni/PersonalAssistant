@@ -3,7 +3,7 @@ flowchart LR
     Maintainer([Maintainer])
 
     subgraph Interface[Local interface]
-        Frontend[React and Vite frontend<br/>chat, image create/analyze, private rendering,<br/>visual history and export; localhost:5173]
+        Frontend[React and Vite frontend<br/>chat, image create/analyze, presentations,<br/>private history and export; localhost:5173]
         API[FastAPI v1 API<br/>localhost:8000]
     end
 
@@ -13,6 +13,9 @@ flowchart LR
         ImageArtifacts[ImageArtifactService<br/>generation, upload, integrity, deletion]
         Vision[VisionAnalysisService<br/>grounded image understanding]
         DiagramAgent[DiagramAgent<br/>specialized LangGraph workflow]
+        PresentationService[PresentationService<br/>revision and promotion authority]
+        PresentationAgent[PresentationAgent<br/>focused LangGraph workflow]
+        PresentationCompiler[Deterministic presentation compiler<br/>compact plan to editable DeckSpec]
         Candidate[Architecture candidate service<br/>review-only repository context]
         Coordinator[MemoryCoordinatorAgent<br/>deterministic policy]
         Graph[LangGraph<br/>one Gemma assistant node]
@@ -21,12 +24,12 @@ flowchart LR
         ToolOrchestration[MCP tool orchestration<br/>Gemma native selection, app-owned execution]
         LLMQueue[Shared Gemma chat-client queue<br/>one local generation at a time]
         MCPInvocation[MCP invocation gates<br/>live contract, policy, privacy]
-        VisualMCP[Local visual FastMCP facade<br/>diagram, image, vision, artifact handles]
+        VisualMCP[Local capability FastMCP facade<br/>visual and presentation handles]
         Research[Hybrid research policy<br/>Google primary, Tavily fallback,<br/>explicit dual-provider verification]
     end
 
     subgraph Infrastructure[Local infrastructure]
-        Database[(PostgreSQL and pgvector<br/>conversations, memory, and visual artifacts)]
+        Database[(PostgreSQL and pgvector<br/>conversations, memory, visual artifacts,<br/>and presentation revisions)]
         LMStudio[LM Studio<br/>Gemma 4 12B and Nomic embeddings]
         ComfyUI[ComfyUI and HiDream-O1 Dev<br/>local raster generation]
         BinaryStore[(Opaque local binary artifact store)]
@@ -34,6 +37,7 @@ flowchart LR
         VisionEmbed[Nomic Embed Vision v1.5<br/>in-process ONNX, aligned image vectors]
         Diagrams[(Canonical Mermaid suite<br/>plus review candidates)]
         SearchQuota[(Daily Google call counter<br/>provider, Pacific date, count only)]
+        PresentationRenderer[PptxGenJS renderer<br/>native Office objects plus LibreOffice validation]
     end
 
     User --> Frontend
@@ -42,6 +46,7 @@ flowchart LR
     API --> Conversation
     API --> Memory
     API --> Toolbox
+    API --> PresentationService
     Conversation --> Coordinator
     Conversation --> Graph
     Conversation --> ToolOrchestration
@@ -70,6 +75,7 @@ flowchart LR
     VisualMCP --> DiagramArtifacts
     VisualMCP --> ImageArtifacts
     VisualMCP --> Vision
+    VisualMCP --> PresentationService
     InternetMCP -->|read-only search_web| Research
     Research -->|isolated minimized query;<br/>no AniOS memory or identity| GoogleResearch
     GoogleResearch -->|native grounding tool| GoogleSearch
@@ -77,6 +83,14 @@ flowchart LR
     Research --> SearchQuota
     Graph -->|chat completions| LLMQueue
     DiagramAgent -->|bounded diagram specification| LLMQueue
+    PresentationService --> PresentationAgent
+    PresentationAgent -->|compact content plan or selected SlideSpec| LLMQueue
+    PresentationAgent -->|validated creation plan| PresentationCompiler
+    PresentationCompiler -->|strict editable DeckSpec| PresentationService
+    PresentationAgent -->|selected SlideSpec| PresentationService
+    PresentationService -->|validated specification| PresentationRenderer
+    PresentationRenderer -->|editable pptx bytes| BinaryStore
+    PresentationService -->|promote only after validation| Database
     LLMQueue --> LMStudio
     DiagramArtifacts --> Database
     ImageArtifacts --> Database
@@ -93,11 +107,11 @@ flowchart LR
     classDef scaffold fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-width:1.5px,stroke-dasharray:5 4;
     class Frontend,API interface;
     class User,Maintainer interface;
-    class Conversation,DiagramArtifacts,ImageArtifacts,Vision,DiagramAgent,Candidate,Coordinator,Graph,Memory,Toolbox,ToolOrchestration,LLMQueue,MCPInvocation,VisualMCP,Research application;
+    class Conversation,DiagramArtifacts,ImageArtifacts,Vision,DiagramAgent,PresentationService,PresentationAgent,PresentationCompiler,Candidate,Coordinator,Graph,Memory,Toolbox,ToolOrchestration,LLMQueue,MCPInvocation,VisualMCP,Research application;
     InternetMCP[[Built-in internet MCP server<br/>stdio, read-only]]
     MCPServers[[Configured MCP servers<br/>stdio or streamable HTTP]]
     GoogleResearch[[Gemini 2.5 Flash research worker<br/>external, opt-in by API key]]
     GoogleSearch[[Google Search Grounding<br/>external public web]]
     WebSearch[[Tavily web search<br/>external fallback, opt-in, untrusted]]
-    class Database,LMStudio,ComfyUI,BinaryStore,Diagrams,VisionEmbed,SearchQuota infrastructure;
+    class Database,LMStudio,ComfyUI,BinaryStore,Diagrams,VisionEmbed,SearchQuota,PresentationRenderer infrastructure;
     class Redis scaffold;

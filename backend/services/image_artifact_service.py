@@ -96,6 +96,7 @@ class ImageArtifactService:
         trace_id: str,
         request: ImageGenerationRequest,
         extra_metadata: dict[str, Any] | None = None,
+        extra_style: str = "",
     ) -> dict[str, Any]:
         artifact = await self.repository.create_binary_pending(
             user_id=user_id,
@@ -108,8 +109,20 @@ class ImageArtifactService:
         )
         artifact_id = str(artifact["id"])
         storage_key: str | None = None
+        # The user's learned style steers the pixels but is not the recorded
+        # intent, so it is applied to the provider request while the stored
+        # generation_prompt stays the base prompt a later refinement builds on.
+        provider_request = request
+        style = extra_style.strip()
+        if style:
+            provider_request = ImageGenerationRequest(
+                prompt=f"{request.prompt}, {style}",
+                width=request.width,
+                height=request.height,
+                seed=request.seed,
+            )
         try:
-            generated = await self.provider.generate(request)
+            generated = await self.provider.generate(provider_request)
             extension = generated.mime_type.removeprefix("image/").replace(
                 "jpeg", "jpg"
             )

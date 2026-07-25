@@ -7,6 +7,7 @@ import {
   deleteArtifact,
   getArtifactImage,
   readAnalysisThread,
+  refineImage,
   type ImageAnalysisTurn,
   type ImageArtifact as ImageArtifactRecord,
 } from '../../services/api'
@@ -15,6 +16,15 @@ interface ImageArtifactProps {
   artifact: ImageArtifactRecord;
   onDeleted?: (artifactId: string) => void;
   onRetry?: () => void;
+  onRefined?: (artifact: ImageArtifactRecord) => void;
+}
+
+// A follow-up on a generated image is treated as edit feedback unless it reads
+// as a question: "brighten the sky" regenerates, "what colour is the sky?" asks.
+const looksLikeQuestion = (text: string): boolean => {
+  const normalized = text.trim().toLowerCase()
+  return normalized.endsWith('?')
+    || /^(what|which|who|where|when|why|how|is|are|was|were|do|does|did|can|could|would|will|should)\b/.test(normalized)
 }
 
 // Download one already loaded private image without another provider request.
@@ -27,7 +37,7 @@ const downloadImage = (url: string, artifact: ImageArtifactRecord) => {
 }
 
 // Render, download, question, retry, and delete one owned generated or uploaded image.
-const ImageArtifact = ({ artifact, onDeleted, onRetry }: ImageArtifactProps) => {
+const ImageArtifact = ({ artifact, onDeleted, onRetry, onRefined }: ImageArtifactProps) => {
   const [imageUrl, setImageUrl] = useState('')
   const [loadError, setLoadError] = useState('')
   const [deleteError, setDeleteError] = useState('')
@@ -91,19 +101,37 @@ const ImageArtifact = ({ artifact, onDeleted, onRetry }: ImageArtifactProps) => 
     }
   }
 
-  // Send one followup question about this image and append the grounded answer.
-  const submitQuestion = async (event: FormEvent) => {
+  // A generated image with non-question feedback regenerates; everything else
+  // asks the vision model about the current image.
+  const willRefine = artifact.kind === 'generated_image'
+    && question.trim() !== ''
+    && !looksLikeQuestion(question)
+
+  // Route a follow-up: refine (regenerate) on feedback, or ask on a question.
+  const submitFollowup = async (event: FormEvent) => {
     event.preventDefault()
     const trimmed = question.trim()
     if (!trimmed || isAsking) return
+    const refine = artifact.kind === 'generated_image' && !looksLikeQuestion(trimmed)
     setIsAsking(true)
     setAskError('')
     try {
-      const updated = await askAboutImage(artifact.user_id, artifact.id, trimmed)
-      setThread(readAnalysisThread(updated))
-      setQuestion('')
+      if (refine) {
+        const revision = await refineImage(
+          artifact.user_id,
+          artifact.id,
+          trimmed,
+          artifact.conversation_id,
+        )
+        onRefined?.(revision)
+        setQuestion('')
+      } else {
+        const updated = await askAboutImage(artifact.user_id, artifact.id, trimmed)
+        setThread(readAnalysisThread(updated))
+        setQuestion('')
+      }
     } catch (error) {
-      setAskError(error instanceof Error ? error.message : 'Unable to answer the question.')
+      setAskError(error instanceof Error ? error.message : 'Unable to apply this follow-up.')
     } finally {
       setIsAsking(false)
     }
@@ -179,21 +207,25 @@ const ImageArtifact = ({ artifact, onDeleted, onRetry }: ImageArtifactProps) => 
             ))}
           </div>
         )}
-        <form onSubmit={submitQuestion} className="mt-4 flex items-end gap-2">
+        <form onSubmit={submitFollowup} className="mt-4 flex items-end gap-2">
           <textarea
             value={question}
             onChange={event => setQuestion(event.target.value)}
             onKeyDown={event => {
               if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault()
-                void submitQuestion(event)
+                void submitFollowup(event)
               }
             }}
             rows={1}
             maxLength={2000}
             disabled={isAsking}
-            placeholder="Ask about this image…"
-            aria-label="Ask a question about this image"
+            placeholder={
+              artifact.kind === 'generated_image'
+                ? 'Ask about it, or say how to change it…'
+                : 'Ask about this image…'
+            }
+            aria-label="Ask about or refine this image"
             className="min-h-[40px] flex-1 resize-y rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-[#1d1d1f] placeholder:text-[#a1a1a6] focus:border-black/25 focus:outline-none disabled:bg-[#f5f5f7]"
           />
           <button
@@ -201,7 +233,10 @@ const ImageArtifact = ({ artifact, onDeleted, onRetry }: ImageArtifactProps) => 
             disabled={isAsking || !question.trim()}
             className="flex items-center gap-1.5 rounded-full bg-[#1d1d1f] px-4 py-2 text-xs font-medium text-white hover:bg-[#000] disabled:bg-[#c7c7cc]"
           >
-            <Send size={13} /> {isAsking ? 'Asking…' : 'Ask'}
+            <Send size={13} />
+            {isAsking
+              ? (willRefine ? 'Refining…' : 'Asking…')
+              : (willRefine ? 'Refine' : 'Ask')}
           </button>
         </form>
         {askError && <p role="alert" className="mt-2 text-sm text-[#c9342f]">{askError}</p>}

@@ -1,9 +1,9 @@
 import React from 'react'
-import { BrainCircuit, Image, MessageCircle } from 'lucide-react'
+import { BrainCircuit, Image, MessageCircle, Presentation } from 'lucide-react'
 
 interface SidebarProps {
-  activeView: 'chat' | 'memory' | 'artifacts'
-  onViewChange: (view: 'chat' | 'memory' | 'artifacts') => void
+  activeView: 'chat' | 'memory' | 'artifacts' | 'presentations'
+  onViewChange: (view: 'chat' | 'memory' | 'artifacts' | 'presentations') => void
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange }) => {
@@ -28,6 +28,14 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange }) => {
         >
           <Image size={19} className={activeView === 'artifacts' ? 'text-[#0071e3]' : ''} />
           <span className="hidden lg:inline">Artifacts</span>
+        </button>
+        <button
+          aria-label="Presentations"
+          onClick={() => onViewChange('presentations')}
+          className={`flex h-12 w-full items-center justify-center gap-3 rounded-2xl px-3 text-sm font-medium lg:justify-start ${activeView === 'presentations' ? 'bg-[#f5f5f7] text-[#1d1d1f] shadow-sm' : 'text-[#6e6e73] hover:bg-[#f5f5f7] hover:text-[#1d1d1f]'}`}
+        >
+          <Presentation size={19} className={activeView === 'presentations' ? 'text-[#0071e3]' : ''} />
+          <span className="hidden lg:inline">Presentations</span>
         </button>
         <button
           aria-label="Memory"

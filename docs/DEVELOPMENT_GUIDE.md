@@ -34,7 +34,7 @@ The commands use the pinned Mermaid CLI and the Chromium installed for Playwrigh
 npx.cmd playwright install chromium
 ```
 
-The renderer maintains the full-system, runtime/deployment, chat, memory, tool-memory, visual-artifact, architecture-maintenance, and frontend diagrams in one pass. The check compares a cross-platform fingerprint of each normalized source, the shared render configuration, and pinned Mermaid CLI version stored in its SVG, then performs a fresh syntax render for every source. It intentionally does not compare generated SVG bytes because renderer-generated identifiers and metadata may vary without changing the diagram.
+The renderer maintains the full-system, runtime/deployment, chat, search, memory, tool-memory, visual-artifact, presentation, architecture-maintenance, and frontend diagrams in one pass. The check compares a cross-platform fingerprint of each normalized source, the shared render configuration, and pinned Mermaid CLI version stored in its SVG, then performs a fresh syntax render for every source. It intentionally does not compare generated SVG bytes because renderer-generated identifiers and metadata may vary without changing the diagram.
 
 For every modifying task, use this process:
 
@@ -70,6 +70,7 @@ Use this ownership map when selecting affected views:
 | Memory forms, coordinator policy, retrieval, lifecycle, vector search, or memory operations | Memory subsystem | A store, agent, dependency, ownership boundary, or cross-subsystem flow changes |
 | Tool metadata, tool retrieval, or the MCP execution boundary | Tool memory | A store, external dependency, trust boundary, or cross-subsystem flow changes |
 | Artifact classification, providers, persistence, lifecycle, or rendering | Visual artifacts | A component, model dependency, store, or cross-subsystem flow changes |
+| Deck/slide specifications, presentation revisions, PowerPoint rendering, or Office validation | Presentations | An agent, renderer process, store, trust boundary, or cross-subsystem flow changes |
 | Repository context collection, LLM diagram candidates, candidate validation/rendering, or canonical review | Architecture maintenance | A maintainer process, model dependency, trust boundary, or canonical ownership flow changes |
 | Browser state, frontend components, API client behavior, SSE parsing, or client rendering | Frontend | A major component or frontend/backend ownership flow changes |
 
@@ -166,6 +167,12 @@ Key settings are:
 | `IMAGE_PROVIDER_POLL_SECONDS` | `0.5` | Bounded terminal-history polling interval |
 | `IMAGE_MAX_CONCURRENCY` | `1` | Shared in-process image-generation gate for the current RTX 5080 |
 | `ARTIFACT_STORAGE_ROOT` | `data/artifacts` | Opaque local binary root; ignored by Git and volume-mounted in Compose |
+| `PRESENTATION_RENDERER_BASE_URL` | `http://127.0.0.1:8002` | PptxGenJS renderer root; Compose uses `http://presentation-renderer:8002` |
+| `PRESENTATION_RENDERER_TIMEOUT_SECONDS` | `60` | Whole render and Office-validation deadline |
+| `PRESENTATION_MAX_OUTPUT_BYTES` | `52428800` | Maximum accepted rendered PPTX bytes |
+| `PRESENTATION_MAX_TOKENS` | `8192` | Local Gemma budget for a selected-slide replacement specification |
+| `PRESENTATION_PLAN_MAX_TOKENS` | `2048` | Local Gemma budget for a compact deck content plan; application code owns the expanded editable layout |
+| `PRESENTATION_REQUIRE_OFFICE_VALIDATION` | `false` | Require the renderer's LibreOffice result; Compose sets `true` |
 | `IMAGE_MAX_UPLOAD_BYTES` | `10485760` | Maximum accepted uploaded image bytes |
 | `IMAGE_MAX_OUTPUT_BYTES` | `41943040` | Maximum accepted generated output bytes |
 | `IMAGE_MAX_PIXELS` | `20000000` | Maximum decoded pixels for uploaded/generated images |
@@ -445,8 +452,9 @@ The default example also registers the Compose `local-capabilities` sidecar:
 MCP_SERVERS_JSON=[{"server_id":"local_visual","transport":"http","url":"http://local-capabilities:8001/mcp","forward_context":true,"risk_classification":"untrusted"}]
 ```
 
-It exposes `generate_diagram`, `generate_image`, `ask_about_image`, and
-`get_artifact` over streamable HTTP while reusing the existing application
+It exposes `generate_diagram`, `generate_image`, `ask_about_image`,
+`get_artifact`, `create_presentation`, `revise_presentation_slide`, and
+`get_presentation` over streamable HTTP while reusing the existing application
 services and shared artifact volume. The tool schemas contain no user,
 conversation, or trace fields, and results contain public artifact metadata
 only. It is intentionally `untrusted`: explicit calls require
@@ -660,7 +668,7 @@ A successful Alembic command does not prove application tables exist. Verify the
 docker compose exec -T db psql -U postgres -d anios_db -c "\dt"
 ```
 
-The current migration head is `20260718_0011`. Revision `0011` adds generated/uploaded artifact kinds plus opaque storage key, byte size, SHA-256, width, and height. Revision `0010` adds user-scoped visual artifacts with pending/ready/failed lifecycle, conversation/trace provenance, provider/model metadata, editable source, and indexes. Revision `0009` adds source-conversation provenance to procedures plus approval and source-request provenance to knowledge documents. Revision `0008` adds semantic-cache, working-memory, procedure, entity/relation, knowledge-document/chunk, and conversation-summary tables plus pgvector HNSW cosine indexes for vector-bearing memory. Revisions `0004` through `0007` add structured facts, retention/embedding metadata, provenance idempotency, and safe tool-memory tables. Revision `20260716_0002` intentionally refuses to change vector dimensions when legacy semantic rows exist; export or explicitly migrate those vectors instead of deleting or silently truncating them.
+The current migration head is `20260724_0014`. Revision `0014` associates each feedback revision with its stable target slide so the browser can reconstruct independent per-slide conversations. Revision `0013` adds user-scoped presentations and append-only revisions with parent/current pointers, lifecycle, encrypted title/spec fields, model/renderer provenance, opaque binary metadata, and optimistic base-revision protection. Revision `0011` adds generated/uploaded artifact kinds plus opaque storage key, byte size, SHA-256, width, and height. Revision `0010` adds user-scoped visual artifacts with pending/ready/failed lifecycle, conversation/trace provenance, provider/model metadata, editable source, and indexes. Revision `0009` adds source-conversation provenance to procedures plus approval and source-request provenance to knowledge documents. Revision `0008` adds semantic-cache, working-memory, procedure, entity/relation, knowledge-document/chunk, and conversation-summary tables plus pgvector HNSW cosine indexes for vector-bearing memory. Revisions `0004` through `0007` add structured facts, retention/embedding metadata, provenance idempotency, and safe tool-memory tables. Revision `20260716_0002` intentionally refuses to change vector dimensions when legacy semantic rows exist; export or explicitly migrate those vectors instead of deleting or silently truncating them.
 
 Create or reset migrations only as part of an explicitly approved schema task. Treat deletion of the `pgdata` volume as destructive.
 
@@ -872,6 +880,60 @@ with `generate_image`, fetch the private content, and use its artifact ID with
 returns HTTP 409, no MCP result contains bytes or `_storage_key`, backend and
 sidecar logs contain no credential or raw image content, and scoped cleanup
 removes the disposable artifacts.
+
+For presentation acceptance, start LM Studio and the full Compose stack,
+including `presentation-renderer`, then submit the documented create body:
+
+```powershell
+$conversationId = [guid]::NewGuid()
+$create = @{
+  user_id = 'ani.mallya'
+  conversation_id = $conversationId
+  prompt = 'Create a three-slide architecture deck with a native chart and table.'
+} | ConvertTo-Json
+$deck = Invoke-RestMethod `
+  -Method Post `
+  -Uri 'http://localhost:8000/api/v1/presentations' `
+  -ContentType 'application/json' `
+  -Body $create
+```
+
+Require HTTP 201, a ready current revision, stable slide/element IDs, renderer
+`pptxgenjs+libreoffice`, and a specification containing the requested native
+objects. Download that exact revision and inspect the PPTX package for the
+expected slide count, text, shape, chart, table, and notes records. Apply
+feedback to one selected slide using its current revision ID; require HTTP 201,
+a new parent-linked revision, exact preservation of every sibling slide, and
+HTTP 409 when the stale base revision is reused.
+
+For creation-latency diagnosis, use the exact requested slide count in the
+brief and correlate the pending revision timestamp with the Gemma and renderer
+log timestamps. Creation should use one compact-plan model call in the normal
+case, followed by deterministic `DeckSpec` compilation and one render call.
+Repeated full-layout model output or a correction request for valid semantic
+content is a regression; an HTTP 201 alone still does not prove the slide count,
+editable structure, loading cleanup, or browser result.
+
+Open Presentations in a real browser. Create or select a real deck, submit a
+unique marker as feedback to one selected slide, and require the marker in the
+main preview, unchanged sibling specifications, and a visible pending then
+ready/failed exchange in that slide's follow-up conversation. Select another
+slide and require an independent conversation. Navigate away and back, reselect
+the revised slide, and require the exact suggestion and revision outcome to
+restore before completing a successful named `.pptx` download. Fail acceptance
+on page exceptions, blocking Console errors, failed required Network requests,
+hidden API failures, or stuck loading. The deterministic browser check is:
+
+```powershell
+cd frontend
+npx.cmd playwright test e2e/presentations.spec.ts
+```
+
+The local capability MCP catalogue must contain `create_presentation`,
+`revise_presentation_slide`, and `get_presentation`; results must remain
+metadata-only. The sidecar is `untrusted`, so explicit MCP calls require
+confirmation and ordinary chat does not autonomously run these consequential
+tools.
 
 Agent-memory route groups are:
 

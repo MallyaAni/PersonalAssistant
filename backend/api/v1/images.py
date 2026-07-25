@@ -19,6 +19,7 @@ from backend.core.auth import (
 from backend.core.dependencies import (
     ImageArtifactDependency,
     ImageRefinementDependency,
+    ImageStyleDependency,
     TracerDependency,
 )
 from backend.models.image import ImageGenerationBody, ImageRefineBody
@@ -60,6 +61,7 @@ async def generate_image(
     body: ImageGenerationBody,
     request: Request,
     service: ImageArtifactDependency,
+    style: ImageStyleDependency,
     tracer: TracerDependency,
     identity: IdentityDependency,
 ) -> dict[str, Any] | Response:
@@ -67,6 +69,7 @@ async def generate_image(
     authorize_scope(identity, SCOPE_VISION)
     trace_id = tracer.start_trace(body.user_id)
     seed = body.seed if body.seed is not None else secrets.randbelow(2**63)
+    learned_style = await style.get_style(body.user_id)
     try:
         return await _run_until_disconnect(
             request,
@@ -81,6 +84,7 @@ async def generate_image(
                         height=body.height,
                         seed=seed,
                     ),
+                    extra_style=learned_style,
                 )
             ),
         )

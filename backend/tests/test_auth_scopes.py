@@ -12,6 +12,7 @@ from backend.core.auth import (
     SCOPE_MEMORY,
     SCOPE_MEMORY_READ,
     SCOPE_MEMORY_WRITE,
+    SCOPE_PRESENTATIONS,
     SCOPE_VISION,
     _scope_satisfied,
     issue_user_token,
@@ -49,6 +50,7 @@ def test_scope_satisfaction_rules():
 def test_route_enforcement_respects_least_privilege():
     read_token = issue_user_token("scope_user", scopes=[SCOPE_MEMORY_READ])
     vision_token = issue_user_token("scope_user", scopes=[SCOPE_VISION])
+    presentation_token = issue_user_token("scope_user", scopes=[SCOPE_PRESENTATIONS])
     group_token = issue_user_token("scope_user", scopes=[SCOPE_MEMORY])
     full_token = issue_user_token("scope_user")
 
@@ -73,6 +75,21 @@ def test_route_enforcement_respects_least_privilege():
             assert delete_memory(read_token).status_code == 403
             # A scope for a different subsystem cannot read memory at all.
             assert get_memory(vision_token).status_code == 403
+            # Presentation access is isolated from memory and vision scopes.
+            assert (
+                client.get(
+                    "/api/v1/presentations/scope_user",
+                    headers={"Authorization": f"Bearer {presentation_token}"},
+                ).status_code
+                == 200
+            )
+            assert (
+                client.get(
+                    "/api/v1/presentations/scope_user",
+                    headers={"Authorization": f"Bearer {read_token}"},
+                ).status_code
+                == 403
+            )
             # A group scope satisfies the read child.
             assert get_memory(group_token).status_code == 200
             # An unrestricted token is unaffected by scope checks.

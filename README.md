@@ -7,8 +7,8 @@ The repository contains:
 - a FastAPI backend;
 - a React and Vite developer console;
 - Docker Compose definitions for PostgreSQL with pgvector, Redis, the backend,
-  the frontend, and a local visual FastMCP sidecar;
-- a model-backed conversation path, PostgreSQL/pgvector personal memory, and focused LangGraph assistant and diagram-agent boundaries;
+  frontend, local capability FastMCP sidecar, and presentation renderer;
+- a model-backed conversation path, PostgreSQL/pgvector personal memory, and focused LangGraph assistant, diagram-agent, and presentation-agent boundaries;
 - Gemma-native MCP tool selection over a semantic live-validated shortlist,
   guarded execution, visible chat status, and a read-only internet-search MCP
   server with an isolated Google ADK research worker, Tavily fallback, bounded
@@ -16,9 +16,13 @@ The repository contains:
 - an explicit chat-to-Mermaid diagram path with user-scoped PostgreSQL artifact persistence and strict in-browser SVG rendering;
 - free local HiDream/ComfyUI image generation plus validated Gemma vision analysis in the chat composer, with natural-language creation intent, grounded historical questions, guarded referenced-image web comparison, private previews, retry/cancel, reload restoration, history, download, owned deletion, and threaded followup questions on any owned image;
 - a clickable Agent memory map whose bounded store details load on demand through the owned export boundary;
-- an agent-facing local FastMCP facade over the same diagram, image-generation,
-  vision-followup, and artifact-status services, returning bounded artifact
-  handles rather than image bytes;
+- a focused presentation subsystem where Gemma produces compact slide content,
+  application code compiles it into strict editable deck specifications,
+  PptxGenJS renders native Office objects, and LibreOffice validates each
+  revision before persistent per-slide feedback, history, preview, download,
+  or deletion;
+- an agent-facing local FastMCP facade over the same visual and presentation
+  services, returning bounded metadata handles rather than private binary data;
 - a local-only, review-first command that uses Gemma and explicit repository evidence to generate architecture-diagram candidates without automatically overwriting canonical documentation.
 
 See [the current session handoff](docs/NEXT_SESSION.md) for verified runtime state and active blockers. See [the roadmap](docs/ROADMAP.md) for milestone status and explicitly planned capabilities.
@@ -42,7 +46,9 @@ Image analysis:   http://localhost:8000/api/v1/vision/analyze
 Image followup:   http://localhost:8000/api/v1/vision/artifacts/{artifact_id}/ask
 Conversation:    http://localhost:8000/api/v1/conversations/{user_id}/{conversation_id}
 Tool invocation: http://localhost:8000/api/v1/tools/{user_id}/call
-Visual MCP:      http://localhost:8001/mcp
+Presentations:   http://localhost:8000/api/v1/presentations/{user_id}
+Capability MCP:  http://localhost:8001/mcp
+PPTX renderer:   http://localhost:8002/health
 ```
 
 These addresses being reachable does not prove chat or persistence works. Follow the functional validation protocol in the development guide.
@@ -60,7 +66,7 @@ User-visible behavior is considered verified only when the intended workflow is 
 - [Next session handoff](docs/NEXT_SESSION.md)
 - [Changelog](docs/CHANGELOG.md)
 - [Security](docs/SECURITY.md)
-- [Architecture decisions](docs/adr/0001-clean-architecture-and-modular-structure.md), including [local visual artifacts and resource-aware orchestration](docs/adr/0003-local-visual-artifacts-and-resource-aware-orchestration.md) and [hybrid free-tier web research](docs/adr/0004-hybrid-free-tier-web-research.md)
+- [Architecture decisions](docs/adr/0001-clean-architecture-and-modular-structure.md), including [local visual artifacts and resource-aware orchestration](docs/adr/0003-local-visual-artifacts-and-resource-aware-orchestration.md), [hybrid free-tier web research](docs/adr/0004-hybrid-free-tier-web-research.md), and [typed editable presentation generation](docs/adr/0005-typed-editable-presentation-generation.md)
 
 ## Status language
 

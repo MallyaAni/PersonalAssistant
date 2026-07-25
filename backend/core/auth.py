@@ -20,6 +20,7 @@ SCOPE_MEMORY_READ = "memory:read"
 SCOPE_MEMORY_WRITE = "memory:write"
 SCOPE_TOOLS = "tools:invoke"
 SCOPE_VISION = "vision"
+SCOPE_PRESENTATIONS = "presentations"
 
 # Coarse group scopes an operator may grant instead of the fine-grained ones.
 SCOPE_MEMORY = "memory"
@@ -36,6 +37,7 @@ GRANTABLE_SCOPES = frozenset(
         SCOPE_TOOLS,
         SCOPE_TOOLS_GROUP,
         SCOPE_VISION,
+        SCOPE_PRESENTATIONS,
     }
 )
 

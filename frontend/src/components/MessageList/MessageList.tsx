@@ -21,6 +21,7 @@ interface MessageListProps {
   messages: Message[];
   isThinking: boolean;
   onArtifactDeleted?: (artifactId: string) => void;
+  onImageRefined?: (artifact: ImageArtifact) => void;
 }
 
 // Render the ordered transcript and route owned artifact actions upward.
@@ -28,6 +29,7 @@ const MessageList: React.FC<MessageListProps> = ({
   messages,
   isThinking,
   onArtifactDeleted,
+  onImageRefined,
 }) => {
   const lastMessageIsAssistant = messages[messages.length - 1]?.role === 'assistant'
 
@@ -50,6 +52,7 @@ const MessageList: React.FC<MessageListProps> = ({
           artifactError={msg.artifactError}
           artifactActivity={msg.artifactActivity}
           onArtifactDeleted={onArtifactDeleted}
+          onImageRefined={onImageRefined}
         />
       ))}
       {isThinking && !lastMessageIsAssistant && (

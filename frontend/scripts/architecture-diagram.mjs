@@ -25,6 +25,7 @@ const diagramNames = [
   "memory-overview",
   "tool-memory-subsystem",
   "visual-artifact-subsystem",
+  "presentation-subsystem",
   "architecture-maintenance-subsystem",
   "frontend-subsystem",
 ];

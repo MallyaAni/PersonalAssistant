@@ -42,6 +42,8 @@ services:
       - LLM_BASE_URL=http://host.docker.internal:1234
       - IMAGE_PROVIDER_BASE_URL=http://host.docker.internal:8188
       - ARTIFACT_STORAGE_ROOT=/app/data/artifacts
+      - PRESENTATION_RENDERER_BASE_URL=http://presentation-renderer:8002
+      - PRESENTATION_REQUIRE_OFFICE_VALIDATION=true
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
@@ -49,6 +51,28 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      presentation-renderer:
+        condition: service_healthy
+
+  presentation-renderer:
+    build:
+      context: ./presentation-renderer
+    container_name: anios_presentation_renderer
+    environment:
+      - PORT=8002
+      - MAX_REQUEST_BYTES=62914560
+      - REQUIRE_OFFICE_VALIDATION=true
+    ports:
+      - "8002:8002"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - fetch('http://127.0.0.1:8002/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   backend:
     build: .
@@ -73,6 +97,8 @@ services:
       # http://comfyui:8188 (that GPU image build needs ~10-20 GB free on C:).
       - IMAGE_PROVIDER_BASE_URL=http://host.docker.internal:8188
       - ARTIFACT_STORAGE_ROOT=/app/data/artifacts
+      - PRESENTATION_RENDERER_BASE_URL=http://presentation-renderer:8002
+      - PRESENTATION_REQUIRE_OFFICE_VALIDATION=true
       # Opt-in web search. Empty disables it: routing still runs and logs its
       # decision, but no query is ever sent.
       - SEARCH_API_KEY=${SEARCH_API_KEY:-}
@@ -103,6 +129,8 @@ services:
         condition: service_started
       local-capabilities:
         condition: service_started
+      presentation-renderer:
+        condition: service_healthy
 
   frontend:
     build:

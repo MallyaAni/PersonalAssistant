@@ -9,7 +9,7 @@ from backend.artifacts.types import StoredBinary
 from backend.core.crypto import get_field_cipher
 from backend.core.interfaces import BinaryArtifactStore
 
-_ALLOWED_EXTENSIONS = {"jpg", "png", "webp"}
+_ALLOWED_EXTENSIONS = {"jpg", "png", "pptx", "webp"}
 
 
 # Write bytes to a temporary file and atomically replace the final path.

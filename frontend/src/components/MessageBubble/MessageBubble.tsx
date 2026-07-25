@@ -25,6 +25,7 @@ interface MessageProps {
   searchBlocked?: string[];
   toolActivities?: ToolActivity[];
   onArtifactDeleted?: (artifactId: string) => void;
+  onImageRefined?: (artifact: ImageArtifactRecord) => void;
 }
 
 // Separate trace metadata from the visible assistant answer.
@@ -66,6 +67,7 @@ const MessageBubble: React.FC<MessageProps> = ({
   searchBlocked,
   toolActivities,
   onArtifactDeleted,
+  onImageRefined,
 }) => {
   const isUser = role === 'user';
   const envelope = isUser ? null : parseAssistantEnvelope(content)
@@ -180,7 +182,7 @@ const MessageBubble: React.FC<MessageProps> = ({
       )}
       {!isUser && artifact?.kind === 'diagram' && <DiagramArtifact artifact={artifact} />}
       {!isUser && artifact && artifact.kind !== 'diagram' && (
-        <ImageArtifact artifact={artifact} onDeleted={onArtifactDeleted} />
+        <ImageArtifact artifact={artifact} onDeleted={onArtifactDeleted} onRefined={onImageRefined} />
       )}
       {!isUser && searchSources && searchSources.length > 0 && (
         <section className="mt-5" aria-label="Web sources used">
@@ -225,6 +227,7 @@ const MessageBubble: React.FC<MessageProps> = ({
               key={match.id}
               artifact={match}
               onDeleted={onArtifactDeleted}
+              onRefined={onImageRefined}
             />
           ))}
         </section>

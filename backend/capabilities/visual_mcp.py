@@ -20,6 +20,9 @@ from backend.core.dependencies import (
     get_image_provider,
     get_llm_client,
     get_memory_service,
+    get_presentation_agent,
+    get_presentation_repository,
+    get_presentation_service,
     get_vision_analysis_service,
     get_vision_embedding_provider,
     get_vision_provider,
@@ -77,6 +80,29 @@ def _artifact_summary(artifact: dict[str, Any]) -> dict[str, Any]:
         "error_code",
     )
     return {key: artifact.get(key) for key in keys if artifact.get(key) is not None}
+
+
+# Return bounded deck metadata and slide identities without the full specification.
+def _presentation_summary(presentation: dict[str, Any]) -> dict[str, Any]:
+    current = presentation.get("current_revision") or {}
+    specification = current.get("specification") or {}
+    return {
+        "id": presentation.get("id"),
+        "conversation_id": presentation.get("conversation_id"),
+        "title": presentation.get("title"),
+        "current_revision_id": presentation.get("current_revision_id"),
+        "revision_number": current.get("revision_number"),
+        "status": current.get("status"),
+        "content_available": current.get("content_available"),
+        "slides": [
+            {
+                "slide_id": slide.get("slide_id"),
+                "title": slide.get("title"),
+            }
+            for slide in specification.get("slides", [])
+            if isinstance(slide, dict)
+        ],
+    }
 
 
 # Encode a tool result below the generic MCP cap while preserving valid JSON.
@@ -221,6 +247,81 @@ class VisualCapabilityRuntime:
             raise ValueError("Artifact not found.")
         return _encode_result({"artifact": _artifact_summary(artifact)})
 
+    # Create one editable presentation through the focused local subagent.
+    async def create_presentation(
+        self,
+        context: VisualRequestContext,
+        prompt: str,
+    ) -> str:
+        normalized_prompt = prompt.strip()
+        if not normalized_prompt or len(normalized_prompt) > 20_000:
+            raise ValueError("Presentation prompt must contain 1 to 20000 characters.")
+        async with AsyncSessionLocal() as session:
+            repository = get_presentation_repository(session)
+            service = get_presentation_service(
+                get_presentation_agent(get_llm_client()),
+                repository,
+                get_binary_artifact_store(),
+            )
+            ready = await service.create(
+                context.user_id,
+                context.conversation_id,
+                context.trace_id,
+                normalized_prompt,
+            )
+        return _encode_result({"presentation": _presentation_summary(ready)})
+
+    # Apply feedback to one slide and persist a linked editable revision.
+    async def revise_presentation_slide(
+        self,
+        context: VisualRequestContext,
+        presentation_id: str,
+        base_revision_id: str,
+        slide_id: str,
+        feedback: str,
+    ) -> str:
+        parsed_presentation_id = str(UUID(presentation_id))
+        parsed_revision_id = str(UUID(base_revision_id))
+        normalized_slide_id = slide_id.strip()
+        normalized_feedback = feedback.strip()
+        if not normalized_slide_id or len(normalized_slide_id) > 80:
+            raise ValueError("A valid presentation slide identifier is required.")
+        if not normalized_feedback or len(normalized_feedback) > 10_000:
+            raise ValueError(
+                "Presentation feedback must contain 1 to 10000 characters."
+            )
+        async with AsyncSessionLocal() as session:
+            repository = get_presentation_repository(session)
+            service = get_presentation_service(
+                get_presentation_agent(get_llm_client()),
+                repository,
+                get_binary_artifact_store(),
+            )
+            ready = await service.revise_slide(
+                context.user_id,
+                parsed_presentation_id,
+                parsed_revision_id,
+                normalized_slide_id,
+                normalized_feedback,
+            )
+        return _encode_result({"presentation": _presentation_summary(ready)})
+
+    # Return current bounded metadata for one owned presentation.
+    async def get_presentation(
+        self,
+        context: VisualRequestContext,
+        presentation_id: str,
+    ) -> str:
+        parsed_presentation_id = str(UUID(presentation_id))
+        async with AsyncSessionLocal() as session:
+            presentation = await get_presentation_repository(session).get_owned(
+                context.user_id,
+                parsed_presentation_id,
+            )
+        if presentation is None:
+            raise ValueError("Presentation not found.")
+        return _encode_result({"presentation": _presentation_summary(presentation)})
+
 
 # Build a FastMCP server whose schemas omit application-owned identity fields.
 def create_visual_mcp(runtime: VisualCapabilityRuntime) -> FastMCP:
@@ -279,6 +380,45 @@ def create_visual_mcp(runtime: VisualCapabilityRuntime) -> FastMCP:
     ) -> str:
         """Return status and public metadata for one owned visual artifact."""
         return await runtime.get_artifact(_request_context(ctx), artifact_id)
+
+    # Create a native editable PowerPoint deck through PresentationAgent.
+    @server.tool()
+    async def create_presentation(
+        prompt: str,
+        ctx: Context[Any, Any, Any],
+    ) -> str:
+        """Create and persist a native editable PowerPoint presentation."""
+        return await runtime.create_presentation(_request_context(ctx), prompt)
+
+    # Revise exactly one slide and keep all sibling slides unchanged.
+    @server.tool()
+    async def revise_presentation_slide(
+        presentation_id: str,
+        base_revision_id: str,
+        slide_id: str,
+        feedback: str,
+        ctx: Context[Any, Any, Any],
+    ) -> str:
+        """Create a linked presentation revision from feedback on one slide."""
+        return await runtime.revise_presentation_slide(
+            _request_context(ctx),
+            presentation_id,
+            base_revision_id,
+            slide_id,
+            feedback,
+        )
+
+    # Read bounded current metadata for one owned presentation.
+    @server.tool()
+    async def get_presentation(
+        presentation_id: str,
+        ctx: Context[Any, Any, Any],
+    ) -> str:
+        """Return current metadata and slide identities for one presentation."""
+        return await runtime.get_presentation(
+            _request_context(ctx),
+            presentation_id,
+        )
 
     return server
 

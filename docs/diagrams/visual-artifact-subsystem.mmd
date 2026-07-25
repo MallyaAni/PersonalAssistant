@@ -24,9 +24,11 @@ flowchart TB
         VisualMCP[FastMCP streamable HTTP sidecar<br/>model schemas omit ownership IDs]
         HiddenContext[Application-owned metadata<br/>user, conversation, and trace]
         VisualTools[generate_diagram, generate_image,<br/>ask_about_image, get_artifact]
+        PresentationTools[Presentation tools<br/>owned by presentation subsystem]
         Handles[Bounded JSON artifact handles<br/>no bytes or storage keys]
 
         HiddenContext --> VisualMCP --> VisualTools --> Handles
+        VisualMCP --> PresentationTools
     end
 
     ToolAPI -->|confirmed untrusted call| HiddenContext
@@ -145,6 +147,6 @@ flowchart TB
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef planned fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
     class User,ExplicitCaller,ChatAPI,ImageAPI,VisionAPI,AskAPI,ArtifactAPI,ToolAPI,ReferencedQuestion,DiagramStream,SSEParser,DiagramCard,ImageComposer,ImageCard,ExistingUI interface;
-    class VisualMCP,HiddenContext,VisualTools,Handles,DiagramRoute,DiagramService,DiagramAgent,MermaidCheck,ImageLifecycle,DisconnectMonitor,ImageProvider,OutputCheck,RecallPolicy,PromptContext,OutboundGate,UploadCheck,UploadState,FollowupRead,VisionService,AnalysisState,Ownership,Repository application;
+    class VisualMCP,HiddenContext,VisualTools,PresentationTools,Handles,DiagramRoute,DiagramService,DiagramAgent,MermaidCheck,ImageLifecycle,DisconnectMonitor,ImageProvider,OutputCheck,RecallPolicy,PromptContext,OutboundGate,UploadCheck,UploadState,FollowupRead,VisionService,AnalysisState,Ownership,Repository application;
     class DiagramState,GeneratedState,Postgres,BinaryStore data;
     class DiagramLLM,ComfyUI,VisionLLM,InternetMCP external;

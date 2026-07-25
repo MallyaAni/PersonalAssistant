@@ -17,6 +17,7 @@ venv/
 
 # Frontend dependencies and generated output
 frontend/node_modules/
+presentation-renderer/node_modules/
 frontend/dist/
 frontend/test-results/
 frontend/playwright-report/

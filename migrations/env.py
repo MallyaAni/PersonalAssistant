@@ -23,6 +23,7 @@ from backend.models.memory import (
     SemanticMemory,
     UserProfile,
 )
+from backend.models.presentation import Presentation, PresentationRevision
 from backend.models.tool_memory import ToolDescriptor, ToolPreference, ToolUsageOutcome
 
 _MODELS = (
@@ -43,6 +44,8 @@ _MODELS = (
     KnowledgeChunk,
     ConversationSummary,
     VisualArtifact,
+    Presentation,
+    PresentationRevision,
 )
 
 # This is the Alembic Config object, which provides

@@ -119,6 +119,139 @@ export interface ImageArtifact extends ArtifactBase {
 
 export type VisualArtifact = DiagramArtifact | ImageArtifact;
 
+export interface PresentationTheme {
+  font_face: string;
+  background_color: string;
+  primary_color: string;
+  text_color: string;
+  muted_color: string;
+}
+
+interface PresentationElementBase {
+  element_id: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface PresentationTextElement extends PresentationElementBase {
+  type: 'text';
+  text: string;
+  font_size: number;
+  bold: boolean;
+  color: string | null;
+  align: 'left' | 'center' | 'right';
+  valign: 'top' | 'mid' | 'bottom';
+  bullet: boolean;
+}
+
+export interface PresentationShapeElement extends PresentationElementBase {
+  type: 'shape';
+  shape: 'rect' | 'roundRect' | 'ellipse' | 'line';
+  fill_color: string;
+  line_color: string;
+  line_width: number;
+}
+
+export interface PresentationChartElement extends PresentationElementBase {
+  type: 'chart';
+  chart_type: 'bar' | 'column' | 'line' | 'pie';
+  categories: string[];
+  series: Array<{ name: string; values: number[] }>;
+  show_legend: boolean;
+  show_title: boolean;
+  title: string | null;
+}
+
+export interface PresentationTableElement extends PresentationElementBase {
+  type: 'table';
+  headers: string[];
+  rows: string[][];
+  font_size: number;
+}
+
+export interface PresentationImageElement extends PresentationElementBase {
+  type: 'image';
+  artifact_id: string;
+  alt_text: string;
+}
+
+export type PresentationElement =
+  | PresentationTextElement
+  | PresentationShapeElement
+  | PresentationChartElement
+  | PresentationTableElement
+  | PresentationImageElement;
+
+export interface PresentationSlide {
+  slide_id: string;
+  title: string;
+  purpose: string;
+  background_color: string | null;
+  notes: string;
+  elements: PresentationElement[];
+}
+
+export interface PresentationDeckSpec {
+  schema_version: 1;
+  title: string;
+  subtitle: string | null;
+  theme: PresentationTheme;
+  slides: PresentationSlide[];
+}
+
+export interface PresentationRevision {
+  id: string;
+  presentation_id: string;
+  parent_revision_id: string | null;
+  revision_number: number;
+  status: 'pending' | 'ready' | 'failed';
+  target_slide_id: string | null;
+  change_summary: string;
+  provider: string;
+  model: string | null;
+  renderer: string | null;
+  renderer_version: string | null;
+  content_available: boolean;
+  byte_size: number | null;
+  sha256: string | null;
+  error_code: string | null;
+  specification?: PresentationDeckSpec | null;
+}
+
+export interface PresentationRecord {
+  id: string;
+  user_id: string;
+  conversation_id: string;
+  trace_id: string;
+  title: string;
+  current_revision_id: string | null;
+  current_revision: PresentationRevision | null;
+  revisions: PresentationRevision[];
+  created_at: string;
+  updated_at: string;
+}
+
+interface PresentationEvent {
+  event: 'started' | 'draft' | 'ready' | 'error' | 'done';
+  data: Record<string, unknown>;
+}
+
+export type PresentationCreationUpdate =
+  | {
+    type: 'started';
+    presentationId: string;
+    revisionId: string;
+    traceId: string;
+  }
+  | {
+    type: 'draft';
+    specification: PresentationDeckSpec;
+    expectedSlideCount: number;
+  }
+  | { type: 'ready'; presentation: PresentationRecord };
+
 export interface ConversationTurn {
   id: string;
   conversation_id: string;
@@ -218,6 +351,231 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(apiErrorMessage(detail, response.status))
   }
   return response.json()
+}
+
+// List recent presentations owned by one user.
+export function getPresentations(userId: string, signal?: AbortSignal) {
+  return apiRequest<PresentationRecord[]>(
+    `/api/v1/presentations/${encodeURIComponent(userId)}`,
+    { signal },
+  )
+}
+
+// Load one owned presentation with its active specification and lineage.
+export function getPresentation(
+  userId: string,
+  presentationId: string,
+  signal?: AbortSignal,
+) {
+  return apiRequest<PresentationRecord>(
+    `/api/v1/presentations/${encodeURIComponent(userId)}/${encodeURIComponent(presentationId)}`,
+    { signal },
+  )
+}
+
+// Create one editable presentation through the focused local subagent.
+export function createPresentation(
+  userId: string,
+  conversationId: string,
+  prompt: string,
+) {
+  return apiRequest<PresentationRecord>('/api/v1/presentations', {
+    method: 'POST',
+    body: JSON.stringify({
+      user_id: userId,
+      conversation_id: conversationId,
+      prompt,
+    }),
+  })
+}
+
+// Stream application-compiled slide previews before the final PPTX is promoted.
+export async function* streamPresentationCreation(
+  userId: string,
+  conversationId: string,
+  prompt: string,
+): AsyncGenerator<PresentationCreationUpdate> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/presentations/stream`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...authHeaders(),
+    },
+    body: JSON.stringify({
+      user_id: userId,
+      conversation_id: conversationId,
+      prompt,
+    }),
+  })
+  if (!response.ok || !response.body) {
+    const detail = await response.json().catch(() => ({}))
+    throw new Error(apiErrorMessage(detail, response.status))
+  }
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  let sawStarted = false
+  let sawDone = false
+
+  while (true) {
+    const { done, value } = await reader.read()
+    buffer += decoder.decode(value || new Uint8Array(), { stream: !done })
+    let boundary = buffer.search(/\r?\n\r?\n/)
+    while (boundary >= 0) {
+      const frame = buffer.slice(0, boundary)
+      const delimiter = buffer.slice(boundary).match(/^\r?\n\r?\n/)?.[0] || '\n\n'
+      buffer = buffer.slice(boundary + delimiter.length)
+      const event = parsePresentationEvent(frame)
+      if (event.event === 'started') {
+        const { presentation_id, revision_id, trace_id } = event.data
+        if (
+          typeof presentation_id !== 'string'
+          || typeof revision_id !== 'string'
+          || typeof trace_id !== 'string'
+        ) throw new Error('Presentation start event is invalid')
+        sawStarted = true
+        yield {
+          type: 'started',
+          presentationId: presentation_id,
+          revisionId: revision_id,
+          traceId: trace_id,
+        }
+      } else if (event.event === 'draft') {
+        const { specification, expected_slide_count } = event.data
+        if (
+          !specification
+          || typeof specification !== 'object'
+          || Array.isArray(specification)
+          || typeof expected_slide_count !== 'number'
+        ) throw new Error('Presentation draft event is invalid')
+        yield {
+          type: 'draft',
+          specification: specification as unknown as PresentationDeckSpec,
+          expectedSlideCount: expected_slide_count,
+        }
+      } else if (event.event === 'ready') {
+        const presentation = event.data.presentation
+        if (!presentation || typeof presentation !== 'object' || Array.isArray(presentation)) {
+          throw new Error('Ready presentation event is invalid')
+        }
+        yield {
+          type: 'ready',
+          presentation: presentation as unknown as PresentationRecord,
+        }
+      } else if (event.event === 'error') {
+        throw new Error(
+          typeof event.data.message === 'string'
+            ? event.data.message
+            : 'Unable to create the presentation.',
+        )
+      } else {
+        sawDone = true
+      }
+      boundary = buffer.search(/\r?\n\r?\n/)
+    }
+    if (done) break
+  }
+  if (buffer.trim()) throw new Error('Presentation stream ended with an incomplete event')
+  if (!sawStarted) throw new Error('Presentation stream did not start')
+  if (!sawDone) throw new Error('Presentation stream ended before completion')
+}
+
+// Parse one bounded presentation SSE frame without interpreting arbitrary fields.
+function parsePresentationEvent(frame: string): PresentationEvent {
+  let eventName = ''
+  const dataLines: string[] = []
+  for (const line of frame.split(/\r?\n/)) {
+    if (line.startsWith('event:')) eventName = line.slice(6).trim()
+    if (line.startsWith('data:')) dataLines.push(line.slice(5).trimStart())
+  }
+  if (!['started', 'draft', 'ready', 'error', 'done'].includes(eventName)) {
+    throw new Error('Presentation stream contained an unknown event')
+  }
+  let data: unknown
+  try {
+    data = JSON.parse(dataLines.join('\n'))
+  } catch {
+    throw new Error('Presentation stream contained invalid event data')
+  }
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error('Presentation stream event data must be an object')
+  }
+  return {
+    event: eventName as PresentationEvent['event'],
+    data: data as Record<string, unknown>,
+  }
+}
+
+// Apply feedback to one selected slide against a known base revision.
+export function revisePresentationSlide(
+  userId: string,
+  presentationId: string,
+  slideId: string,
+  baseRevisionId: string,
+  feedback: string,
+) {
+  return apiRequest<PresentationRecord>(
+    `/api/v1/presentations/${encodeURIComponent(userId)}/${encodeURIComponent(presentationId)}/slides/${encodeURIComponent(slideId)}/revisions`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        base_revision_id: baseRevisionId,
+        feedback,
+      }),
+    },
+  )
+}
+
+// Generate one local image and attach it as a new selected-slide revision.
+export function generatePresentationSlideImage(
+  userId: string,
+  presentationId: string,
+  slideId: string,
+  baseRevisionId: string,
+  prompt?: string,
+) {
+  return apiRequest<PresentationRecord>(
+    `/api/v1/presentations/${encodeURIComponent(userId)}/${encodeURIComponent(presentationId)}/slides/${encodeURIComponent(slideId)}/image`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        base_revision_id: baseRevisionId,
+        prompt: prompt?.trim() || null,
+      }),
+    },
+  )
+}
+
+// Delete one owned presentation and all of its linked revisions.
+export function deletePresentation(userId: string, presentationId: string) {
+  return fetch(
+    `${API_BASE_URL}/api/v1/presentations/${encodeURIComponent(userId)}/${encodeURIComponent(presentationId)}`,
+    {
+      method: 'DELETE',
+      headers: authHeaders(),
+    },
+  ).then(response => {
+    if (!response.ok) throw new Error(`Server responded with ${response.status}`)
+  })
+}
+
+// Download one ready revision and preserve the backend-provided filename.
+export async function downloadPresentation(
+  userId: string,
+  presentationId: string,
+  revisionId: string,
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/presentations/${encodeURIComponent(userId)}/${encodeURIComponent(presentationId)}/revisions/${encodeURIComponent(revisionId)}/content`,
+    { headers: authHeaders() },
+  )
+  if (!response.ok) {
+    const detail = await response.json().catch(() => ({}))
+    throw new Error(apiErrorMessage(detail, response.status))
+  }
+  const disposition = response.headers.get('content-disposition') || ''
+  const filename = disposition.match(/filename="([^"]+)"/)?.[1] || 'presentation.pptx'
+  return { blob: await response.blob(), filename }
 }
 
 // Extract one safe message from FastAPI string or structured error details.
@@ -501,6 +859,33 @@ export async function generateImage(
   const artifact = parseVisualArtifact(record)
   if (artifact.kind !== 'generated_image') {
     throw new Error('Image generation returned an unexpected artifact')
+  }
+  return artifact
+}
+
+// Regenerate a generated image from feedback, returning a new linked revision.
+export async function refineImage(
+  userId: string,
+  artifactId: string,
+  feedback: string,
+  conversationId: string,
+  signal?: AbortSignal,
+) {
+  const record = await apiRequest<Record<string, unknown>>(
+    `/api/v1/images/${encodeURIComponent(artifactId)}/refine`,
+    {
+      method: 'POST',
+      signal,
+      body: JSON.stringify({
+        user_id: userId,
+        conversation_id: conversationId,
+        feedback,
+      }),
+    },
+  )
+  const artifact = parseVisualArtifact(record)
+  if (artifact.kind !== 'generated_image') {
+    throw new Error('Image refinement returned an unexpected artifact')
   }
   return artifact
 }

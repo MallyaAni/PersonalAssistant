@@ -390,6 +390,20 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     })
   }
 
+  // Append a refined image revision as a new assistant turn, preserving the
+  // original so the progression stays visible.
+  const handleImageRefined = (artifact: ImageArtifact) => {
+    setMessages(prev => [
+      ...prev,
+      {
+        role: 'assistant',
+        content: 'Here is the updated image.',
+        artifact,
+        artifactId: artifact.id,
+      },
+    ])
+  }
+
   // Expose a visual request failure and clear its running state.
   const handleVisualError = (message: string) => {
     setMessages(prev => {
@@ -473,6 +487,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               messages={messages}
               isThinking={isThinking}
               onArtifactDeleted={handleVisualDeleted}
+              onImageRefined={handleImageRefined}
             />
           </div>
         ) : (

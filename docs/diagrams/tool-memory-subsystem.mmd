@@ -22,10 +22,13 @@ flowchart TB
     G5 --> G6[Screen arguments<br/>OutboundPrivacyPolicy]
     G6 --> Context{Configured to receive<br/>application context?}
     Context -->|no| Server[[MCP server]]
-    Context -->|yes; not model-visible| VisualServer[[Local visual FastMCP<br/>user, conversation, trace]]
+    Context -->|yes; not model-visible| VisualServer[[Local capability FastMCP<br/>user, conversation, trace]]
     VisualServer --> VisualTools[generate_diagram, generate_image,<br/>ask_about_image, get_artifact]
     VisualTools --> VisualHandles[Bounded artifact handles<br/>no image bytes or storage keys]
     VisualHandles --> Bounded
+    VisualServer --> PresentationTools[create_presentation,<br/>revise_presentation_slide,<br/>get_presentation]
+    PresentationTools --> PresentationHandles[Bounded deck and revision metadata<br/>no PPTX bytes or storage keys]
+    PresentationHandles --> Bounded
     Server --> Bounded[Bounded result, inspected,<br/>quoted as untrusted data]
     Bounded --> Prompt[Final Gemma answer context]
     Bounded --> ToolEvents[tool_started and tool_finished SSE]
@@ -69,7 +72,7 @@ flowchart TB
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
     class Caller,ToolAPI,Chat,Explicit,ToolEvents interface;
-    class Ownership,Schema,Sensitive,Service,DescriptorPath,Identity,Deactivate,Embed,PreferencePath,OutcomePath,Coordinator,Toolbox,SearchDescriptors,LiveSelection,GemmaSelect,Invoke,Gates,G1,G2,G3,G4,G5,G6,Context,VisualTools,VisualHandles,Bounded,Prompt application;
+    class Ownership,Schema,Sensitive,Service,DescriptorPath,Identity,Deactivate,Embed,PreferencePath,OutcomePath,Coordinator,Toolbox,SearchDescriptors,LiveSelection,GemmaSelect,Invoke,Gates,G1,G2,G3,G4,G5,G6,Context,VisualTools,VisualHandles,PresentationTools,PresentationHandles,Bounded,Prompt application;
     class Descriptors,Preferences,Outcomes,Database data;
     class Nomic,Gemma,Server,VisualServer external;
     class Boundary warning;

@@ -9,6 +9,7 @@ from backend.capabilities.visual_mcp import (
     VisualRequestContext,
     _artifact_summary,
     _encode_result,
+    _presentation_summary,
     _request_context,
     create_visual_mcp,
 )
@@ -63,6 +64,9 @@ async def test_visual_mcp_declares_bounded_agent_facing_tools():
         "generate_image",
         "ask_about_image",
         "get_artifact",
+        "create_presentation",
+        "revise_presentation_slide",
+        "get_presentation",
     }
     for tool in tools.values():
         properties = tool.inputSchema.get("properties", {})
@@ -90,6 +94,36 @@ def test_artifact_summary_contains_only_public_bounded_metadata():
         "status": "ready",
         "width": 2048,
     }
+
+
+# Verify presentation tools return slide handles without full private deck content.
+def test_presentation_summary_is_bounded_to_current_slide_identities():
+    summary = _presentation_summary(
+        {
+            "id": "deck",
+            "conversation_id": "conversation",
+            "title": "Deck title",
+            "current_revision_id": "revision",
+            "current_revision": {
+                "revision_number": 2,
+                "status": "ready",
+                "content_available": True,
+                "specification": {
+                    "slides": [
+                        {
+                            "slide_id": "slide-a",
+                            "title": "Opening",
+                            "notes": "private notes",
+                            "elements": [{"text": "private slide body"}],
+                        }
+                    ]
+                },
+            },
+        }
+    )
+
+    assert summary["slides"] == [{"slide_id": "slide-a", "title": "Opening"}]
+    assert "specification" not in summary
 
 
 # Verify long vision answers remain valid bounded JSON under the MCP result cap.

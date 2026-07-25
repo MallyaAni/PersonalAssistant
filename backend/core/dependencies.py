@@ -6,6 +6,7 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.agents.diagram import DiagramAgent
+from backend.agents.presentation import PresentationAgent
 from backend.artifacts.diagram import LLMDiagramProvider
 from backend.artifacts.image import ComfyUIImageProvider
 from backend.artifacts.image_retrieval import ImageRetrievalPolicy
@@ -28,6 +29,8 @@ from backend.mcp.invocation import SessionMCPToolInvoker
 from backend.mcp.types import MCPServerConfig
 from backend.memory.coordinator import MemoryCoordinatorAgent
 from backend.memory.retrieval import SemanticRetrievalPolicy
+from backend.presentations.provider import LLMPresentationProvider
+from backend.presentations.renderer import PptxGenJSRenderer
 from backend.search.cascade import CascadingSearchRouter
 from backend.search.classifier import LMStudioFreshnessClassifier
 from backend.search.mcp import MCPWebSearchProvider
@@ -39,12 +42,16 @@ from backend.services.conversation_service import ConversationService
 from backend.services.diagram_artifact_service import DiagramArtifactService
 from backend.services.image_artifact_service import ImageArtifactService
 from backend.services.image_refinement_service import ImageRefinementService
+from backend.services.image_style_service import ImageStyleService
 from backend.services.mcp_invocation_service import MCPInvocationService
 from backend.services.mcp_tool_orchestration_service import MCPToolOrchestrationService
 from backend.services.memory_operations_service import MemoryOperationsService
 from backend.services.memory_reembedding_service import MemoryReembeddingService
 from backend.services.memory_retention_service import MemoryRetentionService
 from backend.services.postgres_memory_service import PostgresMemoryService
+from backend.services.presentation_image_service import PresentationImageService
+from backend.services.presentation_repository import SQLAlchemyPresentationRepository
+from backend.services.presentation_service import PresentationService
 from backend.services.repository import SQLAlchemyConversationRepository
 from backend.services.tool_memory_service import ToolMemoryService
 from backend.services.tracing import (
@@ -217,6 +224,72 @@ BinaryArtifactStoreDependency = Annotated[
 ]
 
 
+# Reuse one stateless PptxGenJS worker adapter across application requests.
+@lru_cache(maxsize=1)
+def get_presentation_renderer() -> PptxGenJSRenderer:
+    return PptxGenJSRenderer(
+        settings.PRESENTATION_RENDERER_BASE_URL,
+        settings.PRESENTATION_RENDERER_TIMEOUT_SECONDS,
+        settings.PRESENTATION_MAX_OUTPUT_BYTES,
+        require_office_validation=settings.PRESENTATION_REQUIRE_OFFICE_VALIDATION,
+    )
+
+
+# Build the local Gemma presentation planner without storage or file authority.
+def get_presentation_agent(llm: LlmDependency) -> PresentationAgent:
+    return PresentationAgent(
+        LLMPresentationProvider(
+            llm,
+            settings.PRESENTATION_MAX_TOKENS,
+            settings.PRESENTATION_PLAN_MAX_TOKENS,
+            settings.PRESENTATION_REVISION_MAX_TOKENS,
+        )
+    )
+
+
+PresentationAgentDependency = Annotated[
+    PresentationAgent,
+    Depends(get_presentation_agent),
+]
+
+
+# Bind presentation persistence to the current asynchronous request transaction.
+def get_presentation_repository(
+    db: DbDependency,
+) -> SQLAlchemyPresentationRepository:
+    return SQLAlchemyPresentationRepository(db)
+
+
+PresentationRepositoryDependency = Annotated[
+    SQLAlchemyPresentationRepository,
+    Depends(get_presentation_repository),
+]
+
+
+# Coordinate planning, native rendering, revision lineage, and binary storage.
+def get_presentation_service(
+    agent: PresentationAgentDependency,
+    repository: PresentationRepositoryDependency,
+    store: BinaryArtifactStoreDependency,
+    artifacts: ArtifactRepositoryDependency,
+) -> PresentationService:
+    return PresentationService(
+        agent,
+        get_presentation_renderer(),
+        repository,
+        store,
+        provider_name="lm_studio",
+        model_name=settings.LLM_MODEL,
+        artifact_repository=artifacts,
+    )
+
+
+PresentationDependency = Annotated[
+    PresentationService,
+    Depends(get_presentation_service),
+]
+
+
 # Reuse one concurrency-limited ComfyUI image provider across requests.
 @lru_cache(maxsize=1)
 def get_image_provider() -> ComfyUIImageProvider:
@@ -265,12 +338,41 @@ ImageArtifactDependency = Annotated[
 ]
 
 
+# Coordinate optional slide imagery without slowing the initial deck workflow.
+def get_presentation_image_service(
+    presentations: PresentationDependency,
+    images: ImageArtifactDependency,
+) -> PresentationImageService:
+    return PresentationImageService(presentations, images)
+
+
+PresentationImageDependency = Annotated[
+    PresentationImageService,
+    Depends(get_presentation_image_service),
+]
+
+
+# Learn and apply a durable per-user image style from refinement feedback.
+def get_image_style_service(
+    memory: MemoryDependency,
+    llm: LlmDependency,
+) -> ImageStyleService:
+    return ImageStyleService(memory, llm)
+
+
+ImageStyleDependency = Annotated[
+    ImageStyleService,
+    Depends(get_image_style_service),
+]
+
+
 # Regenerate a generated image from its prompt plus the user's feedback.
 def get_image_refinement_service(
     images: ImageArtifactDependency,
     llm: LlmDependency,
+    style: ImageStyleDependency,
 ) -> ImageRefinementService:
-    return ImageRefinementService(images=images, llm=llm)
+    return ImageRefinementService(images=images, llm=llm, style_service=style)
 
 
 ImageRefinementDependency = Annotated[

@@ -535,3 +535,67 @@ This file is append-only history for meaningful, verified changes. It must not c
   entity keywords - and the model answered with the stored recommendation.
 - Verified with the full suite: 434 backend tests, Ruff, Black, and strict MyPy
   over 122 source files pass.
+
+## 2026-07-24 — Editable presentation subsystem verified
+
+- Added a focused `PresentationAgent` and strict typed deck/slide contracts so
+  local Gemma can plan a complete deck or revise one selected slide without
+  receiving persistence, permission, renderer, or sibling-slide authority.
+- Added user-scoped presentations and append-only revision lineage with
+  stale-base conflict protection, encrypted title/spec fields, opaque binary
+  storage, SHA-256 metadata, terminal failures, and promotion only after every
+  generation, validation, and storage boundary succeeds.
+- Added a pinned PptxGenJS worker that produces native editable text, shapes,
+  charts, tables, images, and notes, validates OOXML structure, and opens/exports
+  every Compose result through headless LibreOffice before returning it.
+- Added owned presentation APIs, a React deck/slide preview, slide-specific
+  feedback, revision history, named `.pptx` downloads, deletion, visible
+  loading/errors, and three metadata-only presentation tools on the existing
+  confirmation-gated local FastMCP facade.
+- Verified a real three-slide Gemma deck through direct API creation, native
+  chart/table/notes package inspection, selected-slide revision with exact
+  sibling preservation, stale-base HTTP 409, and a final live Chromium
+  revision/navigation/download workflow with no blocking browser errors.
+- Verified 18 focused backend tests with one renderer-environment skip, the
+  native Node renderer test, strict MyPy over 13 changed production files,
+  Ruff, the frontend production build, deterministic and live presentation
+  Playwright workflows, Compose configuration, migration head
+  `20260724_0013`, and all 11 synchronized architecture diagrams.
+
+## 2026-07-24 — Persistent per-slide presentation follow-ups verified
+
+- Associated every presentation feedback revision with its stable selected
+  slide ID so one deck can reconstruct independent chronological conversations
+  for each slide without duplicating feedback in a second store.
+- Added an image-followup-style browser thread showing the user's suggestion,
+  in-progress PresentationAgent state, and persisted ready/failed outcome.
+  Switching slides changes threads; navigating away and back restores them.
+- Direct live API acceptance created ready revision 8 for slide 1 and returned
+  its target-slide association. Live Chromium then created revisions 9 and 10
+  for slide 2, restored that slide's exact suggestion/outcome after navigation,
+  preserved sibling slides, downloaded the ready PPTX, and reported no blocking
+  page or Console errors.
+- Verified the focused backend test, deterministic and live presentation
+  Playwright workflows, frontend production build, strict MyPy, Ruff, clean
+  backend/renderer logs, and Alembic head `20260724_0014`.
+
+## 2026-07-24 — Compact presentation planning latency verified
+
+- Replaced full model-authored deck layout JSON with a compact semantic
+  `DeckPlan` and deterministic application compiler that owns the theme,
+  coordinates, editable objects, and stable slide/element identifiers.
+- Limited normal deck planning to 2,048 tokens while retaining the strict
+  selected-slide contract and bounded correction path for feedback revisions.
+- Corrected OOXML native-text inspection to recognize PowerPoint
+  `p:txBody` elements and added a regression test for that namespace boundary.
+- The unchanged `create a presentation on horses, 6 slides` request improved
+  from a roughly 200-second malformed-output HTTP 503 to HTTP 201 in 28.67
+  seconds direct and 37.98 seconds in final-source Chromium. The retained
+  116,620-byte PPTX
+  has six slides, 42 editable text bodies, 72 shapes, six notes slides, and
+  passed the PptxGenJS plus LibreOffice path.
+- Verified 452 backend tests, the focused nine-test presentation suite, the
+  native Node renderer test, deterministic presentation Playwright, the
+  frontend production build, repository-wide Ruff/Black, strict MyPy over 135
+  source files, Compose configuration, migration head `20260724_0014`, and all
+  11 synchronized architecture views.

@@ -4,6 +4,7 @@ import ChatWindow from './components/ChatWindow/ChatWindow'
 import Sidebar from './components/Sidebar/Sidebar'
 import MemoryPanel from './components/MemoryPanel/MemoryPanel'
 import ArtifactPanel from './components/ArtifactPanel/ArtifactPanel'
+import PresentationPanel from './components/PresentationPanel/PresentationPanel'
 
 const DEFAULT_USER_ID = 'ani.mallya'
 const LEGACY_DEFAULT_USER_ID = 'dev_user_001'
@@ -37,7 +38,7 @@ const getInitialSession = (): ActiveSession => {
 // Coordinate the active user, conversation, and primary application view.
 function App() {
   const [isSidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 768)
-  const [activeView, setActiveView] = useState<'chat' | 'memory' | 'artifacts'>('chat')
+  const [activeView, setActiveView] = useState<'chat' | 'memory' | 'artifacts' | 'presentations'>('chat')
   const [session, setSession] = useState(getInitialSession)
   const { userId, conversation } = session
 
@@ -123,6 +124,12 @@ function App() {
           <MemoryPanel userId={userId} onUserIdChange={updateUserId} />
         )}
         {activeView === 'artifacts' && <ArtifactPanel userId={userId} />}
+        {activeView === 'presentations' && (
+          <PresentationPanel
+            userId={userId}
+            conversationId={conversation.id}
+          />
+        )}
       </main>
     </div>
   )

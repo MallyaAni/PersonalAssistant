@@ -1,0 +1,85 @@
+flowchart LR
+    User([User])
+    GemmaCaller([Gemma tool caller])
+
+    subgraph Entry[1. Owned entry points]
+        direction TB
+        UI[Presentations UI<br/>brief, preview, slide feedback,<br/>history, download, delete]
+        API[Presentation API<br/>create, list, get, revise,<br/>download, delete]
+        MCP[Local FastMCP facade<br/>metadata-only tools]
+        Gates[Live contract, privacy,<br/>and confirmation gates]
+    end
+
+    subgraph Lifecycle[2. Application-owned lifecycle]
+        direction TB
+        Service[PresentationService<br/>ownership and revision coordinator]
+        Pending[Create pending revision<br/>with parent and expected base]
+        Agent[PresentationAgent<br/>focused LangGraph workflow]
+        Mode{Create deck or<br/>revise selected slide?}
+        Strict{Valid compact DeckPlan<br/>or selected SlideSpec?}
+        Correction[One bounded<br/>correction attempt]
+        Compiler[Deterministic deck compiler<br/>stable IDs and bounded editable layout]
+        Merge[Replace selected slide only;<br/>preserve every sibling]
+    end
+
+    subgraph Model[3. Local model boundary]
+        direction TB
+        Provider[LLMPresentationProvider<br/>compact content-plan grammar<br/>or selected-slide grammar]
+        Queue[Shared Gemma queue<br/>one local generation at a time]
+        LMStudio[LM Studio Gemma 4 12B<br/>brief content or selected slide only]
+        Provider --> Queue --> LMStudio --> Provider
+    end
+
+    subgraph Render[4. Stateless rendering worker]
+        direction TB
+        Renderer[Bounded HTTP renderer]
+        PptxGenJS[PptxGenJS 4.0.1<br/>native editable Office objects]
+        OOXML[OOXML inspection<br/>slides and required object types]
+        LibreOffice[LibreOffice Impress<br/>open and PDF-export check]
+        Cleanup[Temporary workspace cleanup]
+        Renderer --> PptxGenJS --> OOXML --> LibreOffice --> Cleanup
+    end
+
+    subgraph Persistence[5. Private persistence]
+        direction TB
+        Repository[PresentationRepository<br/>user scope and stale-base conflict]
+        Database[(PostgreSQL<br/>deck plus append-only revisions;<br/>encrypted title and canonical spec)]
+        BinaryStore[(Opaque binary store<br/>atomic PPTX plus SHA-256)]
+        Repository --> Database
+        Repository --> BinaryStore
+    end
+
+    subgraph Outcome[6. Safe promotion]
+        direction TB
+        Promote{Generation, validation,<br/>and storage succeeded?}
+        Ready[Promote new current revision<br/>and retain full history]
+        Failed[Mark revision failed;<br/>keep prior current revision]
+        Promote -->|yes| Ready
+        Promote -->|no| Failed
+    end
+
+    User --> UI --> API --> Service
+    GemmaCaller --> Gates --> MCP --> Service
+    Service --> Pending --> Agent --> Mode --> Provider
+    Provider --> Strict
+    Strict -->|no| Correction --> Provider
+    Strict -->|valid creation plan| Compiler --> Renderer
+    Strict -->|valid replacement slide| Merge --> Renderer
+    Cleanup --> Repository --> Promote
+    Ready -->|owned DeckSpec preview<br/>and named PPTX download| UI
+    Failed -->|visible safe failure| UI
+
+    NoAuthority[Trust boundary:<br/>model and renderer cannot grant permissions,<br/>choose storage keys, promote revisions,<br/>or mutate sibling slides]
+    Agent -.-> NoAuthority
+    Renderer -.-> NoAuthority
+
+    classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
+    classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
+    classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
+    classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
+    classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
+    class User,GemmaCaller,UI,API interface;
+    class MCP,Gates,Service,Pending,Agent,Mode,Provider,Strict,Correction,Compiler,Merge,Renderer,PptxGenJS,OOXML,Cleanup,Repository,Promote,Ready,Failed application;
+    class Database,BinaryStore data;
+    class Queue,LMStudio,LibreOffice external;
+    class NoAuthority warning;

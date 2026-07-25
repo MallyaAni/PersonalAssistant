@@ -40,9 +40,14 @@ class StubImages:
         trace_id: str,
         request: Any,
         extra_metadata: dict[str, Any] | None = None,
+        extra_style: str = "",
     ) -> dict[str, Any]:
         self.generate_calls.append(
-            {"request": request, "extra_metadata": extra_metadata or {}}
+            {
+                "request": request,
+                "extra_metadata": extra_metadata or {},
+                "extra_style": extra_style,
+            }
         )
         return {"id": "revision", "kind": "generated_image"}
 

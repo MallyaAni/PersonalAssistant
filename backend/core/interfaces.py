@@ -178,7 +178,7 @@ class BinaryArtifactRepository(ArtifactRepository):
 
 
 class BinaryArtifactStore(ABC):
-    # Store bytes under an opaque key derived from ownership and artifact identity.
+    # Store an approved binary under an opaque ownership-derived key.
     @abstractmethod
     async def write(
         self,

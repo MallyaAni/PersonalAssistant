@@ -63,6 +63,21 @@ class Settings(BaseSettings):
     IMAGE_PROVIDER_POLL_SECONDS: float = Field(default=0.5, ge=0.1, le=10)
     IMAGE_MAX_CONCURRENCY: int = Field(default=1, ge=1, le=4)
     ARTIFACT_STORAGE_ROOT: str = "data/artifacts"
+    PRESENTATION_RENDERER_BASE_URL: str = "http://127.0.0.1:8002"
+    PRESENTATION_RENDERER_TIMEOUT_SECONDS: float = Field(default=60.0, gt=0, le=600)
+    PRESENTATION_MAX_OUTPUT_BYTES: int = Field(
+        default=50 * 1024 * 1024,
+        ge=1024,
+        le=200 * 1024 * 1024,
+    )
+    PRESENTATION_MAX_TOKENS: int = Field(default=8_192, ge=1_024, le=32_768)
+    PRESENTATION_PLAN_MAX_TOKENS: int = Field(default=2_048, ge=1_024, le=8_192)
+    PRESENTATION_REVISION_MAX_TOKENS: int = Field(
+        default=1_024,
+        ge=256,
+        le=4_096,
+    )
+    PRESENTATION_REQUIRE_OFFICE_VALIDATION: bool = False
     IMAGE_MAX_UPLOAD_BYTES: int = Field(
         default=10 * 1024 * 1024,
         ge=1024,
