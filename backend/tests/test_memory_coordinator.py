@@ -189,26 +189,36 @@ class FakeToolbox:
 
 
 # Verify explicit query terms enable the intended memory store.
+# A plain query with no memory keyword still consults every embedded store, so
+# anything relevant can surface regardless of phrasing. Relevance is enforced
+# downstream by each store's distance threshold, not by keyword gating.
 @pytest.mark.parametrize(
-    ("query", "enabled"),
+    "query",
     [
-        ("Do you remember what happened last time?", "use_episodic"),
-        ("Who is the person on that project?", "use_entities"),
-        ("What does my reference document say?", "use_knowledge"),
-        ("Recap our earlier conversation", "use_summaries"),
-        ("What workflow steps should I use?", "use_procedures"),
-        ("Which calendar tool should I use?", "use_toolbox"),
+        "tell me about that",
+        "what did my dentist recommend",
+        "any thoughts?",
     ],
 )
-def test_query_plan_routes_explicit_intent(query: str, enabled: str) -> None:
+def test_embedded_stores_are_always_searched(query: str) -> None:
     plan = build_memory_query_plan(query)
 
-    assert getattr(plan, enabled) is True
-    assert plan.use_working is True
+    assert plan.use_entities is True
+    assert plan.use_knowledge is True
+    assert plan.use_summaries is True
+    assert plan.use_procedures is True
+    assert plan.use_toolbox is True
     assert plan.use_semantic is True
+    assert plan.use_working is True
 
 
-# Verify the deterministic plan queries only its selected stores.
+# Episodic memory has no embedding, so it alone is still selected by intent.
+def test_episodic_stays_keyword_gated_until_embedded() -> None:
+    assert build_memory_query_plan("do you remember what happened last time").use_episodic
+    assert not build_memory_query_plan("what is two plus two").use_episodic
+
+
+# Verify the coordinator searches every embedded store even for a generic query.
 @pytest.mark.asyncio
 async def test_coordinator_plans_and_queries_only_selected_stores() -> None:
     stores = FakeStores()
@@ -217,10 +227,9 @@ async def test_coordinator_plans_and_queries_only_selected_stores() -> None:
         cast(Any, stores),
         cast(Any, toolbox),
     )
-    query = (
-        "Remember and recap who is on the project, what the reference document "
-        "says, which workflow steps and calendar tool to use."
-    )
+    # Deliberately generic: none of the old keyword triggers are present, yet
+    # every embedded store must still be searched.
+    query = "tell me what you know that is relevant here"
 
     first_plan = await coordinator.plan("ani.mallya", query)
     context = await coordinator.prepare_context(

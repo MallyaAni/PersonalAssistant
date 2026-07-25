@@ -514,3 +514,24 @@ This file is append-only history for meaningful, verified changes. It must not c
   set.
 - Verified with the full suite: 436 backend tests, Ruff, Black, and strict MyPy
   over 122 source files pass.
+
+## 2026-07-24 — Memory recall searches every embedded store, not keyword-gated ones
+
+- Made the memory coordinator search every embedded store (entities, knowledge,
+  summaries, procedures, toolbox) on every turn instead of gating them behind
+  keyword triggers. The gate had the same flaw as the old web-search routing:
+  "what did my dentist recommend" names an entity worth recalling but contains
+  none of the entity trigger words, so recall silently dropped it. Anything
+  relevant can now surface regardless of phrasing.
+- This is safe because the safety valve already existed: each store filters by a
+  cosine-distance threshold (0.35, toolbox 0.45), so an unrelated store returns
+  nothing rather than polluting the prompt, and the shared cross-store relevance
+  budget with item/character caps keeps only the closest matches. The query is
+  still embedded once per turn and reused across stores.
+- Episodic memory stays keyword-gated for now because it has no embedding and so
+  cannot be recalled by similarity; embedding it is the tracked next step.
+- Live-verified: an approved "Dr. Avery Chen (dentist)" entity was recalled by
+  "what did my dentist suggest for my teeth?" - a query with none of the old
+  entity keywords - and the model answered with the stored recommendation.
+- Verified with the full suite: 434 backend tests, Ruff, Black, and strict MyPy
+  over 122 source files pass.

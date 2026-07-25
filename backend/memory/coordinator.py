@@ -39,71 +39,40 @@ class MemoryQueryPlan(BaseModel):
 
 
 # Decide which memory stores should handle a query.
+#
+# Every embedded store is searched on every turn. Keyword gating was a losing
+# game for the same reason it was for web-search routing: "what did my dentist
+# recommend" names an entity worth recalling but contains none of the entity
+# trigger words, so a keyword gate silently drops it. Recall should surface
+# anything important regardless of phrasing. This is safe to do unconditionally
+# because each store already filters by a cosine-distance threshold - an
+# unrelated store returns nothing rather than polluting the prompt - and the
+# shared relevance budget keeps only the closest matches across all stores.
 def build_memory_query_plan(query: str) -> MemoryQueryPlan:
     normalized = f" {_normalize_query(query)} "
-    category_terms = {
-        "episodic": (
-            " remember ",
-            " last time ",
-            " when did ",
-            " experience ",
-            " event ",
-            " happened ",
-        ),
-        "entities": (
-            " who is ",
-            " person ",
-            " contact ",
-            " project ",
-            " team ",
-            " relationship ",
-        ),
-        "knowledge": (
-            " document ",
-            " notes ",
-            " file ",
-            " knowledge ",
-            " according to ",
-            " reference ",
-        ),
-        "summaries": (
-            " summarize ",
-            " summary ",
-            " recap ",
-            " earlier conversation ",
-            " what did we ",
-            " we agreed ",
-        ),
-        "procedures": (
-            " how do i ",
-            " how should i ",
-            " steps ",
-            " workflow ",
-            " process ",
-            " routine ",
-            " procedure ",
-        ),
-        "toolbox": (
-            " tool ",
-            " calendar ",
-            " email ",
-            " schedule ",
-            " mcp ",
-        ),
-    }
-    matched = {
-        category
-        for category, terms in category_terms.items()
-        if any(term in normalized for term in terms)
-    }
+    # Episodic memory is the one store with no embedding, so it cannot be
+    # recalled by similarity and stays selected by explicit intent until it is
+    # embedded. Everything else is always-on.
+    episodic_terms = (
+        " remember ",
+        " last time ",
+        " when did ",
+        " experience ",
+        " event ",
+        " happened ",
+    )
+    use_episodic = any(term in normalized for term in episodic_terms)
+    reason_categories = ["always_on_similarity"]
+    if use_episodic:
+        reason_categories.append("episodic_keyword")
     return MemoryQueryPlan(
-        use_episodic="episodic" in matched,
-        use_entities="entities" in matched,
-        use_knowledge="knowledge" in matched,
-        use_summaries="summaries" in matched,
-        use_procedures="procedures" in matched,
-        use_toolbox="toolbox" in matched,
-        reason_categories=sorted(matched) or ["semantic_default"],
+        use_episodic=use_episodic,
+        use_entities=True,
+        use_knowledge=True,
+        use_summaries=True,
+        use_procedures=True,
+        use_toolbox=True,
+        reason_categories=reason_categories,
     )
 
 
