@@ -31,6 +31,8 @@ def policy() -> ImageRecallPolicy:
             "created_reference",
         ),
         ("pull up the golden retriever i made", "created_reference"),
+        # Uploaded images are referenced the same way as generated ones.
+        ("show me the chess board i uploaded", "created_reference"),
         # Adjectives between the article and the subject noun still resolve.
         ("find that vintage red car we discussed", "referential_image"),
     ],

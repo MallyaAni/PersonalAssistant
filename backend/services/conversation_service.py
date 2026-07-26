@@ -372,6 +372,13 @@ class ConversationService:
                 max(self.image_search_limit, 2),
                 ImageRetrievalPolicy.CANDIDATE_CEILING,
             )
+            # Presentation slide images belong to their deck, not general image
+            # recall, so they never surface as a chat image match.
+            ranked = [
+                hit
+                for hit in ranked
+                if not (hit.get("metadata") or {}).get("presentation_id")
+            ]
             ranked = prefer_prompt_matches(query, ranked)
             return self.image_retrieval.select(ranked)[: self.image_search_limit]
         except Exception:

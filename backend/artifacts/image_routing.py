@@ -33,7 +33,8 @@ _RECALL_SIGNALS: tuple[tuple[str, str], ...] = (
 _CREATED_REFERENCE_PATTERN = re.compile(
     r"\b(show|see|view|display|find|pull\s+up|bring\s+up|recall|remember|"
     r"where(?:'s|\s+is|\s+are)?|what\s+was|what\s+did)\b.{0,80}?"
-    r"\b(generated?|created?|made|drew|drawn|painted|rendered|designed)\b",
+    r"\b(generated?|created?|made|drew|drawn|painted|rendered|designed|"
+    r"uploaded|saved|attached)\b",
     re.IGNORECASE,
 )
 

@@ -32,6 +32,25 @@ def test_a_named_subject_narrows_to_its_own_image() -> None:
     ]
 
 
+def test_uploaded_image_matches_on_its_vision_description() -> None:
+    # Uploads have no generation prompt, so the stored analysis provides the text.
+    ranked = [
+        {
+            "id": "chess",
+            "metadata": {"analysis": "A chess board mid-game with pieces."},
+        },
+        {
+            "id": "elephant",
+            "metadata": {"analysis": "The words PURPLE ELEPHANT on white."},
+        },
+    ]
+
+    assert [
+        h["id"]
+        for h in prefer_prompt_matches("show me the chess board i uploaded", ranked)
+    ] == ["chess"]
+
+
 def test_descriptive_query_without_a_prompt_term_keeps_the_ranking() -> None:
     ranked = [_hit("a red BMW sedan", "bmw"), _hit("a silver Porsche 911", "porsche")]
 
