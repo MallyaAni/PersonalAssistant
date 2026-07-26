@@ -2,6 +2,7 @@ from collections.abc import Iterator
 
 import pytest
 
+from backend.artifacts.image_recall_router import CascadingImageRecallRouter
 from backend.artifacts.image_routing import ImageRecallPolicy
 from backend.core.llm import LLMClient
 from backend.search.cascade import CascadingSearchRouter
@@ -162,7 +163,9 @@ def _service(
             patterns=SearchRoutingPolicy(current_year=2026),
             classifier=classifier,
         ),
-        image_recall=ImageRecallPolicy() if image_search else None,
+        image_recall=(
+            CascadingImageRecallRouter(ImageRecallPolicy()) if image_search else None
+        ),
         image_search=image_search,  # type: ignore[arg-type]
     )
 
