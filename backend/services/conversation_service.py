@@ -10,9 +10,10 @@ from anyio import CancelScope
 from backend.agents.graph import build_assistant_graph
 from backend.agents.state import AgentState
 from backend.artifacts.diagram import is_diagram_request
+from backend.artifacts.image_lineage import collapse_revision_chains
 from backend.artifacts.image_prompt_match import prefer_prompt_matches
+from backend.artifacts.image_recall_router import CascadingImageRecallRouter
 from backend.artifacts.image_retrieval import ImageRetrievalPolicy
-from backend.artifacts.image_routing import ImageRecallPolicy
 from backend.core.egress import OutboundPrivacyPolicy
 from backend.core.interfaces import (
     ArtifactEmbeddingStore,
@@ -143,7 +144,7 @@ class ConversationService:
         diagram_artifacts: DiagramArtifactService | None = None,
         search: SearchProvider | None = None,
         search_routing: CascadingSearchRouter | None = None,
-        image_recall: ImageRecallPolicy | None = None,
+        image_recall: CascadingImageRecallRouter | None = None,
         image_search: ArtifactEmbeddingStore | None = None,
         image_search_limit: int = 5,
         image_retrieval: ImageRetrievalPolicy | None = None,
@@ -353,7 +354,7 @@ class ConversationService:
     ) -> list[dict[str, Any]]:
         if self.image_recall is None or self.image_search is None:
             return []
-        decision = self.image_recall.decide(query)
+        decision = await self.image_recall.decide(query)
         if not decision.should_search:
             return []
 
@@ -379,6 +380,9 @@ class ConversationService:
                 for hit in ranked
                 if not (hit.get("metadata") or {}).get("presentation_id")
             ]
+            # Collapse refinement chains so an image and its revisions are not all
+            # returned; only the latest revision of each lineage remains.
+            ranked = collapse_revision_chains(ranked)
             ranked = prefer_prompt_matches(query, ranked)
             return self.image_retrieval.select(ranked)[: self.image_search_limit]
         except Exception:

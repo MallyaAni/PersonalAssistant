@@ -125,6 +125,13 @@ class Settings(BaseSettings):
     # clusters spanned ~0.004 and gapped to the rest by ~0.007+, so 0.006 keeps
     # the real matches together and excludes the field.
     VISION_SEARCH_CLUSTER_DELTA: float = Field(default=0.006, ge=0, le=1)
+    # A bounded single-token classifier resolves image references the recall
+    # patterns miss ("that thing we made yesterday"). It is gated to plausibly
+    # -image queries, so unrelated turns never call it; it reuses the shared
+    # classifier model, which is fastest when SEARCH_CLASSIFIER_MODEL is a small
+    # model.
+    IMAGE_RECALL_CLASSIFIER_ENABLED: bool = True
+    IMAGE_RECALL_CLASSIFIER_MAX_TOKENS: int = Field(default=4, ge=1, le=16)
 
     # Web search. The MCP server prefers Google Grounding and falls back to
     # Tavily; both return untrusted third-party content.

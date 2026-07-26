@@ -9,6 +9,8 @@ from backend.agents.diagram import DiagramAgent
 from backend.agents.presentation import PresentationAgent
 from backend.artifacts.diagram import LLMDiagramProvider
 from backend.artifacts.image import ComfyUIImageProvider
+from backend.artifacts.image_recall_classifier import LMStudioImageRecallClassifier
+from backend.artifacts.image_recall_router import CascadingImageRecallRouter
 from backend.artifacts.image_retrieval import ImageRetrievalPolicy
 from backend.artifacts.image_routing import ImageRecallPolicy
 from backend.artifacts.storage import LocalBinaryArtifactStore
@@ -610,12 +612,6 @@ def get_image_recall_policy() -> ImageRecallPolicy:
     return ImageRecallPolicy()
 
 
-ImageRecallDependency = Annotated[
-    ImageRecallPolicy,
-    Depends(get_image_recall_policy),
-]
-
-
 # Serve the routing classifier from a dedicated model when one is configured,
 # otherwise reuse the chat model.
 @lru_cache(maxsize=1)
@@ -629,6 +625,28 @@ def get_classifier_llm() -> LLMClient:
         timeout_seconds=settings.LLM_TIMEOUT_SECONDS,
         reasoning_effort=settings.LLM_REASONING_EFFORT,
     )
+
+
+# Deterministic recall patterns with a bounded classifier fallback for novel
+# phrasings; the classifier is gated to plausibly-image queries so unrelated
+# turns never pay for it, and it judges intent rather than selecting a tool.
+@lru_cache(maxsize=1)
+def get_image_recall_router() -> CascadingImageRecallRouter:
+    classifier = (
+        LMStudioImageRecallClassifier(
+            get_classifier_llm(),
+            max_tokens=settings.IMAGE_RECALL_CLASSIFIER_MAX_TOKENS,
+        )
+        if settings.IMAGE_RECALL_CLASSIFIER_ENABLED
+        else None
+    )
+    return CascadingImageRecallRouter(get_image_recall_policy(), classifier)
+
+
+ImageRecallDependency = Annotated[
+    CascadingImageRecallRouter,
+    Depends(get_image_recall_router),
+]
 
 
 # Compose free deterministic patterns with a bounded classifier fallback. The
