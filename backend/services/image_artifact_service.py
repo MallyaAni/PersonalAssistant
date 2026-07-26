@@ -55,25 +55,34 @@ class ImageArtifactService:
             return
         if not self.vision_embeddings.is_enabled():
             return
-        try:
-            # ONNX inference is blocking, so keep it off the event loop.
-            vector = await asyncio.to_thread(
-                self.vision_embeddings.embed_image,
-                content,
-            )
-            await self.embedding_store.set_embedding(
-                artifact_id,
-                user_id,
-                vector,
-                self.vision_embedding_model,
-            )
-        except Exception:
-            # An unembedded image is still a usable image; never fail the turn.
-            logger.warning(
-                "Failed to embed image artifact %s",
-                artifact_id,
-                exc_info=True,
-            )
+        # Retry briefly: embedding failures are usually transient (CPU/ONNX under
+        # load), and a missing vector makes the image unrecallable. Anything that
+        # still fails here is caught later by the background reconciler, so the
+        # turn is never failed for it.
+        for attempt in range(3):
+            try:
+                # ONNX inference is blocking, so keep it off the event loop.
+                vector = await asyncio.to_thread(
+                    self.vision_embeddings.embed_image,
+                    content,
+                )
+                await self.embedding_store.set_embedding(
+                    artifact_id,
+                    user_id,
+                    vector,
+                    self.vision_embedding_model,
+                )
+                return
+            except Exception:
+                if attempt == 2:
+                    logger.warning(
+                        "Failed to embed image artifact %s after retries; "
+                        "the reconciler will backfill it",
+                        artifact_id,
+                        exc_info=True,
+                    )
+                else:
+                    await asyncio.sleep(0.5 * (attempt + 1))
 
     # Return one owned artifact's record (no bytes) for ownership and metadata
     # reads such as a refinement's parent prompt.

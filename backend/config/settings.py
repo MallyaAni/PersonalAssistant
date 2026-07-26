@@ -103,6 +103,12 @@ class Settings(BaseSettings):
     VISION_EMBEDDING_MODEL_PATH: str = "data/models/nomic-embed-vision-v1.5/model.onnx"
     VISION_EMBEDDING_DIMENSION: int = Field(default=768, ge=1, le=2_000)
     VISION_EMBEDDING_THREADS: int = Field(default=1, ge=1, le=16)
+    # How often the background reconciler embeds any ready image still missing a
+    # vector, so a write-time failure never leaves an image permanently
+    # unrecallable. It runs once at startup and then on this interval.
+    VISION_EMBEDDING_RECONCILE_INTERVAL_SECONDS: float = Field(
+        default=900.0, ge=30, le=86_400
+    )
     # Image search needs its own threshold. Cross-modal cosine similarity runs
     # an order of magnitude below text-text similarity (the modality gap), so
     # MEMORY_SEMANTIC_MAX_COSINE_DISTANCE would reject every image.

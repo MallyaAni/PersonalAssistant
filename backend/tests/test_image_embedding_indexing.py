@@ -64,9 +64,12 @@ class StubRepository:
 
 
 class StubVisionEmbeddings:
-    def __init__(self, enabled: bool = True, fail: bool = False) -> None:
+    def __init__(
+        self, enabled: bool = True, fail: bool = False, fail_times: int = 0
+    ) -> None:
         self.enabled = enabled
         self.fail = fail
+        self.fail_times = fail_times
         self.calls = 0
 
     def is_enabled(self) -> bool:
@@ -74,7 +77,7 @@ class StubVisionEmbeddings:
 
     def embed_image(self, content: bytes) -> list[float]:
         self.calls += 1
-        if self.fail:
+        if self.fail or self.calls <= self.fail_times:
             raise RuntimeError("onnx session unavailable")
         return [0.5] * 768
 
@@ -121,6 +124,18 @@ async def test_embedding_failure_still_returns_a_usable_image():
     # An unembedded image is still a usable image.
     assert result["status"] == "ready"
     assert repository.embeddings == []
+
+
+@pytest.mark.asyncio
+async def test_embedding_retries_a_transient_failure():
+    # A transient embed failure is retried, so the image ends up recallable.
+    embeddings = StubVisionEmbeddings(fail_times=1)
+    repository = StubRepository()
+
+    await _service(embeddings, repository).generate(USER, CONVERSATION, TRACE, REQUEST)
+
+    assert embeddings.calls == 2
+    assert len(repository.embeddings) == 1
 
 
 @pytest.mark.asyncio
