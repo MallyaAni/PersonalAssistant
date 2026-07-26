@@ -9,62 +9,58 @@ def _hit(distance: float, name: str = "a") -> dict[str, object]:
 
 @pytest.fixture
 def policy() -> ImageRetrievalPolicy:
-    return ImageRetrievalPolicy(max_distance=0.96, min_margin=0.015)
+    return ImageRetrievalPolicy(max_distance=0.96, cluster_delta=0.006)
 
 
-def test_clear_winner_is_returned(policy):
-    # Observed shape of a relevant query: best pulls clearly ahead.
+def test_single_clear_match_is_returned(policy):
+    # One image pulls ahead and the rest are beyond the ceiling or the cluster.
     ranked = [_hit(0.9110, "beach"), _hit(0.9685, "car")]
 
-    selected = policy.select(ranked)
-
-    assert [hit["id"] for hit in selected] == ["beach"]
+    assert [hit["id"] for hit in policy.select(ranked)] == ["beach"]
 
 
-def test_equidistant_results_are_rejected_as_noise(policy):
-    # Observed shape of an unrelated query: everything is roughly equidistant,
-    # so the nearest image is merely least-bad rather than a real match.
-    ranked = [_hit(0.9518, "beach"), _hit(0.9518, "car")]
+def test_multiple_similar_images_all_return(policy):
+    # The multi-image case: two red cars sit almost on top of each other, then a
+    # gap to the rest. Both must return, where the old margin rejected them.
+    ranked = [
+        _hit(0.9310, "car_a"),
+        _hit(0.9337, "car_b"),
+        _hit(0.9411, "sofa"),
+        _hit(0.9516, "tree"),
+    ]
 
-    assert policy.select(ranked) == []
-
-
-def test_small_margin_below_the_threshold_is_rejected(policy):
-    # 0.0107 was the largest margin any distractor produced.
-    ranked = [_hit(0.9593, "city"), _hit(0.9700, "soup")]
-
-    assert policy.select(ranked) == []
+    assert [hit["id"] for hit in policy.select(ranked)] == ["car_a", "car_b"]
 
 
-def test_genuine_weak_match_survives_on_margin_alone(policy):
-    # A true match measured at 0.9531 overlaps the distractor distance band, so
-    # only the margin can save it. This is why an absolute cutoff is not enough.
-    ranked = [_hit(0.9531, "soup"), _hit(0.9800, "car")]
+def test_the_field_beyond_the_cluster_is_excluded(policy):
+    # Only the leading cluster returns, not every image within the ceiling.
+    ranked = [_hit(0.9224, "match"), _hit(0.9570, "other"), _hit(0.9584, "more")]
 
-    assert [hit["id"] for hit in policy.select(ranked)] == ["soup"]
+    assert [hit["id"] for hit in policy.select(ranked)] == ["match"]
 
 
 def test_hits_beyond_the_distance_ceiling_are_dropped(policy):
     ranked = [_hit(0.9100, "beach"), _hit(0.9700, "car"), _hit(0.9900, "dog")]
 
-    selected = policy.select(ranked)
-
-    assert [hit["id"] for hit in selected] == ["beach"]
+    assert [hit["id"] for hit in policy.select(ranked)] == ["beach"]
 
 
-def test_single_stored_image_falls_back_to_the_ceiling(policy):
-    # With no runner up there is no margin to measure.
+def test_nothing_within_the_ceiling_returns_empty(policy):
+    assert policy.select([_hit(0.9700, "car"), _hit(0.9800, "dog")]) == []
+
+
+def test_single_stored_image(policy):
     assert [h["id"] for h in policy.select([_hit(0.9300, "only")])] == ["only"]
     assert policy.select([_hit(0.9900, "only")]) == []
 
 
+def test_cluster_is_capped_at_max_results():
+    policy = ImageRetrievalPolicy(max_distance=0.96, cluster_delta=0.006, max_results=3)
+    ranked = [_hit(0.930 + i * 0.001, f"img_{i}") for i in range(6)]
+
+    # All six are within the cluster, but only the closest three are returned.
+    assert [hit["id"] for hit in policy.select(ranked)] == ["img_0", "img_1", "img_2"]
+
+
 def test_empty_input_is_handled(policy):
     assert policy.select([]) == []
-
-
-def test_weak_hit_is_rejected_when_the_runner_up_is_beyond_the_ceiling(policy):
-    # Regression: a distance pre-filter used to drop the runner up, leaving one
-    # row that looked like a lone result and bypassed the margin check.
-    ranked = [_hit(0.9593, "city"), _hit(0.9643, "soup")]
-
-    assert policy.select(ranked) == []

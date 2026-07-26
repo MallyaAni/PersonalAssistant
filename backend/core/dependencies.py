@@ -684,7 +684,7 @@ def get_conversation_service(
         image_search_limit=settings.VISION_SEARCH_MAX_RESULTS,
         image_retrieval=ImageRetrievalPolicy(
             max_distance=settings.VISION_SEARCH_MAX_COSINE_DISTANCE,
-            min_margin=settings.VISION_SEARCH_MIN_MARGIN,
+            cluster_delta=settings.VISION_SEARCH_CLUSTER_DELTA,
         ),
         tool_orchestration=tool_orchestration,
     )

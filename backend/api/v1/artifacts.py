@@ -44,10 +44,10 @@ async def search_images(
     # The text embedder applies the search_query prefix Nomic requires for
     # multimodal retrieval, placing the query in the shared image/text space.
     vector = await memory.embed_query(query)
-    # Over-fetch so the policy can inspect the runner up before filtering.
+    # Over-fetch so the leading cluster is measured against true nearest hits.
     policy = ImageRetrievalPolicy(
         max_distance=settings.VISION_SEARCH_MAX_COSINE_DISTANCE,
-        min_margin=settings.VISION_SEARCH_MIN_MARGIN,
+        cluster_delta=settings.VISION_SEARCH_CLUSTER_DELTA,
     )
     ranked = await repository.search_by_embedding(
         user_id,

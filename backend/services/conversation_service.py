@@ -10,6 +10,7 @@ from anyio import CancelScope
 from backend.agents.graph import build_assistant_graph
 from backend.agents.state import AgentState
 from backend.artifacts.diagram import is_diagram_request
+from backend.artifacts.image_prompt_match import prefer_prompt_matches
 from backend.artifacts.image_retrieval import ImageRetrievalPolicy
 from backend.artifacts.image_routing import ImageRecallPolicy
 from backend.core.egress import OutboundPrivacyPolicy
@@ -166,7 +167,7 @@ class ConversationService:
         self.search_privacy = search_privacy or OutboundPrivacyPolicy()
         self.image_retrieval = image_retrieval or ImageRetrievalPolicy(
             max_distance=0.96,
-            min_margin=0.015,
+            cluster_delta=0.006,
         )
         self.tool_orchestration = tool_orchestration
 
@@ -361,13 +362,17 @@ class ConversationService:
         )
         try:
             vector = query_embedding or await self.memory.embed_query(query)
-            # Over-fetch so the policy can inspect the runner up before filtering.
+            # Over-fetch so the leading cluster is measured against true nearest
+            # hits, then let a distinctive named subject in the query (a brand,
+            # for example) narrow the candidates by their generation prompt, since
+            # the visual embedding alone clusters every car as just "a car".
             ranked = await self.image_search.search_by_embedding(
                 user_id,
                 vector,
                 max(self.image_search_limit, 2),
                 ImageRetrievalPolicy.CANDIDATE_CEILING,
             )
+            ranked = prefer_prompt_matches(query, ranked)
             return self.image_retrieval.select(ranked)[: self.image_search_limit]
         except Exception:
             # A retrieval failure degrades the answer; it must not fail the turn.
