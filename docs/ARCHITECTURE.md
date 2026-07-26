@@ -50,6 +50,48 @@ The `frontend` container bind-mounts `./frontend` and runs Vite with polling so 
 
 LM Studio is an external host process rather than a Compose service; the container backend reaches it at `http://host.docker.internal:1234` (host-source runs use `http://127.0.0.1:1234`). It selects `google/gemma-4-12b` for chat and validated image understanding and `text-embedding-nomic-embed-text-v1.5` for 768-dimensional text embeddings. ComfyUI now runs as the opt-in `comfyui` Compose service: it bind-mounts the existing host install (`COMFYUI_HOST_PATH`, default `E:/AI/ComfyUI`, including the `hidream_o1_image_dev_fp8_scaled.safetensors` checkpoint), requests the NVIDIA GPU through Compose device reservations, and provides a Blackwell-capable CUDA 12.8 PyTorch runtime; the container backend reaches it at `http://comfyui:8188`, while a host-run ComfyUI uses `http://host.docker.internal:8188`. Generated and uploaded bytes live below the configurable opaque local artifact root; Compose mounts `/app/data/artifacts` from the `artifactdata` volume. Because the `comfyui` image build downloads a multi-GB CUDA/PyTorch base, it needs sufficient free space on the Docker Desktop disk (the WSL2 image, by default on `C:`).
 
+### Model calls per stage
+
+A request is not one model call. Several models run at different stages, and on
+this machine they share **one GPU**, so calls serialize - a turn's latency is
+dominated by how many model calls it makes, not by any single one. Memory
+retrieval planning and memory proposals are **deterministic** keyword logic and
+cost no model call.
+
+A chat turn, in order:
+
+| Stage | Model | Runs on | When |
+| --- | --- | --- | --- |
+| Query embedding | `nomic-embed-text-v1.5` | GPU (LM Studio) | every turn; feeds memory and image-recall search |
+| Memory retrieval planning | none (deterministic patterns) | CPU | every turn |
+| Web-search routing | classifier: `SEARCH_CLASSIFIER_MODEL`, else `gemma-4-12b` | GPU | when patterns abstain (most non-temporal turns) |
+| Image-recall routing | the same classifier model | GPU | only when the query plausibly names a stored image (gated) |
+| Tool selection | `gemma-4-12b` native tool-calls | GPU | only when MCP tools are relevant |
+| Response generation | `gemma-4-12b` (`LLM_MODEL`) | GPU | every turn; the streamed answer |
+| Memory proposal | none (deterministic patterns) | CPU | every turn |
+
+A plain message ("my name is Ani") therefore makes about three model calls: one
+text embedding plus two `gemma-4-12b` calls (the search classifier and the
+response). Pointing `SEARCH_CLASSIFIER_MODEL` at a small model moves both routing
+classifiers off the 12B model.
+
+Image and presentation paths:
+
+| Stage | Model | Runs on |
+| --- | --- | --- |
+| Image generation / slide image | HiDream-O1 via ComfyUI | GPU (shared with Gemma) |
+| Refinement prompt merge | `gemma-4-12b` | GPU |
+| Learned-style distillation | `gemma-4-12b` | GPU |
+| Image vision analysis (ask) | `gemma-4-12b` (`VISION_MODEL`) | GPU |
+| Image embedding (index and reconciler) | `nomic-embed-vision-v1.5` ONNX | CPU |
+| Deck plan / slide content / slide revision | `gemma-4-12b` | GPU |
+
+Web research, only when routing decides to search, calls Google Gemini grounding
+or Tavily - external/cloud, not the local GPU. The practical takeaway: nearly
+every critical-path call is `gemma-4-12b` on the one GPU, and image generation
+contends for that same GPU, so the cheapest wins are a small classifier model for
+the yes/no routing calls and not overlapping image generation with chat.
+
 ### Aligned image embeddings and web search
 
 Images are embedded locally by `nomic-embed-vision-v1.5`, run in-process through
