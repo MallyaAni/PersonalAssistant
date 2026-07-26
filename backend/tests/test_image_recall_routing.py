@@ -25,6 +25,14 @@ def policy() -> ImageRecallPolicy:
             "can you search the internet for that car to get its model?",
             "referential_image",
         ),
+        # Reference by subject to something previously generated, no image word.
+        (
+            "show me the red sports car i generated earlier",
+            "created_reference",
+        ),
+        ("pull up the golden retriever i made", "created_reference"),
+        # Adjectives between the article and the subject noun still resolve.
+        ("find that vintage red car we discussed", "referential_image"),
     ],
 )
 def test_recall_requests_route_to_image_search(policy, query, reason):

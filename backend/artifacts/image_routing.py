@@ -20,10 +20,21 @@ _RECALL_SIGNALS: tuple[tuple[str, str], ...] = (
     (r"\b(image|picture|photo)\s+(of|with|showing)\b", "descriptive_reference"),
     (r"\bmy\s+(image|images|picture|pictures|photo|photos|pic|pics)\b", "possessive"),
     (
-        r"\b(this|that|the|last|previous)\s+"
+        r"\b(this|that|the|last|previous)\s+(?:[\w-]+\s+){0,3}"
         r"(image|picture|photo|car|vehicle|object|scene)\b",
         "referential_image",
     ),
+)
+
+# Asking to see something previously generated, whatever its subject noun is:
+# "show me the red sports car I generated earlier". This catches references by
+# content that the image/picture keyword patterns miss. A pure creation request
+# is excluded first because it has no recall verb.
+_CREATED_REFERENCE_PATTERN = re.compile(
+    r"\b(show|see|view|display|find|pull\s+up|bring\s+up|recall|remember|"
+    r"where(?:'s|\s+is|\s+are)?|what\s+was|what\s+did)\b.{0,80}?"
+    r"\b(generated?|created?|made|drew|drawn|painted|rendered|designed)\b",
+    re.IGNORECASE,
 )
 
 _HISTORICAL_CREATION_PATTERN = re.compile(
@@ -73,6 +84,8 @@ class ImageRecallPolicy:
             )
         if _CREATION_PATTERN.search(query):
             return ImageRecallDecision(should_search=False, reason="creation_request")
+        if _CREATED_REFERENCE_PATTERN.search(query):
+            return ImageRecallDecision(should_search=True, reason="created_reference")
 
         for pattern, reason in _COMPILED:
             if pattern.search(query):

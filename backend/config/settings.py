@@ -112,10 +112,12 @@ class Settings(BaseSettings):
     # noise for unrelated queries, so the usable band is narrow and absolute.
     VISION_SEARCH_MAX_COSINE_DISTANCE: float = Field(default=0.96, ge=0, le=2)
     VISION_SEARCH_MAX_RESULTS: int = Field(default=10, ge=1, le=50)
-    # Required gap between the best and second-best hit. Measured over 18
-    # labelled queries: relevant queries showed a 0.0211 minimum margin,
-    # unrelated ones a 0.0107 maximum, so 0.015 separates them cleanly.
-    VISION_SEARCH_MIN_MARGIN: float = Field(default=0.015, ge=0, le=1)
+    # Required gap between the best and second-best hit. As the image store grows
+    # the cross-modal band compresses and true-match margins shrink (a real match
+    # was observed at 0.011 with 10 candidates), so the earlier 0.015 rejected
+    # genuine hits. The absolute max distance above is the primary gate; this only
+    # guards against a field of roughly equidistant images.
+    VISION_SEARCH_MIN_MARGIN: float = Field(default=0.010, ge=0, le=1)
 
     # Web search. The MCP server prefers Google Grounding and falls back to
     # Tavily; both return untrusted third-party content.
