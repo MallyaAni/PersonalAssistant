@@ -7,6 +7,8 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 
 Last updated: 2026-07-26, America/New_York
 
+Verified implementation checkpoint: `204a1e5def5c239aa2af665d1c64081de8106721`.
+
 ## Current boundary
 
 AniOS now has a bounded hybrid main supervisor. After the existing explicit
