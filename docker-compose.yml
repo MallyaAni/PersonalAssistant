@@ -40,6 +40,16 @@ services:
       - POSTGRES_HOST=db
       - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (see .env.example)}
       - LLM_BASE_URL=http://host.docker.internal:1234
+      - LLM_MODEL=${LLM_MODEL:-google/gemma-4-12b}
+      - MAIN_LLM_BASE_URL=${MAIN_LLM_BASE_URL:-http://host.docker.internal:1234}
+      - MAIN_LLM_MODEL=${MAIN_LLM_MODEL:-}
+      - MAIN_LLM_REASONING_EFFORT=${MAIN_LLM_REASONING_EFFORT:-none}
+      - PRESENTATION_LLM_BASE_URL=${PRESENTATION_LLM_BASE_URL:-http://host.docker.internal:1234}
+      - PRESENTATION_LLM_MODEL=${PRESENTATION_LLM_MODEL:-}
+      - PRESENTATION_LLM_REASONING_EFFORT=${PRESENTATION_LLM_REASONING_EFFORT:-none}
+      - DIAGRAM_LLM_BASE_URL=${DIAGRAM_LLM_BASE_URL:-http://host.docker.internal:1234}
+      - DIAGRAM_LLM_MODEL=${DIAGRAM_LLM_MODEL:-}
+      - DIAGRAM_LLM_REASONING_EFFORT=${DIAGRAM_LLM_REASONING_EFFORT:-none}
       - IMAGE_PROVIDER_BASE_URL=http://host.docker.internal:8188
       - ARTIFACT_STORAGE_ROOT=/app/data/artifacts
       - PRESENTATION_RENDERER_BASE_URL=http://presentation-renderer:8002
@@ -74,6 +84,46 @@ services:
       timeout: 5s
       retries: 10
 
+  presentation-worker:
+    build: .
+    container_name: anios_presentation_worker
+    command:
+      - python
+      - -m
+      - backend.workers.presentation_worker
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_DB=${POSTGRES_DB:-anios_db}
+      - POSTGRES_HOST=db
+      - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (see .env.example)}
+      - LLM_BASE_URL=http://host.docker.internal:1234
+      - LLM_MODEL=${LLM_MODEL:-google/gemma-4-12b}
+      - PRESENTATION_LLM_BASE_URL=${PRESENTATION_LLM_BASE_URL:-http://host.docker.internal:1234}
+      - PRESENTATION_LLM_MODEL=${PRESENTATION_LLM_MODEL:-}
+      - PRESENTATION_LLM_REASONING_EFFORT=${PRESENTATION_LLM_REASONING_EFFORT:-none}
+      - ARTIFACT_STORAGE_ROOT=/app/data/artifacts
+      - PRESENTATION_RENDERER_BASE_URL=http://presentation-renderer:8002
+      - PRESENTATION_REQUIRE_OFFICE_VALIDATION=true
+      - PRESENTATION_JOB_POLL_SECONDS=${PRESENTATION_JOB_POLL_SECONDS:-0.5}
+      - PRESENTATION_JOB_LEASE_SECONDS=${PRESENTATION_JOB_LEASE_SECONDS:-300}
+      - PRESENTATION_JOB_HEARTBEAT_SECONDS=${PRESENTATION_JOB_HEARTBEAT_SECONDS:-30}
+      - REDIS_URL=redis://redis:6379/0
+      - MODEL_GATE_ENABLED=true
+      - MODEL_GATE_LEASE_SECONDS=${MODEL_GATE_LEASE_SECONDS:-300}
+      - MODEL_GATE_POLL_SECONDS=${MODEL_GATE_POLL_SECONDS:-0.1}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - artifactdata:/app/data/artifacts
+    depends_on:
+      db:
+        condition: service_healthy
+      presentation-renderer:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
   backend:
     build: .
     container_name: anios_backend
@@ -91,6 +141,16 @@ services:
       - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (see .env.example)}
       # LM Studio runs on the host; reach it from inside the container.
       - LLM_BASE_URL=http://host.docker.internal:1234
+      - LLM_MODEL=${LLM_MODEL:-google/gemma-4-12b}
+      - MAIN_LLM_BASE_URL=${MAIN_LLM_BASE_URL:-http://host.docker.internal:1234}
+      - MAIN_LLM_MODEL=${MAIN_LLM_MODEL:-}
+      - MAIN_LLM_REASONING_EFFORT=${MAIN_LLM_REASONING_EFFORT:-none}
+      - PRESENTATION_LLM_BASE_URL=${PRESENTATION_LLM_BASE_URL:-http://host.docker.internal:1234}
+      - PRESENTATION_LLM_MODEL=${PRESENTATION_LLM_MODEL:-}
+      - PRESENTATION_LLM_REASONING_EFFORT=${PRESENTATION_LLM_REASONING_EFFORT:-none}
+      - DIAGRAM_LLM_BASE_URL=${DIAGRAM_LLM_BASE_URL:-http://host.docker.internal:1234}
+      - DIAGRAM_LLM_MODEL=${DIAGRAM_LLM_MODEL:-}
+      - DIAGRAM_LLM_REASONING_EFFORT=${DIAGRAM_LLM_REASONING_EFFORT:-none}
       # Points at the host ComfyUI install (E:/AI/ComfyUI), started with
       # --listen 0.0.0.0 so the container can reach it. To use the sibling
       # `comfyui` service instead, run `--profile comfyui` and set this to
@@ -117,6 +177,10 @@ services:
       - OTEL_ENABLED=${OTEL_ENABLED:-false}
       - OTEL_EXPORTER=${OTEL_EXPORTER:-console}
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      - REDIS_URL=redis://redis:6379/0
+      - MODEL_GATE_ENABLED=true
+      - MODEL_GATE_LEASE_SECONDS=${MODEL_GATE_LEASE_SECONDS:-300}
+      - MODEL_GATE_POLL_SECONDS=${MODEL_GATE_POLL_SECONDS:-0.1}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
@@ -131,6 +195,8 @@ services:
         condition: service_started
       presentation-renderer:
         condition: service_healthy
+      presentation-worker:
+        condition: service_started
 
   frontend:
     build:

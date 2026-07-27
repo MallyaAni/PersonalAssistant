@@ -126,6 +126,28 @@ const presentationRecord = (revised = false) => {
   }
 }
 
+// Build one reconnectable background-job response at a requested lifecycle state.
+const presentationJob = (
+  status: 'queued' | 'running' | 'ready' | 'failed' | 'cancelled',
+  draft: ReturnType<typeof deckSpec> | null = null,
+) => ({
+  id: '99999999-9999-4999-8999-999999999999',
+  presentation_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  revision_id: '11111111-1111-4111-8111-111111111111',
+  user_id: 'ani.mallya',
+  status,
+  expected_slide_count: 2,
+  attempt_count: status === 'queued' ? 0 : 1,
+  cancel_requested: false,
+  error_code: status === 'failed' ? 'generation_failed' : null,
+  draft_specification: draft,
+  presentation: status === 'ready' ? presentationRecord() : null,
+  created_at: '2026-07-26T00:00:00Z',
+  started_at: status === 'queued' ? null : '2026-07-26T00:00:01Z',
+  updated_at: '2026-07-26T00:00:02Z',
+  completed_at: status === 'ready' ? '2026-07-26T00:00:03Z' : null,
+})
+
 // Add one ready local-image revision to the deterministic selected slide.
 const imagePresentationRecord = () => {
   const base = presentationRecord(true)
@@ -169,10 +191,22 @@ const fulfillJson = (
   body: JSON.stringify(body),
 })
 
-// Encode one deterministic presentation event as an SSE frame.
-const presentationEvent = (event: string, data: unknown) => (
-  `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`
-)
+// Build one complete deterministic chat stream for cross-tab concurrency.
+const chatEventStream = (conversationId: string, response: string) => [
+  'event: start',
+  `data: ${JSON.stringify({
+    trace_id: '77777777-7777-4777-8777-777777777777',
+    conversation_id: conversationId,
+  })}`,
+  '',
+  'event: delta',
+  `data: ${JSON.stringify({ content: response })}`,
+  '',
+  'event: done',
+  'data: {}',
+  '',
+  '',
+].join('\n')
 
 // Verify create, select, revise, persist-visible, and download interactions.
 test('creates and revises an editable presentation in the browser', async ({ page }) => {
@@ -180,6 +214,7 @@ test('creates and revises an editable presentation in the browser', async ({ pag
   let created = false
   let revised = false
   let imaged = false
+  let jobPolls = 0
   const requests: Array<{ method: string; url: string; body: unknown }> = []
 
   await page.route('**/api/v1/presentations**', async route => {
@@ -188,35 +223,23 @@ test('creates and revises an editable presentation in the browser', async ({ pag
     const body = request.postDataJSON() as unknown
     requests.push({ method: request.method(), url: url.pathname, body })
 
-    if (request.method() === 'POST' && url.pathname === '/api/v1/presentations/stream') {
-      await new Promise(resolve => setTimeout(resolve, 100))
+    if (request.method() === 'POST' && url.pathname === '/api/v1/presentations') {
       created = true
-      const ready = presentationRecord()
-      const firstSlide = {
-        ...deckSpec(),
-        slides: deckSpec().slides.slice(0, 1),
+      await fulfillJson(route, presentationJob('queued'), 202)
+      return
+    }
+    if (request.method() === 'GET' && url.pathname.includes('/presentations/jobs/')) {
+      jobPolls += 1
+      if (jobPolls === 1) {
+        await fulfillJson(route, presentationJob('running', {
+          ...deckSpec(),
+          slides: deckSpec().slides.slice(0, 1),
+        }))
+      } else if (jobPolls === 2) {
+        await fulfillJson(route, presentationJob('running', deckSpec()))
+      } else {
+        await fulfillJson(route, presentationJob('ready', deckSpec()))
       }
-      await route.fulfill({
-        status: 200,
-        contentType: 'text/event-stream',
-        body: [
-          presentationEvent('started', {
-            presentation_id: ready.id,
-            revision_id: ready.current_revision_id,
-            trace_id: ready.trace_id,
-          }),
-          presentationEvent('draft', {
-            specification: firstSlide,
-            expected_slide_count: 2,
-          }),
-          presentationEvent('draft', {
-            specification: deckSpec(),
-            expected_slide_count: 2,
-          }),
-          presentationEvent('ready', { presentation: ready }),
-          presentationEvent('done', {}),
-        ].join(''),
-      })
       return
     }
     if (request.method() === 'POST' && url.pathname.endsWith('/slides/slide-b/revisions')) {
@@ -318,7 +341,7 @@ test('creates and revises an editable presentation in the browser', async ({ pag
   expect((await downloadPromise).suggestedFilename()).toBe('browser-presentation-r2.pptx')
 
   expect(requests.some(request => request.method === 'POST'
-    && request.url === '/api/v1/presentations/stream')).toBe(true)
+    && request.url === '/api/v1/presentations')).toBe(true)
   const revisionRequest = requests.find(request => request.url.endsWith('/slides/slide-b/revisions'))
   expect(revisionRequest?.body).toMatchObject({
     base_revision_id: '11111111-1111-4111-8111-111111111111',
@@ -330,6 +353,300 @@ test('creates and revises an editable presentation in the browser', async ({ pag
     prompt: 'A horse beside an editable chart',
   })
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// Verify a durable deck continues while Conversations completes another turn.
+test('keeps chat responsive while a presentation job runs in the background', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  let queuedAt = 0
+  let chatRequests = 0
+  let jobRequests = 0
+
+  await page.route('**/api/v1/presentations**', async route => {
+    const request = route.request()
+    const url = new URL(request.url())
+    if (request.method() === 'POST' && url.pathname === '/api/v1/presentations') {
+      queuedAt = Date.now()
+      await fulfillJson(route, presentationJob('queued'), 202)
+      return
+    }
+    if (request.method() === 'GET' && url.pathname.includes('/presentations/jobs/')) {
+      jobRequests += 1
+      const elapsed = Date.now() - queuedAt
+      await fulfillJson(
+        route,
+        elapsed >= 1_800
+          ? presentationJob('ready', deckSpec())
+          : presentationJob('running', {
+            ...deckSpec(),
+            slides: deckSpec().slides.slice(0, 1),
+          }),
+      )
+      return
+    }
+    if (request.method() === 'GET' && url.pathname === '/api/v1/presentations/ani.mallya') {
+      await fulfillJson(
+        route,
+        queuedAt > 0 && Date.now() - queuedAt >= 1_800
+          ? [presentationRecord()]
+          : [],
+      )
+      return
+    }
+    if (request.method() === 'GET') {
+      await fulfillJson(route, presentationRecord())
+      return
+    }
+    await fulfillJson(route, {}, 404)
+  })
+  await page.route('http://localhost:8000/api/v1/chat', async route => {
+    chatRequests += 1
+    const payload = route.request().postDataJSON() as { conversation_id: string }
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body: chatEventStream(
+        payload.conversation_id,
+        'CHAT_COMPLETED_WHILE_DECK_RUNNING',
+      ),
+    })
+  })
+
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Presentations' }).click()
+  await page.getByLabel('Create a new deck').fill(
+    'Create a two-slide background presentation.',
+  )
+  await page.getByRole('button', { name: 'Create presentation' }).click()
+  await expect(page.getByText('Using PresentationAgent…')).toBeVisible()
+  await expect(page.getByText(
+    'PresentationAgent is working in the background. You can continue chatting.',
+  )).toBeVisible()
+
+  await page.getByRole('button', { name: 'Conversations' }).click()
+  const textarea = page.getByLabel('Message AniOS')
+  await textarea.fill('UNIQUE_CHAT_DURING_PRESENTATION')
+  await page.getByRole('button', { name: 'Send message' }).click()
+  await expect(page.getByLabel('AniOS answer').last()).toContainText(
+    'CHAT_COMPLETED_WHILE_DECK_RUNNING',
+  )
+
+  await page.getByRole('button', { name: 'Presentations' }).click()
+  await expect(page.getByText(
+    'Presentation ready. Every supported slide object is editable in PowerPoint.',
+  )).toBeVisible({
+    timeout: 5_000,
+  })
+  await expect(page.getByRole('button', {
+    name: 'Download editable PowerPoint',
+  })).toBeVisible()
+  const storedJob = await page.evaluate(() => (
+    localStorage.getItem('anios_presentation_job:ani.mallya')
+  ))
+  expect(storedJob).toBeNull()
+  expect(chatRequests).toBe(1)
+  expect(jobRequests).toBeGreaterThan(0)
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// Verify the real worker yields the local model to chat and resumes after navigation.
+test('@live creates a deck in the background without blocking chat', async ({ page }) => {
+  test.skip(
+    process.env.ANIOS_E2E_LIVE !== '1',
+    'Set ANIOS_E2E_LIVE=1 to exercise the live presentation worker.',
+  )
+  test.setTimeout(240_000)
+
+  const errors = observeBlockingBrowserErrors(page)
+  const failedRequests: string[] = []
+  page.on('requestfailed', request => {
+    const url = new URL(request.url())
+    if (
+      request.method() === 'POST'
+      || url.pathname.includes('/presentations/jobs/')
+    ) {
+      failedRequests.push(`${request.method()} ${request.url()}`)
+    }
+  })
+  const stamp = Date.now()
+  const userId = `live_presentation_bg_${stamp}`
+  const conversationId = '46464646-4646-4646-8646-464646464646'
+  const marker = `background-reference-${stamp}`
+  // Start the live browser with isolated ownership and conversation state.
+  await page.addInitScript(({ user, conversation }) => {
+    localStorage.setItem('anios_user_id', user)
+    localStorage.setItem('anios_conversation_id', conversation)
+  }, { user: userId, conversation: conversationId })
+
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Presentations' }).click()
+  await page.getByLabel('Create a new deck').fill(
+    `Create exactly 2 slides about durable agent jobs. Include the exact text ${marker} in the deck.`,
+  )
+  const queuedResponse = page.waitForResponse(
+    response => response.url() === 'http://localhost:8000/api/v1/presentations'
+      && response.request().method() === 'POST',
+  )
+  await page.getByRole('button', { name: 'Create presentation' }).click()
+  const queued = await queuedResponse
+  expect(queued.status()).toBe(202)
+  const job = await queued.json() as { id: string; presentation_id: string }
+  await expect(page.getByText(
+    'PresentationAgent is working in the background. You can continue chatting.',
+  )).toBeVisible()
+
+  await page.getByRole('button', { name: 'Conversations' }).click()
+  const textarea = page.getByLabel('Message AniOS')
+  await textarea.fill(
+    `Confirm in one sentence that chat remains responsive during deck creation, and include reference ${marker}.`,
+  )
+  const chatResponse = page.waitForResponse(
+    response => response.url() === 'http://localhost:8000/api/v1/chat'
+      && response.request().method() === 'POST',
+    { timeout: 120_000 },
+  )
+  await page.getByRole('button', { name: 'Send message' }).click()
+  expect((await chatResponse).status()).toBe(200)
+  await expect(page.getByLabel('AniOS answer').last()).toContainText(marker, {
+    timeout: 120_000,
+  })
+  await expect(textarea).toBeEnabled()
+  await expect(textarea).toHaveValue('')
+  await expect(page.getByLabel('AniOS is thinking')).toHaveCount(0)
+
+  await page.getByRole('button', { name: 'Presentations' }).click()
+  await expect(page.getByText(
+    'Presentation ready. Every supported slide object is editable in PowerPoint.',
+  )).toBeVisible({ timeout: 180_000 })
+  await expect(page.getByRole('button', {
+    name: 'Download editable PowerPoint',
+  })).toBeVisible()
+
+  const terminalResponse = await page.request.get(
+    `http://localhost:8000/api/v1/presentations/jobs/${userId}/${job.id}`,
+  )
+  expect(terminalResponse.status()).toBe(200)
+  const terminal = await terminalResponse.json()
+  expect(terminal.status).toBe('ready')
+  expect(terminal.presentation.current_revision.status).toBe('ready')
+  expect(terminal.presentation.current_revision.specification.slides).toHaveLength(2)
+  expect(terminal.presentation.current_revision.renderer).toBe(
+    'pptxgenjs+libreoffice',
+  )
+  expect(terminal.presentation.current_revision.content_available).toBe(true)
+  expect(failedRequests).toEqual([])
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+
+  const cleanup = await page.request.delete(
+    `http://localhost:8000/api/v1/presentations/${userId}/${job.presentation_id}`,
+  )
+  expect(cleanup.status()).toBe(204)
+})
+
+// Verify the browser cancels a real running specialist job at a safe checkpoint.
+test('@live cancels an in-flight presentation job', async ({ page }) => {
+  test.skip(
+    process.env.ANIOS_E2E_LIVE !== '1',
+    'Set ANIOS_E2E_LIVE=1 to exercise live worker cancellation.',
+  )
+  test.setTimeout(180_000)
+
+  const errors = observeBlockingBrowserErrors(page)
+  const failedRequests: string[] = []
+  const successfulNoContentRequests = new Set<string>()
+  // Record no-content responses that Chromium may also report as aborted body reads.
+  page.on('response', response => {
+    if (response.status() === 204) {
+      successfulNoContentRequests.add(
+        `${response.request().method()} ${response.url()}`,
+      )
+    }
+  })
+  page.on('requestfailed', request => {
+    if (
+      request.method() === 'POST'
+      || request.url().includes('/presentations/jobs/')
+    ) {
+      failedRequests.push(`${request.method()} ${request.url()}`)
+    }
+  })
+  const stamp = Date.now()
+  const userId = `live_presentation_cancel_${stamp}`
+  const conversationId = '47474747-4747-4747-8747-474747474747'
+  // Start the cancellation browser with isolated ownership and job state.
+  await page.addInitScript(({ user, conversation }) => {
+    localStorage.setItem('anios_user_id', user)
+    localStorage.setItem('anios_conversation_id', conversation)
+  }, { user: userId, conversation: conversationId })
+
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Presentations' }).click()
+  await page.getByLabel('Create a new deck').fill(
+    `Create exactly 6 slides about browser cancellation ${Date.now()}.`,
+  )
+  const queuedResponse = page.waitForResponse(
+    response => response.url() === 'http://localhost:8000/api/v1/presentations'
+      && response.request().method() === 'POST',
+  )
+  await page.getByRole('button', { name: 'Create presentation' }).click()
+  const queued = await queuedResponse
+  expect(queued.status()).toBe(202)
+  const job = await queued.json() as { id: string; presentation_id: string }
+  await expect(page.getByRole('button', {
+    name: 'Cancel presentation',
+  })).toBeVisible()
+  const jobStatusUrl = (
+    `http://localhost:8000/api/v1/presentations/jobs/${userId}/${job.id}`
+  )
+  // Wait until a real worker owns the job before exercising browser cancellation.
+  await expect.poll(
+    // Read the persisted worker state without changing the browser workflow.
+    async () => {
+      const response = await page.request.get(jobStatusUrl)
+      expect(response.status()).toBe(200)
+      return (await response.json() as { status: string }).status
+    },
+    { timeout: 60_000 },
+  ).toBe('running')
+
+  const cancelResponse = page.waitForResponse(
+    response => response.url().endsWith(`/jobs/${userId}/${job.id}`)
+      && response.request().method() === 'DELETE',
+  )
+  await page.getByRole('button', { name: 'Cancel presentation' }).click()
+  expect((await cancelResponse).status()).toBe(204)
+  await expect(page.getByText(
+    'Cancellation requested. The worker will stop at the next safe checkpoint.',
+  )).toBeVisible()
+  await expect(page.getByText(
+    'Presentation creation was cancelled.',
+  )).toBeVisible({ timeout: 120_000 })
+
+  const terminalResponse = await page.request.get(
+    jobStatusUrl,
+  )
+  expect(terminalResponse.status()).toBe(200)
+  const terminal = await terminalResponse.json()
+  expect(terminal.status).toBe('cancelled')
+  expect(terminal.cancel_requested).toBe(true)
+  expect(terminal.error_code).toBe('cancelled')
+  expect(terminal.presentation).toBeNull()
+  expect(await page.evaluate(() => (
+    localStorage.getItem(`anios_presentation_job:${localStorage.getItem('anios_user_id')}`)
+  ))).toBeNull()
+  const unresolvedFailedRequests: string[] = []
+  for (const request of failedRequests) {
+    if (!successfulNoContentRequests.has(request)) {
+      unresolvedFailedRequests.push(request)
+    }
+  }
+  expect(unresolvedFailedRequests).toEqual([])
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+
+  const cleanup = await page.request.delete(
+    `http://localhost:8000/api/v1/presentations/${userId}/${job.presentation_id}`,
+  )
+  expect(cleanup.status()).toBe(204)
 })
 
 // Verify the browser revises a real persisted deck through the configured local model.

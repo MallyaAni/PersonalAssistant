@@ -35,6 +35,8 @@ class ChatStreamEvent(TypedDict):
         "search_blocked",
         "tool_started",
         "tool_finished",
+        "agent_started",
+        "agent_finished",
         "done",
     ]
     data: dict[str, Any]

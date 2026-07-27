@@ -14,13 +14,16 @@ from backend.core.dependencies import (
     get_binary_artifact_store,
     get_diagram_agent,
     get_diagram_artifact_service,
+    get_diagram_llm_client,
     get_diagram_provider,
     get_embedding_provider,
     get_image_artifact_service,
     get_image_provider,
-    get_llm_client,
     get_memory_service,
     get_presentation_agent,
+    get_presentation_job_repository,
+    get_presentation_job_service,
+    get_presentation_llm_client,
     get_presentation_repository,
     get_presentation_service,
     get_vision_analysis_service,
@@ -105,6 +108,23 @@ def _presentation_summary(presentation: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+# Return a bounded durable-job handle without exposing the private deck prompt.
+def _presentation_job_summary(job: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: job.get(key)
+        for key in (
+            "id",
+            "presentation_id",
+            "revision_id",
+            "status",
+            "expected_slide_count",
+            "error_code",
+            "created_at",
+        )
+        if job.get(key) is not None
+    }
+
+
 # Encode a tool result below the generic MCP cap while preserving valid JSON.
 def _encode_result(payload: dict[str, Any]) -> str:
     encoded = json.dumps(payload, ensure_ascii=False, default=str)
@@ -136,7 +156,7 @@ class VisualCapabilityRuntime:
             raise ValueError("Diagram prompt must contain 1 to 10000 characters.")
         async with AsyncSessionLocal() as session:
             repository = get_artifact_repository(session)
-            provider = get_diagram_provider(get_llm_client())
+            provider = get_diagram_provider(get_diagram_llm_client())
             service = get_diagram_artifact_service(
                 get_diagram_agent(provider),
                 repository,
@@ -247,7 +267,7 @@ class VisualCapabilityRuntime:
             raise ValueError("Artifact not found.")
         return _encode_result({"artifact": _artifact_summary(artifact)})
 
-    # Create one editable presentation through the focused local subagent.
+    # Queue one editable presentation for the focused local subagent worker.
     async def create_presentation(
         self,
         context: VisualRequestContext,
@@ -257,20 +277,17 @@ class VisualCapabilityRuntime:
         if not normalized_prompt or len(normalized_prompt) > 20_000:
             raise ValueError("Presentation prompt must contain 1 to 20000 characters.")
         async with AsyncSessionLocal() as session:
-            repository = get_presentation_repository(session)
-            service = get_presentation_service(
-                get_presentation_agent(get_llm_client()),
-                repository,
-                get_binary_artifact_store(),
-                get_artifact_repository(session),
+            jobs = get_presentation_job_service(
+                get_presentation_job_repository(session),
+                get_presentation_repository(session),
             )
-            ready = await service.create(
+            queued = await jobs.enqueue(
                 context.user_id,
                 context.conversation_id,
                 context.trace_id,
                 normalized_prompt,
             )
-        return _encode_result({"presentation": _presentation_summary(ready)})
+        return _encode_result({"presentation_job": _presentation_job_summary(queued)})
 
     # Apply feedback to one slide and persist a linked editable revision.
     async def revise_presentation_slide(
@@ -294,7 +311,7 @@ class VisualCapabilityRuntime:
         async with AsyncSessionLocal() as session:
             repository = get_presentation_repository(session)
             service = get_presentation_service(
-                get_presentation_agent(get_llm_client()),
+                get_presentation_agent(get_presentation_llm_client()),
                 repository,
                 get_binary_artifact_store(),
                 get_artifact_repository(session),
@@ -383,13 +400,13 @@ def create_visual_mcp(runtime: VisualCapabilityRuntime) -> FastMCP:
         """Return status and public metadata for one owned visual artifact."""
         return await runtime.get_artifact(_request_context(ctx), artifact_id)
 
-    # Create a native editable PowerPoint deck through PresentationAgent.
+    # Queue a native editable PowerPoint deck for PresentationAgent.
     @server.tool()
     async def create_presentation(
         prompt: str,
         ctx: Context[Any, Any, Any],
     ) -> str:
-        """Create and persist a native editable PowerPoint presentation."""
+        """Queue creation of a native editable PowerPoint presentation."""
         return await runtime.create_presentation(_request_context(ctx), prompt)
 
     # Revise exactly one slide and keep all sibling slides unchanged.

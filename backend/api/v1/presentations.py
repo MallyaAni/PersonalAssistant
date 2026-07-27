@@ -1,3 +1,4 @@
+import asyncio
 import json
 from collections.abc import AsyncIterator
 from typing import Annotated, Any
@@ -16,6 +17,7 @@ from backend.core.auth import (
 from backend.core.dependencies import (
     PresentationDependency,
     PresentationImageDependency,
+    PresentationJobDependency,
     TracerDependency,
 )
 from backend.models.presentation_api import (
@@ -33,11 +35,11 @@ def _presentation_event(event: str, data: dict[str, Any]) -> str:
     return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
 
 
-# Create one editable deck and return its active specification and revision.
-@router.post("", status_code=status.HTTP_201_CREATED)
+# Queue one editable deck without keeping model work in the API request.
+@router.post("", status_code=status.HTTP_202_ACCEPTED)
 async def create_presentation(
     body: CreatePresentationBody,
-    service: PresentationDependency,
+    jobs: PresentationJobDependency,
     tracer: TracerDependency,
     identity: IdentityDependency,
 ) -> dict[str, Any]:
@@ -45,7 +47,7 @@ async def create_presentation(
     authorize_scope(identity, SCOPE_PRESENTATIONS)
     trace_id = tracer.start_trace(body.user_id)
     try:
-        return await service.create(
+        return await jobs.enqueue(
             body.user_id,
             str(body.conversation_id),
             trace_id,
@@ -58,11 +60,11 @@ async def create_presentation(
         ) from exc
 
 
-# Stream slide previews as Gemma plans them, then return the promoted ready deck.
+# Queue a durable job and stream its persisted progress for legacy clients.
 @router.post("/stream")
 async def stream_presentation(
     body: CreatePresentationBody,
-    service: PresentationDependency,
+    jobs: PresentationJobDependency,
     tracer: TracerDependency,
     identity: IdentityDependency,
 ) -> StreamingResponse:
@@ -70,15 +72,62 @@ async def stream_presentation(
     authorize_scope(identity, SCOPE_PRESENTATIONS)
     trace_id = tracer.start_trace(body.user_id)
 
-    # Keep dependency-owned persistence alive for the complete streamed lifecycle.
+    job = await jobs.enqueue(
+        body.user_id,
+        str(body.conversation_id),
+        trace_id,
+        body.prompt,
+    )
+
+    # Poll durable state so disconnecting this stream never cancels model work.
     async def events() -> AsyncIterator[str]:
-        async for item in service.create_progress(
-            body.user_id,
-            str(body.conversation_id),
-            trace_id,
-            body.prompt,
-        ):
-            yield _presentation_event(item["event"], item["data"])
+        yield _presentation_event(
+            "started",
+            {
+                "job_id": job["id"],
+                "presentation_id": job["presentation_id"],
+                "revision_id": job["revision_id"],
+                "trace_id": trace_id,
+            },
+        )
+        last_draft = ""
+        while True:
+            current = await jobs.get(body.user_id, str(job["id"]))
+            if current is None:
+                yield _presentation_event(
+                    "error",
+                    {"message": "Presentation job was not found."},
+                )
+                break
+            draft = current.get("draft_specification")
+            if isinstance(draft, dict):
+                encoded = json.dumps(draft, sort_keys=True)
+                if encoded != last_draft:
+                    last_draft = encoded
+                    yield _presentation_event(
+                        "draft",
+                        {
+                            "specification": draft,
+                            "expected_slide_count": current.get("expected_slide_count"),
+                        },
+                    )
+            if current["status"] == "ready":
+                yield _presentation_event(
+                    "ready",
+                    {"presentation": current["presentation"]},
+                )
+                break
+            if current["status"] in {"failed", "cancelled"}:
+                yield _presentation_event(
+                    "error",
+                    {
+                        "message": "Unable to create the presentation.",
+                        "presentation_id": current["presentation_id"],
+                    },
+                )
+                break
+            await asyncio.sleep(0.5)
+        yield _presentation_event("done", {})
 
     return StreamingResponse(
         events(),
@@ -88,6 +137,37 @@ async def stream_presentation(
             "X-Accel-Buffering": "no",
         },
     )
+
+
+# Return reconnectable progress for one user-owned presentation job.
+@router.get("/jobs/{user_id}/{job_id}")
+async def get_presentation_job(
+    user_id: str,
+    job_id: UUID,
+    jobs: PresentationJobDependency,
+    identity: IdentityDependency,
+) -> dict[str, Any]:
+    authorize_user(user_id, identity)
+    authorize_scope(identity, SCOPE_PRESENTATIONS)
+    job = await jobs.get(user_id, str(job_id))
+    if job is None:
+        raise HTTPException(status_code=404, detail="Presentation job was not found")
+    return job
+
+
+# Request cooperative cancellation of one queued or running presentation job.
+@router.delete("/jobs/{user_id}/{job_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def cancel_presentation_job(
+    user_id: str,
+    job_id: UUID,
+    jobs: PresentationJobDependency,
+    identity: IdentityDependency,
+) -> Response:
+    authorize_user(user_id, identity)
+    authorize_scope(identity, SCOPE_PRESENTATIONS)
+    if not await jobs.cancel(user_id, str(job_id)):
+        raise HTTPException(status_code=404, detail="Presentation job was not found")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 # List recent presentations owned by one user.

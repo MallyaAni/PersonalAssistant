@@ -1,6 +1,7 @@
 from collections.abc import AsyncIterator
 from typing import Any, NotRequired
 
+from langgraph.config import get_stream_writer
 from langgraph.graph import END, StateGraph
 from typing_extensions import TypedDict
 
@@ -37,9 +38,14 @@ class PresentationAgent:
             raise RuntimeError("Presentation graph completed without a deck")
         return specification
 
-    # Stream compiled drafts through the same bounded presentation-provider authority.
+    # Stream compiled drafts from the presentation graph's planning node.
     async def create_progress(self, prompt: str) -> AsyncIterator[DeckDraft]:
-        async for draft in self.provider.create_progress(prompt):
+        async for draft in self.graph.astream(
+            {"operation": "create_progress", "prompt": prompt},
+            stream_mode="custom",
+        ):
+            if not isinstance(draft, DeckDraft):
+                raise RuntimeError("Presentation graph emitted an invalid draft")
             yield draft
 
     # Plan one slide replacement without receiving storage or file access.
@@ -69,6 +75,15 @@ def build_presentation_graph(provider: PresentationProvider) -> Any:
     async def plan_node(state: PresentationState) -> dict[str, DeckSpec | SlideSpec]:
         if state["operation"] == "create":
             return {"specification": await provider.create(state["prompt"])}
+        if state["operation"] == "create_progress":
+            writer = get_stream_writer()
+            specification: DeckSpec | None = None
+            async for draft in provider.create_progress(state["prompt"]):
+                specification = draft.specification
+                writer(draft)
+            if specification is None:
+                raise ValueError("Presentation provider returned no slides")
+            return {"specification": specification}
         if state["operation"] == "revise_slide":
             return {
                 "slide": await provider.revise_slide(

@@ -148,7 +148,16 @@ Key settings are:
 | `DATABASE_USE_NULL_POOL` | `false` | Keep `false` in runtime; tests set it to `true` because pytest creates multiple event loops |
 | `LLM_BASE_URL` | `http://127.0.0.1:1234` | LM Studio server root; the chat and embedding adapters append their endpoint paths |
 | `LLM_MODEL` | `google/gemma-4-12b` | Use the model key reported by `GET /api/v1/models` |
-| `LLM_REASONING_EFFORT` | `none` | LM Studio OpenAI-compatible reasoning control; `none` is required for the current Gemma chat acceptance path |
+| `LLM_REASONING_EFFORT` | `none` | Legacy/fallback LM Studio OpenAI-compatible reasoning control |
+| `MAIN_LLM_BASE_URL` | blank | Main response and native-tool endpoint; blank falls back to `LLM_BASE_URL` |
+| `MAIN_LLM_MODEL` | blank | Main response/native-tool model; blank falls back to `LLM_MODEL`; current qualified setting is `qwen/qwen3.5-9b` |
+| `MAIN_LLM_REASONING_EFFORT` | `none` | Main-role reasoning control |
+| `PRESENTATION_LLM_BASE_URL` | blank | Presentation specialist endpoint; blank falls back through main and legacy endpoints |
+| `PRESENTATION_LLM_MODEL` | blank | Progressive outline/slide/revision model; current qualified setting is `google/gemma-4-12b` |
+| `PRESENTATION_LLM_REASONING_EFFORT` | `none` | Presentation-role reasoning control |
+| `DIAGRAM_LLM_BASE_URL` | blank | Diagram specialist endpoint; blank falls back through main and legacy endpoints |
+| `DIAGRAM_LLM_MODEL` | blank | Mermaid planning model; current qualified setting is `qwen/qwen3.5-9b` |
+| `DIAGRAM_LLM_REASONING_EFFORT` | `none` | Diagram-role reasoning control |
 | `LLM_API_KEY` | none | Optional Bearer token when LM Studio authentication is enabled |
 | `LLM_TIMEOUT_SECONDS` | `120` | Provider request timeout in seconds |
 | `EMBEDDING_MODEL` | `text-embedding-nomic-embed-text-v1.5` | LM Studio embedding model key |
@@ -170,9 +179,16 @@ Key settings are:
 | `PRESENTATION_RENDERER_BASE_URL` | `http://127.0.0.1:8002` | PptxGenJS renderer root; Compose uses `http://presentation-renderer:8002` |
 | `PRESENTATION_RENDERER_TIMEOUT_SECONDS` | `60` | Whole render and Office-validation deadline |
 | `PRESENTATION_MAX_OUTPUT_BYTES` | `52428800` | Maximum accepted rendered PPTX bytes |
-| `PRESENTATION_MAX_TOKENS` | `8192` | Local Gemma budget for a selected-slide replacement specification |
-| `PRESENTATION_PLAN_MAX_TOKENS` | `2048` | Local Gemma budget for a compact deck content plan; application code owns the expanded editable layout |
+| `PRESENTATION_MAX_TOKENS` | `8192` | Presentation-specialist budget for a selected-slide replacement specification |
+| `PRESENTATION_PLAN_MAX_TOKENS` | `2048` | Presentation-specialist budget for a compact deck content plan; application code owns the expanded editable layout |
 | `PRESENTATION_REQUIRE_OFFICE_VALIDATION` | `false` | Require the renderer's LibreOffice result; Compose sets `true` |
+| `PRESENTATION_JOB_POLL_SECONDS` | `0.5` | Idle delay before the presentation worker looks for another durable job |
+| `PRESENTATION_JOB_LEASE_SECONDS` | `300` | Recoverable PostgreSQL claim lease for one worker attempt |
+| `PRESENTATION_JOB_HEARTBEAT_SECONDS` | `30` | Lease-renewal cadence while a presentation job is running |
+| `REDIS_URL` | `redis://127.0.0.1:6379/0` | Shared model-priority coordination; Compose uses `redis://redis:6379/0` |
+| `MODEL_GATE_ENABLED` | `false` | Enable the Redis foreground/background model gate; Compose enables it for backend and presentation worker |
+| `MODEL_GATE_LEASE_SECONDS` | `300` | Expiry for an abandoned model execution lease |
+| `MODEL_GATE_POLL_SECONDS` | `0.1` | Wait interval while another process owns the model lease |
 | `IMAGE_MAX_UPLOAD_BYTES` | `10485760` | Maximum accepted uploaded image bytes |
 | `IMAGE_MAX_OUTPUT_BYTES` | `41943040` | Maximum accepted generated output bytes |
 | `IMAGE_MAX_PIXELS` | `20000000` | Maximum decoded pixels for uploaded/generated images |
@@ -183,14 +199,14 @@ Key settings are:
 | `SEARCH_MCP_SERVER_ID` | `internet` | Fixed server identity used after deterministic search routing |
 | `SEARCH_MCP_TOOL_NAME` | `search_web` | Fixed read-only MCP search tool name |
 | `GOOGLE_API_KEY` / `GEMINI_API_KEY` | none | Either key enables the isolated Google ADK research worker; never configure both unless they identify the same intended project |
-| `GOOGLE_SEARCH_MODEL` | `gemini-3.6-flash` | Request-scoped grounded research model; Gemma remains the local final-answer model |
+| `GOOGLE_SEARCH_MODEL` | `gemini-3.6-flash` | Request-scoped grounded research model; the configured main role remains the local final-answer model |
 | `GOOGLE_SEARCH_TIMEOUT_SECONDS` | `30` | Whole Google ADK research deadline before Tavily fallback |
 | `GOOGLE_SEARCH_MAX_OUTPUT_TOKENS` | `1024` | Bounded worker answer used only to build attributable result snippets |
 | `GOOGLE_SEARCH_DAILY_LIMIT` | `450` | Local Pacific-day safety cap; it does not guarantee provider quota or free access |
 | `GOOGLE_SEARCH_QUOTA_DB_PATH` | `data/search/google_search_quota.sqlite3` | SQLite counter containing provider/day/count only; Compose maps this into `searchdata` |
 | `MCP_SERVERS_JSON` | `[]` | Operator-owned stdio/HTTP connections, local trust, and optional environment-name allowlists |
 | `MCP_LIST_TIMEOUT_SECONDS` | `30` | Bound for live catalogue and tool sessions |
-| `TOOL_SEARCH_MAX_RESULTS` | `5` | Maximum live-validated schemas exposed to Gemma per turn |
+| `TOOL_SEARCH_MAX_RESULTS` | `5` | Maximum live-validated schemas exposed to the main model per turn |
 
 For host development, a minimal root `.env` is:
 
@@ -210,6 +226,12 @@ DATABASE_USE_NULL_POOL=false
 LLM_BASE_URL=http://127.0.0.1:1234
 LLM_MODEL=google/gemma-4-12b
 LLM_REASONING_EFFORT=none
+MAIN_LLM_MODEL=qwen/qwen3.5-9b
+MAIN_LLM_REASONING_EFFORT=none
+PRESENTATION_LLM_MODEL=google/gemma-4-12b
+PRESENTATION_LLM_REASONING_EFFORT=none
+DIAGRAM_LLM_MODEL=qwen/qwen3.5-9b
+DIAGRAM_LLM_REASONING_EFFORT=none
 EMBEDDING_MODEL=text-embedding-nomic-embed-text-v1.5
 EMBEDDING_MODEL_VERSION=nomic-embed-text-v1.5
 EMBEDDING_DIMENSION=768
@@ -229,17 +251,75 @@ synchronous psycopg2 engine remains only for Alembic and explicit inspection cod
 Pytest selects `NullPool` before importing backend settings so independently created
 test event loops never reuse an async connection owned by another loop.
 
-Confirm and, when needed, load both LM Studio models through its local management API:
+Confirm and, when needed, load the qualified role and embedding models through
+LM Studio's local management API. Do not load Gemma with only its model name on
+the current workstation: LM Studio may select the model's 256k context profile,
+which required about 29.44 GB and failed the resource guardrail during live
+acceptance.
 
 ```powershell
 Invoke-RestMethod 'http://127.0.0.1:1234/api/v1/models'
-$chatModel = @{ model = 'google/gemma-4-12b' } | ConvertTo-Json
-Invoke-RestMethod 'http://127.0.0.1:1234/api/v1/models/load' -Method Post -ContentType 'application/json' -Body $chatModel
+$mainModel = @{
+  model = 'qwen/qwen3.5-9b'
+  context_length = 8192
+  flash_attention = $true
+  echo_load_config = $true
+} | ConvertTo-Json
+Invoke-RestMethod 'http://127.0.0.1:1234/api/v1/models/load' -Method Post -ContentType 'application/json' -Body $mainModel
+$presentationModel = @{
+  model = 'google/gemma-4-12b'
+  context_length = 8192
+  flash_attention = $true
+  offload_kv_cache_to_gpu = $false
+  echo_load_config = $true
+} | ConvertTo-Json
+Invoke-RestMethod 'http://127.0.0.1:1234/api/v1/models/load' -Method Post -ContentType 'application/json' -Body $presentationModel
 $embeddingModel = @{ model = 'text-embedding-nomic-embed-text-v1.5' } | ConvertTo-Json
 Invoke-RestMethod 'http://127.0.0.1:1234/api/v1/models/load' -Method Post -ContentType 'application/json' -Body $embeddingModel
 ```
 
-The management response must report `status: loaded`; the model catalog alone does not prove an instance is loaded.
+The RTX 5080 profile that passed simultaneous main/presentation browser
+acceptance used the LM Studio CLI to limit both instances to one inference slot
+and partially offload Gemma:
+
+```powershell
+$lms = "$env:USERPROFILE\.lmstudio\bin\lms.exe"
+& $lms load qwen/qwen3.5-9b --identifier qwen/qwen3.5-9b --context-length 8192 --parallel 1 --gpu max --yes
+& $lms load google/gemma-4-12b --identifier google/gemma-4-12b --context-length 8192 --parallel 1 --gpu 0.5 --yes
+Invoke-RestMethod 'http://127.0.0.1:1234/api/v1/models'
+```
+
+Require exactly one loaded instance for each configured role, both with
+`context_length=8192` and `parallel=1`; the verified Gemma instance reported
+`offload_kv_cache_to_gpu=false`. The CLI reported about 6.10 GiB for Qwen and
+9.28 GiB for Gemma. Those estimates and the `--gpu` ratio are workstation
+profiles, not portable defaults: re-estimate and requalify them after changing
+the GPU, quantization, context, or parallelism. The management response must
+report `status: loaded`; the model catalog alone does not prove an instance is
+loaded. On one GPU these roles still share physical capacity, so keep the Redis
+model gate enabled in Compose.
+
+### Qualify local models by role
+
+Run the bounded comparative harness sequentially so two candidates do not
+distort each other's timings or exhaust the local host:
+
+```powershell
+python -m backend.cli.qualify_models `
+  --model qwen/qwen3.5-9b `
+  --model google/gemma-4-12b `
+  --timeout-seconds 180
+```
+
+The command emits JSON and exits non-zero when a candidate fails any synthetic
+supervisor/tool-selection case or the production-shaped progressive two-slide
+contract. Compare correctness before latency. A harness pass is only a gate:
+configure one candidate for one role, recreate the owning Compose services,
+then repeat that subsystem's direct API, persisted-state, log, and real-browser
+acceptance path. Do not promote a model because it returned valid JSON once.
+The current presentation choice illustrates why: Qwen passed one harness run
+but failed the actual worker's strict `PlannedSlide` contract after its bounded
+correction attempt, while Gemma completed the real editable-PPTX path.
 
 ### Install and run the free local image provider
 
@@ -415,7 +495,7 @@ transport. A `stdio` server gives `command` and `args` and is launched as a
 subprocess, so its runtime (for example Node, for `npx` servers) must be
 available wherever the backend runs. `inherit_env` may name only the process
 variables that child needs; values stay outside JSON and are not indexed or
-shown to Gemma. An `http` server gives a `url` and optional
+shown to the main model. An `http` server gives a `url` and optional
 `headers` and connects to an already-running service, which is the transport to
 use for a deployed sibling container or a remote vendor and needs nothing extra
 in the image. `forward_context` defaults to `false`. Set it only for an
@@ -458,11 +538,11 @@ It exposes `generate_diagram`, `generate_image`, `ask_about_image`,
 services and shared artifact volume. The tool schemas contain no user,
 conversation, or trace fields, and results contain public artifact metadata
 only. It is intentionally `untrusted`: explicit calls require
-`confirmed=true`, and ordinary Gemma chat selection does not receive these
+`confirmed=true`, and ordinary main-model chat selection does not receive these
 consequential tools until approval/resume UI exists.
 
 Compose passes these settings into the backend. Rebuild it, then sync descriptors
-for each chat user before expecting Gemma selection; fixed deterministic internet
+for each chat user before expecting main-model selection; fixed deterministic internet
 routing does not depend on descriptor sync:
 
 ```powershell
@@ -668,7 +748,7 @@ A successful Alembic command does not prove application tables exist. Verify the
 docker compose exec -T db psql -U postgres -d anios_db -c "\dt"
 ```
 
-The current migration head is `20260724_0014`. Revision `0014` associates each feedback revision with its stable target slide so the browser can reconstruct independent per-slide conversations. Revision `0013` adds user-scoped presentations and append-only revisions with parent/current pointers, lifecycle, encrypted title/spec fields, model/renderer provenance, opaque binary metadata, and optimistic base-revision protection. Revision `0011` adds generated/uploaded artifact kinds plus opaque storage key, byte size, SHA-256, width, and height. Revision `0010` adds user-scoped visual artifacts with pending/ready/failed lifecycle, conversation/trace provenance, provider/model metadata, editable source, and indexes. Revision `0009` adds source-conversation provenance to procedures plus approval and source-request provenance to knowledge documents. Revision `0008` adds semantic-cache, working-memory, procedure, entity/relation, knowledge-document/chunk, and conversation-summary tables plus pgvector HNSW cosine indexes for vector-bearing memory. Revisions `0004` through `0007` add structured facts, retention/embedding metadata, provenance idempotency, and safe tool-memory tables. Revision `20260716_0002` intentionally refuses to change vector dimensions when legacy semantic rows exist; export or explicitly migrate those vectors instead of deleting or silently truncating them.
+The current migration head is `20260726_0015`. Revision `0015` adds user-scoped durable presentation jobs with queued/running/ready/failed/cancelled lifecycle, encrypted prompt/draft fields, recoverable worker leases, attempts, cancellation, and supporting indexes. Revision `0014` associates each feedback revision with its stable target slide so the browser can reconstruct independent per-slide conversations. Revision `0013` adds user-scoped presentations and append-only revisions with parent/current pointers, lifecycle, encrypted title/spec fields, model/renderer provenance, opaque binary metadata, and optimistic base-revision protection. Revision `0011` adds generated/uploaded artifact kinds plus opaque storage key, byte size, SHA-256, width, and height. Revision `0010` adds user-scoped visual artifacts with pending/ready/failed lifecycle, conversation/trace provenance, provider/model metadata, editable source, and indexes. Revision `0009` adds source-conversation provenance to procedures plus approval and source-request provenance to knowledge documents. Revision `0008` adds semantic-cache, working-memory, procedure, entity/relation, knowledge-document/chunk, and conversation-summary tables plus pgvector HNSW cosine indexes for vector-bearing memory. Revisions `0004` through `0007` add structured facts, retention/embedding metadata, provenance idempotency, and safe tool-memory tables. Revision `20260716_0002` intentionally refuses to change vector dimensions when legacy semantic rows exist; export or explicitly migrate those vectors instead of deleting or silently truncating them.
 
 Create or reset migrations only as part of an explicitly approved schema task. Treat deletion of the `pgdata` volume as destructive.
 
@@ -835,7 +915,7 @@ Invoke-RestMethod 'http://localhost:8000/api/v1/memory/dev_user_001/export'
 
 `POST /api/v1/memory/{user_id}/facts` explicitly approves a structured fact. Repeating a normalized value deduplicates; a contradictory value creates a superseding version. `PUT /facts/{fact_id}` corrects, `DELETE /facts/{fact_id}` removes one version, and `DELETE /facts/key/{fact_key}` removes the key history and supported profile projection. `PUT /api/v1/memory/{user_id}/{episodic|semantic}/{memory_id}` corrects an explicit record and re-embeds semantic content. `GET /api/v1/memory/{user_id}/agent` returns typed-store counts. `DELETE /api/v1/memory/{user_id}` removes that user's conversations and all personal, tool, and agent-memory records. It is destructive and the UI requires confirmation.
 
-Tool-memory routes live below `/api/v1/memory/{user_id}/tools`. They accept only canonical safe descriptors, allowlisted approved preferences, and outcome categories; they never accept raw tool arguments or outputs. Discovery is a hint only. Chat re-resolves shortlisted schemas, lets Gemma return at most one native tool call, and then sends the application-owned plan through the same live contract, risk, argument, and privacy gates as `POST /api/v1/tools/{user_id}/call`.
+Tool-memory routes live below `/api/v1/memory/{user_id}/tools`. They accept only canonical safe descriptors, allowlisted approved preferences, and outcome categories; they never accept raw tool arguments or outputs. Discovery is a hint only. Chat re-resolves shortlisted schemas, lets the configured main model return at most one native tool call, and then sends the application-owned plan through the same live contract, risk, argument, and privacy gates as `POST /api/v1/tools/{user_id}/call`.
 
 Run deterministic and real-browser MCP acceptance with:
 
@@ -882,39 +962,58 @@ sidecar logs contain no credential or raw image content, and scoped cleanup
 removes the disposable artifacts.
 
 For presentation acceptance, start LM Studio and the full Compose stack,
-including `presentation-renderer`, then submit the documented create body:
+including `presentation-worker`, `presentation-renderer`, PostgreSQL, and Redis.
+Apply `alembic upgrade head` before starting or restarting the worker, then
+submit the documented create body:
 
 ```powershell
 $conversationId = [guid]::NewGuid()
 $create = @{
   user_id = 'ani.mallya'
   conversation_id = $conversationId
-  prompt = 'Create a three-slide architecture deck with a native chart and table.'
+  prompt = 'Create an architecture deck with a native chart and table, 3 slides.'
 } | ConvertTo-Json
-$deck = Invoke-RestMethod `
+$response = Invoke-WebRequest `
   -Method Post `
   -Uri 'http://localhost:8000/api/v1/presentations' `
   -ContentType 'application/json' `
   -Body $create
+$job = $response.Content | ConvertFrom-Json
+$jobUri = "http://localhost:8000/api/v1/presentations/jobs/ani.mallya/$($job.id)"
+do {
+  Start-Sleep -Milliseconds 500
+  $current = Invoke-RestMethod -Uri $jobUri
+} while ($current.status -in @('queued', 'running'))
 ```
 
-Require HTTP 201, a ready current revision, stable slide/element IDs, renderer
-`pptxgenjs+libreoffice`, and a specification containing the requested native
-objects. Download that exact revision and inspect the PPTX package for the
-expected slide count, text, shape, chart, table, and notes records. Apply
-feedback to one selected slide using its current revision ID; require HTTP 201,
-a new parent-linked revision, exact preservation of every sibling slide, and
-HTTP 409 when the stale base revision is reused.
+Require HTTP 202 in `$response.StatusCode`, a queued job handle, persisted
+running drafts, then terminal `ready` with exactly three slides, stable
+slide/element IDs, renderer `pptxgenjs+libreoffice`, and a specification
+containing the requested native objects. A client disconnect or view change
+must not cancel the job. Download the exact promoted revision and inspect the
+PPTX package for the expected slide count, text, shape, chart, table, and notes
+records. Apply feedback to one selected slide using its current revision ID;
+require HTTP 201, a new parent-linked revision, exact preservation of every
+sibling slide, and HTTP 409 when the stale base revision is reused.
 
 For creation-latency diagnosis, use the exact requested slide count in the
-brief and correlate the pending revision timestamp with the Gemma and renderer
-log timestamps. Creation should use one compact-plan model call in the normal
-case, followed by deterministic `DeckSpec` compilation and one render call.
-Repeated full-layout model output or a correction request for valid semantic
-content is a regression; an HTTP 201 alone still does not prove the slide count,
-editable structure, loading cleanup, or browser result.
+brief and correlate the job/revision timestamps with the worker, presentation
+specialist, and
+renderer logs. Creation should use one compact-outline call followed by one
+bounded slide-content call per slide, checkpointing the compiled `DeckSpec`
+after each slide, then one render call. While the deck remains `running`, submit
+a unique chat marker and require its streamed answer and terminal `done` before
+the deck completes; this proves the Redis foreground-priority gate yields
+between presentation microtasks. An HTTP 202 or a final `ready` alone does not
+prove chat responsiveness, the requested slide count, editable structure,
+loading cleanup, or browser restoration.
 
-Open Presentations in a real browser. Create or select a real deck, submit a
+Open Presentations in a real browser. Queue a real deck, switch to
+Conversations while it remains in progress, submit a unique message, and
+require its complete answer, cleared thinking/loading state, and enabled empty
+composer. Return to Presentations and require the persisted job to resume,
+render arriving slides, terminate ready, and expose the named download. Then
+submit a
 unique marker as feedback to one selected slide, and require the marker in the
 main preview, unchanged sibling specifications, and a visible pending then
 ready/failed exchange in that slide's follow-up conversation. Select another
@@ -928,6 +1027,29 @@ hidden API failures, or stuck loading. The deterministic browser check is:
 cd frontend
 npx.cmd playwright test e2e/presentations.spec.ts
 ```
+
+The opt-in live checks use isolated owners, clean up their presentations, and
+prove foreground chat plus worker-owned cancellation:
+
+```powershell
+$env:ANIOS_E2E_LIVE='1'
+npm.cmd run test:e2e:live -- --grep "creates a deck in the background without blocking chat"
+npm.cmd run test:e2e:live -- --grep "cancels an in-flight presentation job"
+```
+
+For crash recovery, run a disposable worker with a 30-second lease, wait until
+its uniquely owned job is `running`, stop that exact container, start the
+canonical worker, and require the same job to reach `ready` with
+`attempt_count=2`. Never delete the Redis model lease to make this pass; a
+killed process may leave the non-content model lease until its TTL expires.
+
+For horizontal claim safety, stop the canonical worker, start two disposable
+`presentation-worker` replicas, submit two isolated exact-count jobs, and
+inspect `presentation_jobs` while both are running. Require distinct
+`worker_id` values, `attempt_count=1`, one revision per presentation, exact
+slide counts, valid content metadata, and terminal `ready` for both. Stop and
+remove only the disposable containers, restore the canonical worker, and
+delete the isolated test presentations through their owned API.
 
 The local capability MCP catalogue must contain `create_presentation`,
 `revise_presentation_slide`, and `get_presentation`; results must remain

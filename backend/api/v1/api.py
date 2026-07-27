@@ -21,7 +21,7 @@ from backend.core.auth import (
     authorize_scope,
     authorize_user,
 )
-from backend.core.dependencies import DependencyConversationService
+from backend.core.dependencies import DependencyConversationService, ModelGateDependency
 from backend.models.schemas import ChatRequest, ChatStreamEvent
 
 logger = logging.getLogger(__name__)
@@ -50,6 +50,7 @@ async def root() -> dict[str, str]:
 async def chat(
     body: ChatRequest,
     service: DependencyConversationService,
+    model_gate: ModelGateDependency,
     identity: IdentityDependency,
 ) -> StreamingResponse:
     authorize_user(body.user_id, identity)
@@ -61,7 +62,8 @@ async def chat(
                 body.query,
                 str(body.conversation_id) if body.conversation_id else None,
                 body.metadata,
-            )
+            ),
+            model_gate,
         ),
         media_type="text/event-stream",
         headers={
@@ -73,10 +75,12 @@ async def chat(
 
 async def _encode_sse(
     events: AsyncGenerator[ChatStreamEvent, None],
+    model_gate: ModelGateDependency,
 ) -> AsyncGenerator[str, None]:
     try:
-        async for item in events:
-            yield _sse_event(item["event"], item["data"])
+        async with model_gate.interactive():
+            async for item in events:
+                yield _sse_event(item["event"], item["data"])
     except Exception:
         logger.exception("Chat stream failed")
         yield _sse_event(

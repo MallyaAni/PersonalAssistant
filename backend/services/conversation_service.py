@@ -9,6 +9,7 @@ from anyio import CancelScope
 
 from backend.agents.graph import build_assistant_graph
 from backend.agents.state import AgentState
+from backend.agents.supervisor import MainSupervisorAgent
 from backend.artifacts.diagram import is_diagram_request
 from backend.artifacts.image_lineage import collapse_revision_chains
 from backend.artifacts.image_prompt_match import prefer_prompt_matches
@@ -41,6 +42,7 @@ from backend.services.mcp_tool_orchestration_service import (
     MCPToolOrchestrationService,
     MCPToolSelectionError,
 )
+from backend.services.presentation_job_service import PresentationJobService
 
 logger = logging.getLogger(__name__)
 
@@ -150,6 +152,9 @@ class ConversationService:
         image_retrieval: ImageRetrievalPolicy | None = None,
         search_privacy: OutboundPrivacyPolicy | None = None,
         tool_orchestration: MCPToolOrchestrationService | None = None,
+        supervisor: MainSupervisorAgent | None = None,
+        presentation_jobs: PresentationJobService | None = None,
+        presentation_model: str | None = None,
     ):
         self.memory = memory
         self.assistant_graph = build_assistant_graph(llm)
@@ -171,6 +176,116 @@ class ConversationService:
             cluster_delta=0.006,
         )
         self.tool_orchestration = tool_orchestration
+        self.supervisor = supervisor
+        self.presentation_jobs = presentation_jobs
+        self.presentation_model = presentation_model
+
+    # Return the registered subagent selected by the first-step supervisor.
+    async def _delegated_capability(self, query: str) -> str | None:
+        if self.supervisor is None:
+            return None
+        decision = await self.supervisor.decide(query)
+        if decision.action != "delegate_agent":
+            return None
+        if (
+            decision.capability_id == "presentation_agent"
+            and self.presentation_jobs is not None
+        ):
+            return decision.capability_id
+        return None
+
+    # Queue a specialist presentation job and persist the delegated chat turn.
+    async def _process_presentation_delegation(
+        self,
+        user_id: str,
+        query: str,
+        conversation_id: str,
+        trace_id: str,
+        metadata: dict[str, Any],
+    ) -> AsyncGenerator[ChatStreamEvent, None]:
+        if self.presentation_jobs is None:
+            raise RuntimeError("Presentation jobs are not configured")
+        yield {
+            "event": "agent_started",
+            "data": {
+                "agent_id": "presentation_agent",
+                "agent_name": "PresentationAgent",
+                "model": self.presentation_model,
+            },
+        }
+        history = await self.repository.get_history(
+            conversation_id,
+            user_id,
+            self.history_turn_limit,
+        )
+        try:
+            job = await self.presentation_jobs.enqueue(
+                user_id,
+                conversation_id,
+                trace_id,
+                query,
+            )
+        except Exception:
+            logger.exception(
+                "Presentation delegation failed for trace %s",
+                trace_id,
+            )
+            response_text = (
+                "I couldn't queue the presentation. No background job was started."
+            )
+            await self._persist_completed_turn(
+                user_id,
+                conversation_id,
+                query,
+                response_text,
+                trace_id,
+                history,
+                {**metadata, "delegated_agent": "presentation_agent"},
+            )
+            yield {
+                "event": "agent_finished",
+                "data": {
+                    "agent_id": "presentation_agent",
+                    "agent_name": "PresentationAgent",
+                    "model": self.presentation_model,
+                    "status": "failed",
+                    "message": "The presentation job could not be queued.",
+                },
+            }
+            yield {"event": "delta", "data": {"content": response_text}}
+            yield {"event": "done", "data": {}}
+            return
+        job_id = str(job["id"])
+        yield {
+            "event": "agent_finished",
+            "data": {
+                "agent_id": "presentation_agent",
+                "agent_name": "PresentationAgent",
+                "model": self.presentation_model,
+                "job_id": job_id,
+                "status": "queued",
+                "message": "Presentation job queued in the background.",
+            },
+        }
+        response_text = (
+            "PresentationAgent is creating your editable deck in the background. "
+            f"You can follow job `{job_id}` in Presentations while we keep chatting."
+        )
+        await self._persist_completed_turn(
+            user_id,
+            conversation_id,
+            query,
+            response_text,
+            trace_id,
+            history,
+            {
+                **metadata,
+                "delegated_agent": "presentation_agent",
+                "presentation_job_id": job_id,
+            },
+        )
+        yield {"event": "delta", "data": {"content": response_text}}
+        yield {"event": "done", "data": {}}
 
     # Select and execute at most one safe MCP tool while streaming its lifecycle.
     async def _stream_tool_context(
@@ -572,6 +687,42 @@ class ConversationService:
                 yield event
             return
 
+        yield {
+            "event": "start",
+            "data": {
+                "trace_id": trace_id,
+                "conversation_id": resolved_conversation_id,
+            },
+        }
+        if await self._delegated_capability(query) == "presentation_agent":
+            async for event in self._process_presentation_delegation(
+                user_id,
+                query,
+                resolved_conversation_id,
+                trace_id,
+                metadata or {},
+            ):
+                yield event
+            return
+
+        async for event in self._process_assistant_request(
+            user_id,
+            query,
+            resolved_conversation_id,
+            trace_id,
+            metadata or {},
+        ):
+            yield event
+
+    # Retrieve context, run the primary response model, and persist one turn.
+    async def _process_assistant_request(
+        self,
+        user_id: str,
+        query: str,
+        conversation_id: str,
+        trace_id: str,
+        metadata: dict[str, Any],
+    ) -> AsyncGenerator[ChatStreamEvent, None]:
         # 1. Plan and load only the context components needed for this request.
         plan_result = None
         if self.memory_coordinator is not None:
@@ -601,7 +752,7 @@ class ConversationService:
             else []
         )
         history = await self.repository.get_history(
-            resolved_conversation_id,
+            conversation_id,
             user_id,
             self.history_turn_limit,
         )
@@ -614,20 +765,11 @@ class ConversationService:
             "episodic": episodic,
             "semantic": semantic,
         }
-        # The turn is announced before retrieval so the interface can show a
-        # search running rather than sitting silent through the slowest step.
-        yield {
-            "event": "start",
-            "data": {
-                "trace_id": trace_id,
-                "conversation_id": resolved_conversation_id,
-            },
-        }
         async for retrieval_event in self._stream_optional_context(
             context,
             user_id,
             query,
-            resolved_conversation_id,
+            conversation_id,
             trace_id,
             query_embedding,
         ):
@@ -636,7 +778,7 @@ class ConversationService:
         if self.memory_coordinator is not None:
             context = await self.memory_coordinator.prepare_context(
                 user_id,
-                resolved_conversation_id,
+                conversation_id,
                 query,
                 trace_id,
                 context,
@@ -645,7 +787,7 @@ class ConversationService:
             )
 
         initial_state = AgentState(
-            conversation_id=resolved_conversation_id,
+            conversation_id=conversation_id,
             user_id=user_id,
             current_query=query,
             history=history,
@@ -676,7 +818,7 @@ class ConversationService:
             response_text,
             trace_id,
             history,
-            metadata or {},
+            metadata,
         )
         proposal = _memory_proposal(
             query,

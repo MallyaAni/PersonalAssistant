@@ -38,11 +38,11 @@ flowchart TB
         DiagramRoute[ConversationService<br/>deterministic diagram branch]
         DiagramService[DiagramArtifactService<br/>owned pending, ready, or failed lifecycle]
         DiagramAgent[DiagramAgent LangGraph<br/>bounded orchestration]
-        DiagramLLM[LM Studio Gemma<br/>structured Mermaid]
+        DiagramLLM[Model call: DIAGRAM_LLM_MODEL<br/>qwen/qwen3.5-9b<br/>structured Mermaid]
         MermaidCheck[Passive Mermaid validation<br/>plus one correction attempt]
         DiagramState[PostgreSQL artifact<br/>pending, ready, or failed]
         DiagramStream[SSE lifecycle<br/>started, ready/error, done]
-        VisionEmbed[NomicVisionEmbeddingProvider<br/>ONNX on CPU, aligned 768-dim<br/>generated and uploaded images at store time]
+        VisionEmbed[Model call: VISION_EMBEDDING_MODEL<br/>nomic-embed-vision-v1.5<br/>ONNX CPU, aligned 768-dim<br/>generated and uploaded images at store time]
         ImageVectors[(visual_artifacts.embedding<br/>own HNSW index and bounds)]
         RetrievalPolicy[ImageRetrievalPolicy<br/>distance ceiling plus<br/>best-to-runner-up margin]
         VisionEmbed --> ImageVectors --> RetrievalPolicy
@@ -61,7 +61,7 @@ flowchart TB
         ImageLifecycle[ImageArtifactService<br/>durable pending lifecycle]
         DisconnectMonitor[HTTP disconnect monitor<br/>cancel task and terminalize state]
         ImageProvider[ComfyUIImageProvider<br/>one-job concurrency gate]
-        ComfyUI[ComfyUI 0.28<br/>HiDream-I1 Dev FP8]
+        ComfyUI[Model call: IMAGE_MODEL via ComfyUI 0.28<br/>hidream_o1_image_dev_fp8_scaled.safetensors]
         OutputCheck[PNG signature, MIME,<br/>size, pixels, and frame check]
         GeneratedState[Binary plus PostgreSQL metadata<br/>prompt provenance; ready or sanitized failed]
 
@@ -91,7 +91,7 @@ flowchart TB
         UploadState[Persist owned upload<br/>before inference]
         FollowupRead[Read owned image bytes<br/>size and SHA-256 checked]
         VisionService[VisionAnalysisService<br/>bounded thread context]
-        VisionLLM[LM Studio Gemma 4 12B<br/>image plus prompt or thread]
+        VisionLLM[Model call: VISION_MODEL<br/>google/gemma-4-12b<br/>image plus prompt or thread]
         AnalysisState[Persist text, model, usage,<br/>status, and question thread]
 
         UploadCheck --> UploadState --> VisionService

@@ -599,3 +599,111 @@ This file is append-only history for meaningful, verified changes. It must not c
   frontend production build, repository-wide Ruff/Black, strict MyPy over 135
   source files, Compose configuration, migration head `20260724_0014`, and all
   11 synchronized architecture views.
+
+## 2026-07-26 — Exact model-call provenance documented
+
+- Audited the current implementation and configuration after the latest Claude
+  Code changes, then named the exact model at every model-backed boundary in the
+  full-system and detailed subsystem architecture views.
+- Added a per-stage call map covering local Gemma text/vision calls, LM Studio
+  text embeddings, in-process vision embeddings, ComfyUI/HiDream raster
+  generation, and the conditional Google-grounded Gemini worker. The diagrams
+  now distinguish unconditional, conditional, and disabled-by-default calls and
+  make clear that the frontend does not call models directly.
+- Corrected stale diagram labels from Gemini 2.5 to configured
+  `gemini-3.6-flash`, from HiDream-I1 to the configured HiDream-O1 checkpoint,
+  and from generic Gemma/Nomic names to their configured identifiers.
+- Regenerated all 11 SVGs and the published architecture page, visually
+  inspected the final full-system render, passed the synchronized-diagram check,
+  passed all six architecture-candidate tests, passed the focused presentation
+  service regressions, and completed the frontend production build.
+
+## 2026-07-26 — Durable presentation subagent and foreground chat verified
+
+- Moved presentation creation off the HTTP request path into user-scoped
+  PostgreSQL jobs claimed by a standalone leased worker. The worker invokes the
+  focused `PresentationAgent` LangGraph, checkpoints each progressive draft,
+  reconciles terminal revisions after worker loss, and supports reconnectable
+  status plus cooperative cancellation.
+- Split deck generation into one compact Gemma outline followed by one bounded
+  slide-content microtask per slide. A Redis execution gate gives waiting chat
+  priority between those background calls without putting prompts, answers, or
+  user content in Redis.
+- Updated the presentation UI to retain the active job across navigation and
+  reload, show background-agent progress, allow chat while work continues,
+  render persisted draft slides, cancel the job, and hydrate the ready deck.
+  The local FastMCP create tool now returns the same durable job handle.
+- Live Chromium queued a real two-slide deck, switched to Conversations,
+  completed a unique Gemma response while the deck was still running, returned
+  to Presentations, observed terminal ready state, and exposed the validated
+  downloadable PPTX with no required Network, Console, or page errors.
+- Verified migration head `20260726_0015`, five recent exact-count jobs ready in
+  one attempt, 45 focused backend tests, Ruff, Black, the frontend production
+  build, two deterministic presentation browser tests, the live browser
+  concurrency workflow, clean recent backend/worker logs, and all 11
+  synchronized architecture diagrams.
+
+## 2026-07-26 — Hybrid supervisor and qualified model roles verified
+
+- Added a typed `MainSupervisorAgent` LangGraph step before ordinary chat
+  retrieval. Its bounded registered policy delegates explicit presentation
+  creation to the durable `PresentationAgent` worker and leaves other turns on
+  the existing assistant/MCP path; it has no service, persistence, permission,
+  or invocation authority.
+- Added independent main, presentation, and diagram model endpoints,
+  identifiers, and reasoning settings with compatibility fallbacks. Compose
+  forwards them to the backend, presentation worker, and local capability
+  sidecar.
+- Added visible `agent_started` and `agent_finished` chat events carrying the
+  exact specialist/model/job state, plus deterministic and live Chromium
+  coverage for the handoff and continued foreground chat.
+- Added a repeatable sequential local-model qualification CLI. Qwen 3.5 9B
+  passed all bounded supervisor/tool cases and real ordinary-chat and diagram
+  paths, so it is the current main/tool-selection and diagram model. Gemma 4
+  12B remains the presentation specialist because Qwen failed the actual
+  worker's strict progressive slide contract after its correction budget,
+  despite passing one smaller harness run.
+- Final direct chat reconstructed exact `final source verified` content and
+  terminated with `done`. Direct presentation delegation queued in 53 ms before
+  the final mechanical format/type pass; the rebuilt final-source Chromium path
+  repeated the same agent lifecycle and produced an exact two-slide,
+  68,243-byte editable PPTX through Gemma and PptxGenJS/LibreOffice in one
+  attempt. The delegated presentation plus parallel-chat workflow passed in
+  33.0 seconds with no required Console, Network, or page errors.
+- Verified 56 focused backend tests, Ruff, Black, strict MyPy on the changed
+  orchestration path, the frontend production build, the deterministic
+  delegation browser test, the live browser workflow, clean recent runtime
+  logs, all 11 synchronized architecture diagrams, and visual inspection of the
+  full-system, chat, and presentation renders.
+
+## 2026-07-26 — Presentation operations and model-role runtime verified
+
+- Qualified the configured Qwen search cascade on all 52 committed routing
+  cases. The final live run achieved 1.0 recall and 1.0 specificity with no
+  misses or unnecessary searches.
+- Stopped a disposable worker during a live leased job and verified canonical
+  reclaim on attempt 2, exact four-slide completion, and natural expiry of the
+  killed process's Redis model lease. Two simultaneous disposable replicas
+  then claimed distinct jobs and each produced one exact two-slide revision on
+  attempt 1 without duplicate ownership.
+- Verified direct and real-browser cooperative cancellation after worker
+  ownership, including persisted terminal state, visible cancellation
+  lifecycle, cleared resumable browser state, and scoped cleanup.
+- Overlapped a four-client mixed chat/memory workload with two real deck jobs:
+  all 51 operations passed, including six terminal chat streams; p95 was
+  35.059 seconds, maximum was 67.255 seconds, and both decks reached ready in
+  147.881 seconds.
+- Found and corrected the live runtime's first failing boundary: a name-only
+  Gemma load selected a 256k context and exceeded LM Studio's 29.44 GB resource
+  guardrail. Exactly one Qwen and one Gemma instance were reloaded at 8k
+  context and parallelism one; isolated Chromium then passed foreground chat
+  plus a background two-slide deck in 131.2 seconds and worker-owned
+  cancellation in 93.4 seconds.
+- Updated stale image browser acceptance to the unified prompt/attachment
+  composer, real file chooser, combined image Q&A/refinement field, and unified
+  retry control. All 34 deterministic Chromium tests and the frontend
+  production build pass.
+- Verified 488 backend tests with two intentional skips in the exact runtime
+  image, plus 106 focused presentation/supervisor/search tests, Ruff,
+  `git diff --check`, and all 11 synchronized architecture diagrams. No
+  production component or data-flow relationship changed.

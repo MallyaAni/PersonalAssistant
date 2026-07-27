@@ -1,11 +1,12 @@
 import asyncio
 import re
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any
 from uuid import UUID
 
 from backend.agents.presentation import PresentationAgent
 from backend.core.interfaces import BinaryArtifactRepository, BinaryArtifactStore
+from backend.presentations.planner import DeckDraft
 from backend.presentations.renderer import PptxGenJSRenderer
 from backend.presentations.types import (
     DeckSpec,
@@ -144,6 +145,28 @@ class PresentationService:
                 },
             }
         yield {"event": "done", "data": {}}
+
+    # Execute one already-persisted job and checkpoint each graph-produced draft.
+    async def execute_pending_create(
+        self,
+        user_id: str,
+        presentation_id: str,
+        revision_id: str,
+        prompt: str,
+        on_draft: Callable[[DeckDraft], Awaitable[None]],
+    ) -> dict[str, Any]:
+        specification: DeckSpec | None = None
+        async for draft in self.agent.create_progress(prompt):
+            specification = draft.specification
+            await on_draft(draft)
+        if specification is None:
+            raise ValueError("Presentation provider returned no slides")
+        return await self._complete_revision(
+            user_id,
+            presentation_id,
+            revision_id,
+            specification,
+        )
 
     # Replace one selected slide while preserving every sibling slide byte-for-byte.
     async def revise_slide(

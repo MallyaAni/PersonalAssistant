@@ -7,23 +7,25 @@ The repository contains:
 - a FastAPI backend;
 - a React and Vite developer console;
 - Docker Compose definitions for PostgreSQL with pgvector, Redis, the backend,
-  frontend, local capability FastMCP sidecar, and presentation renderer;
-- a model-backed conversation path, PostgreSQL/pgvector personal memory, and focused LangGraph assistant, diagram-agent, and presentation-agent boundaries;
-- Gemma-native MCP tool selection over a semantic live-validated shortlist,
+  frontend, local capability FastMCP sidecar, presentation worker, and
+  presentation renderer;
+- a role-configurable model-backed conversation path, PostgreSQL/pgvector personal memory, and focused LangGraph supervisor, assistant, diagram-agent, and presentation-agent boundaries;
+- main-model-native MCP tool selection over a semantic live-validated shortlist,
   guarded execution, visible chat status, and a read-only internet-search MCP
   server with an isolated Google ADK research worker, Tavily fallback, bounded
   local quota protection and provider-attributed sources;
 - an explicit chat-to-Mermaid diagram path with user-scoped PostgreSQL artifact persistence and strict in-browser SVG rendering;
 - free local HiDream/ComfyUI image generation plus validated Gemma vision analysis in the chat composer, with natural-language creation intent, grounded historical questions, guarded referenced-image web comparison, private previews, retry/cancel, reload restoration, history, download, owned deletion, and threaded followup questions on any owned image;
 - a clickable Agent memory map whose bounded store details load on demand through the owned export boundary;
-- a focused presentation subsystem where Gemma produces compact slide content,
-  application code compiles it into strict editable deck specifications,
-  PptxGenJS renders native Office objects, and LibreOffice validates each
-  revision before persistent per-slide feedback, history, preview, download,
-  or deletion;
+- a focused presentation subsystem where a separately qualified specialist model produces compact slide content,
+  a durable worker executes the presentation LangGraph independently of chat,
+  application code compiles strict editable deck specifications, PptxGenJS
+  renders native Office objects, and LibreOffice validates each revision before
+  reconnectable progress, persistent per-slide feedback, history, preview,
+  download, or deletion;
 - an agent-facing local FastMCP facade over the same visual and presentation
   services, returning bounded metadata handles rather than private binary data;
-- a local-only, review-first command that uses Gemma and explicit repository evidence to generate architecture-diagram candidates without automatically overwriting canonical documentation.
+- a repeatable local-model qualification command for bounded supervisor/tool decisions and progressive presentation contracts, plus a local-only review-first command that uses explicit repository evidence to generate architecture-diagram candidates without automatically overwriting canonical documentation.
 
 See [the current session handoff](docs/NEXT_SESSION.md) for verified runtime state and active blockers. See [the roadmap](docs/ROADMAP.md) for milestone status and explicitly planned capabilities.
 

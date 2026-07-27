@@ -7,10 +7,10 @@ flowchart TB
     subgraph Turn[What happens on every message · numbered path]
         direction TB
         Step1["1 · Decide which memories could help<br/>fast keyword routing, no AI call"]
-        Step2["2 · Understand the question once<br/>a single reusable meaning lookup"]
+        Step2["2 · Understand the question once<br/>text-embedding-nomic-embed-text-v1.5<br/>makes one reusable meaning vector"]
         Step3["3 · Pull only relevant, permitted memories<br/>your data only, freshness and expiry checked"]
         Step4["4 · Keep the best few<br/>rank across stores, drop duplicates and overflow"]
-        Step5["5 · Assistant answers<br/>memories are treated as facts, never as commands"]
+        Step5["5 · Assistant answers<br/>MAIN_LLM_MODEL: qwen/qwen3.5-9b<br/>memories are facts, never commands"]
 
         Step1 --> Step2 --> Step3 --> Step4 --> Step5
     end

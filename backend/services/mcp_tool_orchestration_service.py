@@ -140,7 +140,7 @@ class MCPToolOrchestrationService:
             expected_fingerprint=str(descriptor["schema_fingerprint"]),
         )
 
-    # Select one live read-only or trusted tool when Gemma judges it necessary.
+    # Select one live read-only or trusted tool when the main model requires it.
     async def select(
         self,
         user_id: str,
@@ -180,7 +180,7 @@ class MCPToolOrchestrationService:
                 256,
             )
         except Exception as exc:
-            logger.warning("Gemma MCP selection failed", exc_info=True)
+            logger.warning("Main-model MCP selection failed", exc_info=True)
             raise MCPToolSelectionError("selection_failed") from exc
 
         return self._parse_plan(message, aliases)

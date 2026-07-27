@@ -47,10 +47,21 @@ function observeBlockingBrowserErrors(page: Page) {
   return { consoleErrors, pageErrors }
 }
 
+// Return the composer controls by accessible name so attachment buttons cannot match.
 function chatControls(page: Page) {
   const textarea = page.getByLabel('Message AniOS')
-  const sendButton = textarea.locator('..').locator('button')
+  const sendButton = page.getByRole('button', { name: 'Send message' })
   return { textarea, sendButton }
+}
+
+// Attach one file through the unified composer's real file-chooser interaction.
+async function attachComposerFile(
+  page: Page,
+  file: { name: string; mimeType: string; buffer: Buffer },
+) {
+  const chooserPromise = page.waitForEvent('filechooser')
+  await page.getByRole('button', { name: 'Attach a file' }).click()
+  await (await chooserPromise).setFiles(file)
 }
 
 function latestAssistantAnswer(page: Page) {
@@ -140,6 +151,39 @@ function toolEventStream(
     '',
     'event: delta',
     `data: ${JSON.stringify({ content: status === 'succeeded' ? 'Raleigh is 72 F.' : 'I answered locally.' })}`,
+    '',
+    'event: done',
+    'data: {}',
+    '',
+    '',
+  ].join('\n')
+}
+
+// Build one durable specialist-agent handoff followed by a completed chat turn.
+function agentEventStream(conversationId: string) {
+  return [
+    'event: start',
+    `data: ${JSON.stringify({ trace_id: 'agent-trace', conversation_id: conversationId })}`,
+    '',
+    'event: agent_started',
+    `data: ${JSON.stringify({
+      agent_id: 'presentation_agent',
+      agent_name: 'PresentationAgent',
+      model: 'qualified/presentation-model',
+    })}`,
+    '',
+    'event: agent_finished',
+    `data: ${JSON.stringify({
+      agent_id: 'presentation_agent',
+      agent_name: 'PresentationAgent',
+      model: 'qualified/presentation-model',
+      job_id: '44444444-4444-4444-8444-444444444444',
+      status: 'queued',
+      message: 'Presentation job queued in the background.',
+    })}`,
+    '',
+    'event: delta',
+    `data: ${JSON.stringify({ content: 'Your presentation is running in the background.' })}`,
     '',
     'event: done',
     'data: {}',
@@ -440,6 +484,37 @@ test('shows the MCP tool used for a completed chat answer', async ({ page }) => 
   await expect(page.getByText('Thinking...', { exact: true })).not.toBeVisible()
   await expect(textarea).toBeEnabled()
   await expect(textarea).toHaveValue('')
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// Verify specialist delegation and its exact model remain visible after queuing.
+test('shows a background PresentationAgent handoff in chat', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.route('http://localhost:8000/api/v1/chat', async route => {
+    const payload = route.request().postDataJSON() as { conversation_id: string }
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body: agentEventStream(payload.conversation_id),
+    })
+  })
+
+  await page.goto('/')
+  const { textarea, sendButton } = chatControls(page)
+  await textarea.fill('Create a presentation about horses with 6 slides')
+  await sendButton.click()
+
+  const answer = latestAssistantAnswer(page)
+  await expect(
+    answer.getByText(
+      'PresentationAgent · qualified/presentation-model queued in the background',
+    ),
+  ).toBeVisible()
+  await expect(
+    answer.getByText('Your presentation is running in the background.'),
+  ).toBeVisible()
+  await expect(page.getByText('Thinking...', { exact: true })).not.toBeVisible()
+  await expect(textarea).toBeEnabled()
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
@@ -1648,6 +1723,65 @@ test('@live renders a real Gemma response through AniOS', async ({ page }) => {
   }
 })
 
+// Verify live chat delegates a deck durably while ordinary conversation continues.
+test('@live delegates a presentation subagent without blocking chat', async ({ page }) => {
+  test.setTimeout(120_000)
+  test.skip(
+    process.env.ANIOS_E2E_LIVE !== '1',
+    'Set ANIOS_E2E_LIVE=1 to exercise the live presentation worker.',
+  )
+  const errors = observeBlockingBrowserErrors(page)
+  const stamp = Date.now()
+
+  await page.goto('/')
+  const { textarea, sendButton } = chatControls(page)
+  const presentationResponse = page.waitForResponse(
+    response => response.url() === 'http://localhost:8000/api/v1/chat',
+  )
+  await textarea.fill(
+    `Create a presentation about supervisor validation ${stamp} with exactly 2 slides.`,
+  )
+  await sendButton.click()
+
+  const response = await presentationResponse
+  expect(response.status()).toBe(200)
+  expect(response.headers()['content-type']).toContain('text/event-stream')
+  expect(await response.finished()).toBeNull()
+  const answer = latestAssistantAnswer(page)
+  await expect(
+    answer.getByText(/PresentationAgent · .+ queued in the background/),
+  ).toBeVisible()
+  const answerText = await answer.textContent()
+  const jobId = answerText?.match(
+    /follow job\s+([0-9a-f]{8}-[0-9a-f-]{27,})/i,
+  )?.[1]
+  expect(jobId).toBeTruthy()
+  await expect(page.getByText('Thinking...', { exact: true })).not.toBeVisible()
+  await expect(textarea).toBeEnabled()
+
+  await textarea.fill(`Reply with exactly: parallel chat ${stamp}`)
+  await sendButton.click()
+  await expect(
+    latestAssistantAnswer(page).getByText(`parallel chat ${stamp}`, { exact: true }),
+  ).toBeVisible({ timeout: 60_000 })
+  await expect(textarea).toBeEnabled()
+
+  let job: Record<string, unknown> | undefined
+  await expect.poll(async () => {
+    const result = await page.request.get(
+      `http://localhost:8000/api/v1/presentations/jobs/ani.mallya/${jobId}`,
+    )
+    expect(result.ok()).toBeTruthy()
+    job = await result.json()
+    return job?.status
+  }, { timeout: 90_000 }).toBe('ready')
+  const presentation = job?.presentation as {
+    current_revision?: { specification?: { slides?: unknown[] } }
+  }
+  expect(presentation.current_revision?.specification?.slides).toHaveLength(2)
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
 // Verify Gemma selects a live MCP tool and the browser exposes its full lifecycle.
 test('@live uses a Gemma-selected MCP tool in chat', async ({ page }) => {
   test.setTimeout(120_000)
@@ -1800,7 +1934,7 @@ test('@live uses the hybrid internet MCP in chat', async ({ page }) => {
 test('generates, restores, and deletes an owned image artifact', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   const artifactId = '12121212-1212-4212-8212-121212121212'
-  const prompt = 'Create deterministic cobalt origami whale'
+  const prompt = 'Create an image of a deterministic cobalt origami whale'
   let conversationId = ''
   let artifact: ReturnType<typeof imageArtifactRecord> | null = null
   let releaseGeneration = () => {}
@@ -1849,11 +1983,10 @@ test('generates, restores, and deletes an owned image artifact', async ({ page }
   })
 
   await page.goto('/')
-  await page.getByRole('button', { name: 'Create image', exact: true }).click()
   const textarea = page.getByLabel('Message AniOS')
   await textarea.fill(prompt)
   const responsePromise = page.waitForResponse('http://localhost:8000/api/v1/images/generate')
-  await page.getByRole('button', { name: 'Generate image' }).click()
+  await page.getByRole('button', { name: 'Send message' }).click()
   await expect(page.getByText('Generating image...', { exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Cancel visual request' })).toBeVisible()
   releaseGeneration()
@@ -1925,16 +2058,14 @@ test('routes an explicit Chat request to image generation', async ({ page }) => 
 
   expect(chatRequests).toBe(0)
   expect(generationBody).toMatchObject({ user_id: 'ani.mallya', prompt })
-  await expect(page.getByRole('button', { name: 'Create image', exact: true }))
-    .toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByLabel('Image: Generated image')).toBeVisible()
   await expect(textarea).toBeEnabled()
   await expect(textarea).toHaveValue('')
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
-// Verify a historical image question leaves Create image mode and uses chat.
-test('routes a Create image followup question to chat without regenerating', async ({ page }) => {
+// Verify a historical image question uses chat without regenerating.
+test('routes an image followup question to chat without regenerating', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   const artifactId = '24242424-2424-4242-8242-242424242424'
   const prompt = 'Create an image of a cobalt sports car'
@@ -1973,21 +2104,18 @@ test('routes a Create image followup question to chat without regenerating', asy
   })
 
   await page.goto('/')
-  await page.getByRole('button', { name: 'Create image', exact: true }).click()
   const textarea = page.getByLabel('Message AniOS')
   await textarea.fill(prompt)
-  await page.getByRole('button', { name: 'Generate image' }).click()
+  await page.getByRole('button', { name: 'Send message' }).click()
   await expect(page.getByLabel('Image: Generated image')).toBeVisible()
 
   await textarea.fill(question)
   const responsePromise = page.waitForResponse('http://localhost:8000/api/v1/chat')
-  await page.getByRole('button', { name: 'Generate image' }).click()
+  await page.getByRole('button', { name: 'Send message' }).click()
   expect((await responsePromise).status()).toBe(200)
 
   expect(generationRequests).toBe(1)
   expect(chatBody).toMatchObject({ user_id: 'ani.mallya', query: question })
-  await expect(page.getByRole('button', { name: 'Chat', exact: true }))
-    .toHaveAttribute('aria-pressed', 'true')
   await expect(latestAssistantAnswer(page).getByText(answer, { exact: true })).toBeVisible()
   await expect(page.getByText('Thinking...', { exact: true })).not.toBeVisible()
   await expect(textarea).toBeEnabled()
@@ -1999,7 +2127,7 @@ test('routes a Create image followup question to chat without regenerating', asy
 test('asks a followup question about a generated image and threads the answer', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   const artifactId = '78787878-7878-4878-8878-787878787878'
-  const prompt = 'Create deterministic cobalt origami whale'
+  const prompt = 'Create an image of a deterministic cobalt origami whale'
   const question = 'What is in this image?'
   const answer = 'The image shows a single cobalt origami whale.'
   let conversationId = ''
@@ -2054,16 +2182,15 @@ test('asks a followup question about a generated image and threads the answer', 
   )
 
   await page.goto('/')
-  await page.getByRole('button', { name: 'Create image', exact: true }).click()
   const textarea = page.getByLabel('Message AniOS')
   await textarea.fill(prompt)
-  await page.getByRole('button', { name: 'Generate image' }).click()
+  await page.getByRole('button', { name: 'Send message' }).click()
 
   const imageCard = page.getByLabel('Image: Generated image')
   await expect(imageCard).toBeVisible()
   await expect(imageCard.getByAltText('Generated visual result')).toBeVisible()
 
-  const askInput = imageCard.getByLabel('Ask a question about this image')
+  const askInput = imageCard.getByLabel('Ask about or refine this image')
   await askInput.fill(question)
   const askResponse = page.waitForResponse(
     `http://localhost:8000/api/v1/vision/artifacts/${artifactId}/ask`,
@@ -2109,8 +2236,7 @@ test('uploads and analyzes an image with visible progress and result', async ({ 
   )
 
   await page.goto('/')
-  await page.getByRole('button', { name: 'Analyze image', exact: true }).click()
-  await page.getByLabel('Choose image').setInputFiles({
+  await attachComposerFile(page, {
     name: 'cobalt-whale.png',
     mimeType: 'image/png',
     buffer: TEST_PNG,
@@ -2118,7 +2244,7 @@ test('uploads and analyzes an image with visible progress and result', async ({ 
   const textarea = page.getByLabel('Message AniOS')
   await textarea.fill('Describe the subject and color.')
   const responsePromise = page.waitForResponse('http://localhost:8000/api/v1/vision/analyze')
-  await page.getByRole('button', { name: 'Analyze image' }).last().click()
+  await page.getByRole('button', { name: 'Send message' }).click()
   await expect(page.getByText('Analyzing image...', { exact: true })).toBeVisible()
   releaseAnalysis()
   expect((await responsePromise).status()).toBe(201)
@@ -2170,16 +2296,15 @@ test('shows an image failure, clears loading, and retries successfully', async (
   )
 
   await page.goto('/')
-  await page.getByRole('button', { name: 'Create image', exact: true }).click()
   const textarea = page.getByLabel('Message AniOS')
-  await textarea.fill('Retry this deterministic image')
-  await page.getByRole('button', { name: 'Generate image' }).click()
+  await textarea.fill('Create an image for deterministic retry')
+  await page.getByRole('button', { name: 'Send message' }).click()
   await expect(page.getByRole('alert').filter({ hasText: 'Unable to generate the image.' }).first()).toBeVisible()
   await expect(textarea).toBeEnabled()
-  await expect(textarea).toHaveValue('Retry this deterministic image')
-  await page.getByRole('button', { name: 'Retry visual request' }).click()
+  await expect(textarea).toHaveValue('Create an image for deterministic retry')
+  await page.getByRole('button', { name: 'Retry', exact: true }).click()
   await expect(page.getByLabel('Image: Generated image')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Retry visual request' })).not.toBeVisible()
+  await expect(page.getByRole('button', { name: 'Retry', exact: true })).not.toBeVisible()
   expect(attempts).toBe(2)
   expect(errors.pageErrors).toEqual([])
   expect(errors.consoleErrors).toEqual([
@@ -2211,8 +2336,7 @@ test('shows every documented image-analysis failure contract', async ({ page }) 
   )
 
   await page.goto('/')
-  await page.getByRole('button', { name: 'Analyze image', exact: true }).click()
-  await page.getByLabel('Choose image').setInputFiles({
+  await attachComposerFile(page, {
     name: 'invalid-contract.png',
     mimeType: 'image/png',
     buffer: TEST_PNG,
@@ -2222,7 +2346,7 @@ test('shows every documented image-analysis failure contract', async ({ page }) 
     status = scenario.status
     detail = scenario.detail
     await textarea.fill(`Validate visible HTTP ${scenario.status}`)
-    await page.getByRole('button', { name: 'Analyze image' }).last().click()
+    await page.getByRole('button', { name: 'Send message' }).click()
     await expect(page.getByRole('alert').filter({ hasText: scenario.message }).first()).toBeVisible()
     await expect(textarea).toBeEnabled()
     await expect(textarea).toHaveValue(`Validate visible HTTP ${scenario.status}`)
@@ -2241,7 +2365,7 @@ test('@live visual generation and analysis complete through the browser', async 
   const errors = observeBlockingBrowserErrors(page)
   const userId = `live_visual_${Date.now()}`
   const conversationId = '90909090-9090-4090-8090-909090909090'
-  const generationPrompt = `A sapphire ceramic seahorse beside a copper sphere LIVE_UI_${Date.now()}`
+  const generationPrompt = `Create an image of a sapphire ceramic seahorse beside a copper sphere LIVE_UI_${Date.now()}`
   const analysisPrompt = 'Identify the animal, dominant colors, and the object beneath it.'
   const createdIds: string[] = []
 
@@ -2253,14 +2377,13 @@ test('@live visual generation and analysis complete through the browser', async 
   try {
     await page.goto('/')
     await expect(page.getByText('Restoring conversation...')).not.toBeVisible()
-    await page.getByRole('button', { name: 'Create image', exact: true }).click()
     const textarea = page.getByLabel('Message AniOS')
     await textarea.fill(generationPrompt)
     const generationResponsePromise = page.waitForResponse(
       response => response.url() === 'http://localhost:8000/api/v1/images/generate',
       { timeout: 120_000 },
     )
-    await page.getByRole('button', { name: 'Generate image' }).click()
+    await page.getByRole('button', { name: 'Send message' }).click()
     await expect(page.getByText('Generating image...', { exact: true })).toBeVisible()
     const generationResponse = await generationResponsePromise
     expect(generationResponse.status()).toBe(201)
@@ -2288,12 +2411,11 @@ test('@live visual generation and analysis complete through the browser', async 
     await expect(page.getByText('Restoring conversation...')).not.toBeVisible()
     await expect(page.getByLabel('Image: Generated image').getByAltText('Generated visual result')).toBeVisible()
 
-    await page.getByRole('button', { name: 'Analyze image', exact: true }).click()
     const generatedContent = await page.request.get(
       `http://localhost:8000/api/v1/artifacts/${userId}/${generatedId}/content`,
     )
     expect(generatedContent.status()).toBe(200)
-    await page.getByLabel('Choose image').setInputFiles({
+    await attachComposerFile(page, {
       name: 'generated-live-image.png',
       mimeType: 'image/png',
       buffer: await generatedContent.body(),
@@ -2303,7 +2425,7 @@ test('@live visual generation and analysis complete through the browser', async 
       response => response.url() === 'http://localhost:8000/api/v1/vision/analyze',
       { timeout: 120_000 },
     )
-    await page.getByRole('button', { name: 'Analyze image' }).last().click()
+    await page.getByRole('button', { name: 'Send message' }).click()
     await expect(page.getByText('Analyzing image...', { exact: true })).toBeVisible()
     const analysisResponse = await analysisResponsePromise
     expect(analysisResponse.status()).toBe(201)
@@ -2394,8 +2516,6 @@ test('@live image conversation routes through generation, chat, search, and memo
     const generated = await generationResponse.json() as Record<string, unknown>
     expect((generated.metadata as Record<string, unknown>).generation_prompt)
       .toBe(generationPrompt)
-    await expect(page.getByRole('button', { name: 'Create image', exact: true }))
-      .toHaveAttribute('aria-pressed', 'true')
     await expect(page.getByLabel('Image: Generated image')).toBeVisible()
     await expect(page.getByText('Generating image...', { exact: true })).not.toBeVisible()
     await expect(textarea).toBeEnabled()
@@ -2405,13 +2525,11 @@ test('@live image conversation routes through generation, chat, search, and memo
       response => response.url() === 'http://localhost:8000/api/v1/chat',
       { timeout: 120_000 },
     )
-    await page.getByRole('button', { name: 'Generate image' }).click()
+    await page.getByRole('button', { name: 'Send message' }).click()
     const followupResponse = await followupResponsePromise
     expect(followupResponse.status()).toBe(200)
     expect(await followupResponse.finished()).toBeNull()
     expect(generationRequests).toBe(1)
-    await expect(page.getByRole('button', { name: 'Chat', exact: true }))
-      .toHaveAttribute('aria-pressed', 'true')
     await expect(latestAssistantAnswer(page)).toContainText(/cobalt blue sports car/i)
     await expect(page.getByText('Thinking...', { exact: true })).not.toBeVisible()
     await expect(textarea).toBeEnabled()
@@ -2480,13 +2598,12 @@ test('@live cancelled image generation becomes a terminal failed artifact', asyn
   try {
     await page.goto('/')
     await expect(page.getByText('Restoring conversation...')).not.toBeVisible()
-    await page.getByRole('button', { name: 'Create image', exact: true }).click()
     const textarea = page.getByLabel('Message AniOS')
-    await textarea.fill(`Cancellation probe cobalt glass compass ${Date.now()}`)
+    await textarea.fill(`Create an image of a cancellation probe cobalt glass compass ${Date.now()}`)
     const requestPromise = page.waitForRequest(
       request => request.url() === 'http://localhost:8000/api/v1/images/generate',
     )
-    await page.getByRole('button', { name: 'Generate image' }).click()
+    await page.getByRole('button', { name: 'Send message' }).click()
     await requestPromise
     await expect.poll(async () => {
       const response = await page.request.get(`http://localhost:8000/api/v1/artifacts/${userId}`)

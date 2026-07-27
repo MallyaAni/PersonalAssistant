@@ -15,7 +15,7 @@ flowchart TB
     CandidateService --> Agent[DiagramAgent]
     Agent --> Graph[LangGraph generate_diagram node]
     Graph --> Provider[LLMDiagramProvider]
-    Provider --> Gemma[Local LM Studio Gemma]
+    Provider --> Gemma[Model call: LLM_MODEL<br/>google/gemma-4-12b<br/>local LM Studio]
     Gemma --> Validate[Passive Mermaid validator<br/>type, size, lines, and active-content rejection]
     Validate --> Labels{Required labels present?}
     Labels -->|no; once| Correction[Bounded semantic correction<br/>previous source plus missing labels]

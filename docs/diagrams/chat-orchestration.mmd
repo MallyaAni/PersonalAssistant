@@ -12,15 +12,22 @@ flowchart TB
     Route -->|yes| Artifact[DiagramArtifactService<br/>separate detailed diagram]
     Artifact --> DiagramAgent[DiagramAgent<br/>specialized LangGraph workflow]
     DiagramAgent --> DiagramProvider[LLMDiagramProvider<br/>bounded JSON and Mermaid]
-    DiagramProvider --> DiagramGemma[LM Studio Gemma]
+    DiagramProvider -->|model call: DIAGRAM_LLM_MODEL| DiagramModel[qwen/qwen3.5-9b<br/>diagram specification]
     Artifact --> SSE
 
-    Route -->|no| Retrieval{Retrieval routing cascade<br/>free patterns, then a bounded yes/no classifier<br/>SEARCH_CLASSIFIER_MODEL, else Gemma-4-12B<br/>application owned, model never selects}
+    Route -->|no| Supervisor[MainSupervisorAgent<br/>typed LangGraph route_capability node]
+    Supervisor --> Decision{Registered capability decision}
+    Decision -->|delegate_agent:<br/>presentation_agent| AgentStart[agent_started<br/>PresentationAgent plus exact model]
+    AgentStart --> Queue[PresentationJobService<br/>durable background enqueue]
+    Queue --> AgentFinish[agent_finished: queued<br/>job ID plus exact model]
+    AgentFinish --> Persist
+    AgentFinish --> SSE
+    Decision -->|respond| Retrieval{Retrieval routing cascade<br/>free patterns, then bounded classifiers<br/>SEARCH_CLASSIFIER_MODEL, otherwise main role<br/>application owned, model never selects}
     Retrieval -->|volatile-shape signal| SearchPolicy[Normalize and privacy-screen query]
     SearchPolicy --> InternetMCP[Internet MCP adapter<br/>fixed read-only search_web]
     InternetMCP --> SearchGates[MCP live validation and invocation gates]
     SearchGates --> HybridSearch{Hybrid research policy}
-    HybridSearch -->|normal: primary when configured| GoogleResearch[Isolated Gemini 2.5 Flash researcher<br/>single turn, no history or personal memory]
+    HybridSearch -->|when explicitly enabled and entitled| GoogleResearch[GOOGLE_SEARCH_MODEL: gemini-3.6-flash<br/>single turn, no history or personal memory]
     GoogleResearch --> GoogleGrounding[Native Google Search Grounding<br/>attributable sources required]
     HybridSearch -->|Google unavailable, empty, failed,<br/>or daily budget exhausted| Tavily[TavilySearchProvider<br/>relevance floor]
     HybridSearch -->|explicit verify or cross-check| Both[Run both providers once<br/>merge and deduplicate]
@@ -29,13 +36,15 @@ flowchart TB
     GoogleGrounding --> WebResults[Bounded untrusted web results<br/>provider attribution retained]
     Tavily --> WebResults
     Both --> WebResults
-    Retrieval -->|image recall signal| ImageSearch[Aligned image vector search<br/>distance ceiling, leading cluster,<br/>subject match on prompt or analysis]
+    Retrieval -->|semantic or vector retrieval selected| QueryEmbedding[Model call: EMBEDDING_MODEL<br/>text-embedding-nomic-embed-text-v1.5<br/>one shared query vector]
+    QueryEmbedding -->|image recall signal| ImageSearch[Aligned image vector search<br/>distance ceiling, leading cluster,<br/>subject match on prompt or analysis]
     ImageSearch -->|explicit web request only:<br/>append bounded prompt or analysis| SearchPolicy
     WebResults --> Context
     WebResults --> SSE
     ImageSearch --> Context
     ImageSearch --> SSE
     Retrieval --> Plan[MemoryCoordinatorAgent<br/>deterministic query plan]
+    QueryEmbedding --> Plan
     Plan --> Personal[Profile plus episodic and semantic]
     Plan --> Typed[Working, entity, knowledge,<br/>summary, procedure, toolbox]
     Service --> History[ConversationRepository<br/>bounded same-user history]
@@ -43,8 +52,8 @@ flowchart TB
     Typed --> Context
     Typed --> ToolShortlist[Semantic MCP descriptor shortlist]
     ToolShortlist --> LiveResolve[Re-read live schemas<br/>exclude consequential servers]
-    LiveResolve --> ToolGemma[Gemma native tool_calls<br/>at most one bounded candidate]
-    ToolGemma --> ToolGates[MCP contract, argument,<br/>privacy and trust gates]
+    LiveResolve --> ToolModel[Conditional model call: MAIN_LLM_MODEL<br/>qwen/qwen3.5-9b native tool_calls<br/>at most one bounded candidate]
+    ToolModel --> ToolGates[MCP contract, argument,<br/>privacy and trust gates]
     ToolGates --> MCPServer[[Configured MCP server]]
     MCPServer --> ToolContext[Bounded result as<br/>untrusted prompt data]
     ToolContext --> Context
@@ -53,9 +62,9 @@ flowchart TB
     Context --> State
     State --> Graph[LangGraph<br/>one assistant node]
     Graph --> Prompt[System prompt: current date, literal memory,<br/>quoted untrusted web, tool and image results,<br/>history, and current query]
-    Prompt --> LLMQueue[Shared chat-model request queue<br/>prevents overlapping local generations]
-    LLMQueue --> Gemma[LM Studio Gemma<br/>stream_chat]
-    Gemma -->|message.delta| Graph
+    Prompt --> LLMQueue[Redis foreground-priority gate<br/>chat holds one expiring model lease;<br/>presentation worker yields between slides]
+    LLMQueue --> MainModel[Model call: MAIN_LLM_MODEL<br/>qwen/qwen3.5-9b<br/>stream_chat]
+    MainModel -->|message.delta| Graph
     Graph --> Persist[Persist completed conversation turn]
     Persist --> Lifecycle[Update working state and<br/>periodic conversation summary]
     Persist --> Proposal[At most one deterministic<br/>memory proposal]
@@ -80,7 +89,7 @@ flowchart TB
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef failure fill:#fff3cd,stroke:#b78b20,color:#4d3900;
     class User,Composer,ImageAnswer,Parser,Answer,Reload,RestoreUI,Disconnect interface;
-    class Intent,ImageAPI,ChatAPI,SnapshotAPI,Ownership,Service,Trace,Route,Retrieval,SearchPolicy,InternetMCP,SearchGates,HybridSearch,GoogleResearch,Both,WebResults,Plan,Context,State,Graph,Prompt,LLMQueue,Persist,Lifecycle,Proposal,SSE,Artifact,DiagramAgent,DiagramProvider,CancelCleanup,ToolShortlist,LiveResolve,ToolGemma,ToolGates,ToolContext application;
+    class Intent,ImageAPI,ChatAPI,SnapshotAPI,Ownership,Service,Trace,Route,Supervisor,Decision,AgentStart,Queue,AgentFinish,Retrieval,SearchPolicy,InternetMCP,SearchGates,HybridSearch,GoogleResearch,Both,WebResults,Plan,Context,State,Graph,Prompt,LLMQueue,Persist,Lifecycle,Proposal,SSE,Artifact,DiagramAgent,DiagramProvider,CancelCleanup,ToolShortlist,LiveResolve,ToolModel,ToolGates,ToolContext,QueryEmbedding application;
     class Personal,Typed,History,RestoreHistory data;
-    class Gemma,DiagramGemma,GoogleGrounding,Tavily,MCPServer external;
+    class MainModel,DiagramModel,GoogleGrounding,Tavily,MCPServer external;
     class Failure failure;

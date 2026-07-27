@@ -64,6 +64,8 @@ interface ChatEvent {
     | 'search_blocked'
     | 'tool_started'
     | 'tool_finished'
+    | 'agent_started'
+    | 'agent_finished'
     | 'artifact_error'
     | 'done'
     | 'error';
@@ -233,6 +235,33 @@ export interface PresentationRecord {
   updated_at: string;
 }
 
+export interface AgentActivity {
+  agentId: string;
+  agentName: string;
+  model?: string;
+  jobId?: string;
+  status: 'running' | 'queued' | 'failed';
+  message?: string;
+}
+
+export interface PresentationJob {
+  id: string;
+  presentation_id: string;
+  revision_id: string;
+  user_id: string;
+  status: 'queued' | 'running' | 'ready' | 'failed' | 'cancelled';
+  expected_slide_count: number | null;
+  attempt_count: number;
+  cancel_requested: boolean;
+  error_code: string | null;
+  draft_specification: PresentationDeckSpec | null;
+  presentation: PresentationRecord | null;
+  created_at: string;
+  started_at: string | null;
+  updated_at: string;
+  completed_at: string | null;
+}
+
 interface PresentationEvent {
   event: 'started' | 'draft' | 'ready' | 'error' | 'done';
   data: Record<string, unknown>;
@@ -334,9 +363,11 @@ export type ChatStreamUpdate =
   | { type: 'search_sources'; sources: SearchSource[] }
   | { type: 'tool_started'; activity: ToolActivity }
   | { type: 'tool_finished'; activity: ToolActivity }
+  | { type: 'agent_started'; activity: AgentActivity }
+  | { type: 'agent_finished'; activity: AgentActivity }
   | { type: 'artifact_error'; artifactId: string; message: string }
 
-// Send a JSON API request and surface server errors as exceptions.
+// Send one authenticated JSON request and accept intentional empty responses.
 async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
@@ -350,6 +381,7 @@ async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
     const detail = await response.json().catch(() => ({}))
     throw new Error(apiErrorMessage(detail, response.status))
   }
+  if (response.status === 204) return undefined as T
   return response.json()
 }
 
@@ -373,13 +405,13 @@ export function getPresentation(
   )
 }
 
-// Create one editable presentation through the focused local subagent.
+// Queue one editable presentation and return its durable job handle.
 export function createPresentation(
   userId: string,
   conversationId: string,
   prompt: string,
 ) {
-  return apiRequest<PresentationRecord>('/api/v1/presentations', {
+  return apiRequest<PresentationJob>('/api/v1/presentations', {
     method: 'POST',
     body: JSON.stringify({
       user_id: userId,
@@ -387,6 +419,26 @@ export function createPresentation(
       prompt,
     }),
   })
+}
+
+// Read reconnectable progress for one durable presentation job.
+export function getPresentationJob(
+  userId: string,
+  jobId: string,
+  signal?: AbortSignal,
+) {
+  return apiRequest<PresentationJob>(
+    `/api/v1/presentations/jobs/${encodeURIComponent(userId)}/${encodeURIComponent(jobId)}`,
+    { signal },
+  )
+}
+
+// Request cooperative cancellation for one queued or running deck.
+export function cancelPresentationJob(userId: string, jobId: string) {
+  return apiRequest<void>(
+    `/api/v1/presentations/jobs/${encodeURIComponent(userId)}/${encodeURIComponent(jobId)}`,
+    { method: 'DELETE' },
+  )
 }
 
 // Stream application-compiled slide previews before the final PPTX is promoted.
@@ -1255,6 +1307,47 @@ export async function* streamChat(userId: string, conversationId: string, query:
             message,
           },
         } satisfies ChatStreamUpdate
+      } else if (event.event === 'agent_started') {
+        const { agent_id, agent_name, model } = event.data
+        if (
+          typeof agent_id !== 'string' ||
+          typeof agent_name !== 'string' ||
+          (model !== null && model !== undefined && typeof model !== 'string')
+        ) {
+          throw new Error('Agent start event is invalid')
+        }
+        yield {
+          type: 'agent_started',
+          activity: {
+            agentId: agent_id,
+            agentName: agent_name,
+            model: typeof model === 'string' ? model : undefined,
+            status: 'running',
+          },
+        } satisfies ChatStreamUpdate
+      } else if (event.event === 'agent_finished') {
+        const { agent_id, agent_name, model, job_id, status, message } = event.data
+        if (
+          typeof agent_id !== 'string' ||
+          typeof agent_name !== 'string' ||
+          !['queued', 'failed'].includes(String(status)) ||
+          typeof message !== 'string' ||
+          (model !== null && model !== undefined && typeof model !== 'string') ||
+          (job_id !== undefined && typeof job_id !== 'string')
+        ) {
+          throw new Error('Agent finish event is invalid')
+        }
+        yield {
+          type: 'agent_finished',
+          activity: {
+            agentId: agent_id,
+            agentName: agent_name,
+            model: typeof model === 'string' ? model : undefined,
+            jobId: typeof job_id === 'string' ? job_id : undefined,
+            status: status as AgentActivity['status'],
+            message,
+          },
+        } satisfies ChatStreamUpdate
       } else if (event.event === 'image_matches') {
         const { artifacts } = event.data as { artifacts?: unknown }
         if (!Array.isArray(artifacts)) {
@@ -1324,6 +1417,8 @@ function parseChatEvent(frame: string): ChatEvent {
     'search_blocked',
     'tool_started',
     'tool_finished',
+    'agent_started',
+    'agent_finished',
     'done',
     'error',
   ].includes(eventName)) {

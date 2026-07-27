@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.agents.diagram import DiagramAgent
 from backend.agents.presentation import PresentationAgent
+from backend.agents.supervisor import MainSupervisorAgent
 from backend.artifacts.diagram import LLMDiagramProvider
 from backend.artifacts.image import ComfyUIImageProvider
 from backend.artifacts.image_recall_classifier import LMStudioImageRecallClassifier
@@ -21,6 +22,7 @@ from backend.core.interfaces import (
     VisionEmbeddingProvider,
 )
 from backend.core.llm import LLMClient, LMStudioLLM
+from backend.core.model_gate import ModelExecutionGate
 from backend.database.session import get_db
 from backend.embeddings.base import EmbeddingProvider
 from backend.embeddings.lm_studio import LMStudioEmbeddingProvider
@@ -52,6 +54,10 @@ from backend.services.memory_reembedding_service import MemoryReembeddingService
 from backend.services.memory_retention_service import MemoryRetentionService
 from backend.services.postgres_memory_service import PostgresMemoryService
 from backend.services.presentation_image_service import PresentationImageService
+from backend.services.presentation_job_repository import (
+    SQLAlchemyPresentationJobRepository,
+)
+from backend.services.presentation_job_service import PresentationJobService
 from backend.services.presentation_repository import SQLAlchemyPresentationRepository
 from backend.services.presentation_service import PresentationService
 from backend.services.repository import SQLAlchemyConversationRepository
@@ -149,13 +155,51 @@ def get_memory_service(
     )
 
 
-def get_llm_client() -> LLMClient:
+# Build one LM Studio client from a model role's resolved configuration.
+def _build_llm_client(
+    base_url: str,
+    model: str,
+    reasoning_effort: str,
+) -> LLMClient:
     return LMStudioLLM(
-        base_url=settings.LLM_BASE_URL,
-        model=settings.LLM_MODEL,
+        base_url=base_url,
+        model=model,
         api_key=settings.LLM_API_KEY,
         timeout_seconds=settings.LLM_TIMEOUT_SECONDS,
-        reasoning_effort=settings.LLM_REASONING_EFFORT,
+        reasoning_effort=reasoning_effort,
+    )
+
+
+# Build the primary conversation and supervisor model with legacy fallbacks.
+def get_llm_client() -> LLMClient:
+    return _build_llm_client(
+        settings.MAIN_LLM_BASE_URL or settings.LLM_BASE_URL,
+        settings.MAIN_LLM_MODEL or settings.LLM_MODEL,
+        settings.MAIN_LLM_REASONING_EFFORT,
+    )
+
+
+# Build the focused presentation model independently from the main agent.
+def get_presentation_llm_client() -> LLMClient:
+    return _build_llm_client(
+        settings.PRESENTATION_LLM_BASE_URL
+        or settings.MAIN_LLM_BASE_URL
+        or settings.LLM_BASE_URL,
+        settings.PRESENTATION_LLM_MODEL
+        or settings.MAIN_LLM_MODEL
+        or settings.LLM_MODEL,
+        settings.PRESENTATION_LLM_REASONING_EFFORT,
+    )
+
+
+# Build the diagram-planning model independently from the main agent.
+def get_diagram_llm_client() -> LLMClient:
+    return _build_llm_client(
+        settings.DIAGRAM_LLM_BASE_URL
+        or settings.MAIN_LLM_BASE_URL
+        or settings.LLM_BASE_URL,
+        settings.DIAGRAM_LLM_MODEL or settings.MAIN_LLM_MODEL or settings.LLM_MODEL,
+        settings.DIAGRAM_LLM_REASONING_EFFORT,
     )
 
 
@@ -177,6 +221,14 @@ MemoryDependency = Annotated[
     Depends(get_memory_service),
 ]
 LlmDependency = Annotated[LLMClient, Depends(get_llm_client)]
+PresentationLlmDependency = Annotated[
+    LLMClient,
+    Depends(get_presentation_llm_client),
+]
+DiagramLlmDependency = Annotated[
+    LLMClient,
+    Depends(get_diagram_llm_client),
+]
 RepositoryDependency = Annotated[
     SQLAlchemyConversationRepository,
     Depends(get_conversation_repository),
@@ -226,6 +278,23 @@ BinaryArtifactStoreDependency = Annotated[
 ]
 
 
+# Reuse one Redis-backed priority gate across model-backed request lifecycles.
+@lru_cache(maxsize=1)
+def get_model_execution_gate() -> ModelExecutionGate:
+    return ModelExecutionGate(
+        settings.REDIS_URL,
+        settings.MODEL_GATE_ENABLED,
+        settings.MODEL_GATE_LEASE_SECONDS,
+        settings.MODEL_GATE_POLL_SECONDS,
+    )
+
+
+ModelGateDependency = Annotated[
+    ModelExecutionGate,
+    Depends(get_model_execution_gate),
+]
+
+
 # Reuse one stateless PptxGenJS worker adapter across application requests.
 @lru_cache(maxsize=1)
 def get_presentation_renderer() -> PptxGenJSRenderer:
@@ -237,14 +306,28 @@ def get_presentation_renderer() -> PptxGenJSRenderer:
     )
 
 
-# Build the local Gemma presentation planner without storage or file authority.
-def get_presentation_agent(llm: LlmDependency) -> PresentationAgent:
+# Build the configured presentation planner without storage or file authority.
+def get_presentation_agent(llm: PresentationLlmDependency) -> PresentationAgent:
     return PresentationAgent(
         LLMPresentationProvider(
             llm,
             settings.PRESENTATION_MAX_TOKENS,
             settings.PRESENTATION_PLAN_MAX_TOKENS,
             settings.PRESENTATION_REVISION_MAX_TOKENS,
+        )
+    )
+
+
+# Build the presentation planner with lower-priority per-slide model leases.
+def get_background_presentation_agent() -> PresentationAgent:
+    return PresentationAgent(
+        LLMPresentationProvider(
+            get_presentation_llm_client(),
+            settings.PRESENTATION_MAX_TOKENS,
+            settings.PRESENTATION_PLAN_MAX_TOKENS,
+            settings.PRESENTATION_REVISION_MAX_TOKENS,
+            model_gate=get_model_execution_gate(),
+            background=True,
         )
     )
 
@@ -281,7 +364,11 @@ def get_presentation_service(
         repository,
         store,
         provider_name="lm_studio",
-        model_name=settings.LLM_MODEL,
+        model_name=(
+            settings.PRESENTATION_LLM_MODEL
+            or settings.MAIN_LLM_MODEL
+            or settings.LLM_MODEL
+        ),
         artifact_repository=artifacts,
     )
 
@@ -289,6 +376,53 @@ def get_presentation_service(
 PresentationDependency = Annotated[
     PresentationService,
     Depends(get_presentation_service),
+]
+
+
+# Bind durable presentation-job persistence to the current request session.
+def get_presentation_job_repository(
+    db: DbDependency,
+) -> SQLAlchemyPresentationJobRepository:
+    return SQLAlchemyPresentationJobRepository(db)
+
+
+PresentationJobRepositoryDependency = Annotated[
+    SQLAlchemyPresentationJobRepository,
+    Depends(get_presentation_job_repository),
+]
+
+
+# Queue and inspect presentation work without executing the model in the API.
+def get_presentation_job_service(
+    jobs: PresentationJobRepositoryDependency,
+    presentations: PresentationRepositoryDependency,
+) -> PresentationJobService:
+    return PresentationJobService(
+        jobs,
+        presentations,
+        provider_name="lm_studio",
+        model_name=(
+            settings.PRESENTATION_LLM_MODEL
+            or settings.MAIN_LLM_MODEL
+            or settings.LLM_MODEL
+        ),
+    )
+
+
+PresentationJobDependency = Annotated[
+    PresentationJobService,
+    Depends(get_presentation_job_service),
+]
+
+
+# Build the typed first-step router without granting it execution authority.
+def get_main_supervisor_agent() -> MainSupervisorAgent:
+    return MainSupervisorAgent()
+
+
+MainSupervisorDependency = Annotated[
+    MainSupervisorAgent,
+    Depends(get_main_supervisor_agent),
 ]
 
 
@@ -425,9 +559,12 @@ VisionAnalysisDependency = Annotated[
 ]
 
 
-# Build the replaceable diagram provider around the configured local model.
-def get_diagram_provider(llm: LlmDependency) -> LLMDiagramProvider:
-    return LLMDiagramProvider(llm, settings.LLM_MODEL)
+# Build the replaceable diagram provider around its configured local model.
+def get_diagram_provider(llm: DiagramLlmDependency) -> LLMDiagramProvider:
+    return LLMDiagramProvider(
+        llm,
+        settings.DIAGRAM_LLM_MODEL or settings.MAIN_LLM_MODEL or settings.LLM_MODEL,
+    )
 
 
 DiagramProviderDependency = Annotated[
@@ -456,7 +593,9 @@ def get_diagram_artifact_service(
         agent,
         repository,
         provider_name="lm_studio",
-        model_name=settings.LLM_MODEL,
+        model_name=(
+            settings.DIAGRAM_LLM_MODEL or settings.MAIN_LLM_MODEL or settings.LLM_MODEL
+        ),
     )
 
 
@@ -619,7 +758,7 @@ def get_classifier_llm() -> LLMClient:
     if not settings.SEARCH_CLASSIFIER_MODEL:
         return get_llm_client()
     return LMStudioLLM(
-        base_url=settings.LLM_BASE_URL,
+        base_url=settings.MAIN_LLM_BASE_URL or settings.LLM_BASE_URL,
         model=settings.SEARCH_CLASSIFIER_MODEL,
         api_key=settings.LLM_API_KEY,
         timeout_seconds=settings.LLM_TIMEOUT_SECONDS,
@@ -686,6 +825,8 @@ def get_conversation_service(
     artifacts: ArtifactRepositoryDependency,
     image_recall: ImageRecallDependency,
     tool_orchestration: MCPToolOrchestrationDependency,
+    supervisor: MainSupervisorDependency,
+    presentation_jobs: PresentationJobDependency,
 ) -> ConversationService:
     return ConversationService(
         memory=memory,
@@ -705,6 +846,13 @@ def get_conversation_service(
             cluster_delta=settings.VISION_SEARCH_CLUSTER_DELTA,
         ),
         tool_orchestration=tool_orchestration,
+        supervisor=supervisor,
+        presentation_jobs=presentation_jobs,
+        presentation_model=(
+            settings.PRESENTATION_LLM_MODEL
+            or settings.MAIN_LLM_MODEL
+            or settings.LLM_MODEL
+        ),
     )
 
 

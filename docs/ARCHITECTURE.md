@@ -14,7 +14,7 @@ The absence of one of these labels does not imply runtime verification.
 
 ![AniOS current system architecture](diagrams/anios-system.svg)
 
-The editable source is [anios-system.mmd](diagrams/anios-system.mmd). It describes current implemented and explicitly scaffolded relationships only, including editable diagrams, generated and uploaded raster artifacts, local binary storage, ComfyUI, Gemma vision analysis, and their browser integration. Aligned multimodal image embeddings and hybrid opt-in web research are included. Durable queues, GPU leases, and general multi-agent workers remain outside the current diagram until their runtime boundaries exist. The render/check procedure is documented in [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md#architecture-diagram-maintenance).
+The editable source is [anios-system.mmd](diagrams/anios-system.mmd). It describes current implemented and explicitly scaffolded relationships only, including the typed main-supervisor route, editable diagrams, generated and uploaded raster artifacts, local binary storage, ComfyUI, Gemma vision analysis, their browser integration, and the durable presentation worker. Aligned multimodal image embeddings and hybrid opt-in web research are included. General dynamic agent teams, A2A, and GPU-capacity leases remain outside the current diagram until their runtime boundaries exist. The render/check procedure is documented in [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md#architecture-diagram-maintenance).
 
 ## Detailed subsystem diagrams
 
@@ -23,11 +23,11 @@ AniOS currently has a modular FastAPI backend rather than independently deployed
 | Current view | Technical scope | Source | SVG |
 | --- | --- | --- | --- |
 | Runtime and deployment | Processes, ports, protocols, Compose, LM Studio, database sessions, migration and maintenance paths | [source](diagrams/runtime-deployment.mmd) | [view](diagrams/runtime-deployment.svg) |
-| Chat orchestration | Request ownership, deterministic web-search and image-recall routing, memory planning, history, LangGraph/Gemma streaming, persistence, proposals, artifact branch, SSE | [source](diagrams/chat-orchestration.mmd) | [view](diagrams/chat-orchestration.svg) |
+| Chat orchestration | Request ownership, typed supervisor delegation, deterministic web-search and image-recall routing, memory planning, history, LangGraph streaming, persistence, proposals, artifact branch, SSE | [source](diagrams/chat-orchestration.mmd) | [view](diagrams/chat-orchestration.svg) |
 | Search and research | Query minimization, cloud-worker isolation, Google/Tavily provider policy, quota, MCP serialization, and source provenance | [source](diagrams/search-research-subsystem.mmd) | [view](diagrams/search-research-subsystem.svg) |
 | Memory subsystem | All short/long-term forms, write authority, coordinator, typed services, pgvector retrieval, lifecycle and operations | [source](diagrams/memory-subsystem.mmd) | [view](diagrams/memory-subsystem.svg) |
 | Memory overview (manager) | Plain-language first-contact walkthrough of a memory turn, the approval gate, short-term vs long-term stores, and user data control | [source](diagrams/memory-overview.mmd) | [view](diagrams/memory-overview.svg) |
-| Tool memory and MCP execution | Safe descriptors, approved preferences, sanitized outcomes, semantic tool discovery, Gemma selection, policy-gated invocation, and bounded untrusted results | [source](diagrams/tool-memory-subsystem.mmd) | [view](diagrams/tool-memory-subsystem.svg) |
+| Tool memory and MCP execution | Safe descriptors, approved preferences, sanitized outcomes, semantic tool discovery, main-model selection, policy-gated invocation, and bounded untrusted results | [source](diagrams/tool-memory-subsystem.mmd) | [view](diagrams/tool-memory-subsystem.svg) |
 | Visual artifacts | Diagram classification/rendering, HiDream generation, validated uploads, opaque binary storage, integrity/deletion, Gemma vision analysis, threaded followup questions, aligned image embeddings and margin-bounded retrieval | [source](diagrams/visual-artifact-subsystem.mmd) | [view](diagrams/visual-artifact-subsystem.svg) |
 | Architecture maintenance | Explicit repository evidence, local Gemma candidate generation, passive/required-label validation, pinned rendering, review, and manual canonical promotion | [source](diagrams/architecture-maintenance-subsystem.mmd) | [view](diagrams/architecture-maintenance-subsystem.svg) |
 | Frontend | Identity/conversation state, view lifecycle, chat components, memory management, typed API/SSE client, diagram rendering | [source](diagrams/frontend-subsystem.mmd) | [view](diagrams/frontend-subsystem.svg) |
@@ -39,16 +39,17 @@ AniOS currently has a modular FastAPI backend rather than independently deployed
 | Service | Implementation | Host port | Current architectural role |
 | --- | --- | --- | --- |
 | `backend` | FastAPI/Uvicorn image built from the root `Dockerfile` | `8000` | HTTP API |
+| `presentation-worker` | Same backend image with a dedicated worker command | n/a | Claims durable presentation jobs and executes the focused presentation LangGraph independently of request lifetimes |
 | `frontend` | React/Vite dev-server container built from `frontend/Dockerfile.dev` | `5173` | Developer console with bind-mounted source and hot reload |
 | `db` | `pgvector/pgvector:pg16` | `5432` | PostgreSQL conversation/personal-memory persistence and pgvector semantic search |
-| `redis` | `redis:7-alpine` | `6379` | `SCAFFOLDED`: container exists; backend code does not use a Redis client |
+| `redis` | `redis:7-alpine` | `6379` | Shared expiring model-execution lease and foreground-wait counter; no prompt or response content is stored |
 | `comfyui` | CUDA/PyTorch image (`docker/comfyui/`) that bind-mounts the host ComfyUI install | `8188` | Opt-in (`comfyui` profile) GPU image generation |
 | image embeddings | `nomic-embed-vision-v1.5` ONNX, in-process on CPU | n/a | Aligned 768-dim image vectors for multimodal retrieval |
 | web research | Built-in stdio MCP server; isolated Gemini 3.6 Flash/Google Search worker with Tavily fallback | n/a | Opt-in; Tavily is active with `SEARCH_API_KEY`, while Google primary requires `GOOGLE_API_KEY` or `GEMINI_API_KEY` |
 
 The `frontend` container bind-mounts `./frontend` and runs Vite with polling so hot reload works across the Docker mount; its browser page still calls the backend at `localhost:8000`. The backend image has no source bind mount and does not use reload mode, so backend source changes require an image rebuild for container validation; a host-source Uvicorn run remains supported for backend development and must not share port `8000` with the Compose backend.
 
-LM Studio is an external host process rather than a Compose service; the container backend reaches it at `http://host.docker.internal:1234` (host-source runs use `http://127.0.0.1:1234`). It selects `google/gemma-4-12b` for chat and validated image understanding and `text-embedding-nomic-embed-text-v1.5` for 768-dimensional text embeddings. ComfyUI now runs as the opt-in `comfyui` Compose service: it bind-mounts the existing host install (`COMFYUI_HOST_PATH`, default `E:/AI/ComfyUI`, including the `hidream_o1_image_dev_fp8_scaled.safetensors` checkpoint), requests the NVIDIA GPU through Compose device reservations, and provides a Blackwell-capable CUDA 12.8 PyTorch runtime; the container backend reaches it at `http://comfyui:8188`, while a host-run ComfyUI uses `http://host.docker.internal:8188`. Generated and uploaded bytes live below the configurable opaque local artifact root; Compose mounts `/app/data/artifacts` from the `artifactdata` volume. Because the `comfyui` image build downloads a multi-GB CUDA/PyTorch base, it needs sufficient free space on the Docker Desktop disk (the WSL2 image, by default on `C:`).
+LM Studio is an external host process rather than a Compose service; the container backend reaches it at `http://host.docker.internal:1234` (host-source runs use `http://127.0.0.1:1234`). Role-specific settings select `qwen/qwen3.5-9b` for the main response/tool-selection role and diagram planning, `google/gemma-4-12b` for progressive presentation planning and validated image understanding, and `text-embedding-nomic-embed-text-v1.5` for 768-dimensional text embeddings. The legacy `LLM_MODEL` remains a fallback for an unset role. ComfyUI now runs as the opt-in `comfyui` Compose service: it bind-mounts the existing host install (`COMFYUI_HOST_PATH`, default `E:/AI/ComfyUI`, including the `hidream_o1_image_dev_fp8_scaled.safetensors` checkpoint), requests the NVIDIA GPU through Compose device reservations, and provides a Blackwell-capable CUDA 12.8 PyTorch runtime; the container backend reaches it at `http://comfyui:8188`, while a host-run ComfyUI uses `http://host.docker.internal:8188`. Generated and uploaded bytes live below the configurable opaque local artifact root; Compose mounts `/app/data/artifacts` from the `artifactdata` volume. Because the `comfyui` image build downloads a multi-GB CUDA/PyTorch base, it needs sufficient free space on the Docker Desktop disk (the WSL2 image, by default on `C:`).
 
 ### Model calls per stage
 
@@ -62,35 +63,39 @@ A chat turn, in order:
 
 | Stage | Model | Runs on | When |
 | --- | --- | --- | --- |
-| Query embedding | `nomic-embed-text-v1.5` | GPU (LM Studio) | every turn; feeds memory and image-recall search |
+| Main supervisor route | none for explicit registered intents (typed deterministic LangGraph policy) | CPU | every chat turn before retrieval; currently delegates explicit presentation creation |
+| Query embedding | `text-embedding-nomic-embed-text-v1.5` (`EMBEDDING_MODEL`) | GPU (LM Studio) | when personal semantic or agent-vector retrieval is selected; one vector is reused across stores and image recall |
 | Memory retrieval planning | none (deterministic patterns) | CPU | every turn |
-| Web-search routing | classifier: `SEARCH_CLASSIFIER_MODEL`, else `gemma-4-12b` | GPU | when patterns abstain (most non-temporal turns) |
+| Web-search routing | `SEARCH_CLASSIFIER_MODEL`, else the main role (`MAIN_LLM_MODEL`, then `LLM_MODEL`) | GPU | when patterns abstain (most non-temporal turns) |
 | Image-recall routing | the same classifier model | GPU | only when the query plausibly names a stored image (gated) |
-| Tool selection | `gemma-4-12b` native tool-calls | GPU | only when MCP tools are relevant |
-| Response generation | `gemma-4-12b` (`LLM_MODEL`) | GPU | every turn; the streamed answer |
+| Tool selection | `qwen/qwen3.5-9b` (`MAIN_LLM_MODEL`) native tool-calls | GPU | only when MCP tools are relevant |
+| Response generation | `qwen/qwen3.5-9b` (`MAIN_LLM_MODEL`) | GPU | ordinary non-delegated turns; the streamed answer |
 | Memory proposal | none (deterministic patterns) | CPU | every turn |
 
 A plain message ("my name is Ani") therefore makes about three model calls: one
-text embedding plus two `gemma-4-12b` calls (the search classifier and the
-response). Pointing `SEARCH_CLASSIFIER_MODEL` at a small model moves both routing
-classifiers off the 12B model.
+text embedding plus two main-role calls (the search classifier and the
+response). Pointing `SEARCH_CLASSIFIER_MODEL` at a dedicated qualified model
+moves both bounded routing classifiers off the main response model.
 
 Image and presentation paths:
 
 | Stage | Model | Runs on |
 | --- | --- | --- |
-| Image generation / slide image | HiDream-O1 via ComfyUI | GPU (shared with Gemma) |
-| Refinement prompt merge | `gemma-4-12b` | GPU |
-| Learned-style distillation | `gemma-4-12b` | GPU |
-| Image vision analysis (ask) | `gemma-4-12b` (`VISION_MODEL`) | GPU |
+| Image generation / slide image | `hidream_o1_image_dev_fp8_scaled.safetensors` (`IMAGE_MODEL`) via ComfyUI | GPU (shared with Gemma) |
+| Refinement prompt merge | `qwen/qwen3.5-9b` (`MAIN_LLM_MODEL`) | GPU |
+| Learned-style distillation | `qwen/qwen3.5-9b` (`MAIN_LLM_MODEL`) | GPU |
+| Image vision analysis (ask) | `google/gemma-4-12b` (`VISION_MODEL`) | GPU |
 | Image embedding (index and reconciler) | `nomic-embed-vision-v1.5` ONNX | CPU |
-| Deck plan / slide content / slide revision | `gemma-4-12b` | GPU |
+| Deck outline, one slide-content microtask per slide, or slide revision | `google/gemma-4-12b` (`PRESENTATION_LLM_MODEL`) | GPU |
+| Diagram generation | `qwen/qwen3.5-9b` (`DIAGRAM_LLM_MODEL`) | GPU |
+| Architecture candidates | legacy `LLM_MODEL` unless its CLI environment is overridden | GPU |
+| Google-grounded research, when enabled | `gemini-3.6-flash` (`GOOGLE_SEARCH_MODEL`) | external Google API |
 
 Web research, only when routing decides to search, calls Google Gemini grounding
-or Tavily - external/cloud, not the local GPU. The practical takeaway: nearly
-every critical-path call is `gemma-4-12b` on the one GPU, and image generation
-contends for that same GPU, so the cheapest wins are a small classifier model for
-the yes/no routing calls and not overlapping image generation with chat.
+or Tavily - external/cloud, not the local GPU. Main, presentation, diagram, and
+vision role names are independently configurable, but the current RTX 5080 is
+still one physical GPU. Redis prioritizes chat over presentation microtasks; it
+does not provide multi-model capacity accounting.
 
 ### Aligned image embeddings and web search
 
@@ -186,7 +191,7 @@ explicitly refuses new creation requests while recognizing historical questions
 and referential phrases such as "that car." Generated-image metadata retains a
 bounded generation prompt, so a later chat turn can answer what was requested
 without pretending to inspect absent pixels. Search results and image
-descriptions both enter the final Gemma prompt as untrusted quoted data.
+descriptions both enter the final main-model prompt as untrusted quoted data.
 
 When the user explicitly requests web search about a matched image, image recall
 runs first. AniOS appends at most one bounded stored analysis or generation
@@ -357,8 +362,9 @@ in the system to need its own bound, after personal memory and image vectors.
 For an ordinary chat turn, `MCPToolOrchestrationService` searches that
 user-scoped descriptor index, discards consequential servers, re-resolves each
 candidate against the live catalogue, and exposes at most five current schemas
-to Gemma through LM Studio's native OpenAI-compatible `tool_calls` contract.
-Gemma may select at most one call and supply schema-shaped arguments; it never
+to the configured main model through LM Studio's native OpenAI-compatible
+`tool_calls` contract. The model may select at most one call and supply
+schema-shaped arguments; it never
 receives an invocation handle. AniOS converts the selected alias into an
 application-owned plan and executes it only through the gates below.
 
@@ -413,11 +419,11 @@ fingerprint, a withdrawn tool and an unconfirmed consequential server are each
 refused before any request reaches it.
 
 The built-in `local_utility/current_time` server is the live acceptance fixture
-for Gemma-selected MCP use. The built-in `internet/search_web` server receives
+for main-model-selected MCP use. The built-in `internet/search_web` server receives
 only an already normalized and privacy-screened query and inherits only
 operator-allowlisted search environment names. It emits compact valid JSON
 below the generic MCP result cap. Internet eligibility remains deterministic
-application policy; it is not delegated to Gemma.
+application policy; it is not delegated to the model.
 
 The Compose `local-capabilities` sidecar exposes visual and presentation
 application services as seven streamable-HTTP FastMCP tools:
@@ -454,6 +460,14 @@ configured context-aware local server, it starts a trace and forwards the
 authorized path user plus optional conversation ID as hidden request metadata;
 those ownership values are not part of the tool arguments selected by a model.
 
+`backend/api/v1/presentations.py` enqueues creation with HTTP 202 and returns an
+owned job handle. Job reads expose queued/running/terminal state and the latest
+validated draft; cancellation is cooperative. The legacy creation SSE endpoint
+uses the same durable job and polls persisted progress, so a browser disconnect
+does not terminate work. The React panel stores the active job ID per user,
+polls it across navigation and reload, renders arriving slides, and hydrates the
+ready deck after the background worker promotes its revision.
+
 The image-generation handler monitors HTTP disconnects around provider work. A browser cancellation cancels the service task, interrupts the matching ComfyUI prompt, shields the terminal `failed/cancelled` write, and finishes without an application exception. The React composer exposes Chat, Create image, and Analyze image modes with progress, cancellation, retained retry input, visible API failures, and bounded file selection. Per-turn deterministic intent sends an explicit new-image request from Chat to the image API and sends a historical question from Create image back through chat, so the selected mode follows the action actually taken. `ImageArtifact` fetches private bytes with the optional auth header, renders a temporary object URL, exposes grounded Gemma text, and supports local download and owned deletion. Conversation hydration and artifact history restore both diagrams and binary images.
 
 `backend/api/v1/conversations.py` returns a bounded, user-owned conversation snapshot containing persisted turns and their conversation artifacts. The frontend uses that read boundary to reconstruct the active transcript and ready/failed diagram cards after a full reload.
@@ -482,19 +496,23 @@ The active collaborators are:
 | `AgentMemoryManager` | implemented typed store facade | Owns user-scoped semantic-cache, working, procedure, entity/relation, knowledge, and summary stores without exposing raw tables to the coordinator or model |
 | `MemoryCoordinatorAgent` | implemented deterministic policy boundary | Searches every embedded store on each turn so anything relevant can be recalled regardless of phrasing, embeds the query once and reuses that vector across all of them, relies on each store's cosine-distance threshold and one shared cross-store relevance budget (with dedup and item/character caps) to keep only close matches, selects the non-embedded episodic store by explicit keyword intent, writes expiring session state, and periodically rolls conversation digests |
 | `ToolMemoryService` | implemented safe metadata boundary | Stores and retrieves user-scoped safe tool descriptors, approved preferences, and sanitized outcomes; invocation and authorization remain owned by the separate orchestration and policy boundaries |
-| `MCPToolOrchestrationService` | implemented model-selection boundary | Gives Gemma a bounded live-validated shortlist, accepts at most one native tool call, and produces an application-owned plan without execution authority |
+| `MainSupervisorAgent` | implemented first-step routing boundary | Runs one typed LangGraph policy node before retrieval; currently delegates explicit presentation creation to the registered `presentation_agent` and otherwise returns the turn to the ordinary assistant path |
+| `MCPToolOrchestrationService` | implemented model-selection boundary | Gives the configured main model a bounded live-validated shortlist, accepts at most one native tool call, and produces an application-owned plan without execution authority |
 | `MCPInvocationService` | implemented execution-policy boundary | Re-resolves live contracts, enforces local risk policy, validates and privacy-screens arguments, invokes stdio/HTTP tools, and bounds results as untrusted |
 | `MCPWebSearchProvider` | implemented read-only search boundary | Invokes the fixed internet MCP tool after deterministic routing and privacy minimization, then validates and filters compact result JSON |
 | `VisualCapabilityRuntime` | implemented local FastMCP adapter | Reuses diagram, image, vision, repository, and binary-store services in a dedicated streamable-HTTP process; validates hidden ownership context and returns metadata-only artifact handles |
-| `PresentationAgent` | implemented specialized LangGraph boundary | Runs one typed create-or-revise node around the replaceable presentation provider; creation compiles a compact semantic plan into an application-owned editable layout, and the agent cannot persist, authorize, render, or promote a revision |
-| `PresentationService` | implemented presentation lifecycle boundary | Coordinates pending revisions, selected-slide replacement, rendering, structural and Office validation, opaque storage, failure recording, and current-revision promotion |
+| `PresentationAgent` | implemented specialized LangGraph boundary | Runs typed create, progressive-create, or revise operations around the replaceable provider; progressive graph custom events carry validated drafts, and the agent cannot persist, authorize, render, or promote a revision |
+| `PresentationJobService` | implemented durable scheduling boundary | Enqueues owned creation jobs, reports persisted progress, and requests cooperative cancellation without running model work in the API process |
+| `PresentationWorker` | implemented specialized worker boundary | Claims one leased PostgreSQL job with `SKIP LOCKED`, invokes the presentation LangGraph, checkpoints each draft, renews its lease, and records ready/failed/cancelled terminal state |
+| `PresentationService` | implemented presentation lifecycle boundary | Executes claimed creation jobs and synchronous selected-slide revisions, coordinating deterministic compilation, rendering, structural and Office validation, opaque storage, failure recording, and current-revision promotion |
 | `SQLAlchemyPresentationRepository` | implemented append-only revision boundary | Stores user-owned presentations and immutable revision lineage, rejects stale-base edits, and promotes a ready revision only after every validation boundary succeeds |
+| `SQLAlchemyPresentationJobRepository` | implemented durable job boundary | Atomically creates presentation/revision/job records, leases recoverable work, persists progressive drafts, reconciles completed revisions after worker loss, and scopes reads/cancellation by owner |
 | `PptxGenJSRenderer` | implemented renderer adapter | Sends a strict `DeckSpec` to the bounded PptxGenJS worker, validates response headers and OOXML structure, and optionally requires the worker's LibreOffice result |
 | `DiagramAgent` | implemented specialized LangGraph boundary | Runs one typed `generate_diagram` node around the replaceable provider; it has no persistence, authorization, or hardware-management authority |
 | `DiagramArtifactService` | implemented local artifact boundary | Coordinates pending/ready/failed diagram records, invokes a replaceable bounded diagram provider, and never gives the model persistence authority |
 | `ImageArtifactService` | implemented local binary artifact boundary | Coordinates generated/uploaded pending/ready/failed records, opaque atomic file storage, SHA-256/size integrity checks, owned content reads, and file-plus-row deletion |
 | `ComfyUIImageProvider` | implemented free local provider | Submits a pinned HiDream-O1 Dev workflow through ComfyUI, polls terminal history, fetches one output, validates it, and limits concurrent jobs to one |
-| `VisionAnalysisService` | implemented local VLM boundary | Persists a validated upload before sending its bytes and bounded prompt through the replaceable Gemma vision adapter, records ready/failed analysis metadata, and answers bounded followup questions on any owned image by re-reading stored bytes and maintaining a bounded persisted question/answer thread |
+| `VisionAnalysisService` | implemented local VLM boundary | Persists a validated upload before sending its bytes and bounded prompt through the replaceable `VISION_MODEL` adapter, records ready/failed analysis metadata, and answers bounded followup questions on any owned image by re-reading stored bytes and maintaining a bounded persisted question/answer thread |
 | `ArchitectureCandidateService` | implemented review-only maintenance boundary | Combines registered canonical source with bounded explicit repository evidence, requires selected visible labels, and returns a candidate without canonical write authority |
 | `SQLAlchemyArtifactRepository` | implemented user-scoped persistence boundary | Stores diagram source, lifecycle, conversation/trace provenance, provider/model metadata, and supports conversation listing plus individual deletion |
 | `SQLAlchemyConversationRepository` | implemented local boundary | Saves and counts turns under stable conversation IDs and reads a configured newest-turn window filtered by both conversation ID and user ID, returned in chronological order |
@@ -506,28 +524,32 @@ Chat memory capture is a narrow deterministic approval boundary. The conversatio
 
 ### Agent orchestration
 
-AniOS has three focused LangGraph workflows: the ordinary assistant graph contains one streaming Gemma node; `DiagramAgent` contains one asynchronous `generate_diagram` node; and `PresentationAgent` contains one asynchronous create-or-revise node around `PresentationProvider`. Before the assistant graph runs, the deterministic memory coordinator retrieves bounded context and the separate MCP orchestration service may ask Gemma for one native tool selection. The application owns live revalidation, privacy, risk policy, invocation, persistence, and result attribution. Existing visual and presentation capabilities are available through the same application-owned MCP invocation boundary for confirmed callers, but remain withheld from autonomous chat because they create or access owned artifacts. Retrieved values and tool results are untrusted literal data; they cannot grant permissions. Researcher, reflection, image-worker, A2A, and general multi-agent graph nodes remain `PLANNED`.
+AniOS has a bounded hybrid supervisor plus three focused execution graphs. After the separate explicit-diagram branch, `MainSupervisorAgent` runs the first chat routing step as a typed LangGraph node. Its current deterministic capability policy delegates an explicit presentation-creation request to the registered `presentation_agent`; all other turns continue to the ordinary assistant and MCP paths. The browser receives `agent_started` and `agent_finished` events containing the exact specialist and configured model, while the delegated presentation continues as a durable background job. The ordinary assistant graph contains one streaming main-model node, `DiagramAgent` contains one asynchronous `generate_diagram` node, and `PresentationAgent` contains typed create, progressive-create, and revise operations around `PresentationProvider`.
+
+This is deliberately narrower than a free-form LLM router. Deterministic registered intents provide a fast, testable first boundary; semantic MCP discovery plus native main-model tool selection handles eligible tools later in the ordinary path. The supervisor cannot invoke services, persist state, grant permissions, or invent capability IDs. The standalone presentation worker invokes the focused graph only after PostgreSQL claims a durable job. Application code owns authorization, scheduling, live contract revalidation, privacy, risk policy, invocation, persistence, and result attribution. Retrieved values and tool results are untrusted literal data and cannot grant permissions. A unified dynamic capability registry, ambiguity clarification/resume, researcher and reflection agents, A2A, and general agent-team scheduling remain `PLANNED`.
 
 ### LLM integration
 
-`backend/core/llm.py` implements LM Studio's OpenAI-compatible `/v1/chat/completions` contract for buffered, streamed, and native tool-call generation. Dependency assembly injects this shared client into the graph and MCP selector. The client preserves ordered messages, exposes only application-supplied tool schemas, configures `reasoning_effort`, yields assistant deltas, and requires terminal `[DONE]` for streams. It serializes calls made through the shared client because the loaded local LM Studio model was observed terminating one in-flight stream when another generation overlapped. This is a single-process safety boundary, not a durable distributed scheduler. Other providers remain `PLANNED`.
+`backend/core/llm.py` implements LM Studio's OpenAI-compatible `/v1/chat/completions` contract for buffered, streamed, and native tool-call generation. Dependency assembly creates independently configurable main, presentation, and diagram clients, each with a model, endpoint, and reasoning setting; blank role values fall back through the main and legacy settings. The client preserves ordered messages, exposes only application-supplied tool schemas, yields assistant deltas, and requires terminal `[DONE]` for streams. An in-process lock protects each shared client instance. For the Compose runtime, `ModelExecutionGate` adds an expiring Redis lease shared by backend and presentation-worker processes: a foreground chat increments a wait counter and holds the lease for its model lifecycle, while background presentation generation acquires it for one outline or slide microtask at a time and yields between tasks whenever chat is waiting. Redis stores only coordination keys and opaque lease tokens. This is bounded priority scheduling for one local model host, not GPU-capacity accounting or a general distributed-agent scheduler.
 
-Explicit diagram requests bypass ordinary memory retrieval and the assistant graph, then run through the dedicated `DiagramAgent` graph. `LLMDiagramProvider` asks the same configured local model for a bounded JSON/Mermaid specification, performs one correction retry for malformed local-model formatting, and accepts only allowlisted diagram declarations and passive source within size/line limits. The provider is behind `DiagramProvider`; the application owns routing, validation, persistence, and lifecycle events.
+The current local qualification selected `qwen/qwen3.5-9b` for main response, MCP tool selection, and diagram roles and retained `google/gemma-4-12b` for presentations. Qwen passed all bounded supervisor/tool cases and completed real ordinary-chat and diagram paths faster. Gemma remained the presentation specialist because the actual Qwen worker path failed the strict progressive `PlannedSlide` contract after its correction budget, even though Qwen passed one smaller harness run. The repeatable harness is a promotion gate, not sufficient proof by itself: a candidate must also pass the actual owning subsystem's API, worker, and browser acceptance path.
 
-Presentation creation and selected-slide feedback run through `PresentationAgent` and `LLMPresentationProvider`. For creation, Gemma receives a bounded brief and returns a compact semantic `DeckPlan` containing titles, purposes, points, key messages, and notes within a 2,048-token budget. A deterministic application compiler owns coordinates, theme, editable object construction, and stable slide/element IDs, producing the strict `DeckSpec` accepted downstream. This keeps the model focused on content and avoids spending local inference time reproducing repetitive layout JSON. For feedback, Gemma receives only the selected slide and returns a strict `SlideSpec`; the application replaces only that stable slide ID and preserves all siblings exactly. Either model contract gets at most one bounded correction attempt.
+Explicit diagram requests bypass ordinary memory retrieval and the assistant graph, then run through the dedicated `DiagramAgent` graph. `LLMDiagramProvider` asks `DIAGRAM_LLM_MODEL` for a bounded JSON/Mermaid specification, performs one correction retry for malformed local-model formatting, and accepts only allowlisted diagram declarations and passive source within size/line limits. The provider is behind `DiagramProvider`; the application owns routing, validation, persistence, and lifecycle events.
+
+Presentation creation and selected-slide feedback run through `PresentationAgent` and `LLMPresentationProvider` using `PRESENTATION_LLM_MODEL`. For creation, the specialist first returns a bounded `DeckOutline`; the provider then asks for one strict `PlannedSlide` at a time, compiles and checkpoints each partial `DeckSpec`, and releases the background model lease between those microtasks. A deterministic application compiler owns coordinates, theme, editable object construction, and stable slide/element IDs. This keeps the model focused on content, makes progressive state durable, and gives waiting chat requests a preemption point without interrupting an in-flight generation. For feedback, the specialist receives only the selected slide and returns a strict `SlideEdit`; the application replaces only that stable slide ID and preserves all siblings exactly. Each model contract gets at most one bounded correction attempt.
 
 The separate port-8002 renderer accepts only a validated `DeckSpec`. PptxGenJS creates native editable text, shape, chart, table, image, and notes objects; a Python OOXML inspector confirms slide count and required native-object kinds; and the worker opens the file through headless LibreOffice Impress and exports a PDF as an Office-readability check. The renderer uses an isolated temporary directory and removes it after each serialized job. The application writes the PPTX through the opaque binary store and promotes the pending revision only after both structural and Office validation succeed. A failure remains terminal on the pending revision and does not replace the prior current revision.
 
 The maintainer-only architecture candidate command uses the same agent/provider boundary but remains outside the HTTP runtime. `ArchitectureCandidateService` reads the registered canonical source plus only explicitly selected, bounded repository text. The CLI requires a loopback LM Studio endpoint; rejects traversal, common secret-bearing names, unsupported types, existing outputs, and canonical output paths; can require implementation-backed visible labels with one bounded semantic correction; and invokes the pinned Mermaid renderer. Output is a new review candidate only. Technical and visual review, followed by an explicit manual canonical edit or promotion, remains mandatory because label presence and syntax cannot prove relationship accuracy.
 
-`backend/embeddings/lm_studio.py` implements LM Studio's OpenAI-compatible `/v1/embeddings` boundary. Nomic document/query task prefixes are applied and the configured 768-value dimension is validated before persistence or search. The provider also supports a batch `embed_texts` call that embeds many documents in one request with index-ordered reassembly; knowledge ingestion uses it so a multi-chunk document embeds in a single call instead of one request per chunk. Because the local provider still serializes concurrent calls, a chat turn now embeds the query exactly once and reuses that vector across personal semantic, entity, knowledge, procedure, summary, and toolbox retrieval rather than re-embedding the same query per store.
+`backend/embeddings/lm_studio.py` implements LM Studio's OpenAI-compatible `/v1/embeddings` boundary. Nomic document/query task prefixes are applied and the configured 768-value dimension is validated before persistence or search. The provider also supports a batch `embed_texts` call that embeds many documents in one request with index-ordered reassembly; knowledge ingestion uses it so a multi-chunk document embeds in a single call instead of one request per chunk. Because the local provider still serializes concurrent embedding calls, a chat turn embeds the query exactly once and reuses that vector across personal semantic, entity, knowledge, procedure, summary, and toolbox retrieval rather than re-embedding the same query per store.
 
 ### Persistence
 
-SQLAlchemy models exist for conversations, profiles/facts, episodic/semantic memory, safe tool memory, semantic cache, working memory, procedures, entities/relations, knowledge documents/chunks, conversation summaries, visual artifacts, presentations, and append-only presentation revisions. Persistence has the following implemented boundaries:
+SQLAlchemy models exist for conversations, profiles/facts, episodic/semantic memory, safe tool memory, semantic cache, working memory, procedures, entities/relations, knowledge documents/chunks, conversation summaries, visual artifacts, presentations, append-only presentation revisions, and durable presentation jobs. Persistence has the following implemented boundaries:
 
 - all models use `backend.database.session.Base`;
-- Alembic targets that metadata; head `20260724_0014` associates each feedback revision with its stable target slide on top of the user-scoped presentations, append-only lineage, parent/current pointers, encrypted title/spec fields, lifecycle, renderer/model provenance, opaque storage metadata, and optimistic base-revision checks introduced by `0013`;
+- Alembic targets that metadata; head `20260726_0015` adds durable leased presentation jobs and encrypted briefs/drafts on top of the stable target-slide association in `0014` and the user-scoped presentation/revision lineage introduced by `0013`;
 - FastAPI, conversation, memory, coordinator, and operational paths use injected SQLAlchemy `AsyncSession` transactions through `asyncpg`;
 - runtime uses a bounded async queue pool, while the synchronous psycopg2 engine is retained only for Alembic and explicit inspection/test utilities;
 - episodic and semantic writers map caller metadata to the models' `extra_data` columns;
@@ -558,7 +580,7 @@ Conversation selection/history browsing and configuration screens are not implem
 
 ## Automated validation
 
-Backend tests cover LM Studio chat/embedding contracts, streaming, bounded same-user chronological history, coordinator routing/caching, rolling summaries, every typed memory API, diagram and presentation agent validation/lifecycle/routing, repository candidate boundaries, retention, re-embedding rollback, concurrency, operational inspection, PostgreSQL/pgvector persistence, scoping, export, and deletion. Playwright covers deterministic chat/memory/diagram/presentation workflows and separately gated live Gemma/Nomic acceptance, including persisted real-model Mermaid and PowerPoint artifacts. There is no component-test framework.
+Backend tests cover LM Studio chat/embedding contracts, streaming, bounded same-user chronological history, supervisor routing/delegation, coordinator routing/caching, rolling summaries, every typed memory API, diagram and presentation agent validation/lifecycle/routing, repository candidate boundaries, retention, re-embedding rollback, concurrency, operational inspection, PostgreSQL/pgvector persistence, scoping, export, and deletion. Playwright covers deterministic chat/memory/diagram/presentation workflows and separately gated live local-model/Nomic acceptance, including visible specialist/model activity and persisted real-model Mermaid and PowerPoint artifacts. There is no component-test framework.
 
 The intended validation layers are:
 
@@ -567,7 +589,7 @@ The intended validation layers are:
 | Backend unit and integration tests | `SCAFFOLDED` | Validate service behavior, API boundaries, streaming, and persistence with controlled dependencies |
 | Frontend component tests | `PLANNED` | Validate rendering and interaction states in isolated components |
 | Automated browser tests | implemented | Playwright covers chat success/failure, safe semantic Markdown rendering, diagram and presentation success/failure, selected-slide revision, download naming, navigation retention, conversation identity, memory management, and loading cleanup |
-| Live-provider acceptance | implemented opt-in | Proves Gemma streaming, persisted diagram rendering, and same-conversation recall plus Nomic persistence, reload, recall, and deletion |
+| Live-provider acceptance | implemented opt-in | Proves main-model streaming, typed presentation delegation with visible model provenance, persisted diagram rendering, and same-conversation recall plus Nomic persistence, reload, recall, and deletion |
 
 Deterministic browser tests should use a controlled backend or fake LLM response for repeatability. That proves application behavior, not live-model connectivity; live-provider verification remains a separate acceptance layer.
 
@@ -577,9 +599,15 @@ The current scaffold expresses this intended flow:
 
 ```text
 Frontend -> POST /api/v1/chat -> FastAPI dependency assembly
-         -> ConversationService -> MemoryCoordinatorAgent -> typed stores
+         -> ConversationService -> MainSupervisorAgent
+         -> ordinary turn -> MemoryCoordinatorAgent -> typed stores
          -> curated memory context -> LangGraph
          -> conversation repository -> streamed response
+
+Explicit presentation creation -> MainSupervisorAgent
+                              -> agent_started(PresentationAgent, model)
+                              -> durable PostgreSQL job -> presentation worker
+                              -> agent_finished(queued) -> chat remains available
 
 Explicit diagram request -> ConversationService -> DiagramArtifactService
                          -> pending artifact -> DiagramAgent -> local provider
@@ -601,7 +629,7 @@ Architecture maintenance -> explicit repository evidence -> ArchitectureCandidat
                          -> technical/visual review -> manual canonical update
 ```
 
-Current host-source validation completes this flow through Gemma, a bounded same-user history window, and personal memory. Current runtime evidence is recorded in [NEXT_SESSION.md](NEXT_SESSION.md).
+Current runtime validation completes this flow through the qualified main and specialist roles, a bounded same-user history window, and personal memory. Current evidence is recorded in [NEXT_SESSION.md](NEXT_SESSION.md).
 
 ## Capability boundaries
 
@@ -617,10 +645,10 @@ Current host-source validation completes this flow through Gemma, a bounded same
   branch is deterministically verified but a real Google request is
   `UNVERIFIED` until a key is configured. Sensitive-query review, redacted
   audit storage, and provider hardening remain `PLANNED`.
-- Explicit Mermaid diagram generation through a dedicated diagram graph, user-scoped lifecycle/history/deletion, strict rendering, reload restoration, local Mermaid/SVG export, and disconnect recovery: implemented and browser/direct-client verified. Free local raster generation, bounded upload, opaque binary storage, owned content/deletion, aligned multimodal image embeddings, Gemma image understanding, browser progress/retry/cancel, private rendering, navigation/reload restoration, history, download, and deletion are implemented and direct/live-browser verified. Threaded followup questions on owned generated or uploaded images reuse the stored bytes and the same vision boundary with a bounded, persisted question/answer thread; deterministic browser/backend coverage and a live Gemma call through the visual MCP facade are verified. Indexing the initial upload analysis into semantic memory, so an uploaded image's content is recalled by an ordinary conversation turn, is implemented and live-verified; indexing the interactive follow-up thread remains `PLANNED`. The same diagram, image, followup, and artifact-status services are exposed through a confirmed, metadata-only local FastMCP facade; autonomous consequential-call approval/resume remains `PLANNED`. Review-only local Gemma architecture candidates remain implemented and never update canonical source automatically. Automated binary retention/export, durable queues, GPU resource leasing/transitions, and generalized image agents remain `PLANNED`.
-- Editable PowerPoint generation through a focused presentation graph, strict typed specifications, persistent per-slide feedback conversations, selected-slide-only changes, append-only revision history, PptxGenJS native objects, OOXML inspection, LibreOffice validation, opaque storage, browser previews, named download, deletion, and metadata-only MCP tools: implemented and direct/live-browser verified. Raster images inside a slide remain replaceable image objects rather than decomposed editable pixels. Importing arbitrary existing PPTX files, durable distributed rendering queues, source-grounded deck research/citations, template/master libraries, and automated visual-diff review remain `PLANNED`.
-- Semantic safe-descriptor discovery, approved preference/sanitized outcome memory, stdio/streamable-HTTP connectivity, native Gemma selection, live pre-invocation re-resolution, guarded execution, and UI lifecycle status: implemented. Automatic registry refresh/change notifications, consequential-call approval/resume, per-server user credentials/scopes, durable execution audit, A2A, and multi-agent scheduling remain `PLANNED`; tool memory never authorizes execution.
+- Explicit Mermaid diagram generation through a dedicated diagram graph, user-scoped lifecycle/history/deletion, strict rendering, reload restoration, local Mermaid/SVG export, and disconnect recovery: implemented and browser/direct-client verified. Free local raster generation, bounded upload, opaque binary storage, owned content/deletion, aligned multimodal image embeddings, Gemma image understanding, browser progress/retry/cancel, private rendering, navigation/reload restoration, history, download, and deletion are implemented and direct/live-browser verified. Threaded followup questions on owned generated or uploaded images reuse the stored bytes and the same vision boundary with a bounded, persisted question/answer thread; deterministic browser/backend coverage and a live Gemma call through the visual MCP facade are verified. Indexing the initial upload analysis into semantic memory, so an uploaded image's content is recalled by an ordinary conversation turn, is implemented and live-verified; indexing the interactive follow-up thread remains `PLANNED`. The same diagram, image, followup, and artifact-status services are exposed through a confirmed, metadata-only local FastMCP facade; autonomous consequential-call approval/resume remains `PLANNED`. Review-only local Gemma architecture candidates remain implemented and never update canonical source automatically. Automated binary retention/export, durable diagram/image queues, GPU resource leasing/transitions, and generalized image agents remain `PLANNED`.
+- Editable PowerPoint generation through a focused presentation graph, a durable leased worker, PostgreSQL job state, reconnectable progressive drafts, a Redis foreground-chat priority gate, strict typed specifications, persistent per-slide feedback conversations, selected-slide-only changes, append-only revision history, PptxGenJS native objects, OOXML inspection, LibreOffice validation, opaque storage, browser previews, named download, deletion, and metadata-only MCP tools: implemented and direct/live-browser verified. Raster images inside a slide remain replaceable image objects rather than decomposed editable pixels. Importing arbitrary existing PPTX files, distributed GPU-capacity scheduling, source-grounded deck research/citations, template/master libraries, and automated visual-diff review remain `PLANNED`.
+- Semantic safe-descriptor discovery, approved preference/sanitized outcome memory, stdio/streamable-HTTP connectivity, native main-model selection, live pre-invocation re-resolution, guarded execution, and UI lifecycle status: implemented. Automatic registry refresh/change notifications, consequential-call approval/resume, per-server user credentials/scopes, durable execution audit, A2A, and general multi-agent scheduling remain `PLANNED`; tool memory never authorizes execution.
 
 ## Architectural decision
 
-The project has adopted clean-architecture and dependency-inversion principles as a design direction. [ADR 0001](adr/0001-clean-architecture-and-modular-structure.md) records that direction. [ADR 0002](adr/0002-typed-agent-memory-manager-and-pgvector-indexes.md) records the typed store-manager/coordinator boundary and the pgvector HNSW indexing choice. [ADR 0003](adr/0003-local-visual-artifacts-and-resource-aware-orchestration.md) records the local-only visual-artifact, GPU-resource, and scalable orchestration direction; editable diagrams, raster generation, binary storage, upload validation, VLM analysis, aligned image retrieval, browser integration, and the local visual FastMCP facade are implemented while deterministic resource orchestration remains `PLANNED`. [ADR 0004](adr/0004-hybrid-free-tier-web-research.md) records the isolated Google research worker, Tavily fallback/cross-check, free-tier quota, and data-minimization boundary. [ADR 0005](adr/0005-typed-editable-presentation-generation.md) records the typed editable-presentation, focused-agent, renderer, and validated-promotion boundaries.
+The project has adopted clean-architecture and dependency-inversion principles as a design direction. [ADR 0001](adr/0001-clean-architecture-and-modular-structure.md) records that direction. [ADR 0002](adr/0002-typed-agent-memory-manager-and-pgvector-indexes.md) records the typed store-manager/coordinator boundary and the pgvector HNSW indexing choice. [ADR 0003](adr/0003-local-visual-artifacts-and-resource-aware-orchestration.md) records the local-only visual-artifact, GPU-resource, and scalable orchestration direction; editable diagrams, raster generation, binary storage, upload validation, VLM analysis, aligned image retrieval, browser integration, and the local visual FastMCP facade are implemented while deterministic resource orchestration remains `PLANNED`. [ADR 0004](adr/0004-hybrid-free-tier-web-research.md) records the isolated Google research worker, Tavily fallback/cross-check, free-tier quota, and data-minimization boundary. [ADR 0005](adr/0005-typed-editable-presentation-generation.md) records the typed editable-presentation, focused-agent, durable-job worker, foreground-priority model gate, renderer, and validated-promotion boundaries. [ADR 0006](adr/0006-hybrid-supervisor-and-qualified-model-roles.md) records the typed hybrid-supervisor boundary, visible delegation provenance, role-specific local-model configuration, and acceptance-path-driven model promotion rule.

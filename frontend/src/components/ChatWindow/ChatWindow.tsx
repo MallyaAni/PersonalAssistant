@@ -10,6 +10,7 @@ import {
   approveProcedure,
   approveResponseStyle,
   getConversationSnapshot,
+  type AgentActivity,
   type MemoryProposal,
   type ImageArtifact,
   type SearchSource,
@@ -31,6 +32,7 @@ interface Message {
   searchMinimized?: boolean;
   searchBlocked?: string[];
   toolActivities?: ToolActivity[];
+  agentActivities?: AgentActivity[];
 }
 
 interface ChatWindowProps {
@@ -355,6 +357,37 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     })
   }
 
+  // Show a running specialist agent on the assistant response that owns the turn.
+  const handleAgentStarted = (activity: AgentActivity) => {
+    setMessages(prev => {
+      const next = [...prev]
+      const index = latestAssistantIndex(next)
+      if (index >= 0) {
+        next[index] = {
+          ...next[index],
+          agentActivities: [...(next[index].agentActivities || []), activity],
+        }
+      }
+      return next
+    })
+  }
+
+  // Replace one running specialist with its durable queued or failed outcome.
+  const handleAgentFinished = (activity: AgentActivity) => {
+    setMessages(prev => {
+      const next = [...prev]
+      const index = latestAssistantIndex(next)
+      if (index < 0) return next
+      const current = next[index].agentActivities || []
+      const match = current.findIndex(item => item.agentId === activity.agentId)
+      const agentActivities = [...current]
+      if (match >= 0) agentActivities[match] = activity
+      else agentActivities.push(activity)
+      next[index] = { ...next[index], agentActivities }
+      return next
+    })
+  }
+
   // Attach pixel-matched images to the assistant turn that requested them.
   const handleImageMatches = (artifacts: ImageArtifact[]) => {
     if (artifacts.length === 0) return
@@ -559,6 +592,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             onSearchSources={handleSearchSources}
             onToolStarted={handleToolStarted}
             onToolFinished={handleToolFinished}
+            onAgentStarted={handleAgentStarted}
+            onAgentFinished={handleAgentFinished}
           />
           {hasMessages && (
             <p className="mt-2 text-center text-[11px] text-[#86868b]">AniOS can make mistakes. Check important information.</p>

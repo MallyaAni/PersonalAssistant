@@ -1,10 +1,11 @@
 import React from 'react'
-import { CheckCircle2, MoreHorizontal, Search, ShieldAlert, Sparkles, Wrench, XCircle } from 'lucide-react'
+import { Bot, CheckCircle2, MoreHorizontal, Search, ShieldAlert, Sparkles, Wrench, XCircle } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import DiagramArtifact from '../DiagramArtifact/DiagramArtifact'
 import ImageArtifact from '../ImageArtifact/ImageArtifact'
 import type {
   ImageArtifact as ImageArtifactRecord,
+  AgentActivity,
   SearchSource,
   ToolActivity,
   VisualArtifact,
@@ -24,6 +25,7 @@ interface MessageProps {
   searchMinimized?: boolean;
   searchBlocked?: string[];
   toolActivities?: ToolActivity[];
+  agentActivities?: AgentActivity[];
   onArtifactDeleted?: (artifactId: string) => void;
   onImageRefined?: (artifact: ImageArtifactRecord) => void;
 }
@@ -66,6 +68,7 @@ const MessageBubble: React.FC<MessageProps> = ({
   searchMinimized,
   searchBlocked,
   toolActivities,
+  agentActivities,
   onArtifactDeleted,
   onImageRefined,
 }) => {
@@ -164,6 +167,33 @@ const MessageBubble: React.FC<MessageProps> = ({
                 }`}
               >
                 <Icon size={13} className={isRunning ? 'animate-pulse' : ''} />
+                {label}
+              </p>
+            )
+          })}
+        </section>
+      )}
+      {!isUser && agentActivities && agentActivities.length > 0 && (
+        <section className="mb-3 space-y-1.5" aria-label="Agent activity">
+          {agentActivities.map(activity => {
+            const isRunning = activity.status === 'running'
+            const isFailed = activity.status === 'failed'
+            const model = activity.model ? ` · ${activity.model}` : ''
+            const label = isRunning
+              ? `Delegating to ${activity.agentName}${model}...`
+              : isFailed
+                ? `${activity.agentName}: ${activity.message || 'Delegation failed.'}`
+                : `${activity.agentName}${model} queued in the background`
+            return (
+              <p
+                key={activity.agentId}
+                role={isFailed ? 'alert' : 'status'}
+                aria-live="polite"
+                className={`flex items-center gap-1.5 text-sm ${
+                  isFailed ? 'text-[#c9342f]' : 'text-[#6e6e73]'
+                }`}
+              >
+                <Bot size={13} className={isRunning ? 'animate-pulse' : ''} />
                 {label}
               </p>
             )

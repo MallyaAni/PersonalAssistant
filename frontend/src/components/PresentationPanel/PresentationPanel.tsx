@@ -11,14 +11,16 @@ import {
 } from 'lucide-react'
 
 import {
+  cancelPresentationJob,
+  createPresentation,
   deletePresentation,
   downloadPresentation,
   generatePresentationSlideImage,
   getArtifactImage,
   getPresentation,
+  getPresentationJob,
   getPresentations,
   revisePresentationSlide,
-  streamPresentationCreation,
   type PresentationDeckSpec,
   type PresentationElement,
   type PresentationRecord,
@@ -28,6 +30,11 @@ import {
 
 const SLIDE_WIDTH = 13.333
 const SLIDE_HEIGHT = 7.5
+
+// Isolate one user's reconnectable presentation job in browser storage.
+const presentationJobStorageKey = (userId: string) => (
+  `anios_presentation_job:${userId}`
+)
 
 interface PresentationPanelProps {
   userId: string;
@@ -271,6 +278,7 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
   } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isCreating, setIsCreating] = useState(false)
+  const [activeJobId, setActiveJobId] = useState<string | null>(null)
   const [draftSpecification, setDraftSpecification] = useState<PresentationDeckSpec | null>(null)
   const [expectedDraftSlides, setExpectedDraftSlides] = useState(0)
   const [isRevising, setIsRevising] = useState(false)
@@ -313,6 +321,84 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
   useEffect(() => {
     setViewedRevisionId(null)
   }, [active?.id, active?.current_revision_id])
+
+  // Restore any unfinished durable job after navigation or a full reload.
+  useEffect(() => {
+    setActiveJobId(localStorage.getItem(presentationJobStorageKey(userId)))
+  }, [userId])
+
+  // Poll persisted worker progress and reconnect the preview to a finished deck.
+  useEffect(() => {
+    if (!activeJobId) return undefined
+    const controller = new AbortController()
+
+    // Follow one durable job until it reaches a visible terminal state.
+    const monitor = async () => {
+      setIsCreating(true)
+      setError('')
+      try {
+        while (!controller.signal.aborted) {
+          const job = await getPresentationJob(
+            userId,
+            activeJobId,
+            controller.signal,
+          )
+          if (job.draft_specification) {
+            setDraftSpecification(job.draft_specification)
+            setExpectedDraftSlides(
+              job.expected_slide_count
+                || job.draft_specification.slides.length,
+            )
+          }
+          if (job.status === 'ready') {
+            if (!job.presentation) {
+              throw new Error('Presentation job finished without a ready deck')
+            }
+            const created = job.presentation
+            setActive(created)
+            setPresentations(current => [
+              created,
+              ...current.filter(record => record.id !== created.id),
+            ])
+            setSelectedSlideId(
+              created.current_revision?.specification?.slides[0]?.slide_id || '',
+            )
+            setNotice('Presentation ready. Every supported slide object is editable in PowerPoint.')
+            localStorage.removeItem(presentationJobStorageKey(userId))
+            setActiveJobId(null)
+            return
+          }
+          if (job.status === 'failed' || job.status === 'cancelled') {
+            throw new Error(
+              job.status === 'cancelled'
+                ? 'Presentation creation was cancelled.'
+                : 'Unable to create the presentation.',
+            )
+          }
+          await new Promise(resolve => window.setTimeout(resolve, 750))
+        }
+      } catch (jobError) {
+        if (!controller.signal.aborted) {
+          localStorage.removeItem(presentationJobStorageKey(userId))
+          setActiveJobId(null)
+          setError(
+            jobError instanceof Error
+              ? jobError.message
+              : 'Unable to monitor the presentation.',
+          )
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setDraftSpecification(null)
+          setExpectedDraftSlides(0)
+          setIsCreating(false)
+        }
+      }
+    }
+
+    void monitor()
+    return () => controller.abort()
+  }, [activeJobId, userId])
 
   // Load persisted deck summaries and restore the newest deck workspace.
   useEffect(() => {
@@ -366,7 +452,7 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
     }
   }
 
-  // Stream each compiled slide into the preview before opening the ready revision.
+  // Queue one durable deck job so generation can continue outside this view.
   const submitCreation = async () => {
     const normalized = prompt.trim()
     if (!normalized || isCreating) return
@@ -376,33 +462,35 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
     setDraftSpecification(null)
     setExpectedDraftSlides(0)
     try {
-      let created: PresentationRecord | null = null
-      for await (const update of streamPresentationCreation(
+      const queued = await createPresentation(
         userId,
         conversationId,
         normalized,
-      )) {
-        if (update.type === 'draft') {
-          setDraftSpecification(update.specification)
-          setExpectedDraftSlides(update.expectedSlideCount)
-        } else if (update.type === 'ready') {
-          created = update.presentation
-        }
-      }
-      if (!created) throw new Error('Presentation stream completed without a ready deck')
-      setActive(created)
-      setPresentations(current => [created, ...current])
-      setSelectedSlideId(
-        created.current_revision?.specification?.slides[0]?.slide_id || '',
       )
+      localStorage.setItem(presentationJobStorageKey(userId), queued.id)
+      setActiveJobId(queued.id)
       setPrompt('')
-      setNotice('Presentation ready. Every supported slide object is editable in PowerPoint.')
+      setNotice('PresentationAgent is working in the background. You can continue chatting.')
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : 'Unable to create the presentation.')
-    } finally {
       setDraftSpecification(null)
       setExpectedDraftSlides(0)
       setIsCreating(false)
+    }
+  }
+
+  // Ask the worker to stop at its next safe slide checkpoint.
+  const cancelCreation = async () => {
+    if (!activeJobId) return
+    try {
+      await cancelPresentationJob(userId, activeJobId)
+      setNotice('Cancellation requested. The worker will stop at the next safe checkpoint.')
+    } catch (cancelError) {
+      setError(
+        cancelError instanceof Error
+          ? cancelError.message
+          : 'Unable to cancel the presentation.',
+      )
     }
   }
 
@@ -563,17 +651,29 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
             disabled={isCreating}
           />
           <div className="mt-3 flex items-center justify-between gap-3">
-            <p className="text-xs text-[#86868b]">Gemma plans the deck; deterministic code owns rendering and persistence.</p>
-            <button
-              type="button"
-              aria-label="Create presentation"
-              onClick={() => void submitCreation()}
-              disabled={!prompt.trim() || isCreating}
-              className="flex h-10 items-center gap-2 rounded-full bg-[#0071e3] px-4 text-sm font-medium text-white disabled:bg-[#d2d2d7]"
-            >
-              {isCreating ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-              {isCreating ? 'Using PresentationAgent…' : 'Create presentation'}
-            </button>
+            <p className="text-xs text-[#86868b]">Gemma plans the deck in a background worker; deterministic code owns rendering and persistence.</p>
+            <div className="flex items-center gap-2">
+              {isCreating && activeJobId && (
+                <button
+                  type="button"
+                  aria-label="Cancel presentation"
+                  onClick={() => void cancelCreation()}
+                  className="h-10 rounded-full border border-black/10 bg-white px-4 text-sm font-medium text-[#6e6e73]"
+                >
+                  Cancel
+                </button>
+              )}
+              <button
+                type="button"
+                aria-label="Create presentation"
+                onClick={() => void submitCreation()}
+                disabled={!prompt.trim() || isCreating}
+                className="flex h-10 items-center gap-2 rounded-full bg-[#0071e3] px-4 text-sm font-medium text-white disabled:bg-[#d2d2d7]"
+              >
+                {isCreating ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                {isCreating ? 'Using PresentationAgent…' : 'Create presentation'}
+              </button>
+            </div>
           </div>
         </div>
 

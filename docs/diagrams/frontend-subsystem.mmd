@@ -22,12 +22,13 @@ flowchart TB
         ArtifactView[ArtifactPanel<br/>owned diagram and image history<br/>refresh, download, delete]
         MemoryView[MemoryPanel<br/>personal, agent, and tool snapshots<br/>clickable store details and controls]
         MemoryDetails[On-demand owned export<br/>bounded readable store records<br/>vectors and storage keys hidden]
-        PresentationView[PresentationPanel<br/>brief, deck list, slide selection,<br/>feedback, revisions, and download]
-        DeckPreview[Typed DeckSpec preview<br/>main canvas and slide thumbnails]
+        PresentationView[PresentationPanel<br/>background job, persisted progress,<br/>slide feedback, imagery, revisions, download]
+        PresentationJob[Per-user active job in localStorage<br/>poll resumes across navigation or reload;<br/>cancel and visible terminal state]
+        DeckPreview[Typed DeckSpec preview<br/>arriving slides, main canvas, thumbnails,<br/>and owned image-artifact rendering]
 
         ChatView --> Composer
         MemoryView --> MemoryDetails
-        PresentationView --> DeckPreview
+        PresentationView --> PresentationJob --> DeckPreview
     end
 
     Navigation --> ChatView
@@ -39,7 +40,7 @@ flowchart TB
     subgraph Visuals[Strict local visual rendering]
         direction LR
         DiagramCard[DiagramArtifact<br/>lazy strict Mermaid SVG<br/>editable source and export]
-        ImageCard[ImageArtifact<br/>private preview and Gemma text<br/>download and owned deletion]
+        ImageCard[ImageArtifact<br/>private preview and backend model response<br/>VISION_MODEL: google/gemma-4-12b<br/>download and owned deletion]
     end
 
     ChatView --> DiagramCard
@@ -49,10 +50,10 @@ flowchart TB
 
     subgraph Client[Typed client and trust boundary]
         direction LR
-        ChatClient[streamChat<br/>validated SSE lifecycle<br/>renders search and MCP tool status,<br/>provider-attributed sources and image_matches cards]
+        ChatClient[streamChat<br/>validated SSE lifecycle<br/>renders specialist and exact-model activity,<br/>search and MCP tool status, sources,<br/>and image_matches cards]
         VisualClient[JSON generation and multipart upload<br/>private authenticated image fetch]
         DataClient[JSON memory, history, export,<br/>snapshot, and deletion requests]
-        PresentationClient[Typed presentation JSON<br/>create, revise, list, delete,<br/>and authenticated PPTX download]
+        PresentationClient[Typed presentation JSON<br/>HTTP 202 queue, job poll/cancel,<br/>revise, list, delete, PPTX download]
         Validation[Runtime response validation<br/>visible safe errors]
         Auth[Optional VITE_AUTH_TOKEN]
 
@@ -75,7 +76,7 @@ flowchart TB
     MemoryDetails --> DataClient
     PresentationView --> PresentationClient
 
-    Backend[FastAPI v1 API<br/>localhost:8000]
+    Backend[FastAPI v1 API<br/>owns every model call; browser calls none<br/>localhost:8000]
     Validation --> Backend
 
     classDef shell fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
@@ -83,6 +84,6 @@ flowchart TB
     classDef boundary fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
     class Browser,App,Identity,ConversationID,Navigation,Persistence shell;
-    class ChatView,Composer,ArtifactView,MemoryView,MemoryDetails,PresentationView,DeckPreview,DiagramCard,ImageCard component;
+    class ChatView,Composer,ArtifactView,MemoryView,MemoryDetails,PresentationView,PresentationJob,DeckPreview,DiagramCard,ImageCard component;
     class ChatClient,VisualClient,DataClient,PresentationClient,Validation,Auth boundary;
     class Backend external;

@@ -204,10 +204,12 @@ class SQLAlchemyPresentationRepository:
         presentation = cast(
             Presentation | None,
             await self.session.scalar(
-                select(Presentation).where(
+                select(Presentation)
+                .where(
                     Presentation.id == uuid.UUID(presentation_id),
                     Presentation.user_id == user_id,
                 )
+                .execution_options(populate_existing=True)
             ),
         )
         if presentation is None:
@@ -218,6 +220,7 @@ class SQLAlchemyPresentationRepository:
                     select(PresentationRevision)
                     .where(PresentationRevision.presentation_id == presentation.id)
                     .order_by(PresentationRevision.revision_number.desc())
+                    .execution_options(populate_existing=True)
                 )
             ).all()
         )

@@ -1,6 +1,5 @@
 import re
 from dataclasses import dataclass
-from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -38,26 +37,19 @@ class DeckPlan(DeckPlanModel):
     slides: list[PlannedSlide] = Field(min_length=1, max_length=30)
 
 
-class StreamDeckHeader(DeckPlanModel):
-    """First streamed record declaring deck identity and expected slide count."""
+class DeckOutlineSlide(DeckPlanModel):
+    """Bounded title and purpose used to schedule one slide microtask."""
 
-    type: Literal["deck"]
+    title: str = Field(min_length=1, max_length=160)
+    purpose: str = Field(min_length=1, max_length=300)
+
+
+class DeckOutline(DeckPlanModel):
+    """Compact deck structure produced before individual slide content."""
+
     title: str = Field(min_length=1, max_length=200)
     subtitle: str | None = Field(default=None, max_length=300)
-    slide_count: int = Field(ge=1, le=30)
-
-
-class StreamPlannedSlide(PlannedSlide):
-    """One sequential semantic slide emitted without layout coordinates."""
-
-    type: Literal["slide"]
-    index: int = Field(ge=1, le=30)
-
-
-class StreamDeckDone(DeckPlanModel):
-    """Terminal model record proving the semantic deck stream completed."""
-
-    type: Literal["done"]
+    slides: list[DeckOutlineSlide] = Field(min_length=1, max_length=30)
 
 
 @dataclass(frozen=True, slots=True)

@@ -96,25 +96,6 @@ class StubPlanningLLM:
         return self.replies.pop(0)
 
 
-class StubStreamingPlanningLLM(StubPlanningLLM):
-    """Yield deterministic fragmented model records for progressive previews."""
-
-    # Store one ordered stream and observe its configured token budget.
-    def __init__(self, chunks: list[str]) -> None:
-        super().__init__([])
-        self.chunks = chunks
-        self.stream_requests: list[tuple[list[dict[str, str]], int]] = []
-
-    # Yield record fragments exactly as a local streamed completion would.
-    def stream_chat(
-        self,
-        messages: list[dict[str, str]],
-        max_tokens: int = 1_024,
-    ) -> Any:
-        self.stream_requests.append((messages, max_tokens))
-        yield from self.chunks
-
-
 # Build concise semantic content for the requested number of slides.
 def _compact_plan(slide_count: int) -> dict[str, Any]:
     return {
@@ -325,43 +306,51 @@ async def test_slide_revision_preserves_an_attached_image() -> None:
     assert revised.title == "Reworded opening"
 
 
-# Verify each complete semantic slide becomes visible before the model stream ends.
+# Verify each independently planned slide becomes visible before the deck completes.
 @pytest.mark.asyncio
-async def test_progressive_plan_compiles_each_streamed_slide() -> None:
-    records = "".join(
+async def test_progressive_plan_compiles_each_scheduled_slide() -> None:
+    llm = StubPlanningLLM(
         [
-            json.dumps(
-                {
-                    "type": "deck",
-                    "title": "Progressive horses",
-                    "subtitle": "Visible while planning",
-                    "slide_count": 2,
-                }
-            ),
-            json.dumps(
-                {
-                    "type": "slide",
-                    "index": 1,
-                    "title": "Origins",
-                    "purpose": "Introduce equine history",
-                    "points": ["Early evolution", "Domestication"],
-                    "notes": "Open with context.",
-                }
-            ),
-            json.dumps(
-                {
-                    "type": "slide",
-                    "index": 2,
-                    "title": "Modern roles",
-                    "purpose": "Explain current uses",
-                    "points": ["Sport", "Therapy"],
-                    "notes": "Close with modern impact.",
-                }
-            ),
-            json.dumps({"type": "done"}),
+            {
+                "content": json.dumps(
+                    {
+                        "title": "Progressive horses",
+                        "subtitle": "Visible while planning",
+                        "slides": [
+                            {
+                                "title": "Origins",
+                                "purpose": "Introduce equine history",
+                            },
+                            {
+                                "title": "Modern roles",
+                                "purpose": "Explain current uses",
+                            },
+                        ],
+                    }
+                )
+            },
+            {
+                "content": json.dumps(
+                    {
+                        "title": "Origins",
+                        "purpose": "Introduce equine history",
+                        "points": ["Early evolution", "Domestication"],
+                        "notes": "Open with context.",
+                    }
+                )
+            },
+            {
+                "content": json.dumps(
+                    {
+                        "title": "Modern roles",
+                        "purpose": "Explain current uses",
+                        "points": ["Sport", "Therapy"],
+                        "notes": "Close with modern impact.",
+                    }
+                )
+            },
         ]
     )
-    llm = StubStreamingPlanningLLM([records[:47], records[47:131], records[131:]])
     provider = LLMPresentationProvider(
         llm,  # type: ignore[arg-type]
         max_tokens=8_192,
@@ -379,4 +368,60 @@ async def test_progressive_plan_compiles_each_streamed_slide() -> None:
     assert drafts[0].specification.slides[0].title == "Origins"
     assert drafts[1].specification.slides[1].title == "Modern roles"
     assert all(draft.expected_slide_count == 2 for draft in drafts)
-    assert llm.stream_requests[0][1] == 2_048
+    assert [request[1] for request in llm.requests] == [1_024, 1_024, 1_024]
+
+
+# Verify an invalid outline receives one correction before slide microtasks run.
+@pytest.mark.asyncio
+async def test_progressive_plan_corrects_one_invalid_outline() -> None:
+    llm = StubPlanningLLM(
+        [
+            {"content": "not json"},
+            {
+                "content": json.dumps(
+                    {
+                        "title": "Progressive horses",
+                        "subtitle": "Visible while planning",
+                        "slides": [
+                            {"title": "Origins", "purpose": "Explain origins"},
+                            {"title": "Roles", "purpose": "Explain roles"},
+                        ],
+                    }
+                )
+            },
+            {
+                "content": json.dumps(
+                    {
+                        "title": "Origins",
+                        "purpose": "Explain origins",
+                        "points": ["Evolution", "Domestication"],
+                    }
+                )
+            },
+            {
+                "content": json.dumps(
+                    {
+                        "title": "Roles",
+                        "purpose": "Explain roles",
+                        "points": ["Sport", "Therapy"],
+                    }
+                )
+            },
+        ]
+    )
+    provider = LLMPresentationProvider(
+        llm,  # type: ignore[arg-type]
+        max_tokens=8_192,
+        plan_max_tokens=2_048,
+    )
+
+    drafts = [
+        draft
+        async for draft in provider.create_progress(
+            "Create a presentation on horses, 2 slides"
+        )
+    ]
+
+    assert [len(draft.specification.slides) for draft in drafts] == [1, 2]
+    assert len(llm.requests) == 4
+    assert "failed validation" in llm.requests[1][0][0]["content"]

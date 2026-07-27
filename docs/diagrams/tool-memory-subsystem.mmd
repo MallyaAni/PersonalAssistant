@@ -9,8 +9,8 @@ flowchart TB
     Chat([Chat request]) --> SearchDescriptors[Semantic descriptor shortlist]
     SearchDescriptors --> Service
     Service --> LiveSelection[Resolve current live schemas]
-    LiveSelection --> GemmaSelect[Gemma native tool_calls<br/>at most one call]
-    GemmaSelect --> Invoke[Application-owned call plan]
+    LiveSelection --> MainSelect[Conditional model call: MAIN_LLM_MODEL<br/>qwen/qwen3.5-9b native tool_calls<br/>at most one call]
+    MainSelect --> Invoke[Application-owned call plan]
 
     Explicit([Explicit tool API call]) --> Gates{Invocation gates}
     Invoke --> Gates
@@ -30,7 +30,7 @@ flowchart TB
     PresentationTools --> PresentationHandles[Bounded deck and revision metadata<br/>no PPTX bytes or storage keys]
     PresentationHandles --> Bounded
     Server --> Bounded[Bounded result, inspected,<br/>quoted as untrusted data]
-    Bounded --> Prompt[Final Gemma answer context]
+    Bounded --> Prompt[Final MAIN_LLM_MODEL answer context<br/>qwen/qwen3.5-9b]
     Bounded --> ToolEvents[tool_started and tool_finished SSE]
 
     Caller([Trusted local caller]) --> ToolAPI[Tool-memory API<br/>/memory/user/tools]
@@ -43,7 +43,7 @@ flowchart TB
     DescriptorPath --> Identity[Canonical server, tool, version,<br/>and schema fingerprint]
     Identity --> Deactivate[Deactivate prior descriptor<br/>when schema fingerprint changes]
     Deactivate --> Embed[Embed safe descriptor text]
-    Embed --> Nomic[LM Studio Nomic]
+    Embed --> Nomic[Model call: EMBEDDING_MODEL<br/>text-embedding-nomic-embed-text-v1.5]
     Nomic --> Descriptors[(tool_descriptors<br/>active flag and HNSW cosine index)]
 
     Service --> PreferencePath[Approved preference path]
@@ -56,7 +56,7 @@ flowchart TB
     Preferences --> Service
     Outcomes --> Service
     Service --> Toolbox[Bounded toolbox context<br/>untrusted literal metadata]
-    Toolbox --> Gemma[Gemma prompt context]
+    Toolbox --> MainModel[Model call: MAIN_LLM_MODEL<br/>qwen/qwen3.5-9b<br/>final prompt context]
 
     Database[(PostgreSQL and pgvector)]
     Descriptors --> Database
@@ -72,7 +72,7 @@ flowchart TB
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
     class Caller,ToolAPI,Chat,Explicit,ToolEvents interface;
-    class Ownership,Schema,Sensitive,Service,DescriptorPath,Identity,Deactivate,Embed,PreferencePath,OutcomePath,Coordinator,Toolbox,SearchDescriptors,LiveSelection,GemmaSelect,Invoke,Gates,G1,G2,G3,G4,G5,G6,Context,VisualTools,VisualHandles,PresentationTools,PresentationHandles,Bounded,Prompt application;
+    class Ownership,Schema,Sensitive,Service,DescriptorPath,Identity,Deactivate,Embed,PreferencePath,OutcomePath,Coordinator,Toolbox,SearchDescriptors,LiveSelection,MainSelect,Invoke,Gates,G1,G2,G3,G4,G5,G6,Context,VisualTools,VisualHandles,PresentationTools,PresentationHandles,Bounded,Prompt application;
     class Descriptors,Preferences,Outcomes,Database data;
-    class Nomic,Gemma,Server,VisualServer external;
+    class Nomic,MainModel,Server,VisualServer external;
     class Boundary warning;

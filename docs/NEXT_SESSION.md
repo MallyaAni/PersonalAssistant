@@ -1,206 +1,173 @@
-# Next Session Handoff
+# AniOS Current Session Handoff
 
 Frequently rewrite this file from fresh evidence. Verified history belongs in
 [CHANGELOG.md](CHANGELOG.md), durable milestone status in
 [ROADMAP.md](ROADMAP.md), and stable architecture facts in
 [ARCHITECTURE.md](ARCHITECTURE.md).
 
-Last updated: 2026-07-24, America/New_York
+Last updated: 2026-07-26, America/New_York
 
-## Current milestone
+## Current boundary
 
-**Milestone 5: tools and specialized agents — `IN PROGRESS`.**
+AniOS now has a bounded hybrid main supervisor. After the existing explicit
+diagram branch, `MainSupervisorAgent` runs one typed LangGraph policy node
+before retrieval. It delegates explicit presentation creation to the registered
+`presentation_agent`; every other request continues to the ordinary assistant,
+memory, search, and MCP path.
 
-AniOS now has three focused LangGraph boundaries: the streaming assistant,
-`DiagramAgent`, and `PresentationAgent`. Presentation generation is implemented
-as a typed application-owned subsystem and is available in its dedicated UI/API
-plus the local capability MCP facade. This remains narrower than general
-multi-agent scheduling or A2A.
+The supervisor owns no service, storage, permission, or execution capability.
+Application code validates its typed decision, enqueues the durable
+presentation job, persists the turn, and streams visible `agent_started` and
+`agent_finished` events with the exact specialist, model, job ID, and status.
+The presentation worker then invokes `PresentationAgent` independently of the
+foreground conversation.
 
-## Current presentation boundary
+This is not yet a dynamic agent team. The supervisor does not compare all
+agents and MCP tools in one decision, create arbitrary agents, perform A2A, or
+resume a consequential-tool confirmation.
 
-- `PresentationAgent` and `LLMPresentationProvider` ask local Gemma for a
-  compact semantic `DeckPlan` during creation or a selected-slide `SlideSpec`
-  during feedback. A deterministic compiler owns creation layout, theme,
-  editable objects, and stable IDs. The model cannot persist, authorize,
-  render, choose storage keys, promote revisions, or edit siblings.
-- `PresentationService` creates pending append-only revisions, preserves every
-  sibling during slide feedback, renders, validates, stores, and promotes only
-  a fully successful revision. Reusing a stale base revision returns HTTP 409.
-- The port-8002 worker uses pinned PptxGenJS 4.0.1 for native text, shapes,
-  charts, tables, images, and notes. Python inspects OOXML, and Compose requires
-  a successful headless LibreOffice Impress open/PDF-export check.
-- PostgreSQL stores user-scoped presentations and revision lineage. Encrypted
-  title/spec fields use the existing optional `EncryptedText`; PPTX files use
-  the opaque binary store, optional binary encryption, SHA-256 metadata, and
-  owned deletion.
-- The Presentations UI supports persisted deck lists, typed previews and
-  thumbnails, slide selection, independent per-slide feedback conversations,
-  revision history, navigation restoration, named `.pptx` downloads, deletion,
-  loading, and visible pending/ready/failed outcomes. Each feedback revision
-  carries its stable target slide ID.
-- The local capability FastMCP facade exposes seven metadata-only tools,
-  including `create_presentation`, `revise_presentation_slide`, and
-  `get_presentation`. The server remains `untrusted`, so explicit calls require
-  confirmation and ordinary chat cannot yet autonomously resume them.
+The current RTX 5080 runtime must preload both qualified text roles explicitly.
+The verified profile has exactly one Qwen and one Gemma instance, each at an
+8,192-token context and one inference slot; Gemma keeps KV cache in system RAM.
+Loading Gemma by model name alone selected a 256k context, required about
+29.44 GB, and failed LM Studio's resource guardrail. AniOS documents the bounded
+profile but does not yet own model-residency preflight or recovery.
 
-## Git and runtime state
+## Qualified model roles
 
-- Starting state: branch `main`, `HEAD`
-  `b3d35bddaa615133f317287045b633f00755217e`, clean worktree.
-- Current presentation and documentation changes are uncommitted. No commit,
-  tag, branch, stash, reset, restore, checkout, push, or recovery operation was
-  created.
-- Compose currently runs backend, frontend, local capabilities,
-  presentation-renderer, PostgreSQL, and Redis. The renderer is healthy and
-  backend/local capabilities were rebuilt from this source tree.
-- Alembic reports `20260724_0014 (head)`.
-- Temporary direct/browser diagnostic decks were removed through their owned
-  DELETE APIs. The original verified revision deck remains
-  `7be08e63-c065-46dc-8801-25c20e9e8ba6`; the retained six-slide browser
-  acceptance deck is `a8bfcc5e-a85a-44a2-babe-6e028dc5b2cc`.
+- Main response and native MCP selection:
+  `MAIN_LLM_MODEL=qwen/qwen3.5-9b`.
+- Diagram planning: `DIAGRAM_LLM_MODEL=qwen/qwen3.5-9b`.
+- Progressive presentation planning/revision:
+  `PRESENTATION_LLM_MODEL=google/gemma-4-12b`.
+- Vision remains `VISION_MODEL=google/gemma-4-12b`.
+- Text embeddings remain
+  `EMBEDDING_MODEL=text-embedding-nomic-embed-text-v1.5`.
+- Each main/presentation/diagram role has an independent endpoint and reasoning
+  setting. Blank values fall back through main and legacy LM Studio settings.
+  Compose forwards every role setting to the services that use it.
+- The final loaded workstation profile reported about 6.10 GiB for Qwen and
+  9.28 GiB for Gemma. These are measured local profiles, not portable defaults.
+
+`backend.cli.qualify_models` compares candidates sequentially on five bounded
+supervisor/tool decisions plus a production-shaped progressive two-slide
+contract. It is a gate, not promotion proof. The actual owning subsystem's API,
+worker, state, logs, and browser path remain authoritative.
+
+## Git and runtime identity
+
+- Branch: `main`.
+- Starting and current `HEAD`:
+  `aeafbb51a4f0cc6efd7fc6790b62a22dc0251e43`.
+- The working tree is intentionally uncommitted and contains this task plus
+  pre-existing presentation work. No commit, tag, branch, stash, reset,
+  restore, clean, push, or recovery operation was performed.
+- Final-source Compose images exercised:
+  - backend:
+    `sha256:d823e0dd58e05898b0f69cf303779a2290a4d2ba115cb361540346976124aab7`;
+  - presentation worker:
+    `sha256:ec9438bf30f5fcf1727f417fa39094f3864bf4d7142d9468bd3b71f52495d256`;
+  - local capabilities:
+    `sha256:e2e7998d8a1a884eb501a34d2095e7da6842606142eeabdaa68ca6749b23dcfe`;
+  - frontend:
+    `sha256:b3c1f576a658f8e0817a15ad59bbb6e56d60e40c31b3b45f54be0d0b9a41926c`.
 
 ## VERIFIED
 
-### Direct API and persisted output
-
-- The exact reported slow request, `create a presentation on horses, 6 slides`,
-  now returned HTTP 201 in 28.67 seconds after one Gemma completion and one
-  renderer call. The resulting revision was `ready`, used
-  `pptxgenjs+libreoffice`, and contained exactly six stable slide
-  specifications.
-- The retained browser-created horse deck revision
-  `aa8d093c-424b-4933-8835-b4cc37e93bf5` is 116,620 bytes with SHA-256
-  `fbdb3c5a7e91be76c7de4b083e3d502730dad02b9764dbdd39318f36fde07c77`.
-  Direct download plus current-source OOXML inspection found six slides, 42
-  native text bodies, 72 native shapes, and six notes slides.
-- The documented `POST /api/v1/presentations` body for user `ani.mallya`, a
-  UUID conversation, and a three-slide AniOS brief returned HTTP 201 after
-  local Gemma generation.
-- The initial ready revision contained three slides, native text, shapes, one
-  chart, one table, and three notes. Direct download and OOXML inspection
-  confirmed those objects.
-- A direct selected-slide request produced a parent-linked ready revision while
-  exact application-level comparison proved slides 1 and 3 unchanged and slide
-  2 changed. Reusing an older base revision returned HTTP 409 before model use.
-- Direct per-slide follow-up acceptance created ready revision 8,
-  `24fc1a29-a2c9-42fc-82b6-c6db4d8763a6`, with
-  `target_slide_id=slide_001`, its unique marker in the specification, and one
-  persisted slide-1 conversation entry.
-- The final current revision is number 10,
-  `96c270c8-dc7a-4d79-bd98-f3c7b8b7e0d8`, status `ready`, and targets
-  `slide_002`. The deck currently exposes three threaded revisions: revision 8
-  belongs only to slide 1, while revisions 9 and 10 belong only to slide 2.
-- Backend logs show Gemma HTTP 200, renderer HTTP 200, presentation revision
-  HTTP 201, deck/history HTTP 200, and content HTTP 200 with no traceback in
-  the acceptance window.
-
-### Real browser
-
-- A fresh Chromium submission against the final rebuilt source image returned
-  HTTP 201 for the exact six-slide horse prompt in 37.98 seconds. The UI
-  displayed its running PresentationAgent
-  state, rendered six slide selectors and the created title/preview, replaced
-  the loading control with the normal creation control, and reported no
-  Console errors or page exceptions. Network inspection showed the required
-  POST plus required list/detail GETs all succeed.
-- The final live Playwright workflow passed in 32.6 seconds. It selected slide
-  2, submitted unique AI feedback, observed the running PresentationAgent
-  state, received HTTP 201, rendered the marker, compared both sibling slides
-  unchanged, navigated to Memory and back, reselected slide 2, restored its
-  exact suggestion and ready-revision response, and downloaded the exact ready
-  revision with HTTP 200 and the revisioned filename.
-- The workflow reported no page exceptions or blocking Console errors and
-  cleared the loading state.
-- The deterministic presentation browser workflow also passed; the live test
-  is intentionally skipped unless its two environment gates are set.
-
-### Regression and architecture evidence
-
-- Full current-source backend suite: `452 passed`.
-- PptxGenJS renderer suite: `1 passed`.
-- Strict MyPy: no issues in 135 source files. Repository-wide Ruff and Black
-  checks passed.
-- Frontend TypeScript/Vite production build passed. Vite reports only its
-  existing large-chunk advisory.
-- The deterministic presentation Playwright workflow passed.
-- `docker compose config --quiet` passed.
-- Live MCP listing reports local utility, internet search, and all seven local
-  capability tools with bounded schemas.
-- All 11 Mermaid sources and SVGs plus the published architecture page are
-  synchronized. The new presentation view was visually inspected after being
-  changed from a narrow vertical layout to a numbered landscape flow.
+- The configured Qwen cascade passed the complete committed search-routing
+  evaluation: 52 cases, 1.0 recall, 1.0 specificity, no misses, and no
+  unnecessary searches. An earlier run also had no misses and one conservative
+  extra search, so both exceeded the 0.90/0.80 gates.
+- Forced worker termination is live-verified. A disposable worker claimed job
+  `63753036-a55d-4cc0-8c91-51241ff2b937`; it was stopped while running, the
+  canonical worker reclaimed the same row on attempt 2 after the killed
+  process's Redis model lease expired naturally, and produced a ready,
+  exact four-slide, 96,229-byte PPTX through Gemma and
+  `pptxgenjs+libreoffice`.
+- Cooperative cancellation is live-verified through both the direct API and
+  isolated Chromium. Cancellation occurred only after persisted worker
+  ownership, returned HTTP 204, reached terminal `cancelled` with
+  `cancel_requested=true` and `error_code=cancelled`, left no promoted revision,
+  showed request/terminal notices, cleared the browser resume key, and removed
+  its scoped presentation.
+- Two disposable worker replicas simultaneously claimed separate jobs with
+  distinct worker IDs. Both completed on attempt 1 with exact two-slide
+  specifications, one revision each, valid content metadata, and no duplicate
+  claim. The disposable containers were removed and the canonical worker was
+  restored.
+- A 30-second, four-client mixed live workload overlapped six terminal chat
+  streams and 45 working-memory/operations calls with two real two-slide jobs.
+  All 51 operations passed with zero failures; p95 was 35.059 seconds, maximum
+  was 67.255 seconds, and both decks reached ready on attempt 1 in 147.881
+  seconds.
+- After explicit bounded model loading, isolated live Chromium completed
+  foreground Qwen chat plus a background Gemma two-slide deck in 131.2 seconds.
+  It required the unique rendered chat reference, terminal ready state, exact
+  slide count, model/renderer/content metadata, cleared loading, enabled empty
+  composer, clean required Network/Console/page state, and scoped cleanup.
+  Isolated live Chromium cancellation passed in 93.4 seconds.
+- The unified-composer image acceptance tests now exercise the real natural
+  language send, paperclip/file chooser, image follow-up/refinement field, and
+  unified Retry control. All seven affected image workflows pass.
+- Full backend regression passed in the exact runtime image with declared dev
+  extras: 488 passed, 2 skipped, and five deprecation warnings. The focused
+  presentation/supervisor/search set separately passed 106 tests.
+- All 34 deterministic Chromium tests pass. The TypeScript/Vite production
+  build passes with only the existing chunk-size advisory.
+- Ruff and `git diff --check` pass.
+- All 11 Mermaid/SVG pairs and `docs/architecture.html` remain synchronized.
 
 ## FAILED
 
-- The reported six-slide prompt originally spent roughly 200 seconds across two
-  oversized malformed full-`DeckSpec` model responses and returned HTTP 503
-  before rendering. Replacing repetitive model-authored layout JSON with a
-  2,048-token semantic plan and deterministic application compilation produced
-  the unchanged prompt successfully in one model call.
-- The first compact-plan retest reached a valid six-slide renderer response in
-  27.69 seconds but was rejected because the Python OOXML inspector counted
-  `a:txBody`; native PowerPoint slide text uses `p:txBody`. Correcting that
-  namespace check and adding a native-text regression test made the unchanged
-  direct and browser paths pass.
-- The first real deck creation produced invalid model JSON twice. Returning the
-  exact bounded validation reason on the correction request was the first
-  targeted fix; the unchanged acceptance brief then created a ready deck.
-- The first real slide revision returned a full `DeckSpec` where a `SlideSpec`
-  was required. A dedicated single-slide grammar was the targeted fix; the
-  unchanged revision acceptance then passed.
-- The initial deterministic browser assertion matched both main and thumbnail
-  previews. Scoping the assertion to the main visible result fixed the test.
-- The first browser download exposed a real CORS issue: JavaScript could not
-  read `Content-Disposition`, so it used `presentation.pptx`. Exposing only that
-  response header fixed the real filename path.
-- The first visual render of the presentation architecture diagram was too tall
-  and narrow. A numbered landscape source was rendered, synchronized, and
-  visually re-inspected.
-- An initial strict MyPy command included untyped FastMCP decorators and reported
-  all seven handlers. Narrow `untyped-decorator` ignores were placed only on
-  that third-party decorator boundary; the rerun passed without weakening
-  handler annotations.
-- The first live per-slide browser assertion required the unique marker to be
-  the entire suggestion, while the correctly restored UI displayed the full
-  sentence containing it. Scoping the assertion to contained text fixed the
-  test; the unchanged live workflow then passed.
-- `alembic current` reports `20260724_0014 (head)`, but `alembic check` remains
-  `FAILED` because the pre-existing visual-artifact HNSW index created by
-  migration `0012` is absent from `VisualArtifact.__table_args__`; Alembic
-  therefore proposes removing `ix_visual_artifacts_embedding_hnsw`. Source diff
-  against the starting SHA confirms neither `0012` nor the artifact model was
-  changed by this task. The real index still exists in PostgreSQL and was left
-  untouched because visual-embedding metadata drift is outside this atomic
-  slide-feedback task.
-
-No hypothesis boundary failed three times.
+- The first combined live browser rerun failed because only Qwen was loaded.
+  Gemma's name-only auto-load selected a 256k context; LM Studio estimated
+  29.44 GB and rejected it under the resource guardrail. The deck produced no
+  draft within 180 seconds and the following cancellation job remained queued
+  behind the occupied worker. The two scoped jobs were removed.
+- A second combined run exposed duplicate Gemma instances (256k and 8k) and
+  Qwen eviction. After normalizing residency, the next isolated run reached the
+  chat boundary but the synthetic `LIVE_BG_*` instruction produced an unrelated
+  Qwen response. A direct natural reference prompt succeeded; the isolated
+  browser acceptance now uses that production-like prompt and passes.
+- The first deterministic frontend sweep found seven stale image tests still
+  targeting removed mode buttons. The current UI is intentionally one unified
+  prompt/attachment composer. Tests were updated to the actual accessible
+  workflow, including explicit image intent and the renamed follow-up field;
+  the complete deterministic suite now passes.
+- Repository-wide `alembic check` retains the previously documented unrelated
+  visual-artifact HNSW metadata drift. This task did not alter that schema.
 
 ## UNVERIFIED
 
-- Creation latency for substantially larger decks, concurrent model workloads,
-  and sustained repeated generation has not been benchmarked; the current
-  single six-slide acceptance is verified, not a general latency SLA.
-- Arbitrary existing-PPTX import and round-trip modification are not
-  implemented.
-- The browser preview is a typed layout approximation, not Office rendering.
-  Automatic slide-image comparison or manager-quality visual scoring is not
-  implemented.
-- Source-grounded research/citations, reusable master/template libraries,
-  first-class hydration of owned image/diagram artifacts into decks, durable
-  distributed render queues, cancellation, crash reconciliation, retention,
-  package malware scanning, and renderer sandboxing remain planned.
-- Raster images are replaceable native image objects, but their pixels are not
-  decomposed into editable PowerPoint shapes.
-- General multi-agent scheduling, A2A, and durable agent sessions remain
+- The application does not yet preload, validate, or repair LM Studio role
+  residency. The documented bounded RTX 5080 profile is manual; a server/model
+  restart can reintroduce unsafe default contexts or role eviction until an
+  application-owned preflight exists.
+- Qwen's current role evidence is local to the downloaded quantization,
+  prompts, LM Studio version, and 8k/parallel-1 RTX 5080 profile. Long-duration
+  multi-user latency, accuracy drift across repeated releases, contexts above
+  8k, memory pressure beyond the bounded run, and DGX Spark behavior remain
+  unmeasured.
+- The supervisor registry currently contains only presentation creation.
+  Ambiguous agent/tool selection, clarification/resume, consequential MCP
+  approval, dynamic agent teams, A2A, and general distributed scheduling remain
   unimplemented.
+- The bounded two-replica test proves PostgreSQL claim safety on one host; it
+  does not prove multi-host GPU scheduling, fairness, autoscaling, or
+  long-duration crash churn.
 
 ## Next atomic task
 
-Implement explicit chat confirmation and resume for the existing untrusted
-`create_presentation` MCP tool. The acceptance path should make Gemma select a
-semantically discovered presentation tool, show the pending tool card and safe
-summary, require the user to confirm, invoke through the existing live
-contract/privacy/risk gates, restore the same chat turn, and render a link to
-the persisted deck in Presentations. It must not make other consequential MCP
-tools autonomous or broaden the presentation agent's authority.
+Add an application-owned role-model residency preflight before starting model
+work. It should read the configured main/presentation/diagram identifiers,
+query LM Studio's management API, reject duplicate or unsafe context profiles,
+and return an actionable readiness failure instead of allowing a worker to
+spend repeated provider timeouts on an unloaded role. Keep model load/unload
+mutation explicit and operator-controlled in this slice; do not build the full
+GPU scheduler yet. Acceptance must cover both roles resident with the verified
+profile, missing presentation model, duplicate/oversized Gemma instances,
+provider-unreachable behavior, redacted logs, and the isolated live
+chat-plus-deck browser path.
+
+After that guard is verified, resume the typed capability-registry task shared
+by the main supervisor and MCP shortlist.

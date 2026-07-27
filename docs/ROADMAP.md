@@ -18,9 +18,9 @@ Goal: provide a locally runnable frontend and backend that complete a real chat 
 Current evidence as of 2026-07-18:
 
 - `VERIFIED`: PostgreSQL and Redis start in Compose; PostgreSQL reported healthy while the backend ran from current host source.
-- `VERIFIED`: the documented chat payload returns `200 text/event-stream`, reaches `ConversationService` and the injected LM Studio Gemma model through LangGraph, emits multiple message deltas, terminates, and creates a conversation row with the completed response.
+- `VERIFIED`: the documented chat payload returns `200 text/event-stream`, reaches `ConversationService` and the injected LM Studio main model through LangGraph, emits message deltas, terminates, and creates a conversation row with the completed response.
 - `VERIFIED`: initial Alembic revision `20260716_0001` creates the four application tables and `alembic check` reports no pending operations.
-- `VERIFIED`: Playwright Chromium covers deterministic chat success/failure; its opt-in live path verified a unique Gemma response, response content appearing while loading remained active, stream termination, loading cleanup, and clean Console/Network state.
+- `VERIFIED`: Playwright Chromium covers deterministic chat success/failure; its opt-in live path verifies a unique configured-main-model response, response content appearing while loading remains active, stream termination, loading cleanup, and clean Console/Network state.
 - `VERIFIED`: the visible transcript survives navigation between Chat and Memory for the active conversation; starting a new conversation from Memory returns to a fresh Chat view; a bounded owned transcript and ready diagram restore from the stored active conversation after a full reload.
 - `VERIFIED`: the responsive light-neutral frontend presents an empty search-first state and an active question/result layout, keeps request identifiers behind an accessible answer-level three-dot popover, uses one native system font stack in the composer and shell, and passes deterministic narrow-viewport plus live-provider browser acceptance.
 - `VERIFIED`: assistant CommonMark renders as semantic styled headings, paragraphs, emphasis, lists, links, quotes, and code while raw HTML interpretation remains disabled and user messages remain literal.
@@ -64,7 +64,7 @@ Current evidence as of 2026-07-17:
 - `VERIFIED`: explicit memories carry purpose and optional expiry; semantic records also carry embedding model/version/dimension. Expired semantic records are excluded from retrieval while remaining exportable.
 - `VERIFIED`: optional expiring HMAC-signed local user tokens bind chat and every memory/tool-memory route to the token subject when `AUTH_REQUIRED=true`; missing, invalid, expired, and cross-user requests are rejected before service access.
 - `VERIFIED`: safe MCP tool descriptors can be embedded and discovered by user/server with schema-fingerprint invalidation; approved allowlisted preferences and sanitized outcome categories are stored separately, while secret-shaped descriptor/preference input is rejected.
-- `VERIFIED`: a typed `AgentMemoryManager` persists semantic-cache, session-working, procedural/workflow, entity/relation, knowledge-document/chunk, and conversation-summary records. Current Alembic head `20260724_0014` includes per-slide presentation feedback association on top of presentation persistence and binary visual metadata; the memory stores introduced through `0009` retain pgvector HNSW indexes and source-request provenance.
+- `VERIFIED`: a typed `AgentMemoryManager` persists semantic-cache, session-working, procedural/workflow, entity/relation, knowledge-document/chunk, and conversation-summary records. Current Alembic head `20260726_0015` adds durable presentation jobs on top of per-slide feedback association, presentation persistence, and binary visual metadata; the memory stores introduced through `0009` retain pgvector HNSW indexes and source-request provenance.
 - `VERIFIED`: the deterministic `MemoryCoordinatorAgent` searches every embedded user-scoped store on each turn so anything relevant can be recalled regardless of phrasing, gates only the non-embedded episodic store by keyword, includes the latest conversation digest, relies on per-store distance thresholds plus one shared relevance budget to bound prompt fields, and keeps retrieved values as untrusted literal data. Completed turns update expiring session state and create a rolling digest every configured interval. Live-verified: an approved dentist entity was recalled by a question containing none of the old entity keywords.
 - `VERIFIED`: a live Gemma/Nomic acceptance seeded unique entity, knowledge, summary, procedure, and toolbox codes; one chat query retrieved and reproduced all five codes, terminated with `done`, and cleanup returned all scoped agent-memory counts to zero.
 - `VERIFIED`: the browser Memory screen renders all short- and long-term memory forms with live personal, agent, and toolbox counts. Every map card opens an on-demand owned detail view; full export is not fetched until a card is selected, displayed records are bounded, and embedding/storage internals are omitted.
@@ -123,12 +123,15 @@ The local knowledge store is a working semantic retrieval path, but it is not ye
 Goal: let one AniOS conversation create editable technical diagrams and locally generated visual media while keeping models, renderers, storage, and scarce hardware replaceable behind typed orchestration boundaries.
 
 - `VERIFIED`: eleven canonical Mermaid/SVG views, render-input synchronization checks, architecture-change governance, and a local review-only Gemma candidate command are present. The candidate path reads bounded explicit repository evidence, refuses remote endpoints and canonical overwrite, validates passive source plus required labels, renders an SVG, and still requires technical/visual review before manual promotion.
-- `VERIFIED`: a focused `PresentationAgent` asks Gemma for a compact semantic `DeckPlan` during creation and a strict selected-slide `SlideSpec` during feedback. A deterministic application compiler turns the compact plan into stable editable layout objects, cutting the exact six-slide local creation acceptance from a roughly 200-second malformed-output failure to 28.67 seconds direct and 37.98 seconds in final-source Chromium. PptxGenJS renders editable native text, shapes, charts, tables, images, and notes; structural OOXML inspection and headless LibreOffice validation both precede atomic current-revision promotion. User-scoped append-only history, stable target-slide association, independent per-slide feedback conversations, stale-base conflict protection, opaque binary storage, browser previews, slide thumbnails, navigation restoration, named `.pptx` download, deletion, and visible pending/ready/failed states pass direct and real-browser acceptance.
-- `PLANNED`: source-grounded presentation research and citations, reusable theme/master libraries, owned image/diagram asset hydration, arbitrary existing-PPTX import, automated visual-diff review, and a durable distributed render queue with cancellation. Raster image pixels are not decomposed into editable drawing primitives, although the image object remains replaceable in PowerPoint.
+- `VERIFIED`: a focused `PresentationAgent` asks Gemma for a compact outline, one bounded slide-content microtask at a time, or a strict selected-slide `SlideEdit`. Durable PostgreSQL jobs are claimed by a standalone leased worker that invokes this LangGraph, checkpoints progressive drafts, survives browser navigation/disconnect, and exposes reconnectable progress/cancellation. A Redis foreground-priority lease lets a waiting chat run between presentation microtasks. A deterministic application compiler turns bounded model output into stable editable layout objects. PptxGenJS renders editable native text, shapes, charts, tables, images, and notes; structural OOXML inspection and headless LibreOffice validation both precede atomic current-revision promotion. User-scoped append-only history, stable target-slide association, independent per-slide feedback conversations, stale-base conflict protection, opaque binary storage, progressive browser previews, slide thumbnails, navigation/reload restoration, named `.pptx` download, deletion, and visible queued/running/ready/failed/cancelled states pass direct and real-browser acceptance.
+- `VERIFIED`: forced worker termination reclaimed the same PostgreSQL job on attempt 2 and produced its exact four-slide validated PPTX after the killed worker's Redis model lease expired naturally. Two simultaneous disposable workers claimed separate jobs with distinct worker IDs and each completed once with one revision and its exact two slides. Direct and isolated real-browser cancellation both reached persisted `cancelled` state after worker ownership, cleared resumable browser state, exposed visible progress/terminal messages, and cleaned up their scoped records.
+- `VERIFIED`: a bounded four-client mixed workload overlapped six terminal chat streams and 45 memory/operations calls with two real presentation jobs. All 51 operations passed with zero failures; overall p95 was 35.059 seconds and maximum was 67.255 seconds, while both exact two-slide decks reached `ready` on attempt 1 in 147.881 seconds. An isolated live Chromium chat/deck workflow also passed in 131.2 seconds with both qualified models resident.
+- `VERIFIED`: optional selected-slide imagery uses `PresentationImageService` to generate through the existing ComfyUI/HiDream artifact boundary, attach the owned image UUID to a new revision, and preserve the same rendering and promotion gates.
+- `PLANNED`: source-grounded presentation research and citations, reusable theme/master libraries, diagram-asset hydration, arbitrary existing-PPTX import, automated visual-diff review, sustained multi-host load/latency testing, and distributed GPU-capacity scheduling. The current worker queue is durable and horizontally claim-safe, but it is not yet a general distributed scheduler. Raster image pixels are not decomposed into editable drawing primitives, although the image object remains replaceable in PowerPoint.
 - `VERIFIED`: explicit diagram requests create user-scoped PostgreSQL artifact records with pending/ready/failed lifecycle, conversation/trace provenance, provider/model metadata, recent owned history, scoped deletion, active-conversation transcript/artifact restoration after full reload, local Mermaid/SVG downloads, and shielded failed/cancelled terminal cleanup after client disconnect. Retention cleanup remains `PLANNED`.
-- `VERIFIED`: deterministic application policy routes explicit diagram requests through a specialized typed `DiagramAgent` LangGraph workflow plus provider/repository contracts; Gemma produces only a bounded specification and cannot select providers, write storage, or control hardware. Raster generation and vision now use focused provider/service contracts; autonomous image agents and multi-agent visual workers remain `PLANNED`.
+- `VERIFIED`: deterministic application policy routes explicit diagram requests through a specialized typed `DiagramAgent` LangGraph workflow plus provider/repository contracts; the configured diagram model produces only a bounded specification and cannot select providers, write storage, or control hardware. Raster generation and vision now use focused provider/service contracts; autonomous image agents and multi-agent visual workers remain `PLANNED`.
 - `VERIFIED`: the local Mermaid provider validates allowlisted passive source, performs one bounded format-correction retry, streams artifact lifecycle events, and lazily renders editable source as strict SVG in chat with visible generation/render failure states.
-- `PLANNED`: a hardware-resource manager that leases GPU capacity, drains active inference safely, selects configured context profiles, and restores the primary Gemma provider after a model transition or failure.
+- `PLANNED`: a hardware-resource manager that leases GPU capacity, drains active inference safely, selects configured per-role context/offload profiles, verifies residency before dispatch, and restores the configured main and specialist providers after a model transition or failure.
 - `VERIFIED`: free local ComfyUI 0.28 plus MIT-licensed HiDream-O1 Dev FP8 generates 2048x2048 PNGs through a typed provider and one-job concurrency gate. Direct RTX 5080 acceptance completed in 35.01 seconds under exclusive residency and 35.061 seconds while Gemma remained loaded at its 256k/parallel-4 profile; the immediate post-generation Gemma chat stream also completed. Live browser cancellation now interrupts the exact ComfyUI prompt, records `failed/cancelled`, clears loading, and produces no backend exception. Broader quality, crash recovery, and sustained-load benchmarks remain `PLANNED`; paid APIs, subscriptions, credits, and automatic cloud fallback remain excluded.
 - `VERIFIED`: generated and uploaded images use user-scoped PostgreSQL pending/ready/failed lifecycle plus opaque atomic local storage, SHA-256/size integrity checks, owned content reads, scoped file-plus-row deletion, and sanitized invalid-input/provider failures. Automated retention/export and crash reconciliation remain `PLANNED`.
 - `VERIFIED`: bounded PNG/JPEG/WebP multipart upload validation and real Gemma 4 12B image understanding are implemented. Live acceptance correctly identified a unique magenta geometric fox and its light-green circular platform; malformed bytes returned 422 and created no record. Dedicated multimodal embeddings are now `VERIFIED`: `nomic-embed-vision-v1.5`
@@ -142,14 +145,21 @@ rather than assumed: an 18-query labelled evaluation returns 14/14 correct
 top-1 matches and rejects 4/4 distractor queries, using a distance ceiling plus
 a required best-to-runner-up margin. Search routing now has a committed harness,
 `backend/cli/evaluate_search_routing.py`, which scores a labelled set and exits
-non-zero below a per-mode floor. Image-retrieval calibration remains manual and
-is the next evaluation gap.
+non-zero below a per-mode floor. The configured Qwen cascade passed all 52
+committed cases in the final live run with 1.0 recall, 1.0 specificity, no
+misses, and no unnecessary searches. Image-retrieval calibration remains manual
+and is the next evaluation gap.
 - `VERIFIED`: threaded followup questions about any owned generated or uploaded image reuse the integrity-checked stored bytes and the same Gemma vision boundary, replay a bounded question/answer context, persist a size-bounded thread in artifact metadata, seed from a prior flat analysis, and reject unowned or non-ready images with 404 before any provider call. Deterministic Chromium plus backend/unit coverage pass, and a live Gemma followup completed through the local visual MCP facade. The interactive follow-up thread lives only on the artifact record. The initial upload analysis, however, is indexed into semantic memory as a provenance-labelled description and is recalled by an ordinary conversation turn (live-verified); indexing the follow-up thread itself remains `PLANNED`.
-- `VERIFIED`: natural-language new-image requests submitted from Chat select the image-generation path, while historical questions submitted with Create image selected switch back to ordinary chat without creating another image. Generated artifacts retain prompt provenance; deterministic image recall uses it to ground later questions.
+- `VERIFIED`: the unified composer routes explicit natural-language new-image requests to image generation, image attachments to analysis, and historical image questions back to ordinary chat without creating another image. Generated artifacts retain prompt provenance; deterministic image recall uses it to ground later questions.
 - `VERIFIED`: an explicit internet search about a recalled image runs image retrieval first, appends only a bounded prompt/analysis description to the normalized subject, privacy-screens the combined query, invokes the read-only internet MCP tool, and never sends image bytes. Real Chromium verified generation, grounded followup, visible search-tool lifecycle, terminal streaming, cleared loading/input, and memory-map drilldown.
 - `VERIFIED`: deterministic and live Chromium acceptance covers diagrams, real ComfyUI image generation, multipart Gemma analysis, private image rendering, progress/cancellation, retry, 413/422/502/503 failure display, navigation and reload restoration, history, download, owned deletion, clean successful Network/Console behavior, and terminal loading state.
 
-Gemma remains the primary logical reasoning model, but no model owns orchestration state or its own lifecycle. The application owns policy, durable jobs, resource leases, and provider recovery so specialized workers and future multi-agent graphs can scale without coupling the system to the current RTX 5080 or planned DGX Spark.
+AniOS now uses qualified model roles: `qwen/qwen3.5-9b` is the current main
+response/native-tool and diagram model, while `google/gemma-4-12b` remains the
+presentation specialist and vision model. No model owns orchestration state or
+its own lifecycle. The application owns policy, durable jobs, resource leases,
+and provider recovery so specialized workers and future multi-agent graphs can
+scale without coupling the system to the current RTX 5080 or planned DGX Spark.
 
 ## Milestone 5: tools and specialized agents — IN PROGRESS
 
@@ -160,9 +170,21 @@ Gemma remains the primary logical reasoning model, but no model owns orchestrati
   metadata-only tools with application-owned identity outside model-visible
   schemas;
 - `VERIFIED`: live-list/fingerprint/argument/privacy/risk invocation gates; consequential calls remain approval-gated but chat approval/resume is not implemented;
-- `VERIFIED`: semantic discovery over safe, versioned MCP tool descriptors and native Gemma selection from a bounded live-validated shortlist;
+- `VERIFIED`: semantic discovery over safe, versioned MCP tool descriptors and native configured-main-model selection from a bounded live-validated shortlist;
 - `VERIFIED`: user-scoped tool preference and usage-outcome memory;
-- deterministic, testable LangGraph workflows;
+- `VERIFIED`: a typed hybrid `MainSupervisorAgent` LangGraph step delegates
+  explicit presentation creation to the registered durable specialist before
+  retrieval, emits visible agent/model lifecycle events, and leaves ordinary
+  turns to the existing main assistant/MCP path;
+- `VERIFIED`: independently configurable main, presentation, and diagram model
+  endpoints/identifiers/reasoning settings plus a repeatable comparative
+  qualification harness. Qwen passed bounded supervisor/tool cases plus real
+  chat and diagram paths; Gemma remained the presentation specialist after
+  Qwen failed the actual strict progressive worker contract;
+- `VERIFIED`: the configured Qwen search cascade passed the complete 52-case
+  routing evaluation with 1.0 recall and 1.0 specificity. Long-duration
+  accuracy drift, contexts above the verified 8k workstation profile, and DGX
+  Spark behavior remain unmeasured;
 - `VERIFIED` (Tavily runtime; Google deterministic): deterministic
   privacy-preserving MCP internet research with an isolated Google ADK worker,
   Tavily fallback, explicit dual-provider verification, local non-content
@@ -174,16 +196,22 @@ Gemma remains the primary logical reasoning model, but no model owns orchestrati
 - reflection and multi-agent orchestration;
 - `VERIFIED`: trace-correlated tool execution with visible running/success/refusal/failure status; durable audit and consequential-call approval UI remain planned.
 
-The current LangGraph still has one model-backed assistant node. The
-deterministic memory coordinator is a policy/service boundary, not a spawned
-LLM sub-agent or multi-agent graph. The visual MCP facade is an
+The primary assistant LangGraph still has one model-backed node. The typed
+first-step supervisor currently has one registered delegation policy:
+presentation creation. It does not yet dynamically compare every agent and MCP
+tool in one decision. The deterministic memory coordinator is a policy/service
+boundary, not a spawned LLM sub-agent or multi-agent graph. Presentation
+creation runs as a focused LangGraph subagent in its own durable worker process,
+independently of the foreground chat request.
+The visual MCP facade is an
 application-capability adapter, not a new autonomous agent. Its `untrusted`
 classification keeps artifact-producing calls outside ordinary autonomous chat
 selection until proposal/approval/resume is implemented. One narrow
 request-scoped Google ADK researcher is implemented behind `SearchProvider`; it
 has no AniOS memory, identity, general MCP access, durable session, or
 authorization authority. General researcher teams, tool-executor agents,
-LangGraph multi-agent scheduling, and A2A are not implemented.
+a unified dynamic capability registry, ambiguity clarification/resume, general
+LangGraph agent-team scheduling, and A2A are not implemented.
 
 Internet-search policy and acceptance gates:
 
@@ -201,7 +229,7 @@ cloud-worker context isolation, non-content daily quota, untrusted result
 isolation, visible status, and provider source provenance are implemented.
 Deterministic coverage verifies both provider branches; direct API and real
 Chromium acceptance verify Tavily fallback. A real Google-grounded request is
-`UNVERIFIED` until an operator configures a key. Gemma has no unrestricted
+`UNVERIFIED` until an operator configures a key. The local models have no unrestricted
 network access. Review/approval when a useful query needs materially identifying
 context, broader PII classification, durable redacted decision audit,
 distributed quota coordination, and claim-level citation evaluation remain
@@ -225,7 +253,7 @@ pulls, and quarantine for instruction-shaped descriptions. Verified against a
 real server: 13 tools discovered and indexed, and natural-language queries
 retrieve the correct tool while unrelated questions return nothing.
 
-Safe tool-descriptor embeddings, approved preference/sanitized outcome memory, live MCP connectivity, native Gemma tool selection, permission-aware invocation, pre-invocation registry re-resolution, and the local visual FastMCP capability facade are `VERIFIED`. Automatic registry refresh/change notifications, durable execution audit, per-server user authorization scopes, and chat approval/resume for consequential tools remain `PLANNED`; a stored descriptor never authorizes a call.
+Safe tool-descriptor embeddings, approved preference/sanitized outcome memory, live MCP connectivity, native main-model tool selection, permission-aware invocation, pre-invocation registry re-resolution, and the local visual FastMCP capability facade are `VERIFIED`. Automatic registry refresh/change notifications, durable execution audit, per-server user authorization scopes, and chat approval/resume for consequential tools remain `PLANNED`; a stored descriptor never authorizes a call.
 
 ## Milestone 6: additional interfaces and automation — PLANNED
 

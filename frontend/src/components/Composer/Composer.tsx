@@ -5,6 +5,7 @@ import {
   generateImage,
   ingestDocument,
   streamChat,
+  type AgentActivity,
   type ImageArtifact,
   type MemoryProposal,
   type SearchSource,
@@ -62,6 +63,8 @@ interface ComposerProps {
   onSearchSources: (sources: SearchSource[]) => void;
   onToolStarted: (activity: ToolActivity) => void;
   onToolFinished: (activity: ToolActivity) => void;
+  onAgentStarted: (activity: AgentActivity) => void;
+  onAgentFinished: (activity: AgentActivity) => void;
 }
 
 // Render the chat input and stream submitted messages.
@@ -84,6 +87,8 @@ const Composer: React.FC<ComposerProps> = ({
   onSearchSources,
   onToolStarted,
   onToolFinished,
+  onAgentStarted,
+  onAgentFinished,
 }) => {
   const [input, setInput] = useState('')
   const [isSending, setIsSending] = useState(false)
@@ -204,6 +209,11 @@ const Composer: React.FC<ComposerProps> = ({
           onToolStarted(update.activity)
         } else if (update.type === 'tool_finished') {
           onToolFinished(update.activity)
+        } else if (update.type === 'agent_started') {
+          onAgentStarted(update.activity)
+        } else if (update.type === 'agent_finished') {
+          onThinkingChange(false)
+          onAgentFinished(update.activity)
         } else {
           onThinkingChange(false)
           onArtifactError(update.artifactId, update.message)

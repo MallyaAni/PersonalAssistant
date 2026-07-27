@@ -2,20 +2,17 @@ import asyncio
 import json
 import re
 from abc import ABC, abstractmethod
-from collections.abc import AsyncIterator, Callable, Iterator
+from collections.abc import AsyncIterator, Callable
 from typing import Any
 
-from pydantic import TypeAdapter
-
 from backend.core.llm import LLMClient
+from backend.core.model_gate import ModelExecutionGate
 from backend.presentations.editing import SlideEdit
 from backend.presentations.planner import (
     DeckDraft,
+    DeckOutline,
     DeckPlan,
     PlannedSlide,
-    StreamDeckDone,
-    StreamDeckHeader,
-    StreamPlannedSlide,
     compile_deck_plan,
     compile_slide,
     requested_slide_count,
@@ -134,93 +131,22 @@ def _slide_content_view(slide: SlideSpec) -> dict[str, Any]:
     }
 
 
-# Describe the record stream that enables application-owned progressive previews.
-def _stream_plan_contract(expected_slides: int | None) -> str:
+# Describe the bounded outline that schedules independent slide microtasks.
+def _deck_outline_contract(expected_slides: int | None) -> str:
     count = (
-        "The deck record and final output must contain exactly "
-        f"{expected_slides} slides."
+        f"Return exactly {expected_slides} slide entries."
         if expected_slides is not None
         else "Choose 3 to 8 slides."
     )
     return (
-        "Return consecutive JSON objects with no array, Markdown, commentary, or "
-        "code fence. The first object is "
-        '{"type":"deck","title":"...","subtitle":"...","slide_count":N}. '
-        "Then return one object per slide in index order with fields type:'slide', "
-        "index, title, purpose, points (2 to 6 concise strings), optional "
-        "key_message, and notes. Finish with exactly "
-        '{"type":"done"}. Application code owns all layout. ' + count
+        "Return one compact JSON object only with title, optional subtitle, and "
+        "slides. Each slide entry contains only title and purpose. Do not emit "
+        "points, notes, layout, Markdown, or commentary. " + count
     )
 
 
-_STREAM_RECORD: TypeAdapter[StreamDeckHeader | StreamPlannedSlide | StreamDeckDone] = (
-    TypeAdapter(StreamDeckHeader | StreamPlannedSlide | StreamDeckDone)
-)
-
-
-# Parse adjacent streamed JSON objects as soon as each complete record arrives.
-def _stream_records(chunks: Iterator[str]) -> Iterator[dict[str, Any]]:
-    decoder = json.JSONDecoder()
-    buffer = ""
-    for chunk in chunks:
-        buffer += chunk
-        while stripped := buffer.lstrip():
-            try:
-                record, consumed = decoder.raw_decode(stripped)
-            except json.JSONDecodeError:
-                break
-            if not isinstance(record, dict):
-                raise ValueError("Presentation stream record must be an object")
-            yield record
-            buffer = stripped[consumed:]
-    if buffer.strip():
-        raise ValueError("Presentation stream ended with incomplete JSON")
-
-
-# Validate model stream order and compile each newly arrived slide immediately.
-def _compiled_drafts(
-    chunks: Iterator[str],
-    requested_count: int | None,
-) -> Iterator[DeckDraft]:
-    header: StreamDeckHeader | None = None
-    slides: list[StreamPlannedSlide] = []
-    saw_done = False
-    for raw_record in _stream_records(chunks):
-        record = _STREAM_RECORD.validate_python(raw_record)
-        if isinstance(record, StreamDeckHeader):
-            if header is not None or slides:
-                raise ValueError("Presentation deck metadata must be first")
-            if requested_count is not None and record.slide_count != requested_count:
-                raise ValueError("Presentation stream declared the wrong slide count")
-            header = record
-            continue
-        if isinstance(record, StreamPlannedSlide):
-            if header is None or record.index != len(slides) + 1:
-                raise ValueError("Presentation slides must stream in index order")
-            if len(slides) >= header.slide_count:
-                raise ValueError("Presentation stream exceeded its slide count")
-            slides.append(record)
-            plan = DeckPlan(
-                title=header.title,
-                subtitle=header.subtitle,
-                slides=[
-                    PlannedSlide.model_validate(
-                        slide.model_dump(exclude={"type", "index"})
-                    )
-                    for slide in slides
-                ],
-            )
-            yield DeckDraft(compile_deck_plan(plan), header.slide_count)
-            continue
-        if header is None or len(slides) != header.slide_count:
-            raise ValueError("Presentation stream finished before every slide")
-        saw_done = True
-    if not saw_done:
-        raise ValueError("Presentation model omitted the terminal done record")
-
-
 class LLMPresentationProvider(PresentationProvider):
-    """Ask local Gemma for typed deck or slide plans without file authority."""
+    """Ask the configured local model for typed plans without file authority."""
 
     # Keep the configured model and output budget replaceable at assembly time.
     def __init__(
@@ -229,11 +155,15 @@ class LLMPresentationProvider(PresentationProvider):
         max_tokens: int,
         plan_max_tokens: int = 2_048,
         revision_max_tokens: int = 1_024,
+        model_gate: ModelExecutionGate | None = None,
+        background: bool = False,
     ) -> None:
         self.llm = llm
         self.max_tokens = max_tokens
         self.plan_max_tokens = plan_max_tokens
         self.revision_max_tokens = revision_max_tokens
+        self.model_gate = model_gate
+        self.background = background
 
     # Generate and validate a complete deck, retrying one invalid format once.
     async def create(self, prompt: str) -> DeckSpec:
@@ -265,43 +195,74 @@ class LLMPresentationProvider(PresentationProvider):
             raise TypeError("Presentation provider returned the wrong plan")
         return compile_deck_plan(plan)
 
-    # Bridge the synchronous local-model stream into incremental compiled drafts.
+    # Plan an outline, then yield after each independently scheduled slide call.
     async def create_progress(self, prompt: str) -> AsyncIterator[DeckDraft]:
         expected_slides = requested_slide_count(prompt)
-        messages = [
+        outline_messages = [
             {
                 "role": "system",
                 "content": (
                     "You are AniOS PresentationAgent. Plan clear, technically "
                     "accurate, executive-ready presentation content. "
-                    + _stream_plan_contract(expected_slides)
+                    + _deck_outline_contract(expected_slides)
                 ),
             },
             {"role": "user", "content": prompt},
         ]
-        queue: asyncio.Queue[DeckDraft | Exception | None] = asyncio.Queue()
-        loop = asyncio.get_running_loop()
-
-        # Consume the blocking LM Studio iterator without blocking the API event loop.
-        def consume() -> None:
-            try:
-                chunks = self.llm.stream_chat(messages, self.plan_max_tokens)
-                for draft in _compiled_drafts(chunks, expected_slides):
-                    loop.call_soon_threadsafe(queue.put_nowait, draft)
-            except Exception as exc:
-                loop.call_soon_threadsafe(queue.put_nowait, exc)
-            finally:
-                loop.call_soon_threadsafe(queue.put_nowait, None)
-
-        worker = asyncio.create_task(asyncio.to_thread(consume))
-        while True:
-            item = await queue.get()
-            if item is None:
-                break
-            if isinstance(item, Exception):
-                raise item
-            yield item
-        await worker
+        outline = await self._validated_reply(
+            outline_messages,
+            DeckOutline,
+            max_tokens=min(self.plan_max_tokens, 1_024),
+            expected_slide_count=expected_slides,
+        )
+        if not isinstance(outline, DeckOutline):
+            raise TypeError("Presentation provider returned the wrong outline")
+        planned_slides: list[PlannedSlide] = []
+        for index, outlined_slide in enumerate(outline.slides, start=1):
+            slide_messages = [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are AniOS PresentationAgent completing one slide "
+                        f"({index} of {len(outline.slides)}) for the deck "
+                        f"'{outline.title}'. {_slide_content_contract()} "
+                        "Keep the supplied title and purpose exactly."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": json.dumps(
+                        {
+                            "brief": prompt,
+                            "slide": outlined_slide.model_dump(mode="json"),
+                        },
+                        ensure_ascii=False,
+                    ),
+                },
+            ]
+            planned = await self._validated_reply(
+                slide_messages,
+                PlannedSlide,
+                max_tokens=self.revision_max_tokens,
+            )
+            if not isinstance(planned, PlannedSlide):
+                raise TypeError("Presentation provider returned the wrong slide")
+            planned_slides.append(
+                planned.model_copy(
+                    update={
+                        "title": outlined_slide.title,
+                        "purpose": outlined_slide.purpose,
+                    }
+                )
+            )
+            specification = compile_deck_plan(
+                DeckPlan(
+                    title=outline.title,
+                    subtitle=outline.subtitle,
+                    slides=planned_slides,
+                )
+            )
+            yield DeckDraft(specification, len(outline.slides))
 
     # Ask for one replacement slide while preserving its stable slide identifier.
     async def revise_slide(
@@ -367,19 +328,33 @@ class LLMPresentationProvider(PresentationProvider):
     async def _validated_reply(
         self,
         messages: list[dict[str, str]],
-        response_type: type[DeckPlan] | type[SlideEdit] | type[PlannedSlide],
+        response_type: (
+            type[DeckOutline] | type[DeckPlan] | type[SlideEdit] | type[PlannedSlide]
+        ),
         max_tokens: int | None = None,
         expected_slide_count: int | None = None,
         response_validator: (
-            Callable[[DeckPlan | SlideEdit | PlannedSlide], object] | None
+            Callable[
+                [DeckOutline | DeckPlan | SlideEdit | PlannedSlide],
+                object,
+            ]
+            | None
         ) = None,
-    ) -> DeckPlan | SlideEdit | PlannedSlide:
+    ) -> DeckOutline | DeckPlan | SlideEdit | PlannedSlide:
         for attempt in range(2):
-            result = await asyncio.to_thread(
-                self.llm.chat,
-                messages,
-                max_tokens or self.max_tokens,
-            )
+            if self.model_gate is not None and self.background:
+                async with self.model_gate.background():
+                    result = await asyncio.to_thread(
+                        self.llm.chat,
+                        messages,
+                        max_tokens or self.max_tokens,
+                    )
+            else:
+                result = await asyncio.to_thread(
+                    self.llm.chat,
+                    messages,
+                    max_tokens or self.max_tokens,
+                )
             content = result.get("content")
             try:
                 if not isinstance(content, str):
@@ -388,7 +363,7 @@ class LLMPresentationProvider(PresentationProvider):
                     _extract_json_object(content)
                 )
                 if (
-                    isinstance(specification, DeckPlan)
+                    isinstance(specification, (DeckOutline, DeckPlan))
                     and expected_slide_count is not None
                     and len(specification.slides) != expected_slide_count
                 ):

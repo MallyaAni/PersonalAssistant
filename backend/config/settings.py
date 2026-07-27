@@ -29,6 +29,23 @@ class Settings(BaseSettings):
     LLM_REASONING_EFFORT: Literal[
         "none", "minimal", "low", "medium", "high", "xhigh"
     ] = "none"
+    # Role-specific models fall back to the legacy LLM settings so existing
+    # installations keep working while operators qualify specialized models.
+    MAIN_LLM_BASE_URL: str = ""
+    MAIN_LLM_MODEL: str = ""
+    MAIN_LLM_REASONING_EFFORT: Literal[
+        "none", "minimal", "low", "medium", "high", "xhigh"
+    ] = "none"
+    PRESENTATION_LLM_BASE_URL: str = ""
+    PRESENTATION_LLM_MODEL: str = ""
+    PRESENTATION_LLM_REASONING_EFFORT: Literal[
+        "none", "minimal", "low", "medium", "high", "xhigh"
+    ] = "none"
+    DIAGRAM_LLM_BASE_URL: str = ""
+    DIAGRAM_LLM_MODEL: str = ""
+    DIAGRAM_LLM_REASONING_EFFORT: Literal[
+        "none", "minimal", "low", "medium", "high", "xhigh"
+    ] = "none"
 
     # Semantic memory embeddings (LM Studio OpenAI-compatible endpoint)
     EMBEDDING_MODEL: str = "text-embedding-nomic-embed-text-v1.5"
@@ -78,6 +95,13 @@ class Settings(BaseSettings):
         le=4_096,
     )
     PRESENTATION_REQUIRE_OFFICE_VALIDATION: bool = False
+    PRESENTATION_JOB_POLL_SECONDS: float = Field(default=0.5, ge=0.1, le=30)
+    PRESENTATION_JOB_LEASE_SECONDS: float = Field(default=300, ge=30, le=3_600)
+    PRESENTATION_JOB_HEARTBEAT_SECONDS: float = Field(default=30, ge=5, le=300)
+    REDIS_URL: str = "redis://127.0.0.1:6379/0"
+    MODEL_GATE_ENABLED: bool = False
+    MODEL_GATE_LEASE_SECONDS: float = Field(default=300, ge=30, le=900)
+    MODEL_GATE_POLL_SECONDS: float = Field(default=0.1, ge=0.05, le=2)
     IMAGE_MAX_UPLOAD_BYTES: int = Field(
         default=10 * 1024 * 1024,
         ge=1024,

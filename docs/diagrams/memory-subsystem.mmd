@@ -27,7 +27,7 @@ flowchart TB
         VectorPolicy[User scope, approval, active and expiry filters,<br/>cosine threshold, result limits]
         Budget[Cross-store relevance budget<br/>global ranking, dedup, item and char caps]
         Literal[Curated prompt values<br/>untrusted literal data, never instructions]
-        Context[Bounded ephemeral Gemma context window]
+        Context[Bounded ephemeral main-model context window]
     end
 
     subgraph Lifecycle[Lifecycle and operational controls]
@@ -39,7 +39,7 @@ flowchart TB
         Control[Card-detail export, correction, supersession,<br/>JSON export, scoped and delete-all]
     end
 
-    Embeddings[LM Studio Nomic<br/>document/query task prefixes<br/>dimension validation and serialized calls]
+    Embeddings[Model call: EMBEDDING_MODEL<br/>text-embedding-nomic-embed-text-v1.5<br/>document/query task prefixes<br/>dimension validation and serialized calls]
     Database[(PostgreSQL and pgvector<br/>asyncpg transactions<br/>advisory locks and HNSW cosine indexes)]
 
     Chat --> Coordinator

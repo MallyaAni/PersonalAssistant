@@ -1,75 +1,87 @@
 flowchart LR
     User([User])
-    GemmaCaller([Gemma tool caller])
+    MainCaller([Main supervisor or confirmed MCP caller])
 
     subgraph Entry[1. Owned entry points]
         direction TB
-        UI[Presentations UI<br/>brief, preview, slide feedback,<br/>history, download, delete]
-        API[Presentation API<br/>create, list, get, revise,<br/>download, delete]
-        MCP[Local FastMCP facade<br/>metadata-only tools]
+        UI[Presentations UI<br/>queue, reconnectable progress,<br/>feedback, history, download]
+        API[Presentation API<br/>HTTP 202 create, job read/cancel,<br/>revise, download, delete]
+        MCP[Local FastMCP facade<br/>metadata-only job handle]
         Gates[Live contract, privacy,<br/>and confirmation gates]
+        AgentEvents[Chat SSE agent lifecycle<br/>PresentationAgent plus exact model]
     end
 
-    subgraph Lifecycle[2. Application-owned lifecycle]
+    subgraph Scheduling[2. Durable application scheduling]
         direction TB
-        Service[PresentationService<br/>ownership and revision coordinator]
-        Pending[Create pending revision<br/>with parent and expected base]
+        JobService[PresentationJobService<br/>ownership and queue API]
+        JobStore[(PostgreSQL presentation_jobs<br/>queued, running, ready,<br/>failed, cancelled)]
+        Worker[Presentation worker<br/>lease, heartbeat, recovery]
+        Claim[Atomic claim<br/>FOR UPDATE SKIP LOCKED]
+        Draft[Persist each validated draft<br/>browser can reconnect]
+        JobService --> JobStore
+        Worker --> Claim --> JobStore
+        Worker --> Draft --> JobStore
+    end
+
+    subgraph Lifecycle[3. Focused subagent and application authority]
+        direction TB
+        Service[PresentationService<br/>revision and promotion authority]
         Agent[PresentationAgent<br/>focused LangGraph workflow]
-        Mode{Create deck or<br/>revise selected slide?}
-        Strict{Valid compact DeckPlan<br/>or selected SlideSpec?}
-        Correction[One bounded<br/>correction attempt]
-        Compiler[Deterministic deck compiler<br/>stable IDs and bounded editable layout]
-        Merge[Replace selected slide only;<br/>preserve every sibling]
+        GraphNode[create_progress node<br/>custom draft events]
+        Provider[LLMPresentationProvider<br/>outline then one slide microtask]
+        Compiler[Deterministic compiler<br/>stable IDs and editable layout]
+        Agent --> GraphNode --> Provider --> Compiler
     end
 
-    subgraph Model[3. Local model boundary]
+    subgraph Model[4. Shared local model priority]
         direction TB
-        Provider[LLMPresentationProvider<br/>compact content-plan grammar<br/>or selected-slide grammar]
-        Queue[Shared Gemma queue<br/>one local generation at a time]
-        LMStudio[LM Studio Gemma 4 12B<br/>brief content or selected slide only]
-        Provider --> Queue --> LMStudio --> Provider
+        Gate[Redis ModelExecutionGate<br/>foreground chat priority]
+        LMStudio[Model call: PRESENTATION_LLM_MODEL<br/>google/gemma-4-12b]
+        Provider -->|background lease<br/>one microtask| Gate --> LMStudio --> Provider
+        Chat[Foreground chat<br/>whole model lifecycle]
+        Chat -->|priority lease| Gate
     end
 
-    subgraph Render[4. Stateless rendering worker]
+    subgraph OptionalImage[5. Optional slide image]
+        direction TB
+        ImageCoordinator[PresentationImageService]
+        ImageService[ImageArtifactService]
+        ComfyUI[Model call: IMAGE_MODEL<br/>HiDream through ComfyUI]
+        ImageCoordinator --> ImageService --> ComfyUI
+    end
+
+    subgraph Render[6. Stateless rendering]
         direction TB
         Renderer[Bounded HTTP renderer]
-        PptxGenJS[PptxGenJS 4.0.1<br/>native editable Office objects]
-        OOXML[OOXML inspection<br/>slides and required object types]
-        LibreOffice[LibreOffice Impress<br/>open and PDF-export check]
-        Cleanup[Temporary workspace cleanup]
-        Renderer --> PptxGenJS --> OOXML --> LibreOffice --> Cleanup
+        PptxGenJS[PptxGenJS<br/>native editable Office objects]
+        OOXML[OOXML inspection]
+        LibreOffice[LibreOffice open and export]
+        Renderer --> PptxGenJS --> OOXML --> LibreOffice
     end
 
-    subgraph Persistence[5. Private persistence]
+    subgraph Persistence[7. Private revision and binary persistence]
         direction TB
         Repository[PresentationRepository<br/>user scope and stale-base conflict]
-        Database[(PostgreSQL<br/>deck plus append-only revisions;<br/>encrypted title and canonical spec)]
-        BinaryStore[(Opaque binary store<br/>atomic PPTX plus SHA-256)]
+        Database[(PostgreSQL<br/>deck and append-only revisions)]
+        BinaryStore[(Opaque binary store<br/>PPTX plus SHA-256)]
         Repository --> Database
         Repository --> BinaryStore
     end
 
-    subgraph Outcome[6. Safe promotion]
-        direction TB
-        Promote{Generation, validation,<br/>and storage succeeded?}
-        Ready[Promote new current revision<br/>and retain full history]
-        Failed[Mark revision failed;<br/>keep prior current revision]
-        Promote -->|yes| Ready
-        Promote -->|no| Failed
-    end
+    User --> UI --> API --> JobService
+    MainCaller -->|typed delegation| AgentEvents --> JobService
+    MainCaller --> Gates --> MCP --> JobService
+    JobStore -->|claimable work| Worker --> Service --> Agent
+    Compiler -->|progressive DeckSpec| Draft
+    Compiler -->|final DeckSpec| Renderer
+    API -->|selected-slide revision| Service
+    API -->|selected-slide image| ImageCoordinator
+    ImageCoordinator -->|owned artifact UUID| Service
+    LibreOffice --> Repository
+    Repository -->|promote ready revision| JobStore
+    JobStore -->|poll across navigation or reload| UI
 
-    User --> UI --> API --> Service
-    GemmaCaller --> Gates --> MCP --> Service
-    Service --> Pending --> Agent --> Mode --> Provider
-    Provider --> Strict
-    Strict -->|no| Correction --> Provider
-    Strict -->|valid creation plan| Compiler --> Renderer
-    Strict -->|valid replacement slide| Merge --> Renderer
-    Cleanup --> Repository --> Promote
-    Ready -->|owned DeckSpec preview<br/>and named PPTX download| UI
-    Failed -->|visible safe failure| UI
-
-    NoAuthority[Trust boundary:<br/>model and renderer cannot grant permissions,<br/>choose storage keys, promote revisions,<br/>or mutate sibling slides]
+    NoAuthority[Trust boundary:<br/>model and renderer cannot lease jobs,<br/>grant permissions, choose storage keys,<br/>or promote revisions]
     Agent -.-> NoAuthority
     Renderer -.-> NoAuthority
 
@@ -78,8 +90,8 @@ flowchart LR
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
-    class User,GemmaCaller,UI,API interface;
-    class MCP,Gates,Service,Pending,Agent,Mode,Provider,Strict,Correction,Compiler,Merge,Renderer,PptxGenJS,OOXML,Cleanup,Repository,Promote,Ready,Failed application;
-    class Database,BinaryStore data;
-    class Queue,LMStudio,LibreOffice external;
+    class User,MainCaller,UI,API,AgentEvents interface;
+    class MCP,Gates,JobService,Worker,Claim,Draft,Service,Agent,GraphNode,Provider,Compiler,ImageCoordinator,ImageService,Renderer,PptxGenJS,OOXML,Repository,Chat application;
+    class JobStore,Database,BinaryStore data;
+    class Gate,LMStudio,ComfyUI,LibreOffice external;
     class NoAuthority warning;

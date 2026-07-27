@@ -23,7 +23,11 @@ from backend.models.memory import (
     SemanticMemory,
     UserProfile,
 )
-from backend.models.presentation import Presentation, PresentationRevision
+from backend.models.presentation import (
+    Presentation,
+    PresentationJob,
+    PresentationRevision,
+)
 from backend.models.tool_memory import ToolDescriptor, ToolPreference, ToolUsageOutcome
 
 _MODELS = (
@@ -45,6 +49,7 @@ _MODELS = (
     ConversationSummary,
     VisualArtifact,
     Presentation,
+    PresentationJob,
     PresentationRevision,
 )
 
