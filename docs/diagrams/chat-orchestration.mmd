@@ -15,8 +15,8 @@ flowchart TB
     DiagramProvider -->|model call: DIAGRAM_LLM_MODEL| DiagramModel[qwen/qwen3.5-9b<br/>diagram specification]
     Artifact --> SSE
 
-    Route -->|no| Supervisor[MainSupervisorAgent<br/>typed LangGraph route_capability node]
-    Supervisor --> Decision{Registered capability decision}
+    Route -->|no| Supervisor[MainSupervisorAgent<br/>deterministic route_capability node<br/>NO LLM CALL]
+    Supervisor --> Decision{Registered-intent decision<br/>application policy owns routing}
     Decision -->|delegate_agent:<br/>presentation_agent| AgentStart[agent_started<br/>PresentationAgent plus exact model]
     AgentStart --> Queue[PresentationJobService<br/>durable background enqueue]
     Queue --> AgentFinish[agent_finished: queued<br/>job ID plus exact model]

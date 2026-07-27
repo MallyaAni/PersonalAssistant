@@ -707,3 +707,15 @@ This file is append-only history for meaningful, verified changes. It must not c
   image, plus 106 focused presentation/supervisor/search tests, Ruff,
   `git diff --check`, and all 11 synchronized architecture diagrams. No
   production component or data-flow relationship changed.
+
+## 2026-07-26 — Published architecture model roles clarified
+
+- Made the full-system, chat-orchestration, and presentation diagrams state
+  explicitly that `MainSupervisorAgent` is a deterministic registered-intent
+  LangGraph router and makes no LLM call. Qwen remains the main response,
+  diagram, and eligible MCP tool-selection model; Gemma remains the focused
+  presentation and vision specialist.
+- Rebuilt `architecture.html` as a manager-facing entry point containing all
+  11 canonical subsystem views instead of the previous seven, with current
+  model-role and validation summaries, direct full-size SVG and Mermaid-source
+  links, and independent accessible zoom controls.

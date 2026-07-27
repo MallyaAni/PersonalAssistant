@@ -4,6 +4,8 @@ These diagrams describe the current implementation. AniOS currently deploys one 
 
 Mermaid source is authoritative; SVG is the generated sharing format.
 
+The self-contained [published architecture page](../architecture.html) includes every cataloged view in the reading order below. Each section provides fit-to-page context, bounded zoom controls, a full-size SVG link, and the canonical Mermaid source so managers and engineers can use the same artifact at different levels of detail.
+
 | Diagram | Use it to answer | Editable source | Rendered view |
 | --- | --- | --- | --- |
 | Full system | What are the major AniOS components and external dependencies? | [anios-system.mmd](anios-system.mmd) | [anios-system.svg](anios-system.svg) |

@@ -1,6 +1,6 @@
 flowchart LR
     User([User])
-    MainCaller([Main supervisor or confirmed MCP caller])
+    MainCaller([MainSupervisorAgent<br/>deterministic registered-intent router<br/>NO LLM CALL<br/>or confirmed MCP caller])
 
     subgraph Entry[1. Owned entry points]
         direction TB

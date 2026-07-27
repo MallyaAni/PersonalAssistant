@@ -16,6 +16,8 @@ The absence of one of these labels does not imply runtime verification.
 
 The editable source is [anios-system.mmd](diagrams/anios-system.mmd). It describes current implemented and explicitly scaffolded relationships only, including the typed main-supervisor route, editable diagrams, generated and uploaded raster artifacts, local binary storage, ComfyUI, Gemma vision analysis, their browser integration, and the durable presentation worker. Aligned multimodal image embeddings and hybrid opt-in web research are included. General dynamic agent teams, A2A, and GPU-capacity leases remain outside the current diagram until their runtime boundaries exist. The render/check procedure is documented in [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md#architecture-diagram-maintenance).
 
+The self-contained [manager-facing architecture page](architecture.html) publishes all 11 canonical views with a current model-role summary, direct full-size SVG and Mermaid-source links, and independent per-diagram zoom controls. Its opening orchestration contract states explicitly that `MainSupervisorAgent` is currently deterministic and makes no LLM call.
+
 ## Detailed subsystem diagrams
 
 AniOS currently has a modular FastAPI backend rather than independently deployed internal microservices. These views expand the actual subsystem boundaries while the full-system diagram remains the deployment-level overview. The [diagram catalog](diagrams/README.md) explains which view to use for common technical questions.

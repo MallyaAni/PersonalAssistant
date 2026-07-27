@@ -20,49 +20,77 @@ const publishedDiagrams = [
     title: "Full system",
     scope: "Every implemented component and its trust boundaries",
     change:
-      "Added the isolated Google research worker, Tavily fallback, and non-content quota store.",
+      "Clarifies that MainSupervisorAgent is a deterministic first-step router with no LLM call, before Qwen response/tool work or Gemma presentation delegation.",
   },
   {
     name: "runtime-deployment",
     title: "Runtime & deployment",
     scope: "Processes, ports, protocols, Compose topology",
     change:
-      "Added Google Search as an opt-in external worker and a durable provider-count volume.",
+      "Shows the independently running API, presentation worker, local MCP sidecar, renderer, stores, and explicitly configured local-model roles.",
   },
   {
     name: "chat-orchestration",
     title: "Chat orchestration",
     scope: "Routing, memory planning, streaming, SSE contract",
     change:
-      "Guarded search now selects Google, Tavily fallback, or explicit dual-provider verification.",
+      "Separates deterministic supervisor delegation from conditional Qwen classifier, tool-selection, and final-response calls.",
   },
   {
     name: "search-research-subsystem",
     title: "Search & research",
     scope: "Privacy, provider policy, cloud-worker isolation, quota, provenance",
     change:
-      "Added a Google ADK research subagent with Tavily fallback and deliberate cross-check mode.",
+      "Documents minimized outbound queries, the isolated Google grounding worker, Tavily fallback, deliberate cross-checking, and source provenance.",
+  },
+  {
+    name: "memory-overview",
+    title: "Memory overview",
+    scope: "Manager-level memory lifecycle and user control",
+    change:
+      "Explains the short-term and long-term memory path, approval boundary, retrieval, and user-owned correction or deletion controls.",
+  },
+  {
+    name: "memory-subsystem",
+    title: "Memory subsystem",
+    scope: "Typed stores, write authority, retrieval, lifecycle, operations",
+    change:
+      "Maps every implemented memory form, pgvector retrieval boundary, maintenance operation, and application-owned write policy.",
+  },
+  {
+    name: "tool-memory-subsystem",
+    title: "Tool memory & MCP",
+    scope: "Semantic discovery, live validation, model selection, invocation",
+    change:
+      "Distinguishes stored safe descriptors from live MCP contracts and shows where Qwen may select one bounded eligible tool.",
   },
   {
     name: "visual-artifact-subsystem",
     title: "Visual artifacts",
     scope: "Generation, upload, storage, vision analysis, retrieval",
     change:
-      "Images are embedded at store time; ImageRetrievalPolicy applies a distance ceiling plus a runner-up margin.",
+      "Shows diagrams, image generation, Gemma vision, multimodal embeddings, private binary ownership, and image-aware follow-up paths.",
   },
   {
-    name: "memory-subsystem",
-    title: "Memory",
-    scope: "Every memory form, write authority, retrieval, lifecycle",
+    name: "presentation-subsystem",
+    title: "Presentations",
+    scope: "Delegation, durable work, specialist model, editable rendering",
     change:
-      "Vision analysis text is indexed under its own purpose, kept out of the approval-gated user-fact path.",
+      "Makes the no-LLM supervisor handoff explicit and follows the durable job through the Gemma specialist, progressive drafts, validation, and editable PPTX promotion.",
+  },
+  {
+    name: "architecture-maintenance-subsystem",
+    title: "Architecture maintenance",
+    scope: "Evidence, candidate generation, validation, review, publication",
+    change:
+      "Shows why an LLM may propose a bounded review candidate but cannot overwrite canonical architecture sources.",
   },
   {
     name: "frontend-subsystem",
     title: "Frontend",
     scope: "Client state, components, typed API and SSE client",
     change:
-      "Source cards now identify which research provider supplied each result.",
+      "Maps navigation-safe conversations, reconnectable presentation jobs, visual artifacts, memory drilldown, downloads, and visible agent/model lifecycle.",
   },
 ];
 
@@ -73,11 +101,36 @@ const publicationRedactions = [
 ];
 
 const metrics = [
-  { label: "Relevant queries", value: "14 / 14", note: "correct top-1 match", good: true },
-  { label: "Distractor queries", value: "4 / 4", note: "correctly returned nothing", good: true },
-  { label: "Distance ceiling", value: "0.96", note: "coarse filter", good: false },
-  { label: "Runner-up margin", value: "0.015", note: "the real discriminator", good: false },
-  { label: "Backend tests", value: "367", note: "ruff &middot; black &middot; mypy strict", good: false },
+  {
+    label: "First router",
+    value: "Deterministic",
+    note: "MainSupervisorAgent &middot; no LLM",
+    good: true,
+  },
+  {
+    label: "Main & diagrams",
+    value: "Qwen 3.5 9B",
+    note: "response, tools, diagram specification",
+    good: false,
+  },
+  {
+    label: "Decks & vision",
+    value: "Gemma 4 12B",
+    note: "focused presentation and image understanding",
+    good: false,
+  },
+  {
+    label: "Canonical views",
+    value: "11 / 11",
+    note: "Mermaid, SVG, and page synchronized",
+    good: true,
+  },
+  {
+    label: "Backend suite",
+    value: "488 pass",
+    note: "2 intentional skips",
+    good: true,
+  },
 ];
 
 const pageStyles = `:root{
@@ -100,6 +153,10 @@ body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
 h1{font-size:clamp(1.9rem,4.4vw,2.9rem);line-height:1.12;margin:.5rem 0 0;
    letter-spacing:-.022em;text-wrap:balance;font-weight:640}
 .lede{color:var(--muted);max-width:62ch;margin:.9rem 0 0;font-size:1.03rem}
+.contract{margin:1.35rem 0 0;padding:1rem 1.1rem;border:1px solid var(--rule);
+          border-left:3px solid var(--accent);border-radius:8px;background:var(--panel);
+          max-width:78ch;font-size:.94rem}
+.contract strong{color:var(--accent)}
 .strip{display:grid;gap:1px;background:var(--rule);border:1px solid var(--rule);
        border-radius:10px;overflow:hidden;margin:2.4rem 0 0;
        grid-template-columns:repeat(auto-fit,minmax(158px,1fr))}
@@ -126,9 +183,19 @@ nav.jump a:hover,nav.jump a:focus-visible{color:var(--accent);
 .tag{font-family:var(--mono);font-size:.62rem;text-transform:uppercase;
      letter-spacing:.08em;color:var(--accent);background:var(--accent-soft);
      padding:.15rem .42rem;border-radius:4px;margin-right:.5rem;vertical-align:.06em}
+.diagram-tools{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-top:.8rem}
+.diagram-tools a,.diagram-tools button{font:inherit;font-family:var(--mono);font-size:.68rem;
+       color:var(--accent);background:var(--panel);border:1px solid var(--rule);
+       border-radius:6px;padding:.32rem .55rem;text-decoration:none;cursor:pointer}
+.diagram-tools a:hover,.diagram-tools a:focus-visible,
+.diagram-tools button:hover,.diagram-tools button:focus-visible{
+       background:var(--accent-soft);outline:2px solid transparent}
+.zoom-output{font-family:var(--mono);font-size:.68rem;color:var(--muted);
+       min-width:3.3rem;text-align:center}
 .canvas{margin-top:1.1rem;background:var(--panel);border:1px solid var(--rule);
         border-radius:12px;padding:1.1rem;overflow-x:auto}
-.canvas svg{display:block;height:auto;max-width:none;min-width:860px;margin:0 auto}
+.canvas svg{display:block;width:calc(100% * var(--diagram-scale,1));height:auto;
+        max-width:none;min-width:860px;margin:0 auto;transform-origin:top left}
 footer{margin-top:4rem;padding-top:1.4rem;border-top:1px solid var(--rule);
        color:var(--muted);font-size:.86rem;max-width:70ch}
 code{font-family:var(--mono);font-size:.88em;background:var(--accent-soft);
@@ -209,11 +276,19 @@ function renderPageMarkup() {
   const sections = publishedDiagrams
     .map((diagram, index) =>
       [
-        `<section class="d" id="${diagram.name}">`,
+        `<section class="d" id="${diagram.name}" data-diagram>`,
         `<header class="dh">`,
         `<p class="eyebrow">${escapeHtml(diagram.scope)}</p>`,
         `<h2>${escapeHtml(diagram.title)}</h2>`,
-        `<p class="change"><span class="tag">changed</span>${escapeHtml(diagram.change)}</p>`,
+        `<p class="change"><span class="tag">focus</span>${escapeHtml(diagram.change)}</p>`,
+        `<div class="diagram-tools">`,
+        `<a href="diagrams/${diagram.name}.svg" target="_blank" rel="noreferrer">Open full-size SVG</a>`,
+        `<a href="diagrams/${diagram.name}.mmd">View Mermaid source</a>`,
+        `<button type="button" data-zoom-delta="-0.25" aria-label="Zoom out ${escapeHtml(diagram.title)}">&minus;</button>`,
+        `<button type="button" data-zoom-reset>Reset</button>`,
+        `<button type="button" data-zoom-delta="0.25" aria-label="Zoom in ${escapeHtml(diagram.title)}">+</button>`,
+        `<span class="zoom-output" aria-live="polite">100%</span>`,
+        `</div>`,
         `</header>`,
         `<div class="canvas">${inlineDiagram(diagram.name, index)}</div>`,
         `</section>`,
@@ -244,12 +319,16 @@ ${pageStyles}
 </head>
 <body>
 <div class="wrap">
-<p class="eyebrow">AniOS &middot; canonical suite &middot; 9 diagrams synchronized</p>
-<h1>Architecture after multimodal retrieval</h1>
-<p class="lede">Six of the nine canonical diagrams changed in this pass. Each is rendered
-below from its authoritative <code>.mmd</code> source, with the scope it owns and what moved.
-The three unchanged views &mdash; memory overview, tool memory, and architecture maintenance &mdash; were
-not touched, so their relationships still hold.</p>
+<p class="eyebrow">AniOS &middot; canonical suite &middot; ${publishedDiagrams.length} diagrams synchronized</p>
+<h1>How AniOS routes work, assigns models, and preserves authority</h1>
+<p class="lede">A manager-facing map of the implemented local-first system. Start with the
+full-system view, then use each subsystem diagram to trace ownership, model calls, persistence,
+trust boundaries, and user-visible lifecycle from entry point to result.</p>
+<p class="contract"><strong>Current orchestration contract:</strong>
+<code>MainSupervisorAgent</code> is a deterministic LangGraph router and makes no LLM call.
+It delegates registered presentation creation to the Gemma specialist; ordinary responses,
+diagram specifications, and eligible MCP tool selection use Qwen. Application code &mdash; never
+the models &mdash; owns authorization, persistence, provider policy, and execution.</p>
 
 <dl class="strip">
 ${cells}
@@ -263,6 +342,31 @@ ${sections}
 SVGs and this page are both renderings of them. <code>npm run docs:diagram:check</code> verifies
 every registered pair.</footer>
 </div>
+<script>
+// Apply a bounded visual scale to one diagram without changing its source.
+function setDiagramZoom(section, requestedZoom) {
+  const zoom = Math.min(3, Math.max(0.75, requestedZoom));
+  section.dataset.zoom = String(zoom);
+  section.querySelector(".canvas").style.setProperty("--diagram-scale", zoom);
+  section.querySelector(".zoom-output").textContent = \`\${Math.round(zoom * 100)}%\`;
+}
+
+// Handle one zoom control while keeping each subsystem view independent.
+function handleDiagramZoom(event) {
+  const section = event.currentTarget.closest("[data-diagram]");
+  const currentZoom = Number(section.dataset.zoom || "1");
+  const nextZoom = event.currentTarget.hasAttribute("data-zoom-reset")
+    ? 1
+    : currentZoom + Number(event.currentTarget.dataset.zoomDelta);
+  setDiagramZoom(section, nextZoom);
+}
+
+for (const control of document.querySelectorAll(
+  "[data-zoom-delta], [data-zoom-reset]",
+)) {
+  control.addEventListener("click", handleDiagramZoom);
+}
+</script>
 </body>
 </html>`;
 }

@@ -20,7 +20,7 @@ flowchart LR
         PresentationAgent[PresentationAgent<br/>focused LangGraph workflow]
         PresentationCompiler[Deterministic presentation compiler<br/>outline and slide microtasks to editable DeckSpec]
         Candidate[Architecture candidate service<br/>review-only repository context]
-        Supervisor[MainSupervisorAgent<br/>typed LangGraph capability route]
+        Supervisor[MainSupervisorAgent<br/>deterministic LangGraph router<br/>NO LLM CALL<br/>registered intents only]
         Coordinator[MemoryCoordinatorAgent<br/>deterministic policy]
         Graph[Assistant LangGraph<br/>one main-model streaming node]
         Memory[Typed personal and agent memory services]
@@ -53,10 +53,10 @@ flowchart LR
     API --> PresentationJobs
     API --> PresentationService
     API --> PresentationImage
-    Conversation --> Supervisor
-    Supervisor -->|respond| Coordinator
+    Conversation -->|first routing boundary| Supervisor
+    Supervisor -->|ordinary assistant path| Coordinator
     Coordinator --> Graph
-    Supervisor -->|delegate presentation_agent| PresentationJobs
+    Supervisor -->|typed delegation:<br/>presentation_agent| PresentationJobs
     Conversation --> ToolOrchestration
     Conversation -->|explicit diagram lifecycle| DiagramArtifacts
     DiagramArtifacts --> DiagramAgent
