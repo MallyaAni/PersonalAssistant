@@ -9,7 +9,10 @@ from backend.agents.diagram import DiagramAgent
 from backend.agents.presentation import PresentationAgent
 from backend.agents.supervisor import MainSupervisorAgent
 from backend.artifacts.diagram import LLMDiagramProvider
-from backend.artifacts.image import ComfyUIImageProvider
+from backend.artifacts.image import (
+    ComfyUIImageEditProvider,
+    ComfyUIImageProvider,
+)
 from backend.artifacts.image_recall_classifier import LMStudioImageRecallClassifier
 from backend.artifacts.image_recall_router import CascadingImageRecallRouter
 from backend.artifacts.image_retrieval import ImageRetrievalPolicy
@@ -447,9 +450,33 @@ ImageProviderDependency = Annotated[
 ]
 
 
+# Reuse one source-conditioned FLUX.2 editor on the shared ComfyUI runtime.
+@lru_cache(maxsize=1)
+def get_image_edit_provider() -> ComfyUIImageEditProvider:
+    return ComfyUIImageEditProvider(
+        base_url=settings.IMAGE_PROVIDER_BASE_URL,
+        model=settings.IMAGE_EDIT_MODEL,
+        text_encoder=settings.IMAGE_EDIT_TEXT_ENCODER,
+        vae=settings.IMAGE_EDIT_VAE,
+        timeout_seconds=settings.IMAGE_PROVIDER_TIMEOUT_SECONDS,
+        poll_seconds=settings.IMAGE_PROVIDER_POLL_SECONDS,
+        max_concurrency=settings.IMAGE_MAX_CONCURRENCY,
+        max_output_bytes=settings.IMAGE_MAX_OUTPUT_BYTES,
+        max_pixels=settings.IMAGE_MAX_PIXELS,
+        steps=settings.IMAGE_EDIT_STEPS,
+    )
+
+
+ImageEditProviderDependency = Annotated[
+    ComfyUIImageEditProvider,
+    Depends(get_image_edit_provider),
+]
+
+
 # Coordinate image generation, storage, integrity, and terminal lifecycle state.
 def get_image_artifact_service(
     provider: ImageProviderDependency,
+    edit_provider: ImageEditProviderDependency,
     repository: ArtifactRepositoryDependency,
     store: BinaryArtifactStoreDependency,
     vision_embeddings: VisionEmbeddingDependency,
@@ -465,6 +492,9 @@ def get_image_artifact_service(
         vision_embeddings=vision_embeddings,
         embedding_store=repository,
         vision_embedding_model=settings.VISION_EMBEDDING_MODEL,
+        edit_provider=edit_provider,
+        edit_provider_name=settings.IMAGE_PROVIDER_NAME,
+        edit_model_name=settings.IMAGE_EDIT_MODEL,
     )
 
 
@@ -502,13 +532,11 @@ ImageStyleDependency = Annotated[
 ]
 
 
-# Regenerate a generated image from its prompt plus the user's feedback.
+# Edit a generated image from its owned pixels plus the user's feedback.
 def get_image_refinement_service(
     images: ImageArtifactDependency,
-    llm: LlmDependency,
-    style: ImageStyleDependency,
 ) -> ImageRefinementService:
-    return ImageRefinementService(images=images, llm=llm, style_service=style)
+    return ImageRefinementService(images=images)
 
 
 ImageRefinementDependency = Annotated[

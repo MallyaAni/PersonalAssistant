@@ -16,7 +16,7 @@ The absence of one of these labels does not imply runtime verification.
 
 The editable source is [anios-system.mmd](diagrams/anios-system.mmd). It describes current implemented and explicitly scaffolded relationships only, including the typed main-supervisor route, editable diagrams, generated and uploaded raster artifacts, local binary storage, ComfyUI, Gemma vision analysis, their browser integration, and the durable presentation worker. Aligned multimodal image embeddings and hybrid opt-in web research are included. General dynamic agent teams, A2A, and GPU-capacity leases remain outside the current diagram until their runtime boundaries exist. The render/check procedure is documented in [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md#architecture-diagram-maintenance).
 
-The self-contained [manager-facing architecture page](architecture.html) publishes all 11 canonical views with a current model-role summary, direct full-size SVG and Mermaid-source links, and independent per-diagram zoom controls. Its opening orchestration contract states explicitly that `MainSupervisorAgent` is currently deterministic and makes no LLM call.
+The self-contained [manager-facing architecture page](architecture.html) publishes all 12 canonical views with a current model-role summary, direct full-size SVG and Mermaid-source links, and independent per-diagram zoom controls. Eleven views describe the current system; the separately labelled visual-memory/editing target describes an accepted future design without claiming implementation. Its opening orchestration contract states explicitly that `MainSupervisorAgent` is currently deterministic and makes no LLM call.
 
 ## Detailed subsystem diagrams
 
@@ -31,6 +31,7 @@ AniOS currently has a modular FastAPI backend rather than independently deployed
 | Memory overview (manager) | Plain-language first-contact walkthrough of a memory turn, the approval gate, short-term vs long-term stores, and user data control | [source](diagrams/memory-overview.mmd) | [view](diagrams/memory-overview.svg) |
 | Tool memory and MCP execution | Safe descriptors, approved preferences, sanitized outcomes, semantic tool discovery, main-model selection, policy-gated invocation, and bounded untrusted results | [source](diagrams/tool-memory-subsystem.mmd) | [view](diagrams/tool-memory-subsystem.svg) |
 | Visual artifacts | Diagram classification/rendering, HiDream generation, validated uploads, opaque binary storage, integrity/deletion, Gemma vision analysis, threaded followup questions, aligned image embeddings and margin-bounded retrieval | [source](diagrams/visual-artifact-subsystem.mmd) | [view](diagrams/visual-artifact-subsystem.svg) |
+| Visual memory and editing | Implemented source-aware immutable revisions plus planned non-blocking generated-image observation, versioned semantics, handle-based visual memory, post-edit verification, and derived-data lifecycle | [source](diagrams/visual-memory-editing-target.mmd) | [view](diagrams/visual-memory-editing-target.svg) |
 | Architecture maintenance | Explicit repository evidence, local Gemma candidate generation, passive/required-label validation, pinned rendering, review, and manual canonical promotion | [source](diagrams/architecture-maintenance-subsystem.mmd) | [view](diagrams/architecture-maintenance-subsystem.svg) |
 | Frontend | Identity/conversation state, view lifecycle, chat components, memory management, typed API/SSE client, diagram rendering | [source](diagrams/frontend-subsystem.mmd) | [view](diagrams/frontend-subsystem.svg) |
 
@@ -288,6 +289,56 @@ list on failure, so the interface retracts its indicator instead of spinning.
 The browser renders search and tool lifecycle status, then provider-attributed
 cited sources beneath the answer, so a reader can check what grounded it.
 
+### Visual semantics, memory references, and source-aware editing
+
+This subsection and
+[visual-memory-editing-target](diagrams/visual-memory-editing-target.svg)
+describe a staged architecture. Source-aware editing is implemented and
+verified; automatic generated-image observation, visual aliases/reference
+resolution, semantic post-edit verification, bounded correction, and derived
+data lifecycle remain `PLANNED`.
+[ADR 0007](adr/0007-versioned-visual-semantics-memory-and-editing.md) owns the
+decision.
+
+The target pipeline does not make generated-image availability wait for a VLM.
+After the current generation boundary validates, stores, and displays the
+pixels, an application-owned durable observation job reads the exact owned
+bytes through the existing integrity boundary. A replaceable
+`VisionSemanticsProvider` returns a typed, bounded `VisualObservation` containing
+caption, objects, attributes, relationships, OCR, confidence, model, schema,
+source hash, and provenance. Observations are append-only and versioned by
+artifact revision, plaintext SHA-256, schema, and model; a failed observation
+does not invalidate a ready image.
+
+Visual memory stores no duplicate image bytes. It stores user aliases,
+collections, derived semantic vectors, and immutable artifact/revision handles.
+`VisualReferenceResolver` will fuse exact aliases, semantic-description search,
+the existing aligned pixel-vector search, conversation, recency, and lineage
+state. Each signal retains its own calibrated scale. A minimum score and
+best-to-runner-up margin are required; ambiguous matches produce a visible
+clarification. Before any VLM, editor, agent, or MCP tool receives pixels, the
+application resolves the handle and rechecks owner, ready status, deletion
+state, byte size, and SHA-256.
+
+Editing is a separate provider capability from understanding.
+`ImageRefinementService` re-reads the owned, integrity-checked source bytes,
+adds bounded preservation constraints to the exact user feedback, and invokes
+`ComfyUIImageEditProvider`. The provider runs the official-style FLUX.2 Klein
+4B Distilled FP8 single-reference workflow through ComfyUI with a Qwen 3 4B
+encoder, FLUX.2 VAE, four sampling steps, and one-job concurrency. Deterministic
+image validation precedes an immutable ready child carrying its parent ID,
+source SHA-256, exact feedback, model, seed, steps, and provider latency. The
+frontend replaces the active card in place while retaining both database
+revisions. Prompt-only HiDream regeneration and the experimental SAM recolor
+branch are not fallbacks.
+
+Semantic verification remains a separate planned promotion gate. It will
+compare a candidate child with the requested delta and preservation constraints,
+permit at most one bounded correction, or retain the parent with a visible
+failure. A focused future `VisualAgent` may propose a typed edit plan, but
+application code continues to own authorization, limits, provider selection,
+resource leases, retries, storage, and promotion.
+
 ### Observability
 
 Tracing is OpenTelemetry, off by default and safe to enable without a
@@ -455,7 +506,7 @@ proposal/approval/resume lifecycle exists.
 
 `backend/api/v1/artifacts.py` lists recent owned artifacts, returns owned binary content with private/no-store and nosniff headers, and deletes both the database row and binary file. Explicit diagram requests create a pending record before provider work and stream a sanitized terminal success or failure lifecycle. If the client disconnects after pending persistence, the application shields only the terminal cleanup write, marks the record failed with `cancelled`, and re-raises cancellation.
 
-`backend/api/v1/images.py` accepts a bounded prompt and one allowlisted HiDream training resolution, then returns a terminal generated-image artifact. `backend/api/v1/vision.py` streams a bounded multipart upload, validates actual PNG/JPEG/WebP content, rejects animation, MIME mismatch, excess bytes, and excess pixels, persists the owned upload, and sends only the validated image plus bounded prompt to the configured local vision provider. Invalid uploads create no artifact; VLM failure preserves the valid upload with `analysis_status=failed` for later deletion or retry work. `POST /api/v1/vision/artifacts/{artifact_id}/ask` accepts a bounded question about any owned ready generated or uploaded image, re-reads the integrity-checked stored bytes rather than requiring a new upload, replays a bounded prior question/answer context to the same vision provider, appends the grounded answer to a size-bounded thread persisted in artifact metadata, and returns 404 for unowned or non-ready images without invoking the provider. This threaded follow-up analysis lives only on the artifact record; it is not written into the memory subsystem. Two other paths do feed retrieval: generated and uploaded pixels are embedded in an aligned Nomic image/text space for bounded visual image retrieval, and the initial upload analysis is indexed into semantic memory as a provenance-labelled description, so an uploaded image's content is recalled by an ordinary conversation turn (verified: an uploaded image described by the VLM was retrieved from semantic memory in a later conversation). Only the interactive follow-up thread remains un-indexed.
+`backend/api/v1/images.py` accepts a bounded prompt and one allowlisted HiDream training resolution, then returns a terminal generated-image artifact. Its refinement route reads an owned generated parent and passes the integrity-checked source pixels plus exact bounded feedback and preservation constraints to the configured FLUX.2 Klein editor. It creates a fresh child carrying parent, source-hash, feedback, model, seed, step, and latency provenance. `backend/api/v1/vision.py` streams a bounded multipart upload, validates actual PNG/JPEG/WebP content, rejects animation, MIME mismatch, excess bytes, and excess pixels, persists the owned upload, and sends only the validated image plus bounded prompt to the configured local vision provider. Invalid uploads create no artifact; VLM failure preserves the valid upload with `analysis_status=failed` for later deletion or retry work. `POST /api/v1/vision/artifacts/{artifact_id}/ask` accepts a bounded question about any owned ready generated or uploaded image, re-reads the integrity-checked stored bytes rather than requiring a new upload, replays a bounded prior question/answer context to the same vision provider, appends the grounded answer to a size-bounded thread persisted in artifact metadata, and returns 404 for unowned or non-ready images without invoking the provider. This threaded follow-up analysis lives only on the artifact record; it is not written into the memory subsystem. Two other paths do feed retrieval: generated and uploaded pixels are embedded in an aligned Nomic image/text space for bounded visual image retrieval, and the initial upload analysis is indexed into semantic memory as a provenance-labelled description, so an uploaded image's content is recalled by an ordinary conversation turn (verified: an uploaded image described by the VLM was retrieved from semantic memory in a later conversation). Only the interactive follow-up thread remains un-indexed.
 
 `backend/api/v1/tools.py` exposes explicit policy-gated MCP invocation. For a
 configured context-aware local server, it starts a trace and forwards the
@@ -470,7 +521,7 @@ does not terminate work. The React panel stores the active job ID per user,
 polls it across navigation and reload, renders arriving slides, and hydrates the
 ready deck after the background worker promotes its revision.
 
-The image-generation handler monitors HTTP disconnects around provider work. A browser cancellation cancels the service task, interrupts the matching ComfyUI prompt, shields the terminal `failed/cancelled` write, and finishes without an application exception. The React composer exposes Chat, Create image, and Analyze image modes with progress, cancellation, retained retry input, visible API failures, and bounded file selection. Per-turn deterministic intent sends an explicit new-image request from Chat to the image API and sends a historical question from Create image back through chat, so the selected mode follows the action actually taken. `ImageArtifact` fetches private bytes with the optional auth header, renders a temporary object URL, exposes grounded Gemma text, and supports local download and owned deletion. Conversation hydration and artifact history restore both diagrams and binary images.
+The image-generation handler monitors HTTP disconnects around provider work. A browser cancellation cancels the service task, interrupts the matching ComfyUI prompt, shields the terminal `failed/cancelled` write, and finishes without an application exception. The unified React composer infers new-image generation from bounded natural-language intent and image analysis from an attachment while retaining progress, cancellation, retry input, visible API failures, and bounded file selection. `ImageArtifact` fetches private bytes with the optional auth header, renders a temporary object URL, exposes grounded Gemma text, and supports local download, owned deletion, ordinary vision questions, and non-destructive source-conditioned generated-image refinements. The follow-up classifier recognizes bounded imperative and polite question-shaped edit requests before general question words. A returned FLUX child revision replaces its parent in the active chat card rather than appending a duplicate card, while persisted parent lineage keeps history recoverable. Conversation hydration and artifact history restore both diagrams and binary images.
 
 `backend/api/v1/conversations.py` returns a bounded, user-owned conversation snapshot containing persisted turns and their conversation artifacts. The frontend uses that read boundary to reconstruct the active transcript and ready/failed diagram cards after a full reload.
 
@@ -512,8 +563,9 @@ The active collaborators are:
 | `PptxGenJSRenderer` | implemented renderer adapter | Sends a strict `DeckSpec` to the bounded PptxGenJS worker, validates response headers and OOXML structure, and optionally requires the worker's LibreOffice result |
 | `DiagramAgent` | implemented specialized LangGraph boundary | Runs one typed `generate_diagram` node around the replaceable provider; it has no persistence, authorization, or hardware-management authority |
 | `DiagramArtifactService` | implemented local artifact boundary | Coordinates pending/ready/failed diagram records, invokes a replaceable bounded diagram provider, and never gives the model persistence authority |
-| `ImageArtifactService` | implemented local binary artifact boundary | Coordinates generated/uploaded pending/ready/failed records, opaque atomic file storage, SHA-256/size integrity checks, owned content reads, and file-plus-row deletion |
+| `ImageArtifactService` | implemented local binary artifact boundary | Coordinates generated/uploaded pending/ready/failed records, source-conditioned immutable refinements with parent/source-hash lineage, opaque atomic file storage, SHA-256/size integrity checks, owned content reads, and file-plus-row deletion |
 | `ComfyUIImageProvider` | implemented free local provider | Submits a pinned HiDream-O1 Dev workflow through ComfyUI, polls terminal history, fetches one output, validates it, and limits concurrent jobs to one |
+| `ComfyUIImageEditProvider` | implemented free local editor | Uploads the owned source to ComfyUI and runs a four-step FLUX.2 Klein 4B Distilled single-reference workflow with Qwen 3 4B text encoder and FLUX.2 VAE before bounded output validation |
 | `VisionAnalysisService` | implemented local VLM boundary | Persists a validated upload before sending its bytes and bounded prompt through the replaceable `VISION_MODEL` adapter, records ready/failed analysis metadata, and answers bounded followup questions on any owned image by re-reading stored bytes and maintaining a bounded persisted question/answer thread |
 | `ArchitectureCandidateService` | implemented review-only maintenance boundary | Combines registered canonical source with bounded explicit repository evidence, requires selected visible labels, and returns a candidate without canonical write authority |
 | `SQLAlchemyArtifactRepository` | implemented user-scoped persistence boundary | Stores diagram source, lifecycle, conversation/trace provenance, provider/model metadata, and supports conversation listing plus individual deletion |
@@ -653,4 +705,4 @@ Current runtime validation completes this flow through the qualified main and sp
 
 ## Architectural decision
 
-The project has adopted clean-architecture and dependency-inversion principles as a design direction. [ADR 0001](adr/0001-clean-architecture-and-modular-structure.md) records that direction. [ADR 0002](adr/0002-typed-agent-memory-manager-and-pgvector-indexes.md) records the typed store-manager/coordinator boundary and the pgvector HNSW indexing choice. [ADR 0003](adr/0003-local-visual-artifacts-and-resource-aware-orchestration.md) records the local-only visual-artifact, GPU-resource, and scalable orchestration direction; editable diagrams, raster generation, binary storage, upload validation, VLM analysis, aligned image retrieval, browser integration, and the local visual FastMCP facade are implemented while deterministic resource orchestration remains `PLANNED`. [ADR 0004](adr/0004-hybrid-free-tier-web-research.md) records the isolated Google research worker, Tavily fallback/cross-check, free-tier quota, and data-minimization boundary. [ADR 0005](adr/0005-typed-editable-presentation-generation.md) records the typed editable-presentation, focused-agent, durable-job worker, foreground-priority model gate, renderer, and validated-promotion boundaries. [ADR 0006](adr/0006-hybrid-supervisor-and-qualified-model-roles.md) records the typed hybrid-supervisor boundary, visible delegation provenance, role-specific local-model configuration, and acceptance-path-driven model promotion rule.
+The project has adopted clean-architecture and dependency-inversion principles as a design direction. [ADR 0001](adr/0001-clean-architecture-and-modular-structure.md) records that direction. [ADR 0002](adr/0002-typed-agent-memory-manager-and-pgvector-indexes.md) records the typed store-manager/coordinator boundary and the pgvector HNSW indexing choice. [ADR 0003](adr/0003-local-visual-artifacts-and-resource-aware-orchestration.md) records the local-only visual-artifact, GPU-resource, and scalable orchestration direction; editable diagrams, raster generation and source editing, binary storage, upload validation, VLM analysis, aligned image retrieval, browser integration, and the local visual FastMCP facade are implemented while deterministic resource orchestration remains `PLANNED`. [ADR 0004](adr/0004-hybrid-free-tier-web-research.md) records the isolated Google research worker, Tavily fallback/cross-check, free-tier quota, and data-minimization boundary. [ADR 0005](adr/0005-typed-editable-presentation-generation.md) records the typed editable-presentation, focused-agent, durable-job worker, foreground-priority model gate, renderer, and validated-promotion boundaries. [ADR 0006](adr/0006-hybrid-supervisor-and-qualified-model-roles.md) records the typed hybrid-supervisor boundary, visible delegation provenance, role-specific local-model configuration, and acceptance-path-driven model promotion rule. [ADR 0007](adr/0007-versioned-visual-semantics-memory-and-editing.md) records implemented source-aware immutable editing plus planned generated-image observation, handle-based visual memory, semantic verification, and derived-data lifecycle boundaries.

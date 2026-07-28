@@ -1,4 +1,3 @@
-from collections.abc import Iterator
 from typing import Any
 
 import pytest
@@ -9,92 +8,100 @@ from backend.services.image_refinement_service import (
 )
 
 
-class StubLLM:
-    def __init__(self, reply: str) -> None:
-        self.reply = reply
-
-    def generate_text(self, prompt: str, max_tokens: int = 512) -> str:
-        return ""
-
-    def chat(self, messages: Any, max_tokens: int = 512) -> dict[str, Any]:
-        return {"content": self.reply}
-
-    def stream_chat(self, messages: Any, max_tokens: int = 512) -> Iterator[str]:
-        yield ""
-
-
 class StubImages:
     def __init__(self, record: dict[str, Any] | None) -> None:
         self.record = record
-        self.generate_calls: list[dict[str, Any]] = []
+        self.edit_calls: list[dict[str, Any]] = []
 
-    async def get_owned_record(
-        self, user_id: str, artifact_id: str
-    ) -> dict[str, Any] | None:
-        return self.record
-
-    async def generate(
+    # Return the owned parent and its exact bytes for a refinement.
+    async def read_owned(
         self,
         user_id: str,
-        conversation_id: str,
-        trace_id: str,
-        request: Any,
-        extra_metadata: dict[str, Any] | None = None,
-        extra_style: str = "",
-    ) -> dict[str, Any]:
-        self.generate_calls.append(
-            {
-                "request": request,
-                "extra_metadata": extra_metadata or {},
-                "extra_style": extra_style,
-            }
-        )
+        artifact_id: str,
+    ) -> tuple[dict[str, Any], bytes] | None:
+        if self.record is None:
+            return None
+        return self.record, b"source pixels"
+
+    # Record the source-conditioned edit request without invoking a real provider.
+    async def edit(self, **kwargs: Any) -> dict[str, Any]:
+        self.edit_calls.append(kwargs)
         return {"id": "revision", "kind": "generated_image"}
 
-
-def _service(record: dict[str, Any] | None, reply: str) -> ImageRefinementService:
-    return ImageRefinementService(StubImages(record), StubLLM(reply))  # type: ignore[arg-type]
+# Build one refinement service around an isolated image-service double.
+def _service(record: dict[str, Any] | None) -> ImageRefinementService:
+    return ImageRefinementService(StubImages(record))  # type: ignore[arg-type]
 
 
 _GENERATED = {
     "id": "orig",
     "kind": "generated_image",
+    "mime_type": "image/png",
     "width": 2048,
     "height": 2048,
     "metadata": {"generation_prompt": "a cat on a sofa"},
 }
 
 
+# A refinement must pass the parent's exact pixels and feedback to the editor.
 @pytest.mark.asyncio
-async def test_refine_regenerates_a_linked_revision_with_the_merged_prompt() -> None:
-    service = _service(_GENERATED, "a cat on a sofa, warm golden lighting, realistic")
+async def test_refine_creates_a_source_conditioned_child_revision() -> None:
+    service = _service(_GENERATED)
     images: Any = service.images
 
-    await service.refine("u", "orig", "warmer lighting, more realistic", "c", "t")
+    revision = await service.refine(
+        "u",
+        "orig",
+        "make only the sofa blue",
+        "c",
+        "t",
+    )
 
-    call = images.generate_calls[0]
-    assert call["request"].prompt == "a cat on a sofa, warm golden lighting, realistic"
-    # The revision links back to its parent and records the feedback.
-    assert call["extra_metadata"]["parent_artifact_id"] == "orig"
-    assert "realistic" in call["extra_metadata"]["refinement_feedback"]
+    assert revision["id"] == "revision"
+    call = images.edit_calls[0]
+    assert call["parent"] == _GENERATED
+    assert call["source_content"] == b"source pixels"
+    assert call["instruction"].startswith(
+        "Apply only this edit to image 1: make only the sofa blue."
+    )
+    assert "Preserve every unmentioned subject attribute" in call["instruction"]
+    assert call["user_feedback"] == "make only the sofa blue"
+    assert call["conversation_id"] == "c"
+    assert call["trace_id"] == "t"
 
 
+# A named-color request must use the same qualified source-conditioned editor.
 @pytest.mark.asyncio
-async def test_refine_falls_back_to_a_merge_when_the_model_returns_nothing() -> None:
-    service = _service(_GENERATED, "")
+async def test_refine_routes_named_color_change_to_source_editor() -> None:
+    service = _service(_GENERATED)
     images: Any = service.images
 
-    await service.refine("u", "orig", "make it blue", "c", "t")
+    revision = await service.refine(
+        "u",
+        "orig",
+        "can you make this car red?",
+        "c",
+        "t",
+    )
 
-    # The feedback is never silently dropped.
-    assert images.generate_calls[0]["request"].prompt == "a cat on a sofa, make it blue"
+    assert revision["id"] == "revision"
+    call = images.edit_calls[0]
+    assert call["instruction"].startswith(
+        "Apply only this edit to image 1: can you make this car red?."
+    )
+    assert "Preserve every unmentioned subject attribute" in call["instruction"]
+    assert call["user_feedback"] == "can you make this car red?"
 
 
+# Missing, uploaded, and blank-feedback inputs must fail before provider work.
 @pytest.mark.asyncio
-async def test_refine_rejects_a_missing_or_non_generated_image() -> None:
+async def test_refine_rejects_invalid_parent_or_feedback() -> None:
     with pytest.raises(RefinementError):
-        await _service(None, "x").refine("u", "missing", "x", "c", "t")
+        await _service(None).refine("u", "missing", "x", "c", "t")
 
     upload = {"id": "up", "kind": "uploaded_image", "metadata": {}}
     with pytest.raises(RefinementError):
-        await _service(upload, "x").refine("u", "up", "x", "c", "t")
+        await _service(upload).refine("u", "up", "x", "c", "t")
+
+    with pytest.raises(RefinementError):
+        await _service(_GENERATED).refine("u", "orig", "   ", "c", "t")

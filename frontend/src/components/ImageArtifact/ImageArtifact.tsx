@@ -19,12 +19,17 @@ interface ImageArtifactProps {
   onRefined?: (artifact: ImageArtifactRecord) => void;
 }
 
-// A follow-up on a generated image is treated as edit feedback unless it reads
-// as a question: "brighten the sky" regenerates, "what colour is the sky?" asks.
+// Recognize a general image question after edit-shaped requests are considered.
 const looksLikeQuestion = (text: string): boolean => {
   const normalized = text.trim().toLowerCase()
   return normalized.endsWith('?')
     || /^(what|which|who|where|when|why|how|is|are|was|were|do|does|did|can|could|would|will|should)\b/.test(normalized)
+}
+
+// Recognize polite question-shaped edit commands before general vision Q&A.
+const looksLikeRefinementRequest = (text: string): boolean => {
+  const normalized = text.trim().toLowerCase()
+  return /^(?:please\s+)?(?:(?:can|could|would|will)\s+(?:you|we)\s+)?(?:please\s+)?(?:make|change|turn|recolor|repaint|replace|remove|add|edit|modify|transform|adjust|brighten|darken|crop|resize|rotate|move)\b/.test(normalized)
 }
 
 // Download one already loaded private image without another provider request.
@@ -105,14 +110,15 @@ const ImageArtifact = ({ artifact, onDeleted, onRetry, onRefined }: ImageArtifac
   // asks the vision model about the current image.
   const willRefine = artifact.kind === 'generated_image'
     && question.trim() !== ''
-    && !looksLikeQuestion(question)
+    && (looksLikeRefinementRequest(question) || !looksLikeQuestion(question))
 
   // Route a follow-up: refine (regenerate) on feedback, or ask on a question.
   const submitFollowup = async (event: FormEvent) => {
     event.preventDefault()
     const trimmed = question.trim()
     if (!trimmed || isAsking) return
-    const refine = artifact.kind === 'generated_image' && !looksLikeQuestion(trimmed)
+    const refine = artifact.kind === 'generated_image'
+      && (looksLikeRefinementRequest(trimmed) || !looksLikeQuestion(trimmed))
     setIsAsking(true)
     setAskError('')
     try {

@@ -34,7 +34,7 @@ The commands use the pinned Mermaid CLI and the Chromium installed for Playwrigh
 npx.cmd playwright install chromium
 ```
 
-The renderer maintains the full-system, runtime/deployment, chat, search, memory, tool-memory, visual-artifact, presentation, architecture-maintenance, and frontend diagrams in one pass. The check compares a cross-platform fingerprint of each normalized source, the shared render configuration, and pinned Mermaid CLI version stored in its SVG, then performs a fresh syntax render for every source. It intentionally does not compare generated SVG bytes because renderer-generated identifiers and metadata may vary without changing the diagram.
+The renderer maintains the full-system, runtime/deployment, chat, search, memory, tool-memory, current visual-artifact, planned visual-memory/editing target, presentation, architecture-maintenance, and frontend diagrams in one pass. The check compares a cross-platform fingerprint of each normalized source, the shared render configuration, and pinned Mermaid CLI version stored in its SVG, then performs a fresh syntax render for every source. It intentionally does not compare generated SVG bytes because renderer-generated identifiers and metadata may vary without changing the diagram.
 
 For every modifying task, use this process:
 
@@ -69,7 +69,8 @@ Use this ownership map when selecting affected views:
 | Search routing, outbound minimization, research agents, provider/fallback policy, search budgets, or source provenance | Search and research | A provider, agent, external dependency, store, trust boundary, or cross-subsystem flow changes |
 | Memory forms, coordinator policy, retrieval, lifecycle, vector search, or memory operations | Memory subsystem | A store, agent, dependency, ownership boundary, or cross-subsystem flow changes |
 | Tool metadata, tool retrieval, or the MCP execution boundary | Tool memory | A store, external dependency, trust boundary, or cross-subsystem flow changes |
-| Artifact classification, providers, persistence, lifecycle, or rendering | Visual artifacts | A component, model dependency, store, or cross-subsystem flow changes |
+| Current artifact classification, providers, persistence, lifecycle, or rendering | Visual artifacts | A component, model dependency, store, or cross-subsystem flow changes |
+| Planned generated-image observation, visual references, source-aware editing, verification, or derived-data lifecycle | Visual memory and editing target | A future component, model dependency, store, or cross-subsystem flow is adopted into the current system |
 | Deck/slide specifications, presentation revisions, PowerPoint rendering, or Office validation | Presentations | An agent, renderer process, store, trust boundary, or cross-subsystem flow changes |
 | Repository context collection, LLM diagram candidates, candidate validation/rendering, or canonical review | Architecture maintenance | A maintainer process, model dependency, trust boundary, or canonical ownership flow changes |
 | Browser state, frontend components, API client behavior, SSE parsing, or client rendering | Frontend | A major component or frontend/backend ownership flow changes |
@@ -172,6 +173,10 @@ Key settings are:
 | `IMAGE_PROVIDER_BASE_URL` | `http://127.0.0.1:8188` | Loopback ComfyUI server root; Compose uses `http://host.docker.internal:8188` |
 | `IMAGE_PROVIDER_NAME` | `comfyui` | Provider label persisted with generated artifacts |
 | `IMAGE_MODEL` | `hidream_o1_image_dev_fp8_scaled.safetensors` | Exact checkpoint filename exposed by ComfyUI |
+| `IMAGE_EDIT_MODEL` | `flux-2-klein-4b-fp8.safetensors` | Qualified four-step FLUX.2 Klein 4B Distilled source editor |
+| `IMAGE_EDIT_TEXT_ENCODER` | `qwen_3_4b.safetensors` | Qwen 3 encoder used only by the FLUX.2 edit workflow |
+| `IMAGE_EDIT_VAE` | `flux2-vae.safetensors` | FLUX.2 VAE used by the edit workflow |
+| `IMAGE_EDIT_STEPS` | `4` | Qualified distilled edit step count; requalify quality and latency before changing |
 | `IMAGE_PROVIDER_TIMEOUT_SECONDS` | `600` | Whole image-job timeout including queue, sampling, and output fetch |
 | `IMAGE_PROVIDER_POLL_SECONDS` | `0.5` | Bounded terminal-history polling interval |
 | `IMAGE_MAX_CONCURRENCY` | `1` | Shared in-process image-generation gate for the current RTX 5080 |
@@ -325,7 +330,13 @@ correction attempt, while Gemma completed the real editable-PPTX path.
 
 `scripts\start-anios.ps1` brings the whole stack up with one command: it starts host ComfyUI (if nothing is on `:8188`), runs `docker compose up -d`, and waits for the backend. Image generation needs ComfyUI running; when it is down, `POST /api/v1/images/generate` returns a `503` with `reason: image_provider_unreachable` and a message naming ComfyUI, which the composer surfaces verbatim.
 
-The verified Windows host uses ComfyUI 0.28.0, Python 3.14, PyTorch CUDA 13.0, and the official HiDream-O1 Dev FP8 checkpoint. Keep this runtime outside the repository. The backend runs in Docker and reaches ComfyUI over `host.docker.internal:8188`, so ComfyUI must listen on `0.0.0.0` (the start script uses `--listen 0.0.0.0`); a `--listen 127.0.0.1` binding is reachable only from a host-run backend, not the container.
+The verified Windows host uses ComfyUI 0.28.0, Python 3.14, PyTorch CUDA
+13.0, the official HiDream-O1 Dev FP8 checkpoint for generation, and the
+official ComfyUI FLUX.2 Klein 4B Distilled FP8 split workflow for editing. Keep
+this runtime outside the repository. The backend runs in Docker and reaches
+ComfyUI over `host.docker.internal:8188`, so ComfyUI must listen on `0.0.0.0`
+(the start script uses `--listen 0.0.0.0`); a `--listen 127.0.0.1` binding is
+reachable only from a host-run backend, not the container.
 
 ```powershell
 $comfyRoot = 'E:\AI\ComfyUI'
@@ -342,6 +353,16 @@ $env:HF_XET_CACHE = 'E:\AI\huggingface-xet-cache'
 ```
 
 Verify the checkpoint SHA-256 is `7cbf53a475e0a13f92f2ec08bcffdb9b9de4305ef3b6f35cdd784d09dcd8d0cc` and the prompt encoder is `bf0b4fa2e41a25684dc9e9b256cd505564f02fed09be3da95ce024e653e2c52b`. Start the runtime without opening a visible helper window:
+
+Install these three FLUX.2 edit assets through ComfyUI's official
+`image_flux2_klein_image_edit_4b_distilled` template or Hugging Face download
+tool, preserving the exact filenames:
+
+| ComfyUI folder | Filename | SHA-256 |
+| --- | --- | --- |
+| `models/diffusion_models` | `flux-2-klein-4b-fp8.safetensors` | `97ed34fe0567e436200f2faee3939b88f2b5d99f8af2a4dc16532c4245c0ccb6` |
+| `models/text_encoders` | `qwen_3_4b.safetensors` | `6c671498573ac2f7a5501502ccce8d2b08ea6ca2f661c458e708f36b36edfc5a` |
+| `models/vae` | `flux2-vae.safetensors` | `d64f3a68e1cc4f9f4e29b6e0da38a0204fe9a49f2d4053f0ec1fa1ca02f9c4b5` |
 
 ```powershell
 $comfyArgs = @('main.py', '--listen', '127.0.0.1', '--port', '8188', '--disable-auto-launch')
@@ -864,6 +885,27 @@ $imageBody | curl.exe -sS -D - -X POST 'http://127.0.0.1:8000/api/v1/images/gene
 
 Require HTTP 201, `kind=generated_image`, terminal `status=ready`, `content_available=true`, provider/model/job metadata, `metadata.generation_prompt`, dimensions, byte size, and SHA-256. Fetch `GET /api/v1/artifacts/{user_id}/{artifact_id}/content`, verify its decoded image and hash, require another user to receive 404, and delete through `DELETE /api/v1/artifacts/{user_id}/{artifact_id}`. Confirm both the exact file and row are gone. Unsupported resolutions must return 422 before a provider request.
 
+For source editing, keep the generated parent and submit its exact ID:
+
+```powershell
+$editBody = @{
+  user_id = 'image_validation'
+  conversation_id = '33333333-3333-4333-8333-333333333333'
+  feedback = 'change only the apple from cobalt to red'
+} | ConvertTo-Json -Compress
+$editBody | curl.exe -sS -D - -X POST `
+  'http://127.0.0.1:8000/api/v1/images/{artifact_id}/refine' `
+  -H 'Content-Type: application/json' --data-binary '@-'
+```
+
+Require HTTP 201, FLUX.2 model provenance, four steps, `edit_mode` equal to
+`source_conditioned`, the exact parent ID and feedback, and a
+`source_sha256` matching the parent content. Fetch and decode the child, verify
+its stored hash, inspect the requested delta and unmentioned preservation, and
+confirm the parent remains readable. Qualification must cover at least
+localized color/material, object add/remove, and text edits; latency and visual
+preservation are acceptance criteria, not HTTP reachability.
+
 For real image understanding, upload a validated image to Gemma:
 
 ```powershell
@@ -878,7 +920,12 @@ Require HTTP 201, `kind=uploaded_image`, ready binary integrity metadata, `analy
 
 For browser acceptance, also submit `create an image of ...` while Chat is selected. Require exactly one `/images/generate` request and the selected mode to change to Create image. Without changing that mode manually, ask a historical question such as `what car did we create an image of?`; require `/chat`, no second generation request, a grounded answer, terminal `done`, and cleared loading/input. Then explicitly ask to search the internet for that image, require image recall before the visible internet MCP lifecycle, and require source cards only when the provider returned non-empty results. Inspect Network and Console throughout. The Memory screen must not fetch the full export before a map-card click; selecting Semantic cache must return the owned export and display a bounded detail region without embedding vectors.
 
-Use Create image and Analyze image for the remaining visual checks. Require visible progress, a terminal ready image and grounded analysis, enabled/cleared controls, navigation and full-reload restoration, artifact-history rendering, download/deletion, visible 413/422/502/503 errors, and successful retry. Run the reusable live provider checks explicitly:
+Use the unified composer and image-card follow-up field for the remaining
+visual checks. Require visible generation/refinement/analysis progress, one
+active image card after an edit, a terminal ready image and grounded analysis,
+enabled/cleared controls, navigation and full-reload restoration,
+artifact-history rendering, download/deletion, visible 413/422/502/503 errors,
+and successful retry. Run the reusable live provider checks explicitly:
 
 ```powershell
 cd frontend

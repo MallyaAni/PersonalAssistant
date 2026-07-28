@@ -15,7 +15,13 @@ The repository contains:
   server with an isolated Google ADK research worker, Tavily fallback, bounded
   local quota protection and provider-attributed sources;
 - an explicit chat-to-Mermaid diagram path with user-scoped PostgreSQL artifact persistence and strict in-browser SVG rendering;
-- free local HiDream/ComfyUI image generation plus validated Gemma vision analysis in the chat composer, with natural-language creation intent, grounded historical questions, guarded referenced-image web comparison, private previews, retry/cancel, reload restoration, history, download, owned deletion, and threaded followup questions on any owned image;
+- free local HiDream/ComfyUI image generation, four-step FLUX.2 Klein
+  source-aware editing, and validated Gemma vision analysis in the chat
+  composer, with natural-language creation intent, immutable edit lineage,
+  in-place active revisions, grounded historical questions, guarded
+  referenced-image web comparison, private previews, retry/cancel, reload
+  restoration, history, download, owned deletion, and threaded followup
+  questions on any owned image;
 - a clickable Agent memory map whose bounded store details load on demand through the owned export boundary;
 - a focused presentation subsystem where a separately qualified specialist model produces compact slide content,
   a durable worker executes the presentation LangGraph independently of chat,
@@ -33,6 +39,17 @@ See [the current session handoff](docs/NEXT_SESSION.md) for verified runtime sta
 
 The supported development paths and required environment variables are documented in [docs/DEVELOPMENT_GUIDE.md](docs/DEVELOPMENT_GUIDE.md). Do not start the Compose backend and a host Uvicorn process on port 8000 at the same time.
 
+Start the complete user-facing local stack, including host ComfyUI image
+generation, with:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\start-anios.ps1
+```
+
+`docker compose up` starts the core services but intentionally does not start
+the profile-controlled or host ComfyUI process. Treat that command as an
+incomplete startup whenever image generation is part of the acceptance path.
+
 Common entry points are:
 
 ```text
@@ -44,6 +61,7 @@ Agent memory:    http://localhost:8000/api/v1/memory/{user_id}/agent
 Artifacts API:   http://localhost:8000/api/v1/artifacts/{user_id}/conversations/{conversation_id}
 Artifact history: http://localhost:8000/api/v1/artifacts/{user_id}
 Image generation: http://localhost:8000/api/v1/images/generate
+Image refinement: http://localhost:8000/api/v1/images/{artifact_id}/refine
 Image analysis:   http://localhost:8000/api/v1/vision/analyze
 Image followup:   http://localhost:8000/api/v1/vision/artifacts/{artifact_id}/ask
 Conversation:    http://localhost:8000/api/v1/conversations/{user_id}/{conversation_id}
@@ -68,7 +86,7 @@ User-visible behavior is considered verified only when the intended workflow is 
 - [Next session handoff](docs/NEXT_SESSION.md)
 - [Changelog](docs/CHANGELOG.md)
 - [Security](docs/SECURITY.md)
-- [Architecture decisions](docs/adr/0001-clean-architecture-and-modular-structure.md), including [local visual artifacts and resource-aware orchestration](docs/adr/0003-local-visual-artifacts-and-resource-aware-orchestration.md), [hybrid free-tier web research](docs/adr/0004-hybrid-free-tier-web-research.md), and [typed editable presentation generation](docs/adr/0005-typed-editable-presentation-generation.md)
+- [Architecture decisions](docs/adr/0001-clean-architecture-and-modular-structure.md), including [local visual artifacts and resource-aware orchestration](docs/adr/0003-local-visual-artifacts-and-resource-aware-orchestration.md), [hybrid free-tier web research](docs/adr/0004-hybrid-free-tier-web-research.md), [typed editable presentation generation](docs/adr/0005-typed-editable-presentation-generation.md), and [versioned visual semantics, memory references, and editing](docs/adr/0007-versioned-visual-semantics-memory-and-editing.md)
 
 ## Status language
 

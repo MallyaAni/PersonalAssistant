@@ -6,6 +6,7 @@ flowchart TB
         direction TB
         ChatAPI[POST /api/v1/chat<br/>diagram request]
         ImageAPI[POST /api/v1/images/generate<br/>prompt plus resolution]
+        RefineAPI[POST /api/v1/images/:id/refine<br/>owned generated image plus feedback]
         VisionAPI[POST /api/v1/vision/analyze<br/>image plus prompt]
         AskAPI[POST /api/v1/vision/artifacts/:id/ask<br/>owned image plus question]
         ArtifactAPI[GET content, list,<br/>snapshot, and DELETE]
@@ -14,6 +15,7 @@ flowchart TB
 
     User --> ChatAPI
     User --> ImageAPI
+    User --> RefineAPI
     User --> VisionAPI
     User --> AskAPI
     User --> ArtifactAPI
@@ -64,13 +66,21 @@ flowchart TB
         ComfyUI[Model call: IMAGE_MODEL via ComfyUI 0.28<br/>hidream_o1_image_dev_fp8_scaled.safetensors]
         OutputCheck[PNG signature, MIME,<br/>size, pixels, and frame check]
         GeneratedState[Binary plus PostgreSQL metadata<br/>prompt provenance; ready or sanitized failed]
+        RefinementService[ImageRefinementService<br/>owned parent lookup and immutable revision]
+        EditProvider[ComfyUIImageEditProvider<br/>source upload plus four-step workflow]
+        FluxEditor[Model call: IMAGE_EDIT_MODEL via ComfyUI<br/>FLUX.2 Klein 4B Distilled FP8<br/>Qwen 3 4B encoder plus FLUX.2 VAE]
+        Lineage[Parent artifact ID, source SHA-256,<br/>exact feedback, and child artifact]
 
         ImageLifecycle --> DisconnectMonitor --> ImageProvider --> ComfyUI --> OutputCheck --> GeneratedState
         DisconnectMonitor -. client leaves .-> ImageProvider
         ImageProvider -. timeout, error,<br/>or cancellation .-> GeneratedState
+        RefinementService --> EditProvider --> FluxEditor --> OutputCheck
+        RefinementService -. lineage metadata .-> Lineage
+        Lineage --> GeneratedState
     end
 
     ImageAPI --> ImageLifecycle
+    RefineAPI --> RefinementService
     VisualTools --> ImageLifecycle
 
     subgraph RecallPath[3. Stored-image conversation and comparison path]
@@ -126,8 +136,8 @@ flowchart TB
         direction TB
         SSEParser[Typed SSE parser]
         DiagramCard[Diagram card<br/>strict SVG plus editable source]
-        ImageComposer[Chat composer intent and modes<br/>create, follow up, analyze, cancel, retry]
-        ImageCard[Private image card<br/>preview, threaded ask, download, delete]
+        ImageComposer[Unified composer intent<br/>create, analyze, cancel, retry]
+        ImageCard[Private image card<br/>preview, threaded ask/refine,<br/>active revision replaced in place,<br/>download, delete]
         ExistingUI[Reload, navigation, history,<br/>export, and owned deletion]
 
         SSEParser --> DiagramCard --> ExistingUI
@@ -136,6 +146,7 @@ flowchart TB
         ImageAPI --> ImageCard --> ExistingUI
         VisionAPI --> ImageCard
         ImageCard --> AskAPI
+        ImageCard --> RefineAPI
     end
 
     DiagramStream --> SSEParser
@@ -146,7 +157,7 @@ flowchart TB
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef planned fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
-    class User,ExplicitCaller,ChatAPI,ImageAPI,VisionAPI,AskAPI,ArtifactAPI,ToolAPI,ReferencedQuestion,DiagramStream,SSEParser,DiagramCard,ImageComposer,ImageCard,ExistingUI interface;
-    class VisualMCP,HiddenContext,VisualTools,PresentationTools,Handles,DiagramRoute,DiagramService,DiagramAgent,MermaidCheck,ImageLifecycle,DisconnectMonitor,ImageProvider,OutputCheck,RecallPolicy,PromptContext,OutboundGate,UploadCheck,UploadState,FollowupRead,VisionService,AnalysisState,Ownership,Repository application;
+    class User,ExplicitCaller,ChatAPI,ImageAPI,RefineAPI,VisionAPI,AskAPI,ArtifactAPI,ToolAPI,ReferencedQuestion,DiagramStream,SSEParser,DiagramCard,ImageComposer,ImageCard,ExistingUI interface;
+    class VisualMCP,HiddenContext,VisualTools,PresentationTools,Handles,DiagramRoute,DiagramService,DiagramAgent,MermaidCheck,ImageLifecycle,DisconnectMonitor,ImageProvider,OutputCheck,RefinementService,EditProvider,Lineage,RecallPolicy,PromptContext,OutboundGate,UploadCheck,UploadState,FollowupRead,VisionService,AnalysisState,Ownership,Repository application;
     class DiagramState,GeneratedState,Postgres,BinaryStore data;
-    class DiagramLLM,ComfyUI,VisionLLM,InternetMCP external;
+    class DiagramLLM,ComfyUI,FluxEditor,VisionLLM,InternetMCP external;

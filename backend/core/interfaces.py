@@ -5,6 +5,7 @@ from typing import Any
 from backend.artifacts.types import (
     DiagramSpecification,
     GeneratedImage,
+    ImageEditRequest,
     ImageGenerationRequest,
     StoredBinary,
     VisionAnalysis,
@@ -201,6 +202,12 @@ class ImageProvider(ABC):
     # Generate one image through a replaceable local inference runtime.
     @abstractmethod
     async def generate(self, request: ImageGenerationRequest) -> GeneratedImage: ...
+
+
+class ImageEditProvider(ABC):
+    # Edit owned source pixels through a replaceable local inference runtime.
+    @abstractmethod
+    async def edit(self, request: ImageEditRequest) -> GeneratedImage: ...
 
 
 class VisionProvider(ABC):

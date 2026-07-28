@@ -18,7 +18,7 @@ flowchart LR
         VisionEmbed[VISION_EMBEDDING_MODEL:<br/>nomic-embed-vision-v1.5<br/>in-process ONNX on CPU]
         Dependencies[FastAPI dependency assembly<br/>async request sessions]
         Auth[Optional signed-user ownership<br/>disabled by default locally]
-        ComfyUI[ComfyUI container, comfyui profile<br/>IMAGE_MODEL:<br/>hidream_o1_image_dev_fp8_scaled.safetensors<br/>GPU, host port 8188]
+        ComfyUI[ComfyUI container or host process<br/>GENERATION: HiDream-O1 Dev FP8<br/>EDITING: FLUX.2 Klein 4B Distilled FP8<br/>Qwen 3 4B encoder plus FLUX.2 VAE<br/>GPU, host port 8188]
         Postgres[(PostgreSQL 16 and pgvector<br/>memory, artifacts, and presentation revisions<br/>host port 5432)]
         Redis[(Redis 7, host port 6379<br/>expiring model lease and<br/>foreground waiter count only)]
         Maintenance[Opt-in memory-maintenance<br/>hourly profile]
@@ -54,7 +54,7 @@ flowchart LR
     PresentationWorker -->|validated editable PPTX| BinaryStore
     VisualMCP -->|per-call asyncpg sessions| Postgres
     VisualMCP -->|model calls: MAIN, DIAGRAM,<br/>PRESENTATION, or VISION role| LMStudio
-    VisualMCP -->|model call: IMAGE_MODEL| ComfyUI
+    VisualMCP -->|model call: IMAGE_MODEL<br/>or IMAGE_EDIT_MODEL with source pixels| ComfyUI
     VisualMCP -->|opaque artifact bytes| BinaryStore
     Backend -->|strict DeckSpec or SlideSpec| PresentationRenderer
     VisualMCP -->|strict DeckSpec or SlideSpec| PresentationRenderer
@@ -63,7 +63,7 @@ flowchart LR
     MCPStdio -->|fallback or explicit cross-check| WebSearch
     MCPStdio -->|atomic quota reservation| SearchQuota
     Dependencies -->|model calls: MAIN, DIAGRAM, PRESENTATION,<br/>VISION, or EMBEDDING role;<br/>OpenAI-compatible HTTP| LMStudio
-    Dependencies -->|model call: IMAGE_MODEL;<br/>ComfyUI HTTP, comfyui:8188| ComfyUI
+    Dependencies -->|model call: IMAGE_MODEL or IMAGE_EDIT_MODEL;<br/>ComfyUI HTTP, comfyui:8188| ComfyUI
     Dependencies -->|opaque keys and atomic file writes| BinaryStore
     ComfyUI -. bind-mounts .-> ComfyInstall
     Maintenance -->|asyncpg maintenance cycle| Postgres

@@ -10,7 +10,7 @@ flowchart LR
     subgraph Application[Application and orchestration]
         Conversation[ConversationService]
         DiagramArtifacts[DiagramArtifactService<br/>bounded Mermaid lifecycle]
-        ImageArtifacts[ImageArtifactService<br/>generation, upload, integrity, deletion]
+        ImageArtifacts[ImageArtifactService<br/>generation, source editing, upload,<br/>integrity, lineage, deletion]
         Vision[VisionAnalysisService<br/>grounded image understanding]
         DiagramAgent[DiagramAgent<br/>specialized LangGraph workflow]
         PresentationService[PresentationService<br/>revision and promotion authority]
@@ -35,7 +35,7 @@ flowchart LR
     subgraph Infrastructure[Local infrastructure]
         Database[(PostgreSQL and pgvector<br/>conversations, memory, visual artifacts,<br/>presentation revisions and durable jobs)]
         LMStudio[LM Studio model host<br/>MAIN and DIAGRAM: qwen/qwen3.5-9b<br/>PRESENTATION and VISION:<br/>google/gemma-4-12b<br/>EMBEDDING_MODEL:<br/>text-embedding-nomic-embed-text-v1.5]
-        ComfyUI[ComfyUI local raster generation<br/>IMAGE_MODEL:<br/>hidream_o1_image_dev_fp8_scaled.safetensors]
+        ComfyUI[ComfyUI local raster providers<br/>GENERATION: HiDream-O1 Dev FP8<br/>EDITING: FLUX.2 Klein 4B Distilled FP8<br/>plus Qwen 3 4B encoder and FLUX.2 VAE]
         BinaryStore[(Opaque local binary artifact store)]
         Redis[(Redis<br/>expiring model lease and<br/>foreground waiter count only)]
         VisionEmbed[VISION_EMBEDDING_MODEL:<br/>nomic-embed-vision-v1.5<br/>in-process ONNX, aligned image vectors]
@@ -64,7 +64,7 @@ flowchart LR
     API -->|bounded multipart upload| Vision
     Vision --> ImageArtifacts
     Vision -->|model call: VISION_MODEL| LMStudio
-    ImageArtifacts -->|model call: IMAGE_MODEL| ComfyUI
+    ImageArtifacts -->|model call: IMAGE_MODEL for generation<br/>or IMAGE_EDIT_MODEL with owned source pixels| ComfyUI
     ImageArtifacts --> BinaryStore
     ImageArtifacts -->|bounded prompt provenance<br/>for referenced-image context| Conversation
     Candidate --> DiagramAgent

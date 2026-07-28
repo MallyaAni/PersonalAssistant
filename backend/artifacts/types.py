@@ -22,6 +22,16 @@ class ImageGenerationRequest:
 
 
 @dataclass(frozen=True, slots=True)
+class ImageEditRequest:
+    """Owned source pixels and one bounded instruction sent to an image editor."""
+
+    instruction: str
+    source_content: bytes
+    source_mime_type: str
+    seed: int
+
+
+@dataclass(frozen=True, slots=True)
 class GeneratedImage:
     """Validated binary image returned by a replaceable local provider."""
 

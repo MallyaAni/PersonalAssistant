@@ -423,18 +423,23 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     })
   }
 
-  // Append a refined image revision as a new assistant turn, preserving the
-  // original so the progression stays visible.
+  // Replace the displayed parent with its linked revision while lineage stays persisted.
   const handleImageRefined = (artifact: ImageArtifact) => {
-    setMessages(prev => [
-      ...prev,
-      {
-        role: 'assistant',
-        content: 'Here is the updated image.',
-        artifact,
-        artifactId: artifact.id,
-      },
-    ])
+    const parentId = String(artifact.metadata?.parent_artifact_id ?? '')
+    if (!parentId) return
+    setMessages(prev => prev.map(message => {
+      const replacesPrimary = message.artifact?.id === parentId
+      const hasMatchedParent = message.imageMatches?.some(match => match.id === parentId) ?? false
+      if (!replacesPrimary && !hasMatchedParent) return message
+      return {
+        ...message,
+        artifact: replacesPrimary ? artifact : message.artifact,
+        artifactId: replacesPrimary ? artifact.id : message.artifactId,
+        imageMatches: hasMatchedParent
+          ? message.imageMatches?.map(match => (match.id === parentId ? artifact : match))
+          : message.imageMatches,
+      }
+    }))
   }
 
   // Expose a visual request failure and clear its running state.

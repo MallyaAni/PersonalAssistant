@@ -4,11 +4,15 @@ import logging
 from typing import Any
 
 from backend.artifacts.image import validate_image_bytes
-from backend.artifacts.types import ImageGenerationRequest
+from backend.artifacts.types import (
+    ImageEditRequest,
+    ImageGenerationRequest,
+)
 from backend.core.interfaces import (
     ArtifactEmbeddingStore,
     BinaryArtifactRepository,
     BinaryArtifactStore,
+    ImageEditProvider,
     ImageProvider,
     VisionEmbeddingProvider,
 )
@@ -30,6 +34,9 @@ class ImageArtifactService:
         vision_embeddings: VisionEmbeddingProvider | None = None,
         embedding_store: ArtifactEmbeddingStore | None = None,
         vision_embedding_model: str = "",
+        edit_provider: ImageEditProvider | None = None,
+        edit_provider_name: str = "",
+        edit_model_name: str = "",
     ) -> None:
         self.provider = provider
         self.repository = repository
@@ -41,6 +48,9 @@ class ImageArtifactService:
         self.vision_embeddings = vision_embeddings
         self.embedding_store = embedding_store
         self.vision_embedding_model = vision_embedding_model
+        self.edit_provider = edit_provider
+        self.edit_provider_name = edit_provider_name
+        self.edit_model_name = edit_model_name
 
     # Embed one stored image so it is retrievable by meaning, not just caption.
     # Runs for generated and uploaded images alike; the pixels are what change,
@@ -172,6 +182,87 @@ class ImageArtifactService:
                 artifact_id,
                 user_id,
                 "generation_failed",
+            )
+            raise
+
+    # Edit owned source pixels and persist the result as an immutable child revision.
+    async def edit(
+        self,
+        user_id: str,
+        conversation_id: str,
+        trace_id: str,
+        parent: dict[str, Any],
+        source_content: bytes,
+        instruction: str,
+        seed: int,
+        user_feedback: str | None = None,
+    ) -> dict[str, Any]:
+        if self.edit_provider is None:
+            raise RuntimeError("No source-conditioned image editor is configured")
+        artifact = await self.repository.create_binary_pending(
+            user_id=user_id,
+            conversation_id=conversation_id,
+            trace_id=trace_id,
+            kind="generated_image",
+            provider=self.edit_provider_name or self.provider_name,
+            model=self.edit_model_name or None,
+            title="Edited image",
+        )
+        artifact_id = str(artifact["id"])
+        storage_key: str | None = None
+        try:
+            edited = await self.edit_provider.edit(
+                ImageEditRequest(
+                    instruction=instruction,
+                    source_content=source_content,
+                    source_mime_type=str(parent.get("mime_type") or "image/png"),
+                    seed=seed,
+                )
+            )
+            extension = edited.mime_type.removeprefix("image/").replace("jpeg", "jpg")
+            stored = await self.store.write(
+                user_id,
+                artifact_id,
+                extension,
+                edited.content,
+            )
+            storage_key = stored.storage_key
+            parent_metadata = parent.get("metadata") or {}
+            ready = await self.repository.mark_binary_ready(
+                artifact_id=artifact_id,
+                user_id=user_id,
+                stored=stored,
+                mime_type=edited.mime_type,
+                width=edited.width,
+                height=edited.height,
+                metadata={
+                    **edited.metadata,
+                    "provider_job_id": edited.provider_job_id,
+                    "generation_prompt": str(
+                        parent_metadata.get("generation_prompt") or ""
+                    ),
+                    "parent_artifact_id": str(parent.get("id") or ""),
+                    "refinement_feedback": user_feedback or instruction,
+                    "edit_instruction": instruction,
+                    "edit_mode": "source_conditioned",
+                },
+            )
+            await self._index_embedding(user_id, artifact_id, edited.content)
+            return ready
+        except asyncio.CancelledError:
+            if storage_key:
+                await self.store.delete(storage_key)
+            await asyncio.shield(
+                self.repository.mark_failed(artifact_id, user_id, "cancelled")
+            )
+            raise
+        except Exception:
+            if storage_key:
+                await self.store.delete(storage_key)
+            await self.repository.mark_failed(
+                artifact_id,
+                user_id,
+                "edit_failed",
             )
             raise
 

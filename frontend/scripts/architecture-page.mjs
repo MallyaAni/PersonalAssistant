@@ -67,9 +67,16 @@ const publishedDiagrams = [
   {
     name: "visual-artifact-subsystem",
     title: "Visual artifacts",
-    scope: "Generation, upload, storage, vision analysis, retrieval",
+    scope: "Generation, source editing, upload, storage, vision, retrieval",
     change:
-      "Shows diagrams, image generation, Gemma vision, multimodal embeddings, private binary ownership, and image-aware follow-up paths.",
+      "Shows HiDream generation, four-step FLUX.2 Klein source editing, Gemma vision, multimodal retrieval, and private immutable ownership paths.",
+  },
+  {
+    name: "visual-memory-editing-target",
+    title: "Visual memory & editing target",
+    scope: "Implemented source edits; planned semantics, references, verification",
+    change:
+      "Separates implemented FLUX source-pixel revisions from planned asynchronous VLM observation, handle-based visual memory, and semantic promotion checks.",
   },
   {
     name: "presentation-subsystem",
@@ -121,7 +128,7 @@ const metrics = [
   },
   {
     label: "Canonical views",
-    value: "11 / 11",
+    value: "12 / 12",
     note: "Mermaid, SVG, and page synchronized",
     good: true,
   },

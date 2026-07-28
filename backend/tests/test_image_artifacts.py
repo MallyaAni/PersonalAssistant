@@ -13,6 +13,7 @@ from backend.artifacts.image import validate_image_bytes
 from backend.artifacts.storage import LocalBinaryArtifactStore
 from backend.artifacts.types import (
     GeneratedImage,
+    ImageEditRequest,
     ImageGenerationRequest,
     StoredBinary,
     VisionAnalysis,
@@ -49,6 +50,23 @@ class FailingImageProvider:
     # Raise a private provider error for sanitized failure-state validation.
     async def generate(self, request: ImageGenerationRequest) -> GeneratedImage:
         raise RuntimeError("private provider detail")
+
+
+class StaticImageEditProvider:
+    def __init__(self) -> None:
+        self.requests: list[ImageEditRequest] = []
+
+    # Return a deterministic red image while recording the exact source request.
+    async def edit(self, request: ImageEditRequest) -> GeneratedImage:
+        self.requests.append(request)
+        return GeneratedImage(
+            content=_png_bytes((200, 20, 20)),
+            mime_type="image/png",
+            width=8,
+            height=6,
+            provider_job_id="edit-job-1",
+            metadata={"seed": request.seed, "steps": 4},
+        )
 
 
 class CapturingBinaryRepository:
@@ -434,6 +452,53 @@ async def test_image_artifact_service_completes_binary_lifecycle(
     assert await service.read_owned("other-user", ready["id"]) is None
     assert await service.delete_owned("image-user", ready["id"]) is True
     assert list(tmp_path.rglob("*.png")) == []
+
+
+# Verify source-conditioned editing persists immutable lineage and exact feedback.
+@pytest.mark.asyncio
+async def test_image_artifact_service_persists_source_conditioned_edit(
+    tmp_path: Path,
+) -> None:
+    repository = CapturingBinaryRepository()
+    editor = StaticImageEditProvider()
+    service = ImageArtifactService(
+        StaticImageProvider(),
+        repository,  # type: ignore[arg-type]
+        LocalBinaryArtifactStore(tmp_path),
+        "test-provider",
+        "test-model",
+        1024 * 1024,
+        1000,
+        edit_provider=editor,
+        edit_provider_name="comfyui",
+        edit_model_name="flux2-klein",
+    )
+    parent = {
+        "id": "parent-image",
+        "kind": "generated_image",
+        "mime_type": "image/png",
+        "metadata": {"generation_prompt": "a black sports car by the coast"},
+    }
+
+    ready = await service.edit(
+        "image-user",
+        "11111111-1111-4111-8111-111111111111",
+        "22222222-2222-4222-8222-222222222222",
+        parent,
+        _png_bytes(),
+        "make only the car red",
+        42,
+        user_feedback="make this car red",
+    )
+
+    assert editor.requests[0].source_content == _png_bytes()
+    assert editor.requests[0].instruction == "make only the car red"
+    assert ready["status"] == "ready"
+    assert ready["model"] == "flux2-klein"
+    assert ready["metadata"]["parent_artifact_id"] == "parent-image"
+    assert ready["metadata"]["edit_mode"] == "source_conditioned"
+    assert ready["metadata"]["refinement_feedback"] == "make this car red"
+    assert ready["metadata"]["generation_prompt"] == ("a black sports car by the coast")
 
 
 # Verify provider failures leave a terminal sanitized artifact without bytes.

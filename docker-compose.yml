@@ -51,6 +51,10 @@ services:
       - DIAGRAM_LLM_MODEL=${DIAGRAM_LLM_MODEL:-}
       - DIAGRAM_LLM_REASONING_EFFORT=${DIAGRAM_LLM_REASONING_EFFORT:-none}
       - IMAGE_PROVIDER_BASE_URL=http://host.docker.internal:8188
+      - IMAGE_EDIT_MODEL=${IMAGE_EDIT_MODEL:-flux-2-klein-4b-fp8.safetensors}
+      - IMAGE_EDIT_TEXT_ENCODER=${IMAGE_EDIT_TEXT_ENCODER:-qwen_3_4b.safetensors}
+      - IMAGE_EDIT_VAE=${IMAGE_EDIT_VAE:-flux2-vae.safetensors}
+      - IMAGE_EDIT_STEPS=${IMAGE_EDIT_STEPS:-4}
       - ARTIFACT_STORAGE_ROOT=/app/data/artifacts
       - PRESENTATION_RENDERER_BASE_URL=http://presentation-renderer:8002
       - PRESENTATION_REQUIRE_OFFICE_VALIDATION=true
@@ -156,6 +160,10 @@ services:
       # `comfyui` service instead, run `--profile comfyui` and set this to
       # http://comfyui:8188 (that GPU image build needs ~10-20 GB free on C:).
       - IMAGE_PROVIDER_BASE_URL=http://host.docker.internal:8188
+      - IMAGE_EDIT_MODEL=${IMAGE_EDIT_MODEL:-flux-2-klein-4b-fp8.safetensors}
+      - IMAGE_EDIT_TEXT_ENCODER=${IMAGE_EDIT_TEXT_ENCODER:-qwen_3_4b.safetensors}
+      - IMAGE_EDIT_VAE=${IMAGE_EDIT_VAE:-flux2-vae.safetensors}
+      - IMAGE_EDIT_STEPS=${IMAGE_EDIT_STEPS:-4}
       - ARTIFACT_STORAGE_ROOT=/app/data/artifacts
       - PRESENTATION_RENDERER_BASE_URL=http://presentation-renderer:8002
       - PRESENTATION_REQUIRE_OFFICE_VALIDATION=true

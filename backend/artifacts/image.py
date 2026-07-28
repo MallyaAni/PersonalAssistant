@@ -1,19 +1,22 @@
 import asyncio
+import hashlib
 import io
 import time
 import warnings
 from contextlib import suppress
 from typing import Any, cast
+from uuid import uuid4
 
 import httpx
 from PIL import Image, UnidentifiedImageError
 
 from backend.artifacts.types import (
     GeneratedImage,
+    ImageEditRequest,
     ImageGenerationRequest,
     ValidatedImage,
 )
-from backend.core.interfaces import ImageProvider
+from backend.core.interfaces import ImageEditProvider, ImageProvider
 
 _FORMAT_DETAILS = {
     "JPEG": ("image/jpeg", "jpg"),
@@ -250,6 +253,257 @@ class ComfyUIImageProvider(ImageProvider):
                 "inputs": {
                     "images": ["9", 0],
                     "filename_prefix": "anios_generated",
+                },
+            },
+        }
+
+
+class ComfyUIImageEditProvider(ComfyUIImageProvider, ImageEditProvider):
+    """Edit a source image with the native FLUX.2 Klein ComfyUI workflow."""
+
+    # Configure FLUX.2 Klein's four-step editor on the shared ComfyUI runtime.
+    def __init__(
+        self,
+        base_url: str,
+        model: str,
+        text_encoder: str,
+        vae: str,
+        timeout_seconds: float,
+        poll_seconds: float,
+        max_concurrency: int,
+        max_output_bytes: int,
+        max_pixels: int,
+        steps: int,
+    ) -> None:
+        super().__init__(
+            base_url=base_url,
+            model=model,
+            timeout_seconds=timeout_seconds,
+            poll_seconds=poll_seconds,
+            max_concurrency=max_concurrency,
+            max_output_bytes=max_output_bytes,
+            max_pixels=max_pixels,
+        )
+        self.text_encoder = text_encoder
+        self.vae = vae
+        self.steps = steps
+
+    # Upload the owned source, run the editor, and return one validated candidate.
+    async def edit(self, request: ImageEditRequest) -> GeneratedImage:
+        async with self._semaphore:
+            started_at = time.monotonic()
+            prompt_id: str | None = None
+            timeout = httpx.Timeout(self.timeout_seconds)
+            async with httpx.AsyncClient(timeout=timeout) as client:
+                try:
+                    source_name = await self._upload_source(client, request)
+                    response = await client.post(
+                        f"{self.base_url}/prompt",
+                        json={"prompt": self._edit_workflow(request, source_name)},
+                    )
+                    response.raise_for_status()
+                    submitted = cast(dict[str, Any], response.json())
+                    prompt_id = str(submitted.get("prompt_id") or "")
+                    if not prompt_id or submitted.get("node_errors"):
+                        raise RuntimeError("ComfyUI rejected the image-edit workflow")
+                    output = await self._wait_for_output(client, prompt_id)
+                    image_response = await client.get(
+                        f"{self.base_url}/view",
+                        params=output,
+                    )
+                    image_response.raise_for_status()
+                    content = image_response.content
+                    validated = validate_image_bytes(
+                        content,
+                        image_response.headers.get("content-type", "").split(";")[0],
+                        self.max_output_bytes,
+                        self.max_pixels,
+                    )
+                except asyncio.CancelledError:
+                    if prompt_id:
+                        await self._interrupt(client, prompt_id)
+                    raise
+            return GeneratedImage(
+                content=content,
+                mime_type=validated.mime_type,
+                width=validated.width,
+                height=validated.height,
+                provider_job_id=prompt_id,
+                metadata={
+                    "seed": request.seed,
+                    "steps": self.steps,
+                    "source_sha256": hashlib.sha256(request.source_content).hexdigest(),
+                    "elapsed_seconds": round(time.monotonic() - started_at, 3),
+                },
+            )
+
+    # Place one source image in ComfyUI's temporary area for this edit workflow.
+    async def _upload_source(
+        self,
+        client: httpx.AsyncClient,
+        request: ImageEditRequest,
+    ) -> str:
+        extension = request.source_mime_type.removeprefix("image/").replace(
+            "jpeg", "jpg"
+        )
+        filename = f"{uuid4().hex}.{extension}"
+        response = await client.post(
+            f"{self.base_url}/upload/image",
+            data={
+                "type": "temp",
+                "subfolder": "anios_edits",
+                "overwrite": "false",
+            },
+            files={
+                "image": (
+                    filename,
+                    request.source_content,
+                    request.source_mime_type,
+                )
+            },
+        )
+        response.raise_for_status()
+        uploaded = cast(dict[str, Any], response.json())
+        stored_name = str(uploaded.get("name") or "")
+        stored_subfolder = str(uploaded.get("subfolder") or "")
+        stored_type = str(uploaded.get("type") or "")
+        if not stored_name or stored_type != "temp":
+            raise RuntimeError("ComfyUI did not accept the image-edit source")
+        relative_name = (
+            f"{stored_subfolder}/{stored_name}" if stored_subfolder else stored_name
+        )
+        return f"{relative_name} [temp]"
+
+    # Build ComfyUI's native FLUX.2 Klein source-conditioned workflow.
+    def _edit_workflow(
+        self,
+        request: ImageEditRequest,
+        source_name: str,
+    ) -> dict[str, Any]:
+        return {
+            "1": {
+                "class_type": "LoadImage",
+                "inputs": {"image": source_name},
+            },
+            "2": {
+                "class_type": "UNETLoader",
+                "inputs": {
+                    "unet_name": self.model,
+                    "weight_dtype": "default",
+                },
+            },
+            "3": {
+                "class_type": "CLIPLoader",
+                "inputs": {
+                    "clip_name": self.text_encoder,
+                    "type": "flux2",
+                    "device": "default",
+                },
+            },
+            "4": {
+                "class_type": "VAELoader",
+                "inputs": {"vae_name": self.vae},
+            },
+            "5": {
+                "class_type": "ImageScaleToTotalPixels",
+                "inputs": {
+                    "image": ["1", 0],
+                    "upscale_method": "nearest-exact",
+                    "megapixels": 1.0,
+                    "resolution_steps": 1,
+                },
+            },
+            "6": {
+                "class_type": "GetImageSize",
+                "inputs": {"image": ["5", 0]},
+            },
+            "7": {
+                "class_type": "CLIPTextEncode",
+                "inputs": {
+                    "clip": ["3", 0],
+                    "text": request.instruction.strip(),
+                },
+            },
+            "8": {
+                "class_type": "ConditioningZeroOut",
+                "inputs": {"conditioning": ["7", 0]},
+            },
+            "9": {
+                "class_type": "VAEEncode",
+                "inputs": {
+                    "pixels": ["5", 0],
+                    "vae": ["4", 0],
+                },
+            },
+            "10": {
+                "class_type": "ReferenceLatent",
+                "inputs": {
+                    "conditioning": ["7", 0],
+                    "latent": ["9", 0],
+                },
+            },
+            "11": {
+                "class_type": "ReferenceLatent",
+                "inputs": {
+                    "conditioning": ["8", 0],
+                    "latent": ["9", 0],
+                },
+            },
+            "12": {
+                "class_type": "EmptyFlux2LatentImage",
+                "inputs": {
+                    "width": ["6", 0],
+                    "height": ["6", 1],
+                    "batch_size": 1,
+                },
+            },
+            "13": {
+                "class_type": "Flux2Scheduler",
+                "inputs": {
+                    "steps": self.steps,
+                    "width": ["6", 0],
+                    "height": ["6", 1],
+                },
+            },
+            "14": {
+                "class_type": "RandomNoise",
+                "inputs": {"noise_seed": request.seed},
+            },
+            "15": {
+                "class_type": "CFGGuider",
+                "inputs": {
+                    "model": ["2", 0],
+                    "positive": ["10", 0],
+                    "negative": ["11", 0],
+                    "cfg": 1.0,
+                },
+            },
+            "16": {
+                "class_type": "KSamplerSelect",
+                "inputs": {"sampler_name": "euler"},
+            },
+            "17": {
+                "class_type": "SamplerCustomAdvanced",
+                "inputs": {
+                    "noise": ["14", 0],
+                    "guider": ["15", 0],
+                    "sampler": ["16", 0],
+                    "sigmas": ["13", 0],
+                    "latent_image": ["12", 0],
+                },
+            },
+            "18": {
+                "class_type": "VAEDecode",
+                "inputs": {
+                    "samples": ["17", 0],
+                    "vae": ["4", 0],
+                },
+            },
+            "19": {
+                "class_type": "SaveImage",
+                "inputs": {
+                    "images": ["18", 0],
+                    "filename_prefix": "anios_edited",
                 },
             },
         }

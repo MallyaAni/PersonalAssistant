@@ -67,6 +67,10 @@ class Settings(BaseSettings):
     IMAGE_PROVIDER_BASE_URL: str = "http://127.0.0.1:8188"
     IMAGE_PROVIDER_NAME: str = "comfyui"
     IMAGE_MODEL: str = "hidream_o1_image_dev_fp8_scaled.safetensors"
+    IMAGE_EDIT_MODEL: str = "flux-2-klein-4b-fp8.safetensors"
+    IMAGE_EDIT_TEXT_ENCODER: str = "qwen_3_4b.safetensors"
+    IMAGE_EDIT_VAE: str = "flux2-vae.safetensors"
+    IMAGE_EDIT_STEPS: int = Field(default=4, ge=1, le=100)
     # Realism steering. HiDream-O1 runs distilled at cfg=1.0, where a negative
     # prompt is inert, so photorealism is driven by appending this to the
     # positive prompt. It is added only when not already present; set it empty to

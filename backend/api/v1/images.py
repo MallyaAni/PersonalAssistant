@@ -116,8 +116,8 @@ async def generate_image(
         ) from exc
 
 
-# Regenerate one owned generated image from its prompt plus the user's feedback,
-# returning a new revision linked to the original.
+# Edit one owned generated image from its source pixels plus the user's feedback,
+# returning a new immutable revision linked to the original.
 @router.post(
     "/{artifact_id}/refine",
     status_code=status.HTTP_201_CREATED,

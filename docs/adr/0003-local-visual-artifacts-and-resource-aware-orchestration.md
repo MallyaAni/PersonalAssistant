@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted and partially implemented. Architecture maintenance, the dedicated diagram graph, editable Mermaid artifacts, free local HiDream raster generation, opaque generated/uploaded binary storage, validated image upload, Gemma image understanding, aligned multimodal image embeddings, browser image integration, and an agent-facing local FastMCP facade are implemented. Durable queues, automated retention, GPU leases/model transitions, embedding VLM analysis text into personal memory, and generalized multi-agent visual workers remain `PLANNED`.
+Accepted and partially implemented. Architecture maintenance, the dedicated diagram graph, editable Mermaid artifacts, free local HiDream raster generation, FLUX.2 Klein source-aware editing, opaque generated/uploaded binary storage, validated image upload, Gemma image understanding, aligned multimodal image embeddings, initial uploaded-image analysis indexing, browser image integration, and an agent-facing local FastMCP facade are implemented. Durable visual queues, automatic generated-image observation, handle-based visual memory, semantic post-edit verification, automated retention, GPU leases/model transitions, and generalized multi-agent visual workers remain `PLANNED`; ADR 0007 defines those visual semantics and editing boundaries.
 
 ## Context
 

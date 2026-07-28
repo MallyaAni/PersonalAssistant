@@ -719,3 +719,62 @@ This file is append-only history for meaningful, verified changes. It must not c
   11 canonical subsystem views instead of the previous seven, with current
   model-role and validation summaries, direct full-size SVG and Mermaid-source
   links, and independent accessible zoom controls.
+
+## 2026-07-27 — Polite generated-image refinements verified
+
+- Corrected the generated-image follow-up classifier so polite edit-shaped
+  questions such as `can you make this car red?` use the existing refinement
+  API instead of being misrouted to vision Q&A.
+- Kept ordinary questions on the grounded vision path and added deterministic
+  browser coverage for both decisions, linked revision rendering, exact
+  feedback submission, and clean browser state.
+- Verified the user's exact prompt in live Chromium against the existing car
+  artifact: the refinement returned HTTP 201, persisted parent/feedback
+  lineage, rendered a ready 2048x2048 HiDream revision, cleared loading, and
+  produced no failed required requests, Console errors, or page errors. Visual
+  inspection confirmed that the regenerated car is red.
+- All eight image-focused deterministic Chromium tests and the frontend
+  production build pass.
+
+## 2026-07-27 — Visual memory/editing target and in-place revision UI verified
+
+- Accepted ADR 0007 for non-blocking generated-image observation, append-only
+  typed visual semantics, handle-based picture memory, calibrated reference
+  resolution, source-aware local editing, post-edit verification, immutable
+  lineage, and derived-data lifecycle.
+- Added a separately labelled planned visual-memory/editing target view without
+  presenting it as current functionality. Updated the current visual-artifact
+  view with the implemented prompt-refinement and active-revision relationships;
+  all 12 Mermaid/SVG pairs and the manager architecture page are synchronized.
+- Changed successful refinement presentation so the linked child replaces its
+  parent in the active image card while persisted lineage retains revision
+  history. The deterministic real-browser path confirms one visible card,
+  refreshed child bytes, exact feedback, no vision call, and no blocking
+  browser errors.
+- All eight image-focused deterministic Chromium tests and the frontend
+  production build pass. Accurate source-conditioned editing is not claimed by
+  this entry.
+
+## 2026-07-27 — Fast source-aware FLUX image editing verified
+
+- Replaced prompt-only HiDream refinement with the official-style local
+  FLUX.2 Klein 4B Distilled FP8 single-reference ComfyUI workflow using the
+  Qwen 3 4B encoder, FLUX.2 VAE, and four sampling steps.
+- Removed the superseded Qwen-Image-Edit wiring and the experimental SAM
+  recolor path after live evidence showed that SAM tinted windows, wheels,
+  grille, and plate without a latency benefit. Removed the three unused Qwen
+  edit assets from the local ComfyUI installation, reclaiming 30,172,239,743
+  bytes while retaining the Qwen 3 encoder required by FLUX.
+- Verified localized color/material, object addition, and exact plate-text
+  edits against the same owned car source. Provider time ranged from 4.2 to
+  10.9 seconds; every child retained immutable parent, source-hash, feedback,
+  model, seed, step, and latency provenance.
+- Verified a real Chromium generation/edit/vision workflow with visible
+  refinement progress, exactly one active replacement card, reload
+  persistence, clean required Network/Console/page state, and scoped cleanup.
+  The browser edit preserved the blue seahorse and scene while changing only
+  the copper sphere to polished gold.
+- Passed 17 focused backend tests, all 35 deterministic Chromium tests, and the
+  TypeScript/Vite production build. Full backend collection remains
+  unavailable in the present host environments because their declared test
+  dependencies are incomplete.

@@ -2205,6 +2205,95 @@ test('asks a followup question about a generated image and threads the answer', 
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
+// Verify a polite question-shaped edit command creates a linked image revision.
+test('routes can-you image edits to refinement instead of vision Q&A', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const originalId = '81818181-8181-4181-8181-818181818181'
+  const revisionId = '82828282-8282-4282-8282-828282828282'
+  const prompt = 'Create an image of a blue sports car'
+  const feedback = 'can you make this car red?'
+  let conversationId = ''
+  let refineBody: Record<string, unknown> = {}
+  let askRequests = 0
+
+  await page.route('http://localhost:8000/api/v1/images/generate', async route => {
+    const payload = route.request().postDataJSON()
+    conversationId = String(payload.conversation_id)
+    await route.fulfill({
+      status: 201,
+      contentType: 'application/json',
+      body: JSON.stringify(imageArtifactRecord(
+        'generated_image',
+        originalId,
+        conversationId,
+        { generation_prompt: prompt },
+      )),
+    })
+  })
+  await page.route(
+    `http://localhost:8000/api/v1/artifacts/ani.mallya/${originalId}/content`,
+    route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
+  )
+  await page.route(
+    `http://localhost:8000/api/v1/artifacts/ani.mallya/${revisionId}/content`,
+    route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
+  )
+  await page.route(
+    `http://localhost:8000/api/v1/vision/artifacts/${originalId}/ask`,
+    async route => {
+      askRequests += 1
+      await route.abort()
+    },
+  )
+  await page.route(
+    `http://localhost:8000/api/v1/images/${originalId}/refine`,
+    async route => {
+      refineBody = route.request().postDataJSON()
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify(imageArtifactRecord(
+          'generated_image',
+          revisionId,
+          conversationId,
+          {
+            generation_prompt: 'Create an image of a red sports car',
+            parent_artifact_id: originalId,
+            refinement_feedback: feedback,
+          },
+        )),
+      })
+    },
+  )
+
+  await page.goto('/')
+  const textarea = page.getByLabel('Message AniOS')
+  await textarea.fill(prompt)
+  await page.getByRole('button', { name: 'Send message' }).click()
+
+  const originalCard = page.getByLabel('Image: Generated image').first()
+  const followup = originalCard.getByLabel('Ask about or refine this image')
+  await followup.fill(feedback)
+  const responsePromise = page.waitForResponse(
+    `http://localhost:8000/api/v1/images/${originalId}/refine`,
+  )
+  await originalCard.getByRole('button', { name: 'Refine' }).click()
+  expect((await responsePromise).status()).toBe(201)
+
+  await expect(page.getByLabel('Image: Generated image')).toHaveCount(1)
+  await expect(page.getByText('Here is the updated image.', { exact: true })).toHaveCount(0)
+  await expect(page.getByLabel('Image: Generated image').getByAltText(
+    'Generated visual result',
+  )).toBeVisible()
+  expect(refineBody).toMatchObject({
+    user_id: 'ani.mallya',
+    conversation_id: conversationId,
+    feedback,
+  })
+  expect(askRequests).toBe(0)
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
 // Verify an uploaded image reaches the VLM and displays its grounded analysis.
 test('uploads and analyzes an image with visible progress and result', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
@@ -2359,7 +2448,7 @@ test('shows every documented image-analysis failure contract', async ({ page }) 
   expect(errors.consoleErrors.join('\n')).toContain('502')
 })
 
-// Verify real ComfyUI generation and Gemma vision analysis through the current UI.
+// Verify real ComfyUI generation, source editing, and Gemma vision through the UI.
 test('@live visual generation and analysis complete through the browser', async ({ page }) => {
   test.setTimeout(180_000)
   const errors = observeBlockingBrowserErrors(page)
@@ -2404,15 +2493,53 @@ test('@live visual generation and analysis complete through the browser', async 
     await expect(textarea).toBeEnabled()
     await expect(textarea).toHaveValue('')
 
+    const refinementFeedback = 'change only the copper sphere to polished gold'
+    const refinementInput = generatedCard.getByLabel('Ask about or refine this image')
+    await refinementInput.fill(refinementFeedback)
+    const refinementResponsePromise = page.waitForResponse(
+      response => response.url() ===
+        `http://localhost:8000/api/v1/images/${generatedId}/refine`,
+      { timeout: 120_000 },
+    )
+    await generatedCard.getByRole('button', { name: 'Refine' }).click()
+    await expect(generatedCard.getByRole('button', { name: /^Refining/ })).toBeVisible()
+    const refinementResponse = await refinementResponsePromise
+    expect(refinementResponse.status()).toBe(201)
+    const revision = await refinementResponse.json() as Record<string, unknown>
+    const revisionId = String(revision.id)
+    createdIds.push(revisionId)
+    expect(revision).toMatchObject({
+      user_id: userId,
+      conversation_id: conversationId,
+      kind: 'generated_image',
+      status: 'ready',
+      content_available: true,
+      provider: 'comfyui',
+      model: 'flux-2-klein-4b-fp8.safetensors',
+      metadata: {
+        parent_artifact_id: generatedId,
+        refinement_feedback: refinementFeedback,
+        edit_mode: 'source_conditioned',
+        steps: 4,
+      },
+    })
+    expect(await refinementResponse.finished()).toBeNull()
+    await expect(page.getByLabel(/^Image: /)).toHaveCount(1)
+    const revisedCard = page.getByLabel('Image: Edited image')
+    await expect(revisedCard.getByAltText('Generated visual result')).toBeVisible()
+    await expect(page.getByText(/^Refining/)).not.toBeVisible()
+    await expect(refinementInput).not.toBeVisible()
+    await revisedCard.screenshot({ path: 'test-results/live-flux-refinement.png' })
+
     await page.getByRole('button', { name: 'Visual artifacts' }).click()
-    await expect(page.getByLabel('Image: Generated image').filter({ visible: true })).toBeVisible()
+    await expect(page.getByLabel('Image: Edited image').filter({ visible: true })).toBeVisible()
     await page.getByRole('button', { name: 'Conversations' }).click()
     await page.reload()
     await expect(page.getByText('Restoring conversation...')).not.toBeVisible()
-    await expect(page.getByLabel('Image: Generated image').getByAltText('Generated visual result')).toBeVisible()
+    await expect(page.getByLabel('Image: Edited image').getByAltText('Generated visual result')).toBeVisible()
 
     const generatedContent = await page.request.get(
-      `http://localhost:8000/api/v1/artifacts/${userId}/${generatedId}/content`,
+      `http://localhost:8000/api/v1/artifacts/${userId}/${revisionId}/content`,
     )
     expect(generatedContent.status()).toBe(200)
     await attachComposerFile(page, {
@@ -2451,8 +2578,12 @@ test('@live visual generation and analysis complete through the browser', async 
     await expect(page.getByText('Analyzing image...', { exact: true })).not.toBeVisible()
     await expect(textarea).toBeEnabled()
 
-    await generatedCard.getByRole('button', { name: 'Delete' }).click()
+    await page.getByLabel('Image: Edited image').getByRole('button', { name: 'Delete' }).click()
     await analyzedCard.getByRole('button', { name: 'Delete' }).click()
+    const originalDelete = await page.request.delete(
+      `http://localhost:8000/api/v1/artifacts/${userId}/${generatedId}`,
+    )
+    expect(originalDelete.status()).toBe(200)
     const remainingResponse = await page.request.get(
       `http://localhost:8000/api/v1/artifacts/${userId}`,
     )
