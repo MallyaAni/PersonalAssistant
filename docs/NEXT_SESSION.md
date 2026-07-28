@@ -7,9 +7,10 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 
 Last updated: 2026-07-27, America/New_York
 
-Verified source state: uncommitted working tree based on
-`3ecbe45091f2e49246333e31c8578c1f9f5bc767`. No commit, tag, branch, stash,
-reset, restore, clean, push, or recovery operation was performed.
+Verified implementation checkpoint:
+`8a75e659aeb6650bb6efe9c8dabcd02cb1b1e0cd`. This exact source tree passed
+the direct API, real-browser, focused backend, deterministic browser, frontend
+build, lint, diagram synchronization, and diff-integrity checks recorded below.
 
 ## Current boundary
 
@@ -37,9 +38,12 @@ application-owned model-residency preflight remain planned.
 ## Runtime and Git identity
 
 - Branch: `main`.
-- Base `HEAD`: `3ecbe45091f2e49246333e31c8578c1f9f5bc767`.
-- The working tree was already dirty and contains the user's broader visual
-  memory/editing work plus this task. Preserve it; no Git mutation was made.
+- Starting `HEAD`: `3ecbe45091f2e49246333e31c8578c1f9f5bc767`.
+- Verified implementation commit:
+  `8a75e659aeb6650bb6efe9c8dabcd02cb1b1e0cd`.
+- The implementation commit includes the user's existing visual-memory/editing
+  work plus the qualified FLUX replacement and documentation. A docs-only
+  handoff commit records this checkpoint after validation.
 - Rebuilt backend image exercised:
   `sha256:6105903b4d38d5a8ac5e5d6d7fd8fa8aa7560a2b1eccedacf3e4afe396ab77bf`.
 - Rebuilt local-capabilities image exercised:
