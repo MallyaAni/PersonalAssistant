@@ -326,12 +326,19 @@ must never be the reason a paid search tier is enabled.
 
 Deliver as separately verified atomic stages, in this order:
 
-- `PLANNED` stage 1 — interest and locality profile. A typed, user-approved
-  record of what the user likes and where they live, reusing the existing
-  approval-gated memory boundary so nothing is inferred silently. AniOS has no
-  concept of the user's location today. No egress, no scheduling. Verified when
-  the profile persists, is editable and deletable through an owned API, and is
-  recalled by an ordinary turn.
+- `VERIFIED` stage 1 — interest and locality profile. Typed, user-scoped
+  interests and places persist behind `/api/v1/discovery/{user_id}` with
+  create/update, list, and scoped delete. Labels are sealed with `EncryptedText`
+  and identified by a SHA-256 digest of their normalized form, because a sealed
+  column cannot carry a unique constraint; case and spacing differences resolve
+  to one interest. Provenance is validated against an allowed set so an inferred
+  value can never be written as though the user asked for it, and the interest
+  list is bounded because every label is eligible to enter a prompt. Coordinates
+  are deliberately not stored until a source needs them. Live-verified: the
+  profile round-trips through the owned API, a delete with another user's
+  identifier returns 404 without removing the row, and an ordinary chat turn
+  answered from the profile alone. Approval-gated capture from conversation
+  remains `PLANNED`; today an interest is recorded only by explicit request.
 - `PLANNED` stage 2 — structured schedule sources. A provider-neutral
   `EventSource` contract over venue ICS/RSS feeds and free event APIs, returning
   typed events with a stable per-source identity, start time, place, and link.

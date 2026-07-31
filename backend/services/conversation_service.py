@@ -24,6 +24,7 @@ from backend.core.interfaces import (
     SearchProvider,
 )
 from backend.core.llm import LLMClient
+from backend.discovery.service import DiscoveryProfileService, render_profile_context
 from backend.mcp.invocation import MCPInvocationError
 from backend.memory.coordinator import MemoryCoordinatorAgent
 from backend.memory.proposals import (
@@ -155,6 +156,7 @@ class ConversationService:
         supervisor: MainSupervisorAgent | None = None,
         presentation_jobs: PresentationJobService | None = None,
         presentation_model: str | None = None,
+        discovery_profile: DiscoveryProfileService | None = None,
     ):
         self.memory = memory
         self.assistant_graph = build_assistant_graph(llm)
@@ -179,6 +181,7 @@ class ConversationService:
         self.supervisor = supervisor
         self.presentation_jobs = presentation_jobs
         self.presentation_model = presentation_model
+        self.discovery_profile = discovery_profile
 
     # Return the registered subagent selected by the first-step supervisor.
     async def _delegated_capability(self, query: str) -> str | None:
@@ -765,6 +768,15 @@ class ConversationService:
             "episodic": episodic,
             "semantic": semantic,
         }
+        # The assistant should already know what the user likes and where they
+        # live, so an ordinary turn can answer from the same approved profile a
+        # scheduled discovery run reads.
+        if self.discovery_profile is not None:
+            discovery = render_profile_context(
+                await self.discovery_profile.get_profile(user_id)
+            )
+            if discovery:
+                context["discovery"] = discovery
         async for retrieval_event in self._stream_optional_context(
             context,
             user_id,

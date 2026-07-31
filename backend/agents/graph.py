@@ -116,6 +116,9 @@ def _build_system_prompt(
         personal_context["preferences"] = profile["preferences"]
     if memory_contents:
         personal_context["memories"] = memory_contents
+    discovery = context_data.get("discovery") or {}
+    if discovery:
+        personal_context["discovery_profile"] = discovery
 
     context_fields = {
         "working": ("memory_key", "value", "purpose"),

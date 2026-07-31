@@ -35,6 +35,8 @@ from backend.core.interfaces import (
 from backend.core.llm import LLMClient, create_inference_provider
 from backend.core.model_gate import ModelExecutionGate
 from backend.database.session import get_db
+from backend.discovery.repository import DiscoveryProfileRepository
+from backend.discovery.service import DiscoveryProfileService
 from backend.embeddings.base import EmbeddingProvider
 from backend.embeddings.lm_studio import create_embedding_provider
 from backend.embeddings.nomic_vision import NomicVisionEmbeddingProvider
@@ -707,6 +709,18 @@ DiagramArtifactDependency = Annotated[
 DependencyMemoryService = Annotated[PostgresMemoryService, Depends(get_memory_service)]
 
 
+# The discovery profile is per-request session state like every other repository
+# boundary, so it is built per request rather than cached.
+def get_discovery_profile_service(db: DbDependency) -> DiscoveryProfileService:
+    return DiscoveryProfileService(DiscoveryProfileRepository(db))
+
+
+DependencyDiscoveryProfileService = Annotated[
+    DiscoveryProfileService,
+    Depends(get_discovery_profile_service),
+]
+
+
 def get_tool_memory_service(
     db: DbDependency,
     embeddings: EmbeddingDependency,
@@ -929,6 +943,7 @@ def get_conversation_service(
     tool_orchestration: MCPToolOrchestrationDependency,
     supervisor: MainSupervisorDependency,
     presentation_jobs: PresentationJobDependency,
+    discovery_profile: DependencyDiscoveryProfileService,
 ) -> ConversationService:
     return ConversationService(
         memory=memory,
@@ -955,6 +970,7 @@ def get_conversation_service(
             or settings.MAIN_LLM_MODEL
             or settings.LLM_MODEL
         ),
+        discovery_profile=discovery_profile,
     )
 
 

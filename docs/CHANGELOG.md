@@ -1038,3 +1038,29 @@ This file is append-only history for meaningful, verified changes. It must not c
   47/64/42 s with it against 37/35 s without. ComfyUI already manages its own
   residency. The implementation and its tests stay for a future model that makes
   sharing the card genuinely impossible.
+
+## 2026-08-01 — Ambient discovery stage 1: interest and locality profile
+
+- Added user-scoped interests and localities behind `/api/v1/discovery/{user_id}`
+  with create/update, read, and scoped delete, plus migration `20260801_0016`.
+  This is the profile a scheduled discovery run will score candidates against,
+  and the first time AniOS has any concept of where the user lives.
+- Sealed every label with `EncryptedText` and identified it by a SHA-256 digest
+  of its normalized form. The sealed type documents that it cannot back a unique
+  constraint, since each value is encrypted with a fresh nonce, so the digest
+  carries identity while the readable copy stays encrypted at rest.
+- Bounded the profile at 50 interests and 5 localities because every label is
+  eligible to enter a chat prompt, and validated interest provenance against an
+  allowed set so an inferred value cannot be stored as a user-stated one.
+- Omitted home coordinates deliberately. They would be the most sensitive value
+  the application holds and nothing consumes them yet; a place name and radius
+  are enough until a source requires more.
+- Wired the profile into ordinary chat context. A live turn answered with the
+  recorded interests and city from the profile alone.
+- Fixed two defects found by live verification rather than by the unit tests:
+  the API serialized `slots=True` dataclasses with `vars()`, which has no
+  `__dict__` and returned 500; and re-saving a place without the primary flag
+  silently demoted it, leaving discovery runs with no default locality. Both now
+  have regression coverage, including a router-level round trip.
+- Backend suite 522 passed; Ruff, Black, and full-project MyPy across 160 source
+  files passed.

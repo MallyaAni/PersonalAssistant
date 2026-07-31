@@ -9,6 +9,7 @@ from fastapi.responses import StreamingResponse
 from backend.api.v1.agent_memory import router as agent_memory_router
 from backend.api.v1.artifacts import router as artifacts_router
 from backend.api.v1.conversations import router as conversations_router
+from backend.api.v1.discovery import router as discovery_router
 from backend.api.v1.images import router as images_router
 from backend.api.v1.memory import router as memory_router
 from backend.api.v1.presentations import router as presentations_router
@@ -39,6 +40,7 @@ router.include_router(images_router)
 router.include_router(vision_router)
 router.include_router(tools_router)
 router.include_router(presentations_router)
+router.include_router(discovery_router)
 
 
 @router.get("/")

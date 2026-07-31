@@ -17,6 +17,7 @@ from backend.models.agent_memory import (
 )
 from backend.models.artifact import VisualArtifact
 from backend.models.conversation import Conversation
+from backend.models.discovery import DiscoveryInterest, DiscoveryLocality
 from backend.models.memory import (
     EpisodicMemory,
     MemoryFact,
@@ -32,6 +33,8 @@ from backend.models.tool_memory import ToolDescriptor, ToolPreference, ToolUsage
 
 _MODELS = (
     Conversation,
+    DiscoveryInterest,
+    DiscoveryLocality,
     UserProfile,
     EpisodicMemory,
     SemanticMemory,
