@@ -7,10 +7,11 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 
 Last updated: 2026-07-31, America/New_York
 
-This working tree is based on `main` commit
-`5f04f13322c8c7725377f7e88435ac8189a3eae6`. It was already modified at session
-start and remains intentionally uncommitted. Preserve all pre-existing work;
-the current `HEAD` is not a verified checkpoint for these uncommitted changes.
+The verified implementation tree is `main` commit
+`5709e9c04a43ac7a8f8ca38a47721a8983bcbffc`. It contains the accumulated
+presentation improvements and provider-neutral inference boundary described
+below. The following handoff-only commit records that tested SHA and does not
+change application behavior.
 
 ## Current boundary
 
@@ -36,9 +37,12 @@ profile.
 ## Runtime and Git identity
 
 - Branch: `main`.
-- Starting/current `HEAD`:
+- Session-start `HEAD`:
   `5f04f13322c8c7725377f7e88435ac8189a3eae6`.
-- Working tree: modified and intentionally uncommitted; no commit was created.
+- Verified implementation checkpoint:
+  `5709e9c04a43ac7a8f8ca38a47721a8983bcbffc`.
+- Working tree: clean after the handoff-only follow-up commit; both commits are
+  intended for `origin/main`.
 - Backend image exercised:
   `sha256:1688dd5bf39292ba0ffac66a16d94bee71b93e4e330b8a12915f615ac6990c23`.
 - Presentation-worker image exercised:
