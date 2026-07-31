@@ -1,142 +1,49 @@
+---
+title: Visual Memory and Editing Target
+---
 flowchart TB
-    User([User])
+    User([User]) --> Request{Create, recall,<br/>or edit an image?}
 
-    subgraph Entry[One visual experience]
-        direction LR
-        Create[Create image]
-        Recall[Reference a prior picture<br/>by label, meaning, or recency]
-        Change[Change this picture<br/>instruction plus optional region]
-        UI[Show pixels immediately<br/>then show understanding/edit status]
+    subgraph Current[Implemented foundation]
+        Generate[Generate with HiDream]
+        Edit[Edit owned pixels<br/>with FLUX]
+        Artifact[Immutable image revision<br/>with lineage and SHA-256]
+        PixelIndex[(Nomic pixel-vector index)]
+        Generate --> Artifact
+        Edit --> Artifact
+        Artifact --> PixelIndex
     end
 
-    User --> Create
-    User --> Recall
-    User --> Change
-
-    subgraph Foundation[Implemented foundation]
-        direction LR
-        Generate[ImageArtifactService]
-        HiDream[ComfyUI plus HiDream<br/>text-to-image]
-        Ready[Ready immutable image revision<br/>owner, prompt, SHA-256, lineage]
-        Binary[(Opaque binary store)]
-        PixelEmbed[Nomic vision embedding]
-        PixelIndex[(Pixel-vector HNSW index)]
-
-        Generate --> HiDream --> Ready
-        Ready --> Binary
-        Binary --> PixelEmbed --> PixelIndex
+    subgraph Planned[Planned memory-aware stages]
+        Observe[1. Gemma VLM observation<br/>objects, attributes and OCR]
+        Semantic[(Typed observations<br/>and semantic vectors)]
+        Resolve[2. Resolve alias, meaning,<br/>conversation and recency]
+        Clarify{One confident<br/>owned match?}
+        Verify[3. Compare requested change<br/>with preserved content]
+        Promote{4. Promote candidate<br/>or keep parent}
+        Observe --> Semantic --> Resolve --> Clarify
+        Verify --> Promote
     end
 
-    Create --> Generate
-    Ready --> UI
-
-    subgraph Observe[Target stage 1 - observe the pixels]
-        direction LR
-        ObserveJob[Durable idempotent observation job<br/>source hash plus schema/model]
-        OwnedRead[Owned integrity-checked read]
-        VLM[Local Gemma VLM]
-        Semantics[Typed VisualObservation<br/>caption, objects, attributes,<br/>relations, OCR, confidence]
-        ObservationStore[(Append-only observations<br/>status, model, schema, provenance)]
-        SemanticIndex[(Semantic-description vectors)]
-
-        ObserveJob --> OwnedRead --> VLM --> Semantics
-        Semantics --> ObservationStore
-        Semantics --> SemanticIndex
-    end
-
-    Ready -->|ready event; UI does not wait| ObserveJob
-    Binary --> OwnedRead
-    ObservationStore --> UI
-
-    subgraph Remember[Target stage 2 - remember and resolve pictures]
-        direction LR
-        ReferenceStore[(Visual references<br/>user alias, collection,<br/>artifact/revision handle)]
-        Resolver[VisualReferenceResolver<br/>exact alias plus semantic/pixel search<br/>plus conversation and recency]
-        Match{One confident match?}
-        Clarify[Ask the user to choose<br/>when candidates are close]
-        Handle[Owned immutable handle<br/>no copied image bytes]
-        Gate[Re-check owner, ready state,<br/>deletion state, size, and SHA-256]
-
-        ReferenceStore --> Resolver
-        Resolver --> Match
-        Match -->|no; ambiguous| Clarify
-        Match -->|yes| Handle --> Gate
-    end
-
-    Recall --> Resolver
-    PixelIndex --> Resolver
-    SemanticIndex --> Resolver
-    ObservationStore --> Resolver
-    Clarify --> UI
-
-    subgraph EditPath[Implemented stage 3 - source-aware editing]
-        direction LR
-        EditRead[Owned integrity-checked<br/>source revision read]
-        Instruction[Exact feedback plus bounded<br/>preservation constraints]
-        Editor[FLUX.2 Klein 4B Distilled FP8<br/>single-reference four-step edit]
-        DeterministicCheck[PNG, MIME, byte, pixel,<br/>frame, and SHA-256 checks]
-        Promote[Ready immutable child revision<br/>parent, source hash, feedback,<br/>model, seed, steps, and latency]
-
-        EditRead --> Instruction --> Editor --> DeterministicCheck --> Promote
-    end
-
-    Change --> EditRead
-    Binary --> Editor
-    Promote --> Ready
-    Promote --> UI
-
-    subgraph VerifyPath[Target stage 4 - semantic verification]
-        direction LR
-        Candidate[Unpromoted child candidate]
-        Verify[VLM comparison of requested delta<br/>and explicit invariants]
-        Accept{Accept?}
-        Retry[At most one bounded retry]
-        Fail[Visible failure<br/>parent remains current]
-
-        Candidate --> Verify --> Accept
-        Accept -->|correctable once| Retry
-        Accept -->|no| Fail
-    end
-
-    Editor -. future candidate gate .-> Candidate
-    Accept -. accepted .-> Promote
-    Retry -. retry edit .-> Editor
-    Fail --> UI
-
-    subgraph Control[Application-owned authority and lifecycle]
-        direction LR
-        VisualAgent[Focused VisualAgent LangGraph<br/>typed plan only]
-        Policy[Deterministic policy<br/>ownership, limits, retries, promotion]
-        Resource[GPU resource coordinator<br/>leases and model residency]
-        MCP[Future MCP: find, describe, edit<br/>metadata handles only]
-        Delete[Owned deletion/export<br/>covers revisions, observations,<br/>references, vectors, jobs, and bytes]
-
-        VisualAgent --> Policy --> Resource
-        MCP --> Policy
-        Policy --> Delete
-    end
-
-    Recall -. plan .-> VisualAgent
-    Change -. plan .-> VisualAgent
-    Policy --> Resolver
-    Policy --> EditRead
-    Resource --> HiDream
-    Resource --> VLM
-    Resource --> Editor
-    Ready --> Delete
-    Delete --> Binary
-    Delete --> ObservationStore
-    Delete --> ReferenceStore
-    Delete --> PixelIndex
-    Delete --> SemanticIndex
+    Request -->|create| Generate
+    Request -->|recall| Resolve
+    Request -->|edit| Resolve
+    Artifact -. ready event .-> Observe
+    PixelIndex --> Resolve
+    Clarify -->|ambiguous| Choice[Ask user to choose]
+    Clarify -->|matched edit| Edit
+    Edit -. candidate .-> Verify
+    Promote -. accepted .-> Artifact
+    Promote -->|rejected| Failure[Visible failure;<br/>parent remains current]
+    Artifact --> UI[Show current image<br/>and revision history]
+    Choice --> UI
+    Failure --> UI
 
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
     classDef implemented fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
-    classDef target fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
-    classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
-    class User,Create,Recall,Change,UI,Clarify interface;
-    class Generate,Ready,PixelEmbed,EditRead,Instruction,Editor,DeterministicCheck,Promote implemented;
-    class Binary,PixelIndex data;
-    class HiDream external;
-    class ObserveJob,OwnedRead,VLM,Semantics,ObservationStore,SemanticIndex,ReferenceStore,Resolver,Match,Handle,Gate,Candidate,Verify,Accept,Retry,Fail,VisualAgent,Policy,Resource,MCP,Delete target;
+    classDef planned fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
+    class User,Request,Choice,Failure,UI interface;
+    class Generate,Edit,Artifact implemented;
+    class PixelIndex data;
+    class Observe,Semantic,Resolve,Clarify,Verify,Promote planned;

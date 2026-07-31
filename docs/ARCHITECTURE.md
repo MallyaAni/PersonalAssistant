@@ -20,7 +20,7 @@ The self-contained [manager-facing architecture page](architecture.html) publish
 
 ## Detailed subsystem diagrams
 
-AniOS currently has a modular FastAPI backend rather than independently deployed internal microservices. These views expand the actual subsystem boundaries while the full-system diagram remains the deployment-level overview. The [diagram catalog](diagrams/README.md) explains which view to use for common technical questions.
+AniOS currently has a modular FastAPI backend rather than independently deployed internal microservices. These concise orientation views show ownership, major components, and primary flows; exact endpoints, schemas, and exception paths remain in this document and the code. The [diagram catalog](diagrams/README.md) explains which view answers each common technical question.
 
 | Current view | Technical scope | Source | SVG |
 | --- | --- | --- | --- |

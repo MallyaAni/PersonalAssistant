@@ -13,91 +13,79 @@ const pageHashPrefix = "<!-- Page-Inputs-SHA256: ";
 const renderStampPrefix = "<!-- Render-Inputs-SHA256: ";
 
 // Diagrams published on the page, in reading order, each with the scope it owns
-// and the change that made it worth republishing.
+// and the single engineering question it answers.
 const publishedDiagrams = [
   {
     name: "anios-system",
     title: "Full system",
-    scope: "Every implemented component and its trust boundaries",
-    change:
-      "Clarifies that MainSupervisorAgent is a deterministic first-step router with no LLM call, before Qwen response/tool work or Gemma presentation delegation.",
+    scope: "Major components, ownership, and external boundaries",
+    change: "How a user request moves through AniOS at a glance.",
   },
   {
     name: "runtime-deployment",
     title: "Runtime & deployment",
-    scope: "Processes, ports, protocols, Compose topology",
-    change:
-      "Shows the independently running API, presentation worker, local MCP sidecar, renderer, stores, and explicitly configured local-model roles.",
+    scope: "Processes, ports, stores, and host services",
+    change: "What runs in Docker Compose and what runs on the host.",
   },
   {
     name: "chat-orchestration",
     title: "Chat orchestration",
-    scope: "Routing, memory planning, streaming, SSE contract",
-    change:
-      "Separates deterministic supervisor delegation from conditional Qwen classifier, tool-selection, and final-response calls.",
+    scope: "Routing, delegation, tools, and streaming",
+    change: "How the supervisor routes one chat request to a visible result.",
   },
   {
     name: "search-research-subsystem",
     title: "Search & research",
-    scope: "Privacy, provider policy, cloud-worker isolation, quota, provenance",
-    change:
-      "Documents minimized outbound queries, the isolated Google grounding worker, Tavily fallback, deliberate cross-checking, and source provenance.",
+    scope: "Privacy, providers, quota, and source handling",
+    change: "How a safe public query becomes a cited answer.",
   },
   {
     name: "memory-overview",
     title: "Memory overview",
-    scope: "Manager-level memory lifecycle and user control",
-    change:
-      "Explains the short-term and long-term memory path, approval boundary, retrieval, and user-owned correction or deletion controls.",
+    scope: "Plain-language memory lifecycle and user control",
+    change: "How AniOS retrieves and saves memory with user approval.",
   },
   {
     name: "memory-subsystem",
     title: "Memory subsystem",
-    scope: "Typed stores, write authority, retrieval, lifecycle, operations",
-    change:
-      "Maps every implemented memory form, pgvector retrieval boundary, maintenance operation, and application-owned write policy.",
+    scope: "Write policy, retrieval, storage, and operations",
+    change: "How approved memory becomes bounded assistant context.",
   },
   {
     name: "tool-memory-subsystem",
     title: "Tool memory & MCP",
-    scope: "Semantic discovery, live validation, model selection, invocation",
-    change:
-      "Distinguishes stored safe descriptors from live MCP contracts and shows where Qwen may select one bounded eligible tool.",
+    scope: "Discovery, semantic selection, and safe invocation",
+    change: "How AniOS finds and invokes one eligible MCP tool.",
   },
   {
     name: "visual-artifact-subsystem",
     title: "Visual artifacts",
-    scope: "Generation, source editing, upload, storage, vision, retrieval",
-    change:
-      "Shows HiDream generation, four-step FLUX.2 Klein source editing, Gemma vision, multimodal retrieval, and private immutable ownership paths.",
+    scope: "Diagrams, images, vision, and private storage",
+    change: "How visual requests become owned, reusable artifacts.",
   },
   {
     name: "visual-memory-editing-target",
     title: "Visual memory & editing target",
-    scope: "Implemented source edits; planned semantics, references, verification",
-    change:
-      "Separates implemented FLUX source-pixel revisions from planned asynchronous VLM observation, handle-based visual memory, and semantic promotion checks.",
+    scope: "Implemented editing and planned semantic memory",
+    change: "What works today and what remains planned for reliable visual recall.",
   },
   {
     name: "presentation-subsystem",
     title: "Presentations",
-    scope: "Delegation, durable work, specialist model, editable rendering",
-    change:
-      "Makes the no-LLM supervisor handoff explicit and follows the durable job through the Gemma specialist, progressive drafts, validation, and editable PPTX promotion.",
+    scope: "Durable jobs, specialist generation, and editable output",
+    change: "How a background job produces a validated editable PowerPoint.",
   },
   {
     name: "architecture-maintenance-subsystem",
     title: "Architecture maintenance",
-    scope: "Evidence, candidate generation, validation, review, publication",
-    change:
-      "Shows why an LLM may propose a bounded review candidate but cannot overwrite canonical architecture sources.",
+    scope: "Evidence, LLM candidates, review, and publication",
+    change: "How diagrams change without giving an LLM overwrite authority.",
   },
   {
     name: "frontend-subsystem",
     title: "Frontend",
-    scope: "Client state, components, typed API and SSE client",
-    change:
-      "Maps navigation-safe conversations, reconnectable presentation jobs, visual artifacts, memory drilldown, downloads, and visible agent/model lifecycle.",
+    scope: "Session state, views, actions, and API boundary",
+    change: "How browser state and backend results reach each product view.",
   },
 ];
 

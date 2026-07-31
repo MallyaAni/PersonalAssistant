@@ -778,3 +778,22 @@ This file is append-only history for meaningful, verified changes. It must not c
   TypeScript/Vite production build. Full backend collection remains
   unavailable in the present host environments because their declared test
   dependencies are incomplete.
+
+## 2026-07-30 - Engineering architecture views simplified
+
+- Reworked all twelve canonical Mermaid views as concise orientation maps with
+  one primary engineering question, short labels, shared service boundaries,
+  and model names only at actual model-call points.
+- Replaced dense component-to-store and component-to-provider meshes in the
+  full-system, runtime, memory, presentation, visual-artifact, and frontend
+  views, and changed the search, visual-memory target, and architecture
+  maintenance views to readable top-to-bottom flows.
+- Added a durable readability contract to the diagram catalog and development
+  guide, shortened every published-page description, and clarified that exact
+  endpoints, schemas, configuration, and uncommon branches belong in prose.
+- Regenerated all twelve SVGs and the published architecture page. The
+  synchronization check passed; Chromium found twelve non-empty views and
+  twelve canonical-source links with no Console or page errors; every view was
+  visually inspected; both architecture scripts passed syntax checks; and the
+  TypeScript/Vite production build passed with only the existing chunk-size
+  advisory.

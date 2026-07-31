@@ -1,104 +1,46 @@
+---
+title: Memory Subsystem
+---
 flowchart TB
-    subgraph Entry[Entry points and write authority]
-        Chat[ConversationService]
-        UI[Personal Memory UI<br/>live counts plus on-demand store drilldown]
-        APIs[Personal, agent, and tool-memory APIs]
-        Approval[Explicit user approval<br/>for durable chat proposals]
-        MaintenanceCLI[Maintenance and operations CLI]
+    Chat([Chat turn])
+    UI([Memory UI])
+
+    subgraph Policy[Application-owned policy]
+        Coordinator[MemoryCoordinatorAgent]
+        Consent{Approved write?}
+        Services[Typed memory services<br/>and write policy]
+        Retrieval[Scope, expiry,<br/>relevance and dedup]
+        Context[Bounded literal context]
     end
 
-    subgraph Policy[Application-owned memory policy]
-        Coordinator[MemoryCoordinatorAgent<br/>deterministic plan, one query embedding per turn,<br/>selected retrieval, relevance budget and dedup]
-        PersonalService[PostgresMemoryService<br/>personal forms]
-        AgentManager[AgentMemoryManager<br/>typed store facade]
-        ToolService[ToolMemoryService<br/>safe metadata only]
-        ConversationRepo[ConversationRepository<br/>same-user bounded history]
+    subgraph Infrastructure[Storage and operations]
+        Records[(Conversation, personal,<br/>agent and tool memory)]
+        TextEmbed[Nomic text embedding]
+        Database[(PostgreSQL and pgvector)]
+        Maintenance[Retention, re-embedding,<br/>health, export and delete]
+        Records --> Database
+        TextEmbed --> Database
+        Maintenance --> Database
     end
 
-    subgraph Forms[Implemented memory forms]
-        Short[(Short-term persisted coordination<br/>Semantic cache: expiring response cache<br/>Working: expiring conversation state)]
-        Personal[(Personal long term<br/>Profile and approved facts: persona<br/>Episodic: events and experiences<br/>Semantic: facts and preferences)]
-        Agent[(Agent long term<br/>Procedures: approved and versioned<br/>Entities and relations: approved<br/>Knowledge documents and chunks<br/>Conversation summaries)]
-        Conversation[(Conversational<br/>persistent user-scoped turns)]
-        Tools[(Toolbox<br/>safe descriptors and embeddings<br/>approved preferences<br/>sanitized outcomes)]
-    end
-
-    subgraph Retrieval[Retrieval and model-context boundary]
-        VectorPolicy[User scope, approval, active and expiry filters,<br/>cosine threshold, result limits]
-        Budget[Cross-store relevance budget<br/>global ranking, dedup, item and char caps]
-        Literal[Curated prompt values<br/>untrusted literal data, never instructions]
-        Context[Bounded ephemeral main-model context window]
-    end
-
-    subgraph Lifecycle[Lifecycle and operational controls]
-        Retention[Retention<br/>dry-run or atomic expiry purge]
-        Reembed[Re-embedding<br/>seven vector stores, bounded batches]
-        VisionIndex[Vision analysis indexing<br/>purpose visual_artifact_analysis<br/>derived, not approval-gated user facts]
-        Dimension[Offline dimension migration<br/>shadow columns and atomic switch]
-        Operations[Operations and metrics<br/>counts, backlog, stale vectors,<br/>invariants, DB pool and latency]
-        Control[Card-detail export, correction, supersession,<br/>JSON export, scoped and delete-all]
-    end
-
-    Embeddings[Model call: EMBEDDING_MODEL<br/>text-embedding-nomic-embed-text-v1.5<br/>document/query task prefixes<br/>dimension validation and serialized calls]
-    Database[(PostgreSQL and pgvector<br/>asyncpg transactions<br/>advisory locks and HNSW cosine indexes)]
+    Main[Qwen 3.5 9B<br/>assistant call]
 
     Chat --> Coordinator
-    Chat --> Approval
-    UI --> APIs
-    Approval --> APIs
-    APIs --> PersonalService
-    APIs --> AgentManager
-    APIs --> ToolService
-    Coordinator --> PersonalService
-    Coordinator --> AgentManager
-    Coordinator --> ToolService
-    Coordinator --> ConversationRepo
+    UI --> Services
+    Coordinator --> Consent
+    Consent -->|yes| Services
+    Consent -->|no| Retrieval
+    Services --> Records
+    Services --> TextEmbed
+    Coordinator --> Retrieval
+    Records --> Retrieval
+    Retrieval --> Context --> Main
 
-    Coordinator --> Short
-    PersonalService --> Personal
-    AgentManager --> Short
-    AgentManager --> Agent
-    ConversationRepo --> Conversation
-    ToolService --> Tools
-
-    Personal --> VectorPolicy
-    Agent --> VectorPolicy
-    Conversation --> Literal
-    Tools --> VectorPolicy
-    Short --> Literal
-    VectorPolicy --> Budget
-    Budget --> Literal
-    Literal --> Context
-
-    PersonalService --> Embeddings
-    AgentManager --> Embeddings
-    ToolService --> Embeddings
-    Embeddings --> Database
-    Short --> Database
-    Personal --> Database
-    Agent --> Database
-    Conversation --> Database
-    Tools --> Database
-
-    MaintenanceCLI --> Retention
-    MaintenanceCLI --> Reembed
-    MaintenanceCLI --> Dimension
-    MaintenanceCLI --> Operations
-    APIs --> Control
-    Retention --> Database
-    Reembed --> Embeddings
-    Reembed --> Database
-    Dimension --> Database
-    Operations --> Database
-    Control --> Database
-
-    classDef entry fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
-    classDef policy fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
-    classDef form fill:#eef7ee,stroke:#5f9562,color:#183b1b;
-    classDef retrieval fill:#fff3cd,stroke:#b78b20,color:#4d3900;
-    classDef lifecycle fill:#f1edff,stroke:#8872c6,color:#2e2450;
-    class Chat,UI,APIs,Approval,MaintenanceCLI entry;
-    class Coordinator,PersonalService,AgentManager,ToolService,ConversationRepo policy;
-    class Short,Personal,Agent,Conversation,Tools,Database form;
-    class VectorPolicy,Budget,Literal,Context retrieval;
-    class Retention,Reembed,Dimension,Operations,Control,Embeddings lifecycle;
+    classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
+    classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
+    classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
+    classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
+    class Chat,UI interface;
+    class Consent,Coordinator,Services,Retrieval,Context,Maintenance application;
+    class Records,Database data;
+    class TextEmbed,Main model;

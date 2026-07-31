@@ -1,89 +1,23 @@
+---
+title: Frontend Structure
+---
 flowchart TB
-    Browser([Browser]) --> App[React App shell]
-
-    subgraph Session[Local session and navigation]
-        direction LR
-        Identity[localStorage identity<br/>ani.mallya default]
-        ConversationID[localStorage conversation UUID]
-        Navigation[Sidebar and New chat<br/>Chat, Artifacts, Presentations, Memory]
-        Persistence[Chat stays mounted across views;<br/>stored conversation restores on reload]
-
-        Identity --> Navigation
-        ConversationID --> Navigation --> Persistence
-    end
-
-    App --> Identity
-    App --> ConversationID
-
-    subgraph Views[Primary application views]
-        direction LR
-        ChatView[ChatWindow<br/>transcript, thinking, approvals,<br/>conversation hydration]
-        Composer[Composer modes plus per-turn intent<br/>new images route to Create image;<br/>history questions route to Chat]
-        ArtifactView[ArtifactPanel<br/>owned diagram and image history<br/>refresh, download, delete]
-        MemoryView[MemoryPanel<br/>personal, agent, and tool snapshots<br/>clickable store details and controls]
-        MemoryDetails[On-demand owned export<br/>bounded readable store records<br/>vectors and storage keys hidden]
-        PresentationView[PresentationPanel<br/>background job, persisted progress,<br/>slide feedback, imagery, revisions, download]
-        PresentationJob[Per-user active job in localStorage<br/>poll resumes across navigation or reload;<br/>cancel and visible terminal state]
-        DeckPreview[Typed DeckSpec preview<br/>arriving slides, main canvas, thumbnails,<br/>and owned image-artifact rendering]
-
-        ChatView --> Composer
-        MemoryView --> MemoryDetails
-        PresentationView --> PresentationJob --> DeckPreview
-    end
-
-    Navigation --> ChatView
-    Navigation --> ArtifactView
-    Navigation --> MemoryView
-    Navigation --> PresentationView
-    Persistence --> ChatView
-
-    subgraph Visuals[Strict local visual rendering]
-        direction LR
-        DiagramCard[DiagramArtifact<br/>lazy strict Mermaid SVG<br/>editable source and export]
-        ImageCard[ImageArtifact<br/>private preview and backend model response<br/>VISION_MODEL: google/gemma-4-12b<br/>download and owned deletion]
-    end
-
-    ChatView --> DiagramCard
-    ChatView --> ImageCard
-    ArtifactView --> DiagramCard
-    ArtifactView --> ImageCard
-
-    subgraph Client[Typed client and trust boundary]
-        direction LR
-        ChatClient[streamChat<br/>validated SSE lifecycle<br/>renders specialist and exact-model activity,<br/>search and MCP tool status, sources,<br/>and image_matches cards]
-        VisualClient[JSON generation and multipart upload<br/>private authenticated image fetch]
-        DataClient[JSON memory, history, export,<br/>snapshot, and deletion requests]
-        PresentationClient[Typed presentation JSON<br/>HTTP 202 queue, job poll/cancel,<br/>revise, list, delete, PPTX download]
-        Validation[Runtime response validation<br/>visible safe errors]
-        Auth[Optional VITE_AUTH_TOKEN]
-
-        ChatClient --> Validation
-        VisualClient --> Validation
-        DataClient --> Validation
-        PresentationClient --> Validation
-        Auth --> ChatClient
-        Auth --> VisualClient
-        Auth --> DataClient
-        Auth --> PresentationClient
-    end
-
-    Composer --> ChatClient
-    Composer --> VisualClient
-    ImageCard --> VisualClient
-    ChatView --> DataClient
-    ArtifactView --> DataClient
-    MemoryView --> DataClient
-    MemoryDetails --> DataClient
-    PresentationView --> PresentationClient
-
-    Backend[FastAPI v1 API<br/>owns every model call; browser calls none<br/>localhost:8000]
-    Validation --> Backend
+    Browser([Browser]) --> App[React application shell]
+    Session[(Local user, active conversation<br/>and presentation job IDs)] --> App
+    App --> Restore[Navigation and session restore]
+    Restore --> Views[Chat · Memory · Artifacts · Presentations]
+    Views --> Actions[Compose and upload<br/>inspect, revise and download]
+    Actions --> Client[Typed API and SSE client<br/>validation and visible errors]
+    Client --> Backend[FastAPI API<br/>browser makes no model calls]
+    Backend -->|streams, polling and responses| Client
+    Client --> Results[Answers, sources, tool status,<br/>artifacts, slides and progress]
+    Results --> Views
 
     classDef shell fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
     classDef component fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
     classDef boundary fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
-    class Browser,App,Identity,ConversationID,Navigation,Persistence shell;
-    class ChatView,Composer,ArtifactView,MemoryView,MemoryDetails,PresentationView,PresentationJob,DeckPreview,DiagramCard,ImageCard component;
-    class ChatClient,VisualClient,DataClient,PresentationClient,Validation,Auth boundary;
+    class Browser,App,Restore shell;
+    class Views,Actions,Results component;
+    class Session,Client boundary;
     class Backend external;

@@ -1,131 +1,70 @@
-flowchart LR
-    User([Primary user])
-    Maintainer([Maintainer])
+---
+title: AniOS System Overview
+---
+flowchart TB
+    User([User])
 
-    subgraph Interface[Local interface]
-        Frontend[React and Vite frontend<br/>chat, image create/analyze, presentations,<br/>private history and export; localhost:5173]
-        API[FastAPI v1 API<br/>localhost:8000]
+    subgraph Experience[User experience]
+        Frontend[React frontend]
+        API[FastAPI API]
+        Frontend --> API
     end
 
-    subgraph Application[Application and orchestration]
-        Conversation[ConversationService]
-        DiagramArtifacts[DiagramArtifactService<br/>bounded Mermaid lifecycle]
-        ImageArtifacts[ImageArtifactService<br/>generation, source editing, upload,<br/>integrity, lineage, deletion]
-        Vision[VisionAnalysisService<br/>grounded image understanding]
-        DiagramAgent[DiagramAgent<br/>specialized LangGraph workflow]
-        PresentationService[PresentationService<br/>revision and promotion authority]
-        PresentationJobs[PresentationJobService<br/>durable queue and reconnect]
-        PresentationWorker[Presentation worker<br/>leased LangGraph execution]
-        PresentationImage[PresentationImageService<br/>optional selected-slide image microtask]
-        PresentationAgent[PresentationAgent<br/>focused LangGraph workflow]
-        PresentationCompiler[Deterministic presentation compiler<br/>outline and slide microtasks to editable DeckSpec]
-        Candidate[Architecture candidate service<br/>review-only repository context]
-        Supervisor[MainSupervisorAgent<br/>deterministic LangGraph router<br/>NO LLM CALL<br/>registered intents only]
-        Coordinator[MemoryCoordinatorAgent<br/>deterministic policy]
-        Graph[Assistant LangGraph<br/>one main-model streaming node]
-        Memory[Typed personal and agent memory services]
-        Toolbox[Safe tool-memory service<br/>semantic descriptor shortlist]
-        ToolOrchestration[MCP tool orchestration<br/>main-model native selection,<br/>app-owned execution]
-        LLMQueue[Redis model priority gate<br/>foreground chat before<br/>background slide microtasks]
-        MCPInvocation[MCP invocation gates<br/>live contract, policy, privacy]
-        VisualMCP[Local capability FastMCP facade<br/>visual and presentation handles]
-        Research[Hybrid research policy<br/>Google primary, Tavily fallback,<br/>explicit dual-provider verification]
+    subgraph Orchestration[Application-owned orchestration]
+        Supervisor{Main supervisor}
+        Conversation[Assistant and DiagramAgent]
+        Presentation[PresentationAgent<br/>and durable worker]
+        Memory[Memory coordinator]
+        Visual[Image and vision services]
+        Tools[MCP and search gates]
     end
 
-    subgraph Infrastructure[Local infrastructure]
-        Database[(PostgreSQL and pgvector<br/>conversations, memory, visual artifacts,<br/>presentation revisions and durable jobs)]
-        LMStudio[LM Studio model host<br/>MAIN and DIAGRAM: qwen/qwen3.5-9b<br/>PRESENTATION and VISION:<br/>google/gemma-4-12b<br/>EMBEDDING_MODEL:<br/>text-embedding-nomic-embed-text-v1.5]
-        ComfyUI[ComfyUI local raster providers<br/>GENERATION: HiDream-O1 Dev FP8<br/>EDITING: FLUX.2 Klein 4B Distilled FP8<br/>plus Qwen 3 4B encoder and FLUX.2 VAE]
-        BinaryStore[(Opaque local binary artifact store)]
-        Redis[(Redis<br/>expiring model lease and<br/>foreground waiter count only)]
-        VisionEmbed[VISION_EMBEDDING_MODEL:<br/>nomic-embed-vision-v1.5<br/>in-process ONNX, aligned image vectors]
-        Diagrams[(Canonical Mermaid suite<br/>plus review candidates)]
-        SearchQuota[(Daily Google call counter<br/>provider, Pacific date, count only)]
-        PresentationRenderer[PptxGenJS renderer<br/>native Office objects plus LibreOffice validation]
+    subgraph LocalAI[Replaceable local AI and rendering]
+        ModelGate[Redis model-priority gate]
+        LMStudio[LM Studio<br/>Qwen: chat and diagrams<br/>Gemma: presentations and vision]
+        Media[ComfyUI: HiDream and FLUX<br/>PptxGenJS and LibreOffice]
+        Embeddings[Nomic text and vision embeddings]
+    end
+
+    subgraph Storage[Private local storage]
+        Repositories[Owned persistence services]
+        Database[(PostgreSQL<br/>and pgvector)]
+        Files[(Opaque artifact files)]
+        Repositories --> Database
+        Repositories --> Files
+    end
+
+    subgraph External[Optional external capabilities]
+        Integrations[[Configured MCP servers<br/>Google Search or Tavily]]
     end
 
     User --> Frontend
-    Maintainer --> Candidate
-    Frontend -->|Intent-routed JSON, multipart, private image bytes,<br/>chat SSE, memory drilldown, and restore| API
-    API --> Conversation
-    API --> Memory
-    API --> Toolbox
-    API --> PresentationJobs
-    API --> PresentationService
-    API --> PresentationImage
-    Conversation -->|first routing boundary| Supervisor
-    Supervisor -->|ordinary assistant path| Coordinator
-    Coordinator --> Graph
-    Supervisor -->|typed delegation:<br/>presentation_agent| PresentationJobs
-    Conversation --> ToolOrchestration
-    Conversation -->|explicit diagram lifecycle| DiagramArtifacts
-    DiagramArtifacts --> DiagramAgent
-    API -->|POST images/generate| ImageArtifacts
-    API -->|bounded multipart upload| Vision
-    Vision --> ImageArtifacts
-    Vision -->|model call: VISION_MODEL| LMStudio
-    ImageArtifacts -->|model call: IMAGE_MODEL for generation<br/>or IMAGE_EDIT_MODEL with owned source pixels| ComfyUI
-    ImageArtifacts --> BinaryStore
-    ImageArtifacts -->|bounded prompt provenance<br/>for referenced-image context| Conversation
-    Candidate --> DiagramAgent
-    Candidate -->|read canonical and explicit source context| Diagrams
-    Candidate -->|new candidate only; manual review required| Diagrams
-    Conversation --> Database
-    Coordinator --> Memory
-    Coordinator --> Toolbox
-    ToolOrchestration --> Toolbox
-    ToolOrchestration -->|conditional model call:<br/>MAIN_LLM_MODEL native tool selection| LLMQueue
-    ToolOrchestration --> MCPInvocation
-    Conversation -->|freshness and privacy policy| InternetMCP
-    InternetMCP --> MCPInvocation
-    MCPInvocation --> MCPServers
-    MCPInvocation -->|streamable HTTP plus hidden<br/>user, conversation, and trace context| VisualMCP
-    VisualMCP --> DiagramArtifacts
-    VisualMCP --> ImageArtifacts
-    VisualMCP --> Vision
-    VisualMCP --> PresentationJobs
-    VisualMCP --> PresentationService
-    InternetMCP -->|read-only search_web| Research
-    Research -->|conditional model call:<br/>GOOGLE_SEARCH_MODEL;<br/>minimized query only| GoogleResearch
-    GoogleResearch -->|native grounding tool| GoogleSearch
-    Research -->|fallback or explicit cross-check| WebSearch
-    Research --> SearchQuota
-    Graph -->|model call: MAIN_LLM_MODEL<br/>chat completion| LLMQueue
-    DiagramAgent -->|model call: DIAGRAM_LLM_MODEL<br/>bounded diagram specification| LLMQueue
-    PresentationJobs -->|enqueue and reconnect| Database
-    PresentationWorker -->|claim, heartbeat, drafts,<br/>and terminal state| Database
-    PresentationWorker --> PresentationService
-    PresentationService --> PresentationAgent
-    PresentationImage -->|owned generation request| ImageArtifacts
-    PresentationImage -->|attach image UUID in linked revision| PresentationService
-    PresentationAgent -->|model call: PRESENTATION_LLM_MODEL<br/>outline, one slide, or slide edit| LLMQueue
-    PresentationAgent -->|validated creation plan| PresentationCompiler
-    PresentationCompiler -->|strict editable DeckSpec| PresentationService
-    PresentationAgent -->|validated SlideEdit applied to selected slide| PresentationService
-    PresentationService -->|validated specification<br/>plus owned image bytes when referenced| PresentationRenderer
-    PresentationRenderer -->|editable pptx bytes| BinaryStore
-    PresentationService -->|promote only after validation| Database
-    LLMQueue --> LMStudio
-    LLMQueue -->|coordination only| Redis
-    DiagramArtifacts --> Database
-    ImageArtifacts --> Database
-    Memory --> Database
-    Memory -->|model call: EMBEDDING_MODEL| LMStudio
-    ImageArtifacts -->|image bytes at store time| VisionEmbed
-    VisionEmbed -->|aligned 768-dim vectors| Database
-    Toolbox --> Database
-    Toolbox -->|model call: EMBEDDING_MODEL<br/>safe descriptor text| LMStudio
+    API --> Supervisor
+    Supervisor -->|chat or diagram| Conversation
+    Supervisor -->|presentation| Presentation
+    API --> Visual
+    Conversation <--> Memory
+
+    Conversation --> Tools --> Integrations
+
+    Conversation --> ModelGate
+    Presentation --> ModelGate
+    ModelGate --> LMStudio
+    Visual --> LMStudio
+    Visual --> Media
+    Presentation --> Media
+    Memory --> Embeddings
+
+    Conversation --> Repositories
+    Presentation --> Repositories
+    Visual --> Repositories
+    Memory --> Repositories
 
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f,stroke-width:1.5px;
     classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43,stroke-width:1.5px;
     classDef infrastructure fill:#eef7ee,stroke:#5f9562,color:#183b1b,stroke-width:1.5px;
-    classDef scaffold fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-width:1.5px,stroke-dasharray:5 4;
-    class Frontend,API interface;
-    class User,Maintainer interface;
-    class Conversation,DiagramArtifacts,ImageArtifacts,Vision,DiagramAgent,PresentationService,PresentationJobs,PresentationWorker,PresentationImage,PresentationAgent,PresentationCompiler,Candidate,Supervisor,Coordinator,Graph,Memory,Toolbox,ToolOrchestration,LLMQueue,MCPInvocation,VisualMCP,Research application;
-    InternetMCP[[Built-in internet MCP server<br/>stdio, read-only]]
-    MCPServers[[Configured MCP servers<br/>stdio or streamable HTTP]]
-    GoogleResearch[[GOOGLE_SEARCH_MODEL:<br/>gemini-3.6-flash research worker<br/>external and disabled by default]]
-    GoogleSearch[[Google Search Grounding<br/>external public web]]
-    WebSearch[[Tavily web search<br/>external fallback, opt-in, untrusted]]
-    class Database,Redis,LMStudio,ComfyUI,BinaryStore,Diagrams,VisionEmbed,SearchQuota,PresentationRenderer infrastructure;
+    classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450,stroke-width:1.5px;
+    class User,Frontend,API interface;
+    class Supervisor,Conversation,Presentation,Memory,Visual,Tools application;
+    class ModelGate,LMStudio,Media,Embeddings,Repositories,Database,Files infrastructure;
+    class Integrations external;

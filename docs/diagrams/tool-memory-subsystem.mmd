@@ -1,78 +1,37 @@
+---
+title: MCP Discovery, Selection, and Tool Memory
+---
 flowchart TB
-    MCPServers[[Configured MCP servers<br/>untrusted metadata, locally assigned trust]]
-    MCPServers -->|stdio tools/list, paginated| Discovery[MCPRegistryService]
-    Discovery --> Poison{Instruction-shaped description?}
-    Poison -->|yes| Quarantine[Quarantined, never indexed]
-    Poison -->|no| Service
-    Discovery -. fingerprint covers description<br/>to detect rug pulls .-> Service
+    Servers[[Configured MCP servers]] --> Discover[Read live tool catalog]
+    Discover --> Inspect{Safe description<br/>and stable schema?}
+    Inspect -->|no| Quarantine[Quarantine descriptor]
+    Inspect -->|yes| Index[Embed safe descriptor<br/>with Nomic]
+    Index --> Store[(Tool descriptors<br/>in pgvector)]
 
-    Chat([Chat request]) --> SearchDescriptors[Semantic descriptor shortlist]
-    SearchDescriptors --> Service
-    Service --> LiveSelection[Resolve current live schemas]
-    LiveSelection --> MainSelect[Conditional model call: MAIN_LLM_MODEL<br/>qwen/qwen3.5-9b native tool_calls<br/>at most one call]
-    MainSelect --> Invoke[Application-owned call plan]
+    Chat([Chat request]) --> Shortlist[Semantic tool shortlist]
+    Store --> Shortlist
+    Preferences[(Approved preferences<br/>and sanitized outcomes)] --> Shortlist
+    Shortlist --> Select[Qwen 3.5 9B<br/>native tool selection]
 
-    Explicit([Explicit tool API call]) --> Gates{Invocation gates}
-    Invoke --> Gates
-    Gates -->|server from local config| G1[Confirmation unless<br/>trusted or read_only]
-    G1 --> G2[Re-read live catalogue<br/>refuse withdrawn tool]
-    G2 --> G3[Fingerprint match<br/>refuse changed contract]
-    G3 --> G4[Re-inspect description]
-    G4 --> G5[Validate arguments<br/>against declared schema]
-    G5 --> G6[Screen arguments<br/>OutboundPrivacyPolicy]
-    G6 --> Context{Configured to receive<br/>application context?}
-    Context -->|no| Server[[MCP server]]
-    Context -->|yes; not model-visible| VisualServer[[Local capability FastMCP<br/>user, conversation, trace]]
-    VisualServer --> VisualTools[generate_diagram, generate_image,<br/>ask_about_image, get_artifact]
-    VisualTools --> VisualHandles[Bounded artifact handles<br/>no image bytes or storage keys]
-    VisualHandles --> Bounded
-    VisualServer --> PresentationTools[create_presentation,<br/>revise_presentation_slide,<br/>get_presentation]
-    PresentationTools --> PresentationHandles[Bounded deck and revision metadata<br/>no PPTX bytes or storage keys]
-    PresentationHandles --> Bounded
-    Server --> Bounded[Bounded result, inspected,<br/>quoted as untrusted data]
-    Bounded --> Prompt[Final MAIN_LLM_MODEL answer context<br/>qwen/qwen3.5-9b]
-    Bounded --> ToolEvents[tool_started and tool_finished SSE]
+    Explicit([Explicit tool call]) --> Gates
+    Select --> Gates[Application invocation gates<br/>trust, confirmation, live schema,<br/>arguments and privacy]
+    Gates -->|allowed| Server[[Selected MCP tool]]
+    Gates -->|refused| Status[Visible tool status]
+    Server --> Result[Bounded result<br/>as untrusted data]
+    Result --> Answer[Qwen 3.5 9B<br/>final answer]
+    Result --> Status
 
-    Caller([Trusted local caller]) --> ToolAPI[Tool-memory API<br/>/memory/user/tools]
-    ToolAPI --> Ownership[Optional signed-user ownership]
-    Ownership --> Schema[Pydantic allowlists and size limits]
-    Schema --> Sensitive[Sensitive-marker rejection<br/>no credentials, arguments, outputs, or resources]
-    Sensitive --> Service[ToolMemoryService]
-
-    Service --> DescriptorPath[Descriptor path]
-    DescriptorPath --> Identity[Canonical server, tool, version,<br/>and schema fingerprint]
-    Identity --> Deactivate[Deactivate prior descriptor<br/>when schema fingerprint changes]
-    Deactivate --> Embed[Embed safe descriptor text]
-    Embed --> Nomic[Model call: EMBEDDING_MODEL<br/>text-embedding-nomic-embed-text-v1.5]
-    Nomic --> Descriptors[(tool_descriptors<br/>active flag and HNSW cosine index)]
-
-    Service --> PreferencePath[Approved preference path]
-    PreferencePath --> Preferences[(tool_preferences<br/>allowlisted keys, provenance, optional expiry)]
-    Service --> OutcomePath[Sanitized outcome path]
-    OutcomePath --> Outcomes[(tool_usage_outcomes<br/>category and bounded metadata)]
-
-    Coordinator[MemoryCoordinatorAgent] -->|semantic descriptor search| Service
-    Descriptors --> Service
-    Preferences --> Service
-    Outcomes --> Service
-    Service --> Toolbox[Bounded toolbox context<br/>untrusted literal metadata]
-    Toolbox --> MainModel[Model call: MAIN_LLM_MODEL<br/>qwen/qwen3.5-9b<br/>final prompt context]
-
-    Database[(PostgreSQL and pgvector)]
-    Descriptors --> Database
-    Preferences --> Database
-    Outcomes --> Database
-
-    Boundary[Autonomous boundary:<br/>only locally trusted or read_only servers;<br/>consequential calls stay confirmation-gated]
-    Gates -.-> Boundary
+    MemoryAPI([Tool-memory API]) --> Validate[Ownership and safe fields]
+    Validate --> Preferences
+    Validate --> Store
 
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
     classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
-    classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
-    class Caller,ToolAPI,Chat,Explicit,ToolEvents interface;
-    class Ownership,Schema,Sensitive,Service,DescriptorPath,Identity,Deactivate,Embed,PreferencePath,OutcomePath,Coordinator,Toolbox,SearchDescriptors,LiveSelection,MainSelect,Invoke,Gates,G1,G2,G3,G4,G5,G6,Context,VisualTools,VisualHandles,PresentationTools,PresentationHandles,Bounded,Prompt application;
-    class Descriptors,Preferences,Outcomes,Database data;
-    class Nomic,MainModel,Server,VisualServer external;
-    class Boundary warning;
+    classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900;
+    class Chat,Explicit,MemoryAPI,Status interface;
+    class Discover,Inspect,Index,Shortlist,Gates,Result,Validate application;
+    class Store,Preferences data;
+    class Servers,Server,Select,Answer external;
+    class Quarantine warning;

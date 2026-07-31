@@ -36,6 +36,8 @@ npx.cmd playwright install chromium
 
 The renderer maintains the full-system, runtime/deployment, chat, search, memory, tool-memory, current visual-artifact, planned visual-memory/editing target, presentation, architecture-maintenance, and frontend diagrams in one pass. The check compares a cross-platform fingerprint of each normalized source, the shared render configuration, and pinned Mermaid CLI version stored in its SVG, then performs a fresh syntax render for every source. It intentionally does not compare generated SVG bytes because renderer-generated identifiers and metadata may vary without changing the diagram.
 
+Treat diagrams as orientation maps, not exhaustive dependency graphs. Each view should answer one engineering question, use one main reading direction, and normally stay within 15 conceptual nodes and 18 primary edges. Prefer a named shared boundary over repeated component-to-provider or component-to-store lines. Move endpoint inventories, schemas, configuration, retries, and uncommon failure branches to prose; show model names only at actual model-call points. Split a view when it needs two independent stories.
+
 For every modifying task, use this process:
 
 1. Read the [diagram catalog](diagrams/README.md) and map the changed code to the full-system view and every affected detailed subsystem view.

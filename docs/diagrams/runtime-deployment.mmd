@@ -1,86 +1,51 @@
+---
+title: Local Runtime Deployment
+---
 flowchart LR
-    User([Primary user])
+    User([User]) --> Browser[Browser]
 
-    subgraph Host[Developer host processes]
-        Browser[Chromium or browser]
-        LMStudio[LM Studio, host 127.0.0.1:1234<br/>MAIN and DIAGRAM: qwen/qwen3.5-9b<br/>PRESENTATION and VISION:<br/>google/gemma-4-12b<br/>EMBEDDING_MODEL:<br/>text-embedding-nomic-embed-text-v1.5]
-        DiagramCLI[Architecture candidate CLI<br/>loopback model only]
-        Candidate[(Review candidate<br/>Mermaid and SVG)]
-        ComfyInstall[(Host ComfyUI install and models<br/>E:/AI/ComfyUI)]
+    subgraph Compose[Docker Compose]
+        Frontend[React and Vite<br/>:5173]
+        Backend[FastAPI<br/>:8000]
+        Worker[Presentation worker]
+        MCP[Local capability MCP<br/>:8001]
+        Renderer[PPTX renderer<br/>:8002]
+        Stores[(PostgreSQL and pgvector<br/>Redis lease<br/>artifact volume)]
     end
 
-    subgraph Compose[Docker Compose stack]
-        Frontend[React and Vite dev server container<br/>source bind-mount with polling HMR<br/>host port 5173]
-        Backend[FastAPI and Uvicorn container<br/>host port 8000<br/>optional OpenTelemetry spans]
-        PresentationWorker[Presentation worker container<br/>durable job claims and LangGraph execution<br/>no host port]
-        VisualMCP[Local capability FastMCP sidecar<br/>streamable HTTP, host port 8001<br/>seven metadata-only tools]
-        PresentationRenderer[Presentation renderer worker<br/>PptxGenJS plus headless LibreOffice<br/>host port 8002]
-        VisionEmbed[VISION_EMBEDDING_MODEL:<br/>nomic-embed-vision-v1.5<br/>in-process ONNX on CPU]
-        Dependencies[FastAPI dependency assembly<br/>async request sessions]
-        Auth[Optional signed-user ownership<br/>disabled by default locally]
-        ComfyUI[ComfyUI container or host process<br/>GENERATION: HiDream-O1 Dev FP8<br/>EDITING: FLUX.2 Klein 4B Distilled FP8<br/>Qwen 3 4B encoder plus FLUX.2 VAE<br/>GPU, host port 8188]
-        Postgres[(PostgreSQL 16 and pgvector<br/>memory, artifacts, and presentation revisions<br/>host port 5432)]
-        Redis[(Redis 7, host port 6379<br/>expiring model lease and<br/>foreground waiter count only)]
-        Maintenance[Opt-in memory-maintenance<br/>hourly profile]
-        BinaryStore[(Local artifact bytes<br/>artifactdata volume)]
-        SearchQuota[(searchdata volume<br/>Google daily call count only)]
+    subgraph Host[Host AI processes]
+        AI[Host AI boundary]
+        LMStudio[LM Studio :1234<br/>Qwen, Gemma and Nomic text]
+        ComfyUI[ComfyUI :8188<br/>HiDream and FLUX]
+        VisionEmbed[Nomic vision ONNX<br/>on CPU]
+        AI --> LMStudio
+        AI --> ComfyUI
+        AI --> VisionEmbed
     end
 
-    GoogleResearch[[GOOGLE_SEARCH_MODEL: gemini-3.6-flash<br/>external Google Search grounded worker<br/>disabled by default; opt-in plus entitlement]]
-    WebSearch[[Tavily web search<br/>external fallback, untrusted results<br/>opt-in via SEARCH_API_KEY]]
-    MCPStdio[[MCP stdio servers<br/>subprocess, needs local runtime]]
-    MCPHttp[[MCP http servers<br/>sibling or remote, no runtime in image]]
-    Source[Repository source]
-    Canonical[(Canonical diagram suite)]
-    Migration[Alembic<br/>synchronous migration engine]
+    subgraph External[Optional external services]
+        Integrations[[Configured MCP servers<br/>Google Search and Tavily]]
+    end
 
-    User --> Browser
-    Browser -->|page load, localhost:5173| Frontend
-    Browser -->|HTTP, JSON, and chat SSE, localhost:8000| Backend
-    Frontend -. bind-mounted source .-> Source
-    Backend --> Auth
-    Auth --> Dependencies
-    Dependencies -->|asyncpg transactions| Postgres
-    Dependencies -->|image bytes, aligned 768-dim vector| VisionEmbed
-    Dependencies -->|discover, then invoke behind gates| MCPStdio
-    Dependencies -->|discover, then invoke behind gates| MCPHttp
-    Backend -->|streamable HTTP; application-owned<br/>user, conversation, and trace metadata| VisualMCP
-    Backend -->|enqueue and poll presentation jobs| Postgres
-    Backend -->|foreground model-priority lease| Redis
-    PresentationWorker -->|claim, heartbeat, drafts,<br/>and terminal state| Postgres
-    PresentationWorker -->|background microtask lease| Redis
-    PresentationWorker -->|model calls: PRESENTATION_LLM_MODEL;<br/>outline and one slide at a time| LMStudio
-    PresentationWorker -->|strict final DeckSpec| PresentationRenderer
-    PresentationWorker -->|validated editable PPTX| BinaryStore
-    VisualMCP -->|per-call asyncpg sessions| Postgres
-    VisualMCP -->|model calls: MAIN, DIAGRAM,<br/>PRESENTATION, or VISION role| LMStudio
-    VisualMCP -->|model call: IMAGE_MODEL<br/>or IMAGE_EDIT_MODEL with source pixels| ComfyUI
-    VisualMCP -->|opaque artifact bytes| BinaryStore
-    Backend -->|strict DeckSpec or SlideSpec| PresentationRenderer
-    VisualMCP -->|strict DeckSpec or SlideSpec| PresentationRenderer
-    PresentationRenderer -->|validated editable PPTX| BinaryStore
-    MCPStdio -->|built-in read-only internet/search_web;<br/>minimized public query only| GoogleResearch
-    MCPStdio -->|fallback or explicit cross-check| WebSearch
-    MCPStdio -->|atomic quota reservation| SearchQuota
-    Dependencies -->|model calls: MAIN, DIAGRAM, PRESENTATION,<br/>VISION, or EMBEDDING role;<br/>OpenAI-compatible HTTP| LMStudio
-    Dependencies -->|model call: IMAGE_MODEL or IMAGE_EDIT_MODEL;<br/>ComfyUI HTTP, comfyui:8188| ComfyUI
-    Dependencies -->|opaque keys and atomic file writes| BinaryStore
-    ComfyUI -. bind-mounts .-> ComfyInstall
-    Maintenance -->|asyncpg maintenance cycle| Postgres
-    Maintenance -->|optional model call: EMBEDDING_MODEL| LMStudio
-    Migration -->|psycopg2 schema changes| Postgres
-    Source -->|image build| Backend
-    Source -->|same image, dedicated command| VisualMCP
-    Source -->|explicit allowlisted context| DiagramCLI
-    Canonical -->|read-only exemplar| DiagramCLI
-    DiagramCLI -->|model call: LLM_MODEL;<br/>OpenAI-compatible HTTP| LMStudio
-    DiagramCLI -->|pinned Mermaid render| Candidate
-    Candidate -.->|review then manual promotion| Canonical
+    Browser --> Frontend --> Backend
+    Backend --> Stores
+    Backend --> AI
+    Backend --> MCP
+    Backend --> Integrations
+
+    Stores -->|durable jobs| Worker
+    Worker --> Stores
+    Worker --> AI
+    Worker --> Renderer
+    Renderer --> Stores
+    MCP --> Stores
+    MCP --> AI
 
     classDef user fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
     classDef process fill:#e8f1fb,stroke:#5e8fc4,color:#102a43,stroke-width:1.5px;
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b,stroke-width:1.5px;
-    classDef scaffold fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
-    class User,Source user;
-    class Browser,Frontend,LMStudio,ComfyUI,Backend,PresentationWorker,VisualMCP,PresentationRenderer,Dependencies,Auth,Maintenance,Migration,DiagramCLI,VisionEmbed process;
-    class Postgres,Redis,BinaryStore,SearchQuota,Candidate,Canonical,ComfyInstall data;
+    classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450,stroke-width:1.5px;
+    class User,Browser user;
+    class Frontend,Backend,Worker,MCP,Renderer,AI,LMStudio,ComfyUI,VisionEmbed process;
+    class Stores data;
+    class Integrations external;

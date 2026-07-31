@@ -1,95 +1,40 @@
+---
+title: Chat and Delegation Flow
+---
 flowchart TB
-    User([User message]) --> Composer[Composer]
-    Composer --> Intent{New image request?<br/>historical image questions stay chat}
-    Intent -->|yes| ImageAPI[POST /api/v1/images/generate]
-    ImageAPI --> ImageAnswer[Ready private image card<br/>mode follows selected action]
-    Intent -->|no| ChatAPI[FastAPI chat route]
-    ChatAPI --> Ownership[Optional signed-user ownership]
-    Ownership --> Service[ConversationService]
-    Service --> Trace[New request trace ID]
-    Service --> Route{Explicit diagram request?}
+    User([User message]) --> API[Chat API]
+    API --> Supervisor{MainSupervisorAgent<br/>deterministic routing}
 
-    Route -->|yes| Artifact[DiagramArtifactService<br/>separate detailed diagram]
-    Artifact --> DiagramAgent[DiagramAgent<br/>specialized LangGraph workflow]
-    DiagramAgent --> DiagramProvider[LLMDiagramProvider<br/>bounded JSON and Mermaid]
-    DiagramProvider -->|model call: DIAGRAM_LLM_MODEL| DiagramModel[qwen/qwen3.5-9b<br/>diagram specification]
-    Artifact --> SSE
+    Supervisor -->|presentation| Presentation[Queue durable<br/>PresentationAgent job]
+    Presentation --> Progress[Return job ID<br/>and background progress]
 
-    Route -->|no| Supervisor[MainSupervisorAgent<br/>deterministic route_capability node<br/>NO LLM CALL]
-    Supervisor --> Decision{Registered-intent decision<br/>application policy owns routing}
-    Decision -->|delegate_agent:<br/>presentation_agent| AgentStart[agent_started<br/>PresentationAgent plus exact model]
-    AgentStart --> Queue[PresentationJobService<br/>durable background enqueue]
-    Queue --> AgentFinish[agent_finished: queued<br/>job ID plus exact model]
-    AgentFinish --> Persist
-    AgentFinish --> SSE
-    Decision -->|respond| Retrieval{Retrieval routing cascade<br/>free patterns, then bounded classifiers<br/>SEARCH_CLASSIFIER_MODEL, otherwise main role<br/>application owned, model never selects}
-    Retrieval -->|volatile-shape signal| SearchPolicy[Normalize and privacy-screen query]
-    SearchPolicy --> InternetMCP[Internet MCP adapter<br/>fixed read-only search_web]
-    InternetMCP --> SearchGates[MCP live validation and invocation gates]
-    SearchGates --> HybridSearch{Hybrid research policy}
-    HybridSearch -->|when explicitly enabled and entitled| GoogleResearch[GOOGLE_SEARCH_MODEL: gemini-3.6-flash<br/>single turn, no history or personal memory]
-    GoogleResearch --> GoogleGrounding[Native Google Search Grounding<br/>attributable sources required]
-    HybridSearch -->|Google unavailable, empty, failed,<br/>or daily budget exhausted| Tavily[TavilySearchProvider<br/>relevance floor]
-    HybridSearch -->|explicit verify or cross-check| Both[Run both providers once<br/>merge and deduplicate]
-    GoogleGrounding --> Both
-    Tavily --> Both
-    GoogleGrounding --> WebResults[Bounded untrusted web results<br/>provider attribution retained]
-    Tavily --> WebResults
-    Both --> WebResults
-    Retrieval -->|semantic or vector retrieval selected| QueryEmbedding[Model call: EMBEDDING_MODEL<br/>text-embedding-nomic-embed-text-v1.5<br/>one shared query vector]
-    QueryEmbedding -->|image recall signal| ImageSearch[Aligned image vector search<br/>distance ceiling, leading cluster,<br/>subject match on prompt or analysis]
-    ImageSearch -->|explicit web request only:<br/>append bounded prompt or analysis| SearchPolicy
-    WebResults --> Context
-    WebResults --> SSE
-    ImageSearch --> Context
-    ImageSearch --> SSE
-    Retrieval --> Plan[MemoryCoordinatorAgent<br/>deterministic query plan]
-    QueryEmbedding --> Plan
-    Plan --> Personal[Profile plus episodic and semantic]
-    Plan --> Typed[Working, entity, knowledge,<br/>summary, procedure, toolbox]
-    Service --> History[ConversationRepository<br/>bounded same-user history]
-    Personal --> Context[Bounded context assembly]
-    Typed --> Context
-    Typed --> ToolShortlist[Semantic MCP descriptor shortlist]
-    ToolShortlist --> LiveResolve[Re-read live schemas<br/>exclude consequential servers]
-    LiveResolve --> ToolModel[Conditional model call: MAIN_LLM_MODEL<br/>qwen/qwen3.5-9b native tool_calls<br/>at most one bounded candidate]
-    ToolModel --> ToolGates[MCP contract, argument,<br/>privacy and trust gates]
-    ToolGates --> MCPServer[[Configured MCP server]]
-    MCPServer --> ToolContext[Bounded result as<br/>untrusted prompt data]
-    ToolContext --> Context
-    ToolGates --> SSE
-    History --> State[Typed AgentState]
-    Context --> State
-    State --> Graph[LangGraph<br/>one assistant node]
-    Graph --> Prompt[System prompt: current date, literal memory,<br/>quoted untrusted web, tool and image results,<br/>history, and current query]
-    Prompt --> LLMQueue[Redis foreground-priority gate<br/>chat holds one expiring model lease;<br/>presentation worker yields between slides]
-    LLMQueue --> MainModel[Model call: MAIN_LLM_MODEL<br/>qwen/qwen3.5-9b<br/>stream_chat]
-    MainModel -->|message.delta| Graph
-    Graph --> Persist[Persist completed conversation turn]
-    Persist --> Lifecycle[Update working state and<br/>periodic conversation summary]
-    Persist --> Proposal[At most one deterministic<br/>memory proposal]
-    Proposal --> SSE[SSE encoder]
-    Lifecycle --> SSE
-    Graph --> SSE
-    SSE -->|start, search and tool lifecycles,<br/>delta, optional proposal, artifact,<br/>image_matches, done| Parser[Frontend stream parser]
-    Parser --> Answer[Visible answer, tool status, search status,<br/>cited sources, metadata, proposal,<br/>artifact, or matched image cards]
+    Supervisor -->|diagram| Diagram[DiagramAgent]
+    Diagram --> DiagramModel[Qwen 3.5 9B<br/>diagram call]
+    DiagramModel --> Artifact[Validate and persist<br/>Mermaid artifact]
 
-    Reload([Full browser reload]) --> SnapshotAPI[GET owned conversation snapshot]
-    SnapshotAPI --> Ownership
-    Ownership --> RestoreHistory[Persisted turns and artifacts]
-    RestoreHistory --> RestoreUI[Rebuilt transcript and diagram cards]
+    Supervisor -->|ordinary chat| Memory[MemoryCoordinatorAgent<br/>bounded retrieval]
+    Memory --> Optional{Need a tool<br/>or current web data?}
+    Optional -->|tool| MCP[MCP selection<br/>and safety gates]
+    Optional -->|web| Search[Privacy-screened<br/>internet search]
+    Optional -->|neither| Context[Curated context]
+    MCP --> Context
+    Search --> Context
 
-    Failure[Unexpected stream failure] -->|sanitized error event| SSE
-    Disconnect[Client disconnect after artifact_started] --> CancelCleanup[Shielded cancelled terminal write]
-    CancelCleanup --> Artifact
+    Context --> Main[Qwen 3.5 9B<br/>streaming assistant call]
+    Main --> Persist[Persist completed turn<br/>and lifecycle updates]
+    Persist --> Stream[SSE response]
+
+    Artifact --> Stream
+    Progress --> Stream
+    Stream --> UI[Visible answer, artifact,<br/>tool/search status, or job progress]
+
+    Failure[Sanitized failure] -.-> Stream
 
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
     classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
-    classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
-    classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
+    classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef failure fill:#fff3cd,stroke:#b78b20,color:#4d3900;
-    class User,Composer,ImageAnswer,Parser,Answer,Reload,RestoreUI,Disconnect interface;
-    class Intent,ImageAPI,ChatAPI,SnapshotAPI,Ownership,Service,Trace,Route,Supervisor,Decision,AgentStart,Queue,AgentFinish,Retrieval,SearchPolicy,InternetMCP,SearchGates,HybridSearch,GoogleResearch,Both,WebResults,Plan,Context,State,Graph,Prompt,LLMQueue,Persist,Lifecycle,Proposal,SSE,Artifact,DiagramAgent,DiagramProvider,CancelCleanup,ToolShortlist,LiveResolve,ToolModel,ToolGates,ToolContext,QueryEmbedding application;
-    class Personal,Typed,History,RestoreHistory data;
-    class MainModel,DiagramModel,GoogleGrounding,Tavily,MCPServer external;
+    class User,UI interface;
+    class API,Supervisor,Presentation,Progress,Diagram,Artifact,Memory,Optional,MCP,Search,Context,Persist,Stream application;
+    class Main,DiagramModel model;
     class Failure failure;

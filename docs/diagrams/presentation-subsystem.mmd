@@ -1,97 +1,34 @@
-flowchart LR
-    User([User])
-    MainCaller([MainSupervisorAgent<br/>deterministic registered-intent router<br/>NO LLM CALL<br/>or confirmed MCP caller])
+---
+title: Editable Presentation Subsystem
+---
+flowchart TB
+    User([User or confirmed MCP call]) --> API[Presentation API]
+    Feedback([Selected-slide feedback]) --> API
+    API --> Job[(Owned durable job<br/>and progressive checkpoints)]
+    Job --> Worker[Leased background worker]
+    Worker --> Agent[PresentationAgent]
+    Agent --> Gate[Redis foreground-priority gate]
+    Gate --> Gemma[Gemma 4 12B<br/>outline, slide, or edit]
+    Gemma --> Compiler[Deterministic editable<br/>DeckSpec compiler]
+    Compiler --> Visuals{Useful slide image?}
+    Visuals -->|yes, bounded| HiDream[HiDream via ComfyUI]
+    Visuals -->|no or unavailable| Render
+    HiDream --> Render[PptxGenJS render<br/>and Office validation]
+    Render --> Revision[(Append-only revision<br/>and private PPTX)]
+    Revision --> Job
+    Job -->|progress, reconnect and download| UI[Presentations UI]
 
-    subgraph Entry[1. Owned entry points]
-        direction TB
-        UI[Presentations UI<br/>queue, reconnectable progress,<br/>feedback, history, download]
-        API[Presentation API<br/>HTTP 202 create, job read/cancel,<br/>revise, download, delete]
-        MCP[Local FastMCP facade<br/>metadata-only job handle]
-        Gates[Live contract, privacy,<br/>and confirmation gates]
-        AgentEvents[Chat SSE agent lifecycle<br/>PresentationAgent plus exact model]
-    end
-
-    subgraph Scheduling[2. Durable application scheduling]
-        direction TB
-        JobService[PresentationJobService<br/>ownership and queue API]
-        JobStore[(PostgreSQL presentation_jobs<br/>queued, running, ready,<br/>failed, cancelled)]
-        Worker[Presentation worker<br/>lease, heartbeat, recovery]
-        Claim[Atomic claim<br/>FOR UPDATE SKIP LOCKED]
-        Draft[Persist each validated draft<br/>browser can reconnect]
-        JobService --> JobStore
-        Worker --> Claim --> JobStore
-        Worker --> Draft --> JobStore
-    end
-
-    subgraph Lifecycle[3. Focused subagent and application authority]
-        direction TB
-        Service[PresentationService<br/>revision and promotion authority]
-        Agent[PresentationAgent<br/>focused LangGraph workflow]
-        GraphNode[create_progress node<br/>custom draft events]
-        Provider[LLMPresentationProvider<br/>outline then one slide microtask]
-        Compiler[Deterministic compiler<br/>stable IDs and editable layout]
-        Agent --> GraphNode --> Provider --> Compiler
-    end
-
-    subgraph Model[4. Shared local model priority]
-        direction TB
-        Gate[Redis ModelExecutionGate<br/>foreground chat priority]
-        LMStudio[Model call: PRESENTATION_LLM_MODEL<br/>google/gemma-4-12b]
-        Provider -->|background lease<br/>one microtask| Gate --> LMStudio --> Provider
-        Chat[Foreground chat<br/>whole model lifecycle]
-        Chat -->|priority lease| Gate
-    end
-
-    subgraph OptionalImage[5. Optional slide image]
-        direction TB
-        ImageCoordinator[PresentationImageService]
-        ImageService[ImageArtifactService]
-        ComfyUI[Model call: IMAGE_MODEL<br/>HiDream through ComfyUI]
-        ImageCoordinator --> ImageService --> ComfyUI
-    end
-
-    subgraph Render[6. Stateless rendering]
-        direction TB
-        Renderer[Bounded HTTP renderer]
-        PptxGenJS[PptxGenJS<br/>native editable Office objects]
-        OOXML[OOXML inspection]
-        LibreOffice[LibreOffice open and export]
-        Renderer --> PptxGenJS --> OOXML --> LibreOffice
-    end
-
-    subgraph Persistence[7. Private revision and binary persistence]
-        direction TB
-        Repository[PresentationRepository<br/>user scope and stale-base conflict]
-        Database[(PostgreSQL<br/>deck and append-only revisions)]
-        BinaryStore[(Opaque binary store<br/>PPTX plus SHA-256)]
-        Repository --> Database
-        Repository --> BinaryStore
-    end
-
-    User --> UI --> API --> JobService
-    MainCaller -->|typed delegation| AgentEvents --> JobService
-    MainCaller --> Gates --> MCP --> JobService
-    JobStore -->|claimable work| Worker --> Service --> Agent
-    Compiler -->|progressive DeckSpec| Draft
-    Compiler -->|final DeckSpec| Renderer
-    API -->|selected-slide revision| Service
-    API -->|selected-slide image| ImageCoordinator
-    ImageCoordinator -->|owned artifact UUID| Service
-    LibreOffice --> Repository
-    Repository -->|promote ready revision| JobStore
-    JobStore -->|poll across navigation or reload| UI
-
-    NoAuthority[Trust boundary:<br/>model and renderer cannot lease jobs,<br/>grant permissions, choose storage keys,<br/>or promote revisions]
-    Agent -.-> NoAuthority
-    Renderer -.-> NoAuthority
+    Boundary[Application alone owns<br/>access, storage and promotion]
+    Boundary -.-> Job
+    Boundary -.-> Revision
 
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
     classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
-    class User,MainCaller,UI,API,AgentEvents interface;
-    class MCP,Gates,JobService,Worker,Claim,Draft,Service,Agent,GraphNode,Provider,Compiler,ImageCoordinator,ImageService,Renderer,PptxGenJS,OOXML,Repository,Chat application;
-    class JobStore,Database,BinaryStore data;
-    class Gate,LMStudio,ComfyUI,LibreOffice external;
-    class NoAuthority warning;
+    class User,UI,Feedback interface;
+    class API,Worker,Agent,Gate,Compiler,Visuals,Render application;
+    class Job,Revision data;
+    class Gemma,HiDream external;
+    class Boundary warning;

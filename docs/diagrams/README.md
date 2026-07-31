@@ -1,6 +1,6 @@
 # AniOS Architecture Diagram Catalog
 
-These diagrams describe the current implementation. AniOS currently deploys one modular FastAPI backend, not one independently deployed microservice per internal subsystem. The detailed views expose module, API, persistence, model, ownership, and lifecycle boundaries so the system can be explained without inventing services that do not exist.
+These diagrams are concise orientation maps of the current implementation. AniOS currently deploys one modular FastAPI backend, not one independently deployed microservice per internal subsystem. Exact endpoints, configuration, schemas, and exception paths belong in the architecture prose and code rather than in these views.
 
 Mermaid source is authoritative; SVG is the generated sharing format.
 
@@ -9,19 +9,25 @@ The self-contained [published architecture page](../architecture.html) includes 
 | Diagram | Use it to answer | Editable source | Rendered view |
 | --- | --- | --- | --- |
 | Full system | What are the major AniOS components and external dependencies? | [anios-system.mmd](anios-system.mmd) | [anios-system.svg](anios-system.svg) |
-| Runtime and deployment | Which processes run where, on which ports, and through which protocols, including the local capability FastMCP sidecar and durable presentation worker? | [runtime-deployment.mmd](runtime-deployment.mmd) | [runtime-deployment.svg](runtime-deployment.svg) |
-| Chat orchestration | What happens from composer intent through typed supervisor delegation, image recall, guarded search/tool retrieval, foreground-priority main-model streaming, persistence, and SSE completion? | [chat-orchestration.mmd](chat-orchestration.mmd) | [chat-orchestration.svg](chat-orchestration.svg) |
-| Search and research | How does AniOS minimize outbound queries, isolate the Gemini research worker, enforce a free daily budget, fall back to Tavily, cross-check deliberately, and preserve source provenance? | [search-research-subsystem.mmd](search-research-subsystem.mmd) | [search-research-subsystem.svg](search-research-subsystem.svg) |
-| Memory subsystem | Which memory forms exist, who may write them, how are they retrieved, and how are retention/re-embedding/operations handled? | [memory-subsystem.mmd](memory-subsystem.mmd) | [memory-subsystem.svg](memory-subsystem.svg) |
-| Memory overview (manager) | First-contact, plain-language walkthrough of a memory turn, the approval gate, short-term vs long-term stores, and user data control | [memory-overview.mmd](memory-overview.mmd) | [memory-overview.svg](memory-overview.svg) |
-| Tool memory and execution | How are safe MCP descriptors stored/retrieved, then live-validated, model-selected, policy-gated, invoked, and supplied application-owned context only when configured? | [tool-memory-subsystem.mmd](tool-memory-subsystem.mmd) | [tool-memory-subsystem.svg](tool-memory-subsystem.svg) |
-| Visual artifacts | How do the local visual FastMCP facade, editable diagrams, browser intent, generated-image provenance/recall, guarded web comparison, providers, binary storage, and owned lifecycle boundaries work together? | [visual-artifact-subsystem.mmd](visual-artifact-subsystem.mmd) | [visual-artifact-subsystem.svg](visual-artifact-subsystem.svg) |
-| Visual memory and editing | How do implemented FLUX source-aware revisions fit with planned versioned VLM observations, memory-resolvable artifact handles, semantic verification, and lifecycle-safe derived data? | [visual-memory-editing-target.mmd](visual-memory-editing-target.mmd) | [visual-memory-editing-target.svg](visual-memory-editing-target.svg) |
-| Presentations | How does the supervisor or a confirmed tool enqueue a durable worker that invokes the focused PresentationAgent, checkpoints progressive drafts, yields to chat, and produces validated editable PowerPoint files without giving the specialist persistence or permissions? | [presentation-subsystem.mmd](presentation-subsystem.mmd) | [presentation-subsystem.svg](presentation-subsystem.svg) |
+| Runtime and deployment | What runs in Compose, on the host, and outside AniOS? | [runtime-deployment.mmd](runtime-deployment.mmd) | [runtime-deployment.svg](runtime-deployment.svg) |
+| Chat orchestration | How does one chat request reach the correct workflow and return a visible result? | [chat-orchestration.mmd](chat-orchestration.mmd) | [chat-orchestration.svg](chat-orchestration.svg) |
+| Search and research | How does a privacy-screened query become a cited answer? | [search-research-subsystem.mmd](search-research-subsystem.mmd) | [search-research-subsystem.svg](search-research-subsystem.svg) |
+| Memory subsystem | How does approved memory become bounded assistant context? | [memory-subsystem.mmd](memory-subsystem.mmd) | [memory-subsystem.svg](memory-subsystem.svg) |
+| Memory overview (manager) | How does memory help a turn while remaining under user control? | [memory-overview.mmd](memory-overview.mmd) | [memory-overview.svg](memory-overview.svg) |
+| Tool memory and execution | How does AniOS discover and safely invoke an MCP tool? | [tool-memory-subsystem.mmd](tool-memory-subsystem.mmd) | [tool-memory-subsystem.svg](tool-memory-subsystem.svg) |
+| Visual artifacts | How are diagrams, images, and image analysis produced and stored? | [visual-artifact-subsystem.mmd](visual-artifact-subsystem.mmd) | [visual-artifact-subsystem.svg](visual-artifact-subsystem.svg) |
+| Visual memory and editing | What visual editing works today, and what semantic recall stages remain planned? | [visual-memory-editing-target.mmd](visual-memory-editing-target.mmd) | [visual-memory-editing-target.svg](visual-memory-editing-target.svg) |
+| Presentations | How does a durable job produce an editable, validated PowerPoint? | [presentation-subsystem.mmd](presentation-subsystem.mmd) | [presentation-subsystem.svg](presentation-subsystem.svg) |
 | Architecture maintenance | How does explicit repository evidence become an LLM-generated, validated, rendered, review-only candidate without automatic canonical overwrite? | [architecture-maintenance-subsystem.mmd](architecture-maintenance-subsystem.mmd) | [architecture-maintenance-subsystem.svg](architecture-maintenance-subsystem.svg) |
-| Frontend | How do browser identity, conversation state, intent-aware Chat, reconnectable presentation jobs, on-demand Memory details, API/SSE calls, and visual rendering fit together? | [frontend-subsystem.mmd](frontend-subsystem.mmd) | [frontend-subsystem.svg](frontend-subsystem.svg) |
+| Frontend | How do browser state, product views, and the typed API client fit together? | [frontend-subsystem.mmd](frontend-subsystem.mmd) | [frontend-subsystem.svg](frontend-subsystem.svg) |
 
 Yellow dashed nodes identify a scaffolded component or a known current limitation. They do not claim planned behavior is implemented. Update a diagram only when the corresponding architecture changes, then render and check the complete suite using the commands in [the development guide](../DEVELOPMENT_GUIDE.md#architecture-diagram-maintenance).
+
+## Readability contract
+
+Each diagram answers one engineering question. Prefer 15 or fewer conceptual nodes and 18 or fewer primary edges; exceed those guides only when removing a boundary would make the view misleading. Use short noun labels, one main reading direction, and shared boundary nodes instead of drawing every component-to-store or component-to-provider dependency.
+
+Keep exact endpoints, schemas, configuration values, retries, and uncommon failure branches in prose. Show a model name only where a model is actually called. If a view needs a second independent story, split it into another diagram instead of growing a dependency map.
 
 ## Maintenance ownership
 
