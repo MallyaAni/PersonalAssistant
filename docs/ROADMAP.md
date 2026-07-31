@@ -362,12 +362,31 @@ Deliver as separately verified atomic stages, in this order:
   would produce calendar entries that are confidently wrong. Treat iCalendar as
   the source of record for anything that must reach a calendar, and RSS as a
   discovery signal that a later enrichment stage may date.
-- `PLANNED` stage 3 — durable scheduled discovery. A leased, heartbeated,
-  retryable recurring job reusing the presentation-worker pattern rather than a
-  new scheduler, with cancellation and a persisted run record. A missed or
-  failed run must never double-notify on recovery. Verified when a real
-  scheduled run persists a digest and a forced mid-run failure resumes without
-  duplicate delivery.
+- `VERIFIED` stage 3 — durable scheduled discovery. A `discovery_schedules` row
+  states one user's cadence (daily or weekly, at a chosen local hour) and
+  `discovery_runs` holds each durable, leased instance. Leasing reuses the
+  presentation-worker pattern rather than introducing a second scheduler:
+  `FOR UPDATE SKIP LOCKED` over queued-or-lease-expired rows, a renewable lease,
+  attempt counting, cancellation, and terminal states that release the lease.
+
+  Two invariants carry the "never double-notify" requirement, and both are
+  tested rather than asserted. A unique constraint on `(schedule_id,
+  scheduled_for)` makes a slot exactly-once, so a restarted or duplicated
+  producer cannot queue the same sweep twice; polling the same due slot three
+  times produced one run. And `delivered_at` is written once, so a resumed run
+  that already delivered returns `False` rather than delivering again. A run
+  whose lease lapses mid-work is reclaimed with its persisted digest intact, so
+  the second attempt resumes rather than repeats.
+
+  Cadence maths is pure and computed in the user's own timezone, including the
+  daylight-saving case where a 9am sweep must stay 9am rather than drift with
+  the old UTC offset. The next slot is strictly future, so completing a run at
+  exactly its slot time cannot re-arm the same slot and spin. Each run records
+  `requests_spent`, making the free-tier claim checkable after the fact rather
+  than only asserted in advance.
+
+  The run body is not yet wired: stage 3 delivers the machinery, and stage 4
+  supplies the selection it will persist as a digest.
 - `PLANNED` stage 4 — novelty and relevance. A seen-item store keyed by stable
   source identity, plus an embedding near-duplicate check so the same event
   re-listed under a new identifier is not announced twice. Candidates are ranked

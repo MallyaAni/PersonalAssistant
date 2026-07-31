@@ -1093,3 +1093,31 @@ This file is append-only history for meaningful, verified changes. It must not c
   15 RSS items.
 - Backend suite 538 passed; Ruff, Black, and full-project MyPy across 165 source
   files passed.
+
+## 2026-08-01 — Ambient discovery stage 3: durable scheduled runs
+
+- Added `discovery_schedules` and `discovery_runs` with migration
+  `20260801_0017`. A schedule states one user's cadence; a run is one durable,
+  leased instance of a sweep. Leasing reuses the presentation-worker pattern
+  rather than introducing a second scheduler: `FOR UPDATE SKIP LOCKED` over
+  queued-or-lease-expired rows, a renewable lease, attempt counting,
+  cancellation, and terminal states that release the lease.
+- Made a slot exactly-once with a unique constraint on `(schedule_id,
+  scheduled_for)`. A restarted or duplicated producer cannot queue the same
+  sweep twice, which is the difference between a reliable digest and one the
+  user receives again after a restart.
+- Made delivery exactly-once with a write-once `delivered_at`. A resumed run
+  that already delivered declines rather than delivering again, and a run whose
+  lease lapses mid-work is reclaimed with its persisted digest intact so the
+  second attempt resumes rather than repeats.
+- Computed cadence in the user's own timezone, including the daylight-saving
+  case where a 9am sweep must remain 9am rather than drift with the old UTC
+  offset. The next slot is strictly future, so completing a run at exactly its
+  slot time cannot re-arm the same slot and spin.
+- Recorded `requests_spent` per run so the free-tier claim is checkable after
+  the fact rather than only asserted in advance.
+- Corrected `created_at`/`updated_at` on the stage 1 discovery models, which
+  were declared naive while their columns were timezone-aware. The mismatch was
+  latent until a repository assigned an aware value directly.
+- Backend suite 552 passed; Ruff, Black, and full-project MyPy across 168 source
+  files passed.
