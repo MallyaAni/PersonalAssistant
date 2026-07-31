@@ -5,42 +5,39 @@ flowchart TB
     Chat([Chat turn])
     UI([Memory UI])
 
-    subgraph Policy[Application-owned policy]
-        Coordinator[MemoryCoordinatorAgent]
-        Consent{Approved write?}
-        Services[Typed memory services<br/>and write policy]
-        Retrieval[Scope, expiry,<br/>relevance and dedup]
-        Context[Bounded literal context]
-    end
+    Coordinator[MemoryCoordinatorAgent]
+    Services[Application-owned services and write policy<br/>user scope · consent where required]
+    Retrieval[Scope, expiry,<br/>relevance and dedup]
+    Context[Bounded literal context]
 
-    subgraph Infrastructure[Storage and operations]
-        Records[(Conversation, personal,<br/>agent and tool memory)]
-        TextEmbed[Nomic text embedding]
-        Database[(PostgreSQL and pgvector)]
-        Maintenance[Retention, re-embedding,<br/>health, export and delete]
-        Records --> Database
-        TextEmbed --> Database
-        Maintenance --> Database
-    end
+    Short[Short term<br/>LLM context window<br/>Session working memory<br/>Semantic cache]
+    Long[Long term<br/>Procedural / workflow · Toolbox<br/>Entity · Knowledge base · Persona<br/>Semantic · Episodic<br/>Summaries · Conversations]
+
+    TextEmbed[Nomic text embedding]
+    Database[(PostgreSQL and pgvector)]
+    Maintenance[Retention, re-embedding,<br/>health, export and delete]
 
     Main[Qwen 3.5 9B<br/>assistant call]
 
     Chat --> Coordinator
     UI --> Services
-    Coordinator --> Consent
-    Consent -->|yes| Services
-    Consent -->|no| Retrieval
-    Services --> Records
-    Services --> TextEmbed
+    Coordinator --> Services
+    Services --> Short
+    Services --> Long
     Coordinator --> Retrieval
-    Records --> Retrieval
+    Short --> Retrieval
+    Long --> Retrieval
     Retrieval --> Context --> Main
+    Services --> TextEmbed --> Database
+    Short -->|expiring records| Database
+    Long -->|durable records| Database
+    Maintenance --> Database
 
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
     classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     class Chat,UI interface;
-    class Consent,Coordinator,Services,Retrieval,Context,Maintenance application;
-    class Records,Database data;
+    class Coordinator,Services,Retrieval,Context,Maintenance application;
+    class Short,Long,Database data;
     class TextEmbed,Main model;

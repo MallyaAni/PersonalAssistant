@@ -1,5 +1,5 @@
 ---
-title: AniOS Memory — Manager Overview
+title: AniOS Memory - Manager Overview
 ---
 flowchart TB
     User([You send a message])
@@ -10,14 +10,19 @@ flowchart TB
     Curate --> Answer[5. Assistant answers<br/>memory is data, not instructions]
     Answer --> User
 
-    Stores[(Short-term state<br/>and approved long-term memory)]
-    Retrieve -. reads .-> Stores
+    subgraph Forms[Memory forms]
+        Short[Short term<br/>LLM context window<br/>Session working memory<br/>Semantic cache]
+        Long[Long term<br/>Procedural / workflow · Toolbox · Entity<br/>Knowledge base · Persona · Semantic<br/>Episodic · Summaries · Conversations]
+    end
+    Retrieve -. reads .-> Short
+    Retrieve -. reads .-> Long
 
     Answer -. may propose .-> Consent{Save something new?}
-    Consent -->|only after approval| Stores
+    Consent -->|only after approval| Long
 
-    Control[View, correct, export<br/>or delete your memory]
-    Stores --- Control
+    Control[Inspect short-term state<br/>View, correct, export or delete durable memory]
+    Short --- Control
+    Long --- Control
 
     classDef person fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
     classDef step fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
@@ -27,5 +32,5 @@ flowchart TB
     class User person;
     class Route,Understand,Retrieve,Curate,Answer step;
     class Consent gate;
-    class Stores store;
+    class Short,Long store;
     class Control note;

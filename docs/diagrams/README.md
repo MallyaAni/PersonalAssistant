@@ -12,8 +12,8 @@ The self-contained [published architecture page](../architecture.html) includes 
 | Runtime and deployment | What runs in Compose, on the host, and outside AniOS? | [runtime-deployment.mmd](runtime-deployment.mmd) | [runtime-deployment.svg](runtime-deployment.svg) |
 | Chat orchestration | How does one chat request reach the correct workflow and return a visible result? | [chat-orchestration.mmd](chat-orchestration.mmd) | [chat-orchestration.svg](chat-orchestration.svg) |
 | Search and research | How does a privacy-screened query become a cited answer? | [search-research-subsystem.mmd](search-research-subsystem.mmd) | [search-research-subsystem.svg](search-research-subsystem.svg) |
-| Memory subsystem | How does approved memory become bounded assistant context? | [memory-subsystem.mmd](memory-subsystem.mmd) | [memory-subsystem.svg](memory-subsystem.svg) |
-| Memory overview (manager) | How does memory help a turn while remaining under user control? | [memory-overview.mmd](memory-overview.mmd) | [memory-overview.svg](memory-overview.svg) |
+| Memory subsystem | Which short- and long-term types exist, and how do they become bounded assistant context? | [memory-subsystem.mmd](memory-subsystem.mmd) | [memory-subsystem.svg](memory-subsystem.svg) |
+| Memory overview (manager) | How do short- and long-term memory help a turn while remaining under user control? | [memory-overview.mmd](memory-overview.mmd) | [memory-overview.svg](memory-overview.svg) |
 | Tool memory and execution | How does AniOS discover and safely invoke an MCP tool? | [tool-memory-subsystem.mmd](tool-memory-subsystem.mmd) | [tool-memory-subsystem.svg](tool-memory-subsystem.svg) |
 | Visual artifacts | How are diagrams, images, and image analysis produced and stored? | [visual-artifact-subsystem.mmd](visual-artifact-subsystem.mmd) | [visual-artifact-subsystem.svg](visual-artifact-subsystem.svg) |
 | Visual memory and editing | What visual editing works today, and what semantic recall stages remain planned? | [visual-memory-editing-target.mmd](visual-memory-editing-target.mmd) | [visual-memory-editing-target.svg](visual-memory-editing-target.svg) |

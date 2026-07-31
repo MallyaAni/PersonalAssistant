@@ -42,14 +42,14 @@ const publishedDiagrams = [
   {
     name: "memory-overview",
     title: "Memory overview",
-    scope: "Plain-language memory lifecycle and user control",
-    change: "How AniOS retrieves and saves memory with user approval.",
+    scope: "Short- and long-term types, lifecycle, and user control",
+    change: "How each memory category helps a turn and remains controllable.",
   },
   {
     name: "memory-subsystem",
     title: "Memory subsystem",
-    scope: "Write policy, retrieval, storage, and operations",
-    change: "How approved memory becomes bounded assistant context.",
+    scope: "Short- and long-term types, write policy, retrieval, and storage",
+    change: "How implemented memory forms become bounded assistant context.",
   },
   {
     name: "tool-memory-subsystem",
