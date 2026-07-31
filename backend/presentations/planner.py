@@ -26,6 +26,8 @@ class PlannedSlide(DeckPlanModel):
     purpose: str = Field(min_length=1, max_length=300)
     points: list[str] = Field(min_length=2, max_length=6)
     key_message: str | None = Field(default=None, max_length=240)
+    visual_prompt: str | None = Field(default=None, max_length=500)
+    visual_priority: int = Field(default=0, ge=0, le=3)
     notes: str = Field(default="", max_length=1_500)
 
 
@@ -165,6 +167,8 @@ def compile_slide(
         slide_id=slide_id,
         title=planned.title,
         purpose=planned.purpose,
+        visual_prompt=planned.visual_prompt,
+        visual_priority=planned.visual_priority,
         notes=planned.notes,
         elements=elements,
     )

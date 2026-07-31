@@ -70,7 +70,13 @@ def _deck_plan_contract() -> str:
     return (
         "Return one compact JSON object only. Root fields: title, optional subtitle, "
         "slides. Each slide has exactly: title, purpose, points, optional "
-        "key_message, notes. points must contain 2 to 6 concise strings. Use 3 to 8 "
+        "key_message, optional visual_prompt, visual_priority, notes. points must "
+        "contain 2 to 6 concise strings. visual_prompt is a concrete text-to-image "
+        "brief when an editorial photo or illustration would materially improve "
+        "the slide, otherwise null. visual_priority is 3 for a hero visual, 2 for "
+        "a useful supporting visual, 1 for optional, or 0 with no visual. Prefer "
+        "specific subjects, setting, composition, and mood; never request text, "
+        "labels, logos, UI, charts, or diagrams inside an image. Use 3 to 8 "
         "slides unless the brief explicitly asks for another count. Do not emit "
         "coordinates, colors, element IDs, themes, layout fields, Markdown, or "
         "speaker prose outside notes. Application code owns layout and native "
@@ -98,10 +104,15 @@ def _slide_edit_contract() -> str:
 def _slide_content_contract() -> str:
     return (
         "Return one compact JSON object for a single slide only. Fields: title, "
-        "purpose, points, optional key_message, notes. points must contain 2 to 6 "
-        "concise strings. Do not emit coordinates, colours, element ids, layout "
-        "fields, other slides, or Markdown. Application code owns layout and native "
-        "PowerPoint objects."
+        "purpose, points, optional key_message, optional visual_prompt, "
+        "visual_priority, notes. points must contain 2 to 6 concise strings. "
+        "visual_prompt is a concrete text-to-image brief only when an editorial "
+        "photo or illustration would materially improve the slide; otherwise null. "
+        "visual_priority is 3 for hero, 2 for supporting, 1 for optional, or 0 for "
+        "none. Never request text, labels, logos, charts, or diagrams inside an "
+        "image. Do not emit coordinates, colours, element ids, layout fields, other "
+        "slides, or Markdown. Application code owns layout and native PowerPoint "
+        "objects."
     )
 
 
@@ -127,6 +138,8 @@ def _slide_content_view(slide: SlideSpec) -> dict[str, Any]:
         "purpose": slide.purpose,
         "points": points,
         "key_message": key_message,
+        "visual_prompt": slide.visual_prompt,
+        "visual_priority": slide.visual_priority,
         "notes": slide.notes,
     }
 

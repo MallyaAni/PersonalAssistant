@@ -106,10 +106,8 @@ const ImageArtifact = ({ artifact, onDeleted, onRetry, onRefined }: ImageArtifac
     }
   }
 
-  // A generated image with non-question feedback regenerates; everything else
-  // asks the vision model about the current image.
-  const willRefine = artifact.kind === 'generated_image'
-    && question.trim() !== ''
+  // Any owned image with edit-shaped feedback uses the source-conditioned editor.
+  const willRefine = question.trim() !== ''
     && (looksLikeRefinementRequest(question) || !looksLikeQuestion(question))
 
   // Route a follow-up: refine (regenerate) on feedback, or ask on a question.
@@ -117,8 +115,7 @@ const ImageArtifact = ({ artifact, onDeleted, onRetry, onRefined }: ImageArtifac
     event.preventDefault()
     const trimmed = question.trim()
     if (!trimmed || isAsking) return
-    const refine = artifact.kind === 'generated_image'
-      && (looksLikeRefinementRequest(trimmed) || !looksLikeQuestion(trimmed))
+    const refine = looksLikeRefinementRequest(trimmed) || !looksLikeQuestion(trimmed)
     setIsAsking(true)
     setAskError('')
     try {
@@ -226,11 +223,7 @@ const ImageArtifact = ({ artifact, onDeleted, onRetry, onRefined }: ImageArtifac
             rows={1}
             maxLength={2000}
             disabled={isAsking}
-            placeholder={
-              artifact.kind === 'generated_image'
-                ? 'Ask about it, or say how to change it…'
-                : 'Ask about this image…'
-            }
+            placeholder="Ask about it, or say how to change it…"
             aria-label="Ask about or refine this image"
             className="min-h-[40px] flex-1 resize-y rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-[#1d1d1f] placeholder:text-[#a1a1a6] focus:border-black/25 focus:outline-none disabled:bg-[#f5f5f7]"
           />

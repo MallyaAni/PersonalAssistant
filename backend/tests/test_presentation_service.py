@@ -1,6 +1,7 @@
 import hashlib
 from collections.abc import AsyncIterator
 from typing import Any
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -8,6 +9,7 @@ from backend.artifacts.types import StoredBinary
 from backend.presentations.planner import DeckDraft
 from backend.presentations.types import (
     DeckSpec,
+    ImageElement,
     RenderedPresentation,
     SlideSpec,
     TextElement,
@@ -153,6 +155,19 @@ class StubRepository:
     async def create_pending(self, *args: Any) -> tuple[dict[str, str], dict[str, str]]:
         return {"id": "presentation"}, {"id": "revision-1"}
 
+    # Return the ownership context required by background visual enrichment.
+    async def get_owned(
+        self,
+        user_id: str,
+        presentation_id: str,
+    ) -> dict[str, Any]:
+        return {
+            "id": presentation_id,
+            "user_id": user_id,
+            "conversation_id": "33333333-3333-4333-8333-333333333333",
+            "trace_id": "55555555-5555-4555-8555-555555555555",
+        }
+
     # Store one canonical revision spec.
     async def set_specification(
         self,
@@ -250,6 +265,19 @@ class StubImageCoordinator:
         return True
 
 
+class StubImageRefinementCoordinator:
+    """Capture source-conditioned edits requested for an attached slide image."""
+
+    # Initialize refinement capture with one deterministic child artifact.
+    def __init__(self) -> None:
+        self.refined: dict[str, Any] | None = None
+
+    # Return a linked image child after capturing the exact refinement request.
+    async def refine(self, **kwargs: Any) -> dict[str, Any]:
+        self.refined = kwargs
+        return {"id": "66666666-6666-4666-8666-666666666666"}
+
+
 # Bypass package inspection here because the renderer boundary has its own real test.
 def _accept_structure(content: bytes, specification: DeckSpec) -> None:
     assert content.startswith(b"PK")
@@ -330,6 +358,99 @@ async def test_progressive_creation_yields_partial_slides_before_ready(
     assert len(events[2]["data"]["specification"]["slides"]) == 2
 
 
+# Verify the worker generates only the highest-priority declared default visual.
+@pytest.mark.asyncio
+async def test_background_creation_adds_default_imagery_progressively(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "backend.services.presentation_service.validate_presentation_structure",
+        _accept_structure,
+    )
+    base = _deck()
+    visual_deck = base.model_copy(
+        update={
+            "slides": [
+                base.slides[0].model_copy(
+                    update={
+                        "visual_prompt": "A calm opening portrait",
+                        "visual_priority": 1,
+                    }
+                ),
+                base.slides[1].model_copy(
+                    update={
+                        "visual_prompt": "A decisive evidence photograph",
+                        "visual_priority": 3,
+                    }
+                ),
+            ]
+        }
+    )
+
+    class VisualAgent(StubAgent):
+        """Yield one complete deck containing model-declared visual briefs."""
+
+        # Expose the visual deck as the worker's final planning checkpoint.
+        async def create_progress(self, prompt: str) -> AsyncIterator[DeckDraft]:
+            yield DeckDraft(visual_deck, 2)
+
+    store = StubStore()
+    store.content["user/image.png"] = b"image-bytes"
+    images = StubImageCoordinator()
+    renderer = StubRenderer()
+    drafts: list[DeckDraft] = []
+    service = PresentationService(
+        VisualAgent(),  # type: ignore[arg-type]
+        renderer,  # type: ignore[arg-type]
+        StubRepository(),  # type: ignore[arg-type]
+        store,  # type: ignore[arg-type]
+        "test",
+        "test-model",
+        StubArtifactRepository(),  # type: ignore[arg-type]
+        images,  # type: ignore[arg-type]
+        auto_image_max=1,
+    )
+
+    # Capture every durable checkpoint exactly as the background job does.
+    async def checkpoint(draft: DeckDraft) -> None:
+        drafts.append(draft)
+
+    ready = await service.execute_pending_create(
+        "user",
+        "presentation",
+        "revision-1",
+        "Create an evidence deck",
+        checkpoint,
+    )
+
+    assert images.generated is not None
+    request = images.generated["request"]
+    assert "decisive evidence photograph" in request.prompt.lower()
+    assert request.width == 1_024
+    assert request.height == 1_024
+    assert images.generated["extra_metadata"] == {
+        "presentation_id": "presentation",
+        "slide_id": "slide-b",
+        "presentation_auto_generated": True,
+    }
+    assert len(drafts) == 2
+    enriched = DeckSpec.model_validate(ready["current_revision"]["specification"])
+    assert not any(
+        isinstance(element, ImageElement) for element in enriched.slides[0].elements
+    )
+    assert any(
+        isinstance(element, ImageElement) for element in enriched.slides[1].elements
+    )
+    assert renderer.images == [
+        {
+            "44444444-4444-4444-8444-444444444444": (
+                "image/png",
+                b"image-bytes",
+            )
+        }
+    ]
+
+
 # Verify a selected-slide image becomes an editable reference and renderer input.
 @pytest.mark.asyncio
 async def test_attach_image_hydrates_owned_bytes_and_preserves_sibling(
@@ -380,6 +501,7 @@ async def test_image_enrichment_uses_slide_context_and_fast_dimensions() -> None
     service = PresentationImageService(
         presentations,  # type: ignore[arg-type]
         images,  # type: ignore[arg-type]
+        StubImageRefinementCoordinator(),  # type: ignore[arg-type]
     )
 
     result = await service.enrich_slide(
@@ -410,6 +532,7 @@ async def test_image_enrichment_keeps_user_prompt_and_adds_context() -> None:
     service = PresentationImageService(
         presentations,  # type: ignore[arg-type]
         images,  # type: ignore[arg-type]
+        StubImageRefinementCoordinator(),  # type: ignore[arg-type]
     )
 
     await service.enrich_slide(
@@ -429,3 +552,67 @@ async def test_image_enrichment_keeps_user_prompt_and_adds_context() -> None:
     assert presentations.attachment is not None
     assert presentations.attachment[3] == "slide-a"
     assert presentations.attachment[4] == "44444444-4444-4444-8444-444444444444"
+
+
+# Existing slide imagery must be refined from its pixels instead of regenerated.
+@pytest.mark.asyncio
+async def test_image_enrichment_refines_an_existing_slide_image_with_flux() -> None:
+    presentations = StubPresentationCoordinator()
+    deck = _deck()
+    source_id = "77777777-7777-4777-8777-777777777777"
+    first_slide = deck.slides[0].model_copy(
+        update={
+            "elements": [
+                *deck.slides[0].elements,
+                ImageElement(
+                    element_id="slide-a-image",
+                    artifact_id=source_id,
+                    alt_text="A white horse",
+                    x=8.45,
+                    y=1.95,
+                    w=4.4,
+                    h=4.4,
+                ),
+            ]
+        }
+    )
+    presentations.get = AsyncMock(
+        return_value={
+            "id": "presentation",
+            "conversation_id": "33333333-3333-4333-8333-333333333333",
+            "current_revision": {
+                "specification": deck.model_copy(
+                    update={"slides": [first_slide, deck.slides[1]]}
+                ).model_dump(mode="json"),
+            },
+        }
+    )
+    images = StubImageCoordinator()
+    refinements = StubImageRefinementCoordinator()
+    service = PresentationImageService(
+        presentations,  # type: ignore[arg-type]
+        images,  # type: ignore[arg-type]
+        refinements,  # type: ignore[arg-type]
+    )
+
+    result = await service.enrich_slide(
+        "user",
+        "presentation",
+        "revision-1",
+        "slide-a",
+        "55555555-5555-4555-8555-555555555555",
+        "make only the horse chestnut brown",
+    )
+
+    assert result["current_revision_id"] == "revision-2"
+    assert images.generated is None
+    assert refinements.refined == {
+        "user_id": "user",
+        "artifact_id": source_id,
+        "feedback": "make only the horse chestnut brown",
+        "conversation_id": "33333333-3333-4333-8333-333333333333",
+        "trace_id": "55555555-5555-4555-8555-555555555555",
+    }
+    assert presentations.attachment is not None
+    assert presentations.attachment[4] == "66666666-6666-4666-8666-666666666666"
+    assert presentations.attachment[6].startswith("Refined the local image")

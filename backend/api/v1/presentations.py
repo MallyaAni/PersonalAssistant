@@ -25,6 +25,7 @@ from backend.models.presentation_api import (
     GeneratePresentationSlideImageBody,
     RevisePresentationSlideBody,
 )
+from backend.services.image_refinement_service import RefinementError
 from backend.services.presentation_repository import PresentationConflictError
 
 router = APIRouter(prefix="/presentations", tags=["presentations"])
@@ -263,6 +264,10 @@ async def generate_presentation_slide_image(
     except PresentationConflictError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except RefinementError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(

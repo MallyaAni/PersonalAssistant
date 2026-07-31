@@ -6,7 +6,33 @@ from concurrent.futures import ThreadPoolExecutor
 import httpx
 import pytest
 
-from backend.core.llm import LMStudioLLM
+from backend.core.llm import (
+    LMStudioLLM,
+    OpenAICompatibleInferenceProvider,
+    create_inference_provider,
+)
+
+
+# Verify the neutral factory selects the current OpenAI-compatible adapter.
+def test_inference_factory_builds_openai_compatible_provider():
+    provider = create_inference_provider(
+        adapter="openai_compatible",
+        base_url="http://127.0.0.1:1234",
+        model="qualified/model",
+    )
+
+    assert isinstance(provider, OpenAICompatibleInferenceProvider)
+    assert provider.model == "qualified/model"
+
+
+# Reject unknown adapters before any request can reach a model host.
+def test_inference_factory_rejects_unknown_adapter():
+    with pytest.raises(ValueError, match="Unsupported inference adapter"):
+        create_inference_provider(
+            adapter="unknown",
+            base_url="http://127.0.0.1:1234",
+            model="qualified/model",
+        )
 
 
 def test_lm_studio_chat_uses_compatible_multiturn_contract():
@@ -82,7 +108,7 @@ def test_lm_studio_chat_rejects_response_without_message_output():
 
         with pytest.raises(
             ValueError,
-            match="LM Studio response did not contain a message output",
+            match="Inference provider did not contain a message output",
         ):
             llm.chat([{"role": "user", "content": "Hello"}])
 
@@ -135,7 +161,7 @@ def test_lm_studio_stream_chat_rejects_truncated_stream():
 
         with pytest.raises(
             ValueError,
-            match=r"LM Studio stream ended before \[DONE\]",
+            match=r"Inference provider stream ended before \[DONE\]",
         ):
             list(llm.stream_chat([{"role": "user", "content": "Hello"}]))
 

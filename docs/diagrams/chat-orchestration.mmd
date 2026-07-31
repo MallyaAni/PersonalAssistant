@@ -9,7 +9,8 @@ flowchart TB
     Presentation --> Progress[Return job ID<br/>and background progress]
 
     Supervisor -->|diagram| Diagram[DiagramAgent]
-    Diagram --> DiagramModel[Qwen 3.5 9B<br/>diagram call]
+    Diagram --> Inference[Provider-neutral<br/>inference adapter]
+    Inference -->|diagram role| DiagramModel[Qwen 3.5 9B<br/>diagram call]
     DiagramModel --> Artifact[Validate and persist<br/>Mermaid artifact]
 
     Supervisor -->|ordinary chat| Memory[MemoryCoordinatorAgent<br/>bounded retrieval]
@@ -20,7 +21,8 @@ flowchart TB
     MCP --> Context
     Search --> Context
 
-    Context --> Main[Qwen 3.5 9B<br/>streaming assistant call]
+    Context --> Inference
+    Inference -->|main role| Main[Qwen 3.5 9B<br/>streaming assistant call]
     Main --> Persist[Persist completed turn<br/>and lifecycle updates]
     Persist --> Stream[SSE response]
 
@@ -35,6 +37,6 @@ flowchart TB
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef failure fill:#fff3cd,stroke:#b78b20,color:#4d3900;
     class User,UI interface;
-    class API,Supervisor,Presentation,Progress,Diagram,Artifact,Memory,Optional,MCP,Search,Context,Persist,Stream application;
+    class API,Supervisor,Presentation,Progress,Diagram,Artifact,Memory,Optional,MCP,Search,Context,Inference,Persist,Stream application;
     class Main,DiagramModel model;
     class Failure failure;

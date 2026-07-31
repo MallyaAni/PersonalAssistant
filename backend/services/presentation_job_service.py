@@ -19,11 +19,13 @@ class PresentationJobService:
         presentations: SQLAlchemyPresentationRepository,
         provider_name: str,
         model_name: str | None,
+        auto_image_max: int = 0,
     ) -> None:
         self.jobs = jobs
         self.presentations = presentations
         self.provider_name = provider_name
         self.model_name = model_name
+        self.auto_image_max = max(0, auto_image_max)
 
     # Queue one deck and return before the presentation subagent starts.
     async def enqueue(
@@ -33,7 +35,7 @@ class PresentationJobService:
         trace_id: str,
         prompt: str,
     ) -> dict[str, Any]:
-        return await self.jobs.enqueue(
+        job = await self.jobs.enqueue(
             user_id,
             conversation_id,
             trace_id,
@@ -42,6 +44,8 @@ class PresentationJobService:
             self.model_name,
             requested_slide_count(prompt),
         )
+        job["auto_image_max"] = self.auto_image_max
+        return job
 
     # Return one job plus its ready presentation when promotion has completed.
     async def get(
@@ -52,6 +56,7 @@ class PresentationJobService:
         job = await self.jobs.get_owned(user_id, job_id)
         if job is None:
             return None
+        job["auto_image_max"] = self.auto_image_max
         job["presentation"] = (
             await self.presentations.get_owned(
                 user_id,

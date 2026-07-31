@@ -6,8 +6,8 @@ import httpx
 from backend.embeddings.base import EmbeddingProvider
 
 
-class LMStudioEmbeddingProvider(EmbeddingProvider):
-    """Generate embeddings through LM Studio's OpenAI-compatible endpoint."""
+class OpenAICompatibleEmbeddingProvider(EmbeddingProvider):
+    """Generate embeddings through an OpenAI-compatible endpoint."""
 
     # Configure one provider and its bounded concurrent request slots.
     def __init__(
@@ -67,7 +67,8 @@ class LMStudioEmbeddingProvider(EmbeddingProvider):
         data = result.get("data") or []
         if len(data) != len(inputs):
             raise ValueError(
-                "LM Studio returned " f"{len(data)} embeddings for {len(inputs)} inputs"
+                "Embedding provider returned "
+                f"{len(data)} embeddings for {len(inputs)} inputs"
             )
         ordered = sorted(data, key=lambda item: item.get("index", 0))
         return [self._validate(item.get("embedding")) for item in ordered]
@@ -75,12 +76,40 @@ class LMStudioEmbeddingProvider(EmbeddingProvider):
     # Ensure one returned embedding matches the configured dimension and type.
     def _validate(self, embedding: Any) -> list[float]:
         if not isinstance(embedding, list) or not embedding:
-            raise ValueError("LM Studio response did not contain an embedding")
+            raise ValueError("Embedding provider did not contain an embedding")
         if len(embedding) != self.dimension:
             raise ValueError(
-                "LM Studio embedding dimension mismatch: "
+                "Embedding provider dimension mismatch: "
                 f"expected {self.dimension}, received {len(embedding)}"
             )
         if not all(isinstance(value, int | float) for value in embedding):
-            raise ValueError("LM Studio embedding contained a non-numeric value")
+            raise ValueError("Embedding provider contained a non-numeric value")
         return [float(value) for value in embedding]
+
+
+# Construct an embedding adapter without exposing its wire protocol to services.
+def create_embedding_provider(
+    adapter: str,
+    base_url: str,
+    model: str,
+    dimension: int,
+    api_key: str | None = None,
+    timeout_seconds: float = 120.0,
+    max_concurrency: int = 1,
+    client: httpx.Client | None = None,
+) -> EmbeddingProvider:
+    if adapter != "openai_compatible":
+        raise ValueError(f"Unsupported embedding inference adapter: {adapter}")
+    return OpenAICompatibleEmbeddingProvider(
+        base_url=base_url,
+        model=model,
+        dimension=dimension,
+        api_key=api_key,
+        timeout_seconds=timeout_seconds,
+        max_concurrency=max_concurrency,
+        client=client,
+    )
+
+
+# Preserve the established import while dependency assembly uses the neutral name.
+LMStudioEmbeddingProvider = OpenAICompatibleEmbeddingProvider

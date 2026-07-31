@@ -139,6 +139,8 @@ class SlideSpec(PresentationModel):
     )
     title: str = Field(min_length=1, max_length=200)
     purpose: str = Field(min_length=1, max_length=500)
+    visual_prompt: str | None = Field(default=None, max_length=500)
+    visual_priority: int = Field(default=0, ge=0, le=3)
     background_color: str | None = Field(default=None, pattern=r"^[0-9A-Fa-f]{6}$")
     notes: str = Field(default="", max_length=8_000)
     elements: list[SlideElement] = Field(min_length=1, max_length=80)

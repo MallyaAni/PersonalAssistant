@@ -41,6 +41,11 @@ interface PresentationPanelProps {
   conversationId: string;
 }
 
+interface PresentationProgress {
+  percent: number;
+  label: string;
+}
+
 interface SlideCanvasProps {
   slide: PresentationSlide;
   theme: PresentationTheme;
@@ -60,6 +65,51 @@ const elementPosition = (element: PresentationElement) => ({
   width: `${(element.w / SLIDE_WIDTH) * 100}%`,
   height: `${(element.h / SLIDE_HEIGHT) * 100}%`,
 })
+
+// Convert persisted slide and image checkpoints into honest stage-based progress.
+const presentationProgress = (
+  draft: PresentationDeckSpec | null,
+  expectedSlides: number,
+  autoImageMax: number,
+): PresentationProgress => {
+  if (!draft) {
+    return { percent: 8, label: 'Planning the deck outline' }
+  }
+  const completedSlides = draft.slides.length
+  const totalSlides = Math.max(expectedSlides, completedSlides, 1)
+  if (completedSlides < totalSlides) {
+    return {
+      percent: Math.min(
+        64,
+        10 + Math.round((completedSlides / totalSlides) * 54),
+      ),
+      label: `Planning slide ${completedSlides + 1} of ${totalSlides}`,
+    }
+  }
+  const visualCandidates = draft.slides.filter(
+    slide => Boolean(slide.visual_prompt) && slide.visual_priority > 0,
+  ).length
+  const expectedVisuals = Math.min(
+    Math.max(autoImageMax, 0),
+    visualCandidates,
+  )
+  const completedVisuals = draft.slides.reduce(
+    (count, slide) => count + (
+      slide.elements.some(element => element.type === 'image') ? 1 : 0
+    ),
+    0,
+  )
+  if (expectedVisuals > 0 && completedVisuals < expectedVisuals) {
+    return {
+      percent: 65 + Math.round((completedVisuals / expectedVisuals) * 24),
+      label: `Generating visual ${completedVisuals + 1} of ${expectedVisuals}`,
+    }
+  }
+  return {
+    percent: 92,
+    label: 'Rendering and validating the editable PowerPoint',
+  }
+}
 
 interface OwnedSlideImageProps {
   userId?: string;
@@ -281,6 +331,7 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
   const [activeJobId, setActiveJobId] = useState<string | null>(null)
   const [draftSpecification, setDraftSpecification] = useState<PresentationDeckSpec | null>(null)
   const [expectedDraftSlides, setExpectedDraftSlides] = useState(0)
+  const [autoImageMax, setAutoImageMax] = useState(0)
   const [isRevising, setIsRevising] = useState(false)
   const [imagePrompt, setImagePrompt] = useState('')
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
@@ -307,6 +358,18 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
       || specification?.slides[0]
       || null,
     [selectedSlideId, specification],
+  )
+  const selectedSlideImage = selectedSlide?.elements.find(
+    element => element.type === 'image',
+  )
+  const failedPresentations = presentations.filter(
+    presentation => presentation.current_revision === null
+      && presentation.revisions[0]?.status === 'failed',
+  )
+  const creationProgress = presentationProgress(
+    draftSpecification,
+    expectedDraftSlides,
+    autoImageMax,
   )
   // Reconstruct the selected slide's persisted feedback conversation from revisions.
   const slideFollowups = useMemo(
@@ -343,6 +406,7 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
             activeJobId,
             controller.signal,
           )
+          setAutoImageMax(job.auto_image_max)
           if (job.draft_specification) {
             setDraftSpecification(job.draft_specification)
             setExpectedDraftSlides(
@@ -391,6 +455,7 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
         if (!controller.signal.aborted) {
           setDraftSpecification(null)
           setExpectedDraftSlides(0)
+          setAutoImageMax(0)
           setIsCreating(false)
         }
       }
@@ -469,12 +534,14 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
       )
       localStorage.setItem(presentationJobStorageKey(userId), queued.id)
       setActiveJobId(queued.id)
+      setAutoImageMax(queued.auto_image_max)
       setPrompt('')
       setNotice('PresentationAgent is working in the background. You can continue chatting.')
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : 'Unable to create the presentation.')
       setDraftSpecification(null)
       setExpectedDraftSlides(0)
+      setAutoImageMax(0)
       setIsCreating(false)
     }
   }
@@ -539,7 +606,7 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
     }
   }
 
-  // Generate optional local imagery for only the selected ready slide.
+  // Generate initial imagery or refine the selected slide's existing image.
   const addSlideImage = async () => {
     const revisionId = active?.current_revision_id
     if (
@@ -565,9 +632,9 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
       )))
       setSelectedSlideId(selectedSlide.slide_id)
       setImagePrompt('')
-      setNotice(
-        `Local image added in revision ${revised.current_revision?.revision_number}.`,
-      )
+      setNotice(selectedSlideImage
+        ? `Slide image refined with FLUX in revision ${revised.current_revision?.revision_number}.`
+        : `Local image added in revision ${revised.current_revision?.revision_number}.`)
     } catch (imageError) {
       setError(
         imageError instanceof Error
@@ -600,19 +667,56 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
     }
   }
 
-  // Delete the active deck only after the user confirms the destructive action.
-  const removeActivePresentation = async () => {
-    if (!active || !window.confirm(`Delete "${active.title}" and all revisions?`)) return
+  // Delete any owned deck after confirmation, including failed decks without slides.
+  const removePresentation = async (presentation: PresentationRecord) => {
+    if (!window.confirm(`Delete "${presentation.title}" and all revisions?`)) return
     setError('')
     try {
-      await deletePresentation(userId, active.id)
-      setPresentations(current => current.filter(item => item.id !== active.id))
-      setActive(null)
-      setSelectedSlideId('')
+      await deletePresentation(userId, presentation.id)
+      setPresentations(current => current.filter(item => item.id !== presentation.id))
+      if (active?.id === presentation.id) {
+        setActive(null)
+        setSelectedSlideId('')
+      }
       setNotice('Presentation deleted.')
       setRefreshKey(key => key + 1)
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : 'Unable to delete the presentation.')
+    }
+  }
+
+  // Delete only terminal failed decks while preserving ready and pending work.
+  const removeFailedPresentations = async () => {
+    if (
+      failedPresentations.length === 0
+      || !window.confirm(
+        `Delete ${failedPresentations.length} failed presentation${failedPresentations.length === 1 ? '' : 's'}?`,
+      )
+    ) return
+    setError('')
+    try {
+      await Promise.all(
+        failedPresentations.map(
+          presentation => deletePresentation(userId, presentation.id),
+        ),
+      )
+      const failedIds = new Set(
+        failedPresentations.map(presentation => presentation.id),
+      )
+      setPresentations(current => current.filter(item => !failedIds.has(item.id)))
+      if (active && failedIds.has(active.id)) {
+        setActive(null)
+        setSelectedSlideId('')
+      }
+      setNotice(`${failedIds.size} failed presentation${failedIds.size === 1 ? '' : 's'} deleted.`)
+      setRefreshKey(key => key + 1)
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : 'Unable to delete failed presentations.',
+      )
+      setRefreshKey(key => key + 1)
     }
   }
 
@@ -677,7 +781,7 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
           </div>
         </div>
 
-        {isCreating && draftSpecification && (
+        {isCreating && (
           <section
             aria-label="Generating presentation preview"
             className="mb-6 rounded-3xl border border-[#0071e3]/20 bg-white p-4 shadow-sm md:p-6"
@@ -687,35 +791,64 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                 <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#0071e3]">
                   Building your deck
                 </p>
-                <h3 className="mt-1 text-xl font-semibold">{draftSpecification.title}</h3>
+                <h3 className="mt-1 text-xl font-semibold">
+                  {draftSpecification?.title || 'Preparing your presentation'}
+                </h3>
               </div>
-              <p role="status" className="text-sm text-[#6e6e73]">
-                {draftSpecification.slides.length} of {expectedDraftSlides} slides planned
+              <p role="status" className="text-sm font-medium text-[#6e6e73]">
+                {creationProgress.percent}%
               </p>
             </div>
-            <div className="rounded-2xl bg-[#e8e8ed] p-3 shadow-inner">
-              <SlideCanvas
-                slide={draftSpecification.slides[draftSpecification.slides.length - 1]}
-                theme={draftSpecification.theme}
+            <div
+              role="progressbar"
+              aria-label="Presentation completion"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={creationProgress.percent}
+              aria-valuetext={creationProgress.label}
+              className="h-2 overflow-hidden rounded-full bg-[#e8e8ed]"
+            >
+              <div
+                className="h-full rounded-full bg-[#0071e3] transition-[width] duration-500 ease-out"
+                style={{ width: `${creationProgress.percent}%` }}
               />
             </div>
-            <div
-              className="mt-4 flex gap-3 overflow-x-auto pb-2"
-              aria-label="Generated slide previews"
-            >
-              {draftSpecification.slides.map((slide, index) => (
-                <div
-                  key={slide.slide_id}
-                  aria-label={`Generated slide ${index + 1}: ${slide.title}`}
-                  className="w-36 flex-none overflow-hidden rounded-xl border border-black/10 bg-white p-1"
-                >
-                  <SlideCanvas slide={slide} theme={draftSpecification.theme} compact />
-                  <span className="block truncate px-1 py-1 text-left text-[11px] text-[#6e6e73]">
-                    {index + 1}. {slide.title}
-                  </span>
+            <p className="mt-2 text-sm text-[#6e6e73]">{creationProgress.label}</p>
+            {draftSpecification ? (
+              <>
+                <div className="mt-4 rounded-2xl bg-[#e8e8ed] p-3 shadow-inner">
+                  <SlideCanvas
+                    slide={draftSpecification.slides[draftSpecification.slides.length - 1]}
+                    theme={draftSpecification.theme}
+                    userId={userId}
+                  />
                 </div>
-              ))}
-            </div>
+                <div
+                  className="mt-4 flex gap-3 overflow-x-auto pb-2"
+                  aria-label="Generated slide previews"
+                >
+                  {draftSpecification.slides.map((slide, index) => (
+                    <div
+                      key={slide.slide_id}
+                      aria-label={`Generated slide ${index + 1}: ${slide.title}`}
+                      className="w-36 flex-none overflow-hidden rounded-xl border border-black/10 bg-white p-1"
+                    >
+                      <SlideCanvas
+                        slide={slide}
+                        theme={draftSpecification.theme}
+                        userId={userId}
+                        compact
+                      />
+                      <span className="block truncate px-1 py-1 text-left text-[11px] text-[#6e6e73]">
+                        {index + 1}. {slide.title}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="mt-4 h-40 animate-pulse rounded-2xl bg-[#f5f5f7]" />
+            )}
           </section>
         )}
 
@@ -729,21 +862,53 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
         ) : (
           <div className="grid min-h-[650px] gap-5 xl:grid-cols-[230px_minmax(0,1fr)_300px]">
             <aside className="rounded-3xl border border-black/[0.06] bg-white p-3">
-              <p className="px-2 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#86868b]">Decks</p>
-              <div className="space-y-1">
-                {presentations.map(presentation => (
+              <div className="flex items-center justify-between gap-2 px-2 py-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#86868b]">Decks</p>
+                {failedPresentations.length > 0 && (
                   <button
-                    key={presentation.id}
                     type="button"
-                    onClick={() => void openPresentation(presentation.id)}
-                    className={`w-full rounded-2xl px-3 py-3 text-left ${active?.id === presentation.id ? 'bg-[#f5f5f7]' : 'hover:bg-[#fbfbfd]'}`}
+                    aria-label={`Delete all ${failedPresentations.length} failed presentations`}
+                    onClick={() => void removeFailedPresentations()}
+                    className="rounded-full bg-[#fff1f0] px-2.5 py-1 text-[11px] font-medium text-[#c9342f] hover:bg-[#ffe5e2]"
                   >
-                    <span className="block truncate text-sm font-medium">{presentation.title}</span>
-                    <span className="mt-1 block text-xs text-[#86868b]">
-                      Revision {presentation.current_revision?.revision_number || '—'}
-                    </span>
+                    Clear failed ({failedPresentations.length})
                   </button>
-                ))}
+                )}
+              </div>
+              <div className="space-y-1">
+                {presentations.map(presentation => {
+                  const failed = presentation.current_revision === null
+                    && presentation.revisions[0]?.status === 'failed'
+                  return (
+                    <div
+                      key={presentation.id}
+                      className={`flex items-center gap-1 rounded-2xl pr-2 ${active?.id === presentation.id ? 'bg-[#f5f5f7]' : 'hover:bg-[#fbfbfd]'}`}
+                    >
+                    <button
+                      type="button"
+                      onClick={() => void openPresentation(presentation.id)}
+                      className="min-w-0 flex-1 px-3 py-3 text-left"
+                    >
+                      <span className="block truncate text-sm font-medium">{presentation.title}</span>
+                      <span className={`mt-1 block text-xs ${failed ? 'font-medium text-[#c9342f]' : 'text-[#86868b]'}`}>
+                        {presentation.current_revision
+                          ? `Revision ${presentation.current_revision.revision_number}`
+                          : failed
+                            ? 'Failed · no completed slides'
+                            : 'No completed slides'}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Delete presentation: ${presentation.title}`}
+                      onClick={() => void removePresentation(presentation)}
+                      className="flex h-8 flex-none items-center gap-1 rounded-full border border-[#c9342f]/20 px-2 text-[11px] font-medium text-[#c9342f] hover:bg-[#fff1f0]"
+                    >
+                      <Trash2 size={13} /> Delete
+                    </button>
+                    </div>
+                  )
+                })}
               </div>
             </aside>
 
@@ -770,7 +935,7 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                     <button
                       type="button"
                       aria-label="Delete presentation"
-                      onClick={() => void removeActivePresentation()}
+                      onClick={() => void removePresentation(active)}
                       className="flex h-9 w-9 items-center justify-center rounded-full border border-black/10 text-[#c9342f]"
                     >
                       <Trash2 size={15} />
@@ -818,6 +983,26 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                       </span>
                     </button>
                   ))}
+                </div>
+              </main>
+            ) : active ? (
+              <main className="flex items-center justify-center rounded-3xl border border-black/[0.06] bg-white p-10">
+                <div className="max-w-md text-center">
+                  <PresentationIcon className="mx-auto text-[#86868b]" />
+                  <h3 className="mt-3 text-lg font-semibold">{active.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-[#6e6e73]">
+                    {active.revisions[0]?.status === 'failed'
+                      ? 'This presentation failed before any slides were completed.'
+                      : 'This presentation has no completed slides yet.'}
+                  </p>
+                  <button
+                    type="button"
+                    aria-label="Delete incomplete presentation"
+                    onClick={() => void removePresentation(active)}
+                    className="mt-5 inline-flex h-9 items-center gap-2 rounded-full border border-[#c9342f]/20 px-4 text-xs font-medium text-[#c9342f] hover:bg-[#fff1f0]"
+                  >
+                    <Trash2 size={14} /> Delete presentation
+                  </button>
                 </div>
               </main>
             ) : (
@@ -919,33 +1104,38 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                   <div className="mt-7 border-t border-black/[0.06] pt-5">
                     <div className="flex items-center gap-2">
                       <ImagePlus size={16} className="text-[#0071e3]" />
-                      <p className="text-sm font-semibold">Add local imagery</p>
+                      <p className="text-sm font-semibold">Slide imagery</p>
                     </div>
                     <p className="mt-2 text-xs leading-5 text-[#6e6e73]">
-                      Optional. The deck stays usable while the local image model
-                      handles this selected slide.
+                      {selectedSlideImage
+                        ? 'Describe one change. FLUX edits the current pixels and preserves the rest of the slide.'
+                        : 'Optional. HiDream creates the first image while the deck remains usable.'}
                     </p>
                     <textarea
                       aria-label="Slide image prompt"
                       value={imagePrompt}
                       onChange={event => setImagePrompt(event.target.value)}
-                      placeholder="Optional visual direction; leave blank to use the slide content."
+                      placeholder={selectedSlideImage
+                        ? 'Example: Make only the horse chestnut brown.'
+                        : 'Optional visual direction; leave blank to use the slide content.'}
                       className="mt-3 min-h-24 w-full resize-y rounded-2xl border border-black/10 bg-[#fbfbfd] p-3 text-sm outline-none focus:border-black/20"
                       disabled={isGeneratingImage}
                     />
                     <button
                       type="button"
-                      aria-label="Generate slide image"
+                      aria-label={selectedSlideImage
+                        ? 'Refine slide image'
+                        : 'Generate slide image'}
                       onClick={() => void addSlideImage()}
-                      disabled={isGeneratingImage}
+                      disabled={isGeneratingImage || Boolean(selectedSlideImage && !imagePrompt.trim())}
                       className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-full border border-[#0071e3]/25 bg-[#eef8ff] px-4 text-sm font-medium text-[#0066cc] disabled:text-[#86868b]"
                     >
                       {isGeneratingImage
                         ? <Loader2 size={16} className="animate-spin" />
                         : <ImagePlus size={16} />}
                       {isGeneratingImage
-                        ? 'Generating locally…'
-                        : 'Generate slide image'}
+                        ? (selectedSlideImage ? 'Refining with FLUX…' : 'Generating with HiDream…')
+                        : (selectedSlideImage ? 'Refine slide image' : 'Generate slide image')}
                     </button>
                   </div>
 

@@ -13,6 +13,7 @@ flowchart TB
     Short[Short term<br/>LLM context window<br/>Session working memory<br/>Semantic cache]
     Long[Long term<br/>Procedural / workflow · Toolbox<br/>Entity · Knowledge base · Persona<br/>Semantic · Episodic<br/>Summaries · Conversations]
 
+    Inference[Provider-neutral<br/>inference adapter]
     TextEmbed[Nomic text embedding]
     Database[(PostgreSQL and pgvector)]
     Maintenance[Retention, re-embedding,<br/>health, export and delete]
@@ -27,8 +28,10 @@ flowchart TB
     Coordinator --> Retrieval
     Short --> Retrieval
     Long --> Retrieval
-    Retrieval --> Context --> Main
-    Services --> TextEmbed --> Database
+    Retrieval --> Context --> Inference
+    Inference -->|main role| Main
+    Services --> Inference
+    Inference -->|embedding role| TextEmbed --> Database
     Short -->|expiring records| Database
     Long -->|durable records| Database
     Maintenance --> Database
@@ -38,6 +41,6 @@ flowchart TB
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     class Chat,UI interface;
-    class Coordinator,Services,Retrieval,Context,Maintenance application;
+    class Coordinator,Services,Retrieval,Context,Inference,Maintenance application;
     class Short,Long,Database data;
     class TextEmbed,Main model;

@@ -1,10 +1,13 @@
 import asyncio
+import logging
 import re
+import secrets
 from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any
 from uuid import UUID
 
 from backend.agents.presentation import PresentationAgent
+from backend.artifacts.types import ImageGenerationRequest
 from backend.core.interfaces import BinaryArtifactRepository, BinaryArtifactStore
 from backend.presentations.planner import DeckDraft
 from backend.presentations.renderer import PptxGenJSRenderer
@@ -16,7 +19,10 @@ from backend.presentations.types import (
     TextElement,
 )
 from backend.presentations.validation import validate_presentation_structure
+from backend.services.image_artifact_service import ImageArtifactService
 from backend.services.presentation_repository import SQLAlchemyPresentationRepository
+
+logger = logging.getLogger(__name__)
 
 
 class PresentationService:
@@ -32,6 +38,9 @@ class PresentationService:
         provider_name: str,
         model_name: str | None,
         artifact_repository: BinaryArtifactRepository | None = None,
+        image_service: ImageArtifactService | None = None,
+        auto_image_max: int = 0,
+        auto_image_size: int = 1_024,
     ) -> None:
         self.agent = agent
         self.renderer = renderer
@@ -40,6 +49,9 @@ class PresentationService:
         self.provider_name = provider_name
         self.model_name = model_name
         self.artifact_repository = artifact_repository
+        self.image_service = image_service
+        self.auto_image_max = auto_image_max
+        self.auto_image_size = auto_image_size
 
     # Plan, compile, validate, and persist one initial ready presentation.
     async def create(
@@ -156,17 +168,119 @@ class PresentationService:
         on_draft: Callable[[DeckDraft], Awaitable[None]],
     ) -> dict[str, Any]:
         specification: DeckSpec | None = None
-        async for draft in self.agent.create_progress(prompt):
-            specification = draft.specification
-            await on_draft(draft)
-        if specification is None:
-            raise ValueError("Presentation provider returned no slides")
-        return await self._complete_revision(
-            user_id,
-            presentation_id,
-            revision_id,
-            specification,
+        generated_artifact_ids: list[str] = []
+        try:
+            async for draft in self.agent.create_progress(prompt):
+                specification = draft.specification
+                await on_draft(draft)
+            if specification is None:
+                raise ValueError("Presentation provider returned no slides")
+            if self.image_service is not None and self.auto_image_max > 0:
+                presentation = await self.repository.get_owned(
+                    user_id,
+                    presentation_id,
+                )
+                if presentation is None:
+                    raise LookupError("Presentation was not found")
+                (
+                    specification,
+                    generated_artifact_ids,
+                ) = await self._enrich_default_images(
+                    user_id,
+                    presentation_id,
+                    str(presentation["conversation_id"]),
+                    str(presentation["trace_id"]),
+                    specification,
+                    on_draft,
+                )
+            return await self._complete_revision(
+                user_id,
+                presentation_id,
+                revision_id,
+                specification,
+            )
+        except Exception:
+            if self.image_service is not None:
+                for artifact_id in generated_artifact_ids:
+                    await self.image_service.delete_owned(user_id, artifact_id)
+            raise
+
+    # Generate the highest-value declared visuals and checkpoint each visible result.
+    async def _enrich_default_images(
+        self,
+        user_id: str,
+        presentation_id: str,
+        conversation_id: str,
+        trace_id: str,
+        specification: DeckSpec,
+        on_draft: Callable[[DeckDraft], Awaitable[None]],
+    ) -> tuple[DeckSpec, list[str]]:
+        if self.image_service is None:
+            return specification, []
+        candidates = [
+            (index, slide)
+            for index, slide in enumerate(specification.slides)
+            if slide.visual_prompt
+            and slide.visual_priority > 0
+            and not any(isinstance(element, ImageElement) for element in slide.elements)
+        ]
+        candidates.sort(
+            key=lambda candidate: (-candidate[1].visual_priority, candidate[0])
         )
+        generated_artifact_ids: list[str] = []
+        enriched = specification
+        for _, planned_slide in candidates[: self.auto_image_max]:
+            visual_prompt = planned_slide.visual_prompt
+            if not visual_prompt:
+                continue
+            image_prompt = (
+                f"{visual_prompt}. Editorial presentation image for "
+                f"the slide '{planned_slide.title}' in a presentation about "
+                f"{specification.title}. {planned_slide.purpose}. Clean composition, "
+                "realistic detail, no text, no labels, no logos, no watermark."
+            )
+            try:
+                artifact = await self.image_service.generate(
+                    user_id=user_id,
+                    conversation_id=conversation_id,
+                    trace_id=trace_id,
+                    request=ImageGenerationRequest(
+                        prompt=image_prompt,
+                        width=self.auto_image_size,
+                        height=self.auto_image_size,
+                        seed=secrets.randbelow(2**63),
+                    ),
+                    extra_metadata={
+                        "presentation_id": presentation_id,
+                        "slide_id": planned_slide.slide_id,
+                        "presentation_auto_generated": True,
+                    },
+                )
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                logger.warning(
+                    "presentation_auto_image_failed",
+                    extra={"slide_id": planned_slide.slide_id},
+                    exc_info=True,
+                )
+                continue
+            artifact_id = str(artifact["id"])
+            generated_artifact_ids.append(artifact_id)
+            alt_text = (f"{visual_prompt[:320]}. " f"Visual for {planned_slide.title}")[
+                :400
+            ]
+            slides = [
+                (
+                    _attach_image_to_slide(slide, artifact_id, alt_text)
+                    if slide.slide_id == planned_slide.slide_id
+                    else slide
+                )
+                for slide in enriched.slides
+            ]
+            enriched = enriched.model_copy(update={"slides": slides})
+            await on_draft(DeckDraft(enriched, len(specification.slides)))
+        return enriched, generated_artifact_ids
 
     # Replace one selected slide while preserving every sibling slide byte-for-byte.
     async def revise_slide(

@@ -190,6 +190,8 @@ export interface PresentationSlide {
   slide_id: string;
   title: string;
   purpose: string;
+  visual_prompt: string | null;
+  visual_priority: number;
   background_color: string | null;
   notes: string;
   elements: PresentationElement[];
@@ -251,6 +253,7 @@ export interface PresentationJob {
   user_id: string;
   status: 'queued' | 'running' | 'ready' | 'failed' | 'cancelled';
   expected_slide_count: number | null;
+  auto_image_max: number;
   attempt_count: number;
   cancel_requested: boolean;
   error_code: string | null;
@@ -915,7 +918,7 @@ export async function generateImage(
   return artifact
 }
 
-// Regenerate a generated image from feedback, returning a new linked revision.
+// Refine a generated or uploaded image, returning a new linked revision.
 export async function refineImage(
   userId: string,
   artifactId: string,

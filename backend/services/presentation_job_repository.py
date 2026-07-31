@@ -31,11 +31,12 @@ class SQLAlchemyPresentationJobRepository:
         model: str | None,
         expected_slide_count: int | None,
     ) -> dict[str, Any]:
+        pending_title = " ".join(prompt.split())[:100] or "Untitled presentation"
         presentation = Presentation(
             user_id=user_id,
             conversation_id=uuid.UUID(conversation_id),
             trace_id=uuid.UUID(trace_id),
-            title="Untitled presentation",
+            title=pending_title,
         )
         self.session.add(presentation)
         await self.session.flush()

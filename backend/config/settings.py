@@ -21,7 +21,10 @@ class Settings(BaseSettings):
     DATABASE_POOL_TIMEOUT_SECONDS: float = Field(default=30.0, gt=0, le=300)
     DATABASE_USE_NULL_POOL: bool = False
 
-    # AI / LLM (LM Studio OpenAI-compatible chat completions API)
+    # Provider-neutral inference selects a wire adapter independently from each
+    # role's endpoint and model. LM Studio remains the qualified local runtime.
+    INFERENCE_ADAPTER: Literal["openai_compatible"] = "openai_compatible"
+    INFERENCE_PROVIDER_NAME: str = "lm_studio"
     LLM_BASE_URL: str = "http://127.0.0.1:1234"
     LLM_MODEL: str = "google/gemma-4-12b"
     LLM_API_KEY: str | None = Field(None, alias="LLM_API_KEY")
@@ -31,23 +34,29 @@ class Settings(BaseSettings):
     ] = "none"
     # Role-specific models fall back to the legacy LLM settings so existing
     # installations keep working while operators qualify specialized models.
+    MAIN_INFERENCE_ADAPTER: Literal["", "openai_compatible"] = ""
     MAIN_LLM_BASE_URL: str = ""
     MAIN_LLM_MODEL: str = ""
     MAIN_LLM_REASONING_EFFORT: Literal[
         "none", "minimal", "low", "medium", "high", "xhigh"
     ] = "none"
+    PRESENTATION_INFERENCE_ADAPTER: Literal["", "openai_compatible"] = ""
     PRESENTATION_LLM_BASE_URL: str = ""
     PRESENTATION_LLM_MODEL: str = ""
     PRESENTATION_LLM_REASONING_EFFORT: Literal[
         "none", "minimal", "low", "medium", "high", "xhigh"
     ] = "none"
+    DIAGRAM_INFERENCE_ADAPTER: Literal["", "openai_compatible"] = ""
     DIAGRAM_LLM_BASE_URL: str = ""
     DIAGRAM_LLM_MODEL: str = ""
     DIAGRAM_LLM_REASONING_EFFORT: Literal[
         "none", "minimal", "low", "medium", "high", "xhigh"
     ] = "none"
 
-    # Semantic memory embeddings (LM Studio OpenAI-compatible endpoint)
+    VISION_INFERENCE_ADAPTER: Literal["", "openai_compatible"] = ""
+    EMBEDDING_INFERENCE_ADAPTER: Literal["", "openai_compatible"] = ""
+    # Semantic memory embeddings use their own replaceable role configuration.
+    EMBEDDING_BASE_URL: str = ""
     EMBEDDING_MODEL: str = "text-embedding-nomic-embed-text-v1.5"
     EMBEDDING_MODEL_VERSION: str = "nomic-embed-text-v1.5"
     EMBEDDING_DIMENSION: int = Field(default=768, ge=1, le=2_000)
@@ -102,6 +111,12 @@ class Settings(BaseSettings):
     PRESENTATION_JOB_POLL_SECONDS: float = Field(default=0.5, ge=0.1, le=30)
     PRESENTATION_JOB_LEASE_SECONDS: float = Field(default=300, ge=30, le=3_600)
     PRESENTATION_JOB_HEARTBEAT_SECONDS: float = Field(default=30, ge=5, le=300)
+    # Enrich only the most valuable model-declared slides so default imagery
+    # improves the deck without serially generating an image for every slide.
+    PRESENTATION_AUTO_IMAGE_MAX: int = Field(default=1, ge=0, le=10)
+    # Keep slide imagery sharp without paying the fourfold pixel cost of 2048px
+    # generation on the current single-GPU workstation.
+    PRESENTATION_AUTO_IMAGE_SIZE: int = Field(default=1_024, ge=512, le=2_048)
     REDIS_URL: str = "redis://127.0.0.1:6379/0"
     MODEL_GATE_ENABLED: bool = False
     MODEL_GATE_LEASE_SECONDS: float = Field(default=300, ge=30, le=900)
@@ -117,7 +132,11 @@ class Settings(BaseSettings):
         le=200 * 1024 * 1024,
     )
     IMAGE_MAX_PIXELS: int = Field(default=20_000_000, ge=4096, le=100_000_000)
+    VISION_LLM_BASE_URL: str = ""
     VISION_MODEL: str = "google/gemma-4-12b"
+    VISION_LLM_REASONING_EFFORT: Literal[
+        "none", "minimal", "low", "medium", "high", "xhigh"
+    ] = "none"
     VISION_MAX_TOKENS: int = Field(default=512, ge=32, le=4096)
     # Prior question/answer pairs replayed to the VLM alongside the anchored image.
     VISION_THREAD_CONTEXT_TURNS: int = Field(default=8, ge=1, le=50)

@@ -21,9 +21,10 @@ flowchart TB
 
     subgraph LocalAI[Replaceable local AI and rendering]
         ModelGate[Redis model-priority gate]
+        Inference[Provider-neutral<br/>inference adapters]
         LMStudio[LM Studio<br/>Qwen: chat and diagrams<br/>Gemma: presentations and vision]
         Media[ComfyUI: HiDream and FLUX<br/>PptxGenJS and LibreOffice]
-        Embeddings[Nomic text and vision embeddings]
+        VisionEmbed[Nomic vision embedding<br/>ONNX on CPU]
     end
 
     subgraph Storage[Private local storage]
@@ -49,11 +50,13 @@ flowchart TB
 
     Conversation --> ModelGate
     Presentation --> ModelGate
-    ModelGate --> LMStudio
-    Visual --> LMStudio
+    ModelGate --> Inference
+    Visual --> Inference
+    Memory --> Inference
+    Inference --> LMStudio
     Visual --> Media
+    Visual --> VisionEmbed
     Presentation --> Media
-    Memory --> Embeddings
 
     Conversation --> Repositories
     Presentation --> Repositories
@@ -66,5 +69,5 @@ flowchart TB
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450,stroke-width:1.5px;
     class User,Frontend,API interface;
     class Supervisor,Conversation,Presentation,Memory,Visual,Tools application;
-    class ModelGate,LMStudio,Media,Embeddings,Repositories,Database,Files infrastructure;
+    class ModelGate,Inference,LMStudio,Media,VisionEmbed,Repositories,Database,Files infrastructure;
     class Integrations external;

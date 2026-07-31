@@ -8,22 +8,27 @@ flowchart TB
     API --> Ownership[Ownership, limits<br/>and integrity checks]
 
     subgraph Capabilities[Visual capabilities]
-        Diagram[DiagramAgent<br/>Qwen 3.5 9B]
+        Diagram[DiagramAgent]
         Image{New image<br/>or source edit?}
-        Vision[Image analysis and follow-up<br/>Gemma 4 12B]
+        Vision[Image analysis<br/>and follow-up]
+        Inference[Provider-neutral<br/>inference adapters]
     end
 
     Ownership --> Diagram
     Ownership --> Image
     Ownership --> Vision
 
-    Diagram --> Mermaid[Validated Mermaid]
+    Diagram --> Inference
+    Vision --> Inference
+    Inference -->|diagram role| Qwen[Qwen 3.5 9B]
+    Inference -->|vision role| Gemma[Gemma 4 12B]
+    Qwen --> Mermaid[Validated Mermaid]
     Image -->|new| HiDream[HiDream via ComfyUI]
     Image -->|edit| Flux[FLUX.2 Klein via ComfyUI]
     HiDream --> Pixels[Validated image bytes]
     Flux --> Pixels
 
-    Vision --> Analysis[Grounded analysis<br/>or threaded answer]
+    Gemma --> Analysis[Grounded analysis<br/>or threaded answer]
 
     Mermaid --> Repository[Owned artifact repository]
     Pixels --> Repository
@@ -39,6 +44,6 @@ flowchart TB
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
     class User,UI,MCP interface;
-    class API,Ownership,Diagram,Image,Vision,Mermaid,Pixels,Analysis,Repository application;
+    class API,Ownership,Diagram,Image,Vision,Inference,Mermaid,Pixels,Analysis,Repository application;
     class Storage data;
-    class HiDream,Flux,VisionEmbed external;
+    class Qwen,Gemma,HiDream,Flux,VisionEmbed external;

@@ -9,6 +9,9 @@ The repository contains:
 - Docker Compose definitions for PostgreSQL with pgvector, Redis, the backend,
   frontend, local capability FastMCP sidecar, presentation worker, and
   presentation renderer;
+- an OpenAI-compatible, provider-neutral inference boundary with independently
+  configurable text, vision, and embedding roles; the qualified local profile
+  currently runs through LM Studio;
 - a role-configurable model-backed conversation path, PostgreSQL/pgvector personal memory, and focused LangGraph supervisor, assistant, diagram-agent, and presentation-agent boundaries;
 - main-model-native MCP tool selection over a semantic live-validated shortlist,
   guarded execution, visible chat status, and a read-only internet-search MCP
@@ -16,8 +19,9 @@ The repository contains:
   local quota protection and provider-attributed sources;
 - an explicit chat-to-Mermaid diagram path with user-scoped PostgreSQL artifact persistence and strict in-browser SVG rendering;
 - free local HiDream/ComfyUI image generation, four-step FLUX.2 Klein
-  source-aware editing, and validated Gemma vision analysis in the chat
-  composer, with natural-language creation intent, immutable edit lineage,
+  source-aware editing of generated or uploaded images, and validated Gemma
+  vision analysis in the chat composer, with natural-language creation intent,
+  immutable edit lineage,
   in-place active revisions, grounded historical questions, guarded
   referenced-image web comparison, private previews, retry/cancel, reload
   restoration, history, download, owned deletion, and threaded followup
@@ -25,10 +29,14 @@ The repository contains:
 - a clickable Agent memory map whose bounded store details load on demand through the owned export boundary;
 - a focused presentation subsystem where a separately qualified specialist model produces compact slide content,
   a durable worker executes the presentation LangGraph independently of chat,
-  application code compiles strict editable deck specifications, PptxGenJS
+  application code compiles strict editable deck specifications and ranked
+  visual briefs, the worker progressively adds the highest-value applicable
+  HiDream visuals by default without making imagery a deck-success dependency, PptxGenJS
   renders native Office objects, and LibreOffice validates each revision before
-  reconnectable progress, persistent per-slide feedback, history, preview,
-  download, or deletion;
+  reconnectable stage-weighted progress from outline through Office validation,
+  persistent per-slide feedback, additional HiDream generation, FLUX refinement
+  of an attached slide image, history, preview, download, deletion, and explicit
+  cleanup of failed decks without completed slides;
 - an agent-facing local FastMCP facade over the same visual and presentation
   services, returning bounded metadata handles rather than private binary data;
 - a repeatable local-model qualification command for bounded supervisor/tool decisions and progressive presentation contracts, plus a local-only review-first command that uses explicit repository evidence to generate architecture-diagram candidates without automatically overwriting canonical documentation.

@@ -3,13 +3,15 @@ import threading
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 import httpx
 
+InferenceProviderKind = Literal["openai_compatible"]
 
-class LLMClient(ABC):
-    """Abstract base class for all LLM providers."""
+
+class InferenceProvider(ABC):
+    """Provider-neutral contract for text, streaming, and tool inference."""
 
     @abstractmethod
     def generate_text(self, prompt: str, max_tokens: int = 1024) -> str: ...
@@ -36,9 +38,8 @@ class LLMClient(ABC):
         raise NotImplementedError("This LLM provider does not support tool calling")
 
 
-# Example of a concrete implementation for LM Studio / OpenAI compatible APIs
-class LMStudioLLM(LLMClient):
-    """Client for LM Studio's OpenAI-compatible chat completions API."""
+class OpenAICompatibleInferenceProvider(InferenceProvider):
+    """Use an OpenAI-compatible chat-completions endpoint for inference."""
 
     def __init__(
         self,
@@ -79,7 +80,7 @@ class LMStudioLLM(LLMClient):
             choices[0].get("message", {}).get("content", "") if choices else ""
         )
         if not isinstance(content_value, str) or not content_value.strip():
-            raise ValueError("LM Studio response did not contain a message output")
+            raise ValueError("Inference provider did not contain a message output")
 
         return {**result, "content": content_value.strip()}
 
@@ -105,7 +106,7 @@ class LMStudioLLM(LLMClient):
         choices = cast(list[dict[str, Any]], result.get("choices", []))
         message = choices[0].get("message") if choices else None
         if not isinstance(message, dict):
-            raise ValueError("LM Studio response did not contain a tool decision")
+            raise ValueError("Inference provider did not contain a tool decision")
         return cast(dict[str, Any], message)
 
     def stream_chat(
@@ -138,9 +139,11 @@ class LMStudioLLM(LLMClient):
                     yield content
 
         if not saw_message:
-            raise ValueError("LM Studio stream did not contain a message output")
+            raise ValueError(
+                "Inference provider stream did not contain a message output"
+            )
         if not saw_done:
-            raise ValueError("LM Studio stream ended before [DONE]")
+            raise ValueError("Inference provider stream ended before [DONE]")
 
     def _build_payload(
         self,
@@ -148,7 +151,7 @@ class LMStudioLLM(LLMClient):
         max_tokens: int,
     ) -> dict[str, Any]:
         if not any(message.get("role") == "user" for message in messages):
-            raise ValueError("LM Studio chat requires at least one user message")
+            raise ValueError("Inference request requires at least one user message")
 
         return {
             "model": self.model,
@@ -199,3 +202,32 @@ class LMStudioLLM(LLMClient):
             ) as response,
         ):
             yield response
+
+
+# Construct a supported inference adapter without exposing provider details upstream.
+def create_inference_provider(
+    adapter: str,
+    base_url: str,
+    model: str,
+    api_key: str | None = None,
+    timeout_seconds: float = 120.0,
+    reasoning_effort: str = "none",
+    client: httpx.Client | None = None,
+) -> InferenceProvider:
+    if adapter != "openai_compatible":
+        raise ValueError(f"Unsupported inference adapter: {adapter}")
+    return OpenAICompatibleInferenceProvider(
+        base_url=base_url,
+        model=model,
+        api_key=api_key,
+        timeout_seconds=timeout_seconds,
+        reasoning_effort=reasoning_effort,
+        client=client,
+    )
+
+
+# Preserve the established type name while callers migrate to the neutral contract.
+LLMClient = InferenceProvider
+
+# Preserve established imports without coupling new assembly to LM Studio.
+LMStudioLLM = OpenAICompatibleInferenceProvider

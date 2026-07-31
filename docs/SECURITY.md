@@ -104,9 +104,18 @@ The following controls are requirements for future milestones, not current featu
   claim-level citation evaluation, a durable redacted decision audit, and a
   live Google-grounding acceptance remain incomplete;
 - `PLANNED`: TLS and outbound-provider trust controls;
+- `PLANNED`: private remote-UI ingress through one TLS hostname and an
+  authenticated deny-by-default edge/tunnel. The edge must protect both static
+  UI assets and `/api`, validate its session at the origin, proxy SSE and
+  bounded uploads/downloads, and forward only to a same-origin local gateway.
+  PostgreSQL, Redis, LM Studio, ComfyUI, the renderer, artifact storage, and
+  internal MCP services must remain non-public. A client-side-only password,
+  secret embedded in JavaScript, unprotected static host, or public backend
+  port is not an acceptable access control.
 - `VERIFIED`: diagram artifacts have logical user ownership, conversation/trace provenance, allowlisted type/size/line validation, strict browser rendering with HTML labels disabled, sanitized failure events, scoped listing/deletion, and local Mermaid/SVG download. Auth remains disabled by default for trusted-local development;
 - `VERIFIED`: upload MIME/signature/size/pixel limits, single-frame enforcement, opaque local binary-file isolation, integrity checks, private content responses, media file-plus-row deletion, and generated-image disconnect cancellation with terminal state and provider interruption. Binary retention/export, encryption/backups, malware scanning, and process-crash reconciliation remain `PLANNED`; diagram-stream disconnect cleanup is also `VERIFIED`;
-- `VERIFIED`: image refinements re-check ownership and stored byte integrity,
+- `VERIFIED`: refinements of generated, uploaded, or slide-attached images
+  re-check ownership and stored byte integrity,
   send source pixels only to the configured local ComfyUI editor, validate the
   returned image before persistence, and retain immutable parent/source-hash
   provenance. Semantic post-edit verification remains `PLANNED`;

@@ -6,11 +6,7 @@ from typing import Any
 
 from backend.config.settings import settings
 from backend.core.dependencies import (
-    get_artifact_repository,
-    get_background_presentation_agent,
-    get_binary_artifact_store,
-    get_presentation_repository,
-    get_presentation_service,
+    get_background_presentation_service,
 )
 from backend.core.logging_config import get_logger
 from backend.database.session import AsyncSessionLocal
@@ -61,13 +57,7 @@ class PresentationJobWorker:
         try:
             async with AsyncSessionLocal() as session:
                 jobs = SQLAlchemyPresentationJobRepository(session)
-                presentations = get_presentation_repository(session)
-                service = get_presentation_service(
-                    get_background_presentation_agent(),
-                    presentations,
-                    get_binary_artifact_store(),
-                    get_artifact_repository(session),
-                )
+                service = get_background_presentation_service(session)
 
                 # Persist each graph draft and honor cancellation between slides.
                 async def checkpoint(draft: DeckDraft) -> None:

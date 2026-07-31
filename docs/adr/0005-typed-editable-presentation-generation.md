@@ -59,6 +59,13 @@ state, and replaceable workers that do not own authorization or promotion.
    lifecycle. Background creation holds it for only one outline or slide
    microtask and yields between calls while chat waits. Redis contains no
    prompt, draft, answer, identity, or artifact content.
+10. A planned slide may declare one concrete image brief and priority, but it
+    cannot invoke an image provider. After content planning, application code
+    selects a configured maximum of the highest-priority applicable slides.
+    The durable worker creates owned HiDream artifacts through the shared image
+    service and checkpoints each enriched `DeckSpec` before final rendering.
+    Image generation is best-effort: provider failure is visible in worker logs
+    but cannot discard an otherwise valid editable text deck.
 
 ## Consequences
 
@@ -72,6 +79,8 @@ Benefits:
   the request process;
 - microtask boundaries let foreground chat preempt a long deck without
   interrupting an in-flight local-model request;
+- relevant slides receive bounded default imagery while progressive browser
+  state remains reconnectable;
 - renderer and model implementations remain independently replaceable;
 - direct API, MCP, and browser paths reuse the same lifecycle service.
 

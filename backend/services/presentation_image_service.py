@@ -2,8 +2,9 @@ import secrets
 from typing import Any
 
 from backend.artifacts.types import ImageGenerationRequest
-from backend.presentations.types import DeckSpec
+from backend.presentations.types import DeckSpec, ImageElement, SlideSpec
 from backend.services.image_artifact_service import ImageArtifactService
+from backend.services.image_refinement_service import ImageRefinementService
 from backend.services.presentation_service import PresentationService
 
 
@@ -15,11 +16,13 @@ class PresentationImageService:
         self,
         presentations: PresentationService,
         images: ImageArtifactService,
+        refinements: ImageRefinementService,
     ) -> None:
         self.presentations = presentations
         self.images = images
+        self.refinements = refinements
 
-    # Generate one local visual and attach it without delaying initial deck creation.
+    # Generate an initial visual or refine the slide's existing visual with FLUX.
     async def enrich_slide(
         self,
         user_id: str,
@@ -45,13 +48,39 @@ class PresentationImageService:
         )
         if slide is None:
             raise LookupError("Presentation slide was not found")
+        existing_image = _first_image(slide)
+        user_prompt = (prompt or "").strip()
+        if existing_image is not None:
+            if not user_prompt:
+                raise ValueError("Image feedback cannot be empty")
+            artifact = await self.refinements.refine(
+                user_id=user_id,
+                artifact_id=str(existing_image.artifact_id),
+                feedback=user_prompt,
+                conversation_id=str(presentation["conversation_id"]),
+                trace_id=trace_id,
+            )
+            artifact_id = str(artifact["id"])
+            alt_text = (f"{existing_image.alt_text}. Refined: {user_prompt}")[:500]
+            try:
+                return await self.presentations.attach_image(
+                    user_id,
+                    presentation_id,
+                    base_revision_id,
+                    slide_id,
+                    artifact_id,
+                    alt_text,
+                    f"Refined the local image for {slide.title}: {user_prompt}",
+                )
+            except Exception:
+                await self.images.delete_owned(user_id, artifact_id)
+                raise
         # Ground every image in both the deck's overall topic and the slide's own,
         # so the picture matches what is being discussed - a "history of cars" deck
         # with a "progress of cars" slide asks for period-accurate cars, not a
         # generic photo. The user's own direction, when given, still leads.
         deck_topic = specification.title
         slide_context = f"{slide.title}: {slide.purpose}"
-        user_prompt = (prompt or "").strip()
         if user_prompt:
             image_prompt = (
                 f"{user_prompt}. This illustrates the slide '{slide.title}' "
@@ -97,3 +126,11 @@ class PresentationImageService:
         except Exception:
             await self.images.delete_owned(user_id, artifact_id)
             raise
+
+
+# Return the replaceable visual already attached to one slide, when present.
+def _first_image(slide: SlideSpec) -> ImageElement | None:
+    return next(
+        (element for element in slide.elements if isinstance(element, ImageElement)),
+        None,
+    )

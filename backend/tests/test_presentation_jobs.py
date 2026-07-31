@@ -103,6 +103,7 @@ async def test_job_service_queues_without_running_the_presentation_agent() -> No
         StubPresentationRepository(),  # type: ignore[arg-type]
         "lm_studio",
         "google/gemma-4-12b",
+        auto_image_max=2,
     )
 
     queued = await service.enqueue(
@@ -114,6 +115,7 @@ async def test_job_service_queues_without_running_the_presentation_agent() -> No
 
     assert queued["status"] == "queued"
     assert queued["expected_slide_count"] == 6
+    assert queued["auto_image_max"] == 2
     assert jobs.enqueued is not None
     assert jobs.enqueued[3] == "Create a presentation on horses, 6 slides"
 
@@ -132,6 +134,7 @@ async def test_job_service_hydrates_the_ready_presentation() -> None:
         StubPresentationRepository(),  # type: ignore[arg-type]
         "lm_studio",
         "google/gemma-4-12b",
+        auto_image_max=2,
     )
 
     ready = await service.get(
@@ -141,6 +144,7 @@ async def test_job_service_hydrates_the_ready_presentation() -> None:
 
     assert ready is not None
     assert ready["presentation"]["title"] == "Ready deck"
+    assert ready["auto_image_max"] == 2
 
 
 # Verify POST returns 202 and a job handle rather than waiting for deck generation.

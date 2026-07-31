@@ -23,12 +23,13 @@ from backend.core.interfaces import (
     ConversationTracer,
     SearchProvider,
     VisionEmbeddingProvider,
+    VisionProvider,
 )
-from backend.core.llm import LLMClient, LMStudioLLM
+from backend.core.llm import LLMClient, create_inference_provider
 from backend.core.model_gate import ModelExecutionGate
 from backend.database.session import get_db
 from backend.embeddings.base import EmbeddingProvider
-from backend.embeddings.lm_studio import LMStudioEmbeddingProvider
+from backend.embeddings.lm_studio import create_embedding_provider
 from backend.embeddings.nomic_vision import NomicVisionEmbeddingProvider
 from backend.mcp.client import SessionMCPToolLister
 from backend.mcp.config import parse_server_configs
@@ -70,14 +71,15 @@ from backend.services.tracing import (
     OpenTelemetryConversationTracer,
 )
 from backend.services.vision_analysis_service import VisionAnalysisService
-from backend.vision.lm_studio import LMStudioVisionProvider
+from backend.vision.lm_studio import create_vision_provider
 
 
 # Reuse one concurrency-limited embedding adapter across application requests.
 @lru_cache(maxsize=1)
 def get_embedding_provider() -> EmbeddingProvider:
-    return LMStudioEmbeddingProvider(
-        base_url=settings.LLM_BASE_URL,
+    return create_embedding_provider(
+        adapter=(settings.EMBEDDING_INFERENCE_ADAPTER or settings.INFERENCE_ADAPTER),
+        base_url=settings.EMBEDDING_BASE_URL or settings.LLM_BASE_URL,
         model=settings.EMBEDDING_MODEL,
         dimension=settings.EMBEDDING_DIMENSION,
         api_key=settings.LLM_API_KEY,
@@ -158,13 +160,15 @@ def get_memory_service(
     )
 
 
-# Build one LM Studio client from a model role's resolved configuration.
+# Build one inference client from a role's adapter and endpoint configuration.
 def _build_llm_client(
+    adapter: str,
     base_url: str,
     model: str,
     reasoning_effort: str,
 ) -> LLMClient:
-    return LMStudioLLM(
+    return create_inference_provider(
+        adapter=adapter,
         base_url=base_url,
         model=model,
         api_key=settings.LLM_API_KEY,
@@ -176,6 +180,7 @@ def _build_llm_client(
 # Build the primary conversation and supervisor model with legacy fallbacks.
 def get_llm_client() -> LLMClient:
     return _build_llm_client(
+        settings.MAIN_INFERENCE_ADAPTER or settings.INFERENCE_ADAPTER,
         settings.MAIN_LLM_BASE_URL or settings.LLM_BASE_URL,
         settings.MAIN_LLM_MODEL or settings.LLM_MODEL,
         settings.MAIN_LLM_REASONING_EFFORT,
@@ -185,6 +190,7 @@ def get_llm_client() -> LLMClient:
 # Build the focused presentation model independently from the main agent.
 def get_presentation_llm_client() -> LLMClient:
     return _build_llm_client(
+        settings.PRESENTATION_INFERENCE_ADAPTER or settings.INFERENCE_ADAPTER,
         settings.PRESENTATION_LLM_BASE_URL
         or settings.MAIN_LLM_BASE_URL
         or settings.LLM_BASE_URL,
@@ -198,6 +204,7 @@ def get_presentation_llm_client() -> LLMClient:
 # Build the diagram-planning model independently from the main agent.
 def get_diagram_llm_client() -> LLMClient:
     return _build_llm_client(
+        settings.DIAGRAM_INFERENCE_ADAPTER or settings.INFERENCE_ADAPTER,
         settings.DIAGRAM_LLM_BASE_URL
         or settings.MAIN_LLM_BASE_URL
         or settings.LLM_BASE_URL,
@@ -366,7 +373,7 @@ def get_presentation_service(
         get_presentation_renderer(),
         repository,
         store,
-        provider_name="lm_studio",
+        provider_name=settings.INFERENCE_PROVIDER_NAME,
         model_name=(
             settings.PRESENTATION_LLM_MODEL
             or settings.MAIN_LLM_MODEL
@@ -403,12 +410,13 @@ def get_presentation_job_service(
     return PresentationJobService(
         jobs,
         presentations,
-        provider_name="lm_studio",
+        provider_name=settings.INFERENCE_PROVIDER_NAME,
         model_name=(
             settings.PRESENTATION_LLM_MODEL
             or settings.MAIN_LLM_MODEL
             or settings.LLM_MODEL
         ),
+        auto_image_max=settings.PRESENTATION_AUTO_IMAGE_MAX,
     )
 
 
@@ -504,18 +512,35 @@ ImageArtifactDependency = Annotated[
 ]
 
 
-# Coordinate optional slide imagery without slowing the initial deck workflow.
-def get_presentation_image_service(
-    presentations: PresentationDependency,
-    images: ImageArtifactDependency,
-) -> PresentationImageService:
-    return PresentationImageService(presentations, images)
-
-
-PresentationImageDependency = Annotated[
-    PresentationImageService,
-    Depends(get_presentation_image_service),
-]
+# Assemble the durable worker with automatic presentation imagery enabled.
+def get_background_presentation_service(
+    session: AsyncSession,
+) -> PresentationService:
+    artifacts = get_artifact_repository(session)
+    store = get_binary_artifact_store()
+    images = get_image_artifact_service(
+        get_image_provider(),
+        get_image_edit_provider(),
+        artifacts,
+        store,
+        get_vision_embedding_provider(),
+    )
+    return PresentationService(
+        get_background_presentation_agent(),
+        get_presentation_renderer(),
+        get_presentation_repository(session),
+        store,
+        provider_name=settings.INFERENCE_PROVIDER_NAME,
+        model_name=(
+            settings.PRESENTATION_LLM_MODEL
+            or settings.MAIN_LLM_MODEL
+            or settings.LLM_MODEL
+        ),
+        artifact_repository=artifacts,
+        image_service=images,
+        auto_image_max=settings.PRESENTATION_AUTO_IMAGE_MAX,
+        auto_image_size=settings.PRESENTATION_AUTO_IMAGE_SIZE,
+    )
 
 
 # Learn and apply a durable per-user image style from refinement feedback.
@@ -532,7 +557,7 @@ ImageStyleDependency = Annotated[
 ]
 
 
-# Edit a generated image from its owned pixels plus the user's feedback.
+# Edit a generated or uploaded image from its owned pixels plus user feedback.
 def get_image_refinement_service(
     images: ImageArtifactDependency,
 ) -> ImageRefinementService:
@@ -545,21 +570,37 @@ ImageRefinementDependency = Annotated[
 ]
 
 
-# Reuse one local Gemma vision adapter without granting it storage authority.
+# Coordinate initial HiDream slide imagery and source-conditioned FLUX revisions.
+def get_presentation_image_service(
+    presentations: PresentationDependency,
+    images: ImageArtifactDependency,
+    refinements: ImageRefinementDependency,
+) -> PresentationImageService:
+    return PresentationImageService(presentations, images, refinements)
+
+
+PresentationImageDependency = Annotated[
+    PresentationImageService,
+    Depends(get_presentation_image_service),
+]
+
+
+# Reuse one configured vision adapter without granting it storage authority.
 @lru_cache(maxsize=1)
-def get_vision_provider() -> LMStudioVisionProvider:
-    return LMStudioVisionProvider(
-        base_url=settings.LLM_BASE_URL,
+def get_vision_provider() -> VisionProvider:
+    return create_vision_provider(
+        adapter=settings.VISION_INFERENCE_ADAPTER or settings.INFERENCE_ADAPTER,
+        base_url=settings.VISION_LLM_BASE_URL or settings.LLM_BASE_URL,
         model=settings.VISION_MODEL,
         api_key=settings.LLM_API_KEY,
         timeout_seconds=settings.LLM_TIMEOUT_SECONDS,
-        reasoning_effort=settings.LLM_REASONING_EFFORT,
+        reasoning_effort=settings.VISION_LLM_REASONING_EFFORT,
         max_tokens=settings.VISION_MAX_TOKENS,
     )
 
 
 VisionProviderDependency = Annotated[
-    LMStudioVisionProvider,
+    VisionProvider,
     Depends(get_vision_provider),
 ]
 
@@ -620,7 +661,7 @@ def get_diagram_artifact_service(
     return DiagramArtifactService(
         agent,
         repository,
-        provider_name="lm_studio",
+        provider_name=settings.INFERENCE_PROVIDER_NAME,
         model_name=(
             settings.DIAGRAM_LLM_MODEL or settings.MAIN_LLM_MODEL or settings.LLM_MODEL
         ),
@@ -785,12 +826,11 @@ def get_image_recall_policy() -> ImageRecallPolicy:
 def get_classifier_llm() -> LLMClient:
     if not settings.SEARCH_CLASSIFIER_MODEL:
         return get_llm_client()
-    return LMStudioLLM(
+    return _build_llm_client(
+        settings.MAIN_INFERENCE_ADAPTER or settings.INFERENCE_ADAPTER,
         base_url=settings.MAIN_LLM_BASE_URL or settings.LLM_BASE_URL,
         model=settings.SEARCH_CLASSIFIER_MODEL,
-        api_key=settings.LLM_API_KEY,
-        timeout_seconds=settings.LLM_TIMEOUT_SECONDS,
-        reasoning_effort=settings.LLM_REASONING_EFFORT,
+        reasoning_effort=settings.MAIN_LLM_REASONING_EFFORT,
     )
 
 

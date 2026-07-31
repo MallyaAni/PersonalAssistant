@@ -7,7 +7,7 @@ from backend.artifacts.types import VisionAnalysis
 from backend.core.interfaces import VisionProvider
 
 
-class LMStudioVisionProvider(VisionProvider):
+class OpenAICompatibleVisionProvider(VisionProvider):
     # Configure the local OpenAI-compatible vision-language endpoint.
     def __init__(
         self,
@@ -107,3 +107,29 @@ class LMStudioVisionProvider(VisionProvider):
             model=str(result.get("model") or self.model),
             metadata={"usage": usage if isinstance(usage, dict) else {}},
         )
+
+
+# Construct a vision adapter without exposing its wire protocol to services.
+def create_vision_provider(
+    adapter: str,
+    base_url: str,
+    model: str,
+    api_key: str | None,
+    timeout_seconds: float,
+    reasoning_effort: str,
+    max_tokens: int = 512,
+) -> VisionProvider:
+    if adapter != "openai_compatible":
+        raise ValueError(f"Unsupported vision inference adapter: {adapter}")
+    return OpenAICompatibleVisionProvider(
+        base_url=base_url,
+        model=model,
+        api_key=api_key,
+        timeout_seconds=timeout_seconds,
+        reasoning_effort=reasoning_effort,
+        max_tokens=max_tokens,
+    )
+
+
+# Preserve the established import while dependency assembly uses the neutral name.
+LMStudioVisionProvider = OpenAICompatibleVisionProvider

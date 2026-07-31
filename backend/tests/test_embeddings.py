@@ -105,7 +105,7 @@ def test_lm_studio_embedding_provider_rejects_dimension_mismatch():
 
         with pytest.raises(
             ValueError,
-            match="LM Studio embedding dimension mismatch: expected 3, received 2",
+            match="Embedding provider dimension mismatch: expected 3, received 2",
         ):
             provider.embed_query("query")
 

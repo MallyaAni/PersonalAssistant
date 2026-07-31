@@ -16,7 +16,8 @@ flowchart TB
     Google --> Sources[Merge, bound and<br/>deduplicate sources]
     Tavily --> Sources
     Sources --> Context[Quoted untrusted<br/>research context]
-    Context --> Main[Qwen 3.5 9B<br/>cited answer]
+    Context --> Inference[Provider-neutral<br/>inference adapter]
+    Inference --> Main[Qwen 3.5 9B<br/>cited answer]
     Main --> UI[Answer, sources,<br/>and visible search status]
 
     Quota[(Local daily Google quota)] -.-> Policy
@@ -27,6 +28,6 @@ flowchart TB
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900;
     class Query,Local,Block,UI interface;
-    class Need,Privacy,MCP,Policy,Sources,Context application;
+    class Need,Privacy,MCP,Policy,Sources,Context,Inference application;
     class Quota data;
     class Google,Tavily,Main external;

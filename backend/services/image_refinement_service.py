@@ -9,8 +9,10 @@ _PRESERVATION_SUFFIX = (
     "position, camera angle, background, lighting, reflections, and composition. "
     "Do not add, remove, or move anything unless the instruction explicitly asks."
 )
+
+
 class RefinementError(RuntimeError):
-    """The artifact cannot be refined: missing, not owned, or not generated."""
+    """The artifact cannot be refined: missing, not owned, or not an image."""
 
 
 class ImageRefinementService:
@@ -37,10 +39,13 @@ class ImageRefinementService:
     ) -> dict[str, Any]:
         owned = await self.images.read_owned(user_id, artifact_id)
         if owned is None:
-            raise RefinementError("No owned generated image matched the request")
+            raise RefinementError("No owned image matched the request")
         record, source_content = owned
-        if record is None or record.get("kind") != "generated_image":
-            raise RefinementError("No owned generated image matched the request")
+        if record is None or record.get("kind") not in {
+            "generated_image",
+            "uploaded_image",
+        }:
+            raise RefinementError("No owned image matched the request")
         instruction = feedback.strip()[:_MAX_FEEDBACK_CHARS]
         if not instruction:
             raise RefinementError("Image feedback cannot be empty")

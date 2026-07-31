@@ -70,6 +70,38 @@ const deckSpec = (revised = false) => ({
   ],
 })
 
+// Add one declared and optionally completed visual to a progress draft.
+const progressDeckSpec = (withImage = false) => {
+  const specification = structuredClone(deckSpec())
+  return {
+    ...specification,
+    slides: specification.slides.map((slide, index) => (
+      index === 1
+        ? {
+            ...slide,
+            visual_prompt: 'A decisive evidence photograph',
+            visual_priority: 3,
+            elements: withImage
+              ? [
+                  ...slide.elements,
+                  {
+                    element_id: 'progress-image',
+                    type: 'image',
+                    artifact_id: '44444444-4444-4444-8444-444444444444',
+                    alt_text: 'A decisive evidence photograph',
+                    x: 8.45,
+                    y: 1.65,
+                    w: 4.15,
+                    h: 4.65,
+                  },
+                ]
+              : slide.elements,
+          }
+        : slide
+    )),
+  }
+}
+
 // Build one ready presentation record with linked revision history.
 const presentationRecord = (revised = false) => {
   const currentId = revised
@@ -126,6 +158,42 @@ const presentationRecord = (revised = false) => {
   }
 }
 
+// Build one terminal failed deck that has metadata but no completed slides.
+const failedPresentationRecord = (includeRevision = true) => {
+  const revision = {
+    id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+    presentation_id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+    parent_revision_id: null,
+    revision_number: 1,
+    status: 'failed',
+    target_slide_id: null,
+    change_summary: 'Initial presentation',
+    provider: 'lm_studio',
+    model: 'google/gemma-4-12b',
+    renderer: null,
+    renderer_version: null,
+    content_available: false,
+    byte_size: null,
+    sha256: null,
+    error_code: 'generation_failed',
+    created_at: '2026-07-24T00:00:00Z',
+    completed_at: '2026-07-24T00:00:01Z',
+    specification: null,
+  }
+  return {
+    id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+    user_id: 'ani.mallya',
+    conversation_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+    trace_id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+    title: 'Untitled presentation',
+    current_revision_id: null,
+    current_revision: null,
+    revisions: includeRevision ? [revision] : [],
+    created_at: '2026-07-24T00:00:00Z',
+    updated_at: '2026-07-24T00:00:01Z',
+  }
+}
+
 // Build one reconnectable background-job response at a requested lifecycle state.
 const presentationJob = (
   status: 'queued' | 'running' | 'ready' | 'failed' | 'cancelled',
@@ -137,6 +205,7 @@ const presentationJob = (
   user_id: 'ani.mallya',
   status,
   expected_slide_count: 2,
+  auto_image_max: 2,
   attempt_count: status === 'queued' ? 0 : 1,
   cancel_requested: false,
   error_code: status === 'failed' ? 'generation_failed' : null,
@@ -180,6 +249,35 @@ const imagePresentationRecord = () => {
   }
 }
 
+// Add a source-conditioned FLUX child as the next selected-slide revision.
+const refinedImagePresentationRecord = () => {
+  const base = imagePresentationRecord()
+  const refinementRevision = {
+    ...base.revisions[0],
+    id: '55555555-5555-4555-8555-555555555555',
+    parent_revision_id: base.current_revision_id,
+    revision_number: 4,
+    change_summary: 'Refined the local image for Revised evidence: Make only the horse chestnut brown',
+  }
+  const specification = structuredClone(base.current_revision.specification)
+  const image = specification.slides[1].elements.find(
+    element => element.type === 'image',
+  )
+  if (image?.type === 'image') {
+    image.artifact_id = '66666666-6666-4666-8666-666666666666'
+    image.alt_text = 'A horse beside an editable chart. Refined: Make only the horse chestnut brown'
+  }
+  return {
+    ...base,
+    current_revision_id: refinementRevision.id,
+    current_revision: {
+      ...refinementRevision,
+      specification,
+    },
+    revisions: [refinementRevision, ...base.revisions],
+  }
+}
+
 // Fulfill one JSON route with the supplied status and body.
 const fulfillJson = (
   route: Route,
@@ -208,12 +306,69 @@ const chatEventStream = (conversationId: string, response: string) => [
   '',
 ].join('\n')
 
+// Verify a failed empty deck explains its state and can be deleted in the browser.
+test('deletes a failed presentation without completed slides', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  let deleted = false
+
+  await page.route('**/api/v1/presentations**', async route => {
+    const request = route.request()
+    const url = new URL(request.url())
+    if (
+      request.method() === 'DELETE'
+      && url.pathname.endsWith('/eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee')
+    ) {
+      deleted = true
+      await route.fulfill({ status: 204 })
+      return
+    }
+    if (
+      request.method() === 'GET'
+      && url.pathname === '/api/v1/presentations/ani.mallya'
+    ) {
+      await fulfillJson(route, deleted ? [] : [failedPresentationRecord()])
+      return
+    }
+    if (
+      request.method() === 'GET'
+      && url.pathname.endsWith('/eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee')
+    ) {
+      await fulfillJson(route, failedPresentationRecord())
+      return
+    }
+    await fulfillJson(route, {}, 404)
+  })
+
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Presentations' }).click()
+  await expect(page.getByText('Failed · no completed slides')).toBeVisible()
+  await expect(page.getByText(
+    'This presentation failed before any slides were completed.',
+  )).toBeVisible()
+  await expect(page.getByRole('button', {
+    name: 'Delete presentation: Untitled presentation',
+  })).toBeVisible()
+
+  page.once('dialog', dialog => dialog.accept())
+  const deletion = page.waitForResponse(response => (
+    response.request().method() === 'DELETE'
+    && response.url().endsWith('/eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee')
+  ))
+  await page.getByRole('button', {
+    name: 'Delete all 1 failed presentations',
+  }).click()
+  expect((await deletion).status()).toBe(204)
+  await expect(page.getByText('No presentations yet.')).toBeVisible()
+  expect(deleted).toBe(true)
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
 // Verify create, select, revise, persist-visible, and download interactions.
 test('creates and revises an editable presentation in the browser', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   let created = false
   let revised = false
-  let imaged = false
+  let imageOperations = 0
   let jobPolls = 0
   const requests: Array<{ method: string; url: string; body: unknown }> = []
 
@@ -231,12 +386,18 @@ test('creates and revises an editable presentation in the browser', async ({ pag
     if (request.method() === 'GET' && url.pathname.includes('/presentations/jobs/')) {
       jobPolls += 1
       if (jobPolls === 1) {
+        await new Promise(resolve => setTimeout(resolve, 250))
         await fulfillJson(route, presentationJob('running', {
           ...deckSpec(),
           slides: deckSpec().slides.slice(0, 1),
         }))
       } else if (jobPolls === 2) {
-        await fulfillJson(route, presentationJob('running', deckSpec()))
+        await fulfillJson(route, presentationJob('running', progressDeckSpec()))
+      } else if (jobPolls === 3) {
+        await fulfillJson(
+          route,
+          presentationJob('running', progressDeckSpec(true)),
+        )
       } else {
         await fulfillJson(route, presentationJob('ready', deckSpec()))
       }
@@ -250,8 +411,14 @@ test('creates and revises an editable presentation in the browser', async ({ pag
     }
     if (request.method() === 'POST' && url.pathname.endsWith('/slides/slide-b/image')) {
       await new Promise(resolve => setTimeout(resolve, 100))
-      imaged = true
-      await fulfillJson(route, imagePresentationRecord(), 201)
+      imageOperations += 1
+      await fulfillJson(
+        route,
+        imageOperations > 1
+          ? refinedImagePresentationRecord()
+          : imagePresentationRecord(),
+        201,
+      )
       return
     }
     if (request.method() === 'GET' && url.pathname.endsWith('/content')) {
@@ -269,12 +436,25 @@ test('creates and revises an editable presentation in the browser', async ({ pag
     if (request.method() === 'GET' && url.pathname === '/api/v1/presentations/ani.mallya') {
       await fulfillJson(
         route,
-        created ? [imaged ? imagePresentationRecord() : presentationRecord(revised)] : [],
+        created
+          ? [imageOperations > 1
+              ? refinedImagePresentationRecord()
+              : imageOperations === 1
+                ? imagePresentationRecord()
+                : presentationRecord(revised)]
+          : [],
       )
       return
     }
     if (request.method() === 'GET') {
-      await fulfillJson(route, imaged ? imagePresentationRecord() : presentationRecord(revised))
+      await fulfillJson(
+        route,
+        imageOperations > 1
+          ? refinedImagePresentationRecord()
+          : imageOperations === 1
+            ? imagePresentationRecord()
+            : presentationRecord(revised),
+      )
       return
     }
     await fulfillJson(route, {}, 404)
@@ -300,6 +480,29 @@ test('creates and revises an editable presentation in the browser', async ({ pag
   )
   await page.getByRole('button', { name: 'Create presentation' }).click()
   await expect(page.getByText('Using PresentationAgent…')).toBeVisible()
+  const progress = page.getByRole('progressbar', {
+    name: 'Presentation completion',
+  })
+  await expect(progress).toHaveAttribute('aria-valuenow', '8')
+  await expect(progress).toHaveAttribute(
+    'aria-valuetext',
+    'Planning the deck outline',
+  )
+  await expect(progress).toHaveAttribute('aria-valuenow', '37')
+  await expect(progress).toHaveAttribute(
+    'aria-valuetext',
+    'Planning slide 2 of 2',
+  )
+  await expect(progress).toHaveAttribute('aria-valuenow', '65')
+  await expect(progress).toHaveAttribute(
+    'aria-valuetext',
+    'Generating visual 1 of 1',
+  )
+  await expect(progress).toHaveAttribute('aria-valuenow', '92')
+  await expect(progress).toHaveAttribute(
+    'aria-valuetext',
+    'Rendering and validating the editable PowerPoint',
+  )
   await expect(page.getByText('Browser presentation', { exact: true }).first()).toBeVisible()
   await expect(page.getByLabel('Slide preview: Opening').first()).toBeVisible()
 
@@ -330,10 +533,20 @@ test('creates and revises an editable presentation in the browser', async ({ pag
     'A horse beside an editable chart',
   )
   await page.getByRole('button', { name: 'Generate slide image' }).click()
-  await expect(page.getByText('Generating locally…')).toBeVisible()
+  await expect(page.getByText('Generating with HiDream…')).toBeVisible()
   await expect(page.getByText('Local image added in revision 3.')).toBeVisible()
   await expect(page.getByRole('img', {
     name: 'A horse beside an editable chart',
+  }).first()).toBeVisible()
+
+  await page.getByRole('textbox', { name: 'Slide image prompt' }).fill(
+    'Make only the horse chestnut brown',
+  )
+  await page.getByRole('button', { name: 'Refine slide image' }).click()
+  await expect(page.getByText('Refining with FLUX…')).toBeVisible()
+  await expect(page.getByText('Slide image refined with FLUX in revision 4.')).toBeVisible()
+  await expect(page.getByRole('img', {
+    name: 'A horse beside an editable chart. Refined: Make only the horse chestnut brown',
   }).first()).toBeVisible()
 
   const downloadPromise = page.waitForEvent('download')
@@ -347,10 +560,14 @@ test('creates and revises an editable presentation in the browser', async ({ pag
     base_revision_id: '11111111-1111-4111-8111-111111111111',
     feedback: 'Make the evidence clearer',
   })
-  const imageRequest = requests.find(request => request.url.endsWith('/slides/slide-b/image'))
-  expect(imageRequest?.body).toMatchObject({
+  const imageRequests = requests.filter(request => request.url.endsWith('/slides/slide-b/image'))
+  expect(imageRequests[0]?.body).toMatchObject({
     base_revision_id: '22222222-2222-4222-8222-222222222222',
     prompt: 'A horse beside an editable chart',
+  })
+  expect(imageRequests[1]?.body).toMatchObject({
+    base_revision_id: '33333333-3333-4333-8333-333333333333',
+    prompt: 'Make only the horse chestnut brown',
   })
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
@@ -449,13 +666,13 @@ test('keeps chat responsive while a presentation job runs in the background', as
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
-// Verify the real worker yields the local model to chat and resumes after navigation.
+// Verify live background creation, chat concurrency, and source-refined slide imagery.
 test('@live creates a deck in the background without blocking chat', async ({ page }) => {
   test.skip(
     process.env.ANIOS_E2E_LIVE !== '1',
     'Set ANIOS_E2E_LIVE=1 to exercise the live presentation worker.',
   )
-  test.setTimeout(240_000)
+  test.setTimeout(540_000)
 
   const errors = observeBlockingBrowserErrors(page)
   const failedRequests: string[] = []
@@ -481,7 +698,7 @@ test('@live creates a deck in the background without blocking chat', async ({ pa
   await page.goto('/')
   await page.getByRole('button', { name: 'Presentations' }).click()
   await page.getByLabel('Create a new deck').fill(
-    `Create exactly 2 slides about durable agent jobs. Include the exact text ${marker} in the deck.`,
+    `Create exactly 2 slides about durable agent jobs. Include the exact text ${marker} in the deck and use strong visual storytelling.`,
   )
   const queuedResponse = page.waitForResponse(
     response => response.url() === 'http://localhost:8000/api/v1/presentations'
@@ -517,7 +734,7 @@ test('@live creates a deck in the background without blocking chat', async ({ pa
   await page.getByRole('button', { name: 'Presentations' }).click()
   await expect(page.getByText(
     'Presentation ready. Every supported slide object is editable in PowerPoint.',
-  )).toBeVisible({ timeout: 180_000 })
+  )).toBeVisible({ timeout: 300_000 })
   await expect(page.getByRole('button', {
     name: 'Download editable PowerPoint',
   })).toBeVisible()
@@ -537,10 +754,182 @@ test('@live creates a deck in the background without blocking chat', async ({ pa
   expect(failedRequests).toEqual([])
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 
+  const readySlides = terminal.presentation.current_revision.specification.slides
+  const imageSlides = readySlides.filter((slide: {
+    elements: Array<{ type: string }>;
+  }) => slide.elements.some(element => element.type === 'image'))
+  expect(imageSlides.length).toBeGreaterThan(0)
+  const imageSlide = imageSlides[0]
+  const slideIndex = readySlides.findIndex(
+    (slide: { slide_id: string }) => slide.slide_id === imageSlide.slide_id,
+  )
+  const slideId = String(imageSlide.slide_id)
+  const initialImage = imageSlide.elements.find(
+    (element: { type: string }) => element.type === 'image',
+  )
+  const initialArtifactId = String(initialImage.artifact_id)
+  await page.getByRole('button', {
+    name: `Select slide ${slideIndex + 1}: ${imageSlide.title}`,
+  }).click()
+  await expect(page.getByRole('img', {
+    name: String(initialImage.alt_text),
+  }).first()).toBeVisible()
+  const selectedPreview = page.getByLabel(
+    `Slide preview: ${imageSlide.title}`,
+  ).first().locator('img')
+  const initialPreviewUrl = await selectedPreview.getAttribute('src')
+  await expect(page.getByRole('button', { name: 'Refine slide image' })).toBeVisible()
+
+  const imageFeedback = 'Make only the main subject emerald green'
+  await page.getByRole('textbox', { name: 'Slide image prompt' }).fill(imageFeedback)
+  const refinementResponsePromise = page.waitForResponse(
+    response => response.url().endsWith(`/slides/${slideId}/image`)
+      && response.request().method() === 'POST',
+    { timeout: 180_000 },
+  )
+  await page.getByRole('button', { name: 'Refine slide image' }).click()
+  await expect(page.getByText('Refining with FLUX…')).toBeVisible()
+  const refinementResponse = await refinementResponsePromise
+  expect(refinementResponse.status()).toBe(201)
+  const refinedPresentation = await refinementResponse.json() as ReturnType<
+    typeof presentationRecord
+  >
+  const refinedImage = refinedPresentation.current_revision.specification.slides[0]
+    .elements.find(element => element.type === 'image')
+  expect(refinedImage?.type).toBe('image')
+  const refinedArtifactId = refinedImage?.type === 'image'
+    ? refinedImage.artifact_id
+    : ''
+  expect(refinedArtifactId).not.toBe(initialArtifactId)
+  await expect(page.getByText(
+    `Slide image refined with FLUX in revision ${refinedPresentation.current_revision.revision_number}.`,
+  )).toBeVisible()
+  await expect(selectedPreview).toBeVisible()
+  await expect.poll(
+    async () => selectedPreview.getAttribute('src'),
+  ).not.toBe(initialPreviewUrl)
+
+  const artifactResponse = await page.request.get(
+    `http://localhost:8000/api/v1/artifacts/${userId}`,
+  )
+  expect(artifactResponse.status()).toBe(200)
+  const artifacts = await artifactResponse.json() as Array<Record<string, unknown>>
+  const initialArtifact = artifacts.find(artifact => artifact.id === initialArtifactId)
+  expect(initialArtifact).toMatchObject({
+    kind: 'generated_image',
+    status: 'ready',
+    model: 'hidream_o1_image_dev_fp8_scaled.safetensors',
+    metadata: {
+      presentation_id: job.presentation_id,
+      slide_id: slideId,
+      presentation_auto_generated: true,
+    },
+  })
+  const refinedArtifact = artifacts.find(artifact => artifact.id === refinedArtifactId)
+  expect(refinedArtifact).toMatchObject({
+    kind: 'generated_image',
+    status: 'ready',
+    model: 'flux-2-klein-4b-fp8.safetensors',
+    metadata: {
+      parent_artifact_id: initialArtifactId,
+      refinement_feedback: imageFeedback,
+      edit_mode: 'source_conditioned',
+      steps: 4,
+    },
+  })
+  const download = await page.request.get(
+    `http://localhost:8000/api/v1/presentations/${userId}/${job.presentation_id}/revisions/${refinedPresentation.current_revision_id}/content`,
+  )
+  expect(download.status()).toBe(200)
+  expect(download.headers()['content-type']).toContain(
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  )
+  expect((await download.body()).length).toBeGreaterThan(10_000)
+
   const cleanup = await page.request.delete(
     `http://localhost:8000/api/v1/presentations/${userId}/${job.presentation_id}`,
   )
   expect(cleanup.status()).toBe(204)
+  const automaticArtifactIds = imageSlides.map((slide: {
+    elements: Array<{ type: string; artifact_id?: string }>;
+  }) => slide.elements.find(element => element.type === 'image')?.artifact_id)
+    .filter((artifactId: string | undefined): artifactId is string => Boolean(artifactId))
+  for (const artifactId of automaticArtifactIds) {
+    expect((await page.request.delete(
+      `http://localhost:8000/api/v1/artifacts/${userId}/${artifactId}`,
+    )).status()).toBe(200)
+  }
+  expect((await page.request.delete(
+    `http://localhost:8000/api/v1/artifacts/${userId}/${refinedArtifactId}`,
+  )).status()).toBe(200)
+})
+
+// Verify a real cancelled job has a useful title and can be removed from the UI.
+test('@live deletes a cancelled presentation without completed slides', async ({ page }) => {
+  test.skip(
+    process.env.ANIOS_E2E_LIVE !== '1',
+    'Set ANIOS_E2E_LIVE=1 to exercise live failed-deck cleanup.',
+  )
+  test.setTimeout(60_000)
+
+  const errors = observeBlockingBrowserErrors(page)
+  const stamp = Date.now()
+  const userId = `live_presentation_delete_${stamp}`
+  const conversationId = '57575757-5757-4757-8757-575757575757'
+  const prompt = `Disposable presentation cleanup ${stamp}`
+  const createResponse = await page.request.post(
+    'http://localhost:8000/api/v1/presentations',
+    {
+      data: {
+        user_id: userId,
+        conversation_id: conversationId,
+        prompt,
+      },
+    },
+  )
+  expect(createResponse.status()).toBe(202)
+  const job = await createResponse.json() as {
+    id: string;
+    presentation_id: string;
+  }
+  const cancellation = await page.request.delete(
+    `http://localhost:8000/api/v1/presentations/jobs/${userId}/${job.id}`,
+  )
+  expect(cancellation.status()).toBe(204)
+  await expect.poll(async () => {
+    const response = await page.request.get(
+      `http://localhost:8000/api/v1/presentations/jobs/${userId}/${job.id}`,
+    )
+    return (await response.json()).status
+  }).toBe('cancelled')
+
+  // Open the presentation library as the isolated owner of the cancelled job.
+  await page.addInitScript(({ user, conversation }) => {
+    localStorage.setItem('anios_user_id', user)
+    localStorage.setItem('anios_conversation_id', conversation)
+  }, { user: userId, conversation: conversationId })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Presentations' }).click()
+  await expect(page.getByText(prompt, { exact: true }).first()).toBeVisible()
+  await expect(page.getByText('Failed · no completed slides')).toBeVisible()
+  await expect(page.getByText(
+    'This presentation failed before any slides were completed.',
+  )).toBeVisible()
+
+  page.once('dialog', dialog => dialog.accept())
+  const deletion = page.waitForResponse(response => (
+    response.request().method() === 'DELETE'
+    && response.url().endsWith(`/${job.presentation_id}`)
+  ))
+  await page.getByRole('button', {
+    name: 'Delete all 1 failed presentations',
+  }).click()
+  expect((await deletion).status()).toBe(204)
+  await expect(page.getByText('No presentations yet.')).toBeVisible()
+  expect((await page.request.get(
+    `http://localhost:8000/api/v1/presentations/${userId}/${job.presentation_id}`,
+  )).status()).toBe(404)
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
 // Verify the browser cancels a real running specialist job at a safe checkpoint.

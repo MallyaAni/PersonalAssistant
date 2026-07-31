@@ -335,6 +335,8 @@ async def test_progressive_plan_compiles_each_scheduled_slide() -> None:
                         "title": "Origins",
                         "purpose": "Introduce equine history",
                         "points": ["Early evolution", "Domestication"],
+                        "visual_prompt": "A cinematic portrait of early horses",
+                        "visual_priority": 3,
                         "notes": "Open with context.",
                     }
                 )
@@ -366,6 +368,10 @@ async def test_progressive_plan_compiles_each_scheduled_slide() -> None:
 
     assert [len(draft.specification.slides) for draft in drafts] == [1, 2]
     assert drafts[0].specification.slides[0].title == "Origins"
+    assert drafts[0].specification.slides[0].visual_prompt == (
+        "A cinematic portrait of early horses"
+    )
+    assert drafts[0].specification.slides[0].visual_priority == 3
     assert drafts[1].specification.slides[1].title == "Modern roles"
     assert all(draft.expected_slide_count == 2 for draft in drafts)
     assert [request[1] for request in llm.requests] == [1_024, 1_024, 1_024]

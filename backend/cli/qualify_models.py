@@ -8,7 +8,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from backend.core.llm import LMStudioLLM
+from backend.core.llm import InferenceProvider, create_inference_provider
 from backend.presentations.provider import LLMPresentationProvider
 
 
@@ -92,7 +92,7 @@ def _measure(name: str, operation: Any, expected: str | None) -> CaseResult:
 
 
 # Run the supervisor's routing contract against one local model.
-def _qualify_supervisor(llm: LMStudioLLM) -> list[CaseResult]:
+def _qualify_supervisor(llm: InferenceProvider) -> list[CaseResult]:
     system = (
         "You are AniOS MainAgent. Choose at most one supplied capability only "
         "when it directly completes the request. Use the presentation agent for "
@@ -149,7 +149,7 @@ def _qualify_supervisor(llm: LMStudioLLM) -> list[CaseResult]:
 
 
 # Run the specialized editable-deck contract against one local model.
-async def _qualify_presentation(llm: LMStudioLLM) -> list[CaseResult]:
+async def _qualify_presentation(llm: InferenceProvider) -> list[CaseResult]:
     provider = LLMPresentationProvider(
         llm,
         max_tokens=2_048,
@@ -191,7 +191,8 @@ async def _qualify_model(
     model: str,
     timeout_seconds: float,
 ) -> dict[str, Any]:
-    llm = LMStudioLLM(
+    llm = create_inference_provider(
+        adapter="openai_compatible",
         base_url=base_url,
         model=model,
         timeout_seconds=timeout_seconds,

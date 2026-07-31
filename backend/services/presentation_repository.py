@@ -263,7 +263,22 @@ class SQLAlchemyPresentationRepository:
                 if presentation.current_revision_id
                 else None
             )
-            results.append(self._detail(presentation, current, []))
+            latest = current or cast(
+                PresentationRevision | None,
+                await self.session.scalar(
+                    select(PresentationRevision)
+                    .where(PresentationRevision.presentation_id == presentation.id)
+                    .order_by(PresentationRevision.revision_number.desc())
+                    .limit(1)
+                ),
+            )
+            results.append(
+                self._detail(
+                    presentation,
+                    current,
+                    [latest] if current is None and latest is not None else [],
+                )
+            )
         return results
 
     # Return the private storage key only after both ownership checks succeed.

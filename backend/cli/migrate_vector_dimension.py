@@ -5,7 +5,7 @@ from collections.abc import Sequence
 
 from backend.config.settings import settings
 from backend.database.session import async_engine
-from backend.embeddings.lm_studio import LMStudioEmbeddingProvider
+from backend.embeddings.lm_studio import create_embedding_provider
 from backend.services.vector_dimension_migration_service import (
     VectorDimensionMigrationService,
 )
@@ -37,8 +37,9 @@ def build_parser() -> argparse.ArgumentParser:
 
 # Inventory or migrate every vector store using the target embedding model.
 async def _run(args: argparse.Namespace) -> dict[str, object]:
-    provider = LMStudioEmbeddingProvider(
-        base_url=settings.LLM_BASE_URL,
+    provider = create_embedding_provider(
+        adapter=(settings.EMBEDDING_INFERENCE_ADAPTER or settings.INFERENCE_ADAPTER),
+        base_url=settings.EMBEDDING_BASE_URL or settings.LLM_BASE_URL,
         model=args.target_model,
         dimension=args.target_dimension,
         api_key=settings.LLM_API_KEY,

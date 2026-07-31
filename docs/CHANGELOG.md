@@ -779,11 +779,84 @@ This file is append-only history for meaningful, verified changes. It must not c
   unavailable in the present host environments because their declared test
   dependencies are incomplete.
 
-## 2026-07-30 - Engineering architecture views simplified
+## 2026-07-27 — FLUX slide and uploaded-image refinement verified
+
+- Generalized the owned-source refinement boundary so both generated and
+  uploaded images use the qualified four-step FLUX.2 Klein editor, immutable
+  parent/child lineage, and per-revision visual embeddings.
+- Made `PresentationImageService` inspect the selected slide: HiDream creates
+  its first image, while later image feedback refines the attached source
+  artifact with FLUX and replaces its UUID in a new editable deck revision.
+- Updated the chat and presentation interfaces with explicit model/action
+  states, in-place child replacement, visible failures, and image-feedback
+  controls that require a non-empty edit when a slide image already exists.
+- Verified direct upload/Gemma/FLUX APIs and PostgreSQL embeddings; real
+  Chromium upload/refine/reload and background deck/HiDream/FLUX/PPTX paths;
+  62 related backend tests; deterministic presentation and upload-refinement
+  browser suites; and the TypeScript/Vite production build.
+
+## 2026-07-28 — Default presentation imagery verified
+
+- Extended the typed presentation plan with bounded visual briefs and
+  priorities while keeping provider execution, coordinates, persistence, and
+  revision promotion under deterministic application authority.
+- Made the durable presentation worker automatically generate at most the two
+  highest-priority applicable HiDream visuals, persist them as owned embedded
+  artifacts, and checkpoint each enriched deck into reconnectable browser
+  progress. Image-provider failure retains a promotable editable text deck.
+- Corrected the worker's Compose boundary so its ComfyUI calls use
+  `host.docker.internal:8188`, and made progressive previews fetch private
+  image bytes instead of displaying artifact placeholders.
+- Verified a real two-slide direct job with two default images and an
+  11,185,081-byte editable LibreOffice-validated PPTX. A final 155.5-second
+  Chromium path verified concurrent foreground chat, default images, in-place
+  FLUX feedback, lineage, download, cleanup, and clean Console/page/required
+  Network state. Nineteen focused backend tests, two deterministic presentation
+  browser tests, Ruff, and the production frontend build passed.
+
+## 2026-07-28 — Failed presentation cleanup verified
+
+- Replaced indistinguishable pending `Untitled presentation` names with a
+  bounded, whitespace-normalized form of the submitted brief; a successful
+  deck still promotes its model-generated title.
+- Added latest-revision lifecycle metadata to list summaries, explicit
+  `Failed · no completed slides` copy and terminal-failure explanation for
+  empty records, visible text delete controls on every library row, and a
+  confirmed `Clear failed (N)` action that excludes ready and pending decks.
+- Verified a real isolated queue/cancel/open/delete lifecycle in Chromium
+  against the rebuilt API and PostgreSQL: the useful title and failed state
+  rendered, DELETE returned 204, the row disappeared, the detail endpoint
+  returned 404, and Console/page errors were empty. Three deterministic
+  presentation browser tests, ten focused backend tests, and the frontend
+  production build passed.
+
+## 2026-07-28 — Reconnectable presentation progress verified
+
+- Added an accessible stage-weighted PowerPoint completion bar that appears
+  before the first draft and advances from persisted outline and slide work
+  through selected visual generation and render/validation.
+- Exposed the configured automatic-image budget on durable job responses so
+  reloads and view changes reconstruct progress without a volatile timer or
+  invented wall-clock estimate.
+- Kept Gemma planning and HiDream execution serial on the current shared RTX
+  5080, where both qualified provider paths use concurrency one; safe pipeline
+  overlap remains planned behind separate capacity.
+- Verified the exact 8%, 37%, 65%, and 92% transitions in deterministic
+  Chromium. A real isolated job returned the progress contract, persisted one
+  Gemma slide and one HiDream image, reconnected in Chromium at the visual
+  stage, reached a ready editable deck, cleared its loading/job state, and was
+  cleaned up. Nineteen focused backend tests and the frontend production build
+  passed.
+
+## 2026-07-30 — Engineering architecture views simplified
 
 - Reworked all twelve canonical Mermaid views as concise orientation maps with
   one primary engineering question, short labels, shared service boundaries,
   and model names only at actual model-call points.
+- Restored the explicit implemented memory taxonomy after visual review:
+  short-term LLM context, session working memory, and semantic cache; plus
+  long-term procedural/workflow, toolbox, entity, knowledge, persona,
+  semantic, episodic, summary, and conversation memory.
 - Replaced dense component-to-store and component-to-provider meshes in the
   full-system, runtime, memory, presentation, visual-artifact, and frontend
   views, and changed the search, visual-memory target, and architecture
@@ -797,3 +870,47 @@ This file is append-only history for meaningful, verified changes. It must not c
   visually inspected; both architecture scripts passed syntax checks; and the
   TypeScript/Vite production build passed with only the existing chunk-size
   advisory.
+
+## 2026-07-30 — Bounded RTX 5080 presentation profile verified
+
+- Reproduced the live deck/chat workflow with Qwen and Gemma warm at 8k context
+  and parallel one. Two 2048px default images produced a 423-second job; two
+  1024px images still produced a 367-second job because shared-VRAM model
+  swapping, rather than pixel count alone, dominated the first image.
+- Set the single-GPU default to one automatic 1024px hero image while retaining
+  configurable limits and on-demand per-slide generation/refinement. The exact
+  live Chromium workflow then passed in 4.5 minutes with foreground chat,
+  default HiDream imagery, in-place FLUX refinement, editable PPTX download,
+  terminal loading cleanup, clean required Network/Console state, and scoped
+  cleanup.
+- Confirmed that LM Studio's REST reload does not reproduce the qualified
+  workstation profile: a probe changed Gemma from parallel one to four and
+  nearly exhausted VRAM. Restored the exact CLI profile and left automatic
+  model transitions behind the planned capacity-aware resource manager.
+- Forty-four presentation/chat backend tests, three deterministic presentation
+  browser tests, and the TypeScript/Vite production build passed.
+
+## 2026-07-31 — Provider-neutral inference boundary verified
+
+- Replaced dependency assembly's concrete LM Studio construction with
+  fail-closed provider-neutral factories for text generation/tool calls,
+  vision, and embeddings. Main, presentation, diagram, vision, and embedding
+  roles now independently select an adapter and endpoint while preserving
+  compatibility aliases and the qualified LM Studio Qwen/Gemma/Nomic profile.
+- Kept model discovery, loading, unloading, context/KV-cache configuration,
+  GPU offload, residency verification, and restoration outside the inference
+  boundary for a future deterministic resource manager.
+- The rebuilt current-source backend emitted `start`, 17 deltas, and terminal
+  `done` for a direct unique-marker request, persisted and read back the turn,
+  logged successful embedding/classifier/main calls, and cleaned the scoped
+  user. Gemma separately returned exact buffered output through the
+  presentation role.
+- Live Chromium streamed a non-empty configured-provider response, cleared
+  loading/composer state, restored the exact rendered response after view
+  navigation, observed successful required requests, and reported no blocking
+  Console/page errors. Thirty-eight focused backend tests, Ruff, Black, MyPy,
+  the frontend build, Compose resolution, and twelve synchronized architecture
+  diagrams passed. After selecting the workspace `.venv` and restoring the
+  PostgreSQL container, dependency integrity and the unchanged complete
+  backend suite passed with 499 tests, including Google ADK, OpenTelemetry,
+  ONNX Runtime, and database integration coverage.

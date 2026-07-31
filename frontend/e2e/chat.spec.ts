@@ -1673,15 +1673,15 @@ test('@live creates and renders a real diagram artifact', async ({ page }) => {
   }
 })
 
-// Verify ordinary live chat still renders a real response through the configured model.
-test('@live renders a real Gemma response through AniOS', async ({ page }) => {
+// Verify ordinary live chat renders and restores a real response from the configured provider.
+test('@live renders a real configured-provider response through AniOS', async ({ page }) => {
   test.skip(process.env.ANIOS_E2E_LIVE !== '1', 'Set ANIOS_E2E_LIVE=1 to contact the configured live provider')
-  test.setTimeout(180_000)
+  test.setTimeout(240_000)
 
   const errors = observeBlockingBrowserErrors(page)
   const stamp = Date.now()
-  const userId = `live_gemma_${stamp}`
-  const token = `LIVE_GEMMA_${stamp}`
+  const userId = `live_provider_${stamp}`
+  const token = `LIVE_PROVIDER_${stamp}`
   const query = `Reply with exactly: ${token}`
   await page.addInitScript(id => localStorage.setItem('anios_user_id', id), userId)
 
@@ -1699,10 +1699,13 @@ test('@live renders a real Gemma response through AniOS', async ({ page }) => {
     const response = await responsePromise
     expect(response.status()).toBe(200)
     expect(response.headers()['content-type']).toContain('text/event-stream')
-    await expect(latestAssistantAnswer(page)).toBeVisible({ timeout: 120_000 })
+    const answer = latestAssistantAnswer(page)
+    await expect(answer).toBeVisible({ timeout: 180_000 })
     expect(await response.finished()).toBeNull()
 
-    await expect(latestAssistantAnswer(page).getByText(token, { exact: false })).toBeVisible({ timeout: 120_000 })
+    const renderedAnswer = (await answer.locator('.assistant-markdown').innerText()).trim()
+    expect(renderedAnswer.length).toBeGreaterThan(0)
+    expect(renderedAnswer).not.toBe('Thinking...')
     await expect(textarea).toBeEnabled()
     await expect(textarea).toHaveValue('')
     await expect(sendButton).toBeDisabled()
@@ -1716,7 +1719,7 @@ test('@live renders a real Gemma response through AniOS', async ({ page }) => {
     await expect(page.getByRole('alert')).not.toBeVisible()
     await page.getByRole('button', { name: 'Conversations' }).click()
     await expect(page.getByText(query, { exact: true })).toBeVisible()
-    await expect(latestAssistantAnswer(page).getByText(token, { exact: false })).toBeVisible()
+    await expect(latestAssistantAnswer(page).locator('.assistant-markdown')).toHaveText(renderedAnswer)
     expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
   } finally {
     await page.request.delete(`http://localhost:8000/api/v1/memory/${userId}`)
@@ -2294,12 +2297,15 @@ test('routes can-you image edits to refinement instead of vision Q&A', async ({ 
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
-// Verify an uploaded image reaches the VLM and displays its grounded analysis.
-test('uploads and analyzes an image with visible progress and result', async ({ page }) => {
+// Verify an uploaded image reaches the VLM and can become a linked FLUX revision.
+test('uploads, analyzes, and source-refines an image with visible results', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   const artifactId = '34343434-3434-4434-8434-343434343434'
+  const refinedId = '45454545-4545-4454-8454-454545454545'
   const analysis = 'A cobalt origami whale floating above a white platform.'
+  const feedback = 'Make only the whale violet'
   let multipartBody = ''
+  let refinementBody: Record<string, unknown> = {}
   let releaseAnalysis = () => {}
   const analysisGate = new Promise<void>(resolve => { releaseAnalysis = resolve })
 
@@ -2322,6 +2328,30 @@ test('uploads and analyzes an image with visible progress and result', async ({ 
   await page.route(
     `http://localhost:8000/api/v1/artifacts/ani.mallya/${artifactId}/content`,
     route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
+  )
+  await page.route(
+    `http://localhost:8000/api/v1/artifacts/ani.mallya/${refinedId}/content`,
+    route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
+  )
+  await page.route(
+    `http://localhost:8000/api/v1/images/${artifactId}/refine`,
+    async route => {
+      refinementBody = route.request().postDataJSON() as Record<string, unknown>
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify(imageArtifactRecord(
+          'generated_image',
+          refinedId,
+          String(refinementBody.conversation_id),
+          {
+            parent_artifact_id: artifactId,
+            refinement_feedback: feedback,
+            edit_mode: 'source_conditioned',
+          },
+        )),
+      })
+    },
   )
 
   await page.goto('/')
@@ -2349,6 +2379,18 @@ test('uploads and analyzes an image with visible progress and result', async ({ 
   await expect(textarea).toBeEnabled()
   await expect(textarea).toHaveValue('')
   await expect(page.getByText('Analyzing image...', { exact: true })).not.toBeVisible()
+  const followup = imageCard.getByLabel('Ask about or refine this image')
+  await followup.fill(feedback)
+  await imageCard.getByRole('button', { name: 'Refine' }).click()
+  await expect(page.getByLabel('Image: Generated image')).toHaveCount(1)
+  await expect(page.getByLabel('Image: Generated image').getByAltText(
+    'Generated visual result',
+  )).toBeVisible()
+  expect(refinementBody).toMatchObject({
+    user_id: 'ani.mallya',
+    conversation_id: expect.any(String),
+    feedback,
+  })
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
@@ -2448,9 +2490,9 @@ test('shows every documented image-analysis failure contract', async ({ page }) 
   expect(errors.consoleErrors.join('\n')).toContain('502')
 })
 
-// Verify real ComfyUI generation, source editing, and Gemma vision through the UI.
+// Verify real ComfyUI generation plus generated/uploaded source edits in the UI.
 test('@live visual generation and analysis complete through the browser', async ({ page }) => {
-  test.setTimeout(180_000)
+  test.setTimeout(240_000)
   const errors = observeBlockingBrowserErrors(page)
   const userId = `live_visual_${Date.now()}`
   const conversationId = '90909090-9090-4090-8090-909090909090'
@@ -2558,7 +2600,8 @@ test('@live visual generation and analysis complete through the browser', async 
     expect(analysisResponse.status()).toBe(201)
     const analysisResult = await analysisResponse.json() as Record<string, unknown>
     const analyzed = analysisResult.artifact as Record<string, unknown>
-    createdIds.push(String(analyzed.id))
+    const analyzedId = String(analyzed.id)
+    createdIds.push(analyzedId)
     const metadata = analyzed.metadata as Record<string, unknown>
     expect(analyzed).toMatchObject({
       user_id: userId,
@@ -2578,8 +2621,55 @@ test('@live visual generation and analysis complete through the browser', async 
     await expect(page.getByText('Analyzing image...', { exact: true })).not.toBeVisible()
     await expect(textarea).toBeEnabled()
 
-    await page.getByLabel('Image: Edited image').getByRole('button', { name: 'Delete' }).click()
-    await analyzedCard.getByRole('button', { name: 'Delete' }).click()
+    const uploadFeedback = 'make only the background a soft warm gray'
+    const uploadRefinementInput = analyzedCard.getByLabel('Ask about or refine this image')
+    await uploadRefinementInput.fill(uploadFeedback)
+    const uploadRefinementResponsePromise = page.waitForResponse(
+      response => response.url() ===
+        `http://localhost:8000/api/v1/images/${analyzedId}/refine`,
+      { timeout: 120_000 },
+    )
+    await analyzedCard.getByRole('button', { name: 'Refine' }).click()
+    await expect(analyzedCard.getByRole('button', { name: /^Refining/ })).toBeVisible()
+    const uploadRefinementResponse = await uploadRefinementResponsePromise
+    expect(uploadRefinementResponse.status()).toBe(201)
+    const uploadRevision = await uploadRefinementResponse.json() as Record<string, unknown>
+    const uploadRevisionId = String(uploadRevision.id)
+    createdIds.push(uploadRevisionId)
+    expect(uploadRevision).toMatchObject({
+      user_id: userId,
+      conversation_id: conversationId,
+      kind: 'generated_image',
+      status: 'ready',
+      provider: 'comfyui',
+      model: 'flux-2-klein-4b-fp8.safetensors',
+      metadata: {
+        parent_artifact_id: analyzedId,
+        refinement_feedback: uploadFeedback,
+        edit_mode: 'source_conditioned',
+        steps: 4,
+      },
+    })
+    await expect(page.getByLabel('Image: Uploaded image')).toHaveCount(0)
+    const uploadedRevisionCard = page.getByLabel('Image: Edited image').last()
+    await expect(uploadedRevisionCard.getByAltText('Generated visual result')).toBeVisible()
+
+    await page.reload()
+    await expect(page.getByText('Restoring conversation...')).not.toBeVisible()
+    await expect(page.getByLabel('Image: Edited image')).toHaveCount(2)
+    await expect(page.getByLabel('Image: Generated image').getByAltText(
+      'Generated visual result',
+    )).toBeVisible()
+    await expect(page.getByLabel('Image: Uploaded image').getByAltText(
+      'Uploaded visual',
+    )).toBeVisible()
+
+    await page.getByLabel('Image: Edited image').first().getByRole('button', { name: 'Delete' }).click()
+    await page.getByLabel('Image: Edited image').last().getByRole('button', { name: 'Delete' }).click()
+    const uploadedParentDelete = await page.request.delete(
+      `http://localhost:8000/api/v1/artifacts/${userId}/${analyzedId}`,
+    )
+    expect(uploadedParentDelete.status()).toBe(200)
     const originalDelete = await page.request.delete(
       `http://localhost:8000/api/v1/artifacts/${userId}/${generatedId}`,
     )

@@ -28,6 +28,7 @@ class StubImages:
         self.edit_calls.append(kwargs)
         return {"id": "revision", "kind": "generated_image"}
 
+
 # Build one refinement service around an isolated image-service double.
 def _service(record: dict[str, Any] | None) -> ImageRefinementService:
     return ImageRefinementService(StubImages(record))  # type: ignore[arg-type]
@@ -93,13 +94,32 @@ async def test_refine_routes_named_color_change_to_source_editor() -> None:
     assert call["user_feedback"] == "can you make this car red?"
 
 
-# Missing, uploaded, and blank-feedback inputs must fail before provider work.
+# An uploaded image uses the same owned-pixel editor and becomes a linked child.
+@pytest.mark.asyncio
+async def test_refine_accepts_an_owned_uploaded_image() -> None:
+    upload = {
+        "id": "up",
+        "kind": "uploaded_image",
+        "mime_type": "image/png",
+        "metadata": {"analysis": "A blue car"},
+    }
+    service = _service(upload)
+    images: Any = service.images
+
+    revision = await service.refine("u", "up", "make the car red", "c", "t")
+
+    assert revision["id"] == "revision"
+    assert images.edit_calls[0]["parent"] == upload
+    assert images.edit_calls[0]["source_content"] == b"source pixels"
+
+
+# Missing, non-image, and blank-feedback inputs must fail before provider work.
 @pytest.mark.asyncio
 async def test_refine_rejects_invalid_parent_or_feedback() -> None:
     with pytest.raises(RefinementError):
         await _service(None).refine("u", "missing", "x", "c", "t")
 
-    upload = {"id": "up", "kind": "uploaded_image", "metadata": {}}
+    upload = {"id": "up", "kind": "diagram", "metadata": {}}
     with pytest.raises(RefinementError):
         await _service(upload).refine("u", "up", "x", "c", "t")
 

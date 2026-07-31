@@ -5,20 +5,24 @@ flowchart TB
     Servers[[Configured MCP servers]] --> Discover[Read live tool catalog]
     Discover --> Inspect{Safe description<br/>and stable schema?}
     Inspect -->|no| Quarantine[Quarantine descriptor]
-    Inspect -->|yes| Index[Embed safe descriptor<br/>with Nomic]
-    Index --> Store[(Tool descriptors<br/>in pgvector)]
+    Inspect -->|yes| Index[Embed safe descriptor]
+    Index --> Inference[Provider-neutral<br/>inference adapter]
+    Inference -->|embedding role| Nomic[Nomic text embedding]
+    Nomic --> Store[(Tool descriptors<br/>in pgvector)]
 
     Chat([Chat request]) --> Shortlist[Semantic tool shortlist]
     Store --> Shortlist
     Preferences[(Approved preferences<br/>and sanitized outcomes)] --> Shortlist
-    Shortlist --> Select[Qwen 3.5 9B<br/>native tool selection]
+    Shortlist --> Inference
+    Inference -->|main role| Select[Qwen 3.5 9B<br/>native tool selection]
 
     Explicit([Explicit tool call]) --> Gates
     Select --> Gates[Application invocation gates<br/>trust, confirmation, live schema,<br/>arguments and privacy]
     Gates -->|allowed| Server[[Selected MCP tool]]
     Gates -->|refused| Status[Visible tool status]
     Server --> Result[Bounded result<br/>as untrusted data]
-    Result --> Answer[Qwen 3.5 9B<br/>final answer]
+    Result --> Inference
+    Inference -->|main role| Answer[Qwen 3.5 9B<br/>final answer]
     Result --> Status
 
     MemoryAPI([Tool-memory API]) --> Validate[Ownership and safe fields]
@@ -31,7 +35,7 @@ flowchart TB
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900;
     class Chat,Explicit,MemoryAPI,Status interface;
-    class Discover,Inspect,Index,Shortlist,Gates,Result,Validate application;
+    class Discover,Inspect,Index,Shortlist,Inference,Gates,Result,Validate application;
     class Store,Preferences data;
-    class Servers,Server,Select,Answer external;
+    class Servers,Server,Nomic,Select,Answer external;
     class Quarantine warning;

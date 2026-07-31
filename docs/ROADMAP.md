@@ -110,11 +110,26 @@ The verified items above satisfy parts of these gates; the explicit `UNVERIFIED`
 
 - `VERIFIED`: user-scoped text document ingestion, content-hash idempotency, deterministic paragraph chunking, Nomic embedding, pgvector HNSW search, coordinator prompt delivery, export, and deletion;
 - `VERIFIED`: live Gemma reproduced a unique fact retrieved from an ingested validation document;
-- `PLANNED`: file/connector ingestion, background jobs, parsing beyond plain text, and source lifecycle refresh;
-- hybrid search and reranking;
-- evaluation of retrieval quality;
-- citation and source-display policy;
-- optional RAGFlow, parent-document, GraphRAG, MultiQuery, and HyDE experiments.
+- `PLANNED`: local open-source Unstructured parsing behind an application-owned
+  parser interface for supported document types. Preserve source hashes,
+  element types, titles/sections, page coordinates, tables, parent-document
+  lineage, and parser/version provenance; keep OCR and format-specific system
+  dependencies isolated in a background ingestion worker. Do not require the
+  hosted Unstructured API or send private documents to it.
+- `PLANNED`: agentic chunking as a bounded, optional ingestion strategy after
+  Unstructured partitioning. A specialist may propose semantic boundaries,
+  hierarchy, contextual labels, and parent/child groupings, but application
+  code must validate source coverage, ordering, maximum size, overlap,
+  provenance, idempotency, and prompt-injection isolation before indexing.
+- `PLANNED`: benchmark deterministic paragraph, Unstructured element/`by_title`,
+  parent-document, semantic, and agentic chunking on one versioned retrieval
+  evaluation set. Promote agentic chunking only when it improves answer recall,
+  precision, citation faithfulness, and context efficiency within explicit
+  ingestion-latency and local-compute budgets; retain deterministic fallback.
+- `PLANNED`: file/connector ingestion, durable background jobs, source lifecycle
+  refresh, hybrid search and reranking, retrieval-quality evaluation, and
+  citation/source-display policy;
+- `PLANNED`: optional RAGFlow, GraphRAG, MultiQuery, and HyDE experiments.
 
 The local knowledge store is a working semantic retrieval path, but it is not yet a production RAG system. The remaining items above require separate functional acceptance.
 
@@ -126,8 +141,18 @@ Goal: let one AniOS conversation create editable technical diagrams and locally 
 - `VERIFIED`: a focused `PresentationAgent` asks Gemma for a compact outline, one bounded slide-content microtask at a time, or a strict selected-slide `SlideEdit`. Durable PostgreSQL jobs are claimed by a standalone leased worker that invokes this LangGraph, checkpoints progressive drafts, survives browser navigation/disconnect, and exposes reconnectable progress/cancellation. A Redis foreground-priority lease lets a waiting chat run between presentation microtasks. A deterministic application compiler turns bounded model output into stable editable layout objects. PptxGenJS renders editable native text, shapes, charts, tables, images, and notes; structural OOXML inspection and headless LibreOffice validation both precede atomic current-revision promotion. User-scoped append-only history, stable target-slide association, independent per-slide feedback conversations, stale-base conflict protection, opaque binary storage, progressive browser previews, slide thumbnails, navigation/reload restoration, named `.pptx` download, deletion, and visible queued/running/ready/failed/cancelled states pass direct and real-browser acceptance.
 - `VERIFIED`: forced worker termination reclaimed the same PostgreSQL job on attempt 2 and produced its exact four-slide validated PPTX after the killed worker's Redis model lease expired naturally. Two simultaneous disposable workers claimed separate jobs with distinct worker IDs and each completed once with one revision and its exact two slides. Direct and isolated real-browser cancellation both reached persisted `cancelled` state after worker ownership, cleared resumable browser state, exposed visible progress/terminal messages, and cleaned up their scoped records.
 - `VERIFIED`: a bounded four-client mixed workload overlapped six terminal chat streams and 45 memory/operations calls with two real presentation jobs. All 51 operations passed with zero failures; overall p95 was 35.059 seconds and maximum was 67.255 seconds, while both exact two-slide decks reached `ready` on attempt 1 in 147.881 seconds. An isolated live Chromium chat/deck workflow also passed in 131.2 seconds with both qualified models resident.
-- `VERIFIED`: optional selected-slide imagery uses `PresentationImageService` to generate through the existing ComfyUI/HiDream artifact boundary, attach the owned image UUID to a new revision, and preserve the same rendering and promotion gates.
-- `PLANNED`: source-grounded presentation research and citations, reusable theme/master libraries, diagram-asset hydration, arbitrary existing-PPTX import, automated visual-diff review, sustained multi-host load/latency testing, and distributed GPU-capacity scheduling. The current worker queue is durable and horizontally claim-safe, but it is not yet a general distributed scheduler. Raster image pixels are not decomposed into editable drawing primitives, although the image object remains replaceable in PowerPoint.
+- `VERIFIED`: the presentation specialist declares bounded image briefs and priorities with slide content. The durable worker automatically enriches the configured highest-value applicable slides through the owned ComfyUI/HiDream artifact boundary, checkpoints each image into reconnectable browser progress, and still promotes an editable text deck when imagery is unavailable. The bounded RTX 5080 profile defaults to one 1024px hero image because two serial defaults exceeded the five-minute live-browser readiness gate with both 8k text roles resident; users can add or refine imagery per slide afterward. The browser converts those durable outline, slide, selected-visual, and render/validation checkpoints into an accessible stage-weighted progress bar rather than an invented time estimate. Later image feedback reads the attached owned artifact through the shared integrity boundary, creates an immutable FLUX.2 Klein child, replaces the image UUID in a new deck revision and in-place browser preview, and preserves the same editable-object rendering and promotion gates.
+- `PLANNED`: capacity-aware presentation pipelining. Once a separate GPU or a
+  tested GPU-memory lease proves LM Studio and ComfyUI can overlap safely,
+  enqueue an eligible high-priority visual as soon as its slide checkpoint is
+  durable while the presentation specialist plans later slides. Bound
+  in-flight work per provider, preserve deterministic slide/image association,
+  propagate cancellation and failure independently, retain serial fallback,
+  and measure time-to-first-slide, time-to-first-image, foreground-chat latency,
+  peak VRAM, and total deck latency before enabling it by default. The current
+  shared RTX 5080 qualification intentionally keeps both provider paths at
+  concurrency one.
+- `PLANNED`: source-grounded presentation research and citations, reusable theme/master libraries, diagram-asset hydration, arbitrary existing-PPTX import, automated visual-diff review with minimum-readable-font enforcement, sustained multi-host load/latency testing, and distributed GPU-capacity scheduling. The current worker queue is durable and horizontally claim-safe, but it is not yet a general distributed scheduler. Raster image pixels are not decomposed into editable drawing primitives, although the image object remains replaceable in PowerPoint.
 - `VERIFIED`: explicit diagram requests create user-scoped PostgreSQL artifact records with pending/ready/failed lifecycle, conversation/trace provenance, provider/model metadata, recent owned history, scoped deletion, active-conversation transcript/artifact restoration after full reload, local Mermaid/SVG downloads, and shielded failed/cancelled terminal cleanup after client disconnect. Retention cleanup remains `PLANNED`.
 - `VERIFIED`: deterministic application policy routes explicit diagram requests through a specialized typed `DiagramAgent` LangGraph workflow plus provider/repository contracts; the configured diagram model produces only a bounded specification and cannot select providers, write storage, or control hardware. Raster generation and vision now use focused provider/service contracts; autonomous image agents and multi-agent visual workers remain `PLANNED`.
 - `VERIFIED`: the local Mermaid provider validates allowlisted passive source, performs one bounded format-correction retry, streams artifact lifecycle events, and lazily renders editable source as strict SVG in chat with visible generation/render failure states.
@@ -150,7 +175,7 @@ committed cases in the final live run with 1.0 recall, 1.0 specificity, no
 misses, and no unnecessary searches. Image-retrieval calibration remains manual
 and is the next evaluation gap.
 - `VERIFIED`: threaded followup questions about any owned generated or uploaded image reuse the integrity-checked stored bytes and the same Gemma vision boundary, replay a bounded question/answer context, persist a size-bounded thread in artifact metadata, seed from a prior flat analysis, and reject unowned or non-ready images with 404 before any provider call. Deterministic Chromium plus backend/unit coverage pass, and a live Gemma followup completed through the local visual MCP facade. The interactive follow-up thread lives only on the artifact record. The initial upload analysis, however, is indexed into semantic memory as a provenance-labelled description and is recalled by an ordinary conversation turn (live-verified); indexing the follow-up thread itself remains `PLANNED`.
-- `VERIFIED`: the unified composer routes explicit natural-language new-image requests to image generation, image attachments to analysis, and historical image questions back to ordinary chat without creating another image. Generated-image cards distinguish ordinary questions from imperative and polite question-shaped edit requests such as `can you make this car red?`; edit requests send the integrity-checked source pixels, exact feedback, and preservation constraints through the four-step local FLUX.2 Klein 4B Distilled editor. The immutable child records its parent, source SHA-256, feedback, model, seed, steps, and latency, and replaces the active card in place. Live RTX 5080 acceptance passed localized color/material, object addition, and exact plate-text editing in 4.2–10.9 provider seconds; a real Chromium generation/edit/vision workflow passed with clean Network/Console/page state. Prompt-only HiDream refinement and the experimental SAM recolor branch were removed after failing preservation or quality evidence.
+- `VERIFIED`: the unified composer routes explicit natural-language new-image requests to image generation, image attachments to analysis, and historical image questions back to ordinary chat without creating another image. Generated and uploaded image cards distinguish ordinary questions from imperative and polite question-shaped edit requests such as `can you make this car red?`; edit requests send the integrity-checked source pixels, exact feedback, and preservation constraints through the four-step local FLUX.2 Klein 4B Distilled editor. The immutable child records its parent, source SHA-256, feedback, model, seed, steps, and latency, receives its own visual embedding, and replaces the active card in place. Live RTX 5080 acceptance covers generated and uploaded parents plus slide-attached images; real Chromium runs passed with clean required Network/Console/page state. Prompt-only HiDream refinement and the experimental SAM recolor branch were removed after failing preservation or quality evidence.
 - `PLANNED` (accepted design in ADR 0007): generated pixels become visible before a durable, idempotent VLM observation job records append-only typed semantics. Visual memory stores owned artifact/revision handles, user aliases, and derived descriptions rather than duplicate pixels; calibrated fusion of exact aliases, semantic vectors, pixel vectors, conversation, and recency must clarify ambiguous matches. Post-edit observation and policy verification will compare requested changes and preservation constraints before promotion, retain the parent on failure, and permit at most one bounded retry. Remaining delivery stages are observation, reference resolution, semantic verification, then MCP/agent and resource-scheduling exposure.
 - `VERIFIED`: an explicit internet search about a recalled image runs image retrieval first, appends only a bounded prompt/analysis description to the normalized subject, privacy-screens the combined query, invokes the read-only internet MCP tool, and never sends image bytes. Real Chromium verified generation, grounded followup, visible search-tool lifecycle, terminal streaming, cleared loading/input, and memory-map drilldown.
 - `VERIFIED`: deterministic and live Chromium acceptance covers diagrams, real ComfyUI image generation, multipart Gemma analysis, private image rendering, progress/cancellation, retry, 413/422/502/503 failure display, navigation and reload restoration, history, download, owned deletion, clean successful Network/Console behavior, and terminal loading state.
@@ -182,6 +207,13 @@ scale without coupling the system to the current RTX 5080 or planned DGX Spark.
   qualification harness. Qwen passed bounded supervisor/tool cases plus real
   chat and diagram paths; Gemma remained the presentation specialist after
   Qwen failed the actual strict progressive worker contract;
+- `VERIFIED`: provider-neutral text, vision, and embedding contracts now sit
+  behind a fail-closed `openai_compatible` adapter factory. Main,
+  presentation, diagram, vision, and embedding roles independently select an
+  adapter and endpoint while retaining the qualified LM Studio profile.
+  Buffered Gemma and streaming Qwen paths passed live acceptance. Model
+  discovery, loading, unloading, residency, context/KV-cache, and GPU offload
+  remain outside this boundary and require the planned resource manager;
 - `VERIFIED`: the configured Qwen search cascade passed the complete 52-case
   routing evaluation with 1.0 recall and 1.0 specificity. Long-duration
   accuracy drift, contexts above the verified 8k workstation profile, and DGX
@@ -258,6 +290,17 @@ Safe tool-descriptor embeddings, approved preference/sanitized outcome memory, l
 
 ## Milestone 6: additional interfaces and automation — PLANNED
 
+- `PLANNED`: private single-user remote web access. Publish one HTTPS hostname
+  through an authenticated edge/tunnel that gates every UI and `/api` request
+  with a password-style login, one-time code, or approved identity before it
+  reaches a same-origin local reverse proxy. Keep PostgreSQL, Redis, LM Studio,
+  ComfyUI, the renderer, and internal MCP endpoints unaddressable from the
+  public Internet; expose no secrets in the Vite bundle; support SSE, uploads,
+  downloads, and long presentation/image requests through the proxy; use
+  expiring sessions, logout/revocation, rate limits, and deny-by-default origin
+  checks. GitHub Pages may host a public static demonstration, but it is not the
+  target for the authenticated working application because it does not provide
+  the required local API path or ordinary free private-site access control.
 - notifications;
 - calendar and email integrations;
 - voice interaction;
