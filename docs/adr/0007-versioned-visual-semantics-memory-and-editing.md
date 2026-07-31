@@ -11,7 +11,7 @@ semantic post-edit verification remain `PLANNED`.
 ## Context
 
 AniOS can generate and upload images, store them privately, embed their pixels,
-retrieve them by aligned text-to-image similarity, ask Gemma questions about
+retrieve them by aligned text-to-image similarity, ask the configured vision model questions about
 owned image bytes, and pass an owned generated or uploaded image to a source-conditioned
 local editor. Semantic observation and post-edit verification are not yet part
 of the promotion boundary.

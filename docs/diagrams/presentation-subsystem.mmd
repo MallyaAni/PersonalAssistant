@@ -9,8 +9,8 @@ flowchart TB
     Worker --> Agent[PresentationAgent]
     Agent --> Gate[Redis foreground-priority gate]
     Gate --> Inference[Provider-neutral<br/>inference adapter]
-    Inference --> Gemma[Gemma 4 12B<br/>outline, slide, or edit]
-    Gemma --> Compiler[Deterministic editable<br/>DeckSpec compiler]
+    Inference --> Qwen[Qwen 3.5 4B via vLLM<br/>outline, slide, or edit]
+    Qwen --> Compiler[Deterministic editable<br/>DeckSpec compiler]
     Compiler --> Visuals{Useful slide image?}
     Visuals -->|yes, bounded| HiDream[HiDream via ComfyUI]
     Visuals -->|no or unavailable| Render
@@ -31,5 +31,5 @@ flowchart TB
     class User,UI,Feedback interface;
     class API,Worker,Agent,Gate,Inference,Compiler,Visuals,Render application;
     class Job,Revision data;
-    class Gemma,HiDream external;
+    class Qwen,HiDream external;
     class Boundary warning;

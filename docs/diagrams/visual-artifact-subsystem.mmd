@@ -20,15 +20,15 @@ flowchart TB
 
     Diagram --> Inference
     Vision --> Inference
-    Inference -->|diagram role| Qwen[Qwen 3.5 9B]
-    Inference -->|vision role| Gemma[Gemma 4 12B]
+    Inference -->|diagram role| Qwen[Qwen 3.5 4B via vLLM]
+    Inference -->|vision role| Qwen
     Qwen --> Mermaid[Validated Mermaid]
     Image -->|new| HiDream[HiDream via ComfyUI]
     Image -->|edit| Flux[FLUX.2 Klein via ComfyUI]
     HiDream --> Pixels[Validated image bytes]
     Flux --> Pixels
 
-    Gemma --> Analysis[Grounded analysis<br/>or threaded answer]
+    Qwen --> Analysis[Grounded analysis<br/>or threaded answer]
 
     Mermaid --> Repository[Owned artifact repository]
     Pixels --> Repository
@@ -46,4 +46,4 @@ flowchart TB
     class User,UI,MCP interface;
     class API,Ownership,Diagram,Image,Vision,Inference,Mermaid,Pixels,Analysis,Repository application;
     class Storage data;
-    class Qwen,Gemma,HiDream,Flux,VisionEmbed external;
+    class Qwen,HiDream,Flux,VisionEmbed external;

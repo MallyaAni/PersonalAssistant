@@ -914,3 +914,127 @@ This file is append-only history for meaningful, verified changes. It must not c
   PostgreSQL container, dependency integrity and the unchanged complete
   backend suite passed with 499 tests, including Google ADK, OpenTelemetry,
   ONNX Runtime, and database integration coverage.
+
+## 2026-07-31 — Provider-neutral inference benchmark verified
+
+- Added a sanitized operational benchmark over the provider-neutral text,
+  native-tool, presentation, embedding, and vision contracts, with explicit
+  thresholds and automation-friendly pass/fail exit status.
+- Recorded adapter/runtime/model identity and non-identifying RTX 5080 host
+  facts without retaining prompts, model output, fixture bytes, tool arguments,
+  credentials, or user data.
+- Three sequential LM Studio runs with the qualified Qwen/Gemma/Nomic roles
+  passed all five checks. Main TTFT was 9.790-10.900 seconds, complete main
+  streaming was 10.902-11.991 seconds with terminal completion, and the tool,
+  presentation, embedding, and fixed-fixture vision checks all passed their
+  correctness and latency limits.
+
+## 2026-07-31 — Default inference runtime migrated to vLLM
+
+- Replaced the externally managed LM Studio deployment with pinned
+  `vllm-main` and `vllm-embedding` Compose services. Qwen 3.5 4B now serves
+  main, tool, diagram, presentation, architecture-candidate, and vision roles;
+  Nomic remains the 768-dimensional text embedder.
+- Encoded the RTX 5080 startup requirement that Qwen reach health before Nomic,
+  then ComfyUI, after concurrent cold initialization reproduced a negative
+  KV-cache boundary. Persisted model and compile caches live on `E:`.
+- Tightened the presentation model contract to forbid invented `optional_`
+  field names and normalize explicit null optional notes. Three consecutive
+  real queued presentation jobs then reached `ready` with exact slide counts.
+- Verified provider-level streaming, native tools, structured output,
+  embeddings, and vision; exact direct AniOS SSE chat; real browser response
+  rendering/restoration; a 5.47 MB owning-API vision upload; and a real 2048px
+  ComfyUI generation while both vLLM services remained healthy.
+- The complete backend suite passed 504 tests, all 36 deterministic browser
+  tests passed, the live configured-provider browser test passed against final
+  rebuilt images, Ruff and full-project Black passed, and the frontend
+  production build passed. All 12 diagram pairs and the published architecture
+  page were regenerated, synchronized, and visually reviewed. Full MyPy
+  retains two pre-existing `visual_mcp.py` call-site errors and is not recorded
+  as passing.
+
+## 2026-07-31 — FP8 inference profile and schema-constrained model boundaries
+
+- Quantized `vllm-main` to FP8 with an FP8 KV cache on the RTX 5080's native
+  Blackwell tensor cores (vLLM selected `CutlassFP8ScaledMMLinearKernel`).
+  Resident weights fell from 8.61 GiB to 5.09 GiB, cached tokens rose from
+  45,428 to 64,046, the qualified context doubled to 16,384, and free GPU memory
+  with both services resident rose from 1,860 MiB to 6,588 MiB for host ComfyUI.
+- Sized the embedding service to its measured 0.26 GiB of weights, releasing
+  roughly 2 GiB that the previous 0.15 utilization reserved and never used.
+- Sent JSON Schemas on the boundaries whose replies are parsed as data, so the
+  runtime decodes them as grammars. The presentation schema is derived from the
+  Pydantic model that validates the reply, and an explicitly requested slide
+  count compiles into `minItems`/`maxItems` instead of a validate-and-re-prompt
+  cycle. A prompt explicitly demanding `optional_` prefixes and null notes
+  produced neither, and a real three-slide job reached `ready` on attempt 1.
+- Fixed nondeterministic search routing: at the runtime's default sampling one
+  freshness question answered both `YES` and `NO` across identical calls.
+  Classifiers now decode greedily and scored 16/16 on a labelled set under FP8.
+- Migrated the working `.env`, which still pointed every host-run tool at LM
+  Studio on `127.0.0.1:1234` with Gemma models; the benchmark had been failing
+  5/5 against a model the runtime does not serve.
+- Restored the full MyPy gate by supplying the missing `edit_provider` argument
+  at both `visual_mcp.py` call sites.
+- Benchmark passed 5/5 on FP8 and improved every latency against the BF16
+  baseline: main TTFT 0.260 s to 0.160 s, total 1.653 s to 1.173 s, 27.821 to
+  39.222 normalized estimated tokens/s, native tool 0.439 s to 0.316 s, and the
+  embedding batch 0.065 s to 0.025 s. Real SSE chat returned exact text and
+  terminal `done`. Backend suite 506 passed; Ruff, Black, and full-project MyPy
+  across 152 source files passed.
+- Repointed `test_vision_embedding_alignment` at the embedding service. It had
+  requested embeddings from `LLM_BASE_URL`, which under split vLLM services is
+  the generation endpoint and returns 404, so the cross-modal ordering
+  assertions had been skipping silently rather than running.
+
+## 2026-07-31 — Image-wait feedback, composer clearing, and a GPU contention finding
+
+- Cleared the composer as soon as a send is accepted. `setInput('')` previously
+  ran only after the whole response finished, so submitted text stayed in the
+  box for the entire stream while also appearing in the transcript. The text is
+  restored on failure so the existing Retry action still has something to send.
+- Replaced the single pulsing line shown during image generation with a
+  Genmoji-style conjuring tile: a square placeholder in the accent hues with a
+  sweeping highlight, holding the space the image will occupy so the transcript
+  does not reflow on arrival. It honours `prefers-reduced-motion`, and the exact
+  `Generating image...` status text is preserved for assistive technology.
+- Established that image latency on this workstation is dominated by GPU
+  contention, not by sampler settings. At a fixed 2048x2048 the same prompt took
+  17.7 s at 28 steps but 312 s at 6 steps and 840 s at 16 steps, tracking
+  ComfyUI's available VRAM (7.25 GiB with vLLM stopped, 1.46 GiB while
+  thrashing) rather than the step count. HiDream needs about 10 GiB and vLLM
+  pins about 9.9 GiB on a 16.3 GiB card, so the diffusion runtime streams
+  weights from host RAM whenever both are resident.
+- Added a tested GPU handoff that sleeps local inference for the duration of one
+  image job. `POST /sleep` is verified to return 5.4 GiB, but `POST /wake_up`
+  fails on vLLM 0.23.0 when weights were quantized with `--quantization fp8`
+  (`'list' object has no attribute 'zero_'`) and leaves the engine permanently
+  asleep. The handoff therefore ships behind `GPU_HANDOFF_ENABLED=false` with
+  sleep mode absent from Compose, pending a pre-quantized FP8 checkpoint or a
+  fixed vLLM.
+- Reverted a 0.45 GPU-memory-utilization attempt. The value is a fraction of
+  total VRAM, so once ComfyUI holds its weights vLLM cannot reach its own share
+  and fails startup with `No available memory for the cache blocks`.
+- Stopped caching the routing-classifier inference client. One shared instance
+  serialized every concurrent chat behind another chat's classifier call,
+  because a provider guards its own requests with an internal lock.
+
+## 2026-07-31 — Pre-quantized FP8 checkpoint and a measured verdict on GPU handoff
+
+- Replaced on-the-fly `--quantization fp8` with the pre-quantized
+  `RedHatAI/Qwen3.5-4B-FP8-dynamic` checkpoint (compressed-tensors, revision
+  pinned). vLLM selects `CompressedTensorsW8A8Fp8` on the same native Blackwell
+  kernel, the vision tower is retained, and the benchmark passes 5/5 warm:
+  TTFT 0.169 s, 35.187 normalized estimated tokens/s, native tool 0.394 s,
+  presentation structured output 0.211 s, embeddings 0.056 s, vision 0.139 s.
+- Isolated the sleep/wake failure to the **KV cache dtype**, not FP8 weights.
+  With `--kv-cache-dtype fp8`, waking fails with `'list' object has no attribute
+  'zero_'` and strands the engine asleep; with the default dtype, two sleep/wake
+  cycles succeed and inference is correct after each. Returning the KV cache to
+  the default still raised cached tokens from 64,046 to 93,992, because the
+  pre-quantized weights leave more room than the online quantizer did.
+- Left `GPU_HANDOFF_ENABLED` off after measuring it. The handoff works, but a
+  sleep/reload round trip per image cost more than the contention it removed:
+  47/64/42 s with it against 37/35 s without. ComfyUI already manages its own
+  residency. The implementation and its tests stay for a future model that makes
+  sharing the card genuinely impossible.

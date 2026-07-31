@@ -10,7 +10,7 @@ flowchart TB
 
     Supervisor -->|diagram| Diagram[DiagramAgent]
     Diagram --> Inference[Provider-neutral<br/>inference adapter]
-    Inference -->|diagram role| DiagramModel[Qwen 3.5 9B<br/>diagram call]
+    Inference -->|diagram role| DiagramModel[Qwen 3.5 4B<br/>diagram call via vLLM]
     DiagramModel --> Artifact[Validate and persist<br/>Mermaid artifact]
 
     Supervisor -->|ordinary chat| Memory[MemoryCoordinatorAgent<br/>bounded retrieval]
@@ -22,7 +22,7 @@ flowchart TB
     Search --> Context
 
     Context --> Inference
-    Inference -->|main role| Main[Qwen 3.5 9B<br/>streaming assistant call]
+    Inference -->|main role| Main[Qwen 3.5 4B<br/>streaming call via vLLM]
     Main --> Persist[Persist completed turn<br/>and lifecycle updates]
     Persist --> Stream[SSE response]
 

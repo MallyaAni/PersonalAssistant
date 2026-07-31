@@ -28,6 +28,12 @@ const publishedDiagrams = [
     change: "What runs in Docker Compose and what runs on the host.",
   },
   {
+    name: "inference-scaling-target",
+    title: "Inference scaling target",
+    scope: "Role routing, serving pools, placement, and operations",
+    change: "How the local profile can scale without changing agent authority.",
+  },
+  {
     name: "chat-orchestration",
     title: "Chat orchestration",
     scope: "Routing, delegation, tools, and streaming",
@@ -103,27 +109,27 @@ const metrics = [
     good: true,
   },
   {
-    label: "Main & diagrams",
-    value: "Qwen 3.5 9B",
-    note: "response, tools, diagram specification",
+    label: "Generation & vision",
+    value: "Qwen 3.5 4B",
+    note: "chat, tools, diagrams, decks, image understanding",
     good: false,
   },
   {
-    label: "Decks & vision",
-    value: "Gemma 4 12B",
-    note: "focused presentation and image understanding",
+    label: "Text embeddings",
+    value: "Nomic v1.5",
+    note: "768-dimensional retrieval through vLLM",
     good: false,
   },
   {
     label: "Canonical views",
-    value: "12 / 12",
+    value: "13 / 13",
     note: "Mermaid, SVG, and page synchronized",
     good: true,
   },
   {
     label: "Backend suite",
-    value: "488 pass",
-    note: "2 intentional skips",
+    value: "504 pass",
+    note: "final migration suite",
     good: true,
   },
 ];
@@ -321,9 +327,10 @@ full-system view, then use each subsystem diagram to trace ownership, model call
 trust boundaries, and user-visible lifecycle from entry point to result.</p>
 <p class="contract"><strong>Current orchestration contract:</strong>
 <code>MainSupervisorAgent</code> is a deterministic LangGraph router and makes no LLM call.
-It delegates registered presentation creation to the Gemma specialist; ordinary responses,
-diagram specifications, and eligible MCP tool selection use Qwen. Application code &mdash; never
-the models &mdash; owns authorization, persistence, provider policy, and execution.</p>
+It delegates registered presentation creation to a background worker; ordinary responses,
+presentation plans, diagram specifications, vision, and eligible MCP tool selection use Qwen
+through vLLM. Nomic supplies text embeddings through a separate vLLM service. Application code
+&mdash; never the models &mdash; owns authorization, persistence, provider policy, and execution.</p>
 
 <dl class="strip">
 ${cells}

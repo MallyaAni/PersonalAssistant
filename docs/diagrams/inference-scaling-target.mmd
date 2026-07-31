@@ -1,0 +1,49 @@
+---
+title: Scalable Inference Target
+---
+flowchart LR
+    Requests[Chat, vision,<br/>tools and durable jobs]
+
+    subgraph Application[Application-owned control]
+        Roles[Registered model roles]
+        Adapters[Provider-neutral<br/>inference adapters]
+        Placement[Capacity and placement policy]
+        State[(Durable jobs<br/>and leases)]
+        Workers[Agent worker replicas]
+        State --> Workers --> Roles
+        Roles --> Adapters --> Placement
+    end
+
+    subgraph Serving[Replaceable serving pools]
+        Gateway[Stable inference endpoints]
+        Generation[[Generation and vision<br/>vLLM replicas]]
+        Embeddings[[Embedding<br/>vLLM replicas]]
+        Specialists[[Future specialist<br/>model pools]]
+        Gateway --> Generation
+        Gateway --> Embeddings
+        Gateway -.-> Specialists
+    end
+
+    subgraph Platform[Deployment and operations]
+        ControlPlane[Ray Serve or Kubernetes<br/>autoscaling and back-pressure]
+        Metrics[(Prometheus metrics<br/>and model SLOs)]
+        Models[(Pinned model artifacts)]
+    end
+
+    Requests --> Roles
+    Placement --> Gateway
+    ControlPlane -.-> Gateway
+    ControlPlane -.-> Workers
+    Generation --> Metrics
+    Embeddings --> Metrics
+    Specialists -.-> Metrics
+    Models --> Generation
+    Models --> Embeddings
+    Models -.-> Specialists
+
+    classDef current fill:#e8f1fb,stroke:#5e8fc4,color:#102a43,stroke-width:1.5px;
+    classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b,stroke-width:1.5px;
+    classDef planned fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
+    class Requests,Roles,Adapters,State,Workers current;
+    class Metrics,Models data;
+    class Placement,Gateway,Generation,Embeddings,Specialists,ControlPlane planned;
