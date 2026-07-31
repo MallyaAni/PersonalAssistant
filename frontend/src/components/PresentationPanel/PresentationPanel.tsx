@@ -755,7 +755,7 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
             disabled={isCreating}
           />
           <div className="mt-3 flex items-center justify-between gap-3">
-            <p className="text-xs text-[#86868b]">Gemma plans the deck in a background worker; deterministic code owns rendering and persistence.</p>
+            <p className="text-xs text-[#86868b]">Qwen plans the deck in a background worker; deterministic code owns rendering and persistence.</p>
             <div className="flex items-center gap-2">
               {isCreating && activeJobId && (
                 <button

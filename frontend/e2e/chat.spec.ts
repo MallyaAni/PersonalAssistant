@@ -1785,8 +1785,8 @@ test('@live delegates a presentation subagent without blocking chat', async ({ p
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
-// Verify Gemma selects a live MCP tool and the browser exposes its full lifecycle.
-test('@live uses a Gemma-selected MCP tool in chat', async ({ page }) => {
+// Verify the configured model selects a live tool and exposes its full lifecycle.
+test('@live uses the configured model for an MCP tool in chat', async ({ page }) => {
   test.setTimeout(120_000)
   test.skip(process.env.RUN_LIVE_TOOL_TESTS !== '1', 'requires configured live MCP servers')
   const errors = observeBlockingBrowserErrors(page)

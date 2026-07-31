@@ -73,6 +73,9 @@ const MessageBubble: React.FC<MessageProps> = ({
   onImageRefined,
 }) => {
   const isUser = role === 'user';
+  // Only image generation produces a square result worth reserving space for;
+  // analysis already has the user's own image on screen.
+  const isGeneratingImage = artifactActivity === 'Generating image...'
   const envelope = isUser ? null : parseAssistantEnvelope(content)
   const visibleContent = isThinking ? 'Thinking...' : (envelope?.answer ?? content)
 
@@ -201,9 +204,19 @@ const MessageBubble: React.FC<MessageProps> = ({
         </section>
       )}
       {!isUser && artifactStatus === 'generating' && (
-        <p role="status" className="mt-4 animate-pulse text-sm text-[#6e6e73]">
-          {artifactActivity || 'Creating visual artifact...'}
-        </p>
+        <div className="mt-4">
+          {/* A generated image lands as a square, so hold that space while it
+              renders instead of reflowing the transcript when it arrives. */}
+          {isGeneratingImage && (
+            <div
+              aria-hidden="true"
+              className="anios-conjure mb-3 aspect-square w-full max-w-[320px] rounded-[22px]"
+            />
+          )}
+          <p role="status" className="animate-pulse text-sm text-[#6e6e73]">
+            {artifactActivity || 'Creating visual artifact...'}
+          </p>
+        </div>
       )}
       {!isUser && artifactStatus === 'failed' && (
         <p role="alert" className="mt-4 text-sm text-[#c9342f]">
