@@ -85,14 +85,17 @@ class StubPlanningLLM:
     def __init__(self, replies: list[dict[str, Any]]) -> None:
         self.replies = replies
         self.requests: list[tuple[list[dict[str, str]], int]] = []
+        self.schemas: list[dict[str, Any] | None] = []
 
-    # Return the next compact plan without contacting LM Studio.
+    # Return the next compact plan without contacting the configured provider.
     def chat(
         self,
         messages: list[dict[str, str]],
         max_tokens: int = 1_024,
+        response_schema: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         self.requests.append((messages, max_tokens))
+        self.schemas.append(response_schema)
         return self.replies.pop(0)
 
 
@@ -156,6 +159,45 @@ async def test_compact_plan_compiles_six_slides_with_a_small_budget() -> None:
     assert all(len(slide.elements) >= 8 for slide in deck.slides)
     assert llm.requests[0][1] == 2_048
     assert "Produce exactly 6 slides" in llm.requests[0][0][0]["content"]
+
+
+# The planning call carries a decoding schema that forbids unknown field names
+# and pins an explicitly requested slide count, so the runtime cannot represent
+# the invented-field and wrong-count replies that previously needed a retry.
+@pytest.mark.asyncio
+async def test_compact_plan_sends_a_constraining_response_schema() -> None:
+    llm = StubPlanningLLM([{"content": json.dumps(_compact_plan(6))}])
+    provider = LLMPresentationProvider(
+        llm,  # type: ignore[arg-type]
+        max_tokens=8_192,
+        plan_max_tokens=2_048,
+    )
+    await provider.create("create a presentation on horses, 6 slides")
+    schema = llm.schemas[0]
+    assert schema is not None
+    assert schema["additionalProperties"] is False
+    assert schema["properties"]["slides"]["minItems"] == 6
+    assert schema["properties"]["slides"]["maxItems"] == 6
+    slide_schema = schema["$defs"]["PlannedSlide"]
+    assert slide_schema["additionalProperties"] is False
+    # An optional note is a string, so `notes: null` is not a decodable reply.
+    assert slide_schema["properties"]["notes"]["type"] == "string"
+
+
+# An unconstrained slide count leaves the array bounds to the declared model.
+@pytest.mark.asyncio
+async def test_compact_plan_schema_omits_bounds_without_a_requested_count() -> None:
+    llm = StubPlanningLLM([{"content": json.dumps(_compact_plan(3))}])
+    provider = LLMPresentationProvider(
+        llm,  # type: ignore[arg-type]
+        max_tokens=8_192,
+        plan_max_tokens=2_048,
+    )
+    await provider.create("create a presentation on horses")
+    schema = llm.schemas[0]
+    assert schema is not None
+    assert schema["properties"]["slides"]["minItems"] == 1
+    assert schema["properties"]["slides"]["maxItems"] == 30
 
 
 # Verify a wrong slide count receives one bounded compact-plan correction.
@@ -375,6 +417,48 @@ async def test_progressive_plan_compiles_each_scheduled_slide() -> None:
     assert drafts[1].specification.slides[1].title == "Modern roles"
     assert all(draft.expected_slide_count == 2 for draft in drafts)
     assert [request[1] for request in llm.requests] == [1_024, 1_024, 1_024]
+    assert (
+        "never prefix a field name with optional_" in llm.requests[1][0][0]["content"]
+    )
+
+
+# Verify an explicit null optional note is normalized before deterministic compilation.
+@pytest.mark.asyncio
+async def test_progressive_plan_normalizes_null_notes() -> None:
+    llm = StubPlanningLLM(
+        [
+            {
+                "content": json.dumps(
+                    {
+                        "title": "Null notes",
+                        "slides": [
+                            {"title": "Overview", "purpose": "Explain the topic"}
+                        ],
+                    }
+                )
+            },
+            {
+                "content": json.dumps(
+                    {
+                        "title": "Overview",
+                        "purpose": "Explain the topic",
+                        "points": ["First", "Second"],
+                        "notes": None,
+                    }
+                )
+            },
+        ]
+    )
+    provider = LLMPresentationProvider(llm, max_tokens=8_192)  # type: ignore[arg-type]
+
+    drafts = [
+        draft
+        async for draft in provider.create_progress(
+            "Create a concise presentation with exactly 1 slide"
+        )
+    ]
+
+    assert drafts[0].specification.slides[0].notes == ""
 
 
 # Verify an invalid outline receives one correction before slide microtasks run.
@@ -431,3 +515,4 @@ async def test_progressive_plan_corrects_one_invalid_outline() -> None:
     assert [len(draft.specification.slides) for draft in drafts] == [1, 2]
     assert len(llm.requests) == 4
     assert "failed validation" in llm.requests[1][0][0]["content"]
+    assert "never prefix one with optional_" in llm.requests[1][0][0]["content"]

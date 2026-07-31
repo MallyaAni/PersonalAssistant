@@ -18,7 +18,11 @@ class InferenceProvider(ABC):
 
     @abstractmethod
     def chat(
-        self, messages: list[dict[str, str]], max_tokens: int = 1024
+        self,
+        messages: list[dict[str, str]],
+        max_tokens: int = 1024,
+        response_schema: dict[str, Any] | None = None,
+        temperature: float | None = None,
     ) -> dict[str, Any]: ...
 
     @abstractmethod
@@ -56,8 +60,7 @@ class OpenAICompatibleInferenceProvider(InferenceProvider):
         self.timeout_seconds = timeout_seconds
         self.reasoning_effort = reasoning_effort
         self.client = client
-        # LM Studio may terminate an in-flight generation when another request
-        # reaches the same loaded local model, so this process queues calls.
+        # Keep one client instance's request order deterministic across providers.
         self._request_lock = threading.Lock()
 
     def generate_text(self, prompt: str, max_tokens: int = 1024) -> str:
@@ -68,9 +71,15 @@ class OpenAICompatibleInferenceProvider(InferenceProvider):
         return cast(str, result["content"])
 
     def chat(
-        self, messages: list[dict[str, str]], max_tokens: int = 1024
+        self,
+        messages: list[dict[str, str]],
+        max_tokens: int = 1024,
+        response_schema: dict[str, Any] | None = None,
+        temperature: float | None = None,
     ) -> dict[str, Any]:
-        payload = self._build_payload(messages, max_tokens)
+        payload = self._build_payload(
+            messages, max_tokens, response_schema, temperature
+        )
         with self._request_lock:
             response = self._post(payload)
             response.raise_for_status()
@@ -149,16 +158,33 @@ class OpenAICompatibleInferenceProvider(InferenceProvider):
         self,
         messages: list[dict[str, str]],
         max_tokens: int,
+        response_schema: dict[str, Any] | None = None,
+        temperature: float | None = None,
     ) -> dict[str, Any]:
         if not any(message.get("role") == "user" for message in messages):
             raise ValueError("Inference request requires at least one user message")
 
-        return {
+        payload: dict[str, Any] = {
             "model": self.model,
             "messages": messages,
             "max_tokens": max_tokens,
             "reasoning_effort": self.reasoning_effort,
         }
+        # Omitted, the runtime samples at its own default. Callers that parse the
+        # reply as a decision rather than prose pass 0 for a reproducible answer.
+        if temperature is not None:
+            payload["temperature"] = temperature
+        # A caller-supplied schema is decoded as a grammar, so a violating field
+        # name or type becomes unrepresentable rather than a post-hoc retry.
+        if response_schema is not None:
+            payload["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": str(response_schema.get("title") or "response"),
+                    "schema": response_schema,
+                },
+            }
+        return payload
 
     def _headers(self) -> dict[str, str]:
         headers = {"Content-Type": "application/json"}
@@ -229,5 +255,5 @@ def create_inference_provider(
 # Preserve the established type name while callers migrate to the neutral contract.
 LLMClient = InferenceProvider
 
-# Preserve established imports without coupling new assembly to LM Studio.
+# Preserve the historical import name without coupling assembly to that runtime.
 LMStudioLLM = OpenAICompatibleInferenceProvider

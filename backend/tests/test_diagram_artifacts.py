@@ -206,6 +206,8 @@ class NoopLLM(LLMClient):
         self,
         messages: list[dict[str, str]],
         max_tokens: int = 1024,
+        response_schema: dict[str, Any] | None = None,
+        temperature: float | None = None,
     ) -> dict[str, Any]:
         return {"content": "unused"}
 
@@ -224,6 +226,8 @@ class JsonDiagramLLM(NoopLLM):
         self,
         messages: list[dict[str, str]],
         max_tokens: int = 1024,
+        response_schema: dict[str, Any] | None = None,
+        temperature: float | None = None,
     ) -> dict[str, Any]:
         return {
             "content": (
@@ -243,6 +247,8 @@ class RetryingJsonDiagramLLM(JsonDiagramLLM):
         self,
         messages: list[dict[str, str]],
         max_tokens: int = 1024,
+        response_schema: dict[str, Any] | None = None,
+        temperature: float | None = None,
     ) -> dict[str, Any]:
         self.calls += 1
         if self.calls == 1:

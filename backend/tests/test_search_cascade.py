@@ -12,9 +12,13 @@ class StubLLM:
         self.reply = reply
         self.fail = fail
         self.calls: list[tuple[list[dict[str, str]], int]] = []
+        self.temperatures: list[float | None] = []
 
-    def chat(self, messages, max_tokens: int = 1024):
+    def chat(
+        self, messages, max_tokens: int = 1024, response_schema=None, temperature=None
+    ):
         self.calls.append((messages, max_tokens))
+        self.temperatures.append(temperature)
         if self.fail:
             raise RuntimeError("model unavailable")
         return {"content": self.reply}
@@ -87,6 +91,8 @@ async def test_classifier_reply_is_bounded_to_a_few_tokens():
     assert messages[0]["role"] == "system"
     assert messages[-1] == {"role": "user", "content": "who won today"}
     assert any(m["role"] == "assistant" and m["content"] == "YES" for m in messages)
+    # Routing is a decision, so the same query must not depend on sampling.
+    assert llm.temperatures == [0.0]
 
 
 @pytest.mark.asyncio

@@ -5,6 +5,8 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Callable
 from typing import Any
 
+from pydantic import BaseModel
+
 from backend.core.llm import LLMClient
 from backend.core.model_gate import ModelExecutionGate
 from backend.presentations.editing import SlideEdit
@@ -66,11 +68,29 @@ def _extract_json_object(content: str) -> dict[str, Any]:
 
 
 # Describe the compact content grammar compiled by deterministic application code.
+# Derive the decoding grammar from the same model that validates the reply, so a
+# contract change cannot drift from what the runtime is allowed to emit.
+def _response_schema(
+    response_type: type[BaseModel],
+    expected_slide_count: int | None = None,
+) -> dict[str, Any]:
+    schema = response_type.model_json_schema()
+    slides = schema.get("properties", {}).get("slides")
+    # An exact requested count is a bound the grammar can enforce directly
+    # instead of validating and re-prompting after generation.
+    if expected_slide_count is not None and isinstance(slides, dict):
+        slides["minItems"] = expected_slide_count
+        slides["maxItems"] = expected_slide_count
+    return schema
+
+
 def _deck_plan_contract() -> str:
     return (
         "Return one compact JSON object only. Root fields: title, optional subtitle, "
-        "slides. Each slide has exactly: title, purpose, points, optional "
-        "key_message, optional visual_prompt, visual_priority, notes. points must "
+        "slides. Each slide has exactly these field names: title, purpose, points, "
+        "key_message, visual_prompt, visual_priority, notes. key_message and "
+        "visual_prompt may be null or omitted; never prefix a field name with "
+        "optional_. points must "
         "contain 2 to 6 concise strings. visual_prompt is a concrete text-to-image "
         "brief when an editorial photo or illustration would materially improve "
         "the slide, otherwise null. visual_priority is 3 for a hero visual, 2 for "
@@ -104,8 +124,9 @@ def _slide_edit_contract() -> str:
 def _slide_content_contract() -> str:
     return (
         "Return one compact JSON object for a single slide only. Fields: title, "
-        "purpose, points, optional key_message, optional visual_prompt, "
-        "visual_priority, notes. points must contain 2 to 6 concise strings. "
+        "purpose, points, key_message, visual_prompt, visual_priority, notes. "
+        "key_message and visual_prompt may be null or omitted; never prefix a "
+        "field name with optional_. points must contain 2 to 6 concise strings. "
         "visual_prompt is a concrete text-to-image brief only when an editorial "
         "photo or illustration would materially improve the slide; otherwise null. "
         "visual_priority is 3 for hero, 2 for supporting, 1 for optional, or 0 for "
@@ -354,6 +375,7 @@ class LLMPresentationProvider(PresentationProvider):
             | None
         ) = None,
     ) -> DeckOutline | DeckPlan | SlideEdit | PlannedSlide:
+        schema = _response_schema(response_type, expected_slide_count)
         for attempt in range(2):
             if self.model_gate is not None and self.background:
                 async with self.model_gate.background():
@@ -361,12 +383,14 @@ class LLMPresentationProvider(PresentationProvider):
                         self.llm.chat,
                         messages,
                         max_tokens or self.max_tokens,
+                        schema,
                     )
             else:
                 result = await asyncio.to_thread(
                     self.llm.chat,
                     messages,
                     max_tokens or self.max_tokens,
+                    schema,
                 )
             content = result.get("content")
             try:
@@ -395,6 +419,7 @@ class LLMPresentationProvider(PresentationProvider):
                 messages[0]["content"] += (
                     " Your prior JSON failed validation for this reason: "
                     f"{str(exc)[:2_000]}. Return one corrected JSON object only, "
-                    "with every required field and no Markdown."
+                    "with every required field and no Markdown. Use only the exact "
+                    "field names in the contract and never prefix one with optional_."
                 )
         raise AssertionError("Presentation validation retry did not terminate")

@@ -38,8 +38,11 @@ def _red_circle() -> bytes:
 
 def _embed_text(query: str) -> list[float] | None:
     try:
+        # Embeddings have their own service; the generation endpoint does not
+        # serve them, so resolve this the same way dependency assembly does.
+        base_url = settings.EMBEDDING_BASE_URL or settings.LLM_BASE_URL
         response = httpx.post(
-            f"{settings.LLM_BASE_URL}/v1/embeddings",
+            f"{base_url}/v1/embeddings",
             json={
                 "model": settings.EMBEDDING_MODEL,
                 # Nomic requires this prefix for multimodal retrieval queries.

@@ -95,6 +95,29 @@ def _validated_title(payload: dict[str, Any]) -> str:
     return title
 
 
+# Decoding grammar for the reply envelope. It cannot judge Mermaid validity, but
+# it does guarantee a well-formed JSON object with correctly escaped newlines in
+# `source` -- the specific failure the correction retry below was written for.
+_DIAGRAM_REPLY_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": MAX_DIAGRAM_TITLE_CHARS,
+        },
+        "source": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": MAX_DIAGRAM_SOURCE_CHARS,
+        },
+        "diagram_type": {"type": "string", "enum": sorted(DIAGRAM_DECLARATIONS)},
+    },
+    "required": ["title", "source"],
+    "additionalProperties": False,
+}
+
+
 # Validate and normalize a provider-produced Mermaid specification.
 def validate_diagram_specification(payload: dict[str, Any]) -> DiagramSpecification:
     title = _validated_title(payload)
@@ -161,7 +184,12 @@ class LLMDiagramProvider(DiagramProvider):
             {"role": "user", "content": query},
         ]
         for attempt in range(2):
-            result = await asyncio.to_thread(self.llm.chat, messages, 2_048)
+            result = await asyncio.to_thread(
+                self.llm.chat,
+                messages,
+                2_048,
+                response_schema=_DIAGRAM_REPLY_SCHEMA,
+            )
             content = result.get("content")
             try:
                 if not isinstance(content, str):

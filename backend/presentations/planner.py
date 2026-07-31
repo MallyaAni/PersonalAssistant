@@ -1,7 +1,7 @@
 import re
 from dataclasses import dataclass
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from backend.presentations.types import (
     DeckSpec,
@@ -29,6 +29,12 @@ class PlannedSlide(DeckPlanModel):
     visual_prompt: str | None = Field(default=None, max_length=500)
     visual_priority: int = Field(default=0, ge=0, le=3)
     notes: str = Field(default="", max_length=1_500)
+
+    # Canonicalize an explicit null optional note to the same empty value as omission.
+    @field_validator("notes", mode="before")
+    @classmethod
+    def normalize_optional_notes(cls, value: object) -> object:
+        return "" if value is None else value
 
 
 class DeckPlan(DeckPlanModel):
