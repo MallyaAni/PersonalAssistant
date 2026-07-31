@@ -339,14 +339,29 @@ Deliver as separately verified atomic stages, in this order:
   identifier returns 404 without removing the row, and an ordinary chat turn
   answered from the profile alone. Approval-gated capture from conversation
   remains `PLANNED`; today an interest is recorded only by explicit request.
-- `PLANNED` stage 2 — structured schedule sources. A provider-neutral
-  `EventSource` contract over venue ICS/RSS feeds and free event APIs, returning
-  typed events with a stable per-source identity, start time, place, and link.
-  General web search is explicitly not the discovery mechanism: local listings
-  are already structured, and search would be noisier, less parseable, and the
-  one part of the loop with a hard monthly ceiling. The cascade remains
-  available for enrichment, never for enumeration. Verified when a real adapter
-  returns typed events from a live feed within a bounded request budget.
+- `VERIFIED` stage 2 — structured schedule sources. A provider-neutral
+  `EventSource` contract returns typed events carrying a stable per-source
+  identity, start, place, and link. Two adapters ship: iCalendar and RSS/Atom,
+  both parsed with the standard library so every bound and sanitization step
+  stays visible at the boundary where untrusted feed text enters. Text is
+  stripped of control characters and length-bounded, non-web URL schemes are
+  dropped, each source is capped at 200 events, bodies are abandoned mid-stream
+  past 5 MB, and a `RequestBudget` fixes how many outbound requests one run may
+  make so the free-tier claim stays checkable. General web search is explicitly
+  not the discovery mechanism: local listings are already structured, and search
+  would be noisier, less parseable, and the one part of the loop with a hard
+  monthly ceiling. The cascade remains available for enrichment, never for
+  enumeration. Live-verified against real public feeds: a calendar yielded 42
+  typed events with correct zone-aware all-day starts, and an RSS feed yielded
+  15 items within a 2-request budget.
+
+  RSS is deliberately weaker than iCalendar. A feed item states when it was
+  published, not when the happening occurs, so items yield no start time unless
+  the publisher supplies an explicit event date; the live RSS check returned 15
+  events all correctly marked unschedulable. Inventing a start from `pubDate`
+  would produce calendar entries that are confidently wrong. Treat iCalendar as
+  the source of record for anything that must reach a calendar, and RSS as a
+  discovery signal that a later enrichment stage may date.
 - `PLANNED` stage 3 — durable scheduled discovery. A leased, heartbeated,
   retryable recurring job reusing the presentation-worker pattern rather than a
   new scheduler, with cancellation and a persisted run record. A missed or

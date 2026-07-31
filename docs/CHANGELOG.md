@@ -1064,3 +1064,32 @@ This file is append-only history for meaningful, verified changes. It must not c
   have regression coverage, including a router-level round trip.
 - Backend suite 522 passed; Ruff, Black, and full-project MyPy across 160 source
   files passed.
+
+## 2026-08-01 — Ambient discovery stage 2: structured schedule sources
+
+- Added a provider-neutral `EventSource` contract returning typed events with a
+  stable per-source identity, start, place, and link, plus iCalendar and
+  RSS/Atom adapters. Discovery reads structured listings rather than searching,
+  which keeps the loop inside the free tiers and yields parseable records
+  instead of prose a model would have to interpret.
+- Parsed both formats with the standard library. Only a few properties are
+  needed, their grammar is small and stable, and keeping the parsing local means
+  every bound and sanitization step is visible at the boundary where untrusted
+  feed text enters rather than buried in a dependency.
+- Treated feeds as hostile input: control characters stripped, text bounded,
+  non-web URL schemes dropped so `javascript:` or `file:` targets cannot reach a
+  notification, 200 events per source, and response bodies abandoned mid-stream
+  past 5 MB rather than after they are already held.
+- Added `RequestBudget`, which fixes how many outbound requests one scheduled
+  run may make. The free-tier claim is only checkable if that number is decided
+  in advance rather than emerging from how many sources happen to be configured.
+- Made RSS honest about dates. A feed item states when it was published, not
+  when the happening occurs, so items carry no start time unless the publisher
+  supplies an explicit event date. A live check returned 15 real items, all
+  correctly unschedulable. Inventing a start from `pubDate` would produce
+  calendar entries that are confidently wrong.
+- Live-verified both adapters against real public feeds within a 2-request
+  budget: 42 typed calendar events with correct zone-aware all-day starts, and
+  15 RSS items.
+- Backend suite 538 passed; Ruff, Black, and full-project MyPy across 165 source
+  files passed.
