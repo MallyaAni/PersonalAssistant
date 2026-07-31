@@ -219,7 +219,7 @@ async def _qualify_model(
 # Parse CLI options for repeatable local qualification runs.
 def _arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--base-url", default="http://127.0.0.1:1234")
+    parser.add_argument("--base-url", default="http://127.0.0.1:8003")
     parser.add_argument("--model", action="append", required=True)
     parser.add_argument("--timeout-seconds", type=float, default=180.0)
     parser.add_argument("--output", type=Path)

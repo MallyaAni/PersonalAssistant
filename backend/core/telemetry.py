@@ -29,7 +29,7 @@ _configured = False
 # Configure the global tracer provider and instrument FastAPI and httpx once.
 #
 # httpx instrumentation is what makes this worth doing: every outbound call -
-# LM Studio, Tavily, an HTTP MCP server - is auto-propagated with W3C
+# vLLM, Tavily, an HTTP MCP server - is auto-propagated with W3C
 # trace-context and appears as a child span, so a slow turn can be attributed
 # to the provider that caused it rather than guessed at.
 def configure_telemetry(app: "FastAPI | None" = None) -> None:

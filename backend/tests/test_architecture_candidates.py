@@ -170,4 +170,4 @@ def test_candidate_model_config_reads_only_llm_settings(
     config = _load_model_config(tmp_path)
 
     assert config.model == "test-diagram-model"
-    assert config.base_url == "http://127.0.0.1:1234"
+    assert config.base_url == "http://127.0.0.1:8003"

@@ -22,11 +22,11 @@ class Settings(BaseSettings):
     DATABASE_USE_NULL_POOL: bool = False
 
     # Provider-neutral inference selects a wire adapter independently from each
-    # role's endpoint and model. LM Studio remains the qualified local runtime.
+    # role's endpoint and model. vLLM is the qualified local runtime.
     INFERENCE_ADAPTER: Literal["openai_compatible"] = "openai_compatible"
-    INFERENCE_PROVIDER_NAME: str = "lm_studio"
-    LLM_BASE_URL: str = "http://127.0.0.1:1234"
-    LLM_MODEL: str = "google/gemma-4-12b"
+    INFERENCE_PROVIDER_NAME: str = "vllm"
+    LLM_BASE_URL: str = "http://127.0.0.1:8003"
+    LLM_MODEL: str = "qwen/qwen3.5-4b"
     LLM_API_KEY: str | None = Field(None, alias="LLM_API_KEY")
     LLM_TIMEOUT_SECONDS: float = 120.0
     LLM_REASONING_EFFORT: Literal[
@@ -89,6 +89,24 @@ class Settings(BaseSettings):
         "natural soft lighting, fine detailed textures, sharp focus, "
         "high detail, 4k, professional photography"
     )
+    # A single GPU cannot hold the generation model and the diffusion model at
+    # once. When enabled, AniOS sleeps local inference for the duration of one
+    # image job so the diffusion runtime stops streaming weights from host RAM.
+    # Level 1 offloads weights to CPU memory; level 2 discards them entirely.
+    #
+    # Off because it measured slower, not because it does not work. Sleeping and
+    # waking are verified against the shipped runtime, but a full offload/reload
+    # round trip per image cost more than it saved: 47/64/42 s with the handoff
+    # against 37/35 s without it, because ComfyUI already manages its own
+    # residency. Enable it only if a future model makes the two runtimes
+    # genuinely unable to share the card, and re-measure before trusting it.
+    #
+    # It also requires `--enable-sleep-mode`, `VLLM_SERVER_DEV_MODE=1`, and a KV
+    # cache dtype other than fp8: an FP8 KV cache cannot be woken on vLLM 0.23.0
+    # and strands the engine asleep.
+    GPU_HANDOFF_ENABLED: bool = False
+    GPU_HANDOFF_SLEEP_LEVEL: int = Field(default=1, ge=1, le=2)
+    GPU_HANDOFF_TIMEOUT_SECONDS: float = Field(default=120.0, gt=0, le=600)
     IMAGE_PROVIDER_TIMEOUT_SECONDS: float = Field(default=600.0, gt=0, le=3600)
     IMAGE_PROVIDER_POLL_SECONDS: float = Field(default=0.5, ge=0.1, le=10)
     IMAGE_MAX_CONCURRENCY: int = Field(default=1, ge=1, le=4)
@@ -133,7 +151,7 @@ class Settings(BaseSettings):
     )
     IMAGE_MAX_PIXELS: int = Field(default=20_000_000, ge=4096, le=100_000_000)
     VISION_LLM_BASE_URL: str = ""
-    VISION_MODEL: str = "google/gemma-4-12b"
+    VISION_MODEL: str = "qwen/qwen3.5-4b"
     VISION_LLM_REASONING_EFFORT: Literal[
         "none", "minimal", "low", "medium", "high", "xhigh"
     ] = "none"

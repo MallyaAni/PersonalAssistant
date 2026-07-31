@@ -11,6 +11,7 @@
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 
+# Read one non-secret operator setting from the local environment file.
 function Get-EnvValue([string]$name, [string]$fallback) {
     $envFile = Join-Path $root '.env'
     if (Test-Path $envFile) {
@@ -23,6 +24,7 @@ function Get-EnvValue([string]$name, [string]$fallback) {
     return $fallback
 }
 
+# Report whether a loopback service is accepting TCP connections.
 function Test-Port([int]$port) {
     try {
         $client = New-Object Net.Sockets.TcpClient
@@ -34,7 +36,43 @@ function Test-Port([int]$port) {
     }
 }
 
-# 1) ComfyUI on the host, unless something already listens on 8188.
+# Compile one bounded generation and embedding path before user traffic arrives.
+function Invoke-VllmWarmup {
+    $mainBody = @{
+        model = 'qwen/qwen3.5-4b'
+        messages = @(@{ role = 'user'; content = 'Reply with exactly READY' })
+        max_tokens = 16
+        temperature = 0
+        reasoning_effort = 'none'
+    } | ConvertTo-Json -Depth 5 -Compress
+    Invoke-RestMethod `
+        -Uri 'http://127.0.0.1:8003/v1/chat/completions' `
+        -Method Post `
+        -ContentType 'application/json' `
+        -Body $mainBody | Out-Null
+
+    $embeddingBody = @{
+        model = 'text-embedding-nomic-embed-text-v1.5'
+        input = @('search_document: AniOS startup warmup')
+    } | ConvertTo-Json -Depth 3 -Compress
+    Invoke-RestMethod `
+        -Uri 'http://127.0.0.1:8004/v1/embeddings' `
+        -Method Post `
+        -ContentType 'application/json' `
+        -Body $embeddingBody | Out-Null
+}
+
+# 1) Initialize vLLM in the measured VRAM-safe order. The embedding service
+# waits for the main generation/VLM service to become healthy in Compose.
+Write-Host 'Starting vLLM services ...'
+docker compose -f (Join-Path $root 'docker-compose.yml') up -d --wait --wait-timeout 900 vllm-main vllm-embedding
+
+# 2) Pay one-time JIT costs before the first user request.
+Write-Host 'Warming vLLM generation and embedding paths ...'
+Invoke-VllmWarmup
+
+# 3) ComfyUI on the host, unless something already listens on 8188. Starting it
+# after vLLM avoids competing with CUDA graph and KV-cache initialization.
 if (Test-Port 8188) {
     Write-Host 'ComfyUI already running on :8188.'
 } else {
@@ -50,16 +88,16 @@ if (Test-Port 8188) {
     } else {
         Write-Host "Starting ComfyUI from $comfy ..."
         Start-Process -FilePath $python `
-            -ArgumentList 'main.py', '--listen', '0.0.0.0', '--port', '8188' `
-            -WorkingDirectory $comfy -WindowStyle Minimized
+            -ArgumentList 'main.py', '--listen', '0.0.0.0', '--port', '8188', '--disable-auto-launch' `
+            -WorkingDirectory $comfy -WindowStyle Hidden
     }
 }
 
-# 2) Core Docker services.
-Write-Host 'Starting Docker services ...'
+# 4) Start the remaining application services after inference is ready.
+Write-Host 'Starting AniOS application services ...'
 docker compose -f (Join-Path $root 'docker-compose.yml') up -d
 
-# 3) Wait for the backend, then report.
+# 5) Wait for the backend, then report.
 Write-Host -NoNewline 'Waiting for backend '
 for ($i = 0; $i -lt 40; $i++) {
     try {

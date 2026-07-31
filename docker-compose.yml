@@ -1,4 +1,139 @@
 services:
+  vllm-main:
+    image: vllm/vllm-openai@sha256:6d8429e38e3747723ca07ee1b17972e09bb9c51c4032b266f24fb1cc3b22ed8f
+    container_name: anios_vllm_main
+    ipc: host
+    environment:
+      # Exposes /sleep, /wake_up, and /is_sleeping, which the GPU handoff uses
+      # to lend the card to ComfyUI for the length of one image job.
+      - VLLM_SERVER_DEV_MODE=1
+    command:
+      # Pre-quantized FP8 (compressed-tensors), not `--quantization fp8`. Both
+      # produce FP8 weights on Blackwell's native tensor cores, but the
+      # on-the-fly quantizer cannot be woken from sleep. This checkpoint keeps
+      # the vision tower, so it still serves the vision role.
+      - RedHatAI/Qwen3.5-4B-FP8-dynamic
+      - --revision
+      - 397b7ba47a99b3221ebfc0cfc5a279118cb733ad
+      - --served-model-name
+      - qwen/qwen3.5-4b
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --max-model-len
+      - ${VLLM_MAIN_MAX_MODEL_LEN:-16384}
+      - --max-num-seqs
+      - ${VLLM_MAIN_MAX_NUM_SEQS:-4}
+      - --max-num-batched-tokens
+      - ${VLLM_MAIN_MAX_BATCHED_TOKENS:-4096}
+      # Claim the card generously: sleep mode gives all of this back to ComfyUI
+      # for the duration of an image job, so a large resident share costs
+      # nothing. This is a fraction of total VRAM, so vLLM must start before
+      # ComfyUI or it cannot reach its share; scripts/start-anios.ps1 does that.
+      - --gpu-memory-utilization
+      - ${VLLM_MAIN_GPU_MEMORY_UTILIZATION:-0.70}
+      # KV cache dtype stays at the default. An FP8 KV cache holds more tokens
+      # per GiB, but it is the one setting that breaks waking from sleep on
+      # vLLM 0.23.0 (`'list' object has no attribute 'zero_'`), which strands the
+      # engine asleep. FP8 *weights* wake correctly; the FP8 KV cache does not.
+      # Trading it back still leaves 93,992 cached tokens.
+      - --kv-cache-dtype
+      - ${VLLM_MAIN_KV_CACHE_DTYPE:-auto}
+      # Let AniOS hand the GPU to ComfyUI instead of both runtimes thrashing.
+      - --enable-sleep-mode
+      # Preserve the qualified latency-first V1 scheduler behavior explicitly
+      # instead of relying on version-dependent defaults.
+      - --enable-chunked-prefill
+      - --async-scheduling
+      # AniOS repeats a stable system/tool prefix across turns. Reusing those
+      # KV blocks reduces repeated prefill without changing model output.
+      - --enable-prefix-caching
+      - --enable-auto-tool-choice
+      - --tool-call-parser
+      - qwen3_coder
+      - --reasoning-parser
+      - qwen3
+    ports:
+      - "8003:8000"
+    volumes:
+      - ${VLLM_MODEL_CACHE_PATH:-E:/AI/huggingface-cache-vllm}:/root/.cache/huggingface
+      - ${VLLM_COMPILE_CACHE_PATH:-E:/AI/vllm-compile-cache}:/root/.cache/vllm
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)
+      interval: 10s
+      timeout: 6s
+      retries: 60
+      start_period: 10m
+    restart: unless-stopped
+
+  vllm-embedding:
+    image: vllm/vllm-openai@sha256:6d8429e38e3747723ca07ee1b17972e09bb9c51c4032b266f24fb1cc3b22ed8f
+    container_name: anios_vllm_embedding
+    ipc: host
+    command:
+      - nomic-ai/nomic-embed-text-v1.5
+      - --revision
+      - e9b6763023c676ca8431644204f50c2b100d9aab
+      - --code-revision
+      - 7710840340a098cfb869c4f65e87cf2b1b70caca
+      - --served-model-name
+      - text-embedding-nomic-embed-text-v1.5
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --runner
+      - pooling
+      - --convert
+      - embed
+      - --trust-remote-code
+      - --max-model-len
+      - ${VLLM_EMBEDDING_MAX_MODEL_LEN:-2048}
+      - --max-num-seqs
+      - ${VLLM_EMBEDDING_MAX_NUM_SEQS:-16}
+      # Nomic's weights load in ~0.26 GiB; 0.15 reserved ~2.4 GiB that nothing
+      # used. Size this to the measured footprint plus pooling headroom.
+      - --gpu-memory-utilization
+      - ${VLLM_EMBEDDING_GPU_MEMORY_UTILIZATION:-0.06}
+    ports:
+      - "8004:8000"
+    volumes:
+      - ${VLLM_MODEL_CACHE_PATH:-E:/AI/huggingface-cache-vllm}:/root/.cache/huggingface
+      - ${VLLM_COMPILE_CACHE_PATH:-E:/AI/vllm-compile-cache}:/root/.cache/vllm
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)
+      interval: 10s
+      timeout: 6s
+      retries: 30
+      start_period: 3m
+    depends_on:
+      vllm-main:
+        condition: service_healthy
+    restart: unless-stopped
+
   db:
     image: pgvector/pgvector:pg16
     container_name: anios_db
@@ -39,27 +174,29 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-anios_db}
       - POSTGRES_HOST=db
       - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (see .env.example)}
-      - LLM_BASE_URL=http://host.docker.internal:1234
-      - LLM_MODEL=${LLM_MODEL:-google/gemma-4-12b}
+      - LLM_BASE_URL=http://vllm-main:8000
+      - LLM_MODEL=qwen/qwen3.5-4b
       - INFERENCE_ADAPTER=${INFERENCE_ADAPTER:-openai_compatible}
-      - INFERENCE_PROVIDER_NAME=${INFERENCE_PROVIDER_NAME:-lm_studio}
+      - INFERENCE_PROVIDER_NAME=vllm
       - MAIN_INFERENCE_ADAPTER=${MAIN_INFERENCE_ADAPTER:-}
-      - MAIN_LLM_BASE_URL=${MAIN_LLM_BASE_URL:-http://host.docker.internal:1234}
-      - MAIN_LLM_MODEL=${MAIN_LLM_MODEL:-}
+      - MAIN_LLM_BASE_URL=http://vllm-main:8000
+      - MAIN_LLM_MODEL=qwen/qwen3.5-4b
       - MAIN_LLM_REASONING_EFFORT=${MAIN_LLM_REASONING_EFFORT:-none}
       - PRESENTATION_INFERENCE_ADAPTER=${PRESENTATION_INFERENCE_ADAPTER:-}
-      - PRESENTATION_LLM_BASE_URL=${PRESENTATION_LLM_BASE_URL:-http://host.docker.internal:1234}
-      - PRESENTATION_LLM_MODEL=${PRESENTATION_LLM_MODEL:-}
+      - PRESENTATION_LLM_BASE_URL=http://vllm-main:8000
+      - PRESENTATION_LLM_MODEL=qwen/qwen3.5-4b
       - PRESENTATION_LLM_REASONING_EFFORT=${PRESENTATION_LLM_REASONING_EFFORT:-none}
       - DIAGRAM_INFERENCE_ADAPTER=${DIAGRAM_INFERENCE_ADAPTER:-}
-      - DIAGRAM_LLM_BASE_URL=${DIAGRAM_LLM_BASE_URL:-http://host.docker.internal:1234}
-      - DIAGRAM_LLM_MODEL=${DIAGRAM_LLM_MODEL:-}
+      - DIAGRAM_LLM_BASE_URL=http://vllm-main:8000
+      - DIAGRAM_LLM_MODEL=qwen/qwen3.5-4b
       - DIAGRAM_LLM_REASONING_EFFORT=${DIAGRAM_LLM_REASONING_EFFORT:-none}
       - VISION_INFERENCE_ADAPTER=${VISION_INFERENCE_ADAPTER:-}
-      - VISION_LLM_BASE_URL=${VISION_LLM_BASE_URL:-http://host.docker.internal:1234}
+      - VISION_LLM_BASE_URL=http://vllm-main:8000
+      - VISION_MODEL=qwen/qwen3.5-4b
       - VISION_LLM_REASONING_EFFORT=${VISION_LLM_REASONING_EFFORT:-none}
       - EMBEDDING_INFERENCE_ADAPTER=${EMBEDDING_INFERENCE_ADAPTER:-}
-      - EMBEDDING_BASE_URL=${EMBEDDING_BASE_URL:-http://host.docker.internal:1234}
+      - EMBEDDING_BASE_URL=http://vllm-embedding:8000
+      - EMBEDDING_MODEL=text-embedding-nomic-embed-text-v1.5
       - IMAGE_PROVIDER_BASE_URL=http://host.docker.internal:8188
       - IMAGE_EDIT_MODEL=${IMAGE_EDIT_MODEL:-flux-2-klein-4b-fp8.safetensors}
       - IMAGE_EDIT_TEXT_ENCODER=${IMAGE_EDIT_TEXT_ENCODER:-qwen_3_4b.safetensors}
@@ -73,6 +210,10 @@ services:
     volumes:
       - artifactdata:/app/data/artifacts
     depends_on:
+      vllm-main:
+        condition: service_healthy
+      vllm-embedding:
+        condition: service_healthy
       db:
         condition: service_healthy
       presentation-renderer:
@@ -111,13 +252,13 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-anios_db}
       - POSTGRES_HOST=db
       - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (see .env.example)}
-      - LLM_BASE_URL=http://host.docker.internal:1234
-      - LLM_MODEL=${LLM_MODEL:-google/gemma-4-12b}
+      - LLM_BASE_URL=http://vllm-main:8000
+      - LLM_MODEL=qwen/qwen3.5-4b
       - INFERENCE_ADAPTER=${INFERENCE_ADAPTER:-openai_compatible}
-      - INFERENCE_PROVIDER_NAME=${INFERENCE_PROVIDER_NAME:-lm_studio}
+      - INFERENCE_PROVIDER_NAME=vllm
       - PRESENTATION_INFERENCE_ADAPTER=${PRESENTATION_INFERENCE_ADAPTER:-}
-      - PRESENTATION_LLM_BASE_URL=${PRESENTATION_LLM_BASE_URL:-http://host.docker.internal:1234}
-      - PRESENTATION_LLM_MODEL=${PRESENTATION_LLM_MODEL:-}
+      - PRESENTATION_LLM_BASE_URL=http://vllm-main:8000
+      - PRESENTATION_LLM_MODEL=qwen/qwen3.5-4b
       - PRESENTATION_LLM_REASONING_EFFORT=${PRESENTATION_LLM_REASONING_EFFORT:-none}
       - IMAGE_PROVIDER_BASE_URL=http://host.docker.internal:8188
       - PRESENTATION_AUTO_IMAGE_MAX=${PRESENTATION_AUTO_IMAGE_MAX:-1}
@@ -137,6 +278,8 @@ services:
     volumes:
       - artifactdata:/app/data/artifacts
     depends_on:
+      vllm-main:
+        condition: service_healthy
       db:
         condition: service_healthy
       presentation-renderer:
@@ -159,28 +302,31 @@ services:
       # No default: a missing secret must fail the run, never fall back to a
       # committed placeholder that would sign real auth tokens.
       - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (see .env.example)}
-      # LM Studio runs on the host; reach it from inside the container.
-      - LLM_BASE_URL=http://host.docker.internal:1234
-      - LLM_MODEL=${LLM_MODEL:-google/gemma-4-12b}
+      # vLLM runs as pinned sibling services with independent generation and
+      # embedding endpoints.
+      - LLM_BASE_URL=http://vllm-main:8000
+      - LLM_MODEL=qwen/qwen3.5-4b
       - INFERENCE_ADAPTER=${INFERENCE_ADAPTER:-openai_compatible}
-      - INFERENCE_PROVIDER_NAME=${INFERENCE_PROVIDER_NAME:-lm_studio}
+      - INFERENCE_PROVIDER_NAME=vllm
       - MAIN_INFERENCE_ADAPTER=${MAIN_INFERENCE_ADAPTER:-}
-      - MAIN_LLM_BASE_URL=${MAIN_LLM_BASE_URL:-http://host.docker.internal:1234}
-      - MAIN_LLM_MODEL=${MAIN_LLM_MODEL:-}
+      - MAIN_LLM_BASE_URL=http://vllm-main:8000
+      - MAIN_LLM_MODEL=qwen/qwen3.5-4b
       - MAIN_LLM_REASONING_EFFORT=${MAIN_LLM_REASONING_EFFORT:-none}
       - PRESENTATION_INFERENCE_ADAPTER=${PRESENTATION_INFERENCE_ADAPTER:-}
-      - PRESENTATION_LLM_BASE_URL=${PRESENTATION_LLM_BASE_URL:-http://host.docker.internal:1234}
-      - PRESENTATION_LLM_MODEL=${PRESENTATION_LLM_MODEL:-}
+      - PRESENTATION_LLM_BASE_URL=http://vllm-main:8000
+      - PRESENTATION_LLM_MODEL=qwen/qwen3.5-4b
       - PRESENTATION_LLM_REASONING_EFFORT=${PRESENTATION_LLM_REASONING_EFFORT:-none}
       - DIAGRAM_INFERENCE_ADAPTER=${DIAGRAM_INFERENCE_ADAPTER:-}
-      - DIAGRAM_LLM_BASE_URL=${DIAGRAM_LLM_BASE_URL:-http://host.docker.internal:1234}
-      - DIAGRAM_LLM_MODEL=${DIAGRAM_LLM_MODEL:-}
+      - DIAGRAM_LLM_BASE_URL=http://vllm-main:8000
+      - DIAGRAM_LLM_MODEL=qwen/qwen3.5-4b
       - DIAGRAM_LLM_REASONING_EFFORT=${DIAGRAM_LLM_REASONING_EFFORT:-none}
       - VISION_INFERENCE_ADAPTER=${VISION_INFERENCE_ADAPTER:-}
-      - VISION_LLM_BASE_URL=${VISION_LLM_BASE_URL:-http://host.docker.internal:1234}
+      - VISION_LLM_BASE_URL=http://vllm-main:8000
+      - VISION_MODEL=qwen/qwen3.5-4b
       - VISION_LLM_REASONING_EFFORT=${VISION_LLM_REASONING_EFFORT:-none}
       - EMBEDDING_INFERENCE_ADAPTER=${EMBEDDING_INFERENCE_ADAPTER:-}
-      - EMBEDDING_BASE_URL=${EMBEDDING_BASE_URL:-http://host.docker.internal:1234}
+      - EMBEDDING_BASE_URL=http://vllm-embedding:8000
+      - EMBEDDING_MODEL=text-embedding-nomic-embed-text-v1.5
       # Points at the host ComfyUI install (E:/AI/ComfyUI), started with
       # --listen 0.0.0.0 so the container can reach it. To use the sibling
       # `comfyui` service instead, run `--profile comfyui` and set this to
@@ -221,6 +367,10 @@ services:
       - artifactdata:/app/data/artifacts
       - searchdata:/app/data/search
     depends_on:
+      vllm-main:
+        condition: service_healthy
+      vllm-embedding:
+        condition: service_healthy
       db:
         condition: service_healthy
       redis:
