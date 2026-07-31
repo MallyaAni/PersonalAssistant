@@ -19,8 +19,15 @@ from backend.artifacts.image_retrieval import ImageRetrievalPolicy
 from backend.artifacts.image_routing import ImageRecallPolicy
 from backend.artifacts.storage import LocalBinaryArtifactStore
 from backend.config.settings import settings
+from backend.core.gpu_handoff import (
+    GpuHandoffImageEditProvider,
+    GpuHandoffImageProvider,
+    InferenceGpuHandoff,
+)
 from backend.core.interfaces import (
     ConversationTracer,
+    ImageEditProvider,
+    ImageProvider,
     SearchProvider,
     VisionEmbeddingProvider,
     VisionProvider,
@@ -437,9 +444,25 @@ MainSupervisorDependency = Annotated[
 ]
 
 
-# Reuse one concurrency-limited ComfyUI image provider across requests.
+# Share one handoff so generation and editing use the same sleep endpoint.
 @lru_cache(maxsize=1)
-def get_image_provider() -> ComfyUIImageProvider:
+def get_gpu_handoff() -> InferenceGpuHandoff:
+    return InferenceGpuHandoff(
+        base_url=settings.MAIN_LLM_BASE_URL or settings.LLM_BASE_URL,
+        enabled=settings.GPU_HANDOFF_ENABLED,
+        sleep_level=settings.GPU_HANDOFF_SLEEP_LEVEL,
+        timeout_seconds=settings.GPU_HANDOFF_TIMEOUT_SECONDS,
+    )
+
+
+# Reuse one concurrency-limited ComfyUI image provider across requests, wrapped
+# so each job runs with local inference weights offloaded.
+@lru_cache(maxsize=1)
+def get_image_provider() -> ImageProvider:
+    return GpuHandoffImageProvider(_build_comfyui_image_provider(), get_gpu_handoff())
+
+
+def _build_comfyui_image_provider() -> ComfyUIImageProvider:
     return ComfyUIImageProvider(
         base_url=settings.IMAGE_PROVIDER_BASE_URL,
         model=settings.IMAGE_MODEL,
@@ -453,14 +476,21 @@ def get_image_provider() -> ComfyUIImageProvider:
 
 
 ImageProviderDependency = Annotated[
-    ComfyUIImageProvider,
+    ImageProvider,
     Depends(get_image_provider),
 ]
 
 
-# Reuse one source-conditioned FLUX.2 editor on the shared ComfyUI runtime.
+# Reuse one source-conditioned FLUX.2 editor on the shared ComfyUI runtime,
+# wrapped in the same handoff because editing loads the same diffusion weights.
 @lru_cache(maxsize=1)
-def get_image_edit_provider() -> ComfyUIImageEditProvider:
+def get_image_edit_provider() -> ImageEditProvider:
+    return GpuHandoffImageEditProvider(
+        _build_comfyui_image_edit_provider(), get_gpu_handoff()
+    )
+
+
+def _build_comfyui_image_edit_provider() -> ComfyUIImageEditProvider:
     return ComfyUIImageEditProvider(
         base_url=settings.IMAGE_PROVIDER_BASE_URL,
         model=settings.IMAGE_EDIT_MODEL,
@@ -476,7 +506,7 @@ def get_image_edit_provider() -> ComfyUIImageEditProvider:
 
 
 ImageEditProviderDependency = Annotated[
-    ComfyUIImageEditProvider,
+    ImageEditProvider,
     Depends(get_image_edit_provider),
 ]
 
@@ -701,7 +731,7 @@ DependencyToolMemoryService = Annotated[
 ]
 
 
-# Compose Gemma's bounded tool selection with the guarded MCP invocation boundary.
+# Compose the model's bounded tool selection with the guarded MCP boundary.
 def get_mcp_tool_orchestration_service(
     toolbox: DependencyToolMemoryService,
     invocation: MCPInvocationDependency,
@@ -821,8 +851,12 @@ def get_image_recall_policy() -> ImageRecallPolicy:
 
 
 # Serve the routing classifier from a dedicated model when one is configured,
-# otherwise reuse the chat model.
-@lru_cache(maxsize=1)
+# otherwise reuse the chat model's configuration.
+#
+# Deliberately not cached. A provider serializes its own calls on an internal
+# lock, so one shared instance would make every concurrent chat queue behind
+# another chat's classifier call. A fresh client per router keeps the routing
+# decisions independent, and the runtime already serves several sequences.
 def get_classifier_llm() -> LLMClient:
     if not settings.SEARCH_CLASSIFIER_MODEL:
         return get_llm_client()
