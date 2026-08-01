@@ -237,7 +237,7 @@ def _slide_content_contract() -> str:
 
 # Present one compiled slide back to the model as concise editable content, so a
 # revision rewrites content without ever handling internal element ids.
-def _slide_content_view(slide: SlideSpec) -> dict[str, Any]:
+def _slide_content_view(slide: SlideSpec, layout: str | None = None) -> dict[str, Any]:
     points = [
         element.text
         for element in slide.elements
@@ -257,10 +257,83 @@ def _slide_content_view(slide: SlideSpec) -> dict[str, Any]:
         "purpose": slide.purpose,
         "points": points,
         "key_message": key_message,
+        # A revision recompiles the slide from this view, so it has to say what
+        # shape the slide currently is. Without it the model defaulted to
+        # bullets and an edit to a chart silently deleted the chart.
+        "layout": layout or _detect_layout(slide),
+        **_data_view(slide),
         "visual_prompt": slide.visual_prompt,
         "visual_priority": slide.visual_priority,
         "notes": slide.notes,
     }
+
+
+# Recover the layout from what the compiler produced. The compiled slide stores
+# native objects rather than the plan that made them, so the shape is read back
+# from the elements instead of being carried alongside them.
+def _detect_layout(slide: SlideSpec) -> str:
+    ids = {element.element_id.split("_", 2)[-1] for element in slide.elements}
+    if any(isinstance(element, ChartElement) for element in slide.elements):
+        return "chart"
+    if any(isinstance(element, TableElement) for element in slide.elements):
+        return "table"
+    if "stat_value" in ids:
+        return "statistic"
+    if "quote" in ids:
+        return "quote"
+    if any(name.startswith("column_") for name in ids):
+        return "comparison"
+    if "rule" in ids:
+        return "section"
+    return "bullets"
+
+
+# Return the chart or table already on the slide so a revision can edit its data
+# rather than having to invent it again from the title alone.
+def _data_view(slide: SlideSpec) -> dict[str, Any]:
+    for element in slide.elements:
+        if isinstance(element, ChartElement):
+            return {
+                "chart_kind": element.chart_type,
+                "chart_categories": list(element.categories),
+                "chart_series": [
+                    {"name": series.name, "values": list(series.values)}
+                    for series in element.series
+                ],
+            }
+        if isinstance(element, TableElement):
+            return {
+                "table_headers": list(element.headers),
+                "table_rows": [list(row) for row in element.rows],
+            }
+    return {}
+
+
+# Decide which shape a revision must produce. Telling the model in prose to keep
+# the slide's layout did not work: asked to change a chart's data it returned a
+# layout with no chart data, which the compiler degraded to bullets, silently
+# deleting the chart. So the layout is pinned in the grammar instead. The
+# feedback may still ask for a different shape by naming one, which is what lets
+# "remove the chart and use bullets" actually remove it.
+_LAYOUT_WORDS: tuple[tuple[str, str], ...] = (
+    ("bullet", "bullets"),
+    ("chart", "chart"),
+    ("graph", "chart"),
+    ("table", "table"),
+    ("quote", "quote"),
+    ("comparison", "comparison"),
+    ("compare", "comparison"),
+    ("section", "section"),
+    ("statistic", "statistic"),
+)
+
+
+def _requested_layout(feedback: str) -> str | None:
+    lowered = feedback.lower()
+    matches = {layout for word, layout in _LAYOUT_WORDS if word in lowered}
+    # Only act on an unambiguous request; "turn the chart into a table" names
+    # two shapes and is left to the model with the current one pinned.
+    return matches.pop() if len(matches) == 1 else None
 
 
 # Describe the bounded outline that schedules independent slide microtasks.
@@ -473,6 +546,7 @@ class LLMPresentationProvider(PresentationProvider):
         # asking the model for an element-id diff. A local model reliably rewrites
         # concise content but struggles to reference internal ids, which was making
         # the revision fail; layout stays deterministic and application-owned.
+        layout = _requested_layout(feedback) or _detect_layout(selected)
         messages = [
             {
                 "role": "system",
@@ -480,7 +554,10 @@ class LLMPresentationProvider(PresentationProvider):
                     "You are AniOS PresentationAgent revising exactly one slide. "
                     "Apply the user's feedback to this slide's content, keeping "
                     "everything the feedback does not mention. Do not change other "
-                    "slides. " + _slide_content_contract()
+                    "slides. The layout shown on the slide is the one to "
+                    "produce; supply everything that layout needs, reusing the "
+                    "chart or table data below unless the feedback changes it. "
+                    + _slide_content_contract()
                 ),
             },
             {
@@ -488,7 +565,7 @@ class LLMPresentationProvider(PresentationProvider):
                 "content": json.dumps(
                     {
                         "deck_title": deck.title,
-                        "current_slide": _slide_content_view(selected),
+                        "current_slide": _slide_content_view(selected, layout),
                         "feedback": feedback,
                     },
                     ensure_ascii=False,
@@ -499,16 +576,19 @@ class LLMPresentationProvider(PresentationProvider):
             messages,
             PlannedSlide,
             max_tokens=self.revision_max_tokens,
+            required_layout=layout,
         )
         if not isinstance(planned, PlannedSlide):
             raise TypeError("Presentation provider returned the wrong slide content")
         revised = compile_slide(planned, slide_id, deck.theme)
-        # Recompiling rebuilds only text and shapes, so carry over any images,
-        # charts, or tables already on the slide instead of dropping them.
+        # Charts and tables are compiled from the plan, so the new plan owns
+        # them: carrying the old one over would both duplicate a regenerated
+        # chart and make "remove the table" impossible to honour. Only the
+        # attached image survives a revision, because nothing regenerates it.
         preserved = [
             element
             for element in selected.elements
-            if isinstance(element, ImageElement | ChartElement | TableElement)
+            if isinstance(element, ImageElement)
         ]
         if preserved:
             revised = revised.model_copy(

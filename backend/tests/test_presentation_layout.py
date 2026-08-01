@@ -350,3 +350,63 @@ def test_data_layouts_stay_on_the_slide():
         for element in spec.elements:
             assert element.x + element.w <= SLIDE_WIDTH + 0.01, planned.layout
             assert element.y + element.h <= SLIDE_HEIGHT + 0.01, planned.layout
+
+
+# An image is attached later at x=8.45, so every content layout must yield that
+# column. Only the bullets layout used to, so a chart, table, comparison, or
+# statistic slide had its content run underneath the picture.
+def test_every_layout_clears_the_image_column_when_a_visual_is_expected():
+    theme = default_theme()
+    cases = [
+        _slide(layout="bullets"),
+        _slide(layout="statistic", statistic_value="35%", statistic_label="forage"),
+        _slide(layout="quote", quote="Cities need bees.", quote_attribution="A keeper"),
+        _slide(
+            layout="comparison",
+            comparison_left_heading="Rooftop",
+            comparison_right_heading="Ground",
+        ),
+        _slide(
+            layout="chart",
+            chart_kind="column",
+            chart_categories=["2024", "2025"],
+            chart_series=[PlannedSeries(name="Hives", values=[1.0, 2.0])],
+        ),
+        _slide(
+            layout="table",
+            table_headers=["Site", "Yield"],
+            table_rows=[["Rooftop", "24 kg"]],
+        ),
+    ]
+    for planned in cases:
+        expecting = planned.model_copy(
+            update={"visual_priority": 3, "visual_prompt": "a rooftop apiary"}
+        )
+        spec = compile_slide(expecting, "slide_001", theme)
+        for element in spec.elements:
+            # The picture occupies this rectangle; see attach_image. The title
+            # band legitimately spans the full width because it sits above it.
+            overlaps = (
+                element.x < 12.85
+                and element.x + element.w > 8.45
+                and element.y < 6.35
+                and element.y + element.h > 1.95
+            )
+            assert (
+                not overlaps
+            ), f"{planned.layout}: {element.element_id} overlaps the image"
+
+
+def test_layouts_use_the_full_width_without_an_expected_visual():
+    spec = compile_slide(
+        _slide(
+            layout="table",
+            table_headers=["Site", "Yield"],
+            table_rows=[["Rooftop", "24 kg"]],
+        ),
+        "slide_001",
+        default_theme(),
+    )
+    table = next(e for e in spec.elements if isinstance(e, TableElement))
+
+    assert table.w > 8.0

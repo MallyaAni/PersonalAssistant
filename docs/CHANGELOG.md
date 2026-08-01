@@ -1287,3 +1287,32 @@ This file is append-only history for meaningful, verified changes. It must not c
   deck intact at its previous revision.
 - Backend suite 575 passed; Ruff, Black, and full-project MyPy across 169 source
   files passed; 37 deterministic browser tests passed.
+
+## 2026-08-01 — Layout fixes, editable data objects, and deck controls on the rail
+
+- Fixed generated images overlapping slide text. Only the bullets layout yielded
+  the column a picture occupies, so statistic, quote, comparison, chart, and
+  table slides ran their content underneath it. Every layout now derives its
+  width from one place, and the heading band narrows too: the purpose line sits
+  low enough to reach the picture's top edge, which a horizontal-only check
+  would have missed.
+- Stopped a revision duplicating or silently deleting a chart or table. Charts
+  and tables are compiled from the plan, so the plan owns them and the old one
+  is no longer carried over; only the attached image survives, because nothing
+  regenerates it. The revision view now reports the slide's current shape and
+  its existing chart or table data, and the layout is pinned in the decoding
+  grammar rather than requested in prose.
+- Naming the layout in prose was not enough twice over: first the model returned
+  a chart layout with no chart data, and then, once the data was required, the
+  prompt still told it to keep the slide's previous shape while the grammar
+  asked for a new one. Prompt and grammar now state the same layout. Verified
+  live: adding, editing, and removing a chart through slide feedback each behave
+  correctly.
+- Moved add and delete onto the thumbnail rail, where deck structure belongs.
+  "Revise this slide" had accumulated four controls, two of which changed the
+  deck rather than the slide. Deleting is now a hover control on each thumbnail
+  and adding is a tile at the end of the rail.
+- Pointed an addition's revision at the slide it created, so a new slide has its
+  own follow-up history instead of none.
+- Backend suite 577 passed; Ruff, Black, and full-project MyPy across 169 source
+  files passed; 37 deterministic browser tests passed.

@@ -351,6 +351,7 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
   const [newSlideBrief, setNewSlideBrief] = useState('')
   const [isAddingSlide, setIsAddingSlide] = useState(false)
   const [isDeletingSlide, setIsDeletingSlide] = useState(false)
+  const [isAddingSlideOpen, setIsAddingSlideOpen] = useState(false)
   const [imagePrompt, setImagePrompt] = useState('')
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
   const [error, setError] = useState('')
@@ -652,6 +653,7 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
       )
       const added = slides.find(slide => !previous.has(slide.slide_id))
       if (added) setSelectedSlideId(added.slide_id)
+      setIsAddingSlideOpen(false)
       setNotice(`Slide added as revision ${updated.current_revision?.revision_number}.`)
     } catch (addError) {
       setNewSlideBrief(normalized)
@@ -663,15 +665,15 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
 
   // Remove the selected slide. Revising replaces a slide's content and can
   // never remove it, so deletion is its own action.
-  const removeSelectedSlide = async () => {
+  const removeSlide = async (slideId: string, slideTitle: string) => {
     const revisionId = active?.current_revision_id
-    if (!active || !selectedSlide || !revisionId || isDeletingSlide) return
+    if (!active || !revisionId || isDeletingSlide) return
     const slides = active.current_revision?.specification?.slides ?? []
     if (slides.length <= 1) {
       setError('A presentation must keep at least one slide.')
       return
     }
-    if (!window.confirm(`Delete the slide "${selectedSlide.title}"? This adds a new revision.`)) return
+    if (!window.confirm(`Delete the slide "${slideTitle}"? This adds a new revision.`)) return
     setIsDeletingSlide(true)
     setError('')
     setNotice('')
@@ -679,7 +681,7 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
       const updated = await deletePresentationSlide(
         userId,
         active.id,
-        selectedSlide.slide_id,
+        slideId,
         revisionId,
       )
       setActive(updated)
@@ -1056,12 +1058,12 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
 
                 <div className="mt-4 flex gap-3 overflow-x-auto pb-2" aria-label="Presentation slides">
                   {specification.slides.map((slide, index) => (
-                    <button
-                      key={slide.slide_id}
+                    <div key={slide.slide_id} className="group relative flex-none">
+                      <button
                       type="button"
                       aria-label={`Select slide ${index + 1}: ${slide.title}`}
                       onClick={() => setSelectedSlideId(slide.slide_id)}
-                      className={`w-36 flex-none overflow-hidden rounded-xl border-2 bg-white p-1 ${selectedSlide.slide_id === slide.slide_id ? 'border-[#0071e3]' : 'border-transparent'}`}
+                      className={`w-36 overflow-hidden rounded-xl border-2 bg-white p-1 ${selectedSlide.slide_id === slide.slide_id ? 'border-[#0071e3]' : 'border-transparent'}`}
                     >
                       <SlideCanvas
                         slide={slide}
@@ -1072,9 +1074,65 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                       <span className="block truncate px-1 py-1 text-left text-[11px] text-[#6e6e73]">
                         {index + 1}. {slide.title}
                       </span>
-                    </button>
+                      </button>
+                      {specification.slides.length > 1 && (
+                        <button
+                          type="button"
+                          aria-label={`Delete slide ${index + 1}`}
+                          title="Delete this slide"
+                          onClick={() => void removeSlide(slide.slide_id, slide.title)}
+                          disabled={isDeletingSlide}
+                          className="absolute right-1 top-1 hidden rounded-full bg-white/95 p-1 text-[#c9342f] shadow-sm group-hover:block disabled:text-[#86868b]"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                    </div>
                   ))}
+                  <button
+                    type="button"
+                    aria-label="Add a slide"
+                    title="Add a slide after the selected one"
+                    onClick={() => setIsAddingSlideOpen(true)}
+                    className="flex h-full w-24 flex-none flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-black/15 text-[11px] text-[#6e6e73] hover:border-[#0071e3] hover:text-[#0071e3]"
+                  >
+                    <FilePlus2 size={17} />
+                    Add slide
+                  </button>
                 </div>
+                {isAddingSlideOpen && (
+                  <div className="mt-3 rounded-2xl border border-black/[0.06] bg-[#fbfbfd] p-3">
+                    <label htmlFor="add-slide-brief" className="text-xs font-semibold text-[#1d1d1f]">
+                      Add a slide
+                    </label>
+                    <p className="mt-1 text-xs leading-5 text-[#86868b]">
+                      Adds a new slide after the selected one. Every existing slide is kept as it is.
+                    </p>
+                    <textarea
+                      id="add-slide-brief"
+                      aria-label="New slide brief"
+                      value={newSlideBrief}
+                      onChange={event => setNewSlideBrief(event.target.value)}
+                      onKeyDown={submitOnEnter(
+                        submitNewSlide,
+                        !newSlideBrief.trim() || isAddingSlide,
+                      )}
+                      placeholder="Describe the slide to add, for example: the legal rules for keeping hives in a city."
+                      className="mt-2 min-h-20 w-full resize-y rounded-2xl border border-black/10 bg-white p-3 text-sm outline-none focus:border-black/20"
+                      disabled={isAddingSlide}
+                    />
+                    <button
+                      type="button"
+                      aria-label="Add slide"
+                      onClick={() => void submitNewSlide()}
+                      disabled={!newSlideBrief.trim() || isAddingSlide}
+                      className="mt-2 flex h-9 w-full items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-4 text-sm font-medium text-[#1d1d1f] disabled:text-[#86868b]"
+                    >
+                      {isAddingSlide ? <Loader2 size={15} className="animate-spin" /> : <FilePlus2 size={15} />}
+                      {isAddingSlide ? 'Adding slide…' : 'Add slide'}
+                    </button>
+                  </div>
+                )}
               </main>
             ) : active ? (
               <main className="flex items-center justify-center rounded-3xl border border-black/[0.06] bg-white p-10">
@@ -1172,47 +1230,6 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                         </p>
                       </div>
                     )}
-                  </div>
-                  <button
-                    type="button"
-                    aria-label="Delete this slide"
-                    onClick={() => void removeSelectedSlide()}
-                    disabled={isDeletingSlide || (active.current_revision?.specification?.slides.length ?? 0) <= 1}
-                    className="mt-4 flex h-9 w-full items-center justify-center gap-2 rounded-full border border-[#c9342f]/25 bg-white px-4 text-sm font-medium text-[#c9342f] disabled:border-black/10 disabled:text-[#86868b]"
-                  >
-                    {isDeletingSlide ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
-                    {isDeletingSlide ? 'Deleting slide�' : 'Delete this slide'}
-                  </button>
-                  <div className="mt-4 rounded-2xl border border-black/[0.06] bg-[#fbfbfd] p-3">
-                    <label htmlFor="add-slide-brief" className="text-xs font-semibold text-[#1d1d1f]">
-                      Add a slide
-                    </label>
-                    <p className="mt-1 text-xs leading-5 text-[#86868b]">
-                      Adds a new slide after this one. Every existing slide is kept as it is.
-                    </p>
-                    <textarea
-                      id="add-slide-brief"
-                      aria-label="New slide brief"
-                      value={newSlideBrief}
-                      onChange={event => setNewSlideBrief(event.target.value)}
-                      onKeyDown={submitOnEnter(
-                        submitNewSlide,
-                        !newSlideBrief.trim() || isAddingSlide,
-                      )}
-                      placeholder="Describe the slide to add, for example: the legal rules for keeping hives in a city."
-                      className="mt-2 min-h-20 w-full resize-y rounded-2xl border border-black/10 bg-white p-3 text-sm outline-none focus:border-black/20"
-                      disabled={isAddingSlide}
-                    />
-                    <button
-                      type="button"
-                      aria-label="Add slide"
-                      onClick={() => void submitNewSlide()}
-                      disabled={!newSlideBrief.trim() || isAddingSlide}
-                      className="mt-2 flex h-9 w-full items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-4 text-sm font-medium text-[#1d1d1f] disabled:text-[#86868b]"
-                    >
-                      {isAddingSlide ? <Loader2 size={15} className="animate-spin" /> : <FilePlus2 size={15} />}
-                      {isAddingSlide ? 'Adding slide…' : 'Add slide'}
-                    </button>
                   </div>
                   <textarea
                     aria-label="Slide feedback"

@@ -362,6 +362,9 @@ class PresentationService:
                 "generation_failed",
             )
             raise
+        await self.repository.set_revision_target(
+            presentation_id, revision_id, added.slide_id
+        )
         slides = list(base.slides)
         if after_slide_id is None:
             slides.append(added)

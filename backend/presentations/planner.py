@@ -62,6 +62,8 @@ _OBJECT_X = 0.95
 _OBJECT_TOP = 2.15
 _OBJECT_WIDTH = 11.4
 _OBJECT_MAX_HEIGHT = 4.15
+# Where a generated slide image begins; see presentation_service.attach_image.
+_IMAGE_COLUMN_X = 8.45
 
 
 class DeckPlanModel(BaseModel):
@@ -205,6 +207,16 @@ def compile_slide(
     )
 
 
+# Every content layout must yield the right-hand column when the slide expects a
+# generated image, which is attached later at x=8.45. Only the bullets layout
+# used to do this, so a chart, table, comparison, or statistic slide had its
+# content run underneath the picture.
+def _content_bounds(planned: PlannedSlide) -> tuple[float, float]:
+    if planned.visual_priority >= 1 and planned.visual_prompt:
+        return _OBJECT_X, _IMAGE_COLUMN_X - _OBJECT_X - 0.25
+    return _OBJECT_X, _OBJECT_WIDTH
+
+
 # Resolve the layout the slide can actually render with the content it carries.
 def _effective_layout(planned: PlannedSlide) -> str:
     if planned.layout == "statistic" and not (planned.statistic_value or "").strip():
@@ -249,14 +261,15 @@ def _bullet_elements(
     reserves_image = planned.visual_priority >= 1 and bool(planned.visual_prompt)
     body_width = _BODY_WIDTH_WITH_IMAGE if reserves_image else _BODY_WIDTH
 
+    head_width = body_width if reserves_image else _HEAD_WIDTH
     title_size = fit_font_size(
-        planned.title, _HEAD_WIDTH, _TITLE_MAX_HEIGHT, _TITLE_FONT, _TITLE_FONT_MIN
+        planned.title, head_width, _TITLE_MAX_HEIGHT, _TITLE_FONT, _TITLE_FONT_MIN
     )
-    title_height = required_height(planned.title, _HEAD_WIDTH, title_size)
+    title_height = required_height(planned.title, head_width, title_size)
     purpose_y = _TITLE_TOP + title_height + 0.06
     purpose_height = min(
         _PURPOSE_MAX_HEIGHT,
-        required_height(planned.purpose, _HEAD_WIDTH, _PURPOSE_FONT),
+        required_height(planned.purpose, head_width, _PURPOSE_FONT),
     )
 
     content_top = purpose_y + purpose_height + 0.18
@@ -284,7 +297,7 @@ def _bullet_elements(
             text=planned.title,
             x=0.75,
             y=_TITLE_TOP,
-            w=_HEAD_WIDTH,
+            w=head_width,
             h=title_height,
             font_size=int(title_size),
             bold=True,
@@ -295,7 +308,7 @@ def _bullet_elements(
             text=planned.purpose,
             x=0.8,
             y=purpose_y,
-            w=_HEAD_WIDTH,
+            w=head_width,
             h=purpose_height,
             font_size=_PURPOSE_FONT,
             color=theme.muted_color,
@@ -416,16 +429,20 @@ def _statistic_elements(
     value = (planned.statistic_value or "").strip()
     label = (planned.statistic_label or planned.purpose).strip()
     elements = _heading_elements(planned, slide_id, theme)
-    value_size = fit_font_size(value, 5.1, 2.1, 96, 40)
+    origin, available = _content_bounds(planned)
+    value_width = available * 0.44
+    support_x = origin + value_width + 0.6
+    support_width = available - value_width - 0.6
+    value_size = fit_font_size(value, value_width, 2.1, 96, 40)
     elements.extend(
         [
             TextElement(
                 element_id=f"{slide_id}_stat_value",
                 text=value,
-                x=0.95,
+                x=origin,
                 y=2.35,
-                w=5.1,
-                h=required_height(value, 5.1, value_size),
+                w=value_width,
+                h=required_height(value, value_width, value_size),
                 font_size=int(value_size),
                 bold=True,
                 color=theme.primary_color,
@@ -434,10 +451,10 @@ def _statistic_elements(
             TextElement(
                 element_id=f"{slide_id}_stat_label",
                 text=label,
-                x=0.95,
+                x=origin,
                 y=4.6,
-                w=5.1,
-                h=min(1.0, required_height(label, 5.1, 15)),
+                w=value_width,
+                h=min(1.0, required_height(label, value_width, 15)),
                 font_size=15,
                 color=theme.muted_color,
                 align="center",
@@ -445,17 +462,17 @@ def _statistic_elements(
         ]
     )
     support = list(planned.points)[:4]
-    point_size = fit_stack_font_size(support, 5.6, 3.4, 16, 12, _POINT_GAP)
+    point_size = fit_stack_font_size(support, support_width, 3.4, 16, 12, _POINT_GAP)
     point_y = 2.4
     for index, point in enumerate(support, start=1):
-        height = required_height(point, 5.6, point_size)
+        height = required_height(point, support_width, point_size)
         elements.append(
             TextElement(
                 element_id=f"{slide_id}_point_{index:02d}",
                 text=point,
-                x=6.75,
+                x=support_x,
                 y=point_y,
-                w=5.6,
+                w=support_width,
                 h=height,
                 font_size=int(point_size),
                 color=theme.text_color,
@@ -473,8 +490,10 @@ def _quote_elements(
     planned: PlannedSlide, slide_id: str, theme: PresentationTheme
 ) -> list[SlideElement]:
     quote = (planned.quote or "").strip()
-    quote_size = fit_font_size(quote, 9.6, 3.0, 30, 18)
-    quote_height = required_height(quote, 9.6, quote_size)
+    _, available = _content_bounds(planned)
+    quote_width = available - 0.9
+    quote_size = fit_font_size(quote, quote_width, 3.0, 30, 18)
+    quote_height = required_height(quote, quote_width, quote_size)
     quote_y = max(2.35, 3.35 - (quote_height / 2))
     elements: list[SlideElement] = [
         ShapeElement(
@@ -493,8 +512,8 @@ def _quote_elements(
             text=planned.title,
             x=1.85,
             y=1.05,
-            w=10.0,
-            h=required_height(planned.title, 10.0, 20),
+            w=quote_width,
+            h=required_height(planned.title, quote_width, 20),
             font_size=20,
             bold=True,
             color=theme.muted_color,
@@ -504,7 +523,7 @@ def _quote_elements(
             text=quote,
             x=1.85,
             y=quote_y,
-            w=9.6,
+            w=quote_width,
             h=quote_height,
             font_size=int(quote_size),
             color=theme.text_color,
@@ -518,7 +537,7 @@ def _quote_elements(
                 text=f"— {attribution}",
                 x=1.85,
                 y=quote_y + quote_height + 0.3,
-                w=9.6,
+                w=quote_width,
                 h=0.45,
                 font_size=15,
                 color=theme.primary_color,
@@ -533,13 +552,18 @@ def _comparison_elements(
     planned: PlannedSlide, slide_id: str, theme: PresentationTheme
 ) -> list[SlideElement]:
     elements = _heading_elements(planned, slide_id, theme)
+    origin, available = _content_bounds(planned)
+    column_width = (available - 0.2) / 2
     points = list(planned.points)
     midpoint = (len(points) + 1) // 2
     columns = (
-        (planned.comparison_left_heading, points[:midpoint], 0.95),
-        (planned.comparison_right_heading, points[midpoint:], 6.95),
+        (planned.comparison_left_heading, points[:midpoint], origin),
+        (
+            planned.comparison_right_heading,
+            points[midpoint:],
+            origin + column_width + 0.2,
+        ),
     )
-    column_width = 5.4
     text_width = column_width - 0.5
     largest = max((column[1] for column in columns), key=len, default=[])
     point_size = fit_stack_font_size(largest, text_width, 3.3, 16, 12, _POINT_GAP)
@@ -599,6 +623,7 @@ def _chart_elements(
     planned: PlannedSlide, slide_id: str, theme: PresentationTheme
 ) -> list[SlideElement]:
     elements = _heading_elements(planned, slide_id, theme)
+    object_x, object_width = _content_bounds(planned)
     series = planned.chart_series or []
     elements.append(
         ChartElement(
@@ -612,9 +637,9 @@ def _chart_elements(
             show_legend=len(series) > 1,
             show_title=bool(planned.chart_axis_label),
             title=planned.chart_axis_label,
-            x=_OBJECT_X,
+            x=object_x,
             y=_OBJECT_TOP,
-            w=_OBJECT_WIDTH,
+            w=object_width,
             h=_OBJECT_MAX_HEIGHT,
         )
     )
@@ -627,6 +652,7 @@ def _table_elements(
     planned: PlannedSlide, slide_id: str, theme: PresentationTheme
 ) -> list[SlideElement]:
     elements = _heading_elements(planned, slide_id, theme)
+    object_x, object_width = _content_bounds(planned)
     headers = list(planned.table_headers or [])
     rows = [list(row) for row in (planned.table_rows or [])]
     row_height = 0.46
@@ -637,9 +663,9 @@ def _table_elements(
             headers=headers,
             rows=rows,
             font_size=16 if len(rows) <= 5 else 13,
-            x=_OBJECT_X,
+            x=object_x,
             y=_OBJECT_TOP,
-            w=_OBJECT_WIDTH,
+            w=object_width,
             h=height,
         )
     )
@@ -650,10 +676,13 @@ def _table_elements(
 def _heading_elements(
     planned: PlannedSlide, slide_id: str, theme: PresentationTheme
 ) -> list[SlideElement]:
+    # The purpose line sits low enough to reach the picture's top edge, so the
+    # whole heading band narrows with the body rather than only the bullets.
+    _, head_width = _content_bounds(planned)
     title_size = fit_font_size(
-        planned.title, _HEAD_WIDTH, _TITLE_MAX_HEIGHT, _TITLE_FONT, _TITLE_FONT_MIN
+        planned.title, head_width, _TITLE_MAX_HEIGHT, _TITLE_FONT, _TITLE_FONT_MIN
     )
-    title_height = required_height(planned.title, _HEAD_WIDTH, title_size)
+    title_height = required_height(planned.title, head_width, title_size)
     return [
         TextElement(
             element_id=f"{slide_id}_title",
@@ -671,10 +700,10 @@ def _heading_elements(
             text=planned.purpose,
             x=0.8,
             y=_TITLE_TOP + title_height + 0.06,
-            w=_HEAD_WIDTH,
+            w=head_width,
             h=min(
                 _PURPOSE_MAX_HEIGHT,
-                required_height(planned.purpose, _HEAD_WIDTH, _PURPOSE_FONT),
+                required_height(planned.purpose, head_width, _PURPOSE_FONT),
             ),
             font_size=_PURPOSE_FONT,
             color=theme.muted_color,
