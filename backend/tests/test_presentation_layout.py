@@ -146,3 +146,91 @@ def test_fit_helpers_return_the_floor_rather_than_failing():
     # Even an absurd string resolves to the minimum instead of raising.
     assert fit_font_size("x" * 5_000, 4.0, 0.5, 30, 22) == 22
     assert fit_stack_font_size(["y" * 2_000] * 6, 4.0, 1.0, 18, 12, 0.14) == 12
+
+
+# A deck of identically shaped slides is what makes generated decks read as
+# generated, so each layout must produce visibly different geometry.
+def test_each_layout_produces_its_own_elements():
+    theme = default_theme()
+    ids = {}
+    for layout, extra in (
+        ("bullets", {}),
+        ("section", {}),
+        ("statistic", {"statistic_value": "35%", "statistic_label": "of forage"}),
+        ("quote", {"quote": "Cities need bees.", "quote_attribution": "A beekeeper"}),
+        (
+            "comparison",
+            {
+                "comparison_left_heading": "Rooftop",
+                "comparison_right_heading": "Ground level",
+            },
+        ),
+    ):
+        spec = compile_slide(_slide(layout=layout, **extra), f"slide_{layout}", theme)
+        ids[layout] = {e.element_id.split("_", 2)[-1] for e in spec.elements}
+
+    assert "stat_value" in ids["statistic"]
+    assert "quote" in ids["quote"]
+    assert any(name.startswith("column_") for name in ids["comparison"])
+    assert "rule" in ids["section"]
+    # A section divider is a divider: it carries no bulleted list.
+    assert not any("point_" in name for name in ids["section"])
+    assert ids["bullets"] != ids["statistic"] != ids["quote"]
+
+
+# A layout missing the content it needs degrades rather than rendering an empty
+# panel, so a partial plan still produces a usable slide.
+def test_incomplete_layouts_fall_back_to_bullets():
+    theme = default_theme()
+
+    no_value = compile_slide(_slide(layout="statistic"), "slide_a", theme)
+    no_quote = compile_slide(_slide(layout="quote"), "slide_b", theme)
+
+    assert any("_point_" in e.element_id for e in no_value.elements)
+    assert not any("stat_value" in e.element_id for e in no_value.elements)
+    assert any("_point_" in e.element_id for e in no_quote.elements)
+    assert not any(e.element_id.endswith("_quote") for e in no_quote.elements)
+
+
+# Every layout is subject to the same containment rule the bullets layout is.
+def test_no_layout_places_anything_off_the_slide():
+    theme = default_theme()
+    cases = [
+        _slide(layout="section"),
+        _slide(layout="statistic", statistic_value="1,250", statistic_label="hives"),
+        _slide(
+            layout="quote",
+            quote="A long quotation that runs on for a while to force wrapping "
+            "across several rendered lines in the preview and the deck.",
+            quote_attribution="Someone Notable, Author of Something",
+        ),
+        _slide(
+            layout="comparison",
+            comparison_left_heading="Before",
+            comparison_right_heading="After",
+        ),
+    ]
+    for index, planned in enumerate(cases):
+        spec = compile_slide(planned, f"slide_{index:03d}", theme)
+        for element in spec.elements:
+            assert element.x + element.w <= SLIDE_WIDTH + 0.01, planned.layout
+            assert element.y + element.h <= SLIDE_HEIGHT + 0.01, planned.layout
+
+
+def test_comparison_splits_points_across_both_columns():
+    spec = compile_slide(
+        _slide(
+            layout="comparison",
+            comparison_left_heading="Rooftop",
+            comparison_right_heading="Ground",
+        ),
+        "slide_001",
+        default_theme(),
+    )
+    left = [e for e in spec.elements if "_point_01" in e.element_id]
+    right = [e for e in spec.elements if "_point_02" in e.element_id]
+
+    assert left
+    assert right
+    # Columns do not overlap horizontally.
+    assert max(e.x + e.w for e in left) <= min(e.x for e in right) + 0.01

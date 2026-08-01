@@ -1187,3 +1187,23 @@ This file is append-only history for meaningful, verified changes. It must not c
   deck each returned 404, and a stale base revision returned 409.
 - Backend suite 566 passed; Ruff, Black, and full-project MyPy across 169 source
   files passed; 36 deterministic browser tests passed.
+
+## 2026-08-01 — Slides take five shapes instead of one
+
+- Added section, statistic, quote, and comparison layouts beside the existing
+  bullets layout. Every slide previously had the same shape — title, purpose,
+  bullet list, key message — which is the single largest reason a generated deck
+  reads as generated, ahead of anything about the prose.
+- Let the model choose the shape while deterministic code keeps geometry. The
+  layout is an enum in the decoding grammar, so an unknown layout is
+  unrepresentable rather than validated after the fact, and a layout missing the
+  content it needs degrades to bullets rather than rendering an empty panel.
+- Moved the choice to the outline stage after measuring it. Asked per slide, the
+  model saw only that slide's title and purpose, which carry no signal about
+  what shape the deck needs next, and returned bullets for everything: a deck
+  explicitly asking for a statistic, a quote, and a comparison used two layouts.
+  Choosing in the outline, with every slide in view, produced four.
+- Verified on real decks: a five-slide brief now yields bullets, statistic,
+  quote, and comparison slides with zero elements past the slide edge.
+- Backend suite 570 passed; Ruff, Black, and full-project MyPy across 169 source
+  files passed.
