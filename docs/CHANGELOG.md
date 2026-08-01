@@ -1266,3 +1266,24 @@ This file is append-only history for meaningful, verified changes. It must not c
   with that geometry no matter how correct the boxes are.
 - 37 deterministic browser tests passed; TypeScript and the production build
   passed.
+
+## 2026-08-01 — Slides can be deleted
+
+- Added the missing delete-slide capability. Revising a slide replaces its
+  content and can never remove it, so a deck had no way to drop a slide short of
+  deleting the whole presentation. `DELETE /presentations/{user}/{id}/slides/
+  {slide_id}` now removes one slide as an ordinary linked revision, with the
+  base revision travelling as a query parameter because a DELETE body is not
+  reliably transmitted.
+- Refused the two cases that would otherwise corrupt a deck: an unknown slide
+  returns 404, and deleting the only remaining slide returns 409 rather than
+  letting the specification fail its own minimum-length validation and lose the
+  presentation.
+- Exposed it in the panel as a distinct destructive control, disabled when only
+  one slide remains and confirmed before it runs, with the selection moving to
+  the first surviving slide afterwards.
+- Verified live: deleting a middle slide produced a new ready revision, an
+  unknown slide returned 404, and deleting the last slide returned 409 with the
+  deck intact at its previous revision.
+- Backend suite 575 passed; Ruff, Black, and full-project MyPy across 169 source
+  files passed; 37 deterministic browser tests passed.

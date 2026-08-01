@@ -237,6 +237,42 @@ async def add_presentation_slide(
         ) from exc
 
 
+# Remove one slide as a linked revision. The base revision travels as a query
+# parameter because a DELETE body is not reliably transmitted.
+@router.delete(
+    "/{user_id}/{presentation_id}/slides/{slide_id}",
+    status_code=status.HTTP_200_OK,
+)
+async def delete_presentation_slide(
+    user_id: str,
+    presentation_id: UUID,
+    slide_id: str,
+    base_revision_id: UUID,
+    service: PresentationDependency,
+    identity: IdentityDependency,
+) -> dict[str, Any]:
+    authorize_user(user_id, identity)
+    authorize_scope(identity, SCOPE_PRESENTATIONS)
+    try:
+        return await service.delete_slide(
+            user_id,
+            str(presentation_id),
+            str(base_revision_id),
+            slide_id,
+        )
+    except PresentationConflictError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Unable to delete the slide.",
+        ) from exc
+
+
 # Apply feedback to one selected slide and create a new linked revision.
 @router.post(
     "/{user_id}/{presentation_id}/slides/{slide_id}/revisions",

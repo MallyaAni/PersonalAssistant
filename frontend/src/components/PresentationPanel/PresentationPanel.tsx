@@ -21,6 +21,7 @@ import {
   getPresentationJob,
   getPresentations,
   addPresentationSlide,
+  deletePresentationSlide,
   revisePresentationSlide,
   type PresentationDeckSpec,
   type PresentationElement,
@@ -349,6 +350,7 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
   const [isRevising, setIsRevising] = useState(false)
   const [newSlideBrief, setNewSlideBrief] = useState('')
   const [isAddingSlide, setIsAddingSlide] = useState(false)
+  const [isDeletingSlide, setIsDeletingSlide] = useState(false)
   const [imagePrompt, setImagePrompt] = useState('')
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
   const [error, setError] = useState('')
@@ -656,6 +658,41 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
       setError(addError instanceof Error ? addError.message : 'Unable to add the slide.')
     } finally {
       setIsAddingSlide(false)
+    }
+  }
+
+  // Remove the selected slide. Revising replaces a slide's content and can
+  // never remove it, so deletion is its own action.
+  const removeSelectedSlide = async () => {
+    const revisionId = active?.current_revision_id
+    if (!active || !selectedSlide || !revisionId || isDeletingSlide) return
+    const slides = active.current_revision?.specification?.slides ?? []
+    if (slides.length <= 1) {
+      setError('A presentation must keep at least one slide.')
+      return
+    }
+    if (!window.confirm(`Delete the slide "${selectedSlide.title}"? This adds a new revision.`)) return
+    setIsDeletingSlide(true)
+    setError('')
+    setNotice('')
+    try {
+      const updated = await deletePresentationSlide(
+        userId,
+        active.id,
+        selectedSlide.slide_id,
+        revisionId,
+      )
+      setActive(updated)
+      setPresentations(current => current.map(item => (
+        item.id === updated.id ? updated : item
+      )))
+      const remaining = updated.current_revision?.specification?.slides ?? []
+      setSelectedSlideId(remaining[0]?.slide_id ?? '')
+      setNotice(`Slide removed as revision ${updated.current_revision?.revision_number}.`)
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : 'Unable to delete the slide.')
+    } finally {
+      setIsDeletingSlide(false)
     }
   }
 
@@ -1136,6 +1173,16 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                       </div>
                     )}
                   </div>
+                  <button
+                    type="button"
+                    aria-label="Delete this slide"
+                    onClick={() => void removeSelectedSlide()}
+                    disabled={isDeletingSlide || (active.current_revision?.specification?.slides.length ?? 0) <= 1}
+                    className="mt-4 flex h-9 w-full items-center justify-center gap-2 rounded-full border border-[#c9342f]/25 bg-white px-4 text-sm font-medium text-[#c9342f] disabled:border-black/10 disabled:text-[#86868b]"
+                  >
+                    {isDeletingSlide ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
+                    {isDeletingSlide ? 'Deleting slide…' : 'Delete this slide'}
+                  </button>
                   <div className="mt-4 rounded-2xl border border-black/[0.06] bg-[#fbfbfd] p-3">
                     <label htmlFor="add-slide-brief" className="text-xs font-semibold text-[#1d1d1f]">
                       Add a slide

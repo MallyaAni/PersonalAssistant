@@ -603,6 +603,20 @@ export function addPresentationSlide(
   )
 }
 
+// Remove one slide from a deck as a linked revision.
+export function deletePresentationSlide(
+  userId: string,
+  presentationId: string,
+  slideId: string,
+  baseRevisionId: string,
+) {
+  const query = new URLSearchParams({ base_revision_id: baseRevisionId })
+  return apiRequest<PresentationRecord>(
+    `/api/v1/presentations/${encodeURIComponent(userId)}/${encodeURIComponent(presentationId)}/slides/${encodeURIComponent(slideId)}?${query}`,
+    { method: 'DELETE' },
+  )
+}
+
 // Generate one local image and attach it as a new selected-slide revision.
 export function generatePresentationSlideImage(
   userId: string,

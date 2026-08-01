@@ -379,6 +379,45 @@ class PresentationService:
             base.model_copy(update={"slides": slides}),
         )
 
+    # Remove one slide as a linked revision. Revising replaces a slide's content
+    # and can never remove it, so deletion needs its own path.
+    async def delete_slide(
+        self,
+        user_id: str,
+        presentation_id: str,
+        base_revision_id: str,
+        slide_id: str,
+    ) -> dict[str, Any]:
+        base, revision = await self.repository.create_revision_pending(
+            user_id,
+            presentation_id,
+            base_revision_id,
+            slide_id,
+            f"Removed slide {slide_id}",
+            self.provider_name,
+            self.model_name,
+        )
+        revision_id = str(revision["id"])
+        remaining = [slide for slide in base.slides if slide.slide_id != slide_id]
+        if len(remaining) == len(base.slides):
+            await self.repository.mark_failed(
+                user_id, presentation_id, revision_id, "slide_not_found"
+            )
+            raise LookupError("The slide to delete was not found")
+        # A deck must keep at least one slide, so refuse rather than let the
+        # specification fail validation and lose the whole presentation.
+        if not remaining:
+            await self.repository.mark_failed(
+                user_id, presentation_id, revision_id, "last_slide"
+            )
+            raise ValueError("A presentation must keep at least one slide.")
+        return await self._complete_revision(
+            user_id,
+            presentation_id,
+            revision_id,
+            base.model_copy(update={"slides": remaining}),
+        )
+
     # Attach one owned generated image to the selected slide in a linked revision.
     async def attach_image(
         self,
