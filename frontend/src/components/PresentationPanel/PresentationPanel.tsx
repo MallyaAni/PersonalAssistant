@@ -1086,6 +1086,12 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                     aria-label="Slide feedback"
                     value={feedback}
                     onChange={event => setFeedback(event.target.value)}
+                    onKeyDown={event => {
+                      if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault()
+                        if (feedback.trim() && !isRevising) void submitFeedback()
+                      }
+                    }}
                     placeholder="Make the chart clearer, rewrite the headline, add a comparison…"
                     className="mt-4 min-h-32 w-full resize-y rounded-2xl border border-black/10 bg-[#fbfbfd] p-3 text-sm outline-none focus:border-black/20"
                     disabled={isRevising}
@@ -1115,6 +1121,14 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                       aria-label="Slide image prompt"
                       value={imagePrompt}
                       onChange={event => setImagePrompt(event.target.value)}
+                      onKeyDown={event => {
+                        if (event.key === 'Enter' && !event.shiftKey) {
+                          event.preventDefault()
+                          const blocked = isGeneratingImage
+                            || Boolean(selectedSlideImage && !imagePrompt.trim())
+                          if (!blocked) void addSlideImage()
+                        }
+                      }}
                       placeholder={selectedSlideImage
                         ? 'Example: Make only the horse chestnut brown.'
                         : 'Optional visual direction; leave blank to use the slide content.'}

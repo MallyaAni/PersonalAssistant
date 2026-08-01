@@ -1140,3 +1140,27 @@ This file is append-only history for meaningful, verified changes. It must not c
   car on a wet city street at night", with the image matches still displayed.
 - Backend suite 554 passed; Ruff, Black, and full-project MyPy across 168 source
   files passed.
+
+## 2026-08-01 — Slide text no longer overflows its boxes
+
+- Fixed clipped and colliding slide text. Slide geometry was fixed regardless of
+  content: the title box was 0.65in while a 57-character title wraps to two
+  lines at 30pt, and six bullets on a 0.82in pitch ended at 6.60in while the key
+  message was pinned at 6.55in, so they always collided. A specification that
+  overflows is still a valid specification, so nothing in the pipeline noticed.
+- Added `backend/presentations/layout.py`, which estimates rendered line count
+  and height from text length, box width, and point size. The compiler now sizes
+  the title and purpose to their actual content, stacks bullets at their own
+  measured heights, and shrinks the body font within bounds when content is
+  dense rather than letting it overflow. Geometry stays deterministic and
+  editable rather than depending on renderer autofit.
+- Reserved the right column for slides that expect generated imagery. Bullets
+  spanned x=1.42 to 11.97 while a slide image occupies x=8.45 to 12.85, so text
+  ran underneath any picture the deck produced.
+- Verified on a real generated deck: zero elements past the slide edge, zero
+  bullet overlaps, and zero key-message collisions.
+- Made Enter submit in the presentation panel's slide-feedback and slide-image
+  inputs, with Shift+Enter for a newline, matching the chat composer. The
+  multi-line deck brief keeps plain Enter, since it asks for several lines.
+- Backend suite 563 passed; Ruff, Black, and full-project MyPy across 169 source
+  files passed; 36 deterministic browser tests passed.
