@@ -1333,3 +1333,26 @@ This file is append-only history for meaningful, verified changes. It must not c
   were both refused with the deck left intact.
 - Backend suite 577 passed; Ruff, Black, and full-project MyPy across 169 source
   files passed; 37 deterministic browser tests passed.
+
+## 2026-08-01 — Reordering reflows the deck, and waits show the conjuring tile
+
+- Made the deck reflow under the cursor while a slide is dragged. Displaced
+  thumbnails now slide aside by exactly one thumbnail width, in either
+  direction, so the pending position is visible before the pointer is released
+  rather than only implied by a line. The line is gone, because the gap opening
+  is the clearer signal.
+- Fixed the drop landing somewhere other than where it was indicated. The move
+  spliced against the original list, so a rightward drag placed the slide after
+  the target while the indicator promised before it. The insertion point is now
+  stated explicitly, taken from which half of the thumbnail the pointer is over,
+  and the slide lands exactly where the reflow showed it would.
+- Added grab and grabbing cursors and a short hint, so the rail reads as
+  draggable instead of requiring the interaction to be guessed at.
+- Extended the conjuring tile beyond chat: slide-image generation now holds the
+  square the picture will fill, and deck building shows the same tile during its
+  visual stage. Deck building keeps its staged progress bar, which says what is
+  happening and is more use than an animation on its own.
+- Verified live in both directions: dragging a slide right to sit after another
+  and dragging one left to sit before another each produced the expected order.
+- Backend suite 577 passed; 37 deterministic browser tests passed; TypeScript
+  and the production build passed.

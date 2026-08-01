@@ -46,6 +46,10 @@ const POINTS_PER_CQW = 9.6
 // assume the same line height the compiler used to size the boxes, or it will
 // disagree with the geometry it is drawing.
 const PREVIEW_LINE_HEIGHT = 1.25
+// One thumbnail (w-36 = 144px) plus the rail gap (gap-3 = 12px). Dragging
+// shifts the slides it displaces by exactly this much, so the deck reflows
+// under the cursor instead of only showing a line where the slide will go.
+const THUMBNAIL_STEP = 156
 
 // Isolate one user's reconnectable presentation job in browser storage.
 const presentationJobStorageKey = (userId: string) => (
@@ -125,6 +129,21 @@ const presentationProgress = (
     percent: 92,
     label: 'Rendering and validating the editable PowerPoint',
   }
+}
+
+// How far one thumbnail slides aside while another is dragged over it. Items
+// between the slide's origin and the pending insertion point step out of the
+// way by one thumbnail, which is the movement that confirms the drop before the
+// pointer is released.
+const reorderShift = (
+  index: number,
+  from: number,
+  insertAt: number,
+): number => {
+  if (from < 0 || insertAt < 0 || index === from) return 0
+  if (insertAt > from && index > from && index < insertAt) return -THUMBNAIL_STEP
+  if (insertAt <= from && index >= insertAt && index < from) return THUMBNAIL_STEP
+  return 0
 }
 
 interface OwnedSlideImageProps {
@@ -354,7 +373,7 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
   const [isDeletingSlide, setIsDeletingSlide] = useState(false)
   const [isAddingSlideOpen, setIsAddingSlideOpen] = useState(false)
   const [draggingSlideId, setDraggingSlideId] = useState('')
-  const [dropTargetId, setDropTargetId] = useState('')
+  const [dropTarget, setDropTarget] = useState<{ id: string; side: 'before' | 'after' } | null>(null)
   const [isReordering, setIsReordering] = useState(false)
   const [imagePrompt, setImagePrompt] = useState('')
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
@@ -704,16 +723,24 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
 
   // Move one slide to another position. The whole order is sent so the server
   // can reject anything that is not a permutation, and no model is involved.
-  const moveSlide = async (draggedId: string, targetId: string) => {
+  const moveSlide = async (
+    draggedId: string,
+    targetId: string,
+    side: 'before' | 'after',
+  ) => {
     const revisionId = active?.current_revision_id
     const slides = active?.current_revision?.specification?.slides ?? []
     if (!active || !revisionId || isReordering) return
     if (draggedId === targetId || !slides.length) return
     const order = slides.map(slide => slide.slide_id)
-    const from = order.indexOf(draggedId)
-    const to = order.indexOf(targetId)
-    if (from < 0 || to < 0) return
-    order.splice(to, 0, ...order.splice(from, 1))
+    if (!order.includes(draggedId) || !order.includes(targetId)) return
+    // Remove first, then insert relative to the target's new index, so the
+    // slide lands exactly where the insertion line was drawn.
+    const remaining = order.filter(id => id !== draggedId)
+    const anchor = remaining.indexOf(targetId)
+    remaining.splice(side === 'before' ? anchor : anchor + 1, 0, draggedId)
+    const reordered = remaining
+    if (reordered.every((id, index) => id === order[index])) return
     setIsReordering(true)
     setError('')
     setNotice('')
@@ -722,7 +749,7 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
         userId,
         active.id,
         revisionId,
-        order,
+        reordered,
       )
       setActive(updated)
       setPresentations(current => current.map(item => (
@@ -734,7 +761,7 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
     } finally {
       setIsReordering(false)
       setDraggingSlideId('')
-      setDropTargetId('')
+      setDropTarget(null)
     }
   }
 
@@ -932,6 +959,12 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                 {creationProgress.percent}%
               </p>
             </div>
+            {creationProgress.label.startsWith('Generating visual') && (
+              <div
+                aria-hidden="true"
+                className="anios-conjure mb-4 h-24 w-full rounded-2xl"
+              />
+            )}
             <div
               role="progressbar"
               aria-label="Presentation completion"
@@ -1096,38 +1129,67 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                   />
                 </div>
 
-                <div className="mt-4 flex gap-3 overflow-x-auto pb-2" aria-label="Presentation slides">
-                  {/* Thumbnails are draggable; dropping one on another reorders the deck. */}
-                  {specification.slides.map((slide, index) => (
+                {specification.slides.length > 1 && (
+                  <p className="mt-4 text-xs text-[#86868b]">
+                    Drag a slide to reorder the deck.
+                  </p>
+                )}
+                <div className="mt-2 flex gap-3 overflow-x-auto pb-2" aria-label="Presentation slides">
+                  {/* Thumbnails are draggable. The deck reflows under the
+                      cursor so the pending position is visible before the
+                      pointer is released, rather than only implied. */}
+                  {specification.slides.map((slide, index) => {
+                    const dragFrom = draggingSlideId
+                      ? specification.slides.findIndex(item => item.slide_id === draggingSlideId)
+                      : -1
+                    const targetIndex = dropTarget
+                      ? specification.slides.findIndex(item => item.slide_id === dropTarget.id)
+                      : -1
+                    const insertAt = targetIndex < 0
+                      ? -1
+                      : dropTarget?.side === 'after' ? targetIndex + 1 : targetIndex
+                    const shift = reorderShift(index, dragFrom, insertAt)
+                    return (
                     <div
                       key={slide.slide_id}
                       className="group relative flex-none"
                       draggable={!isReordering && specification.slides.length > 1}
                       onDragStart={() => setDraggingSlideId(slide.slide_id)}
-                      onDragEnd={() => { setDraggingSlideId(''); setDropTargetId('') }}
+                      onDragEnd={() => { setDraggingSlideId(''); setDropTarget(null) }}
                       onDragOver={event => {
                         event.preventDefault()
-                        if (draggingSlideId && draggingSlideId !== slide.slide_id) {
-                          setDropTargetId(slide.slide_id)
-                        }
+                        if (!draggingSlideId || draggingSlideId === slide.slide_id) return
+                        // Which half the pointer is over decides the side, the
+                        // way every slide sorter behaves.
+                        const box = event.currentTarget.getBoundingClientRect()
+                        const side = event.clientX < box.left + box.width / 2
+                          ? 'before'
+                          : 'after'
+                        setDropTarget(current => (
+                          current?.id === slide.slide_id && current.side === side
+                            ? current
+                            : { id: slide.slide_id, side }
+                        ))
                       }}
-                      onDragLeave={() => setDropTargetId(current => (
-                        current === slide.slide_id ? '' : current
-                      ))}
                       onDrop={event => {
                         event.preventDefault()
-                        setDropTargetId('')
-                        if (draggingSlideId) void moveSlide(draggingSlideId, slide.slide_id)
+                        const side = dropTarget?.id === slide.slide_id
+                          ? dropTarget.side
+                          : 'before'
+                        setDropTarget(null)
+                        if (draggingSlideId) {
+                          void moveSlide(draggingSlideId, slide.slide_id, side)
+                        }
                       }}
-                      style={{ opacity: draggingSlideId === slide.slide_id ? 0.4 : 1 }}
+                      style={{
+                        opacity: draggingSlideId === slide.slide_id ? 0.35 : 1,
+                        cursor: isReordering
+                          ? 'progress'
+                          : draggingSlideId ? 'grabbing' : 'grab',
+                        transform: shift ? `translateX(${shift}px)` : undefined,
+                        transition: 'transform 160ms ease',
+                      }}
                     >
-                      {/* The insertion line PowerPoint shows while dragging. */}
-                      {dropTargetId === slide.slide_id && (
-                        <span
-                          aria-hidden="true"
-                          className="absolute -left-1.5 top-0 h-full w-1 rounded-full bg-[#0071e3]"
-                        />
-                      )}
                       <button
                       type="button"
                       aria-label={`Select slide ${index + 1}: ${slide.title}`}
@@ -1157,7 +1219,8 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                         </button>
                       )}
                     </div>
-                  ))}
+                    )
+                  })}
                   <button
                     type="button"
                     aria-label="Add a slide"
@@ -1333,6 +1396,12 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                         ? 'Describe one change. FLUX edits the current pixels and preserves the rest of the slide.'
                         : 'Optional. HiDream creates the first image while the deck remains usable.'}
                     </p>
+                    {isGeneratingImage && (
+                      <div
+                        aria-hidden="true"
+                        className="anios-conjure mt-3 aspect-square w-full rounded-[22px]"
+                      />
+                    )}
                     <textarea
                       aria-label="Slide image prompt"
                       value={imagePrompt}
