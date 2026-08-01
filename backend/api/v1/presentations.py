@@ -24,6 +24,7 @@ from backend.models.presentation_api import (
     AddPresentationSlideBody,
     CreatePresentationBody,
     GeneratePresentationSlideImageBody,
+    ReorderPresentationSlidesBody,
     RevisePresentationSlideBody,
 )
 from backend.services.image_refinement_service import RefinementError
@@ -234,6 +235,41 @@ async def add_presentation_slide(
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Unable to add the slide.",
+        ) from exc
+
+
+# Reorder the deck as a linked revision. No model runs; the caller states the
+# order and the deck is permuted deterministically.
+@router.put(
+    "/{user_id}/{presentation_id}/slides/order",
+    status_code=status.HTTP_200_OK,
+)
+async def reorder_presentation_slides(
+    user_id: str,
+    presentation_id: UUID,
+    body: ReorderPresentationSlidesBody,
+    service: PresentationDependency,
+    identity: IdentityDependency,
+) -> dict[str, Any]:
+    authorize_user(user_id, identity)
+    authorize_scope(identity, SCOPE_PRESENTATIONS)
+    try:
+        return await service.reorder_slides(
+            user_id,
+            str(presentation_id),
+            str(body.base_revision_id),
+            body.slide_ids,
+        )
+    except PresentationConflictError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Unable to reorder the slides.",
         ) from exc
 
 

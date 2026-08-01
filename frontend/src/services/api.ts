@@ -603,6 +603,23 @@ export function addPresentationSlide(
   )
 }
 
+// Reorder a deck as a linked revision. The full order is sent, so the server
+// can refuse anything that is not a permutation of the existing slides.
+export function reorderPresentationSlides(
+  userId: string,
+  presentationId: string,
+  baseRevisionId: string,
+  slideIds: string[],
+) {
+  return apiRequest<PresentationRecord>(
+    `/api/v1/presentations/${encodeURIComponent(userId)}/${encodeURIComponent(presentationId)}/slides/order`,
+    {
+      method: 'PUT',
+      body: JSON.stringify({ base_revision_id: baseRevisionId, slide_ids: slideIds }),
+    },
+  )
+}
+
 // Remove one slide from a deck as a linked revision.
 export function deletePresentationSlide(
   userId: string,

@@ -1316,3 +1316,20 @@ This file is append-only history for meaningful, verified changes. It must not c
   own follow-up history instead of none.
 - Backend suite 577 passed; Ruff, Black, and full-project MyPy across 169 source
   files passed; 37 deterministic browser tests passed.
+
+## 2026-08-01 — Slides can be reordered by dragging their thumbnails
+
+- Added deck reordering. `PUT /presentations/{user}/{id}/slides/order` takes the
+  complete new order and permutes the deck as an ordinary linked revision. No
+  model runs: the caller states the order and the result is deterministic.
+- Refused anything that is not a permutation. Sending a short list or a repeated
+  slide returns 409 rather than silently dropping or duplicating a slide, which
+  is the failure mode a partial order would otherwise cause.
+- Matched the PowerPoint interaction in the thumbnail rail: a thumbnail is
+  dragged onto the position it should take, the dragged one dims, and a blue
+  insertion line marks where it will land.
+- Verified live: moving the last slide to the front produced a new ready
+  revision with the expected order, while dropping a slide and duplicating one
+  were both refused with the deck left intact.
+- Backend suite 577 passed; Ruff, Black, and full-project MyPy across 169 source
+  files passed; 37 deterministic browser tests passed.

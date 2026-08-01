@@ -27,6 +27,14 @@ class AddPresentationSlideBody(BaseModel):
     after_slide_id: str | None = Field(default=None, max_length=64)
 
 
+class ReorderPresentationSlidesBody(BaseModel):
+    """The complete new slide order for one known base revision."""
+
+    base_revision_id: UUID
+    # Every existing slide, exactly once, in the order wanted.
+    slide_ids: list[str] = Field(min_length=1, max_length=30)
+
+
 class GeneratePresentationSlideImageBody(BaseModel):
     """Validated request for optional local imagery on one selected slide."""
 

@@ -421,6 +421,42 @@ class PresentationService:
             base.model_copy(update={"slides": remaining}),
         )
 
+    # Reorder the deck as a linked revision. No model is involved: the caller
+    # supplies the new order and the deck is permuted deterministically.
+    async def reorder_slides(
+        self,
+        user_id: str,
+        presentation_id: str,
+        base_revision_id: str,
+        slide_ids: list[str],
+    ) -> dict[str, Any]:
+        base, revision = await self.repository.create_revision_pending(
+            user_id,
+            presentation_id,
+            base_revision_id,
+            None,
+            "Reordered slides",
+            self.provider_name,
+            self.model_name,
+        )
+        revision_id = str(revision["id"])
+        by_id = {slide.slide_id: slide for slide in base.slides}
+        # The new order must be a permutation of the deck. Anything else would
+        # silently add or drop a slide, so it is refused rather than applied.
+        if sorted(slide_ids) != sorted(by_id):
+            await self.repository.mark_failed(
+                user_id, presentation_id, revision_id, "order_mismatch"
+            )
+            raise ValueError(
+                "The new order must list every existing slide exactly once."
+            )
+        return await self._complete_revision(
+            user_id,
+            presentation_id,
+            revision_id,
+            base.model_copy(update={"slides": [by_id[key] for key in slide_ids]}),
+        )
+
     # Attach one owned generated image to the selected slide in a linked revision.
     async def attach_image(
         self,

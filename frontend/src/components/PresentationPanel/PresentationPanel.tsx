@@ -22,6 +22,7 @@ import {
   getPresentations,
   addPresentationSlide,
   deletePresentationSlide,
+  reorderPresentationSlides,
   revisePresentationSlide,
   type PresentationDeckSpec,
   type PresentationElement,
@@ -352,6 +353,9 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
   const [isAddingSlide, setIsAddingSlide] = useState(false)
   const [isDeletingSlide, setIsDeletingSlide] = useState(false)
   const [isAddingSlideOpen, setIsAddingSlideOpen] = useState(false)
+  const [draggingSlideId, setDraggingSlideId] = useState('')
+  const [dropTargetId, setDropTargetId] = useState('')
+  const [isReordering, setIsReordering] = useState(false)
   const [imagePrompt, setImagePrompt] = useState('')
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
   const [error, setError] = useState('')
@@ -695,6 +699,42 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
       setError(deleteError instanceof Error ? deleteError.message : 'Unable to delete the slide.')
     } finally {
       setIsDeletingSlide(false)
+    }
+  }
+
+  // Move one slide to another position. The whole order is sent so the server
+  // can reject anything that is not a permutation, and no model is involved.
+  const moveSlide = async (draggedId: string, targetId: string) => {
+    const revisionId = active?.current_revision_id
+    const slides = active?.current_revision?.specification?.slides ?? []
+    if (!active || !revisionId || isReordering) return
+    if (draggedId === targetId || !slides.length) return
+    const order = slides.map(slide => slide.slide_id)
+    const from = order.indexOf(draggedId)
+    const to = order.indexOf(targetId)
+    if (from < 0 || to < 0) return
+    order.splice(to, 0, ...order.splice(from, 1))
+    setIsReordering(true)
+    setError('')
+    setNotice('')
+    try {
+      const updated = await reorderPresentationSlides(
+        userId,
+        active.id,
+        revisionId,
+        order,
+      )
+      setActive(updated)
+      setPresentations(current => current.map(item => (
+        item.id === updated.id ? updated : item
+      )))
+      setNotice(`Slides reordered as revision ${updated.current_revision?.revision_number}.`)
+    } catch (reorderError) {
+      setError(reorderError instanceof Error ? reorderError.message : 'Unable to reorder the slides.')
+    } finally {
+      setIsReordering(false)
+      setDraggingSlideId('')
+      setDropTargetId('')
     }
   }
 
@@ -1057,8 +1097,37 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                 </div>
 
                 <div className="mt-4 flex gap-3 overflow-x-auto pb-2" aria-label="Presentation slides">
+                  {/* Thumbnails are draggable; dropping one on another reorders the deck. */}
                   {specification.slides.map((slide, index) => (
-                    <div key={slide.slide_id} className="group relative flex-none">
+                    <div
+                      key={slide.slide_id}
+                      className="group relative flex-none"
+                      draggable={!isReordering && specification.slides.length > 1}
+                      onDragStart={() => setDraggingSlideId(slide.slide_id)}
+                      onDragEnd={() => { setDraggingSlideId(''); setDropTargetId('') }}
+                      onDragOver={event => {
+                        event.preventDefault()
+                        if (draggingSlideId && draggingSlideId !== slide.slide_id) {
+                          setDropTargetId(slide.slide_id)
+                        }
+                      }}
+                      onDragLeave={() => setDropTargetId(current => (
+                        current === slide.slide_id ? '' : current
+                      ))}
+                      onDrop={event => {
+                        event.preventDefault()
+                        setDropTargetId('')
+                        if (draggingSlideId) void moveSlide(draggingSlideId, slide.slide_id)
+                      }}
+                      style={{ opacity: draggingSlideId === slide.slide_id ? 0.4 : 1 }}
+                    >
+                      {/* The insertion line PowerPoint shows while dragging. */}
+                      {dropTargetId === slide.slide_id && (
+                        <span
+                          aria-hidden="true"
+                          className="absolute -left-1.5 top-0 h-full w-1 rounded-full bg-[#0071e3]"
+                        />
+                      )}
                       <button
                       type="button"
                       aria-label={`Select slide ${index + 1}: ${slide.title}`}
