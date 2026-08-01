@@ -50,6 +50,16 @@ class PresentationProvider(ABC):
         feedback: str,
     ) -> SlideSpec: ...
 
+    # Plan one additional slide without rewriting the slides already accepted.
+    @abstractmethod
+    async def add_slide(
+        self,
+        deck: DeckSpec,
+        brief: str,
+        slide_id: str,
+        after_slide_id: str | None = None,
+    ) -> SlideSpec: ...
+
 
 # Extract the first complete JSON object without evaluating model output.
 def _extract_json_object(content: str) -> dict[str, Any]:
@@ -299,6 +309,51 @@ class LLMPresentationProvider(PresentationProvider):
             yield DeckDraft(specification, len(outline.slides))
 
     # Ask for one replacement slide while preserving its stable slide identifier.
+    # Plan one additional slide that fits an existing deck.
+    async def add_slide(
+        self,
+        deck: DeckSpec,
+        brief: str,
+        slide_id: str,
+        after_slide_id: str | None = None,
+    ) -> SlideSpec:
+        # The model sees the deck's shape but writes only the new slide, so an
+        # addition can never rewrite the slides the user already accepted.
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are AniOS PresentationAgent adding exactly one new "
+                    "slide to an existing deck. Write only the new slide. Do "
+                    "not repeat a slide the deck already has, and match the "
+                    "established tone and depth. " + _slide_content_contract()
+                ),
+            },
+            {
+                "role": "user",
+                "content": json.dumps(
+                    {
+                        "deck_title": deck.title,
+                        "existing_slides": [
+                            {"title": slide.title, "purpose": slide.purpose}
+                            for slide in deck.slides
+                        ],
+                        "insert_after": after_slide_id or "end",
+                        "request": brief,
+                    },
+                    ensure_ascii=False,
+                ),
+            },
+        ]
+        planned = await self._validated_reply(
+            messages,
+            PlannedSlide,
+            max_tokens=self.revision_max_tokens,
+        )
+        if not isinstance(planned, PlannedSlide):
+            raise TypeError("Presentation provider returned the wrong slide content")
+        return compile_slide(planned, slide_id, deck.theme)
+
     async def revise_slide(
         self,
         deck: DeckSpec,

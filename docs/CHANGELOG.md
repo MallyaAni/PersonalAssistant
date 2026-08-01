@@ -1164,3 +1164,26 @@ This file is append-only history for meaningful, verified changes. It must not c
   multi-line deck brief keeps plain Enter, since it asks for several lines.
 - Backend suite 563 passed; Ruff, Black, and full-project MyPy across 169 source
   files passed; 36 deterministic browser tests passed.
+
+## 2026-08-01 — Slides can be added to an existing deck
+
+- Added the missing add-slide capability. A deck previously supported only
+  `create`, `revise_slide`, and `attach_image`, so asking to "add another slide"
+  could only be read as feedback on the slide already selected, and rewrote it.
+  `POST /presentations/{user}/{id}/slides` now appends a slide, or inserts one
+  directly after a named slide, as an ordinary linked revision.
+- Kept accepted work untouched. The model receives only the deck title and each
+  existing slide's title and purpose, and writes just the new slide, so an
+  addition cannot rewrite slides the user already approved. Element identifiers
+  and geometry never reach the model.
+- Minted identifiers that cannot collide. Slide identifiers are identities
+  rather than positions, so inserting mid-deck does not renumber its neighbours
+  and earlier revisions keep resolving.
+- Exposed it in the panel as a distinct "Add a slide" control beside slide
+  feedback, so the two intentions are not competing for one box.
+- Verified live: appending produced revision 2 with `slide_003` and both
+  original slides intact; inserting after `slide_001` produced revision 3 with
+  order `001, 004, 002, 003`; an unknown `after_slide_id` and another user's
+  deck each returned 404, and a stale base revision returned 409.
+- Backend suite 566 passed; Ruff, Black, and full-project MyPy across 169 source
+  files passed; 36 deterministic browser tests passed.

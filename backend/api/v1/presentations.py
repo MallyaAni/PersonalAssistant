@@ -21,6 +21,7 @@ from backend.core.dependencies import (
     TracerDependency,
 )
 from backend.models.presentation_api import (
+    AddPresentationSlideBody,
     CreatePresentationBody,
     GeneratePresentationSlideImageBody,
     RevisePresentationSlideBody,
@@ -198,6 +199,42 @@ async def get_presentation(
     if presentation is None:
         raise HTTPException(status_code=404, detail="Presentation was not found")
     return presentation
+
+
+# Add one slide to an existing deck as a linked revision. Distinct from a slide
+# revision: this leaves every existing slide exactly as the user accepted it.
+@router.post(
+    "/{user_id}/{presentation_id}/slides",
+    status_code=status.HTTP_201_CREATED,
+)
+async def add_presentation_slide(
+    user_id: str,
+    presentation_id: UUID,
+    body: AddPresentationSlideBody,
+    service: PresentationDependency,
+    identity: IdentityDependency,
+) -> dict[str, Any]:
+    authorize_user(user_id, identity)
+    authorize_scope(identity, SCOPE_PRESENTATIONS)
+    try:
+        return await service.add_slide(
+            user_id,
+            str(presentation_id),
+            str(body.base_revision_id),
+            body.brief,
+            body.after_slide_id,
+        )
+    except PresentationConflictError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Unable to add the slide.",
+        ) from exc
 
 
 # Apply feedback to one selected slide and create a new linked revision.

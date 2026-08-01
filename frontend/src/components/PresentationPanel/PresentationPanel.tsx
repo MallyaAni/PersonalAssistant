@@ -20,6 +20,7 @@ import {
   getPresentation,
   getPresentationJob,
   getPresentations,
+  addPresentationSlide,
   revisePresentationSlide,
   type PresentationDeckSpec,
   type PresentationElement,
@@ -333,6 +334,8 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
   const [expectedDraftSlides, setExpectedDraftSlides] = useState(0)
   const [autoImageMax, setAutoImageMax] = useState(0)
   const [isRevising, setIsRevising] = useState(false)
+  const [newSlideBrief, setNewSlideBrief] = useState('')
+  const [isAddingSlide, setIsAddingSlide] = useState(false)
   const [imagePrompt, setImagePrompt] = useState('')
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
   const [error, setError] = useState('')
@@ -603,6 +606,43 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
     } finally {
       setPendingFeedback(null)
       setIsRevising(false)
+    }
+  }
+
+  // Add a new slide after the selected one. Revising rewrites the slide you are
+  // looking at, so asking for "another slide" needs its own path.
+  const submitNewSlide = async () => {
+    const normalized = newSlideBrief.trim()
+    const revisionId = active?.current_revision_id
+    if (!active || !revisionId || !normalized || isAddingSlide) return
+    setIsAddingSlide(true)
+    setNewSlideBrief('')
+    setError('')
+    setNotice('')
+    try {
+      const updated = await addPresentationSlide(
+        userId,
+        active.id,
+        revisionId,
+        normalized,
+        selectedSlide?.slide_id ?? null,
+      )
+      setActive(updated)
+      setPresentations(current => current.map(item => (
+        item.id === updated.id ? updated : item
+      )))
+      const slides = updated.current_revision?.specification?.slides ?? []
+      const previous = new Set(
+        (active.current_revision?.specification?.slides ?? []).map(slide => slide.slide_id),
+      )
+      const added = slides.find(slide => !previous.has(slide.slide_id))
+      if (added) setSelectedSlideId(added.slide_id)
+      setNotice(`Slide added as revision ${updated.current_revision?.revision_number}.`)
+    } catch (addError) {
+      setNewSlideBrief(normalized)
+      setError(addError instanceof Error ? addError.message : 'Unable to add the slide.')
+    } finally {
+      setIsAddingSlide(false)
     }
   }
 
@@ -1081,6 +1121,39 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                         </p>
                       </div>
                     )}
+                  </div>
+                  <div className="mt-4 rounded-2xl border border-black/[0.06] bg-[#fbfbfd] p-3">
+                    <label htmlFor="add-slide-brief" className="text-xs font-semibold text-[#1d1d1f]">
+                      Add a slide
+                    </label>
+                    <p className="mt-1 text-xs leading-5 text-[#86868b]">
+                      Adds a new slide after this one. Every existing slide is kept as it is.
+                    </p>
+                    <textarea
+                      id="add-slide-brief"
+                      aria-label="New slide brief"
+                      value={newSlideBrief}
+                      onChange={event => setNewSlideBrief(event.target.value)}
+                      onKeyDown={event => {
+                        if (event.key === 'Enter' && !event.shiftKey) {
+                          event.preventDefault()
+                          if (newSlideBrief.trim() && !isAddingSlide) void submitNewSlide()
+                        }
+                      }}
+                      placeholder="Describe the slide to add, for example: the legal rules for keeping hives in a city."
+                      className="mt-2 min-h-20 w-full resize-y rounded-2xl border border-black/10 bg-white p-3 text-sm outline-none focus:border-black/20"
+                      disabled={isAddingSlide}
+                    />
+                    <button
+                      type="button"
+                      aria-label="Add slide"
+                      onClick={() => void submitNewSlide()}
+                      disabled={!newSlideBrief.trim() || isAddingSlide}
+                      className="mt-2 flex h-9 w-full items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-4 text-sm font-medium text-[#1d1d1f] disabled:text-[#86868b]"
+                    >
+                      {isAddingSlide ? <Loader2 size={15} className="animate-spin" /> : <FilePlus2 size={15} />}
+                      {isAddingSlide ? 'Adding slide…' : 'Add slide'}
+                    </button>
                   </div>
                   <textarea
                     aria-label="Slide feedback"

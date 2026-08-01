@@ -18,6 +18,15 @@ class RevisePresentationSlideBody(BaseModel):
     feedback: str = Field(min_length=1, max_length=10_000)
 
 
+class AddPresentationSlideBody(BaseModel):
+    """Validated request to add one slide to a known base revision."""
+
+    base_revision_id: UUID
+    brief: str = Field(min_length=1, max_length=10_000)
+    # Omitted appends to the end; supplying a slide inserts directly after it.
+    after_slide_id: str | None = Field(default=None, max_length=64)
+
+
 class GeneratePresentationSlideImageBody(BaseModel):
     """Validated request for optional local imagery on one selected slide."""
 

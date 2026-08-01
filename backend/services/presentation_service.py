@@ -323,6 +323,62 @@ class PresentationService:
             revised,
         )
 
+    # Append or insert one new slide as a linked revision of the current deck.
+    async def add_slide(
+        self,
+        user_id: str,
+        presentation_id: str,
+        base_revision_id: str,
+        brief: str,
+        after_slide_id: str | None = None,
+    ) -> dict[str, Any]:
+        base, revision = await self.repository.create_revision_pending(
+            user_id,
+            presentation_id,
+            base_revision_id,
+            # The new slide has no id until it is planned, so the revision is
+            # not associated with a target slide the way an edit is.
+            None,
+            brief,
+            self.provider_name,
+            self.model_name,
+        )
+        revision_id = str(revision["id"])
+        if after_slide_id is not None and not any(
+            slide.slide_id == after_slide_id for slide in base.slides
+        ):
+            await self.repository.mark_failed(
+                user_id, presentation_id, revision_id, "slide_not_found"
+            )
+            raise ValueError("The slide to insert after was not found")
+        slide_id = _next_slide_id(base)
+        try:
+            added = await self.agent.add_slide(base, brief, slide_id, after_slide_id)
+        except Exception:
+            await self.repository.mark_failed(
+                user_id,
+                presentation_id,
+                revision_id,
+                "generation_failed",
+            )
+            raise
+        slides = list(base.slides)
+        if after_slide_id is None:
+            slides.append(added)
+        else:
+            position = next(
+                index
+                for index, slide in enumerate(slides)
+                if slide.slide_id == after_slide_id
+            )
+            slides.insert(position + 1, added)
+        return await self._complete_revision(
+            user_id,
+            presentation_id,
+            revision_id,
+            base.model_copy(update={"slides": slides}),
+        )
+
     # Attach one owned generated image to the selected slide in a linked revision.
     async def attach_image(
         self,
@@ -529,3 +585,15 @@ def _attach_image_to_slide(
             )
         )
     return slide.model_copy(update={"elements": elements})
+
+
+# Mint a slide identifier that cannot collide with one already in the deck.
+# Identifiers are identities rather than positions, so inserting in the middle
+# does not renumber the slides around it and existing revisions keep resolving.
+def _next_slide_id(deck: DeckSpec) -> str:
+    highest = 0
+    for slide in deck.slides:
+        suffix = slide.slide_id.rsplit("_", 1)[-1]
+        if suffix.isdigit():
+            highest = max(highest, int(suffix))
+    return f"slide_{max(highest + 1, len(deck.slides) + 1):03d}"

@@ -58,6 +58,27 @@ class StubPresentationProvider(PresentationProvider):
         assert prompt == "Create the acceptance deck"
         return _deck()
 
+    # Return one new slide carrying the requested identifier.
+    async def add_slide(
+        self,
+        deck: DeckSpec,
+        brief: str,
+        slide_id: str,
+        after_slide_id: str | None = None,
+    ) -> SlideSpec:
+        template = deck.slides[0]
+        return template.model_copy(
+            update={
+                "slide_id": slide_id,
+                "title": brief,
+                "elements": [
+                    template.elements[0].model_copy(
+                        update={"element_id": f"{slide_id}_title", "text": brief}
+                    )
+                ],
+            }
+        )
+
     # Return a replacement only for the selected slide.
     async def revise_slide(
         self,
@@ -516,3 +537,77 @@ async def test_progressive_plan_corrects_one_invalid_outline() -> None:
     assert len(llm.requests) == 4
     assert "failed validation" in llm.requests[1][0][0]["content"]
     assert "never prefix one with optional_" in llm.requests[1][0][0]["content"]
+
+
+# Adding a slide must leave every existing slide byte-for-byte intact. The whole
+# reason "add another slide" failed before was that the only mutation available
+# rewrote the selected slide.
+@pytest.mark.asyncio
+async def test_agent_adds_a_slide_without_touching_the_existing_ones() -> None:
+    agent = PresentationAgent(StubPresentationProvider())
+    deck = _deck()
+
+    added = await agent.add_slide(deck, "Closing summary", "slide_003")
+
+    assert added.slide_id == "slide_003"
+    assert added.title == "Closing summary"
+    # The source deck is untouched; insertion is the service's decision.
+    assert [slide.slide_id for slide in deck.slides] == ["slide-a", "slide-b"]
+
+
+# The new slide is planned from the deck's shape, not its full contents, so the
+# model cannot rewrite accepted slides through the addition path.
+@pytest.mark.asyncio
+async def test_added_slide_prompt_carries_only_titles_and_purposes() -> None:
+    llm = StubPlanningLLM(
+        [
+            {
+                "content": json.dumps(
+                    {
+                        "title": "Closing",
+                        "purpose": "Summarize the argument",
+                        "points": ["First point", "Second point"],
+                        "notes": "",
+                    }
+                )
+            }
+        ]
+    )
+    provider = LLMPresentationProvider(llm, max_tokens=8_192)  # type: ignore[arg-type]
+
+    slide = await provider.add_slide(_deck(), "Add a closing slide", "slide_003")
+
+    assert slide.slide_id == "slide_003"
+    sent = llm.requests[0][0][1]["content"]
+    assert "Add a closing slide" in sent
+    assert "Opening" in sent
+    assert "Introduce the topic" in sent
+    # Element identifiers and geometry never reach the model.
+    assert "title-a" not in sent
+    assert "slide_003_title" not in sent
+
+
+def test_new_slide_identifier_never_collides_with_an_existing_one() -> None:
+    from backend.services.presentation_service import _next_slide_id
+
+    deck = DeckSpec(
+        title="Deck",
+        slides=[
+            SlideSpec(
+                slide_id=f"slide_{index:03d}",
+                title=f"S{index}",
+                purpose="p",
+                elements=[
+                    TextElement(
+                        element_id=f"t{index}", text="x", x=0.5, y=0.5, w=4, h=0.5
+                    )
+                ],
+            )
+            for index in (1, 2, 7)
+        ],
+    )
+
+    minted = _next_slide_id(deck)
+
+    assert minted == "slide_008"
+    assert minted not in {slide.slide_id for slide in deck.slides}

@@ -581,6 +581,28 @@ export function revisePresentationSlide(
   )
 }
 
+// Add one slide to an existing deck. Distinct from revising a slide: every
+// existing slide is carried through untouched.
+export function addPresentationSlide(
+  userId: string,
+  presentationId: string,
+  baseRevisionId: string,
+  brief: string,
+  afterSlideId?: string | null,
+) {
+  return apiRequest<PresentationRecord>(
+    `/api/v1/presentations/${encodeURIComponent(userId)}/${encodeURIComponent(presentationId)}/slides`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        base_revision_id: baseRevisionId,
+        brief,
+        after_slide_id: afterSlideId ?? null,
+      }),
+    },
+  )
+}
+
 // Generate one local image and attach it as a new selected-slide revision.
 export function generatePresentationSlideImage(
   userId: string,

@@ -134,7 +134,8 @@ class SQLAlchemyPresentationRepository:
         user_id: str,
         presentation_id: str,
         base_revision_id: str,
-        target_slide_id: str,
+        # None when the revision adds a slide rather than editing one.
+        target_slide_id: str | None,
         change_summary: str,
         provider: str,
         model: str | None,
