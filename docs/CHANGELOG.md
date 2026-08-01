@@ -1388,3 +1388,16 @@ This file is append-only history for meaningful, verified changes. It must not c
   The brief is cleared on cancel so a discarded thought does not reappear.
 - 37 deterministic browser tests passed; backend suite 577 passed; TypeScript and
   the production build passed.
+
+## 2026-08-01 — The slide rail scrolls to its end and its controls can be hit
+
+- Padded the end of the thumbnail rail. The last control sat flush against the
+  scroll edge, so the rail looked as though it would not scroll the whole way
+  and the final target was partly unreachable.
+- Widened the insertion points. A collapsed 6px target is not reliably
+  clickable, least of all at the edge of a scrolling strip. The points between
+  slides are now 12px and widen on hover, and the trailing one is a permanently
+  visible dashed tile, because appending is the common case and it sits exactly
+  where the rail runs out.
+- 37 deterministic browser tests passed; TypeScript and the production build
+  passed.

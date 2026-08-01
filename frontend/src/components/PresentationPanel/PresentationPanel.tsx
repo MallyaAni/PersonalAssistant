@@ -1136,7 +1136,7 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                   </p>
                 )}
                 <div
-                  className="mt-2 flex gap-3 overflow-x-auto pb-2"
+                  className="mt-2 flex gap-3 overflow-x-auto scroll-smooth pb-2 pr-4"
                   aria-label="Presentation slides"
                   onDragOver={event => event.preventDefault()}
                   onDrop={event => {
@@ -1173,7 +1173,7 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                       onClick={() => setAddPosition(
                         addPosition === index ? null : index,
                       )}
-                      className={`group/gap flex-none self-stretch rounded-full transition-all ${addPosition === index ? 'w-6 bg-[#0071e3]/15' : 'w-1.5 hover:w-6 hover:bg-[#0071e3]/10'}`}
+                      className={`group/gap flex-none self-stretch rounded-full transition-all ${addPosition === index ? 'w-7 bg-[#0071e3]/15' : 'w-3 hover:w-7 hover:bg-[#0071e3]/10'}`}
                     >
                       <span className={`mx-auto block text-[#0071e3] ${addPosition === index ? 'opacity-100' : 'opacity-0 group-hover/gap:opacity-100'}`}>
                         +
@@ -1257,11 +1257,9 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                         ? null
                         : specification.slides.length,
                     )}
-                    className={`group/gap flex-none self-stretch rounded-full transition-all ${addPosition === specification.slides.length ? 'w-6 bg-[#0071e3]/15' : 'w-1.5 hover:w-6 hover:bg-[#0071e3]/10'}`}
+                    className={`flex-none self-stretch rounded-xl border-2 border-dashed transition-all ${addPosition === specification.slides.length ? 'w-12 border-[#0071e3] bg-[#0071e3]/10' : 'w-10 border-black/15 hover:w-12 hover:border-[#0071e3] hover:bg-[#0071e3]/5'}`}
                   >
-                    <span className={`mx-auto block text-[#0071e3] ${addPosition === specification.slides.length ? 'opacity-100' : 'opacity-0 group-hover/gap:opacity-100'}`}>
-                      +
-                    </span>
+                    <span className="mx-auto block text-lg text-[#0071e3]">+</span>
                   </button>
                 </div>
                 {addPosition !== null && (
