@@ -497,6 +497,52 @@ proposal/approval/resume lifecycle exists.
 
 ## Backend boundaries
 
+### Ambient discovery
+
+Milestone 6's ambient discovery is partly implemented and not yet wired end to
+end. Three stages exist as independent boundaries.
+
+`discovery_interests` and `discovery_localities` hold what the user likes and
+where they live, behind `/api/v1/discovery/{user_id}`. Labels are sealed with
+`EncryptedText` and identified by a SHA-256 digest of their normalized form,
+because a sealed column cannot back a unique constraint: each value is encrypted
+with a fresh nonce, so equal plaintext does not produce equal ciphertext. Case
+and spacing differences therefore resolve to one interest while the readable
+copy stays encrypted at rest. Interest provenance is validated against an allowed
+set so an inferred value cannot be stored as a user-stated one, and the list is
+bounded because every label is eligible to enter a chat prompt. Home coordinates
+are deliberately absent: they would be the most sensitive value the application
+holds and nothing consumes them yet. The profile is rendered into ordinary chat
+context, so the assistant answers from the same record a scheduled run reads.
+
+`backend/discovery/events.py` defines a provider-neutral `EventSource` returning
+typed events with a stable per-source identity, start, place, and link, with
+iCalendar and RSS/Atom adapters parsed using the standard library. Discovery
+reads structured listings rather than searching: local listings are already
+structured, and search is the one part of the loop with a hard monthly ceiling.
+Feeds are treated as hostile input — control characters stripped, text bounded,
+non-web URL schemes dropped, 200 events per source, and bodies abandoned
+mid-stream past 5 MB. A `RequestBudget` fixes how many outbound requests one run
+may make, so the free-tier claim is decided in advance rather than emerging from
+how many sources happen to be configured. RSS is deliberately weaker than
+iCalendar: an item states when it was published, not when the happening occurs,
+so items carry no start time unless the publisher supplies an explicit event
+date.
+
+`discovery_schedules` and `discovery_runs` hold one user's cadence and each
+durable, leased sweep. Leasing reuses the presentation-worker pattern rather than
+introducing a second scheduler. Two invariants carry the milestone's
+never-double-notify requirement: a unique constraint on
+`(schedule_id, scheduled_for)` makes a slot exactly-once, so a restarted producer
+cannot queue the same sweep twice, and `delivered_at` is written once, so a
+resumed run declines rather than delivering again. Cadence is computed in the
+user's own timezone, including the daylight-saving case where a 9am sweep must
+stay 9am rather than drift with the old UTC offset.
+
+The run body, novelty filtering, calendar artifacts, and notification egress
+remain `PLANNED`; stage 3 delivers the machinery and stage 4 supplies the
+selection it will persist.
+
 ### Presentation
 
 `backend/main.py` constructs the FastAPI application, allows CORS from the local Vite origins, mounts the v1 router at `/api/v1`, and defines `GET /health`.
@@ -516,6 +562,39 @@ proposal/approval/resume lifecycle exists.
 configured context-aware local server, it starts a trace and forwards the
 authorized path user plus optional conversation ID as hidden request metadata;
 those ownership values are not part of the tool arguments selected by a model.
+
+A deck is editable as a structure, not only as content. Beyond slide revision,
+`POST .../slides` inserts a slide at a 0-based position, `DELETE .../slides/{id}`
+removes one, and `PUT .../slides/order` permutes the deck. Each is an ordinary
+linked revision, so every structural change is reviewable and reversible through
+the same history as a content edit. Position is an index rather than an "after
+this slide" reference, because the first position has no slide before it.
+Reordering sends the complete order and refuses anything that is not a
+permutation; deletion refuses the last remaining slide; both prevent a partial
+request from silently dropping or duplicating a slide. Adding runs the model on
+the deck's titles and purposes only, so an addition cannot rewrite slides the
+user already accepted, and no model runs for deletion or reordering at all.
+
+A slide takes one of seven shapes: bullets, section, statistic, quote,
+comparison, chart, and table. The model chooses the shape and deterministic code
+still owns geometry. The layout is an enum in the decoding grammar, and the
+fields a layout needs are promoted to `required` for that call with their null
+branch removed, so a chart slide without chart data is not a decodable reply.
+Naming the fields in prose was not sufficient in either direction: the model
+returned chart layouts with no data, and later a prompt asking to keep the
+current shape contradicted a grammar asking for a new one. The compiler still
+degrades a layout it cannot render to bullets rather than raising, so a partial
+plan produces a usable slide. Charts and tables compile from the plan, which is
+what lets a revision edit their data or remove them; only an attached image
+survives a revision, because nothing regenerates it.
+
+Geometry is measured rather than fixed. `backend/presentations/layout.py`
+estimates rendered line count from text length, box width, and point size, so
+the compiler sizes a title to its actual content, stacks bullets at their own
+heights, and shrinks the body font within bounds when content is dense instead
+of overflowing. Every content layout derives its width from one place and yields
+the column a generated image occupies, including the heading band, whose purpose
+line sits low enough to reach the picture's top edge.
 
 `backend/api/v1/presentations.py` enqueues creation with HTTP 202 and returns an
 owned job handle. Job reads expose queued/running/terminal state and the latest

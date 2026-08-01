@@ -1401,3 +1401,22 @@ This file is append-only history for meaningful, verified changes. It must not c
   where the rail runs out.
 - 37 deterministic browser tests passed; TypeScript and the production build
   passed.
+
+## 2026-08-01 — One-command startup applies migrations, and the docs catch up
+
+- Made the documented one-command startup actually stand the system up. Compose
+  starts services but never applies migrations, and neither did the script, so a
+  fresh clone came up against a database with no tables while the README
+  presented that command as the whole setup. It now runs Alembic inside the
+  backend image, which already carries the driver, and aborts rather than
+  starting the application if the migration fails.
+- Documented the presentation editing surface and the ambient discovery
+  subsystem in the architecture, neither of which had any mention: structural
+  slide operations as linked revisions, the seven slide shapes and how the
+  decoding grammar enforces them, measured geometry, the sealed interest and
+  locality profile, the `EventSource` contract, and durable scheduled runs.
+- Updated the presentation diagram to show structural edits and the path that
+  needs no model at all.
+- Verified the claim rather than asserting it: dropping the schema entirely and
+  running the script's migration step produced 25 tables at head
+  `20260801_0017`, after which a real chat and a discovery write both succeeded.

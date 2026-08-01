@@ -5,7 +5,7 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 [ROADMAP.md](ROADMAP.md), and stable architecture facts in
 [ARCHITECTURE.md](ARCHITECTURE.md).
 
-Last updated: 2026-07-31, America/New_York
+Last updated: 2026-08-01, America/New_York
 
 ## Current boundary
 
@@ -199,6 +199,30 @@ Two constraints discovered along the way, both encoded in Compose:
 - `--gpu-memory-utilization` is a fraction of *total* VRAM, so vLLM must start
   before ComfyUI or it cannot reach its share and dies with `No available memory
   for the cache blocks`. `scripts/start-anios.ps1` already encodes that order.
+
+## Presentation editing and ambient discovery
+
+A deck is now editable as a structure: slides can be added at any position,
+deleted, and reordered, each as an ordinary linked revision. A slide takes one of
+seven shapes, and charts and tables compile from the plan so a revision can edit
+their data or remove them. Geometry is measured from the text rather than fixed,
+and every layout yields the column a generated image occupies.
+
+Ambient discovery stages 1 to 3 exist as independent boundaries: the interest and
+locality profile, the `EventSource` contract with iCalendar and RSS adapters, and
+durable scheduled runs with exactly-once slots and write-once delivery. The run
+body, novelty filtering, calendar artifacts, and egress remain unbuilt, so
+nothing is scheduled end to end yet.
+
+`scripts/start-anios.ps1` now applies migrations before starting the application.
+It previously did not, so a fresh clone came up against a database with no
+tables. Verified by dropping the schema and re-running that step: 25 tables at
+head `20260801_0017`, then a real chat and a discovery write both succeeded.
+
+The presentation rail — drag reordering and the insertion points — has no browser
+coverage. It produced four defects in one session, each found by using it rather
+than by a test: the drop never firing, the indicator naming the wrong position,
+insert-at-front being impossible, and unhittable targets.
 
 ## Next atomic task
 

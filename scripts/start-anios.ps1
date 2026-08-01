@@ -93,11 +93,21 @@ if (Test-Port 8188) {
     }
 }
 
-# 4) Start the remaining application services after inference is ready.
+# 4) Bring the database schema up to date before anything reads it. Compose
+# starts services but never applies migrations, so without this a fresh clone
+# comes up against a database with no tables and every request fails. It runs
+# inside the backend image, which already carries Alembic and the driver.
+Write-Host 'Applying database migrations ...'
+docker compose -f (Join-Path $root 'docker-compose.yml') up -d --wait db
+docker compose -f (Join-Path $root 'docker-compose.yml') run --rm `
+    -e POSTGRES_HOST=db backend python -m alembic upgrade head
+if ($LASTEXITCODE -ne 0) { throw 'Database migration failed; not starting the application.' }
+
+# 5) Start the remaining application services after inference is ready.
 Write-Host 'Starting AniOS application services ...'
 docker compose -f (Join-Path $root 'docker-compose.yml') up -d
 
-# 5) Wait for the backend, then report.
+# 6) Wait for the backend, then report.
 Write-Host -NoNewline 'Waiting for backend '
 for ($i = 0; $i -lt 40; $i++) {
     try {
