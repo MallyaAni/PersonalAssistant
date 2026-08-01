@@ -33,6 +33,18 @@ import { submitOnEnter } from '../../utils/submitOnEnter'
 const SLIDE_WIDTH = 13.333
 const SLIDE_HEIGHT = 7.5
 
+// The canvas is a `container-type: inline-size` element spanning the whole
+// slide, so 100cqw is SLIDE_WIDTH inches and one inch is 100/13.333 = 7.5cqw.
+// A point is 1/72 inch, so a point is 7.5/72 cqw and a font size in points
+// divides by 9.6. Using 7.2 made preview text a third too large, which wrapped
+// it onto more lines than the compiler had measured and clipped it — the
+// downloaded deck was always correct, because PowerPoint uses the real points.
+const POINTS_PER_CQW = 9.6
+// Matches _LINE_PITCH in backend/presentations/layout.py. The preview must
+// assume the same line height the compiler used to size the boxes, or it will
+// disagree with the geometry it is drawing.
+const PREVIEW_LINE_HEIGHT = 1.25
+
 // Isolate one user's reconnectable presentation job in browser storage.
 const presentationJobStorageKey = (userId: string) => (
   `anios_presentation_job:${userId}`
@@ -206,14 +218,14 @@ const SlideCanvas = ({
             style={{
               ...position,
               color: cssColor(element.color, theme.text_color),
-              fontSize: `${element.font_size / 7.2}cqw`,
+              fontSize: `${element.font_size / POINTS_PER_CQW}cqw`,
               fontWeight: element.bold ? 700 : 400,
               textAlign: element.align,
               display: 'flex',
               alignItems: element.valign === 'mid'
                 ? 'center'
                 : element.valign === 'bottom' ? 'flex-end' : 'flex-start',
-              lineHeight: 1.15,
+              lineHeight: PREVIEW_LINE_HEIGHT,
             }}
           >
             {element.bullet ? `• ${element.text}` : element.text}

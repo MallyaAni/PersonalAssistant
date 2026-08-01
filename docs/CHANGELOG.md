@@ -1251,3 +1251,18 @@ This file is append-only history for meaningful, verified changes. It must not c
   Enter on an empty composer sends nothing.
 - 37 deterministic browser tests passed; TypeScript and the production build
   passed; backend suite 575 passed.
+
+## 2026-08-01 — Preview text matches the downloaded deck
+
+- Fixed slide text appearing clipped in the browser preview while the downloaded
+  PowerPoint was correct. The preview canvas is a `container-type: inline-size`
+  element spanning the whole slide, so 100cqw is 13.333 inches and one point is
+  7.5/72 cqw, meaning a point size divides by 9.6. The preview divided by 7.2,
+  drawing every string a third larger than the compiler had measured, wrapping
+  it onto more lines, and clipping it against `overflow-hidden`. PowerPoint was
+  never wrong because it renders the real point sizes.
+- Matched the preview's line height to the compiler's own assumption. A preview
+  that assumes different line spacing than the geometry it draws will disagree
+  with that geometry no matter how correct the boxes are.
+- 37 deterministic browser tests passed; TypeScript and the production build
+  passed.
