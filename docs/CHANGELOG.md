@@ -1207,3 +1207,27 @@ This file is append-only history for meaningful, verified changes. It must not c
   quote, and comparison slides with zero elements past the slide edge.
 - Backend suite 570 passed; Ruff, Black, and full-project MyPy across 169 source
   files passed.
+
+## 2026-08-01 — Charts and tables materialise, and slides carry fewer bullets
+
+- Reached the chart and table capability the deck already had. `ChartElement`
+  and `TableElement` existed in the type system and the renderer, but the
+  planner could never emit one, so a brief asking for a comparison table got
+  prose. Both are now layouts, compiling to native PowerPoint objects whose data
+  stays editable.
+- Required each layout's fields in the decoding grammar rather than naming them
+  in prose. Asked for a chart slide, the model returned layout `chart` with no
+  categories and no series, and the compiler correctly degraded it to bullets;
+  the outline had chosen correctly, so the gap was the slide pass. Pinning the
+  layout with `const` and promoting its fields to `required`, with the null
+  branch removed, makes a chart slide without chart data undecodable.
+- Kept the compiler's fallback for data that cannot be drawn: a series that does
+  not match its categories, or a row that does not match its headers, degrades
+  to bullets instead of raising inside the element type and losing the slide.
+- Capped bullets at four, down from six, and told the planner that a slide is a
+  visual aid whose supporting detail belongs in notes.
+- Verified live on one brief: bullets, chart, table, comparison, and statistic
+  slides, with a real line chart (120, 185, 290 across 2024-2026), a five-row
+  table, two to four bullets per slide, and zero elements past the slide edge.
+- Backend suite 575 passed; Ruff, Black, and full-project MyPy across 169 source
+  files passed.

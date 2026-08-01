@@ -10,11 +10,14 @@ from backend.presentations.layout import (
     required_height,
 )
 from backend.presentations.types import (
+    ChartElement,
+    ChartSeries,
     DeckSpec,
     PresentationTheme,
     ShapeElement,
     SlideElement,
     SlideSpec,
+    TableElement,
     TextElement,
 )
 
@@ -42,14 +45,23 @@ _MIN_CONTENT_HEIGHT = 1.0
 
 # The shapes a slide may take. Grammar-constrained decoding restricts the model
 # to exactly these, so an unknown layout is unrepresentable rather than caught.
-SlideLayout = Literal["bullets", "section", "statistic", "quote", "comparison"]
+SlideLayout = Literal[
+    "bullets", "section", "statistic", "quote", "comparison", "chart", "table"
+]
 SLIDE_LAYOUTS: tuple[str, ...] = (
     "bullets",
     "section",
     "statistic",
     "quote",
     "comparison",
+    "chart",
+    "table",
 )
+# Native object geometry, shared by the chart and table layouts.
+_OBJECT_X = 0.95
+_OBJECT_TOP = 2.15
+_OBJECT_WIDTH = 11.4
+_OBJECT_MAX_HEIGHT = 4.15
 
 
 class DeckPlanModel(BaseModel):
@@ -58,14 +70,23 @@ class DeckPlanModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class PlannedSeries(DeckPlanModel):
+    """One named data series aligned to the slide's chart categories."""
+
+    name: str = Field(min_length=1, max_length=60)
+    values: list[float] = Field(min_length=1, max_length=8)
+
+
 class PlannedSlide(DeckPlanModel):
     """Concise semantic content for one slide without layout authority."""
 
     title: str = Field(min_length=1, max_length=160)
     purpose: str = Field(min_length=1, max_length=300)
     # Always supplied. A layout that does not show a bulleted list simply does
-    # not render these, which keeps one contract for every slide kind.
-    points: list[str] = Field(min_length=2, max_length=6)
+    # not render these, which keeps one contract for every slide kind. Capped at
+    # four because a slide is a visual aid, not the script: detail belongs in
+    # notes, where a presenter can read it without the audience doing so.
+    points: list[str] = Field(min_length=2, max_length=4)
     # The model picks the shape of the slide; the compiler still owns geometry.
     # A deck of identically shaped slides is the single biggest reason generated
     # decks read as generated.
@@ -78,6 +99,14 @@ class PlannedSlide(DeckPlanModel):
     quote_attribution: str | None = Field(default=None, max_length=120)
     comparison_left_heading: str | None = Field(default=None, max_length=60)
     comparison_right_heading: str | None = Field(default=None, max_length=60)
+    # Chart and table content. Both compile to native PowerPoint objects whose
+    # data stays editable, so a reader can correct a number without redrawing.
+    chart_kind: Literal["bar", "column", "line", "pie"] | None = None
+    chart_categories: list[str] | None = Field(default=None, max_length=8)
+    chart_series: list["PlannedSeries"] | None = Field(default=None, max_length=3)
+    chart_axis_label: str | None = Field(default=None, max_length=80)
+    table_headers: list[str] | None = Field(default=None, max_length=5)
+    table_rows: list[list[str]] | None = Field(default=None, max_length=8)
     key_message: str | None = Field(default=None, max_length=240)
     visual_prompt: str | None = Field(default=None, max_length=500)
     visual_priority: int = Field(default=0, ge=0, le=3)
@@ -159,6 +188,10 @@ def compile_slide(
         elements = _quote_elements(planned, slide_id, theme)
     elif layout == "comparison":
         elements = _comparison_elements(planned, slide_id, theme)
+    elif layout == "chart":
+        elements = _chart_elements(planned, slide_id, theme)
+    elif layout == "table":
+        elements = _table_elements(planned, slide_id, theme)
     else:
         elements = _bullet_elements(planned, slide_id, theme)
     return SlideSpec(
@@ -180,7 +213,32 @@ def _effective_layout(planned: PlannedSlide) -> str:
         return "bullets"
     if planned.layout == "comparison" and len(planned.points) < 2:
         return "bullets"
+    if planned.layout == "chart" and not _chart_is_renderable(planned):
+        return "bullets"
+    if planned.layout == "table" and not _table_is_rectangular(planned):
+        return "bullets"
     return planned.layout
+
+
+# A chart is only worth drawing when every series lines up with the categories.
+# The element type enforces this too; checking here decides the fallback instead
+# of raising and losing the slide.
+def _chart_is_renderable(planned: PlannedSlide) -> bool:
+    categories = planned.chart_categories or []
+    series = planned.chart_series or []
+    if len(categories) < 2 or not series:
+        return False
+    if any(len(item.values) != len(categories) for item in series):
+        return False
+    return not (planned.chart_kind == "pie" and len(series) != 1)
+
+
+def _table_is_rectangular(planned: PlannedSlide) -> bool:
+    headers = planned.table_headers or []
+    rows = planned.table_rows or []
+    if len(headers) < 2 or not rows:
+        return False
+    return all(len(row) == len(headers) for row in rows)
 
 
 def _bullet_elements(
@@ -532,6 +590,59 @@ def _comparison_elements(
                 )
             )
             point_y += height + _POINT_GAP
+    return elements
+
+
+# A native chart. The data stays editable in PowerPoint, so a reader can correct
+# a number in place rather than asking for the deck to be regenerated.
+def _chart_elements(
+    planned: PlannedSlide, slide_id: str, theme: PresentationTheme
+) -> list[SlideElement]:
+    elements = _heading_elements(planned, slide_id, theme)
+    series = planned.chart_series or []
+    elements.append(
+        ChartElement(
+            element_id=f"{slide_id}_chart",
+            chart_type=planned.chart_kind or "column",
+            categories=list(planned.chart_categories or []),
+            series=[
+                ChartSeries(name=item.name, values=list(item.values)) for item in series
+            ],
+            # One series needs no key; several do.
+            show_legend=len(series) > 1,
+            show_title=bool(planned.chart_axis_label),
+            title=planned.chart_axis_label,
+            x=_OBJECT_X,
+            y=_OBJECT_TOP,
+            w=_OBJECT_WIDTH,
+            h=_OBJECT_MAX_HEIGHT,
+        )
+    )
+    return elements
+
+
+# A native table, sized to its rows so a short table does not stretch to fill
+# the slide and a long one does not run off it.
+def _table_elements(
+    planned: PlannedSlide, slide_id: str, theme: PresentationTheme
+) -> list[SlideElement]:
+    elements = _heading_elements(planned, slide_id, theme)
+    headers = list(planned.table_headers or [])
+    rows = [list(row) for row in (planned.table_rows or [])]
+    row_height = 0.46
+    height = min(_OBJECT_MAX_HEIGHT, row_height * (len(rows) + 1))
+    elements.append(
+        TableElement(
+            element_id=f"{slide_id}_table",
+            headers=headers,
+            rows=rows,
+            font_size=16 if len(rows) <= 5 else 13,
+            x=_OBJECT_X,
+            y=_OBJECT_TOP,
+            w=_OBJECT_WIDTH,
+            h=height,
+        )
+    )
     return elements
 
 

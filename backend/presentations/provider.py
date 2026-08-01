@@ -83,6 +83,7 @@ def _extract_json_object(content: str) -> dict[str, Any]:
 def _response_schema(
     response_type: type[BaseModel],
     expected_slide_count: int | None = None,
+    required_layout: str | None = None,
 ) -> dict[str, Any]:
     schema = response_type.model_json_schema()
     slides = schema.get("properties", {}).get("slides")
@@ -91,7 +92,48 @@ def _response_schema(
     if expected_slide_count is not None and isinstance(slides, dict):
         slides["minItems"] = expected_slide_count
         slides["maxItems"] = expected_slide_count
+    if required_layout is not None:
+        _require_layout_fields(schema, required_layout)
     return schema
+
+
+# Fields each layout cannot render without.
+_LAYOUT_REQUIREMENTS: dict[str, tuple[str, ...]] = {
+    "statistic": ("statistic_value", "statistic_label"),
+    "quote": ("quote", "quote_attribution"),
+    "comparison": ("comparison_left_heading", "comparison_right_heading"),
+    "chart": ("chart_kind", "chart_categories", "chart_series"),
+    "table": ("table_headers", "table_rows"),
+}
+
+
+# Pin the slide to one layout and make that layout's fields mandatory in the
+# grammar. Naming the fields in prose was not enough: asked for a chart slide,
+# the model returned layout "chart" with no categories and no series, and the
+# compiler correctly degraded it to bullets. Requiring them in the schema means
+# a chart slide without chart data is not a decodable reply.
+def _require_layout_fields(schema: dict[str, Any], layout: str) -> None:
+    properties = schema.get("properties")
+    if not isinstance(properties, dict):
+        return
+    if isinstance(properties.get("layout"), dict):
+        properties["layout"] = {"const": layout}
+    required = list(schema.get("required", []))
+    for field in _LAYOUT_REQUIREMENTS.get(layout, ()):
+        target = properties.get(field)
+        # These fields are optional and therefore nullable. A required-but-
+        # nullable field is still satisfied by null, so the null branch goes.
+        if isinstance(target, dict) and "anyOf" in target:
+            concrete = [
+                option for option in target["anyOf"] if option.get("type") != "null"
+            ]
+            if concrete:
+                target.pop("anyOf")
+                target.pop("default", None)
+                target.update(concrete[0])
+        if field not in required:
+            required.append(field)
+    schema["required"] = required
 
 
 def _deck_plan_contract() -> str:
@@ -99,11 +141,15 @@ def _deck_plan_contract() -> str:
         "Return one compact JSON object only. Root fields: title, optional subtitle, "
         "slides. Each slide has exactly these field names: title, purpose, points, "
         "layout, statistic_value, statistic_label, quote, quote_attribution, "
-        "comparison_left_heading, comparison_right_heading, "
+        "comparison_left_heading, comparison_right_heading, chart_kind, "
+        "chart_categories, chart_series, chart_axis_label, table_headers, "
+        "table_rows, "
         "key_message, visual_prompt, visual_priority, notes. key_message and "
         "visual_prompt may be null or omitted; never prefix a field name with "
         "optional_. points must "
-        "contain 2 to 6 concise strings. visual_prompt is a concrete text-to-image "
+        "contain 2 to 4 short strings; a slide is a visual aid, so put "
+        "supporting detail in notes rather than on the slide. "
+        "visual_prompt is a concrete text-to-image "
         "brief when an editorial photo or illustration would materially improve "
         "the slide, otherwise null. visual_priority is 3 for a hero visual, 2 for "
         "a useful supporting visual, 1 for optional, or 0 with no visual. Prefer "
@@ -116,7 +162,15 @@ def _deck_plan_contract() -> str:
         "statistic_label naming it), quote when a cited sentence carries the idea "
         "(supply quote and quote_attribution), comparison when two things "
         "genuinely contrast (supply comparison_left_heading and "
-        "comparison_right_heading). Vary layouts across the deck rather than "
+        "comparison_right_heading). "
+        "Use chart when the point is a shape in numbers, supplying "
+        "chart_kind (bar, column, line, or pie), 2 to 8 chart_categories, "
+        "and 1 to 3 chart_series each with a name and one value per "
+        "category. Use table when the point is a small grid of facts, "
+        "supplying 2 to 5 table_headers and rows with one cell per header. "
+        "Both become native editable PowerPoint objects, so give real "
+        "figures and never describe a chart in words instead. "
+        "Vary layouts across the deck rather than "
         "repeating one, and leave the fields other layouts use as null. Do not "
         "emit coordinates, colors, element IDs, themes, geometry, Markdown, or "
         "speaker prose outside notes. Application code owns geometry and native "
@@ -146,9 +200,13 @@ def _slide_content_contract() -> str:
         "Return one compact JSON object for a single slide only. Fields: title, "
         "purpose, points, layout, statistic_value, statistic_label, quote, "
         "quote_attribution, comparison_left_heading, comparison_right_heading, "
+        "chart_kind, chart_categories, chart_series, chart_axis_label, "
+        "table_headers, table_rows, "
         "key_message, visual_prompt, visual_priority, notes. "
         "key_message and visual_prompt may be null or omitted; never prefix a "
-        "field name with optional_. points must contain 2 to 6 concise strings. "
+        "field name with optional_. points must contain 2 to 4 short strings; a "
+        "slide is a visual aid, so put supporting detail in notes rather "
+        "than on the slide. "
         "visual_prompt is a concrete text-to-image brief only when an editorial "
         "photo or illustration would materially improve the slide; otherwise null. "
         "visual_priority is 3 for hero, 2 for supporting, 1 for optional, or 0 for "
@@ -160,7 +218,15 @@ def _slide_content_contract() -> str:
         "and statistic_label naming it; quote when a cited sentence carries the "
         "idea, supplying quote and quote_attribution; comparison when two "
         "things genuinely contrast, supplying comparison_left_heading and "
-        "comparison_right_heading. Prefer bullets unless another layout truly "
+        "comparison_right_heading. "
+        "Use chart when the point is a shape in numbers, supplying "
+        "chart_kind (bar, column, line, or pie), 2 to 8 chart_categories, "
+        "and 1 to 3 chart_series each with a name and one value per "
+        "category. Use table when the point is a small grid of facts, "
+        "supplying 2 to 5 table_headers and rows with one cell per header. "
+        "Both become native editable PowerPoint objects, so give real "
+        "figures and never describe a chart in words instead. "
+        "Prefer bullets unless another layout truly "
         "fits, and vary the layout across a deck rather than repeating one. "
         "Leave the fields other layouts use as null. "
         "Do not emit coordinates, colours, element ids, other "
@@ -210,7 +276,9 @@ def _deck_outline_contract(expected_slides: int | None) -> str:
         "layout for each slide: bullets for ordinary explanation, section to "
         "open a new part of the argument, statistic when one number is the "
         "point, quote when a cited sentence carries the idea, comparison when "
-        "two things genuinely contrast. Most slides are bullets, but a deck of "
+        "two things genuinely contrast, chart when the point is a shape in "
+        "numbers, table when it is a small grid of facts. Most slides are "
+        "bullets, but a deck of "
         "identical slides reads poorly, so use another layout wherever one "
         "genuinely fits. Do not emit points, notes, Markdown, or commentary. " + count
     )
@@ -317,6 +385,7 @@ class LLMPresentationProvider(PresentationProvider):
                 slide_messages,
                 PlannedSlide,
                 max_tokens=self.revision_max_tokens,
+                required_layout=outlined_slide.layout,
             )
             if not isinstance(planned, PlannedSlide):
                 raise TypeError("Presentation provider returned the wrong slide")
@@ -463,8 +532,9 @@ class LLMPresentationProvider(PresentationProvider):
             ]
             | None
         ) = None,
+        required_layout: str | None = None,
     ) -> DeckOutline | DeckPlan | SlideEdit | PlannedSlide:
-        schema = _response_schema(response_type, expected_slide_count)
+        schema = _response_schema(response_type, expected_slide_count, required_layout)
         for attempt in range(2):
             if self.model_gate is not None and self.background:
                 async with self.model_gate.background():

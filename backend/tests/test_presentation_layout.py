@@ -9,10 +9,17 @@ from backend.presentations.layout import (
     line_count,
     required_height,
 )
-from backend.presentations.planner import PlannedSlide, compile_slide, default_theme
+from backend.presentations.planner import (
+    PlannedSeries,
+    PlannedSlide,
+    compile_slide,
+    default_theme,
+)
 from backend.presentations.types import (
     SLIDE_HEIGHT,
     SLIDE_WIDTH,
+    ChartElement,
+    TableElement,
     TextElement,
 )
 
@@ -32,10 +39,6 @@ _LONG_POINTS = [
     "in manufacturing environments.",
     "Modern systems utilize real-time learning algorithms to adapt routines "
     "based on environmental data.",
-    "The shift marks a transition from predetermined paths to dynamic, "
-    "software-defined behavior.",
-    "Today, machines possess the computational capacity to execute complex "
-    "decision-making autonomously.",
 ]
 _KEY_MESSAGE = (
     "Autonomous evolution is defined by the replacement of static mechanical "
@@ -81,7 +84,7 @@ def test_bullets_never_reach_the_key_message_band():
     points = [e for e in _texts(spec) if "_point_" in e.element_id]
     key = next(e for e in _texts(spec) if e.element_id.endswith("_key_message"))
 
-    assert len(points) == 6
+    assert len(points) == 4
     assert max(point.y + point.h for point in points) <= key.y
 
 
@@ -234,3 +237,116 @@ def test_comparison_splits_points_across_both_columns():
     assert right
     # Columns do not overlap horizontally.
     assert max(e.x + e.w for e in left) <= min(e.x for e in right) + 0.01
+
+
+# Charts and tables existed in the type system and the renderer but the planner
+# could never emit them, so a deck asking for a comparison table got prose.
+def test_chart_layout_emits_a_native_editable_chart():
+    spec = compile_slide(
+        _slide(
+            layout="chart",
+            chart_kind="column",
+            chart_categories=["2024", "2025", "2026"],
+            chart_series=[PlannedSeries(name="Hives", values=[120.0, 180.0, 265.0])],
+            chart_axis_label="Registered hives",
+        ),
+        "slide_001",
+        default_theme(),
+    )
+    charts = [e for e in spec.elements if isinstance(e, ChartElement)]
+
+    assert len(charts) == 1
+    assert charts[0].categories == ["2024", "2025", "2026"]
+    assert charts[0].series[0].values == [120.0, 180.0, 265.0]
+    # One series needs no legend; the data is the label.
+    assert charts[0].show_legend is False
+
+
+def test_table_layout_emits_a_native_editable_table():
+    spec = compile_slide(
+        _slide(
+            layout="table",
+            table_headers=["Site", "Yield"],
+            table_rows=[["Rooftop", "24 kg"], ["Ground", "19 kg"]],
+        ),
+        "slide_001",
+        default_theme(),
+    )
+    tables = [e for e in spec.elements if isinstance(e, TableElement)]
+
+    assert len(tables) == 1
+    assert tables[0].headers == ["Site", "Yield"]
+    assert len(tables[0].rows) == 2
+
+
+# Misaligned data would raise inside the element type and lose the whole slide,
+# so the compiler decides the fallback before building it.
+def test_misaligned_chart_and_table_data_fall_back_to_bullets():
+    theme = default_theme()
+    ragged_chart = compile_slide(
+        _slide(
+            layout="chart",
+            chart_kind="column",
+            chart_categories=["A", "B", "C"],
+            chart_series=[PlannedSeries(name="S", values=[1.0, 2.0])],
+        ),
+        "slide_a",
+        theme,
+    )
+    ragged_table = compile_slide(
+        _slide(
+            layout="table",
+            table_headers=["One", "Two"],
+            table_rows=[["only one cell"]],
+        ),
+        "slide_b",
+        theme,
+    )
+
+    assert not [e for e in ragged_chart.elements if isinstance(e, ChartElement)]
+    assert any("_point_" in e.element_id for e in ragged_chart.elements)
+    assert not [e for e in ragged_table.elements if isinstance(e, TableElement)]
+    assert any("_point_" in e.element_id for e in ragged_table.elements)
+
+
+def test_a_pie_chart_with_several_series_falls_back():
+    spec = compile_slide(
+        _slide(
+            layout="chart",
+            chart_kind="pie",
+            chart_categories=["A", "B"],
+            chart_series=[
+                PlannedSeries(name="One", values=[1.0, 2.0]),
+                PlannedSeries(name="Two", values=[3.0, 4.0]),
+            ],
+        ),
+        "slide_001",
+        default_theme(),
+    )
+
+    assert not [e for e in spec.elements if isinstance(e, ChartElement)]
+
+
+def test_data_layouts_stay_on_the_slide():
+    theme = default_theme()
+    cases = [
+        _slide(
+            layout="chart",
+            chart_kind="line",
+            chart_categories=[str(year) for year in range(2019, 2027)],
+            chart_series=[
+                PlannedSeries(name=f"Series {index}", values=[float(index)] * 8)
+                for index in range(1, 4)
+            ],
+        ),
+        _slide(
+            layout="table",
+            table_headers=["A", "B", "C", "D", "E"],
+            table_rows=[[f"r{row}c{col}" for col in range(5)] for row in range(8)],
+        ),
+    ]
+    for index, planned in enumerate(cases):
+        spec = compile_slide(planned, f"slide_{index:03d}", theme)
+        for element in spec.elements:
+            assert element.x + element.w <= SLIDE_WIDTH + 0.01, planned.layout
+            assert element.y + element.h <= SLIDE_HEIGHT + 0.01, planned.layout
