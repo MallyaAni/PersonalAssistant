@@ -300,10 +300,10 @@ docker compose ps vllm-main vllm-embedding
 ```
 
 The one-command startup encodes the complete safe order: wait for Qwen, wait for
-Nomic, start host ComfyUI, then start the application services:
+Nomic, start host ComfyUI, apply migrations, then start the application services:
 
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\start-anios.ps1
+```bash
+bash scripts/start-anios.sh
 ```
 
 `vllm-main` quantizes the Qwen checkpoint to FP8 on load and stores its KV cache
@@ -398,7 +398,7 @@ acceptance and not authorization to promote a candidate runtime.
 
 ### Install and run the free local image provider
 
-`scripts\start-anios.ps1` brings the whole stack up with one command: it waits for `vllm-main`, then `vllm-embedding`, starts host ComfyUI if needed, starts the remaining Compose services, and waits for the backend. Image generation needs ComfyUI running; when it is down, `POST /api/v1/images/generate` returns a `503` with `reason: image_provider_unreachable` and a message naming ComfyUI, which the composer surfaces verbatim.
+`scripts/start-anios.sh` brings the whole stack up with one command: it waits for `vllm-main`, then `vllm-embedding`, starts host ComfyUI if needed, applies migrations, starts the remaining Compose services, and waits for the backend and for ComfyUI when it launched it. It runs under any Bash, including Git Bash on Windows. Image generation needs ComfyUI running; when it is down, `POST /api/v1/images/generate` returns a `503` with `reason: image_provider_unreachable` and a message naming ComfyUI, which the composer surfaces verbatim.
 
 The verified Windows host uses ComfyUI 0.28.0, Python 3.14, PyTorch CUDA
 13.0, the official HiDream-O1 Dev FP8 checkpoint for generation, and the

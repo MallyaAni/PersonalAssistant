@@ -20,7 +20,7 @@ runtime. Docker Compose owns two pinned services:
 
 The RTX 5080 requires ordered cold initialization: Qwen must reach health
 before Nomic starts, and host ComfyUI starts afterward. Compose dependencies and
-`scripts/start-anios.ps1` encode that order. Model and compile caches are
+`scripts/start-anios.sh` encode that order. Model and compile caches are
 bind-mounted below `E:/AI/`.
 
 Qwen is quantized to FP8 with an FP8 KV cache on the RTX 5080's native Blackwell
@@ -93,7 +93,7 @@ grammar, and routing classifiers decode greedily.
   plus null-note normalization fixed the typed boundary. Three consecutive real
   queued one-slide jobs then reached `ready` with exact slide counts; an earlier
   real two-slide deck also rendered with `pptxgenjs+libreoffice`.
-- `scripts/start-anios.ps1` parsed and ran successfully, waited for both vLLM
+- `scripts/start-anios.sh` parsed and ran successfully, waited for both vLLM
   services, detected ComfyUI, started the application services, and reported the
   frontend/API endpoints.
 - Complete backend suite: 504 passed. Deterministic Playwright: 36 passed. Live
@@ -198,7 +198,7 @@ Two constraints discovered along the way, both encoded in Compose:
   yields 93,992 cached tokens, up from 64,046 with the FP8 KV cache.
 - `--gpu-memory-utilization` is a fraction of *total* VRAM, so vLLM must start
   before ComfyUI or it cannot reach its share and dies with `No available memory
-  for the cache blocks`. `scripts/start-anios.ps1` already encodes that order.
+  for the cache blocks`. `scripts/start-anios.sh` already encodes that order.
 
 ## Presentation editing and ambient discovery
 
@@ -214,7 +214,7 @@ durable scheduled runs with exactly-once slots and write-once delivery. The run
 body, novelty filtering, calendar artifacts, and egress remain unbuilt, so
 nothing is scheduled end to end yet.
 
-`scripts/start-anios.ps1` now applies migrations before starting the application.
+`scripts/start-anios.sh` now applies migrations before starting the application.
 It previously did not, so a fresh clone came up against a database with no
 tables. Verified by dropping the schema and re-running that step: 25 tables at
 head `20260801_0017`, then a real chat and a discovery write both succeeded.

@@ -1420,3 +1420,30 @@ This file is append-only history for meaningful, verified changes. It must not c
 - Verified the claim rather than asserting it: dropping the schema entirely and
   running the script's migration step produced 25 tables at head
   `20260801_0017`, after which a real chat and a discovery write both succeeded.
+
+## 2026-08-01 — The one-command startup is a Bash script
+
+- Replaced `scripts/start-anios.ps1` with `scripts/start-anios.sh`, preserving
+  every ordering constraint: vLLM main before embedding before host ComfyUI,
+  migrations before the application, then a bounded wait on backend health.
+  PowerShell tied the documented entry point to one shell on one platform, which
+  the DGX Spark migration would have broken outright.
+- Replaced the PowerShell primitives with ones that need nothing extra
+  installed: Bash's own `/dev/tcp` for the port probes rather than netcat, which
+  Git Bash does not ship, and `curl` for the warmup calls. Reading
+  `COMFYUI_HOST_PATH` stays a literal `grep`, never a shell sourcing, so nothing
+  in `.env` can execute.
+- Made the closing report stop lying about ComfyUI. It takes well over a minute
+  to bind, so on a run that had just launched it the report raced its startup and
+  announced image generation as unavailable. The script now waits for the port,
+  but only when it was the one that started the process.
+- ComfyUI's startup output goes to `comfyui-startup.log` instead of being
+  discarded, since a failed launch was otherwise silent.
+- Added `.gitattributes` pinning `*.sh` to LF. This repository is developed with
+  `core.autocrlf=true`, which would have rewritten the script to CRLF on
+  checkout and left every interpreter reading a carriage return as part of the
+  shebang path.
+- Verified by running it end to end against the live stack: both vLLM services
+  and the renderer reported healthy, migrations applied, the frontend started,
+  `/health` returned `{"status":"healthy"}`, and ComfyUI — absent at the start of
+  the run — was listening on 8188 afterward.

@@ -1,0 +1,5 @@
+# Shell scripts must keep LF endings regardless of the checkout platform. This
+# repository is developed on Windows with core.autocrlf=true, which would
+# otherwise rewrite them to CRLF and leave every interpreter reading a trailing
+# carriage return as part of the shebang path.
+*.sh text eol=lf

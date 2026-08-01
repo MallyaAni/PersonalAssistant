@@ -51,8 +51,8 @@ The supported development paths and required environment variables are documente
 Start the complete user-facing local stack, including host ComfyUI image
 generation, with:
 
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\start-anios.ps1
+```bash
+bash scripts/start-anios.sh
 ```
 
 `docker compose up` starts the core services but intentionally does not start

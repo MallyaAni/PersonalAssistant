@@ -30,7 +30,7 @@ services:
       # Claim the card generously: sleep mode gives all of this back to ComfyUI
       # for the duration of an image job, so a large resident share costs
       # nothing. This is a fraction of total VRAM, so vLLM must start before
-      # ComfyUI or it cannot reach its share; scripts/start-anios.ps1 does that.
+      # ComfyUI or it cannot reach its share; scripts/start-anios.sh does that.
       - --gpu-memory-utilization
       - ${VLLM_MAIN_GPU_MEMORY_UTILIZATION:-0.70}
       # KV cache dtype stays at the default. An FP8 KV cache holds more tokens
