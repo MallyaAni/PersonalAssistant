@@ -1121,3 +1121,22 @@ This file is append-only history for meaningful, verified changes. It must not c
   latent until a repository assigned an aware value directly.
 - Backend suite 552 passed; Ruff, Black, and full-project MyPy across 168 source
   files passed.
+
+## 2026-08-01 — Recalled images are framed as shared history, not search results
+
+- Fixed a contradictory answer: asked "remember the car we generated?", the
+  assistant listed the matching cars and returned their images while stating
+  that no car "was generated as a permanent memory for me to remember". The
+  images were in the same prompt it was denying.
+- Two prompt framings caused it. The recall block read as an external lookup
+  ("the application searched the user's stored images", labelled "Matched
+  images"), and the training-data staleness caveat was being applied to the
+  user's own history. Recall is now framed as a shared record of work the user
+  and AniOS did together, with `kind` explaining who made each image and
+  `created_at`/`generation_prompt` supplying when and from what, and the
+  staleness caveat is explicitly scoped to facts about the world.
+- Verified live end to end: after generating a car, the same question now
+  answers "Yes, I remember! On July 31st, I generated an image of a red sports
+  car on a wet city street at night", with the image matches still displayed.
+- Backend suite 554 passed; Ruff, Black, and full-project MyPy across 168 source
+  files passed.
