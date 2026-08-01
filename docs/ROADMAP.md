@@ -387,17 +387,48 @@ Deliver as separately verified atomic stages, in this order:
 
   The run body is not yet wired: stage 3 delivers the machinery, and stage 4
   supplies the selection it will persist as a digest.
-- `PLANNED` stage 4 — novelty and relevance. A seen-item store keyed by stable
-  source identity, plus an embedding near-duplicate check so the same event
-  re-listed under a new identifier is not announced twice. Candidates are ranked
-  against the stage 1 profile. "Unique" is the product requirement and the
-  hardest part of it: a proactive assistant that repeats itself is worse than
-  none. Verified when repeated runs over an unchanged feed notify exactly once.
-- `PLANNED` stage 5 — calendar artifacts. Each selected event becomes a valid
-  single-`VEVENT` `.ics` served through the existing owned-artifact boundary.
-  iOS adds these natively from a link or attachment, so one artifact satisfies
-  every transport below without CalDAV, an Apple developer account, or write
-  access to the user's calendar. Verified when a generated file opens in iOS
+- `VERIFIED` stage 4 — novelty and relevance. `discovery_sources` holds the
+  feeds a sweep reads, sealed and digest-identified like every other
+  user-supplied value. `discovery_seen_items` records what has been accounted
+  for, and novelty is decided in two passes: exact identity by a SHA-256 of the
+  source and its own external id, then a pgvector near-duplicate check for the
+  same happening relisted under a new identifier. Only an *announced* item
+  suppresses a later one, so being ranked out once cannot permanently mask
+  something the user was never shown.
+
+  Ranking is deterministic and runs outside the model, for the same reason
+  search routing does: a sweep happens while nobody is watching, and a sampled
+  judgement would make one feed produce different results on different days. A
+  candidate scores against its best single interest weighted by strength —
+  summing across interests would let something weakly resembling everything beat
+  something strongly matching one stated interest — and must clear a floor and a
+  lead-time window to be shown at all. An empty digest is a better outcome than
+  a padded one.
+
+  Live-verified against a real public calendar: 42 events yielded 34 novel
+  candidates and 1 selection, and an immediately repeated sweep over the
+  unchanged feed produced 0 novel and 0 selected. A feed listing the same event
+  twice in one response yields one candidate; an embedding-service failure
+  degrades the sweep to identity-only novelty rather than failing it.
+- `VERIFIED` (format and API; on-device import `UNVERIFIED`) stage 5 — calendar
+  artifacts. Each selected event becomes a valid single-`VEVENT` `.ics` at
+  `/api/v1/discovery/{user_id}/calendar/{item_digest}.ics`, rendered from the
+  stored item rather than re-fetching the feed. iOS adds these natively from a
+  link or attachment, so one artifact satisfies every transport below without
+  CalDAV, an Apple developer account, or write access to the user's calendar.
+
+  Written against RFC 5545 rather than formatted from a template, because the
+  failure mode is silent: a client that dislikes a file usually declines it
+  without explaining why, and one it accepts but misreads produces an
+  appointment at the wrong time. Escaping is ordered so backslashes cannot be
+  double-escaped, folding counts octets so a multi-byte character is never split
+  across the 75-octet boundary, naive timestamps are refused rather than guessed
+  at, and UIDs are stable across renders so re-importing updates the appointment
+  instead of creating a second one. A real feed produced a correctly folded,
+  correctly zoned file served as `text/calendar`. Opening one on an actual
+  iPhone remains unverified, and requires the transport decision below.
+
+  Verified when a generated file opens in iOS
   Calendar with correct title, start/end, timezone, and location.
 - `PLANNED` stage 6 — notification egress under an explicit permission
   boundary. A provider-neutral `NotificationChannel` contract whose first

@@ -1,13 +1,20 @@
 from dataclasses import asdict
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Response, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from backend.core.auth import authorize_path_user
-from backend.core.dependencies import DependencyDiscoveryProfileService
+from backend.core.dependencies import (
+    DependencyDiscoveryProfileService,
+    DependencyDiscoveryRunner,
+    DependencyDiscoverySeenItems,
+    DependencyDiscoverySources,
+)
+from backend.discovery.calendar import build_vevent, calendar_filename
 from backend.discovery.errors import DiscoveryProfileLimitError
+from backend.discovery.events import MAX_URL_CHARS
 from backend.discovery.types import (
     MAX_LABEL_CHARS,
     MAX_RADIUS_KM,
@@ -130,3 +137,121 @@ async def delete_locality(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Locality not found."
         )
+
+
+class SourceRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["ics", "rss"]
+    url: str = Field(min_length=8, max_length=MAX_URL_CHARS)
+    label: str | None = Field(default=None, max_length=MAX_LABEL_CHARS)
+    enabled: bool = True
+
+
+@router.get("/sources")
+async def list_sources(
+    user_id: UserId,
+    sources: DependencyDiscoverySources,
+) -> dict[str, object]:
+    configured = await sources.list_sources(user_id)
+    return {"user_id": user_id, "sources": [asdict(item) for item in configured]}
+
+
+@router.put("/sources", status_code=status.HTTP_200_OK)
+async def put_source(
+    user_id: UserId,
+    body: SourceRequest,
+    sources: DependencyDiscoverySources,
+) -> dict[str, object]:
+    try:
+        source = await sources.upsert_source(
+            user_id, body.kind, body.url, body.label, body.enabled
+        )
+    except DiscoveryProfileLimitError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=str(exc)
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+        ) from exc
+    return asdict(source)
+
+
+@router.delete("/sources/{source_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_source(
+    user_id: UserId,
+    source_id: UUID,
+    sources: DependencyDiscoverySources,
+) -> None:
+    if not await sources.delete_source(user_id, source_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Source not found."
+        )
+
+
+# Run one sweep now. The scheduled path is the ordinary one; this exists so a
+# user can see what their configuration actually produces without waiting for
+# the next slot, and so acceptance can exercise the body directly.
+@router.post("/sweep", status_code=status.HTTP_200_OK)
+async def run_sweep(
+    user_id: UserId,
+    profile_service: DependencyDiscoveryProfileService,
+    runner: DependencyDiscoveryRunner,
+) -> dict[str, object]:
+    profile = await profile_service.get_profile(user_id)
+    result = await runner.sweep(user_id, profile)
+    return {
+        "user_id": user_id,
+        "selected": [
+            {
+                "title": item.event.title,
+                "starts_at": (
+                    item.event.starts_at.isoformat() if item.event.starts_at else None
+                ),
+                "place": item.event.place,
+                "url": item.event.url,
+                "score": round(item.score, 4),
+                "matched_interest": item.matched_interest,
+                "calendar_path": (
+                    f"/api/v1/discovery/{user_id}/calendar/{item.candidate.digest}.ics"
+                ),
+            }
+            for item in result.selected
+        ],
+        "candidate_count": result.candidate_count,
+        "novel_count": result.novel_count,
+        "requests_spent": result.requests_spent,
+        "failed_sources": list(result.failed_sources),
+    }
+
+
+# One event as a calendar file. iOS adds a .ics natively from a link, so this is
+# the whole "add to calendar" mechanism: no CalDAV, no developer account, and no
+# write access to the user's calendar.
+@router.get("/calendar/{item_digest}.ics")
+async def download_event_calendar(
+    user_id: UserId,
+    item_digest: str,
+    seen: DependencyDiscoverySeenItems,
+) -> Response:
+    event = await seen.event_for_digest(user_id, item_digest)
+    if event is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Event not found."
+        )
+    try:
+        body = build_vevent(event)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=str(exc)
+        ) from exc
+    return Response(
+        content=body,
+        media_type="text/calendar; charset=utf-8",
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="{calendar_filename(event)}"'
+            )
+        },
+    )

@@ -499,8 +499,9 @@ proposal/approval/resume lifecycle exists.
 
 ### Ambient discovery
 
-Milestone 6's ambient discovery is partly implemented and not yet wired end to
-end. Three stages exist as independent boundaries.
+Milestone 6's ambient discovery runs end to end inside the machine: a sweep
+reads feeds, decides what is new, ranks it, and produces calendar files.
+Delivering any of that outward remains unbuilt and gated.
 
 `discovery_interests` and `discovery_localities` hold what the user likes and
 where they live, behind `/api/v1/discovery/{user_id}`. Labels are sealed with
@@ -539,9 +540,40 @@ resumed run declines rather than delivering again. Cadence is computed in the
 user's own timezone, including the daylight-saving case where a 9am sweep must
 stay 9am rather than drift with the old UTC offset.
 
-The run body, novelty filtering, calendar artifacts, and notification egress
-remain `PLANNED`; stage 3 delivers the machinery and stage 4 supplies the
-selection it will persist.
+`discovery_sources` holds the feeds a sweep reads and `discovery_seen_items`
+records what it has already accounted for. Both seal the user-supplied value and
+identify it by digest, for the same reason the profile does. Novelty is decided
+in two passes ordered by cost: exact identity, a SHA-256 over the source and the
+source's own external id, catches the ordinary case of a feed relisting the same
+event every sweep; then a pgvector near-duplicate check catches the same
+happening published under a new identifier or by a second feed. Only an
+*announced* item suppresses a candidate, so being ranked out once cannot
+permanently mask something the user was never shown, and the check looks back a
+bounded horizon so an annual event recurring next year still counts as new.
+
+Ranking is deterministic and runs outside the model, matching how search routing
+already works. A sweep happens while nobody is watching, so a sampled judgement
+would make the same feed produce different results on different days, and
+scoring in vector space costs one batched embedding call rather than one
+generation per candidate. A candidate scores against its best single interest
+weighted by that interest's strength — summing across interests would let
+something weakly resembling everything outrank something strongly matching one
+stated interest — and must clear both a score floor and a lead-time window,
+since something happening tonight is not actionable from a weekly digest. The
+model still writes the digest a user reads; it does not decide what qualifies.
+
+`backend/discovery/calendar.py` renders selected events as RFC 5545 documents,
+served at `/api/v1/discovery/{user_id}/calendar/{item_digest}.ics` from the
+stored item rather than by re-fetching the feed. The rules that matter are
+ordered escaping, octet-counted folding that never splits a multi-byte
+character, refusal of naive timestamps rather than guessing a zone, and UIDs
+stable across renders so re-importing updates an appointment instead of
+duplicating it. A calendar client that dislikes a file usually declines it
+without explaining why, so the format is asserted directly in tests rather than
+inferred from an import that appeared to work.
+
+Notification egress remains `PLANNED` and gated: it is the first outbound path
+in AniOS, and every subsystem before it fails closed inside the machine.
 
 ### Presentation
 

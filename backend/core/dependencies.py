@@ -35,8 +35,12 @@ from backend.core.interfaces import (
 from backend.core.llm import LLMClient, create_inference_provider
 from backend.core.model_gate import ModelExecutionGate
 from backend.database.session import get_db
+from backend.discovery.novelty import SeenItemRepository
 from backend.discovery.repository import DiscoveryProfileRepository
+from backend.discovery.runner import DiscoveryRunner
+from backend.discovery.runs import DiscoveryRunRepository
 from backend.discovery.service import DiscoveryProfileService
+from backend.discovery.sources_repository import DiscoverySourceRepository
 from backend.embeddings.base import EmbeddingProvider
 from backend.embeddings.lm_studio import create_embedding_provider
 from backend.embeddings.nomic_vision import NomicVisionEmbeddingProvider
@@ -718,6 +722,53 @@ def get_discovery_profile_service(db: DbDependency) -> DiscoveryProfileService:
 DependencyDiscoveryProfileService = Annotated[
     DiscoveryProfileService,
     Depends(get_discovery_profile_service),
+]
+
+
+def get_discovery_source_repository(db: DbDependency) -> DiscoverySourceRepository:
+    return DiscoverySourceRepository(db)
+
+
+DependencyDiscoverySources = Annotated[
+    DiscoverySourceRepository,
+    Depends(get_discovery_source_repository),
+]
+
+
+def get_discovery_seen_repository(db: DbDependency) -> SeenItemRepository:
+    return SeenItemRepository(db)
+
+
+DependencyDiscoverySeenItems = Annotated[
+    SeenItemRepository,
+    Depends(get_discovery_seen_repository),
+]
+
+
+def get_discovery_run_repository(db: DbDependency) -> DiscoveryRunRepository:
+    return DiscoveryRunRepository(db)
+
+
+DependencyDiscoveryRuns = Annotated[
+    DiscoveryRunRepository,
+    Depends(get_discovery_run_repository),
+]
+
+
+def get_discovery_runner(
+    db: DbDependency,
+    embeddings: EmbeddingDependency,
+) -> DiscoveryRunner:
+    return DiscoveryRunner(
+        sources=DiscoverySourceRepository(db),
+        seen=SeenItemRepository(db),
+        embeddings=embeddings,
+    )
+
+
+DependencyDiscoveryRunner = Annotated[
+    DiscoveryRunner,
+    Depends(get_discovery_runner),
 ]
 
 

@@ -56,9 +56,13 @@ if [[ "$scratch" == "$real_db" ]]; then
 fi
 
 echo 'Applying migrations from an empty schema ...'
+# The working tree's migrations are mounted over the image's copy. Without this
+# the check silently verifies whatever was baked in at the last build, so a
+# migration added since would appear to pass while never having run.
 "${compose[@]}" run --rm \
     -e POSTGRES_HOST=db \
     -e POSTGRES_DB="$scratch" \
+    -v "$root/migrations:/app/migrations:ro" \
     backend python -m alembic upgrade head
 
 tables="$("${compose[@]}" exec -T db psql -U "$user" -d "$scratch" -tAc \

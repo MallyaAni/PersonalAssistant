@@ -1476,3 +1476,40 @@ accumulated conversations, memory, presentations, and artifact records were
 destroyed. It is unrecoverable: WAL archiving was off, no dump existed, and the
 volume was the original. Two image files survive under `data/artifacts/` with no
 rows referencing them. The two changes above exist so this cannot recur.
+
+## 2026-08-01 — Ambient discovery stages 4 and 5
+
+- Built the sweep body. A run now reads the user's configured feeds within its
+  request budget, decides what is new, ranks it against approved interests, and
+  produces calendar files. Stage 3 had delivered the durable machinery with
+  nothing for it to carry.
+- Added `discovery_sources` and `discovery_seen_items`, both sealing the
+  user-supplied value and identifying it by digest, since `EncryptedText` uses a
+  fresh nonce per value and cannot back a unique constraint.
+- Novelty runs in two passes ordered by cost: exact source identity, then a
+  pgvector near-duplicate check for the same happening relisted under a new
+  identifier. Only an announced item suppresses a later one — being ranked out
+  once must not permanently mask something the user was never shown — and the
+  lookback is bounded so an annual event recurring next year still counts as new.
+- Ranking is deterministic and outside the model. A sweep runs unattended, so a
+  sampled judgement would make one feed produce different results on different
+  days. A candidate scores against its best single interest weighted by strength
+  rather than summing across interests, and must clear a floor and a lead-time
+  window; an empty digest beats a padded one.
+- Calendar files are written against RFC 5545 rather than formatted from a
+  template, because the failure mode is silent. Escaping is ordered so
+  backslashes are not double-escaped, folding counts octets so a multi-byte
+  character is never split at the 75-octet boundary, naive timestamps are
+  refused rather than guessed at, and UIDs are stable so re-importing updates an
+  appointment instead of duplicating it.
+- Made `verify-migrations.sh` mount the working tree's migrations over the
+  image's copy. It had verified whatever was baked in at the last build, so a
+  migration added since appeared to pass without ever having run — which is
+  exactly what happened on the first run of this work.
+- Live-verified against a real public calendar feed: 42 events yielded 34 novel
+  candidates and 1 selection scoring 1.04 against the stated interest, and an
+  immediately repeated sweep over the unchanged feed produced 0 novel and 0
+  selected. The selection downloaded as `text/calendar` with correct folding and
+  a stable UID. Test data removed afterward.
+- 591 backend tests pass, including 30 new ones. Ruff, Black, and full-project
+  MyPy across 175 files pass.
