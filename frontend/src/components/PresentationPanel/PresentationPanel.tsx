@@ -1170,7 +1170,9 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                       type="button"
                       aria-label={`Insert a slide at position ${index + 1}`}
                       title="Insert a slide here"
-                      onClick={() => setAddPosition(index)}
+                      onClick={() => setAddPosition(
+                        addPosition === index ? null : index,
+                      )}
                       className={`group/gap flex-none self-stretch rounded-full transition-all ${addPosition === index ? 'w-6 bg-[#0071e3]/15' : 'w-1.5 hover:w-6 hover:bg-[#0071e3]/10'}`}
                     >
                       <span className={`mx-auto block text-[#0071e3] ${addPosition === index ? 'opacity-100' : 'opacity-0 group-hover/gap:opacity-100'}`}>
@@ -1248,13 +1250,18 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                   })}
                   <button
                     type="button"
-                    aria-label="Add a slide"
-                    title="Add a slide after the selected one"
-                    onClick={() => setAddPosition(specification.slides.length)}
-                    className="flex h-full w-24 flex-none flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-black/15 text-[11px] text-[#6e6e73] hover:border-[#0071e3] hover:text-[#0071e3]"
+                    aria-label={`Insert a slide at position ${specification.slides.length + 1}`}
+                    title="Add a slide at the end"
+                    onClick={() => setAddPosition(
+                      addPosition === specification.slides.length
+                        ? null
+                        : specification.slides.length,
+                    )}
+                    className={`group/gap flex-none self-stretch rounded-full transition-all ${addPosition === specification.slides.length ? 'w-6 bg-[#0071e3]/15' : 'w-1.5 hover:w-6 hover:bg-[#0071e3]/10'}`}
                   >
-                    <FilePlus2 size={17} />
-                    Add slide
+                    <span className={`mx-auto block text-[#0071e3] ${addPosition === specification.slides.length ? 'opacity-100' : 'opacity-0 group-hover/gap:opacity-100'}`}>
+                      +
+                    </span>
                   </button>
                 </div>
                 {addPosition !== null && (
@@ -1270,24 +1277,44 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                       aria-label="New slide brief"
                       value={newSlideBrief}
                       onChange={event => setNewSlideBrief(event.target.value)}
-                      onKeyDown={submitOnEnter(
-                        submitNewSlide,
-                        !newSlideBrief.trim() || isAddingSlide,
-                      )}
+                      autoFocus
+                      onKeyDown={event => {
+                        if (event.key === 'Escape') {
+                          event.preventDefault()
+                          setAddPosition(null)
+                          setNewSlideBrief('')
+                          return
+                        }
+                        submitOnEnter(
+                          submitNewSlide,
+                          !newSlideBrief.trim() || isAddingSlide,
+                        )(event)
+                      }}
                       placeholder="Describe the slide to add, for example: the legal rules for keeping hives in a city."
                       className="mt-2 min-h-20 w-full resize-y rounded-2xl border border-black/10 bg-white p-3 text-sm outline-none focus:border-black/20"
                       disabled={isAddingSlide}
                     />
+                    <div className="mt-2 flex gap-2">
+                    <button
+                      type="button"
+                      aria-label="Cancel adding a slide"
+                      onClick={() => { setAddPosition(null); setNewSlideBrief('') }}
+                      disabled={isAddingSlide}
+                      className="flex h-9 flex-none items-center justify-center rounded-full border border-black/10 bg-white px-4 text-sm font-medium text-[#6e6e73]"
+                    >
+                      Cancel
+                    </button>
                     <button
                       type="button"
                       aria-label="Add slide"
                       onClick={() => void submitNewSlide()}
                       disabled={!newSlideBrief.trim() || isAddingSlide}
-                      className="mt-2 flex h-9 w-full items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-4 text-sm font-medium text-[#1d1d1f] disabled:text-[#86868b]"
+                      className="flex h-9 flex-1 items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-4 text-sm font-medium text-[#1d1d1f] disabled:text-[#86868b]"
                     >
                       {isAddingSlide ? <Loader2 size={15} className="animate-spin" /> : <FilePlus2 size={15} />}
                       {isAddingSlide ? 'Adding slide…' : 'Add slide'}
                     </button>
+                    </div>
                   </div>
                 )}
               </main>

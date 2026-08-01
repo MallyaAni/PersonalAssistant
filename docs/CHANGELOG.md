@@ -1375,3 +1375,16 @@ This file is append-only history for meaningful, verified changes. It must not c
   position 2 placed it mid-deck, and a position beyond the deck was refused.
 - Backend suite 577 passed; 37 deterministic browser tests passed; TypeScript,
   Ruff, Black, MyPy across 169 source files, and the production build passed.
+
+## 2026-08-01 — One way to add a slide, and a way to change your mind
+
+- Removed the separate "Add slide" tile from the end of the rail. With insertion
+  points between thumbnails there were two ways to do the same thing, and the
+  tile was the one that could only append. A trailing insertion point replaces
+  it, so appending still works through the same affordance as inserting.
+- Gave the add box a way out. Opening it was one click and closing it was
+  impossible without adding a slide. Clicking the same insertion point again
+  closes it, Escape dismisses it, and an explicit Cancel sits beside the confirm.
+  The brief is cleared on cancel so a discarded thought does not reappear.
+- 37 deterministic browser tests passed; backend suite 577 passed; TypeScript and
+  the production build passed.
