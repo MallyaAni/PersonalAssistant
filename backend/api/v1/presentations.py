@@ -223,7 +223,7 @@ async def add_presentation_slide(
             str(presentation_id),
             str(body.base_revision_id),
             body.brief,
-            body.after_slide_id,
+            body.position,
         )
     except PresentationConflictError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc

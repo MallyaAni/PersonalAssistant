@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import {
   Download,
   FilePlus2,
@@ -371,7 +371,7 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
   const [newSlideBrief, setNewSlideBrief] = useState('')
   const [isAddingSlide, setIsAddingSlide] = useState(false)
   const [isDeletingSlide, setIsDeletingSlide] = useState(false)
-  const [isAddingSlideOpen, setIsAddingSlideOpen] = useState(false)
+  const [addPosition, setAddPosition] = useState<number | null>(null)
   const [draggingSlideId, setDraggingSlideId] = useState('')
   const [dropTarget, setDropTarget] = useState<{ id: string; side: 'before' | 'after' } | null>(null)
   const [isReordering, setIsReordering] = useState(false)
@@ -654,6 +654,7 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
     const normalized = newSlideBrief.trim()
     const revisionId = active?.current_revision_id
     if (!active || !revisionId || !normalized || isAddingSlide) return
+    if (addPosition === null) return
     setIsAddingSlide(true)
     setNewSlideBrief('')
     setError('')
@@ -664,7 +665,7 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
         active.id,
         revisionId,
         normalized,
-        selectedSlide?.slide_id ?? null,
+        addPosition,
       )
       setActive(updated)
       setPresentations(current => current.map(item => (
@@ -676,7 +677,7 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
       )
       const added = slides.find(slide => !previous.has(slide.slide_id))
       if (added) setSelectedSlideId(added.slide_id)
-      setIsAddingSlideOpen(false)
+      setAddPosition(null)
       setNotice(`Slide added as revision ${updated.current_revision?.revision_number}.`)
     } catch (addError) {
       setNewSlideBrief(normalized)
@@ -1134,7 +1135,21 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                     Drag a slide to reorder the deck.
                   </p>
                 )}
-                <div className="mt-2 flex gap-3 overflow-x-auto pb-2" aria-label="Presentation slides">
+                <div
+                  className="mt-2 flex gap-3 overflow-x-auto pb-2"
+                  aria-label="Presentation slides"
+                  onDragOver={event => event.preventDefault()}
+                  onDrop={event => {
+                    event.preventDefault()
+                    const dragged = draggingSlideId
+                      || event.dataTransfer.getData('text/plain')
+                    const target = dropTarget
+                    setDropTarget(null)
+                    if (dragged && target) {
+                      void moveSlide(dragged, target.id, target.side)
+                    }
+                  }}
+                >
                   {/* Thumbnails are draggable. The deck reflows under the
                       cursor so the pending position is visible before the
                       pointer is released, rather than only implied. */}
@@ -1150,14 +1165,33 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                       : dropTarget?.side === 'after' ? targetIndex + 1 : targetIndex
                     const shift = reorderShift(index, dragFrom, insertAt)
                     return (
+                    <Fragment key={slide.slide_id}>
+                    <button
+                      type="button"
+                      aria-label={`Insert a slide at position ${index + 1}`}
+                      title="Insert a slide here"
+                      onClick={() => setAddPosition(index)}
+                      className={`group/gap flex-none self-stretch rounded-full transition-all ${addPosition === index ? 'w-6 bg-[#0071e3]/15' : 'w-1.5 hover:w-6 hover:bg-[#0071e3]/10'}`}
+                    >
+                      <span className={`mx-auto block text-[#0071e3] ${addPosition === index ? 'opacity-100' : 'opacity-0 group-hover/gap:opacity-100'}`}>
+                        +
+                      </span>
+                    </button>
                     <div
-                      key={slide.slide_id}
                       className="group relative flex-none"
                       draggable={!isReordering && specification.slides.length > 1}
-                      onDragStart={() => setDraggingSlideId(slide.slide_id)}
+                      onDragStart={event => {
+                        // A drag with no payload is treated as invalid and the
+                        // browser never fires drop, which is why the reflow
+                        // looked right but releasing changed nothing.
+                        event.dataTransfer.setData('text/plain', slide.slide_id)
+                        event.dataTransfer.effectAllowed = 'move'
+                        setDraggingSlideId(slide.slide_id)
+                      }}
                       onDragEnd={() => { setDraggingSlideId(''); setDropTarget(null) }}
                       onDragOver={event => {
                         event.preventDefault()
+                        event.dataTransfer.dropEffect = 'move'
                         if (!draggingSlideId || draggingSlideId === slide.slide_id) return
                         // Which half the pointer is over decides the side, the
                         // way every slide sorter behaves.
@@ -1170,16 +1204,6 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                             ? current
                             : { id: slide.slide_id, side }
                         ))
-                      }}
-                      onDrop={event => {
-                        event.preventDefault()
-                        const side = dropTarget?.id === slide.slide_id
-                          ? dropTarget.side
-                          : 'before'
-                        setDropTarget(null)
-                        if (draggingSlideId) {
-                          void moveSlide(draggingSlideId, slide.slide_id, side)
-                        }
                       }}
                       style={{
                         opacity: draggingSlideId === slide.slide_id ? 0.35 : 1,
@@ -1219,20 +1243,21 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                         </button>
                       )}
                     </div>
+                    </Fragment>
                     )
                   })}
                   <button
                     type="button"
                     aria-label="Add a slide"
                     title="Add a slide after the selected one"
-                    onClick={() => setIsAddingSlideOpen(true)}
+                    onClick={() => setAddPosition(specification.slides.length)}
                     className="flex h-full w-24 flex-none flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-black/15 text-[11px] text-[#6e6e73] hover:border-[#0071e3] hover:text-[#0071e3]"
                   >
                     <FilePlus2 size={17} />
                     Add slide
                   </button>
                 </div>
-                {isAddingSlideOpen && (
+                {addPosition !== null && (
                   <div className="mt-3 rounded-2xl border border-black/[0.06] bg-[#fbfbfd] p-3">
                     <label htmlFor="add-slide-brief" className="text-xs font-semibold text-[#1d1d1f]">
                       Add a slide

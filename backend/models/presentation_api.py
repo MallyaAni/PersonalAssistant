@@ -23,8 +23,9 @@ class AddPresentationSlideBody(BaseModel):
 
     base_revision_id: UUID
     brief: str = Field(min_length=1, max_length=10_000)
-    # Omitted appends to the end; supplying a slide inserts directly after it.
-    after_slide_id: str | None = Field(default=None, max_length=64)
+    # 0-based index for the new slide. Omitted appends to the end. An index
+    # rather than a neighbour reference so position 0 is expressible.
+    position: int | None = Field(default=None, ge=0, le=30)
 
 
 class ReorderPresentationSlidesBody(BaseModel):

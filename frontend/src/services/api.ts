@@ -588,7 +588,8 @@ export function addPresentationSlide(
   presentationId: string,
   baseRevisionId: string,
   brief: string,
-  afterSlideId?: string | null,
+  // 0-based index the new slide takes; null appends to the end.
+  position?: number | null,
 ) {
   return apiRequest<PresentationRecord>(
     `/api/v1/presentations/${encodeURIComponent(userId)}/${encodeURIComponent(presentationId)}/slides`,
@@ -597,7 +598,7 @@ export function addPresentationSlide(
       body: JSON.stringify({
         base_revision_id: baseRevisionId,
         brief,
-        after_slide_id: afterSlideId ?? null,
+        position: position ?? null,
       }),
     },
   )

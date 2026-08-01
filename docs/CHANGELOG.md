@@ -1356,3 +1356,22 @@ This file is append-only history for meaningful, verified changes. It must not c
   and dragging one left to sit before another each produced the expected order.
 - Backend suite 577 passed; 37 deterministic browser tests passed; TypeScript
   and the production build passed.
+
+## 2026-08-01 — Dropping a slide commits, and slides insert anywhere
+
+- Fixed reordering not taking effect on release. The drag set no `dataTransfer`
+  payload, so the browser treated it as an invalid drag and never fired `drop`:
+  the deck reflowed under the cursor and then snapped back. The drag now carries
+  its slide id, and the drop is committed from tracked state at the rail rather
+  than from whichever element received the event, since the thumbnails have
+  moved under the pointer by then.
+- Replaced add-slide's "after this slide" reference with a 0-based position.
+  A neighbour reference cannot express the very first position, because there is
+  no slide before it, so a slide could not be inserted at the front of a deck.
+- Added insertion points between thumbnails. Hovering a gap opens it and shows a
+  plus; clicking it targets that exact position, so a slide can be added
+  anywhere rather than only appended.
+- Verified live: inserting at position 0 put the new slide first, inserting at
+  position 2 placed it mid-deck, and a position beyond the deck was refused.
+- Backend suite 577 passed; 37 deterministic browser tests passed; TypeScript,
+  Ruff, Black, MyPy across 169 source files, and the production build passed.

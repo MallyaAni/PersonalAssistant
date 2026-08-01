@@ -330,7 +330,10 @@ class PresentationService:
         presentation_id: str,
         base_revision_id: str,
         brief: str,
-        after_slide_id: str | None = None,
+        # 0-based index the new slide takes. None appends. An index rather than
+        # an "after this slide" reference so the very first position, which has
+        # no slide before it, is expressible.
+        position: int | None = None,
     ) -> dict[str, Any]:
         base, revision = await self.repository.create_revision_pending(
             user_id,
@@ -344,16 +347,19 @@ class PresentationService:
             self.model_name,
         )
         revision_id = str(revision["id"])
-        if after_slide_id is not None and not any(
-            slide.slide_id == after_slide_id for slide in base.slides
-        ):
+        if position is not None and not 0 <= position <= len(base.slides):
             await self.repository.mark_failed(
-                user_id, presentation_id, revision_id, "slide_not_found"
+                user_id, presentation_id, revision_id, "position_out_of_range"
             )
-            raise ValueError("The slide to insert after was not found")
+            raise ValueError("The requested position is outside the deck.")
         slide_id = _next_slide_id(base)
         try:
-            added = await self.agent.add_slide(base, brief, slide_id, after_slide_id)
+            neighbour = (
+                base.slides[position - 1].slide_id
+                if position is not None and position > 0
+                else None
+            )
+            added = await self.agent.add_slide(base, brief, slide_id, neighbour)
         except Exception:
             await self.repository.mark_failed(
                 user_id,
@@ -366,15 +372,7 @@ class PresentationService:
             presentation_id, revision_id, added.slide_id
         )
         slides = list(base.slides)
-        if after_slide_id is None:
-            slides.append(added)
-        else:
-            position = next(
-                index
-                for index, slide in enumerate(slides)
-                if slide.slide_id == after_slide_id
-            )
-            slides.insert(position + 1, added)
+        slides.insert(len(slides) if position is None else position, added)
         return await self._complete_revision(
             user_id,
             presentation_id,
