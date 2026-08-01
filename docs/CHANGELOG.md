@@ -1231,3 +1231,23 @@ This file is append-only history for meaningful, verified changes. It must not c
   table, two to four bullets per slide, and zero elements past the slide edge.
 - Backend suite 575 passed; Ruff, Black, and full-project MyPy across 169 source
   files passed.
+
+## 2026-08-01 — Enter submits in every multi-line box
+
+- Made Enter submit and Shift+Enter start a new line in every text box, not just
+  the chat composer. A browser never submits a form from inside a textarea, so
+  each box needs this wired explicitly, which is exactly how one box ends up
+  behaving unlike the one beside it.
+- Wired the create-deck brief, which had deliberately been left on plain Enter
+  because it asks for several lines. That reasoning was wrong: Shift+Enter
+  already covers multi-line input, and consistency matters more than the guess.
+- Also wired the two memory boxes, and extracted the three inline handlers added
+  earlier into one shared `submitOnEnter` helper. Every handler now mirrors its
+  button's own disabled condition, so the keyboard cannot trigger an action the
+  button would refuse, and none of them fire while an input method editor is
+  composing, where Enter accepts a candidate rather than sending.
+- Added browser coverage for the behaviour: Shift+Enter extends the message
+  without sending, Enter sends and empties the composer without a click, and
+  Enter on an empty composer sends nothing.
+- 37 deterministic browser tests passed; TypeScript and the production build
+  passed; backend suite 575 passed.

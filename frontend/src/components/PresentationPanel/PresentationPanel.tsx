@@ -28,6 +28,7 @@ import {
   type PresentationSlide,
   type PresentationTheme,
 } from '../../services/api'
+import { submitOnEnter } from '../../utils/submitOnEnter'
 
 const SLIDE_WIDTH = 13.333
 const SLIDE_HEIGHT = 7.5
@@ -790,6 +791,7 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
             id="presentation-brief"
             value={prompt}
             onChange={event => setPrompt(event.target.value)}
+            onKeyDown={submitOnEnter(submitCreation, !prompt.trim() || isCreating)}
             placeholder="Describe the audience, objective, key points, data, and desired number of slides."
             className="mt-3 min-h-24 w-full resize-y rounded-2xl border border-black/10 bg-[#fbfbfd] p-4 text-sm outline-none focus:border-black/20"
             disabled={isCreating}
@@ -1134,12 +1136,10 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                       aria-label="New slide brief"
                       value={newSlideBrief}
                       onChange={event => setNewSlideBrief(event.target.value)}
-                      onKeyDown={event => {
-                        if (event.key === 'Enter' && !event.shiftKey) {
-                          event.preventDefault()
-                          if (newSlideBrief.trim() && !isAddingSlide) void submitNewSlide()
-                        }
-                      }}
+                      onKeyDown={submitOnEnter(
+                        submitNewSlide,
+                        !newSlideBrief.trim() || isAddingSlide,
+                      )}
                       placeholder="Describe the slide to add, for example: the legal rules for keeping hives in a city."
                       className="mt-2 min-h-20 w-full resize-y rounded-2xl border border-black/10 bg-white p-3 text-sm outline-none focus:border-black/20"
                       disabled={isAddingSlide}
@@ -1159,12 +1159,10 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                     aria-label="Slide feedback"
                     value={feedback}
                     onChange={event => setFeedback(event.target.value)}
-                    onKeyDown={event => {
-                      if (event.key === 'Enter' && !event.shiftKey) {
-                        event.preventDefault()
-                        if (feedback.trim() && !isRevising) void submitFeedback()
-                      }
-                    }}
+                    onKeyDown={submitOnEnter(
+                      submitFeedback,
+                      !feedback.trim() || isRevising,
+                    )}
                     placeholder="Make the chart clearer, rewrite the headline, add a comparison…"
                     className="mt-4 min-h-32 w-full resize-y rounded-2xl border border-black/10 bg-[#fbfbfd] p-3 text-sm outline-none focus:border-black/20"
                     disabled={isRevising}
@@ -1194,14 +1192,11 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                       aria-label="Slide image prompt"
                       value={imagePrompt}
                       onChange={event => setImagePrompt(event.target.value)}
-                      onKeyDown={event => {
-                        if (event.key === 'Enter' && !event.shiftKey) {
-                          event.preventDefault()
-                          const blocked = isGeneratingImage
-                            || Boolean(selectedSlideImage && !imagePrompt.trim())
-                          if (!blocked) void addSlideImage()
-                        }
-                      }}
+                      onKeyDown={submitOnEnter(
+                        addSlideImage,
+                        isGeneratingImage
+                          || Boolean(selectedSlideImage && !imagePrompt.trim()),
+                      )}
                       placeholder={selectedSlideImage
                         ? 'Example: Make only the horse chestnut brown.'
                         : 'Optional visual direction; leave blank to use the slide content.'}

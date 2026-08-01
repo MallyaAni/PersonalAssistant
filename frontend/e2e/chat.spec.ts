@@ -3233,3 +3233,44 @@ test('@live persists, recalls, and deletes personal memory', async ({ page }) =>
     await page.request.delete(`http://localhost:8000/api/v1/memory/${userId}`)
   }
 })
+
+// Enter submits and Shift+Enter starts a new line. Every multi-line box needs
+// this wired explicitly, because a browser never submits a form from inside a
+// textarea, so it is easy for one box to silently behave unlike its neighbours.
+test('Enter sends from the composer and Shift+Enter writes a new line', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const sent: string[] = []
+  await page.route('http://localhost:8000/api/v1/chat', async route => {
+    const payload = route.request().postDataJSON()
+    sent.push(payload.query)
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body: chatEventStream('enter-trace', payload.conversation_id, 'received'),
+    })
+  })
+
+  await page.goto('/')
+  const { textarea } = chatControls(page)
+
+  // Shift+Enter must not send; it extends the message.
+  await textarea.fill('first line')
+  await textarea.press('Shift+Enter')
+  await textarea.type('second line')
+  expect(await textarea.inputValue()).toContain('\n')
+  expect(sent).toHaveLength(0)
+
+  // Plain Enter sends, and the composer empties without a click.
+  await textarea.press('Enter')
+  await expect(textarea).toHaveValue('')
+  await expect(latestAssistantAnswer(page)).toContainText('received')
+  expect(sent).toHaveLength(1)
+  expect(sent[0]).toContain('first line')
+
+  // An empty composer must not send on Enter.
+  await textarea.press('Enter')
+  expect(sent).toHaveLength(1)
+
+  expect(errors.consoleErrors).toEqual([])
+  expect(errors.pageErrors).toEqual([])
+})

@@ -12,6 +12,7 @@ import {
   type ToolActivity,
   type VisualArtifact,
 } from '../../services/api'
+import { submitOnEnter } from '../../utils/submitOnEnter'
 
 type ComposerAction = 'chat' | 'generate' | 'analyze' | 'ingest';
 
@@ -252,12 +253,7 @@ const Composer: React.FC<ComposerProps> = ({
   }
 
   // Send on Enter while preserving Shift+Enter for new lines.
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
-    }
-  }
+  const handleKeyDown = submitOnEnter(handleSend, !canSend)
 
   return (
     <div>
