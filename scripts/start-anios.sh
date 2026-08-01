@@ -38,6 +38,50 @@ port_open() {
     (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null && exec 3<&- 3>&-
 }
 
+# How many rotating dumps to retain below data/backups.
+backup_keep=10
+
+# Dump the database before anything alters its schema. Nothing else in this
+# stack protects it: archive_mode is off and there is no backup job, so a lost
+# table is lost permanently. Restore one with:
+#
+#   gunzip -c data/backups/<file>.sql.gz \
+#     | docker compose exec -T db psql -U postgres -d anios_db
+backup_database() {
+    local user db dir stamp target tables old
+    user="$(env_value POSTGRES_USER postgres)"
+    db="$(env_value POSTGRES_DB anios_db)"
+
+    # A fresh install has nothing to lose, and dumping an empty schema on every
+    # start would push real backups out of the retention window.
+    tables="$("${compose[@]}" exec -T db psql -U "$user" -d "$db" -tAc \
+        "select count(*) from information_schema.tables where table_schema = 'public'" \
+        2>/dev/null || printf '0')"
+    tables="$(printf '%s' "$tables" | tr -cd '0-9')"
+    if [[ -z "$tables" || "$tables" == '0' ]]; then
+        echo 'No existing schema to back up.'
+        return
+    fi
+
+    dir="$root/data/backups"
+    mkdir -p "$dir"
+    stamp="$(date +%Y%m%d-%H%M%S)"
+    target="$dir/anios_db-$stamp.sql.gz"
+
+    if "${compose[@]}" exec -T db pg_dump -U "$user" -d "$db" --clean --if-exists \
+        | gzip >"$target"; then
+        echo "Backed up $tables tables to data/backups/$(basename "$target")"
+    else
+        rm -f "$target"
+        echo 'WARNING: database backup failed; continuing without one.' >&2
+        return
+    fi
+
+    while IFS= read -r old; do
+        [[ -n "$old" ]] && rm -f "$old"
+    done < <(ls -1t "$dir"/anios_db-*.sql.gz 2>/dev/null | tail -n +$((backup_keep + 1)))
+}
+
 # Compile one bounded generation and embedding path before user traffic arrives.
 warm_vllm() {
     curl -fsS -X POST 'http://127.0.0.1:8003/v1/chat/completions' \
@@ -100,6 +144,7 @@ fi
 # inside the backend image, which already carries Alembic and the driver.
 echo 'Applying database migrations ...'
 "${compose[@]}" up -d --wait db
+backup_database
 if ! "${compose[@]}" run --rm -e POSTGRES_HOST=db backend python -m alembic upgrade head; then
     echo 'Database migration failed; not starting the application.' >&2
     exit 1

@@ -306,6 +306,37 @@ Nomic, start host ComfyUI, apply migrations, then start the application services
 bash scripts/start-anios.sh
 ```
 
+### Database backup and restore
+
+The database holds real conversations, memory, presentations, and artifact
+records. It runs with `archive_mode = off` and has no replica, so anything lost
+there is lost permanently — there is no WAL to replay.
+
+Startup therefore dumps the schema before applying migrations, keeping the ten
+most recent runs below `data/backups/` (gitignored). A fresh install with no
+tables is skipped, so empty dumps never push real ones out of the window.
+
+Restore one into the running database with:
+
+```bash
+gunzip -c data/backups/anios_db-<stamp>.sql.gz \
+  | docker compose exec -T db psql -U postgres -d anios_db
+```
+
+The dump is taken with `--clean --if-exists`, so restoring replaces the current
+schema rather than merging into it.
+
+Never verify a migration path by emptying `anios_db`. Migrations recreate
+structure and never data, so the check appears to pass while destroying
+everything the database held. Use the throwaway database instead:
+
+```bash
+bash scripts/verify-migrations.sh
+```
+
+It creates a scratch database, upgrades it to head from nothing, reports the
+resulting table count and revision, and drops it however the run exits.
+
 `vllm-main` quantizes the Qwen checkpoint to FP8 on load and stores its KV cache
 in FP8, serving a 16,384-token maximum, four sequences, a 4,096-token scheduler
 budget, native Qwen tool/reasoning parsers, and 0.55 GPU-memory utilization. The

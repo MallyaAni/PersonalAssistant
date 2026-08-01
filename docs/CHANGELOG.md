@@ -1447,3 +1447,32 @@ This file is append-only history for meaningful, verified changes. It must not c
   and the renderer reported healthy, migrations applied, the frontend started,
   `/health` returned `{"status":"healthy"}`, and ComfyUI — absent at the start of
   the run — was listening on 8188 afterward.
+
+## 2026-08-01 — The database is backed up, and migrations verify safely
+
+- Startup now dumps the database before applying migrations, retaining the ten
+  most recent runs below `data/backups/`. The stack had been running unbacked
+  since 2026-07-13 with `archive_mode = off`, meaning any loss was permanent.
+  A fresh install with no tables is skipped so empty dumps cannot push real ones
+  out of the retention window, and a failed dump warns rather than blocking
+  startup.
+- Added `scripts/verify-migrations.sh`, which builds the schema from nothing
+  inside a throwaway database and drops it however the run exits. This replaces
+  the practice that caused the loss below: emptying the real database to prove
+  migrations work, which passes convincingly because migrations recreate
+  structure and never data.
+- Documented backup, restore, and safe migration verification in the development
+  guide, including the exact restore command.
+- Verified all three claims rather than asserting them. The verifier built 25
+  tables at head `20260801_0017` against a scratch database and left none behind;
+  startup produced a real dump containing 25 `CREATE TABLE` statements; and that
+  dump restored into a separate database, reproducing 25 tables at the same head.
+
+### Data loss
+
+Verifying the migration step on 2026-08-01 ran `DROP SCHEMA public CASCADE`
+against `anios_db` — the live database rather than a scratch one. All
+accumulated conversations, memory, presentations, and artifact records were
+destroyed. It is unrecoverable: WAL archiving was off, no dump existed, and the
+volume was the original. Two image files survive under `data/artifacts/` with no
+rows referencing them. The two changes above exist so this cannot recur.
