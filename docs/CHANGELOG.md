@@ -1513,3 +1513,33 @@ rows referencing them. The two changes above exist so this cannot recur.
   a stable UID. Test data removed afterward.
 - 591 backend tests pass, including 30 new ones. Ruff, Black, and full-project
   MyPy across 175 files pass.
+
+## 2026-08-01 — Ambient discovery stage 6: the outbound boundary
+
+- Built the permission model, digest, and channel contract for delivering a
+  sweep to a small circle of friends. Outbound sending ships **disabled** behind
+  `DISCOVERY_EGRESS_ENABLED`; nothing has been delivered to anyone.
+- A subscriber is a revocable permission, not an account: no memory, no profile
+  access, no ability to ask the assistant anything. That smallness is what lets
+  outbound delivery exist before multi-user identity does.
+- Consent is a recorded column and never inferred. An address enrolled without
+  it is stored inactive, so the default outcome of a mistake is silence.
+  Revocation stops delivery and rotates the token in one operation, so a
+  calendar link already handed out stops resolving.
+- The digest text is assembled from typed records rather than generated. Feed
+  text is untrusted and this string leaves the machine — a model asked to
+  summarize hostile input can be steered by it, and the result reaches third
+  parties over a channel that cannot be unsent.
+- Delivery marks the run delivered *before* calling any channel. Losing a digest
+  is recoverable by someone asking; duplicating one is not.
+- iMessage goes through a Mac signed into Messages, exposed as an MCP send tool.
+  AniOS decides whether to send; that machine does the sending; the tool receives
+  an address and a body and nothing else. `shortcuts_pull` is the alternative
+  where the recipient's device fetches and AniOS opens no outbound connection.
+- Subscription feeds are addressed by an unguessable token and no user path,
+  which is how every calendar subscription URL works. Revocation rotates it.
+- Live-verified end to end: enrolling without consent gave an undeliverable
+  permission and a 404 feed; consenting opened it; the feed served a real
+  `text/calendar` document; revoking made the already-shared link 404 again.
+  Test data removed. Sending a real iMessage is unverified and needs a Mac.
+- 605 backend tests pass. Ruff, Black, and MyPy across 180 files pass.

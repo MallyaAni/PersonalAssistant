@@ -41,6 +41,7 @@ from backend.discovery.runner import DiscoveryRunner
 from backend.discovery.runs import DiscoveryRunRepository
 from backend.discovery.service import DiscoveryProfileService
 from backend.discovery.sources_repository import DiscoverySourceRepository
+from backend.discovery.subscribers import SubscriberRepository
 from backend.embeddings.base import EmbeddingProvider
 from backend.embeddings.lm_studio import create_embedding_provider
 from backend.embeddings.nomic_vision import NomicVisionEmbeddingProvider
@@ -732,6 +733,16 @@ def get_discovery_source_repository(db: DbDependency) -> DiscoverySourceReposito
 DependencyDiscoverySources = Annotated[
     DiscoverySourceRepository,
     Depends(get_discovery_source_repository),
+]
+
+
+def get_discovery_subscriber_repository(db: DbDependency) -> SubscriberRepository:
+    return SubscriberRepository(db)
+
+
+DependencyDiscoverySubscribers = Annotated[
+    SubscriberRepository,
+    Depends(get_discovery_subscriber_repository),
 ]
 
 

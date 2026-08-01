@@ -5,14 +5,20 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Path, Response, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from backend.config.settings import settings
 from backend.core.auth import authorize_path_user
 from backend.core.dependencies import (
     DependencyDiscoveryProfileService,
     DependencyDiscoveryRunner,
     DependencyDiscoverySeenItems,
     DependencyDiscoverySources,
+    DependencyDiscoverySubscribers,
 )
-from backend.discovery.calendar import build_vevent, calendar_filename
+from backend.discovery.calendar import (
+    build_calendar,
+    build_vevent,
+    calendar_filename,
+)
 from backend.discovery.errors import DiscoveryProfileLimitError
 from backend.discovery.events import MAX_URL_CHARS
 from backend.discovery.types import (
@@ -28,6 +34,13 @@ router = APIRouter(
     dependencies=[Depends(authorize_path_user)],
 )
 UserId = Annotated[str, Path(min_length=1, max_length=50)]
+
+# A subscriber's own calendar feed is addressed by an unguessable token and
+# nothing else, so it cannot sit behind the owning user's path or authorization.
+# This is how every calendar subscription URL works, including Apple's and
+# Google's: the secret is the URL. Revoking rotates the token, which is why
+# revocation and rotation are the same operation.
+feed_router = APIRouter(prefix="/discovery/feed", tags=["discovery"])
 
 
 class InterestRequest(BaseModel):
@@ -255,3 +268,136 @@ async def download_event_calendar(
             )
         },
     )
+
+
+class SubscriberRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    channel: Literal["imessage", "shortcuts_pull"]
+    address: str = Field(min_length=1, max_length=200)
+    label: str | None = Field(default=None, max_length=MAX_LABEL_CHARS)
+    # Consent is stated, never inferred. Without it the permission is stored
+    # inactive, so the default outcome of a mistake is that nothing is sent.
+    consented: bool = False
+
+
+@router.get("/subscribers")
+async def list_subscribers(
+    user_id: UserId,
+    subscribers: DependencyDiscoverySubscribers,
+) -> dict[str, object]:
+    people = await subscribers.list_subscribers(user_id)
+    return {
+        "user_id": user_id,
+        "egress_enabled": settings.DISCOVERY_EGRESS_ENABLED,
+        "subscribers": [
+            {
+                "id": person.id,
+                "channel": person.channel,
+                "label": person.label,
+                "active": person.active,
+                "deliverable": person.deliverable,
+                "delivery_count": person.delivery_count,
+                "last_error": person.last_error,
+                # The address is deliberately absent from the listing: it is
+                # someone else's contact detail, and enumerating recipients
+                # should not hand them out.
+                "feed_path": f"/api/v1/discovery/feed/{person.token}.ics",
+            }
+            for person in people
+        ],
+    }
+
+
+@router.put("/subscribers", status_code=status.HTTP_200_OK)
+async def put_subscriber(
+    user_id: UserId,
+    body: SubscriberRequest,
+    subscribers: DependencyDiscoverySubscribers,
+) -> dict[str, object]:
+    try:
+        person = await subscribers.enroll(
+            user_id, body.channel, body.address, body.label, body.consented
+        )
+    except DiscoveryProfileLimitError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=str(exc)
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+        ) from exc
+    return {
+        "id": person.id,
+        "channel": person.channel,
+        "deliverable": person.deliverable,
+        "feed_path": f"/api/v1/discovery/feed/{person.token}.ics",
+    }
+
+
+# Stop delivery now, and invalidate any calendar link already shared. Kept
+# separate from deletion so revoking preserves the record of what was sent.
+@router.post("/subscribers/{subscriber_id}/revoke", status_code=status.HTTP_200_OK)
+async def revoke_subscriber(
+    user_id: UserId,
+    subscriber_id: UUID,
+    subscribers: DependencyDiscoverySubscribers,
+) -> dict[str, object]:
+    if not await subscribers.revoke(user_id, subscriber_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Subscriber not found."
+        )
+    return {"id": str(subscriber_id), "revoked": True}
+
+
+@router.delete("/subscribers/{subscriber_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_subscriber(
+    user_id: UserId,
+    subscriber_id: UUID,
+    subscribers: DependencyDiscoverySubscribers,
+) -> None:
+    if not await subscribers.delete(user_id, subscriber_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Subscriber not found."
+        )
+
+
+# One subscriber's own subscription feed. A calendar client re-reads this on its
+# own schedule and reconciles by UID, so an event that leaves this document
+# leaves their calendar. Unauthenticated by necessity and unguessable by design.
+@feed_router.get("/{token}.ics")
+async def subscriber_feed(
+    token: str,
+    subscribers: DependencyDiscoverySubscribers,
+    seen: DependencyDiscoverySeenItems,
+) -> Response:
+    resolved = await subscribers.by_token(token)
+    if resolved is None:
+        # A revoked or unknown token is indistinguishable from the outside.
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Feed not found."
+        )
+    owner, _subscriber = resolved
+    events = await seen.announced_events(owner)
+    if not events:
+        # An empty calendar is still a valid calendar; a subscriber whose feed
+        # errors would see a broken-subscription warning on their phone.
+        body = _EMPTY_CALENDAR
+    else:
+        body = build_calendar(events, calendar_name="AniOS Discoveries")
+    return Response(
+        content=body,
+        media_type="text/calendar; charset=utf-8",
+        headers={"Cache-Control": "private, max-age=900"},
+    )
+
+
+_EMPTY_CALENDAR = (
+    "BEGIN:VCALENDAR\r\n"
+    "VERSION:2.0\r\n"
+    "PRODID:-//AniOS//Ambient Discovery//EN\r\n"
+    "CALSCALE:GREGORIAN\r\n"
+    "METHOD:PUBLISH\r\n"
+    "X-WR-CALNAME:AniOS Discoveries\r\n"
+    "END:VCALENDAR\r\n"
+)

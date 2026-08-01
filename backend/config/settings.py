@@ -114,6 +114,22 @@ class Settings(BaseSettings):
     # cache dtype other than fp8: an FP8 KV cache cannot be woken on vLLM 0.23.0
     # and strands the engine asleep.
     GPU_HANDOFF_ENABLED: bool = False
+
+    # Ambient discovery egress. This is the first path in AniOS that reaches a
+    # third party, and everything before it fails closed inside the machine, so
+    # it ships off. Turning it on is an explicit operator decision, not a
+    # default someone discovers after messages have already gone out.
+    #
+    # Apple publishes no server-side iMessage API, so the unpaid path is a Mac
+    # signed into Messages exposing a send tool over MCP. AniOS decides whether
+    # to send; that machine does the sending.
+    DISCOVERY_EGRESS_ENABLED: bool = False
+    DISCOVERY_IMESSAGE_TOOL: str = "send_message"
+    # The public base a subscriber's calendar link is built from. Local by
+    # default: a link only resolves from wherever the recipient actually is, so
+    # leaving this unset keeps delivery useful only on the same network.
+    DISCOVERY_CALENDAR_BASE_URL: str = "http://localhost:8000/api/v1/discovery"
+
     GPU_HANDOFF_SLEEP_LEVEL: int = Field(default=1, ge=1, le=2)
     GPU_HANDOFF_TIMEOUT_SECONDS: float = Field(default=120.0, gt=0, le=600)
     IMAGE_PROVIDER_TIMEOUT_SECONDS: float = Field(default=600.0, gt=0, le=3600)

@@ -430,8 +430,38 @@ Deliver as separately verified atomic stages, in this order:
 
   Verified when a generated file opens in iOS
   Calendar with correct title, start/end, timezone, and location.
-- `PLANNED` stage 6 — notification egress under an explicit permission
-  boundary. A provider-neutral `NotificationChannel` contract whose first
+- `IN PROGRESS` stage 6 — notification egress under an explicit permission
+  boundary. The contract, the permission model, and the pull path exist;
+  outbound sending ships disabled behind `DISCOVERY_EGRESS_ENABLED`, and no real
+  message has been delivered.
+
+  A subscriber is a revocable permission to send one person one kind of message
+  — not an account, no memory, no ability to ask the assistant anything. Keeping
+  it that small is what lets outbound delivery exist before multi-user identity
+  does. Consent is a recorded column and never inferred, so an address enrolled
+  without it is stored inactive and the default outcome of a mistake is that
+  nothing is sent. Revocation stops delivery and rotates the token in one
+  operation, so a calendar link already shared stops resolving too.
+
+  The digest text is assembled from typed records rather than generated. Feed
+  text is untrusted and this string leaves the machine: a model asked to
+  summarize hostile input can be steered by that input, and the output reaches
+  third parties over a channel that cannot be unsent.
+
+  iMessage is the chosen channel for a small circle. Apple publishes no
+  server-side API, so the unpaid path is a Mac signed into Messages exposing a
+  send tool over the existing MCP boundary — AniOS decides whether to send, that
+  machine does the sending, and the tool learns only an address and a body.
+  `shortcuts_pull` is a first-class alternative where the recipient's own device
+  fetches and AniOS makes no outbound connection at all.
+
+  Live-verified: enrolling without consent yields an undeliverable permission
+  and a feed that 404s; consenting opens it; the feed serves a real
+  `text/calendar` subscription document; and revoking makes the
+  already-shared link 404 again. Sending a real iMessage remains `UNVERIFIED`
+  and requires a Mac.
+
+  Original scope, still outstanding: A provider-neutral `NotificationChannel` contract whose first
   adapter is one-way push (ntfy, Pushover, or an Apple Shortcuts webhook).
   Egress is opt-in per channel, revocable, rate-limited, and audited; a channel
   carries only the approved digest fields and the artifact link, never raw

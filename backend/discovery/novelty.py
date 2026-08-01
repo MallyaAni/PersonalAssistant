@@ -168,22 +168,37 @@ class SeenItemRepository:
             DiscoverySeenItem.item_digest == digest,
         )
         row = (await self.session.execute(stmt)).scalars().first()
-        if row is None or not row.payload_json:
+        if row is None:
             return None
-        try:
-            payload = json.loads(row.payload_json)
-        except ValueError:
-            return None
-        return DiscoveredEvent(
-            source_id=str(payload.get("source_id", "")),
-            external_id=str(payload.get("external_id", "")),
-            title=str(payload.get("title", "")),
-            starts_at=_parse_moment(payload.get("starts_at")),
-            ends_at=_parse_moment(payload.get("ends_at")),
-            place=payload.get("place"),
-            url=payload.get("url"),
-            summary=payload.get("summary"),
+        return _event_from_payload(row.payload_json)
+
+    # Every future event this user was actually announced, newest start first.
+    # A subscription feed reconciles by UID against exactly this set, so an
+    # item that leaves it leaves the subscriber's calendar.
+    async def announced_events(
+        self, user_id: str, now: datetime | None = None, limit: int = 100
+    ) -> tuple[DiscoveredEvent, ...]:
+        moment = now or datetime.now(UTC)
+        stmt = (
+            select(DiscoverySeenItem)
+            .where(
+                DiscoverySeenItem.user_id == user_id,
+                DiscoverySeenItem.announced_at.is_not(None),
+                DiscoverySeenItem.starts_at.is_not(None),
+                # Past events are dropped rather than accumulating forever in
+                # someone else's calendar.
+                DiscoverySeenItem.starts_at >= moment,
+            )
+            .order_by(DiscoverySeenItem.starts_at.asc())
+            .limit(limit)
         )
+        rows = (await self.session.execute(stmt)).scalars().all()
+        events: list[DiscoveredEvent] = []
+        for row in rows:
+            event = _event_from_payload(row.payload_json)
+            if event is not None:
+                events.append(event)
+        return tuple(events)
 
     async def count_seen(self, user_id: str) -> int:
         stmt = select(func.count(DiscoverySeenItem.id)).where(
@@ -239,6 +254,29 @@ class NoveltyFilter:
                     continue
             novel.append(candidate)
         return tuple(novel)
+
+
+# Rebuild one typed event from its stored payload, or None when the record is
+# unusable. A single unreadable row must not take out a whole feed.
+def _event_from_payload(payload_json: str | None) -> DiscoveredEvent | None:
+    if not payload_json:
+        return None
+    try:
+        payload = json.loads(payload_json)
+    except ValueError:
+        return None
+    if not isinstance(payload, dict):
+        return None
+    return DiscoveredEvent(
+        source_id=str(payload.get("source_id", "")),
+        external_id=str(payload.get("external_id", "")),
+        title=str(payload.get("title", "")),
+        starts_at=_parse_moment(payload.get("starts_at")),
+        ends_at=_parse_moment(payload.get("ends_at")),
+        place=payload.get("place"),
+        url=payload.get("url"),
+        summary=payload.get("summary"),
+    )
 
 
 def _parse_moment(value: object) -> datetime | None:

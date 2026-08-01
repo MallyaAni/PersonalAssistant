@@ -1,0 +1,87 @@
+"""Render a sweep into the message a person actually reads.
+
+Assembled from typed records rather than generated, for one specific reason:
+feed text is untrusted, and this string leaves the machine. A model asked to
+"write a friendly summary" of hostile input can be steered by that input into
+writing whatever the input wants — and here the output is delivered to third
+parties over a channel that cannot be unsent.
+
+So the shape is fixed and only bounded field values vary.
+"""
+
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+from backend.discovery.relevance import RankedCandidate
+
+# What one message may carry. A digest longer than this is not read.
+MAX_EVENTS_IN_MESSAGE = 5
+MAX_TITLE_CHARS = 90
+MAX_PLACE_CHARS = 60
+
+
+# One line per event, in the recipient's own words as far as possible: what,
+# when, where. The calendar link is what makes it actionable.
+def render_message(
+    selected: tuple[RankedCandidate, ...],
+    calendar_base_url: str,
+    timezone: str = "America/New_York",
+    limit: int = MAX_EVENTS_IN_MESSAGE,
+) -> str | None:
+    """Return the digest text, or None when there is nothing worth sending."""
+    if not selected:
+        # Silence is a valid outcome. Sending "nothing this week" every week is
+        # how a proactive assistant trains people to ignore it.
+        return None
+
+    zone = _zone(timezone)
+    lines = ["Coming up near you:", ""]
+    for item in selected[:limit]:
+        event = item.event
+        title = _bound(event.title, MAX_TITLE_CHARS)
+        when = _format_when(event.starts_at, zone)
+        line = f"• {title}"
+        if when:
+            line += f" — {when}"
+        if event.place:
+            line += f" ({_bound(event.place, MAX_PLACE_CHARS)})"
+        lines.append(line)
+        lines.append(f"  Add: {_calendar_url(calendar_base_url, item)}")
+    remaining = len(selected) - limit
+    if remaining > 0:
+        lines.extend(["", f"and {remaining} more"])
+    return "\n".join(lines)
+
+
+# A local, human reading of the start. Rendered in the recipient's zone rather
+# than UTC, since a message saying 03:00 for a 22:00 concert is worse than no
+# time at all. Built from parts because the platform-specific strftime flags for
+# unpadded numbers differ between Windows and Linux.
+def _format_when(starts_at: datetime | None, zone: ZoneInfo) -> str | None:
+    if starts_at is None:
+        return None
+    local = starts_at.astimezone(zone)
+    hour = local.hour % 12 or 12
+    meridiem = "am" if local.hour < 12 else "pm"
+    clock = f"{hour}:{local.minute:02d}{meridiem}"
+    return f"{local.strftime('%a %b')} {local.day}, {clock}"
+
+
+def _calendar_url(base: str, item: RankedCandidate) -> str:
+    return f"{base.rstrip('/')}/{item.candidate.digest}.ics"
+
+
+def _bound(value: str, limit: int) -> str:
+    collapsed = " ".join(value.split())
+    if len(collapsed) <= limit:
+        return collapsed
+    return collapsed[: limit - 1].rstrip() + "…"
+
+
+# An unknown zone falls back to UTC rather than failing the delivery. A digest
+# with a slightly wrong clock still beats one that never arrives.
+def _zone(name: str) -> ZoneInfo:
+    try:
+        return ZoneInfo(name)
+    except Exception:
+        return ZoneInfo("UTC")
