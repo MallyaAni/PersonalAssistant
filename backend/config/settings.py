@@ -84,10 +84,19 @@ class Settings(BaseSettings):
     # prompt is inert, so photorealism is driven by appending this to the
     # positive prompt. It is added only when not already present; set it empty to
     # send the user's prompt verbatim.
+    # Realism comes from imperfection, not from asking for quality. The previous
+    # suffix asked for "sharp focus, high detail, 4k, professional photography",
+    # which are the exact terms that produce the glossy retouched stock-photo
+    # look people read as AI. Naming a film stock, available light, and explicit
+    # flaws produces skin with pores and fine lines, uneven light, and unstyled
+    # props instead. Compared side by side on a fixed seed, this suffix was the
+    # only one of three that read as a candid photograph.
     IMAGE_STYLE_SUFFIX: str = (
-        "photorealistic, realistic photograph, DSLR photo, 85mm lens, "
-        "natural soft lighting, fine detailed textures, sharp focus, "
-        "high detail, 4k, professional photography"
+        "candid snapshot, shot on 35mm film, Kodak Portra 400, 50mm lens, "
+        "available light only, uneven mixed lighting, visible film grain, "
+        "natural unretouched skin with pores and fine lines, flyaway hair, "
+        "slightly off-centre imperfect framing, mild motion blur, "
+        "everyday unstyled scene"
     )
     # A single GPU cannot hold the generation model and the diffusion model at
     # once. When enabled, AniOS sleeps local inference for the duration of one
