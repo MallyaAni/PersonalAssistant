@@ -11,6 +11,7 @@ from backend.core.dependencies import (
     DependencyDiscoveryProfileService,
     DependencyDiscoveryRunner,
     DependencyDiscoverySeenItems,
+    DependencyDiscoverySetup,
     DependencyDiscoverySources,
     DependencyDiscoverySubscribers,
 )
@@ -401,3 +402,45 @@ _EMPTY_CALENDAR = (
     "X-WR-CALNAME:AniOS Discoveries\r\n"
     "END:VCALENDAR\r\n"
 )
+
+
+# Propose feeds for the user's primary place. Search is used here and only here,
+# to find sources rather than events: a sweep never searches, which is what keeps
+# the weekly loop inside the free tier and out of the business of inferring dates
+# from prose. Every candidate has already been fetched and parsed before it is
+# offered.
+@router.get("/sources/suggest")
+async def suggest_sources(
+    user_id: UserId,
+    profile_service: DependencyDiscoveryProfileService,
+    setup: DependencyDiscoverySetup,
+) -> dict[str, object]:
+    profile = await profile_service.get_profile(user_id)
+    if profile.primary_locality is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Add a place first so suggestions can be local.",
+        )
+    candidates = await setup.suggest_feeds(profile)
+    return {
+        "user_id": user_id,
+        "locality": profile.primary_locality.label,
+        "candidates": [asdict(candidate) for candidate in candidates],
+    }
+
+
+# Propose interests from memory the user already approved. These are candidates,
+# never facts: accepting one is a separate call, and that acceptance is what
+# records it as user-stated.
+@router.get("/interests/suggest")
+async def suggest_interests(
+    user_id: UserId,
+    profile_service: DependencyDiscoveryProfileService,
+    setup: DependencyDiscoverySetup,
+) -> dict[str, object]:
+    profile = await profile_service.get_profile(user_id)
+    proposals = await setup.suggest_interests(user_id, profile)
+    return {
+        "user_id": user_id,
+        "proposals": [asdict(proposal) for proposal in proposals],
+    }

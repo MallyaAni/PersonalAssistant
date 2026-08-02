@@ -1589,3 +1589,34 @@ rows referencing them. The two changes above exist so this cannot recur.
   status on one agent cannot satisfy an assertion about the other.
 - 612 backend tests and 41 deterministic Playwright tests pass. Ruff, Black, and
   MyPy across 183 files pass; the TypeScript build passes.
+
+## 2026-08-01 — Setup assist, and delegation as a registry
+
+- Scout reported "needs setup" because configuring it meant hand-finding `.ics`
+  URLs. It now proposes them: search is used **once, at setup, to find sources**
+  rather than events. That division preserves both properties the weekly loop
+  depends on — search is the only metered component, so it stays off the
+  recurring path; and a search snippet cannot supply a zone-aware start, so
+  enumerating events that way would mean inferring dates from prose and
+  producing calendar entries that are confidently wrong.
+- A suggested feed is offered only after AniOS has fetched it, parsed it with
+  the same adapter a sweep uses, and seen real typed events come out. Each
+  candidate carries sample titles so the user recognizes what they are adding
+  rather than trusting a URL.
+- Interests are proposed from already-approved memory. Only approved facts are
+  read, since building a profile from inferences would produce an agent acting
+  on things the user never said, and a proposal is never a fact — accepting one
+  is the separate call that records `user_explicit` provenance.
+- **Bug found by live verification, not by its test.** A note filed under the
+  key `dentist` had prose for a value; the value was correctly rejected as prose
+  and the code then fell back to the internal key, proposing "dentist" as an
+  interest. The unit test passed because its fixture had no key field. Removed
+  the fallback entirely — a record must say what the user likes, not what it is
+  filed as — and added the regression test.
+- Replaced the supervisor's single hardcoded check with an ordered, listable
+  delegation registry. A policy names a capability and grants nothing; the
+  conversation service resolves that name against what is actually wired up, so
+  a policy for an agent with no handler falls through to the ordinary assistant.
+  Adding a specialist is deliberately two steps, because routing to something
+  that cannot run is worse than not routing at all.
+- 640 backend tests pass. Ruff, Black, and MyPy across 187 files pass.

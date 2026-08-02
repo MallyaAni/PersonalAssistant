@@ -47,6 +47,7 @@ from backend.discovery.repository import DiscoveryProfileRepository
 from backend.discovery.runner import DiscoveryRunner
 from backend.discovery.runs import DiscoveryRunRepository
 from backend.discovery.service import DiscoveryProfileService
+from backend.discovery.setup_service import DiscoverySetupService
 from backend.discovery.sources_repository import DiscoverySourceRepository
 from backend.discovery.subscribers import SubscriberRepository
 from backend.embeddings.base import EmbeddingProvider
@@ -730,6 +731,18 @@ def get_discovery_profile_service(db: DbDependency) -> DiscoveryProfileService:
 DependencyDiscoveryProfileService = Annotated[
     DiscoveryProfileService,
     Depends(get_discovery_profile_service),
+]
+
+
+def get_discovery_setup_service(
+    db: DbDependency, search: SearchDependency
+) -> DiscoverySetupService:
+    return DiscoverySetupService(db, search)
+
+
+DependencyDiscoverySetup = Annotated[
+    DiscoverySetupService,
+    Depends(get_discovery_setup_service),
 ]
 
 

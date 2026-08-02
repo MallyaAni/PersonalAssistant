@@ -572,8 +572,36 @@ duplicating it. A calendar client that dislikes a file usually declines it
 without explaining why, so the format is asserted directly in tests rather than
 inferred from an import that appeared to work.
 
+Setup is the only place in this subsystem that uses search, and it uses it to
+find *sources* rather than events. That division is what preserves two
+properties the weekly loop depends on: search is the one metered component, so
+keeping it off the recurring path keeps the loop inside the free tier; and a
+search snippet cannot supply a zone-aware start, so enumerating events that way
+would mean inferring dates from prose and producing calendar entries that are
+confidently wrong. A suggested feed is offered only after AniOS has fetched it,
+parsed it with the same adapter a sweep uses, and seen real typed events come
+out. Interests are proposed from already-approved memory, never from inferences,
+and a proposal is never a fact — accepting one is the separate call that records
+`user_explicit` provenance.
+
 Notification egress remains `PLANNED` and gated: it is the first outbound path
 in AniOS, and every subsystem before it fails closed inside the machine.
+
+### Agent delegation
+
+`backend/agents/delegation.py` holds the routing rules as an ordered, listable
+registry rather than a chain of conditionals inside the graph node that uses
+them. Each policy names a capability and grants nothing: the caller resolves that
+name against what is actually wired up, so a policy for an agent with no handler
+falls through to the ordinary assistant instead of dropping the turn. Adding a
+specialist is deliberately two steps — a policy and a handler — because routing
+to something that cannot run is worse than not routing at all.
+
+Matching is pattern-based and deterministic, for the same reason search routing
+is: this runs on every turn, and a sampled judgement would send the same sentence
+to different agents on different days. A policy separates the noun from the verb,
+which is what keeps "show me the deck" from being read as "build me a deck", and
+ties break on declared priority rather than on registration order.
 
 ### Agents
 

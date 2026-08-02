@@ -184,18 +184,30 @@ class ConversationService:
         self.discovery_profile = discovery_profile
 
     # Return the registered subagent selected by the first-step supervisor.
+    #
+    # A routing decision names a capability; it does not grant one. This resolves
+    # that name against what is actually wired up, so a policy for an agent with
+    # no handler falls through to the ordinary assistant instead of dropping the
+    # turn. Adding a specialist means adding it here as well as to the registry —
+    # deliberately two steps, because routing to something that cannot run is
+    # worse than not routing at all.
     async def _delegated_capability(self, query: str) -> str | None:
         if self.supervisor is None:
             return None
         decision = await self.supervisor.decide(query)
         if decision.action != "delegate_agent":
             return None
-        if (
-            decision.capability_id == "presentation_agent"
-            and self.presentation_jobs is not None
-        ):
+        available = self._available_capabilities()
+        if decision.capability_id in available:
             return decision.capability_id
         return None
+
+    # Which specialists this conversation can actually delegate to right now.
+    def _available_capabilities(self) -> frozenset[str]:
+        available: set[str] = set()
+        if self.presentation_jobs is not None:
+            available.add("presentation_agent")
+        return frozenset(available)
 
     # Queue a specialist presentation job and persist the delegated chat turn.
     async def _process_presentation_delegation(
