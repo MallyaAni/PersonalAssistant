@@ -21,6 +21,9 @@ export interface AuthSession {
   authentication_required: boolean;
   user_id: string;
   expires_at: string | null;
+  // Decides what the workspace offers. The server never trusts this: every
+  // operator route re-derives the answer from the database.
+  is_admin: boolean;
 }
 
 // Load the server-derived identity or report that an interactive login is needed.
@@ -2136,4 +2139,68 @@ export const deleteDiscoveryKnown = async (
   if (!response.ok) {
     throw new Error(response.status === 404 ? 'That dismissal no longer exists.' : 'Could not undo that dismissal.');
   }
+};
+
+export interface AdminInvite {
+  id: string;
+  status: 'open' | 'used' | 'expired';
+  expires_at: string;
+  created_at: string | null;
+  consumed_at: string | null;
+  consumed_by: string | null;
+}
+
+export interface AdminAccount {
+  user_id: string;
+  username: string;
+  is_active: boolean;
+  is_admin: boolean;
+  created_at: string | null;
+}
+
+const adminBase = `${API_BASE_URL}/api/v1/admin`;
+
+export const getAdminInvites = async (): Promise<AdminInvite[]> => {
+  const payload = await readJson(
+    await fetch(`${adminBase}/invites`, { credentials: 'include' }),
+    'Could not load invitations.',
+  );
+  return payload.invites ?? [];
+};
+
+// The code comes back exactly once; only its digest is stored, so it cannot be
+// recovered afterwards.
+export const createAdminInvite = async (
+  ttlHours: number,
+): Promise<{ code: string; expires_at: string }> =>
+  readJson(
+    await fetch(`${adminBase}/invites?ttl_hours=${ttlHours}`, {
+      method: 'POST',
+      credentials: 'include',
+    }),
+    'Could not create an invitation.',
+  );
+
+export const revokeAdminInvite = async (inviteId: string): Promise<void> => {
+  const response = await fetch(`${adminBase}/invites/${inviteId}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    let detail = '';
+    try {
+      detail = (await response.json())?.detail ?? '';
+    } catch {
+      detail = '';
+    }
+    throw new Error(detail || 'Could not revoke that invitation.');
+  }
+};
+
+export const getAdminAccounts = async (): Promise<AdminAccount[]> => {
+  const payload = await readJson(
+    await fetch(`${adminBase}/accounts`, { credentials: 'include' }),
+    'Could not load accounts.',
+  );
+  return payload.accounts ?? [];
 };

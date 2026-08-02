@@ -3,11 +3,13 @@ from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from sqlalchemy import select
 
 from backend.config.settings import settings
 from backend.core.auth import IdentityDependency, validate_browser_origin
 from backend.core.auth_dependencies import LoginRateLimiterDependency
 from backend.core.dependencies import DbDependency
+from backend.models.auth import UserAccount
 from backend.services.auth_service import (
     AuthService,
     CreatedSession,
@@ -59,6 +61,10 @@ class SessionResponse(BaseModel):
     authentication_required: bool
     user_id: str
     expires_at: str | None
+    # Whether this identity may administer the machine. The browser needs it to
+    # decide what to show; the server never trusts it, and every admin route
+    # re-derives the answer from the database.
+    is_admin: bool = False
 
 
 # Attach one opaque session using the deployment's browser-cookie policy.
@@ -218,17 +224,26 @@ async def register(
 
 # Return the server-derived identity that owns every subsequent UI request.
 @router.get("/session", response_model=SessionResponse)
-async def current_session(identity: IdentityDependency) -> SessionResponse:
+async def current_session(
+    identity: IdentityDependency, db: DbDependency
+) -> SessionResponse:
     if identity is None:
+        # Trusted-local mode has no account, and is already a single-user
+        # development option, so it sees the operator surface.
         return SessionResponse(
             authentication_required=False,
             user_id=settings.AUTH_LOCAL_USER_ID,
             expires_at=None,
+            is_admin=True,
         )
+    account = await db.scalar(
+        select(UserAccount).where(UserAccount.user_id == identity.user_id)
+    )
     return SessionResponse(
         authentication_required=True,
         user_id=identity.user_id,
         expires_at=datetime.fromtimestamp(identity.expires_at, tz=UTC).isoformat(),
+        is_admin=bool(account and account.is_admin),
     )
 
 

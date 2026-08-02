@@ -1,12 +1,15 @@
 import React from 'react'
-import { Bot, BrainCircuit, Image, MessageCircle, Presentation } from 'lucide-react'
+import { Bot, BrainCircuit, Image, MessageCircle, Presentation, ShieldCheck } from 'lucide-react'
 
 interface SidebarProps {
-  activeView: 'chat' | 'memory' | 'artifacts' | 'presentations' | 'agents'
-  onViewChange: (view: 'chat' | 'memory' | 'artifacts' | 'presentations' | 'agents') => void
+  activeView: 'chat' | 'memory' | 'artifacts' | 'presentations' | 'agents' | 'admin'
+  onViewChange: (view: 'chat' | 'memory' | 'artifacts' | 'presentations' | 'agents' | 'admin') => void
+  // The operator surface is hidden for a guest. The server refuses it anyway;
+  // this keeps the workspace from advertising something they cannot use.
+  isAdmin?: boolean
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange, isAdmin = false }) => {
   return (
     <aside className="flex w-[76px] flex-none flex-col border-r border-black/[0.06] bg-white/72 px-3 py-5 backdrop-blur-xl lg:w-[232px] lg:px-4">
       <div className="mb-8 hidden px-3 lg:block">
@@ -53,6 +56,16 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange }) => {
           <BrainCircuit size={19} className={activeView === 'memory' ? 'text-[#0071e3]' : ''} />
           <span className="hidden lg:inline">Memory</span>
         </button>
+        {isAdmin && (
+          <button
+            aria-label="Operator"
+            onClick={() => onViewChange('admin')}
+            className={`flex h-12 w-full items-center justify-center gap-3 rounded-2xl px-3 text-sm font-medium lg:justify-start ${activeView === 'admin' ? 'bg-[#f5f5f7] text-[#1d1d1f] shadow-sm' : 'text-[#6e6e73] hover:bg-[#f5f5f7] hover:text-[#1d1d1f]'}`}
+          >
+            <ShieldCheck size={19} className={activeView === 'admin' ? 'text-[#0071e3]' : ''} />
+            <span className="hidden lg:inline">Operator</span>
+          </button>
+        )}
       </nav>
       <div className="mt-auto hidden rounded-2xl bg-[#f5f5f7] px-4 py-3 lg:block">
         <p className="text-xs font-medium text-[#1d1d1f]">Local by default</p>

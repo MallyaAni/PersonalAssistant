@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { LogOut, Menu, Plus } from 'lucide-react'
 import AgentPanel from './components/AgentPanel/AgentPanel'
+import AdminPanel from './components/AdminPanel/AdminPanel'
 import ArtifactPanel from './components/ArtifactPanel/ArtifactPanel'
 import ChatWindow from './components/ChatWindow/ChatWindow'
 import LoginScreen from './components/LoginScreen/LoginScreen'
@@ -42,7 +43,7 @@ interface AuthenticatedAppProps {
 const AuthenticatedApp = ({ auth, onSignedOut }: AuthenticatedAppProps) => {
   const userId = auth.user_id
   const [isSidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 768)
-  const [activeView, setActiveView] = useState<'chat' | 'memory' | 'artifacts' | 'presentations' | 'agents'>('chat')
+  const [activeView, setActiveView] = useState<'chat' | 'memory' | 'artifacts' | 'presentations' | 'agents' | 'admin'>('chat')
   const [conversation, setConversation] = useState(() => getInitialConversation(userId))
   const [logoutError, setLogoutError] = useState('')
 
@@ -77,6 +78,7 @@ const AuthenticatedApp = ({ auth, onSignedOut }: AuthenticatedAppProps) => {
     <div className="flex h-dvh w-full overflow-hidden bg-[#f5f5f7] text-[#1d1d1f]">
       {isSidebarOpen && (
         <Sidebar
+          isAdmin={auth.is_admin}
           activeView={activeView}
           onViewChange={setActiveView}
         />
@@ -128,6 +130,9 @@ const AuthenticatedApp = ({ auth, onSignedOut }: AuthenticatedAppProps) => {
         </div>
         {activeView === 'memory' && <MemoryPanel userId={userId} />}
         {activeView === 'artifacts' && <ArtifactPanel userId={userId} />}
+        {/* Guarded twice: hidden unless the session says operator, and every
+            route behind it re-checks against the database. */}
+        {activeView === 'admin' && auth.is_admin && <AdminPanel />}
         {activeView === 'agents' && (
           <AgentPanel userId={userId} onOpenView={setActiveView} />
         )}

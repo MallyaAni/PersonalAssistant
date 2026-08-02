@@ -1975,3 +1975,21 @@ rows referencing them. The two changes above exist so this cannot recur.
 - Verified live through the public HTTPS URL with a real invited guest: `403` on
   every admin route, `200` on their own memory. Test account removed.
 - 764 backend tests pass; migrations build 32 tables at head `20260802_0026`.
+
+## 2026-08-02 — The operator surface, visible
+
+- Added an **Operator** view to the workspace: create an invitation with a
+  chosen lifetime, see every invitation with its status and who used it, revoke
+  an open one, and list accounts.
+- The session endpoint now reports `is_admin`, so the workspace can hide what a
+  guest cannot use. It is a display hint only — every operator route re-derives
+  the answer from the database, so a modified client gains nothing.
+- A minted code is shown once with a copy control and says so plainly. It cannot
+  be shown again, which is exactly why revoking is the recovery for a code that
+  reached the wrong person.
+- Verified live over the public HTTPS URL: an operator session reports
+  `is_admin: true`, lists invitations, mints a 43-character code, and revokes it
+  (`204`). An invited guest was previously verified as `403` on every one of
+  those routes while keeping `200` on their own memory. Both temporary accounts
+  removed.
+- 764 backend tests pass; the TypeScript build passes.
