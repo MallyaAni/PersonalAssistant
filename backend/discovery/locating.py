@@ -38,6 +38,28 @@ class ResolvedPlace:
 
     label: str
     region: str | None
+    # Country is kept separate from region because a town name alone is
+    # ambiguous across countries — there is an Arlington in several — and a
+    # state name alone does not resolve it either.
+    country: str | None = None
+    country_code: str | None = None
+
+    # How the place reads to a person: "Arlington, Virginia (US)".
+    @property
+    def display(self) -> str:
+        parts = [self.label]
+        if self.region:
+            parts.append(self.region)
+        rendered = ", ".join(parts)
+        if self.country_code:
+            rendered += f" ({self.country_code})"
+        return rendered
+
+    # What the profile stores as its disambiguator, compact enough for a label.
+    @property
+    def stored_region(self) -> str | None:
+        parts = [part for part in (self.region, self.country_code) if part]
+        return ", ".join(parts) or None
 
 
 class PlaceResolver(ABC):
@@ -155,8 +177,18 @@ def _place_from(payload: object) -> ResolvedPlace | None:
     )
     if label is None:
         return None
-    region = _first_string(address, ("state", "province", "region", "country"))
-    return ResolvedPlace(label=label, region=region)
+    # Country is read separately rather than as a fallback for region. Falling
+    # back would return "United States" as the region for a town with no state,
+    # and then drop the country entirely for one that has both.
+    region = _first_string(address, ("state", "province", "region"))
+    country = _first_string(address, ("country",))
+    code = _first_string(address, ("country_code",))
+    return ResolvedPlace(
+        label=label,
+        region=region,
+        country=country,
+        country_code=code.upper() if code else None,
+    )
 
 
 def _first_string(address: dict[str, object], keys: tuple[str, ...]) -> str | None:

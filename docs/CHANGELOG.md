@@ -1659,3 +1659,19 @@ rows referencing them. The two changes above exist so this cannot recur.
   resolve identically, which is the observable proof that precision was dropped
   before the request; an out-of-range coordinate is refused before any outbound
   call.
+
+## 2026-08-01 — Saving a place says so, and says which one
+
+- Saving a typed place gave no feedback at all — only the location button set a
+  notice — so there was no way to tell whether it had worked. The panel now
+  carries a persistent line stating what is actually saved, rather than relying
+  on a message the user has to catch, and flags an edited field as an unsaved
+  edit so a half-typed change cannot look committed.
+- A town name alone is ambiguous: "Arlington" exists in several countries. The
+  resolver now reads country separately from region rather than as a fallback,
+  which had meant a town with both would silently lose its country while one
+  without a state would report the country as its region. Places read as
+  "Arlington, Virginia (US)" and store as "Arlington · Virginia, US".
+- Verified live against two real coordinates: 38.88/-77.09 resolves to
+  `Arlington, Virginia (US)`, and a coordinate in England resolves with `(GB)`,
+  so the country is doing real disambiguating work rather than being decoration.

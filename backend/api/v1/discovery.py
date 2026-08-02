@@ -480,6 +480,12 @@ async def resolve_locality(
     return {
         "label": place.label,
         "region": place.region,
+        "country": place.country,
+        "country_code": place.country_code,
+        # A town name alone is ambiguous across countries, so the caller is
+        # given something it can show a person without guessing.
+        "display": place.display,
+        "stored_region": place.stored_region,
         # Stated back so the caller can show what was actually sent.
         "sent_precision_decimals": COARSE_DECIMALS,
     }

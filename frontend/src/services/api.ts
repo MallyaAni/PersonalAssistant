@@ -1810,7 +1810,14 @@ export const resolveDiscoveryLocality = async (
   userId: string,
   latitude: number,
   longitude: number,
-): Promise<{ label: string; region: string | null }> =>
+): Promise<{
+  label: string;
+  region: string | null;
+  country: string | null;
+  country_code: string | null;
+  display: string;
+  stored_region: string | null;
+}> =>
   readJson(
     await fetch(`${discoveryBase(userId)}/locality/resolve`, {
       method: 'POST',

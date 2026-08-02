@@ -14,10 +14,16 @@ import {
   suggestDiscoveryInterests,
   suggestDiscoverySources,
   type DiscoveryInterest,
+  type DiscoveryLocality,
   type DiscoverySource,
   type FeedCandidate,
   type InterestProposal,
 } from '../../services/api'
+
+// "Arlington, Virginia, US" rather than "Arlington". A town name alone is
+// ambiguous across countries, so what is saved is shown in full.
+const describePlace = (place: { label: string; region?: string | null }): string =>
+  place.region ? `${place.label}, ${place.region}` : place.label
 
 interface ScoutSetupProps {
   userId: string;
@@ -29,7 +35,7 @@ interface ScoutSetupProps {
 // never holds state the backend does not already have.
 const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
   const [place, setPlace] = useState('')
-  const [savedPlace, setSavedPlace] = useState<string | null>(null)
+  const [savedPlace, setSavedPlace] = useState<DiscoveryLocality | null>(null)
   const [interests, setInterests] = useState<DiscoveryInterest[]>([])
   const [sources, setSources] = useState<DiscoverySource[]>([])
   const [interestDraft, setInterestDraft] = useState('')
@@ -48,7 +54,7 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
     setInterests(profile.interests)
     setSources(feeds)
     const primary = profile.localities.find(item => item.is_primary) ?? profile.localities[0]
-    setSavedPlace(primary?.label ?? null)
+    setSavedPlace(primary ?? null)
     if (primary && !place) setPlace(primary.label)
   }, [userId, place])
 
@@ -79,10 +85,11 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
     perform('place', async () => {
       const label = place.trim()
       if (!label) throw new Error('Enter a town or city.')
-      await putDiscoveryLocality(userId, {
+      const saved = await putDiscoveryLocality(userId, {
         label,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       })
+      setNotice(`Saved. Looking around ${describePlace(saved)}.`)
     })
 
   // Ask the browser, then hand the backend a coordinate it will blunt further
@@ -109,10 +116,14 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
       setPlace(resolved.label)
       await putDiscoveryLocality(userId, {
         label: resolved.label,
-        region: resolved.region,
+        // Region carries the country too: a town name alone is ambiguous, and
+        // there is an Arlington in more than one country.
+        region: resolved.stored_region ?? resolved.region,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       })
-      setNotice(`Set to ${resolved.label}. Only the town was stored, never coordinates.`)
+      setNotice(
+        `Saved ${resolved.display}. Only the town was stored, never coordinates.`,
+      )
     })
 
   const addInterest = (label: string) =>
@@ -205,6 +216,17 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
             Use my location
           </button>
         </div>
+        {savedPlace ? (
+          <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-[#248a3d]">
+            <Check size={13} />
+            Saved — looking around {describePlace(savedPlace)}
+            {place.trim() && place.trim() !== savedPlace.label && (
+              <span className="font-normal text-[#b25e00]">· unsaved edit</span>
+            )}
+          </p>
+        ) : (
+          <p className="mt-2 text-xs font-medium text-[#b25e00]">No place saved yet.</p>
+        )}
         <p className="mt-2 text-[11px] leading-4 text-[#86868b]">
           Your browser will ask permission. The coordinate is rounded to about a kilometre
           before a single lookup names the town, and only the town is stored — never
