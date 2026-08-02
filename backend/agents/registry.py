@@ -16,6 +16,10 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.config.settings import settings
+from backend.discovery.reachability import (
+    calendar_base_url,
+    is_reachable_from_other_devices,
+)
 from backend.models.discovery import DiscoveryInterest
 from backend.models.discovery_run import DiscoveryRun, DiscoverySchedule
 from backend.models.discovery_source import DiscoverySource
@@ -120,6 +124,20 @@ class AgentRegistry:
 
         if not settings.DISCOVERY_EGRESS_ENABLED and subscribers:
             detail += " Delivery is off, so nothing is sent."
+        # A calendar link that only resolves on this machine is dead on the
+        # phone it was sent to, and nothing about the send would reveal that.
+        base = calendar_base_url(settings.DISCOVERY_CALENDAR_BASE_URL)
+        reachable = is_reachable_from_other_devices(base)
+        if not reachable:
+            detail += (
+                " Calendar links will not open on a phone —"
+                " set DISCOVERY_CALENDAR_BASE_URL to this machine's address."
+            )
+        facts.append(
+            AgentFact(
+                "Calendar links", _link_host(base) if reachable else "unreachable"
+            )
+        )
 
         return AgentSummary(
             id="discovery",
@@ -190,6 +208,12 @@ class AgentRegistry:
             select(func.count(model.id)).where(model.user_id == user_id)
         )
         return int(value or 0)
+
+
+# Just the host, so the card shows where links point without a URL in it.
+def _link_host(base_url: str) -> str:
+    without_scheme = base_url.split("://", 1)[-1]
+    return without_scheme.split("/", 1)[0] or base_url
 
 
 # A short relative phrase. Absolute timestamps are the wrong unit for "when will

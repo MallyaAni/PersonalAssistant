@@ -1703,3 +1703,21 @@ rows referencing them. The two changes above exist so this cannot recur.
   Arlington VA page — one dated with a working calendar link and three as
   mentions.
 - 663 backend tests pass; Ruff, Black and MyPy across 189 files pass.
+
+## 2026-08-01 — Calendar links that actually open on a phone
+
+- A digest's whole value is its "Add" link, and the default pointed at
+  `localhost`. On the recipient's phone `localhost` is the phone, so every link
+  would have failed silently — the class of defect that works perfectly on the
+  machine serving it and nowhere else.
+- Links are now built from an address other devices can reach. An explicitly
+  configured value always wins, since an operator publishing a real hostname must
+  not be second-guessed.
+- Detection **refuses to answer inside a container**. It would find the
+  container's own bridge address, which looks routable and is reachable only
+  from the Docker network — a plausible wrong answer is worse than none here,
+  because it produces links that fail without explaining why. Observed rather
+  than predicted: the first version reported `172.18.0.7`.
+- The Scout card states where links point, and when they are unreachable it says
+  what to do about it rather than only that something is wrong.
+- 668 backend tests pass; Ruff, Black and MyPy across 190 files pass.

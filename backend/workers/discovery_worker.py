@@ -28,6 +28,10 @@ from backend.core.dependencies import (
 from backend.core.logging_config import get_logger
 from backend.database.session import AsyncSessionLocal
 from backend.discovery.delivery import DigestDelivery
+from backend.discovery.reachability import (
+    calendar_base_url,
+    is_reachable_from_other_devices,
+)
 from backend.discovery.repository import DiscoveryProfileRepository
 from backend.discovery.runs import DiscoveryRunRepository
 from backend.discovery.subscribers import SubscriberRepository
@@ -156,8 +160,17 @@ class DiscoveryWorker:
                     return
 
 
+# A digest's value is the "Add" link, and a link to localhost is dead on the
+# recipient's phone — where localhost is the phone. The configured value wins
+# when it is routable; otherwise the host's LAN address replaces loopback.
 def _calendar_base(user_id: str) -> str:
-    return f"{settings.DISCOVERY_CALENDAR_BASE_URL.rstrip('/')}/{user_id}/calendar"
+    base = calendar_base_url(settings.DISCOVERY_CALENDAR_BASE_URL)
+    if not is_reachable_from_other_devices(base):
+        logger.warning(
+            "discovery_calendar_links_unreachable",
+            extra={"base_url": base},
+        )
+    return f"{base.rstrip('/')}/{user_id}/calendar"
 
 
 # A digest is read in the recipient's local time, and the user's primary place
