@@ -35,6 +35,12 @@ from backend.core.interfaces import (
 from backend.core.llm import LLMClient, create_inference_provider
 from backend.core.model_gate import ModelExecutionGate
 from backend.database.session import get_db
+from backend.discovery.channels import (
+    MessagesAppChannel,
+    NotificationChannel,
+    NullChannel,
+    PullOnlyChannel,
+)
 from backend.discovery.novelty import SeenItemRepository
 from backend.discovery.repository import DiscoveryProfileRepository
 from backend.discovery.runner import DiscoveryRunner
@@ -781,6 +787,54 @@ DependencyDiscoveryRunner = Annotated[
     DiscoveryRunner,
     Depends(get_discovery_runner),
 ]
+
+
+# The same runner, assembled for a background worker that owns its own session
+# rather than receiving one from a request.
+def get_discovery_runner_for_session(session: AsyncSession) -> DiscoveryRunner:
+    return DiscoveryRunner(
+        sources=DiscoverySourceRepository(session),
+        seen=SeenItemRepository(session),
+        embeddings=get_embedding_provider(),
+    )
+
+
+# Which channels may actually deliver. Egress ships disabled, so the default map
+# refuses to send and says so rather than silently dropping a digest.
+@lru_cache(maxsize=1)
+def get_discovery_channels() -> dict[str, NotificationChannel]:
+    channels: dict[str, NotificationChannel] = {
+        # The recipient's own device fetches; this never sends.
+        "shortcuts_pull": PullOnlyChannel(),
+    }
+    if not settings.DISCOVERY_EGRESS_ENABLED:
+        channels["imessage"] = NullChannel("imessage")
+        return channels
+    channels["imessage"] = MessagesAppChannel(
+        _invoke_discovery_tool, settings.DISCOVERY_IMESSAGE_TOOL
+    )
+    return channels
+
+
+# Deliver through the operator-trusted MCP server that owns the Apple device.
+# Routed through the ordinary invocation service so the same trust, allowlist,
+# and audit apply as to any other tool call.
+#
+# `confirmed` is set because the approval for this specific send already exists
+# and is stronger than a prompt: a per-subscriber consent record the user wrote
+# deliberately, which a scheduled sweep running at 9am cannot ask for again.
+async def _invoke_discovery_tool(tool_name: str, arguments: dict[str, str]) -> object:
+    result = await get_mcp_invocation_service().invoke(
+        settings.DISCOVERY_IMESSAGE_SERVER_ID,
+        tool_name,
+        dict(arguments),
+        confirmed=True,
+    )
+    # The service reports a tool-side failure in the result rather than raising,
+    # and a channel must never report a success it did not have.
+    if result.is_error:
+        raise RuntimeError("imessage tool reported an error")
+    return result
 
 
 def get_tool_memory_service(

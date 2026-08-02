@@ -16,6 +16,7 @@ Three properties are enforced here rather than trusted to callers:
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Protocol
 
 # A message longer than this is not a notification. Bounded here because the
 # text has already crossed the boundary by the time a channel sees it.
@@ -113,9 +114,7 @@ class MessagesAppChannel(NotificationChannel):
 
 
 # What a channel needs from the MCP layer, so this module depends on the
-# capability rather than the client.
-class ToolInvoker:
-    async def __call__(
-        self, tool_name: str, arguments: dict[str, str]
-    ) -> object:  # pragma: no cover - structural type
-        raise NotImplementedError
+# capability rather than the client. Structural, so any coroutine of the right
+# shape satisfies it without importing anything from here.
+class ToolInvoker(Protocol):
+    async def __call__(self, tool_name: str, arguments: dict[str, str]) -> object: ...

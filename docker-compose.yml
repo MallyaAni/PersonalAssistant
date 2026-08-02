@@ -287,6 +287,44 @@ services:
       redis:
         condition: service_started
 
+  # The ambient discovery loop. Separate from the presentation worker because
+  # the two have nothing in common but the leasing pattern: this one reads
+  # feeds and embeddings, never the generation model, so it must not wait on
+  # vllm-main to be healthy before it can run.
+  discovery-worker:
+    build: .
+    container_name: anios_discovery_worker
+    command:
+      - python
+      - -m
+      - backend.workers.discovery_worker
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_DB=${POSTGRES_DB:-anios_db}
+      - POSTGRES_HOST=db
+      - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (see .env.example)}
+      - INFERENCE_ADAPTER=${INFERENCE_ADAPTER:-openai_compatible}
+      - INFERENCE_PROVIDER_NAME=vllm
+      - EMBEDDING_BASE_URL=http://vllm-embedding:8000
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-text-embedding-nomic-embed-text-v1.5}
+      # Egress stays off unless the operator turns it on deliberately.
+      - DISCOVERY_EGRESS_ENABLED=${DISCOVERY_EGRESS_ENABLED:-false}
+      - DISCOVERY_IMESSAGE_SERVER_ID=${DISCOVERY_IMESSAGE_SERVER_ID:-imessage}
+      - DISCOVERY_IMESSAGE_TOOL=${DISCOVERY_IMESSAGE_TOOL:-send_message}
+      - DISCOVERY_CALENDAR_BASE_URL=${DISCOVERY_CALENDAR_BASE_URL:-http://localhost:8000/api/v1/discovery}
+      - DISCOVERY_POLL_SECONDS=${DISCOVERY_POLL_SECONDS:-60}
+      - DISCOVERY_RUN_LEASE_SECONDS=${DISCOVERY_RUN_LEASE_SECONDS:-300}
+      - DISCOVERY_RUN_HEARTBEAT_SECONDS=${DISCOVERY_RUN_HEARTBEAT_SECONDS:-60}
+      - MCP_SERVERS_JSON=${MCP_SERVERS_JSON:-[]}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      db:
+        condition: service_healthy
+      vllm-embedding:
+        condition: service_healthy
+
   backend:
     build: .
     container_name: anios_backend

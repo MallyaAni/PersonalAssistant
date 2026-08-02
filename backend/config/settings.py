@@ -124,7 +124,15 @@ class Settings(BaseSettings):
     # signed into Messages exposing a send tool over MCP. AniOS decides whether
     # to send; that machine does the sending.
     DISCOVERY_EGRESS_ENABLED: bool = False
+    # A sweep is weekly, so nothing about this loop needs to be prompt. The
+    # lease is generous because reading several feeds over the network can
+    # legitimately outlive a short one.
+    DISCOVERY_POLL_SECONDS: float = Field(default=60.0, gt=0, le=3_600)
+    DISCOVERY_RUN_LEASE_SECONDS: float = Field(default=300.0, gt=0, le=3_600)
+    DISCOVERY_RUN_HEARTBEAT_SECONDS: float = Field(default=60.0, gt=0, le=600)
     DISCOVERY_IMESSAGE_TOOL: str = "send_message"
+    # Which operator-trusted MCP server owns the Apple device that sends.
+    DISCOVERY_IMESSAGE_SERVER_ID: str = "imessage"
     # The public base a subscriber's calendar link is built from. Local by
     # default: a link only resolves from wherever the recipient actually is, so
     # leaving this unset keeps delivery useful only on the same network.

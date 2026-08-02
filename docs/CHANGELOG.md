@@ -1543,3 +1543,26 @@ rows referencing them. The two changes above exist so this cannot recur.
   `text/calendar` document; revoking made the already-shared link 404 again.
   Test data removed. Sending a real iMessage is unverified and needs a Mac.
 - 605 backend tests pass. Ruff, Black, and MyPy across 180 files pass.
+
+## 2026-08-01 — The discovery loop actually runs
+
+- Added `discovery-worker` as its own Compose service. Nothing called
+  `enqueue_due_runs` or `claim_next`, so every piece of the ambient loop existed
+  and none of it ran: the schedule could never fire and a sweep only happened if
+  someone posted to `/sweep` by hand. This was the difference between a feature
+  and an endpoint.
+- The worker both produces and consumes in one process, so there is one thing to
+  run and one thing to stop. Producing is safe from any number of processes
+  because the slot uniqueness constraint turns a duplicate into a no-op.
+- It does not depend on `vllm-main`. A sweep reads feeds and embeddings and never
+  the generation model, so waiting on the generation service to be healthy would
+  have coupled the loop to something it does not use.
+- The digest is persisted before delivery is attempted and delivery is
+  write-once, so a crash between the two resumes rather than resends.
+- Live-verified against a real public feed with the worker running as a
+  container: an armed schedule was picked up unattended, the run reached `ready`
+  with 1 candidate for 1 request spent, the digest persisted, the schedule
+  re-armed to a strictly future slot, and exactly one run existed afterwards —
+  it did not spin. Test data removed.
+- 608 backend tests pass, including three new ones covering the scheduled path.
+  Ruff, Black, and MyPy across 181 files pass.
