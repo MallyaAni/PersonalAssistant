@@ -8,10 +8,12 @@ from dataclasses import dataclass
 from typing import Annotated
 
 from fastapi import Depends, Header, HTTPException, Request, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.config.settings import settings
 from backend.database.session import get_db
+from backend.models.auth import UserAccount
 from backend.services.auth_service import AuthService
 
 # Least-privilege scopes. A token may be restricted to a subset so a leaked or
@@ -225,3 +227,38 @@ def _encode(value: bytes) -> str:
 def _decode(value: str) -> bytes:
     padding = "=" * (-len(value) % 4)
     return base64.urlsafe_b64decode(value + padding)
+
+
+# Require that the caller is an administrator.
+#
+# Separated from ownership deliberately. `authorize_path_user` answers "is this
+# your data"; this answers "may you act on the machine". A guest owns their chat,
+# memory, and agents completely, and still may not invite people, enumerate other
+# accounts, or change what this machine sends on the owner's behalf.
+#
+# Trusted-local mode has no identity, so it is treated as the operator — that
+# mode is a single-user development option and already grants everything.
+async def require_admin(
+    identity: IdentityDependency,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> None:
+    if identity is None:
+        if settings.AUTH_REQUIRED:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication is required.",
+            )
+        return
+    account = await db.scalar(
+        select(UserAccount).where(UserAccount.user_id == identity.user_id)
+    )
+    if account is None or not account.is_admin:
+        # Deliberately does not distinguish "not an admin" from "no such
+        # account": the reply should not confirm who exists.
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This action is restricted to the operator.",
+        )
+
+
+AdminDependency = Annotated[None, Depends(require_admin)]

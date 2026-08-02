@@ -20,6 +20,13 @@ class UserAccount(Base):
     is_active: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default="true"
     )
+    # False for everyone unless deliberately promoted. An invited guest gets
+    # their own chat, memory, and agents, but not the ability to invite others,
+    # enumerate accounts, or change what this machine sends on the owner's
+    # behalf.
+    is_admin: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false"
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

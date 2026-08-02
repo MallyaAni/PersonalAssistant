@@ -1949,3 +1949,29 @@ rows referencing them. The two changes above exist so this cannot recur.
 - Honest limit recorded rather than designed around: acceptance cannot be
   undone by the sharer. A code can be withdrawn before it is used; a recipe
   someone already has is theirs, like a message already delivered.
+
+## 2026-08-02 — An operator boundary, separate from ownership
+
+- Added `is_admin` to accounts, defaulting false. The migration promotes the
+  oldest existing account, so an already-deployed instance still has an operator
+  after upgrading rather than none.
+- `require_admin` answers a different question from `authorize_path_user`.
+  Ownership asks "is this your data" — an invited guest's chat, memory, and
+  agents are entirely theirs. Administration asks "may you act on the machine",
+  which a guest may not: inviting people, enumerating accounts, or changing what
+  this machine does on the operator's behalf.
+- The refusal deliberately does not distinguish "not an admin" from "no such
+  account", so it cannot be used to confirm who exists.
+- Added invite management: list with status and who consumed each one, mint with
+  a bounded TTL, and revoke. A listing never returns a code — only a digest is
+  stored, so one cannot be recovered even by the operator, which is exactly why
+  revoking is the recovery for a code sent to the wrong person. An already-used
+  invitation refuses revocation, because it is the record of how an account
+  exists.
+- **Found by running the suite:** the new test module set `AUTH_REQUIRED` through
+  the environment at import, which leaked into every other module in the same
+  pytest process and broke four unrelated tests. It is now toggled per test and
+  restored.
+- Verified live through the public HTTPS URL with a real invited guest: `403` on
+  every admin route, `200` on their own memory. Test account removed.
+- 764 backend tests pass; migrations build 32 tables at head `20260802_0026`.

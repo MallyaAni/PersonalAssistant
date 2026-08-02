@@ -94,7 +94,9 @@ def _create_invite() -> str:
 # Remove only rows owned by the unique profiles and invitations from this test.
 def _cleanup(user_ids: tuple[str, ...], invite_tokens: tuple[str, ...]) -> None:
     with SessionLocal() as session:
-        session.execute(delete(SemanticMemory).where(SemanticMemory.user_id.in_(user_ids)))
+        session.execute(
+            delete(SemanticMemory).where(SemanticMemory.user_id.in_(user_ids))
+        )
         session.execute(delete(UserProfile).where(UserProfile.user_id.in_(user_ids)))
         session.execute(delete(UserSession).where(UserSession.user_id.in_(user_ids)))
         session.execute(

@@ -113,9 +113,7 @@ async def test_save_semantic_memory(memory_service, db_session):
 
     saved = (
         await db_session.execute(
-            select(SemanticMemory).where(
-                SemanticMemory.id == uuid.UUID(created["id"])
-            )
+            select(SemanticMemory).where(SemanticMemory.id == uuid.UUID(created["id"]))
         )
     ).scalar_one()
     assert saved.user_id == user_id
