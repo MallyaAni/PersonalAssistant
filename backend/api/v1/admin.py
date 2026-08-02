@@ -253,3 +253,49 @@ async def delete_subscriber(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Subscriber not found."
         )
+
+
+# Every subscription on the machine, whoever requested it.
+#
+# The operator's view differs from a guest's on purpose: a guest sees only their
+# own and cannot approve it, while this shows who asked for what and is the only
+# place an address becomes messageable.
+@router.get("/subscriptions")
+async def list_subscriptions(
+    admin: AdminDependency,
+    subscribers: DependencyDiscoverySubscribers,
+) -> dict[str, object]:
+    rows = await subscribers.list_all()
+    return {
+        "egress_enabled": settings.DISCOVERY_EGRESS_ENABLED,
+        "subscriptions": [
+            {
+                "id": person.id,
+                "requested_by": owner,
+                "channel": person.channel,
+                "approved": person.approved,
+                "deliverable": person.deliverable,
+                "delivery_count": person.delivery_count,
+                # The address is shown here and nowhere else: approving it is a
+                # decision about who this machine messages, and that cannot be
+                # made blind.
+                "address": person.address,
+            }
+            for owner, person in rows
+        ],
+    }
+
+
+# Permit this machine to message one address.
+@router.post("/subscriptions/{subscriber_id}/approve", status_code=status.HTTP_200_OK)
+async def approve_subscription(
+    admin: AdminDependency,
+    subscriber_id: UUID,
+    subscribers: DependencyDiscoverySubscribers,
+) -> dict[str, object]:
+    person = await subscribers.approve(subscriber_id)
+    if person is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Subscription not found."
+        )
+    return {"id": person.id, "approved": person.approved}

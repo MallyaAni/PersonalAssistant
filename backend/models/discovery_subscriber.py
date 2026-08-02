@@ -67,6 +67,12 @@ class DiscoverySubscriber(Base):
     consented_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    # Consent and approval are different permissions. The recipient consents to
+    # receive; the operator permits this machine to message that address, since
+    # the bridge sends from the operator's own Apple ID.
+    approved_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     revoked_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
@@ -86,7 +92,14 @@ class DiscoverySubscriber(Base):
     # are both checked here so no caller can accidentally test only one.
     @property
     def deliverable(self) -> bool:
-        return self.active and self.revoked_at is None and self.consented_at is not None
+        if not (
+            self.active and self.revoked_at is None and self.consented_at is not None
+        ):
+            return False
+        # A pull subscription sends nothing, so it needs no approval to exist.
+        if self.channel == "shortcuts_pull":
+            return True
+        return self.approved_at is not None
 
     def to_dict(self) -> dict[str, Any]:
         return {

@@ -42,6 +42,7 @@ _ADMIN_ROUTES = (
     ("POST", "/api/v1/admin/invites"),
     ("GET", "/api/v1/admin/accounts"),
     ("GET", "/api/v1/admin/subscribers"),
+    ("GET", "/api/v1/admin/subscriptions"),
 )
 
 
@@ -78,6 +79,7 @@ async def _cleanup(*user_ids: str) -> None:
     from sqlalchemy import delete
 
     from backend.models.auth import RegistrationInvite, UserAccount, UserSession
+    from backend.models.discovery_subscriber import DiscoverySubscriber
 
     async with AsyncSessionLocal() as session:
         for user_id in user_ids:
@@ -87,6 +89,11 @@ async def _cleanup(*user_ids: str) -> None:
             await session.execute(
                 delete(RegistrationInvite).where(
                     RegistrationInvite.consumed_by_user_id == user_id
+                )
+            )
+            await session.execute(
+                delete(DiscoverySubscriber).where(
+                    DiscoverySubscriber.user_id == user_id
                 )
             )
             await session.execute(
@@ -279,4 +286,112 @@ async def test_a_guest_keeps_the_rest_of_their_own_agent():
                 delete(DiscoveryInterest).where(DiscoveryInterest.user_id == guest)
             )
             await session.commit()
+        await _cleanup(guest)
+
+
+@pytest.mark.asyncio
+async def test_a_guest_subscribes_themselves_but_cannot_make_it_live():
+    """The split the design turns on.
+
+    Where a guest's own digest goes is theirs to choose. Whether this machine
+    messages that address is not, because the bridge sends from the operator's
+    Apple ID — so an unapproved subscription would let any account make the
+    operator message a stranger.
+    """
+    guest = f"guest_{uuid.uuid4().hex[:10]}"
+    try:
+        _, token = await _account(guest, admin=False)
+        async with _client(token) as client:
+            asked = await client.put(
+                f"/api/v1/discovery/{guest}/subscription",
+                json={"channel": "imessage", "address": "+15550142"},
+            )
+            mine = await client.get(f"/api/v1/discovery/{guest}/subscription")
+            # Approving is the operator's, and so is seeing everyone's.
+            approve = await client.post(
+                f"/api/v1/admin/subscriptions/{asked.json()['id']}/approve"
+            )
+            everyone = await client.get("/api/v1/admin/subscriptions")
+
+        assert asked.status_code == 200
+        assert asked.json()["approved"] is False
+        assert asked.json()["deliverable"] is False
+        assert mine.json()["subscription"]["approved"] is False
+        assert approve.status_code == 403
+        assert everyone.status_code == 403
+    finally:
+        await _cleanup(guest)
+
+
+@pytest.mark.asyncio
+async def test_the_operator_approves_and_only_then_is_it_deliverable():
+    operator = f"op_{uuid.uuid4().hex[:10]}"
+    guest = f"guest_{uuid.uuid4().hex[:10]}"
+    try:
+        _, guest_token = await _account(guest, admin=False)
+        _, op_token = await _account(operator, admin=True)
+
+        async with _client(guest_token) as client:
+            asked = await client.put(
+                f"/api/v1/discovery/{guest}/subscription",
+                json={"channel": "imessage", "address": "+15550143"},
+            )
+        subscriber_id = asked.json()["id"]
+
+        async with _client(op_token) as client:
+            listed = await client.get("/api/v1/admin/subscriptions")
+            approved = await client.post(
+                f"/api/v1/admin/subscriptions/{subscriber_id}/approve"
+            )
+
+        async with _client(guest_token) as client:
+            after = await client.get(f"/api/v1/discovery/{guest}/subscription")
+
+        rows = listed.json()["subscriptions"]
+        assert any(row["requested_by"] == guest for row in rows)
+        assert approved.status_code == 200
+        assert after.json()["subscription"]["approved"] is True
+        assert after.json()["subscription"]["deliverable"] is True
+    finally:
+        await _cleanup(operator, guest)
+
+
+@pytest.mark.asyncio
+async def test_an_account_may_hold_one_subscription():
+    # A guest choosing where their own digest goes is reasonable; a guest
+    # accumulating destinations is a way to make the operator message several
+    # people.
+    guest = f"guest_{uuid.uuid4().hex[:10]}"
+    try:
+        _, token = await _account(guest, admin=False)
+        async with _client(token) as client:
+            first = await client.put(
+                f"/api/v1/discovery/{guest}/subscription",
+                json={"channel": "imessage", "address": "+15550144"},
+            )
+            second = await client.put(
+                f"/api/v1/discovery/{guest}/subscription",
+                json={"channel": "imessage", "address": "+15550145"},
+            )
+        assert first.status_code == 200
+        assert second.status_code == 409
+    finally:
+        await _cleanup(guest)
+
+
+@pytest.mark.asyncio
+async def test_a_pull_subscription_needs_no_approval():
+    # Nothing is sent: the recipient's own device fetches, so there is no
+    # decision for the operator to make.
+    guest = f"guest_{uuid.uuid4().hex[:10]}"
+    try:
+        _, token = await _account(guest, admin=False)
+        async with _client(token) as client:
+            asked = await client.put(
+                f"/api/v1/discovery/{guest}/subscription",
+                json={"channel": "shortcuts_pull", "address": "this-device"},
+            )
+        assert asked.json()["approved"] is True
+        assert asked.json()["deliverable"] is True
+    finally:
         await _cleanup(guest)

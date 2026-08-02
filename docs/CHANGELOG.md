@@ -1993,3 +1993,27 @@ rows referencing them. The two changes above exist so this cannot recur.
   those routes while keeping `200` on their own memory. Both temporary accounts
   removed.
 - 764 backend tests pass; the TypeScript build passes.
+
+## 2026-08-02 — Who gets messaged, and who decides
+
+- A guest can now subscribe **themselves** to their own agent's digest by
+  entering their own iMessage address. An agent that cannot tell its owner
+  anything is not an agent, so restricting this entirely was wrong.
+- What a guest cannot do is make this machine message an address. The bridge
+  sends from the operator's Apple ID, so an iMessage subscription arrives
+  **consented by the recipient and unapproved by the operator**, and stays
+  undeliverable until the operator approves it. Consent and approval are
+  genuinely different permissions and both are now required.
+- The operator's view differs by design: a guest sees only their own
+  subscription and cannot approve it; the operator sees every subscription with
+  who requested it, and the address — which is shown there and nowhere else,
+  because approving it is a decision that cannot be made blind.
+- An account may hold one subscription. Choosing where your own digest goes is
+  reasonable; accumulating destinations is a way to make someone else's Apple ID
+  message several people.
+- A `shortcuts_pull` subscription needs no approval, because nothing is sent —
+  the recipient's own device fetches.
+- The operator enrolling an address directly is itself the approval; only
+  self-service leaves it pending. That fell out of running the suite, where four
+  delivery tests correctly failed against the stricter rule.
+- 780 backend tests pass; migrations build 32 tables at head `20260802_0027`.

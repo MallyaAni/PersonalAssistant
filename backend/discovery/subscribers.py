@@ -33,6 +33,9 @@ class Subscriber:
     token: str
     active: bool
     deliverable: bool
+    # Set when the operator permitted this machine to message the address. A
+    # pull subscription needs none, because nothing is sent.
+    approved: bool
     delivery_count: int
     last_error: str | None
 
@@ -82,6 +85,7 @@ class SubscriberRepository:
                 token=secrets.token_urlsafe(32)[:64],
                 active=consented,
                 consented_at=now if consented else None,
+                approved_at=now if consented else None,
             )
             self.session.add(row)
         else:
@@ -90,6 +94,7 @@ class SubscriberRepository:
                 # Re-consenting after a revocation restores delivery, but the
                 # original consent timestamp is what the record keeps.
                 row.consented_at = row.consented_at or now
+                row.approved_at = row.approved_at or now
                 row.revoked_at = None
                 row.active = True
         await self.session.commit()
@@ -109,6 +114,67 @@ class SubscriberRepository:
         row.token = secrets.token_urlsafe(32)[:64]
         await self.session.commit()
         return True
+
+    # One account asking to receive its own digest.
+    #
+    # The address is theirs to choose and the decision to message it is not: the
+    # bridge sends from the operator's Apple ID, so an unapproved request would
+    # let anyone make that account message a stranger. An iMessage subscription
+    # therefore arrives consented but inactive, and the operator approves it
+    # once. A pull subscription needs no approval because nothing is sent — the
+    # recipient's own device fetches.
+    async def request_subscription(
+        self, user_id: str, channel: str, address: str, label: str | None = None
+    ) -> Subscriber:
+        if channel not in SUBSCRIBER_CHANNELS:
+            raise ValueError(f"Unsupported subscriber channel: {channel}")
+        existing = await self.list_subscribers(user_id)
+        cleaned = address.strip()
+        digest = label_digest(cleaned) if cleaned else ""
+        already = any(
+            label_digest(item.address) == digest and item.channel == channel
+            for item in existing
+        )
+        # One per account. A guest choosing where their own digest goes is
+        # reasonable; a guest accumulating destinations is a way to make someone
+        # else's Apple ID message several people.
+        if existing and not already:
+            raise DiscoveryProfileLimitError(
+                "Each account may have one subscription. Remove the current one first."
+            )
+
+        subscriber = await self.enroll(user_id, channel, cleaned, label, consented=True)
+        if channel == "shortcuts_pull":
+            return subscriber
+        # Consented by the recipient, not yet permitted by the operator.
+        row = await self._by_digest(user_id, channel, digest)
+        if row is not None and not already:
+            # A fresh request is consented by the recipient and not yet
+            # permitted by the operator, whatever enrol defaulted to.
+            row.approved_at = None
+            row.active = False
+            await self.session.commit()
+            await self.session.refresh(row)
+            return _to_subscriber(row)
+        return subscriber if row is None else _to_subscriber(row)
+
+    # The operator permitting this machine to message one address.
+    async def approve(self, subscriber_id: uuid.UUID) -> Subscriber | None:
+        row = await self.session.get(DiscoverySubscriber, subscriber_id)
+        if row is None:
+            return None
+        row.approved_at = datetime.now(UTC)
+        row.active = True
+        row.revoked_at = None
+        await self.session.commit()
+        await self.session.refresh(row)
+        return _to_subscriber(row)
+
+    # Every subscription on the machine, for the operator's view.
+    async def list_all(self) -> tuple[tuple[str, Subscriber], ...]:
+        stmt = select(DiscoverySubscriber).order_by(DiscoverySubscriber.created_at)
+        rows = (await self.session.execute(stmt)).scalars().all()
+        return tuple((row.user_id, _to_subscriber(row)) for row in rows)
 
     async def delete(self, user_id: str, subscriber_id: uuid.UUID) -> bool:
         row = await self.session.get(DiscoverySubscriber, subscriber_id)
@@ -165,6 +231,7 @@ def _to_subscriber(row: DiscoverySubscriber) -> Subscriber:
         token=row.token,
         active=row.active,
         deliverable=row.deliverable,
+        approved=row.approved_at is not None or row.channel == "shortcuts_pull",
         delivery_count=row.delivery_count,
         last_error=row.last_error,
     )

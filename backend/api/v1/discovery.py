@@ -635,3 +635,85 @@ async def forget_known(
 ) -> None:
     if not await familiar.forget(user_id, item_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found.")
+
+
+class SubscriptionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    channel: Literal["imessage", "shortcuts_pull"] = "imessage"
+    # The recipient's own address. What this machine may message is not theirs
+    # to decide — the operator approves it — but where their own digest goes is.
+    address: str = Field(min_length=1, max_length=200)
+
+
+# Ask to receive this account's own digest.
+#
+# Deliberately available to every account, unlike the operator's subscriber
+# administration. A guest's agent that cannot tell them anything is not an agent.
+# What a guest cannot do is decide that this machine will message an address:
+# the bridge sends from the operator's Apple ID, so an iMessage subscription
+# arrives consented and inactive until the operator approves it.
+@router.put("/subscription", status_code=status.HTTP_200_OK)
+async def request_subscription(
+    user_id: UserId,
+    body: SubscriptionRequest,
+    subscribers: DependencyDiscoverySubscribers,
+) -> dict[str, object]:
+    try:
+        person = await subscribers.request_subscription(
+            user_id, body.channel, body.address
+        )
+    except DiscoveryProfileLimitError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=str(exc)
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+        ) from exc
+    return {
+        "id": person.id,
+        "channel": person.channel,
+        "approved": person.approved,
+        "deliverable": person.deliverable,
+        "feed_path": f"/api/v1/discovery/feed/{person.token}.ics",
+    }
+
+
+# Show this account its own subscription and whether it is live yet.
+@router.get("/subscription")
+async def read_subscription(
+    user_id: UserId,
+    subscribers: DependencyDiscoverySubscribers,
+) -> dict[str, object]:
+    people = await subscribers.list_subscribers(user_id)
+    if not people:
+        return {
+            "subscription": None,
+            "egress_enabled": settings.DISCOVERY_EGRESS_ENABLED,
+        }
+    person = people[0]
+    return {
+        "subscription": {
+            "id": person.id,
+            "channel": person.channel,
+            "approved": person.approved,
+            "deliverable": person.deliverable,
+            "delivery_count": person.delivery_count,
+            "feed_path": f"/api/v1/discovery/feed/{person.token}.ics",
+        },
+        "egress_enabled": settings.DISCOVERY_EGRESS_ENABLED,
+    }
+
+
+# Stop receiving. Removing rather than revoking, because this is the recipient
+# withdrawing their own consent rather than the operator cutting delivery off.
+@router.delete("/subscription", status_code=status.HTTP_204_NO_CONTENT)
+async def cancel_subscription(
+    user_id: UserId,
+    subscribers: DependencyDiscoverySubscribers,
+) -> None:
+    import uuid as _uuid
+
+    for person in await subscribers.list_subscribers(user_id):
+        await subscribers.delete(user_id, _uuid.UUID(person.id))
