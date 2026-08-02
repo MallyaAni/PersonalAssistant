@@ -587,6 +587,27 @@ still surfaced, as a link in a separate section of the digest, and cannot become
 a `VEVENT`. And the query count is bounded before the sweep runs, because search
 is the only metered component here.
 
+`backend/discovery/summarize.py` makes a find readable enough to decide on. A
+scraped page title names the site rather than the happening — "Nature and History
+Events – Official Website of Arlington County Virginia Government" — and a
+recipient cannot judge that. Cleanup is deterministic and strips a trailing
+segment only when it looks like a CMS site name, so a genuinely hyphenated title
+survives.
+
+This is the one place a model belongs in the subsystem. Deciding *what qualifies*
+stays deterministic, because a sweep runs unattended and must not vary by
+sampling; turning a scraped paragraph into a sentence a person can read is what a
+model is for. It answers into a decoding grammar with a bounded field, greedily,
+so the same page describes itself the same way each sweep. No URL survives from
+model output — links come from the typed record, so a page cannot put a link of
+its choosing in front of a recipient — and any failure falls back to a
+first-sentence extract that never invents. The grammar constrains shape, not
+meaning: a hostile page can still influence the wording of its own description,
+exactly as it influences its own title.
+
+Descriptions are written before the selection is persisted, because the stored
+payload is what every later preview, digest, and calendar file is built from.
+
 Queries carry the locality's region, not just its label. A bare town name is
 ambiguous to a search engine exactly as it is to a person: "hiking near
 Arlington" returns Texas and Washington alongside Virginia, which was observed

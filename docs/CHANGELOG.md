@@ -1734,3 +1734,30 @@ rows referencing them. The two changes above exist so this cannot recur.
 - It reports the three things that decide whether a real send would work:
   whether any subscriber would receive it, whether egress is on, and whether the
   calendar links are reachable from another device.
+
+## 2026-08-01 — A find you can actually decide on
+
+- A recipient was being shown "Nature and History Events – Official Website of
+  Arlington County Virginia Government" and a wall of scraped markdown. Nobody
+  can judge that. Titles are now cleaned deterministically, and a one-line
+  description is written for each selected find.
+- This is the one place a model belongs here. What *qualifies* stays
+  deterministic — a sweep runs unattended and must not vary by sampling — but
+  turning a scraped paragraph into a readable sentence is what a model is for.
+  It answers into a decoding grammar with a bounded field, greedily, so the same
+  page describes itself identically each sweep.
+- No URL survives model output: links come from the typed record, so a page
+  cannot put a link of its choosing in front of a recipient. Any failure falls
+  back to a first-sentence extract that never invents.
+- **Found by running it:** descriptions were applied after ranking but the seen
+  store persisted the pre-description candidates, so the work existed only in the
+  sweep's return value and every preview showed raw text. The stored payload is
+  what later previews, digests, and calendar files are built from, so selections
+  are now persisted in their described form.
+- Live result, same event before and after:
+  `Nature and History Events – Official Website of Arlington County Virginia
+  Government` / `## History Hike: Boundary Stones 12 Sep 2026 Local and national
+  history meet during…` became `Nature and History Events` / `A local and
+  national history hike for participants to explore D.C.'s original boundary
+  stones and surveyor stories.` The `.ics` carries the same clean description.
+- 680 backend tests pass; Ruff, Black and MyPy across 191 files pass.

@@ -16,7 +16,7 @@ separate, permissioned stage.
 
 import asyncio
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from typing import Protocol
 
@@ -36,6 +36,7 @@ from backend.discovery.sources.ics import IcsEventSource
 from backend.discovery.sources.rss import RssEventSource
 from backend.discovery.sources.web import WebEventSource
 from backend.discovery.sources_repository import DiscoverySourceRepository, FeedSource
+from backend.discovery.summarize import DescriptionWriter, EventDescriber
 from backend.discovery.types import DiscoveryProfile
 
 
@@ -134,6 +135,7 @@ class DiscoveryRunner:
         embeddings: EmbeddingClient,
         adapter_factory: AdapterFactory | None = None,
         search: SearchProvider | None = None,
+        writer: DescriptionWriter | None = None,
     ) -> None:
         self.sources = sources
         self.seen = seen
@@ -143,6 +145,9 @@ class DiscoveryRunner:
         # anything that must reach a calendar; this covers what publishes no
         # feed at all, which for a niche interest is most of it.
         self.search = search
+        # Only the selected finds are described, so the model runs a handful of
+        # times per sweep rather than once per candidate.
+        self.describer = EventDescriber(writer)
         # Injected so a sweep can be exercised end to end without a network,
         # which is what makes the "announce once" guarantee testable at all.
         self.adapter_factory = adapter_factory or _adapter_for
@@ -173,16 +178,22 @@ class DiscoveryRunner:
             },
         )
         selected = ranker.rank(novel, now=moment, limit=limit)
+        selected = await self._make_readable(selected)
 
         # Everything considered is recorded, but only what was selected counts
         # as announced. An item ranked out stays eligible for a later sweep,
         # while an announced one suppresses its own near-duplicates.
-        chosen = {item.candidate.digest for item in selected}
+        #
+        # A selected item is stored in its *described* form. The stored payload
+        # is what a later preview, digest, or calendar file is built from, so
+        # persisting the raw scraped title here would mean the description work
+        # only ever existed in this function's return value.
+        described = {item.candidate.digest: item.candidate for item in selected}
         for candidate in novel:
             await self.seen.record_seen(
                 user_id,
-                candidate,
-                announced=candidate.digest in chosen,
+                described.get(candidate.digest, candidate),
+                announced=candidate.digest in described,
                 run_id=run_id,
                 now=moment,
             )
@@ -195,6 +206,33 @@ class DiscoveryRunner:
             requests_spent=budget.spent,
             failed_sources=failed,
         )
+
+    # Rewrite each selection's title and summary into something a person can
+    # decide on. A scraped page title names the site, not the happening, and a
+    # recipient cannot judge "Official Website of Arlington County" — so this
+    # runs before the digest is persisted rather than at render time.
+    async def _make_readable(
+        self, selected: tuple[RankedCandidate, ...]
+    ) -> tuple[RankedCandidate, ...]:
+        readable: list[RankedCandidate] = []
+        for item in selected:
+            event = item.event
+            described = await self.describer.describe(event.title, event.summary)
+            readable.append(
+                RankedCandidate(
+                    candidate=ScoredCandidate(
+                        event=replace(
+                            event,
+                            title=described.title,
+                            summary=described.description,
+                        ),
+                        embedding=item.candidate.embedding,
+                    ),
+                    score=item.score,
+                    matched_interest=item.matched_interest,
+                )
+            )
+        return tuple(readable)
 
     # Read every configured feed. One broken source degrades that source rather
     # than failing the sweep, because a user with five feeds should still hear

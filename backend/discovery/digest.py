@@ -18,6 +18,7 @@ from backend.discovery.relevance import RankedCandidate
 MAX_EVENTS_IN_MESSAGE = 5
 MAX_TITLE_CHARS = 90
 MAX_PLACE_CHARS = 60
+MAX_SUMMARY_CHARS = 170
 
 
 # One line per event, in the recipient's own words as far as possible: what,
@@ -50,6 +51,10 @@ def render_message(
             if event.place:
                 line += f" ({_bound(event.place, MAX_PLACE_CHARS)})"
             lines.append(line)
+            # What the thing actually is. Without it a recipient is deciding
+            # from a title alone, which is how you get ignored.
+            if event.summary:
+                lines.append(f"  {_bound(event.summary, MAX_SUMMARY_CHARS)}")
             lines.append(f"  Add: {_calendar_url(calendar_base_url, item)}")
         remaining = len(dated) - limit
         if remaining > 0:
@@ -64,6 +69,8 @@ def render_message(
         lines.extend(["Worth a look — no date given:", ""])
         for item in undated:
             lines.append(f"• {_bound(item.event.title, MAX_TITLE_CHARS)}")
+            if item.event.summary:
+                lines.append(f"  {_bound(item.event.summary, MAX_SUMMARY_CHARS)}")
             if item.event.url:
                 lines.append(f"  {item.event.url}")
 
