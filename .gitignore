@@ -35,3 +35,6 @@ data/
 
 # Editable-install build metadata
 *.egg-info/
+
+# Playwright run output, including diagram review screenshots.
+test-results/

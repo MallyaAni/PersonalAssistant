@@ -43,6 +43,17 @@ _RESPONSE_STYLE_PATTERNS = (
     ),
 )
 
+_LOCALITY_PATTERN = re.compile(
+    r"\bi\s+live\s+(?:in|near)\s+([^\r\n.!?;]{1,160})",
+    re.IGNORECASE,
+)
+
+_INTEREST_PATTERN = re.compile(
+    r"\b(?:i(?:'m|\s+am)\s+interested\s+in|my\s+interests?\s+include)\s+"
+    r"([^\r\n.!?;,]{1,80})",
+    re.IGNORECASE,
+)
+
 _ENTITY_PATTERN = re.compile(
     r"\bremember\s+that\s+([^\r\n.!?;]{1,300})\s+is\s+my\s+" r"([^\r\n.!?;]{1,100})",
     re.IGNORECASE,
@@ -112,6 +123,30 @@ def propose_response_style(query: str) -> str | None:
         if pattern.search(query):
             return style
     return None
+
+
+# Extract an explicit home locality without persisting it.
+def propose_locality(query: str) -> dict[str, str | None] | None:
+    if query.strip().endswith("?"):
+        return None
+    match = _LOCALITY_PATTERN.search(query)
+    if match is None:
+        return None
+    label, separator, region = match.group(1).partition(",")
+    label = label.strip().strip('"')
+    region = region.strip().strip('"') if separator else ""
+    if not label or len(label) > 80 or len(region) > 80:
+        return None
+    return {"label": label, "region": region or None}
+
+
+# Extract one explicitly stated interest without persisting it.
+def propose_interest(query: str) -> str | None:
+    match = _INTEREST_PATTERN.search(query)
+    if match is None:
+        return None
+    label = match.group(1).strip().strip('"')
+    return label if label else None
 
 
 # Extract an explicitly stated person or organization without persisting it.

@@ -19,7 +19,6 @@ import {
 
 interface MemoryPanelProps {
   userId: string
-  onUserIdChange: (userId: string) => void
 }
 
 type MemoryDetailKey =
@@ -152,11 +151,10 @@ const formatDetailLabel = (key: string): string => (
 )
 
 // Render memory controls and summaries for the active user.
-const MemoryPanel: React.FC<MemoryPanelProps> = ({ userId, onUserIdChange }) => {
+const MemoryPanel: React.FC<MemoryPanelProps> = ({ userId }) => {
   const [snapshot, setSnapshot] = useState<MemorySnapshot>(() => emptySnapshot(userId))
   const [agentSnapshot, setAgentSnapshot] = useState<AgentMemorySnapshot>(emptyAgentSnapshot)
   const [toolSnapshot, setToolSnapshot] = useState<ToolMemorySnapshot>(emptyToolSnapshot)
-  const [draftUserId, setDraftUserId] = useState(userId)
   const [name, setName] = useState('')
   const [responseStyle, setResponseStyle] = useState('')
   const [episodic, setEpisodic] = useState('')
@@ -183,7 +181,6 @@ const MemoryPanel: React.FC<MemoryPanelProps> = ({ userId, onUserIdChange }) => 
 
   useEffect(() => {
     activeUserRef.current = userId
-    setDraftUserId(userId)
     setSnapshot(emptySnapshot(userId))
     setAgentSnapshot(emptyAgentSnapshot)
     setToolSnapshot(emptyToolSnapshot)
@@ -301,33 +298,12 @@ const MemoryPanel: React.FC<MemoryPanelProps> = ({ userId, onUserIdChange }) => 
       <div>
         <p className="mb-2 text-sm font-medium text-[#0071e3]">Your context</p>
         <h2 className="text-[34px] font-semibold tracking-[-0.04em] md:text-[42px]">Personal Memory</h2>
-        <p className="mt-2 text-sm text-slate-400">Review and control what AniOS remembers for the active local user.</p>
+        <p className="mt-2 text-sm text-slate-400">Review and control what AniOS remembers for your signed-in account.</p>
       </div>
 
-      <form
-        className="flex items-end gap-2"
-        onSubmit={event => {
-          event.preventDefault()
-          onUserIdChange(draftUserId)
-        }}
-      >
-        <label className="block flex-1 space-y-1">
-          <span className="text-sm text-slate-300">Active user ID</span>
-          <input
-            aria-label="Active user ID"
-            value={draftUserId}
-            onChange={event => setDraftUserId(event.target.value)}
-            minLength={1}
-            maxLength={50}
-            required
-            className="w-full rounded border border-slate-700 bg-slate-900 p-2"
-          />
-        </label>
-        <button
-          disabled={isLoading || !draftUserId.trim() || draftUserId.trim() === userId}
-          className="rounded bg-blue-600 px-3 py-2 disabled:bg-slate-700"
-        >Switch user</button>
-      </form>
+      <p className="rounded-xl border border-black/[0.08] bg-white px-4 py-3 text-sm text-[#6e6e73]">
+        Signed in as <span className="font-semibold text-[#1d1d1f]">{userId}</span>
+      </p>
 
       {error && <p role="alert" className="rounded border border-red-800 bg-red-950 p-3 text-red-200">{error}</p>}
 

@@ -44,7 +44,7 @@ class DiscoverySetupService:
     async def suggest_feeds(
         self, profile: DiscoveryProfile
     ) -> tuple[FeedCandidate, ...]:
-        primary = profile.primary_locality
+        primary = profile.active_locality
         if primary is None:
             # Without a place, a query would either be useless or would have to
             # guess where the user lives. Neither is acceptable.

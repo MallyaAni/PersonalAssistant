@@ -23,13 +23,19 @@ from backend.discovery.types import (
 from backend.models.discovery import DiscoveryInterest, DiscoveryLocality
 
 
+# Build a compact interest record for profile behavior tests.
 def _interest(label: str, strength: int = 2) -> Interest:
     return Interest(
         id=str(uuid.uuid4()), label=label, strength=strength, provenance="user_explicit"
     )
 
 
-def _locality(label: str, is_primary: bool = False) -> Locality:
+# Build a compact locality record with independent home and travel flags.
+def _locality(
+    label: str,
+    is_primary: bool = False,
+    is_travel_active: bool = False,
+) -> Locality:
     return Locality(
         id=str(uuid.uuid4()),
         label=label,
@@ -37,6 +43,7 @@ def _locality(label: str, is_primary: bool = False) -> Locality:
         radius_km=25,
         timezone="America/New_York",
         is_primary=is_primary,
+        is_travel_active=is_travel_active,
     )
 
 
@@ -57,6 +64,7 @@ def test_digest_does_not_expose_the_label():
     assert len(digest) == 64
 
 
+# Prefer the approved home, falling back only for a legacy profile without one.
 def test_primary_locality_prefers_the_marked_place_then_falls_back():
     marked = DiscoveryProfile(
         interests=(),
@@ -70,6 +78,22 @@ def test_primary_locality_prefers_the_marked_place_then_falls_back():
     assert unmarked.primary_locality.label == "Hoboken"
 
     assert DiscoveryProfile(interests=(), localities=()).primary_locality is None
+
+
+# Travel changes the operational place while preserving the approved home.
+def test_active_locality_prefers_travel_without_changing_primary():
+    profile = DiscoveryProfile(
+        interests=(),
+        localities=(
+            _locality("Arlington", is_primary=True),
+            _locality("Denver", is_travel_active=True),
+        ),
+    )
+
+    assert profile.primary_locality is not None
+    assert profile.primary_locality.label == "Arlington"
+    assert profile.active_locality is not None
+    assert profile.active_locality.label == "Denver"
 
 
 # Only approved labels reach a prompt. Identifiers and provenance are internal
@@ -92,6 +116,7 @@ def test_rendered_context_carries_labels_without_internal_bookkeeping():
     assert "provenance" not in str(rendered)
 
 
+# An empty profile contributes no prompt context.
 def test_rendered_context_is_empty_without_a_profile():
     assert render_profile_context(DiscoveryProfile(interests=(), localities=())) == {}
 
@@ -213,6 +238,7 @@ async def test_interest_capacity_is_bounded_but_still_allows_edits():
         await _cleanup(user_id)
 
 
+# Remove profile rows created by service-level tests.
 async def _cleanup(*user_ids: str) -> None:
     async with AsyncSessionLocal() as session:
         for table in (DiscoveryInterest, DiscoveryLocality):
@@ -281,3 +307,79 @@ def test_api_round_trips_a_profile_and_scopes_deletes():
         import asyncio
 
         asyncio.run(_cleanup(user_id, other_id))
+
+
+# Exercise reversible travel through the public API and preserve the home fact.
+def test_api_travel_mode_preserves_home_and_scopes_the_destination():
+    from fastapi.testclient import TestClient
+
+    from backend.discovery.projection import LOCALITY_KEY
+    from backend.main import app
+
+    user_id = f"travel_{uuid.uuid4().hex[:12]}"
+    other_id = f"travel_{uuid.uuid4().hex[:12]}"
+    try:
+        with TestClient(app) as client:
+            home = client.put(
+                f"/api/v1/discovery/{user_id}/localities",
+                json={"label": "Arlington", "region": "Virginia"},
+            )
+            destination = client.put(
+                f"/api/v1/discovery/{user_id}/localities",
+                json={"label": "Denver", "region": "Colorado"},
+            )
+            assert home.status_code == 200
+            assert destination.status_code == 200
+            assert home.json()["is_primary"] is True
+            assert destination.json()["is_primary"] is False
+
+            started = client.put(
+                f"/api/v1/discovery/{user_id}/travel",
+                json={"locality_id": destination.json()["id"]},
+            )
+            profile = client.get(f"/api/v1/discovery/{user_id}").json()
+            facts = client.get(f"/api/v1/memory/{user_id}").json()["facts"]
+
+            assert started.status_code == 200
+            assert started.json()["active_locality"]["label"] == "Denver"
+            assert (
+                next(
+                    item
+                    for item in profile["localities"]
+                    if item["label"] == "Arlington"
+                )["is_primary"]
+                is True
+            )
+            assert (
+                next(
+                    item for item in profile["localities"] if item["label"] == "Denver"
+                )["is_travel_active"]
+                is True
+            )
+            assert [(fact["fact_key"], fact["value"]) for fact in facts] == [
+                (LOCALITY_KEY, "Arlington, Virginia")
+            ]
+
+            assert (
+                client.put(
+                    f"/api/v1/discovery/{other_id}/travel",
+                    json={"locality_id": destination.json()["id"]},
+                ).status_code
+                == 404
+            )
+            assert (
+                client.put(
+                    f"/api/v1/discovery/{user_id}/travel",
+                    json={"locality_id": home.json()["id"]},
+                ).status_code
+                == 409
+            )
+
+            stopped = client.delete(f"/api/v1/discovery/{user_id}/travel")
+            after = client.get(f"/api/v1/discovery/{user_id}").json()
+            assert stopped.status_code == 204
+            assert not any(item["is_travel_active"] for item in after["localities"])
+    finally:
+        with TestClient(app) as client:
+            client.delete(f"/api/v1/memory/{user_id}")
+            client.delete(f"/api/v1/memory/{other_id}")

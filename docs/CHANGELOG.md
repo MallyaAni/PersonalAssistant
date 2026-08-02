@@ -1875,3 +1875,57 @@ rows referencing them. The two changes above exist so this cannot recur.
   and returned three unsuppressed finds including trail runs; switching back
   showed the Arlington dismissal still in force.
 - 724 backend tests pass; migrations build to 29 tables at head `20260802_0020`.
+
+## 2026-08-02 — Unified Scout memory and profile controls
+
+- Closed the discovery privacy gap: personal-memory export and delete-all now
+  cover interests, localities, sources, seen items, subscribers, familiar
+  items, schedules, and runs. Tests seed every table, verify export/deletion
+  counts, assert zero owned rows remain, and preserve another user's rows.
+- Made approved home and interests versioned memory facts with a bidirectional
+  typed Scout projection. Explicit chat statements produce approval cards;
+  panel edits record the same facts; removal clears the owning fact history.
+- Added user-facing recovery and ranking controls: dismissed familiar items can
+  be undone, interest importance is editable from Low through High, and travel
+  mode temporarily changes Scout's active locality without changing home. A
+  partial unique index enforces one active travel destination per user.
+- Verified the rebuilt source tree through 766 backend tests, 42 deterministic
+  Chromium tests, a production frontend build, Ruff, Black, MyPy, Alembic head
+  `20260802_0022`, and a real Chromium workflow against the API and PostgreSQL.
+  The live path persisted and reloaded home/interests, changed strength, started
+  and stopped travel, undid a dismissal, inspected memory, and deleted the
+  isolated user without browser or backend errors.
+
+## 2026-08-02 — Invite-only password authentication verified
+
+- Added Argon2id invite accounts with login names independent of stable owned
+  user IDs, digest-only revocable browser sessions, logout/password-reset/
+  disable revocation, unsafe-request Origin checks, and retained scoped bearer
+  compatibility for automation.
+- Gated the React workspace on a server-derived session, removed browser-driven
+  identity switching, scoped retained conversation IDs by authenticated owner,
+  and added visible login/logout behavior.
+- Added additive migrations through `20260802_0024`, a non-destructive operator
+  CLI with hidden password prompts, safe backup/migration/move guidance, and a
+  dedicated authentication architecture view.
+- Verified 768 backend tests, 43 deterministic Chromium tests, the production
+  build, static/type gates, clean scratch and real migrations, direct live
+  ownership/revocation behavior, and a real alias-login Chromium chat plus
+  cross-owner isolation workflow.
+
+## 2026-08-02 — Invited browser profiles and same-origin gateway verified
+
+- Added expiring one-time registration invitations with digest-only storage,
+  atomic account/session creation, browser username/password enrollment, and
+  shared Redis attempt limits. Unrestricted public signup remains unavailable.
+- Added a loopback-only Nginx gateway that serves the production React build and
+  proxies API, SSE, uploads, and downloads on one origin; production clients no
+  longer call their own localhost.
+- Live Chromium created two invited profiles through the gateway, persisted a
+  semantic marker for one through the real embedding service, proved the other
+  profile received 403 and no semantic result, then logged back into the owner
+  and recalled the marker. Test-owned rows were cleaned up afterward.
+- Verified migration head `20260802_0025` from an empty scratch database and in
+  place after a fresh backup, all 772 backend tests, all 44 deterministic
+  Chromium tests, the live two-profile browser path, and the production build.
+  Public Tailscale Funnel ingress remains unconfigured and unverified.

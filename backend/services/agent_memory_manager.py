@@ -22,6 +22,11 @@ from backend.models.agent_memory import (
     SemanticCacheEntry,
     WorkingMemoryItem,
 )
+from backend.models.discovery import DiscoveryInterest, DiscoveryLocality
+from backend.models.discovery_familiar import DiscoveryFamiliarItem
+from backend.models.discovery_run import DiscoveryRun, DiscoverySchedule
+from backend.models.discovery_source import DiscoverySeenItem, DiscoverySource
+from backend.models.discovery_subscriber import DiscoverySubscriber
 
 
 # Normalize text so equivalent values share the same lookup key.
@@ -815,6 +820,17 @@ class AgentMemoryManager:
             ("knowledge_documents", KnowledgeDocument),
             ("knowledge_chunks", KnowledgeChunk),
             ("summaries", ConversationSummary),
+            # Ambient discovery holds where the user lives, what they like, and
+            # what they have already been shown. An export that omits it is not
+            # an export of what the system knows about them.
+            ("discovery_interests", DiscoveryInterest),
+            ("discovery_localities", DiscoveryLocality),
+            ("discovery_sources", DiscoverySource),
+            ("discovery_seen", DiscoverySeenItem),
+            ("discovery_subscribers", DiscoverySubscriber),
+            ("discovery_familiar", DiscoveryFamiliarItem),
+            ("discovery_schedules", DiscoverySchedule),
+            ("discovery_runs", DiscoveryRun),
         )
         exported: dict[str, list[dict[str, Any]]] = {}
         for name, model in models:

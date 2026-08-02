@@ -194,7 +194,7 @@ class DiscoveryRunner:
 
         # Scoped to where the user currently is, so travelling to a new place
         # starts from nothing known and everything ordinary there is a find.
-        primary = profile.primary_locality
+        primary = profile.active_locality
         novel = await self.familiarity.unfamiliar(
             user_id, primary.label if primary else None, novel
         )
@@ -296,7 +296,7 @@ class DiscoveryRunner:
     ) -> tuple[DiscoveredEvent, ...]:
         if self.search is None or not settings.DISCOVERY_WEB_SEARCH_ENABLED:
             return ()
-        primary = profile.primary_locality
+        primary = profile.active_locality
         if primary is None:
             # Without a place, a query would be about nowhere in particular.
             return ()

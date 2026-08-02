@@ -1,5 +1,19 @@
 import { expect, test, type Page, type Route } from '@playwright/test'
 
+// Give deterministic presentation tests the authenticated primary identity.
+test.beforeEach(async ({ page }, testInfo) => {
+  if (testInfo.title.includes('@live')) return
+  await page.route('http://localhost:8000/api/v1/auth/session', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      authentication_required: true,
+      user_id: 'ani.mallya',
+      expires_at: '2026-08-09T00:00:00Z',
+    }),
+  }))
+})
+
 // Capture browser exceptions and console errors that block the acceptance path.
 const observeBlockingBrowserErrors = (page: Page) => {
   const consoleErrors: string[] = []

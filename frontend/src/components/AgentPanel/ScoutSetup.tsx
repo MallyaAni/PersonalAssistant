@@ -11,13 +11,17 @@ import {
   Rss,
   Sparkles,
   Trash2,
+  Undo2,
 } from 'lucide-react'
 
 import {
   deleteDiscoveryInterest,
+  deleteDiscoveryKnown,
   deleteDiscoverySchedule,
   deleteDiscoverySource,
+  deleteDiscoveryTravelMode,
   getDiscoveryProfile,
+  getDiscoveryKnown,
   getDiscoverySchedule,
   getDiscoverySources,
   markDiscoveryKnown,
@@ -25,12 +29,14 @@ import {
   putDiscoveryLocality,
   putDiscoverySchedule,
   putDiscoverySource,
+  putDiscoveryTravelMode,
   resolveDiscoveryLocality,
   previewDiscoveryDigest,
   runDiscoverySweep,
   suggestDiscoveryInterests,
   suggestDiscoverySources,
   type DiscoveryInterest,
+  type DiscoveryKnownItem,
   type DiscoveryLocality,
   type DiscoverySchedule,
   type DiscoverySource,
@@ -73,7 +79,12 @@ interface ScoutSetupProps {
 const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
   const [place, setPlace] = useState('')
   const [savedPlace, setSavedPlace] = useState<DiscoveryLocality | null>(null)
+  const [localities, setLocalities] = useState<DiscoveryLocality[]>([])
+  const [travelDraft, setTravelDraft] = useState('')
+  const [activeTravel, setActiveTravel] = useState<DiscoveryLocality | null>(null)
   const [interests, setInterests] = useState<DiscoveryInterest[]>([])
+  const [known, setKnown] = useState<DiscoveryKnownItem[]>([])
+  const [knownLocality, setKnownLocality] = useState<string | null>(null)
   const [sources, setSources] = useState<DiscoverySource[]>([])
   const [interestDraft, setInterestDraft] = useState('')
   const [feedDraft, setFeedDraft] = useState('')
@@ -90,20 +101,25 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
   const [weekday, setWeekday] = useState(4)
 
   const reload = useCallback(async () => {
-    const [profile, feeds, saved] = await Promise.all([
+    const [profile, feeds, saved, familiar] = await Promise.all([
       getDiscoveryProfile(userId),
       getDiscoverySources(userId),
       getDiscoverySchedule(userId),
+      getDiscoveryKnown(userId),
     ])
     setInterests(profile.interests)
+    setLocalities(profile.localities)
     setSources(feeds)
     setSchedule(saved)
+    setKnown(familiar.known)
+    setKnownLocality(familiar.locality)
     if (saved) {
       setCadence(saved.cadence)
       setHour(saved.hour)
       setWeekday(saved.weekday)
     }
     const primary = profile.localities.find(item => item.is_primary) ?? profile.localities[0]
+    setActiveTravel(profile.localities.find(item => item.is_travel_active) ?? null)
     setSavedPlace(primary ?? null)
     if (primary && !place) setPlace(primary.label)
   }, [userId, place])
@@ -242,6 +258,43 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
       )
     })
 
+  // Change ranking weight for an existing interest without creating another fact.
+  const updateInterestStrength = (interest: DiscoveryInterest, strength: number) =>
+    perform('interest', async () => {
+      await putDiscoveryInterest(userId, interest.label, strength)
+      const label = strength === 1 ? 'Low' : strength === 3 ? 'High' : 'Normal'
+      setNotice(`${interest.label} importance set to ${label.toLowerCase()}.`)
+    })
+
+  // Save a destination separately from home, then make it Scout's active locality.
+  const startTravel = () =>
+    perform('travel', async () => {
+      const label = travelDraft.trim()
+      if (!label) throw new Error('Enter a travel destination.')
+      const destination = await putDiscoveryLocality(userId, {
+        label,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        is_primary: false,
+      })
+      await putDiscoveryTravelMode(userId, destination.id)
+      setTravelDraft('')
+      setNotice(`Travel mode on. Scout is now looking around ${describePlace(destination)}.`)
+    })
+
+  // Stop using the temporary destination and return Scout to the saved home.
+  const stopTravel = () =>
+    perform('travel', async () => {
+      await deleteDiscoveryTravelMode(userId)
+      setNotice(`Travel mode off. Scout is back around ${savedPlace?.label ?? 'home'}.`)
+    })
+
+  // Restore one dismissed family to the current locality's future results.
+  const undoKnown = (item: DiscoveryKnownItem) =>
+    perform('known', async () => {
+      await deleteDiscoveryKnown(userId, item.id)
+      setNotice(`Restored ${item.label}. Similar finds can appear here again.`)
+    })
+
   // A rehearsal: everything runs, nothing is recorded, so this can be repeated
   // while adjusting interests and comparing what comes back.
   const tryIt = () =>
@@ -343,6 +396,91 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
         </p>
       </section>
 
+      <section className="mb-5 rounded-2xl border border-black/[0.06] p-3">
+        <h4 className="text-xs font-semibold uppercase tracking-[0.08em] text-[#86868b]">
+          Travel mode
+        </h4>
+        {activeTravel ? (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="min-w-0 flex-1 text-sm font-medium text-[#248a3d]">
+              Looking around {describePlace(activeTravel)}
+            </span>
+            <button
+              onClick={() => void stopTravel()}
+              disabled={busy !== ''}
+              className="h-9 rounded-full border border-black/[0.08] px-3 text-xs font-medium disabled:opacity-40"
+            >
+              Return home
+            </button>
+          </div>
+        ) : (
+          <>
+            <p className="mt-1 text-[11px] leading-4 text-[#86868b]">
+              Temporarily search somewhere else without changing your saved home or what you know there.
+            </p>
+            <div className="mt-2 flex gap-2">
+              <input
+                value={travelDraft}
+                onChange={event => setTravelDraft(event.target.value)}
+                aria-label="Travel destination"
+                placeholder="Town or city"
+                className="h-10 min-w-0 flex-1 rounded-xl border border-black/[0.08] px-3 text-sm outline-none focus:border-[#0071e3]"
+              />
+              <button
+                onClick={() => void startTravel()}
+                disabled={busy !== '' || !Boolean(savedPlace)}
+                className="h-10 rounded-xl bg-[#1d1d1f] px-3 text-sm font-medium text-white disabled:opacity-40"
+              >
+                {busy === 'travel' ? 'Switching…' : 'Start travel'}
+              </button>
+            </div>
+            {localities.filter(item => !item.is_primary).length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {localities.filter(item => !item.is_primary).map(item => (
+                  <button
+                    key={item.id}
+                    onClick={() => void perform('travel', async () => {
+                      await putDiscoveryTravelMode(userId, item.id)
+                      setNotice(`Travel mode on. Scout is now looking around ${describePlace(item)}.`)
+                    })}
+                    disabled={busy !== ''}
+                    className="rounded-full bg-[#f5f5f7] px-2.5 py-1 text-xs disabled:opacity-40"
+                  >
+                    {describePlace(item)}
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </section>
+
+      {known.length > 0 && (
+        <section className="mb-5 rounded-2xl border border-black/[0.06] bg-[#f5f5f7] p-3">
+          <h4 className="text-xs font-semibold uppercase tracking-[0.08em] text-[#86868b]">
+            Hidden {knownLocality ? `around ${knownLocality}` : 'here'}
+          </h4>
+          <p className="mt-1 text-[11px] leading-4 text-[#86868b]">
+            These were dismissed as already familiar. Undo one to let similar finds appear again.
+          </p>
+          <div className="mt-2 space-y-1.5">
+            {known.map(item => (
+              <div key={item.id} className="flex items-center gap-2 rounded-xl bg-white px-3 py-2">
+                <span className="min-w-0 flex-1 truncate text-sm">{item.label}</span>
+                <button
+                  onClick={() => void undoKnown(item)}
+                  disabled={busy !== ''}
+                  aria-label={`Undo dismissal of ${item.label}`}
+                  className="flex h-7 items-center gap-1 rounded-full px-2 text-xs font-medium text-[#0071e3] hover:bg-[#e8f2ff] disabled:opacity-40"
+                >
+                  <Undo2 size={12} /> Undo
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       <section className="mb-5">
         <div className="mb-2 flex items-center justify-between">
           <h4 className="text-xs font-semibold uppercase tracking-[0.08em] text-[#86868b]">
@@ -358,11 +496,24 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
         </div>
         <div className="mb-2 flex flex-wrap gap-2">
           {interests.map(interest => (
-            <span
+            <div
               key={interest.id}
-              className="flex items-center gap-1.5 rounded-full bg-[#f5f5f7] py-1 pl-3 pr-1.5 text-sm"
+              className="flex items-center gap-1.5 rounded-xl bg-[#f5f5f7] py-1 pl-3 pr-1.5 text-sm"
             >
-              {interest.label}
+              <span>{interest.label}</span>
+              <select
+                value={interest.strength}
+                onChange={event =>
+                  void updateInterestStrength(interest, Number(event.target.value))
+                }
+                disabled={busy !== ''}
+                aria-label={`Importance of ${interest.label}`}
+                className="h-6 rounded-md border-0 bg-white px-1 text-[11px] text-[#6e6e73] outline-none"
+              >
+                <option value={1}>Low</option>
+                <option value={2}>Normal</option>
+                <option value={3}>High</option>
+              </select>
               <button
                 aria-label={`Remove ${interest.label}`}
                 onClick={() =>
@@ -372,7 +523,7 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
               >
                 <Trash2 size={12} />
               </button>
-            </span>
+            </div>
           ))}
           {interests.length === 0 && (
             <span className="text-sm text-[#86868b]">Nothing yet.</span>

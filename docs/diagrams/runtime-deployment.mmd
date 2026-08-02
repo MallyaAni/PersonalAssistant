@@ -1,11 +1,12 @@
 ---
 title: Local Runtime Deployment
 ---
-flowchart LR
+flowchart TB
     User([User]) --> Browser[Browser]
 
     subgraph Compose[Docker Compose]
-        Frontend[React and Vite<br/>:5173]
+        Gateway[Same-origin gateway :8080<br/>compiled React and API proxy]
+        Frontend[Vite development server<br/>:5173]
         Backend[FastAPI<br/>:8000]
         Worker[Presentation worker]
         MCP[Local capability MCP<br/>:8001]
@@ -13,7 +14,7 @@ flowchart LR
         Adapters[In-process provider-neutral<br/>inference adapters]
         VLLMMain[vLLM main :8003<br/>Qwen 3.5 4B FP8<br/>generation and vision]
         VLLMEmbed[vLLM embedding :8004<br/>Nomic text embeddings]
-        Stores[(PostgreSQL and pgvector<br/>Redis lease<br/>artifact volume)]
+        Stores[(PostgreSQL and pgvector<br/>accounts and sessions<br/>Redis lease and artifact volume)]
         VLLMMain -.->|healthy before start| VLLMEmbed
     end
 
@@ -23,9 +24,14 @@ flowchart LR
 
     subgraph External[Optional external services]
         Integrations[[Configured MCP servers<br/>Google Search and Tavily]]
+        PublicEdge[[Planned HTTPS tunnel<br/>public users install nothing]]
     end
 
-    Browser --> Frontend --> Backend
+    PublicEdge -.->|not configured| Gateway
+    Browser -->|production login and HttpOnly cookie| Gateway
+    Browser -.->|local development| Frontend
+    Gateway --> Backend
+    Frontend --> Backend
     Backend --> Stores
     Backend --> Adapters
     Backend --> ComfyUI
@@ -48,6 +54,6 @@ flowchart LR
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b,stroke-width:1.5px;
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450,stroke-width:1.5px;
     class User,Browser user;
-    class Frontend,Backend,Worker,MCP,Renderer,Adapters,VLLMMain,VLLMEmbed,ComfyUI process;
+    class Gateway,Frontend,Backend,Worker,MCP,Renderer,Adapters,VLLMMain,VLLMEmbed,ComfyUI process;
     class Stores data;
-    class Integrations external;
+    class Integrations,PublicEdge external;

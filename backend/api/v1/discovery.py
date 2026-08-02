@@ -96,6 +96,12 @@ class LocalityRequest(BaseModel):
         return normalized
 
 
+class TravelModeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    locality_id: UUID
+
+
 # Return the profile a discovery run would read, so the user can see exactly
 # what the assistant knows about their interests and where they live.
 @router.get("")
@@ -172,6 +178,35 @@ async def delete_locality(
         )
 
 
+# Activate one saved destination without changing the user's home locality.
+@router.put("/travel", status_code=status.HTTP_200_OK)
+async def start_travel_mode(
+    user_id: UserId,
+    body: TravelModeRequest,
+    service: DependencyDiscoveryProfileService,
+) -> dict[str, object]:
+    try:
+        locality = await service.set_travel_mode(user_id, body.locality_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=str(exc)
+        ) from exc
+    if locality is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Destination not found."
+        )
+    return {"active_locality": asdict(locality)}
+
+
+# Return Scout to the approved home locality.
+@router.delete("/travel", status_code=status.HTTP_204_NO_CONTENT)
+async def stop_travel_mode(
+    user_id: UserId,
+    service: DependencyDiscoveryProfileService,
+) -> None:
+    await service.set_travel_mode(user_id, None)
+
+
 class SourceRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -239,7 +274,7 @@ async def run_sweep(
 ) -> dict[str, object]:
     profile = await profile_service.get_profile(user_id)
     result = await runner.sweep(user_id, profile, persist=commit)
-    primary = profile.primary_locality
+    primary = profile.active_locality
     base = calendar_base_url(settings.DISCOVERY_CALENDAR_BASE_URL)
     return {
         # The message as it would actually be sent, so quality is judged on the
@@ -454,7 +489,7 @@ async def suggest_sources(
     setup: DependencyDiscoverySetup,
 ) -> dict[str, object]:
     profile = await profile_service.get_profile(user_id)
-    if profile.primary_locality is None:
+    if profile.active_locality is None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Add a place first so suggestions can be local.",
@@ -462,7 +497,7 @@ async def suggest_sources(
     candidates = await setup.suggest_feeds(profile)
     return {
         "user_id": user_id,
-        "locality": profile.primary_locality.label,
+        "locality": profile.active_locality.label,
         "candidates": [asdict(candidate) for candidate in candidates],
     }
 
@@ -539,7 +574,7 @@ async def preview_digest(
     seen: DependencyDiscoverySeenItems,
 ) -> dict[str, object]:
     profile = await profile_service.get_profile(user_id)
-    primary = profile.primary_locality
+    primary = profile.active_locality
     timezone = primary.timezone if primary else "America/New_York"
 
     # Preview reads what has already been announced rather than sweeping again,
@@ -645,7 +680,7 @@ async def mark_known(
     embeddings: EmbeddingDependency,
 ) -> dict[str, object]:
     profile = await profile_service.get_profile(user_id)
-    primary = profile.primary_locality
+    primary = profile.active_locality
     label = body.label.strip()
 
     # Embedded so dismissing one trail directory suppresses the family rather
@@ -675,7 +710,7 @@ async def list_known(
     familiar: DependencyDiscoveryFamiliar,
 ) -> dict[str, object]:
     profile = await profile_service.get_profile(user_id)
-    primary = profile.primary_locality
+    primary = profile.active_locality
     return {
         "locality": primary.label if primary else None,
         "known": list(

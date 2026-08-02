@@ -4,6 +4,8 @@ import MessageList from '../MessageList/MessageList'
 import Composer from '../Composer/Composer'
 import {
   approveEntity,
+  approveDiscoveryInterest,
+  approveDiscoveryLocality,
   approveEpisodic,
   approveKnowledge,
   approvePreferredName,
@@ -45,6 +47,8 @@ interface ChatWindowProps {
 const proposalLabel = (proposal: MemoryProposal) => ({
   preferred_name: 'Preferred name memory proposal',
   response_style: 'Response style memory proposal',
+  discovery_interest: 'Interest memory proposal',
+  discovery_locality: 'Home locality memory proposal',
   entity: 'Entity memory proposal',
   procedure: 'Procedure memory proposal',
   knowledge: 'Knowledge memory proposal',
@@ -56,6 +60,10 @@ const proposalValue = (proposal: MemoryProposal) => {
   if (proposal.kind === 'preferred_name' || proposal.kind === 'response_style') {
     return proposal.value
   }
+  if (proposal.kind === 'discovery_interest') return proposal.label
+  if (proposal.kind === 'discovery_locality') {
+    return proposal.region ? `${proposal.label}, ${proposal.region}` : proposal.label
+  }
   if (proposal.kind === 'entity') return proposal.canonical_name
   if (proposal.kind === 'procedure') return proposal.name
   if (proposal.kind === 'episodic') return proposal.content
@@ -66,6 +74,8 @@ const proposalValue = (proposal: MemoryProposal) => {
 const proposalType = (proposal: MemoryProposal) => ({
   preferred_name: 'preferred name',
   response_style: 'response style',
+  discovery_interest: 'interest',
+  discovery_locality: 'home locality',
   entity: 'person or organization',
   procedure: 'reusable workflow',
   knowledge: 'reference knowledge',
@@ -478,6 +488,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         await approvePreferredName(userId, memoryProposal)
       } else if (memoryProposal.kind === 'response_style') {
         await approveResponseStyle(userId, memoryProposal)
+      } else if (memoryProposal.kind === 'discovery_interest') {
+        await approveDiscoveryInterest(userId, memoryProposal)
+      } else if (memoryProposal.kind === 'discovery_locality') {
+        await approveDiscoveryLocality(userId, memoryProposal)
       } else if (memoryProposal.kind === 'entity') {
         await approveEntity(userId, memoryProposal)
       } else if (memoryProposal.kind === 'procedure') {

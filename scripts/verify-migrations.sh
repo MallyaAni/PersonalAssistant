@@ -11,7 +11,21 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-compose=(docker compose -f "$root/docker-compose.yml")
+compose_root="$root"
+migrations_mount="$root/migrations"
+backend_mount="$root/backend"
+
+# Git Bash rewrites container paths such as /app/migrations unless path
+# conversion is disabled. Supply Windows-native host paths explicitly there;
+# macOS and Linux keep the ordinary POSIX paths.
+if command -v cygpath >/dev/null 2>&1; then
+    compose_root="$(cygpath -w "$root")"
+    migrations_mount="$(cygpath -w "$root/migrations")"
+    backend_mount="$(cygpath -w "$root/backend")"
+    export MSYS_NO_PATHCONV=1
+fi
+
+compose=(docker compose -f "$compose_root/docker-compose.yml")
 
 env_value() {
     local name="$1" fallback="$2" line value
@@ -62,7 +76,8 @@ echo 'Applying migrations from an empty schema ...'
 "${compose[@]}" run --rm \
     -e POSTGRES_HOST=db \
     -e POSTGRES_DB="$scratch" \
-    -v "$root/migrations:/app/migrations:ro" \
+    -v "$migrations_mount:/app/migrations:ro" \
+    -v "$backend_mount:/app/backend:ro" \
     backend python -m alembic upgrade head
 
 tables="$("${compose[@]}" exec -T db psql -U "$user" -d "$scratch" -tAc \

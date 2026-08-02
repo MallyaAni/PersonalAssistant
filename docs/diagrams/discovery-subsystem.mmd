@@ -1,0 +1,39 @@
+---
+title: Scout Discovery Subsystem
+---
+flowchart LR
+    User([User])
+    Chat[Chat approvals]
+    Setup[Scout setup]
+
+    Memory[Approved memory facts<br/>home and interests]
+    Projection[Bidirectional profile projection]
+    Profile[(Scout profile<br/>home Â· travel Â· weighted interests)]
+
+    Schedule[Durable schedule]
+    Sources[Feeds and bounded web results]
+    Sweep[Scout sweep]
+    Rank[Novelty and deterministic ranking]
+    History[(Seen and familiar items)]
+    Result[Digest and calendar]
+
+    User --> Chat --> Memory
+    User --> Setup
+    Setup -->|profile edits| Projection
+    Memory --> Projection --> Profile
+    Setup -->|travel and strength| Profile
+    Setup -->|undo dismissal| History
+
+    Schedule --> Sweep
+    Sources --> Sweep
+    Profile --> Sweep --> Rank
+    History --> Rank
+    Rank --> History
+    Rank --> Result
+
+    classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
+    classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
+    classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
+    class User,Chat,Setup,Result interface;
+    class Projection,Schedule,Sources,Sweep,Rank application;
+    class Memory,Profile,History data;

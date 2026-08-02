@@ -30,7 +30,9 @@ from backend.memory.coordinator import MemoryCoordinatorAgent
 from backend.memory.proposals import (
     propose_entity,
     propose_episodic,
+    propose_interest,
     propose_knowledge,
+    propose_locality,
     propose_preferred_name,
     propose_procedure,
     propose_response_style,
@@ -105,6 +107,22 @@ def _memory_proposal(
         return {
             "kind": "response_style",
             "value": response_style,
+            "conversation_id": conversation_id,
+            "trace_id": trace_id,
+        }
+    locality = propose_locality(query)
+    if locality:
+        return {
+            "kind": "discovery_locality",
+            **locality,
+            "conversation_id": conversation_id,
+            "trace_id": trace_id,
+        }
+    interest = propose_interest(query)
+    if interest:
+        return {
+            "kind": "discovery_interest",
+            "label": interest,
             "conversation_id": conversation_id,
             "trace_id": trace_id,
         }

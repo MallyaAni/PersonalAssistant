@@ -3,7 +3,7 @@ title: Memory Subsystem
 ---
 flowchart TB
     Chat([Chat turn])
-    UI([Memory UI])
+    UI([Memory and Scout UI])
 
     Coordinator[MemoryCoordinatorAgent]
     Services[Application-owned services and write policy<br/>user scope · consent where required]
@@ -17,6 +17,7 @@ flowchart TB
     TextEmbed[Nomic text embedding<br/>via vLLM]
     Database[(PostgreSQL and pgvector)]
     Maintenance[Retention, re-embedding,<br/>health, export and delete]
+    Discovery[Scout fact projection<br/>home and interests]
 
     Main[Qwen 3.5 4B<br/>assistant call via vLLM]
 
@@ -25,6 +26,7 @@ flowchart TB
     Coordinator --> Services
     Services --> Short
     Services --> Long
+    Services --> Discovery --> Database
     Coordinator --> Retrieval
     Short --> Retrieval
     Long --> Retrieval
@@ -41,6 +43,6 @@ flowchart TB
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     class Chat,UI interface;
-    class Coordinator,Services,Retrieval,Context,Inference,Maintenance application;
+    class Coordinator,Services,Retrieval,Context,Inference,Maintenance,Discovery application;
     class Short,Long,Database data;
     class TextEmbed,Main model;

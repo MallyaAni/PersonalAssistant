@@ -9,6 +9,7 @@ from sqlalchemy import (
     Integer,
     String,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -71,6 +72,13 @@ class DiscoveryLocality(Base):
     __table_args__ = (
         UniqueConstraint("user_id", "label_digest", name="uq_discovery_locality_label"),
         Index("ix_discovery_localities_user", "user_id"),
+        # The active destination is single-valued even under concurrent requests.
+        Index(
+            "uq_discovery_localities_active_travel",
+            "user_id",
+            unique=True,
+            postgresql_where=text("is_travel_active IS TRUE"),
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -87,6 +95,10 @@ class DiscoveryLocality(Base):
         String(64), nullable=False, default="America/New_York"
     )
     is_primary: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # Travel mode changes where Scout looks without rewriting where the user lives.
+    is_travel_active: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -107,4 +119,5 @@ class DiscoveryLocality(Base):
             "radius_km": self.radius_km,
             "timezone": self.timezone,
             "is_primary": self.is_primary,
+            "is_travel_active": self.is_travel_active,
         }

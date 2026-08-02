@@ -3,7 +3,9 @@ import pytest
 from backend.memory.proposals import (
     propose_entity,
     propose_episodic,
+    propose_interest,
     propose_knowledge,
+    propose_locality,
     propose_preferred_name,
     propose_procedure,
     propose_response_style,
@@ -40,6 +42,38 @@ def test_propose_preferred_name_is_narrow_and_non_executing(query, expected):
 )
 def test_propose_response_style_is_narrow_and_non_executing(query, expected):
     assert propose_response_style(query) == expected
+
+
+# Verify home-locality proposals require an explicit first-person residence statement.
+@pytest.mark.parametrize(
+    ("query", "expected"),
+    [
+        ("I live in Arlington.", {"label": "Arlington", "region": None}),
+        (
+            "I live near Arlington, Virginia.",
+            {"label": "Arlington", "region": "Virginia"},
+        ),
+        ("Find events in Arlington.", None),
+        ("Do I live in Arlington?", None),
+    ],
+)
+def test_propose_locality_is_explicit_and_non_executing(query, expected):
+    assert propose_locality(query) == expected
+
+
+# Verify interest proposals require explicit interest language.
+@pytest.mark.parametrize(
+    ("query", "expected"),
+    [
+        ("I am interested in hiking.", "hiking"),
+        ("I'm interested in live jazz!", "live jazz"),
+        ("My interests include architecture.", "architecture"),
+        ("Tell me about hiking.", None),
+        ("I like hiking.", None),
+    ],
+)
+def test_propose_interest_is_explicit_and_non_executing(query, expected):
+    assert propose_interest(query) == expected
 
 
 # Verify explicit relationship statements become non-persisted entity proposals.

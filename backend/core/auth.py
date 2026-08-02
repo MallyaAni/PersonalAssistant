@@ -8,8 +8,11 @@ from dataclasses import dataclass
 from typing import Annotated
 
 from fastapi import Depends, Header, HTTPException, Request, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.config.settings import settings
+from backend.database.session import get_db
+from backend.services.auth_service import AuthService
 
 # Least-privilege scopes. A token may be restricted to a subset so a leaked or
 # narrowly-issued token cannot reach the whole account. A scope with a `parent`
@@ -113,18 +116,35 @@ def _parse_scopes(raw: object) -> frozenset[str] | None:
     return frozenset(raw)
 
 
-def get_authenticated_identity(
+# Resolve either an operator bearer token or a revocable browser session.
+async def get_authenticated_identity(
+    request: Request,
+    db: Annotated[AsyncSession, Depends(get_db)],
     authorization: str | None = Header(default=None),
 ) -> AuthenticatedIdentity | None:
     if not settings.AUTH_REQUIRED:
         return None
-    if not authorization or not authorization.startswith("Bearer "):
+    if authorization and authorization.startswith("Bearer "):
+        return verify_user_token(authorization[7:])
+    session_token = request.cookies.get(settings.AUTH_COOKIE_NAME)
+    if not session_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication required",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return verify_user_token(authorization[7:])
+    validate_browser_origin(request)
+    session = await AuthService(db).resolve_session(session_token)
+    if session is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired authentication session",
+        )
+    return AuthenticatedIdentity(
+        user_id=session.user_id,
+        expires_at=int(session.expires_at.timestamp()),
+        scopes=None,
+    )
 
 
 IdentityDependency = Annotated[
@@ -166,6 +186,29 @@ def authorize_path_user(
         else SCOPE_MEMORY_WRITE
     )
     authorize_scope(identity, required)
+
+
+# Reject unsafe cookie-authenticated browser requests from untrusted origins.
+def validate_browser_origin(request: Request) -> None:
+    if request.method in ("GET", "HEAD", "OPTIONS"):
+        return
+    origin = request.headers.get("origin")
+    if not origin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="A trusted request origin is required",
+        )
+    trusted = {
+        value.strip().rstrip("/")
+        for value in settings.AUTH_TRUSTED_ORIGINS.split(",")
+        if value.strip()
+    }
+    request_origin = f"{request.url.scheme}://{request.headers.get('host', '')}"
+    if origin.rstrip("/") not in trusted | {request_origin.rstrip("/")}:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Request origin is not trusted",
+        )
 
 
 def _sign(encoded_payload: str) -> str:

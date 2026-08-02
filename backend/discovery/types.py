@@ -37,6 +37,7 @@ class Locality:
     radius_km: int
     timezone: str
     is_primary: bool
+    is_travel_active: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -53,6 +54,14 @@ class DiscoveryProfile:
             if locality.is_primary:
                 return locality
         return self.localities[0] if self.localities else None
+
+    # Use a temporary travel destination when set, otherwise use the user's home.
+    @property
+    def active_locality(self) -> Locality | None:
+        for locality in self.localities:
+            if locality.is_travel_active:
+                return locality
+        return self.primary_locality
 
 
 # Fold case, width, and whitespace so "Live  Music" and "live music" are one

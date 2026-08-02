@@ -137,7 +137,12 @@ Key settings are:
 | Variable | Code default | Local-host guidance |
 | --- | --- | --- |
 | `SECRET_KEY` | none; required | Set a non-production development value before importing the backend |
-| `AUTH_REQUIRED` | `false` | Set `true` outside trusted-local mode; then every chat/memory request needs a signed user token |
+| `AUTH_REQUIRED` | `false` | Set `true` outside trusted-local mode; private UI/API requests then require a password session or supported bearer token |
+| `AUTH_LOCAL_USER_ID` | `ani.mallya` | Stable owner returned only in trusted-local auth-disabled mode |
+| `AUTH_SESSION_TTL_HOURS` | `168` | Password-browser-session lifetime before re-login |
+| `AUTH_COOKIE_SECURE` | `false` | Keep false only for loopback HTTP; set true for HTTPS ingress |
+| `AUTH_COOKIE_SAMESITE` | `lax` | Browser CSRF boundary; supported values are `lax` and `strict` |
+| `AUTH_TRUSTED_ORIGINS` | local Vite origins | Comma-separated exact Origins allowed for unsafe cookie-authenticated requests |
 | `ENCRYPTION_KEY` | none; disabled | Set a urlsafe-base64 AES-256 key (from `python -m backend.cli.generate_encryption_key`) to seal conversation/memory/image content at rest; empty stores plaintext |
 | `DEBUG` | `false` | Must be a valid boolean; an existing host `DEBUG` value overrides `.env` |
 | `POSTGRES_USER` | `postgres` | Match the Compose database |
@@ -232,6 +237,11 @@ For host development, a minimal root `.env` is:
 ```dotenv
 SECRET_KEY=local-development-only
 AUTH_REQUIRED=false
+AUTH_LOCAL_USER_ID=ani.mallya
+AUTH_SESSION_TTL_HOURS=168
+AUTH_COOKIE_SECURE=false
+AUTH_COOKIE_SAMESITE=lax
+AUTH_TRUSTED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 DEBUG=false
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=password
@@ -336,6 +346,17 @@ bash scripts/verify-migrations.sh
 
 It creates a scratch database, upgrades it to head from nothing, reports the
 resulting table count and revision, and drops it however the run exits.
+
+Before moving AniOS from Windows to macOS, stop all writers and take a fresh
+database dump. Copy that dump, the opaque artifact storage volume, and any
+external encryption key through a private channel; a database dump alone does
+not contain image or PowerPoint bytes, and encrypted content is unrecoverable
+without its key. On the Mac, clone the same source revision, restore the
+database and artifact files, run the scratch migration verifier, upgrade the
+restored database, and compare per-user counts before allowing writes. Then
+exercise login, one existing conversation, memory recall, artifact download,
+and a new chat turn. Never treat a fresh empty schema as a migration test for
+the copied data.
 
 `vllm-main` quantizes the Qwen checkpoint to FP8 on load and stores its KV cache
 in FP8, serving a 16,384-token maximum, four sequences, a 4,096-token scheduler
@@ -825,6 +846,7 @@ Backend tests are located under `backend/tests`:
 ```powershell
 docker compose up -d db
 $env:POSTGRES_HOST='127.0.0.1'
+$env:AUTH_REQUIRED='false' # individual auth tests enable it explicitly
 .\.venv\Scripts\python.exe -m pytest -p no:cacheprovider backend/tests
 ```
 
@@ -863,6 +885,29 @@ Tests must prove behavior at the lowest useful layer and must collectively cover
 
 The repository has Playwright `test:e2e` and `test:e2e:live` scripts. The deterministic suite intercepts the chat boundary for repeatability; the live suite is skipped unless `ANIOS_E2E_LIVE=1` and must contact the configured backend/provider. Passing deterministic tests does not prove live-model connectivity.
 
+### Scout profile acceptance
+
+For changes to discovery memory or controls, validate both boundaries. Backend
+tests must seed/export/delete every discovery table, exercise fact-to-profile and
+profile-to-fact projection, and verify active-locality behavior. Browser coverage
+must configure home and an interest, change strength, start and stop travel,
+undo a locality-scoped dismissal, inspect the persisted profile/facts, and fail
+on blocking Console or page errors.
+
+After rebuilding the backend and frontend from the working tree, the focused
+live path is:
+
+```powershell
+$env:ANIOS_E2E_LIVE='1'
+$env:ANIOS_API_URL='http://localhost:8000'
+cd frontend
+.\node_modules\.bin\playwright.cmd test --grep "manages Scout memory, travel, strength, and dismissal undo"
+```
+
+The test uses a unique user and removes it through the public memory delete-all
+API. Inspect backend logs afterward for the matching user identifier and any
+exception; HTTP success alone is not sufficient.
+
 ### Deterministic and live LLM validation
 
 Keep these checks separate:
@@ -887,7 +932,13 @@ A successful Alembic command does not prove application tables exist. Verify the
 docker compose exec -T db psql -U postgres -d anios_db -c "\dt"
 ```
 
-The current migration head is `20260726_0015`. Revision `0015` adds user-scoped durable presentation jobs with queued/running/ready/failed/cancelled lifecycle, encrypted prompt/draft fields, recoverable worker leases, attempts, cancellation, and supporting indexes. Revision `0014` associates each feedback revision with its stable target slide so the browser can reconstruct independent per-slide conversations. Revision `0013` adds user-scoped presentations and append-only revisions with parent/current pointers, lifecycle, encrypted title/spec fields, model/renderer provenance, opaque binary metadata, and optimistic base-revision protection. Revision `0011` adds generated/uploaded artifact kinds plus opaque storage key, byte size, SHA-256, width, and height. Revision `0010` adds user-scoped visual artifacts with pending/ready/failed lifecycle, conversation/trace provenance, provider/model metadata, editable source, and indexes. Revision `0009` adds source-conversation provenance to procedures plus approval and source-request provenance to knowledge documents. Revision `0008` adds semantic-cache, working-memory, procedure, entity/relation, knowledge-document/chunk, and conversation-summary tables plus pgvector HNSW cosine indexes for vector-bearing memory. Revisions `0004` through `0007` add structured facts, retention/embedding metadata, provenance idempotency, and safe tool-memory tables. Revision `20260716_0002` intentionally refuses to change vector dimensions when legacy semantic rows exist; export or explicitly migrate those vectors instead of deleting or silently truncating them.
+The current migration head is `20260802_0025`. Revision `0023` adds invite-only
+accounts and revocable browser sessions; revision `0024` separates the unique
+login name from the stable owned user ID without rewriting owned data; revision
+`0025` adds digest-only, expiring, one-time registration invitations. Revisions
+`0021` and `0022` add reversible travel mode and its single-active-destination
+invariant. Earlier revisions retain the presentation, artifact, structured
+memory, tool-memory, and pgvector history described in their migration files.
 
 Create or reset migrations only as part of an explicitly approved schema task. Treat deletion of the `pgdata` volume as destructive.
 
@@ -935,14 +986,67 @@ The repository also contains a diagnostic client:
 python debug_test.py
 ```
 
-To validate auth-enabled mode, set `AUTH_REQUIRED=true`, issue a short-lived token, and expose the same token to the frontend process:
+Provision invite accounts through the non-echoing operator prompt. Keep the
+stable owner attached to existing data even when the login name is different:
 
 ```powershell
-$token = python -m backend.cli.issue_token --user dev_user_001 --ttl-seconds 3600
-$env:VITE_AUTH_TOKEN = $token
+python -m backend.cli.manage_user create --user ani.mallya
 ```
 
-Send `Authorization: Bearer <token>` on direct API requests. The token subject must exactly match the body/path `user_id`; never commit or log a real token.
+For a friend to choose their own username and password in the browser, create a
+short-lived one-time invitation instead. The command prints the raw code once;
+only its SHA-256 digest is stored:
+
+```powershell
+python -m backend.cli.manage_user create-invite --ttl-hours 24
+```
+
+Share that code privately. The friend selects `Create an invited profile` on
+the login screen, enters a username, a password of at least 12 characters, and
+the code. Account creation, first-session creation, and invitation consumption
+commit in one transaction. A used or expired code cannot be replayed. There is
+no unrestricted public signup.
+
+The password must contain at least 12 characters and is never printed. Enable
+`AUTH_REQUIRED=true`, recreate the backend, and use a cookie jar for direct API
+acceptance:
+
+```bash
+curl -c anios-cookie.txt -X POST http://localhost:8000/api/v1/auth/login \
+  -H "Origin: http://localhost:5173" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"ani.mallya","password":"<enter a strong test password>"}'
+curl -b anios-cookie.txt http://localhost:8000/api/v1/auth/session
+curl -b anios-cookie.txt http://localhost:8000/api/v1/memory/ani.mallya
+```
+
+Delete the temporary cookie file after the check. Confirm a different user's
+path returns 403, logout revokes the session, and the same cookie then returns
+401. In Chromium, require the login screen first, submit credentials, send a
+unique chat turn, reload, and verify the same owned transcript returns with no
+blocking Console error or required Network failure. Log out and prove private
+views are no longer mounted.
+
+Login and registration attempts use shared Redis fixed-window limits. If Redis
+is unavailable, a new attempt fails closed with 503; repeated invalid attempts
+return 429 with `Retry-After`. The operator-facing settings are
+`AUTH_LOGIN_MAX_FAILURES`, `AUTH_LOGIN_FAILURE_WINDOW_SECONDS`,
+`AUTH_LOGIN_GLOBAL_MAX_ATTEMPTS`, and
+`AUTH_LOGIN_GLOBAL_WINDOW_SECONDS`.
+
+For production-style local acceptance, use `http://localhost:8080`. The
+loopback-only Nginx gateway serves the compiled React application and proxies
+`/api` to FastAPI on the same origin, including SSE, uploads, downloads, and
+long-running image/presentation requests. Remote HTTPS ingress is not yet
+configured. A future Tailscale Funnel should publish only this gateway; friends
+do not install Tailscale, and PostgreSQL, Redis, vLLM, ComfyUI, renderers, and
+MCP ports remain private. The same Docker Compose gateway is portable to macOS;
+follow the database/artifact/encryption-key migration procedure before moving
+hosts.
+
+Legacy bearer tokens remain useful for scoped automation. Send
+`Authorization: Bearer <token>` on direct requests; the subject must exactly
+match the body/path `user_id`, and no real token may be committed or logged.
 
 To issue a least-privilege token, pass `--scope` one or more times; omitting it mints an unrestricted token. Each route requires the scope matching its action, so a read-only token cannot write:
 

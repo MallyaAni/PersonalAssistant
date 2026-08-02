@@ -320,10 +320,20 @@ class Settings(BaseSettings):
     OTEL_EXPORTER: Literal["console", "otlp", "none"] = "console"
     OTEL_EXPORTER_OTLP_ENDPOINT: str = ""
 
-    # JWT Authentication
+    # Authentication and revocable browser sessions.
     SECRET_KEY: str = Field(..., alias="SECRET_KEY")
     AUTH_REQUIRED: bool = False
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    AUTH_SESSION_TTL_HOURS: int = Field(default=168, ge=1, le=720)
+    AUTH_COOKIE_NAME: str = "anios_session"
+    AUTH_COOKIE_SECURE: bool = False
+    AUTH_COOKIE_SAMESITE: Literal["lax", "strict"] = "lax"
+    AUTH_TRUSTED_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
+    AUTH_LOCAL_USER_ID: str = "ani.mallya"
+    AUTH_LOGIN_MAX_FAILURES: int = Field(default=8, ge=2, le=100)
+    AUTH_LOGIN_FAILURE_WINDOW_SECONDS: int = Field(default=900, ge=60, le=86_400)
+    AUTH_LOGIN_GLOBAL_MAX_ATTEMPTS: int = Field(default=120, ge=10, le=10_000)
+    AUTH_LOGIN_GLOBAL_WINDOW_SECONDS: int = Field(default=60, ge=10, le=3_600)
 
     # Encryption at rest. Opt-in: empty means disabled and all content is stored
     # as plaintext, unchanged from earlier behaviour. Set a urlsafe-base64

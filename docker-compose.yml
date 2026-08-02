@@ -351,6 +351,16 @@ services:
       # No default: a missing secret must fail the run, never fall back to a
       # committed placeholder that would sign real auth tokens.
       - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (see .env.example)}
+      - AUTH_REQUIRED=${AUTH_REQUIRED:-true}
+      - AUTH_LOCAL_USER_ID=${AUTH_LOCAL_USER_ID:-ani.mallya}
+      - AUTH_SESSION_TTL_HOURS=${AUTH_SESSION_TTL_HOURS:-168}
+      - AUTH_COOKIE_SECURE=${AUTH_COOKIE_SECURE:-false}
+      - AUTH_COOKIE_SAMESITE=${AUTH_COOKIE_SAMESITE:-lax}
+      - AUTH_TRUSTED_ORIGINS=${AUTH_TRUSTED_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
+      - AUTH_LOGIN_MAX_FAILURES=${AUTH_LOGIN_MAX_FAILURES:-8}
+      - AUTH_LOGIN_FAILURE_WINDOW_SECONDS=${AUTH_LOGIN_FAILURE_WINDOW_SECONDS:-900}
+      - AUTH_LOGIN_GLOBAL_MAX_ATTEMPTS=${AUTH_LOGIN_GLOBAL_MAX_ATTEMPTS:-120}
+      - AUTH_LOGIN_GLOBAL_WINDOW_SECONDS=${AUTH_LOGIN_GLOBAL_WINDOW_SECONDS:-60}
       # Seals free-text columns at rest. Empty disables it; every service
       # that writes a sealed column needs the same key, or one of them
       # stores plaintext into a column another reads as sealed.
@@ -458,6 +468,29 @@ services:
       - /app/node_modules
     depends_on:
       - backend
+
+  gateway:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.gateway
+    container_name: anios_gateway
+    # Funnel targets one loopback-only port; no LAN/public socket is opened.
+    ports:
+      - "127.0.0.1:${ANIOS_GATEWAY_PORT:-8080}:8080"
+    depends_on:
+      - backend
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - --quiet
+        - --tries=1
+        - --spider
+        - http://127.0.0.1:8080/healthz
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
 
   comfyui:
     build:

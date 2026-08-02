@@ -42,6 +42,7 @@ from backend.discovery.channels import (
     NullChannel,
     PullOnlyChannel,
 )
+from backend.discovery.fact_recorder import MemoryFactRecorder
 from backend.discovery.familiarity import FamiliarItemRepository
 from backend.discovery.locating import (
     DisabledPlaceResolver,
@@ -731,7 +732,12 @@ DependencyMemoryService = Annotated[PostgresMemoryService, Depends(get_memory_se
 # The discovery profile is per-request session state like every other repository
 # boundary, so it is built per request rather than cached.
 def get_discovery_profile_service(db: DbDependency) -> DiscoveryProfileService:
-    return DiscoveryProfileService(DiscoveryProfileRepository(db))
+    # The profile is a projection of memory, so an edit here records the fact
+    # too. Otherwise the user maintains where they live in two places and the
+    # assistant only knows about one of them.
+    return DiscoveryProfileService(
+        DiscoveryProfileRepository(db), MemoryFactRecorder(db)
+    )
 
 
 DependencyDiscoveryProfileService = Annotated[

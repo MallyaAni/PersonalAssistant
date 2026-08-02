@@ -1,81 +1,76 @@
 import { useEffect, useState } from 'react'
-import { Menu, Plus } from 'lucide-react'
-import ChatWindow from './components/ChatWindow/ChatWindow'
-import Sidebar from './components/Sidebar/Sidebar'
-import MemoryPanel from './components/MemoryPanel/MemoryPanel'
-import ArtifactPanel from './components/ArtifactPanel/ArtifactPanel'
-import PresentationPanel from './components/PresentationPanel/PresentationPanel'
+import { LogOut, Menu, Plus } from 'lucide-react'
 import AgentPanel from './components/AgentPanel/AgentPanel'
-
-const DEFAULT_USER_ID = 'ani.mallya'
-const LEGACY_DEFAULT_USER_ID = 'dev_user_001'
+import ArtifactPanel from './components/ArtifactPanel/ArtifactPanel'
+import ChatWindow from './components/ChatWindow/ChatWindow'
+import LoginScreen from './components/LoginScreen/LoginScreen'
+import MemoryPanel from './components/MemoryPanel/MemoryPanel'
+import PresentationPanel from './components/PresentationPanel/PresentationPanel'
+import Sidebar from './components/Sidebar/Sidebar'
+import {
+  getAuthSession,
+  logout,
+  type AuthSession,
+} from './services/api'
 
 interface ActiveConversation {
   id: string;
   restore: boolean;
 }
 
-interface ActiveSession {
-  userId: string;
-  conversation: ActiveConversation;
-}
-
-// Read one initial session without mutating storage during React initialization.
-const getInitialSession = (): ActiveSession => {
-  const storedUser = localStorage.getItem('anios_user_id')
-  const migrateUser = !storedUser || storedUser === LEGACY_DEFAULT_USER_ID
-  const userId = migrateUser ? DEFAULT_USER_ID : storedUser as string
-  const storedConversation = migrateUser
-    ? null
-    : localStorage.getItem('anios_conversation_id')
-  return {
-    userId,
-    conversation: storedConversation
-      ? { id: storedConversation, restore: true }
-      : { id: crypto.randomUUID(), restore: false },
+// Restore only the conversation identifier previously used by this signed-in user.
+const getInitialConversation = (userId: string): ActiveConversation => {
+  const scopedKey = `anios_conversation_id:${userId}`
+  const stored = localStorage.getItem(scopedKey)
+  if (stored) return { id: stored, restore: true }
+  const legacy = userId === 'ani.mallya'
+    ? localStorage.getItem('anios_conversation_id')
+    : null
+  if (legacy) {
+    localStorage.setItem(scopedKey, legacy)
+    return { id: legacy, restore: true }
   }
+  return { id: crypto.randomUUID(), restore: false }
 }
 
-// Coordinate the active user, conversation, and primary application view.
-function App() {
+interface AuthenticatedAppProps {
+  auth: AuthSession;
+  onSignedOut: () => void;
+}
+
+// Render the private workspace using only the server-authenticated user identity.
+const AuthenticatedApp = ({ auth, onSignedOut }: AuthenticatedAppProps) => {
+  const userId = auth.user_id
   const [isSidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 768)
   const [activeView, setActiveView] = useState<'chat' | 'memory' | 'artifacts' | 'presentations' | 'agents'>('chat')
-  const [session, setSession] = useState(getInitialSession)
-  const { userId, conversation } = session
+  const [conversation, setConversation] = useState(() => getInitialConversation(userId))
+  const [logoutError, setLogoutError] = useState('')
 
-  // Persist the committed session after React finishes initialization.
+  // Persist the active conversation separately for each authenticated account.
   useEffect(() => {
-    localStorage.setItem('anios_user_id', userId)
-    localStorage.setItem('anios_conversation_id', conversation.id)
+    localStorage.setItem(`anios_conversation_id:${userId}`, conversation.id)
   }, [conversation.id, userId])
 
-  // Start a new empty conversation and persist its identifier for later reloads.
+  // Start a new empty conversation without changing the signed-in owner.
   const rotateConversation = () => {
-    const created = crypto.randomUUID()
-    setSession(current => ({
-      ...current,
-      conversation: { id: created, restore: false },
-    }))
-    localStorage.setItem('anios_conversation_id', created)
+    setConversation({ id: crypto.randomUUID(), restore: false })
   }
 
-  // Open a new chat without changing the active user.
+  // Open a new chat while retaining the authenticated account boundary.
   const startNewConversation = () => {
     rotateConversation()
     setActiveView('chat')
   }
 
-  // Change the logical local user and isolate them in a new conversation.
-  const updateUserId = (nextUserId: string) => {
-    const normalized = nextUserId.trim()
-    if (!normalized || normalized === userId) return
-    const created = crypto.randomUUID()
-    setSession({
-      userId: normalized,
-      conversation: { id: created, restore: false },
-    })
-    localStorage.setItem('anios_user_id', normalized)
-    localStorage.setItem('anios_conversation_id', created)
+  // Revoke the server session before returning to the login screen.
+  const signOut = async () => {
+    setLogoutError('')
+    try {
+      await logout()
+      onSignedOut()
+    } catch (reason) {
+      setLogoutError(reason instanceof Error ? reason.message : 'Unable to sign out.')
+    }
   }
 
   return (
@@ -92,7 +87,7 @@ function App() {
             <span className="anios-wordmark flex h-9 w-9 flex-none items-center justify-center rounded-xl text-sm font-semibold text-white">A</span>
             <div className="min-w-0">
               <h1 className="truncate text-[17px] font-semibold tracking-[-0.02em]">AniOS</h1>
-              <p className="hidden text-xs text-[#6e6e73] sm:block">Local intelligence</p>
+              <p className="hidden text-xs text-[#6e6e73] sm:block">Signed in as {userId}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -104,6 +99,15 @@ function App() {
               <Plus size={17} strokeWidth={2.25} />
               <span className="hidden sm:inline">New chat</span>
             </button>
+            {auth.authentication_required && (
+              <button
+                aria-label="Sign out"
+                onClick={() => void signOut()}
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-black/[0.08] bg-white text-[#1d1d1f] hover:bg-[#f5f5f7]"
+              >
+                <LogOut size={17} />
+              </button>
+            )}
             <button
               aria-label={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
               onClick={() => setSidebarOpen(!isSidebarOpen)}
@@ -113,6 +117,7 @@ function App() {
             </button>
           </div>
         </header>
+        {logoutError && <p role="alert" className="bg-[#fff1f0] px-4 py-2 text-sm text-[#b42318]">{logoutError}</p>}
         <div className={activeView === 'chat' ? 'flex flex-1 min-h-0' : 'hidden'}>
           <ChatWindow
             key={`${userId}:${conversation.id}`}
@@ -121,9 +126,7 @@ function App() {
             restoreConversation={conversation.restore}
           />
         </div>
-        {activeView === 'memory' && (
-          <MemoryPanel userId={userId} onUserIdChange={updateUserId} />
-        )}
+        {activeView === 'memory' && <MemoryPanel userId={userId} />}
         {activeView === 'artifacts' && <ArtifactPanel userId={userId} />}
         {activeView === 'agents' && (
           <AgentPanel userId={userId} onOpenView={setActiveView} />
@@ -137,6 +140,49 @@ function App() {
       </main>
     </div>
   )
+}
+
+// Gate the entire application on the backend's revocable authenticated session.
+function App() {
+  const [auth, setAuth] = useState<AuthSession | null | undefined>(undefined)
+  const [startupError, setStartupError] = useState('')
+
+  // Resolve the current cookie session before mounting any private workspace view.
+  useEffect(() => {
+    void getAuthSession()
+      .then(setAuth)
+      .catch(reason => {
+        setStartupError(reason instanceof Error ? reason.message : 'Unable to reach AniOS.')
+        setAuth(null)
+      })
+  }, [])
+
+  // Return to login whenever any API request reports an expired session.
+  useEffect(() => {
+    const handleUnauthorized = () => setAuth(null)
+    window.addEventListener('anios:unauthorized', handleUnauthorized)
+    return () => window.removeEventListener('anios:unauthorized', handleUnauthorized)
+  }, [])
+
+  if (auth === undefined) {
+    return (
+      <main className="flex min-h-dvh items-center justify-center bg-[#f5f5f7] text-[#6e6e73]">
+        <p role="status">Opening AniOS…</p>
+      </main>
+    )
+  }
+  if (auth === null) {
+    return (
+      <>
+        {startupError && <p role="alert" className="fixed inset-x-0 top-0 z-10 bg-[#fff1f0] p-3 text-center text-sm text-[#b42318]">{startupError}</p>}
+        <LoginScreen onAuthenticated={session => {
+          setStartupError('')
+          setAuth(session)
+        }} />
+      </>
+    )
+  }
+  return <AuthenticatedApp key={auth.user_id} auth={auth} onSignedOut={() => setAuth(null)} />
 }
 
 export default App

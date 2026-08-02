@@ -6,6 +6,9 @@ The repository contains:
 
 - a FastAPI backend;
 - a React and Vite developer console;
+- invited profile creation and login backed by one-time expiring codes,
+  Argon2id password hashes, shared attempt limits, revocable HttpOnly browser
+  sessions, server-derived ownership, and stable per-user data IDs;
 - Docker Compose definitions for PostgreSQL with pgvector, Redis, two pinned
   vLLM inference services, the backend, frontend, local capability FastMCP
   sidecar, presentation worker, and presentation renderer;
@@ -28,6 +31,10 @@ The repository contains:
   restoration, history, download, owned deletion, and threaded followup
   questions on any owned image;
 - a clickable Agent memory map whose bounded store details load on demand through the owned export boundary;
+- a durable Scout discovery agent whose approved home and interests share the
+  personal-memory fact lifecycle, with editable ranking strength, reversible
+  travel mode, familiar-item undo, bounded sources, scheduled sweeps, digests,
+  and calendar artifacts;
 - a focused presentation subsystem where a separately qualified specialist model produces compact slide content,
   a durable worker executes the presentation LangGraph independently of chat,
   application code compiles strict editable deck specifications and ranked
@@ -65,7 +72,10 @@ Common entry points are:
 Backend health:  http://localhost:8000/health
 OpenAPI UI:      http://localhost:8000/docs
 Frontend:        http://localhost:5173
+Local gateway:   http://localhost:8080
+Authentication: http://localhost:8000/api/v1/auth/session
 Memory API:      http://localhost:8000/api/v1/memory/{user_id}
+Scout discovery: http://localhost:8000/api/v1/discovery/{user_id}
 Agent memory:    http://localhost:8000/api/v1/memory/{user_id}/agent
 Artifacts API:   http://localhost:8000/api/v1/artifacts/{user_id}/conversations/{conversation_id}
 Artifact history: http://localhost:8000/api/v1/artifacts/{user_id}
@@ -90,6 +100,7 @@ User-visible behavior is considered verified only when the intended workflow is 
 - [Architecture](docs/ARCHITECTURE.md)
 - [Canonical system diagram](docs/diagrams/anios-system.svg)
 - [Scalable inference target](docs/diagrams/inference-scaling-target.svg)
+- [Authentication and ownership](docs/diagrams/authentication-subsystem.svg)
 - [Detailed subsystem diagram catalog](docs/diagrams/README.md)
 - [Development and validation](docs/DEVELOPMENT_GUIDE.md)
 - [Roadmap](docs/ROADMAP.md)

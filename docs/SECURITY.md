@@ -4,9 +4,37 @@ This document separates current security facts from future requirements. A contr
 
 ## Current security posture
 
-- Chat and memory routes support expiring HMAC-signed local user tokens. Authentication is disabled by default for trusted local development; when `AUTH_REQUIRED=true`, missing/invalid/expired tokens return 401 and a token subject that differs from the requested user returns 403.
+- AniOS supports invited password accounts. An operator mints an expiring
+  one-time registration code; only its SHA-256 digest is stored, and browser
+  registration consumes it atomically with account and session creation.
+  Argon2id hashes are stored for
+  passwords; a successful login creates a random opaque browser token, while
+  PostgreSQL stores only its SHA-256 digest. The host-only cookie is HttpOnly,
+  SameSite=Lax by default, revocable on logout, password reset, or account
+  disable, and must use `Secure=true` for HTTPS deployment. There is an
+  invitation-gated registration endpoint, not unrestricted public signup.
+- Login names and owned data identities are separate even when their values are
+  equal. The current primary account uses `ani.mallya` for both; every protected
+  handler uses that server-derived owner and rejects a different path/body user
+  with 403. Authentication is enabled in the current local `.env`.
+- Account storage contains the normalized login name, stable owner ID, Argon2id
+  hash, active flag, and timestamps. Session storage contains the owner, token
+  digest, expiry, and optional revocation time—never the raw token. Memory
+  delete-all intentionally does not delete authentication records. The current
+  CLI disables access and revokes sessions but offers no account deletion, so a
+  future destructive account-removal workflow must enumerate owned data,
+  backups, artifacts, and audit retention explicitly.
+- Redis applies global attempt windows and normalized-login failure windows to
+  both login and registration. The boundary fails closed if shared protection
+  is unavailable and returns bounded retry time after repeated failures.
+- Chat and memory routes retain expiring HMAC-signed bearer tokens for local
+  automation and least-privilege testing. When authentication is required,
+  missing, invalid, expired, or revoked browser sessions return 401 and a
+  subject that differs from the requested user returns 403.
 - A token may be restricted to least-privilege scopes (`chat`, `memory:read`, `memory:write`, `tools:invoke`, `vision`, or the `memory`/`tools` groups). A route requires the scope matching its action - a read needs `memory:read`, a write needs `memory:write` - and a token lacking it returns 403 before the handler runs. A token with no scope claim (the default, and every token issued before scopes existed) stays unrestricted, so scopes narrow a token without a migration. Scopes limit what a valid token can reach; they are not a substitute for the ownership check, which still binds every request to the token subject.
-- `SECRET_KEY` signs local user tokens when authentication is enabled. It must be high-entropy, stored outside source control, and rotated if disclosed; current tokens have expiry but no revocation list.
+- `SECRET_KEY` signs legacy local bearer tokens when authentication is enabled.
+  It must be high-entropy and stored outside source control. Those bearer tokens
+  expire but are not individually revocable; password browser sessions are.
 - Compose contains development-only PostgreSQL credentials and an example backend secret in plaintext configuration. These values must not be reused outside local development.
 - CORS allows credentials from `http://localhost:5173` and `http://127.0.0.1:5173`.
 - The chat route validates a typed request and no longer prints the raw request body. Provider, framework, and manually added logs still require review because automated secret/PII redaction is not implemented.
@@ -19,7 +47,11 @@ This document separates current security facts from future requirements. A contr
 - Agent-memory tables for cache, working state, procedures, entities/relations, knowledge, and summaries are user-scoped and covered by export/delete-all and scoped record deletion. A dry-run/apply service and CLI purge expired application rows; external scheduling and backup deletion are not implemented.
 - `MemoryCoordinatorAgent` receives only typed store methods. It selects bounded context deterministically and does not give the configured generation model SQL, raw table, durable-write, tool-invocation, or authorization capabilities.
 - Retrieved personal, knowledge, procedure, entity, summary, and toolbox values are placed in a prompt section labeled as untrusted literal data. This is a defense-in-depth prompt boundary, not a complete prompt-injection sandbox.
-- The developer UI stores its active user and conversation IDs in browser local storage. Missing or legacy `dev_user_001` state now defaults to `ani.mallya`, but this convenience identifier is not authentication or proof of identity; production-like use must enable signed ownership checks.
+- The private UI obtains its user identity from `/api/v1/auth/session`; it does
+  not accept a local-storage user switch. Browser local storage contains only
+  per-owner conversation and presentation job identifiers. Trusted-local mode
+  deliberately returns configured owner `ani.mallya` without login, so it must
+  not be exposed to another person or a public URL.
 - Assistant text is treated as untrusted CommonMark. ReactMarkdown creates approved React elements without enabling raw HTML parsing; browser acceptance proves an injected image/event handler creates no element and executes no script. User messages remain literal text.
 - Preferred-name and response-style proposals are not persisted before explicit UI approval. Generic fact approval, correction, export, and deletion are constrained to the token subject when auth is enabled; auth-disabled mode remains caller-user-ID scoped.
 - Semantic memory content is sent over the private Compose network to the `vllm-embedding` service. The configured embedding endpoint does not request provider-side storage, but vLLM process logging/configuration must still be reviewed for sensitive use.
@@ -80,7 +112,11 @@ AniOS is therefore a local development scaffold, not a hardened system for sensi
 
 The following controls are requirements for future milestones, not current features:
 
-- `VERIFIED`: optional signed local user authentication and route ownership checks; password-based login, token revocation, and account administration remain `PLANNED`;
+- `VERIFIED`: one-time invited registration, Argon2id password login,
+  server-derived route ownership, shared login/registration attempt limits,
+  HttpOnly browser sessions, logout, password reset, account enable/disable,
+  and session revocation. Unrestricted signup, recovery, MFA, and a browser
+  administration UI remain `PLANNED`;
 - `VERIFIED` (bounded): user tokens carry least-privilege scopes enforced per route action, rejected unknown scopes fail at issue time, and unscoped tokens stay unrestricted for compatibility; token revocation and service-to-service tokens remain `PLANNED`;
 - `VERIFIED`: subject ownership checks cover current chat, conversation snapshot/export/deletion, personal-memory, tool-memory, visual-artifact, generated-image, upload, content, image-analysis, presentations/revisions/download/deletion, and explicit/chat-initiated tool routes when auth is enabled; per-server user credential scopes remain `PLANNED`;
 - `PLANNED`: OS keychain or dedicated secret-store integration;
@@ -104,7 +140,9 @@ The following controls are requirements for future milestones, not current featu
   claim-level citation evaluation, a durable redacted decision audit, and a
   live Google-grounding acceptance remain incomplete;
 - `PLANNED`: TLS and outbound-provider trust controls;
-- `PLANNED`: private remote-UI ingress through one TLS hostname and an
+- `VERIFIED` (local boundary): a loopback-only same-origin Nginx gateway serves
+  the compiled UI and proxies API/SSE/upload/download traffic. `PLANNED`:
+  remote-UI ingress through one TLS hostname and an
   authenticated deny-by-default edge/tunnel. The edge must protect both static
   UI assets and `/api`, validate its session at the origin, proxy SSE and
   bounded uploads/downloads, and forward only to a same-origin local gateway.
@@ -123,6 +161,10 @@ The following controls are requirements for future milestones, not current featu
 - `VERIFIED` (bounded): presentation inputs use strict typed schemas and size limits; job reads/cancellation are owner-scoped; encrypted job briefs/drafts are supported; stale-base edits fail before model use; only a validated ready revision can become current; downloads are private/no-store and ownership-scoped; structural OOXML and LibreOffice checks reject malformed output; and model/MCP responses expose no PPTX bytes or storage keys. Package malware scanning, worker/renderer sandboxing, retention, service-to-service authentication, and encrypted/tested backups remain `PLANNED`;
 - `PLANNED`: mobile token storage and biometric integration;
 - `VERIFIED`: application-level expiry, deterministic scoped purge, JSON export, correction, scoped record deletion, and delete-all propagation across current PostgreSQL tables; external scheduling, log/backup deletion, and encrypted backup lifecycle remain `PLANNED` and are intentionally deferred to the final security subsystem.
+- `VERIFIED`: discovery export/delete coverage includes interests, localities,
+  sources, seen items, subscribers, familiar items, schedules, and runs. Public
+  API tests seed every table, verify exported categories and deletion counts,
+  assert no owned rows remain, and prove another user's rows are untouched.
 
 ## Security review for a change
 

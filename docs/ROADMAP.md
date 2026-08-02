@@ -79,7 +79,11 @@ Current evidence as of 2026-07-17:
 - `UNVERIFIED`: long-duration production-capacity/HNSW recall testing and delivery into a selected external alert platform.
 - `VERIFIED` (bounded, opt-in): AES-256-GCM application-level encryption at rest for conversation, episodic/semantic memory, and image content when `ENCRYPTION_KEY` is set, with lazy plaintext migration, authenticated ciphertext, and integrity preserved over the plaintext; embeddings and deduplication columns are intentionally excluded and documented as residual exposure.
 - `VERIFIED` (bounded): least-privilege token scopes (`chat`, `memory:read`, `memory:write`, `tools:invoke`, `vision`, and `memory`/`tools` groups) enforced per route action, validated at issue time, with unscoped tokens remaining unrestricted for compatibility.
-- `PLANNED` by explicit user direction as the remaining final-subsystem work: full-store/backup encryption, tested backup/restore, token revocation/password-based login, redacted audits, and backup/log deletion.
+- `PLANNED` by explicit user direction as remaining final-subsystem work:
+  full-store/backup encryption, tested disaster restore, redacted audits,
+  MFA/recovery, and backup/log deletion. Shared login/registration attempt
+  limiting, invited password enrollment, and revocable browser sessions are
+  now verified.
 - `VERIFIED` (bounded): automatic approval-gated episodic capture from conversations. A deterministic proposer recognizes a narrated first-person past-tense event (a curated verb set, question-guarded, the user's own sentence kept as content) and emits it as the lowest-priority typed proposal, so any explicit intent wins over it. Approval routes through the existing `POST /memory/{user}/episodic` boundary with chat provenance; rejection writes nothing, preserving the "no silent model extraction" principle. Live-verified end to end: a chat turn emitted the episodic proposal over SSE and approval persisted it. Recall is intentionally conservative (deterministic patterns, not an LLM classifier); broadening it with a bounded classifier remains `PLANNED`.
 
 Delivered local-development capabilities include:
@@ -295,9 +299,12 @@ retrieve the correct tool while unrelated questions return nothing.
 
 Safe tool-descriptor embeddings, approved preference/sanitized outcome memory, live MCP connectivity, native main-model tool selection, permission-aware invocation, pre-invocation registry re-resolution, and the local visual FastMCP capability facade are `VERIFIED`. Automatic registry refresh/change notifications, durable execution audit, per-server user authorization scopes, and chat approval/resume for consequential tools remain `PLANNED`; a stored descriptor never authorizes a call.
 
-## Milestone 6: additional interfaces and automation — PLANNED
+## Milestone 6: additional interfaces and automation — IN PROGRESS
 
-- `PLANNED`: private single-user remote web access. Publish one HTTPS hostname
+- `VERIFIED` (local boundary): a loopback-only same-origin Nginx gateway serves
+  the compiled UI and proxies API, SSE, upload, download, and long-running
+  requests. The frontend uses relative production API URLs, so a remote browser
+  does not attempt its own localhost. `PLANNED`: publish one HTTPS hostname
   through an authenticated edge/tunnel that gates every UI and `/api` request
   with a password-style login, one-time code, or approved identity before it
   reaches a same-origin local reverse proxy. Keep PostgreSQL, Redis, vLLM,
@@ -312,7 +319,7 @@ Safe tool-descriptor embeddings, approved preference/sanitized outcome memory, l
 - voice interaction;
 - mobile applications.
 
-### Ambient local discovery and notification — PLANNED
+### Ambient local discovery and notification — IN PROGRESS
 
 The first capability that reaches *out* rather than answering when asked: on a
 daily or weekly cadence, find things happening near where the user lives that
@@ -337,8 +344,16 @@ Deliver as separately verified atomic stages, in this order:
   are deliberately not stored until a source needs them. Live-verified: the
   profile round-trips through the owned API, a delete with another user's
   identifier returns 404 without removing the row, and an ordinary chat turn
-  answered from the profile alone. Approval-gated capture from conversation
-  remains `PLANNED`; today an interest is recorded only by explicit request.
+  answered from the profile alone. Explicit chat statements about home and
+  interests now produce approval cards; approval writes the memory fact and
+  Scout projection, while panel edits record the same approved fact.
+
+  `VERIFIED` profile-control closure: export and delete-all cover all eight
+  discovery table families; familiar-item dismissals are reviewable and
+  reversible; travel mode selects one database-enforced active destination
+  without changing home; and each interest exposes its 1–3 ranking strength.
+  A rebuilt live browser workflow exercised home, interest, strength, travel,
+  dismissal undo, memory inspection, and isolated delete-all against PostgreSQL.
 - `VERIFIED` stage 2 — structured schedule sources. A provider-neutral
   `EventSource` contract returns typed events carrying a stable per-source
   identity, start, place, and link. Two adapters ship: iCalendar and RSS/Atom,
@@ -480,10 +495,10 @@ Deliver as separately verified atomic stages, in this order:
 Sequencing and gates:
 
 - Stages 1 through 5 stay inside the existing trust boundary and may proceed as
-  ordinary work. Stage 6 is the first outbound path in AniOS and should follow
-  the Milestone 7 authentication work, since tokens today cannot be revoked;
-  shipping outbound delivery before revocable sessions means a leaked token
-  reaches the user's phone.
+  ordinary work. Stage 6 is the first outbound delivery path and must require
+  the verified revocable password session boundary plus the remaining remote
+  ingress, audit, and recipient-confirmation controls before it can reach a
+  user's phone.
 - Requalify on the DGX Spark before starting. The measured RTX 5080 profile —
   FP8 kernel selection, KV sizing, and vLLM/ComfyUI GPU contention — does not
   transfer, and unified memory removes the residency conflict that shaped the
@@ -493,19 +508,23 @@ Sequencing and gates:
 
 Security and privacy gates in [SECURITY.md](SECURITY.md) apply before these capabilities can be considered complete.
 
-## Milestone 7: multi-user identity and private per-user profiles — PLANNED
+## Milestone 7: multi-user identity and private per-user profiles — IN PROGRESS
 
 The target: each person logs in, has their own profile and memory, and can view
 only their own information. The per-user data model (every store scoped by
 `user_id`) and the authorization layer (ownership binding plus least-privilege
 token scopes) already exist and are `VERIFIED`; with `AUTH_REQUIRED=true` one
-user cannot read another's data at the application layer. What remains is real
-identity, a cryptographic privacy guarantee, and session lifecycle.
+user cannot read another's data at the application layer. Invited identity
+and revocable browser-session lifecycle are now `VERIFIED`. Cryptographic
+per-user privacy and hardened public administration remain.
 
-- `PLANNED`: real authentication. A users table, password hashing (argon2id or
-  bcrypt), a registration and `POST /login` flow that issues the existing scoped
-  tokens, and a frontend login screen replacing the dev-user `localStorage`
-  shim. Today tokens are minted by a CLI and there is no user record or password.
+- `VERIFIED` (bounded): an operator either creates an account directly or mints
+  an expiring one-time invitation. A friend chooses a username and password in
+  the browser; registration consumes the digest-only invitation atomically with
+  account and first-session creation. `POST /auth/login` verifies Argon2id
+  passwords, issues an opaque HttpOnly session whose digest is stored in
+  PostgreSQL, and the frontend gates all private views on the server-derived
+  owner. There is deliberately no unrestricted public signup.
 - `PLANNED`: per-user encryption keys for a true "only I can read it, not even
   the operator" guarantee. The current at-rest encryption uses a single
   server-side key, which protects a stolen database or backup but does not stop
@@ -514,15 +533,20 @@ identity, a cryptographic privacy guarantee, and session lifecycle.
   user's own password (or a KMS/HSM), so content is unreadable without the user.
   This decision shapes the login flow, because the password must unlock the key,
   and should be settled before more data is encrypted under the single key.
-- `PLANNED`: session lifecycle. Token revocation and logout (today tokens only
-  expire), refresh/rotation, and optional account administration.
+- `VERIFIED` (bounded): password browser sessions expire and are revoked by
+  logout, password replacement, or account disable. The operator CLI creates,
+  enables, disables, and resets accounts without offering destructive deletion.
+  Shared Redis windows rate-limit invalid login/registration attempts and fail
+  closed when protection is unavailable. Session refresh/rotation, recovery,
+  MFA, and a browser administration surface remain `PLANNED`.
 - `PLANNED`: per-user key rotation and recovery, including what happens to
   a user's encrypted data on password reset (unrecoverable without a recovery
   key or escrow), documented as an explicit product decision.
 
-Ordering note: the per-user-key decision (item two) is architectural and
-influences authentication and the encryption already in place, so it is worth
-designing before building the login flow, not after.
+Ordering note: the verified session boundary does not yet unlock a per-user
+encryption key. Settle recovery/escrow semantics before migrating content from
+the current optional server-wide encryption key; do not retrofit key derivation
+by rewriting user data without a tested backup and restore acceptance path.
 
 The security and privacy gates in [SECURITY.md](SECURITY.md) apply throughout;
 enabling `AUTH_REQUIRED` and protecting the signing and encryption keys are

@@ -176,7 +176,7 @@ def _calendar_base(user_id: str) -> str:
 # A digest is read in the recipient's local time, and the user's primary place
 # is where that comes from.
 def _timezone_for(profile: Any) -> str:
-    primary = getattr(profile, "primary_locality", None)
+    primary = getattr(profile, "active_locality", None)
     if primary is not None and getattr(primary, "timezone", None):
         return str(primary.timezone)
     return "America/New_York"

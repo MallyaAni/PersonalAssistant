@@ -286,6 +286,308 @@ function diagramEventStream(
   return frames.join('\n')
 }
 
+// Give deterministic tests one server-derived identity without bypassing login in live runs.
+test.beforeEach(async ({ page }, testInfo) => {
+  if (testInfo.title.includes('@live')) return
+  await page.route('http://localhost:8000/api/v1/auth/session', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      authentication_required: true,
+      user_id: 'ani.mallya',
+      expires_at: '2026-08-09T00:00:00Z',
+    }),
+  }))
+})
+
+// Verify login is the only initial view and logout removes private workspace state.
+test('requires invite credentials before showing the private workspace', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  let authenticated = false
+  await page.unroute('http://localhost:8000/api/v1/auth/session')
+  await page.route('http://localhost:8000/api/v1/auth/session', route => route.fulfill({
+    status: authenticated ? 200 : 401,
+    contentType: 'application/json',
+    body: JSON.stringify(authenticated
+      ? { authentication_required: true, user_id: 'friend.user', expires_at: '2026-08-09T00:00:00Z' }
+      : { detail: 'Authentication required' }),
+  }))
+  await page.route('http://localhost:8000/api/v1/auth/login', async route => {
+    const body = route.request().postDataJSON() as { username: string; password: string }
+    if (body.username !== 'friend.user' || body.password !== 'correct test password') {
+      await route.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({ detail: 'Invalid username or password' }),
+      })
+      return
+    }
+    authenticated = true
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: { 'Set-Cookie': 'anios_session=browser-test; Path=/; HttpOnly; SameSite=Lax' },
+      body: JSON.stringify({
+        authentication_required: true,
+        user_id: 'friend.user',
+        expires_at: '2026-08-09T00:00:00Z',
+      }),
+    })
+  })
+  await page.route('http://localhost:8000/api/v1/auth/logout', async route => {
+    authenticated = false
+    await route.fulfill({ status: 204 })
+  })
+
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Sign in to AniOS' })).toBeVisible()
+  await expect(page.getByLabel('Message AniOS')).not.toBeVisible()
+  await page.getByLabel('Username').fill('friend.user')
+  await page.getByLabel('Password').fill('wrong test password')
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(page.getByRole('alert')).toContainText('Invalid username or password')
+
+  await page.getByLabel('Password').fill('correct test password')
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(page.getByText('Signed in as friend.user')).toBeVisible()
+  await expect(page.getByLabel('Message AniOS')).toBeVisible()
+  await page.getByRole('button', { name: 'Sign out' }).click()
+  await expect(page.getByRole('heading', { name: 'Sign in to AniOS' })).toBeVisible()
+  await expect(page.getByLabel('Message AniOS')).not.toBeVisible()
+  expect(errors.pageErrors).toEqual([])
+  expect(errors.consoleErrors.length).toBeGreaterThan(0)
+  expect(errors.consoleErrors.every(message => message.includes('401 (Unauthorized)'))).toBe(true)
+})
+
+// Verify invited profile creation validates secrets and enters the owned workspace.
+test('creates a profile with a one-time invitation from the login screen', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  let registrationPayload: Record<string, string> | null = null
+  await page.unroute('http://localhost:8000/api/v1/auth/session')
+  await page.route('http://localhost:8000/api/v1/auth/session', route => route.fulfill({
+    status: 401,
+    contentType: 'application/json',
+    body: JSON.stringify({ detail: 'Authentication required' }),
+  }))
+  await page.route('http://localhost:8000/api/v1/auth/register', async route => {
+    registrationPayload = route.request().postDataJSON() as Record<string, string>
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: { 'Set-Cookie': 'anios_session=registration-test; Path=/; HttpOnly; SameSite=Lax' },
+      body: JSON.stringify({
+        authentication_required: true,
+        user_id: 'new.friend',
+        expires_at: '2026-08-09T00:00:00Z',
+      }),
+    })
+  })
+
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Create an invited profile' }).click()
+  await expect(page.getByRole('heading', { name: 'Create your profile' })).toBeVisible()
+  await page.getByLabel('Username').fill('new.friend')
+  await page.getByLabel('Password', { exact: true }).fill('a sufficiently long password')
+  await page.getByLabel('Confirm password').fill('a different long password')
+  await page.getByLabel('Invitation code').fill('one-time-invitation-code')
+  await page.getByRole('button', { name: 'Create profile' }).click()
+  await expect(page.getByRole('alert')).toContainText('Passwords do not match')
+
+  await page.getByLabel('Confirm password').fill('a sufficiently long password')
+  await page.getByRole('button', { name: 'Create profile' }).click()
+  await expect(page.getByText('Signed in as new.friend')).toBeVisible()
+  expect(registrationPayload).toEqual({
+    username: 'new.friend',
+    password: 'a sufficiently long password',
+    invite_code: 'one-time-invitation-code',
+  })
+  expect(errors.pageErrors).toEqual([])
+  expect(errors.consoleErrors.every(message => message.includes('401 (Unauthorized)'))).toBe(true)
+})
+
+// Exercise live browser registration and semantic isolation through the gateway.
+test('@live invited profiles keep semantic context private across logout', async ({ page }) => {
+  test.setTimeout(120_000)
+  const firstUser = process.env.ANIOS_E2E_REGISTER_USER_A
+  const firstPassword = process.env.ANIOS_E2E_REGISTER_PASSWORD_A
+  const firstInvite = process.env.ANIOS_E2E_REGISTER_INVITE_A
+  const secondUser = process.env.ANIOS_E2E_REGISTER_USER_B
+  const secondPassword = process.env.ANIOS_E2E_REGISTER_PASSWORD_B
+  const secondInvite = process.env.ANIOS_E2E_REGISTER_INVITE_B
+  test.skip(
+    !firstUser || !firstPassword || !firstInvite
+      || !secondUser || !secondPassword || !secondInvite,
+    'Set both ANIOS_E2E_REGISTER user/password/invite triples for live acceptance.',
+  )
+  const errors = observeBlockingBrowserErrors(page)
+  const firstMarker = `private-blue-orchid-${Date.now()}`
+
+  // Register one invited profile through the visible browser form.
+  const registerProfile = async (username: string, password: string, invite: string) => {
+    await page.getByRole('button', { name: 'Create an invited profile' }).click()
+    await page.getByLabel('Username').fill(username)
+    await page.getByLabel('Password', { exact: true }).fill(password)
+    await page.getByLabel('Confirm password').fill(password)
+    await page.getByLabel('Invitation code').fill(invite)
+    await page.getByRole('button', { name: 'Create profile' }).click()
+    await expect(page.getByText(`Signed in as ${username}`)).toBeVisible()
+  }
+
+  await page.goto('/')
+  await registerProfile(firstUser!, firstPassword!, firstInvite!)
+  const firstWrite = await page.evaluate(async ({ user, marker }) => {
+    const response = await fetch(`/api/v1/memory/${encodeURIComponent(user)}/semantic`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: marker, metadata: { source: 'live-browser' } }),
+    })
+    return response.status
+  }, { user: firstUser!, marker: firstMarker })
+  expect(firstWrite).toBe(201)
+  await page.getByRole('button', { name: 'Sign out' }).click()
+
+  await registerProfile(secondUser!, secondPassword!, secondInvite!)
+  const secondView = await page.evaluate(async ({ first, second, marker }) => {
+    const cross = await fetch(`/api/v1/memory/${encodeURIComponent(first)}`, {
+      credentials: 'include',
+    })
+    const own = await fetch(`/api/v1/memory/${encodeURIComponent(second)}`, {
+      credentials: 'include',
+    })
+    const ownSearch = await fetch(
+      `/api/v1/memory/${encodeURIComponent(second)}/search?query=${encodeURIComponent(marker)}`,
+      { credentials: 'include' },
+    )
+    return {
+      crossStatus: cross.status,
+      ownStatus: own.status,
+      own: await own.json(),
+      ownSearchStatus: ownSearch.status,
+      ownSearch: await ownSearch.json(),
+    }
+  }, { first: firstUser!, second: secondUser!, marker: firstMarker })
+  expect(secondView.crossStatus).toBe(403)
+  expect(secondView.ownStatus).toBe(200)
+  expect(secondView.own.semantic).toEqual([])
+  expect(secondView.ownSearchStatus).toBe(200)
+  expect(secondView.ownSearch.memories).toEqual([])
+  await page.getByRole('button', { name: 'Sign out' }).click()
+
+  await page.getByLabel('Username').fill(firstUser!)
+  await page.getByLabel('Password').fill(firstPassword!)
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(page.getByText(`Signed in as ${firstUser}`)).toBeVisible()
+  const firstView = await page.evaluate(async ({ user, marker }) => {
+    const response = await fetch(`/api/v1/memory/${encodeURIComponent(user)}`, {
+      credentials: 'include',
+    })
+    const search = await fetch(
+      `/api/v1/memory/${encodeURIComponent(user)}/search?query=${encodeURIComponent(marker)}`,
+      { credentials: 'include' },
+    )
+    return {
+      status: response.status,
+      body: await response.json(),
+      searchStatus: search.status,
+      searchBody: await search.json(),
+    }
+  }, { user: firstUser!, marker: firstMarker })
+  expect(firstView.status).toBe(200)
+  expect(firstView.body.semantic.map((item: { content: string }) => item.content)).toContain(firstMarker)
+  expect(firstView.searchStatus).toBe(200)
+  expect(firstView.searchBody.memories.map((item: { content: string }) => item.content)).toContain(firstMarker)
+  expect(errors.pageErrors).toEqual([])
+  expect(errors.consoleErrors.every(message => (
+    message.includes('401 (Unauthorized)') || message.includes('403 (Forbidden)')
+  ))).toBe(true)
+})
+
+// Exercise real password sessions, chat persistence, and cross-user denial in Chromium.
+test('@live password login keeps one conversation private from another account', async ({ page }) => {
+  test.setTimeout(180_000)
+  const firstUser = process.env.ANIOS_E2E_AUTH_USER
+  const firstLogin = process.env.ANIOS_E2E_AUTH_LOGIN ?? firstUser
+  const firstPassword = process.env.ANIOS_E2E_AUTH_PASSWORD
+  const secondUser = process.env.ANIOS_E2E_AUTH_OTHER_USER
+  const secondLogin = process.env.ANIOS_E2E_AUTH_OTHER_LOGIN ?? secondUser
+  const secondPassword = process.env.ANIOS_E2E_AUTH_OTHER_PASSWORD
+  const browserApiOrigin = process.env.ANIOS_E2E_BROWSER_API_ORIGIN
+    ?? 'http://localhost:8000'
+  test.skip(
+    !firstUser || !firstPassword || !secondUser || !secondPassword,
+    'Set both ANIOS_E2E_AUTH user/password pairs for live authentication acceptance.',
+  )
+  const errors = observeBlockingBrowserErrors(page)
+  const uniqueMessage = `AUTH_ISOLATION_${Date.now()}`
+
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Sign in to AniOS' })).toBeVisible()
+  await page.getByLabel('Username').fill(firstLogin!)
+  await page.getByLabel('Password').fill(firstPassword!)
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(page.getByText(`Signed in as ${firstUser}`)).toBeVisible()
+
+  const { textarea, sendButton } = chatControls(page)
+  const requestPromise = page.waitForRequest(`${browserApiOrigin}/api/v1/chat`)
+  const responsePromise = page.waitForResponse(`${browserApiOrigin}/api/v1/chat`)
+  await textarea.fill(`${uniqueMessage}. Reply briefly that authentication isolation works.`)
+  await sendButton.click()
+  const request = await requestPromise
+  const payload = request.postDataJSON() as { user_id: string; conversation_id: string }
+  const response = await responsePromise
+  expect(payload.user_id).toBe(firstUser)
+  expect(response.status()).toBe(200)
+  expect(await response.finished()).toBeNull()
+  await expect(textarea).toBeEnabled({ timeout: 120_000 })
+  await expect(page.getByText('Thinking...', { exact: true })).not.toBeVisible()
+  await expect(latestAssistantAnswer(page)).not.toBeEmpty()
+
+  const ownSnapshot = await page.evaluate(async ({ user, conversation }) => {
+    const result = await fetch(
+      `${origin}/api/v1/conversations/${encodeURIComponent(user)}/${conversation}`,
+      { credentials: 'include' },
+    )
+    return { status: result.status, body: await result.json() }
+  }, { origin: browserApiOrigin, user: firstUser!, conversation: payload.conversation_id })
+  expect(ownSnapshot.status).toBe(200)
+  expect(ownSnapshot.body.turns.some((turn: { query: string }) => turn.query.includes(uniqueMessage))).toBe(true)
+
+  await page.getByRole('button', { name: 'Sign out' }).click()
+  await page.getByLabel('Username').fill(secondLogin!)
+  await page.getByLabel('Password').fill(secondPassword!)
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await expect(page.getByText(`Signed in as ${secondUser}`)).toBeVisible()
+
+  const isolation = await page.evaluate(async ({ first, second, conversation }) => {
+    const cross = await fetch(
+      `${origin}/api/v1/conversations/${encodeURIComponent(first)}/${conversation}`,
+      { credentials: 'include' },
+    )
+    const own = await fetch(
+      `${origin}/api/v1/conversations/${encodeURIComponent(second)}/${conversation}`,
+      { credentials: 'include' },
+    )
+    return {
+      crossStatus: cross.status,
+      ownStatus: own.status,
+      ownBody: await own.json(),
+    }
+  }, {
+    origin: browserApiOrigin,
+    first: firstUser!,
+    second: secondUser!,
+    conversation: payload.conversation_id,
+  })
+  expect(isolation.crossStatus).toBe(403)
+  expect(isolation.ownStatus).toBe(200)
+  expect(isolation.ownBody.turns).toEqual([])
+  expect(errors.pageErrors).toEqual([])
+  expect(errors.consoleErrors.every(message => (
+    message.includes('401 (Unauthorized)') || message.includes('403 (Forbidden)')
+  ))).toBe(true)
+})
+
 test('renders a responsive search-first chat shell', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   await page.setViewportSize({ width: 390, height: 844 })
@@ -325,17 +627,16 @@ test('renders a responsive search-first chat shell', async ({ page }) => {
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
-test('migrates only the legacy default user and rotates its conversation', async ({ page }) => {
+test('ignores client-stored user spoofing and scopes conversations by authenticated user', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   const legacyConversation = '11111111-1111-4111-8111-111111111111'
   const customConversation = '22222222-2222-4222-8222-222222222222'
   const requests: Array<{ user_id: string; conversation_id: string }> = []
 
   await page.addInitScript(({ conversation }) => {
-    if (sessionStorage.getItem('legacy_default_seeded')) return
-    sessionStorage.setItem('legacy_default_seeded', 'true')
-    localStorage.setItem('anios_user_id', 'dev_user_001')
+    localStorage.setItem('anios_user_id', 'attacker.user')
     localStorage.setItem('anios_conversation_id', conversation)
+    localStorage.setItem('anios_conversation_id:attacker.user', '22222222-2222-4222-8222-222222222222')
   }, { conversation: legacyConversation })
   await page.route('http://localhost:8000/api/v1/chat', async route => {
     const payload = route.request().postDataJSON()
@@ -350,13 +651,30 @@ test('migrates only the legacy default user and rotates its conversation', async
     })
   })
 
+  // Keep transcript restoration inside the authenticated deterministic boundary.
+  await page.route(
+    'http://localhost:8000/api/v1/conversations/ani.mallya/*',
+    async route => {
+      const conversationId = route.request().url().split('/').pop()
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversation_id: conversationId,
+          turns: [],
+          artifacts: [],
+        }),
+      })
+    },
+  )
+
   await page.goto('/')
-  let stored = await page.evaluate(() => ({
+  const stored = await page.evaluate(() => ({
     userId: localStorage.getItem('anios_user_id'),
-    conversationId: localStorage.getItem('anios_conversation_id'),
+    conversationId: localStorage.getItem('anios_conversation_id:ani.mallya'),
   }))
-  expect(stored.userId).toBe('ani.mallya')
-  expect(stored.conversationId).not.toBe(legacyConversation)
+  expect(stored.userId).toBe('attacker.user')
+  expect(stored.conversationId).toBe(legacyConversation)
 
   let controls = chatControls(page)
   await controls.textarea.fill('verify migrated default')
@@ -369,25 +687,17 @@ test('migrates only the legacy default user and rotates its conversation', async
 
   await page.evaluate(({ conversation }) => {
     localStorage.setItem('anios_user_id', 'custom_user')
-    localStorage.setItem('anios_conversation_id', conversation)
+    localStorage.setItem('anios_conversation_id:custom_user', conversation)
   }, { conversation: customConversation })
   await page.reload()
-  stored = await page.evaluate(() => ({
-    userId: localStorage.getItem('anios_user_id'),
-    conversationId: localStorage.getItem('anios_conversation_id'),
-  }))
-  expect(stored).toEqual({
-    userId: 'custom_user',
-    conversationId: customConversation,
-  })
 
   controls = chatControls(page)
   await controls.textarea.fill('verify custom user')
   await controls.sendButton.click()
   await expect(controls.textarea).toBeEnabled()
   expect(requests[1]).toEqual({
-    user_id: 'custom_user',
-    conversation_id: customConversation,
+    user_id: 'ani.mallya',
+    conversation_id: legacyConversation,
   })
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
@@ -704,9 +1014,18 @@ test('restores a completed diagram artifact after a full browser reload', async 
   const query = 'Create the reload validation flowchart'
   let persisted = false
 
+  await page.unroute('http://localhost:8000/api/v1/auth/session')
+  await page.route('http://localhost:8000/api/v1/auth/session', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      authentication_required: true,
+      user_id: userId,
+      expires_at: '2026-08-09T00:00:00Z',
+    }),
+  }))
   await page.addInitScript(({ user, conversation }) => {
-    localStorage.setItem('anios_user_id', user)
-    localStorage.setItem('anios_conversation_id', conversation)
+    localStorage.setItem(`anios_conversation_id:${user}`, conversation)
   }, { user: userId, conversation: conversationId })
   await page.route(`http://localhost:8000/api/v1/conversations/${userId}/${conversationId}`, route =>
     route.fulfill({
@@ -1163,6 +1482,83 @@ test('requires approval before saving a response-style proposal', async ({ page 
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
+// Verify chat approval routes locality and interest proposals through memory-owned APIs.
+test('approves home locality and interest proposals from chat', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const approvals: Array<{ path: string; body: Record<string, unknown> }> = []
+  let chatCount = 0
+
+  await page.route('http://localhost:8000/api/v1/chat', async route => {
+    const payload = route.request().postDataJSON()
+    const proposal = chatCount++ === 0
+      ? { kind: 'discovery_locality', label: 'Arlington', region: 'Virginia' }
+      : { kind: 'discovery_interest', label: 'hiking' }
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body: chatEventStream(
+        'discovery-proposal-trace',
+        payload.conversation_id,
+        'ok',
+        undefined,
+        undefined,
+        proposal,
+      ),
+    })
+  })
+  await page.route(
+    'http://localhost:8000/api/v1/memory/*/profile/discovery-*',
+    async route => {
+      approvals.push({
+        path: new URL(route.request().url()).pathname,
+        body: route.request().postDataJSON(),
+      })
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ fact: {}, deduplicated: false }),
+      })
+    },
+  )
+
+  await page.goto('/')
+  const { textarea, sendButton } = chatControls(page)
+  await textarea.fill('I live in Arlington, Virginia.')
+  await sendButton.click()
+  await expect(page.getByLabel('Home locality memory proposal')).toContainText(
+    'Arlington, Virginia',
+  )
+  await page.getByRole('button', { name: 'Approve home locality' }).click()
+  await expect(page.getByText('Saved home locality: Arlington, Virginia')).toBeVisible()
+
+  await textarea.fill('I am interested in hiking.')
+  await sendButton.click()
+  await expect(page.getByLabel('Interest memory proposal')).toContainText('hiking')
+  await page.getByRole('button', { name: 'Approve interest' }).click()
+  await expect(page.getByText('Saved interest: hiking')).toBeVisible()
+
+  expect(approvals).toEqual([
+    {
+      path: expect.stringContaining('/profile/discovery-locality'),
+      body: {
+        label: 'Arlington',
+        region: 'Virginia',
+        source_conversation_id: expect.any(String),
+        source_trace_id: 'discovery-proposal-trace',
+      },
+    },
+    {
+      path: expect.stringContaining('/profile/discovery-interest'),
+      body: {
+        label: 'hiking',
+        source_conversation_id: expect.any(String),
+        source_trace_id: 'discovery-proposal-trace',
+      },
+    },
+  ])
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
 test('keeps a preferred-name proposal actionable when approval fails', async ({ page }) => {
   await page.route('http://localhost:8000/api/v1/chat', async route => {
     const payload = route.request().postDataJSON()
@@ -1314,7 +1710,7 @@ test('opens a fresh chat when starting a conversation from memory', async ({ pag
   await expect(page.getByText(userMessage, { exact: true })).not.toBeVisible()
 })
 
-test('isolates chat state and conversation identity when the active user changes', async ({ page }) => {
+test('does not let browser state switch the authenticated account', async ({ page }) => {
   const requests: Array<{ user_id: string; conversation_id: string; query: string }> = []
   await page.route('http://localhost:8000/api/v1/chat', async route => {
     const payload = route.request().postDataJSON()
@@ -1346,21 +1742,20 @@ test('isolates chat state and conversation identity when the active user changes
   await expect(textarea).toBeEnabled()
 
   await page.getByRole('button', { name: 'Memory', exact: true }).click()
-  await page.getByLabel('Active user ID').fill('different_user')
-  await expect(page.getByRole('button', { name: 'Switch user' })).toBeEnabled()
-  await page.getByRole('button', { name: 'Switch user' }).click()
-  await expect(page.getByLabel('Active user ID')).toHaveValue('different_user')
+  await expect(page.getByLabel('Active user ID')).not.toBeVisible()
+  await expect(page.getByRole('button', { name: 'Switch user' })).not.toBeVisible()
+  await page.evaluate(() => localStorage.setItem('anios_user_id', 'different_user'))
   await page.getByRole('button', { name: 'Conversations' }).click()
-  await expect(page.getByText('message for first user', { exact: true })).not.toBeVisible()
+  await expect(page.getByText('message for first user', { exact: true })).toBeVisible()
 
-  await textarea.fill('message for second user')
+  await textarea.fill('second message after tampering')
   await sendButton.click()
   await expect(textarea).toBeEnabled()
 
   expect(requests).toHaveLength(2)
   expect(requests[0].user_id).toBe('ani.mallya')
-  expect(requests[1].user_id).toBe('different_user')
-  expect(requests[1].conversation_id).not.toBe(requests[0].conversation_id)
+  expect(requests[1].user_id).toBe('ani.mallya')
+  expect(requests[1].conversation_id).toBe(requests[0].conversation_id)
 })
 
 test('manages persisted personal memory through the browser', async ({ page }) => {
@@ -3339,4 +3734,407 @@ test('the Agents tab reports each agent status and what it is waiting on', async
   await expect(deck.getByText('3', { exact: true })).toBeVisible()
 
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// Verify a familiar-item dismissal can be reviewed and undone from Scout's panel.
+test('undoes a dismissed discovery from the Agents tab', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  let hidden = [{ id: 'known-1', label: 'Four Mile Run Trail', created_at: null }]
+
+  await page.route('**/api/v1/agents/**', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      user_id: 'ani.mallya',
+      agents: [{
+        id: 'discovery',
+        name: 'Scout',
+        role: 'Finds things happening near you.',
+        status: 'idle',
+        detail: 'Ready.',
+        trigger: 'On request',
+        last_active_at: null,
+        facts: [],
+      }],
+    }),
+  }))
+  await page.route('**/api/v1/discovery/ani.mallya', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      user_id: 'ani.mallya',
+      interests: [{ id: 'interest-1', label: 'hiking', strength: 2, provenance: 'user_explicit' }],
+      localities: [{
+        id: 'place-1',
+        label: 'Arlington',
+        region: 'Virginia',
+        radius_km: 25,
+        timezone: 'America/New_York',
+        is_primary: true,
+      }],
+    }),
+  }))
+  await page.route('**/api/v1/discovery/ani.mallya/sources', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ sources: [] }),
+  }))
+  await page.route('**/api/v1/discovery/ani.mallya/schedule', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ schedule: null }),
+  }))
+  await page.route('**/api/v1/discovery/ani.mallya/known', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ locality: 'Arlington', known: hidden }),
+  }))
+  await page.route('**/api/v1/discovery/ani.mallya/known/known-1', route => {
+    hidden = []
+    return route.fulfill({ status: 204 })
+  })
+
+  await page.goto('/')
+  await page.getByLabel('Agents').click()
+  await page.getByRole('button', { name: 'Configure' }).click()
+  await expect(page.getByText('Hidden around Arlington')).toBeVisible()
+  await expect(page.getByText('Four Mile Run Trail')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Undo dismissal of Four Mile Run Trail' }).click()
+
+  await expect(page.getByText('Restored Four Mile Run Trail. Similar finds can appear here again.')).toBeVisible()
+  await expect(page.getByText('Hidden around Arlington')).not.toBeVisible()
+  expect(hidden).toEqual([])
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// Verify travel mode changes Scout's active place and returns home without editing home.
+test('starts and stops Scout travel mode from the Agents tab', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const localities: Array<{
+    id: string;
+    label: string;
+    region: string | null;
+    radius_km: number;
+    timezone: string;
+    is_primary: boolean;
+    is_travel_active: boolean;
+  }> = [{
+    id: 'place-home',
+    label: 'Arlington',
+    region: 'Virginia',
+    radius_km: 25,
+    timezone: 'America/New_York',
+    is_primary: true,
+    is_travel_active: false,
+  }]
+
+  await page.route('**/api/v1/agents/**', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      user_id: 'ani.mallya',
+      agents: [{
+        id: 'discovery',
+        name: 'Scout',
+        role: 'Finds things happening near you.',
+        status: 'idle',
+        detail: 'Ready.',
+        trigger: 'On request',
+        last_active_at: null,
+        facts: [],
+      }],
+    }),
+  }))
+  await page.route('**/api/v1/discovery/ani.mallya', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      user_id: 'ani.mallya',
+      interests: [{ id: 'interest-1', label: 'hiking', strength: 2, provenance: 'user_explicit' }],
+      localities,
+    }),
+  }))
+  await page.route('**/api/v1/discovery/ani.mallya/localities', async route => {
+    const body = route.request().postDataJSON()
+    const destination = {
+      id: 'place-travel',
+      label: body.label,
+      region: null,
+      radius_km: 25,
+      timezone: body.timezone,
+      is_primary: false,
+      is_travel_active: false,
+    }
+    localities.push(destination)
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(destination),
+    })
+  })
+  await page.route('**/api/v1/discovery/ani.mallya/travel', async route => {
+    if (route.request().method() === 'DELETE') {
+      localities.forEach(item => { item.is_travel_active = false })
+      await route.fulfill({ status: 204 })
+      return
+    }
+    const body = route.request().postDataJSON()
+    localities.forEach(item => { item.is_travel_active = item.id === body.locality_id })
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ active_locality: localities.find(item => item.is_travel_active) }),
+    })
+  })
+  await page.route('**/api/v1/discovery/ani.mallya/sources', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ sources: [] }),
+  }))
+  await page.route('**/api/v1/discovery/ani.mallya/schedule', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ schedule: null }),
+  }))
+  await page.route('**/api/v1/discovery/ani.mallya/known', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ locality: 'Arlington', known: [] }),
+  }))
+
+  await page.goto('/')
+  await page.getByLabel('Agents').click()
+  await page.getByRole('button', { name: 'Configure' }).click()
+  await page.getByLabel('Travel destination').fill('Denver')
+  await page.getByRole('button', { name: 'Start travel' }).click()
+
+  await expect(page.getByText('Looking around Denver', { exact: true })).toBeVisible()
+  expect(localities[0].is_primary).toBe(true)
+  expect(localities[1].is_travel_active).toBe(true)
+
+  await page.getByRole('button', { name: 'Return home' }).click()
+  await expect(page.getByText('Travel mode off. Scout is back around Arlington.')).toBeVisible()
+  await expect(page.getByLabel('Travel destination')).toBeVisible()
+  expect(localities[0].is_primary).toBe(true)
+  expect(localities.some(item => item.is_travel_active)).toBe(false)
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// Verify a user can tune ranking strength and see the persisted value after refresh.
+test('changes Scout interest importance from the Agents tab', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const interest = {
+    id: 'interest-1',
+    label: 'hiking',
+    strength: 2,
+    provenance: 'user_explicit',
+  }
+  const writes: Array<{ label: string; strength: number }> = []
+
+  await page.route('**/api/v1/agents/**', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      user_id: 'ani.mallya',
+      agents: [{
+        id: 'discovery',
+        name: 'Scout',
+        role: 'Finds things happening near you.',
+        status: 'idle',
+        detail: 'Ready.',
+        trigger: 'On request',
+        last_active_at: null,
+        facts: [],
+      }],
+    }),
+  }))
+  await page.route('**/api/v1/discovery/ani.mallya', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      user_id: 'ani.mallya',
+      interests: [interest],
+      localities: [{
+        id: 'place-home',
+        label: 'Arlington',
+        region: 'Virginia',
+        radius_km: 25,
+        timezone: 'America/New_York',
+        is_primary: true,
+        is_travel_active: false,
+      }],
+    }),
+  }))
+  await page.route('**/api/v1/discovery/ani.mallya/interests', async route => {
+    const body = route.request().postDataJSON() as { label: string; strength: number }
+    writes.push(body)
+    interest.strength = body.strength
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(interest),
+    })
+  })
+  await page.route('**/api/v1/discovery/ani.mallya/sources', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ sources: [] }),
+  }))
+  await page.route('**/api/v1/discovery/ani.mallya/schedule', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ schedule: null }),
+  }))
+  await page.route('**/api/v1/discovery/ani.mallya/known', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ locality: 'Arlington', known: [] }),
+  }))
+
+  await page.goto('/')
+  await page.getByLabel('Agents').click()
+  await page.getByRole('button', { name: 'Configure' }).click()
+  const importance = page.getByLabel('Importance of hiking')
+  await expect(importance).toHaveValue('2')
+  await importance.selectOption('3')
+
+  await expect(page.getByText('hiking importance set to high.')).toBeVisible()
+  await expect(importance).toHaveValue('3')
+  expect(writes).toEqual([{ label: 'hiking', strength: 3 }])
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// Exercise the complete Scout profile workflow against the rebuilt API and database.
+test('@live manages Scout memory, travel, strength, and dismissal undo', async ({ page }) => {
+  test.skip(process.env.ANIOS_E2E_LIVE !== '1', 'Set ANIOS_E2E_LIVE=1 to contact the live application')
+  const errors = observeBlockingBrowserErrors(page)
+  const apiUrl = process.env.ANIOS_API_URL ?? 'http://localhost:8000'
+  const stamp = Date.now()
+  const userId = `live_scout_${stamp}`
+  const interestLabel = `urban hiking ${stamp}`
+  await page.addInitScript(id => localStorage.setItem('anios_user_id', id), userId)
+
+  try {
+    await page.goto('/')
+    await page.getByLabel('Agents').click()
+    await page.getByRole('button', { name: 'Configure' }).click()
+
+    await page.getByLabel('Town or city').fill('Arlington')
+    const homeResponse = page.waitForResponse(response => (
+      response.url() === `${apiUrl}/api/v1/discovery/${userId}/localities` &&
+      response.request().method() === 'PUT'
+    ))
+    await page.getByRole('button', { name: 'Save', exact: true }).click()
+    expect((await homeResponse).status()).toBe(200)
+    await expect(page.getByText(/Saved .* looking around Arlington/)).toBeVisible()
+
+    await page.getByLabel('Add an interest').fill(interestLabel)
+    await page.getByLabel('Add an interest').press('Enter')
+    const importance = page.getByLabel(`Importance of ${interestLabel}`)
+    await expect(importance).toHaveValue('2')
+    await importance.selectOption('3')
+    await expect(importance).toHaveValue('3')
+
+    await page.getByLabel('Travel destination').fill('Denver')
+    await page.getByRole('button', { name: 'Start travel' }).click()
+    await expect(page.getByText('Looking around Denver', { exact: true })).toBeVisible()
+
+    const marked = await page.request.post(
+      `${apiUrl}/api/v1/discovery/${userId}/known`,
+      { data: { label: `River trail ${stamp}` } },
+    )
+    expect(marked.status()).toBe(200)
+
+    await page.reload()
+    await page.getByLabel('Agents').click()
+    await page.getByRole('button', { name: 'Configure' }).click()
+    await expect(page.getByText('Hidden around Denver')).toBeVisible()
+    await page.getByRole('button', { name: `Undo dismissal of River trail ${stamp}` }).click()
+    await expect(page.getByText('Hidden around Denver')).not.toBeVisible()
+
+    await page.getByRole('button', { name: 'Return home' }).click()
+    await expect(page.getByText('Travel mode off. Scout is back around Arlington.')).toBeVisible()
+
+    const profile = await page.request.get(`${apiUrl}/api/v1/discovery/${userId}`)
+    expect(profile.status()).toBe(200)
+    const profileBody = await profile.json()
+    expect(profileBody.interests).toEqual([
+      expect.objectContaining({ label: interestLabel, strength: 3 }),
+    ])
+    expect(profileBody.localities).toEqual(expect.arrayContaining([
+      expect.objectContaining({ label: 'Arlington', is_primary: true, is_travel_active: false }),
+      expect.objectContaining({ label: 'Denver', is_primary: false, is_travel_active: false }),
+    ]))
+
+    const memory = await page.request.get(`${apiUrl}/api/v1/memory/${userId}`)
+    expect(memory.status()).toBe(200)
+    const factValues = (await memory.json()).facts.map((fact: { value: string }) => fact.value)
+    expect(factValues).toEqual(expect.arrayContaining(['Arlington', interestLabel]))
+    expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+  } finally {
+    await page.request.delete(`${apiUrl}/api/v1/memory/${userId}`)
+  }
+})
+
+// Verify real chat turns can propose and approve the facts that configure Scout.
+test('@live approves Scout home and interest facts from chat', async ({ page }) => {
+  test.skip(process.env.ANIOS_E2E_LIVE !== '1', 'Set ANIOS_E2E_LIVE=1 to contact the live application')
+  test.setTimeout(120_000)
+  const errors = observeBlockingBrowserErrors(page)
+  const apiUrl = process.env.ANIOS_API_URL ?? 'http://localhost:8000'
+  const stamp = Date.now()
+  const userId = `live_scout_chat_${stamp}`
+  const interestLabel = `urban hiking ${stamp}`
+  await page.addInitScript(id => localStorage.setItem('anios_user_id', id), userId)
+
+  try {
+    await page.goto('/')
+    const { textarea, sendButton } = chatControls(page)
+
+    const localityResponse = page.waitForResponse(response => (
+      response.url() === `${apiUrl}/api/v1/chat` &&
+      response.request().method() === 'POST'
+    ))
+    await textarea.fill('I live in Arlington, Virginia.')
+    await sendButton.click()
+    const localityStream = await localityResponse
+    expect(localityStream.status()).toBe(200)
+    expect(await localityStream.finished()).toBeNull()
+    await expect(page.getByLabel('Home locality memory proposal')).toContainText(
+      'Arlington, Virginia',
+      { timeout: 30_000 },
+    )
+    await page.getByRole('button', { name: 'Approve home locality' }).click()
+    await expect(page.getByText('Saved home locality: Arlington, Virginia')).toBeVisible()
+
+    const interestResponse = page.waitForResponse(response => (
+      response.url() === `${apiUrl}/api/v1/chat` &&
+      response.request().method() === 'POST'
+    ))
+    await textarea.fill(`I am interested in ${interestLabel}.`)
+    await sendButton.click()
+    const interestStream = await interestResponse
+    expect(interestStream.status()).toBe(200)
+    expect(await interestStream.finished()).toBeNull()
+    await expect(page.getByLabel('Interest memory proposal')).toContainText(
+      interestLabel,
+      { timeout: 30_000 },
+    )
+    await page.getByRole('button', { name: 'Approve interest' }).click()
+    await expect(page.getByText(`Saved interest: ${interestLabel}`)).toBeVisible()
+
+    const profile = await page.request.get(`${apiUrl}/api/v1/discovery/${userId}`)
+    expect(profile.status()).toBe(200)
+    const body = await profile.json()
+    expect(body.localities).toEqual([
+      expect.objectContaining({ label: 'Arlington', region: 'Virginia', is_primary: true }),
+    ])
+    expect(body.interests).toEqual([
+      expect.objectContaining({ label: interestLabel, strength: 2 }),
+    ])
+    expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+  } finally {
+    await page.request.delete(`${apiUrl}/api/v1/memory/${userId}`)
+  }
 })

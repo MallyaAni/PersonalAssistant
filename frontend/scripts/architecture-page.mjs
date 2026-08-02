@@ -58,6 +58,18 @@ const publishedDiagrams = [
     change: "How implemented memory forms become bounded assistant context.",
   },
   {
+    name: "authentication-subsystem",
+    title: "Authentication & ownership",
+    scope: "Invite accounts, sessions, and stable data ownership",
+    change: "How a login becomes one server-derived owner across every request.",
+  },
+  {
+    name: "discovery-subsystem",
+    title: "Scout discovery",
+    scope: "Profile facts, travel, ranking, familiarity, and durable sweeps",
+    change: "How approved preferences become local findings without losing user control.",
+  },
+  {
     name: "tool-memory-subsystem",
     title: "Tool memory & MCP",
     scope: "Discovery, semantic selection, and safe invocation",
@@ -122,14 +134,14 @@ const metrics = [
   },
   {
     label: "Canonical views",
-    value: "13 / 13",
+    value: "15 / 15",
     note: "Mermaid, SVG, and page synchronized",
     good: true,
   },
   {
     label: "Backend suite",
-    value: "504 pass",
-    note: "final migration suite",
+    value: "766 pass",
+    note: "current full backend suite",
     good: true,
   },
 ];

@@ -1,10 +1,77 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-const AUTH_TOKEN = import.meta.env.VITE_AUTH_TOKEN || '';
+// Development keeps its explicit API port; production uses the gateway origin.
+const API_BASE_URL = import.meta.env.VITE_API_URL
+  ?? (import.meta.env.DEV ? 'http://localhost:8000' : '')
 
-// Build the optional authorization header for API requests.
-const authHeaders = (): Record<string, string> => (
-  AUTH_TOKEN ? { Authorization: `Bearer ${AUTH_TOKEN}` } : {}
-)
+// Send browser credentials on every API request and surface expired sessions.
+const authenticatedFetch = async (
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<Response> => {
+  const response = await globalThis.fetch(input, {
+    ...init,
+    credentials: 'include',
+  })
+  if (response.status === 401) {
+    window.dispatchEvent(new Event('anios:unauthorized'))
+  }
+  return response
+}
+
+export interface AuthSession {
+  authentication_required: boolean;
+  user_id: string;
+  expires_at: string | null;
+}
+
+// Load the server-derived identity or report that an interactive login is needed.
+export async function getAuthSession(): Promise<AuthSession | null> {
+  const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/auth/session`)
+  if (response.status === 401) return null
+  if (!response.ok) throw new Error('Unable to check your AniOS session.')
+  return response.json()
+}
+
+// Exchange a username and password for an HttpOnly server session.
+export async function login(username: string, password: string): Promise<AuthSession> {
+  const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  })
+  if (!response.ok) {
+    const detail = await response.json().catch(() => ({}))
+    throw new Error(apiErrorMessage(detail, response.status))
+  }
+  return response.json()
+}
+
+// Create one invited profile and accept its server-owned browser session.
+export async function register(
+  username: string,
+  password: string,
+  inviteCode: string,
+): Promise<AuthSession> {
+  const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password, invite_code: inviteCode }),
+  })
+  if (!response.ok) {
+    const detail = await response.json().catch(() => ({}))
+    throw new Error(apiErrorMessage(detail, response.status))
+  }
+  return response.json()
+}
+
+// Revoke the active browser session without deleting any user-owned data.
+export async function logout(): Promise<void> {
+  const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/auth/logout`, {
+    method: 'POST',
+  })
+  if (!response.ok && response.status !== 401) {
+    throw new Error('Unable to sign out. Please try again.')
+  }
+}
 
 export interface MemoryItem {
   id: string;
@@ -313,6 +380,21 @@ export interface ResponseStyleProposal {
   trace_id: string;
 }
 
+export interface DiscoveryInterestProposal {
+  kind: 'discovery_interest';
+  label: string;
+  conversation_id: string;
+  trace_id: string;
+}
+
+export interface DiscoveryLocalityProposal {
+  kind: 'discovery_locality';
+  label: string;
+  region: string | null;
+  conversation_id: string;
+  trace_id: string;
+}
+
 export interface EntityProposal {
   kind: 'entity';
   entity_type: string;
@@ -349,6 +431,8 @@ export interface EpisodicProposal {
 export type MemoryProposal =
   | PreferredNameProposal
   | ResponseStyleProposal
+  | DiscoveryInterestProposal
+  | DiscoveryLocalityProposal
   | EntityProposal
   | ProcedureProposal
   | KnowledgeProposal
@@ -372,11 +456,10 @@ export type ChatStreamUpdate =
 
 // Send one authenticated JSON request and accept intentional empty responses.
 async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await authenticatedFetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
-      ...authHeaders(),
       ...init?.headers,
     },
   })
@@ -450,11 +533,10 @@ export async function* streamPresentationCreation(
   conversationId: string,
   prompt: string,
 ): AsyncGenerator<PresentationCreationUpdate> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/presentations/stream`, {
+  const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/presentations/stream`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...authHeaders(),
     },
     body: JSON.stringify({
       user_id: userId,
@@ -657,11 +739,10 @@ export function generatePresentationSlideImage(
 
 // Delete one owned presentation and all of its linked revisions.
 export function deletePresentation(userId: string, presentationId: string) {
-  return fetch(
+  return authenticatedFetch(
     `${API_BASE_URL}/api/v1/presentations/${encodeURIComponent(userId)}/${encodeURIComponent(presentationId)}`,
     {
       method: 'DELETE',
-      headers: authHeaders(),
     },
   ).then(response => {
     if (!response.ok) throw new Error(`Server responded with ${response.status}`)
@@ -674,9 +755,9 @@ export async function downloadPresentation(
   presentationId: string,
   revisionId: string,
 ) {
-  const response = await fetch(
+  const response = await authenticatedFetch(
     `${API_BASE_URL}/api/v1/presentations/${encodeURIComponent(userId)}/${encodeURIComponent(presentationId)}/revisions/${encodeURIComponent(revisionId)}/content`,
-    { headers: authHeaders() },
+    {},
   )
   if (!response.ok) {
     const detail = await response.json().catch(() => ({}))
@@ -775,6 +856,43 @@ export function approveResponseStyle(
         source_conversation_id: proposal.conversation_id,
         source_trace_id: proposal.trace_id,
         metadata: { source: 'chat_approval' },
+      }),
+    },
+  )
+}
+
+// Approve an interest proposal and let memory configure Scout atomically.
+export function approveDiscoveryInterest(
+  userId: string,
+  proposal: DiscoveryInterestProposal,
+) {
+  return apiRequest<{ fact: Record<string, unknown>; deduplicated: boolean }>(
+    `/api/v1/memory/${encodeURIComponent(userId)}/profile/discovery-interest`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        label: proposal.label,
+        source_conversation_id: proposal.conversation_id,
+        source_trace_id: proposal.trace_id,
+      }),
+    },
+  )
+}
+
+// Approve a locality proposal and let memory configure Scout atomically.
+export function approveDiscoveryLocality(
+  userId: string,
+  proposal: DiscoveryLocalityProposal,
+) {
+  return apiRequest<{ fact: Record<string, unknown>; deduplicated: boolean }>(
+    `/api/v1/memory/${encodeURIComponent(userId)}/profile/discovery-locality`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        label: proposal.label,
+        region: proposal.region,
+        source_conversation_id: proposal.conversation_id,
+        source_trace_id: proposal.trace_id,
       }),
     },
   )
@@ -1012,9 +1130,8 @@ export async function analyzeImage(
   form.set('conversation_id', conversationId)
   form.set('prompt', prompt)
   form.set('image', image)
-  const response = await fetch(`${API_BASE_URL}/api/v1/vision/analyze`, {
+  const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/vision/analyze`, {
     method: 'POST',
-    headers: authHeaders(),
     body: form,
     signal,
   })
@@ -1092,9 +1209,9 @@ export async function getArtifactImage(
   artifactId: string,
   signal?: AbortSignal,
 ) {
-  const response = await fetch(
+  const response = await authenticatedFetch(
     `${API_BASE_URL}/api/v1/artifacts/${encodeURIComponent(userId)}/${encodeURIComponent(artifactId)}/content`,
-    { headers: authHeaders(), signal },
+    { signal },
   )
   if (!response.ok) {
     const detail = await response.json().catch(() => ({}))
@@ -1129,11 +1246,10 @@ export async function getConversationSnapshot(
 
 // Submit a chat message and yield typed server-sent stream updates.
 export async function* streamChat(userId: string, conversationId: string, query: string) {
-  const response = await fetch(`${API_BASE_URL}/api/v1/chat`, {
+  const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/chat`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...authHeaders(),
     },
     body: JSON.stringify({ 
       user_id: userId, 
@@ -1200,7 +1316,16 @@ export async function* streamChat(userId: string, conversationId: string, query:
         const proposalConversationId = event.data.conversation_id
         const proposalTraceId = event.data.trace_id
         if (
-          !['preferred_name', 'response_style', 'entity', 'procedure', 'knowledge', 'episodic']
+          ![
+            'preferred_name',
+            'response_style',
+            'discovery_interest',
+            'discovery_locality',
+            'entity',
+            'procedure',
+            'knowledge',
+            'episodic',
+          ]
             .includes(String(kind)) ||
           typeof proposalConversationId !== 'string' ||
           typeof proposalTraceId !== 'string'
@@ -1222,6 +1347,33 @@ export async function* streamChat(userId: string, conversationId: string, query:
             conversation_id: proposalConversationId,
             trace_id: proposalTraceId,
           } as MemoryProposal
+        } else if (kind === 'discovery_interest') {
+          const { label } = event.data
+          if (typeof label !== 'string' || !label.trim()) {
+            throw new Error('Interest memory proposal is invalid')
+          }
+          proposal = {
+            kind,
+            label,
+            conversation_id: proposalConversationId,
+            trace_id: proposalTraceId,
+          }
+        } else if (kind === 'discovery_locality') {
+          const { label, region } = event.data
+          if (
+            typeof label !== 'string' ||
+            !label.trim() ||
+            (region !== null && typeof region !== 'string')
+          ) {
+            throw new Error('Locality memory proposal is invalid')
+          }
+          proposal = {
+            kind,
+            label,
+            region,
+            conversation_id: proposalConversationId,
+            trace_id: proposalTraceId,
+          }
         } else if (kind === 'entity') {
           const { entity_type, canonical_name, attributes } = event.data
           if (
@@ -1634,7 +1786,7 @@ export interface AgentSummary {
 // Read the live state of every specialized agent. Each field is derived from
 // the tables the agent itself writes, so this cannot report a state it is not in.
 export const getAgents = async (userId: string): Promise<AgentSummary[]> => {
-  const response = await fetch(
+  const response = await authenticatedFetch(
     `${API_BASE_URL}/api/v1/agents/${encodeURIComponent(userId)}`,
   );
   if (!response.ok) {
@@ -1658,6 +1810,7 @@ export interface DiscoveryLocality {
   radius_km: number;
   timezone: string;
   is_primary: boolean;
+  is_travel_active: boolean;
 }
 
 export interface DiscoverySource {
@@ -1706,7 +1859,7 @@ export const getDiscoveryProfile = async (
   userId: string,
 ): Promise<{ interests: DiscoveryInterest[]; localities: DiscoveryLocality[] }> => {
   const payload = await readJson(
-    await fetch(discoveryBase(userId)),
+    await authenticatedFetch(discoveryBase(userId)),
     'Could not load the discovery profile.',
   );
   return { interests: payload.interests ?? [], localities: payload.localities ?? [] };
@@ -1717,7 +1870,7 @@ export const putDiscoveryLocality = async (
   body: { label: string; region?: string | null; timezone?: string; is_primary?: boolean },
 ): Promise<DiscoveryLocality> =>
   readJson(
-    await fetch(`${discoveryBase(userId)}/localities`, {
+    await authenticatedFetch(`${discoveryBase(userId)}/localities`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ is_primary: true, ...body }),
@@ -1731,7 +1884,7 @@ export const putDiscoveryInterest = async (
   strength = 2,
 ): Promise<DiscoveryInterest> =>
   readJson(
-    await fetch(`${discoveryBase(userId)}/interests`, {
+    await authenticatedFetch(`${discoveryBase(userId)}/interests`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ label, strength }),
@@ -1743,7 +1896,7 @@ export const deleteDiscoveryInterest = async (
   userId: string,
   interestId: string,
 ): Promise<void> => {
-  const response = await fetch(`${discoveryBase(userId)}/interests/${interestId}`, {
+  const response = await authenticatedFetch(`${discoveryBase(userId)}/interests/${interestId}`, {
     method: 'DELETE',
   });
   if (!response.ok && response.status !== 404) {
@@ -1753,7 +1906,7 @@ export const deleteDiscoveryInterest = async (
 
 export const getDiscoverySources = async (userId: string): Promise<DiscoverySource[]> => {
   const payload = await readJson(
-    await fetch(`${discoveryBase(userId)}/sources`),
+    await authenticatedFetch(`${discoveryBase(userId)}/sources`),
     'Could not load feeds.',
   );
   return payload.sources ?? [];
@@ -1764,7 +1917,7 @@ export const putDiscoverySource = async (
   body: { kind: string; url: string; label?: string | null },
 ): Promise<DiscoverySource> =>
   readJson(
-    await fetch(`${discoveryBase(userId)}/sources`, {
+    await authenticatedFetch(`${discoveryBase(userId)}/sources`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -1776,7 +1929,7 @@ export const deleteDiscoverySource = async (
   userId: string,
   sourceId: string,
 ): Promise<void> => {
-  const response = await fetch(`${discoveryBase(userId)}/sources/${sourceId}`, {
+  const response = await authenticatedFetch(`${discoveryBase(userId)}/sources/${sourceId}`, {
     method: 'DELETE',
   });
   if (!response.ok && response.status !== 404) {
@@ -1788,7 +1941,7 @@ export const suggestDiscoverySources = async (
   userId: string,
 ): Promise<FeedCandidate[]> => {
   const payload = await readJson(
-    await fetch(`${discoveryBase(userId)}/sources/suggest`),
+    await authenticatedFetch(`${discoveryBase(userId)}/sources/suggest`),
     'Could not suggest feeds.',
   );
   return payload.candidates ?? [];
@@ -1798,7 +1951,7 @@ export const suggestDiscoveryInterests = async (
   userId: string,
 ): Promise<InterestProposal[]> => {
   const payload = await readJson(
-    await fetch(`${discoveryBase(userId)}/interests/suggest`),
+    await authenticatedFetch(`${discoveryBase(userId)}/interests/suggest`),
     'Could not suggest interests.',
   );
   return payload.proposals ?? [];
@@ -1820,7 +1973,7 @@ export const resolveDiscoveryLocality = async (
   stored_region: string | null;
 }> =>
   readJson(
-    await fetch(`${discoveryBase(userId)}/locality/resolve`, {
+    await authenticatedFetch(`${discoveryBase(userId)}/locality/resolve`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ latitude, longitude }),
@@ -1846,7 +1999,7 @@ export const runDiscoverySweep = async (
   commit = true,
 ): Promise<SweepResult> =>
   readJson(
-    await fetch(`${discoveryBase(userId)}/sweep?commit=${commit}`, {
+    await authenticatedFetch(`${discoveryBase(userId)}/sweep?commit=${commit}`, {
       method: 'POST',
     }),
     'Could not run a sweep.',
@@ -1867,7 +2020,7 @@ export const previewDiscoveryDigest = async (
   userId: string,
 ): Promise<DigestPreview> =>
   readJson(
-    await fetch(`${discoveryBase(userId)}/digest/preview`),
+    await authenticatedFetch(`${discoveryBase(userId)}/digest/preview`),
     'Could not build a preview.',
   );
 
@@ -1886,7 +2039,7 @@ export const getDiscoverySchedule = async (
   userId: string,
 ): Promise<DiscoverySchedule | null> => {
   const payload = await readJson(
-    await fetch(`${discoveryBase(userId)}/schedule`),
+    await authenticatedFetch(`${discoveryBase(userId)}/schedule`),
     'Could not load the schedule.',
   );
   return payload.schedule ?? null;
@@ -1902,7 +2055,7 @@ export const putDiscoverySchedule = async (
   },
 ): Promise<DiscoverySchedule> =>
   readJson(
-    await fetch(`${discoveryBase(userId)}/schedule`, {
+    await authenticatedFetch(`${discoveryBase(userId)}/schedule`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -1911,7 +2064,7 @@ export const putDiscoverySchedule = async (
   );
 
 export const deleteDiscoverySchedule = async (userId: string): Promise<void> => {
-  const response = await fetch(`${discoveryBase(userId)}/schedule`, {
+  const response = await authenticatedFetch(`${discoveryBase(userId)}/schedule`, {
     method: 'DELETE',
   });
   if (!response.ok && response.status !== 404) {
@@ -1927,10 +2080,60 @@ export const markDiscoveryKnown = async (
   label: string,
 ): Promise<{ label: string; locality: string | null; known_here: number }> =>
   readJson(
-    await fetch(`${discoveryBase(userId)}/known`, {
+    await authenticatedFetch(`${discoveryBase(userId)}/known`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ label }),
     }),
     'Could not record that.',
   );
+
+// Make one saved destination Scout's active travel locality.
+export const putDiscoveryTravelMode = async (
+  userId: string,
+  localityId: string,
+): Promise<DiscoveryLocality> => {
+  const payload = await readJson(
+    await authenticatedFetch(`${discoveryBase(userId)}/travel`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ locality_id: localityId }),
+    }),
+    'Could not start travel mode.',
+  );
+  return payload.active_locality;
+};
+
+// Return Scout to the user's approved home locality.
+export const deleteDiscoveryTravelMode = async (userId: string): Promise<void> => {
+  const response = await authenticatedFetch(`${discoveryBase(userId)}/travel`, { method: 'DELETE' });
+  if (!response.ok) throw new Error('Could not stop travel mode.');
+};
+
+export interface DiscoveryKnownItem {
+  id: string;
+  label: string;
+  created_at: string | null;
+}
+
+// Load the things hidden around the user's current primary locality.
+export const getDiscoveryKnown = async (
+  userId: string,
+): Promise<{ locality: string | null; known: DiscoveryKnownItem[] }> =>
+  readJson(
+    await authenticatedFetch(`${discoveryBase(userId)}/known`),
+    'Could not load hidden discoveries.',
+  );
+
+// Undo one owned dismissal so similar discoveries can appear again.
+export const deleteDiscoveryKnown = async (
+  userId: string,
+  itemId: string,
+): Promise<void> => {
+  const response = await authenticatedFetch(`${discoveryBase(userId)}/known/${encodeURIComponent(itemId)}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    throw new Error(response.status === 404 ? 'That dismissal no longer exists.' : 'Could not undo that dismissal.');
+  }
+};

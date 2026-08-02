@@ -105,7 +105,7 @@ async def test_episodic_memory_is_scoped_to_requested_user(memory_service):
 async def test_save_semantic_memory(memory_service, db_session):
     user_id = f"test_user_{uuid.uuid4()}"
     content = f"The user prefers jasmine tea {uuid.uuid4()}."
-    await memory_service.save_semantic_memory(
+    created = await memory_service.save_semantic_memory(
         user_id,
         content,
         {"type": "preference"},
@@ -113,7 +113,9 @@ async def test_save_semantic_memory(memory_service, db_session):
 
     saved = (
         await db_session.execute(
-            select(SemanticMemory).where(SemanticMemory.content == content)
+            select(SemanticMemory).where(
+                SemanticMemory.id == uuid.UUID(created["id"])
+            )
         )
     ).scalar_one()
     assert saved.user_id == user_id

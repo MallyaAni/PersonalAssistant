@@ -7,8 +7,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from backend.database.locks import transaction_advisory_lock
+from backend.discovery.errors import DiscoveryProjectionConflictError
+from backend.discovery.projection import DiscoveryProjection
 from backend.memory.errors import MemoryConflictError
 from backend.models.conversation import Conversation
+from backend.models.discovery import DiscoveryInterest, DiscoveryLocality
+from backend.models.discovery_familiar import DiscoveryFamiliarItem
+from backend.models.discovery_run import DiscoveryRun, DiscoverySchedule
+from backend.models.discovery_source import DiscoverySeenItem, DiscoverySource
+from backend.models.discovery_subscriber import DiscoverySubscriber
 from backend.models.memory import (
     EpisodicMemory,
     MemoryFact,
@@ -206,6 +213,7 @@ class MemoryRepository:
                 None,
             )
             if current is not None and current.normalized_value == normalized_value:
+                await self._apply_fact_projection(user_id, fact_key, current.value)
                 await self.session.commit()
                 return current, True
 
@@ -302,6 +310,14 @@ class MemoryRepository:
         value: str | None,
     ) -> None:
         if fact_key not in {"preferred_name", "response_style"}:
+            projection = DiscoveryProjection(self.session)
+            try:
+                if value is None:
+                    await projection.revoke_fact(user_id, fact_key)
+                else:
+                    await projection.apply_fact(user_id, fact_key, value)
+            except DiscoveryProjectionConflictError as exc:
+                raise MemoryConflictError(str(exc)) from exc
             return
         profile = await self.get_user_profile(user_id)
         if profile is None:
@@ -531,6 +547,47 @@ class MemoryRepository:
             (
                 "conversations",
                 delete(Conversation).where(Conversation.user_id == user_id),
+            ),
+            # Ambient discovery holds some of the most personal data here — where
+            # the user lives, what they like, everything they have been shown,
+            # and other people's contact details. It grew outside this
+            # subsystem's guarantees, so a "forget me" once left all of it
+            # behind. Runs are removed before schedules for the foreign key.
+            (
+                "discovery_familiar",
+                delete(DiscoveryFamiliarItem).where(
+                    DiscoveryFamiliarItem.user_id == user_id
+                ),
+            ),
+            (
+                "discovery_seen",
+                delete(DiscoverySeenItem).where(DiscoverySeenItem.user_id == user_id),
+            ),
+            (
+                "discovery_subscribers",
+                delete(DiscoverySubscriber).where(
+                    DiscoverySubscriber.user_id == user_id
+                ),
+            ),
+            (
+                "discovery_sources",
+                delete(DiscoverySource).where(DiscoverySource.user_id == user_id),
+            ),
+            (
+                "discovery_runs",
+                delete(DiscoveryRun).where(DiscoveryRun.user_id == user_id),
+            ),
+            (
+                "discovery_schedules",
+                delete(DiscoverySchedule).where(DiscoverySchedule.user_id == user_id),
+            ),
+            (
+                "discovery_interests",
+                delete(DiscoveryInterest).where(DiscoveryInterest.user_id == user_id),
+            ),
+            (
+                "discovery_localities",
+                delete(DiscoveryLocality).where(DiscoveryLocality.user_id == user_id),
             ),
         ):
             result = await self.session.execute(stmt)

@@ -138,6 +138,34 @@ class DiscoveryProfileRepository:
         await self.session.commit()
         return int(getattr(result, "rowcount", 0)) > 0
 
+    # Select one owned travel destination, or clear travel mode with no id.
+    async def set_travel_mode(
+        self, user_id: str, locality_id: UUID | None
+    ) -> Locality | None:
+        rows = list(
+            (
+                await self.session.execute(
+                    select(DiscoveryLocality).where(
+                        DiscoveryLocality.user_id == user_id
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
+        selected = next((row for row in rows if row.id == locality_id), None)
+        if locality_id is not None and selected is None:
+            return None
+        if selected is not None and selected.is_primary:
+            raise ValueError("Choose a destination other than the home locality")
+        for row in rows:
+            row.is_travel_active = row is selected
+        await self.session.commit()
+        if selected is None:
+            return None
+        await self.session.refresh(selected)
+        return _to_locality(selected)
+
     async def _find_interest(
         self, user_id: str, digest: str
     ) -> DiscoveryInterest | None:
@@ -184,4 +212,5 @@ def _to_locality(row: DiscoveryLocality) -> Locality:
         radius_km=row.radius_km,
         timezone=row.timezone,
         is_primary=row.is_primary,
+        is_travel_active=row.is_travel_active,
     )

@@ -11,10 +11,12 @@ flowchart TB
     end
 
     subgraph Orchestration[Application-owned orchestration]
+        Identity[Invited registration,<br/>session and ownership gate]
         Supervisor{Main supervisor}
         Conversation[Assistant and DiagramAgent]
         Presentation[PresentationAgent<br/>and durable worker]
         Memory[Memory coordinator]
+        Discovery[Scout ambient discovery]
         Visual[Image and vision services]
         Tools[MCP and search gates]
     end
@@ -40,11 +42,13 @@ flowchart TB
     end
 
     User --> Frontend
-    API --> Supervisor
+    API --> Identity --> Supervisor
     Supervisor -->|chat or diagram| Conversation
     Supervisor -->|presentation| Presentation
-    API --> Visual
+    Identity --> Visual
+    Identity --> Discovery
     Conversation <--> Memory
+    Discovery <--> Memory
 
     Conversation --> Tools --> Integrations
 
@@ -53,6 +57,7 @@ flowchart TB
     ModelGate --> Inference
     Visual --> Inference
     Memory --> Inference
+    Discovery --> Inference
     Inference --> VLLM
     Visual --> Media
     Visual --> VisionEmbed
@@ -62,12 +67,13 @@ flowchart TB
     Presentation --> Repositories
     Visual --> Repositories
     Memory --> Repositories
+    Discovery --> Repositories
 
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f,stroke-width:1.5px;
     classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43,stroke-width:1.5px;
     classDef infrastructure fill:#eef7ee,stroke:#5f9562,color:#183b1b,stroke-width:1.5px;
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450,stroke-width:1.5px;
     class User,Frontend,API interface;
-    class Supervisor,Conversation,Presentation,Memory,Visual,Tools application;
+    class Identity,Supervisor,Conversation,Presentation,Memory,Discovery,Visual,Tools application;
     class ModelGate,Inference,VLLM,Media,VisionEmbed,Repositories,Database,Files infrastructure;
     class Integrations external;

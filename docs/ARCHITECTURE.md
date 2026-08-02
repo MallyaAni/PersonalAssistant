@@ -16,7 +16,7 @@ The absence of one of these labels does not imply runtime verification.
 
 The editable source is [anios-system.mmd](diagrams/anios-system.mmd). It describes current implemented and explicitly scaffolded relationships only, including the typed main-supervisor route, editable diagrams, generated and uploaded raster artifacts, local binary storage, Compose-managed vLLM inference, ComfyUI, Qwen vision analysis, their browser integration, and the durable presentation worker. Aligned multimodal image embeddings and hybrid opt-in web research are included. General dynamic agent teams, A2A, and GPU-capacity leases remain outside the current diagram until their runtime boundaries exist. The render/check procedure is documented in [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md#architecture-diagram-maintenance).
 
-The self-contained [manager-facing architecture page](architecture.html) publishes all 13 canonical views with a current model-role summary, direct full-size SVG and Mermaid-source links, and independent per-diagram zoom controls. Eleven views describe the current system; the separately labelled visual-memory/editing and inference-scaling targets describe accepted future designs without claiming implementation. Its opening orchestration contract states explicitly that `MainSupervisorAgent` is currently deterministic and makes no LLM call.
+The self-contained [manager-facing architecture page](architecture.html) publishes all 15 canonical views with a current model-role summary, direct full-size SVG and Mermaid-source links, and independent per-diagram zoom controls. Thirteen views describe the current system; the separately labelled visual-memory/editing and inference-scaling targets describe accepted future designs without claiming implementation. Its opening orchestration contract states explicitly that `MainSupervisorAgent` is currently deterministic and makes no LLM call.
 
 ## Detailed subsystem diagrams
 
@@ -30,6 +30,7 @@ AniOS currently has a modular FastAPI backend rather than independently deployed
 | Search and research | Query minimization, cloud-worker isolation, Google/Tavily provider policy, quota, MCP serialization, and source provenance | [source](diagrams/search-research-subsystem.mmd) | [view](diagrams/search-research-subsystem.svg) |
 | Memory subsystem | All short/long-term forms, write authority, coordinator, typed services, pgvector retrieval, lifecycle and operations | [source](diagrams/memory-subsystem.mmd) | [view](diagrams/memory-subsystem.svg) |
 | Memory overview (manager) | Plain-language first-contact walkthrough of a memory turn, the approval gate, short-term vs long-term stores, and user data control | [source](diagrams/memory-overview.mmd) | [view](diagrams/memory-overview.svg) |
+| Scout discovery | Approved home/interest facts, profile projection, travel locality, strength-weighted ranking, familiarity controls, durable sweeps, and outputs | [source](diagrams/discovery-subsystem.mmd) | [view](diagrams/discovery-subsystem.svg) |
 | Tool memory and MCP execution | Safe descriptors, approved preferences, sanitized outcomes, semantic tool discovery, main-model selection, policy-gated invocation, and bounded untrusted results | [source](diagrams/tool-memory-subsystem.mmd) | [view](diagrams/tool-memory-subsystem.svg) |
 | Visual artifacts | Diagram classification/rendering, HiDream generation, validated uploads, opaque binary storage, integrity/deletion, Qwen vision analysis, threaded followup questions, aligned image embeddings and margin-bounded retrieval | [source](diagrams/visual-artifact-subsystem.mmd) | [view](diagrams/visual-artifact-subsystem.svg) |
 | Visual memory and editing | Implemented source-aware immutable revisions plus planned non-blocking generated-image observation, versioned semantics, handle-based visual memory, post-edit verification, and derived-data lifecycle | [source](diagrams/visual-memory-editing-target.mmd) | [view](diagrams/visual-memory-editing-target.svg) |
@@ -516,6 +517,31 @@ are deliberately absent: they would be the most sensitive value the application
 holds and nothing consumes them yet. The profile is rendered into ordinary chat
 context, so the assistant answers from the same record a scheduled run reads.
 
+Home and interests are approved personal-memory facts, while the typed discovery
+rows are the projection Scout needs for deterministic ranking. Chat recognizes
+the bounded explicit forms "I live in ..." and "I am interested in ..." and
+offers an approval card; approval writes the versioned fact and its profile
+projection in one transaction. Editing the Scout panel takes the reverse path:
+the profile edit is immediately usable and records the corresponding approved
+fact with profile-edit provenance. Removing either value clears the fact history
+that owns the projection. Interest fact keys use a namespace plus the normalized
+label digest, so they remain API-safe without exposing the interest in the key.
+
+Operational controls remain typed profile state rather than competing facts.
+Interest `strength` is an editable 1â€“3 ranking weight. Travel mode marks one
+non-home locality as active behind a database-enforced partial unique index;
+every sweep, preview, source suggestion, worker timezone, and familiarity scope
+uses that active locality, then falls back to the approved home. Stopping travel
+therefore changes where Scout looks without rewriting where the user lives.
+Dismissed familiar items can be reviewed and deleted from the Scout panel, which
+lets a future similar result appear again in that locality.
+
+Personal-memory export and delete-all cover every discovery-owned table:
+interests, localities, sources, seen items, subscribers, familiar items,
+schedules, and runs. Deletion orders dependent runs before schedules and is
+user-scoped. The public export/delete APIs and live browser workflow exercise
+these guarantees rather than inferring them from repository wiring.
+
 `backend/discovery/events.py` defines a provider-neutral `EventSource` returning
 typed events with a stable per-source identity, start, place, and link, with
 iCalendar and RSS/Atom adapters parsed using the standard library. Discovery
@@ -930,7 +956,11 @@ The maintainer-only architecture candidate command uses the same agent/provider 
 SQLAlchemy models exist for conversations, profiles/facts, episodic/semantic memory, safe tool memory, semantic cache, working memory, procedures, entities/relations, knowledge documents/chunks, conversation summaries, visual artifacts, presentations, append-only presentation revisions, and durable presentation jobs. Persistence has the following implemented boundaries:
 
 - all models use `backend.database.session.Base`;
-- Alembic targets that metadata; head `20260726_0015` adds durable leased presentation jobs and encrypted briefs/drafts on top of the stable target-slide association in `0014` and the user-scoped presentation/revision lineage introduced by `0013`;
+- Alembic targets that metadata; revision `20260802_0024` adds independent unique
+  account login names on top of the invite-account and revocable-session tables
+  in `0023`; head `20260802_0025` adds one-time registration invitations. Every
+  revision is additive across the earlier discovery,
+  presentation, artifact, memory, tool-memory, and pgvector history;
 - FastAPI, conversation, memory, coordinator, and operational paths use injected SQLAlchemy `AsyncSession` transactions through `asyncpg`;
 - runtime uses a bounded async queue pool, while the synchronous psycopg2 engine is retained only for Alembic and explicit inspection/test utilities;
 - episodic and semantic writers map caller metadata to the models' `extra_data` columns;
@@ -941,15 +971,46 @@ PostgreSQL transaction advisory locks serialize natural-key writes. An async acc
 
 An opt-in Compose maintenance service applies retention, optionally refreshes stale vectors, performs final inspection, emits non-content JSON monitoring events, and continues after transient interval failures. The operations API also exposes Prometheus-compatible counts, expiry backlog, stale vectors, invariants, database latency, and a binary health gauge. A configurable live soak mixes chat, working-memory reads/writes, and health inspection through the public API and cleans its isolated user afterward.
 
-PostgreSQL and pgvector persist all durable and expiring memory forms. Vector stores use 768-dimensional embeddings with HNSW cosine indexes; retrieval applies user scope, approval/active/expiry filters, cosine-distance thresholds, and result limits before prompt use. Oracle-specific IVF helpers are not used: schema and indexes are owned by SQLAlchemy metadata and Alembic. `backend/core/auth.py` provides optional expiring HMAC-signed local tokens; auth-disabled local development retains caller-supplied logical scoping.
+PostgreSQL and pgvector persist all durable and expiring memory forms. Vector stores use 768-dimensional embeddings with HNSW cosine indexes; retrieval applies user scope, approval/active/expiry filters, cosine-distance thresholds, and result limits before prompt use. Oracle-specific IVF helpers are not used: schema and indexes are owned by SQLAlchemy metadata and Alembic.
+
+Invited authentication keeps a unique login name separate from
+the stable `user_id` that owns chats, memory, discovery rows, artifacts, and
+jobs. The operator can create an account through a private password prompt or
+mint an expiring one-time registration code. Only the invitation digest is
+stored. `POST /auth/register` locks and consumes one valid invitation while
+creating the normalized account and first session in one transaction; the
+browser never supplies a separate owner ID.
+`POST /auth/login` verifies the submitted password, creates a random opaque
+token, persists only its
+SHA-256 digest, and sets a host-only HttpOnly browser cookie. The async auth
+dependency resolves unexpired, unrevoked sessions to the stable owner before
+any owned handler runs; logout, password replacement, and account disable
+revoke sessions. Login and registration admission use shared Redis attempt
+windows and fail closed when that protection is unavailable. Unsafe
+cookie-authenticated requests additionally require an
+allowlisted Origin. Legacy expiring HMAC bearer tokens remain available for
+local automation. Trusted-local `AUTH_REQUIRED=false` deliberately returns the
+configured local owner and is not suitable for public ingress.
+
+The production-style local web boundary is a loopback-only Nginx container on
+port 8080. It serves the compiled React application and proxies `/api` to
+FastAPI on the same origin with buffering disabled for SSE and bounded
+upload/download timeouts. Vite on port 5173 remains a development path. A
+public TLS tunnel is not configured; future ingress must expose only this
+gateway and keep every database, model, media, renderer, and MCP port private.
 
 The model vector type follows the validated `EMBEDDING_DIMENSION` setting. Offline dimension changes use resumable `embedding_next` shadow columns across semantic memory, cache, procedures, entities, knowledge chunks, summaries, and tool descriptors. Batches commit without replacing the authoritative old vectors; after all shadow rows validate, one PostgreSQL transaction locks and switches every pending table, updates embedding metadata, and rebuilds each HNSW cosine index. Provider/backfill failure therefore leaves old vectors usable and the shadow work resumable.
 
 ## Frontend
 
-The React frontend contains a responsive light-neutral shell with search-first Chat, Personal Memory, Visual Artifacts, and Presentations views. Empty chat centers one dominant query composer; active chat presents each user query and assistant response as a left-aligned result flow rather than opposing message bubbles. Request trace/conversation identifiers remain available through an answer-level three-dot metadata popover instead of the primary answer text. The native font stack selects SF Pro through the Apple system aliases where available and the platform `system-ui` font elsewhere; the composer explicitly inherits that same stack. The memory screen explicitly applies user changes, cancels obsolete reads, edits profile/preferences, lists and deletes records, confirms delete-all, keeps manual event/fact creation behind an advanced plain-language disclosure, and renders live counts for every implemented short- and long-term memory form. Chat validates text, memory, search, MCP tool, image, and artifact SSE lifecycles; each tool shows running, succeeded, refused, or failed state without exposing arguments or results. Assistant text is rendered as styled CommonMark through ReactMarkdown with raw HTML interpretation disabled, while user messages remain literal text. Chat lazily loads Mermaid only for ready diagrams, renders under strict settings with HTML labels disabled, exposes editable source, and shows generation/render failures. The Artifacts view lists recent owned ready diagrams, reuses strict rendering, downloads Mermaid or the locally rendered SVG without another provider call, exposes refresh/load failures, and deletes owned records. The Presentations view lists persisted decks, creates a deck from a brief, shows reconnectable named-stage progress plus the latest partial slide, previews the promoted typed specification in a main canvas and thumbnails, applies feedback only to a selected slide, displays append-only revision history, downloads a named `.pptx`, and exposes loading and failure states. The browser persists a conversation ID across reloads/views, keeps the in-memory transcript mounted across view switches, restores a bounded owned transcript and its diagram artifacts after a full reload, rotates it through `New conversation`, and clears the visible transcript when either the user or conversation changes.
+The React frontend begins at an invited sign-in/profile-creation screen when
+authentication is required and does not mount private product views until
+`/auth/session` returns
+the server-derived owner. It contains a responsive light-neutral shell with search-first Chat, Personal Memory, Visual Artifacts, and Presentations views. Empty chat centers one dominant query composer; active chat presents each user query and assistant response as a left-aligned result flow rather than opposing message bubbles. Request trace/conversation identifiers remain available through an answer-level three-dot metadata popover instead of the primary answer text. The native font stack selects SF Pro through the Apple system aliases where available and the platform `system-ui` font elsewhere; the composer explicitly inherits that same stack. The memory screen explicitly applies user changes, cancels obsolete reads, edits profile/preferences, lists and deletes records, confirms delete-all, keeps manual event/fact creation behind an advanced plain-language disclosure, and renders live counts for every implemented short- and long-term memory form. Chat validates text, memory, search, MCP tool, image, and artifact SSE lifecycles; each tool shows running, succeeded, refused, or failed state without exposing arguments or results. Assistant text is rendered as styled CommonMark through ReactMarkdown with raw HTML interpretation disabled, while user messages remain literal text. Chat lazily loads Mermaid only for ready diagrams, renders under strict settings with HTML labels disabled, exposes editable source, and shows generation/render failures. The Artifacts view lists recent owned ready diagrams, reuses strict rendering, downloads Mermaid or the locally rendered SVG without another provider call, exposes refresh/load failures, and deletes owned records. The Presentations view lists persisted decks, creates a deck from a brief, shows reconnectable named-stage progress plus the latest partial slide, previews the promoted typed specification in a main canvas and thumbnails, applies feedback only to a selected slide, displays append-only revision history, downloads a named `.pptx`, and exposes loading and failure states. The browser persists only per-owner conversation and presentation job IDs across reloads; it keeps the in-memory transcript mounted across view switches, restores a bounded owned transcript and its diagram artifacts after a full reload, rotates it through `New conversation`, and clears the visible transcript when the authenticated owner or conversation changes.
 
-The trusted-local developer UI defaults a missing or legacy `dev_user_001` browser identity to `ani.mallya` and rotates the legacy conversation ID. Any other stored user/conversation identity is preserved. This is local UI convenience, not authentication.
+Trusted-local mode uses configured owner `ani.mallya` without a login. It is a
+single-user development convenience, not authentication, and must not be
+exposed through a public ingress.
 
 Presentation feedback revisions carry the selected stable slide ID. The browser
 uses that public association and encrypted feedback summary to reconstruct a
@@ -1015,9 +1076,16 @@ Current runtime validation completes this flow through the qualified main and sp
 
 ## Capability boundaries
 
-- Personal profile, episodic memory, relevance-gated semantic search, management/export/correction/deletion UI, and optional signed user authentication: functionally implemented; auth is disabled by default for trusted-local development.
+- Personal profile, episodic memory, relevance-gated semantic search,
+  management/export/correction/deletion UI, and invite-only password
+  authentication: functionally implemented; the current local runtime has auth
+  enabled and the primary account is provisioned.
 - Local knowledge-document ingestion, deterministic chunking, embedding, semantic retrieval, prompt curation, export, and deletion: implemented. Hybrid retrieval, reranking, source-citation policy, file connectors, ingestion jobs, and GraphRAG remain `PLANNED`.
-- Signed local-user route ownership: implemented when enabled. Password login, account management, token revocation, and external identity providers: `PLANNED`.
+- Server-derived route ownership, one-time invited browser registration,
+  Argon2id password login, shared attempt limits, revocable HttpOnly sessions,
+  logout, and operator CLI account lifecycle: implemented and API/browser
+  verified. Unrestricted public signup, account recovery, MFA, browser
+  administration, and external identity providers remain `PLANNED`.
 - Deterministic internet routing, outbound privacy minimization/blocking,
   Google-first/Tavily-fallback MCP research policy, request-scoped cloud-worker
   isolation, non-content daily quota, untrusted prompt attribution,
@@ -1033,4 +1101,4 @@ Current runtime validation completes this flow through the qualified main and sp
 
 ## Architectural decision
 
-The project has adopted clean-architecture and dependency-inversion principles as a design direction. [ADR 0001](adr/0001-clean-architecture-and-modular-structure.md) records that direction. [ADR 0002](adr/0002-typed-agent-memory-manager-and-pgvector-indexes.md) records the typed store-manager/coordinator boundary and the pgvector HNSW indexing choice. [ADR 0003](adr/0003-local-visual-artifacts-and-resource-aware-orchestration.md) records the local-only visual-artifact, GPU-resource, and scalable orchestration direction; editable diagrams, raster generation and source editing, binary storage, upload validation, VLM analysis, aligned image retrieval, browser integration, and the local visual FastMCP facade are implemented while deterministic resource orchestration remains `PLANNED`. [ADR 0004](adr/0004-hybrid-free-tier-web-research.md) records the isolated Google research worker, Tavily fallback/cross-check, free-tier quota, and data-minimization boundary. [ADR 0005](adr/0005-typed-editable-presentation-generation.md) records the typed editable-presentation, focused-agent, durable-job worker, foreground-priority model gate, renderer, and validated-promotion boundaries. [ADR 0006](adr/0006-hybrid-supervisor-and-qualified-model-roles.md) records the typed hybrid-supervisor boundary, visible delegation provenance, role-specific local-model configuration, and acceptance-path-driven model promotion rule. [ADR 0007](adr/0007-versioned-visual-semantics-memory-and-editing.md) records implemented source-aware immutable editing plus planned generated-image observation, handle-based visual memory, semantic verification, and derived-data lifecycle boundaries. [ADR 0008](adr/0008-provider-neutral-inference-boundary.md) records the provider-neutral inference adapters, role-level configuration, and deliberate separation from runtime lifecycle control. [ADR 0009](adr/0009-vllm-default-local-inference-runtime.md) records the pinned two-service vLLM deployment, consolidated Qwen/Nomic role profile, GPU-safe startup order, and remaining resource-management boundary.
+The project has adopted clean-architecture and dependency-inversion principles as a design direction. [ADR 0001](adr/0001-clean-architecture-and-modular-structure.md) records that direction. [ADR 0002](adr/0002-typed-agent-memory-manager-and-pgvector-indexes.md) records the typed store-manager/coordinator boundary and the pgvector HNSW indexing choice. [ADR 0003](adr/0003-local-visual-artifacts-and-resource-aware-orchestration.md) records the local-only visual-artifact, GPU-resource, and scalable orchestration direction; editable diagrams, raster generation and source editing, binary storage, upload validation, VLM analysis, aligned image retrieval, browser integration, and the local visual FastMCP facade are implemented while deterministic resource orchestration remains `PLANNED`. [ADR 0004](adr/0004-hybrid-free-tier-web-research.md) records the isolated Google research worker, Tavily fallback/cross-check, free-tier quota, and data-minimization boundary. [ADR 0005](adr/0005-typed-editable-presentation-generation.md) records the typed editable-presentation, focused-agent, durable-job worker, foreground-priority model gate, renderer, and validated-promotion boundaries. [ADR 0006](adr/0006-hybrid-supervisor-and-qualified-model-roles.md) records the typed hybrid-supervisor boundary, visible delegation provenance, role-specific local-model configuration, and acceptance-path-driven model promotion rule. [ADR 0007](adr/0007-versioned-visual-semantics-memory-and-editing.md) records implemented source-aware immutable editing plus planned generated-image observation, handle-based visual memory, semantic verification, and derived-data lifecycle boundaries. [ADR 0008](adr/0008-provider-neutral-inference-boundary.md) records the provider-neutral inference adapters, role-level configuration, and deliberate separation from runtime lifecycle control. [ADR 0009](adr/0009-vllm-default-local-inference-runtime.md) records the pinned two-service vLLM deployment, consolidated Qwen/Nomic role profile, GPU-safe startup order, and remaining resource-management boundary. [ADR 0010](adr/0010-invite-identity-and-revocable-sessions.md) records the stable-owner/login-name split and revocable server-side browser-session boundary.

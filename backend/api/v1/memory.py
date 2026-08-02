@@ -11,6 +11,8 @@ from backend.core.dependencies import (
     DependencyAgentMemoryManager,
     DependencyMemoryService,
 )
+from backend.discovery.projection import interest_fact, locality_fact
+from backend.discovery.types import MAX_LABEL_CHARS, MAX_REGION_CHARS
 from backend.memory.errors import MemoryConflictError
 
 router = APIRouter(
@@ -84,6 +86,48 @@ class PreferredNameApprovalRequest(BaseModel):
         if value <= datetime.now(UTC):
             raise ValueError("must be in the future")
         return value
+
+
+class DiscoveryInterestApprovalRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    label: str = Field(min_length=1, max_length=MAX_LABEL_CHARS)
+    source_conversation_id: uuid.UUID
+    source_trace_id: uuid.UUID
+
+    # Trim an approved interest and reject blank text.
+    @field_validator("label")
+    @classmethod
+    def normalize_label(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("must not be blank")
+        return normalized
+
+
+class DiscoveryLocalityApprovalRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    label: str = Field(min_length=1, max_length=MAX_LABEL_CHARS)
+    region: str | None = Field(default=None, max_length=MAX_REGION_CHARS)
+    source_conversation_id: uuid.UUID
+    source_trace_id: uuid.UUID
+
+    # Trim an approved locality label and reject blank text.
+    @field_validator("label")
+    @classmethod
+    def normalize_label(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("must not be blank")
+        return normalized
+
+    # Normalize an optional locality region before persistence.
+    @field_validator("region")
+    @classmethod
+    def normalize_region(cls, value: str | None) -> str | None:
+        normalized = value.strip() if value is not None else ""
+        return normalized or None
 
 
 class FactApprovalRequest(BaseModel):
@@ -207,6 +251,54 @@ async def clear_preferred_name(
     service: DependencyMemoryService,
 ) -> dict[str, Any]:
     return await service.clear_preferred_name(user_id)
+
+
+# Approve a chat-proposed interest and atomically project it into Scout's profile.
+@router.post("/{user_id}/profile/discovery-interest", status_code=201)
+async def approve_discovery_interest(
+    user_id: UserId,
+    body: DiscoveryInterestApprovalRequest,
+    service: DependencyMemoryService,
+) -> dict[str, Any]:
+    fact = interest_fact(body.label)
+    try:
+        return await service.approve_fact(
+            user_id=user_id,
+            fact_type=fact.fact_type,
+            fact_key=fact.fact_key,
+            value=fact.value,
+            purpose=fact.purpose,
+            source_conversation_id=str(body.source_conversation_id),
+            source_trace_id=str(body.source_trace_id),
+            expires_at=None,
+            metadata={"source": "chat_approval"},
+        )
+    except MemoryConflictError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+# Approve a chat-proposed home locality and atomically configure Scout's primary place.
+@router.post("/{user_id}/profile/discovery-locality", status_code=201)
+async def approve_discovery_locality(
+    user_id: UserId,
+    body: DiscoveryLocalityApprovalRequest,
+    service: DependencyMemoryService,
+) -> dict[str, Any]:
+    fact = locality_fact(body.label, body.region)
+    try:
+        return await service.approve_fact(
+            user_id=user_id,
+            fact_type=fact.fact_type,
+            fact_key=fact.fact_key,
+            value=fact.value,
+            purpose=fact.purpose,
+            source_conversation_id=str(body.source_conversation_id),
+            source_trace_id=str(body.source_trace_id),
+            expires_at=None,
+            metadata={"source": "chat_approval"},
+        )
+    except MemoryConflictError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 # Approve and persist a typed personal-memory fact.

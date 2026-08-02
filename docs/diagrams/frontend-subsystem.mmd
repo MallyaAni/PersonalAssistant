@@ -2,13 +2,17 @@
 title: Frontend Structure
 ---
 flowchart TB
-    Browser([Browser]) --> App[React application shell]
-    Session[(Local user, active conversation<br/>and presentation job IDs)] --> App
-    App --> Restore[Navigation and session restore]
+    Browser([Browser]) --> Gate{Authenticated session?}
+    Gate -->|no| Login[Sign in or create<br/>an invited profile]
+    Login -->|one-time invitation<br/>or existing password| Auth[Authentication API]
+    Auth -->|HttpOnly cookie| Gate
+    Gate -->|yes| App[Private React application shell]
+    Session[(Per-user conversation<br/>and presentation job IDs)] --> App
+    App --> Restore[Navigation and owned-state restore]
     Restore --> Views[Chat · Memory · Artifacts · Presentations]
     Views --> Actions[Compose and upload<br/>inspect, revise and download]
     Actions --> Client[Typed API and SSE client<br/>validation and visible errors]
-    Client --> Backend[FastAPI API<br/>browser makes no model calls]
+    Client --> Backend[FastAPI API<br/>session derives the owner]
     Backend -->|streams, polling and responses| Client
     Client --> Results[Answers, sources, tool status,<br/>artifacts, slides and progress]
     Results --> Views
@@ -17,7 +21,7 @@ flowchart TB
     classDef component fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
     classDef boundary fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
-    class Browser,App,Restore shell;
-    class Views,Actions,Results component;
+    class Browser,Gate,App,Restore shell;
+    class Login,Auth,Views,Actions,Results component;
     class Session,Client boundary;
     class Backend external;

@@ -273,6 +273,42 @@ async def test_conversation_service_proposes_name_without_writing_memory():
     )
 
 
+# Verify explicit residence and interest statements stream approval-gated proposals.
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("query", "kind", "expected"),
+    [
+        (
+            "I live in Arlington, Virginia.",
+            "discovery_locality",
+            {"label": "Arlington", "region": "Virginia"},
+        ),
+        (
+            "I am interested in hiking.",
+            "discovery_interest",
+            {"label": "hiking"},
+        ),
+    ],
+)
+async def test_conversation_service_proposes_discovery_profile_memory(
+    query, kind, expected
+):
+    service = ConversationService(
+        memory=StubMemoryService(),
+        llm=StubLLM(),
+        repository=CapturingConversationRepository(),
+        tracer=StubTracer(),
+    )
+
+    events = [event async for event in service.process_request("proposal_user", query)]
+
+    proposal = next(
+        event["data"] for event in events if event["event"] == "memory_proposal"
+    )
+    assert proposal["kind"] == kind
+    assert {key: proposal[key] for key in expected} == expected
+
+
 @pytest.mark.asyncio
 async def test_conversation_service_sends_user_scoped_memory_to_llm():
     llm = StubLLM()
