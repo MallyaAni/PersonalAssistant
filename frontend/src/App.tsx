@@ -125,7 +125,9 @@ function App() {
           <MemoryPanel userId={userId} onUserIdChange={updateUserId} />
         )}
         {activeView === 'artifacts' && <ArtifactPanel userId={userId} />}
-        {activeView === 'agents' && <AgentPanel userId={userId} />}
+        {activeView === 'agents' && (
+          <AgentPanel userId={userId} onOpenView={setActiveView} />
+        )}
         {activeView === 'presentations' && (
           <PresentationPanel
             userId={userId}

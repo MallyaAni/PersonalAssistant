@@ -50,6 +50,8 @@ class AgentSummary:
     trigger: str
     last_active_at: datetime | None = None
     facts: tuple[AgentFact, ...] = field(default=())
+    # Which workspace view holds this agent's output, when it has one elsewhere.
+    opens_view: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -63,6 +65,7 @@ class AgentSummary:
                 self.last_active_at.isoformat() if self.last_active_at else None
             ),
             "facts": [{"label": f.label, "value": f.value} for f in self.facts],
+            "opens_view": self.opens_view,
         }
 
 
@@ -181,6 +184,18 @@ class AgentRegistry:
         facts = [AgentFact("Decks built", str(completed or 0))]
         if latest is not None:
             facts.append(AgentFact("Last job", latest.status))
+        # What the agent is actually configured to do, read from settings rather
+        # than described, so the card cannot claim a behaviour it does not have.
+        facts.append(
+            AgentFact(
+                "Auto images",
+                (
+                    f"up to {settings.PRESENTATION_AUTO_IMAGE_MAX}"
+                    if settings.PRESENTATION_AUTO_IMAGE_MAX
+                    else "off"
+                ),
+            )
+        )
 
         if active:
             status: AgentStatus = "working"
@@ -204,6 +219,10 @@ class AgentRegistry:
             trigger="Delegated from chat",
             last_active_at=latest.created_at if latest else None,
             facts=tuple(facts),
+            # Agents is a control surface; a deck is an artifact you keep, edit,
+            # and download. The card points at that workspace rather than
+            # nesting an editor inside an agent listing.
+            opens_view="presentations",
         )
 
     async def _count(self, model: Any, user_id: str) -> int:

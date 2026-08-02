@@ -1809,3 +1809,27 @@ rows referencing them. The two changes above exist so this cannot recur.
   three finds, and the seen-item count was 5 before and 5 after, so a rehearsal
   writes nothing. A real sweep following a rehearsal still announces once and
   then nothing, so the rehearsal does not poison the store.
+
+## 2026-08-01 — Telling a happening apart from a page that lists happenings
+
+- The digest was returning trail directories and Meetup landing pages for
+  "hiking". An embedding cannot make this call: "Events in Arlington, Virginia |
+  Meetup" is a genuinely excellent semantic match for someone interested in local
+  events, and it is not something you can go to. The distinction is structural,
+  so it is now decided by URL and title signals rather than by similarity.
+- Every case in `listing_filter` is a real result from a live sweep, labelled by
+  hand. A specific event path (`/event/<slug>`, `/events/<id>`) beats a generic
+  title, because the URL is the harder signal to fake.
+- **The query was the larger problem, and it was measured rather than guessed.**
+  "hiking events near Arlington upcoming" kept **0 of 5** results — that phrasing
+  is how a directory page describes itself, so that is what ranks for it. Naming
+  the current month instead kept **6 of 9** across hiking, pottery, and jazz, and
+  surfaced real happenings: *Tour de Trail: Pentagon Memorial*, *Hand-Built
+  Pottery Class*, *Lubber Run Amphitheater*. A date appears on a page about one
+  happening and not on a landing page.
+- Added guide patterns after "The Complete Guide To Hiking In Northern Virginia"
+  reached a live digest; a guide to a category is a directory under another name.
+- The Deck card now reports what it is configured to do — read from settings, so
+  it cannot claim a behaviour it does not have — and links through to the
+  Presentations workspace.
+- 716 backend tests and the Agents tab browser test pass.

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
+  ArrowRight,
   Bot,
   CalendarClock,
   ChevronDown,
@@ -14,6 +15,8 @@ import ScoutSetup from './ScoutSetup'
 
 interface AgentPanelProps {
   userId: string;
+  // Agents is a control surface; some agents' output lives in its own view.
+  onOpenView?: (view: 'presentations') => void;
 }
 
 // Each agent's live state is polled rather than pushed. A sweep runs on a
@@ -47,7 +50,7 @@ const formatLastActive = (value: string | null): string => {
 }
 
 // List the specialized agents and what each is currently doing.
-const AgentPanel = ({ userId }: AgentPanelProps) => {
+const AgentPanel = ({ userId, onOpenView }: AgentPanelProps) => {
   const [agents, setAgents] = useState<AgentSummary[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
@@ -144,6 +147,15 @@ const AgentPanel = ({ userId }: AgentPanelProps) => {
                           {agent.trigger}
                         </span>
                         <span>Last active {formatLastActive(agent.last_active_at).toLowerCase()}</span>
+                        {agent.opens_view === 'presentations' && onOpenView && (
+                          <button
+                            onClick={() => onOpenView('presentations')}
+                            className="ml-auto flex items-center gap-1 text-xs font-medium text-[#0071e3]"
+                          >
+                            Open decks
+                            <ArrowRight size={13} />
+                          </button>
+                        )}
                         {agent.id === 'discovery' && (
                           <button
                             onClick={() =>

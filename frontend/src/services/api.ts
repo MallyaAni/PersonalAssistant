@@ -1628,6 +1628,7 @@ export interface AgentSummary {
   trigger: string;
   last_active_at: string | null;
   facts: AgentFact[];
+  opens_view: string | null;
 }
 
 // Read the live state of every specialized agent. Each field is derived from

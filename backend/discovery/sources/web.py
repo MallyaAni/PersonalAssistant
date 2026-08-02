@@ -22,7 +22,9 @@ boundary like any feed.
 """
 
 import re
+from collections.abc import Iterable
 from datetime import UTC, datetime
+from typing import Any
 
 from backend.core.interfaces import SearchProvider
 from backend.discovery.events import (
@@ -36,6 +38,7 @@ from backend.discovery.events import (
     clean_url,
 )
 from backend.discovery.fetching import RequestBudget
+from backend.discovery.listing_filter import looks_like_a_directory
 
 # One query per interest, capped. A user with twenty interests must not turn one
 # sweep into twenty metered calls.
@@ -124,12 +127,8 @@ class WebEventSource(EventSource):
         events: list[DiscoveredEvent] = []
         seen_urls: set[str] = set()
         for query in self._queries():
-            if self.budget is not None:
-                # A spent budget ends the sweep's searching rather than raising:
-                # feeds already read must still contribute.
-                if self.budget.remaining <= 0:
-                    break
-                self.budget.spend()
+            if not self._spend_one_request():
+                break
             try:
                 results = await self.search.search(
                     query, max_results=MAX_RESULTS_PER_QUERY
@@ -137,34 +136,66 @@ class WebEventSource(EventSource):
             except Exception:
                 # One failed query degrades coverage, never the sweep.
                 continue
-            for result in results.results:
-                url = clean_url(result.url)
-                if url is None or url in seen_urls:
-                    continue
-                seen_urls.add(url)
-                event = _to_event(self._source_id, result.title, result.content, url)
-                if event is not None:
-                    events.append(event)
-                if len(events) >= MAX_EVENTS_PER_SOURCE:
-                    return tuple(events)
+            events.extend(_events_from(self._source_id, results.results, seen_urls))
+            if len(events) >= MAX_EVENTS_PER_SOURCE:
+                return tuple(events[:MAX_EVENTS_PER_SOURCE])
         return tuple(events)
+
+    # Reserve one query against the budget. A spent budget ends the searching
+    # rather than raising, because feeds already read must still contribute.
+    def _spend_one_request(self) -> bool:
+        if self.budget is None:
+            return True
+        if self.budget.remaining <= 0:
+            return False
+        self.budget.spend()
+        return True
 
     # One query per interest, because a combined query returns results matching
     # none of them well. Bounded so the metered cost of a sweep is knowable
     # before it runs.
-    def _queries(self) -> tuple[str, ...]:
+    def _queries(self, now: datetime | None = None) -> tuple[str, ...]:
         place = clean_text(self.locality, 80) or ""
         region = clean_text(self.region, 80)
         if region:
             place = f"{place}, {region}"
+        # The month and year are the useful part. "events near X upcoming" is
+        # how a directory page describes itself, so that phrasing returns
+        # directory pages — measured, not guessed: it kept 0 of 5 results while
+        # naming the month kept 6 of 9 across three different interests. A date
+        # appears on a page about one happening and not on a landing page.
+        moment = now or datetime.now(UTC)
+        when = moment.strftime("%B %Y")
         queries: list[str] = []
         for interest in self.interests[: self.max_queries]:
             label = clean_text(interest, 60)
             if label:
-                queries.append(f"{label} events near {place} upcoming".strip())
+                queries.append(f"{label} {place} {when}".strip())
         if not queries:
-            queries.append(f"upcoming local events {place}".strip())
+            queries.append(f"local events {place} {when}".strip())
         return tuple(queries[: self.max_queries])
+
+
+# Turn one query's results into typed events, skipping anything already taken and
+# anything that is a page listing happenings rather than one happening.
+def _events_from(
+    source_id: str, results: "Iterable[Any]", seen_urls: set[str]
+) -> list[DiscoveredEvent]:
+    events: list[DiscoveredEvent] = []
+    for result in results:
+        url = clean_url(result.url)
+        if url is None or url in seen_urls:
+            continue
+        seen_urls.add(url)
+        # An embedding scores "Events in Arlington" as an excellent match for
+        # someone interested in local events, which is exactly the wrong answer,
+        # so this is decided structurally rather than semantically.
+        if looks_like_a_directory(result.title, url):
+            continue
+        event = _to_event(source_id, result.title, result.content, url)
+        if event is not None:
+            events.append(event)
+    return events
 
 
 def _to_event(
