@@ -48,7 +48,7 @@ class _StubSearch:
 
 
 @pytest.mark.parametrize(
-    "text,expected",
+    ("text", "expected"),
     [
         ("Group hike on 2026-09-12, meet at the trailhead", (2026, 9, 12)),
         ("Trail cleanup September 12, 2026", (2026, 9, 12)),

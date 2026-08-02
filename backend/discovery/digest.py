@@ -39,51 +39,67 @@ def render_message(
     dated = [item for item in selected if item.event.starts_at is not None]
     undated = [item for item in selected if item.event.starts_at is None]
 
-    lines: list[str] = []
-    if dated:
-        heading = (
-            "Coming up near you:"
-            if calendar_base_url
-            else "Coming up near you — the calendar file is attached:"
-        )
-        lines.extend([heading, ""])
-        for item in dated[:limit]:
-            event = item.event
-            line = f"• {_bound(event.title, MAX_TITLE_CHARS)}"
-            when = _format_when(event.starts_at, zone)
-            if when:
-                line += f" — {when}"
-            if event.place:
-                line += f" ({_bound(event.place, MAX_PLACE_CHARS)})"
-            lines.append(line)
-            # What the thing actually is. Without it a recipient is deciding
-            # from a title alone, which is how you get ignored.
-            if event.summary:
-                lines.append(f"  {_bound(event.summary, MAX_SUMMARY_CHARS)}")
-            # No link when the calendar file travels with the message: the
-            # attachment is what the recipient taps, and a link would be the
-            # one that only resolves on the sender's network.
-            if calendar_base_url:
-                lines.append(f"  Add: {_calendar_url(calendar_base_url, item)}")
-        remaining = len(dated) - limit
-        if remaining > 0:
-            lines.extend(["", f"and {remaining} more"])
-
-    # Found without a published date. These carry a link rather than a calendar
-    # entry: nobody stated when they happen, and inventing a time would put a
-    # confidently wrong appointment in someone's calendar.
-    if undated:
-        if lines:
-            lines.append("")
-        lines.extend(["Worth a look — no date given:", ""])
-        for item in undated:
-            lines.append(f"• {_bound(item.event.title, MAX_TITLE_CHARS)}")
-            if item.event.summary:
-                lines.append(f"  {_bound(item.event.summary, MAX_SUMMARY_CHARS)}")
-            if item.event.url:
-                lines.append(f"  {item.event.url}")
+    lines = _render_dated(dated, calendar_base_url, zone, limit)
+    mentions = _render_undated(undated)
+    if lines and mentions:
+        lines.append("")
+    lines.extend(mentions)
 
     return "\n".join(lines) if lines else None
+
+
+def _render_dated(
+    dated: list[RankedCandidate],
+    calendar_base_url: str | None,
+    zone: ZoneInfo,
+    limit: int,
+) -> list[str]:
+    if not dated:
+        return []
+    heading = (
+        "Coming up near you:"
+        if calendar_base_url
+        else "Coming up near you — the calendar file is attached:"
+    )
+    lines = [heading, ""]
+    for item in dated[:limit]:
+        event = item.event
+        line = f"• {_bound(event.title, MAX_TITLE_CHARS)}"
+        when = _format_when(event.starts_at, zone)
+        if when:
+            line += f" — {when}"
+        if event.place:
+            line += f" ({_bound(event.place, MAX_PLACE_CHARS)})"
+        lines.append(line)
+        # What the thing actually is. Without it a recipient is deciding from a
+        # title alone, which is how you get ignored.
+        if event.summary:
+            lines.append(f"  {_bound(event.summary, MAX_SUMMARY_CHARS)}")
+        # No link when the calendar file travels with the message: the
+        # attachment is what the recipient taps, and a link would be the one
+        # that only resolves on the sender's network.
+        if calendar_base_url:
+            lines.append(f"  Add: {_calendar_url(calendar_base_url, item)}")
+    remaining = len(dated) - limit
+    if remaining > 0:
+        lines.extend(["", f"and {remaining} more"])
+    return lines
+
+
+# Found without a published date. These carry a link rather than a calendar
+# entry: nobody stated when they happen, and inventing a time would put a
+# confidently wrong appointment in someone's calendar.
+def _render_undated(undated: list[RankedCandidate]) -> list[str]:
+    if not undated:
+        return []
+    lines = ["Worth a look — no date given:", ""]
+    for item in undated:
+        lines.append(f"• {_bound(item.event.title, MAX_TITLE_CHARS)}")
+        if item.event.summary:
+            lines.append(f"  {_bound(item.event.summary, MAX_SUMMARY_CHARS)}")
+        if item.event.url:
+            lines.append(f"  {item.event.url}")
+    return lines
 
 
 # A local, human reading of the start. Rendered in the recipient's zone rather

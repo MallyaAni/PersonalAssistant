@@ -1,0 +1,3 @@
+# The bridge needs only an MCP server. Everything else it uses is stdlib, so a
+# Mac running this pulls in nothing that could reach the network on its own.
+mcp>=1.2.0
