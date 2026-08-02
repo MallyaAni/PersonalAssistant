@@ -140,6 +140,7 @@ class DiscoveryRunner:
         writer: DescriptionWriter | None = None,
         search_budget: SearchBudget | None = None,
         is_operator: bool = False,
+        search_limit: int | None = None,
     ) -> None:
         self.sources = sources
         self.seen = seen
@@ -161,6 +162,9 @@ class DiscoveryRunner:
         # any single run's request budget.
         self.search_budget = search_budget
         self.is_operator = is_operator
+        # An operator-set monthly ceiling for this account, or None for the
+        # deployment default.
+        self.search_limit = search_limit
         # Injected so a sweep can be exercised end to end without a network,
         # which is what makes the "announce once" guarantee testable at all.
         self.adapter_factory = adapter_factory or _adapter_for
@@ -315,7 +319,7 @@ class DiscoveryRunner:
         granted = wanted
         if self.search_budget is not None:
             granted = await self.search_budget.reserve(
-                user_id, self.is_operator, wanted
+                user_id, self.is_operator, wanted, override=self.search_limit
             )
             if granted <= 0:
                 return ()

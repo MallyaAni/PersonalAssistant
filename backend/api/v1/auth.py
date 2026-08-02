@@ -1,3 +1,4 @@
+import secrets
 from contextlib import suppress
 from datetime import UTC, datetime, timedelta
 
@@ -9,12 +10,13 @@ from backend.config.settings import settings
 from backend.core.auth import IdentityDependency, validate_browser_origin
 from backend.core.auth_dependencies import LoginRateLimiterDependency
 from backend.core.dependencies import DbDependency
-from backend.models.auth import UserAccount
+from backend.models.auth import AccessRequest, UserAccount
 from backend.services.auth_service import (
     AuthService,
     CreatedSession,
     InvalidRegistrationInviteError,
     UsernameUnavailableError,
+    digest_registration_invite,
 )
 from backend.services.login_rate_limiter import (
     LoginRateLimiterUnavailableError,
@@ -272,3 +274,82 @@ async def logout(
         httponly=True,
         samesite=settings.AUTH_COOKIE_SAMESITE,
     )
+
+
+class AccessRequestBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    display_name: str = Field(min_length=1, max_length=80)
+    contact: str | None = Field(default=None, max_length=120)
+    reason: str | None = Field(default=None, max_length=500)
+
+
+# Ask the operator for an account.
+#
+# Unauthenticated by necessity — the point is that the asker has no account yet —
+# and therefore rate-limited on the same shared counter as login, because this
+# sits on a public URL. Nothing here grants anything: it records a request and
+# hands back a token the asker keeps. Approval makes that same token usable,
+# which avoids having to send a code back over some other channel.
+@router.post("/request-access", status_code=status.HTTP_201_CREATED)
+async def request_access(
+    request: Request,
+    body: AccessRequestBody,
+    db: DbDependency,
+    rate_limiter: LoginRateLimiterDependency,
+) -> dict[str, object]:
+    fingerprint = (
+        f"access-request:{request.client.host if request.client else 'unknown'}"
+    )
+    try:
+        allowed = await rate_limiter.before_attempt(fingerprint)
+    except LoginRateLimiterUnavailableError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Requests are temporarily unavailable",
+        ) from exc
+    if not allowed.allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many requests. Try again later.",
+            headers={"Retry-After": str(int(allowed.retry_after_seconds))},
+        )
+
+    token = secrets.token_urlsafe(32)
+    db.add(
+        AccessRequest(
+            token_digest=digest_registration_invite(token),
+            display_name=body.display_name.strip(),
+            contact=(body.contact or "").strip() or None,
+            reason=(body.reason or "").strip() or None,
+        )
+    )
+    await db.commit()
+    # Deliberately not recorded as a failure. `before_attempt` already applies
+    # the global attempt window, which is what bounds abuse here; counting a
+    # successful request as a failure would mean an honest asker locks out the
+    # next one, and it misuses a counter that means something else.
+    return {
+        # Shown once. Keep it: when the operator approves, this is what lets the
+        # asker register, with no code needing to travel back to them.
+        "request_token": token,
+        "status": "pending",
+    }
+
+
+# Report whether a request has been decided, so the asker can come back and see.
+@router.get("/request-access/{request_token}")
+async def check_access_request(
+    request_token: str,
+    db: DbDependency,
+) -> dict[str, object]:
+    row = await db.scalar(
+        select(AccessRequest).where(
+            AccessRequest.token_digest == digest_registration_invite(request_token)
+        )
+    )
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Request not found."
+        )
+    return {"status": row.status, "display_name": row.display_name}

@@ -22,7 +22,7 @@ from sqlalchemy import select
 from backend.config.settings import settings
 from backend.core.auth import AdminDependency, IdentityDependency
 from backend.core.dependencies import DbDependency, DependencyDiscoverySubscribers
-from backend.models.auth import RegistrationInvite, UserAccount
+from backend.models.auth import AccessRequest, RegistrationInvite, UserAccount
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -151,6 +151,10 @@ async def list_accounts(
                 "is_active": row.is_active,
                 "is_admin": row.is_admin,
                 "created_at": row.created_at.isoformat() if row.created_at else None,
+                "last_seen_at": (
+                    row.last_seen_at.isoformat() if row.last_seen_at else None
+                ),
+                "search_monthly_limit": row.search_monthly_limit,
             }
             for row in rows
         ]
@@ -299,3 +303,125 @@ async def approve_subscription(
             status_code=status.HTTP_404_NOT_FOUND, detail="Subscription not found."
         )
     return {"id": person.id, "approved": person.approved}
+
+
+class SearchLimitRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # Null restores the deployment default rather than meaning "no limit": an
+    # unbounded account is exactly what this exists to prevent.
+    monthly_limit: int | None = Field(default=None, ge=0, le=10_000)
+
+
+# Requests for an account, newest first.
+#
+# The details are the point. Minting a code blind means deciding who gets access
+# before knowing who is asking, so approving reads what they said about
+# themselves.
+@router.get("/access-requests")
+async def list_access_requests(
+    admin: AdminDependency,
+    db: DbDependency,
+    pending_only: bool = Query(False),
+) -> dict[str, object]:
+    stmt = select(AccessRequest).order_by(AccessRequest.created_at.desc())
+    if pending_only:
+        stmt = stmt.where(AccessRequest.status == "pending")
+    rows = (await db.execute(stmt)).scalars().all()
+    return {
+        "requests": [row.to_dict() for row in rows],
+        "pending": sum(1 for row in rows if row.status == "pending"),
+    }
+
+
+# Approve one request, making the token its asker already holds usable.
+#
+# Nothing is sent anywhere. The asker keeps their token from the moment they
+# asked, so approval needs no code to travel back to them over some other
+# channel — which is one fewer secret in flight.
+@router.post("/access-requests/{request_id}/approve", status_code=status.HTTP_200_OK)
+async def approve_access_request(
+    admin: AdminDependency,
+    identity: IdentityDependency,
+    db: DbDependency,
+    request_id: UUID,
+    ttl_hours: Annotated[int, Query(ge=1, le=MAX_INVITE_HOURS)] = DEFAULT_INVITE_HOURS,
+) -> dict[str, object]:
+    row = await db.get(AccessRequest, request_id)
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Request not found."
+        )
+    if row.status != "pending":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"That request was already {row.status}.",
+        )
+
+    from datetime import UTC, datetime
+
+    from backend.models.auth import RegistrationInvite
+
+    # The request's own token becomes the registration credential, so the digest
+    # already on file is reused rather than a second secret being created.
+    invite = RegistrationInvite(
+        token_digest=row.token_digest,
+        expires_at=datetime.now(UTC) + timedelta(hours=ttl_hours),
+    )
+    db.add(invite)
+    await db.flush()
+    row.status = "approved"
+    row.invite_id = invite.id
+    row.decided_at = datetime.now(UTC)
+    row.decided_by = _operator_id(identity)
+    await db.commit()
+    return {"id": str(request_id), "status": "approved"}
+
+
+# Decline a request. The token stops being usable for anything.
+@router.post("/access-requests/{request_id}/deny", status_code=status.HTTP_200_OK)
+async def deny_access_request(
+    admin: AdminDependency,
+    identity: IdentityDependency,
+    db: DbDependency,
+    request_id: UUID,
+) -> dict[str, object]:
+    from datetime import UTC, datetime
+
+    row = await db.get(AccessRequest, request_id)
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Request not found."
+        )
+    if row.status != "pending":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"That request was already {row.status}.",
+        )
+    row.status = "denied"
+    row.decided_at = datetime.now(UTC)
+    row.decided_by = _operator_id(identity)
+    await db.commit()
+    return {"id": str(request_id), "status": "denied"}
+
+
+# Set how much metered search one account may spend per month.
+@router.put("/accounts/{user_id}/search-limit", status_code=status.HTTP_200_OK)
+async def set_search_limit(
+    admin: AdminDependency,
+    db: DbDependency,
+    user_id: str,
+    body: SearchLimitRequest,
+) -> dict[str, object]:
+    account = await db.scalar(select(UserAccount).where(UserAccount.user_id == user_id))
+    if account is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Account not found."
+        )
+    account.search_monthly_limit = body.monthly_limit
+    await db.commit()
+    return {
+        "user_id": user_id,
+        "monthly_limit": account.search_monthly_limit,
+        "using_default": account.search_monthly_limit is None,
+    }

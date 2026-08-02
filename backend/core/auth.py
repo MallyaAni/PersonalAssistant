@@ -4,11 +4,13 @@ import hmac
 import json
 import time
 from collections.abc import Sequence
+from contextlib import suppress
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from fastapi import Depends, Header, HTTPException, Request, status
-from sqlalchemy import select
+from sqlalchemy import or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.config.settings import settings
@@ -142,6 +144,7 @@ async def get_authenticated_identity(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired authentication session",
         )
+    await _touch_last_seen(db, session.user_id)
     return AuthenticatedIdentity(
         user_id=session.user_id,
         expires_at=int(session.expires_at.timestamp()),
@@ -153,6 +156,32 @@ IdentityDependency = Annotated[
     AuthenticatedIdentity | None,
     Depends(get_authenticated_identity),
 ]
+
+
+# Record that an account was seen, at most once a minute.
+#
+# Written on every authenticated request, so it is throttled: a chat turn makes
+# several calls and a to-the-minute answer is all the operator needs. A failure
+# here must never fail the request — knowing when someone was last active is
+# worth less than the request they were making.
+async def _touch_last_seen(db: AsyncSession, user_id: str) -> None:
+    now = datetime.now(UTC)
+    try:
+        await db.execute(
+            update(UserAccount)
+            .where(
+                UserAccount.user_id == user_id,
+                or_(
+                    UserAccount.last_seen_at.is_(None),
+                    UserAccount.last_seen_at < now - timedelta(minutes=1),
+                ),
+            )
+            .values(last_seen_at=now)
+        )
+        await db.commit()
+    except Exception:
+        with suppress(Exception):
+            await db.rollback()
 
 
 def authorize_user(user_id: str, identity: IdentityDependency) -> None:

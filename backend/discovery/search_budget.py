@@ -45,21 +45,31 @@ class SearchBudget:
         return f"anios:search:{user_id}:{now.strftime('%Y-%m')}"
 
     @staticmethod
-    def allowance(is_operator: bool) -> int:
+    def allowance(is_operator: bool, override: int | None = None) -> int:
+        # An operator-set override replaces the default entirely, including
+        # zero — which is how an account is stopped from searching without
+        # removing it.
+        if override is not None:
+            return override
         return OPERATOR_MONTHLY_QUERIES if is_operator else GUEST_MONTHLY_QUERIES
 
     # How many queries this account may still spend this month.
     async def remaining(
-        self, user_id: str, is_operator: bool, now: datetime | None = None
+        self,
+        user_id: str,
+        is_operator: bool,
+        now: datetime | None = None,
+        override: int | None = None,
     ) -> int:
+        allowance = self.allowance(is_operator, override)
         if not self.enabled:
-            return self.allowance(is_operator)
+            return allowance
         moment = now or datetime.now(UTC)
         try:
             spent = int(await self.redis.get(self._key(user_id, moment)) or 0)
         except Exception:
-            return self.allowance(is_operator)
-        return max(self.allowance(is_operator) - spent, 0)
+            return allowance
+        return max(allowance - spent, 0)
 
     # Reserve up to `wanted` queries and report how many were actually granted.
     #
@@ -72,6 +82,7 @@ class SearchBudget:
         is_operator: bool,
         wanted: int,
         now: datetime | None = None,
+        override: int | None = None,
     ) -> int:
         if not self.enabled or wanted <= 0:
             return max(wanted, 0)
@@ -85,7 +96,7 @@ class SearchBudget:
             # must not take the feature down for everyone.
             return wanted
 
-        allowance = self.allowance(is_operator)
+        allowance = self.allowance(is_operator, override)
         overshoot = spent - allowance
         if overshoot <= 0:
             return wanted
