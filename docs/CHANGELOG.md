@@ -1929,3 +1929,23 @@ rows referencing them. The two changes above exist so this cannot recur.
   place after a fresh backup, all 772 backend tests, all 44 deterministic
   Chromium tests, the live two-profile browser path, and the production build.
   Public Tailscale Funnel ingress remains unconfigured and unverified.
+
+## 2026-08-02 — Recorded how sharing between accounts will work
+
+- Added [ADR 0011](adr/0011-sharing-by-copy-on-accept.md). Invited accounts made
+  a second person real, and the first thing two people want is to give each
+  other something. Sharing will **copy on accept** rather than grant access into
+  another owner's store.
+- The decision was measured, not preferred: single ownership is load-bearing in
+  133 places across the backend, 33 of them in deletion and export alone. A
+  grant table consulted by every read means editing all 133, and each one missed
+  is a disclosure or an invisible omission — which this project has already done
+  once, when discovery escaped the memory subsystem and "forget me" left
+  someone's home town and their friends' phone numbers behind.
+- From the recipient's side the flow reuses the account-invitation machinery: an
+  expiring one-time code, a preview before accepting, and then it is theirs,
+  attributed. Accepted items land in ordinary memory and search rather than a
+  "shared with me" silo nobody remembers to open.
+- Honest limit recorded rather than designed around: acceptance cannot be
+  undone by the sharer. A code can be withdrawn before it is used; a recipe
+  someone already has is theirs, like a message already delivered.
