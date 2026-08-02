@@ -634,6 +634,18 @@ rounded to roughly a kilometre in one place that no adapter can bypass, a
 Resolution is off unless an operator configures a provider, so an unconfigured
 deployment reaches nobody, and typing the town makes no outbound request at all.
 
+The calendar travels **with** the message rather than being linked from it. One
+`.ics` carrying every dated find is attached, so a phone can offer to add them
+together and — more importantly — a recipient anywhere with internet can act on
+it without reaching the machine that produced it. A link would require AniOS to
+be publicly addressable, which is a far larger commitment than sending a file,
+and would fail silently for anyone off the sender's network. When the file is
+attached the message drops its links, because those links would be exactly the
+ones that do not work.
+
+Undated finds keep their own source URL, which points at the third-party page and
+is reachable from anywhere regardless.
+
 Notification egress remains `PLANNED` and gated: it is the first outbound path
 in AniOS, and every subsystem before it fails closed inside the machine.
 

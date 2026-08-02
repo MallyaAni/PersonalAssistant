@@ -25,7 +25,7 @@ MAX_SUMMARY_CHARS = 170
 # when, where. The calendar link is what makes it actionable.
 def render_message(
     selected: tuple[RankedCandidate, ...],
-    calendar_base_url: str,
+    calendar_base_url: str | None,
     timezone: str = "America/New_York",
     limit: int = MAX_EVENTS_IN_MESSAGE,
 ) -> str | None:
@@ -41,7 +41,12 @@ def render_message(
 
     lines: list[str] = []
     if dated:
-        lines.extend(["Coming up near you:", ""])
+        heading = (
+            "Coming up near you:"
+            if calendar_base_url
+            else "Coming up near you — the calendar file is attached:"
+        )
+        lines.extend([heading, ""])
         for item in dated[:limit]:
             event = item.event
             line = f"• {_bound(event.title, MAX_TITLE_CHARS)}"
@@ -55,7 +60,11 @@ def render_message(
             # from a title alone, which is how you get ignored.
             if event.summary:
                 lines.append(f"  {_bound(event.summary, MAX_SUMMARY_CHARS)}")
-            lines.append(f"  Add: {_calendar_url(calendar_base_url, item)}")
+            # No link when the calendar file travels with the message: the
+            # attachment is what the recipient taps, and a link would be the
+            # one that only resolves on the sender's network.
+            if calendar_base_url:
+                lines.append(f"  Add: {_calendar_url(calendar_base_url, item)}")
         remaining = len(dated) - limit
         if remaining > 0:
             lines.extend(["", f"and {remaining} more"])

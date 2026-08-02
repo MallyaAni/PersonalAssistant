@@ -15,7 +15,8 @@ sets the rules here:
 from dataclasses import dataclass
 from datetime import datetime
 
-from backend.discovery.channels import NotificationChannel
+from backend.discovery.calendar import build_calendar
+from backend.discovery.channels import Attachment, NotificationChannel
 from backend.discovery.digest import render_message
 from backend.discovery.relevance import RankedCandidate
 from backend.discovery.runs import DiscoveryRunRepository
@@ -51,13 +52,23 @@ class DigestDelivery:
         self,
         user_id: str,
         selected: tuple[RankedCandidate, ...],
-        calendar_base_url: str,
+        calendar_base_url: str | None,
         timezone: str = "America/New_York",
         run_id: str | None = None,
         worker_id: str | None = None,
         now: datetime | None = None,
     ) -> DeliveryReport:
-        message = render_message(selected, calendar_base_url, timezone=timezone)
+        # One calendar file carrying every dated find. Attaching it is what makes
+        # a digest work away from home: a link has to reach the machine that
+        # served it, a file that arrives with the message does not.
+        attachment = build_calendar_attachment(selected)
+        # With the file attached, links would only be the ones that fail off the
+        # sender's network, so the message drops them.
+        message = render_message(
+            selected,
+            None if attachment is not None else calendar_base_url,
+            timezone=timezone,
+        )
         if message is None:
             # Nothing worth sending. Recording the run as delivered still
             # matters: it stops a resumed attempt from re-deciding and sending
@@ -87,7 +98,7 @@ class DigestDelivery:
                     subscriber.id, "channel_unconfigured"
                 )
                 continue
-            result = await channel.send(subscriber.address, message)
+            result = await channel.send(subscriber.address, message, attachment)
             await self.subscribers.record_delivery(subscriber.id, result.error_code)
             if result.delivered:
                 delivered += 1
@@ -110,6 +121,26 @@ class DigestDelivery:
         if self.runs is None or run_id is None or worker_id is None:
             return True
         return await self.runs.mark_delivered(run_id, worker_id)
+
+
+# Render every dated selection as one attachable calendar, or None when nothing
+# in the digest can be scheduled. A single file lets a phone offer "add all"
+# rather than making the recipient tap once per event.
+def build_calendar_attachment(
+    selected: tuple[RankedCandidate, ...],
+) -> Attachment | None:
+    events = tuple(item.event for item in selected if item.event.starts_at is not None)
+    if not events:
+        return None
+    try:
+        document = build_calendar(events, calendar_name="AniOS Discoveries")
+    except ValueError:
+        return None
+    return Attachment(
+        filename="discoveries.ics",
+        media_type="text/calendar",
+        content=document.encode("utf-8"),
+    )
 
 
 # Which subscribers would receive a digest right now, without sending one.

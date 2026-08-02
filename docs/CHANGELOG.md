@@ -1761,3 +1761,20 @@ rows referencing them. The two changes above exist so this cannot recur.
   national history hike for participants to explore D.C.'s original boundary
   stones and surveyor stories.` The `.ics` carries the same clean description.
 - 680 backend tests pass; Ruff, Black and MyPy across 191 files pass.
+
+## 2026-08-01 — The calendar travels with the message
+
+- Digests now attach one `.ics` carrying every dated find instead of linking to
+  one. A link requires AniOS to be reachable from wherever the recipient is; a
+  file that arrives with the message does not. This is what makes the feature
+  work for someone on mobile data, and it needs no public hostname, no tunnel,
+  and no part of AniOS exposed.
+- One combined file rather than one per event, so a phone can offer to add them
+  together. UIDs are stable, so re-sending updates an entry rather than
+  duplicating it.
+- When the file is attached the message drops its `Add:` links, because those
+  are precisely the links that would fail off the sender's network.
+- The channel contract carries an optional attachment, bounded in size, base64
+  encoded because the tool boundary is JSON. Undated finds keep their own source
+  URL, which is a third-party page and reachable from anywhere.
+- 685 backend tests pass; Ruff, Black and MyPy across 191 files pass.

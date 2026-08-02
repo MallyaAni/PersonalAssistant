@@ -18,6 +18,7 @@ os.environ["POSTGRES_HOST"] = "localhost"
 
 from backend.database.session import AsyncSessionLocal
 from backend.discovery.channels import (
+    Attachment,
     DeliveryResult,
     MessagesAppChannel,
     NotificationChannel,
@@ -40,13 +41,20 @@ class _RecordingChannel(NotificationChannel):
     def __init__(self, channel_id: str = "imessage") -> None:
         self._channel_id = channel_id
         self.sent: list[tuple[str, str]] = []
+        self.attachments: list[Attachment | None] = []
 
     @property
     def channel_id(self) -> str:
         return self._channel_id
 
-    async def send(self, address: str, message: str) -> DeliveryResult:
+    async def send(
+        self,
+        address: str,
+        message: str,
+        attachment: Attachment | None = None,
+    ) -> DeliveryResult:
         self.sent.append((address, message))
+        self.attachments.append(attachment)
         return DeliveryResult(delivered=True)
 
 
@@ -257,3 +265,92 @@ async def test_re_enrolling_the_same_address_updates_one_permission():
             assert len(await repo.list_subscribers(user_id)) == 1
     finally:
         await _cleanup(user_id)
+
+
+def test_the_calendar_travels_as_one_attachable_file():
+    from backend.discovery.delivery import build_calendar_attachment
+
+    attachment = build_calendar_attachment((_ranked("Jazz"), _ranked("Blues", 12)))
+
+    assert attachment is not None
+    assert attachment.filename == "discoveries.ics"
+    assert attachment.media_type == "text/calendar"
+    document = attachment.content.decode("utf-8")
+    # One document, both events, so a phone can offer to add them together.
+    assert document.count("BEGIN:VEVENT") == 2
+    assert not attachment.too_large
+
+
+def test_a_digest_with_nothing_datable_has_no_attachment():
+    undated = RankedCandidate(
+        ScoredCandidate(
+            DiscoveredEvent(
+                source_id="web",
+                external_id="u1",
+                title="Weekly group walks",
+                starts_at=None,
+                ends_at=None,
+                place=None,
+                url="https://example.org/walks",
+                summary=None,
+            ),
+            None,
+        ),
+        0.8,
+        "hiking",
+    )
+    from backend.discovery.delivery import build_calendar_attachment
+
+    assert build_calendar_attachment((undated,)) is None
+
+
+@pytest.mark.asyncio
+async def test_delivery_attaches_the_calendar_and_drops_the_links():
+    # A link only resolves on the sender's network; the attachment is what makes
+    # this work for a recipient on mobile data.
+    user_id = f"sub_{uuid.uuid4().hex[:12]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            repo = SubscriberRepository(session)
+            await repo.enroll(user_id, "imessage", "+15550100", consented=True)
+            channel = _RecordingChannel()
+
+            await DigestDelivery(repo, {"imessage": channel}).deliver(
+                user_id, (_ranked("Jazz"),), _BASE
+            )
+
+            _address, message = channel.sent[0]
+            assert channel.attachments[0] is not None
+            assert "Add: " not in message
+            assert "the calendar file is attached" in message
+    finally:
+        await _cleanup(user_id)
+
+
+@pytest.mark.asyncio
+async def test_an_oversized_attachment_is_refused_rather_than_sent():
+    channel = MessagesAppChannel(lambda *_: None, "send_message")
+    huge = Attachment("x.ics", "text/calendar", b"x" * (256 * 1024 + 1))
+
+    result = await channel.send("+15550100", "hi", huge)
+
+    assert result.delivered is False
+    assert result.error_code == "attachment_too_large"
+
+
+@pytest.mark.asyncio
+async def test_the_bridge_receives_the_file_encoded_for_a_json_boundary():
+    import base64
+
+    captured: dict[str, object] = {}
+
+    async def _capture(tool_name: str, arguments: dict[str, str]) -> object:
+        captured.update(arguments)
+        return None
+
+    attachment = Attachment("discoveries.ics", "text/calendar", b"BEGIN:VCALENDAR")
+    await MessagesAppChannel(_capture, "send_message").send("+1555", "hi", attachment)
+
+    assert captured["attachment_name"] == "discoveries.ics"
+    assert captured["attachment_media_type"] == "text/calendar"
+    assert base64.b64decode(str(captured["attachment_base64"])) == b"BEGIN:VCALENDAR"
