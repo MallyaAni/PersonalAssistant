@@ -41,6 +41,7 @@ _ADMIN_ROUTES = (
     ("GET", "/api/v1/admin/invites"),
     ("POST", "/api/v1/admin/invites"),
     ("GET", "/api/v1/admin/accounts"),
+    ("GET", "/api/v1/admin/subscribers"),
 )
 
 
@@ -231,18 +232,23 @@ async def test_a_guest_cannot_configure_who_this_machine_messages():
     try:
         _, token = await _account(guest, admin=False)
         async with _client(token) as client:
-            listed = await client.get(f"/api/v1/discovery/{guest}/subscribers")
+            listed = await client.get("/api/v1/admin/subscribers")
             added = await client.put(
-                f"/api/v1/discovery/{guest}/subscribers",
+                "/api/v1/admin/subscribers",
                 json={
                     "channel": "imessage",
                     "address": "+15550100",
                     "consented": True,
                 },
             )
+            # The per-user route is gone entirely. It modelled a resource only
+            # one account could ever have, which reads as a feature and is not
+            # one: there is one Apple ID and one bridge.
+            old_path = await client.get(f"/api/v1/discovery/{guest}/subscribers")
 
         assert listed.status_code == 403
         assert added.status_code == 403
+        assert old_path.status_code == 404
     finally:
         await _cleanup(guest)
 

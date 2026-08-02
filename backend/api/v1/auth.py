@@ -144,10 +144,14 @@ async def login(
             detail="Login protection is temporarily unavailable",
         ) from exc
     _set_session_cookie(response, created)
+    account = await db.scalar(
+        select(UserAccount).where(UserAccount.user_id == created.user_id)
+    )
     return SessionResponse(
         authentication_required=settings.AUTH_REQUIRED,
         user_id=created.user_id,
         expires_at=created.expires_at.isoformat(),
+        is_admin=bool(account and account.is_admin),
     )
 
 
@@ -219,6 +223,9 @@ async def register(
         authentication_required=settings.AUTH_REQUIRED,
         user_id=created.user_id,
         expires_at=created.expires_at.isoformat(),
+        # An invited account is a guest. Stated rather than defaulted, so
+        # the answer cannot change if the field default ever does.
+        is_admin=False,
     )
 
 

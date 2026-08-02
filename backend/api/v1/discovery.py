@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Response, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from backend.config.settings import settings
-from backend.core.auth import AdminDependency, authorize_path_user
+from backend.core.auth import authorize_path_user
 from backend.core.dependencies import (
     DependencyDiscoveryFamiliar,
     DependencyDiscoveryProfileService,
@@ -342,102 +342,6 @@ async def download_event_calendar(
             )
         },
     )
-
-
-class SubscriberRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    channel: Literal["imessage", "shortcuts_pull"]
-    address: str = Field(min_length=1, max_length=200)
-    label: str | None = Field(default=None, max_length=MAX_LABEL_CHARS)
-    # Consent is stated, never inferred. Without it the permission is stored
-    # inactive, so the default outcome of a mistake is that nothing is sent.
-    consented: bool = False
-
-
-@router.get("/subscribers")
-async def list_subscribers(
-    user_id: UserId,
-    admin: AdminDependency,
-    subscribers: DependencyDiscoverySubscribers,
-) -> dict[str, object]:
-    people = await subscribers.list_subscribers(user_id)
-    return {
-        "user_id": user_id,
-        "egress_enabled": settings.DISCOVERY_EGRESS_ENABLED,
-        "subscribers": [
-            {
-                "id": person.id,
-                "channel": person.channel,
-                "label": person.label,
-                "active": person.active,
-                "deliverable": person.deliverable,
-                "delivery_count": person.delivery_count,
-                "last_error": person.last_error,
-                # The address is deliberately absent from the listing: it is
-                # someone else's contact detail, and enumerating recipients
-                # should not hand them out.
-                "feed_path": f"/api/v1/discovery/feed/{person.token}.ics",
-            }
-            for person in people
-        ],
-    }
-
-
-@router.put("/subscribers", status_code=status.HTTP_200_OK)
-async def put_subscriber(
-    user_id: UserId,
-    admin: AdminDependency,
-    body: SubscriberRequest,
-    subscribers: DependencyDiscoverySubscribers,
-) -> dict[str, object]:
-    try:
-        person = await subscribers.enroll(
-            user_id, body.channel, body.address, body.label, body.consented
-        )
-    except DiscoveryProfileLimitError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail=str(exc)
-        ) from exc
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
-        ) from exc
-    return {
-        "id": person.id,
-        "channel": person.channel,
-        "deliverable": person.deliverable,
-        "feed_path": f"/api/v1/discovery/feed/{person.token}.ics",
-    }
-
-
-# Stop delivery now, and invalidate any calendar link already shared. Kept
-# separate from deletion so revoking preserves the record of what was sent.
-@router.post("/subscribers/{subscriber_id}/revoke", status_code=status.HTTP_200_OK)
-async def revoke_subscriber(
-    user_id: UserId,
-    admin: AdminDependency,
-    subscriber_id: UUID,
-    subscribers: DependencyDiscoverySubscribers,
-) -> dict[str, object]:
-    if not await subscribers.revoke(user_id, subscriber_id):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Subscriber not found."
-        )
-    return {"id": str(subscriber_id), "revoked": True}
-
-
-@router.delete("/subscribers/{subscriber_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_subscriber(
-    user_id: UserId,
-    admin: AdminDependency,
-    subscriber_id: UUID,
-    subscribers: DependencyDiscoverySubscribers,
-) -> None:
-    if not await subscribers.delete(user_id, subscriber_id):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Subscriber not found."
-        )
 
 
 # One subscriber's own subscription feed. A calendar client re-reads this on its

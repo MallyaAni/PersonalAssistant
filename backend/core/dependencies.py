@@ -53,6 +53,7 @@ from backend.discovery.novelty import SeenItemRepository
 from backend.discovery.repository import DiscoveryProfileRepository
 from backend.discovery.runner import DiscoveryRunner
 from backend.discovery.runs import DiscoveryRunRepository
+from backend.discovery.search_budget import SearchBudget
 from backend.discovery.service import DiscoveryProfileService
 from backend.discovery.setup_service import DiscoverySetupService
 from backend.discovery.sources_repository import DiscoverySourceRepository
@@ -831,6 +832,13 @@ DependencyDiscoveryRuns = Annotated[
 ]
 
 
+# One budget shared by the API and the worker, so a sweep cannot dodge the
+# ceiling by running from the other process.
+@lru_cache(maxsize=1)
+def get_search_budget() -> SearchBudget:
+    return SearchBudget(settings.REDIS_URL, enabled=settings.MODEL_GATE_ENABLED)
+
+
 def get_discovery_runner(
     db: DbDependency,
     embeddings: EmbeddingDependency,
@@ -841,6 +849,7 @@ def get_discovery_runner(
         embeddings=embeddings,
         search=get_search_provider(),
         writer=get_llm_client(),
+        search_budget=get_search_budget(),
     )
 
 
@@ -859,6 +868,7 @@ def get_discovery_runner_for_session(session: AsyncSession) -> DiscoveryRunner:
         embeddings=get_embedding_provider(),
         search=get_search_provider(),
         writer=get_llm_client(),
+        search_budget=get_search_budget(),
     )
 
 

@@ -33,6 +33,7 @@ from backend.discovery.relevance import (
     RelevanceRanker,
     candidate_text,
 )
+from backend.discovery.search_budget import SearchBudget
 from backend.discovery.sources.ics import IcsEventSource
 from backend.discovery.sources.rss import RssEventSource
 from backend.discovery.sources.web import WebEventSource
@@ -137,6 +138,8 @@ class DiscoveryRunner:
         adapter_factory: AdapterFactory | None = None,
         search: SearchProvider | None = None,
         writer: DescriptionWriter | None = None,
+        search_budget: SearchBudget | None = None,
+        is_operator: bool = False,
     ) -> None:
         self.sources = sources
         self.seen = seen
@@ -153,6 +156,11 @@ class DiscoveryRunner:
         # Only the selected finds are described, so the model runs a handful of
         # times per sweep rather than once per candidate.
         self.describer = EventDescriber(writer)
+        # Search is the one metered component here and its key belongs to the
+        # operator, so an account's monthly spend is bounded independently of
+        # any single run's request budget.
+        self.search_budget = search_budget
+        self.is_operator = is_operator
         # Injected so a sweep can be exercised end to end without a network,
         # which is what makes the "announce once" guarantee testable at all.
         self.adapter_factory = adapter_factory or _adapter_for
@@ -180,7 +188,7 @@ class DiscoveryRunner:
 
         configured = await self.sources.list_sources(user_id, enabled_only=True)
         events, failed = await self._collect(user_id, configured, budget)
-        events = events + await self._search_events(profile, budget)
+        events = events + await self._search_events(user_id, profile, budget)
 
         candidates = await self._embed(events)
         # A rehearsal treats everything as new. Applying novelty would show an
@@ -292,7 +300,7 @@ class DiscoveryRunner:
     # Search for what no feed publishes. Failure here is silent by design: a
     # sweep with working feeds must not fail because a search provider is down.
     async def _search_events(
-        self, profile: DiscoveryProfile, budget: RequestBudget
+        self, user_id: str, profile: DiscoveryProfile, budget: RequestBudget
     ) -> tuple[DiscoveredEvent, ...]:
         if self.search is None or not settings.DISCOVERY_WEB_SEARCH_ENABLED:
             return ()
@@ -300,6 +308,18 @@ class DiscoveryRunner:
         if primary is None:
             # Without a place, a query would be about nowhere in particular.
             return ()
+        # Ask for this sweep's share of the month before spending any of it. A
+        # reduced grant still runs — finding less beats finding nothing — and a
+        # zero grant skips search while configured feeds still contribute.
+        wanted = settings.DISCOVERY_WEB_QUERIES_PER_SWEEP
+        granted = wanted
+        if self.search_budget is not None:
+            granted = await self.search_budget.reserve(
+                user_id, self.is_operator, wanted
+            )
+            if granted <= 0:
+                return ()
+
         source = WebEventSource(
             source_id="web-search",
             search=self.search,
@@ -307,7 +327,7 @@ class DiscoveryRunner:
             region=primary.region,
             interests=tuple(interest.label for interest in profile.interests),
             budget=budget,
-            max_queries=settings.DISCOVERY_WEB_QUERIES_PER_SWEEP,
+            max_queries=granted,
         )
         try:
             return await source.fetch()
