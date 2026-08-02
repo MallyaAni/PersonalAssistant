@@ -3,6 +3,7 @@ import {
   Check,
   Clock,
   Eye,
+  EyeOff,
   FlaskConical,
   Loader2,
   MapPin,
@@ -19,6 +20,7 @@ import {
   getDiscoveryProfile,
   getDiscoverySchedule,
   getDiscoverySources,
+  markDiscoveryKnown,
   putDiscoveryInterest,
   putDiscoveryLocality,
   putDiscoverySchedule,
@@ -218,6 +220,25 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
       setNotice(
         `Read ${result.candidate_count} events, ${result.novel_count} new, ` +
           `${result.selected.length} worth telling you about.`,
+      )
+    })
+
+  // "I know this" is scoped to the current place, so the same dismissal does not
+  // follow the user somewhere they have never been.
+  const markKnown = (label: string) =>
+    perform('known', async () => {
+      const result = await markDiscoveryKnown(userId, label)
+      setTrial(current =>
+        current
+          ? {
+              ...current,
+              selected: current.selected.filter(item => item.title !== label),
+            }
+          : current,
+      )
+      setNotice(
+        `Noted — you already know that around ${result.locality ?? 'here'}. ` +
+          'It will not come up again there.',
       )
     })
 
@@ -605,6 +626,22 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
           <pre className="overflow-x-auto whitespace-pre-wrap break-words font-sans text-sm leading-5 text-[#1d1d1f]">
             {trial.message}
           </pre>
+          {trial.selected.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {trial.selected.map(item => (
+                <button
+                  key={item.title}
+                  onClick={() => void markKnown(item.title)}
+                  disabled={busy !== ''}
+                  title={`Stop showing things like "${item.title}" around here`}
+                  className="flex items-center gap-1 rounded-full border border-black/[0.08] px-2.5 py-1 text-[11px] text-[#6e6e73] hover:border-[#b25e00] hover:text-[#b25e00] disabled:opacity-40"
+                >
+                  <EyeOff size={11} />
+                  I know {item.title.length > 26 ? `${item.title.slice(0, 26)}…` : item.title}
+                </button>
+              ))}
+            </div>
+          )}
           <p className="mt-3 border-t border-black/[0.05] pt-2 text-[11px] leading-4 text-[#86868b]">
             Read {trial.candidate_count} listings using {trial.requests_spent} search
             {trial.requests_spent === 1 ? ' request' : ' requests'}.

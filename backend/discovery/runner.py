@@ -24,6 +24,7 @@ from backend.config.settings import settings
 from backend.core.interfaces import SearchProvider
 from backend.discovery.errors import DiscoveryError
 from backend.discovery.events import DiscoveredEvent, EventSource, FeedError
+from backend.discovery.familiarity import FamiliarItemRepository, FamiliarityFilter
 from backend.discovery.fetching import DEFAULT_RUN_REQUEST_BUDGET, RequestBudget
 from backend.discovery.novelty import NoveltyFilter, ScoredCandidate, SeenItemRepository
 from backend.discovery.relevance import (
@@ -141,6 +142,10 @@ class DiscoveryRunner:
         self.seen = seen
         self.embeddings = embeddings
         self.novelty = NoveltyFilter(seen)
+        # Different question from novelty: not "have I shown you this" but "did
+        # you already know it". They diverge for anyone who has lived somewhere
+        # a while.
+        self.familiarity = FamiliarityFilter(FamiliarItemRepository(seen.session))
         # Optional second enumerator. Feeds are the source of record for
         # anything that must reach a calendar; this covers what publishes no
         # feed at all, which for a niche interest is most of it.
@@ -185,6 +190,13 @@ class DiscoveryRunner:
             await self.novelty.novel(user_id, candidates, now=moment)
             if persist
             else candidates
+        )
+
+        # Scoped to where the user currently is, so travelling to a new place
+        # starts from nothing known and everything ordinary there is a find.
+        primary = profile.primary_locality
+        novel = await self.familiarity.unfamiliar(
+            user_id, primary.label if primary else None, novel
         )
 
         ranker = RelevanceRanker(

@@ -19,6 +19,7 @@ from backend.models.artifact import VisualArtifact
 from backend.models.conversation import Conversation
 from backend.models.discovery import DiscoveryInterest, DiscoveryLocality
 from backend.models.discovery_run import DiscoveryRun, DiscoverySchedule
+from backend.models.discovery_familiar import DiscoveryFamiliarItem
 from backend.models.discovery_source import DiscoverySeenItem, DiscoverySource
 from backend.models.discovery_subscriber import DiscoverySubscriber
 from backend.models.memory import (
@@ -42,6 +43,7 @@ _MODELS = (
     DiscoverySchedule,
     DiscoverySource,
     DiscoverySeenItem,
+    DiscoveryFamiliarItem,
     DiscoverySubscriber,
     UserProfile,
     EpisodicMemory,

@@ -1,3 +1,4 @@
+import asyncio
 from dataclasses import asdict
 from typing import Annotated, Literal
 from uuid import UUID
@@ -8,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from backend.config.settings import settings
 from backend.core.auth import authorize_path_user
 from backend.core.dependencies import (
+    DependencyDiscoveryFamiliar,
     DependencyDiscoveryProfileService,
     DependencyDiscoveryRunner,
     DependencyDiscoveryRuns,
@@ -16,6 +18,7 @@ from backend.core.dependencies import (
     DependencyDiscoverySources,
     DependencyDiscoverySubscribers,
     DependencyPlaceResolver,
+    EmbeddingDependency,
 )
 from backend.discovery.calendar import (
     build_calendar,
@@ -617,3 +620,75 @@ async def delete_schedule(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="No schedule set."
         )
+
+
+class KnownRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # The title as shown. Carried rather than referenced by id, because a
+    # rehearsal persists nothing and dismissing something you just saw in one is
+    # the most likely moment to want this.
+    label: str = Field(min_length=1, max_length=MAX_LABEL_CHARS * 3)
+
+
+# Record that the user already knows this, here.
+#
+# Scoped to their current primary place, which is the point: someone who knows
+# every trail in Arlington knows none in Denver, so a global list would make the
+# agent progressively useless exactly when travel makes it most valuable.
+@router.post("/known", status_code=status.HTTP_200_OK)
+async def mark_known(
+    user_id: UserId,
+    body: KnownRequest,
+    profile_service: DependencyDiscoveryProfileService,
+    familiar: DependencyDiscoveryFamiliar,
+    embeddings: EmbeddingDependency,
+) -> dict[str, object]:
+    profile = await profile_service.get_profile(user_id)
+    primary = profile.primary_locality
+    label = body.label.strip()
+
+    # Embedded so dismissing one trail directory suppresses the family rather
+    # than that single instance. A failure still records it by identity.
+    vector: list[float] | None
+    try:
+        vector = await asyncio.to_thread(embeddings.embed_query, label)
+    except Exception:
+        vector = None
+
+    await familiar.remember_known(
+        user_id, primary.label if primary else None, label, vector
+    )
+    return {
+        "label": label,
+        "locality": primary.label if primary else None,
+        "known_here": await familiar.count_known(
+            user_id, primary.label if primary else None
+        ),
+    }
+
+
+@router.get("/known")
+async def list_known(
+    user_id: UserId,
+    profile_service: DependencyDiscoveryProfileService,
+    familiar: DependencyDiscoveryFamiliar,
+) -> dict[str, object]:
+    profile = await profile_service.get_profile(user_id)
+    primary = profile.primary_locality
+    return {
+        "locality": primary.label if primary else None,
+        "known": list(
+            await familiar.list_known(user_id, primary.label if primary else None)
+        ),
+    }
+
+
+@router.delete("/known/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def forget_known(
+    user_id: UserId,
+    item_id: str,
+    familiar: DependencyDiscoveryFamiliar,
+) -> None:
+    if not await familiar.forget(user_id, item_id):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found.")

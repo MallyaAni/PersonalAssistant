@@ -1918,3 +1918,19 @@ export const deleteDiscoverySchedule = async (userId: string): Promise<void> => 
     throw new Error('Could not turn off the schedule.');
   }
 };
+
+// Record that the user already knows this, in the place they currently are.
+// Scoped deliberately: knowing every trail at home says nothing about a town
+// they have never visited.
+export const markDiscoveryKnown = async (
+  userId: string,
+  label: string,
+): Promise<{ label: string; locality: string | null; known_here: number }> =>
+  readJson(
+    await fetch(`${discoveryBase(userId)}/known`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ label }),
+    }),
+    'Could not record that.',
+  );

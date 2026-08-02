@@ -1853,3 +1853,25 @@ rows referencing them. The two changes above exist so this cannot recur.
   apart and everything added since is unprotected — the only existing dump
   predated the interests it was supposed to protect. It also warns that a dump
   taken with encryption on is only as recoverable as the key.
+
+## 2026-08-02 — Familiarity, scoped to where you are
+
+- Novelty and familiarity are different questions. The seen store answers "have I
+  shown you this"; a find can now be dismissed as "I already know this", which
+  answers "did you already know it". For someone who has lived somewhere a while
+  those diverge, and a digest of trails they walk weekly is one they stop reading.
+- Dismissal suppresses by embedding proximity, not identity: marking one trail
+  directory as known is only useful if the next four like it also go.
+- **Scoped per locality, which is the point.** Someone who knows every trail in
+  Arlington knows none in Denver, so the same happening is noise at home and a
+  find while travelling. A global list would make the agent progressively useless
+  exactly when travel makes it most valuable.
+- **Found by running it:** the first dismissal silently did nothing. The user
+  dismisses the title they were *shown* — already stripped of its CMS site name —
+  while a candidate still carries the raw one from search. Both sides now clean
+  the title before comparing.
+- Verified live end to end: dismissing "Trails" in Arlington removed it from the
+  next rehearsal there; switching the primary place to Denver reported 0 known
+  and returned three unsuppressed finds including trail runs; switching back
+  showed the Arlington dismissal still in force.
+- 724 backend tests pass; migrations build to 29 tables at head `20260802_0020`.

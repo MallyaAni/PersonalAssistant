@@ -42,6 +42,7 @@ from backend.discovery.channels import (
     NullChannel,
     PullOnlyChannel,
 )
+from backend.discovery.familiarity import FamiliarItemRepository
 from backend.discovery.locating import (
     DisabledPlaceResolver,
     NominatimPlaceResolver,
@@ -791,6 +792,16 @@ def get_discovery_subscriber_repository(db: DbDependency) -> SubscriberRepositor
 DependencyDiscoverySubscribers = Annotated[
     SubscriberRepository,
     Depends(get_discovery_subscriber_repository),
+]
+
+
+def get_discovery_familiar_repository(db: DbDependency) -> FamiliarItemRepository:
+    return FamiliarItemRepository(db)
+
+
+DependencyDiscoveryFamiliar = Annotated[
+    FamiliarItemRepository,
+    Depends(get_discovery_familiar_repository),
 ]
 
 

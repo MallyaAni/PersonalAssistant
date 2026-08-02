@@ -646,6 +646,26 @@ ones that do not work.
 Undated finds keep their own source URL, which points at the third-party page and
 is reachable from anywhere regardless.
 
+`discovery_familiar_items` answers a different question from the seen store.
+Novelty asks "have I shown you this before"; familiarity asks "did you already
+know it". For someone who has lived somewhere a while those diverge sharply — a
+trail they walk weekly is new to the database and worthless to them — so a find
+can be dismissed as already known, and dismissal suppresses by embedding
+proximity rather than identity, because marking one trail directory as known is
+only useful if the next four like it are also gone.
+
+Familiarity is scoped **per locality**, which is the design's whole point.
+Someone who knows every trail in Arlington knows none in Denver, so the same
+happening is noise at home and a genuine find while travelling. A global list
+would make the agent progressively useless exactly when travel makes it most
+valuable. The scope is a digest of the locality label rather than a foreign key,
+so it survives a place being renamed or removed.
+
+Both sides of the comparison clean the title first. The user dismisses the title
+they were shown, which has already had its CMS site name stripped, while a
+candidate still carries the raw one from search; comparing those directly makes a
+dismissal silently do nothing, which is what happened on the first live run.
+
 Notification egress remains `PLANNED` and gated: it is the first outbound path
 in AniOS, and every subsystem before it fails closed inside the machine.
 
