@@ -44,6 +44,8 @@ class UserAccount(Base):
     # Null means the deployment default. An override lets the operator give one
     # person more, or throttle a runaway, without moving the ceiling for all.
     search_monthly_limit: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Null on either column means "use the deployment default", never "no limit".
+    search_daily_limit: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

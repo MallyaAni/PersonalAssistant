@@ -344,8 +344,18 @@ def _deck_outline_contract(expected_slides: int | None) -> str:
         else "Choose 3 to 8 slides."
     )
     return (
-        "Return one compact JSON object only with title, optional subtitle, and "
-        "slides. Each slide entry contains title, purpose, and layout. Choose a "
+        "Return one compact JSON object only with title, optional subtitle, "
+        "narrative, through_line, and slides. First decide how the deck moves "
+        "from beginning to end: chronological when the subject is a progression "
+        "through time, problem_solution when a tension resolves, comparison "
+        "when two things are held side by side throughout, thesis_evidence when "
+        "a claim is supported, topical when it is genuinely a set of related "
+        "parts. A request about the evolution, history, or development of "
+        "something is chronological, and its slides must advance in order "
+        "rather than each restating the subject. Write through_line as the one "
+        "sentence the whole deck argues. Each slide entry contains title, "
+        "purpose, layout, and beat — beat naming where that slide sits in the "
+        "arc, such as an era, a stage, or one side of a contrast. Choose a "
         "layout for each slide: bullets for ordinary explanation, section to "
         "open a new part of the argument, statistic when one number is the "
         "point, quote when a cited sentence carries the idea, comparison when "
@@ -440,7 +450,12 @@ class LLMPresentationProvider(PresentationProvider):
                         f"'{outline.title}'. {_slide_content_contract()} "
                         "Keep the supplied title, purpose, and layout exactly; "
                         "the deck's shape was already decided. Supply whatever "
-                        "that layout needs."
+                        "that layout needs. This slide advances the deck rather "
+                        "than summarising it: write only what belongs to this "
+                        "beat, do not repeat what an earlier slide covered, and "
+                        "carry the beat into visual_prompt so any image matches "
+                        "this point in the arc rather than the subject in "
+                        "general."
                     ),
                 },
                 {
@@ -448,6 +463,15 @@ class LLMPresentationProvider(PresentationProvider):
                     "content": json.dumps(
                         {
                             "brief": prompt,
+                            "narrative": outline.narrative,
+                            "through_line": outline.through_line,
+                            # What came before, so this slide follows rather
+                            # than restates. Titles and beats only: sending the
+                            # earlier content would grow every later request.
+                            "already_covered": [
+                                {"title": earlier.title, "beat": earlier.beat}
+                                for earlier in outline.slides[: index - 1]
+                            ],
                             "slide": outlined_slide.model_dump(mode="json"),
                         },
                         ensure_ascii=False,

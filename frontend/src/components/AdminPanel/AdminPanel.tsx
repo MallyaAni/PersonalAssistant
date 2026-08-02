@@ -101,10 +101,19 @@ const AdminPanel = () => {
   const permit = (subscription: AdminSubscription) =>
     perform(`permit-${subscription.id}`, () => approveSubscription(subscription.id))
 
-  const changeLimit = (account: AdminAccount, raw: string) =>
-    perform(`limit-${account.user_id}`, () =>
-      setAccountSearchLimit(account.user_id, raw === '' ? null : Number(raw)),
+  // Both windows travel together: the endpoint writes both, so sending only the
+  // edited one would clear the other. Blank means "use the default", not
+  // "unlimited" — an unbounded account is what these limits exist to prevent.
+  const changeLimit = (account: AdminAccount, field: 'month' | 'day', raw: string) => {
+    const edited = raw === '' ? null : Number(raw)
+    return perform(`limit-${account.user_id}`, () =>
+      setAccountSearchLimit(
+        account.user_id,
+        field === 'month' ? edited : account.search_monthly_limit,
+        field === 'day' ? edited : account.search_daily_limit,
+      ),
     )
+  }
 
   const open = invites.filter(invite => invite.status === 'open')
   const pending = requests.filter(request => request.status === 'pending')
@@ -335,14 +344,25 @@ const AdminPanel = () => {
                     : 'never signed in'}
                 </span>
                 <label className="flex items-center gap-1 text-[11px] text-[#86868b]">
-                  search/mo
+                  search/day
+                  <input
+                    type="number"
+                    min={0}
+                    defaultValue={account.search_daily_limit ?? ''}
+                    placeholder="default"
+                    onBlur={event => void changeLimit(account, 'day', event.target.value)}
+                    className="h-7 w-16 rounded-lg border border-black/[0.08] px-2 text-xs"
+                  />
+                </label>
+                <label className="flex items-center gap-1 text-[11px] text-[#86868b]">
+                  /mo
                   <input
                     type="number"
                     min={0}
                     defaultValue={account.search_monthly_limit ?? ''}
                     placeholder="default"
-                    onBlur={event => void changeLimit(account, event.target.value)}
-                    className="h-7 w-20 rounded-lg border border-black/[0.08] px-2 text-xs"
+                    onBlur={event => void changeLimit(account, 'month', event.target.value)}
+                    className="h-7 w-16 rounded-lg border border-black/[0.08] px-2 text-xs"
                   />
                 </label>
               </div>

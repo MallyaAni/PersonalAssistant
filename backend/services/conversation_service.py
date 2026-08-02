@@ -38,6 +38,7 @@ from backend.memory.proposals import (
     propose_response_style,
 )
 from backend.models.schemas import ChatStreamEvent
+from backend.search.budgeted import SearchBudgetExceededError
 from backend.search.cascade import CascadingSearchRouter
 from backend.search.query import normalize_search_query
 from backend.services.diagram_artifact_service import DiagramArtifactService
@@ -680,6 +681,33 @@ class ConversationService:
             return [], False
         try:
             found = await self.search.search(query)
+        except SearchBudgetExceededError as exhausted:
+            # Distinct from an outage: nothing is broken and retrying will not
+            # help. Returning silently would read as "the internet had nothing",
+            # which is the failure that makes a quota impossible to diagnose, so
+            # the limit is stated as context for the model to relay.
+            logger.info(
+                "Trace %s web search budget exhausted for %s",
+                trace_id,
+                exhausted.window,
+            )
+            return (
+                [
+                    {
+                        "title": "Internet search limit reached",
+                        "url": "",
+                        "content": (
+                            f"This account has used its internet search "
+                            f"allowance for {exhausted.window}. Searching "
+                            f"resumes at "
+                            f"{exhausted.resets_at.strftime('%Y-%m-%d %H:%M UTC')}. "
+                            "Answer from what you already know and say plainly "
+                            "that you could not search."
+                        ),
+                    }
+                ],
+                False,
+            )
         except Exception:
             # A search outage degrades the answer; it must not fail the turn.
             logger.warning("Trace %s web search failed", trace_id, exc_info=True)

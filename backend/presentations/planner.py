@@ -138,6 +138,25 @@ class DeckOutlineSlide(DeckPlanModel):
     # sees its own title and purpose, which carry no signal about what shape the
     # deck needs next, so every slide came back as bullets.
     layout: SlideLayout = "bullets"
+    # Where this slide sits in the arc — an era, a stage, a side of a contrast.
+    # Carried into the slide's own planning and into its image, so a slide about
+    # the 1950s gets 1950s content and a period-accurate picture.
+    beat: str | None = Field(default=None, max_length=120)
+
+
+# The shape a deck argues in, decided once while the whole deck is in view.
+#
+# Without this a slide is planned knowing only its own title and purpose, which
+# carry no sense of sequence. "The evolution of X" then produced several slides
+# each independently about X rather than one progression through it — evolution
+# is a claim about order, and a set of slides cannot make it.
+DeckNarrative = Literal[
+    "chronological",
+    "problem_solution",
+    "comparison",
+    "thesis_evidence",
+    "topical",
+]
 
 
 class DeckOutline(DeckPlanModel):
@@ -145,6 +164,11 @@ class DeckOutline(DeckPlanModel):
 
     title: str = Field(min_length=1, max_length=200)
     subtitle: str | None = Field(default=None, max_length=300)
+    # How the deck moves from its first slide to its last.
+    narrative: DeckNarrative = "topical"
+    # The one sentence the whole deck argues. Every slide is planned against it,
+    # which is what stops slide four from restating slide three.
+    through_line: str | None = Field(default=None, max_length=300)
     slides: list[DeckOutlineSlide] = Field(min_length=1, max_length=30)
 
 

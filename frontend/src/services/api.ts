@@ -2158,6 +2158,7 @@ export interface AdminAccount {
   created_at: string | null;
   last_seen_at: string | null;
   search_monthly_limit: number | null;
+  search_daily_limit: number | null;
 }
 
 const adminBase = `${API_BASE_URL}/api/v1/admin`;
@@ -2275,16 +2276,19 @@ export const approveSubscription = async (subscriberId: string): Promise<void> =
   );
 };
 
+// Both windows are sent on every call because the endpoint writes both. Sending
+// only the edited one would silently clear the other.
 export const setAccountSearchLimit = async (
   userId: string,
   monthlyLimit: number | null,
+  dailyLimit: number | null,
 ): Promise<void> => {
   await readJson(
     await fetch(`${adminBase}/accounts/${encodeURIComponent(userId)}/search-limit`, {
       method: 'PUT',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ monthly_limit: monthlyLimit }),
+      body: JSON.stringify({ monthly_limit: monthlyLimit, daily_limit: dailyLimit }),
     }),
     'Could not set that limit.',
   );

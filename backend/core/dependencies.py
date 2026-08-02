@@ -69,6 +69,7 @@ from backend.memory.coordinator import MemoryCoordinatorAgent
 from backend.memory.retrieval import SemanticRetrievalPolicy
 from backend.presentations.provider import LLMPresentationProvider
 from backend.presentations.renderer import PptxGenJSRenderer
+from backend.search.budgeted import BudgetedSearchProvider
 from backend.search.cascade import CascadingSearchRouter
 from backend.search.classifier import LMStudioFreshnessClassifier
 from backend.search.mcp import MCPWebSearchProvider
@@ -119,8 +120,16 @@ def get_embedding_provider() -> EmbeddingProvider:
 
 
 # Reuse one configured search adapter; it is disabled when no key is present.
+#
+# Wrapped so every interactive query is charged to the calling account. The
+# wrapper goes here rather than at each call site because this is the single
+# place all of them resolve through, including the ones built outside a request.
 @lru_cache(maxsize=1)
 def get_search_provider() -> SearchProvider:
+    return BudgetedSearchProvider(_build_search_provider(), get_search_budget())
+
+
+def _build_search_provider() -> SearchProvider:
     if settings.SEARCH_PROVIDER_NAME == "mcp":
         return MCPWebSearchProvider(
             get_mcp_invocation_service(),

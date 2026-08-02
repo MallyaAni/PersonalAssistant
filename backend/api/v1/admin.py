@@ -155,6 +155,7 @@ async def list_accounts(
                     row.last_seen_at.isoformat() if row.last_seen_at else None
                 ),
                 "search_monthly_limit": row.search_monthly_limit,
+                "search_daily_limit": row.search_daily_limit,
             }
             for row in rows
         ]
@@ -311,6 +312,7 @@ class SearchLimitRequest(BaseModel):
     # Null restores the deployment default rather than meaning "no limit": an
     # unbounded account is exactly what this exists to prevent.
     monthly_limit: int | None = Field(default=None, ge=0, le=10_000)
+    daily_limit: int | None = Field(default=None, ge=0, le=1_000)
 
 
 # Requests for an account, newest first.
@@ -419,9 +421,12 @@ async def set_search_limit(
             status_code=status.HTTP_404_NOT_FOUND, detail="Account not found."
         )
     account.search_monthly_limit = body.monthly_limit
+    account.search_daily_limit = body.daily_limit
     await db.commit()
     return {
         "user_id": user_id,
         "monthly_limit": account.search_monthly_limit,
-        "using_default": account.search_monthly_limit is None,
+        "daily_limit": account.search_daily_limit,
+        "using_default": account.search_monthly_limit is None
+        and account.search_daily_limit is None,
     }

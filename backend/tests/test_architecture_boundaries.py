@@ -55,6 +55,10 @@ def test_search_package_holds_only_web_search():
     names = {p.stem for p in (BACKEND / "search").glob("*.py") if p.stem != "__init__"}
 
     assert names == {
+        # Admitted deliberately: per-account metering of web search. It wraps a
+        # provider and returns results, so it is web search, not a fourth
+        # meaning of the word.
+        "budgeted",
         "cascade",
         "classifier",
         "google_adk",

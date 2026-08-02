@@ -29,8 +29,17 @@ from redis.asyncio import Redis
 GUEST_MONTHLY_QUERIES = 60
 OPERATOR_MONTHLY_QUERIES = 400
 
+# A month is the billing period, but it is the wrong unit to protect. One account
+# in a loop on the first of the month can spend a whole monthly allowance in an
+# afternoon, and the month's ceiling only notices once it is gone. A daily bound
+# caps the blast radius of any single bad day and refills tomorrow, so a mistake
+# costs a day rather than a month.
+GUEST_DAILY_QUERIES = 10
+OPERATOR_DAILY_QUERIES = 40
+
 # Counters expire on their own so nothing has to sweep them up.
 _TTL_SECONDS = 40 * 24 * 60 * 60
+_DAILY_TTL_SECONDS = 3 * 24 * 60 * 60
 
 
 class SearchBudget:
@@ -45,6 +54,10 @@ class SearchBudget:
         return f"anios:search:{user_id}:{now.strftime('%Y-%m')}"
 
     @staticmethod
+    def _daily_key(user_id: str, now: datetime) -> str:
+        return f"anios:search:{user_id}:day:{now.strftime('%Y-%m-%d')}"
+
+    @staticmethod
     def allowance(is_operator: bool, override: int | None = None) -> int:
         # An operator-set override replaces the default entirely, including
         # zero — which is how an account is stopped from searching without
@@ -52,6 +65,12 @@ class SearchBudget:
         if override is not None:
             return override
         return OPERATOR_MONTHLY_QUERIES if is_operator else GUEST_MONTHLY_QUERIES
+
+    @staticmethod
+    def daily_allowance(is_operator: bool, override: int | None = None) -> int:
+        if override is not None:
+            return override
+        return OPERATOR_DAILY_QUERIES if is_operator else GUEST_DAILY_QUERIES
 
     # How many queries this account may still spend this month.
     async def remaining(
@@ -71,6 +90,24 @@ class SearchBudget:
             return allowance
         return max(allowance - spent, 0)
 
+    # How many queries this account may still spend today.
+    async def remaining_today(
+        self,
+        user_id: str,
+        is_operator: bool,
+        now: datetime | None = None,
+        override: int | None = None,
+    ) -> int:
+        allowance = self.daily_allowance(is_operator, override)
+        if not self.enabled:
+            return allowance
+        moment = now or datetime.now(UTC)
+        try:
+            spent = int(await self.redis.get(self._daily_key(user_id, moment)) or 0)
+        except Exception:
+            return allowance
+        return max(allowance - spent, 0)
+
     # Reserve up to `wanted` queries and report how many were actually granted.
     #
     # Returns a number rather than a yes/no so a sweep can proceed with a smaller
@@ -83,25 +120,53 @@ class SearchBudget:
         wanted: int,
         now: datetime | None = None,
         override: int | None = None,
+        daily_override: int | None = None,
     ) -> int:
         if not self.enabled or wanted <= 0:
             return max(wanted, 0)
         moment = now or datetime.now(UTC)
-        key = self._key(user_id, moment)
+
+        # The day is checked first because it is the tighter bound and the one
+        # that refills, so a rejection here costs the caller the least.
+        granted = await self._take(
+            self._daily_key(user_id, moment),
+            wanted,
+            self.daily_allowance(is_operator, daily_override),
+            _DAILY_TTL_SECONDS,
+        )
+        if granted <= 0:
+            return 0
+
+        monthly = await self._take(
+            self._key(user_id, moment),
+            granted,
+            self.allowance(is_operator, override),
+            _TTL_SECONDS,
+        )
+        if monthly < granted:
+            # The month was the binding limit, so return the day's surplus.
+            # Without this a query blocked by the month still burns the day.
+            with suppress(Exception):
+                await self.redis.decrby(
+                    self._daily_key(user_id, moment), granted - monthly
+                )
+        return monthly
+
+    # Spend against one window and report how much of `wanted` it allowed.
+    async def _take(self, key: str, wanted: int, allowance: int, ttl: int) -> int:
         try:
             spent = int(await self.redis.incrby(key, wanted))
-            await self.redis.expire(key, _TTL_SECONDS)
+            await self.redis.expire(key, ttl)
         except Exception:
             # A rate limiter, not an authorization boundary: a restarted cache
             # must not take the feature down for everyone.
             return wanted
 
-        allowance = self.allowance(is_operator, override)
         overshoot = spent - allowance
         if overshoot <= 0:
             return wanted
         granted = max(wanted - overshoot, 0)
-        # Give back what was not granted so the month's count stays honest. A
+        # Give back what was not granted so the window's count stays honest. A
         # failure here only overstates the spend, which errs toward the ceiling.
         with suppress(Exception):
             await self.redis.decrby(key, wanted - granted)

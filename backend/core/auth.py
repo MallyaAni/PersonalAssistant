@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.config.settings import settings
 from backend.database.session import get_db
 from backend.models.auth import UserAccount
+from backend.search.budgeted import SearchIdentity, current_search_identity
 from backend.services.auth_service import AuthService
 
 # Least-privilege scopes. A token may be restricted to a subset so a leaked or
@@ -145,6 +146,7 @@ async def get_authenticated_identity(
             detail="Invalid or expired authentication session",
         )
     await _touch_last_seen(db, session.user_id)
+    await _bind_search_identity(db, session.user_id)
     return AuthenticatedIdentity(
         user_id=session.user_id,
         expires_at=int(session.expires_at.timestamp()),
@@ -156,6 +158,34 @@ IdentityDependency = Annotated[
     AuthenticatedIdentity | None,
     Depends(get_authenticated_identity),
 ]
+
+
+# Attach the caller to any web search this request performs.
+#
+# The search provider is built once and cached process-wide, so it cannot hold a
+# per-request account. Binding here means every route charges its own caller
+# without each one having to remember to, including routes added later.
+#
+# A failure leaves the search unattributed and therefore unmetered, which is the
+# right way to fail: metering is a cost control, not an authorization boundary,
+# and a lookup problem must not stop somebody searching.
+async def _bind_search_identity(db: AsyncSession, user_id: str) -> None:
+    try:
+        account = await db.scalar(
+            select(UserAccount).where(UserAccount.user_id == user_id)
+        )
+        if account is None:
+            return
+        current_search_identity.set(
+            SearchIdentity(
+                user_id=user_id,
+                is_operator=bool(account.is_admin),
+                monthly_limit=account.search_monthly_limit,
+                daily_limit=account.search_daily_limit,
+            )
+        )
+    except Exception:
+        return
 
 
 # Record that an account was seen, at most once a minute.
