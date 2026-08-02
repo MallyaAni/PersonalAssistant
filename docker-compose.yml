@@ -252,6 +252,10 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-anios_db}
       - POSTGRES_HOST=db
       - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (see .env.example)}
+      # Seals free-text columns at rest. Empty disables it; every service
+      # that writes a sealed column needs the same key, or one of them
+      # stores plaintext into a column another reads as sealed.
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-}
       - LLM_BASE_URL=http://vllm-main:8000
       - LLM_MODEL=qwen/qwen3.5-4b
       - INFERENCE_ADAPTER=${INFERENCE_ADAPTER:-openai_compatible}
@@ -304,6 +308,10 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-anios_db}
       - POSTGRES_HOST=db
       - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (see .env.example)}
+      # The worker writes sealed columns (a seen item's title), so it needs
+      # the same key as the API — otherwise it stores plaintext into a column
+      # the API reads as sealed.
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-}
       - INFERENCE_ADAPTER=${INFERENCE_ADAPTER:-openai_compatible}
       - INFERENCE_PROVIDER_NAME=vllm
       - EMBEDDING_BASE_URL=http://vllm-embedding:8000
@@ -343,6 +351,10 @@ services:
       # No default: a missing secret must fail the run, never fall back to a
       # committed placeholder that would sign real auth tokens.
       - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (see .env.example)}
+      # Seals free-text columns at rest. Empty disables it; every service
+      # that writes a sealed column needs the same key, or one of them
+      # stores plaintext into a column another reads as sealed.
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-}
       # Reverse geocoding for the Agents tab location button. Empty disables
       # it; typing a town needs nothing here.
       - DISCOVERY_PLACE_RESOLVER=${DISCOVERY_PLACE_RESOLVER:-}

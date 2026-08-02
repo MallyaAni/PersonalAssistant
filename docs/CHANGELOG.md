@@ -1833,3 +1833,23 @@ rows referencing them. The two changes above exist so this cannot recur.
   it cannot claim a behaviour it does not have — and links through to the
   Presentations workspace.
 - 716 backend tests and the Agents tab browser test pass.
+
+## 2026-08-01 — Field encryption was never switched on
+
+- Every claim made about interests, localities, and subscriber addresses being
+  "sealed at rest" described a capability the deployment did not have.
+  `EncryptedText` and `FieldCipher` were correct and wired; `ENCRYPTION_KEY` was
+  empty in `.env.example`, absent from `.env`, and **not present in
+  `docker-compose.yml` at all** — so setting it would not have reached a
+  container either. Found by reading a backup and seeing `Hiking` in plaintext.
+- Plumbed the key into every service that reads or writes a sealed column:
+  backend, discovery worker, presentation worker. The worker mattered as much as
+  the API — one writing plaintext into a column the other reads as sealed is
+  worse than neither doing it.
+- Enabling it is non-breaking by design and was verified rather than assumed:
+  the pre-existing `Hiking` row still reads through the API, while a newly added
+  interest is `enc:1:Dq4uVNF…` on disk.
+- Added `scripts/backup-db.sh`. Startup takes a backup, but startup can be weeks
+  apart and everything added since is unprotected — the only existing dump
+  predated the interests it was supposed to protect. It also warns that a dump
+  taken with encryption on is only as recoverable as the key.
