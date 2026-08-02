@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.agents.diagram import DiagramAgent
 from backend.agents.presentation import PresentationAgent
+from backend.agents.registry import AgentRegistry
 from backend.agents.supervisor import MainSupervisorAgent
 from backend.artifacts.diagram import LLMDiagramProvider
 from backend.artifacts.image import (
@@ -730,6 +731,13 @@ DependencyDiscoveryProfileService = Annotated[
     DiscoveryProfileService,
     Depends(get_discovery_profile_service),
 ]
+
+
+def get_agent_registry(db: DbDependency) -> AgentRegistry:
+    return AgentRegistry(db)
+
+
+DependencyAgentRegistry = Annotated[AgentRegistry, Depends(get_agent_registry)]
 
 
 def get_discovery_source_repository(db: DbDependency) -> DiscoverySourceRepository:

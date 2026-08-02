@@ -1566,3 +1566,26 @@ rows referencing them. The two changes above exist so this cannot recur.
   it did not spin. Test data removed.
 - 608 backend tests pass, including three new ones covering the scheduled path.
   Ruff, Black, and MyPy across 181 files pass.
+
+## 2026-08-01 — An Agents tab that reports live state
+
+- Added a workspace Agents tab listing the specialized workers and what each is
+  currently doing. Two exist today: **Scout**, the ambient discovery loop, and
+  **Deck**, the presentation specialist.
+- The registry stores nothing. Every field is derived from the tables each agent
+  already writes, so the tab cannot drift from reality by being updated in the
+  wrong place, and an agent that stops working shows as stalled rather than
+  showing whatever it last claimed. Adding an agent means adding a describer.
+- Status is five-valued rather than a boolean, because `needs_setup` and `idle`
+  are different problems: the most common discovery failure is having no sources
+  or interests, and calling that "idle" hides the one action the user can take.
+  The detail line names what is missing.
+- Times are relative — "in 4 h", "2 d ago" — since an absolute timestamp is the
+  wrong unit for "when does this happen next" and makes the reader do
+  arithmetic. An agent that has never run says so rather than showing a
+  fabricated date.
+- Covered by a browser test, because a new tab shipped without one repeats the
+  gap that produced four defects in the slide rail. It asserts per-card so a
+  status on one agent cannot satisfy an assertion about the other.
+- 612 backend tests and 41 deterministic Playwright tests pass. Ruff, Black, and
+  MyPy across 183 files pass; the TypeScript build passes.

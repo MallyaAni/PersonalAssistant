@@ -1613,3 +1613,32 @@ function parseConversationSnapshot(
   })
   return { ...data, artifacts }
 }
+
+export interface AgentFact {
+  label: string;
+  value: string;
+}
+
+export interface AgentSummary {
+  id: string;
+  name: string;
+  role: string;
+  status: 'idle' | 'working' | 'scheduled' | 'needs_setup' | 'disabled';
+  detail: string;
+  trigger: string;
+  last_active_at: string | null;
+  facts: AgentFact[];
+}
+
+// Read the live state of every specialized agent. Each field is derived from
+// the tables the agent itself writes, so this cannot report a state it is not in.
+export const getAgents = async (userId: string): Promise<AgentSummary[]> => {
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/agents/${encodeURIComponent(userId)}`,
+  );
+  if (!response.ok) {
+    throw new Error('Could not load agents.');
+  }
+  const payload = await response.json();
+  return Array.isArray(payload.agents) ? payload.agents : [];
+};

@@ -3274,3 +3274,69 @@ test('Enter sends from the composer and Shift+Enter writes a new line', async ({
   expect(errors.consoleErrors).toEqual([])
   expect(errors.pageErrors).toEqual([])
 })
+
+// The Agents tab is the control surface for every specialized worker, so it
+// must show real state rather than a static list. Deterministic: the registry
+// response is stubbed, and the assertions are about what the user can read.
+test('the Agents tab reports each agent status and what it is waiting on', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.route('**/api/v1/agents/**', async route => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        user_id: 'test',
+        agents: [
+          {
+            id: 'discovery',
+            name: 'Scout',
+            role: 'Finds things happening near you.',
+            status: 'needs_setup',
+            detail: 'Add an interest and a feed before it can find anything.',
+            trigger: 'On request',
+            last_active_at: null,
+            facts: [
+              { label: 'Feeds', value: '0' },
+              { label: 'Interests', value: '0' },
+            ],
+          },
+          {
+            id: 'presentation',
+            name: 'Deck',
+            role: 'Plans and builds editable presentations.',
+            status: 'working',
+            detail: 'Building 1 deck now.',
+            trigger: 'Delegated from chat',
+            last_active_at: new Date().toISOString(),
+            facts: [{ label: 'Decks built', value: '3' }],
+          },
+        ],
+      }),
+    })
+  })
+
+  await page.goto('/')
+  await page.getByLabel('Agents').click()
+
+  await expect(page.getByRole('heading', { name: 'Agents' })).toBeVisible()
+
+  // Scope each assertion to its own card, so a status shown on one agent can never
+  // satisfy an assertion about the other.
+  const scout = page.locator('article').filter({ hasText: 'Scout' })
+  const deck = page.locator('article').filter({ hasText: 'Deck' })
+
+  // An agent that cannot run must say what is missing, not just "idle".
+  await expect(scout.getByText('Needs setup')).toBeVisible()
+  await expect(
+    scout.getByText('Add an interest and a feed before it can find anything.'),
+  ).toBeVisible()
+  // A never-run agent must not display a fabricated timestamp.
+  await expect(scout.getByText('Last active never run')).toBeVisible()
+
+  // A working agent reports what it is doing right now.
+  await expect(deck.getByText('Working', { exact: true })).toBeVisible()
+  await expect(deck.getByText('Building 1 deck now.')).toBeVisible()
+  await expect(deck.getByText('3', { exact: true })).toBeVisible()
+
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})

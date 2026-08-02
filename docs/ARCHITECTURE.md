@@ -575,6 +575,24 @@ inferred from an import that appeared to work.
 Notification egress remains `PLANNED` and gated: it is the first outbound path
 in AniOS, and every subsystem before it fails closed inside the machine.
 
+### Agents
+
+`backend/agents/registry.py` describes every specialized agent for one user, and
+`GET /api/v1/agents/{user_id}` serves it to the workspace's Agents tab. Two
+agents exist today: **Scout**, the ambient discovery loop, and **Deck**, the
+presentation specialist.
+
+The registry stores nothing. Every field is derived from the tables each agent
+already writes — schedules, runs, sources, subscribers, presentation jobs — so
+the tab cannot drift from reality by being updated in the wrong place, and an
+agent that stops working shows as stalled rather than showing whatever it last
+claimed about itself. Adding an agent means adding a describer, not a row.
+
+Status is deliberately five-valued rather than a boolean. `needs_setup` is
+separated from `idle` because the most common discovery failure is having no
+sources or no interests, and reporting that as "idle" hides the one thing the
+user needs to do. The detail line names what is missing.
+
 ### Presentation
 
 `backend/main.py` constructs the FastAPI application, allows CORS from the local Vite origins, mounts the v1 router at `/api/v1`, and defines `GET /health`.
