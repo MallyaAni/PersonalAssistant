@@ -217,3 +217,60 @@ async def test_a_used_invitation_is_kept_as_a_record_rather_than_revoked():
             assert refused.status_code == 409
     finally:
         await _cleanup(operator, guest)
+
+
+@pytest.mark.asyncio
+async def test_a_guest_cannot_configure_who_this_machine_messages():
+    """The iMessage bridge sends from the operator's own Apple ID.
+
+    A guest managing their own subscribers would cause messages to be sent as
+    the operator, to numbers the operator never chose. Ownership is the wrong
+    boundary for that, so these routes are the operator's.
+    """
+    guest = f"guest_{uuid.uuid4().hex[:10]}"
+    try:
+        _, token = await _account(guest, admin=False)
+        async with _client(token) as client:
+            listed = await client.get(f"/api/v1/discovery/{guest}/subscribers")
+            added = await client.put(
+                f"/api/v1/discovery/{guest}/subscribers",
+                json={
+                    "channel": "imessage",
+                    "address": "+15550100",
+                    "consented": True,
+                },
+            )
+
+        assert listed.status_code == 403
+        assert added.status_code == 403
+    finally:
+        await _cleanup(guest)
+
+
+@pytest.mark.asyncio
+async def test_a_guest_keeps_the_rest_of_their_own_agent():
+    # Restricting egress must not take away the parts that are genuinely theirs:
+    # their interests, their place, their feeds.
+    guest = f"guest_{uuid.uuid4().hex[:10]}"
+    try:
+        _, token = await _account(guest, admin=False)
+        async with _client(token) as client:
+            profile = await client.get(f"/api/v1/discovery/{guest}")
+            interest = await client.put(
+                f"/api/v1/discovery/{guest}/interests",
+                json={"label": "hiking", "strength": 2},
+            )
+
+        assert profile.status_code == 200
+        assert interest.status_code == 200
+    finally:
+        from sqlalchemy import delete
+
+        from backend.models.discovery import DiscoveryInterest
+
+        async with AsyncSessionLocal() as session:
+            await session.execute(
+                delete(DiscoveryInterest).where(DiscoveryInterest.user_id == guest)
+            )
+            await session.commit()
+        await _cleanup(guest)

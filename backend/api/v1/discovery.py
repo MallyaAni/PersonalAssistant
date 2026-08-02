@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Response, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from backend.config.settings import settings
-from backend.core.auth import authorize_path_user
+from backend.core.auth import AdminDependency, authorize_path_user
 from backend.core.dependencies import (
     DependencyDiscoveryFamiliar,
     DependencyDiscoveryProfileService,
@@ -358,6 +358,7 @@ class SubscriberRequest(BaseModel):
 @router.get("/subscribers")
 async def list_subscribers(
     user_id: UserId,
+    admin: AdminDependency,
     subscribers: DependencyDiscoverySubscribers,
 ) -> dict[str, object]:
     people = await subscribers.list_subscribers(user_id)
@@ -386,6 +387,7 @@ async def list_subscribers(
 @router.put("/subscribers", status_code=status.HTTP_200_OK)
 async def put_subscriber(
     user_id: UserId,
+    admin: AdminDependency,
     body: SubscriberRequest,
     subscribers: DependencyDiscoverySubscribers,
 ) -> dict[str, object]:
@@ -414,6 +416,7 @@ async def put_subscriber(
 @router.post("/subscribers/{subscriber_id}/revoke", status_code=status.HTTP_200_OK)
 async def revoke_subscriber(
     user_id: UserId,
+    admin: AdminDependency,
     subscriber_id: UUID,
     subscribers: DependencyDiscoverySubscribers,
 ) -> dict[str, object]:
@@ -427,6 +430,7 @@ async def revoke_subscriber(
 @router.delete("/subscribers/{subscriber_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_subscriber(
     user_id: UserId,
+    admin: AdminDependency,
     subscriber_id: UUID,
     subscribers: DependencyDiscoverySubscribers,
 ) -> None:
