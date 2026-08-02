@@ -2293,6 +2293,23 @@ export const approveSubscription = async (subscriberId: string): Promise<void> =
 
 // Both windows are sent on every call because the endpoint writes both. Sending
 // only the edited one would silently clear the other.
+// Suspend or restore an account. Reversible on purpose: the account and
+// everything it owns stay put, so this is "locked out", not "deleted".
+export const setAccountActive = async (
+  userId: string,
+  active: boolean,
+): Promise<void> => {
+  await readJson(
+    await fetch(`${adminBase}/accounts/${encodeURIComponent(userId)}/revoke`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ active }),
+    }),
+    'Could not change that account.',
+  );
+};
+
 export const setAccountSearchLimit = async (
   userId: string,
   monthlyLimit: number | null,

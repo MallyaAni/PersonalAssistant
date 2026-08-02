@@ -17,6 +17,8 @@ from backend.services.auth_service import (
     InvalidRegistrationInviteError,
     UsernameUnavailableError,
     digest_registration_invite,
+    hash_password,
+    normalize_user_id,
 )
 from backend.services.login_rate_limiter import (
     LoginRateLimiterUnavailableError,
@@ -282,6 +284,11 @@ class AccessRequestBody(BaseModel):
     display_name: str = Field(min_length=1, max_length=80)
     contact: str | None = Field(default=None, max_length=120)
     reason: str | None = Field(default=None, max_length=500)
+    # Chosen here so approval creates the account outright. Same rules as
+    # registration, checked now rather than after the operator has agreed —
+    # being told the username is taken should not wait on a human.
+    username: str = Field(min_length=1, max_length=50)
+    password: str = Field(min_length=12, max_length=1_024)
 
 
 # Ask the operator for an account.
@@ -315,6 +322,24 @@ async def request_access(
             headers={"Retry-After": str(int(allowed.retry_after_seconds))},
         )
 
+    desired = normalize_user_id(body.username)
+    taken = await db.scalar(
+        select(UserAccount.user_id).where(UserAccount.username == desired)
+    )
+    pending_claim = await db.scalar(
+        select(AccessRequest.id).where(
+            AccessRequest.desired_username == desired,
+            AccessRequest.status == "pending",
+        )
+    )
+    if taken is not None or pending_claim is not None:
+        # Said plainly. This is a name collision on a public sign-up form, not a
+        # credential check, so there is nothing here worth being vague about.
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="That username is already taken. Pick another.",
+        )
+
     token = secrets.token_urlsafe(32)
     db.add(
         AccessRequest(
@@ -322,6 +347,10 @@ async def request_access(
             display_name=body.display_name.strip(),
             contact=(body.contact or "").strip() or None,
             reason=(body.reason or "").strip() or None,
+            desired_username=desired,
+            # Hashed on arrival; the plaintext is never stored and never needed
+            # again, since approval moves this hash across unchanged.
+            password_hash=hash_password(body.password),
         )
     )
     await db.commit()

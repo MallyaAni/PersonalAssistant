@@ -96,6 +96,29 @@ class SearchBudget:
     async def shared_daily_ceiling(self, now: datetime | None = None) -> int:
         return await self.pool_remaining(now)
 
+    # Align the pool with what the provider says the key has actually spent.
+    #
+    # Only ever raises the local count. The provider is authoritative about
+    # spending we did not do — another tool on the same key, or a plan that
+    # counts differently — but a lower number can also mean a stale or partial
+    # report, and trusting that would hand back credits that are really gone.
+    # Erring toward the ceiling is the safe direction for a cost control.
+    async def reconcile(self, reported_spent: int, now: datetime | None = None) -> int:
+        if not self.enabled or reported_spent < 0:
+            return await self.pool_remaining(now)
+        moment = now or datetime.now(UTC)
+        key = self._pool_key(moment)
+        try:
+            local = int(await self.redis.get(key) or 0)
+            if reported_spent > local:
+                await self.redis.set(key, reported_spent)
+                await self.redis.expire(key, _TTL_SECONDS)
+        except Exception:
+            # Reconciliation is an improvement, not a requirement. Failing here
+            # leaves the local count in charge, which is what it was anyway.
+            return await self.pool_remaining(moment)
+        return max(self.monthly_credits - max(local, reported_spent), 0)
+
     # Spend against the shared pool, and what it has already cost this month.
     async def pool_status(self, now: datetime | None = None) -> dict[str, int]:
         remaining = await self.pool_remaining(now)

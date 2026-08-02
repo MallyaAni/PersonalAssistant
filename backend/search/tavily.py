@@ -129,3 +129,82 @@ class TavilySearchProvider(SearchProvider):
             results=tuple(parsed[:bounded]),
             provider="tavily",
         )
+
+
+# Where Tavily reports what the key has actually spent.
+_USAGE_PATH = "/usage"
+
+# Response shapes seen from Tavily's usage endpoint, most specific first. The
+# provider is free to change this, and a wrong guess must not corrupt the local
+# count, so an unrecognised body reports nothing rather than zero — zero would
+# read as "nothing spent" and silently refill the pool.
+_USAGE_PATHS: tuple[tuple[str, ...], ...] = (
+    ("account", "plan_usage"),
+    ("account", "current_plan_usage"),
+    ("key", "usage"),
+    ("usage",),
+)
+
+
+# Read one integer from a nested response without assuming the shape exists.
+def _dig(payload: Any, path: tuple[str, ...]) -> int | None:
+    current: Any = payload
+    for step in path:
+        if not isinstance(current, dict) or step not in current:
+            return None
+        current = current[step]
+    if isinstance(current, bool) or not isinstance(current, int | float):
+        return None
+    return int(current)
+
+
+class TavilyUsageClient:
+    """Report what Tavily says the key has spent this billing period.
+
+    The local pool counts what this system reserved, which drifts from the real
+    balance in both directions: another tool sharing the key spends without us
+    knowing, and a query charged locally that then fails in flight costs nothing
+    while we still count it. Reconciling against the provider closes both gaps.
+    """
+
+    def __init__(
+        self,
+        base_url: str,
+        api_key: str | None,
+        timeout_seconds: float = 10.0,
+        client: httpx.AsyncClient | None = None,
+    ) -> None:
+        self.base_url = base_url.rstrip("/")
+        self.api_key = api_key
+        self.timeout_seconds = timeout_seconds
+        self.client = client
+
+    def is_enabled(self) -> bool:
+        return bool(self.api_key)
+
+    # Credits spent this period, or None when it cannot be established.
+    #
+    # None rather than 0 throughout: every failure here means "unknown", and a
+    # caller treating unknown as zero would reset the pool to full on any
+    # outage, turning a monitoring problem into an overspend.
+    async def spent(self) -> int | None:
+        if not self.api_key:
+            return None
+        headers = {"Authorization": f"Bearer {self.api_key}"}
+        url = f"{self.base_url}{_USAGE_PATH}"
+        try:
+            if self.client is not None:
+                response = await self.client.get(url, headers=headers)
+            else:
+                async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
+                    response = await client.get(url, headers=headers)
+            response.raise_for_status()
+            payload = response.json()
+        except Exception:
+            return None
+
+        for path in _USAGE_PATHS:
+            found = _dig(payload, path)
+            if found is not None and found >= 0:
+                return found
+        return None

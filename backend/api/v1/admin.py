@@ -17,7 +17,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from backend.config.settings import settings
 from backend.core.auth import AdminDependency, IdentityDependency
@@ -26,7 +26,13 @@ from backend.core.dependencies import (
     DependencyDiscoverySubscribers,
     get_search_budget,
 )
-from backend.models.auth import AccessRequest, RegistrationInvite, UserAccount
+from backend.models.auth import (
+    AccessRequest,
+    RegistrationInvite,
+    UserAccount,
+    UserSession,
+)
+from backend.search.tavily import TavilyUsageClient
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -367,21 +373,54 @@ async def approve_access_request(
     from datetime import UTC, datetime
 
     from backend.models.auth import RegistrationInvite
+    from backend.services.auth_service import AuthService
 
-    # The request's own token becomes the registration credential, so the digest
-    # already on file is reused rather than a second secret being created.
+    row.status = "approved"
+    row.decided_at = datetime.now(UTC)
+    row.decided_by = _operator_id(identity)
+
+    # Requests made since credentials were collected become accounts here.
+    # Approving is the decision, so it should also be the moment the account
+    # exists — an approved request that still needs redeeming leaves the
+    # operator unable to tell who actually signed up.
+    if row.desired_username and row.password_hash:
+        try:
+            account = await AuthService(db).create_account_with_hash(
+                user_id=row.desired_username,
+                username=row.desired_username,
+                password_hash=row.password_hash,
+            )
+        except ValueError as clash:
+            # The name was free when they asked and is not now. The request
+            # stays pending so it can be approved once they pick another.
+            await db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="That username was taken since the request was made.",
+            ) from clash
+        # The hash now lives on the account; there is no reason to keep a second
+        # copy on a decided request.
+        row.password_hash = None
+        await db.commit()
+        return {
+            "id": str(request_id),
+            "status": "approved",
+            "user_id": account.user_id,
+            "account_created": True,
+        }
+
+    # Older requests carry no credentials, so they keep the token path they were
+    # created under: their own token becomes the registration credential, and
+    # the digest already on file is reused rather than minting a second secret.
     invite = RegistrationInvite(
         token_digest=row.token_digest,
         expires_at=datetime.now(UTC) + timedelta(hours=ttl_hours),
     )
     db.add(invite)
     await db.flush()
-    row.status = "approved"
     row.invite_id = invite.id
-    row.decided_at = datetime.now(UTC)
-    row.decided_by = _operator_id(identity)
     await db.commit()
-    return {"id": str(request_id), "status": "approved"}
+    return {"id": str(request_id), "status": "approved", "account_created": False}
 
 
 # Decline a request. The token stops being usable for anything.
@@ -424,6 +463,17 @@ async def read_search_credits(
     db: DbDependency,
 ) -> dict[str, object]:
     budget = get_search_budget()
+    # Ask the provider what the key has really spent before reporting a balance.
+    # The local count only knows about reservations this system made, so without
+    # this the operator is shown a number that drifts further from the truth
+    # every time anything else touches the key.
+    usage = TavilyUsageClient(
+        base_url=settings.SEARCH_BASE_URL,
+        api_key=settings.SEARCH_API_KEY,
+    )
+    reported = await usage.spent() if usage.is_enabled() else None
+    if reported is not None:
+        await budget.reconcile(reported)
     status_now = await budget.pool_status()
     accounts = (await db.execute(select(UserAccount))).scalars().all()
     committed_daily = sum(
@@ -437,7 +487,51 @@ async def read_search_credits(
         "daily_ceiling": status_now["remaining"],
         "committed_daily": committed_daily,
         "overcommitted": committed_daily > status_now["remaining"],
+        # Null means the provider could not be asked, so the figures above are
+        # this system's own count. Said plainly rather than implied, because a
+        # balance nobody has checked should not look like one that was.
+        "provider_reported_spent": reported,
     }
+
+
+class RevokeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # False restores access. Revoking is reversible on purpose: the account and
+    # everything it owns stay put, so this is "locked out", not "deleted".
+    active: bool = False
+
+
+# Suspend or restore an account.
+#
+# Sessions are destroyed rather than left to expire, because an already
+# signed-in browser would otherwise keep working for as long as its cookie
+# lasts — which would make revoking look like it had worked while it had not.
+@router.post("/accounts/{user_id}/revoke", status_code=status.HTTP_200_OK)
+async def set_account_active(
+    admin: AdminDependency,
+    identity: IdentityDependency,
+    db: DbDependency,
+    user_id: str,
+    body: RevokeRequest,
+) -> dict[str, object]:
+    account = await db.scalar(select(UserAccount).where(UserAccount.user_id == user_id))
+    if account is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Account not found."
+        )
+    # Locking yourself out of the only account that can unlock anything would
+    # need database access to undo.
+    if not body.active and account.user_id == _operator_id(identity):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="You cannot revoke your own operator account.",
+        )
+    account.is_active = body.active
+    if not body.active:
+        await db.execute(delete(UserSession).where(UserSession.user_id == user_id))
+    await db.commit()
+    return {"user_id": user_id, "is_active": account.is_active}
 
 
 # Set how much metered search one account may spend per month.

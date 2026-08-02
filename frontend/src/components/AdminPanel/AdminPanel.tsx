@@ -11,6 +11,7 @@ import {
   getAdminSubscriptions,
   getSearchCredits,
   revokeAdminInvite,
+  setAccountActive,
   setAccountSearchLimit,
   type AccessRequest,
   type AdminAccount,
@@ -110,6 +111,12 @@ const AdminPanel = () => {
   // Both windows travel together: the endpoint writes both, so sending only the
   // edited one would clear the other. Blank means "use the default", not
   // "unlimited" — an unbounded account is what these limits exist to prevent.
+  const changeActive = (account: AdminAccount, active: boolean) =>
+    perform(`active-${account.user_id}`, async () => {
+      await setAccountActive(account.user_id, active)
+      await reload()
+    })
+
   const changeLimit = (account: AdminAccount, field: 'month' | 'day', raw: string) => {
     const edited = raw === '' ? null : Number(raw)
     return perform(`limit-${account.user_id}`, () =>
@@ -362,6 +369,16 @@ const AdminPanel = () => {
                     ? `active ${untilExpiry(account.last_seen_at).replace(' left', '')} ago`.replace('expired ago', 'active just now')
                     : 'never signed in'}
                 </span>
+                {!account.is_admin && (
+                  <button
+                    type="button"
+                    onClick={() => void changeActive(account, !account.is_active)}
+                    disabled={busy === `active-${account.user_id}`}
+                    className="rounded-lg border border-black/[0.08] px-2 py-1 text-[11px] text-[#6e6e73] hover:bg-black/[0.03] disabled:opacity-50"
+                  >
+                    {account.is_active ? 'Revoke' : 'Restore'}
+                  </button>
+                )}
                 <label className="flex items-center gap-1 text-[11px] text-[#86868b]">
                   search/day
                   <input

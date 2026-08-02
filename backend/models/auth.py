@@ -135,6 +135,15 @@ class AccessRequest(Base):
     display_name: Mapped[str] = mapped_column(Text, nullable=False)
     contact: Mapped[str | None] = mapped_column(Text, nullable=True)
     reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # The credentials they chose when asking, so approving creates the account
+    # in one step rather than handing back a token they must redeem later.
+    #
+    # Hashed on arrival with the same Argon2id parameters as a live account: a
+    # pending request is not a safer place to keep a password than a real one,
+    # and the plaintext is never wanted again — approval moves this hash across
+    # unchanged rather than re-hashing anything.
+    desired_username: Mapped[str | None] = mapped_column(Text, nullable=True)
+    password_hash: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, server_default="pending"
     )

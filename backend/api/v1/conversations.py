@@ -28,6 +28,25 @@ ArtifactRepositoryDependency = Annotated[
 ]
 
 
+# List this account's conversations, most recently active first.
+#
+# Without this, reaching a past conversation needs its id, and the only copy of
+# that id was the one the browser happened to keep. Signing in from a second
+# device, a new profile, or a cleared cache left every stored conversation
+# unreachable — present in the database and invisible to the person who wrote
+# it. History belongs to the account, so the server is what lists it.
+@router.get("")
+async def list_conversations(
+    user_id: str,
+    identity: IdentityDependency,
+    repository: ConversationRepositoryDependency,
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+) -> dict[str, Any]:
+    authorize_user(user_id, identity)
+    authorize_scope(identity, SCOPE_MEMORY_READ)
+    return {"conversations": await repository.list_conversations(user_id, limit)}
+
+
 # Return persisted turns and artifacts needed to restore one owned conversation.
 @router.get("/{conversation_id}")
 async def get_conversation_snapshot(

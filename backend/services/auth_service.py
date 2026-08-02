@@ -99,6 +99,39 @@ class AuthService:
         self.session = session
 
     # Create one invite-only account without changing any existing owned data.
+    # Create an account from a hash computed earlier, without ever seeing the
+    # password.
+    #
+    # An access request hashes on arrival, so approval has a hash and no
+    # plaintext. Re-hashing is impossible and inventing a placeholder password
+    # would be worse than either, so the hash moves across unchanged.
+    async def create_account_with_hash(
+        self,
+        user_id: str,
+        password_hash: str,
+        username: str | None = None,
+    ) -> UserAccount:
+        normalized = normalize_user_id(user_id)
+        normalized_username = normalize_user_id(username or user_id)
+        if await self.session.get(UserAccount, normalized) is not None:
+            raise ValueError("account already exists")
+        existing_username = await self.session.scalar(
+            select(UserAccount.user_id).where(
+                UserAccount.username == normalized_username
+            )
+        )
+        if existing_username is not None:
+            raise ValueError("username already exists")
+        account = UserAccount(
+            user_id=normalized,
+            username=normalized_username,
+            password_hash=password_hash,
+            is_active=True,
+        )
+        self.session.add(account)
+        await self.session.flush()
+        return account
+
     async def create_account(
         self,
         user_id: str,

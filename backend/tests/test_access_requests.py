@@ -142,7 +142,12 @@ async def test_anyone_can_ask_and_asking_grants_nothing():
         async with _client() as client:
             asked = await client.post(
                 "/api/v1/auth/request-access",
-                json={"display_name": name, "contact": "+15550100"},
+                json={
+                    "display_name": name,
+                    "contact": "+15550100",
+                    "username": f"u{uuid.uuid4().hex[:8]}",
+                    "password": "Str0ng-Passw0rd-Here",
+                },
             )
             token = asked.json()["request_token"]
             registered = await client.post(
@@ -168,7 +173,12 @@ async def test_only_the_operator_sees_requests():
     try:
         async with _client() as client:
             await client.post(
-                "/api/v1/auth/request-access", json={"display_name": name}
+                "/api/v1/auth/request-access",
+                json={
+                    "display_name": name,
+                    "username": f"u{uuid.uuid4().hex[:8]}",
+                    "password": "Str0ng-Passw0rd-Here",
+                },
             )
             anonymous = await client.get("/api/v1/admin/access-requests")
         assert anonymous.status_code in (401, 403)
@@ -178,7 +188,7 @@ async def test_only_the_operator_sees_requests():
 
 @pytest.mark.asyncio
 async def test_approval_makes_the_askers_own_token_work():
-    """No secret travels back: the token they kept becomes the credential."""
+    """Approving is the moment the account exists, not a permit to register."""
     operator = f"op_{uuid.uuid4().hex[:10]}"
     guest = f"u{uuid.uuid4().hex[:8]}"
     name = f"Asker {uuid.uuid4().hex[:8]}"
@@ -187,7 +197,12 @@ async def test_approval_makes_the_askers_own_token_work():
             token = (
                 await client.post(
                     "/api/v1/auth/request-access",
-                    json={"display_name": name, "reason": "a friend"},
+                    json={
+                        "display_name": name,
+                        "reason": "a friend",
+                        "username": guest,
+                        "password": "Str0ng-Passw0rd-Here",
+                    },
                 )
             ).json()["request_token"]
 
@@ -201,21 +216,20 @@ async def test_approval_makes_the_askers_own_token_work():
 
         async with _client() as client:
             checked = await client.get(f"/api/v1/auth/request-access/{token}")
-            registered = await client.post(
-                "/api/v1/auth/register",
-                json={
-                    "invite_code": token,
-                    "username": guest,
-                    "password": "Str0ng-Passw0rd-Here",
-                },
+            # Nothing to redeem: approval already made the account, so the
+            # credentials they chose when asking are simply their credentials.
+            signed_in = await client.post(
+                "/api/v1/auth/login",
+                json={"username": guest, "password": "Str0ng-Passw0rd-Here"},
             )
 
         # The details are the point of asking first.
         assert listed.json()["requests"][0]["display_name"] == name
         assert listed.json()["requests"][0]["reason"] == "a friend"
         assert approved.status_code == 200
+        assert approved.json()["account_created"] is True
         assert checked.json()["status"] == "approved"
-        assert registered.status_code == 200
+        assert signed_in.status_code == 200
     finally:
         await _cleanup(operator, guest, names=(name,))
 
@@ -228,7 +242,12 @@ async def test_a_denied_request_never_becomes_usable():
         async with _client() as client:
             token = (
                 await client.post(
-                    "/api/v1/auth/request-access", json={"display_name": name}
+                    "/api/v1/auth/request-access",
+                    json={
+                        "display_name": name,
+                        "username": f"u{uuid.uuid4().hex[:8]}",
+                        "password": "Str0ng-Passw0rd-Here",
+                    },
                 )
             ).json()["request_token"]
 
@@ -289,3 +308,88 @@ async def test_the_operator_sees_activity_and_can_set_a_search_limit():
         assert cleared.json()["using_default"] is True
     finally:
         await _cleanup(operator)
+
+
+@pytest.mark.asyncio
+async def test_revoking_an_account_ends_its_sessions_immediately():
+    # A revoked account whose browser keeps working would look revoked without
+    # being revoked, so the sessions go rather than being left to expire.
+    operator = f"op_{uuid.uuid4().hex[:10]}"
+    guest = f"g{uuid.uuid4().hex[:9]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            await AuthService(session).create_account(
+                user_id=guest, username=guest, password="Str0ng-Passw0rd-Here"
+            )
+        async with _client() as client:
+            signed_in = await client.post(
+                "/api/v1/auth/login",
+                json={"username": guest, "password": "Str0ng-Passw0rd-Here"},
+            )
+            guest_token = signed_in.cookies.get(settings.AUTH_COOKIE_NAME)
+
+        op_token = await _operator(operator)
+        async with _client(op_token) as client:
+            revoked = await client.post(
+                f"/api/v1/admin/accounts/{guest}/revoke", json={"active": False}
+            )
+
+        async with _client(guest_token) as client:
+            after = await client.get(f"/api/v1/memory/{guest}")
+
+        assert revoked.status_code == 200
+        assert revoked.json()["is_active"] is False
+        assert after.status_code in (401, 403)
+    finally:
+        await _cleanup(operator, guest)
+
+
+@pytest.mark.asyncio
+async def test_the_operator_cannot_revoke_their_own_account():
+    # Undoing it would need database access, so it is refused rather than
+    # confirmed.
+    operator = f"op_{uuid.uuid4().hex[:10]}"
+    try:
+        op_token = await _operator(operator)
+        async with _client(op_token) as client:
+            refused = await client.post(
+                f"/api/v1/admin/accounts/{operator}/revoke", json={"active": False}
+            )
+            still_here = await client.get("/api/v1/admin/accounts")
+
+        assert refused.status_code == 409
+        assert still_here.status_code == 200
+    finally:
+        await _cleanup(operator)
+
+
+@pytest.mark.asyncio
+async def test_a_username_already_claimed_is_refused_when_asking():
+    # Told at once rather than after the operator has agreed: a name collision
+    # on a public form is not a credential check and nothing is gained by
+    # being vague about it.
+    name = f"Asker {uuid.uuid4().hex[:8]}"
+    wanted = f"u{uuid.uuid4().hex[:8]}"
+    try:
+        async with _client() as client:
+            first = await client.post(
+                "/api/v1/auth/request-access",
+                json={
+                    "display_name": name,
+                    "username": wanted,
+                    "password": "Str0ng-Passw0rd-Here",
+                },
+            )
+            second = await client.post(
+                "/api/v1/auth/request-access",
+                json={
+                    "display_name": name,
+                    "username": wanted,
+                    "password": "Str0ng-Passw0rd-Here",
+                },
+            )
+
+        assert first.status_code == 201
+        assert second.status_code == 409
+    finally:
+        await _cleanup(names=(name,))
