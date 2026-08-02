@@ -55,6 +55,56 @@ User-interface behavior is `VERIFIED` only after an automated browser test or a 
 
 If functional validation cannot be performed, do not label the behavior verified. Follow [docs/DEVELOPMENT_GUIDE.md](docs/DEVELOPMENT_GUIDE.md).
 
+## Operational traps in this repository
+
+Each of these has cost real time or real data here. They are recorded because
+they are not discoverable from the code alone.
+
+**Adding a setting means editing `docker-compose.yml`, not just `.env`.** Every
+service declares an explicit environment allowlist, so a new key in `.env`
+reaches nothing. This has silently broken a feature three separate times —
+`DISCOVERY_PLACE_RESOLVER`, `ENCRYPTION_KEY`, and the discovery calendar base
+URL. Add the key to every service that reads it, then prove it arrived:
+`docker compose exec -T <service> printenv | grep <KEY>`. A value present in
+`.env` is not evidence.
+
+**`ENCRYPTION_KEY` must reach every service that writes a sealed column.** The
+API and both workers write `EncryptedText` values. One service without the key
+writes plaintext into a column another reads as sealed, which is worse than
+neither having it.
+
+**Never run destructive DDL against `anios_db`.** It holds real conversations,
+memory, presentations, and artifacts, with `archive_mode = off` and no replica.
+`DROP SCHEMA public CASCADE` was once run against it to verify a migration path
+and destroyed everything permanently: migrations recreate structure and never
+data, so the check passed while the loss was total. To verify migrations use
+`bash scripts/verify-migrations.sh`, which builds a throwaway database and drops
+it however the run exits. Before anything risky run `bash scripts/backup-db.sh`;
+startup also backs up, but startup can be weeks apart.
+
+**`verify-migrations.sh` mounts the working tree.** It previously verified
+whatever migrations were baked into the last image build, so a migration added
+since appeared to pass without ever running.
+
+**Run the backend suite with `AUTH_REQUIRED=false`.** The live `.env` sets it
+`true`; auth tests enable the boundary explicitly. Without the override, several
+legacy anonymous API tests return 401 and look like regressions.
+
+**Four test modules fail on a Windows host for missing optional dependencies** —
+`test_telemetry`, `test_google_adk_search`, `test_internet_mcp_server`, and
+`test_vision_embedding_alignment` need `opentelemetry`, `google-adk`, and
+`onnxruntime`, which live in the container rather than the host venv. Their
+failure is environmental, not a regression.
+
+**`AUTH_COOKIE_SECURE` belongs with HTTPS, and only with it.** Setting it true
+while the only origin is plain HTTP leaves no working login anywhere: the
+browser refuses the cookie and there is no HTTPS origin yet. Change it in the
+same step that makes an HTTPS origin real.
+
+**Verify a claim against the running container, not the source.** A rebuilt
+image, a stale container, and an edited file are three different states. Several
+defects here were only visible by asking the live system what it actually had.
+
 ## Documentation ownership
 
 - `README.md`: stable overview, entry points, and documentation map.
