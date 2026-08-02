@@ -1778,3 +1778,19 @@ rows referencing them. The two changes above exist so this cannot recur.
   encoded because the tool boundary is JSON. Undated finds keep their own source
   URL, which is a third-party page and reachable from anywhere.
 - 685 backend tests pass; Ruff, Black and MyPy across 191 files pass.
+
+## 2026-08-01 — Scout can be scheduled from the panel
+
+- Added schedule endpoints and a clock control in the Scout panel: cadence, day,
+  and hour, stated in the user's own timezone. Without this the worker polled
+  forever and found nothing due, so a fully built loop only ever ran when
+  someone pressed a button.
+- The panel says plainly when nothing is scheduled, rather than looking
+  configured while never running.
+- Fixed a stale rule in the agent registry: it still demanded a feed before
+  Scout could work, which stopped being true when search became a second
+  enumerator. A feed is now required only when search cannot enumerate, so a
+  user with an interest and a place is not sent hunting for `.ics` URLs they do
+  not need. Both branches are covered.
+- 686 backend tests and the Agents tab browser test pass; Ruff, Black and MyPy
+  across 191 files pass.

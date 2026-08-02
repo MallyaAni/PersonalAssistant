@@ -10,6 +10,7 @@ from backend.core.auth import authorize_path_user
 from backend.core.dependencies import (
     DependencyDiscoveryProfileService,
     DependencyDiscoveryRunner,
+    DependencyDiscoveryRuns,
     DependencyDiscoverySeenItems,
     DependencyDiscoverySetup,
     DependencyDiscoverySources,
@@ -36,6 +37,7 @@ from backend.discovery.reachability import (
     is_reachable_from_other_devices,
 )
 from backend.discovery.relevance import RankedCandidate
+from backend.discovery.schedule import Cadence
 from backend.discovery.types import (
     MAX_LABEL_CHARS,
     MAX_RADIUS_KM,
@@ -546,3 +548,57 @@ async def preview_digest(
         "calendar_links_reachable": is_reachable_from_other_devices(base),
         "event_count": len(events),
     }
+
+
+class ScheduleRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    cadence: Literal["daily", "weekly"] = "weekly"
+    hour: int = Field(default=9, ge=0, le=23)
+    # Monday is 0, matching datetime.weekday(). Ignored for a daily cadence.
+    weekday: int = Field(default=4, ge=0, le=6)
+    timezone: str = Field(default="America/New_York", min_length=1, max_length=64)
+    enabled: bool = True
+
+
+# Without a schedule the worker polls forever and finds nothing due, so the
+# whole loop only ever runs when someone presses a button.
+@router.get("/schedule")
+async def read_schedule(
+    user_id: UserId,
+    runs: DependencyDiscoveryRuns,
+) -> dict[str, object]:
+    schedule = await runs.get_schedule(user_id)
+    return {"user_id": user_id, "schedule": schedule}
+
+
+@router.put("/schedule", status_code=status.HTTP_200_OK)
+async def put_schedule(
+    user_id: UserId,
+    body: ScheduleRequest,
+    runs: DependencyDiscoveryRuns,
+) -> dict[str, object]:
+    try:
+        cadence = Cadence(
+            cadence=body.cadence,
+            hour=body.hour,
+            weekday=body.weekday,
+            timezone=body.timezone,
+        )
+        saved = await runs.upsert_schedule(user_id, cadence, enabled=body.enabled)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+        ) from exc
+    return saved
+
+
+@router.delete("/schedule", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_schedule(
+    user_id: UserId,
+    runs: DependencyDiscoveryRuns,
+) -> None:
+    if not await runs.delete_schedule(user_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No schedule set."
+        )

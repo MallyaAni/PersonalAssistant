@@ -1853,3 +1853,51 @@ export const previewDiscoveryDigest = async (
     await fetch(`${discoveryBase(userId)}/digest/preview`),
     'Could not build a preview.',
   );
+
+export interface DiscoverySchedule {
+  cadence: 'daily' | 'weekly';
+  hour: number;
+  weekday: number;
+  timezone: string;
+  enabled: boolean;
+  next_run_at: string;
+}
+
+// Without a schedule the worker polls forever and finds nothing due, so the
+// loop only ever runs when someone presses a button.
+export const getDiscoverySchedule = async (
+  userId: string,
+): Promise<DiscoverySchedule | null> => {
+  const payload = await readJson(
+    await fetch(`${discoveryBase(userId)}/schedule`),
+    'Could not load the schedule.',
+  );
+  return payload.schedule ?? null;
+};
+
+export const putDiscoverySchedule = async (
+  userId: string,
+  body: {
+    cadence: 'daily' | 'weekly';
+    hour: number;
+    weekday: number;
+    timezone: string;
+  },
+): Promise<DiscoverySchedule> =>
+  readJson(
+    await fetch(`${discoveryBase(userId)}/schedule`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }),
+    'Could not save the schedule.',
+  );
+
+export const deleteDiscoverySchedule = async (userId: string): Promise<void> => {
+  const response = await fetch(`${discoveryBase(userId)}/schedule`, {
+    method: 'DELETE',
+  });
+  if (!response.ok && response.status !== 404) {
+    throw new Error('Could not turn off the schedule.');
+  }
+};

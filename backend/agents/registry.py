@@ -107,12 +107,15 @@ class AgentRegistry:
         if latest is not None and latest.status == "running":
             status: AgentStatus = "working"
             detail = "Sweeping feeds now."
-        elif sources == 0 or interests == 0:
+        elif interests == 0 or (sources == 0 and not _can_search()):
             status = "needs_setup"
             missing = []
             if interests == 0:
                 missing.append("an interest")
-            if sources == 0:
+            # A feed is only required when search cannot enumerate. With search
+            # available, interests and a place are enough — demanding a feed here
+            # would send the user hunting for .ics URLs they do not need.
+            if sources == 0 and not _can_search():
                 missing.append("a feed")
             detail = f"Add {' and '.join(missing)} before it can find anything."
         elif schedule is None or not schedule.enabled:
@@ -208,6 +211,11 @@ class AgentRegistry:
             select(func.count(model.id)).where(model.user_id == user_id)
         )
         return int(value or 0)
+
+
+# Whether a sweep could find anything without a configured feed.
+def _can_search() -> bool:
+    return settings.DISCOVERY_WEB_SEARCH_ENABLED
 
 
 # Just the host, so the card shows where links point without a URL in it.

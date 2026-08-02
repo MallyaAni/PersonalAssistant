@@ -65,11 +65,39 @@ async def test_a_new_user_sees_discovery_as_needing_setup():
 
         scout = next(agent for agent in agents if agent.id == "discovery")
         assert scout.status == "needs_setup"
-        # The most common failure is having no sources, and the panel must name
-        # what is missing rather than saying "idle".
+        # The panel must name what is missing rather than saying "idle".
         assert "interest" in scout.detail
-        assert "feed" in scout.detail
         assert scout.last_active_at is None
+    finally:
+        await _cleanup(user_id)
+
+
+@pytest.mark.asyncio
+async def test_a_feed_is_only_demanded_when_search_cannot_enumerate(monkeypatch):
+    # Search finds happenings that publish no feed at all, so with it available
+    # an interest and a place are enough. Demanding a feed anyway would send the
+    # user hunting for .ics URLs they do not need.
+    user_id = f"reg_{uuid.uuid4().hex[:12]}"
+    import backend.agents.registry as registry_module
+
+    try:
+        async with AsyncSessionLocal() as session:
+            await DiscoveryProfileRepository(session).upsert_interest(
+                user_id, "hiking", 3, "user_explicit"
+            )
+
+            monkeypatch.setattr(registry_module, "_can_search", lambda: True)
+            with_search = await AgentRegistry(session).describe_all(user_id)
+
+            monkeypatch.setattr(registry_module, "_can_search", lambda: False)
+            without_search = await AgentRegistry(session).describe_all(user_id)
+
+        searching = next(a for a in with_search if a.id == "discovery")
+        blind = next(a for a in without_search if a.id == "discovery")
+
+        assert searching.status != "needs_setup"
+        assert blind.status == "needs_setup"
+        assert "feed" in blind.detail
     finally:
         await _cleanup(user_id)
 

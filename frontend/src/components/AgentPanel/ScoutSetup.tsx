@@ -1,13 +1,26 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Check, Eye, Loader2, MapPin, Plus, Rss, Sparkles, Trash2 } from 'lucide-react'
+import {
+  Check,
+  Clock,
+  Eye,
+  Loader2,
+  MapPin,
+  Plus,
+  Rss,
+  Sparkles,
+  Trash2,
+} from 'lucide-react'
 
 import {
   deleteDiscoveryInterest,
+  deleteDiscoverySchedule,
   deleteDiscoverySource,
   getDiscoveryProfile,
+  getDiscoverySchedule,
   getDiscoverySources,
   putDiscoveryInterest,
   putDiscoveryLocality,
+  putDiscoverySchedule,
   putDiscoverySource,
   resolveDiscoveryLocality,
   previewDiscoveryDigest,
@@ -16,11 +29,29 @@ import {
   suggestDiscoverySources,
   type DiscoveryInterest,
   type DiscoveryLocality,
+  type DiscoverySchedule,
   type DiscoverySource,
   type DigestPreview,
   type FeedCandidate,
   type InterestProposal,
 } from '../../services/api'
+
+const WEEKDAYS = [
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+]
+
+// A readable clock hour. The schedule is stated in the user's own timezone, so
+// showing 24-hour values would make them do the conversion.
+const formatHour = (value: number): string => {
+  const meridiem = value < 12 ? 'am' : 'pm'
+  return `${value % 12 || 12}:00${meridiem}`
+}
 
 // "Arlington, Virginia, US" rather than "Arlington". A town name alone is
 // ambiguous across countries, so what is saved is shown in full.
@@ -48,14 +79,25 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [preview, setPreview] = useState<DigestPreview | null>(null)
+  const [schedule, setSchedule] = useState<DiscoverySchedule | null>(null)
+  const [cadence, setCadence] = useState<'daily' | 'weekly'>('weekly')
+  const [hour, setHour] = useState(9)
+  const [weekday, setWeekday] = useState(4)
 
   const reload = useCallback(async () => {
-    const [profile, feeds] = await Promise.all([
+    const [profile, feeds, saved] = await Promise.all([
       getDiscoveryProfile(userId),
       getDiscoverySources(userId),
+      getDiscoverySchedule(userId),
     ])
     setInterests(profile.interests)
     setSources(feeds)
+    setSchedule(saved)
+    if (saved) {
+      setCadence(saved.cadence)
+      setHour(saved.hour)
+      setWeekday(saved.weekday)
+    }
     const primary = profile.localities.find(item => item.is_primary) ?? profile.localities[0]
     setSavedPlace(primary ?? null)
     if (primary && !place) setPlace(primary.label)
@@ -181,6 +223,23 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
       if (result.message === null) {
         setNotice('Nothing to send yet. Run "Look now" first.')
       }
+    })
+
+  const saveSchedule = () =>
+    perform('schedule', async () => {
+      const saved = await putDiscoverySchedule(userId, {
+        cadence,
+        hour,
+        weekday,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      })
+      setNotice(`Scheduled. Next sweep ${new Date(saved.next_run_at).toLocaleString()}.`)
+    })
+
+  const stopSchedule = () =>
+    perform('schedule', async () => {
+      await deleteDiscoverySchedule(userId)
+      setNotice('Schedule turned off. It will only run when you ask.')
     })
 
   const ready = Boolean(savedPlace) && interests.length > 0 && sources.length > 0
@@ -416,6 +475,82 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
             <Plus size={15} /> Add
           </button>
         </div>
+      </section>
+
+      <section className="mb-5">
+        <div className="mb-2 flex items-center justify-between">
+          <h4 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-[#86868b]">
+            <Clock size={13} /> When to look
+          </h4>
+          {schedule && (
+            <button
+              onClick={() => void stopSchedule()}
+              disabled={busy !== ''}
+              className="text-xs font-medium text-[#b3261e] disabled:opacity-40"
+            >
+              Turn off
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={cadence}
+            onChange={event => setCadence(event.target.value as 'daily' | 'weekly')}
+            aria-label="How often"
+            className="h-10 rounded-xl border border-black/[0.08] bg-white px-3 text-sm outline-none focus:border-[#0071e3]"
+          >
+            <option value="weekly">Weekly</option>
+            <option value="daily">Daily</option>
+          </select>
+          {cadence === 'weekly' && (
+            <select
+              value={weekday}
+              onChange={event => setWeekday(Number(event.target.value))}
+              aria-label="Day of the week"
+              className="h-10 rounded-xl border border-black/[0.08] bg-white px-3 text-sm outline-none focus:border-[#0071e3]"
+            >
+              {WEEKDAYS.map((label, index) => (
+                <option key={label} value={index}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          )}
+          <select
+            value={hour}
+            onChange={event => setHour(Number(event.target.value))}
+            aria-label="Hour"
+            className="h-10 rounded-xl border border-black/[0.08] bg-white px-3 text-sm outline-none focus:border-[#0071e3]"
+          >
+            {Array.from({ length: 24 }, (_, value) => (
+              <option key={value} value={value}>
+                {formatHour(value)}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={() => void saveSchedule()}
+            disabled={busy !== '' || !ready}
+            className="flex h-10 items-center gap-1.5 rounded-xl bg-[#1d1d1f] px-3 text-sm font-medium text-white disabled:opacity-40"
+          >
+            {busy === 'schedule' ? (
+              <Loader2 size={15} className="animate-spin" />
+            ) : (
+              <Check size={15} />
+            )}
+            {schedule ? 'Update' : 'Schedule'}
+          </button>
+        </div>
+        {schedule ? (
+          <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-[#248a3d]">
+            <Check size={13} />
+            Next sweep {new Date(schedule.next_run_at).toLocaleString()}
+          </p>
+        ) : (
+          <p className="mt-2 text-xs font-medium text-[#b25e00]">
+            Not scheduled — it only runs when you press “Look now”.
+          </p>
+        )}
       </section>
 
       <div className="flex flex-wrap gap-2">
