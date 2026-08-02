@@ -2156,6 +2156,8 @@ export interface AdminAccount {
   is_active: boolean;
   is_admin: boolean;
   created_at: string | null;
+  last_seen_at: string | null;
+  search_monthly_limit: number | null;
 }
 
 const adminBase = `${API_BASE_URL}/api/v1/admin`;
@@ -2203,4 +2205,122 @@ export const getAdminAccounts = async (): Promise<AdminAccount[]> => {
     'Could not load accounts.',
   );
   return payload.accounts ?? [];
+};
+
+export interface AccessRequest {
+  id: string;
+  display_name: string;
+  contact: string | null;
+  reason: string | null;
+  status: 'pending' | 'approved' | 'denied';
+  created_at: string | null;
+}
+
+export interface AdminSubscription {
+  id: string;
+  requested_by: string;
+  channel: string;
+  approved: boolean;
+  deliverable: boolean;
+  delivery_count: number;
+  address: string;
+}
+
+export interface GuestSubscription {
+  id: string;
+  channel: string;
+  approved: boolean;
+  deliverable: boolean;
+  delivery_count: number;
+}
+
+export const getAccessRequests = async (): Promise<AccessRequest[]> => {
+  const payload = await readJson(
+    await fetch(`${adminBase}/access-requests`, { credentials: 'include' }),
+    'Could not load access requests.',
+  );
+  return payload.requests ?? [];
+};
+
+export const decideAccessRequest = async (
+  requestId: string,
+  decision: 'approve' | 'deny',
+): Promise<void> => {
+  await readJson(
+    await fetch(`${adminBase}/access-requests/${requestId}/${decision}`, {
+      method: 'POST',
+      credentials: 'include',
+    }),
+    'Could not record that decision.',
+  );
+};
+
+export const getAdminSubscriptions = async (): Promise<AdminSubscription[]> => {
+  const payload = await readJson(
+    await fetch(`${adminBase}/subscriptions`, { credentials: 'include' }),
+    'Could not load subscriptions.',
+  );
+  return payload.subscriptions ?? [];
+};
+
+// Permitting this machine to message one address. Shown with the address,
+// because approving blind is not a decision.
+export const approveSubscription = async (subscriberId: string): Promise<void> => {
+  await readJson(
+    await fetch(`${adminBase}/subscriptions/${subscriberId}/approve`, {
+      method: 'POST',
+      credentials: 'include',
+    }),
+    'Could not approve that subscription.',
+  );
+};
+
+export const setAccountSearchLimit = async (
+  userId: string,
+  monthlyLimit: number | null,
+): Promise<void> => {
+  await readJson(
+    await fetch(`${adminBase}/accounts/${encodeURIComponent(userId)}/search-limit`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ monthly_limit: monthlyLimit }),
+    }),
+    'Could not set that limit.',
+  );
+};
+
+// A guest asking to receive their own agent's digest. Where it goes is theirs to
+// choose; whether this machine messages it is the operator's to approve.
+export const requestSubscription = async (
+  userId: string,
+  channel: string,
+  address: string,
+): Promise<GuestSubscription> =>
+  readJson(
+    await fetch(`${discoveryBase(userId)}/subscription`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channel, address }),
+    }),
+    'Could not subscribe.',
+  );
+
+export const getSubscription = async (
+  userId: string,
+): Promise<GuestSubscription | null> => {
+  const payload = await readJson(
+    await fetch(`${discoveryBase(userId)}/subscription`),
+    'Could not load your subscription.',
+  );
+  return payload.subscription ?? null;
+};
+
+export const cancelSubscription = async (userId: string): Promise<void> => {
+  const response = await fetch(`${discoveryBase(userId)}/subscription`, {
+    method: 'DELETE',
+  });
+  if (!response.ok && response.status !== 404) {
+    throw new Error('Could not unsubscribe.');
+  }
 };

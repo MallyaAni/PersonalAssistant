@@ -9,6 +9,7 @@ import {
   MapPin,
   Plus,
   Rss,
+  Send,
   Sparkles,
   Trash2,
   Undo2,
@@ -23,8 +24,11 @@ import {
   getDiscoveryProfile,
   getDiscoveryKnown,
   getDiscoverySchedule,
+  cancelSubscription,
   getDiscoverySources,
+  getSubscription,
   markDiscoveryKnown,
+  requestSubscription,
   putDiscoveryInterest,
   putDiscoveryLocality,
   putDiscoverySchedule,
@@ -39,6 +43,7 @@ import {
   type DiscoveryKnownItem,
   type DiscoveryLocality,
   type DiscoverySchedule,
+  type GuestSubscription,
   type DiscoverySource,
   type DigestPreview,
   type FeedCandidate,
@@ -95,6 +100,8 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
   const [notice, setNotice] = useState('')
   const [preview, setPreview] = useState<DigestPreview | null>(null)
   const [trial, setTrial] = useState<SweepResult | null>(null)
+  const [subscription, setSubscription] = useState<GuestSubscription | null>(null)
+  const [addressDraft, setAddressDraft] = useState('')
   const [schedule, setSchedule] = useState<DiscoverySchedule | null>(null)
   const [cadence, setCadence] = useState<'daily' | 'weekly'>('weekly')
   const [hour, setHour] = useState(9)
@@ -314,6 +321,25 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
       if (result.message === null) {
         setNotice('Nothing to send yet. Run "Look now" first.')
       }
+    })
+
+  const subscribe = () =>
+    perform('subscribe', async () => {
+      const value = addressDraft.trim()
+      if (!value) throw new Error('Enter the number or Apple ID to message.')
+      const result = await requestSubscription(userId, 'imessage', value)
+      setAddressDraft('')
+      setNotice(
+        result.approved
+          ? 'Subscribed.'
+          : 'Asked. It starts once the operator allows messages to that address.',
+      )
+    })
+
+  const unsubscribe = () =>
+    perform('subscribe', async () => {
+      await cancelSubscription(userId)
+      setNotice('Unsubscribed.')
     })
 
   const saveSchedule = () =>
@@ -664,6 +690,59 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
             <Plus size={15} /> Add
           </button>
         </div>
+      </section>
+
+      <section className="mb-5">
+        <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-[#86868b]">
+          <Send size={13} /> Where to send it
+        </h4>
+        {subscription ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={`rounded-full px-2.5 py-1 text-xs font-medium ${subscription.approved ? 'bg-[#e8f5ec] text-[#248a3d]' : 'bg-[#fff4e5] text-[#b25e00]'}`}
+            >
+              {subscription.approved ? 'Subscribed' : 'Waiting for approval'}
+            </span>
+            <span className="text-xs text-[#6e6e73]">
+              {subscription.channel} · {subscription.delivery_count} sent
+            </span>
+            <button
+              onClick={() => void unsubscribe()}
+              disabled={busy !== ''}
+              className="ml-auto text-xs font-medium text-[#b3261e] disabled:opacity-40"
+            >
+              Unsubscribe
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            <input
+              value={addressDraft}
+              onChange={event => setAddressDraft(event.target.value)}
+              onKeyDown={event => {
+                if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
+                  event.preventDefault()
+                  void subscribe()
+                }
+              }}
+              placeholder="Your number or Apple ID"
+              aria-label="Your number or Apple ID"
+              className="h-10 min-w-0 flex-1 rounded-xl border border-black/[0.08] px-3 text-sm outline-none focus:border-[#0071e3]"
+            />
+            <button
+              onClick={() => void subscribe()}
+              disabled={busy !== ''}
+              className="flex h-10 items-center gap-1.5 rounded-xl bg-[#1d1d1f] px-3 text-sm font-medium text-white disabled:opacity-40"
+            >
+              {busy === 'subscribe' ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
+              Subscribe
+            </button>
+          </div>
+        )}
+        <p className="mt-2 text-[11px] leading-4 text-[#86868b]">
+          Messages come from the operator&apos;s iMessage, so a new address has to be
+          allowed once before anything is sent.
+        </p>
       </section>
 
       <section className="mb-5">
