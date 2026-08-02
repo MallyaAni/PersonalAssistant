@@ -1794,3 +1794,18 @@ rows referencing them. The two changes above exist so this cannot recur.
   not need. Both branches are covered.
 - 686 backend tests and the Agents tab browser test pass; Ruff, Black and MyPy
   across 191 files pass.
+
+## 2026-08-01 — A rehearsal you can run repeatedly
+
+- Added `Try it` to the Scout panel and `commit=false` to the sweep endpoint: the
+  whole pipeline runs, nothing is recorded, and novelty is not consulted, so the
+  same configuration can be run again and compared.
+- This existed because a *real* sweep is useless for judging quality. The
+  novelty filter is working correctly when the second run finds nothing, which
+  is precisely what stops anyone from tuning interests and seeing the difference.
+- Both buttons now show the rendered message rather than counts, so quality is
+  judged on the thing a person would actually receive.
+- Verified live: two consecutive rehearsals on the same profile returned the same
+  three finds, and the seen-item count was 5 before and 5 after, so a rehearsal
+  writes nothing. A real sweep following a rehearsal still announces once and
+  then nothing, so the rehearsal does not poison the store.

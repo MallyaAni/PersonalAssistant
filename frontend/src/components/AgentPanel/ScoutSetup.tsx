@@ -3,6 +3,7 @@ import {
   Check,
   Clock,
   Eye,
+  FlaskConical,
   Loader2,
   MapPin,
   Plus,
@@ -33,6 +34,7 @@ import {
   type DiscoverySource,
   type DigestPreview,
   type FeedCandidate,
+  type SweepResult,
   type InterestProposal,
 } from '../../services/api'
 
@@ -79,6 +81,7 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [preview, setPreview] = useState<DigestPreview | null>(null)
+  const [trial, setTrial] = useState<SweepResult | null>(null)
   const [schedule, setSchedule] = useState<DiscoverySchedule | null>(null)
   const [cadence, setCadence] = useState<'daily' | 'weekly'>('weekly')
   const [hour, setHour] = useState(9)
@@ -209,11 +212,25 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
 
   const sweepNow = () =>
     perform('sweep', async () => {
-      const result = await runDiscoverySweep(userId)
+      const result = await runDiscoverySweep(userId, true)
+      setPreview(null)
+      setTrial(result)
       setNotice(
         `Read ${result.candidate_count} events, ${result.novel_count} new, ` +
           `${result.selected.length} worth telling you about.`,
       )
+    })
+
+  // A rehearsal: everything runs, nothing is recorded, so this can be repeated
+  // while adjusting interests and comparing what comes back.
+  const tryIt = () =>
+    perform('try', async () => {
+      const result = await runDiscoverySweep(userId, false)
+      setPreview(null)
+      setTrial(result)
+      if (result.message === null) {
+        setNotice('Nothing matched. Try a broader interest.')
+      }
     })
 
   const showPreview = () =>
@@ -563,6 +580,14 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
           Look now
         </button>
         <button
+          onClick={() => void tryIt()}
+          disabled={busy !== '' || !Boolean(savedPlace) || interests.length === 0}
+          className="flex h-10 items-center gap-2 rounded-xl border border-black/[0.08] px-4 text-sm font-medium disabled:opacity-40"
+        >
+          {busy === 'try' ? <Loader2 size={15} className="animate-spin" /> : <FlaskConical size={15} />}
+          Try it
+        </button>
+        <button
           onClick={() => void showPreview()}
           disabled={busy !== ''}
           className="flex h-10 items-center gap-2 rounded-xl border border-black/[0.08] px-4 text-sm font-medium disabled:opacity-40"
@@ -571,6 +596,23 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
           Preview message
         </button>
       </div>
+
+      {trial?.message && (
+        <div className="mt-3 rounded-xl border border-black/[0.08] bg-white p-3">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#86868b]">
+            {trial.committed ? 'Found and saved' : 'Rehearsal — nothing was saved'}
+          </p>
+          <pre className="overflow-x-auto whitespace-pre-wrap break-words font-sans text-sm leading-5 text-[#1d1d1f]">
+            {trial.message}
+          </pre>
+          <p className="mt-3 border-t border-black/[0.05] pt-2 text-[11px] leading-4 text-[#86868b]">
+            Read {trial.candidate_count} listings using {trial.requests_spent} search
+            {trial.requests_spent === 1 ? ' request' : ' requests'}.
+            {!trial.committed &&
+              ' Run this as often as you like — it records nothing, so results stay comparable.'}
+          </p>
+        </div>
+      )}
 
       {preview?.message && (
         <div className="mt-3 rounded-xl border border-black/[0.08] bg-white p-3">

@@ -1827,11 +1827,27 @@ export const resolveDiscoveryLocality = async (
     'Could not work out where that is.',
   );
 
+export interface SweepResult {
+  message: string | null;
+  committed: boolean;
+  selected: { title: string; starts_at: string | null }[];
+  candidate_count: number;
+  novel_count: number;
+  requests_spent: number;
+}
+
+// `commit: false` is a rehearsal — the whole pipeline runs and nothing is
+// recorded, so the same configuration can be tried repeatedly. A real sweep
+// marks what it found as seen, which correctly makes a second run empty and
+// therefore useless for judging quality.
 export const runDiscoverySweep = async (
   userId: string,
-): Promise<{ selected: unknown[]; candidate_count: number; novel_count: number }> =>
+  commit = true,
+): Promise<SweepResult> =>
   readJson(
-    await fetch(`${discoveryBase(userId)}/sweep`, { method: 'POST' }),
+    await fetch(`${discoveryBase(userId)}/sweep?commit=${commit}`, {
+      method: 'POST',
+    }),
     'Could not run a sweep.',
   );
 

@@ -160,7 +160,16 @@ class DiscoveryRunner:
         now: datetime | None = None,
         budget_limit: int = DEFAULT_RUN_REQUEST_BUDGET,
         limit: int = MAX_SELECTED,
+        persist: bool = True,
     ) -> SweepResult:
+        """Run one sweep.
+
+        With `persist` false this is a rehearsal: nothing is recorded as seen and
+        novelty is not consulted, so the same configuration can be run
+        repeatedly and compared. That matters because the novelty filter is
+        working correctly when a second real sweep finds nothing — which is
+        exactly what makes a real sweep useless for judging output quality.
+        """
         moment = now or datetime.now(UTC)
         budget = RequestBudget(limit=budget_limit)
 
@@ -169,7 +178,14 @@ class DiscoveryRunner:
         events = events + await self._search_events(profile, budget)
 
         candidates = await self._embed(events)
-        novel = await self.novelty.novel(user_id, candidates, now=moment)
+        # A rehearsal treats everything as new. Applying novelty would show an
+        # empty result to anyone who had already run a real sweep, which is the
+        # opposite of what a rehearsal is for.
+        novel = (
+            await self.novelty.novel(user_id, candidates, now=moment)
+            if persist
+            else candidates
+        )
 
         ranker = RelevanceRanker(
             interest_vectors=await self._interest_vectors(profile),
@@ -189,15 +205,16 @@ class DiscoveryRunner:
         # persisting the raw scraped title here would mean the description work
         # only ever existed in this function's return value.
         described = {item.candidate.digest: item.candidate for item in selected}
-        for candidate in novel:
-            await self.seen.record_seen(
-                user_id,
-                described.get(candidate.digest, candidate),
-                announced=candidate.digest in described,
-                run_id=run_id,
-                now=moment,
-            )
-        await self.seen.session.commit()
+        if persist:
+            for candidate in novel:
+                await self.seen.record_seen(
+                    user_id,
+                    described.get(candidate.digest, candidate),
+                    announced=candidate.digest in described,
+                    run_id=run_id,
+                    now=moment,
+                )
+            await self.seen.session.commit()
 
         return SweepResult(
             selected=selected,

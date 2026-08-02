@@ -320,3 +320,89 @@ def test_a_digest_round_trips_into_typed_events():
     # Stage 5 needs an aware start or it cannot emit a DTSTART.
     assert restored[0].starts_at is not None
     assert restored[0].starts_at.tzinfo is not None
+
+
+@pytest.mark.asyncio
+async def test_a_rehearsal_records_nothing_and_repeats_identically():
+    """A real sweep is useless for judging quality; a rehearsal is not.
+
+    The novelty filter is working correctly when a second real sweep finds
+    nothing, which is exactly what makes it impossible to compare output while
+    adjusting interests. A rehearsal runs the whole pipeline, consults no seen
+    store, and writes none.
+    """
+    user_id = f"nov_{uuid.uuid4().hex[:12]}"
+    events = (_event("evt-1", "Jazz at the Green"), _event("evt-2", "Jazz brunch"))
+    try:
+        async with AsyncSessionLocal() as session:
+            sources = DiscoverySourceRepository(session)
+            source = await sources.upsert_source(
+                user_id, "ics", "https://example.org/feed.ics"
+            )
+            stub = _StubSource(source.id, events)
+            seen = SeenItemRepository(session)
+            runner = DiscoveryRunner(
+                sources=sources,
+                seen=seen,
+                embeddings=_StubEmbeddings({"jazz": _vec(1.0)}),
+                adapter_factory=lambda _source, _budget: stub,
+            )
+            profile = DiscoveryProfile(
+                interests=(
+                    Interest(
+                        id="i1", label="jazz", strength=3, provenance="user_explicit"
+                    ),
+                ),
+                localities=(),
+            )
+
+            first = await runner.sweep(user_id, profile, now=_NOW, persist=False)
+            second = await runner.sweep(user_id, profile, now=_NOW, persist=False)
+
+            # Repeatable: the same configuration produces the same answer, which
+            # is the whole point of a rehearsal.
+            assert len(first.selected) == 2
+            assert len(second.selected) == 2
+            assert [item.event.title for item in first.selected] == [
+                item.event.title for item in second.selected
+            ]
+            assert await seen.count_seen(user_id) == 0
+    finally:
+        await _cleanup(user_id)
+
+
+@pytest.mark.asyncio
+async def test_a_real_sweep_after_a_rehearsal_still_behaves_normally():
+    # A rehearsal must not have poisoned the seen store, so the real sweep that
+    # follows announces everything once and then nothing.
+    user_id = f"nov_{uuid.uuid4().hex[:12]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            sources = DiscoverySourceRepository(session)
+            source = await sources.upsert_source(
+                user_id, "ics", "https://example.org/feed.ics"
+            )
+            stub = _StubSource(source.id, (_event("evt-1", "Jazz at the Green"),))
+            runner = DiscoveryRunner(
+                sources=sources,
+                seen=SeenItemRepository(session),
+                embeddings=_StubEmbeddings({"jazz": _vec(1.0)}),
+                adapter_factory=lambda _source, _budget: stub,
+            )
+            profile = DiscoveryProfile(
+                interests=(
+                    Interest(
+                        id="i1", label="jazz", strength=3, provenance="user_explicit"
+                    ),
+                ),
+                localities=(),
+            )
+
+            await runner.sweep(user_id, profile, now=_NOW, persist=False)
+            real = await runner.sweep(user_id, profile, now=_NOW)
+            again = await runner.sweep(user_id, profile, now=_NOW)
+
+            assert len(real.selected) == 1
+            assert again.selected == ()
+    finally:
+        await _cleanup(user_id)

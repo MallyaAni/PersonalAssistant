@@ -228,10 +228,25 @@ async def run_sweep(
     user_id: UserId,
     profile_service: DependencyDiscoveryProfileService,
     runner: DependencyDiscoveryRunner,
+    # A rehearsal runs the whole pipeline and records nothing, so the same
+    # configuration can be tried repeatedly while judging output quality. A real
+    # sweep marks what it found as seen, which correctly makes the second run
+    # empty and therefore useless for comparison.
+    commit: bool = True,
 ) -> dict[str, object]:
     profile = await profile_service.get_profile(user_id)
-    result = await runner.sweep(user_id, profile)
+    result = await runner.sweep(user_id, profile, persist=commit)
+    primary = profile.primary_locality
+    base = calendar_base_url(settings.DISCOVERY_CALENDAR_BASE_URL)
     return {
+        # The message as it would actually be sent, so quality is judged on the
+        # thing a person receives rather than on a field listing.
+        "message": render_message(
+            result.selected,
+            f"{base.rstrip('/')}/{user_id}/calendar",
+            timezone=primary.timezone if primary else "America/New_York",
+        ),
+        "committed": commit,
         "user_id": user_id,
         "selected": [
             {
