@@ -73,10 +73,14 @@ class LMStudioFreshnessClassifier(QueryFreshnessClassifier):
     async def requires_current_information(self, query: str) -> bool | None:
         try:
             # The client is synchronous, so keep it off the event loop.
+            # Routing must not depend on sampling luck: at the runtime's default
+            # temperature the same question was observed answering both YES and
+            # NO across identical calls. Greedy decoding makes it reproducible.
             result = await asyncio.to_thread(
                 self.llm.chat,
                 _build_messages(query),
                 self.max_tokens,
+                temperature=0.0,
             )
             raw = str(result.get("content", ""))
         except Exception:

@@ -6,12 +6,13 @@ The repository contains:
 
 - a FastAPI backend;
 - a React and Vite developer console;
-- Docker Compose definitions for PostgreSQL with pgvector, Redis, the backend,
-  frontend, local capability FastMCP sidecar, presentation worker, and
-  presentation renderer;
+- Docker Compose definitions for PostgreSQL with pgvector, Redis, two pinned
+  vLLM inference services, the backend, frontend, local capability FastMCP
+  sidecar, presentation worker, and presentation renderer;
 - an OpenAI-compatible, provider-neutral inference boundary with independently
-  configurable text, vision, and embedding roles; the qualified local profile
-  currently runs through LM Studio;
+  configurable text, vision, and embedding roles; the qualified RTX 5080
+  profile runs Qwen 3.5 4B and Nomic through pinned vLLM services and requires
+  no LM Studio process or model-management API;
 - a role-configurable model-backed conversation path, PostgreSQL/pgvector personal memory, and focused LangGraph supervisor, assistant, diagram-agent, and presentation-agent boundaries;
 - main-model-native MCP tool selection over a semantic live-validated shortlist,
   guarded execution, visible chat status, and a read-only internet-search MCP
@@ -19,7 +20,7 @@ The repository contains:
   local quota protection and provider-attributed sources;
 - an explicit chat-to-Mermaid diagram path with user-scoped PostgreSQL artifact persistence and strict in-browser SVG rendering;
 - free local HiDream/ComfyUI image generation, four-step FLUX.2 Klein
-  source-aware editing of generated or uploaded images, and validated Gemma
+  source-aware editing of generated or uploaded images, and validated Qwen
   vision analysis in the chat composer, with natural-language creation intent,
   immutable edit lineage,
   in-place active revisions, grounded historical questions, guarded
@@ -50,8 +51,8 @@ The supported development paths and required environment variables are documente
 Start the complete user-facing local stack, including host ComfyUI image
 generation, with:
 
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\start-anios.ps1
+```bash
+bash scripts/start-anios.sh
 ```
 
 `docker compose up` starts the core services but intentionally does not start
@@ -88,13 +89,14 @@ User-visible behavior is considered verified only when the intended workflow is 
 - [Agent instructions](AGENTS.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Canonical system diagram](docs/diagrams/anios-system.svg)
+- [Scalable inference target](docs/diagrams/inference-scaling-target.svg)
 - [Detailed subsystem diagram catalog](docs/diagrams/README.md)
 - [Development and validation](docs/DEVELOPMENT_GUIDE.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Next session handoff](docs/NEXT_SESSION.md)
 - [Changelog](docs/CHANGELOG.md)
 - [Security](docs/SECURITY.md)
-- [Architecture decisions](docs/adr/0001-clean-architecture-and-modular-structure.md), including [local visual artifacts and resource-aware orchestration](docs/adr/0003-local-visual-artifacts-and-resource-aware-orchestration.md), [hybrid free-tier web research](docs/adr/0004-hybrid-free-tier-web-research.md), [typed editable presentation generation](docs/adr/0005-typed-editable-presentation-generation.md), and [versioned visual semantics, memory references, and editing](docs/adr/0007-versioned-visual-semantics-memory-and-editing.md)
+- [Architecture decisions](docs/adr/0001-clean-architecture-and-modular-structure.md), including [local visual artifacts and resource-aware orchestration](docs/adr/0003-local-visual-artifacts-and-resource-aware-orchestration.md), [hybrid free-tier web research](docs/adr/0004-hybrid-free-tier-web-research.md), [typed editable presentation generation](docs/adr/0005-typed-editable-presentation-generation.md), [versioned visual semantics, memory references, and editing](docs/adr/0007-versioned-visual-semantics-memory-and-editing.md), and the [default vLLM runtime](docs/adr/0009-vllm-default-local-inference-runtime.md)
 
 ## Status language
 

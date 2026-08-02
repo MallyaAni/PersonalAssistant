@@ -14,11 +14,11 @@ flowchart TB
     Long[Long term<br/>Procedural / workflow · Toolbox<br/>Entity · Knowledge base · Persona<br/>Semantic · Episodic<br/>Summaries · Conversations]
 
     Inference[Provider-neutral<br/>inference adapter]
-    TextEmbed[Nomic text embedding]
+    TextEmbed[Nomic text embedding<br/>via vLLM]
     Database[(PostgreSQL and pgvector)]
     Maintenance[Retention, re-embedding,<br/>health, export and delete]
 
-    Main[Qwen 3.5 9B<br/>assistant call]
+    Main[Qwen 3.5 4B<br/>assistant call via vLLM]
 
     Chat --> Coordinator
     UI --> Services

@@ -215,10 +215,12 @@ const ImageArtifact = ({ artifact, onDeleted, onRetry, onRefined }: ImageArtifac
             value={question}
             onChange={event => setQuestion(event.target.value)}
             onKeyDown={event => {
-              if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault()
-                void submitFollowup(event)
-              }
+              if (event.key !== 'Enter' || event.shiftKey) return
+              // An IME uses Enter to accept a candidate, not to send.
+              if (event.nativeEvent.isComposing) return
+              event.preventDefault()
+              // Match the button: an empty or in-flight question does nothing.
+              if (!isAsking && question.trim()) void submitFollowup(event)
             }}
             rows={1}
             maxLength={2000}

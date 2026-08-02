@@ -22,11 +22,11 @@ class Settings(BaseSettings):
     DATABASE_USE_NULL_POOL: bool = False
 
     # Provider-neutral inference selects a wire adapter independently from each
-    # role's endpoint and model. LM Studio remains the qualified local runtime.
+    # role's endpoint and model. vLLM is the qualified local runtime.
     INFERENCE_ADAPTER: Literal["openai_compatible"] = "openai_compatible"
-    INFERENCE_PROVIDER_NAME: str = "lm_studio"
-    LLM_BASE_URL: str = "http://127.0.0.1:1234"
-    LLM_MODEL: str = "google/gemma-4-12b"
+    INFERENCE_PROVIDER_NAME: str = "vllm"
+    LLM_BASE_URL: str = "http://127.0.0.1:8003"
+    LLM_MODEL: str = "qwen/qwen3.5-4b"
     LLM_API_KEY: str | None = Field(None, alias="LLM_API_KEY")
     LLM_TIMEOUT_SECONDS: float = 120.0
     LLM_REASONING_EFFORT: Literal[
@@ -84,11 +84,75 @@ class Settings(BaseSettings):
     # prompt is inert, so photorealism is driven by appending this to the
     # positive prompt. It is added only when not already present; set it empty to
     # send the user's prompt verbatim.
+    # Realism comes from imperfection, not from asking for quality. The previous
+    # suffix asked for "sharp focus, high detail, 4k, professional photography",
+    # which are the exact terms that produce the glossy retouched stock-photo
+    # look people read as AI. Naming a film stock, available light, and explicit
+    # flaws produces skin with pores and fine lines, uneven light, and unstyled
+    # props instead. Compared side by side on a fixed seed, this suffix was the
+    # only one of three that read as a candid photograph.
     IMAGE_STYLE_SUFFIX: str = (
-        "photorealistic, realistic photograph, DSLR photo, 85mm lens, "
-        "natural soft lighting, fine detailed textures, sharp focus, "
-        "high detail, 4k, professional photography"
+        "candid snapshot, shot on 35mm film, Kodak Portra 400, 50mm lens, "
+        "available light only, uneven mixed lighting, visible film grain, "
+        "natural unretouched skin with pores and fine lines, flyaway hair, "
+        "slightly off-centre imperfect framing, mild motion blur, "
+        "everyday unstyled scene"
     )
+    # A single GPU cannot hold the generation model and the diffusion model at
+    # once. When enabled, AniOS sleeps local inference for the duration of one
+    # image job so the diffusion runtime stops streaming weights from host RAM.
+    # Level 1 offloads weights to CPU memory; level 2 discards them entirely.
+    #
+    # Off because it measured slower, not because it does not work. Sleeping and
+    # waking are verified against the shipped runtime, but a full offload/reload
+    # round trip per image cost more than it saved: 47/64/42 s with the handoff
+    # against 37/35 s without it, because ComfyUI already manages its own
+    # residency. Enable it only if a future model makes the two runtimes
+    # genuinely unable to share the card, and re-measure before trusting it.
+    #
+    # It also requires `--enable-sleep-mode`, `VLLM_SERVER_DEV_MODE=1`, and a KV
+    # cache dtype other than fp8: an FP8 KV cache cannot be woken on vLLM 0.23.0
+    # and strands the engine asleep.
+    GPU_HANDOFF_ENABLED: bool = False
+
+    # Ambient discovery egress. This is the first path in AniOS that reaches a
+    # third party, and everything before it fails closed inside the machine, so
+    # it ships off. Turning it on is an explicit operator decision, not a
+    # default someone discovers after messages have already gone out.
+    #
+    # Apple publishes no server-side iMessage API, so the unpaid path is a Mac
+    # signed into Messages exposing a send tool over MCP. AniOS decides whether
+    # to send; that machine does the sending.
+    DISCOVERY_EGRESS_ENABLED: bool = False
+    # A sweep is weekly, so nothing about this loop needs to be prompt. The
+    # lease is generous because reading several feeds over the network can
+    # legitimately outlive a short one.
+    DISCOVERY_POLL_SECONDS: float = Field(default=60.0, gt=0, le=3_600)
+    DISCOVERY_RUN_LEASE_SECONDS: float = Field(default=300.0, gt=0, le=3_600)
+    DISCOVERY_RUN_HEARTBEAT_SECONDS: float = Field(default=60.0, gt=0, le=600)
+    DISCOVERY_IMESSAGE_TOOL: str = "send_message"
+    # Which operator-trusted MCP server owns the Apple device that sends.
+    DISCOVERY_IMESSAGE_SERVER_ID: str = "imessage"
+    # The public base a subscriber's calendar link is built from. Local by
+    # default: a link only resolves from wherever the recipient actually is, so
+    # leaving this unset keeps delivery useful only on the same network.
+    DISCOVERY_CALENDAR_BASE_URL: str = "http://localhost:8000/api/v1/discovery"
+    # Reverse geocoding for the "use my location" button. Off unless an operator
+    # sets a provider, so a deployment never reaches a third party by default.
+    # The coordinate is rounded to roughly a kilometre before it is sent, and
+    # only the resulting town label is stored.
+    # Search a sweep for happenings no calendar feed publishes. Feeds cover
+    # institutions; a trail association's group hike exists only as a page
+    # someone wrote. Bounded per sweep, and dates are read from the text rather
+    # than inferred, so an undated find stays a link and never a calendar entry.
+    DISCOVERY_WEB_SEARCH_ENABLED: bool = True
+    DISCOVERY_WEB_QUERIES_PER_SWEEP: int = Field(default=4, ge=1, le=10)
+    DISCOVERY_PLACE_RESOLVER: Literal["", "nominatim"] = ""
+    DISCOVERY_PLACE_RESOLVER_URL: str = "https://nominatim.openstreetmap.org/reverse"
+    DISCOVERY_PLACE_RESOLVER_USER_AGENT: str = "AniOS/1.0 (local personal assistant)"
+
+    GPU_HANDOFF_SLEEP_LEVEL: int = Field(default=1, ge=1, le=2)
+    GPU_HANDOFF_TIMEOUT_SECONDS: float = Field(default=120.0, gt=0, le=600)
     IMAGE_PROVIDER_TIMEOUT_SECONDS: float = Field(default=600.0, gt=0, le=3600)
     IMAGE_PROVIDER_POLL_SECONDS: float = Field(default=0.5, ge=0.1, le=10)
     IMAGE_MAX_CONCURRENCY: int = Field(default=1, ge=1, le=4)
@@ -133,7 +197,7 @@ class Settings(BaseSettings):
     )
     IMAGE_MAX_PIXELS: int = Field(default=20_000_000, ge=4096, le=100_000_000)
     VISION_LLM_BASE_URL: str = ""
-    VISION_MODEL: str = "google/gemma-4-12b"
+    VISION_MODEL: str = "qwen/qwen3.5-4b"
     VISION_LLM_REASONING_EFFORT: Literal[
         "none", "minimal", "low", "medium", "high", "xhigh"
     ] = "none"

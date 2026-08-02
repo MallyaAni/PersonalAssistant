@@ -17,7 +17,7 @@ from backend.architecture.candidates import (
     validate_candidate_output_path,
 )
 from backend.artifacts.diagram import LLMDiagramProvider
-from backend.core.llm import LMStudioLLM
+from backend.core.llm import OpenAICompatibleInferenceProvider
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,7 +63,7 @@ def _require_local_model_endpoint(base_url: str) -> None:
     host = (urlparse(base_url).hostname or "").lower()
     if host not in {"127.0.0.1", "localhost", "::1"}:
         raise ValueError(
-            "Architecture candidates require a loopback LM Studio endpoint"
+            "Architecture candidates require a loopback inference endpoint"
         )
 
 
@@ -79,8 +79,8 @@ def _load_model_config(repository_root: Path) -> LocalDiagramModelConfig:
 
     api_key = value("LLM_API_KEY", "").strip() or None
     return LocalDiagramModelConfig(
-        base_url=value("LLM_BASE_URL", "http://127.0.0.1:1234"),
-        model=value("LLM_MODEL", "google/gemma-4-12b"),
+        base_url=value("LLM_BASE_URL", "http://127.0.0.1:8003"),
+        model=value("LLM_MODEL", "qwen/qwen3.5-4b"),
         api_key=api_key,
         timeout_seconds=float(value("LLM_TIMEOUT_SECONDS", "120")),
         reasoning_effort=value("LLM_REASONING_EFFORT", "none"),
@@ -108,7 +108,7 @@ async def _run(args: argparse.Namespace, repository_root: Path) -> dict[str, obj
         args.diagram,
         args.output,
     )
-    llm = LMStudioLLM(
+    llm = OpenAICompatibleInferenceProvider(
         base_url=model_config.base_url,
         model=model_config.model,
         api_key=model_config.api_key,

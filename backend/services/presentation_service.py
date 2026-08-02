@@ -323,6 +323,138 @@ class PresentationService:
             revised,
         )
 
+    # Append or insert one new slide as a linked revision of the current deck.
+    async def add_slide(
+        self,
+        user_id: str,
+        presentation_id: str,
+        base_revision_id: str,
+        brief: str,
+        # 0-based index the new slide takes. None appends. An index rather than
+        # an "after this slide" reference so the very first position, which has
+        # no slide before it, is expressible.
+        position: int | None = None,
+    ) -> dict[str, Any]:
+        base, revision = await self.repository.create_revision_pending(
+            user_id,
+            presentation_id,
+            base_revision_id,
+            # The new slide has no id until it is planned, so the revision is
+            # not associated with a target slide the way an edit is.
+            None,
+            brief,
+            self.provider_name,
+            self.model_name,
+        )
+        revision_id = str(revision["id"])
+        if position is not None and not 0 <= position <= len(base.slides):
+            await self.repository.mark_failed(
+                user_id, presentation_id, revision_id, "position_out_of_range"
+            )
+            raise ValueError("The requested position is outside the deck.")
+        slide_id = _next_slide_id(base)
+        try:
+            neighbour = (
+                base.slides[position - 1].slide_id
+                if position is not None and position > 0
+                else None
+            )
+            added = await self.agent.add_slide(base, brief, slide_id, neighbour)
+        except Exception:
+            await self.repository.mark_failed(
+                user_id,
+                presentation_id,
+                revision_id,
+                "generation_failed",
+            )
+            raise
+        await self.repository.set_revision_target(
+            presentation_id, revision_id, added.slide_id
+        )
+        slides = list(base.slides)
+        slides.insert(len(slides) if position is None else position, added)
+        return await self._complete_revision(
+            user_id,
+            presentation_id,
+            revision_id,
+            base.model_copy(update={"slides": slides}),
+        )
+
+    # Remove one slide as a linked revision. Revising replaces a slide's content
+    # and can never remove it, so deletion needs its own path.
+    async def delete_slide(
+        self,
+        user_id: str,
+        presentation_id: str,
+        base_revision_id: str,
+        slide_id: str,
+    ) -> dict[str, Any]:
+        base, revision = await self.repository.create_revision_pending(
+            user_id,
+            presentation_id,
+            base_revision_id,
+            slide_id,
+            f"Removed slide {slide_id}",
+            self.provider_name,
+            self.model_name,
+        )
+        revision_id = str(revision["id"])
+        remaining = [slide for slide in base.slides if slide.slide_id != slide_id]
+        if len(remaining) == len(base.slides):
+            await self.repository.mark_failed(
+                user_id, presentation_id, revision_id, "slide_not_found"
+            )
+            raise LookupError("The slide to delete was not found")
+        # A deck must keep at least one slide, so refuse rather than let the
+        # specification fail validation and lose the whole presentation.
+        if not remaining:
+            await self.repository.mark_failed(
+                user_id, presentation_id, revision_id, "last_slide"
+            )
+            raise ValueError("A presentation must keep at least one slide.")
+        return await self._complete_revision(
+            user_id,
+            presentation_id,
+            revision_id,
+            base.model_copy(update={"slides": remaining}),
+        )
+
+    # Reorder the deck as a linked revision. No model is involved: the caller
+    # supplies the new order and the deck is permuted deterministically.
+    async def reorder_slides(
+        self,
+        user_id: str,
+        presentation_id: str,
+        base_revision_id: str,
+        slide_ids: list[str],
+    ) -> dict[str, Any]:
+        base, revision = await self.repository.create_revision_pending(
+            user_id,
+            presentation_id,
+            base_revision_id,
+            None,
+            "Reordered slides",
+            self.provider_name,
+            self.model_name,
+        )
+        revision_id = str(revision["id"])
+        by_id = {slide.slide_id: slide for slide in base.slides}
+        # The new order must be a permutation of the deck. Anything else would
+        # silently add or drop a slide, so it is refused rather than applied.
+        if sorted(slide_ids) != sorted(by_id):
+            await self.repository.mark_failed(
+                user_id, presentation_id, revision_id, "order_mismatch"
+            )
+            raise ValueError(
+                "The new order must list every existing slide exactly once."
+            )
+        return await self._complete_revision(
+            user_id,
+            presentation_id,
+            revision_id,
+            base.model_copy(update={"slides": [by_id[key] for key in slide_ids]}),
+        )
+
     # Attach one owned generated image to the selected slide in a linked revision.
     async def attach_image(
         self,
@@ -529,3 +661,15 @@ def _attach_image_to_slide(
             )
         )
     return slide.model_copy(update={"elements": elements})
+
+
+# Mint a slide identifier that cannot collide with one already in the deck.
+# Identifiers are identities rather than positions, so inserting in the middle
+# does not renumber the slides around it and existing revisions keep resolving.
+def _next_slide_id(deck: DeckSpec) -> str:
+    highest = 0
+    for slide in deck.slides:
+        suffix = slide.slide_id.rsplit("_", 1)[-1]
+        if suffix.isdigit():
+            highest = max(highest, int(suffix))
+    return f"slide_{max(highest + 1, len(deck.slides) + 1):03d}"

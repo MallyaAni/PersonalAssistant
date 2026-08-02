@@ -12,6 +12,7 @@ import {
   type ToolActivity,
   type VisualArtifact,
 } from '../../services/api'
+import { submitOnEnter } from '../../utils/submitOnEnter'
 
 type ComposerAction = 'chat' | 'generate' | 'analyze' | 'ingest';
 
@@ -139,12 +140,16 @@ const Composer: React.FC<ComposerProps> = ({
 
     setIsSending(true)
     setVisualError('')
+    // Empty the composer as soon as the send is accepted. The transcript owns
+    // the submitted text from here, so leaving a copy in the box while the
+    // response streams reads as if nothing was sent. The catch restores it so a
+    // failed send is never lost and Retry still has something to resend.
+    setInput('')
+    setAttachedFile(null)
 
     try {
       if (action === 'ingest') {
         await ingestAttachedDocument(file as File, prompt)
-        setInput('')
-        setAttachedFile(null)
         return
       }
 
@@ -164,8 +169,6 @@ const Composer: React.FC<ComposerProps> = ({
           controller.signal,
         )
         onVisualReady(artifact)
-        setInput('')
-        setAttachedFile(null)
         return
       }
 
@@ -179,7 +182,6 @@ const Composer: React.FC<ComposerProps> = ({
         requestController.current = controller
         const artifact = await generateImage(userId, conversationId, prompt, controller.signal)
         onVisualReady(artifact)
-        setInput('')
         return
       }
 
@@ -219,9 +221,11 @@ const Composer: React.FC<ComposerProps> = ({
           onArtifactError(update.artifactId, update.message)
         }
       }
-      setInput('')
     } catch (err) {
       onThinkingChange(false)
+      // Give the text back so the send can be retried rather than retyped.
+      setInput(prompt)
+      setAttachedFile(file)
       if (action === 'chat') {
         console.warn('Chat request failed:', err)
         onStreamUpdate('Unable to send message. Please try again.')
@@ -249,12 +253,7 @@ const Composer: React.FC<ComposerProps> = ({
   }
 
   // Send on Enter while preserving Shift+Enter for new lines.
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
-    }
-  }
+  const handleKeyDown = submitOnEnter(handleSend, !canSend)
 
   return (
     <div>

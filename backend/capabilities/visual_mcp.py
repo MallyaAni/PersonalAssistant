@@ -18,6 +18,7 @@ from backend.core.dependencies import (
     get_diagram_provider,
     get_embedding_provider,
     get_image_artifact_service,
+    get_image_edit_provider,
     get_image_provider,
     get_memory_service,
     get_presentation_agent,
@@ -200,6 +201,7 @@ class VisualCapabilityRuntime:
             repository = get_artifact_repository(session)
             service = get_image_artifact_service(
                 get_image_provider(),
+                get_image_edit_provider(),
                 repository,
                 get_binary_artifact_store(),
                 get_vision_embedding_provider(),
@@ -230,6 +232,7 @@ class VisualCapabilityRuntime:
             repository = get_artifact_repository(session)
             images = get_image_artifact_service(
                 get_image_provider(),
+                get_image_edit_provider(),
                 repository,
                 get_binary_artifact_store(),
                 get_vision_embedding_provider(),

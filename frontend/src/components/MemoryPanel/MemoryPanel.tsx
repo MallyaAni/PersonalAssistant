@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { submitOnEnter } from '../../utils/submitOnEnter'
 import {
   createMemory,
   clearPreferredName,
@@ -518,7 +519,10 @@ const MemoryPanel: React.FC<MemoryPanelProps> = ({ userId, onUserIdChange }) => 
             }}
           >
             <h3 className="font-semibold">Event or experience</h3>
-            <textarea aria-label="Event or experience" value={episodic} onChange={event => setEpisodic(event.target.value)} placeholder="Something that happened" className="w-full rounded bg-slate-950 p-2" />
+            <textarea aria-label="Event or experience" value={episodic} onChange={event => setEpisodic(event.target.value)} onKeyDown={submitOnEnter(
+              () => run(() => createMemory(userId, 'episodic', episodic.trim()), () => setEpisodic('')),
+              isLoading || !episodic.trim(),
+            )} placeholder="Something that happened" className="w-full rounded bg-slate-950 p-2" />
             <button disabled={isLoading || !episodic.trim()} className="rounded bg-blue-600 px-3 py-2 disabled:bg-slate-700">Add event or experience</button>
           </form>
 
@@ -530,7 +534,10 @@ const MemoryPanel: React.FC<MemoryPanelProps> = ({ userId, onUserIdChange }) => 
             }}
           >
             <h3 className="font-semibold">Fact or preference</h3>
-            <textarea aria-label="Fact or preference" value={semantic} onChange={event => setSemantic(event.target.value)} placeholder="A durable fact or preference" className="w-full rounded bg-slate-950 p-2" />
+            <textarea aria-label="Fact or preference" value={semantic} onChange={event => setSemantic(event.target.value)} onKeyDown={submitOnEnter(
+              () => run(() => createMemory(userId, 'semantic', semantic.trim()), () => setSemantic('')),
+              isLoading || !semantic.trim(),
+            )} placeholder="A durable fact or preference" className="w-full rounded bg-slate-950 p-2" />
             <button disabled={isLoading || !semantic.trim()} className="rounded bg-blue-600 px-3 py-2 disabled:bg-slate-700">Add fact or preference</button>
           </form>
         </div>

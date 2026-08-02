@@ -21,8 +21,10 @@ from backend.core.dependencies import (
     TracerDependency,
 )
 from backend.models.presentation_api import (
+    AddPresentationSlideBody,
     CreatePresentationBody,
     GeneratePresentationSlideImageBody,
+    ReorderPresentationSlidesBody,
     RevisePresentationSlideBody,
 )
 from backend.services.image_refinement_service import RefinementError
@@ -198,6 +200,113 @@ async def get_presentation(
     if presentation is None:
         raise HTTPException(status_code=404, detail="Presentation was not found")
     return presentation
+
+
+# Add one slide to an existing deck as a linked revision. Distinct from a slide
+# revision: this leaves every existing slide exactly as the user accepted it.
+@router.post(
+    "/{user_id}/{presentation_id}/slides",
+    status_code=status.HTTP_201_CREATED,
+)
+async def add_presentation_slide(
+    user_id: str,
+    presentation_id: UUID,
+    body: AddPresentationSlideBody,
+    service: PresentationDependency,
+    identity: IdentityDependency,
+) -> dict[str, Any]:
+    authorize_user(user_id, identity)
+    authorize_scope(identity, SCOPE_PRESENTATIONS)
+    try:
+        return await service.add_slide(
+            user_id,
+            str(presentation_id),
+            str(body.base_revision_id),
+            body.brief,
+            body.position,
+        )
+    except PresentationConflictError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Unable to add the slide.",
+        ) from exc
+
+
+# Reorder the deck as a linked revision. No model runs; the caller states the
+# order and the deck is permuted deterministically.
+@router.put(
+    "/{user_id}/{presentation_id}/slides/order",
+    status_code=status.HTTP_200_OK,
+)
+async def reorder_presentation_slides(
+    user_id: str,
+    presentation_id: UUID,
+    body: ReorderPresentationSlidesBody,
+    service: PresentationDependency,
+    identity: IdentityDependency,
+) -> dict[str, Any]:
+    authorize_user(user_id, identity)
+    authorize_scope(identity, SCOPE_PRESENTATIONS)
+    try:
+        return await service.reorder_slides(
+            user_id,
+            str(presentation_id),
+            str(body.base_revision_id),
+            body.slide_ids,
+        )
+    except PresentationConflictError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Unable to reorder the slides.",
+        ) from exc
+
+
+# Remove one slide as a linked revision. The base revision travels as a query
+# parameter because a DELETE body is not reliably transmitted.
+@router.delete(
+    "/{user_id}/{presentation_id}/slides/{slide_id}",
+    status_code=status.HTTP_200_OK,
+)
+async def delete_presentation_slide(
+    user_id: str,
+    presentation_id: UUID,
+    slide_id: str,
+    base_revision_id: UUID,
+    service: PresentationDependency,
+    identity: IdentityDependency,
+) -> dict[str, Any]:
+    authorize_user(user_id, identity)
+    authorize_scope(identity, SCOPE_PRESENTATIONS)
+    try:
+        return await service.delete_slide(
+            user_id,
+            str(presentation_id),
+            str(base_revision_id),
+            slide_id,
+        )
+    except PresentationConflictError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Unable to delete the slide.",
+        ) from exc
 
 
 # Apply feedback to one selected slide and create a new linked revision.

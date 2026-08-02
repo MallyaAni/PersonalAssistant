@@ -2,13 +2,13 @@
 
 ## Status
 
-Accepted and partially implemented. Architecture maintenance, the dedicated diagram graph, editable Mermaid artifacts, free local HiDream raster generation, FLUX.2 Klein source-aware editing, opaque generated/uploaded binary storage, validated image upload, Gemma image understanding, aligned multimodal image embeddings, initial uploaded-image analysis indexing, browser image integration, and an agent-facing local FastMCP facade are implemented. Durable visual queues, automatic generated-image observation, handle-based visual memory, semantic post-edit verification, automated retention, GPU leases/model transitions, and generalized multi-agent visual workers remain `PLANNED`; ADR 0007 defines those visual semantics and editing boundaries.
+Accepted and partially implemented. Architecture maintenance, the dedicated diagram graph, editable Mermaid artifacts, free local HiDream raster generation, FLUX.2 Klein source-aware editing, opaque generated/uploaded binary storage, validated image upload, Qwen image understanding through vLLM, aligned multimodal image embeddings, initial uploaded-image analysis indexing, browser image integration, and an agent-facing local FastMCP facade are implemented. Durable visual queues, automatic generated-image observation, handle-based visual memory, semantic post-edit verification, automated retention, GPU leases/model transitions, and generalized multi-agent visual workers remain `PLANNED`; ADR 0007 defines those visual semantics and editing boundaries.
 
 ## Context
 
 AniOS needs two related but different visual capabilities. Maintainers need an accurate, reviewable high-level architecture diagram, while users should eventually be able to request editable flowcharts, technical diagrams, generated images, and later image understanding through chat.
 
-The current local development machine runs Gemma 4 12B through LM Studio on an RTX 5080 with 32 GB of system RAM. Long-context KV cache can be offloaded or reduced, but a visual model may still compete with Gemma for GPU capacity. A planned DGX Spark changes available capacity but must not require an AniOS redesign.
+The current local development machine runs Qwen 3.5 4B through a pinned vLLM service on an RTX 5080 with 32 GB of system RAM. Nomic text embeddings use a second vLLM service, while ComfyUI loads visual generation/editing models on the same GPU. A planned DGX Spark changes available capacity but must not require an AniOS redesign.
 
 The user requires a free approach: no subscriptions, paid API credits, or automatic cloud fallback. AniOS is also intended to grow into a scalable multi-agent orchestration framework rather than allow one model or inference runtime to own application policy.
 
@@ -17,13 +17,13 @@ The user requires a free approach: no subscriptions, paid API credits, or automa
 1. Mermaid source is authoritative for technical architecture and flow diagrams. Generated SVG is a sharing artifact, not the source of truth. A normalized source/configuration/renderer fingerprint plus fresh render check keeps both synchronized across development platforms.
 2. Architecture diagrams change only with components, agents, persistent stores, external dependencies, deployment/trust boundaries, ownership boundaries, or cross-component data flows. Every modifying task declares its diagram impact.
 3. Runtime visual outputs are first-class, user-scoped artifacts with conversation and trace provenance, lifecycle status, provider/model metadata, listing, owned content, integrity metadata, and deletion. Editable diagrams remain database source; generated and uploaded image bytes use opaque local binary storage. Automated binary export and retention remain planned extensions.
-4. AniOS will expose focused provider contracts for diagram rendering, visual generation, artifact storage, and model-runtime control. Application services and typed orchestration nodes depend on those contracts rather than LM Studio, ComfyUI, Mermaid, or a particular model.
+4. AniOS will expose focused provider contracts for diagram rendering, visual generation, artifact storage, and model-runtime control. Application services and typed orchestration nodes depend on those contracts rather than vLLM, ComfyUI, Mermaid, or a particular model.
 5. A deterministic application coordinator owns artifact routing, durable job state, GPU leases, queueing, cancellation, timeout, provider transitions, and recovery. An LLM may produce a bounded diagram specification or image prompt, but it cannot unload models, allocate hardware, authorize storage, or declare a job successful.
-6. Gemma is the primary logical reasoning provider, not required to remain resident permanently. When simultaneous residency fails measured resource gates, the coordinator drains active streams, persists the prepared job, unloads or reduces the chat runtime, runs a visual worker, releases it, restores Gemma, and then resumes queued work.
+6. Qwen is the current primary logical reasoning and vision provider, but no business workflow depends on that model or on permanent residency. When simultaneous residency fails measured resource gates, application-owned coordination must drain active streams, persist prepared work, transition the applicable runtime, run the visual worker, and restore service before resuming queued work.
 7. Model context size is a configurable resource profile selected by application policy. Normal chat, long-context work, and visual-job preparation can use different profiles without changing conversation or memory ownership.
 8. Free local providers are mandatory. Paid endpoints and automatic cloud fallback are excluded. Candidate models must pass pinned-license review and local quality, latency, VRAM, cancellation, and recovery acceptance before selection.
 9. Multi-agent expansion uses typed nodes and bounded messages over durable application-owned state. Specialized diagram, image, research, coding, and tool workers may be introduced incrementally; they do not receive raw database, permission, secret, or hardware-management authority merely because they are agents.
-10. Image understanding and multimodal vector retrieval are separate capabilities. Gemma provides validated image understanding through a focused adapter. Nomic Embed Vision and its aligned text encoder provide bounded image retrieval in a distinct vector index; these vectors are not inferred from Nomic text-memory embeddings or HiDream generation.
+10. Image understanding and multimodal vector retrieval are separate capabilities. Qwen currently provides validated image understanding through a focused adapter. Nomic Embed Vision and its aligned text encoder provide bounded image retrieval in a distinct vector index; these vectors are not inferred from Nomic text-memory embeddings or HiDream generation.
 11. Repository architecture generation is LLM-assisted rather than LLM-authoritative. The application selects explicit bounded context, validates passive Mermaid and required implementation labels, renders a new candidate, and refuses canonical overwrite. Technical and visual review must precede an explicit manual canonical change.
 12. Existing visual application services are exposed to future agents through a
     dedicated local FastMCP adapter rather than duplicated tool
@@ -38,10 +38,10 @@ The user requires a free approach: no subscriptions, paid API credits, or automa
     comparison, AniOS may append one bounded stored analysis or generation
     prompt only after image recall and before outbound privacy screening; it
     never sends image bytes to search.
-14. Calls made through the shared local Gemma chat client are serialized because
-    the current LM Studio runtime can terminate an in-flight generation when
-    another call overlaps it. This lock is a local safety boundary; durable
-    queues, multi-process scheduling, and resource leases remain planned.
+14. Foreground and background model work coordinates through application-owned
+    priority gates, while vLLM exposes a bounded concurrent-sequence profile.
+    The runtime does not own workload priority or promotion; broader durable
+    scheduling, GPU leases, and multi-host placement remain planned.
 
 ## Consequences
 
@@ -73,4 +73,4 @@ Costs and risks:
 - A single unified multimodal model remains a benchmark candidate but was rejected as a mandatory architecture dependency; one model's current quality or runtime support should not constrain every modality.
 - Permanent simultaneous model residency was rejected as an assumption because lowering KV cache does not eliminate model-weight pressure and current hardware evidence is not yet collected.
 - Paid hosted image APIs and cloud fallback were rejected by the zero-cost requirement.
-- Giving Gemma direct LM Studio or GPU lifecycle tools was rejected because model-resource control is application policy and must remain deterministic and recoverable.
+- Giving a model direct vLLM or GPU lifecycle tools was rejected because model-resource control is application policy and must remain deterministic and recoverable.

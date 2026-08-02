@@ -14,9 +14,9 @@ The absence of one of these labels does not imply runtime verification.
 
 ![AniOS current system architecture](diagrams/anios-system.svg)
 
-The editable source is [anios-system.mmd](diagrams/anios-system.mmd). It describes current implemented and explicitly scaffolded relationships only, including the typed main-supervisor route, editable diagrams, generated and uploaded raster artifacts, local binary storage, ComfyUI, Gemma vision analysis, their browser integration, and the durable presentation worker. Aligned multimodal image embeddings and hybrid opt-in web research are included. General dynamic agent teams, A2A, and GPU-capacity leases remain outside the current diagram until their runtime boundaries exist. The render/check procedure is documented in [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md#architecture-diagram-maintenance).
+The editable source is [anios-system.mmd](diagrams/anios-system.mmd). It describes current implemented and explicitly scaffolded relationships only, including the typed main-supervisor route, editable diagrams, generated and uploaded raster artifacts, local binary storage, Compose-managed vLLM inference, ComfyUI, Qwen vision analysis, their browser integration, and the durable presentation worker. Aligned multimodal image embeddings and hybrid opt-in web research are included. General dynamic agent teams, A2A, and GPU-capacity leases remain outside the current diagram until their runtime boundaries exist. The render/check procedure is documented in [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md#architecture-diagram-maintenance).
 
-The self-contained [manager-facing architecture page](architecture.html) publishes all 12 canonical views with a current model-role summary, direct full-size SVG and Mermaid-source links, and independent per-diagram zoom controls. Eleven views describe the current system; the separately labelled visual-memory/editing target describes an accepted future design without claiming implementation. Its opening orchestration contract states explicitly that `MainSupervisorAgent` is currently deterministic and makes no LLM call.
+The self-contained [manager-facing architecture page](architecture.html) publishes all 13 canonical views with a current model-role summary, direct full-size SVG and Mermaid-source links, and independent per-diagram zoom controls. Eleven views describe the current system; the separately labelled visual-memory/editing and inference-scaling targets describe accepted future designs without claiming implementation. Its opening orchestration contract states explicitly that `MainSupervisorAgent` is currently deterministic and makes no LLM call.
 
 ## Detailed subsystem diagrams
 
@@ -24,15 +24,16 @@ AniOS currently has a modular FastAPI backend rather than independently deployed
 
 | Current view | Technical scope | Source | SVG |
 | --- | --- | --- | --- |
-| Runtime and deployment | Processes, ports, protocols, Compose, LM Studio, database sessions, migration and maintenance paths | [source](diagrams/runtime-deployment.mmd) | [view](diagrams/runtime-deployment.svg) |
+| Runtime and deployment | Processes, ports, protocols, Compose, vLLM, database sessions, migration and maintenance paths | [source](diagrams/runtime-deployment.mmd) | [view](diagrams/runtime-deployment.svg) |
+| Inference scaling target | Implemented role/adapter authority plus planned capacity placement, replicated vLLM pools, specialist pools, serving control plane, and model SLOs | [source](diagrams/inference-scaling-target.mmd) | [view](diagrams/inference-scaling-target.svg) |
 | Chat orchestration | Request ownership, typed supervisor delegation, deterministic web-search and image-recall routing, memory planning, history, LangGraph streaming, persistence, proposals, artifact branch, SSE | [source](diagrams/chat-orchestration.mmd) | [view](diagrams/chat-orchestration.svg) |
 | Search and research | Query minimization, cloud-worker isolation, Google/Tavily provider policy, quota, MCP serialization, and source provenance | [source](diagrams/search-research-subsystem.mmd) | [view](diagrams/search-research-subsystem.svg) |
 | Memory subsystem | All short/long-term forms, write authority, coordinator, typed services, pgvector retrieval, lifecycle and operations | [source](diagrams/memory-subsystem.mmd) | [view](diagrams/memory-subsystem.svg) |
 | Memory overview (manager) | Plain-language first-contact walkthrough of a memory turn, the approval gate, short-term vs long-term stores, and user data control | [source](diagrams/memory-overview.mmd) | [view](diagrams/memory-overview.svg) |
 | Tool memory and MCP execution | Safe descriptors, approved preferences, sanitized outcomes, semantic tool discovery, main-model selection, policy-gated invocation, and bounded untrusted results | [source](diagrams/tool-memory-subsystem.mmd) | [view](diagrams/tool-memory-subsystem.svg) |
-| Visual artifacts | Diagram classification/rendering, HiDream generation, validated uploads, opaque binary storage, integrity/deletion, Gemma vision analysis, threaded followup questions, aligned image embeddings and margin-bounded retrieval | [source](diagrams/visual-artifact-subsystem.mmd) | [view](diagrams/visual-artifact-subsystem.svg) |
+| Visual artifacts | Diagram classification/rendering, HiDream generation, validated uploads, opaque binary storage, integrity/deletion, Qwen vision analysis, threaded followup questions, aligned image embeddings and margin-bounded retrieval | [source](diagrams/visual-artifact-subsystem.mmd) | [view](diagrams/visual-artifact-subsystem.svg) |
 | Visual memory and editing | Implemented source-aware immutable revisions plus planned non-blocking generated-image observation, versioned semantics, handle-based visual memory, post-edit verification, and derived-data lifecycle | [source](diagrams/visual-memory-editing-target.mmd) | [view](diagrams/visual-memory-editing-target.svg) |
-| Architecture maintenance | Explicit repository evidence, local Gemma candidate generation, passive/required-label validation, pinned rendering, review, and manual canonical promotion | [source](diagrams/architecture-maintenance-subsystem.mmd) | [view](diagrams/architecture-maintenance-subsystem.svg) |
+| Architecture maintenance | Explicit repository evidence, local Qwen candidate generation, passive/required-label validation, pinned rendering, review, and manual canonical promotion | [source](diagrams/architecture-maintenance-subsystem.mmd) | [view](diagrams/architecture-maintenance-subsystem.svg) |
 | Frontend | Identity/conversation state, view lifecycle, chat components, memory management, typed API/SSE client, diagram rendering | [source](diagrams/frontend-subsystem.mmd) | [view](diagrams/frontend-subsystem.svg) |
 
 ## Runtime topology
@@ -46,13 +47,15 @@ AniOS currently has a modular FastAPI backend rather than independently deployed
 | `frontend` | React/Vite dev-server container built from `frontend/Dockerfile.dev` | `5173` | Developer console with bind-mounted source and hot reload |
 | `db` | `pgvector/pgvector:pg16` | `5432` | PostgreSQL conversation/personal-memory persistence and pgvector semantic search |
 | `redis` | `redis:7-alpine` | `6379` | Shared expiring model-execution lease and foreground-wait counter; no prompt or response content is stored |
+| `vllm-main` | Pinned `vllm/vllm-openai` image with pinned Qwen revision | `8003` | OpenAI-compatible generation, native tool-call, structured-output, diagram, and vision service |
+| `vllm-embedding` | Pinned `vllm/vllm-openai` image with pinned Nomic model and remote-code revisions | `8004` | OpenAI-compatible 768-dimensional text embedding service; starts only after `vllm-main` is healthy |
 | `comfyui` | CUDA/PyTorch image (`docker/comfyui/`) that bind-mounts the host ComfyUI install | `8188` | Opt-in (`comfyui` profile) GPU image generation |
 | image embeddings | `nomic-embed-vision-v1.5` ONNX, in-process on CPU | n/a | Aligned 768-dim image vectors for multimodal retrieval |
 | web research | Built-in stdio MCP server; isolated Gemini 3.6 Flash/Google Search worker with Tavily fallback | n/a | Opt-in; Tavily is active with `SEARCH_API_KEY`, while Google primary requires `GOOGLE_API_KEY` or `GEMINI_API_KEY` |
 
 The `frontend` container bind-mounts `./frontend` and runs Vite with polling so hot reload works across the Docker mount; its browser page still calls the backend at `localhost:8000`. The backend image has no source bind mount and does not use reload mode, so backend source changes require an image rebuild for container validation; a host-source Uvicorn run remains supported for backend development and must not share port `8000` with the Compose backend.
 
-LM Studio is an external host process rather than a Compose service; the container backend reaches it at `http://host.docker.internal:1234` (host-source runs use `http://127.0.0.1:1234`). Role-specific settings select `qwen/qwen3.5-9b` for the main response/tool-selection role and diagram planning, `google/gemma-4-12b` for progressive presentation planning and validated image understanding, and `text-embedding-nomic-embed-text-v1.5` for 768-dimensional text embeddings. The legacy `LLM_MODEL` remains a fallback for an unset role. ComfyUI now runs as the opt-in `comfyui` Compose service: it bind-mounts the existing host install (`COMFYUI_HOST_PATH`, default `E:/AI/ComfyUI`, including the `hidream_o1_image_dev_fp8_scaled.safetensors` checkpoint), requests the NVIDIA GPU through Compose device reservations, and provides a Blackwell-capable CUDA 12.8 PyTorch runtime; the container backend reaches it at `http://comfyui:8188`, while a host-run ComfyUI uses `http://host.docker.internal:8188`. Generated and uploaded bytes live below the configurable opaque local artifact root; Compose mounts `/app/data/artifacts` from the `artifactdata` volume. Because the `comfyui` image build downloads a multi-GB CUDA/PyTorch base, it needs sufficient free space on the Docker Desktop disk (the WSL2 image, by default on `C:`).
+vLLM is part of the default Compose runtime. The pinned `vllm-main` service exposes `Qwen/Qwen3.5-4B` as `qwen/qwen3.5-4b` at host port `8003`; the pinned `vllm-embedding` service exposes `nomic-ai/nomic-embed-text-v1.5` as `text-embedding-nomic-embed-text-v1.5` at port `8004`. Main, presentation, diagram, and vision roles currently share Qwen, while text retrieval uses Nomic; role settings remain independent and the legacy `LLM_MODEL` remains a fallback. The qualified single-RTX-5080 profile quantizes Qwen to FP8 on load with an FP8 KV cache, and explicitly selects a 16,384-token context, four generation sequences, a 4,096-token scheduler budget, V1 chunked prefill, asynchronous scheduling, and prefix caching; Nomic uses a 2,048-token context and sixteen sequences. FP8 halves resident weights from 8.61 GiB to 5.09 GiB, which is what allows the doubled context to fit alongside host ComfyUI: measured free GPU memory with both services resident rose from 1,860 MiB to 6,588 MiB, and cached tokens rose from 45,428 to 64,046. Prefix caching produced real hits and passed the role suite, but vLLM 0.23 labels its Qwen hybrid-GDN/Mamba `align` support experimental, so it is a bounded local-profile choice rather than an inherited multi-tenant default. Compose starts Qwen to health before Nomic because concurrent cold GPU initialization left no KV-cache blocks during acceptance. The one-command startup preserves that order, warms one constant non-sensitive generation and embedding request to pay deferred JIT costs, and starts host ComfyUI afterward. ComfyUI remains available as the opt-in Compose profile or the lighter host install at `COMFYUI_HOST_PATH` (default `E:/AI/ComfyUI`); the container backend reaches the host process at `http://host.docker.internal:8188`. Generated and uploaded bytes live below the configurable opaque local artifact root; Compose mounts `/app/data/artifacts` from the `artifactdata` volume.
 
 ### Model calls per stage
 
@@ -67,12 +70,12 @@ A chat turn, in order:
 | Stage | Model | Runs on | When |
 | --- | --- | --- | --- |
 | Main supervisor route | none for explicit registered intents (typed deterministic LangGraph policy) | CPU | every chat turn before retrieval; currently delegates explicit presentation creation |
-| Query embedding | `text-embedding-nomic-embed-text-v1.5` (`EMBEDDING_MODEL`) | GPU (LM Studio) | when personal semantic or agent-vector retrieval is selected; one vector is reused across stores and image recall |
+| Query embedding | `text-embedding-nomic-embed-text-v1.5` (`EMBEDDING_MODEL`) | GPU (`vllm-embedding`) | when personal semantic or agent-vector retrieval is selected; one vector is reused across stores and image recall |
 | Memory retrieval planning | none (deterministic patterns) | CPU | every turn |
 | Web-search routing | `SEARCH_CLASSIFIER_MODEL`, else the main role (`MAIN_LLM_MODEL`, then `LLM_MODEL`) | GPU | when patterns abstain (most non-temporal turns) |
 | Image-recall routing | the same classifier model | GPU | only when the query plausibly names a stored image (gated) |
-| Tool selection | `qwen/qwen3.5-9b` (`MAIN_LLM_MODEL`) native tool-calls | GPU | only when MCP tools are relevant |
-| Response generation | `qwen/qwen3.5-9b` (`MAIN_LLM_MODEL`) | GPU | ordinary non-delegated turns; the streamed answer |
+| Tool selection | `qwen/qwen3.5-4b` (`MAIN_LLM_MODEL`) native tool-calls through `vllm-main` | GPU | only when MCP tools are relevant |
+| Response generation | `qwen/qwen3.5-4b` (`MAIN_LLM_MODEL`) through `vllm-main` | GPU | ordinary non-delegated turns; the streamed answer |
 | Memory proposal | none (deterministic patterns) | CPU | every turn |
 
 A plain message ("my name is Ani") therefore makes about three model calls: one
@@ -84,13 +87,13 @@ Image and presentation paths:
 
 | Stage | Model | Runs on |
 | --- | --- | --- |
-| Image generation / slide image | `hidream_o1_image_dev_fp8_scaled.safetensors` (`IMAGE_MODEL`) via ComfyUI | GPU (shared with Gemma) |
-| Refinement prompt merge | `qwen/qwen3.5-9b` (`MAIN_LLM_MODEL`) | GPU |
-| Learned-style distillation | `qwen/qwen3.5-9b` (`MAIN_LLM_MODEL`) | GPU |
-| Image vision analysis (ask) | `google/gemma-4-12b` (`VISION_MODEL`) | GPU |
+| Image generation / slide image | `hidream_o1_image_dev_fp8_scaled.safetensors` (`IMAGE_MODEL`) via ComfyUI | GPU (shared with vLLM) |
+| Refinement prompt merge | `qwen/qwen3.5-4b` (`MAIN_LLM_MODEL`) | GPU |
+| Learned-style distillation | `qwen/qwen3.5-4b` (`MAIN_LLM_MODEL`) | GPU |
+| Image vision analysis (ask) | `qwen/qwen3.5-4b` (`VISION_MODEL`) | GPU |
 | Image embedding (index and reconciler) | `nomic-embed-vision-v1.5` ONNX | CPU |
-| Deck outline, one slide-content microtask per slide, or slide revision | `google/gemma-4-12b` (`PRESENTATION_LLM_MODEL`) | GPU |
-| Diagram generation | `qwen/qwen3.5-9b` (`DIAGRAM_LLM_MODEL`) | GPU |
+| Deck outline, one slide-content microtask per slide, or slide revision | `qwen/qwen3.5-4b` (`PRESENTATION_LLM_MODEL`) | GPU |
+| Diagram generation | `qwen/qwen3.5-4b` (`DIAGRAM_LLM_MODEL`) | GPU |
 | Architecture candidates | legacy `LLM_MODEL` unless its CLI environment is overridden | GPU |
 | Google-grounded research, when enabled | `gemini-3.6-flash` (`GOOGLE_SEARCH_MODEL`) | external Google API |
 
@@ -167,7 +170,7 @@ prefers an isolated Google ADK worker when `GOOGLE_API_KEY` or
 empty, unavailable, or over its local daily budget, and calls both providers
 only when the user explicitly asks to verify or cross-check. A deterministic
 `SearchRoutingPolicy` owned by the application decides when a turn needs live
-data; neither Gemma nor the cloud worker owns outbound eligibility.
+data; neither the local model nor the cloud worker owns outbound eligibility.
 
 The Google worker is a request-scoped `gemini-3.6-flash` ADK `Agent` with the
 native `google_search` tool. Each call creates a random in-memory session,
@@ -345,7 +348,7 @@ resource leases, retries, storage, and promotion.
 Tracing is OpenTelemetry, off by default and safe to enable without a
 collector: an unreachable OTLP endpoint drops spans in the background rather
 than failing a request. `configure_telemetry` instruments FastAPI so each
-request is a span, and httpx so every outbound call - LM Studio, Tavily, an
+request is a span, and httpx so every outbound call - vLLM, Tavily, an
 HTTP MCP server - is an auto-propagated child span carrying W3C trace-context.
 That is what turns "the turn was slow" into "the turn spent 1.4s in the Tavily
 call", without guessing.
@@ -416,7 +419,7 @@ in the system to need its own bound, after personal memory and image vectors.
 For an ordinary chat turn, `MCPToolOrchestrationService` searches that
 user-scoped descriptor index, discards consequential servers, re-resolves each
 candidate against the live catalogue, and exposes at most five current schemas
-to the configured main model through LM Studio's native OpenAI-compatible
+to the configured main model through vLLM's native OpenAI-compatible
 `tool_calls` contract. The model may select at most one call and supply
 schema-shaped arguments; it never
 receives an invocation handle. AniOS converts the selected alias into an
@@ -494,6 +497,192 @@ proposal/approval/resume lifecycle exists.
 
 ## Backend boundaries
 
+### Ambient discovery
+
+Milestone 6's ambient discovery runs end to end inside the machine: a sweep
+reads feeds, decides what is new, ranks it, and produces calendar files.
+Delivering any of that outward remains unbuilt and gated.
+
+`discovery_interests` and `discovery_localities` hold what the user likes and
+where they live, behind `/api/v1/discovery/{user_id}`. Labels are sealed with
+`EncryptedText` and identified by a SHA-256 digest of their normalized form,
+because a sealed column cannot back a unique constraint: each value is encrypted
+with a fresh nonce, so equal plaintext does not produce equal ciphertext. Case
+and spacing differences therefore resolve to one interest while the readable
+copy stays encrypted at rest. Interest provenance is validated against an allowed
+set so an inferred value cannot be stored as a user-stated one, and the list is
+bounded because every label is eligible to enter a chat prompt. Home coordinates
+are deliberately absent: they would be the most sensitive value the application
+holds and nothing consumes them yet. The profile is rendered into ordinary chat
+context, so the assistant answers from the same record a scheduled run reads.
+
+`backend/discovery/events.py` defines a provider-neutral `EventSource` returning
+typed events with a stable per-source identity, start, place, and link, with
+iCalendar and RSS/Atom adapters parsed using the standard library. Discovery
+reads structured listings rather than searching: local listings are already
+structured, and search is the one part of the loop with a hard monthly ceiling.
+Feeds are treated as hostile input — control characters stripped, text bounded,
+non-web URL schemes dropped, 200 events per source, and bodies abandoned
+mid-stream past 5 MB. A `RequestBudget` fixes how many outbound requests one run
+may make, so the free-tier claim is decided in advance rather than emerging from
+how many sources happen to be configured. RSS is deliberately weaker than
+iCalendar: an item states when it was published, not when the happening occurs,
+so items carry no start time unless the publisher supplies an explicit event
+date.
+
+`discovery_schedules` and `discovery_runs` hold one user's cadence and each
+durable, leased sweep. Leasing reuses the presentation-worker pattern rather than
+introducing a second scheduler. Two invariants carry the milestone's
+never-double-notify requirement: a unique constraint on
+`(schedule_id, scheduled_for)` makes a slot exactly-once, so a restarted producer
+cannot queue the same sweep twice, and `delivered_at` is written once, so a
+resumed run declines rather than delivering again. Cadence is computed in the
+user's own timezone, including the daylight-saving case where a 9am sweep must
+stay 9am rather than drift with the old UTC offset.
+
+`discovery_sources` holds the feeds a sweep reads and `discovery_seen_items`
+records what it has already accounted for. Both seal the user-supplied value and
+identify it by digest, for the same reason the profile does. Novelty is decided
+in two passes ordered by cost: exact identity, a SHA-256 over the source and the
+source's own external id, catches the ordinary case of a feed relisting the same
+event every sweep; then a pgvector near-duplicate check catches the same
+happening published under a new identifier or by a second feed. Only an
+*announced* item suppresses a candidate, so being ranked out once cannot
+permanently mask something the user was never shown, and the check looks back a
+bounded horizon so an annual event recurring next year still counts as new.
+
+Ranking is deterministic and runs outside the model, matching how search routing
+already works. A sweep happens while nobody is watching, so a sampled judgement
+would make the same feed produce different results on different days, and
+scoring in vector space costs one batched embedding call rather than one
+generation per candidate. A candidate scores against its best single interest
+weighted by that interest's strength — summing across interests would let
+something weakly resembling everything outrank something strongly matching one
+stated interest — and must clear both a score floor and a lead-time window,
+since something happening tonight is not actionable from a weekly digest. The
+model still writes the digest a user reads; it does not decide what qualifies.
+
+`backend/discovery/calendar.py` renders selected events as RFC 5545 documents,
+served at `/api/v1/discovery/{user_id}/calendar/{item_digest}.ics` from the
+stored item rather than by re-fetching the feed. The rules that matter are
+ordered escaping, octet-counted folding that never splits a multi-byte
+character, refusal of naive timestamps rather than guessing a zone, and UIDs
+stable across renders so re-importing updates an appointment instead of
+duplicating it. A calendar client that dislikes a file usually declines it
+without explaining why, so the format is asserted directly in tests rather than
+inferred from an import that appeared to work.
+
+Search enumerates alongside feeds rather than only finding them. iCalendar feeds
+cover institutions — venues, museums, universities — and publish nothing for a
+trail association's group hike or a pop-up that exists only as a page someone
+wrote. For a niche interest that is most of what happens, so `WebEventSource`
+queries the configured `SearchProvider` (MCP or Tavily) once per interest, within
+the sweep's request budget.
+
+Two rules keep that from undoing the loop's other properties. A start time is
+**read, never inferred**: dates come from an explicit deterministic parse of the
+result text, and anything requiring a reference point the snippet does not carry
+— "this weekend", "next Saturday" — yields no start at all. An undated find is
+still surfaced, as a link in a separate section of the digest, and cannot become
+a `VEVENT`. And the query count is bounded before the sweep runs, because search
+is the only metered component here.
+
+`backend/discovery/summarize.py` makes a find readable enough to decide on. A
+scraped page title names the site rather than the happening — "Nature and History
+Events – Official Website of Arlington County Virginia Government" — and a
+recipient cannot judge that. Cleanup is deterministic and strips a trailing
+segment only when it looks like a CMS site name, so a genuinely hyphenated title
+survives.
+
+This is the one place a model belongs in the subsystem. Deciding *what qualifies*
+stays deterministic, because a sweep runs unattended and must not vary by
+sampling; turning a scraped paragraph into a sentence a person can read is what a
+model is for. It answers into a decoding grammar with a bounded field, greedily,
+so the same page describes itself the same way each sweep. No URL survives from
+model output — links come from the typed record, so a page cannot put a link of
+its choosing in front of a recipient — and any failure falls back to a
+first-sentence extract that never invents. The grammar constrains shape, not
+meaning: a hostile page can still influence the wording of its own description,
+exactly as it influences its own title.
+
+Descriptions are written before the selection is persisted, because the stored
+payload is what every later preview, digest, and calendar file is built from.
+
+Queries carry the locality's region, not just its label. A bare town name is
+ambiguous to a search engine exactly as it is to a person: "hiking near
+Arlington" returns Texas and Washington alongside Virginia, which was observed
+rather than predicted.
+
+Setup also uses search to find *sources* rather than events. That division is what preserves two
+properties the weekly loop depends on: search is the one metered component, so
+keeping it off the recurring path keeps the loop inside the free tier; and a
+search snippet cannot supply a zone-aware start, so enumerating events that way
+would mean inferring dates from prose and producing calendar entries that are
+confidently wrong. A suggested feed is offered only after AniOS has fetched it,
+parsed it with the same adapter a sweep uses, and seen real typed events come
+out. Interests are proposed from already-approved memory, never from inferences,
+and a proposal is never a fact — accepting one is the separate call that records
+`user_explicit` provenance.
+
+Location is set as a place *label*, typed or resolved. The browser's geolocation
+API returns a fix precise enough to identify a building, and for a request made
+at home that is the user's address — the most sensitive value this application
+could hold, which is why the profile has never stored coordinates. The resolve
+path therefore discards precision before it can travel: the coordinate is
+rounded to roughly a kilometre in one place that no adapter can bypass, a
+`PlaceResolver` provider names the town, and only that label is persisted.
+Resolution is off unless an operator configures a provider, so an unconfigured
+deployment reaches nobody, and typing the town makes no outbound request at all.
+
+The calendar travels **with** the message rather than being linked from it. One
+`.ics` carrying every dated find is attached, so a phone can offer to add them
+together and — more importantly — a recipient anywhere with internet can act on
+it without reaching the machine that produced it. A link would require AniOS to
+be publicly addressable, which is a far larger commitment than sending a file,
+and would fail silently for anyone off the sender's network. When the file is
+attached the message drops its links, because those links would be exactly the
+ones that do not work.
+
+Undated finds keep their own source URL, which points at the third-party page and
+is reachable from anywhere regardless.
+
+Notification egress remains `PLANNED` and gated: it is the first outbound path
+in AniOS, and every subsystem before it fails closed inside the machine.
+
+### Agent delegation
+
+`backend/agents/delegation.py` holds the routing rules as an ordered, listable
+registry rather than a chain of conditionals inside the graph node that uses
+them. Each policy names a capability and grants nothing: the caller resolves that
+name against what is actually wired up, so a policy for an agent with no handler
+falls through to the ordinary assistant instead of dropping the turn. Adding a
+specialist is deliberately two steps — a policy and a handler — because routing
+to something that cannot run is worse than not routing at all.
+
+Matching is pattern-based and deterministic, for the same reason search routing
+is: this runs on every turn, and a sampled judgement would send the same sentence
+to different agents on different days. A policy separates the noun from the verb,
+which is what keeps "show me the deck" from being read as "build me a deck", and
+ties break on declared priority rather than on registration order.
+
+### Agents
+
+`backend/agents/registry.py` describes every specialized agent for one user, and
+`GET /api/v1/agents/{user_id}` serves it to the workspace's Agents tab. Two
+agents exist today: **Scout**, the ambient discovery loop, and **Deck**, the
+presentation specialist.
+
+The registry stores nothing. Every field is derived from the tables each agent
+already writes — schedules, runs, sources, subscribers, presentation jobs — so
+the tab cannot drift from reality by being updated in the wrong place, and an
+agent that stops working shows as stalled rather than showing whatever it last
+claimed about itself. Adding an agent means adding a describer, not a row.
+
+Status is deliberately five-valued rather than a boolean. `needs_setup` is
+separated from `idle` because the most common discovery failure is having no
+sources or no interests, and reporting that as "idle" hides the one thing the
+user needs to do. The detail line names what is missing.
+
 ### Presentation
 
 `backend/main.py` constructs the FastAPI application, allows CORS from the local Vite origins, mounts the v1 router at `/api/v1`, and defines `GET /health`.
@@ -514,6 +703,39 @@ configured context-aware local server, it starts a trace and forwards the
 authorized path user plus optional conversation ID as hidden request metadata;
 those ownership values are not part of the tool arguments selected by a model.
 
+A deck is editable as a structure, not only as content. Beyond slide revision,
+`POST .../slides` inserts a slide at a 0-based position, `DELETE .../slides/{id}`
+removes one, and `PUT .../slides/order` permutes the deck. Each is an ordinary
+linked revision, so every structural change is reviewable and reversible through
+the same history as a content edit. Position is an index rather than an "after
+this slide" reference, because the first position has no slide before it.
+Reordering sends the complete order and refuses anything that is not a
+permutation; deletion refuses the last remaining slide; both prevent a partial
+request from silently dropping or duplicating a slide. Adding runs the model on
+the deck's titles and purposes only, so an addition cannot rewrite slides the
+user already accepted, and no model runs for deletion or reordering at all.
+
+A slide takes one of seven shapes: bullets, section, statistic, quote,
+comparison, chart, and table. The model chooses the shape and deterministic code
+still owns geometry. The layout is an enum in the decoding grammar, and the
+fields a layout needs are promoted to `required` for that call with their null
+branch removed, so a chart slide without chart data is not a decodable reply.
+Naming the fields in prose was not sufficient in either direction: the model
+returned chart layouts with no data, and later a prompt asking to keep the
+current shape contradicted a grammar asking for a new one. The compiler still
+degrades a layout it cannot render to bullets rather than raising, so a partial
+plan produces a usable slide. Charts and tables compile from the plan, which is
+what lets a revision edit their data or remove them; only an attached image
+survives a revision, because nothing regenerates it.
+
+Geometry is measured rather than fixed. `backend/presentations/layout.py`
+estimates rendered line count from text length, box width, and point size, so
+the compiler sizes a title to its actual content, stacks bullets at their own
+heights, and shrinks the body font within bounds when content is dense instead
+of overflowing. Every content layout derives its width from one place and yields
+the column a generated image occupies, including the heading band, whose purpose
+line sits low enough to reach the picture's top edge.
+
 `backend/api/v1/presentations.py` enqueues creation with HTTP 202 and returns an
 owned job handle. Job reads expose queued/running/terminal state and the latest
 validated draft; cancellation is cooperative. The legacy creation SSE endpoint
@@ -527,7 +749,7 @@ and explicit image feedback through `ImageRefinementService`, then replaces the
 image UUID in a new append-only deck revision. The surrounding native Office
 objects remain editable, and the prior deck/image revisions remain intact.
 
-The image-generation handler monitors HTTP disconnects around provider work. A browser cancellation cancels the service task, interrupts the matching ComfyUI prompt, shields the terminal `failed/cancelled` write, and finishes without an application exception. The unified React composer infers new-image generation from bounded natural-language intent and image analysis from an attachment while retaining progress, cancellation, retry input, visible API failures, and bounded file selection. `ImageArtifact` fetches private bytes with the optional auth header, renders a temporary object URL, exposes grounded Gemma text, and supports local download, owned deletion, ordinary vision questions, and non-destructive source-conditioned refinements of generated or uploaded images. The follow-up classifier recognizes bounded imperative and polite question-shaped edit requests before general question words. A returned FLUX child revision replaces its parent in the active chat card rather than appending a duplicate card, while persisted parent lineage keeps history recoverable. Conversation hydration and artifact history restore both diagrams and binary images.
+The image-generation handler monitors HTTP disconnects around provider work. A browser cancellation cancels the service task, interrupts the matching ComfyUI prompt, shields the terminal `failed/cancelled` write, and finishes without an application exception. The unified React composer infers new-image generation from bounded natural-language intent and image analysis from an attachment while retaining progress, cancellation, retry input, visible API failures, and bounded file selection. `ImageArtifact` fetches private bytes with the optional auth header, renders a temporary object URL, exposes grounded Qwen text, and supports local download, owned deletion, ordinary vision questions, and non-destructive source-conditioned refinements of generated or uploaded images. The follow-up classifier recognizes bounded imperative and polite question-shaped edit requests before general question words. A returned FLUX child revision replaces its parent in the active chat card rather than appending a duplicate card, while persisted parent lineage keeps history recoverable. Conversation hydration and artifact history restore both diagrams and binary images.
 
 `backend/api/v1/conversations.py` returns a bounded, user-owned conversation snapshot containing persisted turns and their conversation artifacts. The frontend uses that read boundary to reconstruct the active transcript and ready/failed diagram cards after a full reload.
 
@@ -601,18 +823,19 @@ presentation, diagram, vision, and embedding roles; blank role values inherit
 the global adapter and established endpoint fallbacks. `INFERENCE_PROVIDER_NAME`
 is only a provenance label and does not select transport behavior. Existing
 `LLMClient`, `LMStudioLLM`, and LM-Studio-named vision/embedding imports remain
-temporary compatibility aliases, while new assembly depends on the neutral
-contracts.
+temporary source-compatibility aliases only; runtime assembly depends on the
+neutral contracts and the current deployment no longer calls LM Studio.
 
 The text adapter preserves ordered messages, exposes only
 application-supplied tool schemas, yields assistant deltas, and requires
 terminal `[DONE]` for streams. An in-process lock protects each shared client
 instance. Model discovery, loading, unloading, context/KV-cache selection, GPU
 offload, residency verification, and restoration are deliberately not part of
-the inference adapter. LM Studio remains the qualified runtime, and its
-management API stays an operator/resource-manager concern; a future vLLM or
-TensorRT-LLM runtime must implement the same inference contract and pass the
-owning subsystem acceptance paths before promotion.
+the inference adapter. The qualified runtime is vLLM 0.23.0 in two pinned
+Compose services. Compose owns their model/revision/startup profile, while the
+adapter remains unaware of process lifecycle; another runtime must implement
+the same inference contract and pass the owning subsystem acceptance paths
+before promotion.
 
 For the Compose runtime, `ModelExecutionGate` adds an expiring Redis lease
 shared by backend and presentation-worker processes: a foreground chat
@@ -623,7 +846,43 @@ stores only coordination keys and opaque lease tokens. This is bounded priority
 scheduling for one local model host, not GPU-capacity accounting or a general
 distributed-agent scheduler.
 
-The current local qualification selected `qwen/qwen3.5-9b` for main response, MCP tool selection, and diagram roles and retained `google/gemma-4-12b` for presentations. Qwen passed all bounded supervisor/tool cases and completed real ordinary-chat and diagram paths faster. Gemma remained the presentation specialist because the actual Qwen worker path failed the strict progressive `PlannedSlide` contract after its correction budget, even though Qwen passed one smaller harness run. The repeatable harness is a promotion gate, not sufficient proof by itself: a candidate must also pass the actual owning subsystem's API, worker, and browser acceptance path.
+The current local qualification consolidates main response, native tool selection, diagram, presentation, architecture-candidate, and vision roles on `qwen/qwen3.5-4b`, served in FP8 by `vllm-main`; `vllm-embedding` serves Nomic text embeddings. Provider-level checks passed streaming termination, native tools, structured output, vision, and embedding dimensions. Real AniOS acceptance then passed direct chat, live Chromium chat/restoration, uploaded-image analysis, real ComfyUI generation while both vLLM services remained resident, and three consecutive presentation jobs after the typed presentation boundary normalized optional-field variants. The repeatable harness remains a promotion gate, not sufficient proof by itself.
+
+### Schema-constrained model boundaries
+
+Every boundary that parses model output as data rather than prose now sends a JSON Schema with the request, which the runtime decodes as a grammar. A reply that violates the schema is unrepresentable rather than detected afterwards, so the correction retries below each boundary became a fallback for semantic errors instead of the primary defence against format drift.
+
+The presentation boundary derives its schema from the same Pydantic model that validates the reply, so the contract and the grammar cannot drift apart; an explicitly requested slide count is compiled into `minItems`/`maxItems` rather than validated and re-prompted. This closed the two observed Qwen output variants directly: `extra="forbid"` becomes `additionalProperties: false`, which forbids invented `optional_` field prefixes, and the typed `notes` string forbids `notes: null`. The diagram boundary constrains its reply envelope, which guarantees the correctly escaped newlines its retry text was written to request.
+
+Routing classifiers decode greedily. At the runtime's default sampling the same freshness question was observed answering both `YES` and `NO` across identical calls, which made a search decision depend on sampling luck; `temperature=0` makes the judgement reproducible.
+
+### Scalable inference target
+
+The current Compose profile is one deployment of stable role-level inference
+contracts, not the definition of AniOS scale. Main, presentation, diagram,
+vision, and embedding settings already resolve independently through
+provider-neutral adapters. The accepted target keeps registered role selection,
+authorization, privacy policy, durable job state, and result promotion in AniOS,
+then introduces an application-owned capacity/placement policy that resolves a
+role to a stable serving endpoint. Behind that endpoint, generation/vision,
+embedding, and future specialist models can scale as separate vLLM pools.
+
+Replication and data parallelism are the preferred way to increase independent
+request throughput when each model fits one GPU. Tensor or pipeline parallelism
+is reserved for a model that cannot fit on one device, because splitting one
+request adds communication cost. Ray Serve LLM or Kubernetes may later provide
+load balancing, back-pressure, autoscaling, and failure replacement, but neither
+is part of the current Compose runtime. A serving control plane does not become
+an agent and never receives application authorization, memory-write, tool-risk,
+or artifact-promotion authority. Each pool must expose model-labelled vLLM
+Prometheus metrics, and promotion requires role correctness plus warm/cold
+latency, queueing, saturation, cancellation, and recovery evidence.
+
+The [inference scaling target](diagrams/inference-scaling-target.svg) uses blue
+for implemented application boundaries and yellow dashed nodes for this planned
+serving infrastructure. Multi-node vLLM traffic must remain on a protected
+private network; it is not treated as an authenticated or encrypted application
+boundary by default.
 
 Explicit diagram requests bypass ordinary memory retrieval and the assistant graph, then run through the dedicated `DiagramAgent` graph. `LLMDiagramProvider` asks `DIAGRAM_LLM_MODEL` for a bounded JSON/Mermaid specification, performs one correction retry for malformed local-model formatting, and accepts only allowlisted diagram declarations and passive source within size/line limits. The provider is behind `DiagramProvider`; the application owns routing, validation, persistence, and lifecycle events.
 
@@ -636,15 +895,15 @@ shows named outline, slide-planning, visual-generation, and render/validation
 stages, survives navigation or reload through the stored job handle, and
 disappears only after terminal promotion or failure. This is completed-work
 progress rather than a wall-clock estimate. Text planning and HiDream execution
-remain serial on the current workstation because LM Studio and ComfyUI share
+remain serial on the current workstation because vLLM and ComfyUI share
 one RTX 5080 and both qualified provider paths have concurrency one; safe
 pipeline overlap requires a separate GPU or a capacity-aware resource lease.
 
 The separate port-8002 renderer accepts only a validated `DeckSpec`. PptxGenJS creates native editable text, shape, chart, table, image, and notes objects; a Python OOXML inspector confirms slide count and required native-object kinds; and the worker opens the file through headless LibreOffice Impress and exports a PDF as an Office-readability check. The renderer uses an isolated temporary directory and removes it after each serialized job. The application writes the PPTX through the opaque binary store and promotes the pending revision only after both structural and Office validation succeed. A failure remains terminal on the pending revision and does not replace the prior current revision.
 
-The maintainer-only architecture candidate command uses the same agent/provider boundary but remains outside the HTTP runtime. `ArchitectureCandidateService` reads the registered canonical source plus only explicitly selected, bounded repository text. The CLI requires a loopback LM Studio endpoint; rejects traversal, common secret-bearing names, unsupported types, existing outputs, and canonical output paths; can require implementation-backed visible labels with one bounded semantic correction; and invokes the pinned Mermaid renderer. Output is a new review candidate only. Technical and visual review, followed by an explicit manual canonical edit or promotion, remains mandatory because label presence and syntax cannot prove relationship accuracy.
+The maintainer-only architecture candidate command uses the same agent/provider boundary but remains outside the HTTP runtime. `ArchitectureCandidateService` reads the registered canonical source plus only explicitly selected, bounded repository text. The CLI requires a loopback model endpoint, currently `vllm-main` on port `8003`; rejects traversal, common secret-bearing names, unsupported types, existing outputs, and canonical output paths; can require implementation-backed visible labels with one bounded semantic correction; and invokes the pinned Mermaid renderer. Output is a new review candidate only. Technical and visual review, followed by an explicit manual canonical edit or promotion, remains mandatory because label presence and syntax cannot prove relationship accuracy.
 
-`backend/embeddings/lm_studio.py` implements LM Studio's OpenAI-compatible `/v1/embeddings` boundary. Nomic document/query task prefixes are applied and the configured 768-value dimension is validated before persistence or search. The provider also supports a batch `embed_texts` call that embeds many documents in one request with index-ordered reassembly; knowledge ingestion uses it so a multi-chunk document embeds in a single call instead of one request per chunk. Because the local provider still serializes concurrent embedding calls, a chat turn embeds the query exactly once and reuses that vector across personal semantic, entity, knowledge, procedure, summary, and toolbox retrieval rather than re-embedding the same query per store.
+`backend/embeddings/lm_studio.py` retains its compatibility filename but implements the provider-neutral OpenAI-compatible `/v1/embeddings` boundary used by `vllm-embedding`. Nomic document/query task prefixes are applied and the configured 768-value dimension is validated before persistence or search. The provider also supports a batch `embed_texts` call that embeds many documents in one request with index-ordered reassembly; knowledge ingestion uses it so a multi-chunk document embeds in a single call instead of one request per chunk. A chat turn embeds the query exactly once and reuses that vector across personal semantic, entity, knowledge, procedure, summary, and toolbox retrieval rather than re-embedding the same query per store.
 
 ### Persistence
 
@@ -658,7 +917,7 @@ SQLAlchemy models exist for conversations, profiles/facts, episodic/semantic mem
 - semantic embedding and cosine-distance retrieval are operational through the injected provider;
 - every current user-owned memory table participates in JSON export and delete-all; knowledge documents also have a scoped individual deletion path.
 
-PostgreSQL transaction advisory locks serialize natural-key writes. An async acceptance test runs six real PostgreSQL waits through a two-connection bounded pool while an event-loop heartbeat continues; it verifies a peak of two checked-out connections and complete pool drain. Transaction-abort and pool-timeout tests prove rollback/reuse and checkout recovery. The shared LM Studio embedding adapter serializes requests by default because mixed load proved that the local provider returns HTTP 400 under concurrent embedding calls; the limit is configurable after provider validation.
+PostgreSQL transaction advisory locks serialize natural-key writes. An async acceptance test runs six real PostgreSQL waits through a two-connection bounded pool while an event-loop heartbeat continues; it verifies a peak of two checked-out connections and complete pool drain. Transaction-abort and pool-timeout tests prove rollback/reuse and checkout recovery. The shared embedding adapter retains a configurable in-process concurrency limit; increase it only after mixed-load acceptance against the deployed vLLM profile.
 
 An opt-in Compose maintenance service applies retention, optionally refreshes stale vectors, performs final inspection, emits non-content JSON monitoring events, and continues after transient interval failures. The operations API also exposes Prometheus-compatible counts, expiry backlog, stale vectors, invariants, database latency, and a binary health gauge. A configurable live soak mixes chat, working-memory reads/writes, and health inspection through the public API and cleans its isolated user afterward.
 
@@ -682,7 +941,7 @@ Conversation selection/history browsing and configuration screens are not implem
 
 ## Automated validation
 
-Backend tests cover LM Studio chat/embedding contracts, streaming, bounded same-user chronological history, supervisor routing/delegation, coordinator routing/caching, rolling summaries, every typed memory API, diagram and presentation agent validation/lifecycle/routing, repository candidate boundaries, retention, re-embedding rollback, concurrency, operational inspection, PostgreSQL/pgvector persistence, scoping, export, and deletion. Playwright covers deterministic chat/memory/diagram/presentation workflows and separately gated live local-model/Nomic acceptance, including visible specialist/model activity and persisted real-model Mermaid and PowerPoint artifacts. There is no component-test framework.
+Backend tests cover OpenAI-compatible chat/embedding contracts, streaming, bounded same-user chronological history, supervisor routing/delegation, coordinator routing/caching, rolling summaries, every typed memory API, diagram and presentation agent validation/lifecycle/routing, repository candidate boundaries, retention, re-embedding rollback, concurrency, operational inspection, PostgreSQL/pgvector persistence, scoping, export, and deletion. Playwright covers deterministic chat/memory/diagram/presentation workflows and separately gated live local-model/Nomic acceptance, including visible specialist/model activity and persisted real-model Mermaid and PowerPoint artifacts. There is no component-test framework.
 
 The intended validation layers are:
 
@@ -748,10 +1007,10 @@ Current runtime validation completes this flow through the qualified main and sp
   branch is deterministically verified but a real Google request is
   `UNVERIFIED` until a key is configured. Sensitive-query review, redacted
   audit storage, and provider hardening remain `PLANNED`.
-- Explicit Mermaid diagram generation through a dedicated diagram graph, user-scoped lifecycle/history/deletion, strict rendering, reload restoration, local Mermaid/SVG export, and disconnect recovery: implemented and browser/direct-client verified. Free local raster generation, bounded upload, source-conditioned FLUX editing of generated or uploaded images, opaque binary storage, owned content/deletion, aligned multimodal image embeddings, Gemma image understanding, browser progress/retry/cancel, private rendering, navigation/reload restoration, history, download, and deletion are implemented and direct/live-browser verified. Threaded followup questions on owned generated or uploaded images reuse the stored bytes and the same vision boundary with a bounded, persisted question/answer thread; deterministic browser/backend coverage and a live Gemma call through the visual MCP facade are verified. Indexing the initial upload analysis into semantic memory, so an uploaded image's content is recalled by an ordinary conversation turn, is implemented and live-verified; indexing the interactive follow-up thread remains `PLANNED`. The same diagram, image, followup, and artifact-status services are exposed through a confirmed, metadata-only local FastMCP facade; autonomous consequential-call approval/resume remains `PLANNED`. Review-only local Gemma architecture candidates remain implemented and never update canonical source automatically. Automated binary retention/export, durable diagram/image queues, GPU resource leasing/transitions, and generalized image agents remain `PLANNED`.
+- Explicit Mermaid diagram generation through a dedicated diagram graph, user-scoped lifecycle/history/deletion, strict rendering, reload restoration, local Mermaid/SVG export, and disconnect recovery: implemented and browser/direct-client verified. Free local raster generation, bounded upload, source-conditioned FLUX editing of generated or uploaded images, opaque binary storage, owned content/deletion, aligned multimodal image embeddings, Qwen image understanding, browser progress/retry/cancel, private rendering, navigation/reload restoration, history, download, and deletion are implemented and direct/live-browser verified. Threaded followup questions on owned generated or uploaded images reuse the stored bytes and the same vision boundary with a bounded, persisted question/answer thread; deterministic browser/backend coverage and a live local VLM call through the visual MCP facade are verified. Indexing the initial upload analysis into semantic memory, so an uploaded image's content is recalled by an ordinary conversation turn, is implemented and live-verified; indexing the interactive follow-up thread remains `PLANNED`. The same diagram, image, followup, and artifact-status services are exposed through a confirmed, metadata-only local FastMCP facade; autonomous consequential-call approval/resume remains `PLANNED`. Review-only local Qwen architecture candidates remain implemented and never update canonical source automatically. Automated binary retention/export, durable diagram/image queues, GPU resource leasing/transitions, and generalized image agents remain `PLANNED`.
 - Editable PowerPoint generation through a focused presentation graph, a durable leased worker, PostgreSQL job state, reconnectable progressive drafts, a Redis foreground-chat priority gate, strict typed specifications, model-declared ranked visual briefs, bounded best-effort default HiDream enrichment, persistent per-slide feedback conversations, additional HiDream generation, FLUX refinement of an attached slide image, selected-slide-only changes, append-only revision history, PptxGenJS native objects, OOXML inspection, LibreOffice validation, opaque storage, browser previews, named download, deletion, and metadata-only MCP tools: implemented and direct/live-browser verified. Raster images inside a slide remain replaceable image objects rather than decomposed editable pixels. Importing arbitrary existing PPTX files, distributed GPU-capacity scheduling, source-grounded deck research/citations, template/master libraries, automated visual-diff review, and a minimum-readable-font visual quality gate remain `PLANNED`.
 - Semantic safe-descriptor discovery, approved preference/sanitized outcome memory, stdio/streamable-HTTP connectivity, native main-model selection, live pre-invocation re-resolution, guarded execution, and UI lifecycle status: implemented. Automatic registry refresh/change notifications, consequential-call approval/resume, per-server user credentials/scopes, durable execution audit, A2A, and general multi-agent scheduling remain `PLANNED`; tool memory never authorizes execution.
 
 ## Architectural decision
 
-The project has adopted clean-architecture and dependency-inversion principles as a design direction. [ADR 0001](adr/0001-clean-architecture-and-modular-structure.md) records that direction. [ADR 0002](adr/0002-typed-agent-memory-manager-and-pgvector-indexes.md) records the typed store-manager/coordinator boundary and the pgvector HNSW indexing choice. [ADR 0003](adr/0003-local-visual-artifacts-and-resource-aware-orchestration.md) records the local-only visual-artifact, GPU-resource, and scalable orchestration direction; editable diagrams, raster generation and source editing, binary storage, upload validation, VLM analysis, aligned image retrieval, browser integration, and the local visual FastMCP facade are implemented while deterministic resource orchestration remains `PLANNED`. [ADR 0004](adr/0004-hybrid-free-tier-web-research.md) records the isolated Google research worker, Tavily fallback/cross-check, free-tier quota, and data-minimization boundary. [ADR 0005](adr/0005-typed-editable-presentation-generation.md) records the typed editable-presentation, focused-agent, durable-job worker, foreground-priority model gate, renderer, and validated-promotion boundaries. [ADR 0006](adr/0006-hybrid-supervisor-and-qualified-model-roles.md) records the typed hybrid-supervisor boundary, visible delegation provenance, role-specific local-model configuration, and acceptance-path-driven model promotion rule. [ADR 0007](adr/0007-versioned-visual-semantics-memory-and-editing.md) records implemented source-aware immutable editing plus planned generated-image observation, handle-based visual memory, semantic verification, and derived-data lifecycle boundaries. [ADR 0008](adr/0008-provider-neutral-inference-boundary.md) records the provider-neutral inference adapters, role-level configuration, and deliberate separation from runtime lifecycle control.
+The project has adopted clean-architecture and dependency-inversion principles as a design direction. [ADR 0001](adr/0001-clean-architecture-and-modular-structure.md) records that direction. [ADR 0002](adr/0002-typed-agent-memory-manager-and-pgvector-indexes.md) records the typed store-manager/coordinator boundary and the pgvector HNSW indexing choice. [ADR 0003](adr/0003-local-visual-artifacts-and-resource-aware-orchestration.md) records the local-only visual-artifact, GPU-resource, and scalable orchestration direction; editable diagrams, raster generation and source editing, binary storage, upload validation, VLM analysis, aligned image retrieval, browser integration, and the local visual FastMCP facade are implemented while deterministic resource orchestration remains `PLANNED`. [ADR 0004](adr/0004-hybrid-free-tier-web-research.md) records the isolated Google research worker, Tavily fallback/cross-check, free-tier quota, and data-minimization boundary. [ADR 0005](adr/0005-typed-editable-presentation-generation.md) records the typed editable-presentation, focused-agent, durable-job worker, foreground-priority model gate, renderer, and validated-promotion boundaries. [ADR 0006](adr/0006-hybrid-supervisor-and-qualified-model-roles.md) records the typed hybrid-supervisor boundary, visible delegation provenance, role-specific local-model configuration, and acceptance-path-driven model promotion rule. [ADR 0007](adr/0007-versioned-visual-semantics-memory-and-editing.md) records implemented source-aware immutable editing plus planned generated-image observation, handle-based visual memory, semantic verification, and derived-data lifecycle boundaries. [ADR 0008](adr/0008-provider-neutral-inference-boundary.md) records the provider-neutral inference adapters, role-level configuration, and deliberate separation from runtime lifecycle control. [ADR 0009](adr/0009-vllm-default-local-inference-runtime.md) records the pinned two-service vLLM deployment, consolidated Qwen/Nomic role profile, GPU-safe startup order, and remaining resource-management boundary.

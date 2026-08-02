@@ -18,6 +18,8 @@ class PresentationState(TypedDict):
     deck: NotRequired[DeckSpec]
     slide_id: NotRequired[str]
     feedback: NotRequired[str]
+    brief: NotRequired[str]
+    after_slide_id: NotRequired[str | None]
     specification: NotRequired[DeckSpec]
     slide: NotRequired[SlideSpec]
 
@@ -68,6 +70,28 @@ class PresentationAgent:
             raise RuntimeError("Presentation graph completed without a slide")
         return slide
 
+    # Plan one added slide, leaving every existing slide untouched.
+    async def add_slide(
+        self,
+        deck: DeckSpec,
+        brief: str,
+        slide_id: str,
+        after_slide_id: str | None = None,
+    ) -> SlideSpec:
+        result = await self.graph.ainvoke(
+            {
+                "operation": "add_slide",
+                "deck": deck,
+                "brief": brief,
+                "slide_id": slide_id,
+                "after_slide_id": after_slide_id,
+            }
+        )
+        slide = result.get("slide")
+        if not isinstance(slide, SlideSpec):
+            raise RuntimeError("Presentation graph completed without a slide")
+        return slide
+
 
 # Build a specialized create-or-revise graph around the injected provider.
 def build_presentation_graph(provider: PresentationProvider) -> Any:
@@ -84,6 +108,15 @@ def build_presentation_graph(provider: PresentationProvider) -> Any:
             if specification is None:
                 raise ValueError("Presentation provider returned no slides")
             return {"specification": specification}
+        if state["operation"] == "add_slide":
+            return {
+                "slide": await provider.add_slide(
+                    state["deck"],
+                    state["brief"],
+                    state["slide_id"],
+                    state.get("after_slide_id"),
+                )
+            }
         if state["operation"] == "revise_slide":
             return {
                 "slide": await provider.revise_slide(

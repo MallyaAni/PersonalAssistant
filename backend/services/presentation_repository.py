@@ -134,7 +134,8 @@ class SQLAlchemyPresentationRepository:
         user_id: str,
         presentation_id: str,
         base_revision_id: str,
-        target_slide_id: str,
+        # None when the revision adds a slide rather than editing one.
+        target_slide_id: str | None,
         change_summary: str,
         provider: str,
         model: str | None,
@@ -194,6 +195,22 @@ class SQLAlchemyPresentationRepository:
             DeckSpec.model_validate_json(base.specification_json),
             revision.to_dict(),
         )
+
+    # Point a revision at the slide it produced. An addition has no slide id
+    # until the model has planned it, so the revision is created without one and
+    # claims it afterwards; without this the new slide's follow-up history is
+    # empty even though a revision created it.
+    async def set_revision_target(
+        self,
+        presentation_id: str,
+        revision_id: str,
+        slide_id: str,
+    ) -> None:
+        revision = await self.session.get(PresentationRevision, uuid.UUID(revision_id))
+        if revision is None or str(revision.presentation_id) != presentation_id:
+            return
+        revision.target_slide_id = slide_id
+        await self.session.commit()
 
     # Return one owned deck, its current full spec, and complete revision lineage.
     async def get_owned(

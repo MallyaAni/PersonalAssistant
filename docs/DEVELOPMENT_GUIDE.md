@@ -47,7 +47,7 @@ For every modifying task, use this process:
 5. Visually inspect every affected SVG for clipped text, unreadable routing, and incorrect relationships.
 6. Report exactly `Diagram impact: UPDATED — <diagram names>` or `Diagram impact: NONE — <reason>`.
 
-Gemma can create a review candidate from the current canonical source and explicitly selected implementation evidence. Run this command from the repository root, use only files needed to prove the requested relationships, and require important implementation labels:
+Qwen can create a review candidate from the current canonical source and explicitly selected implementation evidence. Run this command from the repository root, use only files needed to prove the requested relationships, and require important implementation labels:
 
 ```powershell
 python -m backend.cli.generate_architecture_candidate `
@@ -150,30 +150,30 @@ Key settings are:
 | `DATABASE_POOL_TIMEOUT_SECONDS` | `30` | Maximum wait for an available pooled connection |
 | `DATABASE_USE_NULL_POOL` | `false` | Keep `false` in runtime; tests set it to `true` because pytest creates multiple event loops |
 | `INFERENCE_ADAPTER` | `openai_compatible` | Global inference wire adapter; unsupported values fail during settings validation or factory construction |
-| `INFERENCE_PROVIDER_NAME` | `lm_studio` | Operator-facing provenance label only; it does not choose the adapter or manage model lifecycle |
-| `LLM_BASE_URL` | `http://127.0.0.1:1234` | Global OpenAI-compatible server root; role adapters append their endpoint paths |
-| `LLM_MODEL` | `google/gemma-4-12b` | Use the model key reported by `GET /api/v1/models` |
+| `INFERENCE_PROVIDER_NAME` | `vllm` | Operator-facing provenance label only; it does not choose the adapter or manage model lifecycle |
+| `LLM_BASE_URL` | `http://127.0.0.1:8003` | Global OpenAI-compatible vLLM server root; role adapters append their endpoint paths |
+| `LLM_MODEL` | `qwen/qwen3.5-4b` | Served model name reported by `GET /v1/models` |
 | `LLM_REASONING_EFFORT` | `none` | Legacy/fallback OpenAI-compatible reasoning control |
 | `MAIN_INFERENCE_ADAPTER` | blank | Main-role adapter; blank inherits `INFERENCE_ADAPTER` |
 | `MAIN_LLM_BASE_URL` | blank | Main response and native-tool endpoint; blank falls back to `LLM_BASE_URL` |
-| `MAIN_LLM_MODEL` | blank | Main response/native-tool model; blank falls back to `LLM_MODEL`; current qualified setting is `qwen/qwen3.5-9b` |
+| `MAIN_LLM_MODEL` | blank | Main response/native-tool model; blank falls back to `LLM_MODEL`; current qualified setting is `qwen/qwen3.5-4b` |
 | `MAIN_LLM_REASONING_EFFORT` | `none` | Main-role reasoning control |
 | `PRESENTATION_INFERENCE_ADAPTER` | blank | Presentation-role adapter; blank inherits `INFERENCE_ADAPTER` |
 | `PRESENTATION_LLM_BASE_URL` | blank | Presentation specialist endpoint; blank falls back through main and global endpoints |
-| `PRESENTATION_LLM_MODEL` | blank | Progressive outline/slide/revision model; current qualified setting is `google/gemma-4-12b` |
+| `PRESENTATION_LLM_MODEL` | blank | Progressive outline/slide/revision model; current qualified setting is `qwen/qwen3.5-4b` |
 | `PRESENTATION_LLM_REASONING_EFFORT` | `none` | Presentation-role reasoning control |
 | `DIAGRAM_INFERENCE_ADAPTER` | blank | Diagram-role adapter; blank inherits `INFERENCE_ADAPTER` |
 | `DIAGRAM_LLM_BASE_URL` | blank | Diagram specialist endpoint; blank falls back through main and global endpoints |
-| `DIAGRAM_LLM_MODEL` | blank | Mermaid planning model; current qualified setting is `qwen/qwen3.5-9b` |
+| `DIAGRAM_LLM_MODEL` | blank | Mermaid planning model; current qualified setting is `qwen/qwen3.5-4b` |
 | `DIAGRAM_LLM_REASONING_EFFORT` | `none` | Diagram-role reasoning control |
-| `LLM_API_KEY` | none | Optional Bearer token when LM Studio authentication is enabled |
+| `LLM_API_KEY` | none | Optional Bearer token when the compatible inference server requires one |
 | `LLM_TIMEOUT_SECONDS` | `120` | Provider request timeout in seconds |
 | `EMBEDDING_INFERENCE_ADAPTER` | blank | Embedding-role adapter; blank inherits `INFERENCE_ADAPTER` |
-| `EMBEDDING_BASE_URL` | blank | Embedding endpoint; blank falls back to `LLM_BASE_URL` |
-| `EMBEDDING_MODEL` | `text-embedding-nomic-embed-text-v1.5` | LM Studio embedding model key |
+| `EMBEDDING_BASE_URL` | blank | Embedding endpoint; the qualified host profile uses `http://127.0.0.1:8004` |
+| `EMBEDDING_MODEL` | `text-embedding-nomic-embed-text-v1.5` | Served Nomic embedding model name |
 | `EMBEDDING_MODEL_VERSION` | `nomic-embed-text-v1.5` | Version label persisted with new semantic/tool embeddings |
 | `EMBEDDING_DIMENSION` | `768` | Must match the embedding response and pgvector column |
-| `EMBEDDING_MAX_CONCURRENCY` | `1` | Shared in-process LM Studio embedding request limit; increase only after provider load validation |
+| `EMBEDDING_MAX_CONCURRENCY` | `1` | Shared in-process embedding request limit; increase only after mixed-load vLLM validation |
 | `MEMORY_SEMANTIC_MAX_COSINE_DISTANCE` | `0.35` | Maximum distance admitted to semantic/tool discovery |
 | `MEMORY_SEMANTIC_MAX_RESULTS` | `5` | Hard retrieval result limit |
 | `MEMORY_SEMANTIC_MAX_CONTENT_CHARS` | `4000` | Hard semantic prompt-content character budget |
@@ -211,7 +211,7 @@ Key settings are:
 | `VISION_INFERENCE_ADAPTER` | blank | Vision-role adapter; blank inherits `INFERENCE_ADAPTER` |
 | `VISION_LLM_BASE_URL` | blank | Vision endpoint; blank falls back to `LLM_BASE_URL` |
 | `VISION_LLM_REASONING_EFFORT` | `none` | Vision-role reasoning control |
-| `VISION_MODEL` | `google/gemma-4-12b` | Local VLM model key; independently replaceable from the chat setting |
+| `VISION_MODEL` | `qwen/qwen3.5-4b` | Local VLM served by `vllm-main`; independently replaceable from the chat setting |
 | `VISION_MAX_TOKENS` | `512` | Maximum grounded analysis output tokens |
 | `SEARCH_PROVIDER_NAME` | `tavily` | Set `mcp` to route approved internet searches through the built-in read-only MCP server |
 | `SEARCH_API_KEY` | none | Tavily credential inherited only by the internet MCP child when allowlisted |
@@ -243,20 +243,22 @@ DATABASE_MAX_OVERFLOW=5
 DATABASE_POOL_TIMEOUT_SECONDS=30
 DATABASE_USE_NULL_POOL=false
 INFERENCE_ADAPTER=openai_compatible
-INFERENCE_PROVIDER_NAME=lm_studio
-LLM_BASE_URL=http://127.0.0.1:1234
-LLM_MODEL=google/gemma-4-12b
+INFERENCE_PROVIDER_NAME=vllm
+LLM_BASE_URL=http://127.0.0.1:8003
+LLM_MODEL=qwen/qwen3.5-4b
 LLM_REASONING_EFFORT=none
-MAIN_LLM_MODEL=qwen/qwen3.5-9b
+MAIN_LLM_MODEL=qwen/qwen3.5-4b
 MAIN_LLM_REASONING_EFFORT=none
 PRESENTATION_INFERENCE_ADAPTER=openai_compatible
-PRESENTATION_LLM_MODEL=google/gemma-4-12b
+PRESENTATION_LLM_MODEL=qwen/qwen3.5-4b
 PRESENTATION_LLM_REASONING_EFFORT=none
-DIAGRAM_LLM_MODEL=qwen/qwen3.5-9b
+DIAGRAM_LLM_MODEL=qwen/qwen3.5-4b
 DIAGRAM_LLM_REASONING_EFFORT=none
 VISION_INFERENCE_ADAPTER=openai_compatible
-VISION_MODEL=google/gemma-4-12b
+VISION_LLM_BASE_URL=http://127.0.0.1:8003
+VISION_MODEL=qwen/qwen3.5-4b
 EMBEDDING_INFERENCE_ADAPTER=openai_compatible
+EMBEDDING_BASE_URL=http://127.0.0.1:8004
 EMBEDDING_MODEL=text-embedding-nomic-embed-text-v1.5
 EMBEDDING_MODEL_VERSION=nomic-embed-text-v1.5
 EMBEDDING_DIMENSION=768
@@ -272,10 +274,10 @@ Do not use the Compose credentials or example secret in production. Because proc
 
 The inference adapter sends generation, vision, and embedding requests only.
 It does not discover, load, unload, resize, or restore models. Keep the
-qualified LM Studio CLI/management procedure below as an operator action. A new
-runtime may use another role endpoint without changing application services,
-but it is not promoted until the role qualification harness and the owning
-API/browser acceptance paths pass against that runtime.
+qualified vLLM Compose profile below as an operator action. A new runtime may
+use another role endpoint without changing application services, but it is not
+promoted until the role qualification harness and the owning API/browser
+acceptance paths pass against that runtime.
 
 FastAPI request handling uses SQLAlchemy's async engine and `asyncpg`. Runtime uses a
 bounded async queue pool configured by the four database-pool variables above. The
@@ -283,53 +285,74 @@ synchronous psycopg2 engine remains only for Alembic and explicit inspection cod
 Pytest selects `NullPool` before importing backend settings so independently created
 test event loops never reuse an async connection owned by another loop.
 
-Confirm and, when needed, load the qualified role and embedding models through
-LM Studio's local management API. Do not load Gemma with only its model name on
-the current workstation: LM Studio may select the model's 256k context profile,
-which required about 29.44 GB and failed the resource guardrail during live
-acceptance.
+The default Compose profile pins vLLM 0.23.0 by image digest, pins the Qwen and
+Nomic model revisions, and keeps model/compile caches on `E:`. Native Windows is
+not a supported vLLM runtime, so Docker Desktop's Linux/WSL2 engine and NVIDIA
+container runtime are required. Start Qwen completely before Nomic: simultaneous
+cold initialization failed with no available KV-cache blocks, while the ordered
+profile passed and both models remained resident with ComfyUI generation.
 
 ```powershell
-Invoke-RestMethod 'http://127.0.0.1:1234/api/v1/models'
-$mainModel = @{
-  model = 'qwen/qwen3.5-9b'
-  context_length = 8192
-  flash_attention = $true
-  echo_load_config = $true
-} | ConvertTo-Json
-Invoke-RestMethod 'http://127.0.0.1:1234/api/v1/models/load' -Method Post -ContentType 'application/json' -Body $mainModel
-$presentationModel = @{
-  model = 'google/gemma-4-12b'
-  context_length = 8192
-  flash_attention = $true
-  offload_kv_cache_to_gpu = $false
-  echo_load_config = $true
-} | ConvertTo-Json
-Invoke-RestMethod 'http://127.0.0.1:1234/api/v1/models/load' -Method Post -ContentType 'application/json' -Body $presentationModel
-$embeddingModel = @{ model = 'text-embedding-nomic-embed-text-v1.5' } | ConvertTo-Json
-Invoke-RestMethod 'http://127.0.0.1:1234/api/v1/models/load' -Method Post -ContentType 'application/json' -Body $embeddingModel
+docker compose up -d --wait --wait-timeout 900 vllm-main vllm-embedding
+Invoke-RestMethod 'http://127.0.0.1:8003/v1/models'
+Invoke-RestMethod 'http://127.0.0.1:8004/v1/models'
+docker compose ps vllm-main vllm-embedding
 ```
 
-The RTX 5080 profile that passed simultaneous main/presentation browser
-acceptance used the LM Studio CLI to limit both instances to one inference slot
-and partially offload Gemma:
+The one-command startup encodes the complete safe order: wait for Qwen, wait for
+Nomic, start host ComfyUI, apply migrations, then start the application services:
 
-```powershell
-$lms = "$env:USERPROFILE\.lmstudio\bin\lms.exe"
-& $lms load qwen/qwen3.5-9b --identifier qwen/qwen3.5-9b --context-length 8192 --parallel 1 --gpu max --yes
-& $lms load google/gemma-4-12b --identifier google/gemma-4-12b --context-length 8192 --parallel 1 --gpu 0.5 --yes
-Invoke-RestMethod 'http://127.0.0.1:1234/api/v1/models'
+```bash
+bash scripts/start-anios.sh
 ```
 
-Require exactly one loaded instance for each configured role, both with
-`context_length=8192` and `parallel=1`; the verified Gemma instance reported
-`offload_kv_cache_to_gpu=false`. The CLI reported about 6.10 GiB for Qwen and
-9.28 GiB for Gemma. Those estimates and the `--gpu` ratio are workstation
-profiles, not portable defaults: re-estimate and requalify them after changing
-the GPU, quantization, context, or parallelism. The management response must
-report `status: loaded`; the model catalog alone does not prove an instance is
-loaded. On one GPU these roles still share physical capacity, so keep the Redis
-model gate enabled in Compose.
+### Database backup and restore
+
+The database holds real conversations, memory, presentations, and artifact
+records. It runs with `archive_mode = off` and has no replica, so anything lost
+there is lost permanently — there is no WAL to replay.
+
+Startup therefore dumps the schema before applying migrations, keeping the ten
+most recent runs below `data/backups/` (gitignored). A fresh install with no
+tables is skipped, so empty dumps never push real ones out of the window.
+
+Restore one into the running database with:
+
+```bash
+gunzip -c data/backups/anios_db-<stamp>.sql.gz \
+  | docker compose exec -T db psql -U postgres -d anios_db
+```
+
+The dump is taken with `--clean --if-exists`, so restoring replaces the current
+schema rather than merging into it.
+
+Never verify a migration path by emptying `anios_db`. Migrations recreate
+structure and never data, so the check appears to pass while destroying
+everything the database held. Use the throwaway database instead:
+
+```bash
+bash scripts/verify-migrations.sh
+```
+
+It creates a scratch database, upgrades it to head from nothing, reports the
+resulting table count and revision, and drops it however the run exits.
+
+`vllm-main` quantizes the Qwen checkpoint to FP8 on load and stores its KV cache
+in FP8, serving a 16,384-token maximum, four sequences, a 4,096-token scheduler
+budget, native Qwen tool/reasoning parsers, and 0.55 GPU-memory utilization. The
+embedding service serves Nomic at 2,048 tokens, sixteen sequences, and 0.06
+utilization, sized to its measured 0.26 GiB of weights.
+
+FP8 requires native FP8 tensor cores (Ada or newer; the RTX 5080 reports compute
+capability 12.0). On a GPU without them, set `VLLM_MAIN_QUANTIZATION` and
+`VLLM_MAIN_KV_CACHE_DTYPE` to `auto` and lower the context accordingly. vLLM logs
+that the checkpoint carries no calibrated KV scaling factors and falls back to
+1.0, so treat FP8 output quality as measured on this profile rather than assumed.
+
+These values are a measured RTX 5080 profile, not portable defaults. Requalify
+after changing GPU, model, precision, context, concurrency, or vLLM version.
+Health and model-list responses prove readiness only; repeat direct AniOS API,
+worker, browser, and ComfyUI coexistence acceptance after such changes.
 
 ### Qualify local models by role
 
@@ -338,8 +361,8 @@ distort each other's timings or exhaust the local host:
 
 ```powershell
 python -m backend.cli.qualify_models `
-  --model qwen/qwen3.5-9b `
-  --model google/gemma-4-12b `
+  --base-url http://127.0.0.1:8003 `
+  --model qwen/qwen3.5-4b `
   --timeout-seconds 180
 ```
 
@@ -349,13 +372,64 @@ contract. Compare correctness before latency. A harness pass is only a gate:
 configure one candidate for one role, recreate the owning Compose services,
 then repeat that subsystem's direct API, persisted-state, log, and real-browser
 acceptance path. Do not promote a model because it returned valid JSON once.
-The current presentation choice illustrates why: Qwen passed one harness run
-but failed the actual worker's strict `PlannedSlide` contract after its bounded
-correction attempt, while Gemma completed the real editable-PPTX path.
+The current presentation promotion illustrates why: the initial real Qwen jobs
+exposed `optional_` field-name and nullable-note variants that a smaller harness
+did not. The typed boundary was narrowed to exact names and normalized null
+optional notes; only then did three consecutive real queued jobs pass.
+
+### Benchmark provider-neutral inference roles
+
+Run the operational benchmark before comparing a new runtime or changing the
+qualified role profile. It exercises the neutral contracts sequentially so a
+single GPU is not distorted by benchmark-created contention:
+
+```powershell
+python -m backend.cli.benchmark_inference `
+  --output data\inference-benchmark.json
+```
+
+The command records the configured provider name, adapter, sanitized endpoint,
+model, non-identifying host facts, and GPU name/memory/driver. It does not
+retain prompts, model output, tool arguments, fixture bytes, credentials, or
+user data. The report covers:
+
+- main-role time to first token, total streaming latency, completed terminal
+  stream, and normalized estimated output tokens per second;
+- one harmless native tool decision with exact bounded JSON arguments;
+- presentation-role buffered latency and exact structured JSON correctness;
+- a three-document embedding batch with finite-value and dimension checks; and
+- vision latency and correctness on a deterministic application-owned
+  red-square PNG, identified only by its SHA-256.
+
+The throughput value is a runtime-neutral estimate using the same word and
+punctuation counter for every provider; it is not a vendor tokenizer's native
+tokens/second metric. Terminal streaming is true only after the adapter has
+consumed its required terminal marker. Default pass limits are 30 seconds for
+main TTFT and vision, 45 seconds for the complete main stream and presentation,
+10 seconds for the native tool and embedding batch, and at least 1.0 normalized
+estimated token/second. Override the corresponding CLI options only when the
+changed threshold is reviewed and recorded with the evidence. Any correctness
+failure or threshold miss returns exit code 1.
+
+The 2026-07-31 LM Studio RTX 5080 baseline ran three times with Qwen3.5 9B as main,
+Gemma 4 12B for presentation/vision, and Nomic Embed Text v1.5 at 768
+dimensions. All runs passed 5/5. The observed ranges were 9.790-10.900
+seconds main TTFT, 10.902-11.991 seconds main total, 3.836-4.219 estimated
+tokens/second, 0.488-0.499 seconds native tool latency, 8.803-11.419 seconds
+presentation latency, 2.295-2.575 seconds embedding latency, and 7.799-8.263
+seconds vision latency. The fixed fixture hash was
+`783a9ecd8f02d36c2156ebb5ad66e03fe96882f624374509a87585bba82305fe`.
+The promoted vLLM 0.23.0 profile then passed 5/5 with consolidated Qwen 3.5 4B
+and Nomic: main TTFT 0.260 seconds, main total 1.653 seconds at 27.821 estimated
+tokens/second, native tool 0.439 seconds, presentation 0.174 seconds, embedding
+batch 0.065 seconds, and vision 0.118 seconds. These are small warm operational
+probes, not sustained-load or long-context measurements.
+Benchmark success is comparative operational evidence, not subsystem/browser
+acceptance and not authorization to promote a candidate runtime.
 
 ### Install and run the free local image provider
 
-`scripts\start-anios.ps1` brings the whole stack up with one command: it starts host ComfyUI (if nothing is on `:8188`), runs `docker compose up -d`, and waits for the backend. Image generation needs ComfyUI running; when it is down, `POST /api/v1/images/generate` returns a `503` with `reason: image_provider_unreachable` and a message naming ComfyUI, which the composer surfaces verbatim.
+`scripts/start-anios.sh` brings the whole stack up with one command: it waits for `vllm-main`, then `vllm-embedding`, starts host ComfyUI if needed, applies migrations, starts the remaining Compose services, and waits for the backend and for ComfyUI when it launched it. It runs under any Bash, including Git Bash on Windows. Image generation needs ComfyUI running; when it is down, `POST /api/v1/images/generate` returns a `503` with `reason: image_provider_unreachable` and a message naming ComfyUI, which the composer surfaces verbatim.
 
 The verified Windows host uses ComfyUI 0.28.0, Python 3.14, PyTorch CUDA
 13.0, the official HiDream-O1 Dev FP8 checkpoint for generation, and the
@@ -392,12 +466,12 @@ tool, preserving the exact filenames:
 | `models/vae` | `flux2-vae.safetensors` | `d64f3a68e1cc4f9f4e29b6e0da38a0204fe9a49f2d4053f0ec1fa1ca02f9c4b5` |
 
 ```powershell
-$comfyArgs = @('main.py', '--listen', '127.0.0.1', '--port', '8188', '--disable-auto-launch')
+$comfyArgs = @('main.py', '--listen', '0.0.0.0', '--port', '8188', '--disable-auto-launch')
 Start-Process -FilePath "$comfyRoot\.venv\Scripts\python.exe" -ArgumentList $comfyArgs -WorkingDirectory $comfyRoot -WindowStyle Hidden -RedirectStandardOutput "$comfyRoot\comfyui.stdout.log" -RedirectStandardError "$comfyRoot\comfyui.stderr.log"
 Invoke-RestMethod 'http://127.0.0.1:8188/system_stats'
 ```
 
-`/system_stats` must report the NVIDIA device and CUDA PyTorch runtime. Reachability alone does not verify generation. ComfyUI can release cached weights through `POST /free` with `{"unload_models":true,"free_memory":true}`; do not unload LM Studio or ComfyUI during an active request.
+`/system_stats` must report the NVIDIA device and CUDA PyTorch runtime. Reachability alone does not verify generation. ComfyUI can release cached weights through `POST /free` with `{"unload_models":true,"free_memory":true}`; do not restart vLLM or unload ComfyUI during an active request.
 
 ## Git checkpoints and recovery
 
@@ -519,7 +593,7 @@ docker compose ps
 docker compose logs --tail 100 backend
 ```
 
-Compose starts `db`, `redis`, `backend`, and the `frontend` dev container. Re-run `docker compose up --build -d backend` after backend source changes because the backend container does not bind-mount the repository. The `frontend` container **does** bind-mount `./frontend` and hot-reloads, so frontend source changes need no rebuild. The container backend reaches host LM Studio at `http://host.docker.internal:1234`.
+Compose starts the ordered vLLM services, `db`, `redis`, `backend`, and the `frontend` dev container. Re-run `docker compose up --build -d backend` after backend source changes because the backend container does not bind-mount the repository. The `frontend` container **does** bind-mount `./frontend` and hot-reloads, so frontend source changes need no rebuild. Containers reach `vllm-main:8000` and `vllm-embedding:8000` on the Compose network.
 
 Multimodal image retrieval needs local encoder weights, which are not committed.
 Download them once into the gitignored `data/` tree:
@@ -739,7 +813,7 @@ cd frontend
 npm run test:e2e
 ```
 
-With the backend and a configured LM Studio model running, opt into the live-provider path:
+With the backend and both vLLM services healthy, opt into the live-provider path:
 
 ```powershell
 $env:ANIOS_E2E_LIVE='1'
@@ -913,7 +987,7 @@ Then submit a unique diagram request through Chromium. Require a rendered SVG, e
 
 For disconnect recovery, open the chat stream with a client that can stop reading immediately after the `artifact_started` data frame. Close the response, then list the scoped artifacts and require the new record to be `failed` with `error_code=cancelled`, no source, and no remaining `pending` record. Inspect logs for the same trace's `cancelled` lifecycle entry and delete the scoped validation record.
 
-For raster generation, keep both LM Studio and ComfyUI running and submit an allowlisted HiDream training resolution. The body is piped to `curl.exe` because Windows PowerShell 5 can mishandle large or completed `Invoke-WebRequest` responses:
+For raster generation, keep both vLLM services and ComfyUI running and submit an allowlisted HiDream training resolution. The body is piped to `curl.exe` because Windows PowerShell 5 can mishandle large or completed `Invoke-WebRequest` responses:
 
 ```powershell
 $imageBody = @{
@@ -954,7 +1028,7 @@ actual source kind. Qualification must cover at least
 localized color/material, object add/remove, and text edits; latency and visual
 preservation are acceptance criteria, not HTTP reachability.
 
-For real image understanding, upload a validated image to Gemma:
+For real image understanding, upload a validated image to Qwen through `vllm-main`:
 
 ```powershell
 curl.exe -sS -D - -X POST 'http://127.0.0.1:8000/api/v1/vision/analyze' `
@@ -969,7 +1043,7 @@ Require HTTP 201, `kind=uploaded_image`, ready binary integrity metadata, `analy
 For browser acceptance, also submit `create an image of ...` while Chat is selected. Require exactly one `/images/generate` request and the selected mode to change to Create image. Without changing that mode manually, ask a historical question such as `what car did we create an image of?`; require `/chat`, no second generation request, a grounded answer, terminal `done`, and cleared loading/input. Then explicitly ask to search the internet for that image, require image recall before the visible internet MCP lifecycle, and require source cards only when the provider returned non-empty results. Inspect Network and Console throughout. The Memory screen must not fetch the full export before a map-card click; selecting Semantic cache must return the owned export and display a bounded detail region without embedding vectors.
 
 Use the unified composer and image-card follow-up field for the remaining
-visual checks. Upload an image, wait for grounded Gemma analysis, then submit an
+visual checks. Upload an image, wait for grounded Qwen analysis, then submit an
 edit-shaped instruction in that uploaded image's follow-up field and require
 the same FLUX endpoint, visible refinement progress, and in-place child
 replacement. Require visible generation/refinement/analysis progress, one
@@ -1022,7 +1096,7 @@ cd frontend
 npx.cmd playwright test --grep "MCP tool|MCP refusal"
 $env:RUN_LIVE_TOOL_TESTS='1'
 $env:ANIOS_LIVE_TOOL_USER='live_tool_browser_user'
-npx.cmd playwright test --grep "@live uses a Gemma-selected MCP tool"
+npx.cmd playwright test --grep "@live uses the configured model for an MCP tool"
 ```
 
 The live user must have fresh descriptors from `sync_mcp_tools`. Require the
@@ -1059,7 +1133,7 @@ returns HTTP 409, no MCP result contains bytes or `_storage_key`, backend and
 sidecar logs contain no credential or raw image content, and scoped cleanup
 removes the disposable artifacts.
 
-For presentation acceptance, start LM Studio and the full Compose stack,
+For presentation acceptance, start both vLLM services and the full Compose stack,
 including `presentation-worker`, `presentation-renderer`, PostgreSQL, and Redis.
 Apply `alembic upgrade head` before starting or restarting the worker, then
 submit the documented create body:
@@ -1104,7 +1178,7 @@ first draft, advance from the persisted outline/slide checkpoints into any
 selected visual work and render/validation, remain reconnectable after leaving
 the view, and disappear when the ready deck is selected. Treat its percentage
 as stage-weighted completed work, not an elapsed-time estimate. On the current
-single RTX 5080 profile, keep LM Studio presentation planning and ComfyUI image
+single RTX 5080 profile, keep vLLM presentation planning and ComfyUI image
 generation serial: both qualified paths use concurrency one and share VRAM.
 Enable text/image pipeline overlap only after a separate GPU or a tested
 capacity-aware resource lease prevents model-memory contention.
@@ -1233,7 +1307,7 @@ The soak command uses an isolated user, mixes real SSE chat with public working-
 
 Dimension migration is a maintenance-window operation across all seven vector-bearing stores. First run the command above without `--apply`; it inventories the declared live and resumable shadow dimensions and calls no embedding provider. To migrate:
 
-1. Load and probe the target embedding model in LM Studio.
+1. Configure, start, and probe the target embedding model through the chosen provider (currently `vllm-embedding`).
 2. Stop every chat, memory, maintenance, and ingestion writer.
 3. Run the migration command with the new model, version, and dimension plus `--apply --confirm-offline`.
 4. If embedding fails, leave the shadow columns in place, correct the provider, and repeat the same command; committed batches resume while the old `embedding` columns remain authoritative.

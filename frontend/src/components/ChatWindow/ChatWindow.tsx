@@ -275,7 +275,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const handleVisualStarted = (mode: 'generate' | 'analyze') => {
     setMessages(prev => [...prev, {
       role: 'assistant',
-      content: mode === 'generate' ? 'Creating your image locally.' : 'Inspecting your image with Gemma.',
+      content: mode === 'generate' ? 'Creating your image locally.' : 'Inspecting your image with Qwen.',
       artifactStatus: 'generating',
       artifactActivity: mode === 'generate' ? 'Generating image...' : 'Analyzing image...',
     }])

@@ -18,7 +18,7 @@ Goal: provide a locally runnable frontend and backend that complete a real chat 
 Current evidence as of 2026-07-18:
 
 - `VERIFIED`: PostgreSQL and Redis start in Compose; PostgreSQL reported healthy while the backend ran from current host source.
-- `VERIFIED`: the documented chat payload returns `200 text/event-stream`, reaches `ConversationService` and the injected LM Studio main model through LangGraph, emits message deltas, terminates, and creates a conversation row with the completed response.
+- `VERIFIED`: the documented chat payload returns `200 text/event-stream`, reaches `ConversationService` and the injected provider-neutral main model through LangGraph, emits message deltas, terminates, and creates a conversation row with the completed response.
 - `VERIFIED`: initial Alembic revision `20260716_0001` creates the four application tables and `alembic check` reports no pending operations.
 - `VERIFIED`: Playwright Chromium covers deterministic chat success/failure; its opt-in live path verifies a unique configured-main-model response, response content appearing while loading remains active, stream termination, loading cleanup, and clean Console/Network state.
 - `VERIFIED`: the visible transcript survives navigation between Chat and Memory for the active conversation; starting a new conversation from Memory returns to a fresh Chat view; a bounded owned transcript and ready diagram restore from the stored active conversation after a full reload.
@@ -72,7 +72,7 @@ Current evidence as of 2026-07-17:
 - `VERIFIED`: deterministic dry-run/apply retention, resumable same-dimension re-embedding across every vector store, natural-key transaction locks, concurrent write tests, a pgvector retrieval benchmark, and user-scoped operational inspection/CLI checks pass.
 - `VERIFIED`: FastAPI, conversation, memory, coordinator, and operational persistence use SQLAlchemy `AsyncSession` through `asyncpg` with a bounded runtime pool. Six concurrent real PostgreSQL waits through a two-connection test pool preserved an event-loop heartbeat, never exceeded two checkouts, and drained completely; direct SSE chat and all live browser workflows passed through the same async repositories.
 - `VERIFIED`: a configurable mixed live soak completed 6,526 public operations in 60.758 seconds with concurrency four: 66 terminal chat streams plus 6,460 working-memory/operations calls, zero failures, 63.044 ms p95 overall latency, and scoped cleanup. Transaction-abort and pool-checkout-timeout tests prove database recovery.
-- `VERIFIED`: a shared configurable embedding concurrency limit prevents LM Studio's observed concurrent-request HTTP 400 failures; the unchanged soak passed after the targeted fix.
+- `VERIFIED`: a shared configurable embedding concurrency limit remains at the provider-neutral boundary; the unchanged soak passed after the targeted fix and the promoted vLLM embedding batch passed live acceptance.
 - `VERIFIED`: an opt-in Compose maintenance runner schedules retention, optional re-embedding, and final health inspection; it emits JSON/exit-code alert signals, continues after transient interval failures, and the API exposes Prometheus-compatible non-content metrics.
 - `VERIFIED`: vector dimension is runtime-configured, and an offline resumable shadow-column migrator covers all seven vector stores. An isolated PostgreSQL acceptance forced a wrong-dimension failure that preserved both original `vector(3)` values, then retried, changed the column to `vector(2)`, and rebuilt HNSW; a production dry run confirmed every real store remains `vector(768)` with no shadow columns.
 - `VERIFIED`: chat deterministically proposes explicit person/relationship, reusable workflow, and titled-reference memory in addition to preferred name and response style. Rejection performs no write; browser approval uses typed APIs with conversation/trace provenance. Live new-conversation checks recalled an approved dentist name plus unique workflow and reference codes, then cleanup removed the scoped data.
@@ -137,13 +137,13 @@ The local knowledge store is a working semantic retrieval path, but it is not ye
 
 Goal: let one AniOS conversation create editable technical diagrams and locally generated visual media while keeping models, renderers, storage, and scarce hardware replaceable behind typed orchestration boundaries.
 
-- `VERIFIED`: twelve concise canonical Mermaid/SVG orientation views, a documented one-question readability contract, render-input synchronization checks, architecture-change governance, and a local review-only Gemma candidate command are present. Eleven views document the current system; the separately labelled visual-memory/editing target records accepted future architecture without claiming implementation. The candidate path reads bounded explicit repository evidence, refuses remote endpoints and canonical overwrite, validates passive source plus required labels, renders an SVG, and still requires technical/visual review before manual promotion.
-- `VERIFIED`: a focused `PresentationAgent` asks Gemma for a compact outline, one bounded slide-content microtask at a time, or a strict selected-slide `SlideEdit`. Durable PostgreSQL jobs are claimed by a standalone leased worker that invokes this LangGraph, checkpoints progressive drafts, survives browser navigation/disconnect, and exposes reconnectable progress/cancellation. A Redis foreground-priority lease lets a waiting chat run between presentation microtasks. A deterministic application compiler turns bounded model output into stable editable layout objects. PptxGenJS renders editable native text, shapes, charts, tables, images, and notes; structural OOXML inspection and headless LibreOffice validation both precede atomic current-revision promotion. User-scoped append-only history, stable target-slide association, independent per-slide feedback conversations, stale-base conflict protection, opaque binary storage, progressive browser previews, slide thumbnails, navigation/reload restoration, named `.pptx` download, deletion, and visible queued/running/ready/failed/cancelled states pass direct and real-browser acceptance.
+- `VERIFIED`: twelve concise canonical Mermaid/SVG orientation views, a documented one-question readability contract, render-input synchronization checks, architecture-change governance, and a local review-only Qwen candidate command are present. Eleven views document the current system; the separately labelled visual-memory/editing target records accepted future architecture without claiming implementation. The candidate path reads bounded explicit repository evidence, refuses remote endpoints and canonical overwrite, validates passive source plus required labels, renders an SVG, and still requires technical/visual review before manual promotion.
+- `VERIFIED`: a focused `PresentationAgent` asks the configured presentation model, currently Qwen 3.5 4B through vLLM, for a compact outline, one bounded slide-content microtask at a time, or a strict selected-slide edit. Durable PostgreSQL jobs are claimed by a standalone leased worker that invokes this LangGraph, checkpoints progressive drafts, survives browser navigation/disconnect, and exposes reconnectable progress/cancellation. A Redis foreground-priority lease lets a waiting chat run between presentation microtasks. A deterministic application compiler turns bounded model output into stable editable layout objects. PptxGenJS renders editable native text, shapes, charts, tables, images, and notes; structural OOXML inspection and headless LibreOffice validation both precede atomic current-revision promotion. User-scoped append-only history, stable target-slide association, independent per-slide feedback conversations, stale-base conflict protection, opaque binary storage, progressive browser previews, slide thumbnails, navigation/reload restoration, named `.pptx` download, deletion, and visible queued/running/ready/failed/cancelled states pass direct and real-browser acceptance.
 - `VERIFIED`: forced worker termination reclaimed the same PostgreSQL job on attempt 2 and produced its exact four-slide validated PPTX after the killed worker's Redis model lease expired naturally. Two simultaneous disposable workers claimed separate jobs with distinct worker IDs and each completed once with one revision and its exact two slides. Direct and isolated real-browser cancellation both reached persisted `cancelled` state after worker ownership, cleared resumable browser state, exposed visible progress/terminal messages, and cleaned up their scoped records.
 - `VERIFIED`: a bounded four-client mixed workload overlapped six terminal chat streams and 45 memory/operations calls with two real presentation jobs. All 51 operations passed with zero failures; overall p95 was 35.059 seconds and maximum was 67.255 seconds, while both exact two-slide decks reached `ready` on attempt 1 in 147.881 seconds. An isolated live Chromium chat/deck workflow also passed in 131.2 seconds with both qualified models resident.
 - `VERIFIED`: the presentation specialist declares bounded image briefs and priorities with slide content. The durable worker automatically enriches the configured highest-value applicable slides through the owned ComfyUI/HiDream artifact boundary, checkpoints each image into reconnectable browser progress, and still promotes an editable text deck when imagery is unavailable. The bounded RTX 5080 profile defaults to one 1024px hero image because two serial defaults exceeded the five-minute live-browser readiness gate with both 8k text roles resident; users can add or refine imagery per slide afterward. The browser converts those durable outline, slide, selected-visual, and render/validation checkpoints into an accessible stage-weighted progress bar rather than an invented time estimate. Later image feedback reads the attached owned artifact through the shared integrity boundary, creates an immutable FLUX.2 Klein child, replaces the image UUID in a new deck revision and in-place browser preview, and preserves the same editable-object rendering and promotion gates.
 - `PLANNED`: capacity-aware presentation pipelining. Once a separate GPU or a
-  tested GPU-memory lease proves LM Studio and ComfyUI can overlap safely,
+  tested GPU-memory lease proves the configured inference runtime and ComfyUI can overlap safely,
   enqueue an eligible high-priority visual as soon as its slide checkpoint is
   durable while the presentation specialist plans later slides. Bound
   in-flight work per provider, preserve deterministic slide/image association,
@@ -159,7 +159,7 @@ Goal: let one AniOS conversation create editable technical diagrams and locally 
 - `PLANNED`: a hardware-resource manager that leases GPU capacity, drains active inference safely, selects configured per-role context/offload profiles, verifies residency before dispatch, and restores the configured main and specialist providers after a model transition or failure.
 - `VERIFIED`: free local ComfyUI 0.28 plus MIT-licensed HiDream-O1 Dev FP8 generates 2048x2048 PNGs through a typed provider and one-job concurrency gate. Direct RTX 5080 acceptance completed in 35.01 seconds under exclusive residency and 35.061 seconds while Gemma remained loaded at its 256k/parallel-4 profile; the immediate post-generation Gemma chat stream also completed. Live browser cancellation now interrupts the exact ComfyUI prompt, records `failed/cancelled`, clears loading, and produces no backend exception. Broader quality, crash recovery, and sustained-load benchmarks remain `PLANNED`; paid APIs, subscriptions, credits, and automatic cloud fallback remain excluded.
 - `VERIFIED`: generated and uploaded images use user-scoped PostgreSQL pending/ready/failed lifecycle plus opaque atomic local storage, SHA-256/size integrity checks, owned content reads, scoped file-plus-row deletion, and sanitized invalid-input/provider failures. Automated retention/export and crash reconciliation remain `PLANNED`.
-- `VERIFIED`: bounded PNG/JPEG/WebP multipart upload validation and real Gemma 4 12B image understanding are implemented. Live acceptance correctly identified a unique magenta geometric fox and its light-green circular platform; malformed bytes returned 422 and created no record. Dedicated multimodal embeddings are now `VERIFIED`: `nomic-embed-vision-v1.5`
+- `VERIFIED`: bounded PNG/JPEG/WebP multipart upload validation and real local VLM image understanding are implemented. The current Qwen 3.5 4B vLLM path described a persisted 2048px validation image through the owning API in 7.31 seconds; malformed bytes return 422 and create no record. Dedicated multimodal embeddings are now `VERIFIED`: `nomic-embed-vision-v1.5`
 runs locally through ONNX and is aligned to the text latent space, generated and
 uploaded images are embedded at store time, and a text query retrieves them by
 pixel content through `GET /api/v1/artifacts/{user_id}/search/images` and through
@@ -174,15 +174,16 @@ non-zero below a per-mode floor. The configured Qwen cascade passed all 52
 committed cases in the final live run with 1.0 recall, 1.0 specificity, no
 misses, and no unnecessary searches. Image-retrieval calibration remains manual
 and is the next evaluation gap.
-- `VERIFIED`: threaded followup questions about any owned generated or uploaded image reuse the integrity-checked stored bytes and the same Gemma vision boundary, replay a bounded question/answer context, persist a size-bounded thread in artifact metadata, seed from a prior flat analysis, and reject unowned or non-ready images with 404 before any provider call. Deterministic Chromium plus backend/unit coverage pass, and a live Gemma followup completed through the local visual MCP facade. The interactive follow-up thread lives only on the artifact record. The initial upload analysis, however, is indexed into semantic memory as a provenance-labelled description and is recalled by an ordinary conversation turn (live-verified); indexing the follow-up thread itself remains `PLANNED`.
+- `VERIFIED`: threaded followup questions about any owned generated or uploaded image reuse the integrity-checked stored bytes and the same provider-neutral vision boundary, replay a bounded question/answer context, persist a size-bounded thread in artifact metadata, seed from a prior flat analysis, and reject unowned or non-ready images with 404 before any provider call. Deterministic Chromium plus backend/unit coverage pass, and live local-VLM calls completed through the visual MCP facade and current Qwen vLLM endpoint. The interactive follow-up thread lives only on the artifact record. The initial upload analysis, however, is indexed into semantic memory as a provenance-labelled description and is recalled by an ordinary conversation turn (live-verified); indexing the follow-up thread itself remains `PLANNED`.
 - `VERIFIED`: the unified composer routes explicit natural-language new-image requests to image generation, image attachments to analysis, and historical image questions back to ordinary chat without creating another image. Generated and uploaded image cards distinguish ordinary questions from imperative and polite question-shaped edit requests such as `can you make this car red?`; edit requests send the integrity-checked source pixels, exact feedback, and preservation constraints through the four-step local FLUX.2 Klein 4B Distilled editor. The immutable child records its parent, source SHA-256, feedback, model, seed, steps, and latency, receives its own visual embedding, and replaces the active card in place. Live RTX 5080 acceptance covers generated and uploaded parents plus slide-attached images; real Chromium runs passed with clean required Network/Console/page state. Prompt-only HiDream refinement and the experimental SAM recolor branch were removed after failing preservation or quality evidence.
 - `PLANNED` (accepted design in ADR 0007): generated pixels become visible before a durable, idempotent VLM observation job records append-only typed semantics. Visual memory stores owned artifact/revision handles, user aliases, and derived descriptions rather than duplicate pixels; calibrated fusion of exact aliases, semantic vectors, pixel vectors, conversation, and recency must clarify ambiguous matches. Post-edit observation and policy verification will compare requested changes and preservation constraints before promotion, retain the parent on failure, and permit at most one bounded retry. Remaining delivery stages are observation, reference resolution, semantic verification, then MCP/agent and resource-scheduling exposure.
 - `VERIFIED`: an explicit internet search about a recalled image runs image retrieval first, appends only a bounded prompt/analysis description to the normalized subject, privacy-screens the combined query, invokes the read-only internet MCP tool, and never sends image bytes. Real Chromium verified generation, grounded followup, visible search-tool lifecycle, terminal streaming, cleared loading/input, and memory-map drilldown.
-- `VERIFIED`: deterministic and live Chromium acceptance covers diagrams, real ComfyUI image generation, multipart Gemma analysis, private image rendering, progress/cancellation, retry, 413/422/502/503 failure display, navigation and reload restoration, history, download, owned deletion, clean successful Network/Console behavior, and terminal loading state.
+- `VERIFIED`: deterministic and live Chromium acceptance covers diagrams, real ComfyUI image generation, multipart local-VLM analysis, private image rendering, progress/cancellation, retry, 413/422/502/503 failure display, navigation and reload restoration, history, download, owned deletion, clean successful Network/Console behavior, and terminal loading state.
 
-AniOS now uses qualified model roles: `qwen/qwen3.5-9b` is the current main
-response/native-tool and diagram model, while `google/gemma-4-12b` remains the
-presentation specialist and vision model. No model owns orchestration state or
+AniOS now uses one qualified local model across generation roles:
+`qwen/qwen3.5-4b` is the current main response/native-tool, diagram,
+presentation, architecture-candidate, and vision model, while Nomic remains
+the text embedding model. Both run through pinned vLLM Compose services. No model owns orchestration state or
 its own lifecycle. The application owns policy, durable jobs, resource leases,
 and provider recovery so specialized workers and future multi-agent graphs can
 scale without coupling the system to the current RTX 5080 or planned DGX Spark.
@@ -204,16 +205,22 @@ scale without coupling the system to the current RTX 5080 or planned DGX Spark.
   turns to the existing main assistant/MCP path;
 - `VERIFIED`: independently configurable main, presentation, and diagram model
   endpoints/identifiers/reasoning settings plus a repeatable comparative
-  qualification harness. Qwen passed bounded supervisor/tool cases plus real
-  chat and diagram paths; Gemma remained the presentation specialist after
-  Qwen failed the actual strict progressive worker contract;
+  qualification harness. Qwen 3.5 4B passed bounded provider checks plus real
+  chat, vision, image-coexistence, and repeated presentation-worker paths;
 - `VERIFIED`: provider-neutral text, vision, and embedding contracts now sit
   behind a fail-closed `openai_compatible` adapter factory. Main,
   presentation, diagram, vision, and embedding roles independently select an
-  adapter and endpoint while retaining the qualified LM Studio profile.
-  Buffered Gemma and streaming Qwen paths passed live acceptance. Model
-  discovery, loading, unloading, residency, context/KV-cache, and GPU offload
-  remain outside this boundary and require the planned resource manager;
+  adapter and endpoint. The qualified profile is now vLLM 0.23.0 with pinned
+  Qwen/Nomic model revisions and an ordered Compose startup. Buffered and
+  streaming Qwen paths passed live acceptance. Dynamic discovery, runtime
+  model switching, sleep/wake, context/KV-cache changes, and general GPU
+  capacity scheduling remain outside this boundary;
+- `VERIFIED`: a sanitized provider-neutral operational benchmark records
+  adapter/runtime/model and host GPU identity, enforces explicit exit-code
+  thresholds, and measures main TTFT/throughput/terminal streaming, native tool
+  correctness, presentation buffered structured output, embedding batch
+  latency/dimension, and fixed-fixture vision latency. Three sequential LM Studio
+  baselines and the promoted vLLM RTX 5080 profile passed all five role checks;
 - `VERIFIED`: the configured Qwen search cascade passed the complete 52-case
   routing evaluation with 1.0 recall and 1.0 specificity. Long-duration
   accuracy drift, contexts above the verified 8k workstation profile, and DGX
@@ -293,7 +300,7 @@ Safe tool-descriptor embeddings, approved preference/sanitized outcome memory, l
 - `PLANNED`: private single-user remote web access. Publish one HTTPS hostname
   through an authenticated edge/tunnel that gates every UI and `/api` request
   with a password-style login, one-time code, or approved identity before it
-  reaches a same-origin local reverse proxy. Keep PostgreSQL, Redis, LM Studio,
+  reaches a same-origin local reverse proxy. Keep PostgreSQL, Redis, vLLM,
   ComfyUI, the renderer, and internal MCP endpoints unaddressable from the
   public Internet; expose no secrets in the Vite bundle; support SSE, uploads,
   downloads, and long presentation/image requests through the proxy; use
@@ -301,11 +308,188 @@ Safe tool-descriptor embeddings, approved preference/sanitized outcome memory, l
   checks. GitHub Pages may host a public static demonstration, but it is not the
   target for the authenticated working application because it does not provide
   the required local API path or ordinary free private-site access control.
-- notifications;
 - calendar and email integrations;
 - voice interaction;
-- mobile applications;
-- proactive automation with explicit permission boundaries.
+- mobile applications.
+
+### Ambient local discovery and notification — PLANNED
+
+The first capability that reaches *out* rather than answering when asked: on a
+daily or weekly cadence, find things happening near where the user lives that
+match interests they have already approved, and offer each one as a phone
+notification plus a calendar entry.
+
+Cadence is deliberately slow. Social and venue schedules publish ahead of time,
+so a weekly sweep loses nothing a continuous one would catch, and it keeps the
+whole feature inside the free tiers the project already commits to. The loop
+must never be the reason a paid search tier is enabled.
+
+Deliver as separately verified atomic stages, in this order:
+
+- `VERIFIED` stage 1 — interest and locality profile. Typed, user-scoped
+  interests and places persist behind `/api/v1/discovery/{user_id}` with
+  create/update, list, and scoped delete. Labels are sealed with `EncryptedText`
+  and identified by a SHA-256 digest of their normalized form, because a sealed
+  column cannot carry a unique constraint; case and spacing differences resolve
+  to one interest. Provenance is validated against an allowed set so an inferred
+  value can never be written as though the user asked for it, and the interest
+  list is bounded because every label is eligible to enter a prompt. Coordinates
+  are deliberately not stored until a source needs them. Live-verified: the
+  profile round-trips through the owned API, a delete with another user's
+  identifier returns 404 without removing the row, and an ordinary chat turn
+  answered from the profile alone. Approval-gated capture from conversation
+  remains `PLANNED`; today an interest is recorded only by explicit request.
+- `VERIFIED` stage 2 — structured schedule sources. A provider-neutral
+  `EventSource` contract returns typed events carrying a stable per-source
+  identity, start, place, and link. Two adapters ship: iCalendar and RSS/Atom,
+  both parsed with the standard library so every bound and sanitization step
+  stays visible at the boundary where untrusted feed text enters. Text is
+  stripped of control characters and length-bounded, non-web URL schemes are
+  dropped, each source is capped at 200 events, bodies are abandoned mid-stream
+  past 5 MB, and a `RequestBudget` fixes how many outbound requests one run may
+  make so the free-tier claim stays checkable. General web search is explicitly
+  not the discovery mechanism: local listings are already structured, and search
+  would be noisier, less parseable, and the one part of the loop with a hard
+  monthly ceiling. The cascade remains available for enrichment, never for
+  enumeration. Live-verified against real public feeds: a calendar yielded 42
+  typed events with correct zone-aware all-day starts, and an RSS feed yielded
+  15 items within a 2-request budget.
+
+  RSS is deliberately weaker than iCalendar. A feed item states when it was
+  published, not when the happening occurs, so items yield no start time unless
+  the publisher supplies an explicit event date; the live RSS check returned 15
+  events all correctly marked unschedulable. Inventing a start from `pubDate`
+  would produce calendar entries that are confidently wrong. Treat iCalendar as
+  the source of record for anything that must reach a calendar, and RSS as a
+  discovery signal that a later enrichment stage may date.
+- `VERIFIED` stage 3 — durable scheduled discovery. A `discovery_schedules` row
+  states one user's cadence (daily or weekly, at a chosen local hour) and
+  `discovery_runs` holds each durable, leased instance. Leasing reuses the
+  presentation-worker pattern rather than introducing a second scheduler:
+  `FOR UPDATE SKIP LOCKED` over queued-or-lease-expired rows, a renewable lease,
+  attempt counting, cancellation, and terminal states that release the lease.
+
+  Two invariants carry the "never double-notify" requirement, and both are
+  tested rather than asserted. A unique constraint on `(schedule_id,
+  scheduled_for)` makes a slot exactly-once, so a restarted or duplicated
+  producer cannot queue the same sweep twice; polling the same due slot three
+  times produced one run. And `delivered_at` is written once, so a resumed run
+  that already delivered returns `False` rather than delivering again. A run
+  whose lease lapses mid-work is reclaimed with its persisted digest intact, so
+  the second attempt resumes rather than repeats.
+
+  Cadence maths is pure and computed in the user's own timezone, including the
+  daylight-saving case where a 9am sweep must stay 9am rather than drift with
+  the old UTC offset. The next slot is strictly future, so completing a run at
+  exactly its slot time cannot re-arm the same slot and spin. Each run records
+  `requests_spent`, making the free-tier claim checkable after the fact rather
+  than only asserted in advance.
+
+  The run body is not yet wired: stage 3 delivers the machinery, and stage 4
+  supplies the selection it will persist as a digest.
+- `VERIFIED` stage 4 — novelty and relevance. `discovery_sources` holds the
+  feeds a sweep reads, sealed and digest-identified like every other
+  user-supplied value. `discovery_seen_items` records what has been accounted
+  for, and novelty is decided in two passes: exact identity by a SHA-256 of the
+  source and its own external id, then a pgvector near-duplicate check for the
+  same happening relisted under a new identifier. Only an *announced* item
+  suppresses a later one, so being ranked out once cannot permanently mask
+  something the user was never shown.
+
+  Ranking is deterministic and runs outside the model, for the same reason
+  search routing does: a sweep happens while nobody is watching, and a sampled
+  judgement would make one feed produce different results on different days. A
+  candidate scores against its best single interest weighted by strength —
+  summing across interests would let something weakly resembling everything beat
+  something strongly matching one stated interest — and must clear a floor and a
+  lead-time window to be shown at all. An empty digest is a better outcome than
+  a padded one.
+
+  Live-verified against a real public calendar: 42 events yielded 34 novel
+  candidates and 1 selection, and an immediately repeated sweep over the
+  unchanged feed produced 0 novel and 0 selected. A feed listing the same event
+  twice in one response yields one candidate; an embedding-service failure
+  degrades the sweep to identity-only novelty rather than failing it.
+- `VERIFIED` (format and API; on-device import `UNVERIFIED`) stage 5 — calendar
+  artifacts. Each selected event becomes a valid single-`VEVENT` `.ics` at
+  `/api/v1/discovery/{user_id}/calendar/{item_digest}.ics`, rendered from the
+  stored item rather than re-fetching the feed. iOS adds these natively from a
+  link or attachment, so one artifact satisfies every transport below without
+  CalDAV, an Apple developer account, or write access to the user's calendar.
+
+  Written against RFC 5545 rather than formatted from a template, because the
+  failure mode is silent: a client that dislikes a file usually declines it
+  without explaining why, and one it accepts but misreads produces an
+  appointment at the wrong time. Escaping is ordered so backslashes cannot be
+  double-escaped, folding counts octets so a multi-byte character is never split
+  across the 75-octet boundary, naive timestamps are refused rather than guessed
+  at, and UIDs are stable across renders so re-importing updates the appointment
+  instead of creating a second one. A real feed produced a correctly folded,
+  correctly zoned file served as `text/calendar`. Opening one on an actual
+  iPhone remains unverified, and requires the transport decision below.
+
+  Verified when a generated file opens in iOS
+  Calendar with correct title, start/end, timezone, and location.
+- `IN PROGRESS` stage 6 — notification egress under an explicit permission
+  boundary. The contract, the permission model, and the pull path exist;
+  outbound sending ships disabled behind `DISCOVERY_EGRESS_ENABLED`, and no real
+  message has been delivered.
+
+  A subscriber is a revocable permission to send one person one kind of message
+  — not an account, no memory, no ability to ask the assistant anything. Keeping
+  it that small is what lets outbound delivery exist before multi-user identity
+  does. Consent is a recorded column and never inferred, so an address enrolled
+  without it is stored inactive and the default outcome of a mistake is that
+  nothing is sent. Revocation stops delivery and rotates the token in one
+  operation, so a calendar link already shared stops resolving too.
+
+  The digest text is assembled from typed records rather than generated. Feed
+  text is untrusted and this string leaves the machine: a model asked to
+  summarize hostile input can be steered by that input, and the output reaches
+  third parties over a channel that cannot be unsent.
+
+  iMessage is the chosen channel for a small circle. Apple publishes no
+  server-side API, so the unpaid path is a Mac signed into Messages exposing a
+  send tool over the existing MCP boundary — AniOS decides whether to send, that
+  machine does the sending, and the tool learns only an address and a body.
+  `shortcuts_pull` is a first-class alternative where the recipient's own device
+  fetches and AniOS makes no outbound connection at all.
+
+  Live-verified: enrolling without consent yields an undeliverable permission
+  and a feed that 404s; consenting opens it; the feed serves a real
+  `text/calendar` subscription document; and revoking makes the
+  already-shared link 404 again. Sending a real iMessage remains `UNVERIFIED`
+  and requires a Mac.
+
+  Original scope, still outstanding: A provider-neutral `NotificationChannel` contract whose first
+  adapter is one-way push (ntfy, Pushover, or an Apple Shortcuts webhook).
+  Egress is opt-in per channel, revocable, rate-limited, and audited; a channel
+  carries only the approved digest fields and the artifact link, never raw
+  memory content. This is the milestone's real risk: every earlier subsystem
+  fails closed inside the machine, and this one does not. Verified when a real
+  push arrives on-device with a working calendar link and revocation
+  immediately stops delivery.
+- `PLANNED` stage 7 — optional two-way messaging, only if replying is wanted.
+  A gateway such as OpenClaw may serve as transport, calling AniOS over the
+  existing MCP/HTTP boundary. AniOS remains the only scheduler and the only
+  memory owner: a second assistant maintaining its own heartbeat and its own
+  Markdown memory would fork the source of truth that the typed,
+  provenance-tracked memory subsystem exists to protect. Adopt the gateway for
+  its messaging integrations, not for its agent loop.
+
+Sequencing and gates:
+
+- Stages 1 through 5 stay inside the existing trust boundary and may proceed as
+  ordinary work. Stage 6 is the first outbound path in AniOS and should follow
+  the Milestone 7 authentication work, since tokens today cannot be revoked;
+  shipping outbound delivery before revocable sessions means a leaked token
+  reaches the user's phone.
+- Requalify on the DGX Spark before starting. The measured RTX 5080 profile —
+  FP8 kernel selection, KV sizing, and vLLM/ComfyUI GPU contention — does not
+  transfer, and unified memory removes the residency conflict that shaped the
+  current runtime.
+- Every stage keeps the free-tier posture: no paid search tier, no paid
+  messaging tier, and a bounded per-run request budget recorded with the digest.
 
 Security and privacy gates in [SECURITY.md](SECURITY.md) apply before these capabilities can be considered complete.
 

@@ -58,6 +58,27 @@ class StubPresentationProvider(PresentationProvider):
         assert prompt == "Create the acceptance deck"
         return _deck()
 
+    # Return one new slide carrying the requested identifier.
+    async def add_slide(
+        self,
+        deck: DeckSpec,
+        brief: str,
+        slide_id: str,
+        after_slide_id: str | None = None,
+    ) -> SlideSpec:
+        template = deck.slides[0]
+        return template.model_copy(
+            update={
+                "slide_id": slide_id,
+                "title": brief,
+                "elements": [
+                    template.elements[0].model_copy(
+                        update={"element_id": f"{slide_id}_title", "text": brief}
+                    )
+                ],
+            }
+        )
+
     # Return a replacement only for the selected slide.
     async def revise_slide(
         self,
@@ -85,14 +106,17 @@ class StubPlanningLLM:
     def __init__(self, replies: list[dict[str, Any]]) -> None:
         self.replies = replies
         self.requests: list[tuple[list[dict[str, str]], int]] = []
+        self.schemas: list[dict[str, Any] | None] = []
 
-    # Return the next compact plan without contacting LM Studio.
+    # Return the next compact plan without contacting the configured provider.
     def chat(
         self,
         messages: list[dict[str, str]],
         max_tokens: int = 1_024,
+        response_schema: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         self.requests.append((messages, max_tokens))
+        self.schemas.append(response_schema)
         return self.replies.pop(0)
 
 
@@ -156,6 +180,45 @@ async def test_compact_plan_compiles_six_slides_with_a_small_budget() -> None:
     assert all(len(slide.elements) >= 8 for slide in deck.slides)
     assert llm.requests[0][1] == 2_048
     assert "Produce exactly 6 slides" in llm.requests[0][0][0]["content"]
+
+
+# The planning call carries a decoding schema that forbids unknown field names
+# and pins an explicitly requested slide count, so the runtime cannot represent
+# the invented-field and wrong-count replies that previously needed a retry.
+@pytest.mark.asyncio
+async def test_compact_plan_sends_a_constraining_response_schema() -> None:
+    llm = StubPlanningLLM([{"content": json.dumps(_compact_plan(6))}])
+    provider = LLMPresentationProvider(
+        llm,  # type: ignore[arg-type]
+        max_tokens=8_192,
+        plan_max_tokens=2_048,
+    )
+    await provider.create("create a presentation on horses, 6 slides")
+    schema = llm.schemas[0]
+    assert schema is not None
+    assert schema["additionalProperties"] is False
+    assert schema["properties"]["slides"]["minItems"] == 6
+    assert schema["properties"]["slides"]["maxItems"] == 6
+    slide_schema = schema["$defs"]["PlannedSlide"]
+    assert slide_schema["additionalProperties"] is False
+    # An optional note is a string, so `notes: null` is not a decodable reply.
+    assert slide_schema["properties"]["notes"]["type"] == "string"
+
+
+# An unconstrained slide count leaves the array bounds to the declared model.
+@pytest.mark.asyncio
+async def test_compact_plan_schema_omits_bounds_without_a_requested_count() -> None:
+    llm = StubPlanningLLM([{"content": json.dumps(_compact_plan(3))}])
+    provider = LLMPresentationProvider(
+        llm,  # type: ignore[arg-type]
+        max_tokens=8_192,
+        plan_max_tokens=2_048,
+    )
+    await provider.create("create a presentation on horses")
+    schema = llm.schemas[0]
+    assert schema is not None
+    assert schema["properties"]["slides"]["minItems"] == 1
+    assert schema["properties"]["slides"]["maxItems"] == 30
 
 
 # Verify a wrong slide count receives one bounded compact-plan correction.
@@ -375,6 +438,48 @@ async def test_progressive_plan_compiles_each_scheduled_slide() -> None:
     assert drafts[1].specification.slides[1].title == "Modern roles"
     assert all(draft.expected_slide_count == 2 for draft in drafts)
     assert [request[1] for request in llm.requests] == [1_024, 1_024, 1_024]
+    assert (
+        "never prefix a field name with optional_" in llm.requests[1][0][0]["content"]
+    )
+
+
+# Verify an explicit null optional note is normalized before deterministic compilation.
+@pytest.mark.asyncio
+async def test_progressive_plan_normalizes_null_notes() -> None:
+    llm = StubPlanningLLM(
+        [
+            {
+                "content": json.dumps(
+                    {
+                        "title": "Null notes",
+                        "slides": [
+                            {"title": "Overview", "purpose": "Explain the topic"}
+                        ],
+                    }
+                )
+            },
+            {
+                "content": json.dumps(
+                    {
+                        "title": "Overview",
+                        "purpose": "Explain the topic",
+                        "points": ["First", "Second"],
+                        "notes": None,
+                    }
+                )
+            },
+        ]
+    )
+    provider = LLMPresentationProvider(llm, max_tokens=8_192)  # type: ignore[arg-type]
+
+    drafts = [
+        draft
+        async for draft in provider.create_progress(
+            "Create a concise presentation with exactly 1 slide"
+        )
+    ]
+
+    assert drafts[0].specification.slides[0].notes == ""
 
 
 # Verify an invalid outline receives one correction before slide microtasks run.
@@ -431,3 +536,78 @@ async def test_progressive_plan_corrects_one_invalid_outline() -> None:
     assert [len(draft.specification.slides) for draft in drafts] == [1, 2]
     assert len(llm.requests) == 4
     assert "failed validation" in llm.requests[1][0][0]["content"]
+    assert "never prefix one with optional_" in llm.requests[1][0][0]["content"]
+
+
+# Adding a slide must leave every existing slide byte-for-byte intact. The whole
+# reason "add another slide" failed before was that the only mutation available
+# rewrote the selected slide.
+@pytest.mark.asyncio
+async def test_agent_adds_a_slide_without_touching_the_existing_ones() -> None:
+    agent = PresentationAgent(StubPresentationProvider())
+    deck = _deck()
+
+    added = await agent.add_slide(deck, "Closing summary", "slide_003")
+
+    assert added.slide_id == "slide_003"
+    assert added.title == "Closing summary"
+    # The source deck is untouched; insertion is the service's decision.
+    assert [slide.slide_id for slide in deck.slides] == ["slide-a", "slide-b"]
+
+
+# The new slide is planned from the deck's shape, not its full contents, so the
+# model cannot rewrite accepted slides through the addition path.
+@pytest.mark.asyncio
+async def test_added_slide_prompt_carries_only_titles_and_purposes() -> None:
+    llm = StubPlanningLLM(
+        [
+            {
+                "content": json.dumps(
+                    {
+                        "title": "Closing",
+                        "purpose": "Summarize the argument",
+                        "points": ["First point", "Second point"],
+                        "notes": "",
+                    }
+                )
+            }
+        ]
+    )
+    provider = LLMPresentationProvider(llm, max_tokens=8_192)  # type: ignore[arg-type]
+
+    slide = await provider.add_slide(_deck(), "Add a closing slide", "slide_003")
+
+    assert slide.slide_id == "slide_003"
+    sent = llm.requests[0][0][1]["content"]
+    assert "Add a closing slide" in sent
+    assert "Opening" in sent
+    assert "Introduce the topic" in sent
+    # Element identifiers and geometry never reach the model.
+    assert "title-a" not in sent
+    assert "slide_003_title" not in sent
+
+
+def test_new_slide_identifier_never_collides_with_an_existing_one() -> None:
+    from backend.services.presentation_service import _next_slide_id
+
+    deck = DeckSpec(
+        title="Deck",
+        slides=[
+            SlideSpec(
+                slide_id=f"slide_{index:03d}",
+                title=f"S{index}",
+                purpose="p",
+                elements=[
+                    TextElement(
+                        element_id=f"t{index}", text="x", x=0.5, y=0.5, w=4, h=0.5
+                    )
+                ],
+            )
+            for index in (1, 2, 7)
+        ],
+    )
+
+    minted = _next_slide_id(deck)
+
+    assert minted == "slide_008"
+    assert minted not in {slide.slide_id for slide in deck.slides}

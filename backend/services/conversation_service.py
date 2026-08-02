@@ -24,6 +24,7 @@ from backend.core.interfaces import (
     SearchProvider,
 )
 from backend.core.llm import LLMClient
+from backend.discovery.service import DiscoveryProfileService, render_profile_context
 from backend.mcp.invocation import MCPInvocationError
 from backend.memory.coordinator import MemoryCoordinatorAgent
 from backend.memory.proposals import (
@@ -155,6 +156,7 @@ class ConversationService:
         supervisor: MainSupervisorAgent | None = None,
         presentation_jobs: PresentationJobService | None = None,
         presentation_model: str | None = None,
+        discovery_profile: DiscoveryProfileService | None = None,
     ):
         self.memory = memory
         self.assistant_graph = build_assistant_graph(llm)
@@ -179,20 +181,33 @@ class ConversationService:
         self.supervisor = supervisor
         self.presentation_jobs = presentation_jobs
         self.presentation_model = presentation_model
+        self.discovery_profile = discovery_profile
 
     # Return the registered subagent selected by the first-step supervisor.
+    #
+    # A routing decision names a capability; it does not grant one. This resolves
+    # that name against what is actually wired up, so a policy for an agent with
+    # no handler falls through to the ordinary assistant instead of dropping the
+    # turn. Adding a specialist means adding it here as well as to the registry —
+    # deliberately two steps, because routing to something that cannot run is
+    # worse than not routing at all.
     async def _delegated_capability(self, query: str) -> str | None:
         if self.supervisor is None:
             return None
         decision = await self.supervisor.decide(query)
         if decision.action != "delegate_agent":
             return None
-        if (
-            decision.capability_id == "presentation_agent"
-            and self.presentation_jobs is not None
-        ):
+        available = self._available_capabilities()
+        if decision.capability_id in available:
             return decision.capability_id
         return None
+
+    # Which specialists this conversation can actually delegate to right now.
+    def _available_capabilities(self) -> frozenset[str]:
+        available: set[str] = set()
+        if self.presentation_jobs is not None:
+            available.add("presentation_agent")
+        return frozenset(available)
 
     # Queue a specialist presentation job and persist the delegated chat turn.
     async def _process_presentation_delegation(
@@ -765,6 +780,15 @@ class ConversationService:
             "episodic": episodic,
             "semantic": semantic,
         }
+        # The assistant should already know what the user likes and where they
+        # live, so an ordinary turn can answer from the same approved profile a
+        # scheduled discovery run reads.
+        if self.discovery_profile is not None:
+            discovery = render_profile_context(
+                await self.discovery_profile.get_profile(user_id)
+            )
+            if discovery:
+                context["discovery"] = discovery
         async for retrieval_event in self._stream_optional_context(
             context,
             user_id,

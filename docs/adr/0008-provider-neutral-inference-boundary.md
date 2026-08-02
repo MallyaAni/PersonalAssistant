@@ -2,8 +2,8 @@
 
 ## Status
 
-Accepted and runtime verified for the current OpenAI-compatible LM Studio
-profile.
+Accepted and runtime verified first with LM Studio and now with the promoted
+OpenAI-compatible vLLM profile.
 
 ## Context
 
@@ -45,7 +45,8 @@ residency.
 - Each role can move independently instead of forcing a single provider or
   model on the whole system.
 - Runtime lifecycle policy cannot leak into model-generated tool decisions.
-- The current qualified LM Studio profile is unchanged.
+- Runtime promotion can change deployment without changing the business-service
+  contracts; ADR 0009 records the first such promotion from LM Studio to vLLM.
 - OpenAI-compatible syntax alone does not prove semantic compatibility;
   structured output, tool calls, streaming termination, vision payloads, and
   embeddings still require acceptance against each candidate runtime.
@@ -66,3 +67,6 @@ residency.
   and produced no blocking Console/page errors.
 - The presentation role returned `READY` from Gemma through the same neutral
   text contract.
+- The same contracts later passed vLLM chat streaming, native tool calls,
+  structured presentation output, vision, and Nomic embeddings, followed by
+  direct AniOS, worker, ComfyUI-coexistence, and live-browser acceptance.

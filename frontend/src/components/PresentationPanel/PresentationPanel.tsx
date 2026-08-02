@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import {
   Download,
   FilePlus2,
@@ -20,6 +20,9 @@ import {
   getPresentation,
   getPresentationJob,
   getPresentations,
+  addPresentationSlide,
+  deletePresentationSlide,
+  reorderPresentationSlides,
   revisePresentationSlide,
   type PresentationDeckSpec,
   type PresentationElement,
@@ -27,9 +30,26 @@ import {
   type PresentationSlide,
   type PresentationTheme,
 } from '../../services/api'
+import { submitOnEnter } from '../../utils/submitOnEnter'
 
 const SLIDE_WIDTH = 13.333
 const SLIDE_HEIGHT = 7.5
+
+// The canvas is a `container-type: inline-size` element spanning the whole
+// slide, so 100cqw is SLIDE_WIDTH inches and one inch is 100/13.333 = 7.5cqw.
+// A point is 1/72 inch, so a point is 7.5/72 cqw and a font size in points
+// divides by 9.6. Using 7.2 made preview text a third too large, which wrapped
+// it onto more lines than the compiler had measured and clipped it — the
+// downloaded deck was always correct, because PowerPoint uses the real points.
+const POINTS_PER_CQW = 9.6
+// Matches _LINE_PITCH in backend/presentations/layout.py. The preview must
+// assume the same line height the compiler used to size the boxes, or it will
+// disagree with the geometry it is drawing.
+const PREVIEW_LINE_HEIGHT = 1.25
+// One thumbnail (w-36 = 144px) plus the rail gap (gap-3 = 12px). Dragging
+// shifts the slides it displaces by exactly this much, so the deck reflows
+// under the cursor instead of only showing a line where the slide will go.
+const THUMBNAIL_STEP = 156
 
 // Isolate one user's reconnectable presentation job in browser storage.
 const presentationJobStorageKey = (userId: string) => (
@@ -109,6 +129,21 @@ const presentationProgress = (
     percent: 92,
     label: 'Rendering and validating the editable PowerPoint',
   }
+}
+
+// How far one thumbnail slides aside while another is dragged over it. Items
+// between the slide's origin and the pending insertion point step out of the
+// way by one thumbnail, which is the movement that confirms the drop before the
+// pointer is released.
+const reorderShift = (
+  index: number,
+  from: number,
+  insertAt: number,
+): number => {
+  if (from < 0 || insertAt < 0 || index === from) return 0
+  if (insertAt > from && index > from && index < insertAt) return -THUMBNAIL_STEP
+  if (insertAt <= from && index >= insertAt && index < from) return THUMBNAIL_STEP
+  return 0
 }
 
 interface OwnedSlideImageProps {
@@ -204,14 +239,14 @@ const SlideCanvas = ({
             style={{
               ...position,
               color: cssColor(element.color, theme.text_color),
-              fontSize: `${element.font_size / 7.2}cqw`,
+              fontSize: `${element.font_size / POINTS_PER_CQW}cqw`,
               fontWeight: element.bold ? 700 : 400,
               textAlign: element.align,
               display: 'flex',
               alignItems: element.valign === 'mid'
                 ? 'center'
                 : element.valign === 'bottom' ? 'flex-end' : 'flex-start',
-              lineHeight: 1.15,
+              lineHeight: PREVIEW_LINE_HEIGHT,
             }}
           >
             {element.bullet ? `• ${element.text}` : element.text}
@@ -333,6 +368,13 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
   const [expectedDraftSlides, setExpectedDraftSlides] = useState(0)
   const [autoImageMax, setAutoImageMax] = useState(0)
   const [isRevising, setIsRevising] = useState(false)
+  const [newSlideBrief, setNewSlideBrief] = useState('')
+  const [isAddingSlide, setIsAddingSlide] = useState(false)
+  const [isDeletingSlide, setIsDeletingSlide] = useState(false)
+  const [addPosition, setAddPosition] = useState<number | null>(null)
+  const [draggingSlideId, setDraggingSlideId] = useState('')
+  const [dropTarget, setDropTarget] = useState<{ id: string; side: 'before' | 'after' } | null>(null)
+  const [isReordering, setIsReordering] = useState(false)
   const [imagePrompt, setImagePrompt] = useState('')
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
   const [error, setError] = useState('')
@@ -606,6 +648,124 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
     }
   }
 
+  // Add a new slide after the selected one. Revising rewrites the slide you are
+  // looking at, so asking for "another slide" needs its own path.
+  const submitNewSlide = async () => {
+    const normalized = newSlideBrief.trim()
+    const revisionId = active?.current_revision_id
+    if (!active || !revisionId || !normalized || isAddingSlide) return
+    if (addPosition === null) return
+    setIsAddingSlide(true)
+    setNewSlideBrief('')
+    setError('')
+    setNotice('')
+    try {
+      const updated = await addPresentationSlide(
+        userId,
+        active.id,
+        revisionId,
+        normalized,
+        addPosition,
+      )
+      setActive(updated)
+      setPresentations(current => current.map(item => (
+        item.id === updated.id ? updated : item
+      )))
+      const slides = updated.current_revision?.specification?.slides ?? []
+      const previous = new Set(
+        (active.current_revision?.specification?.slides ?? []).map(slide => slide.slide_id),
+      )
+      const added = slides.find(slide => !previous.has(slide.slide_id))
+      if (added) setSelectedSlideId(added.slide_id)
+      setAddPosition(null)
+      setNotice(`Slide added as revision ${updated.current_revision?.revision_number}.`)
+    } catch (addError) {
+      setNewSlideBrief(normalized)
+      setError(addError instanceof Error ? addError.message : 'Unable to add the slide.')
+    } finally {
+      setIsAddingSlide(false)
+    }
+  }
+
+  // Remove the selected slide. Revising replaces a slide's content and can
+  // never remove it, so deletion is its own action.
+  const removeSlide = async (slideId: string, slideTitle: string) => {
+    const revisionId = active?.current_revision_id
+    if (!active || !revisionId || isDeletingSlide) return
+    const slides = active.current_revision?.specification?.slides ?? []
+    if (slides.length <= 1) {
+      setError('A presentation must keep at least one slide.')
+      return
+    }
+    if (!window.confirm(`Delete the slide "${slideTitle}"? This adds a new revision.`)) return
+    setIsDeletingSlide(true)
+    setError('')
+    setNotice('')
+    try {
+      const updated = await deletePresentationSlide(
+        userId,
+        active.id,
+        slideId,
+        revisionId,
+      )
+      setActive(updated)
+      setPresentations(current => current.map(item => (
+        item.id === updated.id ? updated : item
+      )))
+      const remaining = updated.current_revision?.specification?.slides ?? []
+      setSelectedSlideId(remaining[0]?.slide_id ?? '')
+      setNotice(`Slide removed as revision ${updated.current_revision?.revision_number}.`)
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : 'Unable to delete the slide.')
+    } finally {
+      setIsDeletingSlide(false)
+    }
+  }
+
+  // Move one slide to another position. The whole order is sent so the server
+  // can reject anything that is not a permutation, and no model is involved.
+  const moveSlide = async (
+    draggedId: string,
+    targetId: string,
+    side: 'before' | 'after',
+  ) => {
+    const revisionId = active?.current_revision_id
+    const slides = active?.current_revision?.specification?.slides ?? []
+    if (!active || !revisionId || isReordering) return
+    if (draggedId === targetId || !slides.length) return
+    const order = slides.map(slide => slide.slide_id)
+    if (!order.includes(draggedId) || !order.includes(targetId)) return
+    // Remove first, then insert relative to the target's new index, so the
+    // slide lands exactly where the insertion line was drawn.
+    const remaining = order.filter(id => id !== draggedId)
+    const anchor = remaining.indexOf(targetId)
+    remaining.splice(side === 'before' ? anchor : anchor + 1, 0, draggedId)
+    const reordered = remaining
+    if (reordered.every((id, index) => id === order[index])) return
+    setIsReordering(true)
+    setError('')
+    setNotice('')
+    try {
+      const updated = await reorderPresentationSlides(
+        userId,
+        active.id,
+        revisionId,
+        reordered,
+      )
+      setActive(updated)
+      setPresentations(current => current.map(item => (
+        item.id === updated.id ? updated : item
+      )))
+      setNotice(`Slides reordered as revision ${updated.current_revision?.revision_number}.`)
+    } catch (reorderError) {
+      setError(reorderError instanceof Error ? reorderError.message : 'Unable to reorder the slides.')
+    } finally {
+      setIsReordering(false)
+      setDraggingSlideId('')
+      setDropTarget(null)
+    }
+  }
+
   // Generate initial imagery or refine the selected slide's existing image.
   const addSlideImage = async () => {
     const revisionId = active?.current_revision_id
@@ -750,12 +910,13 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
             id="presentation-brief"
             value={prompt}
             onChange={event => setPrompt(event.target.value)}
+            onKeyDown={submitOnEnter(submitCreation, !prompt.trim() || isCreating)}
             placeholder="Describe the audience, objective, key points, data, and desired number of slides."
             className="mt-3 min-h-24 w-full resize-y rounded-2xl border border-black/10 bg-[#fbfbfd] p-4 text-sm outline-none focus:border-black/20"
             disabled={isCreating}
           />
           <div className="mt-3 flex items-center justify-between gap-3">
-            <p className="text-xs text-[#86868b]">Gemma plans the deck in a background worker; deterministic code owns rendering and persistence.</p>
+            <p className="text-xs text-[#86868b]">Qwen plans the deck in a background worker; deterministic code owns rendering and persistence.</p>
             <div className="flex items-center gap-2">
               {isCreating && activeJobId && (
                 <button
@@ -799,6 +960,12 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                 {creationProgress.percent}%
               </p>
             </div>
+            {creationProgress.label.startsWith('Generating visual') && (
+              <div
+                aria-hidden="true"
+                className="anios-conjure mb-4 h-24 w-full rounded-2xl"
+              />
+            )}
             <div
               role="progressbar"
               aria-label="Presentation completion"
@@ -963,14 +1130,97 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                   />
                 </div>
 
-                <div className="mt-4 flex gap-3 overflow-x-auto pb-2" aria-label="Presentation slides">
-                  {specification.slides.map((slide, index) => (
+                {specification.slides.length > 1 && (
+                  <p className="mt-4 text-xs text-[#86868b]">
+                    Drag a slide to reorder the deck.
+                  </p>
+                )}
+                <div
+                  className="mt-2 flex gap-3 overflow-x-auto scroll-smooth pb-2 pr-4"
+                  aria-label="Presentation slides"
+                  onDragOver={event => event.preventDefault()}
+                  onDrop={event => {
+                    event.preventDefault()
+                    const dragged = draggingSlideId
+                      || event.dataTransfer.getData('text/plain')
+                    const target = dropTarget
+                    setDropTarget(null)
+                    if (dragged && target) {
+                      void moveSlide(dragged, target.id, target.side)
+                    }
+                  }}
+                >
+                  {/* Thumbnails are draggable. The deck reflows under the
+                      cursor so the pending position is visible before the
+                      pointer is released, rather than only implied. */}
+                  {specification.slides.map((slide, index) => {
+                    const dragFrom = draggingSlideId
+                      ? specification.slides.findIndex(item => item.slide_id === draggingSlideId)
+                      : -1
+                    const targetIndex = dropTarget
+                      ? specification.slides.findIndex(item => item.slide_id === dropTarget.id)
+                      : -1
+                    const insertAt = targetIndex < 0
+                      ? -1
+                      : dropTarget?.side === 'after' ? targetIndex + 1 : targetIndex
+                    const shift = reorderShift(index, dragFrom, insertAt)
+                    return (
+                    <Fragment key={slide.slide_id}>
                     <button
-                      key={slide.slide_id}
+                      type="button"
+                      aria-label={`Insert a slide at position ${index + 1}`}
+                      title="Insert a slide here"
+                      onClick={() => setAddPosition(
+                        addPosition === index ? null : index,
+                      )}
+                      className={`group/gap flex-none self-stretch rounded-full transition-all ${addPosition === index ? 'w-7 bg-[#0071e3]/15' : 'w-3 hover:w-7 hover:bg-[#0071e3]/10'}`}
+                    >
+                      <span className={`mx-auto block text-[#0071e3] ${addPosition === index ? 'opacity-100' : 'opacity-0 group-hover/gap:opacity-100'}`}>
+                        +
+                      </span>
+                    </button>
+                    <div
+                      className="group relative flex-none"
+                      draggable={!isReordering && specification.slides.length > 1}
+                      onDragStart={event => {
+                        // A drag with no payload is treated as invalid and the
+                        // browser never fires drop, which is why the reflow
+                        // looked right but releasing changed nothing.
+                        event.dataTransfer.setData('text/plain', slide.slide_id)
+                        event.dataTransfer.effectAllowed = 'move'
+                        setDraggingSlideId(slide.slide_id)
+                      }}
+                      onDragEnd={() => { setDraggingSlideId(''); setDropTarget(null) }}
+                      onDragOver={event => {
+                        event.preventDefault()
+                        event.dataTransfer.dropEffect = 'move'
+                        if (!draggingSlideId || draggingSlideId === slide.slide_id) return
+                        // Which half the pointer is over decides the side, the
+                        // way every slide sorter behaves.
+                        const box = event.currentTarget.getBoundingClientRect()
+                        const side = event.clientX < box.left + box.width / 2
+                          ? 'before'
+                          : 'after'
+                        setDropTarget(current => (
+                          current?.id === slide.slide_id && current.side === side
+                            ? current
+                            : { id: slide.slide_id, side }
+                        ))
+                      }}
+                      style={{
+                        opacity: draggingSlideId === slide.slide_id ? 0.35 : 1,
+                        cursor: isReordering
+                          ? 'progress'
+                          : draggingSlideId ? 'grabbing' : 'grab',
+                        transform: shift ? `translateX(${shift}px)` : undefined,
+                        transition: 'transform 160ms ease',
+                      }}
+                    >
+                      <button
                       type="button"
                       aria-label={`Select slide ${index + 1}: ${slide.title}`}
                       onClick={() => setSelectedSlideId(slide.slide_id)}
-                      className={`w-36 flex-none overflow-hidden rounded-xl border-2 bg-white p-1 ${selectedSlide.slide_id === slide.slide_id ? 'border-[#0071e3]' : 'border-transparent'}`}
+                      className={`w-36 overflow-hidden rounded-xl border-2 bg-white p-1 ${selectedSlide.slide_id === slide.slide_id ? 'border-[#0071e3]' : 'border-transparent'}`}
                     >
                       <SlideCanvas
                         slide={slide}
@@ -981,9 +1231,90 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                       <span className="block truncate px-1 py-1 text-left text-[11px] text-[#6e6e73]">
                         {index + 1}. {slide.title}
                       </span>
-                    </button>
-                  ))}
+                      </button>
+                      {specification.slides.length > 1 && (
+                        <button
+                          type="button"
+                          aria-label={`Delete slide ${index + 1}`}
+                          title="Delete this slide"
+                          onClick={() => void removeSlide(slide.slide_id, slide.title)}
+                          disabled={isDeletingSlide}
+                          className="absolute right-1 top-1 hidden rounded-full bg-white/95 p-1 text-[#c9342f] shadow-sm group-hover:block disabled:text-[#86868b]"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                    </div>
+                    </Fragment>
+                    )
+                  })}
+                  <button
+                    type="button"
+                    aria-label={`Insert a slide at position ${specification.slides.length + 1}`}
+                    title="Add a slide at the end"
+                    onClick={() => setAddPosition(
+                      addPosition === specification.slides.length
+                        ? null
+                        : specification.slides.length,
+                    )}
+                    className={`flex-none self-stretch rounded-xl border-2 border-dashed transition-all ${addPosition === specification.slides.length ? 'w-12 border-[#0071e3] bg-[#0071e3]/10' : 'w-10 border-black/15 hover:w-12 hover:border-[#0071e3] hover:bg-[#0071e3]/5'}`}
+                  >
+                    <span className="mx-auto block text-lg text-[#0071e3]">+</span>
+                  </button>
                 </div>
+                {addPosition !== null && (
+                  <div className="mt-3 rounded-2xl border border-black/[0.06] bg-[#fbfbfd] p-3">
+                    <label htmlFor="add-slide-brief" className="text-xs font-semibold text-[#1d1d1f]">
+                      Add a slide
+                    </label>
+                    <p className="mt-1 text-xs leading-5 text-[#86868b]">
+                      Adds a new slide after the selected one. Every existing slide is kept as it is.
+                    </p>
+                    <textarea
+                      id="add-slide-brief"
+                      aria-label="New slide brief"
+                      value={newSlideBrief}
+                      onChange={event => setNewSlideBrief(event.target.value)}
+                      autoFocus
+                      onKeyDown={event => {
+                        if (event.key === 'Escape') {
+                          event.preventDefault()
+                          setAddPosition(null)
+                          setNewSlideBrief('')
+                          return
+                        }
+                        submitOnEnter(
+                          submitNewSlide,
+                          !newSlideBrief.trim() || isAddingSlide,
+                        )(event)
+                      }}
+                      placeholder="Describe the slide to add, for example: the legal rules for keeping hives in a city."
+                      className="mt-2 min-h-20 w-full resize-y rounded-2xl border border-black/10 bg-white p-3 text-sm outline-none focus:border-black/20"
+                      disabled={isAddingSlide}
+                    />
+                    <div className="mt-2 flex gap-2">
+                    <button
+                      type="button"
+                      aria-label="Cancel adding a slide"
+                      onClick={() => { setAddPosition(null); setNewSlideBrief('') }}
+                      disabled={isAddingSlide}
+                      className="flex h-9 flex-none items-center justify-center rounded-full border border-black/10 bg-white px-4 text-sm font-medium text-[#6e6e73]"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Add slide"
+                      onClick={() => void submitNewSlide()}
+                      disabled={!newSlideBrief.trim() || isAddingSlide}
+                      className="flex h-9 flex-1 items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-4 text-sm font-medium text-[#1d1d1f] disabled:text-[#86868b]"
+                    >
+                      {isAddingSlide ? <Loader2 size={15} className="animate-spin" /> : <FilePlus2 size={15} />}
+                      {isAddingSlide ? 'Adding slide…' : 'Add slide'}
+                    </button>
+                    </div>
+                  </div>
+                )}
               </main>
             ) : active ? (
               <main className="flex items-center justify-center rounded-3xl border border-black/[0.06] bg-white p-10">
@@ -1086,6 +1417,10 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                     aria-label="Slide feedback"
                     value={feedback}
                     onChange={event => setFeedback(event.target.value)}
+                    onKeyDown={submitOnEnter(
+                      submitFeedback,
+                      !feedback.trim() || isRevising,
+                    )}
                     placeholder="Make the chart clearer, rewrite the headline, add a comparison…"
                     className="mt-4 min-h-32 w-full resize-y rounded-2xl border border-black/10 bg-[#fbfbfd] p-3 text-sm outline-none focus:border-black/20"
                     disabled={isRevising}
@@ -1111,10 +1446,21 @@ const PresentationPanel = ({ userId, conversationId }: PresentationPanelProps) =
                         ? 'Describe one change. FLUX edits the current pixels and preserves the rest of the slide.'
                         : 'Optional. HiDream creates the first image while the deck remains usable.'}
                     </p>
+                    {isGeneratingImage && (
+                      <div
+                        aria-hidden="true"
+                        className="anios-conjure mt-3 aspect-square w-full rounded-[22px]"
+                      />
+                    )}
                     <textarea
                       aria-label="Slide image prompt"
                       value={imagePrompt}
                       onChange={event => setImagePrompt(event.target.value)}
+                      onKeyDown={submitOnEnter(
+                        addSlideImage,
+                        isGeneratingImage
+                          || Boolean(selectedSlideImage && !imagePrompt.trim()),
+                      )}
                       placeholder={selectedSlideImage
                         ? 'Example: Make only the horse chestnut brown.'
                         : 'Optional visual direction; leave blank to use the slide content.'}

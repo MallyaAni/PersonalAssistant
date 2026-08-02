@@ -60,10 +60,13 @@ class LMStudioImageRecallClassifier(ImageRecallClassifier):
     async def references_stored_image(self, query: str) -> bool | None:
         try:
             # The client is synchronous, so keep it off the event loop.
+            # Recall routing is a decision, not prose: decode greedily so the
+            # same message cannot classify differently between identical calls.
             result = await asyncio.to_thread(
                 self.llm.chat,
                 _build_messages(query),
                 self.max_tokens,
+                temperature=0.0,
             )
             raw = str(result.get("content", ""))
         except Exception:

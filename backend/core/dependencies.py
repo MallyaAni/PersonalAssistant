@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.agents.diagram import DiagramAgent
 from backend.agents.presentation import PresentationAgent
+from backend.agents.registry import AgentRegistry
 from backend.agents.supervisor import MainSupervisorAgent
 from backend.artifacts.diagram import LLMDiagramProvider
 from backend.artifacts.image import (
@@ -19,8 +20,15 @@ from backend.artifacts.image_retrieval import ImageRetrievalPolicy
 from backend.artifacts.image_routing import ImageRecallPolicy
 from backend.artifacts.storage import LocalBinaryArtifactStore
 from backend.config.settings import settings
+from backend.core.gpu_handoff import (
+    GpuHandoffImageEditProvider,
+    GpuHandoffImageProvider,
+    InferenceGpuHandoff,
+)
 from backend.core.interfaces import (
     ConversationTracer,
+    ImageEditProvider,
+    ImageProvider,
     SearchProvider,
     VisionEmbeddingProvider,
     VisionProvider,
@@ -28,6 +36,25 @@ from backend.core.interfaces import (
 from backend.core.llm import LLMClient, create_inference_provider
 from backend.core.model_gate import ModelExecutionGate
 from backend.database.session import get_db
+from backend.discovery.channels import (
+    MessagesAppChannel,
+    NotificationChannel,
+    NullChannel,
+    PullOnlyChannel,
+)
+from backend.discovery.locating import (
+    DisabledPlaceResolver,
+    NominatimPlaceResolver,
+    PlaceResolver,
+)
+from backend.discovery.novelty import SeenItemRepository
+from backend.discovery.repository import DiscoveryProfileRepository
+from backend.discovery.runner import DiscoveryRunner
+from backend.discovery.runs import DiscoveryRunRepository
+from backend.discovery.service import DiscoveryProfileService
+from backend.discovery.setup_service import DiscoverySetupService
+from backend.discovery.sources_repository import DiscoverySourceRepository
+from backend.discovery.subscribers import SubscriberRepository
 from backend.embeddings.base import EmbeddingProvider
 from backend.embeddings.lm_studio import create_embedding_provider
 from backend.embeddings.nomic_vision import NomicVisionEmbeddingProvider
@@ -437,9 +464,25 @@ MainSupervisorDependency = Annotated[
 ]
 
 
-# Reuse one concurrency-limited ComfyUI image provider across requests.
+# Share one handoff so generation and editing use the same sleep endpoint.
 @lru_cache(maxsize=1)
-def get_image_provider() -> ComfyUIImageProvider:
+def get_gpu_handoff() -> InferenceGpuHandoff:
+    return InferenceGpuHandoff(
+        base_url=settings.MAIN_LLM_BASE_URL or settings.LLM_BASE_URL,
+        enabled=settings.GPU_HANDOFF_ENABLED,
+        sleep_level=settings.GPU_HANDOFF_SLEEP_LEVEL,
+        timeout_seconds=settings.GPU_HANDOFF_TIMEOUT_SECONDS,
+    )
+
+
+# Reuse one concurrency-limited ComfyUI image provider across requests, wrapped
+# so each job runs with local inference weights offloaded.
+@lru_cache(maxsize=1)
+def get_image_provider() -> ImageProvider:
+    return GpuHandoffImageProvider(_build_comfyui_image_provider(), get_gpu_handoff())
+
+
+def _build_comfyui_image_provider() -> ComfyUIImageProvider:
     return ComfyUIImageProvider(
         base_url=settings.IMAGE_PROVIDER_BASE_URL,
         model=settings.IMAGE_MODEL,
@@ -453,14 +496,21 @@ def get_image_provider() -> ComfyUIImageProvider:
 
 
 ImageProviderDependency = Annotated[
-    ComfyUIImageProvider,
+    ImageProvider,
     Depends(get_image_provider),
 ]
 
 
-# Reuse one source-conditioned FLUX.2 editor on the shared ComfyUI runtime.
+# Reuse one source-conditioned FLUX.2 editor on the shared ComfyUI runtime,
+# wrapped in the same handoff because editing loads the same diffusion weights.
 @lru_cache(maxsize=1)
-def get_image_edit_provider() -> ComfyUIImageEditProvider:
+def get_image_edit_provider() -> ImageEditProvider:
+    return GpuHandoffImageEditProvider(
+        _build_comfyui_image_edit_provider(), get_gpu_handoff()
+    )
+
+
+def _build_comfyui_image_edit_provider() -> ComfyUIImageEditProvider:
     return ComfyUIImageEditProvider(
         base_url=settings.IMAGE_PROVIDER_BASE_URL,
         model=settings.IMAGE_EDIT_MODEL,
@@ -476,7 +526,7 @@ def get_image_edit_provider() -> ComfyUIImageEditProvider:
 
 
 ImageEditProviderDependency = Annotated[
-    ComfyUIImageEditProvider,
+    ImageEditProvider,
     Depends(get_image_edit_provider),
 ]
 
@@ -677,6 +727,162 @@ DiagramArtifactDependency = Annotated[
 DependencyMemoryService = Annotated[PostgresMemoryService, Depends(get_memory_service)]
 
 
+# The discovery profile is per-request session state like every other repository
+# boundary, so it is built per request rather than cached.
+def get_discovery_profile_service(db: DbDependency) -> DiscoveryProfileService:
+    return DiscoveryProfileService(DiscoveryProfileRepository(db))
+
+
+DependencyDiscoveryProfileService = Annotated[
+    DiscoveryProfileService,
+    Depends(get_discovery_profile_service),
+]
+
+
+def get_discovery_setup_service(
+    db: DbDependency, search: SearchDependency
+) -> DiscoverySetupService:
+    return DiscoverySetupService(db, search)
+
+
+DependencyDiscoverySetup = Annotated[
+    DiscoverySetupService,
+    Depends(get_discovery_setup_service),
+]
+
+
+# Reverse geocoding is a replaceable outbound boundary like search or images,
+# and it is disabled unless configured so a deployment never reaches a third
+# party by default.
+@lru_cache(maxsize=1)
+def get_place_resolver() -> PlaceResolver:
+    if settings.DISCOVERY_PLACE_RESOLVER != "nominatim":
+        return DisabledPlaceResolver()
+    return NominatimPlaceResolver(
+        base_url=settings.DISCOVERY_PLACE_RESOLVER_URL,
+        user_agent=settings.DISCOVERY_PLACE_RESOLVER_USER_AGENT,
+    )
+
+
+DependencyPlaceResolver = Annotated[PlaceResolver, Depends(get_place_resolver)]
+
+
+def get_agent_registry(db: DbDependency) -> AgentRegistry:
+    return AgentRegistry(db)
+
+
+DependencyAgentRegistry = Annotated[AgentRegistry, Depends(get_agent_registry)]
+
+
+def get_discovery_source_repository(db: DbDependency) -> DiscoverySourceRepository:
+    return DiscoverySourceRepository(db)
+
+
+DependencyDiscoverySources = Annotated[
+    DiscoverySourceRepository,
+    Depends(get_discovery_source_repository),
+]
+
+
+def get_discovery_subscriber_repository(db: DbDependency) -> SubscriberRepository:
+    return SubscriberRepository(db)
+
+
+DependencyDiscoverySubscribers = Annotated[
+    SubscriberRepository,
+    Depends(get_discovery_subscriber_repository),
+]
+
+
+def get_discovery_seen_repository(db: DbDependency) -> SeenItemRepository:
+    return SeenItemRepository(db)
+
+
+DependencyDiscoverySeenItems = Annotated[
+    SeenItemRepository,
+    Depends(get_discovery_seen_repository),
+]
+
+
+def get_discovery_run_repository(db: DbDependency) -> DiscoveryRunRepository:
+    return DiscoveryRunRepository(db)
+
+
+DependencyDiscoveryRuns = Annotated[
+    DiscoveryRunRepository,
+    Depends(get_discovery_run_repository),
+]
+
+
+def get_discovery_runner(
+    db: DbDependency,
+    embeddings: EmbeddingDependency,
+) -> DiscoveryRunner:
+    return DiscoveryRunner(
+        sources=DiscoverySourceRepository(db),
+        seen=SeenItemRepository(db),
+        embeddings=embeddings,
+        search=get_search_provider(),
+        writer=get_llm_client(),
+    )
+
+
+DependencyDiscoveryRunner = Annotated[
+    DiscoveryRunner,
+    Depends(get_discovery_runner),
+]
+
+
+# The same runner, assembled for a background worker that owns its own session
+# rather than receiving one from a request.
+def get_discovery_runner_for_session(session: AsyncSession) -> DiscoveryRunner:
+    return DiscoveryRunner(
+        sources=DiscoverySourceRepository(session),
+        seen=SeenItemRepository(session),
+        embeddings=get_embedding_provider(),
+        search=get_search_provider(),
+        writer=get_llm_client(),
+    )
+
+
+# Which channels may actually deliver. Egress ships disabled, so the default map
+# refuses to send and says so rather than silently dropping a digest.
+@lru_cache(maxsize=1)
+def get_discovery_channels() -> dict[str, NotificationChannel]:
+    channels: dict[str, NotificationChannel] = {
+        # The recipient's own device fetches; this never sends.
+        "shortcuts_pull": PullOnlyChannel(),
+    }
+    if not settings.DISCOVERY_EGRESS_ENABLED:
+        channels["imessage"] = NullChannel("imessage")
+        return channels
+    channels["imessage"] = MessagesAppChannel(
+        _invoke_discovery_tool, settings.DISCOVERY_IMESSAGE_TOOL
+    )
+    return channels
+
+
+# Deliver through the operator-trusted MCP server that owns the Apple device.
+# Routed through the ordinary invocation service so the same trust, allowlist,
+# and audit apply as to any other tool call.
+#
+# `confirmed` is set because the approval for this specific send already exists
+# and is stronger than a prompt: a per-subscriber consent record the user wrote
+# deliberately, which a scheduled sweep running at 9am cannot ask for again.
+async def _invoke_discovery_tool(tool_name: str, arguments: dict[str, str]) -> object:
+    result = await get_mcp_invocation_service().invoke(
+        settings.DISCOVERY_IMESSAGE_SERVER_ID,
+        tool_name,
+        dict(arguments),
+        confirmed=True,
+    )
+    # The service reports a tool-side failure in the result rather than raising,
+    # and a channel must never report a success it did not have.
+    if result.is_error:
+        raise RuntimeError("imessage tool reported an error")
+    return result
+
+
 def get_tool_memory_service(
     db: DbDependency,
     embeddings: EmbeddingDependency,
@@ -701,7 +907,7 @@ DependencyToolMemoryService = Annotated[
 ]
 
 
-# Compose Gemma's bounded tool selection with the guarded MCP invocation boundary.
+# Compose the model's bounded tool selection with the guarded MCP boundary.
 def get_mcp_tool_orchestration_service(
     toolbox: DependencyToolMemoryService,
     invocation: MCPInvocationDependency,
@@ -821,8 +1027,12 @@ def get_image_recall_policy() -> ImageRecallPolicy:
 
 
 # Serve the routing classifier from a dedicated model when one is configured,
-# otherwise reuse the chat model.
-@lru_cache(maxsize=1)
+# otherwise reuse the chat model's configuration.
+#
+# Deliberately not cached. A provider serializes its own calls on an internal
+# lock, so one shared instance would make every concurrent chat queue behind
+# another chat's classifier call. A fresh client per router keeps the routing
+# decisions independent, and the runtime already serves several sequences.
 def get_classifier_llm() -> LLMClient:
     if not settings.SEARCH_CLASSIFIER_MODEL:
         return get_llm_client()
@@ -895,6 +1105,7 @@ def get_conversation_service(
     tool_orchestration: MCPToolOrchestrationDependency,
     supervisor: MainSupervisorDependency,
     presentation_jobs: PresentationJobDependency,
+    discovery_profile: DependencyDiscoveryProfileService,
 ) -> ConversationService:
     return ConversationService(
         memory=memory,
@@ -921,6 +1132,7 @@ def get_conversation_service(
             or settings.MAIN_LLM_MODEL
             or settings.LLM_MODEL
         ),
+        discovery_profile=discovery_profile,
     )
 
 

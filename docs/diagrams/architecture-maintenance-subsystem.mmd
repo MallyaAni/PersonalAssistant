@@ -6,8 +6,8 @@ flowchart TB
     Request --> Guards{Local model, safe paths,<br/>bounded context?}
     Guards -->|no| Reject[Reject request]
     Guards -->|yes| Agent[DiagramAgent]
-    Agent --> Gemma[Gemma 4 12B<br/>candidate call]
-    Gemma --> Validate{Valid passive Mermaid<br/>with required labels?}
+    Agent --> Qwen[Qwen 3.5 4B via vLLM<br/>candidate call]
+    Qwen --> Validate{Valid passive Mermaid<br/>with required labels?}
     Validate -->|one correction| Agent
     Validate -->|no| Reject
     Validate -->|yes| Candidate[(New candidate<br/>Mermaid and SVG)]
@@ -27,5 +27,5 @@ flowchart TB
     class Maintainer,Request interface;
     class Guards,Agent,Validate,Review application;
     class Candidate,Canonical data;
-    class Gemma external;
+    class Qwen external;
     class Reject,Protection warning;

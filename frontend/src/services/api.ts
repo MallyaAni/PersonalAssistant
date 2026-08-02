@@ -581,6 +581,60 @@ export function revisePresentationSlide(
   )
 }
 
+// Add one slide to an existing deck. Distinct from revising a slide: every
+// existing slide is carried through untouched.
+export function addPresentationSlide(
+  userId: string,
+  presentationId: string,
+  baseRevisionId: string,
+  brief: string,
+  // 0-based index the new slide takes; null appends to the end.
+  position?: number | null,
+) {
+  return apiRequest<PresentationRecord>(
+    `/api/v1/presentations/${encodeURIComponent(userId)}/${encodeURIComponent(presentationId)}/slides`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        base_revision_id: baseRevisionId,
+        brief,
+        position: position ?? null,
+      }),
+    },
+  )
+}
+
+// Reorder a deck as a linked revision. The full order is sent, so the server
+// can refuse anything that is not a permutation of the existing slides.
+export function reorderPresentationSlides(
+  userId: string,
+  presentationId: string,
+  baseRevisionId: string,
+  slideIds: string[],
+) {
+  return apiRequest<PresentationRecord>(
+    `/api/v1/presentations/${encodeURIComponent(userId)}/${encodeURIComponent(presentationId)}/slides/order`,
+    {
+      method: 'PUT',
+      body: JSON.stringify({ base_revision_id: baseRevisionId, slide_ids: slideIds }),
+    },
+  )
+}
+
+// Remove one slide from a deck as a linked revision.
+export function deletePresentationSlide(
+  userId: string,
+  presentationId: string,
+  slideId: string,
+  baseRevisionId: string,
+) {
+  const query = new URLSearchParams({ base_revision_id: baseRevisionId })
+  return apiRequest<PresentationRecord>(
+    `/api/v1/presentations/${encodeURIComponent(userId)}/${encodeURIComponent(presentationId)}/slides/${encodeURIComponent(slideId)}?${query}`,
+    { method: 'DELETE' },
+  )
+}
+
 // Generate one local image and attach it as a new selected-slide revision.
 export function generatePresentationSlideImage(
   userId: string,
@@ -1559,3 +1613,291 @@ function parseConversationSnapshot(
   })
   return { ...data, artifacts }
 }
+
+export interface AgentFact {
+  label: string;
+  value: string;
+}
+
+export interface AgentSummary {
+  id: string;
+  name: string;
+  role: string;
+  status: 'idle' | 'working' | 'scheduled' | 'needs_setup' | 'disabled';
+  detail: string;
+  trigger: string;
+  last_active_at: string | null;
+  facts: AgentFact[];
+}
+
+// Read the live state of every specialized agent. Each field is derived from
+// the tables the agent itself writes, so this cannot report a state it is not in.
+export const getAgents = async (userId: string): Promise<AgentSummary[]> => {
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/agents/${encodeURIComponent(userId)}`,
+  );
+  if (!response.ok) {
+    throw new Error('Could not load agents.');
+  }
+  const payload = await response.json();
+  return Array.isArray(payload.agents) ? payload.agents : [];
+};
+
+export interface DiscoveryInterest {
+  id: string;
+  label: string;
+  strength: number;
+  provenance: string;
+}
+
+export interface DiscoveryLocality {
+  id: string;
+  label: string;
+  region: string | null;
+  radius_km: number;
+  timezone: string;
+  is_primary: boolean;
+}
+
+export interface DiscoverySource {
+  id: string;
+  kind: string;
+  url: string;
+  label: string | null;
+  enabled: boolean;
+  last_error: string | null;
+}
+
+export interface FeedCandidate {
+  kind: string;
+  url: string;
+  title: string;
+  event_count: number;
+  sample_titles: string[];
+}
+
+export interface InterestProposal {
+  label: string;
+  evidence: string;
+  source: string;
+}
+
+const discoveryBase = (userId: string) =>
+  `${API_BASE_URL}/api/v1/discovery/${encodeURIComponent(userId)}`;
+
+// Surface the server's own reason when it gave one. A generic message forces the
+// user to ask someone why something failed, when the backend already said.
+const readJson = async (response: Response, message: string) => {
+  if (!response.ok) {
+    let detail = '';
+    try {
+      const body = await response.json();
+      if (typeof body?.detail === 'string') detail = body.detail;
+    } catch {
+      detail = '';
+    }
+    throw new Error(detail || message);
+  }
+  return response.json();
+};
+
+export const getDiscoveryProfile = async (
+  userId: string,
+): Promise<{ interests: DiscoveryInterest[]; localities: DiscoveryLocality[] }> => {
+  const payload = await readJson(
+    await fetch(discoveryBase(userId)),
+    'Could not load the discovery profile.',
+  );
+  return { interests: payload.interests ?? [], localities: payload.localities ?? [] };
+};
+
+export const putDiscoveryLocality = async (
+  userId: string,
+  body: { label: string; region?: string | null; timezone?: string; is_primary?: boolean },
+): Promise<DiscoveryLocality> =>
+  readJson(
+    await fetch(`${discoveryBase(userId)}/localities`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_primary: true, ...body }),
+    }),
+    'Could not save that place.',
+  );
+
+export const putDiscoveryInterest = async (
+  userId: string,
+  label: string,
+  strength = 2,
+): Promise<DiscoveryInterest> =>
+  readJson(
+    await fetch(`${discoveryBase(userId)}/interests`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ label, strength }),
+    }),
+    'Could not save that interest.',
+  );
+
+export const deleteDiscoveryInterest = async (
+  userId: string,
+  interestId: string,
+): Promise<void> => {
+  const response = await fetch(`${discoveryBase(userId)}/interests/${interestId}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok && response.status !== 404) {
+    throw new Error('Could not remove that interest.');
+  }
+};
+
+export const getDiscoverySources = async (userId: string): Promise<DiscoverySource[]> => {
+  const payload = await readJson(
+    await fetch(`${discoveryBase(userId)}/sources`),
+    'Could not load feeds.',
+  );
+  return payload.sources ?? [];
+};
+
+export const putDiscoverySource = async (
+  userId: string,
+  body: { kind: string; url: string; label?: string | null },
+): Promise<DiscoverySource> =>
+  readJson(
+    await fetch(`${discoveryBase(userId)}/sources`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }),
+    'Could not add that feed.',
+  );
+
+export const deleteDiscoverySource = async (
+  userId: string,
+  sourceId: string,
+): Promise<void> => {
+  const response = await fetch(`${discoveryBase(userId)}/sources/${sourceId}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok && response.status !== 404) {
+    throw new Error('Could not remove that feed.');
+  }
+};
+
+export const suggestDiscoverySources = async (
+  userId: string,
+): Promise<FeedCandidate[]> => {
+  const payload = await readJson(
+    await fetch(`${discoveryBase(userId)}/sources/suggest`),
+    'Could not suggest feeds.',
+  );
+  return payload.candidates ?? [];
+};
+
+export const suggestDiscoveryInterests = async (
+  userId: string,
+): Promise<InterestProposal[]> => {
+  const payload = await readJson(
+    await fetch(`${discoveryBase(userId)}/interests/suggest`),
+    'Could not suggest interests.',
+  );
+  return payload.proposals ?? [];
+};
+
+// Name the town containing a coordinate. The backend rounds the coordinate to
+// roughly a kilometre before its single outbound lookup and stores nothing
+// numeric, so the precise fix the browser produced never leaves this machine.
+export const resolveDiscoveryLocality = async (
+  userId: string,
+  latitude: number,
+  longitude: number,
+): Promise<{
+  label: string;
+  region: string | null;
+  country: string | null;
+  country_code: string | null;
+  display: string;
+  stored_region: string | null;
+}> =>
+  readJson(
+    await fetch(`${discoveryBase(userId)}/locality/resolve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ latitude, longitude }),
+    }),
+    'Could not work out where that is.',
+  );
+
+export const runDiscoverySweep = async (
+  userId: string,
+): Promise<{ selected: unknown[]; candidate_count: number; novel_count: number }> =>
+  readJson(
+    await fetch(`${discoveryBase(userId)}/sweep`, { method: 'POST' }),
+    'Could not run a sweep.',
+  );
+
+export interface DigestPreview {
+  message: string | null;
+  would_send: boolean;
+  recipients: { id: string; channel: string; label: string | null }[];
+  egress_enabled: boolean;
+  calendar_links_reachable: boolean;
+  event_count: number;
+}
+
+// Show exactly what a delivery would send, without sending it. Verifying an
+// outbound feature by triggering it cannot be undone.
+export const previewDiscoveryDigest = async (
+  userId: string,
+): Promise<DigestPreview> =>
+  readJson(
+    await fetch(`${discoveryBase(userId)}/digest/preview`),
+    'Could not build a preview.',
+  );
+
+export interface DiscoverySchedule {
+  cadence: 'daily' | 'weekly';
+  hour: number;
+  weekday: number;
+  timezone: string;
+  enabled: boolean;
+  next_run_at: string;
+}
+
+// Without a schedule the worker polls forever and finds nothing due, so the
+// loop only ever runs when someone presses a button.
+export const getDiscoverySchedule = async (
+  userId: string,
+): Promise<DiscoverySchedule | null> => {
+  const payload = await readJson(
+    await fetch(`${discoveryBase(userId)}/schedule`),
+    'Could not load the schedule.',
+  );
+  return payload.schedule ?? null;
+};
+
+export const putDiscoverySchedule = async (
+  userId: string,
+  body: {
+    cadence: 'daily' | 'weekly';
+    hour: number;
+    weekday: number;
+    timezone: string;
+  },
+): Promise<DiscoverySchedule> =>
+  readJson(
+    await fetch(`${discoveryBase(userId)}/schedule`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }),
+    'Could not save the schedule.',
+  );
+
+export const deleteDiscoverySchedule = async (userId: string): Promise<void> => {
+  const response = await fetch(`${discoveryBase(userId)}/schedule`, {
+    method: 'DELETE',
+  });
+  if (!response.ok && response.status !== 404) {
+    throw new Error('Could not turn off the schedule.');
+  }
+};

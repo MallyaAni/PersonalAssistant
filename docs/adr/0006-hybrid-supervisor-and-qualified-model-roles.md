@@ -2,7 +2,8 @@
 
 ## Status
 
-Accepted and runtime verified for the current local model set.
+Accepted as historical role-qualification evidence. The selected runtime and
+role assignments are superseded by ADR 0009.
 
 ## Context
 

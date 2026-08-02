@@ -13,7 +13,7 @@ layout instructions would mix probabilistic generation with file execution,
 persistence, permissions, and revision authority. Rasterizing complete slides
 would also prevent normal editing.
 
-The primary local Gemma model is shared with chat and other focused agents.
+The configured local generation model is shared with chat and other focused agents.
 Long presentation generations must not bind an HTTP request or prevent the
 foreground assistant from answering. Presentation generation and rendering
 therefore need narrow specification contracts, durable application-owned job
@@ -54,7 +54,7 @@ state, and replaceable workers that do not own authorization or promotion.
    invokes the focused LangGraph, checkpoints each progressive draft, and
    records terminal state. The browser persists the active job handle and can
    reconnect after navigation, reload, or stream disconnection.
-9. Backend chat and the presentation worker coordinate local Gemma access with
+9. Backend chat and the presentation worker coordinate local inference access with
    an expiring Redis priority gate. Foreground chat holds the gate for its model
    lifecycle. Background creation holds it for only one outline or slide
    microtask and yields between calls while chat waits. Redis contains no

@@ -18,6 +18,24 @@ class RevisePresentationSlideBody(BaseModel):
     feedback: str = Field(min_length=1, max_length=10_000)
 
 
+class AddPresentationSlideBody(BaseModel):
+    """Validated request to add one slide to a known base revision."""
+
+    base_revision_id: UUID
+    brief: str = Field(min_length=1, max_length=10_000)
+    # 0-based index for the new slide. Omitted appends to the end. An index
+    # rather than a neighbour reference so position 0 is expressible.
+    position: int | None = Field(default=None, ge=0, le=30)
+
+
+class ReorderPresentationSlidesBody(BaseModel):
+    """The complete new slide order for one known base revision."""
+
+    base_revision_id: UUID
+    # Every existing slide, exactly once, in the order wanted.
+    slide_ids: list[str] = Field(min_length=1, max_length=30)
+
+
 class GeneratePresentationSlideImageBody(BaseModel):
     """Validated request for optional local imagery on one selected slide."""
 

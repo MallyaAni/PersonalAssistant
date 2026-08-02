@@ -33,7 +33,7 @@ the final user response.
 
 ## Decision
 
-1. Gemma remains the local coordinator/final-answer model. Deterministic
+1. The configured local Qwen model remains the final-answer model. Deterministic
    application policy decides whether internet research is allowed and
    privacy-screens the query before any provider call.
 2. The primary optional research provider is a request-scoped Google ADK
@@ -98,7 +98,7 @@ Costs and risks:
 - Sending full conversation context to Gemini was rejected because the worker
   needs only the public research question and unpaid-service data handling is
   unsuitable for private context.
-- Letting Gemma choose providers or invoke internet tools directly was rejected
+- Letting the generation model choose providers or invoke internet tools directly was rejected
   because freshness eligibility, privacy, quota, and fallback are application
   policy.
 - Calling both providers for every query was rejected because it wastes both

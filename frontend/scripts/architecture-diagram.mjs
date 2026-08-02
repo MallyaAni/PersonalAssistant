@@ -19,6 +19,7 @@ const diagramDirectory = path.join(repositoryDirectory, "docs", "diagrams");
 const diagramNames = [
   "anios-system",
   "runtime-deployment",
+  "inference-scaling-target",
   "chat-orchestration",
   "search-research-subsystem",
   "memory-subsystem",

@@ -1,10 +1,11 @@
 """Route bounded user intents to application-owned tools or subagents."""
 
-import re
 from dataclasses import asdict, dataclass
 from typing import Any, Literal, NotRequired, TypedDict
 
 from langgraph.graph import END, StateGraph
+
+from backend.agents.delegation import DEFAULT_POLICIES, DelegationRegistry
 
 SupervisorAction = Literal[
     "respond",
@@ -12,15 +13,6 @@ SupervisorAction = Literal[
     "delegate_agent",
     "request_confirmation",
 ]
-
-_PRESENTATION_NOUN = re.compile(
-    r"\b(presentation|slide\s*deck|deck|slides?|powerpoint|pptx)\b",
-    re.IGNORECASE,
-)
-_PRESENTATION_CREATE = re.compile(
-    r"\b(create|make|build|generate|prepare|produce|draft|design|put\s+together)\b",
-    re.IGNORECASE,
-)
 
 
 @dataclass(frozen=True, slots=True)
@@ -39,23 +31,25 @@ class SupervisorState(TypedDict):
     decision: NotRequired[dict[str, Any]]
 
 
-# Recognize an explicit request for a new editable slide presentation.
-def _is_presentation_creation(query: str) -> bool:
-    return bool(_PRESENTATION_NOUN.search(query) and _PRESENTATION_CREATE.search(query))
-
-
 # Build the main routing graph without granting it service or storage access.
-def build_supervisor_graph() -> Any:
-    # Choose only application-registered capabilities using bounded policy.
+# The registry is a parameter so a caller can route against a different policy
+# set without reaching into this module.
+def build_supervisor_graph(registry: DelegationRegistry | None = None) -> Any:
+    policies = registry or DelegationRegistry(DEFAULT_POLICIES)
+
+    # Choose only application-registered capabilities using bounded policy. The
+    # decision carries a capability name and no authority to run it; the caller
+    # still resolves that name against what is actually registered.
     def route_node(state: SupervisorState) -> dict[str, dict[str, Any]]:
-        if _is_presentation_creation(state["query"]):
+        matched = policies.select(state["query"])
+        if matched is None:
+            decision = SupervisorDecision(action="respond")
+        else:
             decision = SupervisorDecision(
                 action="delegate_agent",
-                capability_id="presentation_agent",
-                reason="explicit_presentation_creation",
+                capability_id=matched.capability_id,
+                reason=matched.reason,
             )
-        else:
-            decision = SupervisorDecision(action="respond")
         return {"decision": asdict(decision)}
 
     workflow = StateGraph(SupervisorState)
@@ -69,8 +63,9 @@ class MainSupervisorAgent:
     """Run the first typed routing step before tools or specialist agents."""
 
     # Compile the routing node once for reuse across conversation turns.
-    def __init__(self) -> None:
-        self.graph = build_supervisor_graph()
+    def __init__(self, registry: DelegationRegistry | None = None) -> None:
+        self.registry = registry or DelegationRegistry(DEFAULT_POLICIES)
+        self.graph = build_supervisor_graph(self.registry)
 
     # Return one validated decision for the current user request.
     async def decide(self, query: str) -> SupervisorDecision:
