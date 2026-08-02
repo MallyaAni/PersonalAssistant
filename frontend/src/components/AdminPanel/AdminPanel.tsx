@@ -170,7 +170,14 @@ const AdminPanel = () => {
             <div className="mt-3 space-y-2">
               {pending.map(request => (
                 <div key={request.id} className="rounded-xl bg-[#f5f5f7] p-3">
-                  <p className="text-sm font-medium">{request.display_name}</p>
+                  <p className="text-sm font-medium">
+                    {request.display_name}
+                    {request.username && (
+                      <span className="ml-1.5 font-normal text-[#86868b]">
+                        signs in as {request.username}
+                      </span>
+                    )}
+                  </p>
                   {request.contact && (
                     <p className="text-xs text-[#6e6e73]">{request.contact}</p>
                   )}

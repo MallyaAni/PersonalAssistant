@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
-import { ArrowLeft, ArrowRight, KeyRound, LockKeyhole } from 'lucide-react'
-import { login, register, type AuthSession } from '../../services/api'
+import { ArrowLeft, ArrowRight, LockKeyhole, UserRound } from 'lucide-react'
+import { login, requestAccess, type AuthSession } from '../../services/api'
 
 interface LoginScreenProps {
   onAuthenticated: (session: AuthSession) => void;
@@ -12,9 +12,13 @@ const LoginScreen = ({ onAuthenticated }: LoginScreenProps) => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [inviteCode, setInviteCode] = useState('')
+  const [displayName, setDisplayName] = useState('')
+  const [reason, setReason] = useState('')
   const [isSubmitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  // Set once the request is in. Signing up no longer signs anyone in, so the
+  // form has an outcome of its own to report.
+  const [awaitingApproval, setAwaitingApproval] = useState(false)
 
   // Submit either existing credentials or one invited account registration.
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -27,10 +31,14 @@ const LoginScreen = ({ onAuthenticated }: LoginScreenProps) => {
     setSubmitting(true)
     setError('')
     try {
-      const session = mode === 'login'
-        ? await login(username, password)
-        : await register(username, password, inviteCode)
-      onAuthenticated(session)
+      if (mode === 'login') {
+        onAuthenticated(await login(username, password))
+      } else {
+        // Creating a profile records a request; it does not create an account.
+        // The credentials entered here become the account's own when approved.
+        await requestAccess(displayName.trim() || username, username, password, reason)
+        setAwaitingApproval(true)
+      }
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Unable to continue.')
     } finally {
@@ -43,15 +51,40 @@ const LoginScreen = ({ onAuthenticated }: LoginScreenProps) => {
     setMode(nextMode)
     setPassword('')
     setConfirmPassword('')
-    setInviteCode('')
+    setDisplayName('')
+    setReason('')
     setError('')
+    setAwaitingApproval(false)
   }
 
   const isRegistration = mode === 'register'
   const isDisabled = isSubmitting
     || !username.trim()
     || !password
-    || (isRegistration && (!inviteCode.trim() || !confirmPassword))
+    || (isRegistration && !confirmPassword)
+
+  if (awaitingApproval) {
+    return (
+      <main className="flex min-h-dvh items-center justify-center bg-[#f5f5f7] px-5 py-10 text-[#1d1d1f]">
+        <section className="w-full max-w-[420px] rounded-[28px] border border-black/[0.07] bg-white p-7 shadow-[0_24px_70px_rgba(0,0,0,0.10)] sm:p-9">
+          <span className="anios-wordmark mb-5 flex h-12 w-12 items-center justify-center rounded-2xl text-lg font-semibold text-white">A</span>
+          <h1 className="text-[28px] font-semibold tracking-[-0.03em]">Request sent</h1>
+          <p className="mt-2 text-[15px] leading-6 text-[#6e6e73]">
+            The owner has to approve you before your account exists. Once they do,
+            sign in with the username and password you just chose — there is no
+            code to wait for.
+          </p>
+          <button
+            type="button"
+            onClick={() => switchMode('login')}
+            className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0071e3] text-[15px] font-semibold text-white transition hover:bg-[#0077ed]"
+          >
+            Back to sign in
+          </button>
+        </section>
+      </main>
+    )
+  }
 
   return (
     <main className="flex min-h-dvh items-center justify-center bg-[#f5f5f7] px-5 py-10 text-[#1d1d1f]">
@@ -64,7 +97,7 @@ const LoginScreen = ({ onAuthenticated }: LoginScreenProps) => {
           </h1>
           <p className="mt-2 text-[15px] leading-6 text-[#6e6e73]">
             {isRegistration
-              ? 'Use the one-time invitation shared with you by the AniOS owner.'
+              ? 'Choose your credentials. The owner approves before the account is created.'
               : 'Continue to your private AniOS workspace.'}
           </p>
         </div>
@@ -122,22 +155,32 @@ const LoginScreen = ({ onAuthenticated }: LoginScreenProps) => {
                 </div>
               </label>
               <label className="block space-y-1.5">
-                <span className="text-sm font-medium">Invitation code</span>
+                <span className="text-sm font-medium">Your name</span>
                 <div className="relative">
-                  <KeyRound className="pointer-events-none absolute left-3.5 top-3.5 text-[#86868b]" size={18} />
+                  <UserRound className="pointer-events-none absolute left-3.5 top-3.5 text-[#86868b]" size={18} />
                   <input
-                    aria-label="Invitation code"
-                    autoComplete="off"
-                    value={inviteCode}
-                    onChange={event => setInviteCode(event.target.value)}
+                    aria-label="Your name"
+                    autoComplete="name"
+                    value={displayName}
+                    onChange={event => setDisplayName(event.target.value)}
                     className="h-12 w-full rounded-xl border border-black/[0.14] bg-white pl-11 pr-3.5 text-base outline-none transition focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/15"
-                    minLength={16}
-                    maxLength={512}
-                    required
+                    maxLength={80}
+                    placeholder="So the owner knows who is asking"
                   />
                 </div>
               </label>
+              <label className="block space-y-1.5">
+                <span className="text-sm font-medium">Anything to add <span className="font-normal text-[#86868b]">(optional)</span></span>
+                <textarea
+                  aria-label="Anything to add"
+                  value={reason}
+                  onChange={event => setReason(event.target.value)}
+                  className="min-h-[72px] w-full rounded-xl border border-black/[0.14] bg-white px-3.5 py-3 text-base outline-none transition focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/15"
+                  maxLength={500}
+                />
+              </label>
               <p className="text-xs leading-5 text-[#6e6e73]">
+                The owner reviews every request. Nothing is created until they approve it.
                 Your username permanently owns your chats, memories, files, and agent context.
               </p>
             </>
@@ -153,8 +196,8 @@ const LoginScreen = ({ onAuthenticated }: LoginScreenProps) => {
             className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0071e3] text-[15px] font-semibold text-white transition hover:bg-[#0077ed] disabled:cursor-not-allowed disabled:bg-[#a7c9eb]"
           >
             {isSubmitting
-              ? (isRegistration ? 'Creating profile…' : 'Signing in…')
-              : (isRegistration ? 'Create profile' : 'Continue')}
+              ? (isRegistration ? 'Sending request…' : 'Signing in…')
+              : (isRegistration ? 'Request access' : 'Continue')}
             {!isSubmitting && <ArrowRight size={17} />}
           </button>
           <button
@@ -163,7 +206,7 @@ const LoginScreen = ({ onAuthenticated }: LoginScreenProps) => {
             className="flex h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-medium text-[#0071e3] hover:bg-[#0071e3]/[0.06]"
           >
             {isRegistration && <ArrowLeft size={16} />}
-            {isRegistration ? 'Back to sign in' : 'Create an invited profile'}
+            {isRegistration ? 'Back to sign in' : 'Request an account'}
           </button>
         </form>
       </section>

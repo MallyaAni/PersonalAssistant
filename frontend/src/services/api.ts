@@ -2170,6 +2170,29 @@ export interface SearchCredits {
   overcommitted: boolean;
 }
 
+// Ask for an account. Grants nothing on its own — the operator decides, and on
+// approval these are the credentials the account is created with.
+export const requestAccess = async (
+  displayName: string,
+  username: string,
+  password: string,
+  reason: string,
+): Promise<{ request_token: string; status: string }> =>
+  readJson(
+    await fetch(`${API_BASE_URL}/api/v1/auth/request-access`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        display_name: displayName,
+        username,
+        password,
+        reason: reason || null,
+      }),
+    }),
+    'Could not send that request.',
+  );
+
 const adminBase = `${API_BASE_URL}/api/v1/admin`;
 
 export const getSearchCredits = async (): Promise<SearchCredits> =>
@@ -2230,6 +2253,7 @@ export interface AccessRequest {
   reason: string | null;
   status: 'pending' | 'approved' | 'denied';
   created_at: string | null;
+  username: string | null;
 }
 
 export interface AdminSubscription {

@@ -162,6 +162,10 @@ class AccessRequest(Base):
         return {
             "id": str(self.id),
             "display_name": self.display_name,
+            # The name the account will be created under, so the operator is
+            # approving something they can actually recognise afterwards. The
+            # password hash is never serialised.
+            "username": self.desired_username,
             "contact": self.contact,
             "reason": self.reason,
             "status": self.status,
