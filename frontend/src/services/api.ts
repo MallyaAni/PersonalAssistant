@@ -1642,3 +1642,179 @@ export const getAgents = async (userId: string): Promise<AgentSummary[]> => {
   const payload = await response.json();
   return Array.isArray(payload.agents) ? payload.agents : [];
 };
+
+export interface DiscoveryInterest {
+  id: string;
+  label: string;
+  strength: number;
+  provenance: string;
+}
+
+export interface DiscoveryLocality {
+  id: string;
+  label: string;
+  region: string | null;
+  radius_km: number;
+  timezone: string;
+  is_primary: boolean;
+}
+
+export interface DiscoverySource {
+  id: string;
+  kind: string;
+  url: string;
+  label: string | null;
+  enabled: boolean;
+  last_error: string | null;
+}
+
+export interface FeedCandidate {
+  kind: string;
+  url: string;
+  title: string;
+  event_count: number;
+  sample_titles: string[];
+}
+
+export interface InterestProposal {
+  label: string;
+  evidence: string;
+  source: string;
+}
+
+const discoveryBase = (userId: string) =>
+  `${API_BASE_URL}/api/v1/discovery/${encodeURIComponent(userId)}`;
+
+const readJson = async (response: Response, message: string) => {
+  if (!response.ok) {
+    throw new Error(message);
+  }
+  return response.json();
+};
+
+export const getDiscoveryProfile = async (
+  userId: string,
+): Promise<{ interests: DiscoveryInterest[]; localities: DiscoveryLocality[] }> => {
+  const payload = await readJson(
+    await fetch(discoveryBase(userId)),
+    'Could not load the discovery profile.',
+  );
+  return { interests: payload.interests ?? [], localities: payload.localities ?? [] };
+};
+
+export const putDiscoveryLocality = async (
+  userId: string,
+  body: { label: string; region?: string | null; timezone?: string; is_primary?: boolean },
+): Promise<DiscoveryLocality> =>
+  readJson(
+    await fetch(`${discoveryBase(userId)}/localities`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_primary: true, ...body }),
+    }),
+    'Could not save that place.',
+  );
+
+export const putDiscoveryInterest = async (
+  userId: string,
+  label: string,
+  strength = 2,
+): Promise<DiscoveryInterest> =>
+  readJson(
+    await fetch(`${discoveryBase(userId)}/interests`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ label, strength }),
+    }),
+    'Could not save that interest.',
+  );
+
+export const deleteDiscoveryInterest = async (
+  userId: string,
+  interestId: string,
+): Promise<void> => {
+  const response = await fetch(`${discoveryBase(userId)}/interests/${interestId}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok && response.status !== 404) {
+    throw new Error('Could not remove that interest.');
+  }
+};
+
+export const getDiscoverySources = async (userId: string): Promise<DiscoverySource[]> => {
+  const payload = await readJson(
+    await fetch(`${discoveryBase(userId)}/sources`),
+    'Could not load feeds.',
+  );
+  return payload.sources ?? [];
+};
+
+export const putDiscoverySource = async (
+  userId: string,
+  body: { kind: string; url: string; label?: string | null },
+): Promise<DiscoverySource> =>
+  readJson(
+    await fetch(`${discoveryBase(userId)}/sources`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }),
+    'Could not add that feed.',
+  );
+
+export const deleteDiscoverySource = async (
+  userId: string,
+  sourceId: string,
+): Promise<void> => {
+  const response = await fetch(`${discoveryBase(userId)}/sources/${sourceId}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok && response.status !== 404) {
+    throw new Error('Could not remove that feed.');
+  }
+};
+
+export const suggestDiscoverySources = async (
+  userId: string,
+): Promise<FeedCandidate[]> => {
+  const payload = await readJson(
+    await fetch(`${discoveryBase(userId)}/sources/suggest`),
+    'Could not suggest feeds.',
+  );
+  return payload.candidates ?? [];
+};
+
+export const suggestDiscoveryInterests = async (
+  userId: string,
+): Promise<InterestProposal[]> => {
+  const payload = await readJson(
+    await fetch(`${discoveryBase(userId)}/interests/suggest`),
+    'Could not suggest interests.',
+  );
+  return payload.proposals ?? [];
+};
+
+// Name the town containing a coordinate. The backend rounds the coordinate to
+// roughly a kilometre before its single outbound lookup and stores nothing
+// numeric, so the precise fix the browser produced never leaves this machine.
+export const resolveDiscoveryLocality = async (
+  userId: string,
+  latitude: number,
+  longitude: number,
+): Promise<{ label: string; region: string | null }> =>
+  readJson(
+    await fetch(`${discoveryBase(userId)}/locality/resolve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ latitude, longitude }),
+    }),
+    'Could not work out where that is.',
+  );
+
+export const runDiscoverySweep = async (
+  userId: string,
+): Promise<{ selected: unknown[]; candidate_count: number; novel_count: number }> =>
+  readJson(
+    await fetch(`${discoveryBase(userId)}/sweep`, { method: 'POST' }),
+    'Could not run a sweep.',
+  );

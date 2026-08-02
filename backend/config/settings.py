@@ -137,6 +137,13 @@ class Settings(BaseSettings):
     # default: a link only resolves from wherever the recipient actually is, so
     # leaving this unset keeps delivery useful only on the same network.
     DISCOVERY_CALENDAR_BASE_URL: str = "http://localhost:8000/api/v1/discovery"
+    # Reverse geocoding for the "use my location" button. Off unless an operator
+    # sets a provider, so a deployment never reaches a third party by default.
+    # The coordinate is rounded to roughly a kilometre before it is sent, and
+    # only the resulting town label is stored.
+    DISCOVERY_PLACE_RESOLVER: Literal["", "nominatim"] = ""
+    DISCOVERY_PLACE_RESOLVER_URL: str = "https://nominatim.openstreetmap.org/reverse"
+    DISCOVERY_PLACE_RESOLVER_USER_AGENT: str = "AniOS/1.0 (local personal assistant)"
 
     GPU_HANDOFF_SLEEP_LEVEL: int = Field(default=1, ge=1, le=2)
     GPU_HANDOFF_TIMEOUT_SECONDS: float = Field(default=120.0, gt=0, le=600)

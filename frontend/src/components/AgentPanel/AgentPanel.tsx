@@ -1,7 +1,16 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Bot, CalendarClock, Compass, Presentation, RefreshCw } from 'lucide-react'
+import {
+  Bot,
+  CalendarClock,
+  ChevronDown,
+  ChevronRight,
+  Compass,
+  Presentation,
+  RefreshCw,
+} from 'lucide-react'
 
 import { getAgents, type AgentSummary } from '../../services/api'
+import ScoutSetup from './ScoutSetup'
 
 interface AgentPanelProps {
   userId: string;
@@ -42,6 +51,8 @@ const AgentPanel = ({ userId }: AgentPanelProps) => {
   const [agents, setAgents] = useState<AgentSummary[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+  // Which agent's configuration is open. Only discovery has one today.
+  const [expanded, setExpanded] = useState<string | null>(null)
 
   const load = useCallback(async (showSpinner: boolean) => {
     if (showSpinner) setIsLoading(true)
@@ -133,7 +144,27 @@ const AgentPanel = ({ userId }: AgentPanelProps) => {
                           {agent.trigger}
                         </span>
                         <span>Last active {formatLastActive(agent.last_active_at).toLowerCase()}</span>
+                        {agent.id === 'discovery' && (
+                          <button
+                            onClick={() =>
+                              setExpanded(current => (current === agent.id ? null : agent.id))
+                            }
+                            aria-expanded={expanded === agent.id}
+                            className="ml-auto flex items-center gap-1 text-xs font-medium text-[#0071e3]"
+                          >
+                            {expanded === agent.id ? (
+                              <ChevronDown size={13} />
+                            ) : (
+                              <ChevronRight size={13} />
+                            )}
+                            Configure
+                          </button>
+                        )}
                       </div>
+
+                      {expanded === agent.id && agent.id === 'discovery' && (
+                        <ScoutSetup userId={userId} onChanged={() => void load(false)} />
+                      )}
                     </div>
                   </div>
                 </article>

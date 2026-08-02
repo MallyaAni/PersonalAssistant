@@ -584,6 +584,16 @@ out. Interests are proposed from already-approved memory, never from inferences,
 and a proposal is never a fact — accepting one is the separate call that records
 `user_explicit` provenance.
 
+Location is set as a place *label*, typed or resolved. The browser's geolocation
+API returns a fix precise enough to identify a building, and for a request made
+at home that is the user's address — the most sensitive value this application
+could hold, which is why the profile has never stored coordinates. The resolve
+path therefore discards precision before it can travel: the coordinate is
+rounded to roughly a kilometre in one place that no adapter can bypass, a
+`PlaceResolver` provider names the town, and only that label is persisted.
+Resolution is off unless an operator configures a provider, so an unconfigured
+deployment reaches nobody, and typing the town makes no outbound request at all.
+
 Notification egress remains `PLANNED` and gated: it is the first outbound path
 in AniOS, and every subsystem before it fails closed inside the machine.
 

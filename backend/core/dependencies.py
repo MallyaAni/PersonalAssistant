@@ -42,6 +42,11 @@ from backend.discovery.channels import (
     NullChannel,
     PullOnlyChannel,
 )
+from backend.discovery.locating import (
+    DisabledPlaceResolver,
+    NominatimPlaceResolver,
+    PlaceResolver,
+)
 from backend.discovery.novelty import SeenItemRepository
 from backend.discovery.repository import DiscoveryProfileRepository
 from backend.discovery.runner import DiscoveryRunner
@@ -744,6 +749,22 @@ DependencyDiscoverySetup = Annotated[
     DiscoverySetupService,
     Depends(get_discovery_setup_service),
 ]
+
+
+# Reverse geocoding is a replaceable outbound boundary like search or images,
+# and it is disabled unless configured so a deployment never reaches a third
+# party by default.
+@lru_cache(maxsize=1)
+def get_place_resolver() -> PlaceResolver:
+    if settings.DISCOVERY_PLACE_RESOLVER != "nominatim":
+        return DisabledPlaceResolver()
+    return NominatimPlaceResolver(
+        base_url=settings.DISCOVERY_PLACE_RESOLVER_URL,
+        user_agent=settings.DISCOVERY_PLACE_RESOLVER_USER_AGENT,
+    )
+
+
+DependencyPlaceResolver = Annotated[PlaceResolver, Depends(get_place_resolver)]
 
 
 def get_agent_registry(db: DbDependency) -> AgentRegistry:

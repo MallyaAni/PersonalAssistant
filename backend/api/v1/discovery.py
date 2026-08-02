@@ -14,6 +14,7 @@ from backend.core.dependencies import (
     DependencyDiscoverySetup,
     DependencyDiscoverySources,
     DependencyDiscoverySubscribers,
+    DependencyPlaceResolver,
 )
 from backend.discovery.calendar import (
     build_calendar,
@@ -22,6 +23,11 @@ from backend.discovery.calendar import (
 )
 from backend.discovery.errors import DiscoveryProfileLimitError
 from backend.discovery.events import MAX_URL_CHARS
+from backend.discovery.locating import (
+    COARSE_DECIMALS,
+    LocationLookupError,
+    resolve_place,
+)
 from backend.discovery.types import (
     MAX_LABEL_CHARS,
     MAX_RADIUS_KM,
@@ -443,4 +449,37 @@ async def suggest_interests(
     return {
         "user_id": user_id,
         "proposals": [asdict(proposal) for proposal in proposals],
+    }
+
+
+class ResolveLocationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
+
+
+# Name the town containing a coordinate, without keeping the coordinate.
+#
+# The browser returns a precise fix, which for a request made at home is the
+# user's address. This rounds it to roughly a kilometre before the single
+# outbound lookup, returns a place label, and persists nothing numeric. Typing
+# the town instead makes no request at all.
+@router.post("/locality/resolve", status_code=status.HTTP_200_OK)
+async def resolve_locality(
+    user_id: UserId,
+    body: ResolveLocationRequest,
+    resolver: DependencyPlaceResolver,
+) -> dict[str, object]:
+    try:
+        place = await resolve_place(resolver, body.latitude, body.longitude)
+    except LocationLookupError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)
+        ) from exc
+    return {
+        "label": place.label,
+        "region": place.region,
+        # Stated back so the caller can show what was actually sent.
+        "sent_precision_decimals": COARSE_DECIMALS,
     }

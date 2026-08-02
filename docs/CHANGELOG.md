@@ -1620,3 +1620,26 @@ rows referencing them. The two changes above exist so this cannot recur.
   Adding a specialist is deliberately two steps, because routing to something
   that cannot run is worse than not routing at all.
 - 640 backend tests pass. Ruff, Black, and MyPy across 187 files pass.
+
+## 2026-08-01 — Configuring Scout from the Agents tab
+
+- The Scout card now expands into a configuration panel: set the place, add and
+  remove interests, add and remove feeds, and run a sweep immediately. Both
+  suggestion paths are wired in — feeds found by search and validated by
+  fetching, interests proposed from already-approved memory.
+- Added "Use my location". The browser's fix is precise enough to identify a
+  building, and for a request made at home that is the user's address, so the
+  coordinate is rounded to roughly a kilometre before a single lookup names the
+  town, and only the town is stored. The panel says so rather than leaving the
+  user to assume it.
+- Coarsening happens in `resolve_place`, not in an adapter, so no future
+  resolver can be written that forgets to do it. An out-of-range coordinate
+  never reaches the provider at all.
+- Reverse geocoding is a `PlaceResolver` provider contract, matching how every
+  other outbound boundary here works — `EventSource`, `SearchProvider`,
+  `ImageProvider`. It had been written as a bare HTTP call inside a module,
+  which broke that pattern and made the dependency unswappable and always-on.
+  It now ships disabled: an unconfigured deployment resolves nothing rather
+  than silently reaching a third party.
+- 646 backend tests pass; Ruff, Black and MyPy across 188 files pass; the
+  TypeScript build passes.
