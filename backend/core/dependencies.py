@@ -845,7 +845,11 @@ DependencyDiscoveryRuns = Annotated[
 # ceiling by running from the other process.
 @lru_cache(maxsize=1)
 def get_search_budget() -> SearchBudget:
-    return SearchBudget(settings.REDIS_URL, enabled=settings.MODEL_GATE_ENABLED)
+    return SearchBudget(
+        settings.REDIS_URL,
+        enabled=settings.MODEL_GATE_ENABLED,
+        monthly_credits=settings.SEARCH_MONTHLY_CREDITS,
+    )
 
 
 def get_discovery_runner(

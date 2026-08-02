@@ -37,6 +37,10 @@ OPERATOR_MONTHLY_QUERIES = 400
 GUEST_DAILY_QUERIES = 10
 OPERATOR_DAILY_QUERIES = 40
 
+# Tavily's free plan. This is the number that actually runs out, and every
+# per-account limit above is a share of it rather than an independent budget.
+FREE_TIER_MONTHLY_CREDITS = 1_000
+
 # Counters expire on their own so nothing has to sweep them up.
 _TTL_SECONDS = 40 * 24 * 60 * 60
 _DAILY_TTL_SECONDS = 3 * 24 * 60 * 60
@@ -45,8 +49,16 @@ _DAILY_TTL_SECONDS = 3 * 24 * 60 * 60
 class SearchBudget:
     """Count metered search queries per account per calendar month."""
 
-    def __init__(self, redis_url: str, enabled: bool = True) -> None:
+    def __init__(
+        self,
+        redis_url: str,
+        enabled: bool = True,
+        monthly_credits: int = FREE_TIER_MONTHLY_CREDITS,
+    ) -> None:
         self.enabled = enabled
+        # The purchased ceiling, not a preference. Per-account limits are shares
+        # of this; it is what actually runs out.
+        self.monthly_credits = monthly_credits
         self.redis = Redis.from_url(redis_url, decode_responses=True)
 
     @staticmethod
@@ -56,6 +68,42 @@ class SearchBudget:
     @staticmethod
     def _daily_key(user_id: str, now: datetime) -> str:
         return f"anios:search:{user_id}:day:{now.strftime('%Y-%m-%d')}"
+
+    # The shared pool every account spends from — the actual purchased ceiling.
+    #
+    # Per-account limits alone cannot protect this. They bound each caller but
+    # say nothing about the sum, so enough accounts within their own limits
+    # still drain the key. This is the only window that is not per-user.
+    @staticmethod
+    def _pool_key(now: datetime) -> str:
+        return f"anios:search:_pool:{now.strftime('%Y-%m')}"
+
+    # Credits left in the shared monthly pool.
+    async def pool_remaining(self, now: datetime | None = None) -> int:
+        if not self.enabled:
+            return self.monthly_credits
+        moment = now or datetime.now(UTC)
+        try:
+            spent = int(await self.redis.get(self._pool_key(moment)) or 0)
+        except Exception:
+            return self.monthly_credits
+        return max(self.monthly_credits - spent, 0)
+
+    # What all accounts together may still spend today.
+    #
+    # No day may promise more than the month has left, so this is the pool's
+    # remainder rather than a separate number that could drift above it.
+    async def shared_daily_ceiling(self, now: datetime | None = None) -> int:
+        return await self.pool_remaining(now)
+
+    # Spend against the shared pool, and what it has already cost this month.
+    async def pool_status(self, now: datetime | None = None) -> dict[str, int]:
+        remaining = await self.pool_remaining(now)
+        return {
+            "monthly_credits": self.monthly_credits,
+            "remaining": remaining,
+            "spent": max(self.monthly_credits - remaining, 0),
+        }
 
     @staticmethod
     def allowance(is_operator: bool, override: int | None = None) -> int:
@@ -126,31 +174,43 @@ class SearchBudget:
             return max(wanted, 0)
         moment = now or datetime.now(UTC)
 
-        # The day is checked first because it is the tighter bound and the one
-        # that refills, so a rejection here costs the caller the least.
-        granted = await self._take(
-            self._daily_key(user_id, moment),
-            wanted,
-            self.daily_allowance(is_operator, daily_override),
-            _DAILY_TTL_SECONDS,
+        # Ordered loosest-last. The per-account day is checked first because it
+        # is the tightest bound and the one that refills, so a rejection there
+        # costs the caller the least. The shared pool is checked last: it is the
+        # real ceiling, and reaching it stops everybody, so nothing should be
+        # charged against it that a cheaper bound would have refused anyway.
+        windows = (
+            (
+                self._daily_key(user_id, moment),
+                self.daily_allowance(is_operator, daily_override),
+                _DAILY_TTL_SECONDS,
+            ),
+            (
+                self._key(user_id, moment),
+                self.allowance(is_operator, override),
+                _TTL_SECONDS,
+            ),
+            (self._pool_key(moment), self.monthly_credits, _TTL_SECONDS),
         )
-        if granted <= 0:
-            return 0
 
-        monthly = await self._take(
-            self._key(user_id, moment),
-            granted,
-            self.allowance(is_operator, override),
-            _TTL_SECONDS,
-        )
-        if monthly < granted:
-            # The month was the binding limit, so return the day's surplus.
-            # Without this a query blocked by the month still burns the day.
-            with suppress(Exception):
-                await self.redis.decrby(
-                    self._daily_key(user_id, moment), granted - monthly
-                )
-        return monthly
+        granted = wanted
+        charged: list[tuple[str, int]] = []
+        for key, allowance, ttl in windows:
+            took = await self._take(key, granted, allowance, ttl)
+            charged.append((key, took))
+            granted = min(granted, took)
+            if granted <= 0:
+                break
+
+        # A later window refusing must not leave an earlier one overcharged.
+        # Without this a query the shared pool blocks would still burn the
+        # caller's day and month, so exhausting the pool would quietly consume
+        # everyone's personal allowance too.
+        for key, took in charged:
+            if took > granted:
+                with suppress(Exception):
+                    await self.redis.decrby(key, took - granted)
+        return granted
 
     # Spend against one window and report how much of `wanted` it allowed.
     async def _take(self, key: str, wanted: int, allowance: int, ttl: int) -> int:

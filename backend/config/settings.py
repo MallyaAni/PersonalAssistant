@@ -250,6 +250,11 @@ class Settings(BaseSettings):
     SEARCH_BASE_URL: str = "https://api.tavily.com"
     # Empty disables search rather than failing startup; callers check is_enabled.
     SEARCH_API_KEY: str | None = Field(None, alias="SEARCH_API_KEY")
+    # The shared monthly ceiling every account spends from. Per-account limits
+    # bound each caller but say nothing about the sum, so without this enough
+    # accounts staying inside their own limits still drain the key. Defaults to
+    # Tavily's free plan; raise it only to match a plan actually purchased.
+    SEARCH_MONTHLY_CREDITS: int = Field(default=1_000, ge=0, le=1_000_000)
     SEARCH_MAX_RESULTS: int = Field(default=5, ge=1, le=20)
     SEARCH_TIMEOUT_SECONDS: float = Field(default=15.0, gt=0, le=120)
     # Per-result truncation so one verbose page cannot dominate the prompt budget.

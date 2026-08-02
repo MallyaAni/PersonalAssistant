@@ -2161,7 +2161,22 @@ export interface AdminAccount {
   search_daily_limit: number | null;
 }
 
+export interface SearchCredits {
+  monthly_credits: number;
+  remaining: number;
+  spent: number;
+  daily_ceiling: number;
+  committed_daily: number;
+  overcommitted: boolean;
+}
+
 const adminBase = `${API_BASE_URL}/api/v1/admin`;
+
+export const getSearchCredits = async (): Promise<SearchCredits> =>
+  readJson(
+    await fetch(`${adminBase}/search-credits`, { credentials: 'include' }),
+    'Could not load search credits.',
+  );
 
 export const getAdminInvites = async (): Promise<AdminInvite[]> => {
   const payload = await readJson(

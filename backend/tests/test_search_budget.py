@@ -179,3 +179,84 @@ async def test_the_operator_may_set_a_daily_limit_for_one_account():
     assert await budget.reserve(user, False, 3, _NOW, daily_override=2) == 2
     # Zero stops an account searching without removing it.
     assert await budget.reserve(_user(), False, 1, _NOW, daily_override=0) == 0
+
+
+# The pool is deliberately global — it is the one window that is not per-user —
+# so unlike accounts it cannot be made unique per test. It is cleared instead.
+@pytest.fixture(autouse=True)
+def _empty_pool():
+    import redis as sync_redis
+
+    def clear() -> None:
+        try:
+            client = sync_redis.Redis.from_url(_REDIS)
+            keys = list(client.scan_iter("anios:search:_pool:*"))
+            if keys:
+                client.delete(*keys)
+            client.close()
+        except Exception:
+            pass
+
+    clear()
+    yield
+    clear()
+
+
+def _pooled(credits: int) -> SearchBudget:
+    return SearchBudget(_REDIS, monthly_credits=credits)
+
+
+@pytest.mark.asyncio
+async def test_accounts_inside_their_own_limits_cannot_together_drain_the_key():
+    # The whole point of the shared pool. Per-account limits bound each caller
+    # but say nothing about the sum, so without this enough well-behaved
+    # accounts still exhaust the credits everybody depends on.
+    budget = _pooled(5)
+    spent = 0
+    for _ in range(4):
+        spent += await budget.reserve(_user(), False, 3, _NOW)
+
+    assert spent == 5
+    assert await budget.pool_remaining(_NOW) == 0
+
+
+@pytest.mark.asyncio
+async def test_no_day_may_promise_more_than_the_month_has_left():
+    budget = _pooled(30)
+    await budget.reserve(_user(), False, 10, _NOW, daily_override=_NO_DAILY_BOUND)
+
+    assert await budget.shared_daily_ceiling(_NOW) == 20
+    assert await budget.pool_remaining(_NOW) == 20
+
+
+@pytest.mark.asyncio
+async def test_an_exhausted_pool_does_not_also_burn_the_callers_own_allowance():
+    # The pool is charged last, so a query it refuses has to be refunded to the
+    # caller's day and month. Otherwise running the shared key dry would
+    # quietly consume everyone's personal allowance as well.
+    budget = _pooled(0)
+    user = _user()
+
+    assert await budget.reserve(user, False, 2, _NOW) == 0
+    assert await budget.remaining_today(user, False, _NOW) == GUEST_DAILY_QUERIES
+    assert await budget.remaining(user, False, _NOW) == GUEST_MONTHLY_QUERIES
+
+
+@pytest.mark.asyncio
+async def test_a_partly_funded_pool_grants_what_is_left_rather_than_refusing():
+    budget = _pooled(2)
+    user = _user()
+
+    assert await budget.reserve(user, False, 5, _NOW) == 2
+    # The caller is charged for what they actually got, not what they asked for.
+    assert await budget.remaining_today(user, False, _NOW) == GUEST_DAILY_QUERIES - 2
+
+
+@pytest.mark.asyncio
+async def test_the_pool_refills_next_month():
+    budget = _pooled(4)
+    await budget.reserve(_user(), False, 4, _NOW)
+    september = datetime(2026, 9, 1, 12, 0, tzinfo=UTC)
+
+    assert await budget.pool_remaining(_NOW) == 0
+    assert await budget.pool_remaining(september) == 4

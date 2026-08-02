@@ -9,12 +9,14 @@ import {
   getAdminAccounts,
   getAdminInvites,
   getAdminSubscriptions,
+  getSearchCredits,
   revokeAdminInvite,
   setAccountSearchLimit,
   type AccessRequest,
   type AdminAccount,
   type AdminInvite,
   type AdminSubscription,
+  type SearchCredits,
 } from '../../services/api'
 
 const TTL_CHOICES = [1, 6, 24, 72]
@@ -44,6 +46,7 @@ const AdminPanel = () => {
   const [accounts, setAccounts] = useState<AdminAccount[]>([])
   const [requests, setRequests] = useState<AccessRequest[]>([])
   const [subscriptions, setSubscriptions] = useState<AdminSubscription[]>([])
+  const [credits, setCredits] = useState<SearchCredits | null>(null)
   const [ttlHours, setTtlHours] = useState(24)
   const [minted, setMinted] = useState<{ code: string; expires_at: string } | null>(null)
   const [copied, setCopied] = useState(false)
@@ -51,12 +54,15 @@ const AdminPanel = () => {
   const [error, setError] = useState('')
 
   const reload = useCallback(async () => {
-    const [nextInvites, nextAccounts, nextRequests, nextSubs] = await Promise.all([
-      getAdminInvites(),
-      getAdminAccounts(),
-      getAccessRequests(),
-      getAdminSubscriptions(),
-    ])
+    const [nextInvites, nextAccounts, nextRequests, nextSubs, nextCredits] =
+      await Promise.all([
+        getAdminInvites(),
+        getAdminAccounts(),
+        getAccessRequests(),
+        getAdminSubscriptions(),
+        getSearchCredits(),
+      ])
+    setCredits(nextCredits)
     setInvites(nextInvites)
     setAccounts(nextAccounts)
     setRequests(nextRequests)
@@ -318,9 +324,22 @@ const AdminPanel = () => {
         </section>
 
         <section className="rounded-3xl border border-black/[0.06] bg-white p-5 shadow-sm">
-          <h3 className="mb-3 text-[17px] font-semibold tracking-[-0.01em]">
+          <h3 className="mb-1 text-[17px] font-semibold tracking-[-0.01em]">
             Accounts — {accounts.length}
           </h3>
+          {credits && (
+            <p className="mb-3 text-[12px] text-[#6e6e73]">
+              Search credits: <strong>{credits.remaining}</strong> of{' '}
+              {credits.monthly_credits} left this month. No day can spend more
+              than what remains.
+              {credits.overcommitted && (
+                <span className="ml-1 text-[#b25e00]">
+                  Daily limits below add up to {credits.committed_daily}, more
+                  than the pool has left — whoever searches last gets cut off.
+                </span>
+              )}
+            </p>
+          )}
           <div className="space-y-2">
             {accounts.map(account => (
               <div

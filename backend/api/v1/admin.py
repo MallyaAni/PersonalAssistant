@@ -21,7 +21,11 @@ from sqlalchemy import select
 
 from backend.config.settings import settings
 from backend.core.auth import AdminDependency, IdentityDependency
-from backend.core.dependencies import DbDependency, DependencyDiscoverySubscribers
+from backend.core.dependencies import (
+    DbDependency,
+    DependencyDiscoverySubscribers,
+    get_search_budget,
+)
 from backend.models.auth import AccessRequest, RegistrationInvite, UserAccount
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -405,6 +409,35 @@ async def deny_access_request(
     row.decided_by = _operator_id(identity)
     await db.commit()
     return {"id": str(request_id), "status": "denied"}
+
+
+# What the shared search pool has left, and whether the per-account limits
+# promise more than it can pay for.
+#
+# The overcommitment figure is reported rather than enforced: the pool refuses
+# spending past its ceiling regardless, so a warning here lets the operator
+# rebalance limits deliberately instead of discovering it when a guest is cut
+# off mid-sweep.
+@router.get("/search-credits", status_code=status.HTTP_200_OK)
+async def read_search_credits(
+    admin: AdminDependency,
+    db: DbDependency,
+) -> dict[str, object]:
+    budget = get_search_budget()
+    status_now = await budget.pool_status()
+    accounts = (await db.execute(select(UserAccount))).scalars().all()
+    committed_daily = sum(
+        budget.daily_allowance(bool(row.is_admin), row.search_daily_limit)
+        for row in accounts
+        if row.is_active
+    )
+    return {
+        **status_now,
+        # No day may promise more than the month has left.
+        "daily_ceiling": status_now["remaining"],
+        "committed_daily": committed_daily,
+        "overcommitted": committed_daily > status_now["remaining"],
+    }
 
 
 # Set how much metered search one account may spend per month.
