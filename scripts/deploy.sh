@@ -85,31 +85,37 @@ else
     "${compose[@]}" up -d
 fi
 
-# A restarted container proves nothing. Ask the system whether it works.
+# A restarted container proves nothing, and neither does the gateway's own
+# health page — that is served by Nginx and would answer even with the backend
+# down. This asks for a private API route instead, which only answers correctly
+# when Nginx reaches the backend *and* the authentication boundary is intact.
+# One check, covering the whole chain.
 step "Verifying"
-ok=true
-for attempt in $(seq 1 20); do
-    if curl -fsS --max-time 3 http://localhost:8080/health >/dev/null 2>&1; then
-        break
-    fi
-    [[ $attempt -eq 20 ]] && ok=false
+ok=false
+code=000
+for attempt in $(seq 1 30); do
+    code="$(curl -s -o /dev/null -w '%{http_code}'         --max-time 5 http://localhost:8080/api/v1/memory/probe || echo 000)"
+    case "$code" in
+        401 | 403)
+            ok=true
+            break
+            ;;
+        200)
+            # A private route answering without credentials means the boundary
+            # is gone, which is worse than being down. Stop immediately.
+            echo "FATAL: a private route answered $code without credentials" >&2
+            break
+            ;;
+    esac
     sleep 3
 done
 
 if $ok; then
-    echo "gateway healthy"
+    echo "backend reachable through the gateway and refusing anonymous access ($code)"
 else
-    echo "gateway did not become healthy" >&2
-fi
-
-# The authentication boundary is the only thing between the public URL and this
-# machine, so a deploy that quietly disabled it must not look like a success.
-code="$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/api/v1/memory/probe || echo 000)"
-if [[ "$code" == "401" || "$code" == "403" ]]; then
-    echo "auth boundary holding ($code on an unauthenticated private call)"
-else
-    echo "WARNING: unauthenticated private call returned $code, expected 401/403" >&2
-    ok=false
+    echo "verification failed: private route returned $code, expected 401/403" >&2
+    echo "recent backend logs:" >&2
+    "${compose[@]}" logs --tail 20 backend >&2 || true
 fi
 
 step "Result"
