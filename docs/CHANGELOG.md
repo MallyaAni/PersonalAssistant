@@ -1721,3 +1721,16 @@ rows referencing them. The two changes above exist so this cannot recur.
 - The Scout card states where links point, and when they are unreachable it says
   what to do about it rather than only that something is wrong.
 - 668 backend tests pass; Ruff, Black and MyPy across 190 files pass.
+
+## 2026-08-01 — Preview what would be sent, without sending it
+
+- Added a digest preview: the Scout panel and
+  `GET /api/v1/discovery/{user_id}/digest/preview` render the exact string a
+  channel would receive, from the same code path, and name who would have
+  received it. Verifying an outbound feature by triggering it is a bad trade —
+  the send cannot be recalled and a wrong digest reaches real people.
+- Preview reads what has already been announced rather than sweeping again, so
+  looking costs no metered query and marks nothing as seen.
+- It reports the three things that decide whether a real send would work:
+  whether any subscriber would receive it, whether egress is on, and whether the
+  calendar links are reachable from another device.

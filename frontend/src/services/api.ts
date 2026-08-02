@@ -1834,3 +1834,22 @@ export const runDiscoverySweep = async (
     await fetch(`${discoveryBase(userId)}/sweep`, { method: 'POST' }),
     'Could not run a sweep.',
   );
+
+export interface DigestPreview {
+  message: string | null;
+  would_send: boolean;
+  recipients: { id: string; channel: string; label: string | null }[];
+  egress_enabled: boolean;
+  calendar_links_reachable: boolean;
+  event_count: number;
+}
+
+// Show exactly what a delivery would send, without sending it. Verifying an
+// outbound feature by triggering it cannot be undone.
+export const previewDiscoveryDigest = async (
+  userId: string,
+): Promise<DigestPreview> =>
+  readJson(
+    await fetch(`${discoveryBase(userId)}/digest/preview`),
+    'Could not build a preview.',
+  );

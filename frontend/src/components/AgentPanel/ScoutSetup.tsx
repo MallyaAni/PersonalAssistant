@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Check, Loader2, MapPin, Plus, Rss, Sparkles, Trash2 } from 'lucide-react'
+import { Check, Eye, Loader2, MapPin, Plus, Rss, Sparkles, Trash2 } from 'lucide-react'
 
 import {
   deleteDiscoveryInterest,
@@ -10,12 +10,14 @@ import {
   putDiscoveryLocality,
   putDiscoverySource,
   resolveDiscoveryLocality,
+  previewDiscoveryDigest,
   runDiscoverySweep,
   suggestDiscoveryInterests,
   suggestDiscoverySources,
   type DiscoveryInterest,
   type DiscoveryLocality,
   type DiscoverySource,
+  type DigestPreview,
   type FeedCandidate,
   type InterestProposal,
 } from '../../services/api'
@@ -45,6 +47,7 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [preview, setPreview] = useState<DigestPreview | null>(null)
 
   const reload = useCallback(async () => {
     const [profile, feeds] = await Promise.all([
@@ -169,6 +172,15 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
         `Read ${result.candidate_count} events, ${result.novel_count} new, ` +
           `${result.selected.length} worth telling you about.`,
       )
+    })
+
+  const showPreview = () =>
+    perform('preview', async () => {
+      const result = await previewDiscoveryDigest(userId)
+      setPreview(result)
+      if (result.message === null) {
+        setNotice('Nothing to send yet. Run "Look now" first.')
+      }
     })
 
   const ready = Boolean(savedPlace) && interests.length > 0 && sources.length > 0
@@ -406,14 +418,47 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
         </div>
       </section>
 
-      <button
-        onClick={() => void sweepNow()}
-        disabled={busy !== '' || !ready}
-        className="flex h-10 items-center gap-2 rounded-xl bg-[#0071e3] px-4 text-sm font-medium text-white disabled:opacity-40"
-      >
-        {busy === 'sweep' ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
-        Look now
-      </button>
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => void sweepNow()}
+          disabled={busy !== '' || !ready}
+          className="flex h-10 items-center gap-2 rounded-xl bg-[#0071e3] px-4 text-sm font-medium text-white disabled:opacity-40"
+        >
+          {busy === 'sweep' ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
+          Look now
+        </button>
+        <button
+          onClick={() => void showPreview()}
+          disabled={busy !== ''}
+          className="flex h-10 items-center gap-2 rounded-xl border border-black/[0.08] px-4 text-sm font-medium disabled:opacity-40"
+        >
+          {busy === 'preview' ? <Loader2 size={15} className="animate-spin" /> : <Eye size={15} />}
+          Preview message
+        </button>
+      </div>
+
+      {preview?.message && (
+        <div className="mt-3 rounded-xl border border-black/[0.08] bg-white p-3">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#86868b]">
+            What would be sent
+          </p>
+          <pre className="overflow-x-auto whitespace-pre-wrap break-words font-sans text-sm leading-5 text-[#1d1d1f]">
+            {preview.message}
+          </pre>
+          <p className="mt-3 border-t border-black/[0.05] pt-2 text-[11px] leading-4 text-[#86868b]">
+            {preview.recipients.length === 0
+              ? 'No subscribers yet, so this would go nowhere.'
+              : `To ${preview.recipients.length} subscriber${preview.recipients.length > 1 ? 's' : ''}.`}
+            {!preview.egress_enabled && ' Sending is turned off.'}
+            {!preview.calendar_links_reachable &&
+              ' Calendar links would not open on a phone.'}
+          </p>
+          <p className="mt-1 text-[11px] leading-4 text-[#86868b]">
+            Open an “Add” link on your phone to check the calendar half before any
+            message is ever sent.
+          </p>
+        </div>
+      )}
       {!ready && (
         <p className="mt-2 text-[11px] text-[#86868b]">
           Needs a place, at least one interest, and at least one feed.

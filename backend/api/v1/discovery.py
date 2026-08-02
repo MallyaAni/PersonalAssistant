@@ -21,6 +21,8 @@ from backend.discovery.calendar import (
     build_vevent,
     calendar_filename,
 )
+from backend.discovery.delivery import describe_recipients
+from backend.discovery.digest import render_message
 from backend.discovery.errors import DiscoveryProfileLimitError
 from backend.discovery.events import MAX_URL_CHARS
 from backend.discovery.locating import (
@@ -28,6 +30,12 @@ from backend.discovery.locating import (
     LocationLookupError,
     resolve_place,
 )
+from backend.discovery.novelty import ScoredCandidate
+from backend.discovery.reachability import (
+    calendar_base_url,
+    is_reachable_from_other_devices,
+)
+from backend.discovery.relevance import RankedCandidate
 from backend.discovery.types import (
     MAX_LABEL_CHARS,
     MAX_RADIUS_KM,
@@ -492,4 +500,49 @@ async def resolve_locality(
         "stored_region": place.stored_region,
         # Stated back so the caller can show what was actually sent.
         "sent_precision_decimals": COARSE_DECIMALS,
+    }
+
+
+# Show exactly what a delivery would send, without sending it.
+#
+# Verifying an outbound feature by triggering it is a bad trade: the send cannot
+# be recalled, and a wrong digest reaches real people. This renders the same
+# string the channel would receive, from the same code path, and names who would
+# have received it — so the whole loop can be checked before egress is ever
+# switched on.
+@router.get("/digest/preview")
+async def preview_digest(
+    user_id: UserId,
+    profile_service: DependencyDiscoveryProfileService,
+    runner: DependencyDiscoveryRunner,
+    subscribers: DependencyDiscoverySubscribers,
+    seen: DependencyDiscoverySeenItems,
+) -> dict[str, object]:
+    profile = await profile_service.get_profile(user_id)
+    primary = profile.primary_locality
+    timezone = primary.timezone if primary else "America/New_York"
+
+    # Preview reads what has already been announced rather than sweeping again,
+    # so looking does not consume a metered query or mark anything as seen.
+    events = await seen.announced_events(user_id)
+    selected = tuple(
+        RankedCandidate(ScoredCandidate(event, None), 1.0, None) for event in events
+    )
+
+    base = calendar_base_url(settings.DISCOVERY_CALENDAR_BASE_URL)
+    message = render_message(
+        selected, f"{base.rstrip('/')}/{user_id}/calendar", timezone=timezone
+    )
+    recipients = await subscribers.list_subscribers(user_id, deliverable_only=True)
+
+    return {
+        "user_id": user_id,
+        # None means nothing would be sent, which is a valid outcome rather
+        # than an error: silence beats a weekly "nothing this week".
+        "message": message,
+        "would_send": message is not None and bool(recipients),
+        "recipients": describe_recipients(recipients),
+        "egress_enabled": settings.DISCOVERY_EGRESS_ENABLED,
+        "calendar_links_reachable": is_reachable_from_other_devices(base),
+        "event_count": len(events),
     }
