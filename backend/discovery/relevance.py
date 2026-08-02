@@ -28,6 +28,10 @@ MIN_SCORE = 0.25
 # How many events one digest may carry.
 MAX_SELECTED = 8
 
+# Undated finds are capped separately and lower. They cannot become calendar
+# entries, so they are a weaker offer than a dated one and must not crowd it out.
+MAX_UNDATED = 3
+
 
 @dataclass(frozen=True, slots=True)
 class RankedCandidate:
@@ -96,27 +100,45 @@ class RelevanceRanker:
         candidates: tuple[ScoredCandidate, ...],
         now: datetime | None = None,
         limit: int = MAX_SELECTED,
+        undated_limit: int = MAX_UNDATED,
     ) -> tuple[RankedCandidate, ...]:
+        """Dated events first, then a bounded tail of undated finds.
+
+        A search result about a group hike with no published date cannot become
+        a calendar entry, but it is still the kind of thing this loop exists to
+        surface. It is admitted as a mention, capped lower than dated events so
+        it never displaces one.
+        """
         moment = now or datetime.now(UTC)
-        ranked: list[RankedCandidate] = []
+        dated: list[RankedCandidate] = []
+        undated: list[RankedCandidate] = []
         for candidate in candidates:
-            if not within_lead_time(candidate.event.starts_at, moment):
+            starts_at = candidate.event.starts_at
+            schedulable = within_lead_time(starts_at, moment)
+            # An event with a start that is past or too far out is genuinely
+            # excluded; only one with no start at all becomes a mention.
+            if not schedulable and starts_at is not None:
                 continue
             score, matched = self._score(candidate)
             if score < MIN_SCORE:
                 continue
-            ranked.append(
-                RankedCandidate(
-                    candidate=candidate, score=score, matched_interest=matched
-                )
+            entry = RankedCandidate(
+                candidate=candidate, score=score, matched_interest=matched
             )
-        ranked.sort(
-            key=lambda item: (
-                -item.score,
-                item.candidate.event.starts_at or datetime.max.replace(tzinfo=UTC),
-            )
+            (dated if schedulable else undated).append(entry)
+
+        dated.sort(key=self._order)
+        undated.sort(key=self._order)
+        return tuple(dated[:limit]) + tuple(undated[:undated_limit])
+
+    # Score first, then soonest. A tie resolves toward the thing the user must
+    # decide about first; an undated entry sorts last within its own group.
+    @staticmethod
+    def _order(item: RankedCandidate) -> tuple[float, datetime]:
+        return (
+            -item.score,
+            item.candidate.event.starts_at or datetime.max.replace(tzinfo=UTC),
         )
-        return tuple(ranked[:limit])
 
     # The best single interest match, scaled by how strongly the user holds it.
     # Summing across interests would let a candidate that weakly resembles

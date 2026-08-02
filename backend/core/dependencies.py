@@ -822,6 +822,7 @@ def get_discovery_runner(
         sources=DiscoverySourceRepository(db),
         seen=SeenItemRepository(db),
         embeddings=embeddings,
+        search=get_search_provider(),
     )
 
 
@@ -838,6 +839,7 @@ def get_discovery_runner_for_session(session: AsyncSession) -> DiscoveryRunner:
         sources=DiscoverySourceRepository(session),
         seen=SeenItemRepository(session),
         embeddings=get_embedding_provider(),
+        search=get_search_provider(),
     )
 
 

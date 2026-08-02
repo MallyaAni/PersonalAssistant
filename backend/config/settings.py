@@ -141,6 +141,12 @@ class Settings(BaseSettings):
     # sets a provider, so a deployment never reaches a third party by default.
     # The coordinate is rounded to roughly a kilometre before it is sent, and
     # only the resulting town label is stored.
+    # Search a sweep for happenings no calendar feed publishes. Feeds cover
+    # institutions; a trail association's group hike exists only as a page
+    # someone wrote. Bounded per sweep, and dates are read from the text rather
+    # than inferred, so an undated find stays a link and never a calendar entry.
+    DISCOVERY_WEB_SEARCH_ENABLED: bool = True
+    DISCOVERY_WEB_QUERIES_PER_SWEEP: int = Field(default=4, ge=1, le=10)
     DISCOVERY_PLACE_RESOLVER: Literal["", "nominatim"] = ""
     DISCOVERY_PLACE_RESOLVER_URL: str = "https://nominatim.openstreetmap.org/reverse"
     DISCOVERY_PLACE_RESOLVER_USER_AGENT: str = "AniOS/1.0 (local personal assistant)"

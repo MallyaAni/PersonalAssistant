@@ -1675,3 +1675,31 @@ rows referencing them. The two changes above exist so this cannot recur.
 - Verified live against two real coordinates: 38.88/-77.09 resolves to
   `Arlington, Virginia (US)`, and a coordinate in England resolves with `(GB)`,
   so the country is doing real disambiguating work rather than being decoration.
+
+## 2026-08-01 — Search enumerates too, without inventing dates
+
+- Feeds cover institutions and publish nothing for a trail association's group
+  hike. `WebEventSource` now queries the configured `SearchProvider` — MCP when
+  that is the configured provider — once per interest inside the sweep's request
+  budget, so niche interests have coverage at all.
+- Revised an earlier judgement: the objection that search would burn the free
+  tier assumed continuous enumeration. At a weekly cadence with a bounded query
+  count it is a handful of queries a month. The date objection stands and shapes
+  the design; the metering one was overweighted.
+- A start time is read, never inferred. Explicit forms parse deterministically;
+  "this weekend" and "next Saturday" yield no start, because resolving them needs
+  a reference point the snippet does not carry. Undated finds appear in a
+  separate digest section with a link and no calendar entry.
+- Undated finds rank in their own bounded slot so a weaker offer never displaces
+  a schedulable one.
+- **Two defects found by running it, not by its tests.** Queries used the town
+  label alone, so "hiking near Arlington" returned River Legacy Foundation
+  (Texas) and Boulder River Trail (Montana); queries now carry the region.
+  And the sweep response offered a calendar link for undated finds, which would
+  have failed on click; the link is now gated on having a date.
+- Verified live for `hiking` in Arlington, Virginia with **no feeds configured at
+  all**: one search request produced four finds, all genuinely local —
+  arlingtonva.us, Eventbrite VA-Arlington, stayarlington.com, and REI's
+  Arlington VA page — one dated with a working calendar link and three as
+  mentions.
+- 663 backend tests pass; Ruff, Black and MyPy across 189 files pass.

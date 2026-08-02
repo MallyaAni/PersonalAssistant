@@ -20,6 +20,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Protocol
 
+from backend.config.settings import settings
+from backend.core.interfaces import SearchProvider
 from backend.discovery.errors import DiscoveryError
 from backend.discovery.events import DiscoveredEvent, EventSource, FeedError
 from backend.discovery.fetching import DEFAULT_RUN_REQUEST_BUDGET, RequestBudget
@@ -32,6 +34,7 @@ from backend.discovery.relevance import (
 )
 from backend.discovery.sources.ics import IcsEventSource
 from backend.discovery.sources.rss import RssEventSource
+from backend.discovery.sources.web import WebEventSource
 from backend.discovery.sources_repository import DiscoverySourceRepository, FeedSource
 from backend.discovery.types import DiscoveryProfile
 
@@ -130,11 +133,16 @@ class DiscoveryRunner:
         seen: SeenItemRepository,
         embeddings: EmbeddingClient,
         adapter_factory: AdapterFactory | None = None,
+        search: SearchProvider | None = None,
     ) -> None:
         self.sources = sources
         self.seen = seen
         self.embeddings = embeddings
         self.novelty = NoveltyFilter(seen)
+        # Optional second enumerator. Feeds are the source of record for
+        # anything that must reach a calendar; this covers what publishes no
+        # feed at all, which for a niche interest is most of it.
+        self.search = search
         # Injected so a sweep can be exercised end to end without a network,
         # which is what makes the "announce once" guarantee testable at all.
         self.adapter_factory = adapter_factory or _adapter_for
@@ -153,6 +161,7 @@ class DiscoveryRunner:
 
         configured = await self.sources.list_sources(user_id, enabled_only=True)
         events, failed = await self._collect(user_id, configured, budget)
+        events = events + await self._search_events(profile, budget)
 
         candidates = await self._embed(events)
         novel = await self.novelty.novel(user_id, candidates, now=moment)
@@ -212,6 +221,31 @@ class DiscoveryRunner:
             await self.sources.record_fetch(user_id, source.id, None)
             collected.extend(events)
         return tuple(collected), tuple(failed)
+
+    # Search for what no feed publishes. Failure here is silent by design: a
+    # sweep with working feeds must not fail because a search provider is down.
+    async def _search_events(
+        self, profile: DiscoveryProfile, budget: RequestBudget
+    ) -> tuple[DiscoveredEvent, ...]:
+        if self.search is None or not settings.DISCOVERY_WEB_SEARCH_ENABLED:
+            return ()
+        primary = profile.primary_locality
+        if primary is None:
+            # Without a place, a query would be about nowhere in particular.
+            return ()
+        source = WebEventSource(
+            source_id="web-search",
+            search=self.search,
+            locality=primary.label,
+            region=primary.region,
+            interests=tuple(interest.label for interest in profile.interests),
+            budget=budget,
+            max_queries=settings.DISCOVERY_WEB_QUERIES_PER_SWEEP,
+        )
+        try:
+            return await source.fetch()
+        except Exception:
+            return ()
 
     # Embed candidates for both novelty and ranking, in one batch rather than
     # one call per event. An embedding failure downgrades the batch to

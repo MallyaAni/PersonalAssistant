@@ -35,22 +35,39 @@ def render_message(
         return None
 
     zone = _zone(timezone)
-    lines = ["Coming up near you:", ""]
-    for item in selected[:limit]:
-        event = item.event
-        title = _bound(event.title, MAX_TITLE_CHARS)
-        when = _format_when(event.starts_at, zone)
-        line = f"• {title}"
-        if when:
-            line += f" — {when}"
-        if event.place:
-            line += f" ({_bound(event.place, MAX_PLACE_CHARS)})"
-        lines.append(line)
-        lines.append(f"  Add: {_calendar_url(calendar_base_url, item)}")
-    remaining = len(selected) - limit
-    if remaining > 0:
-        lines.extend(["", f"and {remaining} more"])
-    return "\n".join(lines)
+    dated = [item for item in selected if item.event.starts_at is not None]
+    undated = [item for item in selected if item.event.starts_at is None]
+
+    lines: list[str] = []
+    if dated:
+        lines.extend(["Coming up near you:", ""])
+        for item in dated[:limit]:
+            event = item.event
+            line = f"• {_bound(event.title, MAX_TITLE_CHARS)}"
+            when = _format_when(event.starts_at, zone)
+            if when:
+                line += f" — {when}"
+            if event.place:
+                line += f" ({_bound(event.place, MAX_PLACE_CHARS)})"
+            lines.append(line)
+            lines.append(f"  Add: {_calendar_url(calendar_base_url, item)}")
+        remaining = len(dated) - limit
+        if remaining > 0:
+            lines.extend(["", f"and {remaining} more"])
+
+    # Found without a published date. These carry a link rather than a calendar
+    # entry: nobody stated when they happen, and inventing a time would put a
+    # confidently wrong appointment in someone's calendar.
+    if undated:
+        if lines:
+            lines.append("")
+        lines.extend(["Worth a look — no date given:", ""])
+        for item in undated:
+            lines.append(f"• {_bound(item.event.title, MAX_TITLE_CHARS)}")
+            if item.event.url:
+                lines.append(f"  {item.event.url}")
+
+    return "\n".join(lines) if lines else None
 
 
 # A local, human reading of the start. Rendered in the recipient's zone rather

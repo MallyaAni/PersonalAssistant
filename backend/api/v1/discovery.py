@@ -233,8 +233,12 @@ async def run_sweep(
                 "url": item.event.url,
                 "score": round(item.score, 4),
                 "matched_interest": item.matched_interest,
+                # Only a dated event can become a calendar file. Offering a
+                # link that would fail is worse than offering none.
                 "calendar_path": (
                     f"/api/v1/discovery/{user_id}/calendar/{item.candidate.digest}.ics"
+                    if item.event.starts_at is not None
+                    else None
                 ),
             }
             for item in result.selected

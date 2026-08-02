@@ -572,8 +572,27 @@ duplicating it. A calendar client that dislikes a file usually declines it
 without explaining why, so the format is asserted directly in tests rather than
 inferred from an import that appeared to work.
 
-Setup is the only place in this subsystem that uses search, and it uses it to
-find *sources* rather than events. That division is what preserves two
+Search enumerates alongside feeds rather than only finding them. iCalendar feeds
+cover institutions — venues, museums, universities — and publish nothing for a
+trail association's group hike or a pop-up that exists only as a page someone
+wrote. For a niche interest that is most of what happens, so `WebEventSource`
+queries the configured `SearchProvider` (MCP or Tavily) once per interest, within
+the sweep's request budget.
+
+Two rules keep that from undoing the loop's other properties. A start time is
+**read, never inferred**: dates come from an explicit deterministic parse of the
+result text, and anything requiring a reference point the snippet does not carry
+— "this weekend", "next Saturday" — yields no start at all. An undated find is
+still surfaced, as a link in a separate section of the digest, and cannot become
+a `VEVENT`. And the query count is bounded before the sweep runs, because search
+is the only metered component here.
+
+Queries carry the locality's region, not just its label. A bare town name is
+ambiguous to a search engine exactly as it is to a person: "hiking near
+Arlington" returns Texas and Washington alongside Virginia, which was observed
+rather than predicted.
+
+Setup also uses search to find *sources* rather than events. That division is what preserves two
 properties the weekly loop depends on: search is the one metered component, so
 keeping it off the recurring path keeps the loop inside the free tier; and a
 search snippet cannot supply a zone-aware start, so enumerating events that way
