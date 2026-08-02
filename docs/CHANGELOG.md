@@ -1643,3 +1643,19 @@ rows referencing them. The two changes above exist so this cannot recur.
   than silently reaching a third party.
 - 646 backend tests pass; Ruff, Black and MyPy across 188 files pass; the
   TypeScript build passes.
+
+## 2026-08-01 — Fix: the location button could never have worked
+
+- `DISCOVERY_PLACE_RESOLVER` was added to settings but never plumbed through
+  Compose to the backend service, which uses an explicit environment allowlist.
+  Setting it in `.env` did nothing, so "Use my location" always failed. Added it,
+  and the two related values, to the backend service.
+- The UI discarded the backend's reason and showed a generic "Could not work out
+  where that is." The server had said `Location lookup is not enabled` — the
+  exact diagnosis — and the panel threw it away, so the only way to find out was
+  to ask. API errors now surface the server's own `detail` when it gave one.
+- Verified live end to end: a street-level fix resolves to `New Haven,
+  Connecticut`; two different precise coordinates a few hundred metres apart
+  resolve identically, which is the observable proof that precision was dropped
+  before the request; an out-of-range coordinate is refused before any outbound
+  call.

@@ -316,6 +316,9 @@ services:
       - DISCOVERY_POLL_SECONDS=${DISCOVERY_POLL_SECONDS:-60}
       - DISCOVERY_RUN_LEASE_SECONDS=${DISCOVERY_RUN_LEASE_SECONDS:-300}
       - DISCOVERY_RUN_HEARTBEAT_SECONDS=${DISCOVERY_RUN_HEARTBEAT_SECONDS:-60}
+      - DISCOVERY_PLACE_RESOLVER=${DISCOVERY_PLACE_RESOLVER:-}
+      - DISCOVERY_PLACE_RESOLVER_URL=${DISCOVERY_PLACE_RESOLVER_URL:-https://nominatim.openstreetmap.org/reverse}
+      - DISCOVERY_PLACE_RESOLVER_USER_AGENT=${DISCOVERY_PLACE_RESOLVER_USER_AGENT:-AniOS/1.0 (local personal assistant)}
       - MCP_SERVERS_JSON=${MCP_SERVERS_JSON:-[]}
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -340,6 +343,13 @@ services:
       # No default: a missing secret must fail the run, never fall back to a
       # committed placeholder that would sign real auth tokens.
       - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (see .env.example)}
+      # Reverse geocoding for the Agents tab location button. Empty disables
+      # it; typing a town needs nothing here.
+      - DISCOVERY_PLACE_RESOLVER=${DISCOVERY_PLACE_RESOLVER:-}
+      - DISCOVERY_PLACE_RESOLVER_URL=${DISCOVERY_PLACE_RESOLVER_URL:-https://nominatim.openstreetmap.org/reverse}
+      - DISCOVERY_PLACE_RESOLVER_USER_AGENT=${DISCOVERY_PLACE_RESOLVER_USER_AGENT:-AniOS/1.0 (local personal assistant)}
+      - DISCOVERY_EGRESS_ENABLED=${DISCOVERY_EGRESS_ENABLED:-false}
+      - DISCOVERY_CALENDAR_BASE_URL=${DISCOVERY_CALENDAR_BASE_URL:-http://localhost:8000/api/v1/discovery}
       # vLLM runs as pinned sibling services with independent generation and
       # embedding endpoints.
       - LLM_BASE_URL=http://vllm-main:8000

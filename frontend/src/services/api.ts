@@ -1685,9 +1685,18 @@ export interface InterestProposal {
 const discoveryBase = (userId: string) =>
   `${API_BASE_URL}/api/v1/discovery/${encodeURIComponent(userId)}`;
 
+// Surface the server's own reason when it gave one. A generic message forces the
+// user to ask someone why something failed, when the backend already said.
 const readJson = async (response: Response, message: string) => {
   if (!response.ok) {
-    throw new Error(message);
+    let detail = '';
+    try {
+      const body = await response.json();
+      if (typeof body?.detail === 'string') detail = body.detail;
+    } catch {
+      detail = '';
+    }
+    throw new Error(detail || message);
   }
   return response.json();
 };
