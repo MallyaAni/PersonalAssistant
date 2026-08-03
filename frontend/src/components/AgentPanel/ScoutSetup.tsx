@@ -211,7 +211,7 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
   const addFeed = (kind: string, url: string) =>
     perform('feed', async () => {
       const value = url.trim()
-      if (!value) throw new Error('Enter a feed address.')
+      if (!value) throw new Error("Paste a venue's calendar link first.")
       await putDiscoverySource(userId, { kind, url: value })
       setFeedDraft('')
       setFeedCandidates(current => current.filter(item => item.url !== url))
@@ -599,7 +599,7 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
       <section className="mb-5">
         <div className="mb-2 flex items-center justify-between">
           <h4 className="text-xs font-semibold uppercase tracking-[0.08em] text-[#86868b]">
-            Feeds
+            Places to watch
           </h4>
           <button
             onClick={() => void suggestFeeds()}
@@ -668,6 +668,13 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
             ))}
           </div>
         )}
+        <p className="mb-2 text-[12px] leading-5 text-[#86868b]">
+          Venues, museums, libraries and universities publish their event
+          calendars as a subscribable link ending in <code>.ics</code>. Add one
+          and Scout watches it for things worth telling you about. “Find
+          feeds near me” looks for them automatically, so this is only for a
+          place it missed.
+        </p>
         <div className="flex gap-2">
           <input
             value={feedDraft}
@@ -678,8 +685,8 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
                 void addFeed('ics', feedDraft)
               }
             }}
-            placeholder="Add a calendar feed address"
-            aria-label="Add a calendar feed address"
+            placeholder="Paste a venue's calendar link (.ics)"
+            aria-label="Paste a venue's calendar link ending in .ics"
             className="h-10 min-w-0 flex-1 rounded-xl border border-black/[0.08] px-3 text-sm outline-none focus:border-[#0071e3]"
           />
           <button
