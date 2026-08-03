@@ -92,7 +92,6 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
   const [knownLocality, setKnownLocality] = useState<string | null>(null)
   const [sources, setSources] = useState<DiscoverySource[]>([])
   const [interestDraft, setInterestDraft] = useState('')
-  const [feedDraft, setFeedDraft] = useState('')
   const [feedCandidates, setFeedCandidates] = useState<FeedCandidate[]>([])
   const [interestProposals, setInterestProposals] = useState<InterestProposal[]>([])
   const [busy, setBusy] = useState('')
@@ -210,10 +209,11 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
 
   const addFeed = (kind: string, url: string) =>
     perform('feed', async () => {
+      // Only reachable from a suggestion Scout found, so the URL is one it
+      // already validated rather than something typed by hand.
       const value = url.trim()
-      if (!value) throw new Error("Paste a venue's calendar link first.")
+      if (!value) return
       await putDiscoverySource(userId, { kind, url: value })
-      setFeedDraft('')
       setFeedCandidates(current => current.filter(item => item.url !== url))
     })
 
@@ -611,7 +611,7 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
             ) : (
               <Sparkles size={13} />
             )}
-            Find feeds near me
+            Look again
           </button>
         </div>
         <div className="mb-2 space-y-1.5">
@@ -669,34 +669,10 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
           </div>
         )}
         <p className="mb-2 text-[12px] leading-5 text-[#86868b]">
-          Venues, museums, libraries and universities publish their event
-          calendars as a subscribable link ending in <code>.ics</code>. Add one
-          and Scout watches it for things worth telling you about. “Find
-          feeds near me” looks for them automatically, so this is only for a
-          place it missed.
+          Scout finds these itself from your location. Nothing to set up — this
+          is only here so you can see what it is watching and drop anything you
+          do not want.
         </p>
-        <div className="flex gap-2">
-          <input
-            value={feedDraft}
-            onChange={event => setFeedDraft(event.target.value)}
-            onKeyDown={event => {
-              if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
-                event.preventDefault()
-                void addFeed('ics', feedDraft)
-              }
-            }}
-            placeholder="Paste a venue's calendar link (.ics)"
-            aria-label="Paste a venue's calendar link ending in .ics"
-            className="h-10 min-w-0 flex-1 rounded-xl border border-black/[0.08] px-3 text-sm outline-none focus:border-[#0071e3]"
-          />
-          <button
-            onClick={() => void addFeed('ics', feedDraft)}
-            disabled={busy !== ''}
-            className="flex h-10 items-center gap-1.5 rounded-xl border border-black/[0.08] px-3 text-sm font-medium disabled:opacity-40"
-          >
-            <Plus size={15} /> Add
-          </button>
-        </div>
       </section>
 
       <section className="mb-5">
