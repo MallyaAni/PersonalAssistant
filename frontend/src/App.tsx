@@ -52,6 +52,13 @@ const AuthenticatedApp = ({ auth, onSignedOut }: AuthenticatedAppProps) => {
     localStorage.setItem(`anios_conversation_id:${userId}`, conversation.id)
   }, [conversation.id, userId])
 
+  // Reopen a stored conversation. `restore: true` is what makes the window load
+  // its persisted turns rather than starting empty on the same id.
+  const openConversation = (conversationId: string) => {
+    setConversation({ id: conversationId, restore: true })
+    setActiveView('chat')
+  }
+
   // Start a new empty conversation without changing the signed-in owner.
   const rotateConversation = () => {
     setConversation({ id: crypto.randomUUID(), restore: false })
@@ -81,6 +88,9 @@ const AuthenticatedApp = ({ auth, onSignedOut }: AuthenticatedAppProps) => {
           isAdmin={auth.is_admin}
           activeView={activeView}
           onViewChange={setActiveView}
+          userId={userId}
+          activeConversationId={conversation.id}
+          onOpenConversation={openConversation}
         />
       )}
       <main className="relative flex min-w-0 flex-1 flex-col bg-[#f5f5f7]">

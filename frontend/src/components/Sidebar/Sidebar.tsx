@@ -1,4 +1,5 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
+import { listConversations, type ConversationSummary } from '../../services/api'
 import { Bot, BrainCircuit, Image, MessageCircle, Presentation, ShieldCheck } from 'lucide-react'
 
 interface SidebarProps {
@@ -7,9 +8,34 @@ interface SidebarProps {
   // The operator surface is hidden for a guest. The server refuses it anyway;
   // this keeps the workspace from advertising something they cannot use.
   isAdmin?: boolean
+  userId?: string
+  activeConversationId?: string
+  onOpenConversation?: (conversationId: string) => void
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange, isAdmin = false }) => {
+const Sidebar: React.FC<SidebarProps> = ({
+  activeView,
+  onViewChange,
+  isAdmin = false,
+  userId,
+  activeConversationId,
+  onOpenConversation,
+}) => {
+  const [history, setHistory] = useState<ConversationSummary[]>([])
+
+  // Loaded from the server rather than local storage, so history follows the
+  // account onto a second device instead of living in one browser. Reloaded
+  // when the active conversation changes, which is when a new one appears.
+  useEffect(() => {
+    if (!userId || !onOpenConversation) return
+    let cancelled = false
+    void listConversations(userId)
+      .then(rows => { if (!cancelled) setHistory(rows) })
+      // A history that will not load must not take the workspace down with it.
+      .catch(() => { if (!cancelled) setHistory([]) })
+    return () => { cancelled = true }
+  }, [userId, activeConversationId, onOpenConversation])
+
   return (
     <aside className="flex w-[76px] flex-none flex-col border-r border-black/[0.06] bg-white/72 px-3 py-5 backdrop-blur-xl lg:w-[232px] lg:px-4">
       <div className="mb-8 hidden px-3 lg:block">
@@ -67,6 +93,30 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onViewChange, isAdmin = f
           </button>
         )}
       </nav>
+      {activeView === 'chat' && onOpenConversation && history.length > 0 && (
+        <div className="mt-6 hidden min-h-0 flex-1 flex-col lg:flex">
+          <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#86868b]">
+            History
+          </p>
+          <div className="min-h-0 flex-1 space-y-0.5 overflow-y-auto">
+            {history.map(row => (
+              <button
+                key={row.conversation_id}
+                type="button"
+                onClick={() => onOpenConversation(row.conversation_id)}
+                title={row.title}
+                className={`block w-full truncate rounded-lg px-3 py-1.5 text-left text-[13px] transition ${
+                  row.conversation_id === activeConversationId
+                    ? 'bg-[#0071e3]/10 text-[#0071e3]'
+                    : 'text-[#6e6e73] hover:bg-black/[0.04]'
+                }`}
+              >
+                {row.title || 'Untitled'}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="mt-auto hidden rounded-2xl bg-[#f5f5f7] px-4 py-3 lg:block">
         <p className="text-xs font-medium text-[#1d1d1f]">Local by default</p>
         <p className="mt-0.5 text-[11px] leading-4 text-[#86868b]">Your assistant runs on your machine.</p>

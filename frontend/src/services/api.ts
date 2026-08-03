@@ -2193,6 +2193,27 @@ export const requestAccess = async (
     'Could not send that request.',
   );
 
+export interface ConversationSummary {
+  conversation_id: string;
+  title: string;
+  turns: number;
+  started_at: string;
+  last_at: string;
+}
+
+// History belongs to the account, so the server lists it. Relying on an id the
+// browser happened to keep left every past conversation unreachable from a
+// second device or a cleared cache.
+export const listConversations = async (
+  userId: string,
+): Promise<ConversationSummary[]> => {
+  const response = await authenticatedFetch(
+    `${API_BASE_URL}/api/v1/conversations/${encodeURIComponent(userId)}`,
+  );
+  const payload = await readJson(response, 'Could not load your conversations.');
+  return payload.conversations ?? [];
+};
+
 const adminBase = `${API_BASE_URL}/api/v1/admin`;
 
 export const getSearchCredits = async (): Promise<SearchCredits> =>
