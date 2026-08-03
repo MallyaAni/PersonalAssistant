@@ -54,8 +54,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   }, [userId, activeConversationId, onOpenConversation])
 
   return (
-    <aside className="flex w-[76px] flex-none flex-col border-r border-black/[0.06] bg-white/72 px-3 py-5 backdrop-blur-xl lg:w-[232px] lg:px-4">
-      <div className="mb-8 hidden px-3 lg:block">
+    <aside className="flex w-[76px] flex-none flex-col border-r border-black/[0.06] bg-white/72 px-3 py-5 backdrop-blur-xl md:w-[232px] md:px-4">
+      <div className="mb-8 hidden px-3 md:block">
         <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#86868b]">Workspace</p>
       </div>
       <nav className="space-y-2" aria-label="Primary navigation">
@@ -110,12 +110,19 @@ const Sidebar: React.FC<SidebarProps> = ({
           </button>
         )}
       </nav>
-      {activeView === 'chat' && onOpenConversation && history.length > 0 && (
-        <div className="mt-6 hidden min-h-0 flex-1 flex-col lg:flex">
+      {activeView === 'chat' && onOpenConversation && (
+        <div className="mt-6 hidden min-h-0 flex-1 flex-col md:flex">
           <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#86868b]">
             History
           </p>
           <div className="min-h-0 flex-1 space-y-0.5 overflow-y-auto">
+            {history.length === 0 && (
+              // Silence here reads as a broken sidebar. An account with no
+              // chats yet should be told that is what it is looking at.
+              <p className="px-3 text-[12px] text-[#86868b]">
+                Nothing yet. Your chats appear here.
+              </p>
+            )}
             {history.map(row => (
               <div
                 key={row.conversation_id}
