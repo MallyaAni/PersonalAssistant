@@ -135,6 +135,9 @@ services:
     restart: unless-stopped
 
   db:
+    # Comes back when Docker does, so a reboot does not
+    # need someone to remember to start it.
+    restart: unless-stopped
     image: pgvector/pgvector:pg16
     container_name: anios_db
     ports:
@@ -154,6 +157,9 @@ services:
       retries: 5
 
   redis:
+    # Comes back when Docker does, so a reboot does not
+    # need someone to remember to start it.
+    restart: unless-stopped
     image: redis:7-alpine
     container_name: anios_redis
     ports:
@@ -220,6 +226,9 @@ services:
         condition: service_healthy
 
   presentation-renderer:
+    # Comes back when Docker does, so a reboot does not
+    # need someone to remember to start it.
+    restart: unless-stopped
     build:
       context: ./presentation-renderer
     container_name: anios_presentation_renderer
@@ -240,6 +249,9 @@ services:
       retries: 10
 
   presentation-worker:
+    # Comes back when Docker does, so a reboot does not
+    # need someone to remember to start it.
+    restart: unless-stopped
     build: .
     container_name: anios_presentation_worker
     command:
@@ -296,6 +308,9 @@ services:
   # feeds and embeddings, never the generation model, so it must not wait on
   # vllm-main to be healthy before it can run.
   discovery-worker:
+    # Comes back when Docker does, so a reboot does not
+    # need someone to remember to start it.
+    restart: unless-stopped
     build: .
     container_name: anios_discovery_worker
     command:
@@ -340,6 +355,9 @@ services:
         condition: service_healthy
 
   backend:
+    # Comes back when Docker does, so a reboot does not
+    # need someone to remember to start it.
+    restart: unless-stopped
     build: .
     container_name: anios_backend
     ports:
@@ -457,6 +475,9 @@ services:
         condition: service_started
 
   frontend:
+    # Comes back when Docker does, so a reboot does not
+    # need someone to remember to start it.
+    restart: unless-stopped
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
@@ -474,6 +495,9 @@ services:
       - backend
 
   gateway:
+    # Comes back when Docker does, so a reboot does not
+    # need someone to remember to start it.
+    restart: unless-stopped
     build:
       context: ./frontend
       dockerfile: Dockerfile.gateway
@@ -516,6 +540,9 @@ services:
               capabilities: [gpu]
 
   memory-maintenance:
+    # Comes back when Docker does, so a reboot does not
+    # need someone to remember to start it.
+    restart: unless-stopped
     build: .
     profiles: ["maintenance"]
     command:
