@@ -2017,3 +2017,56 @@ rows referencing them. The two changes above exist so this cannot recur.
   self-service leaves it pending. That fell out of running the suite, where four
   delivery tests correctly failed against the stricter rule.
 - 780 backend tests pass; migrations build 32 tables at head `20260802_0027`.
+
+## 2026-08-03 — Three reported defects fixed: memory capture, empty slides, ungrounded decks
+
+- Explicit "remember this" now reaches memory. Every one of the eight
+  extractors was a narrow shape matcher, so an ordinary fact about a person's
+  life — "Remember that my dog is called Biscuit." — matched no rule and
+  reached no store. A general-fact proposer catches an explicit save request
+  and stores the fact, not the instruction wrapping it, as semantic memory. It
+  runs after every structured proposer, so a dentist is still an entity and a
+  workflow still a procedure, and before the episodic proposer, because an
+  explicit request outranks a proactively noticed event. A recall question
+  ("do you remember...") is guarded off the save path.
+- The assistant no longer claims a save it does not control. Telling the model
+  only that it cannot write to memory was not enough: it answered "your
+  personal memory has been updated" — passive, true-sounding, and false. The
+  proposal is now decided before the answer is generated rather than after, and
+  the turn's real save state is stated in the prompt with the sentence to
+  write. Verified live: the reply became "I cannot store this myself, just
+  approve the save card below".
+- A section slide renders its points instead of discarding them. Every slide is
+  planned with two to four points and this layout rendered none of them, which
+  is how a real five-slide deck came back with three slides holding a title, a
+  purpose, and nothing else. The divider keeps its rule and centred title; the
+  block is centred as a whole, so a divider carrying no points sits where it
+  always did, and the point font is fitted against the space left at the
+  highest permitted position so a long title plus four long points cannot push
+  the rule off the slide. The statistic, quote, comparison, chart, and table
+  layouts already degraded correctly and were unchanged.
+- Deck content is grounded in one web search per deck. The per-slide contract
+  solicited `statistic_value`, `quote_attribution`, `table_rows`, and
+  `chart_series` with nothing behind them. `DeckResearch` now gathers bounded
+  public sources at outline time — before layouts are chosen, because that is
+  where a slide is told to carry a number — and the same sources are quoted
+  into every slide request as untrusted data with the rule that an unsupported
+  figure must become a plainer layout instead. The brief is reduced to its
+  subject first: sent verbatim, "create a deck about X with a statistic slide,
+  4 slides" returned a slideware marketing page, because most of those words
+  describe the artifact rather than the subject. Screening, metering, and
+  failure behaviour reuse the existing shared gate, the per-account budget, and
+  best-effort degradation.
+- Measured effect on a real deck, same brief, same model: the ungrounded run
+  asserted seven crewed landings, "285-day intervals", a "21-year span", and
+  "Apollo 11 December 1969"; the grounded run gave six landings, Apollo 8 in
+  December 1968, and correct Apollo 12 and 14 crews. Two errors survived, so
+  this reduces invention rather than eliminating it.
+- Pinned `mcp<2.0.0`. The range was open at `>=1.0.0`, and 2.0 removes
+  `mcp.server.fastmcp`, which every built-in server and the local-capabilities
+  sidecar import. An image rebuilt after that release lost web search and both
+  stdio MCP servers while the host venv stayed on 1.x and the tests still
+  passed — the same rug-pull shape the MCP guidance warns about, arriving
+  through a Python dependency instead of a server.
+- 869 backend tests pass; Ruff, Black, and MyPy are clean; the frontend builds;
+  all 15 architecture diagrams render and check as synchronized.

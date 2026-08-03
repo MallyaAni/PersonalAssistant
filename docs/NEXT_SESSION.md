@@ -5,7 +5,7 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 [ROADMAP.md](ROADMAP.md), and stable architecture facts in
 [ARCHITECTURE.md](ARCHITECTURE.md).
 
-Last updated: 2026-08-03, America/New_York
+Last updated: 2026-08-03, America/New_York (defect-fix session)
 
 ## Public access is a temporary Cloudflare quick tunnel
 
@@ -59,58 +59,82 @@ socket.create_connection((ip, 443), 10)
 ssl.create_default_context().wrap_socket(raw, server_hostname=HOST)
 ```
 
-## Open defects, in priority order
+## The three reported defects are fixed; one is only reduced
 
-### 1. Explicit "remember this" saves nothing, and claims it did
+All three were reproduced, changed, and re-exercised against the running stack.
+Details in [CHANGELOG.md](CHANGELOG.md).
 
-Reproduced end to end through the public URL:
+### 1. Explicit "remember this" — VERIFIED fixed
+
+Was: all eight extractors in `backend/memory/proposals.py` returned `None` for
+"Remember that my dog is called Biscuit.", and the assistant claimed a save
+anyway. Now `propose_semantic_fact` catches an explicit save request that no
+narrower proposer claimed, and the reply is honest.
+
+Re-run of the original reproduction, through the API with auth on:
 
 ```
-CHAT 1 >  "I've made a note of that: your dog's name is Biscuit."
-CHAT 2 >  "I don't have information about your dog's name..."
-semantic_memory: 0   memory_facts: 0   episodic_memory: 0
+CHAT 1 >  "...I cannot store this myself, just approve the save card below."
+          memory_proposal: kind=semantic_fact "my dog is called Biscuit."
+approve -> 201        semantic count 0 -> 1
+CHAT 2 (new conversation) >  "Your dog's name is **Biscuit**."
 ```
 
-Root cause: **all eight proposal extractors in `backend/memory/proposals.py`
-return `None`** for `"Remember that my dog is called Biscuit."` They are narrow
-lexical matchers for specific shapes (preferred name, locality, interest) and
-nothing covers an ordinary fact about a person's life.
+The honesty half needed two attempts, which is worth remembering: told only
+that it could not write to memory, the model answered "your personal memory has
+been updated". A blanket prohibition invites a passive rephrasing. What worked
+was deciding the proposal **before** generating the answer and stating the
+turn's real save state in the prompt, with the sentence to write.
 
-Two defects, and the second is worse:
+### 2. Presentation slides render empty — VERIFIED fixed
 
-- no rule captures general facts, so almost nothing reaches memory;
-- the assistant asserts a save it does not control and did not make. An honest
-  "I cannot save that" would have surfaced this immediately.
+The mechanism was narrower than recorded. `statistic`, `quote`, `comparison`,
+`chart`, and `table` already degraded to bullets through `_effective_layout`,
+and the grammar already promotes each layout's fields to required. **`section`
+was the only layout still discarding its points**, and it produces exactly the
+reported symptom: a rule, a title, a purpose, nothing else. Confirmed by
+compiling one directly (3 elements, both points gone) before changing anything.
 
-`semantic_memory` and `episodic_memory` are empty for every real account.
+Section slides now carry their points. Verified on three real generated decks:
+12 slides, 0 rendering only a title and a purpose.
 
-### 2. Presentation slides render empty
+### 3. Deck content is ungrounded — reduced, not eliminated
 
-Three of five slides in a generated deck had a title and purpose and nothing
-else. Confirmed mechanism:
+`DeckResearch` runs one privacy-screened search per deck at outline time and
+quotes bounded sources into the outline and every slide request. Verified live
+inside `presentation-worker`: MCP → Tavily returned NASA and Smithsonian
+sources, and the same brief sent verbatim had returned a slideware marketing
+page until the brief was reduced to its subject.
 
-- `points` is **required** on `PlannedSlide` (`min_length=2`), so bullets always
-  exist;
-- a non-bullets layout (`statistic`, `section`, `comparison`) deliberately
-  suppresses them — see the comment on the field;
-- that layout's own fields (`statistic_value`, `quote`, `table_rows`) are all
-  `default=None`.
+Same brief, same model, measured:
 
-So a slide validates with nothing renderable and nothing notices. Nondeterminism
-follows: an earlier run of the same prompt did emit `stat_value: "11"`.
+| | ungrounded | grounded |
+| --- | --- | --- |
+| crewed landings | "seven" | "six" (correct) |
+| dates | "Apollo 11 December 1969", "285-day intervals", "21-year span" | Apollo 8 December 1968 (correct) |
+| crews | Apollo 12 crew wrong | Apollo 12 and 14 crews correct |
 
-Fix: fall back to rendering the points when a layout's data is missing, and/or
-require the field for the layout that was chosen. Each slide also gets only
-1,024 tokens for a ~20-field object, which squeezes those fields out first.
+Two errors survived: the Apollo 11 module as "Eagles", and Charles Duke placed
+on Apollo 15 (he flew Apollo 16). **Do not record this as solved.** Grounding
+is wired, screened, metered, and degrades safely, but Qwen 3.5 4B with 1,024
+tokens per slide still misreads its sources. The next lever is the slide token
+budget or a stronger presentation role, not more prompt wording — that was
+already tried here and is what the contract now says.
 
-### 3. Deck content is ungrounded
+## Pin `mcp` below 2.0, and know why
 
-The per-slide contract solicits `statistic_value`, `quote_attribution`,
-`table_rows` and `chart_series` with no retrieval behind them, so the model
-invents them. Observed: *"a quarter of the world's 37-year-old inhabitants"*,
-Apollo described as staying on budget, and `statistic: 11` for the number of
-lunar landings (there were six). Fix is to ground the deck in search results at
-outline time; the shared Tavily pool already provides the metering story.
+`requirements.txt` had `mcp>=1.0.0` open-ended. Rebuilding the image today
+resolved **mcp 2.0.0**, which removes `mcp.server.fastmcp` — imported by both
+built-in stdio servers and the local-capabilities sidecar. The result: web
+search and every MCP server broke in the containers while the host venv stayed
+on 1.28.1 and the full test suite still passed. It is the rug-pull the MCP
+guidance warns about, arriving through a Python dependency rather than a server.
+Now pinned `<2.0.0` in both `requirements.txt` and `pyproject.toml`, verified as
+1.29.0 with `fastmcp OK` in backend, presentation-worker, and
+local-capabilities.
+
+If MCP or search breaks after a rebuild, check the installed `mcp` version in
+the container first.
 
 ## Things that look wrong and are not
 

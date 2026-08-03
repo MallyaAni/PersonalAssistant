@@ -8,6 +8,11 @@ flowchart TB
     API --> Job[(Owned durable job<br/>and progressive checkpoints)]
     Job --> Worker[Leased background worker]
     Worker --> Agent[PresentationAgent]
+    Agent --> Research[DeckResearch<br/>one query per deck]
+    Research --> Egress[Outbound privacy gate]
+    Egress --> Web[Web search<br/>untrusted sources]
+    Web --> Gate
+    Research -->|disabled, blocked or failed| Gate
     Agent --> Gate[Redis foreground-priority gate]
     Gate --> Inference[Provider-neutral<br/>inference adapter]
     Inference --> Qwen[Qwen 3.5 4B via vLLM<br/>outline, slide, or edit]
@@ -32,7 +37,7 @@ flowchart TB
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
     class User,UI,Feedback,Structure interface;
-    class API,Worker,Agent,Gate,Inference,Compiler,Permute,Visuals,Render application;
+    class API,Worker,Agent,Gate,Inference,Compiler,Permute,Visuals,Render,Research,Egress application;
     class Job,Revision data;
-    class Qwen,HiDream external;
+    class Qwen,HiDream,Web external;
     class Boundary warning;

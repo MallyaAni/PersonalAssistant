@@ -761,8 +761,30 @@ request from silently dropping or duplicating a slide. Adding runs the model on
 the deck's titles and purposes only, so an addition cannot rewrite slides the
 user already accepted, and no model runs for deletion or reordering at all.
 
+Deck content is grounded before any layout is chosen. `DeckResearch` runs one
+privacy-screened web search per deck at outline time and quotes bounded,
+attributed sources into the outline and into every slide request as untrusted
+data, with the rule that a figure the sources do not support must become a
+plainer layout rather than an invented number. Outline time is the right moment
+because that is where a slide is told to carry a statistic; by the slide pass
+the only way to satisfy that instruction is to make one up. The brief is reduced
+to its research subject first, since a deck brief is mostly instructions about
+the artifact — sent verbatim, one returned a slideware marketing page as a
+source. Screening reuses `OutboundPrivacyPolicy`, metering reuses the
+per-account search budget, and a disabled, blocked, or failed search leaves the
+deck planned ungrounded rather than failing it. `PRESENTATION_RESEARCH_ENABLED`
+governs it, and it must reach `presentation-worker`, which is the process that
+plans decks. Grounding measurably reduces invented figures but does not remove
+them at the current 4B presentation role; see
+[NEXT_SESSION.md](NEXT_SESSION.md) for the measured before/after.
+
 A slide takes one of seven shapes: bullets, section, statistic, quote,
-comparison, chart, and table. The model chooses the shape and deterministic code
+comparison, chart, and table. No layout discards planned content: every slide is
+planned with two to four points, and the section divider used to render none of
+them, which produced slides carrying a title and a purpose and nothing else. It
+now keeps its rule and centred title and carries its points beneath them, with
+the block centred as a whole so a divider without points is positioned exactly
+as before. The model chooses the shape and deterministic code
 still owns geometry. The layout is an enum in the decoding grammar, and the
 fields a layout needs are promoted to `required` for that call with their null
 branch removed, so a chart slide without chart data is not a decodable reply.
@@ -849,7 +871,9 @@ The active collaborators are:
 
 Notification and external-agent collaborators are not part of current dependency assembly. Internet search and guarded MCP execution are assembled; knowledge ingestion/retrieval is implemented as a local memory store, while a complete RAG pipeline remains `SCAFFOLDED`.
 
-Chat memory capture is a narrow deterministic approval boundary. The conversation service recognizes explicit preferred-name, response-style, person/relationship, reusable workflow, and titled-reference statements and emits at most one typed proposal only after the conversation turn is saved; the proposal itself is not persisted. It also proactively proposes an episodic memory when a turn narrates a first-person past-tense event - the only proposer that fires without explicit save intent, so it is the lowest priority (any explicit statement above wins) and is kept high-precision with a curated verb set and a question guard to avoid a nuisance proposal. The frontend explicitly approves or rejects every proposal. Approval uses the existing typed store API with source conversation/trace provenance. The model never receives a durable-write tool, and unrestricted implicit fact extraction remains intentionally unsupported.
+Chat memory capture is a narrow deterministic approval boundary. The conversation service recognizes explicit preferred-name, response-style, person/relationship, reusable workflow, and titled-reference statements and emits at most one typed proposal; the proposal itself is not persisted. A general-fact proposer is the catch-all beneath those shapes: it fires only on an explicit save request that no narrower proposer claimed, keeps the stated fact rather than the instruction wrapping it, and stores it as semantic memory on approval. Without it the structured matchers covered only pre-agreed shapes, so an ordinary fact about the user's life reached no store at all while the assistant reported that it had.
+
+The proposal is decided **before** the answer is generated, and the turn's real save state is rendered into the system prompt. The model has no write tool, so a helpful assistant answering "remember this" claims a save that never happened; telling it only that it cannot write to memory proved insufficient, because it re-expressed the same claim passively ("your personal memory has been updated"). Naming what is actually about to happen, and the sentence to write, removes the thing to route around. Emission over SSE still follows the saved turn. It also proactively proposes an episodic memory when a turn narrates a first-person past-tense event - the only proposer that fires without explicit save intent, so it is the lowest priority (any explicit statement above wins) and is kept high-precision with a curated verb set and a question guard to avoid a nuisance proposal. The frontend explicitly approves or rejects every proposal. Approval uses the existing typed store API with source conversation/trace provenance. The model never receives a durable-write tool, and unrestricted implicit fact extraction remains intentionally unsupported.
 
 ### Agent orchestration
 
