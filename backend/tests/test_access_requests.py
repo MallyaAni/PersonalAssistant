@@ -11,7 +11,7 @@ import uuid
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, text
 
 os.environ["DEBUG"] = "false"
 os.environ.setdefault("SECRET_KEY", "test-secret-key-only-for-testing")
@@ -393,3 +393,75 @@ async def test_a_username_already_claimed_is_refused_when_asking():
         assert second.status_code == 409
     finally:
         await _cleanup(names=(name,))
+
+
+@pytest.mark.asyncio
+async def test_deleting_an_account_clears_every_table_that_names_a_user():
+    """The purge is schema-driven, so a new table cannot be forgotten.
+
+    A hand-written list already shipped here missing eight discovery tables.
+    This asserts the rule instead of the list: nothing with a user_id column
+    still holds rows for the deleted account.
+    """
+    operator = f"op_{uuid.uuid4().hex[:10]}"
+    guest = f"g{uuid.uuid4().hex[:9]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            await AuthService(session).create_account(
+                user_id=guest, username=guest, password="Str0ng-Passw0rd-Here"
+            )
+        # Give them data in a couple of unrelated places.
+        async with AsyncSessionLocal() as session:
+            from backend.services.repository import SQLAlchemyConversationRepository
+
+            repo = SQLAlchemyConversationRepository(session)
+            await repo.save_turn(
+                str(uuid.uuid4()),
+                {"user_id": guest, "query": "mine", "response": "a"},
+            )
+
+        op_token = await _operator(operator)
+        async with _client(op_token) as client:
+            removed = await client.delete(f"/api/v1/admin/accounts/{guest}")
+
+        assert removed.status_code == 200
+        body = removed.json()
+        assert body["tables_scanned"] > 5
+
+        # The rule, checked against the live schema rather than a list.
+        async with AsyncSessionLocal() as session:
+            tables = [
+                row[0]
+                for row in (
+                    await session.execute(
+                        text(
+                            "select table_name from information_schema.columns "
+                            "where table_schema = 'public' "
+                            "and column_name = 'user_id'"
+                        )
+                    )
+                ).all()
+            ]
+            leftovers = {}
+            for table in tables:
+                count = await session.scalar(
+                    text(f'select count(*) from "{table}" where user_id = :uid'),
+                    {"uid": guest},
+                )
+                if count:
+                    leftovers[table] = count
+        assert leftovers == {}
+    finally:
+        await _cleanup(operator, guest)
+
+
+@pytest.mark.asyncio
+async def test_the_operator_cannot_delete_their_own_account():
+    operator = f"op_{uuid.uuid4().hex[:10]}"
+    try:
+        op_token = await _operator(operator)
+        async with _client(op_token) as client:
+            refused = await client.delete(f"/api/v1/admin/accounts/{operator}")
+        assert refused.status_code == 409
+    finally:
+        await _cleanup(operator)

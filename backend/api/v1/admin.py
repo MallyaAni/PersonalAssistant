@@ -17,7 +17,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, text
 
 from backend.config.settings import settings
 from backend.core.auth import AdminDependency, IdentityDependency
@@ -25,6 +25,12 @@ from backend.core.dependencies import (
     DbDependency,
     DependencyDiscoverySubscribers,
     get_search_budget,
+)
+from backend.discovery.search_budget import (
+    GUEST_DAILY_QUERIES,
+    GUEST_MONTHLY_QUERIES,
+    OPERATOR_DAILY_QUERIES,
+    OPERATOR_MONTHLY_QUERIES,
 )
 from backend.models.auth import (
     AccessRequest,
@@ -491,6 +497,14 @@ async def read_search_credits(
         # this system's own count. Said plainly rather than implied, because a
         # balance nobody has checked should not look like one that was.
         "provider_reported_spent": reported,
+        # So the operator can see what "default" actually means rather than
+        # having to guess the number an empty field stands for.
+        "defaults": {
+            "guest_daily": GUEST_DAILY_QUERIES,
+            "guest_monthly": GUEST_MONTHLY_QUERIES,
+            "operator_daily": OPERATOR_DAILY_QUERIES,
+            "operator_monthly": OPERATOR_MONTHLY_QUERIES,
+        },
     }
 
 
@@ -532,6 +546,79 @@ async def set_account_active(
         await db.execute(delete(UserSession).where(UserSession.user_id == user_id))
     await db.commit()
     return {"user_id": user_id, "is_active": account.is_active}
+
+
+# Erase an account and everything in the database belonging to it.
+#
+# Tables are discovered from the schema rather than listed here. A hand-written
+# list is how this codebase already shipped a purge that missed eight discovery
+# tables: the list and the schema drift apart silently, and the failure is
+# invisible because deletion reports success either way. Anything with a user_id
+# column is data about a user, so that is the rule.
+#
+# Deletion is retried while it makes progress, so foreign keys between user-owned
+# tables resolve themselves without hardcoding an order that would also drift.
+@router.delete("/accounts/{user_id}", status_code=status.HTTP_200_OK)
+async def delete_account(
+    admin: AdminDependency,
+    identity: IdentityDependency,
+    db: DbDependency,
+    user_id: str,
+) -> dict[str, object]:
+    account = await db.scalar(select(UserAccount).where(UserAccount.user_id == user_id))
+    if account is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Account not found."
+        )
+    # Deleting the only account that can undo it needs database access to fix.
+    if account.user_id == _operator_id(identity):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="You cannot delete your own operator account.",
+        )
+
+    tables = [
+        row[0]
+        for row in (
+            await db.execute(
+                text(
+                    "select table_name from information_schema.columns "
+                    "where table_schema = 'public' and column_name = 'user_id'"
+                )
+            )
+        ).all()
+    ]
+    removed: dict[str, int] = {}
+    pending = set(tables)
+    while pending:
+        progressed = False
+        for table in sorted(pending):
+            try:
+                result = await db.execute(
+                    text(f'delete from "{table}" where user_id = :uid'),
+                    {"uid": user_id},
+                )
+            except Exception:
+                # Probably still referenced by a table not yet cleared. Roll
+                # back only this statement and try again next pass.
+                await db.rollback()
+                continue
+            removed[table] = int(getattr(result, "rowcount", 0) or 0)
+            pending.discard(table)
+            progressed = True
+        if not progressed:
+            # A cycle, or a reference from something not owned by this user.
+            # Refusing beats leaving an account half-erased and unusable.
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Could not clear: {', '.join(sorted(pending))}.",
+            )
+    await db.commit()
+    return {
+        "user_id": user_id,
+        "deleted": {name: count for name, count in removed.items() if count},
+        "tables_scanned": len(tables),
+    }
 
 
 # Set how much metered search one account may spend per month.

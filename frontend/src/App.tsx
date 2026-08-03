@@ -91,6 +91,7 @@ const AuthenticatedApp = ({ auth, onSignedOut }: AuthenticatedAppProps) => {
           userId={userId}
           activeConversationId={conversation.id}
           onOpenConversation={openConversation}
+          onNewConversation={startNewConversation}
         />
       )}
       <main className="relative flex min-w-0 flex-1 flex-col bg-[#f5f5f7]">

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { listConversations, type ConversationSummary } from '../../services/api'
-import { Bot, BrainCircuit, Image, MessageCircle, Presentation, ShieldCheck } from 'lucide-react'
+import { deleteConversation, listConversations, type ConversationSummary } from '../../services/api'
+import { Bot, BrainCircuit, Image, MessageCircle, Presentation, ShieldCheck, Trash2 } from 'lucide-react'
 
 interface SidebarProps {
   activeView: 'chat' | 'memory' | 'artifacts' | 'presentations' | 'agents' | 'admin'
@@ -11,6 +11,7 @@ interface SidebarProps {
   userId?: string
   activeConversationId?: string
   onOpenConversation?: (conversationId: string) => void
+  onNewConversation?: () => void
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -20,8 +21,24 @@ const Sidebar: React.FC<SidebarProps> = ({
   userId,
   activeConversationId,
   onOpenConversation,
+  onNewConversation,
 }) => {
   const [history, setHistory] = useState<ConversationSummary[]>([])
+
+  // Removed from the list straight away rather than after a reload: the row is
+  // gone from the server, so leaving it on screen would be a lie.
+  const removeConversation = async (conversationId: string) => {
+    if (!userId) return
+    if (!window.confirm('Delete this conversation? This cannot be undone.')) return
+    try {
+      await deleteConversation(userId, conversationId)
+      setHistory(rows => rows.filter(row => row.conversation_id !== conversationId))
+      if (conversationId === activeConversationId) onNewConversation?.()
+    } catch {
+      // Leave the row: a failed delete that vanishes from the list reads as
+      // success and the conversation reappears on the next load.
+    }
+  }
 
   // Loaded from the server rather than local storage, so history follows the
   // account onto a second device instead of living in one browser. Reloaded
@@ -100,19 +117,36 @@ const Sidebar: React.FC<SidebarProps> = ({
           </p>
           <div className="min-h-0 flex-1 space-y-0.5 overflow-y-auto">
             {history.map(row => (
-              <button
+              <div
                 key={row.conversation_id}
-                type="button"
-                onClick={() => onOpenConversation(row.conversation_id)}
-                title={row.title}
-                className={`block w-full truncate rounded-lg px-3 py-1.5 text-left text-[13px] transition ${
+                className={`group flex items-center rounded-lg pr-1 transition ${
                   row.conversation_id === activeConversationId
-                    ? 'bg-[#0071e3]/10 text-[#0071e3]'
-                    : 'text-[#6e6e73] hover:bg-black/[0.04]'
+                    ? 'bg-[#0071e3]/10'
+                    : 'hover:bg-black/[0.04]'
                 }`}
               >
-                {row.title || 'Untitled'}
-              </button>
+                <button
+                  type="button"
+                  onClick={() => onOpenConversation(row.conversation_id)}
+                  title={row.title}
+                  className={`min-w-0 flex-1 truncate px-3 py-1.5 text-left text-[13px] ${
+                    row.conversation_id === activeConversationId
+                      ? 'text-[#0071e3]'
+                      : 'text-[#6e6e73]'
+                  }`}
+                >
+                  {row.title || 'Untitled'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void removeConversation(row.conversation_id)}
+                  aria-label={`Delete conversation ${row.title || 'Untitled'}`}
+                  title="Delete"
+                  className="flex-none rounded p-1 text-[#86868b] opacity-0 transition hover:text-[#b42318] focus:opacity-100 group-hover:opacity-100"
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
             ))}
           </div>
         </div>

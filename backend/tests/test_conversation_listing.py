@@ -83,3 +83,51 @@ async def test_one_account_never_sees_anothers_conversations():
         assert [row["title"] for row in listed] == ["mine"]
     finally:
         await _cleanup(mine, theirs)
+
+
+@pytest.mark.asyncio
+async def test_deleting_a_conversation_removes_only_that_one():
+    owner = f"conv{uuid.uuid4().hex[:8]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            repo = SQLAlchemyConversationRepository(session)
+            keep, drop = str(uuid.uuid4()), str(uuid.uuid4())
+            await repo.save_turn(
+                keep, {"user_id": owner, "query": "keep", "response": "a"}
+            )
+            await repo.save_turn(
+                drop, {"user_id": owner, "query": "drop", "response": "b"}
+            )
+            await repo.save_turn(
+                drop, {"user_id": owner, "query": "drop 2", "response": "c"}
+            )
+
+            removed = await repo.delete_conversation(owner, drop)
+            remaining = await repo.list_conversations(owner)
+
+        assert removed == 2
+        assert [row["title"] for row in remaining] == ["keep"]
+    finally:
+        await _cleanup(owner)
+
+
+@pytest.mark.asyncio
+async def test_one_account_cannot_delete_anothers_conversation():
+    # Scoped by user as well as id: an id alone would let anyone who learns one
+    # delete somebody else's conversation.
+    mine, theirs = f"conv{uuid.uuid4().hex[:8]}", f"conv{uuid.uuid4().hex[:8]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            repo = SQLAlchemyConversationRepository(session)
+            target = str(uuid.uuid4())
+            await repo.save_turn(
+                target, {"user_id": theirs, "query": "not yours", "response": "b"}
+            )
+
+            removed = await repo.delete_conversation(mine, target)
+            survivors = await repo.list_conversations(theirs)
+
+        assert removed == 0
+        assert [row["title"] for row in survivors] == ["not yours"]
+    finally:
+        await _cleanup(mine, theirs)

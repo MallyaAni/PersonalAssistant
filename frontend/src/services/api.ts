@@ -2161,7 +2161,15 @@ export interface AdminAccount {
   search_daily_limit: number | null;
 }
 
+export interface SearchDefaults {
+  guest_daily: number;
+  guest_monthly: number;
+  operator_daily: number;
+  operator_monthly: number;
+}
+
 export interface SearchCredits {
+  defaults: SearchDefaults;
   monthly_credits: number;
   remaining: number;
   spent: number;
@@ -2214,7 +2222,32 @@ export const listConversations = async (
   return payload.conversations ?? [];
 };
 
+export const deleteConversation = async (
+  userId: string,
+  conversationId: string,
+): Promise<void> => {
+  await readJson(
+    await authenticatedFetch(
+      `${API_BASE_URL}/api/v1/conversations/${encodeURIComponent(userId)}/${encodeURIComponent(conversationId)}`,
+      { method: 'DELETE' },
+    ),
+    'Could not delete that conversation.',
+  );
+};
+
 const adminBase = `${API_BASE_URL}/api/v1/admin`;
+
+// Erase the account and everything it owns. Unlike revoking, this cannot be
+// undone, so the caller is expected to confirm first.
+export const deleteAccount = async (userId: string): Promise<void> => {
+  await readJson(
+    await fetch(`${adminBase}/accounts/${encodeURIComponent(userId)}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    }),
+    'Could not delete that account.',
+  );
+};
 
 export const getSearchCredits = async (): Promise<SearchCredits> =>
   readJson(

@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query
 
 from backend.core.auth import (
     SCOPE_MEMORY_READ,
+    SCOPE_MEMORY_WRITE,
     IdentityDependency,
     authorize_scope,
     authorize_user,
@@ -45,6 +46,20 @@ async def list_conversations(
     authorize_user(user_id, identity)
     authorize_scope(identity, SCOPE_MEMORY_READ)
     return {"conversations": await repository.list_conversations(user_id, limit)}
+
+
+# Delete one conversation this account owns.
+@router.delete("/{conversation_id}")
+async def delete_conversation(
+    user_id: str,
+    conversation_id: UUID,
+    identity: IdentityDependency,
+    repository: ConversationRepositoryDependency,
+) -> dict[str, Any]:
+    authorize_user(user_id, identity)
+    authorize_scope(identity, SCOPE_MEMORY_WRITE)
+    removed = await repository.delete_conversation(user_id, str(conversation_id))
+    return {"conversation_id": str(conversation_id), "deleted_turns": removed}
 
 
 # Return persisted turns and artifacts needed to restore one owned conversation.

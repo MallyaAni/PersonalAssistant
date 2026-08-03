@@ -11,6 +11,7 @@ import {
   getAdminSubscriptions,
   getSearchCredits,
   revokeAdminInvite,
+  deleteAccount,
   setAccountActive,
   setAccountSearchLimit,
   type AccessRequest,
@@ -116,6 +117,23 @@ const AdminPanel = () => {
       await setAccountActive(account.user_id, active)
       await reload()
     })
+
+  // Irreversible, so it asks first and names what goes. Revoking is the
+  // reversible option and stays a separate button.
+  const removeAccount = (account: AdminAccount) => {
+    const confirmed = window.confirm(
+      `Permanently delete ${account.username}?
+
+` +
+        'This erases their chats, memories, images, presentations and ' +
+        'discovery data from the database. It cannot be undone.',
+    )
+    if (!confirmed) return
+    return perform(`delete-${account.user_id}`, async () => {
+      await deleteAccount(account.user_id)
+      await reload()
+    })
+  }
 
   const changeLimit = (account: AdminAccount, field: 'month' | 'day', raw: string) => {
     const edited = raw === '' ? null : Number(raw)
@@ -386,13 +404,28 @@ const AdminPanel = () => {
                     {account.is_active ? 'Revoke' : 'Restore'}
                   </button>
                 )}
+                {!account.is_admin && (
+                  <button
+                    type="button"
+                    onClick={() => void removeAccount(account)}
+                    disabled={busy === `delete-${account.user_id}`}
+                    title="Delete account and all its data"
+                    className="rounded-lg border border-[#b42318]/30 px-2 py-1 text-[11px] text-[#b42318] hover:bg-[#b42318]/[0.06] disabled:opacity-50"
+                  >
+                    Delete
+                  </button>
+                )}
                 <label className="flex items-center gap-1 text-[11px] text-[#86868b]">
                   search/day
                   <input
                     type="number"
                     min={0}
                     defaultValue={account.search_daily_limit ?? ''}
-                    placeholder="default"
+                    placeholder={String(
+                      account.is_admin
+                        ? credits?.defaults.operator_daily ?? ''
+                        : credits?.defaults.guest_daily ?? '',
+                    )}
                     onBlur={event => void changeLimit(account, 'day', event.target.value)}
                     className="h-7 w-16 rounded-lg border border-black/[0.08] px-2 text-xs"
                   />
@@ -403,7 +436,11 @@ const AdminPanel = () => {
                     type="number"
                     min={0}
                     defaultValue={account.search_monthly_limit ?? ''}
-                    placeholder="default"
+                    placeholder={String(
+                      account.is_admin
+                        ? credits?.defaults.operator_monthly ?? ''
+                        : credits?.defaults.guest_monthly ?? '',
+                    )}
                     onBlur={event => void changeLimit(account, 'month', event.target.value)}
                     className="h-7 w-16 rounded-lg border border-black/[0.08] px-2 text-xs"
                   />

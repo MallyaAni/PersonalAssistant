@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.interfaces import ConversationRepository
@@ -84,6 +84,20 @@ class SQLAlchemyConversationRepository(ConversationRepository):
                 }
             )
         return listed
+
+    # Remove one conversation this account owns, and report what went.
+    #
+    # Scoped by user as well as id: an id alone would let anyone who learns one
+    # delete somebody else's conversation.
+    async def delete_conversation(self, user_id: str, conversation_id: str) -> int:
+        result = await self.session.execute(
+            delete(Conversation).where(
+                Conversation.conversation_id == uuid.UUID(conversation_id),
+                Conversation.user_id == user_id,
+            )
+        )
+        await self.session.commit()
+        return int(getattr(result, "rowcount", 0) or 0)
 
     async def save_turn(self, conversation_id: str, turn: dict[str, Any]) -> None:
         new_conv = Conversation(
