@@ -1,5 +1,6 @@
 """Application rules for the ambient discovery profile."""
 
+from datetime import UTC, datetime, timedelta
 from typing import Protocol
 from uuid import UUID
 
@@ -135,9 +136,60 @@ class DiscoveryProfileService:
 
     # Start or stop travel mode without changing the approved home-locality fact.
     async def set_travel_mode(
-        self, user_id: str, locality_id: UUID | None
+        self,
+        user_id: str,
+        locality_id: UUID | None,
+        expires_at: datetime | None = None,
     ) -> Locality | None:
-        return await self.repository.set_travel_mode(user_id, locality_id)
+        return await self.repository.set_travel_mode(user_id, locality_id, expires_at)
+
+    # Record where the user currently is without touching where they live.
+    #
+    # This is the whole point of the redesign. "Use my location" used to write
+    # the primary locality, which also records the approved memory fact that the
+    # user lives there - so checking the weather in Denver rewrote their home,
+    # stranded the familiarity they had built in Arlington, and left their
+    # memory saying they had moved. Pressing it again on the way back said they
+    # had moved twice.
+    #
+    # Being somewhere that is not home is simply being away. It needs no mode to
+    # switch on, and it ends by itself.
+    async def set_current_place(
+        self,
+        user_id: str,
+        label: str,
+        region: str | None = None,
+        timezone: str = "America/New_York",
+        trip_days: int = 14,
+        now: datetime | None = None,
+    ) -> tuple[Locality, bool]:
+        moment = now or datetime.now(UTC)
+        profile = await self.repository.get_profile(user_id)
+        home = profile.primary_locality
+        digest = label_digest(label)
+
+        # Arriving home is the end of a trip, not the start of one.
+        if home is not None and label_digest(home.label) == digest:
+            await self.repository.set_travel_mode(user_id, None)
+            return home, False
+
+        # With no home recorded yet, the first place someone reports is where
+        # they live. Anything else would leave the profile permanently away from
+        # a home it never had.
+        if home is None:
+            locality = await self.add_locality(
+                user_id, label, region, timezone=timezone, is_primary=True
+            )
+            return locality, False
+
+        away = await self.add_locality(
+            user_id, label, region, timezone=timezone, is_primary=False
+        )
+        expires_at = moment + timedelta(days=trip_days)
+        recorded = await self.repository.set_travel_mode(
+            user_id, UUID(away.id), expires_at
+        )
+        return recorded or away, True
 
     # Write the fact that owns a profile projection before returning success.
     async def _record(self, user_id: str, fact: ProjectedFact) -> None:

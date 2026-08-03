@@ -1846,6 +1846,8 @@ export interface DiscoveryLocality {
   timezone: string;
   is_primary: boolean;
   is_travel_active: boolean;
+  // When being away lapses on its own; null means open-ended.
+  travel_expires_at?: string | null;
 }
 
 export interface DiscoverySource {
@@ -2124,6 +2126,26 @@ export const markDiscoveryKnown = async (
   );
 
 // Make one saved destination Scout's active travel locality.
+// Tell Scout where the user is now. This never changes where they live, which
+// is why it is a separate call from saving a place: reporting a location used
+// to write the home locality and the memory fact behind it.
+export const putDiscoveryCurrentPlace = async (
+  userId: string,
+  body: { label: string; region?: string | null; timezone?: string },
+): Promise<{
+  locality: DiscoveryLocality
+  away: boolean
+  home: DiscoveryLocality | null
+}> =>
+  readJson(
+    await authenticatedFetch(`${discoveryBase(userId)}/current-place`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }),
+    'Could not update where you are.',
+  )
+
 export const putDiscoveryTravelMode = async (
   userId: string,
   localityId: string,

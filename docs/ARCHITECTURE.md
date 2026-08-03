@@ -528,11 +528,33 @@ that owns the projection. Interest fact keys use a namespace plus the normalized
 label digest, so they remain API-safe without exposing the interest in the key.
 
 Operational controls remain typed profile state rather than competing facts.
-Interest `strength` is an editable 1â€“3 ranking weight. Travel mode marks one
+Interest `strength` is an editable 1â€“3 ranking weight. Being away marks one
 non-home locality as active behind a database-enforced partial unique index;
 every sweep, preview, source suggestion, worker timezone, and familiarity scope
-uses that active locality, then falls back to the approved home. Stopping travel
-therefore changes where Scout looks without rewriting where the user lives.
+uses that active locality, then falls back to the approved home, so where Scout
+looks changes without rewriting where the user lives.
+
+Where someone *is* and where they *live* are two values, and both are needed:
+familiarity is scoped per locality, so collapsing them would either strand what
+a user already knew at home or teach Scout that everything ordinary in a city
+they are visiting is familiar. What is not needed is a mode. `PUT
+/discovery/{user}/current-place` records the current place and never the home
+one; a reported place that differs from home is simply being away. Reporting the
+home place again ends it, and the first place reported by a profile with no home
+becomes the home, since anything else would leave it permanently away from a
+home it never had.
+
+Being away carries `travel_expires_at` (`DISCOVERY_TRIP_DAYS`, default 14) and
+`active_locality` ignores a lapsed one, so a trip nobody remembered to end
+returns to home by itself. A destination recorded before the expiry column
+existed has none and stays open-ended. This was a real failure mode rather than
+a theoretical one: the earlier design made reporting a location write the
+*primary* locality, and `add_locality` records the approved memory fact behind
+it, so one press from a hotel rewrote where the user lived, stranded their home
+familiarity, and made memory say they had moved — twice, after they came back.
+Because a coordinate cannot distinguish visiting from moving, the interface asks
+once and defaults to visiting; promoting the place to home is a separate,
+explicit action.
 Dismissed familiar items can be reviewed and deleted from the Scout panel, which
 lets a future similar result appear again in that locality.
 

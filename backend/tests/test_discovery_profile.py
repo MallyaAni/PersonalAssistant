@@ -1,5 +1,6 @@
 import os
 import uuid
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import delete
@@ -35,6 +36,7 @@ def _locality(
     label: str,
     is_primary: bool = False,
     is_travel_active: bool = False,
+    travel_expires_at: datetime | None = None,
 ) -> Locality:
     return Locality(
         id=str(uuid.uuid4()),
@@ -44,6 +46,7 @@ def _locality(
         timezone="America/New_York",
         is_primary=is_primary,
         is_travel_active=is_travel_active,
+        travel_expires_at=travel_expires_at,
     )
 
 
@@ -383,3 +386,135 @@ def test_api_travel_mode_preserves_home_and_scopes_the_destination():
         with TestClient(app) as client:
             client.delete(f"/api/v1/memory/{user_id}")
             client.delete(f"/api/v1/memory/{other_id}")
+
+
+# A trip that nobody remembered to end must not redirect Scout forever. The
+# failure was silent: a weekly digest about a city the user left in spring still
+# arrives looking like a working digest, and every find in it is useless.
+def test_a_lapsed_trip_falls_back_to_home_on_its_own():
+    moment = datetime(2026, 8, 3, 12, 0, tzinfo=UTC)
+    profile = DiscoveryProfile(
+        interests=(),
+        localities=(
+            _locality("Arlington", is_primary=True),
+            _locality(
+                "Denver",
+                is_travel_active=True,
+                travel_expires_at=moment - timedelta(days=1),
+            ),
+        ),
+    )
+
+    lapsed = profile.locality_at(moment)
+    assert lapsed is not None
+    assert lapsed.label == "Arlington"
+    # Still away the day before it expires.
+    current = profile.locality_at(moment - timedelta(days=2))
+    assert current is not None
+    assert current.label == "Denver"
+
+
+# A destination recorded before expiry existed stays open-ended, so the
+# migration changes nothing for a trip that is already running.
+def test_a_trip_without_an_expiry_stays_active():
+    profile = DiscoveryProfile(
+        interests=(),
+        localities=(
+            _locality("Arlington", is_primary=True),
+            _locality("Denver", is_travel_active=True),
+        ),
+    )
+
+    assert profile.is_away is True
+    current = profile.active_locality
+    assert current is not None
+    assert current.label == "Denver"
+
+
+# Reporting a location must never rewrite where someone lives. It used to write
+# the primary locality, and with it the approved memory fact, so one press from
+# a hotel said the user had moved - and pressing it again on the way home said
+# they had moved twice.
+@pytest.mark.asyncio
+async def test_reporting_a_location_moves_scout_but_never_home():
+    user_id = f"place_{uuid.uuid4().hex[:8]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            service = DiscoveryProfileService(DiscoveryProfileRepository(session))
+            await service.add_locality(
+                user_id, "Arlington", "Virginia", is_primary=True
+            )
+
+            away, is_away = await service.set_current_place(
+                user_id, "Denver", "Colorado", trip_days=14
+            )
+
+            assert is_away is True
+            assert away.label == "Denver"
+            profile = await service.get_profile(user_id)
+            home = profile.primary_locality
+            assert home is not None
+            assert home.label == "Arlington"
+            assert away.travel_expires_at is not None
+            current = profile.active_locality
+            assert current is not None
+            assert current.label == "Denver"
+    finally:
+        async with AsyncSessionLocal() as session:
+            await session.execute(
+                delete(DiscoveryLocality).where(DiscoveryLocality.user_id == user_id)
+            )
+            await session.commit()
+
+
+# Arriving home ends the trip rather than recording home as a destination.
+@pytest.mark.asyncio
+async def test_reporting_home_ends_the_trip():
+    user_id = f"place_{uuid.uuid4().hex[:8]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            service = DiscoveryProfileService(DiscoveryProfileRepository(session))
+            await service.add_locality(
+                user_id, "Arlington", "Virginia", is_primary=True
+            )
+            await service.set_current_place(user_id, "Denver", "Colorado")
+
+            back, is_away = await service.set_current_place(
+                user_id, "Arlington", "Virginia"
+            )
+
+            assert is_away is False
+            assert back.label == "Arlington"
+            profile = await service.get_profile(user_id)
+            assert profile.is_away is False
+            assert not any(item.is_travel_active for item in profile.localities)
+    finally:
+        async with AsyncSessionLocal() as session:
+            await session.execute(
+                delete(DiscoveryLocality).where(DiscoveryLocality.user_id == user_id)
+            )
+            await session.commit()
+
+
+# With nothing recorded yet, the first place someone reports is where they live.
+# Treating it as a trip would leave the profile permanently away from a home it
+# never had.
+@pytest.mark.asyncio
+async def test_the_first_reported_place_becomes_home():
+    user_id = f"place_{uuid.uuid4().hex[:8]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            service = DiscoveryProfileService(DiscoveryProfileRepository(session))
+
+            locality, is_away = await service.set_current_place(
+                user_id, "Arlington", "Virginia"
+            )
+
+            assert is_away is False
+            assert locality.is_primary is True
+    finally:
+        async with AsyncSessionLocal() as session:
+            await session.execute(
+                delete(DiscoveryLocality).where(DiscoveryLocality.user_id == user_id)
+            )
+            await session.commit()

@@ -95,9 +95,20 @@ class DiscoveryLocality(Base):
         String(64), nullable=False, default="America/New_York"
     )
     is_primary: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    # Travel mode changes where Scout looks without rewriting where the user lives.
+    # Being away changes where Scout looks without rewriting where the user
+    # lives. The two must stay separate: familiarity is scoped per place, so
+    # collapsing them either strands what someone already knew at home or
+    # teaches Scout that everything ordinary where they are visiting is
+    # familiar.
     is_travel_active: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False
+    )
+    # A trip ends by itself. Being away was a mode someone had to remember to
+    # switch off, and a forgotten one leaves Scout searching a city the user
+    # left months ago - the failure is silent, because a digest about the wrong
+    # place still looks like a working digest.
+    travel_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

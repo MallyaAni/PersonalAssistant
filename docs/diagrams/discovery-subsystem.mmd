@@ -8,7 +8,7 @@ flowchart LR
 
     Memory[Approved memory facts<br/>home and interests]
     Projection[Bidirectional profile projection]
-    Profile[(Scout profile<br/>home Â· travel Â· weighted interests)]
+    Profile[(Scout profile<br/>home Â· where you are Â· weighted interests)]
 
     Schedule[Durable schedule]
     Sources[Feeds and bounded web results]
@@ -21,7 +21,7 @@ flowchart LR
     User --> Setup
     Setup -->|profile edits| Projection
     Memory --> Projection --> Profile
-    Setup -->|travel and strength| Profile
+    Setup -->|where you are, strength| Profile
     Setup -->|undo dismissal| History
 
     Schedule --> Sweep

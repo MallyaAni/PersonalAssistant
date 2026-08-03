@@ -248,6 +248,48 @@ async def stop_travel_mode(
     await service.set_travel_mode(user_id, None)
 
 
+class CurrentPlaceRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    label: str = Field(min_length=1, max_length=MAX_LABEL_CHARS)
+    region: str | None = Field(default=None, max_length=MAX_REGION_CHARS)
+    timezone: str = Field(default="America/New_York", max_length=64)
+
+
+# Record where the user is now, which is never a statement about where they
+# live. Reporting a location used to write the home locality and the approved
+# memory fact behind it, so one press while away said the user had moved. Being
+# somewhere other than home is just being away: it needs no mode, and it lapses
+# on its own.
+@router.put("/current-place", status_code=status.HTTP_200_OK)
+async def set_current_place(
+    user_id: UserId,
+    body: CurrentPlaceRequest,
+    service: DependencyDiscoveryProfileService,
+) -> dict[str, object]:
+    try:
+        locality, away = await service.set_current_place(
+            user_id,
+            body.label,
+            body.region,
+            timezone=body.timezone,
+            trip_days=settings.DISCOVERY_TRIP_DAYS,
+        )
+    except DiscoveryProfileLimitError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=str(exc)
+        ) from exc
+    profile = await service.get_profile(user_id)
+    home = profile.primary_locality
+    return {
+        "locality": asdict(locality),
+        # The caller shows this as a fact rather than asking anyone to set a
+        # mode; it is also what decides whether to ask "visiting, or moved?".
+        "away": away,
+        "home": asdict(home) if home else None,
+    }
+
+
 class SourceRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

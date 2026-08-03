@@ -166,6 +166,10 @@ class Settings(BaseSettings):
     # than inferred, so an undated find stays a link and never a calendar entry.
     DISCOVERY_WEB_SEARCH_ENABLED: bool = True
     DISCOVERY_WEB_QUERIES_PER_SWEEP: int = Field(default=4, ge=1, le=10)
+    # How long being away lasts before Scout looks around home again. Long
+    # enough to cover an ordinary trip, short enough that forgetting to say you
+    # came back costs a couple of digests rather than every digest from now on.
+    DISCOVERY_TRIP_DAYS: int = Field(default=14, ge=1, le=180)
     DISCOVERY_PLACE_RESOLVER: Literal["", "nominatim"] = ""
     DISCOVERY_PLACE_RESOLVER_URL: str = "https://nominatim.openstreetmap.org/reverse"
     DISCOVERY_PLACE_RESOLVER_USER_AGENT: str = "AniOS/1.0 (local personal assistant)"

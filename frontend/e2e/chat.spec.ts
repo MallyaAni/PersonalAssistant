@@ -3808,8 +3808,10 @@ test('undoes a dismissed discovery from the Agents tab', async ({ page }) => {
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
-// Verify travel mode changes Scout's active place and returns home without editing home.
-test('starts and stops Scout travel mode from the Agents tab', async ({ page }) => {
+// Verify reporting a location moves Scout without touching home. This used to
+// save the home locality, so one press while away rewrote where the user lives
+// and the approved memory fact behind it.
+test('reports a location without changing where the user lives', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   const localities: Array<{
     id: string;
@@ -3855,22 +3857,49 @@ test('starts and stops Scout travel mode from the Agents tab', async ({ page }) 
       localities,
     }),
   }))
-  await page.route('**/api/v1/discovery/ani.mallya/localities', async route => {
+  // The browser reports a coordinate; the backend blunts it and names the town.
+  // Only the town is ever stored, which is what the resolve step exists for.
+  await page.route('**/api/v1/discovery/ani.mallya/locality/resolve', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      label: 'Denver',
+      region: 'Colorado',
+      country: 'United States',
+      country_code: 'us',
+      display: 'Denver, Colorado, US',
+      stored_region: 'Colorado',
+      sent_precision_decimals: 2,
+    }),
+  }))
+  await page.route('**/api/v1/discovery/ani.mallya/current-place', async route => {
     const body = route.request().postDataJSON()
+    const home = localities.find(item => item.is_primary)
+    // Reporting home ends the trip; anywhere else is simply being away.
+    if (home && home.label === body.label) {
+      localities.forEach(item => { item.is_travel_active = false })
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ locality: home, away: false, home }),
+      })
+      return
+    }
     const destination = {
       id: 'place-travel',
       label: body.label,
-      region: null,
+      region: body.region ?? null,
       radius_km: 25,
       timezone: body.timezone,
       is_primary: false,
-      is_travel_active: false,
+      is_travel_active: true,
+      travel_expires_at: '2026-08-17T00:00:00Z',
     }
     localities.push(destination)
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(destination),
+      body: JSON.stringify({ locality: destination, away: true, home }),
     })
   })
   await page.route('**/api/v1/discovery/ani.mallya/travel', async route => {
@@ -3903,19 +3932,25 @@ test('starts and stops Scout travel mode from the Agents tab', async ({ page }) 
     body: JSON.stringify({ locality: 'Arlington', known: [] }),
   }))
 
+  await page.context().grantPermissions(['geolocation'])
+  await page.context().setGeolocation({ latitude: 39.74, longitude: -104.99 })
+
   await page.goto('/')
   await page.getByLabel('Agents').click()
   await page.getByRole('button', { name: 'Configure' }).click()
-  await page.getByLabel('Travel destination').fill('Denver')
-  await page.getByRole('button', { name: 'Start travel' }).click()
+  await page.getByRole('button', { name: 'Use my location' }).click()
 
-  await expect(page.getByText('Looking around Denver', { exact: true })).toBeVisible()
+  await expect(page.getByText('Looking around Denver')).toBeVisible()
+  // The whole point: home is untouched, so the memory fact behind it is too.
   expect(localities[0].is_primary).toBe(true)
+  expect(localities[0].label).toBe('Arlington')
   expect(localities[1].is_travel_active).toBe(true)
+  // Visiting and moving are indistinguishable from a coordinate, so it asks.
+  await expect(page.getByRole('button', { name: 'I moved here' })).toBeVisible()
+  await page.getByRole('button', { name: 'Just visiting' }).click()
+  expect(localities[0].is_primary).toBe(true)
 
-  await page.getByRole('button', { name: 'Return home' }).click()
-  await expect(page.getByText('Travel mode off. Scout is back around Arlington.')).toBeVisible()
-  await expect(page.getByLabel('Travel destination')).toBeVisible()
+  await page.getByRole('button', { name: /Back to Arlington/ }).click()
   expect(localities[0].is_primary).toBe(true)
   expect(localities.some(item => item.is_travel_active)).toBe(false)
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })

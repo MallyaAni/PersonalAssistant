@@ -4,6 +4,7 @@ import hashlib
 import re
 import unicodedata
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
 # Bound how much profile can exist. Every interest is eligible to enter a chat
 # prompt, so an unbounded list would silently grow the context of every turn.
@@ -38,6 +39,16 @@ class Locality:
     timezone: str
     is_primary: bool
     is_travel_active: bool = False
+    # When the trip ends on its own. None means open-ended, which is what a
+    # destination set before expiry existed still carries.
+    travel_expires_at: datetime | None = None
+
+    # Report whether this is where the user currently is. A lapsed trip is not,
+    # which is what stops a forgotten one from redirecting Scout forever.
+    def is_away_at(self, moment: datetime) -> bool:
+        if not self.is_travel_active:
+            return False
+        return self.travel_expires_at is None or self.travel_expires_at > moment
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,13 +66,28 @@ class DiscoveryProfile:
                 return locality
         return self.localities[0] if self.localities else None
 
-    # Use a temporary travel destination when set, otherwise use the user's home.
+    # Use where the user currently is, otherwise where they live. An expired
+    # trip falls back to home on its own, so forgetting to say you came back
+    # costs nothing.
     @property
     def active_locality(self) -> Locality | None:
+        return self.locality_at(datetime.now(UTC))
+
+    # Resolve the active place as of a given moment, so the expiry rule is
+    # testable without waiting for real time to pass.
+    def locality_at(self, moment: datetime) -> Locality | None:
         for locality in self.localities:
-            if locality.is_travel_active:
+            if locality.is_away_at(moment):
                 return locality
         return self.primary_locality
+
+    # True when the user is somewhere other than home right now. The interface
+    # states this as a fact rather than offering it as a mode to switch.
+    @property
+    def is_away(self) -> bool:
+        current = self.active_locality
+        home = self.primary_locality
+        return current is not None and home is not None and current.id != home.id
 
 
 # Fold case, width, and whitespace so "Live  Music" and "live music" are one

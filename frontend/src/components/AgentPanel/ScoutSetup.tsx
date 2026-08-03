@@ -30,10 +30,10 @@ import {
   markDiscoveryKnown,
   requestSubscription,
   putDiscoveryInterest,
+  putDiscoveryCurrentPlace,
   putDiscoveryLocality,
   putDiscoverySchedule,
   putDiscoverySource,
-  putDiscoveryTravelMode,
   resolveDiscoveryLocality,
   previewDiscoveryDigest,
   runDiscoverySweep,
@@ -87,7 +87,6 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
   const [place, setPlace] = useState('')
   const [savedPlace, setSavedPlace] = useState<DiscoveryLocality | null>(null)
   const [localities, setLocalities] = useState<DiscoveryLocality[]>([])
-  const [travelDraft, setTravelDraft] = useState('')
   const [activeTravel, setActiveTravel] = useState<DiscoveryLocality | null>(null)
   const [interests, setInterests] = useState<DiscoveryInterest[]>([])
   const [known, setKnown] = useState<DiscoveryKnownItem[]>([])
@@ -100,6 +99,10 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  // Set only when a reported location differs from home. Visiting and moving
+  // are indistinguishable from a coordinate, so this asks once instead of
+  // silently picking the answer that rewrites where someone lives.
+  const [movedPrompt, setMovedPrompt] = useState('')
   const [preview, setPreview] = useState<DigestPreview | null>(null)
   const [trial, setTrial] = useState<SweepResult | null>(null)
   const [subscription, setSubscription] = useState<GuestSubscription | null>(null)
@@ -193,17 +196,53 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
         position.coords.latitude,
         position.coords.longitude,
       )
-      setPlace(resolved.label)
-      await putDiscoveryLocality(userId, {
+      // Where you are, never where you live. This used to save the home
+      // locality, which also records the approved memory fact that the user
+      // lives there — so one press from a hotel rewrote their home, stranded
+      // the familiarity they had built up at home, and made their memory say
+      // they had moved. Pressing it again on the way back said so twice.
+      const outcome = await putDiscoveryCurrentPlace(userId, {
         label: resolved.label,
         // Region carries the country too: a town name alone is ambiguous, and
         // there is an Arlington in more than one country.
         region: resolved.stored_region ?? resolved.region,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       })
+      await reload()
+      if (outcome.away) {
+        // The one thing that cannot be inferred. Visiting and moving look
+        // identical from a coordinate, and guessing "moved" is the expensive
+        // wrong answer, so being away is assumed and moving is one tap.
+        setMovedPrompt(describePlace(outcome.locality))
+        setNotice(
+          `Looking around ${describePlace(outcome.locality)} for now. ` +
+            `Only the town was stored, never coordinates.`,
+        )
+        return
+      }
+      setPlace(resolved.label)
+      setMovedPrompt('')
       setNotice(
-        `Saved ${resolved.display}. Only the town was stored, never coordinates.`,
+        `You're around ${resolved.display}. Only the town was stored, never coordinates.`,
       )
+    })
+
+  // Promote where the user is to where they live, which is the only path that
+  // rewrites the approved home fact — and it now takes someone saying so.
+  const confirmMoved = () =>
+    perform('locate', async () => {
+      const current = activeTravel
+      if (!current) throw new Error('No new place to move to.')
+      await deleteDiscoveryTravelMode(userId)
+      await putDiscoveryLocality(userId, {
+        label: current.label,
+        region: current.region,
+        timezone: current.timezone,
+        is_primary: true,
+      })
+      setMovedPrompt('')
+      await reload()
+      setNotice(`Home is now ${describePlace(current)}.`)
     })
 
   const addInterest = (label: string) =>
@@ -281,22 +320,7 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
       setNotice(`${interest.label} importance set to ${label.toLowerCase()}.`)
     })
 
-  // Save a destination separately from home, then make it Scout's active locality.
-  const startTravel = () =>
-    perform('travel', async () => {
-      const label = travelDraft.trim()
-      if (!label) throw new Error('Enter a travel destination.')
-      const destination = await putDiscoveryLocality(userId, {
-        label,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        is_primary: false,
-      })
-      await putDiscoveryTravelMode(userId, destination.id)
-      setTravelDraft('')
-      setNotice(`Travel mode on. Scout is now looking around ${describePlace(destination)}.`)
-    })
-
-  // Stop using the temporary destination and return Scout to the saved home.
+  // Stop being away and return Scout to the saved home.
   const stopTravel = () =>
     perform('travel', async () => {
       await deleteDiscoveryTravelMode(userId)
@@ -440,64 +464,61 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
         </p>
       </section>
 
-      <section className="mb-5 rounded-2xl border border-black/[0.06] p-3">
-        <h4 className="text-xs font-semibold uppercase tracking-[0.08em] text-[#86868b]">
-          Travel mode
-        </h4>
-        {activeTravel ? (
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className="min-w-0 flex-1 text-sm font-medium text-[#248a3d]">
+      {/* Being away is a fact, not a mode. It used to be a switch someone had
+          to remember to turn off, and a forgotten one left Scout searching a
+          city they had left months ago — silently, because a digest about the
+          wrong place still looks like a working digest. Now reporting a
+          location says it, and it lapses on its own. */}
+      {activeTravel && (
+        <section className="mb-5 rounded-2xl border border-black/[0.06] p-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <MapPin size={14} className="text-[#248a3d]" />
+            <span className="min-w-0 flex-1 text-sm font-medium text-[#1d1d1f]">
               Looking around {describePlace(activeTravel)}
+              {savedPlace && (
+                <span className="font-normal text-[#86868b]">
+                  {' '}· you live in {describePlace(savedPlace)}
+                </span>
+              )}
             </span>
             <button
               onClick={() => void stopTravel()}
               disabled={busy !== ''}
               className="h-9 rounded-full border border-black/[0.08] px-3 text-xs font-medium disabled:opacity-40"
             >
-              Return home
+              Back to {savedPlace?.label ?? 'home'}
             </button>
           </div>
-        ) : (
-          <>
-            <p className="mt-1 text-[11px] leading-4 text-[#86868b]">
-              Temporarily search somewhere else without changing your saved home or what you know there.
-            </p>
-            <div className="mt-2 flex gap-2">
-              <input
-                value={travelDraft}
-                onChange={event => setTravelDraft(event.target.value)}
-                aria-label="Travel destination"
-                placeholder="Town or city"
-                className="h-10 min-w-0 flex-1 rounded-xl border border-black/[0.08] px-3 text-sm outline-none focus:border-[#0071e3]"
-              />
+          <p className="mt-1.5 text-[11px] leading-4 text-[#86868b]">
+            {activeTravel.travel_expires_at
+              ? `Back to ${savedPlace?.label ?? 'home'} by itself on ${new Date(activeTravel.travel_expires_at).toLocaleDateString()}. What you already know at home is kept separate.`
+              : 'What you already know at home is kept separate.'}
+          </p>
+          {/* Asked once, because a coordinate cannot tell visiting from moving,
+              and silently choosing "moved" rewrites where someone lives. */}
+          {movedPrompt && (
+            <div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl bg-[#f5f5f7] p-2">
+              <span className="min-w-0 flex-1 text-xs text-[#1d1d1f]">
+                Visiting {movedPrompt}, or did you move here?
+              </span>
               <button
-                onClick={() => void startTravel()}
-                disabled={busy !== '' || !Boolean(savedPlace)}
-                className="h-10 rounded-xl bg-[#1d1d1f] px-3 text-sm font-medium text-white disabled:opacity-40"
+                onClick={() => setMovedPrompt('')}
+                disabled={busy !== ''}
+                className="h-8 rounded-full border border-black/[0.08] bg-white px-3 text-xs font-medium disabled:opacity-40"
               >
-                {busy === 'travel' ? 'Switching…' : 'Start travel'}
+                Just visiting
+              </button>
+              <button
+                onClick={() => void confirmMoved()}
+                disabled={busy !== ''}
+                className="h-8 rounded-full bg-[#1d1d1f] px-3 text-xs font-medium text-white disabled:opacity-40"
+              >
+                I moved here
               </button>
             </div>
-            {localities.filter(item => !item.is_primary).length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {localities.filter(item => !item.is_primary).map(item => (
-                  <button
-                    key={item.id}
-                    onClick={() => void perform('travel', async () => {
-                      await putDiscoveryTravelMode(userId, item.id)
-                      setNotice(`Travel mode on. Scout is now looking around ${describePlace(item)}.`)
-                    })}
-                    disabled={busy !== ''}
-                    className="rounded-full bg-[#f5f5f7] px-2.5 py-1 text-xs disabled:opacity-40"
-                  >
-                    {describePlace(item)}
-                  </button>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-      </section>
+          )}
+        </section>
+      )}
 
       {known.length > 0 && (
         <section className="mb-5 rounded-2xl border border-black/[0.06] bg-[#f5f5f7] p-3">

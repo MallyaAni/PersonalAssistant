@@ -1,5 +1,6 @@
 """User-scoped persistence for the ambient discovery profile."""
 
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import delete, select
@@ -138,9 +139,13 @@ class DiscoveryProfileRepository:
         await self.session.commit()
         return int(getattr(result, "rowcount", 0)) > 0
 
-    # Select one owned travel destination, or clear travel mode with no id.
+    # Record where the user currently is, or clear it with no id. An expiry ends
+    # the trip on its own so nobody has to remember they are still marked away.
     async def set_travel_mode(
-        self, user_id: str, locality_id: UUID | None
+        self,
+        user_id: str,
+        locality_id: UUID | None,
+        expires_at: datetime | None = None,
     ) -> Locality | None:
         rows = list(
             (
@@ -160,6 +165,9 @@ class DiscoveryProfileRepository:
             raise ValueError("Choose a destination other than the home locality")
         for row in rows:
             row.is_travel_active = row is selected
+            # Clearing the flag clears its expiry too, so a place reused for a
+            # later trip cannot inherit the deadline of the previous one.
+            row.travel_expires_at = expires_at if row is selected else None
         await self.session.commit()
         if selected is None:
             return None
@@ -213,4 +221,5 @@ def _to_locality(row: DiscoveryLocality) -> Locality:
         timezone=row.timezone,
         is_primary=row.is_primary,
         is_travel_active=row.is_travel_active,
+        travel_expires_at=row.travel_expires_at,
     )

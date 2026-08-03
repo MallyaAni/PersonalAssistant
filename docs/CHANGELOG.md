@@ -2070,3 +2070,40 @@ rows referencing them. The two changes above exist so this cannot recur.
   through a Python dependency instead of a server.
 - 869 backend tests pass; Ruff, Black, and MyPy are clean; the frontend builds;
   all 15 architecture diagrams render and check as synchronized.
+
+## 2026-08-03 — Scout: let it look, and stop a trip rewriting where you live
+
+- "Look now" required a configured feed. The runner does not — search
+  enumerates events from the place and interests alone, and treats feeds and
+  search as independent contributors — so an account with a home, two interests
+  and no feeds had the button permanently greyed out. "Try it", the same sweep
+  one flag apart, stayed enabled and worked. A rehearsal on that exact account
+  returned two real Arlington finds with zero feeds. The hint now names which
+  condition is missing rather than listing three.
+- Reporting a location no longer says you moved house. "Use my location" wrote
+  the *primary* locality, and `add_locality` records the approved memory fact
+  behind it, so one press from a hotel rewrote where the user lived, stranded
+  the familiarity they had built at home, and left memory asserting the move —
+  twice, once they came back and pressed it again. `PUT /current-place` records
+  where someone is and never where they live.
+- Being away stopped being a mode. It was a switch to remember to turn off, and
+  a forgotten one is silent: a weekly digest about a city left in spring still
+  looks like a working digest. A reported place that differs from home is
+  simply being away, it carries `travel_expires_at` (`DISCOVERY_TRIP_DAYS`,
+  default 14), and `active_locality` ignores a lapsed one, so forgetting costs
+  a couple of digests instead of every digest from now on.
+- Home and current place remain two values, deliberately. Familiarity is scoped
+  per locality, so collapsing them would either strand what someone already
+  knew at home or teach Scout that everything ordinary where they are visiting
+  is familiar. What was redundant was the toggle, not the distinction.
+- A coordinate cannot tell visiting from moving, so the panel asks once and
+  defaults to visiting; promoting a place to home stays an explicit action. The
+  status line states the fact — "Looking around Denver · you live in Arlington"
+  — with when it lapses and a way back.
+- Migration `20260803_0031` adds the nullable expiry; a destination set before
+  it stays open-ended. Verified on a throwaway database (33 tables at head)
+  before `anios_db` was touched, and the live profile round-tripped
+  Arlington → Denver → Arlington with home and the memory fact unchanged
+  throughout.
+- 874 backend tests pass; Ruff, Black and MyPy are clean; the frontend builds;
+  15 diagrams render and check as synchronized.
