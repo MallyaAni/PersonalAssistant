@@ -4,6 +4,7 @@ import logging
 from typing import Any
 
 from backend.artifacts.image import validate_image_bytes
+from backend.artifacts.image_subject import subject_of
 from backend.artifacts.types import (
     ImageEditRequest,
     ImageGenerationRequest,
@@ -131,15 +132,24 @@ class ImageArtifactService:
         # The user's learned style steers the pixels but is not the recorded
         # intent, so it is applied to the provider request while the stored
         # generation_prompt stays the base prompt a later refinement builds on.
-        provider_request = request
+        #
+        # The provider also gets the subject rather than the sentence: a
+        # diffusion model draws every token it is given, so leaving "generate an
+        # image of" in front of "a car" spends most of the prompt on words that
+        # describe nothing and lets the checkpoint's own bias fill the gap.
+        subject = subject_of(request.prompt)
         style = extra_style.strip()
-        if style:
-            provider_request = ImageGenerationRequest(
-                prompt=f"{request.prompt}, {style}",
+        provider_prompt = f"{subject}, {style}" if style else subject
+        provider_request = (
+            request
+            if provider_prompt == request.prompt
+            else ImageGenerationRequest(
+                prompt=provider_prompt,
                 width=request.width,
                 height=request.height,
                 seed=request.seed,
             )
+        )
         try:
             generated = await self.provider.generate(provider_request)
             extension = generated.mime_type.removeprefix("image/").replace(
