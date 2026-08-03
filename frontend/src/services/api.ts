@@ -2148,6 +2148,11 @@ export interface AdminInvite {
   created_at: string | null;
   consumed_at: string | null;
   consumed_by: string | null;
+  requested_by: string | null;
+  requested_username: string | null;
+  requested_contact: string | null;
+  requested_reason: string | null;
+  requested_at: string | null;
 }
 
 export interface AdminAccount {

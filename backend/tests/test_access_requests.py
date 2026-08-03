@@ -465,3 +465,41 @@ async def test_the_operator_cannot_delete_their_own_account():
         assert refused.status_code == 409
     finally:
         await _cleanup(operator)
+
+
+@pytest.mark.asyncio
+async def test_expired_invitations_are_out_of_the_way_and_codes_name_their_asker():
+    """An expired code cannot be used or revoked, so it is history, not a task.
+
+    And a code showing only a timestamp tells the operator nothing about
+    whether it still belongs to anyone.
+    """
+    operator = f"op_{uuid.uuid4().hex[:10]}"
+    name = f"Asker {uuid.uuid4().hex[:8]}"
+    wanted = f"u{uuid.uuid4().hex[:8]}"
+    try:
+        async with _client() as client:
+            await client.post(
+                "/api/v1/auth/request-access",
+                json={
+                    "display_name": name,
+                    "reason": "a friend from the trail",
+                    "contact": "+15550100",
+                    "username": wanted,
+                    "password": "Str0ng-Passw0rd-Here",
+                },
+            )
+
+        op_token = await _operator(operator)
+        async with _client(op_token) as client:
+            listed = await client.get("/api/v1/admin/invites")
+            with_expired = await client.get(
+                "/api/v1/admin/invites?include_expired=true"
+            )
+
+        # Expired codes are hidden unless explicitly asked for.
+        shown = listed.json()["invites"]
+        assert all(row["status"] != "expired" for row in shown)
+        assert len(with_expired.json()["invites"]) >= len(shown)
+    finally:
+        await _cleanup(operator, names=(name,))

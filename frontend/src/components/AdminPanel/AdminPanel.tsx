@@ -329,9 +329,43 @@ const AdminPanel = () => {
                       {style.label}
                     </span>
                     <span className="min-w-0 flex-1 text-sm text-[#1d1d1f]">
-                      {invite.consumed_by
-                        ? `Used by ${invite.consumed_by}`
-                        : untilExpiry(invite.expires_at)}
+                      {invite.requested_by ? (
+                        <>
+                          <span className="font-medium">{invite.requested_by}</span>
+                          {invite.requested_username && (
+                            <span className="text-[#86868b]"> · {invite.requested_username}</span>
+                          )}
+                          {invite.requested_contact && (
+                            <span className="text-[#86868b]"> · {invite.requested_contact}</span>
+                          )}
+                          <span className="block text-[12px] text-[#86868b]">
+                            {invite.requested_at &&
+                              `asked ${untilExpiry(invite.requested_at).replace(' left', '')} ago`.replace(
+                                'expired ago',
+                                'asked just now',
+                              )}
+                            {invite.consumed_by
+                              ? ` · used by ${invite.consumed_by}`
+                              : ` · ${untilExpiry(invite.expires_at)}`}
+                          </span>
+                          {invite.requested_reason && (
+                            <span className="block text-[12px] italic text-[#86868b]">
+                              “{invite.requested_reason}”
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          {/* Minted directly rather than from a request, so
+                              there is nobody to name. */}
+                          <span className="text-[#86868b]">Issued directly</span>
+                          <span className="block text-[12px] text-[#86868b]">
+                            {invite.consumed_by
+                              ? `used by ${invite.consumed_by}`
+                              : untilExpiry(invite.expires_at)}
+                          </span>
+                        </>
+                      )}
                     </span>
                     {invite.status === 'open' && (
                       <button

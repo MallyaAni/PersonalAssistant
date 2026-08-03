@@ -57,7 +57,11 @@ def _operator_id(identity: object) -> str:
 
 
 # Describe one invitation by status rather than by its secret.
-def _describe(invite: RegistrationInvite, now: datetime) -> dict[str, object]:
+def _describe(
+    invite: RegistrationInvite,
+    now: datetime,
+    asker: AccessRequest | None = None,
+) -> dict[str, object]:
     if invite.consumed_at is not None:
         state = "used"
     elif invite.expires_at <= now:
@@ -71,6 +75,16 @@ def _describe(invite: RegistrationInvite, now: datetime) -> dict[str, object]:
         "created_at": invite.created_at.isoformat() if invite.created_at else None,
         "consumed_at": (invite.consumed_at.isoformat() if invite.consumed_at else None),
         "consumed_by": invite.consumed_by_user_id,
+        # Who this was minted for, when they asked, and what they said. A code
+        # with only a timestamp tells the operator nothing about whether it
+        # still belongs to anyone.
+        "requested_by": asker.display_name if asker else None,
+        "requested_username": asker.desired_username if asker else None,
+        "requested_contact": asker.contact if asker else None,
+        "requested_reason": asker.reason if asker else None,
+        "requested_at": (
+            asker.created_at.isoformat() if asker and asker.created_at else None
+        ),
     }
 
 
@@ -80,6 +94,7 @@ async def list_invites(
     admin: AdminDependency,
     db: DbDependency,
     include_finished: bool = Query(True),
+    include_expired: bool = Query(False),
 ) -> dict[str, object]:
     now = datetime.now(UTC)
     rows = (
@@ -93,7 +108,26 @@ async def list_invites(
         .scalars()
         .all()
     )
-    described = [_describe(row, now) for row in rows]
+    # One lookup for every invitation that came from a request, so each code
+    # can name the person it was minted for.
+    askers = {
+        request.invite_id: request
+        for request in (
+            (
+                await db.execute(
+                    select(AccessRequest).where(AccessRequest.invite_id.is_not(None))
+                )
+            )
+            .scalars()
+            .all()
+        )
+    }
+    described = [_describe(row, now, askers.get(row.id)) for row in rows]
+    # An expired code cannot be used and cannot be revoked into anything, so it
+    # is history rather than something to act on. Kept behind a flag rather than
+    # deleted, because "was one ever issued" is still a real question.
+    if not include_expired:
+        described = [item for item in described if item["status"] != "expired"]
     if not include_finished:
         described = [item for item in described if item["status"] == "open"]
     return {
