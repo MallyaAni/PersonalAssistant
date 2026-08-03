@@ -91,12 +91,31 @@ class Settings(BaseSettings):
     # flaws produces skin with pores and fine lines, uneven light, and unstyled
     # props instead. Compared side by side on a fixed seed, this suffix was the
     # only one of three that read as a candid photograph.
+    # Subject-agnostic only. This is appended to every prompt, so anything
+    # naming a body part describes a subject the request may not have asked
+    # for: "skin with pores and fine lines, flyaway hair" used to live here and
+    # put a person in every image, which is how a request for a car returned a
+    # woman leaning out of one. Film stock, lens, light, and framing apply to a
+    # car and a face alike; skin and hair do not.
     IMAGE_STYLE_SUFFIX: str = (
         "candid snapshot, shot on 35mm film, Kodak Portra 400, 50mm lens, "
         "available light only, uneven mixed lighting, visible film grain, "
-        "natural unretouched skin with pores and fine lines, flyaway hair, "
         "slightly off-centre imperfect framing, mild motion blur, "
         "everyday unstyled scene"
+    )
+    # The human half of the tuned look, added only when the request is about a
+    # person. Keeping it out of the global suffix is what stops it inventing
+    # subjects; keeping it at all is what preserves the portrait quality it was
+    # originally tuned for.
+    IMAGE_PORTRAIT_SUFFIX: str = (
+        "natural unretouched skin with pores and fine lines, flyaway hair"
+    )
+    # Steers away from the CGI look without forbidding any subject. Naming
+    # "person" here would break every portrait, so it names rendering styles
+    # rather than content.
+    IMAGE_NEGATIVE_PROMPT: str = (
+        "3d render, cgi, illustration, painting, cartoon, anime, plastic, "
+        "airbrushed, oversaturated, watermark, text, logo"
     )
     # A single GPU cannot hold the generation model and the diffusion model at
     # once. When enabled, AniOS sleeps local inference for the duration of one

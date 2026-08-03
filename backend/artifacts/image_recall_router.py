@@ -10,8 +10,14 @@ from backend.artifacts.image_routing import ImageRecallDecision, ImageRecallPoli
 _CLASSIFIER_GATE = re.compile(
     r"\b(show|see|view|display|find|pull|bring|where|recall|remember)\b"
     r".{0,40}\b(the|that|those|this|these|my|our|your|it|one)\b"
+    # Creation and upload verbs only count when they point at something that
+    # already exists. A bare "generate an image of a car" names nothing stored,
+    # and letting it through sent a fresh request to the classifier, which
+    # answered recall and refined an unrelated old image instead.
     r"|\b(made|create|created|generate|generated|drew|drawn|design|designed|"
-    r"render|rendered|paint|painted|upload|uploaded|save|saved|sketch|sketched)\b",
+    r"render|rendered|paint|painted|upload|uploaded|save|saved|sketch|sketched)\b"
+    r".{0,40}\b(the|that|those|this|these|my|our|your|it|one|earlier|before|"
+    r"previous|last|yesterday|ago)\b",
     re.IGNORECASE,
 )
 

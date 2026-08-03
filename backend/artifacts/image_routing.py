@@ -51,8 +51,21 @@ _COMPILED: tuple[tuple[re.Pattern[str], str], ...] = tuple(
 
 # Requests to produce a new image must never be answered with an old one.
 _CREATION_PATTERN = re.compile(
+    # Verb-led: "generate an image of a car".
     r"\b(generate|create|draw|make|paint|render|design)\b.{0,80}"
-    r"\b(image|picture|photo|illustration|artwork)\b",
+    r"\b(image|picture|photo|illustration|artwork)\b"
+    # Noun-led, no verb at all: "image of a car". Without this the turn never
+    # reaches the image path, and the assistant answers from its own assumption
+    # — telling the user it cannot generate images, which is untrue.
+    # Indefinite only. "the picture of my dog" names one that already exists and
+    # belongs to recall; "image of a car" names nothing and has to be made.
+    r"|^\s*(?:an?\s+)?"
+    r"(?:image|picture|photo|photograph|illustration|artwork|drawing|sketch)s?"
+    r"\s+(?:of|showing|depicting|with)\s+"
+    r"(?!my\b|our\b|your\b|the\b|that\b|this\b|those\b|these\b|it\b)\S"
+    # Bare verb, no noun: "draw a car".
+    r"|^\s*(?:please\s+)?(?:generate|draw|paint|sketch|render)\s+"
+    r"(?:me\s+)?(?:an?\s+|the\s+)?\S",
     re.IGNORECASE,
 )
 

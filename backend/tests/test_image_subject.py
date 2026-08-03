@@ -51,3 +51,26 @@ def test_the_subject_keeps_its_own_detail():
     assert subject_of("generate an image of a car in the rain, 35mm") == (
         "a car in the rain, 35mm"
     )
+
+
+def test_human_detail_applies_only_to_people():
+    from backend.artifacts.image_subject import mentions_a_person
+
+    # Skin and hair wording in the global style suffix put a person in every
+    # image, which is how a request for a car returned a woman leaning out of
+    # one. It has to be conditional on the subject.
+    assert mentions_a_person("a woman leaning out of a car") is True
+    assert mentions_a_person("portrait of a chef") is True
+    assert mentions_a_person("a car") is False
+    assert mentions_a_person("a red ferrari on a mountain road") is False
+    assert mentions_a_person("a sunset over the ocean") is False
+
+
+def test_the_style_suffix_names_no_body_parts():
+    # A regression guard on configuration rather than code: this string is
+    # appended to every prompt, so anything here describing a body describes a
+    # subject the request may not have asked for.
+    from backend.config.settings import settings
+
+    for banned in ("skin", "hair", "pores", "face", "eyes", "smile"):
+        assert banned not in settings.IMAGE_STYLE_SUFFIX.lower()

@@ -10,6 +10,7 @@ from uuid import uuid4
 import httpx
 from PIL import Image, UnidentifiedImageError
 
+from backend.artifacts.image_subject import mentions_a_person
 from backend.artifacts.types import (
     GeneratedImage,
     ImageEditRequest,
@@ -73,10 +74,14 @@ class ComfyUIImageProvider(ImageProvider):
         max_output_bytes: int,
         max_pixels: int,
         style_suffix: str = "",
+        portrait_suffix: str = "",
+        negative_prompt: str = "",
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.model = model
         self.style_suffix = style_suffix.strip().strip(",").strip()
+        self.portrait_suffix = portrait_suffix.strip().strip(",").strip()
+        self.negative_prompt = negative_prompt.strip().strip(",").strip()
         self.timeout_seconds = timeout_seconds
         self.poll_seconds = poll_seconds
         self.max_output_bytes = max_output_bytes
@@ -180,9 +185,18 @@ class ComfyUIImageProvider(ImageProvider):
     # user's wording leads and the style steer follows.
     def _positive_prompt(self, prompt: str) -> str:
         text = prompt.strip()
+        parts = [text] if text else []
         if self.style_suffix and self.style_suffix.lower() not in text.lower():
-            return f"{text}, {self.style_suffix}" if text else self.style_suffix
-        return text
+            parts.append(self.style_suffix)
+        # Skin and hair wording only when a person was asked for. Applied
+        # unconditionally it does not describe the subject, it invents one.
+        if (
+            self.portrait_suffix
+            and mentions_a_person(text)
+            and self.portrait_suffix.lower() not in text.lower()
+        ):
+            parts.append(self.portrait_suffix)
+        return ", ".join(parts)
 
     def _workflow(self, request: ImageGenerationRequest) -> dict[str, Any]:
         return {
@@ -197,9 +211,11 @@ class ComfyUIImageProvider(ImageProvider):
                     "clip": ["1", 1],
                 },
             },
+            # The negative conditioning was empty, so nothing counterweighted
+            # the checkpoint's own priors.
             "3": {
                 "class_type": "CLIPTextEncode",
-                "inputs": {"text": "", "clip": ["1", 1]},
+                "inputs": {"text": self.negative_prompt, "clip": ["1", 1]},
             },
             "4": {
                 "class_type": "ModelNoiseScale",

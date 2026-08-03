@@ -193,6 +193,13 @@ class ConversationService:
         # leaving the machine, so one is always constructed.
         self.search_privacy = search_privacy or OutboundPrivacyPolicy()
         self.image_retrieval = image_retrieval or ImageRetrievalPolicy(
+            # Deliberately loose, and not comparable to discovery's 0.08
+            # novelty or 0.16 familiarity: those measure text embeddings,
+            # these measure image embeddings, where genuine matches
+            # observed in this space sit around 0.90-0.94. Tightening this
+            # on the strength of the text numbers disables recall
+            # outright, so any change needs the real distance
+            # distribution measured first.
             max_distance=0.96,
             cluster_delta=0.006,
         )

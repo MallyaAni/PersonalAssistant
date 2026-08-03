@@ -504,6 +504,8 @@ def _build_comfyui_image_provider() -> ComfyUIImageProvider:
         max_output_bytes=settings.IMAGE_MAX_OUTPUT_BYTES,
         max_pixels=settings.IMAGE_MAX_PIXELS,
         style_suffix=settings.IMAGE_STYLE_SUFFIX,
+        portrait_suffix=settings.IMAGE_PORTRAIT_SUFFIX,
+        negative_prompt=settings.IMAGE_NEGATIVE_PROMPT,
     )
 
 
