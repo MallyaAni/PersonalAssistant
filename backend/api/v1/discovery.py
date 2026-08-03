@@ -5,10 +5,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Response, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from sqlalchemy import select
 
 from backend.config.settings import settings
 from backend.core.auth import authorize_path_user
 from backend.core.dependencies import (
+    DbDependency,
     DependencyDiscoveryFamiliar,
     DependencyDiscoveryProfileService,
     DependencyDiscoveryRunner,
@@ -114,6 +116,45 @@ async def read_profile(
         "user_id": user_id,
         "interests": [asdict(interest) for interest in profile.interests],
         "localities": [asdict(locality) for locality in profile.localities],
+    }
+
+
+# What this account has left of the shared metered search allowance.
+#
+# Shown to the person spending it rather than only the operator: a limit nobody
+# can see is indistinguishable from the feature quietly not working, which is
+# the failure this budget exists to make visible.
+@router.get("/search-usage")
+async def read_search_usage(
+    user_id: UserId,
+    db: DbDependency,
+) -> dict[str, object]:
+    from backend.core.dependencies import get_search_budget
+    from backend.models.auth import UserAccount
+
+    account = await db.scalar(select(UserAccount).where(UserAccount.user_id == user_id))
+    is_operator = bool(account and account.is_admin)
+    daily_override = account.search_daily_limit if account else None
+    monthly_override = account.search_monthly_limit if account else None
+
+    budget = get_search_budget()
+    day_left = await budget.remaining_today(
+        user_id, is_operator, override=daily_override
+    )
+    month_left = await budget.remaining(user_id, is_operator, override=monthly_override)
+    day_total = budget.daily_allowance(is_operator, daily_override)
+    month_total = budget.allowance(is_operator, monthly_override)
+    return {
+        "today": {
+            "used": max(day_total - day_left, 0),
+            "limit": day_total,
+            "remaining": day_left,
+        },
+        "month": {
+            "used": max(month_total - month_left, 0),
+            "limit": month_total,
+            "remaining": month_left,
+        },
     }
 
 

@@ -358,7 +358,9 @@ const AdminPanel = () => {
                         <>
                           {/* Minted directly rather than from a request, so
                               there is nobody to name. */}
-                          <span className="text-[#86868b]">Issued directly</span>
+                          <span className="text-[#86868b]">
+                            Code you created — nobody requested it
+                          </span>
                           <span className="block text-[12px] text-[#86868b]">
                             {invite.consumed_by
                               ? `used by ${invite.consumed_by}`

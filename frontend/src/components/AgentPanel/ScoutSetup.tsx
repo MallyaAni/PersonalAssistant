@@ -49,6 +49,8 @@ import {
   type FeedCandidate,
   type SweepResult,
   type InterestProposal,
+  getSearchUsage,
+  type SearchUsage,
 } from '../../services/api'
 
 const WEEKDAYS = [
@@ -92,6 +94,7 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
   const [knownLocality, setKnownLocality] = useState<string | null>(null)
   const [sources, setSources] = useState<DiscoverySource[]>([])
   const [interestDraft, setInterestDraft] = useState('')
+  const [usage, setUsage] = useState<SearchUsage | null>(null)
   const [feedCandidates, setFeedCandidates] = useState<FeedCandidate[]>([])
   const [interestProposals, setInterestProposals] = useState<InterestProposal[]>([])
   const [busy, setBusy] = useState('')
@@ -132,6 +135,11 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
 
   useEffect(() => {
     void reload().catch(() => setError('Could not load the configuration.'))
+    // Usage is read separately: it changes as searches are spent, and a
+    // failure here must not stop the rest of the panel loading.
+    void getSearchUsage(userId)
+      .then(setUsage)
+      .catch(() => setUsage(null))
     // Loading once per user is deliberate: reload() depends on the draft place,
     // and re-running on every keystroke would fight the user's typing.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -595,6 +603,44 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
           </button>
         </div>
       </section>
+
+      {usage && (
+        <section className="mb-5">
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-[0.08em] text-[#86868b]">
+            Internet searches
+          </h4>
+          <div className="rounded-xl bg-[#f5f5f7] px-3 py-2.5">
+            <div className="flex items-baseline justify-between text-sm">
+              <span className="text-[#1d1d1f]">
+                <strong>{usage.today.used}</strong> of {usage.today.limit} today
+              </span>
+              <span className="text-[12px] text-[#86868b]">
+                {usage.month.used} of {usage.month.limit} this month
+              </span>
+            </div>
+            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-black/[0.07]">
+              <div
+                className={`h-full rounded-full ${
+                  usage.today.remaining === 0 ? 'bg-[#b42318]' : 'bg-[#0071e3]'
+                }`}
+                style={{
+                  width: `${Math.min(
+                    100,
+                    usage.today.limit > 0
+                      ? (usage.today.used / usage.today.limit) * 100
+                      : 0,
+                  )}%`,
+                }}
+              />
+            </div>
+            <p className="mt-1.5 text-[11px] text-[#86868b]">
+              {usage.today.remaining === 0
+                ? 'Daily limit reached. It resets at midnight UTC.'
+                : 'Shared across everyone using this machine. Resets daily.'}
+            </p>
+          </div>
+        </section>
+      )}
 
       <section className="mb-5">
         <div className="mb-2 flex items-center justify-between">

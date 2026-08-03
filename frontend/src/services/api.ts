@@ -2166,6 +2166,28 @@ export interface AdminAccount {
   search_daily_limit: number | null;
 }
 
+export interface SearchUsageWindow {
+  used: number;
+  limit: number;
+  remaining: number;
+}
+
+export interface SearchUsage {
+  today: SearchUsageWindow;
+  month: SearchUsageWindow;
+}
+
+// What this account has left of the shared metered search allowance. Shown to
+// the person spending it: a limit nobody can see is indistinguishable from the
+// feature quietly not working.
+export const getSearchUsage = async (userId: string): Promise<SearchUsage> =>
+  readJson(
+    await authenticatedFetch(
+      `${API_BASE_URL}/api/v1/discovery/${encodeURIComponent(userId)}/search-usage`,
+    ),
+    'Could not load your search usage.',
+  );
+
 export interface SearchDefaults {
   guest_daily: number;
   guest_monthly: number;
