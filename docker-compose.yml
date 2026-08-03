@@ -282,6 +282,24 @@ services:
       - ARTIFACT_STORAGE_ROOT=/app/data/artifacts
       - PRESENTATION_RENDERER_BASE_URL=http://presentation-renderer:8002
       - PRESENTATION_REQUIRE_OFFICE_VALIDATION=true
+      # Deck grounding runs in this process, not the API, because the durable
+      # worker is what plans a deck. Without these the worker's search provider
+      # is silently disabled and every figure comes from recollection again.
+      - PRESENTATION_RESEARCH_ENABLED=${PRESENTATION_RESEARCH_ENABLED:-true}
+      - SEARCH_API_KEY=${SEARCH_API_KEY:-}
+      - SEARCH_MONTHLY_CREDITS=${SEARCH_MONTHLY_CREDITS:-1000}
+      - SEARCH_PROVIDER_NAME=${SEARCH_PROVIDER_NAME:-tavily}
+      - SEARCH_MCP_SERVER_ID=${SEARCH_MCP_SERVER_ID:-internet}
+      - SEARCH_MCP_TOOL_NAME=${SEARCH_MCP_TOOL_NAME:-search_web}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GOOGLE_SEARCH_ENABLED=${GOOGLE_SEARCH_ENABLED:-false}
+      - GOOGLE_SEARCH_MODEL=${GOOGLE_SEARCH_MODEL:-gemini-3.6-flash}
+      - GOOGLE_SEARCH_TIMEOUT_SECONDS=${GOOGLE_SEARCH_TIMEOUT_SECONDS:-30}
+      - GOOGLE_SEARCH_MAX_OUTPUT_TOKENS=${GOOGLE_SEARCH_MAX_OUTPUT_TOKENS:-2048}
+      - GOOGLE_SEARCH_DAILY_LIMIT=${GOOGLE_SEARCH_DAILY_LIMIT:-450}
+      - GOOGLE_SEARCH_QUOTA_DB_PATH=/app/data/search/google_search_quota.sqlite3
+      - MCP_SERVERS_JSON=${MCP_SERVERS_JSON:-[]}
       - PRESENTATION_JOB_POLL_SECONDS=${PRESENTATION_JOB_POLL_SECONDS:-0.5}
       - PRESENTATION_JOB_LEASE_SECONDS=${PRESENTATION_JOB_LEASE_SECONDS:-300}
       - PRESENTATION_JOB_HEARTBEAT_SECONDS=${PRESENTATION_JOB_HEARTBEAT_SECONDS:-30}
@@ -293,6 +311,9 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - artifactdata:/app/data/artifacts
+      # The Google research quota counter is shared with the API, so both
+      # processes reserve against one count rather than two.
+      - searchdata:/app/data/search
     depends_on:
       vllm-main:
         condition: service_healthy
@@ -430,6 +451,7 @@ services:
       - ARTIFACT_STORAGE_ROOT=/app/data/artifacts
       - PRESENTATION_RENDERER_BASE_URL=http://presentation-renderer:8002
       - PRESENTATION_REQUIRE_OFFICE_VALIDATION=true
+      - PRESENTATION_RESEARCH_ENABLED=${PRESENTATION_RESEARCH_ENABLED:-true}
       # Opt-in web search. Empty disables it: routing still runs and logs its
       # decision, but no query is ever sent.
       - SEARCH_API_KEY=${SEARCH_API_KEY:-}

@@ -69,6 +69,7 @@ from backend.memory.coordinator import MemoryCoordinatorAgent
 from backend.memory.retrieval import SemanticRetrievalPolicy
 from backend.presentations.provider import LLMPresentationProvider
 from backend.presentations.renderer import PptxGenJSRenderer
+from backend.presentations.research import DeckResearch
 from backend.search.budgeted import BudgetedSearchProvider
 from backend.search.cascade import CascadingSearchRouter
 from backend.search.classifier import LMStudioFreshnessClassifier
@@ -355,6 +356,15 @@ def get_presentation_renderer() -> PptxGenJSRenderer:
     )
 
 
+# Build the deck-grounding boundary, or nothing when the operator disabled it.
+# A deck plans from recollection without this, which is what produced invented
+# statistics; the planning contract still forbids unsupported figures either way.
+def get_deck_research() -> DeckResearch | None:
+    if not settings.PRESENTATION_RESEARCH_ENABLED:
+        return None
+    return DeckResearch(get_search_provider())
+
+
 # Build the configured presentation planner without storage or file authority.
 def get_presentation_agent(llm: PresentationLlmDependency) -> PresentationAgent:
     return PresentationAgent(
@@ -363,6 +373,7 @@ def get_presentation_agent(llm: PresentationLlmDependency) -> PresentationAgent:
             settings.PRESENTATION_MAX_TOKENS,
             settings.PRESENTATION_PLAN_MAX_TOKENS,
             settings.PRESENTATION_REVISION_MAX_TOKENS,
+            research=get_deck_research(),
         )
     )
 
@@ -377,6 +388,7 @@ def get_background_presentation_agent() -> PresentationAgent:
             settings.PRESENTATION_REVISION_MAX_TOKENS,
             model_gate=get_model_execution_gate(),
             background=True,
+            research=get_deck_research(),
         )
     )
 

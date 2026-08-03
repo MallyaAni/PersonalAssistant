@@ -200,6 +200,11 @@ class Settings(BaseSettings):
     # Keep slide imagery sharp without paying the fourfold pixel cost of 2048px
     # generation on the current single-GPU workstation.
     PRESENTATION_AUTO_IMAGE_SIZE: int = Field(default=1_024, ge=512, le=2_048)
+    # Ground deck content in one web search per deck so figures come from
+    # sources rather than recollection. Independent of chat search, which this
+    # must be switchable without disabling: a deck asserting an invented
+    # statistic is a different failure from a chat answer being stale.
+    PRESENTATION_RESEARCH_ENABLED: bool = True
     REDIS_URL: str = "redis://127.0.0.1:6379/0"
     MODEL_GATE_ENABLED: bool = False
     MODEL_GATE_LEASE_SECONDS: float = Field(default=300, ge=30, le=900)

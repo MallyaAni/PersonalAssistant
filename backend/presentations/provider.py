@@ -19,6 +19,7 @@ from backend.presentations.planner import (
     compile_slide,
     requested_slide_count,
 )
+from backend.presentations.research import DeckResearch, DeckSource, render_sources
 from backend.presentations.types import (
     ChartElement,
     DeckSpec,
@@ -168,8 +169,10 @@ def _deck_plan_contract() -> str:
         "and 1 to 3 chart_series each with a name and one value per "
         "category. Use table when the point is a small grid of facts, "
         "supplying 2 to 5 table_headers and rows with one cell per header. "
-        "Both become native editable PowerPoint objects, so give real "
-        "figures and never describe a chart in words instead. "
+        "Both become native editable PowerPoint objects, so take the figures "
+        "from the researched sources below and never describe a chart in words "
+        "instead; if the sources carry no usable figures, choose a layout that "
+        "needs none. "
         "Vary layouts across the deck rather than "
         "repeating one, and leave the fields other layouts use as null. Do not "
         "emit coordinates, colors, element IDs, themes, geometry, Markdown, or "
@@ -224,8 +227,10 @@ def _slide_content_contract() -> str:
         "and 1 to 3 chart_series each with a name and one value per "
         "category. Use table when the point is a small grid of facts, "
         "supplying 2 to 5 table_headers and rows with one cell per header. "
-        "Both become native editable PowerPoint objects, so give real "
-        "figures and never describe a chart in words instead. "
+        "Both become native editable PowerPoint objects, so take the figures "
+        "from the researched sources below and never describe a chart in words "
+        "instead; if the sources carry no usable figures, choose a layout that "
+        "needs none. "
         "Prefer bullets unless another layout truly "
         "fits, and vary the layout across a deck rather than repeating one. "
         "Leave the fields other layouts use as null. "
@@ -379,6 +384,7 @@ class LLMPresentationProvider(PresentationProvider):
         revision_max_tokens: int = 1_024,
         model_gate: ModelExecutionGate | None = None,
         background: bool = False,
+        research: DeckResearch | None = None,
     ) -> None:
         self.llm = llm
         self.max_tokens = max_tokens
@@ -386,6 +392,17 @@ class LLMPresentationProvider(PresentationProvider):
         self.revision_max_tokens = revision_max_tokens
         self.model_gate = model_gate
         self.background = background
+        # Absent, the deck is planned from the model's recollection alone, which
+        # is what produced invented statistics. The contract still forbids
+        # unsupported figures, so an ungrounded deck degrades to plainer slides
+        # rather than to confident wrong ones.
+        self.research = research
+
+    # Gather bounded public sources once per deck, before any layout is chosen.
+    async def _sources(self, prompt: str) -> tuple[DeckSource, ...]:
+        if self.research is None:
+            return ()
+        return await self.research.gather(prompt)
 
     # Generate and validate a complete deck, retrying one invalid format once.
     async def create(self, prompt: str) -> DeckSpec:
@@ -395,6 +412,7 @@ class LLMPresentationProvider(PresentationProvider):
             if expected_slides is not None
             else ""
         )
+        sources = await self._sources(prompt)
         messages = [
             {
                 "role": "system",
@@ -403,6 +421,8 @@ class LLMPresentationProvider(PresentationProvider):
                     "accurate, executive-ready presentation content. "
                     + _deck_plan_contract()
                     + count_instruction
+                    + "\n\n"
+                    + render_sources(sources)
                 ),
             },
             {"role": "user", "content": prompt},
@@ -420,6 +440,12 @@ class LLMPresentationProvider(PresentationProvider):
     # Plan an outline, then yield after each independently scheduled slide call.
     async def create_progress(self, prompt: str) -> AsyncIterator[DeckDraft]:
         expected_slides = requested_slide_count(prompt)
+        # One search per deck, before the outline, because the outline is where
+        # layouts are chosen: a slide is told to carry a statistic there, and by
+        # the time the slide pass runs the only way to satisfy that is to invent
+        # one. The same sources are then repeated into every slide call.
+        sources = await self._sources(prompt)
+        rendered_sources = render_sources(sources)
         outline_messages = [
             {
                 "role": "system",
@@ -427,6 +453,8 @@ class LLMPresentationProvider(PresentationProvider):
                     "You are AniOS PresentationAgent. Plan clear, technically "
                     "accurate, executive-ready presentation content. "
                     + _deck_outline_contract(expected_slides)
+                    + "\n\n"
+                    + rendered_sources
                 ),
             },
             {"role": "user", "content": prompt},
@@ -455,7 +483,7 @@ class LLMPresentationProvider(PresentationProvider):
                         "beat, do not repeat what an earlier slide covered, and "
                         "carry the beat into visual_prompt so any image matches "
                         "this point in the arc rather than the subject in "
-                        "general."
+                        "general.\n\n" + rendered_sources
                     ),
                 },
                 {
