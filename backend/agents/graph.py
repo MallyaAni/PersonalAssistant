@@ -86,6 +86,30 @@ def _render_tool_context(
     )
 
 
+# State what will actually happen to this turn's memory, rather than forbidding
+# a claim in the abstract. Told only "you cannot save", the model answered "your
+# personal memory has been updated": passive, true-sounding, and false. Naming
+# the real state and showing the sentence to write leaves nothing to route
+# around, and a small model follows a worked example far better than a ban.
+def _render_save_state(save: dict[str, Any]) -> str:
+    if not save:
+        return ""
+    if save.get("offered"):
+        value = save.get("value") or "what the user just stated"
+        return (
+            "\nThis turn: a save card for the following is displayed with your "
+            f"reply, and nothing is stored yet - {value}. Tell the user you can "
+            "save it once they approve it below. Do not write any sentence "
+            "meaning it is already saved, in any voice: not 'I've noted that', "
+            "not 'your memory has been updated', not 'that has been recorded'."
+        )
+    return (
+        "\nThis turn: no save card is being shown and nothing from this message "
+        "will be stored. Do not say or imply that anything was saved, noted, "
+        "recorded, remembered, or added to memory."
+    )
+
+
 def _build_system_prompt(
     context_data: dict[str, Any],
     now: datetime | None = None,
@@ -106,7 +130,18 @@ def _build_system_prompt(
         "That caveat is about facts in the world. It does not apply to this "
         "user's own history, which the application supplies below: anything "
         "provided there is something you and the user genuinely did together, "
-        "so treat it as your memory and never disclaim it."
+        "so treat it as your memory and never disclaim it.\n"
+        # The model has no write tool and never had one, but nothing told it so,
+        # and a helpful assistant answers "remember this" by saying it has. That
+        # produced a confident "I've made a note of that" for a fact that
+        # reached no store, which is worse than refusing outright: the user has
+        # no reason to check. Saving is the user's decision, taken on an
+        # approval card the application renders next to this reply.
+        "You cannot write to memory. Only the user can save something, by "
+        "approving a save card the application offers alongside your reply, and "
+        "you neither see nor control it. Reading what the application already "
+        "gave you above is not saving, so describe that memory normally."
+        f"{_render_save_state(context_data.get('memory_save') or {})}"
     )
     search_context = _render_search_context(context_data.get("search") or [])
     image_context = _render_image_context(context_data.get("images") or [])

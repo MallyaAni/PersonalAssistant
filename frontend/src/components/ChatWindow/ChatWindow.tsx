@@ -8,6 +8,7 @@ import {
   approveDiscoveryLocality,
   approveEpisodic,
   approveKnowledge,
+  approveSemanticFact,
   approvePreferredName,
   approveProcedure,
   approveResponseStyle,
@@ -53,6 +54,7 @@ const proposalLabel = (proposal: MemoryProposal) => ({
   procedure: 'Procedure memory proposal',
   knowledge: 'Knowledge memory proposal',
   episodic: 'Experience memory proposal',
+  semantic_fact: 'Fact memory proposal',
 })[proposal.kind]
 
 // Return the primary value shown for one proposal.
@@ -66,7 +68,9 @@ const proposalValue = (proposal: MemoryProposal) => {
   }
   if (proposal.kind === 'entity') return proposal.canonical_name
   if (proposal.kind === 'procedure') return proposal.name
-  if (proposal.kind === 'episodic') return proposal.content
+  if (proposal.kind === 'episodic' || proposal.kind === 'semantic_fact') {
+    return proposal.content
+  }
   return proposal.title
 }
 
@@ -80,6 +84,7 @@ const proposalType = (proposal: MemoryProposal) => ({
   procedure: 'reusable workflow',
   knowledge: 'reference knowledge',
   episodic: 'experience or event',
+  semantic_fact: 'fact',
 })[proposal.kind]
 
 // Find the newest assistant message without requiring a newer JavaScript runtime.
@@ -498,6 +503,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         await approveProcedure(userId, memoryProposal)
       } else if (memoryProposal.kind === 'episodic') {
         await approveEpisodic(userId, memoryProposal)
+      } else if (memoryProposal.kind === 'semantic_fact') {
+        await approveSemanticFact(userId, memoryProposal)
       } else {
         await approveKnowledge(userId, memoryProposal)
       }

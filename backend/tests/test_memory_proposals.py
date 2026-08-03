@@ -9,6 +9,7 @@ from backend.memory.proposals import (
     propose_preferred_name,
     propose_procedure,
     propose_response_style,
+    propose_semantic_fact,
 )
 
 
@@ -157,3 +158,63 @@ def test_propose_episodic_captures_a_narrated_event(query, expected):
 )
 def test_propose_episodic_ignores_non_events(query):
     assert propose_episodic(query) is None
+
+
+# Verify an ordinary stated fact is captured when the user explicitly asks for
+# it. Every extractor used to be a narrow shape matcher, so "remember that my
+# dog is called Biscuit" reached no store while the assistant said it had noted
+# it. Only the fact is kept, not the instruction wrapping it.
+@pytest.mark.parametrize(
+    ("query", "expected"),
+    [
+        ("Remember that my dog is called Biscuit.", "my dog is called Biscuit."),
+        ("remember my parking spot is B14", "my parking spot is B14"),
+        (
+            "Please remember that I am allergic to penicillin.",
+            "I am allergic to penicillin.",
+        ),
+        (
+            "Don't forget that the spare key is under the pot.",
+            "the spare key is under the pot.",
+        ),
+        (
+            "Keep in mind that I work night shifts on Tuesdays.",
+            "I work night shifts on Tuesdays.",
+        ),
+        (
+            "Note that my passport expires in March 2027.",
+            "my passport expires in March 2027.",
+        ),
+        (
+            "Make a note that the insurance renews in June.",
+            "the insurance renews in June.",
+        ),
+        # Only the first sentence becomes the fact, so a trailing aside is not
+        # stored as though the user had asked for it.
+        (
+            "Remember that my locker is 42. Anyway, how are you?",
+            "my locker is 42.",
+        ),
+    ],
+)
+def test_propose_semantic_fact_captures_an_explicit_general_fact(query, expected):
+    assert propose_semantic_fact(query) == expected
+
+
+# Verify a request to recall never produces a proposal to save. The trigger word
+# is identical in both directions, so the auxiliary in front of it is what
+# separates "remember that X" from "do you remember X".
+@pytest.mark.parametrize(
+    "query",
+    [
+        "Do you remember my dog's name?",
+        "Can you remember what I told you yesterday?",
+        "Did you note that down?",
+        "Would you remember this for me?",
+        "What is my dog's name?",
+        "Write me a poem about rain.",
+        "Remember?",
+    ],
+)
+def test_propose_semantic_fact_ignores_recall_and_ordinary_chat(query):
+    assert propose_semantic_fact(query) is None

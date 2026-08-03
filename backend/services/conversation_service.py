@@ -36,6 +36,7 @@ from backend.memory.proposals import (
     propose_preferred_name,
     propose_procedure,
     propose_response_style,
+    propose_semantic_fact,
 )
 from backend.models.schemas import ChatStreamEvent
 from backend.search.budgeted import SearchBudgetExceededError
@@ -140,6 +141,17 @@ def _memory_proposal(
                 "conversation_id": conversation_id,
                 "trace_id": trace_id,
             }
+    # The catch-all for an explicit save request. It runs after every structured
+    # proposer so a narrower shape still wins, and before the episodic proposer
+    # because an explicit "remember this" outranks a proactively noticed event.
+    semantic_fact = propose_semantic_fact(query)
+    if semantic_fact:
+        return {
+            "kind": "semantic_fact",
+            "content": semantic_fact,
+            "conversation_id": conversation_id,
+            "trace_id": trace_id,
+        }
     # Lowest priority: this is the only proposal made without explicit save
     # intent, so any of the above wins over a proactively noticed event.
     episodic = propose_episodic(query)
@@ -151,6 +163,18 @@ def _memory_proposal(
             "trace_id": trace_id,
         }
     return None
+
+
+# Describe the pending save in one short line for the prompt. Only the value the
+# user themselves stated is echoed, so nothing new is disclosed to the model.
+def _proposal_summary(proposal: dict[str, Any] | None) -> str:
+    if proposal is None:
+        return ""
+    for field in ("content", "value", "canonical_name", "name", "title", "label"):
+        value = proposal.get(field)
+        if isinstance(value, str) and value.strip():
+            return value.strip()[:200]
+    return ""
 
 
 class ConversationService:
@@ -863,6 +887,18 @@ class ConversationService:
                 query_embedding=query_embedding,
             )
 
+        # Decided before the answer is generated, not after, so the model can be
+        # told what is actually about to happen. Told only "you cannot save", it
+        # answered "your personal memory has been updated" - true-sounding,
+        # passive, and wrong. A blanket prohibition invites that; a statement of
+        # the real save state leaves nothing to route around. The proposal is
+        # pure keyword logic over the query, so computing it here costs nothing.
+        proposal = _memory_proposal(query, conversation_id, trace_id)
+        context["memory_save"] = {
+            "offered": proposal is not None,
+            "value": _proposal_summary(proposal),
+        }
+
         initial_state = AgentState(
             conversation_id=conversation_id,
             user_id=user_id,
@@ -897,11 +933,8 @@ class ConversationService:
             history,
             metadata,
         )
-        proposal = _memory_proposal(
-            query,
-            initial_state.conversation_id,
-            trace_id,
-        )
+        # Emitted after the turn is saved, as before; it was decided before the
+        # answer was generated so the reply could describe it honestly.
         if proposal is not None:
             yield {
                 "event": "memory_proposal",

@@ -71,6 +71,34 @@ _KNOWLEDGE_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+# Every proposer above captures one narrow, pre-agreed shape: a name, a style, a
+# locality, an interest, a person, a workflow, a titled reference. Nothing
+# captured an ordinary fact about the user's life, so "Remember that my dog is
+# called Biscuit." matched no rule and reached no store while the assistant said
+# it had made a note. This is the catch-all for an explicit save request, and it
+# runs only after every structured proposer has declined, so a dentist is still
+# an entity and a workflow is still a procedure.
+_SEMANTIC_FACT_PATTERN = re.compile(
+    r"\b(?:please\s+)?(?:"
+    r"remember|memorize|memorise|note|make\s+a\s+note|"
+    r"keep\s+in\s+mind|bear\s+in\s+mind|don'?t\s+forget|do\s+not\s+forget"
+    r")(?:\s+this|\s+that|\s+it)?\s*[:,-]?\s+(?:that\s+)?(.{1,500})",
+    re.IGNORECASE | re.DOTALL,
+)
+
+# "Do you remember my dog's name?" is a recall request, not a save request, and
+# the trigger word alone cannot tell them apart. A first- or second-person
+# auxiliary in front of the sentence is what marks the question.
+_FACT_QUESTION_GUARD = re.compile(
+    r"\b(?:do|does|did|can|could|would|will|shall|should|have|has)\s+"
+    r"(?:you|we|i)\b",
+    re.IGNORECASE,
+)
+
+_FACT_MIN_CHARS = 4
+_FACT_MAX_CHARS = 400
+
+
 # Unlike the proposers above, this one fires without an explicit "remember"
 # trigger: it proactively notices that the user narrated something they did.
 # Precision matters more than recall - a noisy proposal is an annoyance - so the
@@ -195,6 +223,33 @@ def propose_knowledge(query: str) -> dict[str, str] | None:
     if not title or not content:
         return None
     return {"title": title, "content": content}
+
+
+# Propose an ordinary stated fact as semantic memory when the user explicitly
+# asks for it to be remembered and no narrower proposer above claimed it. Only
+# the fact itself is kept, not the instruction wrapping it, so the stored text
+# reads as something true about the user rather than as a command.
+def propose_semantic_fact(query: str) -> str | None:
+    # A question that happens to contain "remember" is asking to recall, and
+    # answering it by proposing a new memory would be exactly backwards.
+    if _FACT_QUESTION_GUARD.search(query):
+        return None
+    match = _SEMANTIC_FACT_PATTERN.search(query)
+    if match is None:
+        return None
+    fact = _first_sentence(match.group(1)).strip().strip('"').strip()
+    if fact.endswith("?"):
+        return None
+    if not _FACT_MIN_CHARS <= len(fact) <= _FACT_MAX_CHARS:
+        return None
+    return fact
+
+
+# Return the first complete sentence of `text`, so a trailing second thought
+# does not become part of the stored fact.
+def _first_sentence(text: str) -> str:
+    boundary = re.search(r"[.!?](?:\s|$)", text)
+    return text[: boundary.start() + 1] if boundary else text
 
 
 # Proactively propose a narrated first-person event as episodic memory, keeping

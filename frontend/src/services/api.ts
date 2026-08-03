@@ -431,6 +431,13 @@ export interface EpisodicProposal {
   trace_id: string;
 }
 
+export interface SemanticFactProposal {
+  kind: 'semantic_fact';
+  content: string;
+  conversation_id: string;
+  trace_id: string;
+}
+
 export type MemoryProposal =
   | PreferredNameProposal
   | ResponseStyleProposal
@@ -439,7 +446,8 @@ export type MemoryProposal =
   | EntityProposal
   | ProcedureProposal
   | KnowledgeProposal
-  | EpisodicProposal;
+  | EpisodicProposal
+  | SemanticFactProposal;
 
 export type ChatStreamUpdate =
   | { type: 'start'; content: string }
@@ -940,6 +948,30 @@ export function approveProcedure(userId: string, proposal: ProcedureProposal) {
 export function approveEpisodic(userId: string, proposal: EpisodicProposal) {
   return apiRequest<MemoryItem>(
     `/api/v1/memory/${encodeURIComponent(userId)}/episodic`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        content: proposal.content,
+        purpose: 'chat_approval',
+        metadata: {
+          source: 'chat_approval',
+          source_conversation_id: proposal.conversation_id,
+          source_trace_id: proposal.trace_id,
+        },
+      }),
+    },
+  )
+}
+
+// Approve an ordinary stated fact the user explicitly asked to be remembered.
+// It is saved as semantic memory so later turns can recall it by meaning rather
+// than by the words the user happened to use.
+export function approveSemanticFact(
+  userId: string,
+  proposal: SemanticFactProposal,
+) {
+  return apiRequest<MemoryItem>(
+    `/api/v1/memory/${encodeURIComponent(userId)}/semantic`,
     {
       method: 'POST',
       body: JSON.stringify({
