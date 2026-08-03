@@ -24,15 +24,19 @@ accounts, neither failure ours:
 Renaming a node never produced address records in either tailnet, which is a
 second, separate quirk. Do not spend more time here without new evidence.
 
-The current URL is a `trycloudflare.com` quick tunnel started by hand:
+The current URL is a `trycloudflare.com` quick tunnel. Restore it with:
 
 ```bash
-cloudflared tunnel --url http://localhost:8080
+bash scripts/start-tunnel.sh
 ```
 
-**It does not survive a reboot and the hostname is random every time.** When it
-changes, `DISCOVERY_CALENDAR_BASE_URL` in `.env` must be re-pointed or every
-calendar link already sent stops resolving.
+which waits for the address, prints it, and rewrites
+`DISCOVERY_CALENDAR_BASE_URL` to match.
+
+**It does not survive a reboot and the hostname is random every time**, so every
+calendar link already sent stops resolving when it changes. The script handles
+the rewrite; recreate `backend` and `discovery-worker` afterwards so they read
+the new value.
 
 The fix is a named tunnel, which needs a domain on Cloudflare (~$10/yr). That
 buys a stable hostname and installation as a Windows service, so it starts

@@ -4,7 +4,7 @@
 #   bash scripts/deploy.sh              # pull, then rebuild what changed
 #   bash scripts/deploy.sh --no-pull    # deploy the working tree as it stands
 #
-# Written to be run over Tailscale SSH from anywhere:
+# Written to be run over any remote shell:
 #
 #   ssh ani-desktop 'cd /path/to/AniOS && bash scripts/deploy.sh'
 #

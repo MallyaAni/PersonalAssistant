@@ -1037,10 +1037,15 @@ return 429 with `Retry-After`. The operator-facing settings are
 For production-style local acceptance, use `http://localhost:8080`. The
 loopback-only Nginx gateway serves the compiled React application and proxies
 `/api` to FastAPI on the same origin, including SSE, uploads, downloads, and
-long-running image/presentation requests. Remote HTTPS ingress is not yet
-configured. A future Tailscale Funnel should publish only this gateway; friends
-do not install Tailscale, and PostgreSQL, Redis, vLLM, ComfyUI, renderers, and
-MCP ports remain private. The same Docker Compose gateway is portable to macOS;
+long-running image/presentation requests. Remote HTTPS ingress is a Cloudflare
+tunnel publishing only this gateway; PostgreSQL, Redis, vLLM, ComfyUI,
+renderers, and MCP ports stay private and friends install nothing.
+
+Tailscale Funnel was tried first and abandoned — see
+[NEXT_SESSION.md](NEXT_SESSION.md) for what failed and why retrying it needs
+new evidence. The tunnel in use is currently a quick tunnel whose hostname
+changes on every restart; a named tunnel needs a domain and would also install
+as a service so it survives a reboot. The same Docker Compose gateway is portable to macOS;
 follow the database/artifact/encryption-key migration procedure before moving
 hosts.
 

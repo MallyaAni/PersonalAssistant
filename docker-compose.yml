@@ -502,7 +502,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.gateway
     container_name: anios_gateway
-    # Funnel targets one loopback-only port; no LAN/public socket is opened.
+    # The tunnel targets one loopback-only port; no LAN or public socket is
+    # opened, so ingress cannot reach anything the gateway does not serve.
     ports:
       - "127.0.0.1:${ANIOS_GATEWAY_PORT:-8080}:8080"
     depends_on:
