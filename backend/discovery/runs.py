@@ -211,6 +211,35 @@ class DiscoveryRunRepository:
     async def mark_cancelled(self, run_id: str, worker_id: str) -> None:
         await self._finish(run_id, worker_id, "cancelled", "cancelled")
 
+    # Read recent sweeps and what each one found.
+    #
+    # Every sweep already persists its digest; nothing could read it back, so a
+    # scheduled run's recommendations existed only as a message that had not
+    # been sent. That made the whole loop unobservable: the one place the
+    # results could be seen was the delivery that does not work yet.
+    async def recent_runs(
+        self, user_id: str, limit: int = 10
+    ) -> tuple[dict[str, Any], ...]:
+        stmt = (
+            select(DiscoveryRun)
+            .where(DiscoveryRun.user_id == user_id)
+            .order_by(DiscoveryRun.scheduled_for.desc())
+            .limit(max(1, min(limit, 50)))
+        )
+        rows = (await self.session.execute(stmt)).scalars().all()
+        return tuple(
+            {
+                "id": str(row.id),
+                "status": row.status,
+                "scheduled_for": row.scheduled_for,
+                "completed_at": row.completed_at,
+                "delivered_at": row.delivered_at,
+                "error_code": row.error_code,
+                "digest_json": row.digest_json,
+            }
+            for row in rows
+        )
+
     async def request_cancel(self, user_id: str, run_id: str) -> bool:
         stmt = (
             select(DiscoveryRun)

@@ -2107,3 +2107,37 @@ rows referencing them. The two changes above exist so this cannot recur.
   throughout.
 - 874 backend tests pass; Ruff, Black and MyPy are clean; the frontend builds;
   15 diagrams render and check as synchronized.
+
+## 2026-08-03 — Scout: a dismissal means the thing it names, and findings are readable
+
+- Dismissals are keyed on the happening's own identity (`source_id` +
+  `external_id`, the digest novelty already uses) rather than its cleaned
+  title. The title path let a real page title collapse to a common word and
+  become the suppression key: after dismissing one county's trails page, the
+  stored key was `trails`, so any later find whose cleaned title was also
+  "Trails" — another county's listing, never shown before — was dropped without
+  a trace. Identity digests cannot collide that way, and the rule is uniform
+  rather than a special case for titles that look too generic.
+- The familiarity radius moved from `0.16` to the near-duplicate bound `0.08`.
+  It was chosen to suppress a whole family on the reasoning that the user had
+  asked to see less of that kind of thing. They had not: the control says "I
+  know <this thing>" and names one item. Its remaining job is narrower and
+  real — the same happening carried by a second source has a different
+  `external_id` — which is exactly what `0.08` already means elsewhere.
+  Measured against the live embedder, the old radius was not in fact hiding
+  the trail category (nearest real trail find sat at `0.3156`), so this is a
+  correction of intent and of the collision risk, not of an active mass-hide.
+- Dismissals made before this change still suppress, through the legacy title
+  key, so nothing anyone had already hidden comes back.
+- A sweep now reports how many finds it dropped as already known, and the
+  dismiss control shows the item's full name instead of truncating it at 26
+  characters. A wrong dismissal was previously undiscoverable: the panel lists
+  what was dismissed, never what those dismissals removed, and a truncated
+  label reads as a category.
+- `GET /discovery/{user}/runs` returns recent sweeps and what each one found.
+  Every run already persisted its digest and nothing could read it back, so a
+  scheduled sweep's recommendations were reachable only through a delivery that
+  is still switched off — the one loop that runs unattended was the one loop
+  nobody could check. The panel shows the last three sweeps, each find with its
+  date, place and link, and states plainly whether it was sent.
+- 877 backend tests pass; Ruff, Black and MyPy are clean; the frontend builds.

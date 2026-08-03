@@ -7,13 +7,22 @@ worthless to them, and a digest full of those is a digest that gets ignored.
 
 Two properties carry the design:
 
-- **dismissing one thing suppresses the family.** Marking a trail directory as
-  known is only useful if the next four like it are also gone, so suppression is
-  by embedding proximity rather than by identity;
+- **a dismissal means the thing it names.** The control says "I know <this
+  happening>", so it records that happening's own identity — the same
+  `source_id`/`external_id` digest novelty uses. It previously keyed on the
+  cleaned title, which let a real page title collapse to a common word and
+  become the key: after dismissing one county's trails page, any later find
+  whose cleaned title was also "Trails" was dropped, including listings from
+  other counties that had never been shown. Similarity still runs, but only far
+  enough to catch the same happening carried by a second source;
 - **familiarity is scoped to a place.** Someone who knows every trail in
   Arlington knows none in Denver. A global list would make the agent
   progressively useless exactly when travel makes it most valuable, so the same
   happening can be noise at home and a find away from it.
+
+Suppression is also counted and reported. A hide the user did not intend is
+otherwise undiscoverable: the panel lists what was dismissed, never what those
+dismissals removed from this sweep.
 """
 
 import hashlib
@@ -23,17 +32,27 @@ from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.discovery.novelty import EMBEDDING_DIMENSIONS, ScoredCandidate
+from backend.discovery.novelty import (
+    EMBEDDING_DIMENSIONS,
+    NEAR_DUPLICATE_DISTANCE,
+    ScoredCandidate,
+)
 from backend.discovery.summarize import clean_title
 from backend.discovery.types import label_digest, normalize_label
 from backend.models.discovery_familiar import DiscoveryFamiliarItem
 
-# Wider than the near-duplicate threshold, and deliberately so. Novelty asks
-# "is this the same event", where a false positive silently hides something new.
-# Familiarity asks "is this the same kind of thing I already know", where the
-# user has explicitly asked to see less of it, so a broader sweep is what they
-# requested rather than a risk taken on their behalf.
-FAMILIAR_DISTANCE = 0.16
+# The same happening, listed by a second source. Not "the same kind of thing":
+# a dismissal is keyed on the happening's own identity, and this exists only
+# because that identity is per-source, so one 5K carried by both a parks feed
+# and a running club has two external ids and would otherwise return.
+#
+# It was 0.16, chosen to suppress a whole family on the reasoning that the user
+# had asked to see less of it. They had not: the control says "I know <this
+# thing>" and names one item. A radius that wide silently answers a question
+# nobody was asked, and a wrong hide is invisible by construction — the list
+# shows what was dismissed, never what the dismissal cost. This is the bound
+# novelty already uses for "same happening, relisted", which is the actual job.
+FAMILIAR_DISTANCE = NEAR_DUPLICATE_DISTANCE
 
 
 # Identify a dismissed thing by its normalized title, so dismissing the same
@@ -71,6 +90,7 @@ class FamiliarItemRepository:
         label: str,
         embedding: list[float] | None,
         now: datetime | None = None,
+        item_digest: str | None = None,
     ) -> None:
         vector = embedding
         if vector is not None and len(vector) != EMBEDDING_DIMENSIONS:
@@ -80,7 +100,14 @@ class FamiliarItemRepository:
         stmt = insert(DiscoveryFamiliarItem).values(
             user_id=user_id,
             locality_digest=locality_scope(locality_label),
-            item_digest=familiar_digest(label),
+            # The happening's own identity when the caller has it. Keying on the
+            # title instead meant a title that cleaned down to a common word
+            # became the key: dismissing one county's page left "trails" as the
+            # suppression key, so any later find whose cleaned title was also
+            # "Trails" — a different county, a different park authority, a
+            # listing never seen before — was dropped without a trace. The same
+            # identity novelty already uses cannot collide that way.
+            item_digest=item_digest or familiar_digest(label),
             label=clean_title(label),
             embedding=vector,
             created_at=now or datetime.now(UTC),
@@ -169,17 +196,36 @@ class FamiliarityFilter:
         locality_label: str | None,
         candidates: tuple[ScoredCandidate, ...],
     ) -> tuple[ScoredCandidate, ...]:
+        surviving, _ = await self.filter_known(user_id, locality_label, candidates)
+        return surviving
+
+    # Drop what the user knows and report how many went, so a suppression the
+    # user did not intend is visible instead of being inferred from an
+    # unexpectedly thin digest.
+    async def filter_known(
+        self,
+        user_id: str,
+        locality_label: str | None,
+        candidates: tuple[ScoredCandidate, ...],
+    ) -> tuple[tuple[ScoredCandidate, ...], int]:
         if not candidates:
-            return ()
+            return (), 0
         # One query for the exact matches, then similarity only for survivors.
         known = await self.repository.known_digests(user_id, locality_label)
         surviving: list[ScoredCandidate] = []
+        hidden = 0
         for candidate in candidates:
-            if familiar_digest(candidate.event.title) in known:
+            # The happening's own identity, with the legacy title key still
+            # honoured so dismissals made before this change keep working.
+            if candidate.digest in known or familiar_digest(candidate.event.title) in (
+                known
+            ):
+                hidden += 1
                 continue
             if candidate.embedding is not None and await self.repository.is_familiar(
                 user_id, locality_label, candidate.embedding
             ):
+                hidden += 1
                 continue
             surviving.append(candidate)
-        return tuple(surviving)
+        return tuple(surviving), hidden

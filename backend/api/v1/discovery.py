@@ -29,19 +29,20 @@ from backend.discovery.calendar import (
 )
 from backend.discovery.delivery import describe_recipients
 from backend.discovery.digest import render_message
-from backend.discovery.errors import DiscoveryProfileLimitError
+from backend.discovery.errors import DiscoveryError, DiscoveryProfileLimitError
 from backend.discovery.events import MAX_URL_CHARS
 from backend.discovery.locating import (
     COARSE_DECIMALS,
     LocationLookupError,
     resolve_place,
 )
-from backend.discovery.novelty import ScoredCandidate
+from backend.discovery.novelty import ScoredCandidate, item_digest
 from backend.discovery.reachability import (
     calendar_base_url,
     is_reachable_from_other_devices,
 )
 from backend.discovery.relevance import RankedCandidate
+from backend.discovery.runner import events_from_digest
 from backend.discovery.schedule import Cadence
 from backend.discovery.types import (
     MAX_LABEL_CHARS,
@@ -379,6 +380,10 @@ async def run_sweep(
                 "url": item.event.url,
                 "score": round(item.score, 4),
                 "matched_interest": item.matched_interest,
+                # Identity of the happening itself. The UI sends this back when
+                # the user says they already know it, so the dismissal records
+                # that event rather than whatever its title happened to be.
+                "item_digest": item.candidate.digest,
                 # Only a dated event can become a calendar file. Offering a
                 # link that would fail is worse than offering none.
                 "calendar_path": (
@@ -391,6 +396,9 @@ async def run_sweep(
         ],
         "candidate_count": result.candidate_count,
         "novel_count": result.novel_count,
+        # Named so a suppression the user did not intend is visible rather
+        # than showing up only as an unexpectedly thin digest.
+        "hidden_count": result.hidden_count,
         "requests_spent": result.requests_spent,
         "failed_sources": list(result.failed_sources),
     }
@@ -655,6 +663,10 @@ class KnownRequest(BaseModel):
     # rehearsal persists nothing and dismissing something you just saw in one is
     # the most likely moment to want this.
     label: str = Field(min_length=1, max_length=MAX_LABEL_CHARS * 3)
+    # The happening's own identity, as the sweep reported it. Optional so a
+    # dismissal still works without one, but supplying it is what keeps the
+    # record about the thing named rather than about its title text.
+    item_digest: str | None = Field(default=None, min_length=64, max_length=64)
 
 
 # Record that the user already knows this, here.
@@ -683,7 +695,11 @@ async def mark_known(
         vector = None
 
     await familiar.remember_known(
-        user_id, primary.label if primary else None, label, vector
+        user_id,
+        primary.label if primary else None,
+        label,
+        vector,
+        item_digest=body.item_digest,
     )
     return {
         "label": label,
@@ -692,6 +708,66 @@ async def mark_known(
             user_id, primary.label if primary else None
         ),
     }
+
+
+# What Scout has actually found, sweep by sweep.
+#
+# Each run already stored its digest and nothing could read it back, so a
+# scheduled sweep's recommendations were reachable only through a delivery that
+# is still switched off. Reading them here makes the loop observable without
+# depending on egress at all — and a digest worth sending is worth being able to
+# look at.
+@router.get("/runs")
+async def list_runs(
+    user_id: UserId,
+    runs: DependencyDiscoveryRuns,
+    limit: int = 10,
+) -> dict[str, object]:
+    records = await runs.recent_runs(user_id, limit)
+    history: list[dict[str, object]] = []
+    for record in records:
+        digest = record.get("digest_json")
+        found: list[dict[str, object]] = []
+        if isinstance(digest, str) and digest:
+            try:
+                for event in events_from_digest(digest):
+                    found.append(
+                        {
+                            "title": event.title,
+                            "starts_at": (
+                                event.starts_at.isoformat() if event.starts_at else None
+                            ),
+                            "place": event.place,
+                            "url": event.url,
+                            "summary": event.summary,
+                            "item_digest": item_digest(
+                                event.source_id, event.external_id
+                            ),
+                            "calendar_path": (
+                                f"/api/v1/discovery/{user_id}/calendar/"
+                                f"{item_digest(event.source_id, event.external_id)}.ics"
+                                if event.starts_at is not None
+                                else None
+                            ),
+                        }
+                    )
+            except DiscoveryError:
+                # A digest written by an older format must not break the list.
+                found = []
+        history.append(
+            {
+                "id": record["id"],
+                "status": record["status"],
+                "scheduled_for": record["scheduled_for"],
+                "completed_at": record["completed_at"],
+                # Stated plainly: a sweep can succeed and still deliver nothing,
+                # which is the normal state while egress is off.
+                "delivered": record["delivered_at"] is not None,
+                "error_code": record["error_code"],
+                "found": found,
+            }
+        )
+    return {"runs": history}
 
 
 @router.get("/known")

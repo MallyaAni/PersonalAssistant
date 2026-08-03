@@ -2018,13 +2018,52 @@ export const resolveDiscoveryLocality = async (
     'Could not work out where that is.',
   );
 
+export interface DiscoveryFind {
+  title: string;
+  starts_at: string | null;
+  place?: string | null;
+  url?: string | null;
+  summary?: string | null;
+  // Identity of the happening itself, sent back when the user says they already
+  // know it so the dismissal records that event and not its title text.
+  item_digest?: string | null;
+  calendar_path?: string | null;
+}
+
 export interface SweepResult {
   message: string | null;
   committed: boolean;
-  selected: { title: string; starts_at: string | null }[];
+  selected: DiscoveryFind[];
   candidate_count: number;
   novel_count: number;
+  // How many finds were dropped as already known. Shown because a dismissal the
+  // user did not intend is otherwise invisible.
+  hidden_count?: number;
   requests_spent: number;
+}
+
+export interface DiscoveryRun {
+  id: string;
+  status: string;
+  scheduled_for: string;
+  completed_at: string | null;
+  delivered: boolean;
+  error_code: string | null;
+  found: DiscoveryFind[];
+}
+
+// Read what Scout actually found on each sweep. Every run already stored its
+// digest; nothing could read it back, so a scheduled sweep's recommendations
+// were reachable only through a delivery that is still switched off.
+export const getDiscoveryRuns = async (
+  userId: string,
+  limit = 10,
+): Promise<DiscoveryRun[]> => {
+  const payload = await readJson(
+    await authenticatedFetch(`${discoveryBase(userId)}/runs?limit=${limit}`),
+    'Could not load what Scout found.',
+  )
+  return payload.runs
 }
 
 // `commit: false` is a rehearsal — the whole pipeline runs and nothing is
@@ -2115,12 +2154,17 @@ export const deleteDiscoverySchedule = async (userId: string): Promise<void> => 
 export const markDiscoveryKnown = async (
   userId: string,
   label: string,
+  itemDigest?: string | null,
 ): Promise<{ label: string; locality: string | null; known_here: number }> =>
   readJson(
     await authenticatedFetch(`${discoveryBase(userId)}/known`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ label }),
+      // The happening's identity when the sweep supplied one. Without it the
+      // record falls back to the title, which is how a page called "Trails"
+      // once became a suppression key broad enough to hide other counties'
+      // listings the user had never seen.
+      body: JSON.stringify({ label, item_digest: itemDigest ?? null }),
     }),
     'Could not record that.',
   );

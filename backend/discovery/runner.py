@@ -63,6 +63,10 @@ class SweepResult:
     novel_count: int
     requests_spent: int
     failed_sources: tuple[str, ...]
+    # How many novel finds were dropped as already known. Reported because a
+    # wrong dismissal is otherwise undiscoverable: the panel lists what was
+    # dismissed, never what those dismissals removed from this sweep.
+    hidden_count: int = 0
 
     # The persisted form. Deliberately not the model's output: a digest is
     # assembled from typed records so a feed cannot inject text that later
@@ -96,6 +100,7 @@ class SweepResult:
                 ],
                 "candidate_count": self.candidate_count,
                 "novel_count": self.novel_count,
+                "hidden_count": self.hidden_count,
                 "failed_sources": list(self.failed_sources),
             },
             separators=(",", ":"),
@@ -207,7 +212,7 @@ class DiscoveryRunner:
         # Scoped to where the user currently is, so travelling to a new place
         # starts from nothing known and everything ordinary there is a find.
         primary = profile.active_locality
-        novel = await self.familiarity.unfamiliar(
+        novel, hidden_count = await self.familiarity.filter_known(
             user_id, primary.label if primary else None, novel
         )
 
@@ -246,6 +251,7 @@ class DiscoveryRunner:
             novel_count=len(novel),
             requests_spent=budget.spent,
             failed_sources=failed,
+            hidden_count=hidden_count,
         )
 
     # Rewrite each selection's title and summary into something a person can

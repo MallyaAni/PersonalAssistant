@@ -54,6 +54,24 @@ def _candidate(title: str, embedding: list[float] | None = None) -> ScoredCandid
     )
 
 
+# One candidate from a named source, so two listings can share a title while
+# remaining different happenings.
+def _candidate_from(source_id: str, title: str) -> ScoredCandidate:
+    return ScoredCandidate(
+        DiscoveredEvent(
+            source_id=source_id,
+            external_id=f"https://{source_id}.example.org/{title}",
+            title=title,
+            starts_at=None,
+            ends_at=None,
+            place=None,
+            url=f"https://{source_id}.example.org/{title}",
+            summary=None,
+        ),
+        None,
+    )
+
+
 async def _cleanup(user_id: str) -> None:
     async with AsyncSessionLocal() as session:
         await session.execute(
@@ -195,3 +213,82 @@ async def test_another_users_record_cannot_be_forgotten():
             assert await repo.count_known(owner, _HOME) == 1
     finally:
         await _cleanup(owner)
+
+
+# A dismissal means the thing it names. Keying on the cleaned title let a real
+# page title collapse to a common word and become the key: after dismissing one
+# county's trails page, any later find whose cleaned title was also "Trails" was
+# dropped — including other counties' listings the user had never been shown.
+@pytest.mark.asyncio
+async def test_a_dismissal_does_not_hide_a_different_thing_with_the_same_title():
+    user_id = f"fam_{uuid.uuid4().hex[:8]}"
+    try:
+        # Two different counties' pages, both titled "Trails" - which is what
+        # the CMS-name stripping actually produced on the live account.
+        arlington = _candidate_from("arlington", "Trails")
+        fairfax = _candidate_from("fairfax", "Trails")
+
+        async with AsyncSessionLocal() as session:
+            repository = FamiliarItemRepository(session)
+            await repository.remember_known(
+                user_id, _HOME, "Trails", None, item_digest=arlington.digest
+            )
+            surviving, hidden = await FamiliarityFilter(repository).filter_known(
+                user_id, _HOME, (arlington, fairfax)
+            )
+
+        # The dismissed one goes; the other county's listing survives.
+        assert hidden == 1
+        assert [item.event.source_id for item in surviving] == ["fairfax"]
+    finally:
+        await _cleanup(user_id)
+
+
+# Suppression is counted so a dismissal the user did not intend is visible. The
+# panel lists what was dismissed, never what those dismissals removed, so
+# without this a wrong hide can only be noticed as an unexplained thin digest.
+@pytest.mark.asyncio
+async def test_hidden_finds_are_counted():
+    user_id = f"fam_{uuid.uuid4().hex[:8]}"
+    try:
+        known = _candidate("Weekly farmers market")
+        fresh = _candidate("Night hike at Long Branch")
+        async with AsyncSessionLocal() as session:
+            repository = FamiliarItemRepository(session)
+            await repository.remember_known(
+                user_id,
+                _HOME,
+                known.event.title,
+                None,
+                item_digest=known.digest,
+            )
+            surviving, hidden = await FamiliarityFilter(repository).filter_known(
+                user_id, _HOME, (known, fresh)
+            )
+
+        assert hidden == 1
+        assert len(surviving) == 1
+    finally:
+        await _cleanup(user_id)
+
+
+# A dismissal recorded before identity keying still works, so the change does
+# not quietly resurrect everything anyone had already hidden.
+@pytest.mark.asyncio
+async def test_a_legacy_title_keyed_dismissal_still_suppresses():
+    user_id = f"fam_{uuid.uuid4().hex[:8]}"
+    try:
+        item = _candidate("Weekly farmers market")
+        async with AsyncSessionLocal() as session:
+            repository = FamiliarItemRepository(session)
+            # No identity supplied: the old title-hash path.
+            await repository.remember_known(user_id, _HOME, item.event.title, None)
+            surviving, hidden = await FamiliarityFilter(repository).filter_known(
+                user_id, _HOME, (item,)
+            )
+
+        assert familiar_digest(item.event.title) is not None
+        assert hidden == 1
+        assert surviving == ()
+    finally:
+        await _cleanup(user_id)

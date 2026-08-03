@@ -23,6 +23,7 @@ import {
   deleteDiscoveryTravelMode,
   getDiscoveryProfile,
   getDiscoveryKnown,
+  getDiscoveryRuns,
   getDiscoverySchedule,
   cancelSubscription,
   getDiscoverySources,
@@ -42,6 +43,7 @@ import {
   type DiscoveryInterest,
   type DiscoveryKnownItem,
   type DiscoveryLocality,
+  type DiscoveryRun,
   type DiscoverySchedule,
   type GuestSubscription,
   type DiscoverySource,
@@ -103,6 +105,10 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
   // are indistinguishable from a coordinate, so this asks once instead of
   // silently picking the answer that rewrites where someone lives.
   const [movedPrompt, setMovedPrompt] = useState('')
+  // What past sweeps found. Every run already stored this and nothing could
+  // read it back, so a scheduled sweep's recommendations were reachable only
+  // through a delivery that is still switched off.
+  const [runs, setRuns] = useState<DiscoveryRun[]>([])
   const [preview, setPreview] = useState<DigestPreview | null>(null)
   const [trial, setTrial] = useState<SweepResult | null>(null)
   const [subscription, setSubscription] = useState<GuestSubscription | null>(null)
@@ -113,12 +119,14 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
   const [weekday, setWeekday] = useState(4)
 
   const reload = useCallback(async () => {
-    const [profile, feeds, saved, familiar] = await Promise.all([
+    const [profile, feeds, saved, familiar, history] = await Promise.all([
       getDiscoveryProfile(userId),
       getDiscoverySources(userId),
       getDiscoverySchedule(userId),
       getDiscoveryKnown(userId),
+      getDiscoveryRuns(userId).catch(() => [] as DiscoveryRun[]),
     ])
+    setRuns(history)
     setInterests(profile.interests)
     setLocalities(profile.localities)
     setSources(feeds)
@@ -287,17 +295,23 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
       const result = await runDiscoverySweep(userId, true)
       setPreview(null)
       setTrial(result)
+      // The hidden count is stated rather than left to be inferred from a thin
+      // digest, because that is the only way a wrong dismissal is ever noticed.
+      const hidden = result.hidden_count
+        ? ` ${result.hidden_count} hidden as already known.`
+        : ''
       setNotice(
         `Read ${result.candidate_count} events, ${result.novel_count} new, ` +
-          `${result.selected.length} worth telling you about.`,
+          `${result.selected.length} worth telling you about.${hidden}`,
       )
     })
 
   // "I know this" is scoped to the current place, so the same dismissal does not
-  // follow the user somewhere they have never been.
-  const markKnown = (label: string) =>
+  // follow the user somewhere they have never been. It carries the happening's
+  // own identity, so it dismisses the thing named rather than its title text.
+  const markKnown = (label: string, itemDigest?: string | null) =>
     perform('known', async () => {
-      const result = await markDiscoveryKnown(userId, label)
+      const result = await markDiscoveryKnown(userId, label, itemDigest)
       setTrial(current =>
         current
           ? {
@@ -517,6 +531,82 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
               </button>
             </div>
           )}
+        </section>
+      )}
+
+      {/* What Scout actually found, sweep by sweep. Every run persisted its
+          digest and nothing could read it back, so the recommendations existed
+          only as a message that had not been sent — which made the one loop
+          that runs unattended the one loop nobody could check. */}
+      {runs.length > 0 && (
+        <section className="mb-5 rounded-2xl border border-black/[0.06] p-3">
+          <h4 className="text-xs font-semibold uppercase tracking-[0.08em] text-[#86868b]">
+            What Scout found
+          </h4>
+          <div className="mt-2 space-y-3">
+            {runs.slice(0, 3).map(run => (
+              <div key={run.id}>
+                <div className="flex flex-wrap items-baseline gap-x-2">
+                  <span className="text-xs font-medium text-[#1d1d1f]">
+                    {new Date(run.scheduled_for).toLocaleDateString()}
+                  </span>
+                  <span className="text-[11px] text-[#86868b]">
+                    {run.found.length} found
+                    {/* Said plainly: a sweep can succeed and send nothing,
+                        which is the normal state while sending is off. */}
+                    {run.delivered ? ' · sent' : ' · not sent'}
+                    {run.error_code ? ` · ${run.error_code}` : ''}
+                  </span>
+                </div>
+                {run.found.length === 0 ? (
+                  <p className="mt-1 text-[11px] text-[#86868b]">
+                    Nothing matched that week.
+                  </p>
+                ) : (
+                  <div className="mt-1 space-y-1">
+                    {run.found.slice(0, 5).map(item => (
+                      <div
+                        key={item.item_digest ?? item.title}
+                        className="flex items-start gap-2 rounded-xl bg-[#f5f5f7] px-3 py-2"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm text-[#1d1d1f]">
+                            {item.url ? (
+                              <a
+                                href={item.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-[#0071e3] hover:underline"
+                              >
+                                {item.title}
+                              </a>
+                            ) : (
+                              item.title
+                            )}
+                          </p>
+                          <p className="text-[11px] text-[#86868b]">
+                            {item.starts_at
+                              ? new Date(item.starts_at).toLocaleString()
+                              : 'No date given'}
+                            {item.place ? ` · ${item.place}` : ''}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => void markKnown(item.title, item.item_digest)}
+                          disabled={busy !== ''}
+                          aria-label={`I already know ${item.title}`}
+                          className="mt-0.5 shrink-0 text-[#86868b] hover:text-[#b25e00] disabled:opacity-40"
+                          title={`Stop showing "${item.title}" around here`}
+                        >
+                          <EyeOff size={13} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </section>
       )}
 
@@ -920,14 +1010,16 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
             <div className="mt-3 flex flex-wrap gap-1.5">
               {trial.selected.map(item => (
                 <button
-                  key={item.title}
-                  onClick={() => void markKnown(item.title)}
+                  key={item.item_digest ?? item.title}
+                  onClick={() => void markKnown(item.title, item.item_digest)}
                   disabled={busy !== ''}
-                  title={`Stop showing things like "${item.title}" around here`}
-                  className="flex items-center gap-1 rounded-full border border-black/[0.08] px-2.5 py-1 text-[11px] text-[#6e6e73] hover:border-[#b25e00] hover:text-[#b25e00] disabled:opacity-40"
+                  title={`Stop showing "${item.title}" around here`}
+                  className="flex items-center gap-1 rounded-full border border-black/[0.08] px-2.5 py-1 text-left text-[11px] text-[#6e6e73] hover:border-[#b25e00] hover:text-[#b25e00] disabled:opacity-40"
                 >
-                  <EyeOff size={11} />
-                  I know {item.title.length > 26 ? `${item.title.slice(0, 26)}…` : item.title}
+                  <EyeOff size={11} className="shrink-0" />
+                  {/* The full name, because this dismisses exactly this thing
+                      and a truncated one reads as a category. */}
+                  I know {item.title}
                 </button>
               ))}
             </div>
