@@ -264,8 +264,20 @@ def validate_browser_origin(request: Request) -> None:
         for value in settings.AUTH_TRUSTED_ORIGINS.split(",")
         if value.strip()
     }
-    request_origin = f"{request.url.scheme}://{request.headers.get('host', '')}"
-    if origin.rstrip("/") not in trusted | {request_origin.rstrip("/")}:
+    # Behind TLS termination the app sees plain HTTP, so the scheme it observes
+    # is the proxy's hop rather than the browser's. Comparing that against an
+    # Origin of "https://host" fails on the scheme alone and rejects a
+    # same-origin request — which is exactly what a browser sends. Every
+    # HTTPS ingress hits this: the gateway, a tunnel, anything in front.
+    #
+    # Only the scheme is taken from the header, and only to compare against the
+    # request's own host. A forged value cannot introduce a new trusted origin,
+    # because the host still has to match the one being served.
+    forwarded_proto = request.headers.get("x-forwarded-proto", "")
+    scheme = forwarded_proto.split(",")[0].strip() or request.url.scheme
+    host = request.headers.get("host", "")
+    same_origin = {f"{scheme}://{host}".rstrip("/"), f"https://{host}".rstrip("/")}
+    if origin.rstrip("/") not in trusted | same_origin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Request origin is not trusted",
