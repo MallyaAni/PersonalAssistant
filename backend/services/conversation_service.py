@@ -24,7 +24,7 @@ from backend.core.interfaces import (
     SearchProvider,
 )
 from backend.core.llm import LLMClient
-from backend.discovery.service import DiscoveryProfileService, render_profile_context
+from backend.discovery.service import DiscoveryProfileService
 from backend.mcp.invocation import MCPInvocationError
 from backend.memory.coordinator import MemoryCoordinatorAgent
 from backend.memory.proposals import (
@@ -833,15 +833,15 @@ class ConversationService:
             "episodic": episodic,
             "semantic": semantic,
         }
-        # The assistant should already know what the user likes and where they
-        # live, so an ordinary turn can answer from the same approved profile a
-        # scheduled discovery run reads.
-        if self.discovery_profile is not None:
-            discovery = render_profile_context(
-                await self.discovery_profile.get_profile(user_id)
-            )
-            if discovery:
-                context["discovery"] = discovery
+        # Scout's profile is deliberately not added here. It was, on the
+        # reasoning that an ordinary turn may as well know what the user likes
+        # — but a standing list of interests with strengths in every prompt is
+        # a thumb on the scale for all of them. Unrelated questions came back
+        # bent toward hiking because hiking was sitting in the context.
+        #
+        # What the assistant should know about someone belongs in memory, which
+        # is retrieved per question and only when it is relevant. Scout's
+        # profile exists to steer a scheduled sweep, not conversation.
         async for retrieval_event in self._stream_optional_context(
             context,
             user_id,

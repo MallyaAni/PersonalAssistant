@@ -92,3 +92,18 @@ def test_every_outbound_caller_uses_the_shared_gate():
     ]
 
     assert duplicates == []
+
+
+def test_scout_does_not_season_ordinary_conversation():
+    # Scout's profile — interests with strengths, and a home locality — was
+    # added to every chat turn on the reasoning that the assistant may as well
+    # know what someone likes. In practice a standing list of interests in
+    # every prompt is a thumb on the scale for all of them, and unrelated
+    # questions came back bent toward whatever was in it.
+    #
+    # What the assistant should know about a person belongs in memory, which is
+    # retrieved per question and only when relevant.
+    source = (BACKEND / "services" / "conversation_service.py").read_text(
+        encoding="utf-8"
+    )
+    assert "render_profile_context(" not in source
