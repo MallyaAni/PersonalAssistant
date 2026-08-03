@@ -367,7 +367,17 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
       setNotice('Schedule turned off. It will only run when you ask.')
     })
 
-  const ready = Boolean(savedPlace) && interests.length > 0 && sources.length > 0
+  // A sweep needs somewhere to look and something to look for. It does not need
+  // a feed: search enumerates events from the place and interests alone, and
+  // the runner treats feeds and search as independent contributors. Requiring
+  // one here left "Look now" permanently dead for an account with a place, two
+  // interests and no feeds - which a rehearsal proved finds real local events -
+  // while "Try it", the same pipeline one flag apart, stayed enabled.
+  const ready = Boolean(savedPlace) && interests.length > 0
+  const missing = [
+    savedPlace ? '' : 'a place',
+    interests.length > 0 ? '' : 'at least one interest',
+  ].filter(Boolean)
 
   return (
     <div className="mt-5 border-t border-black/[0.05] pt-5">
@@ -932,9 +942,17 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
           </p>
         </div>
       )}
+      {/* Name what is actually missing. "Needs a place, an interest and a feed"
+          left someone holding two of the three with no way to tell which. */}
       {!ready && (
         <p className="mt-2 text-[11px] text-[#86868b]">
-          Needs a place, at least one interest, and at least one feed.
+          Needs {missing.join(' and ')} before it can look.
+        </p>
+      )}
+      {ready && sources.length === 0 && savedPlace && (
+        <p className="mt-2 text-[11px] text-[#86868b]">
+          Scout will search the web around {describePlace(savedPlace)}. Adding a
+          feed gives it venue calendars with proper start times too.
         </p>
       )}
     </div>
