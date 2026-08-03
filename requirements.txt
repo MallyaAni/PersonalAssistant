@@ -14,7 +14,11 @@ Pillow>=11.0.0
 python-multipart>=0.0.20
 numpy>=2.0.0
 onnxruntime>=1.20.0
-mcp>=1.0.0
+# Capped below 2.0: it removes mcp.server.fastmcp, which every built-in server
+# and the local-capabilities sidecar import. The range was open, so an image
+# rebuilt after that release silently lost web search and both stdio servers
+# while the host venv kept working on 1.x and the tests still passed.
+mcp>=1.0.0,<2.0.0
 redis>=5.0.0
 google-adk==2.5.0
 argon2-cffi>=23.1.0
