@@ -10,6 +10,7 @@ from backend.presentations.layout import (
     required_height,
 )
 from backend.presentations.types import (
+    SLIDE_WIDTH,
     ChartElement,
     ChartSeries,
     DeckSpec,
@@ -42,6 +43,19 @@ _KEY_MESSAGE_TOP = 6.55
 _KEY_MESSAGE_HEIGHT = 0.5
 _CONTENT_FLOOR = 7.05
 _MIN_CONTENT_HEIGHT = 1.0
+# The centred divider block. Its points are narrower and quieter than a bullets
+# slide's, because on a section slide they preview what follows rather than
+# carrying the argument themselves.
+_SECTION_CENTER_Y = 2.82
+_SECTION_PURPOSE_GAP = 0.24
+_SECTION_POINTS_GAP = 0.34
+_SECTION_POINT_WIDTH = 9.0
+_SECTION_POINT_FONT = 15
+_SECTION_POINT_FONT_MIN = 11
+_SECTION_POINT_GAP = 0.1
+# The rule shape sits 0.45 above the title, so the block can never start higher
+# than this without leaving the slide.
+_SECTION_TOP_MIN = 0.62
 
 # The shapes a slide may take. Grammar-constrained decoding restricts the model
 # to exactly these, so an unknown layout is unrepresentable rather than caught.
@@ -405,9 +419,48 @@ def _section_elements(
 ) -> list[SlideElement]:
     title_size = fit_font_size(planned.title, 10.5, 1.9, 44, 28)
     title_height = required_height(planned.title, 10.5, title_size)
-    title_y = 2.55 - (title_height / 2)
     purpose_height = required_height(planned.purpose, 9.0, 16)
-    return [
+    # Every slide is planned with two to four points, and this layout used to
+    # drop all of them: a section slide rendered a title and a purpose and
+    # nothing else, which is how a five-slide deck came back with three blank
+    # ones. A divider is still a divider with its points beneath it, so they are
+    # carried rather than discarded, and no planned content can vanish silently.
+    points = [point.strip() for point in planned.points if point.strip()]
+    head_height = title_height + _SECTION_PURPOSE_GAP + purpose_height
+    # A long title, a wrapping purpose, and four long points can outgrow the
+    # slide. The font is fitted against the space left when the block starts at
+    # its highest permitted position, so the worst case still fits rather than
+    # centring itself off the top edge.
+    points_available = max(
+        _CONTENT_FLOOR - (_SECTION_TOP_MIN + head_height + _SECTION_POINTS_GAP),
+        _MIN_CONTENT_HEIGHT,
+    )
+    point_size = (
+        fit_stack_font_size(
+            points,
+            _SECTION_POINT_WIDTH,
+            points_available,
+            _SECTION_POINT_FONT,
+            _SECTION_POINT_FONT_MIN,
+            _SECTION_POINT_GAP,
+        )
+        if points
+        else _SECTION_POINT_FONT
+    )
+    point_heights = [
+        required_height(point, _SECTION_POINT_WIDTH, point_size) for point in points
+    ]
+    points_height = sum(point_heights) + _SECTION_POINT_GAP * max(len(points) - 1, 0)
+
+    block_height = head_height
+    if points:
+        block_height += _SECTION_POINTS_GAP + points_height
+    # Centring the whole block keeps a divider that carries no points sitting
+    # exactly where it always did; the clamp keeps the rule above it on-slide.
+    title_y = max(_SECTION_TOP_MIN, _SECTION_CENTER_Y - (block_height / 2))
+    purpose_y = title_y + title_height + _SECTION_PURPOSE_GAP
+
+    elements: list[SlideElement] = [
         ShapeElement(
             element_id=f"{slide_id}_rule",
             shape="roundRect",
@@ -435,7 +488,7 @@ def _section_elements(
             element_id=f"{slide_id}_purpose",
             text=planned.purpose,
             x=2.15,
-            y=title_y + title_height + 0.24,
+            y=purpose_y,
             w=9.0,
             h=purpose_height,
             font_size=16,
@@ -443,6 +496,26 @@ def _section_elements(
             align="center",
         ),
     ]
+
+    point_y = purpose_y + purpose_height + _SECTION_POINTS_GAP
+    for index, (point, height) in enumerate(
+        zip(points, point_heights, strict=True), start=1
+    ):
+        elements.append(
+            TextElement(
+                element_id=f"{slide_id}_point_{index:02d}",
+                text=point,
+                x=(SLIDE_WIDTH - _SECTION_POINT_WIDTH) / 2,
+                y=point_y,
+                w=_SECTION_POINT_WIDTH,
+                h=height,
+                font_size=int(point_size),
+                color=theme.text_color,
+                align="center",
+            )
+        )
+        point_y += height + _SECTION_POINT_GAP
+    return elements
 
 
 # One number carried large enough to be the point of the slide, with its

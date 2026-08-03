@@ -175,10 +175,31 @@ def test_each_layout_produces_its_own_elements():
     assert "stat_value" in ids["statistic"]
     assert "quote" in ids["quote"]
     assert any(name.startswith("column_") for name in ids["comparison"])
+    # The rule is what makes a divider read as a divider; it keeps that while
+    # still carrying its points, which it used to discard.
     assert "rule" in ids["section"]
-    # A section divider is a divider: it carries no bulleted list.
-    assert not any("point_" in name for name in ids["section"])
     assert ids["bullets"] != ids["statistic"] != ids["quote"]
+
+
+# Every slide is planned with two to four points and this layout rendered none
+# of them, so a section slide came back holding a title and a purpose and
+# nothing else - three of five slides in one real deck. No layout may silently
+# discard planned content.
+def test_section_slide_renders_its_points_instead_of_dropping_them():
+    theme = default_theme()
+    planned = _slide(
+        layout="section",
+        points=["Kennedy set the goal in 1961", "NASA grew to 400,000 people"],
+    )
+
+    spec = compile_slide(planned, "slide_section", theme)
+
+    rendered = [e.text for e in spec.elements if isinstance(e, TextElement)]
+    for point in planned.points:
+        assert point in rendered
+    # It is still a divider, not a bullets slide: no markers, and centred.
+    assert not any("marker" in e.element_id for e in spec.elements)
+    assert all(e.align == "center" for e in spec.elements if isinstance(e, TextElement))
 
 
 # A layout missing the content it needs degrades rather than rendering an empty
