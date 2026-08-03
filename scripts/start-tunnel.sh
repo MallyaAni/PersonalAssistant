@@ -27,6 +27,17 @@ if ! curl -sf -o /dev/null --max-time 5 http://localhost:8080/; then
     exit 1
 fi
 
+# A second tunnel would serve the same site on a different hostname and quietly
+# overwrite the calendar URL with it, so the first one becomes unreachable while
+# still running.
+if pgrep -f "cloudflared.*trycloudflare|cloudflared.exe" >/dev/null 2>&1 ||
+    tasklist 2>/dev/null | grep -qi cloudflared; then
+    existing="$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' "$log" 2>/dev/null | head -1 || true)"
+    echo "A tunnel is already running${existing:+ at $existing}." >&2
+    echo "Stop it first if you want a new address." >&2
+    exit 1
+fi
+
 echo "==> Starting tunnel"
 : > "$log"
 "$exe" tunnel --url http://localhost:8080 --no-autoupdate >"$log" 2>&1 &

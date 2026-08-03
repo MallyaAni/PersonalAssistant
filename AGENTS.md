@@ -105,6 +105,32 @@ same step that makes an HTTPS origin real.
 image, a stale container, and an edited file are three different states. Several
 defects here were only visible by asking the live system what it actually had.
 
+**Public access is a Cloudflare quick tunnel that dies with the machine.** Not
+Tailscale — that was tried and abandoned, and `docs/NEXT_SESSION.md` records
+what failed so it is not retried without new evidence. Restore the tunnel with
+`bash scripts/start-tunnel.sh`. The hostname is random on every start, so the
+script also rewrites `DISCOVERY_CALENDAR_BASE_URL`; a calendar invite pointing
+at a dead hostname fails on the recipient's phone rather than anywhere visible
+here. If the public URL stopped working, check the tunnel is still running
+before suspecting anything in the stack.
+
+**Never verify public ingress from this desktop.** Some ingress resolves back to
+the local machine, so `curl` from the host returned 200 in 14 ms while the
+public path was dead — and that was reported as verified. Run the check from
+inside a container, which has its own network namespace, and test *every*
+published address rather than letting DNS pick one:
+
+```python
+socket.create_connection((ip, 443), 10)
+ssl.create_default_context().wrap_socket(raw, server_hostname=HOST)
+```
+
+**Recreating the backend requires restarting the gateway.** Nginx resolves its
+upstream once at startup, so a recreated `backend` gets a new container IP that
+the gateway does not know about, and every request 502s while both containers
+report healthy and the backend's own log says startup complete. `docker compose
+restart gateway` after any `up -d backend`.
+
 ## Documentation ownership
 
 - `README.md`: stable overview, entry points, and documentation map.
