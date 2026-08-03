@@ -24,6 +24,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   onNewConversation,
 }) => {
   const [history, setHistory] = useState<ConversationSummary[]>([])
+  // A failed load and an empty history looked identical, which is how a
+  // missing sidebar got reported as missing data.
+  const [historyFailed, setHistoryFailed] = useState(false)
 
   // Removed from the list straight away rather than after a reload: the row is
   // gone from the server, so leaving it on screen would be a lie.
@@ -44,18 +47,30 @@ const Sidebar: React.FC<SidebarProps> = ({
   // account onto a second device instead of living in one browser. Reloaded
   // when the active conversation changes, which is when a new one appears.
   useEffect(() => {
-    if (!userId || !onOpenConversation) return
+    if (!userId) return
     let cancelled = false
     void listConversations(userId)
-      .then(rows => { if (!cancelled) setHistory(rows) })
+      .then(rows => {
+        if (cancelled) return
+        setHistory(rows)
+        setHistoryFailed(false)
+      })
       // A history that will not load must not take the workspace down with it.
-      .catch(() => { if (!cancelled) setHistory([]) })
+      .catch(() => {
+        if (cancelled) return
+        setHistory([])
+        setHistoryFailed(true)
+      })
     return () => { cancelled = true }
-  }, [userId, activeConversationId, onOpenConversation])
+    // Deliberately not depending on the callbacks: they are defined inline
+    // by the parent, so a new identity every render would refetch history
+    // in a loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, activeConversationId])
 
   return (
-    <aside className="flex w-[76px] flex-none flex-col border-r border-black/[0.06] bg-white/72 px-3 py-5 backdrop-blur-xl md:w-[232px] md:px-4">
-      <div className="mb-8 hidden px-3 md:block">
+    <aside className="fixed inset-y-0 left-0 z-50 flex w-[264px] flex-none flex-col border-r border-black/[0.06] bg-white px-4 py-5 backdrop-blur-xl md:static md:z-auto md:w-[232px] md:bg-white/72">
+      <div className="mb-8 px-3">
         <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#86868b]">Workspace</p>
       </div>
       <nav className="space-y-2" aria-label="Primary navigation">
@@ -65,7 +80,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           className={`flex h-12 w-full items-center justify-center gap-3 rounded-2xl px-3 text-sm font-medium lg:justify-start ${activeView === 'chat' ? 'bg-[#f5f5f7] text-[#1d1d1f] shadow-sm' : 'text-[#6e6e73] hover:bg-[#f5f5f7] hover:text-[#1d1d1f]'}`}
         >
           <MessageCircle size={19} className={activeView === 'chat' ? 'text-[#0071e3]' : ''} />
-          <span className="hidden lg:inline">Conversations</span>
+          <span className="inline">Conversations</span>
         </button>
         <button
           aria-label="Visual artifacts"
@@ -73,7 +88,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           className={`flex h-12 w-full items-center justify-center gap-3 rounded-2xl px-3 text-sm font-medium lg:justify-start ${activeView === 'artifacts' ? 'bg-[#f5f5f7] text-[#1d1d1f] shadow-sm' : 'text-[#6e6e73] hover:bg-[#f5f5f7] hover:text-[#1d1d1f]'}`}
         >
           <Image size={19} className={activeView === 'artifacts' ? 'text-[#0071e3]' : ''} />
-          <span className="hidden lg:inline">Artifacts</span>
+          <span className="inline">Artifacts</span>
         </button>
         <button
           aria-label="Presentations"
@@ -81,7 +96,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           className={`flex h-12 w-full items-center justify-center gap-3 rounded-2xl px-3 text-sm font-medium lg:justify-start ${activeView === 'presentations' ? 'bg-[#f5f5f7] text-[#1d1d1f] shadow-sm' : 'text-[#6e6e73] hover:bg-[#f5f5f7] hover:text-[#1d1d1f]'}`}
         >
           <Presentation size={19} className={activeView === 'presentations' ? 'text-[#0071e3]' : ''} />
-          <span className="hidden lg:inline">Presentations</span>
+          <span className="inline">Presentations</span>
         </button>
         <button
           aria-label="Agents"
@@ -89,7 +104,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           className={`flex h-12 w-full items-center justify-center gap-3 rounded-2xl px-3 text-sm font-medium lg:justify-start ${activeView === 'agents' ? 'bg-[#f5f5f7] text-[#1d1d1f] shadow-sm' : 'text-[#6e6e73] hover:bg-[#f5f5f7] hover:text-[#1d1d1f]'}`}
         >
           <Bot size={19} className={activeView === 'agents' ? 'text-[#0071e3]' : ''} />
-          <span className="hidden lg:inline">Agents</span>
+          <span className="inline">Agents</span>
         </button>
         <button
           aria-label="Memory"
@@ -97,7 +112,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           className={`flex h-12 w-full items-center justify-center gap-3 rounded-2xl px-3 text-sm font-medium lg:justify-start ${activeView === 'memory' ? 'bg-[#f5f5f7] text-[#1d1d1f] shadow-sm' : 'text-[#6e6e73] hover:bg-[#f5f5f7] hover:text-[#1d1d1f]'}`}
         >
           <BrainCircuit size={19} className={activeView === 'memory' ? 'text-[#0071e3]' : ''} />
-          <span className="hidden lg:inline">Memory</span>
+          <span className="inline">Memory</span>
         </button>
         {isAdmin && (
           <button
@@ -106,17 +121,22 @@ const Sidebar: React.FC<SidebarProps> = ({
             className={`flex h-12 w-full items-center justify-center gap-3 rounded-2xl px-3 text-sm font-medium lg:justify-start ${activeView === 'admin' ? 'bg-[#f5f5f7] text-[#1d1d1f] shadow-sm' : 'text-[#6e6e73] hover:bg-[#f5f5f7] hover:text-[#1d1d1f]'}`}
           >
             <ShieldCheck size={19} className={activeView === 'admin' ? 'text-[#0071e3]' : ''} />
-            <span className="hidden lg:inline">Operator</span>
+            <span className="inline">Operator</span>
           </button>
         )}
       </nav>
       {activeView === 'chat' && onOpenConversation && (
-        <div className="mt-6 hidden min-h-0 flex-1 flex-col md:flex">
+        <div className="mt-6 flex min-h-0 flex-1 flex-col">
           <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#86868b]">
             History
           </p>
           <div className="min-h-0 flex-1 space-y-0.5 overflow-y-auto">
-            {history.length === 0 && (
+            {history.length === 0 && historyFailed && (
+              <p className="px-3 text-[12px] text-[#b42318]">
+                Could not load your chats. They are safe — try again shortly.
+              </p>
+            )}
+            {history.length === 0 && !historyFailed && (
               // Silence here reads as a broken sidebar. An account with no
               // chats yet should be told that is what it is looking at.
               <p className="px-3 text-[12px] text-[#86868b]">

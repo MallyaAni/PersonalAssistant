@@ -84,13 +84,29 @@ const AuthenticatedApp = ({ auth, onSignedOut }: AuthenticatedAppProps) => {
   return (
     <div className="flex h-dvh w-full overflow-hidden bg-[#f5f5f7] text-[#1d1d1f]">
       {isSidebarOpen && (
+        // Over the content on a phone, beside it from md up. The backdrop only
+        // exists at the overlay size, where tapping outside is how a panel is
+        // dismissed.
+        <div
+          className="fixed inset-0 z-40 bg-black/25 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+      {isSidebarOpen && (
         <Sidebar
           isAdmin={auth.is_admin}
           activeView={activeView}
-          onViewChange={setActiveView}
+          onViewChange={view => {
+            setActiveView(view)
+            if (window.innerWidth < 768) setSidebarOpen(false)
+          }}
           userId={userId}
           activeConversationId={conversation.id}
-          onOpenConversation={openConversation}
+          onOpenConversation={conversationId => {
+            openConversation(conversationId)
+            if (window.innerWidth < 768) setSidebarOpen(false)
+          }}
           onNewConversation={startNewConversation}
         />
       )}
