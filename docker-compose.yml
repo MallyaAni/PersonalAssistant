@@ -384,6 +384,20 @@ services:
       - GOOGLE_SEARCH_MODEL=${GOOGLE_SEARCH_MODEL:-gemini-3.6-flash}
       - GOOGLE_SEARCH_DAILY_LIMIT=${GOOGLE_SEARCH_DAILY_LIMIT:-450}
       - GOOGLE_SEARCH_QUOTA_DB_PATH=/app/data/search/google_search_quota.sqlite3
+      # The sweep writes each find's description with the model, falling back to
+      # a first-sentence extract when it cannot. Undeclared, LLM_BASE_URL
+      # defaults to 127.0.0.1:8003 — the host's address, which inside this
+      # container is nothing — so the call always failed and every digest
+      # silently used the fallback. The failure is invisible by design, because
+      # falling back is the correct behaviour when the model is genuinely down.
+      - LLM_BASE_URL=http://vllm-main:8000
+      - LLM_MODEL=qwen/qwen3.5-4b
+      - MAIN_LLM_BASE_URL=http://vllm-main:8000
+      - MAIN_LLM_MODEL=qwen/qwen3.5-4b
+      - INFERENCE_ADAPTER=${INFERENCE_ADAPTER:-openai_compatible}
+      # Same shape of mistake: the default is a loopback address that resolves
+      # to this container rather than to the shared Redis.
+      - REDIS_URL=redis://redis:6379/0
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:

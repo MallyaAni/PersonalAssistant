@@ -2168,3 +2168,31 @@ rows referencing them. The two changes above exist so this cannot recur.
   started, the other means it is working and empty-handed — and collapsing them
   is what made a broken sweep look like an idle one. It now names the sweep's
   date and, when there is one, the last sweep that did find something.
+
+## 2026-08-03 — Audit: what else the discovery worker was missing
+
+Method worth repeating. Static reachability proved useless — importing any
+entrypoint pulls ~145 backend modules through `dependencies.py`, so all three
+services look identical. Instrumenting `Settings.__getattribute__` and running a
+real sweep gives the settings the *executing path* actually reads: 44 of them,
+28 falling back to code defaults inside `discovery-worker`.
+
+- `LLM_BASE_URL` was undeclared, so it defaulted to `http://127.0.0.1:8003` —
+  the host's address, which inside the container is nothing. The sweep writes
+  each find's description with the model and falls back to a first-sentence
+  extract when it cannot, so every scheduled digest silently used the fallback
+  and never the model. The failure is invisible by design: falling back is
+  correct when the model is genuinely down, so nothing distinguishes "down"
+  from "never configured". Now pointed at `vllm-main:8000`; verified the model
+  endpoint answers and the sweep produces written descriptions.
+- `REDIS_URL` had the same shape of default, resolving to the container itself
+  rather than the shared Redis.
+- Checked and deliberately not changed: `SEARCH_MIN_SCORE`, `SEARCH_MAX_RESULTS`,
+  `SEARCH_MAX_CONTENT_CHARS`, `SEARCH_DEPTH`, `SEARCH_TIMEOUT_SECONDS`. The
+  backend does not declare them either, so both sides use identical code
+  defaults and there is no divergence to fix. An earlier draft of this change
+  declared them with a wrong fallback (1200 against the real default of 2000),
+  which would have created the divergence it claimed to prevent.
+- The general lesson: the dangerous default is not a missing key, it is a key
+  whose default is a loopback address. Those resolve successfully inside a
+  container, to the wrong thing.
