@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 
 import { getAgents, type AgentSummary } from '../../services/api'
+import ScoutFindings from './ScoutFindings'
 import ScoutSetup from './ScoutSetup'
 
 interface AgentPanelProps {
@@ -173,6 +174,10 @@ const AgentPanel = ({ userId, onOpenView }: AgentPanelProps) => {
                           </button>
                         )}
                       </div>
+
+                      {/* The output, on the card. Reading what the agent found
+                          should not require opening its configuration. */}
+                      {agent.id === 'discovery' && <ScoutFindings userId={userId} />}
 
                       {expanded === agent.id && agent.id === 'discovery' && (
                         <ScoutSetup userId={userId} onChanged={() => void load(false)} />

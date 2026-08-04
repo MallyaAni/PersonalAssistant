@@ -23,7 +23,6 @@ import {
   deleteDiscoveryTravelMode,
   getDiscoveryProfile,
   getDiscoveryKnown,
-  getDiscoveryRuns,
   getDiscoverySchedule,
   cancelSubscription,
   getDiscoverySources,
@@ -43,7 +42,6 @@ import {
   type DiscoveryInterest,
   type DiscoveryKnownItem,
   type DiscoveryLocality,
-  type DiscoveryRun,
   type DiscoverySchedule,
   type GuestSubscription,
   type DiscoverySource,
@@ -105,10 +103,6 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
   // are indistinguishable from a coordinate, so this asks once instead of
   // silently picking the answer that rewrites where someone lives.
   const [movedPrompt, setMovedPrompt] = useState('')
-  // What past sweeps found. Every run already stored this and nothing could
-  // read it back, so a scheduled sweep's recommendations were reachable only
-  // through a delivery that is still switched off.
-  const [runs, setRuns] = useState<DiscoveryRun[]>([])
   const [preview, setPreview] = useState<DigestPreview | null>(null)
   const [trial, setTrial] = useState<SweepResult | null>(null)
   const [subscription, setSubscription] = useState<GuestSubscription | null>(null)
@@ -119,14 +113,12 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
   const [weekday, setWeekday] = useState(4)
 
   const reload = useCallback(async () => {
-    const [profile, feeds, saved, familiar, history] = await Promise.all([
+    const [profile, feeds, saved, familiar] = await Promise.all([
       getDiscoveryProfile(userId),
       getDiscoverySources(userId),
       getDiscoverySchedule(userId),
       getDiscoveryKnown(userId),
-      getDiscoveryRuns(userId).catch(() => [] as DiscoveryRun[]),
     ])
-    setRuns(history)
     setInterests(profile.interests)
     setLocalities(profile.localities)
     setSources(feeds)
@@ -531,82 +523,6 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
               </button>
             </div>
           )}
-        </section>
-      )}
-
-      {/* What Scout actually found, sweep by sweep. Every run persisted its
-          digest and nothing could read it back, so the recommendations existed
-          only as a message that had not been sent — which made the one loop
-          that runs unattended the one loop nobody could check. */}
-      {runs.length > 0 && (
-        <section className="mb-5 rounded-2xl border border-black/[0.06] p-3">
-          <h4 className="text-xs font-semibold uppercase tracking-[0.08em] text-[#86868b]">
-            What Scout found
-          </h4>
-          <div className="mt-2 space-y-3">
-            {runs.slice(0, 3).map(run => (
-              <div key={run.id}>
-                <div className="flex flex-wrap items-baseline gap-x-2">
-                  <span className="text-xs font-medium text-[#1d1d1f]">
-                    {new Date(run.scheduled_for).toLocaleDateString()}
-                  </span>
-                  <span className="text-[11px] text-[#86868b]">
-                    {run.found.length} found
-                    {/* Said plainly: a sweep can succeed and send nothing,
-                        which is the normal state while sending is off. */}
-                    {run.delivered ? ' · sent' : ' · not sent'}
-                    {run.error_code ? ` · ${run.error_code}` : ''}
-                  </span>
-                </div>
-                {run.found.length === 0 ? (
-                  <p className="mt-1 text-[11px] text-[#86868b]">
-                    Nothing matched that week.
-                  </p>
-                ) : (
-                  <div className="mt-1 space-y-1">
-                    {run.found.slice(0, 5).map(item => (
-                      <div
-                        key={item.item_digest ?? item.title}
-                        className="flex items-start gap-2 rounded-xl bg-[#f5f5f7] px-3 py-2"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm text-[#1d1d1f]">
-                            {item.url ? (
-                              <a
-                                href={item.url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-[#0071e3] hover:underline"
-                              >
-                                {item.title}
-                              </a>
-                            ) : (
-                              item.title
-                            )}
-                          </p>
-                          <p className="text-[11px] text-[#86868b]">
-                            {item.starts_at
-                              ? new Date(item.starts_at).toLocaleString()
-                              : 'No date given'}
-                            {item.place ? ` · ${item.place}` : ''}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => void markKnown(item.title, item.item_digest)}
-                          disabled={busy !== ''}
-                          aria-label={`I already know ${item.title}`}
-                          className="mt-0.5 shrink-0 text-[#86868b] hover:text-[#b25e00] disabled:opacity-40"
-                          title={`Stop showing "${item.title}" around here`}
-                        >
-                          <EyeOff size={13} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
         </section>
       )}
 
