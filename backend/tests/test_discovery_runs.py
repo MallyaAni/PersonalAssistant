@@ -2,6 +2,7 @@ import asyncio
 import os
 import uuid
 from datetime import UTC, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import pytest
 from sqlalchemy import delete
@@ -315,3 +316,48 @@ async def _cleanup(*user_ids: str) -> None:
             )
         )
         await session.commit()
+
+
+# A sweep can sit at a quarter past. The slot was built from the hour alone, so
+# every schedule fired at :00 regardless of what anyone wanted.
+def test_a_slot_can_carry_minutes():
+    cadence = Cadence(cadence="daily", hour=9, minute=15, weekday=0, timezone=_ZONE)
+
+    upcoming = next_run_at(cadence, datetime(2026, 8, 3, 12, 0, tzinfo=UTC))
+
+    local = upcoming.astimezone(ZoneInfo(_ZONE))
+    assert (local.hour, local.minute) == (9, 15)
+
+
+# A schedule written before minutes existed reads as 0, which is exactly where
+# it used to fire, so the migration changes nobody's timing.
+def test_an_existing_schedule_keeps_firing_on_the_hour():
+    cadence = Cadence(cadence="weekly", hour=9, weekday=4, timezone=_ZONE)
+
+    upcoming = next_run_at(cadence, datetime(2026, 8, 3, 12, 0, tzinfo=UTC))
+
+    local = upcoming.astimezone(ZoneInfo(_ZONE))
+    assert (local.hour, local.minute) == (9, 0)
+
+
+# The minute is validated like every other field rather than trusted.
+def test_an_impossible_minute_is_refused():
+    with pytest.raises(ValueError, match="Minute"):
+        Cadence(cadence="daily", hour=9, minute=60, weekday=0, timezone=_ZONE)
+    with pytest.raises(ValueError, match="Minute"):
+        Cadence(cadence="daily", hour=9, minute=-1, weekday=0, timezone=_ZONE)
+
+
+# The slot stays strictly future, so a run completing exactly on its own slot
+# cannot re-arm the same one and spin. Minutes must not weaken that.
+def test_a_quarter_past_slot_is_still_strictly_future():
+    zone = ZoneInfo(_ZONE)
+    cadence = Cadence(cadence="daily", hour=9, minute=45, weekday=0, timezone=_ZONE)
+    exactly_on_slot = datetime(2026, 8, 3, 9, 45, tzinfo=zone)
+
+    upcoming = next_run_at(cadence, exactly_on_slot)
+
+    assert upcoming > exactly_on_slot
+    assert upcoming.astimezone(zone).date() == exactly_on_slot.date() + timedelta(
+        days=1
+    )

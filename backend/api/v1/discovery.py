@@ -607,6 +607,9 @@ class ScheduleRequest(BaseModel):
 
     cadence: Literal["daily", "weekly"] = "weekly"
     hour: int = Field(default=9, ge=0, le=23)
+    # Minutes past the hour, so a sweep can sit at 9:15. Defaults to the hour,
+    # which is where every schedule set before this sat.
+    minute: int = Field(default=0, ge=0, le=59)
     # Monday is 0, matching datetime.weekday(). Ignored for a daily cadence.
     weekday: int = Field(default=4, ge=0, le=6)
     timezone: str = Field(default="America/New_York", min_length=1, max_length=64)
@@ -634,6 +637,7 @@ async def put_schedule(
         cadence = Cadence(
             cadence=body.cadence,
             hour=body.hour,
+            minute=body.minute,
             weekday=body.weekday,
             timezone=body.timezone,
         )

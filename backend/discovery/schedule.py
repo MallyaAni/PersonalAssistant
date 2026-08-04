@@ -19,6 +19,8 @@ MAX_HOUR = 23
 # Monday is 0, matching datetime.weekday().
 MIN_WEEKDAY = 0
 MAX_WEEKDAY = 6
+MIN_MINUTE = 0
+MAX_MINUTE = 59
 
 
 @dataclass(frozen=True, slots=True)
@@ -29,12 +31,18 @@ class Cadence:
     hour: int
     weekday: int
     timezone: str
+    # Minutes past the hour. Any value is accepted rather than only quarters:
+    # the interface offers quarter hours, and a stricter domain would reject a
+    # schedule someone had already set through the API.
+    minute: int = 0
 
     def __post_init__(self) -> None:
         if self.cadence not in CADENCES:
             raise ValueError(f"Unsupported cadence: {self.cadence}")
         if not MIN_HOUR <= self.hour <= MAX_HOUR:
             raise ValueError("Hour must be between 0 and 23.")
+        if not MIN_MINUTE <= self.minute <= MAX_MINUTE:
+            raise ValueError("Minute must be between 0 and 59.")
         if not MIN_WEEKDAY <= self.weekday <= MAX_WEEKDAY:
             raise ValueError("Weekday must be between 0 (Monday) and 6.")
 
@@ -44,25 +52,27 @@ class Cadence:
 def next_run_at(cadence: Cadence, after: datetime) -> datetime:
     zone = _zone(cadence.timezone)
     local = after.astimezone(zone)
-    candidate = _at_hour(local, cadence.hour, zone)
+    candidate = _at_time(local, cadence, zone)
 
     if cadence.cadence == "daily":
         while candidate <= local:
-            candidate = _at_hour(candidate + timedelta(days=1), cadence.hour, zone)
+            candidate = _at_time(candidate + timedelta(days=1), cadence, zone)
         return candidate.astimezone(after.tzinfo or zone)
 
     # Weekly: move to the requested weekday, then forward until it is future.
     days_ahead = (cadence.weekday - candidate.weekday()) % 7
-    candidate = _at_hour(candidate + timedelta(days=days_ahead), cadence.hour, zone)
+    candidate = _at_time(candidate + timedelta(days=days_ahead), cadence, zone)
     while candidate <= local:
-        candidate = _at_hour(candidate + timedelta(days=7), cadence.hour, zone)
+        candidate = _at_time(candidate + timedelta(days=7), cadence, zone)
     return candidate.astimezone(after.tzinfo or zone)
 
 
 # Rebuild the instant from local calendar fields so a daylight-saving shift
-# moves the wall-clock hour correctly instead of drifting by the old offset.
-def _at_hour(moment: datetime, hour: int, zone: ZoneInfo) -> datetime:
-    return datetime.combine(moment.date(), time(hour=hour), tzinfo=zone)
+# moves the wall-clock time correctly instead of drifting by the old offset.
+def _at_time(moment: datetime, cadence: "Cadence", zone: ZoneInfo) -> datetime:
+    return datetime.combine(
+        moment.date(), time(hour=cadence.hour, minute=cadence.minute), tzinfo=zone
+    )
 
 
 def _zone(name: str) -> ZoneInfo:

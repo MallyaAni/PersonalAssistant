@@ -35,6 +35,12 @@ class DiscoverySchedule(Base):
     user_id: Mapped[str] = mapped_column(String(50), nullable=False)
     cadence: Mapped[str] = mapped_column(String(10), nullable=False, default="weekly")
     hour: Mapped[int] = mapped_column(Integer, nullable=False, default=9)
+    # Minutes past the hour, so a sweep can sit at 9:15 rather than only on the
+    # hour. Defaulted rather than nullable: an existing schedule keeps the exact
+    # time it already had.
+    minute: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
     # Monday is 0, matching datetime.weekday(). Ignored for a daily cadence.
     weekday: Mapped[int] = mapped_column(Integer, nullable=False, default=4)
     timezone: Mapped[str] = mapped_column(
@@ -57,6 +63,7 @@ class DiscoverySchedule(Base):
             "user_id": self.user_id,
             "cadence": self.cadence,
             "hour": self.hour,
+            "minute": self.minute,
             "weekday": self.weekday,
             "timezone": self.timezone,
             "enabled": self.enabled,

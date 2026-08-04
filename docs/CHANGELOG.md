@@ -2196,3 +2196,24 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
 - The general lesson: the dangerous default is not a missing key, it is a key
   whose default is a loopback address. Those resolve successfully inside a
   container, to the wrong thing.
+
+## 2026-08-03 — Scheduled sweeps can sit at a quarter past
+
+- A schedule's slot was built from the hour alone, so every sweep fired at :00.
+  `Cadence` now carries a `minute`, `next_run_at` builds the instant from it,
+  and the picker offers quarter hours beside the hour.
+- The domain accepts any minute 0–59 while the interface offers only quarters.
+  A stricter domain would reject a schedule someone had already set through the
+  API, and a 60-item list is a worse way to choose a sweep time than four.
+- Migration `20260803_0032` defaults the column to `0` rather than making it
+  nullable, so every existing schedule keeps firing at exactly the time it
+  fired before. Verified on the live row: `daily 21:00` stayed `21:00`.
+- The daylight-saving property is preserved: the instant is still rebuilt from
+  local calendar fields, so a 9:15 sweep stays 9:15 across a shift rather than
+  drifting by the old offset. The slot also stays strictly future, so a run
+  completing exactly on its own slot cannot re-arm it and spin — both covered
+  by tests.
+- Verified through the API on a disposable account: `hour 9, minute 15` stored
+  and `next_run_at` returned `13:15Z`, which is 09:15 America/New_York.
+- 881 backend tests pass; Ruff, Black and MyPy clean; gateway rebuilt and the
+  served bundle confirmed to contain the picker.

@@ -40,6 +40,7 @@ class DiscoveryRunRepository:
                 user_id=user_id,
                 cadence=cadence.cadence,
                 hour=cadence.hour,
+                minute=cadence.minute,
                 weekday=cadence.weekday,
                 timezone=cadence.timezone,
                 enabled=enabled,
@@ -49,6 +50,7 @@ class DiscoveryRunRepository:
         else:
             schedule.cadence = cadence.cadence
             schedule.hour = cadence.hour
+            schedule.minute = cadence.minute
             schedule.weekday = cadence.weekday
             schedule.timezone = cadence.timezone
             schedule.enabled = enabled

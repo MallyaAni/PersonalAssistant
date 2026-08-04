@@ -2103,6 +2103,9 @@ export const previewDiscoveryDigest = async (
 export interface DiscoverySchedule {
   cadence: 'daily' | 'weekly';
   hour: number;
+  // Minutes past the hour. Older schedules have none stored and read as 0,
+  // which is exactly where they used to fire.
+  minute?: number;
   weekday: number;
   timezone: string;
   enabled: boolean;
@@ -2126,6 +2129,7 @@ export const putDiscoverySchedule = async (
   body: {
     cadence: 'daily' | 'weekly';
     hour: number;
+    minute?: number;
     weekday: number;
     timezone: string;
   },

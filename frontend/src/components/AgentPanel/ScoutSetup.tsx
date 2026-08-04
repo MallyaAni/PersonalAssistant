@@ -63,12 +63,16 @@ const WEEKDAYS = [
   'Sunday',
 ]
 
-// A readable clock hour. The schedule is stated in the user's own timezone, so
+// A readable clock time. The schedule is stated in the user's own timezone, so
 // showing 24-hour values would make them do the conversion.
-const formatHour = (value: number): string => {
+const formatHour = (value: number, minutes = 0): string => {
   const meridiem = value < 12 ? 'am' : 'pm'
-  return `${value % 12 || 12}:00${meridiem}`
+  return `${value % 12 || 12}:${String(minutes).padStart(2, '0')}${meridiem}`
 }
+
+// Quarter hours only. The API accepts any minute, but a 60-item list to pick a
+// sweep time is a worse choice than four.
+const QUARTERS = [0, 15, 30, 45]
 
 // "Arlington, Virginia, US" rather than "Arlington". A town name alone is
 // ambiguous across countries, so what is saved is shown in full.
@@ -110,6 +114,7 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
   const [schedule, setSchedule] = useState<DiscoverySchedule | null>(null)
   const [cadence, setCadence] = useState<'daily' | 'weekly'>('weekly')
   const [hour, setHour] = useState(9)
+  const [minute, setMinute] = useState(0)
   const [weekday, setWeekday] = useState(4)
 
   const reload = useCallback(async () => {
@@ -128,6 +133,7 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
     if (saved) {
       setCadence(saved.cadence)
       setHour(saved.hour)
+      setMinute(saved.minute ?? 0)
       setWeekday(saved.weekday)
     }
     const primary = profile.localities.find(item => item.is_primary) ?? profile.localities[0]
@@ -385,6 +391,7 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
       const saved = await putDiscoverySchedule(userId, {
         cadence,
         hour,
+        minute,
         weekday,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       })
@@ -859,6 +866,18 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
             {Array.from({ length: 24 }, (_, value) => (
               <option key={value} value={value}>
                 {formatHour(value)}
+              </option>
+            ))}
+          </select>
+          <select
+            value={minute}
+            onChange={event => setMinute(Number(event.target.value))}
+            aria-label="Minutes past the hour"
+            className="h-10 rounded-xl border border-black/[0.08] bg-white px-3 text-sm outline-none focus:border-[#0071e3]"
+          >
+            {QUARTERS.map(value => (
+              <option key={value} value={value}>
+                :{String(value).padStart(2, '0')}
               </option>
             ))}
           </select>
