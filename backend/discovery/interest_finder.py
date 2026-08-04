@@ -16,6 +16,7 @@ Two rules make that safe rather than creepy:
 
 from dataclasses import dataclass
 
+from backend.discovery.projection import INTEREST_KEY_PREFIX, LOCALITY_KEY
 from backend.discovery.types import (
     MAX_LABEL_CHARS,
     DiscoveryProfile,
@@ -77,6 +78,8 @@ def propose_interests(
     seen: set[str] = set()
 
     for record in records:
+        if _is_structural(record):
+            continue
         label = _label_from(record)
         if label is None:
             continue
@@ -97,6 +100,30 @@ def propose_interests(
     return tuple(proposals)
 
 
+# Facts that describe the person rather than what they enjoy. A profile fact is
+# still an approved fact, so without naming these the finder offered a home
+# locality and a preferred name as interests — the two facts almost every
+# account has, which is why the feature looked like it suggested "everything in
+# memory".
+_STRUCTURAL_FACT_KEYS = frozenset(
+    {
+        LOCALITY_KEY,
+        "preferred_name",
+        "response_style",
+    }
+)
+
+
+# Whether this fact describes the user rather than something they like.
+def _is_structural(record: dict[str, object]) -> bool:
+    raw = record.get("fact_key")
+    if not isinstance(raw, str) or not raw:
+        return False
+    # An interest already projected onto the profile is not a new suggestion;
+    # it is the thing being suggested, already accepted.
+    return raw in _STRUCTURAL_FACT_KEYS or raw.startswith(INTEREST_KEY_PREFIX)
+
+
 def _label_from(record: dict[str, object]) -> str | None:
     # Only the stored *value* can become a label, and only if it is already
     # interest-shaped. There is deliberately no fallback to an internal key or
@@ -111,17 +138,25 @@ def _label_from(record: dict[str, object]) -> str | None:
 
 
 def _normalize(raw: str) -> str | None:
-    label = normalize_label(raw)
+    # Normalizing decides whether this is interest-shaped; it does not decide
+    # how it reads. Returning the folded form put "rock climbing" and "Rock
+    # Climbing" on the profile as the former, so every suggestion arrived in
+    # lower case while a typed one kept its capitals. Identity is normalized
+    # separately by `label_digest`, so the two are still one interest.
+    display = " ".join(raw.split())
+    label = normalize_label(display)
     # A sentence is not an interest. Anything long enough to be prose is
     # rejected rather than truncated into a misleading label.
     if len(label) > MAX_LABEL_CHARS or len(label) < MIN_LABEL_CHARS:
+        return None
+    if len(display) > MAX_LABEL_CHARS:
         return None
     words = label.split()
     if not words or len(words) > 4:
         return None
     if any(word in _STOPWORDS for word in words):
         return None
-    return label
+    return display
 
 
 def _evidence(record: dict[str, object]) -> str:

@@ -2217,3 +2217,25 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   and `next_run_at` returned `13:15Z`, which is 09:15 America/New_York.
 - 881 backend tests pass; Ruff, Black and MyPy clean; gateway rebuilt and the
   served bundle confirmed to contain the picker.
+
+## 2026-08-03 — "Suggest from memory" proposed the user's own name
+
+- `_approved_facts` discarded `fact_key`, so every approved fact reached the
+  finder looking alike and any short value became an interest candidate. On the
+  live account the only two approved facts are a home locality and a preferred
+  name, and both were offered: `arlington, virginia, us` and `ani`. Those two
+  facts exist on almost every account, which is what made the feature look like
+  it suggested everything in memory.
+- The key is now carried, and facts that describe the person rather than what
+  they enjoy — `discovery_locality`, `preferred_name`, `response_style`, and
+  interests already projected onto the profile — are skipped. Verified against
+  the live account: it now proposes nothing, which is correct, because neither
+  stored fact is an interest.
+- Suggestions also keep their capitalisation. `_normalize` returned the
+  casefolded form as the display label, so every suggestion arrived lower case
+  while a typed interest kept its capitals — visible on the live profile as
+  `Hiking` beside `trail running`. Normalizing decides whether something is
+  interest-shaped; it does not decide how it reads, and `label_digest`
+  normalizes identity separately, so `Rock Climbing` and `rock climbing` remain
+  one interest.
+- 885 backend tests pass; Ruff, Black and MyPy clean.

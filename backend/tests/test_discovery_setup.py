@@ -15,7 +15,8 @@ os.environ["POSTGRES_HOST"] = "localhost"
 
 from backend.discovery.feed_finder import FeedFinder
 from backend.discovery.interest_finder import propose_interests
-from backend.discovery.types import DiscoveryProfile, Interest, Locality
+from backend.discovery.projection import INTEREST_KEY_PREFIX, LOCALITY_KEY
+from backend.discovery.types import DiscoveryProfile, Interest, Locality, label_digest
 from backend.search.types import SearchResult, SearchResults
 
 
@@ -195,3 +196,56 @@ def test_a_proposal_carries_its_evidence():
 
     assert proposals[0].label == "ceramics"
     assert "ceramics class" in proposals[0].evidence
+
+
+# A suggestion keeps the capitalisation it was written with. Normalizing decides
+# whether something is interest-shaped; it does not decide how it reads, and
+# returning the folded form made every suggestion arrive in lower case while a
+# typed interest kept its capitals.
+def test_a_suggestion_keeps_its_capitalisation():
+    records = (
+        {"value": "Rock Climbing"},
+        {"value": "live JAZZ"},
+        {"value": "  Trail   Running  "},
+    )
+
+    labels = [item.label for item in propose_interests(records, _profile())]
+
+    assert labels == ["Rock Climbing", "live JAZZ", "Trail Running"]
+
+
+# Identity stays case-insensitive, so a differently-capitalised duplicate is
+# still one interest rather than a second row the user has to delete twice.
+def test_capitalisation_does_not_create_a_duplicate():
+    proposals = propose_interests(({"value": "HIKING"},), _profile(("Hiking",)))
+
+    assert proposals == ()
+
+
+# A profile fact describes the person, not what they enjoy. Both are approved
+# facts, so without telling them apart the finder offered a home locality and a
+# preferred name as interests — the two facts almost every account has, which is
+# what made it look like it suggested everything in memory.
+def test_profile_facts_are_never_proposed_as_interests():
+    records = (
+        {"value": "Arlington, Virginia, US", "fact_key": LOCALITY_KEY},
+        {"value": "ani", "fact_key": "preferred_name"},
+        {"value": "concise", "fact_key": "response_style"},
+        {"value": "bouldering", "fact_key": "hobby"},
+    )
+
+    labels = [item.label for item in propose_interests(records, _profile())]
+
+    assert labels == ["bouldering"]
+
+
+# An interest already projected onto the profile is not a new suggestion.
+def test_an_already_recorded_interest_is_not_re_proposed():
+    records = (
+        {
+            "value": "hiking",
+            "fact_key": f"{INTEREST_KEY_PREFIX}{label_digest('hiking')}",
+        },
+    )
+
+    assert propose_interests(records, _profile()) == ()

@@ -84,6 +84,10 @@ class DiscoverySetupService:
                 "value": row.value,
                 "content": row.value,
                 "source": f"memory:{row.fact_type}",
+                # Carried so the finder can tell what a fact *is*. Without it
+                # every approved fact looked alike, and a home locality and a
+                # preferred name were offered as things to be interested in.
+                "fact_key": row.fact_key,
             }
             for row in rows
         )
