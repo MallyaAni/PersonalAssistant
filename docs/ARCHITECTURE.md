@@ -599,8 +599,24 @@ happening published under a new identifier or by a second feed. Only an
 permanently mask something the user was never shown, and the check looks back a
 bounded horizon so an annual event recurring next year still counts as new.
 
-Ranking is deterministic and runs outside the model, matching how search routing
-already works. A sweep happens while nobody is watching, so a sampled judgement
+One ranking path is deliberately not anchored to an interest. Every other part
+of selection scores against what the user said they like, which is what keeps a
+digest from becoming noise — and also means the loop can only return more of
+what it already knew about. `NotableSelector` surfaces at most two finds per
+sweep that match no interest and are unlike anything the account has been shown,
+under their own heading, fed by one query per sweep that names no interest.
+Two criteria must hold, and the first does the work: the matcher must have
+scored it below its own floor, and it must sit beyond `MIN_UNLIKENESS` from the
+nearest item in the user's history. Distance alone was tried and measured wrong
+— against a ten-item history a guided night hike scored `0.362` while a hot air
+balloon festival scored `0.328`, so a bar on unlikeness admitted the hiking
+event and rejected the balloon festival. Nearest-neighbour is used rather than a
+centroid, because the centroid of a varied history resembles nothing and
+everything looks far from it. The quota is small and the section is separate
+because the subsystem's own rule is that an empty digest beats a padded one.
+
+Ranking is otherwise deterministic and runs outside the model, matching how
+search routing already works. A sweep happens while nobody is watching, so a sampled judgement
 would make the same feed produce different results on different days, and
 scoring in vector space costs one batched embedding call rather than one
 generation per candidate. A candidate scores against its best single interest

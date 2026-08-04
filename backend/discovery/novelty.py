@@ -103,6 +103,34 @@ class SeenItemRepository:
         )
         return (await self.session.execute(stmt)).scalars().first() is not None
 
+    # How far this sits from the nearest thing the user has ever been shown.
+    #
+    # Novelty asks whether something is the same happening. This asks something
+    # else: whether it is the same *kind* of thing. A forty-first trail listing
+    # is novel and unremarkable, because forty like it came before; a hot-air
+    # balloon festival is novel and genuinely unusual, because nothing like it
+    # has. The distance to the nearest neighbour separates them, where a
+    # distance to the centroid would not — the centroid of a varied history is
+    # a point resembling nothing.
+    #
+    # Everything seen counts here, announced or not, because the question is
+    # what this account's stream normally looks like rather than what was sent.
+    async def nearest_seen_distance(
+        self, user_id: str, embedding: list[float]
+    ) -> float | None:
+        stmt = (
+            select(DiscoverySeenItem.embedding.cosine_distance(embedding).label("d"))
+            .where(
+                DiscoverySeenItem.user_id == user_id,
+                DiscoverySeenItem.embedding.is_not(None),
+            )
+            .order_by("d")
+            .limit(1)
+        )
+        value = (await self.session.execute(stmt)).scalars().first()
+        # No history yet means nothing to be unlike, so the caller decides.
+        return float(value) if value is not None else None
+
     # Record a candidate as seen. Concurrent sweeps for one user are possible
     # after a lease lapses, so insertion tolerates the row already existing
     # rather than failing the run.

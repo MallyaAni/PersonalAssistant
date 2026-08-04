@@ -2239,3 +2239,36 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   normalizes identity separately, so `Rock Climbing` and `rock climbing` remain
   one interest.
 - 885 backend tests pass; Ruff, Black and MyPy clean.
+
+## 2026-08-04 — Scout can surface something you never asked for
+
+- Every ranking path was anchored to a stated interest, so the loop could only
+  ever return more of what it already knew about: a meteor shower or a one-night
+  exhibit scored near zero against "hiking" and was dropped before anyone saw
+  it. It was also never searched for — queries are built one per interest.
+- One query per sweep now names no interest, spent first so a tight budget
+  buys the query that can return something new. `NotableSelector` picks at most
+  two finds that match no interest and are unlike anything the account has been
+  shown, under their own heading in the digest and the panel.
+- Unlikeness is the distance to the nearest item in the user's own history, not
+  to a centroid: the centroid of a varied history resembles nothing, so
+  everything looks far from it.
+- **The first design was wrong and measurement caught it.** Against the real
+  ten-item history a guided night hike scored `0.362` unlike and a hot air
+  balloon festival `0.328`, so a bar on unlikeness alone admitted the hiking
+  event and rejected the balloon festival — exactly backwards. Distance from
+  history is a weak signal on a short history. The criterion that discriminates
+  is whether the matcher wanted it, so a candidate scoring at or above the
+  matcher's own floor is now excluded outright, and the unlikeness bar dropped
+  to `0.25` as a secondary check. Verified against the live account: the night
+  hike is excluded, and a motorcycle swap meet and a baroque recital surface.
+- The broad query also reintroduced a failure this module had already measured
+  and designed against — it returned directory pages, and `Events Arlington,
+  Virginia` and `Arlington, VA Events, Calendar & Tickets | Eventbrite` reached
+  the *matched* list by scoring well against "hiking". `looks_like_a_directory`
+  missed both: one has no preposition, and the ticketing sites write "Events,
+  Calendar & Tickets" rather than "Events & Tickets". Both are now refused, and
+  a happening named "Event Horizon Film Festival" still survives, which is why
+  the new rule is keyed on the plural at the start of a title.
+- 896 backend tests pass; Ruff, Black and MyPy clean; gateway rebuilt and the
+  served bundle confirmed to carry the section.

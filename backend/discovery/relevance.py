@@ -143,6 +143,12 @@ class RelevanceRanker:
     # The best single interest match, scaled by how strongly the user holds it.
     # Summing across interests would let a candidate that weakly resembles
     # everything outrank one that strongly matches a single stated interest.
+    # How well this matches the user's stated interests, and which one. Public
+    # so the notable path can ask the same question the matcher asks rather
+    # than approximating it with a second scorer.
+    def score(self, candidate: ScoredCandidate) -> tuple[float, str | None]:
+        return self._score(candidate)
+
     def _score(self, candidate: ScoredCandidate) -> tuple[float, str | None]:
         if candidate.embedding is None or not self.interest_vectors:
             return 0.0, None

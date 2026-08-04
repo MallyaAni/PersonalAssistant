@@ -2050,6 +2050,10 @@ export interface DiscoveryRun {
   delivered: boolean;
   error_code: string | null;
   found: DiscoveryFind[];
+  // Surfaced for being unlike anything this account has been shown, rather than
+  // for matching an interest. A separate list all the way to the interface, so
+  // an unusual find is never mistaken for something that matched.
+  notable?: DiscoveryFind[];
 }
 
 // Read what Scout actually found on each sweep. Every run already stored its

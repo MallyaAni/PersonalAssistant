@@ -42,13 +42,22 @@ _DIRECTORY_TITLE = re.compile(
     r"(^\s*(the\s+)?(\d+\s+)?best\b|^\s*top\s+\d+|\bthings\s+to\s+do\b"
     r"|\bnear\s+me\b|\bevent\s+calendar\b|\ball\s+events\b"
     r"|\bevents?\s+(and|&|\+)\s+tickets\b|\bwhat'?s\s+on\b"
+    # "Arlington, VA Events, Calendar & Tickets" — the ticketing sites separate
+    # the words, so requiring "events & tickets" adjacent missed them.
+    r"|\bcalendar\s*(and|&|\+)\s*tickets\b"
     r"|\b(complete\s+)?guide\s+to\b|\bultimate\s+guide\b)",
     re.IGNORECASE,
 )
 
 # "Events in Arlington, Virginia" — a place-scoped plural with no specific name.
+#
+# The second branch is the same page without the preposition, which is how a
+# query that names no interest returns them: "Events Arlington, Virginia".
+# Plural, and only at the start: "Event Horizon Film Festival" is a happening,
+# and a rule keyed on the singular would throw it away.
 _PLACE_SCOPED_PLURAL = re.compile(
-    r"^\s*[\w\s&'-]*\bevents?\b\s+(in|near|around)\s+", re.IGNORECASE
+    r"^\s*[\w\s&'-]*\bevents?\b\s+(in|near|around)\s+|^\s*events\b",
+    re.IGNORECASE,
 )
 
 

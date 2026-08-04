@@ -1,4 +1,5 @@
 import asyncio
+import json
 from dataclasses import asdict
 from typing import Annotated, Literal
 from uuid import UUID
@@ -367,6 +368,7 @@ async def run_sweep(
             result.selected,
             f"{base.rstrip('/')}/{user_id}/calendar",
             timezone=primary.timezone if primary else "America/New_York",
+            notable=result.notable,
         ),
         "committed": commit,
         "user_id": user_id,
@@ -399,6 +401,21 @@ async def run_sweep(
         # Named so a suppression the user did not intend is visible rather
         # than showing up only as an unexpectedly thin digest.
         "hidden_count": result.hidden_count,
+        # Its own list, never merged into `selected`: these matched no interest,
+        # and blending them would make the digest look padded.
+        "notable": [
+            {
+                "title": item.event.title,
+                "starts_at": (
+                    item.event.starts_at.isoformat() if item.event.starts_at else None
+                ),
+                "place": item.event.place,
+                "url": item.event.url,
+                "unlikeness": round(item.score, 4),
+                "item_digest": item.candidate.digest,
+            }
+            for item in result.notable
+        ],
         "requests_spent": result.requests_spent,
         "failed_sources": list(result.failed_sources),
     }
@@ -758,6 +775,25 @@ async def list_runs(
             except DiscoveryError:
                 # A digest written by an older format must not break the list.
                 found = []
+        notable_found: list[dict[str, object]] = []
+        if isinstance(digest, str) and digest:
+            try:
+                payload = json.loads(digest)
+            except ValueError:
+                payload = {}
+            for item in payload.get("notable", []) or []:
+                source_id = str(item.get("source_id", ""))
+                external_id = str(item.get("external_id", ""))
+                notable_found.append(
+                    {
+                        "title": item.get("title"),
+                        "starts_at": item.get("starts_at"),
+                        "place": item.get("place"),
+                        "url": item.get("url"),
+                        "summary": item.get("summary"),
+                        "item_digest": item_digest(source_id, external_id),
+                    }
+                )
         history.append(
             {
                 "id": record["id"],
@@ -769,6 +805,9 @@ async def list_runs(
                 "delivered": record["delivered_at"] is not None,
                 "error_code": record["error_code"],
                 "found": found,
+                # Separate from `found` all the way to the interface, so an
+                # unusual find is never mistaken for something that matched.
+                "notable": notable_found,
             }
         )
     return {"runs": history}

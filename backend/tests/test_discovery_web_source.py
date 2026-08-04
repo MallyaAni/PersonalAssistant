@@ -140,13 +140,53 @@ async def test_a_disabled_provider_yields_nothing():
 @pytest.mark.asyncio
 async def test_one_query_per_interest_rather_than_a_combined_one():
     search = _StubSearch([])
-    source = WebEventSource("web-search", search, "Arlington", ("hiking", "pottery"))
+    source = WebEventSource(
+        "web-search",
+        search,
+        "Arlington",
+        ("hiking", "pottery"),
+        include_general=False,
+    )
 
     await source.fetch()
 
     assert len(search.queries) == 2
     assert any("hiking" in query for query in search.queries)
     assert any("pottery" in query for query in search.queries)
+
+
+# One query names no interest, so a sweep can surface something the user never
+# thought to ask for. Every other query is interest-shaped by construction,
+# which means the loop could otherwise only return more of what it knew about.
+@pytest.mark.asyncio
+async def test_a_general_query_asks_what_is_on_without_naming_an_interest():
+    search = _StubSearch([])
+    source = WebEventSource("web-search", search, "Arlington", ("hiking", "pottery"))
+
+    await source.fetch()
+
+    general = [
+        query
+        for query in search.queries
+        if "hiking" not in query and "pottery" not in query
+    ]
+    assert len(general) == 1
+    assert "Arlington" in general[0]
+
+
+# It goes first, so a tight budget spends its one request on the query that can
+# return something new rather than on a fourth variation of one interest.
+@pytest.mark.asyncio
+async def test_the_general_query_is_spent_first_under_a_tight_budget():
+    search = _StubSearch([])
+    source = WebEventSource(
+        "web-search", search, "Arlington", ("hiking",), max_queries=1
+    )
+
+    await source.fetch()
+
+    assert len(search.queries) == 1
+    assert "hiking" not in search.queries[0]
 
 
 def _candidate(title: str, starts_at: datetime | None) -> ScoredCandidate:

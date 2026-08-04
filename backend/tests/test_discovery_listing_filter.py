@@ -82,3 +82,29 @@ def test_a_specific_event_path_beats_a_generic_title():
 def test_a_missing_url_still_judges_the_title():
     assert looks_like_a_directory("Things to do in Arlington", None) is True
     assert looks_like_a_directory("Guided Nature Walk", None) is False
+
+
+# A query that names no interest returns these, and they scored well against
+# "hiking" because an embedding thinks a page about local events is an excellent
+# match for someone interested in local events. Structural, not semantic.
+@pytest.mark.parametrize(
+    "title",
+    [
+        "Events Arlington, Virginia",
+        "Arlington, VA Events, Calendar & Tickets | Eventbrite",
+    ],
+)
+def test_a_broad_query_s_directory_pages_are_refused(title):
+    assert looks_like_a_directory(title, None) is True
+
+
+# The plural rule must not swallow a happening whose name begins with "Event".
+@pytest.mark.parametrize(
+    "title",
+    [
+        "Event Horizon Film Festival",
+        "Eventide Concert Series Opening Night",
+    ],
+)
+def test_a_happening_named_event_something_survives(title):
+    assert looks_like_a_directory(title, None) is False

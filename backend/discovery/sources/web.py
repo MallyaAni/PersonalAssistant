@@ -104,6 +104,7 @@ class WebEventSource(EventSource):
         budget: RequestBudget | None = None,
         max_queries: int = MAX_QUERIES_PER_SWEEP,
         region: str | None = None,
+        include_general: bool = True,
     ) -> None:
         self._source_id = source_id
         self.search = search
@@ -115,6 +116,7 @@ class WebEventSource(EventSource):
         self.interests = interests
         self.budget = budget
         self.max_queries = max_queries
+        self.include_general = include_general
 
     @property
     def source_id(self) -> str:
@@ -167,6 +169,13 @@ class WebEventSource(EventSource):
         moment = now or datetime.now(UTC)
         when = moment.strftime("%B %Y")
         queries: list[str] = []
+        # One query that names no interest, so a sweep can surface something the
+        # user never thought to ask for. Every other query is interest-shaped by
+        # construction, which means the loop could only ever return more of what
+        # it already knew about. It goes first so a tight budget spends its one
+        # request here rather than on the fourth variation of one interest.
+        if self.include_general:
+            queries.append(f"events happening in {place} {when}".strip())
         for interest in self.interests[: self.max_queries]:
             label = clean_text(interest, 60)
             if label:

@@ -108,6 +108,53 @@ const ScoutFindings = ({ userId }: ScoutFindingsProps) => {
     )
   }
 
+  const findRow = (find: DiscoveryFind) => (
+    <div
+      key={find.item_digest ?? find.title}
+      className="flex items-start gap-2 rounded-xl bg-[#f5f5f7] px-3 py-2"
+    >
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm text-[#1d1d1f]">
+          {find.url ? (
+            <a
+              href={find.url}
+              target="_blank"
+              rel="noreferrer"
+              className="text-[#0071e3] hover:underline"
+            >
+              {find.title}
+            </a>
+          ) : (
+            find.title
+          )}
+        </p>
+        <p className="text-[11px] text-[#86868b]">
+          {describeWhen(find)}
+          {find.place ? ` · ${find.place}` : ''}
+        </p>
+      </div>
+      {find.calendar_path && (
+        <a
+          href={find.calendar_path}
+          aria-label={`Add ${find.title} to your calendar`}
+          title="Add to calendar"
+          className="mt-0.5 shrink-0 text-[#86868b] hover:text-[#0071e3]"
+        >
+          <CalendarPlus size={13} />
+        </a>
+      )}
+      <button
+        onClick={() => void dismiss(find)}
+        disabled={dismissing !== ''}
+        aria-label={`I already know ${find.title}`}
+        title={`Stop showing "${find.title}" around here`}
+        className="mt-0.5 shrink-0 text-[#86868b] hover:text-[#b25e00] disabled:opacity-40"
+      >
+        <EyeOff size={13} />
+      </button>
+    </div>
+  )
+
   return (
     <div className="mt-4 border-t border-black/[0.05] pt-3">
       <div className="flex flex-wrap items-baseline gap-x-2">
@@ -121,57 +168,28 @@ const ScoutFindings = ({ userId }: ScoutFindingsProps) => {
         </span>
       </div>
       <div className="mt-2 space-y-1.5">
-        {latest.found.slice(0, 4).map(find => (
-          <div
-            key={find.item_digest ?? find.title}
-            className="flex items-start gap-2 rounded-xl bg-[#f5f5f7] px-3 py-2"
-          >
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm text-[#1d1d1f]">
-                {find.url ? (
-                  <a
-                    href={find.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-[#0071e3] hover:underline"
-                  >
-                    {find.title}
-                  </a>
-                ) : (
-                  find.title
-                )}
-              </p>
-              <p className="text-[11px] text-[#86868b]">
-                {describeWhen(find)}
-                {find.place ? ` · ${find.place}` : ''}
-              </p>
-            </div>
-            {find.calendar_path && (
-              <a
-                href={find.calendar_path}
-                aria-label={`Add ${find.title} to your calendar`}
-                title="Add to calendar"
-                className="mt-0.5 shrink-0 text-[#86868b] hover:text-[#0071e3]"
-              >
-                <CalendarPlus size={13} />
-              </a>
-            )}
-            <button
-              onClick={() => void dismiss(find)}
-              disabled={dismissing !== ''}
-              aria-label={`I already know ${find.title}`}
-              title={`Stop showing "${find.title}" around here`}
-              className="mt-0.5 shrink-0 text-[#86868b] hover:text-[#b25e00] disabled:opacity-40"
-            >
-              <EyeOff size={13} />
-            </button>
-          </div>
-        ))}
+        {latest.found.slice(0, 4).map(findRow)}
       </div>
       {latest.found.length > 4 && (
         <p className="mt-1.5 text-[11px] text-[#86868b]">
           and {latest.found.length - 4} more
         </p>
+      )}
+      {/* Its own heading, below the matches, saying plainly why these are here.
+          They match nothing that was asked for, so presenting them alongside
+          real matches would make the digest look padded — and a reader who does
+          not want them can skip the section whole. */}
+      {(latest.notable?.length ?? 0) > 0 && (
+        <div className="mt-3 border-t border-black/[0.05] pt-3">
+          <h4 className="text-xs font-semibold uppercase tracking-[0.08em] text-[#86868b]">
+            Unusual around here
+          </h4>
+          <p className="mb-2 mt-0.5 text-[11px] text-[#86868b]">
+            Not what you asked for — surfaced because nothing like it has come up
+            before.
+          </p>
+          <div className="space-y-1.5">{latest.notable?.map(findRow)}</div>
+        </div>
       )}
     </div>
   )

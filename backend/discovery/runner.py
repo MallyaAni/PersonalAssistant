@@ -26,6 +26,7 @@ from backend.discovery.errors import DiscoveryError
 from backend.discovery.events import DiscoveredEvent, EventSource, FeedError
 from backend.discovery.familiarity import FamiliarItemRepository, FamiliarityFilter
 from backend.discovery.fetching import DEFAULT_RUN_REQUEST_BUDGET, RequestBudget
+from backend.discovery.notable import NotableSelector
 from backend.discovery.novelty import NoveltyFilter, ScoredCandidate, SeenItemRepository
 from backend.discovery.relevance import (
     MAX_SELECTED,
@@ -67,6 +68,10 @@ class SweepResult:
     # wrong dismissal is otherwise undiscoverable: the panel lists what was
     # dismissed, never what those dismissals removed from this sweep.
     hidden_count: int = 0
+    # Finds surfaced for being unlike anything this account has been shown,
+    # rather than for matching an interest. Kept as their own field so they can
+    # never quietly pad the matched list.
+    notable: tuple[RankedCandidate, ...] = ()
 
     # The persisted form. Deliberately not the model's output: a digest is
     # assembled from typed records so a feed cannot inject text that later
@@ -101,6 +106,23 @@ class SweepResult:
                 "candidate_count": self.candidate_count,
                 "novel_count": self.novel_count,
                 "hidden_count": self.hidden_count,
+                "notable": [
+                    {
+                        "source_id": item.event.source_id,
+                        "external_id": item.event.external_id,
+                        "title": item.event.title,
+                        "starts_at": (
+                            item.event.starts_at.isoformat()
+                            if item.event.starts_at
+                            else None
+                        ),
+                        "ends_at": None,
+                        "place": item.event.place,
+                        "url": item.event.url,
+                        "summary": item.event.summary,
+                    }
+                    for item in self.notable
+                ],
                 "failed_sources": list(self.failed_sources),
             },
             separators=(",", ":"),
@@ -155,6 +177,11 @@ class DiscoveryRunner:
         # you already know it". They diverge for anyone who has lived somewhere
         # a while.
         self.familiarity = FamiliarityFilter(FamiliarItemRepository(seen.session))
+        # Surfaces the few finds unlike anything this account has been shown, so
+        # the loop can return something the user never thought to ask for. Every
+        # other ranking path is anchored to a stated interest and therefore can
+        # only ever return more of what it already knew about.
+        self.notable = NotableSelector(seen)
         # Optional second enumerator. Feeds are the source of record for
         # anything that must reach a calendar; this covers what publishes no
         # feed at all, which for a niche interest is most of it.
@@ -223,7 +250,39 @@ class DiscoveryRunner:
             },
         )
         selected = ranker.rank(novel, now=moment, limit=limit)
+
+        # Chosen before anything is recorded as seen. Afterwards these
+        # candidates would be in the history they are measured against, and
+        # every one of them would look perfectly familiar.
+        notable: tuple[RankedCandidate, ...] = ()
+        if self.notable is not None:
+            # The matcher's own scores, so "would this have been selected?" is
+            # answered by the thing that selects rather than by a second scorer
+            # that could drift from it.
+            interest_scores = {
+                candidate.digest: ranker.score(candidate)[0] for candidate in novel
+            }
+            picked = await self.notable.select(
+                user_id,
+                novel,
+                selected,
+                now=moment,
+                interest_scores=interest_scores,
+            )
+            notable = tuple(
+                RankedCandidate(
+                    candidate=item.candidate,
+                    score=item.unlikeness,
+                    # No interest matched, which is the point of this section.
+                    matched_interest=None,
+                )
+                for item in picked
+            )
+
+        # Both sections get readable titles and descriptions; an unusual find is
+        # no easier to judge from a scraped page title than a matching one.
         selected = await self._make_readable(selected)
+        notable = await self._make_readable(notable)
 
         # Everything considered is recorded, but only what was selected counts
         # as announced. An item ranked out stays eligible for a later sweep,
@@ -233,7 +292,11 @@ class DiscoveryRunner:
         # is what a later preview, digest, or calendar file is built from, so
         # persisting the raw scraped title here would mean the description work
         # only ever existed in this function's return value.
-        described = {item.candidate.digest: item.candidate for item in selected}
+        # Everything shown counts as announced, including the unusual few, so
+        # they do not return next sweep as though they had never been sent.
+        described = {
+            item.candidate.digest: item.candidate for item in (*selected, *notable)
+        }
         if persist:
             for candidate in novel:
                 await self.seen.record_seen(
@@ -252,6 +315,7 @@ class DiscoveryRunner:
             requests_spent=budget.spent,
             failed_sources=failed,
             hidden_count=hidden_count,
+            notable=notable,
         )
 
     # Rewrite each selection's title and summary into something a person can

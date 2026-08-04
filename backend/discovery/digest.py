@@ -28,9 +28,10 @@ def render_message(
     calendar_base_url: str | None,
     timezone: str = "America/New_York",
     limit: int = MAX_EVENTS_IN_MESSAGE,
+    notable: tuple[RankedCandidate, ...] = (),
 ) -> str | None:
     """Return the digest text, or None when there is nothing worth sending."""
-    if not selected:
+    if not selected and not notable:
         # Silence is a valid outcome. Sending "nothing this week" every week is
         # how a proactive assistant trains people to ignore it.
         return None
