@@ -367,8 +367,29 @@ services:
       # disagreement means each enforces a different ceiling on it.
       - SEARCH_MONTHLY_CREDITS=${SEARCH_MONTHLY_CREDITS:-1000}
       - MCP_SERVERS_JSON=${MCP_SERVERS_JSON:-[]}
+      # Without these the sweep has no search provider, and a profile with no
+      # feeds then reads zero events and finds nothing — every week, silently,
+      # while the same account finds things through the API because the backend
+      # container does have them. The credits line above was here on its own,
+      # which made it look like search was already wired up.
+      - SEARCH_PROVIDER_NAME=${SEARCH_PROVIDER_NAME:-tavily}
+      - SEARCH_API_KEY=${SEARCH_API_KEY:-}
+      - SEARCH_MCP_SERVER_ID=${SEARCH_MCP_SERVER_ID:-internet}
+      - SEARCH_MCP_TOOL_NAME=${SEARCH_MCP_TOOL_NAME:-search_web}
+      - DISCOVERY_WEB_SEARCH_ENABLED=${DISCOVERY_WEB_SEARCH_ENABLED:-true}
+      - DISCOVERY_WEB_QUERIES_PER_SWEEP=${DISCOVERY_WEB_QUERIES_PER_SWEEP:-4}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GOOGLE_SEARCH_ENABLED=${GOOGLE_SEARCH_ENABLED:-false}
+      - GOOGLE_SEARCH_MODEL=${GOOGLE_SEARCH_MODEL:-gemini-3.6-flash}
+      - GOOGLE_SEARCH_DAILY_LIMIT=${GOOGLE_SEARCH_DAILY_LIMIT:-450}
+      - GOOGLE_SEARCH_QUOTA_DB_PATH=/app/data/search/google_search_quota.sqlite3
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    volumes:
+      # The Google quota counter is shared with the API so both reserve against
+      # one count rather than two.
+      - searchdata:/app/data/search
     depends_on:
       db:
         condition: service_healthy

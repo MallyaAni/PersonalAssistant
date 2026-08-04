@@ -2141,3 +2141,30 @@ rows referencing them. The two changes above exist so this cannot recur.
   nobody could check. The panel shows the last three sweeps, each find with its
   date, place and link, and states plainly whether it was sent.
 - 877 backend tests pass; Ruff, Black and MyPy are clean; the frontend builds.
+
+## 2026-08-03 — Scout's scheduled sweeps could never find anything
+
+- `discovery-worker` had no search configuration. It carried
+  `SEARCH_MONTHLY_CREDITS` and `MCP_SERVERS_JSON` — which made search look
+  wired up — but not `SEARCH_PROVIDER_NAME`, `SEARCH_API_KEY`, or
+  `DISCOVERY_WEB_SEARCH_ENABLED`. `SEARCH_PROVIDER_NAME` defaults to `tavily`
+  and the key was absent, so the provider was disabled. For a profile with no
+  feeds, that leaves nothing to read: every scheduled sweep returned
+  `candidate_count: 0`.
+- It was invisible because the same account finds things through the API: the
+  backend container has the keys, so "Try it" and "Look now" worked while the
+  weekly sweep — the entire point of the agent — quietly found nothing. The
+  stored digest of the 2026-08-04 run was
+  `{"selected":[],"candidate_count":0,...}`.
+- Measured on the live account from inside the worker after the fix: 5
+  candidates, 5 novel, 5 selected, including "2026 NOVA Running Club 5K",
+  against 0 before. Run as a rehearsal so nothing was recorded.
+- This is the environment-allowlist trap the agent instructions already record,
+  found a third time. The presence of one `SEARCH_*` key is what made it look
+  configured; the check that matters is `printenv` in the container that does
+  the work, not the key list in `.env`.
+- The findings panel no longer reports "nothing found yet" for a sweep that ran
+  and found nothing. Those are different states — one means the feature has not
+  started, the other means it is working and empty-handed — and collapsing them
+  is what made a broken sweep look like an idle one. It now names the sweep's
+  date and, when there is one, the last sweep that did find something.

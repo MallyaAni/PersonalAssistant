@@ -61,7 +61,12 @@ const ScoutFindings = ({ userId }: ScoutFindingsProps) => {
     }
   }
 
-  const latest = runs.find(run => run.found.length > 0)
+  // The most recent sweep, whether or not it found anything. Picking the most
+  // recent sweep *with* finds conflated two different states: "no sweep has run"
+  // and "the last sweep found nothing" both rendered as "nothing found yet",
+  // which reads as the feature being broken when it is working and empty-handed.
+  const latest = runs[0]
+  const lastWithFinds = runs.find(run => run.found.length > 0)
 
   if (isLoading) {
     return (
@@ -76,9 +81,30 @@ const ScoutFindings = ({ userId }: ScoutFindingsProps) => {
     // honest reason is usually that no sweep has run yet.
     return (
       <p className="mt-4 border-t border-black/[0.05] pt-3 text-xs text-[#86868b]">
-        Nothing found yet. Scout posts what it finds here after each sweep — you
-        do not need the messaging set up to read it.
+        No sweep has run yet. Scout posts what it finds here afterwards — you do
+        not need the messaging set up to read it.
       </p>
+    )
+  }
+
+  // A sweep that ran and found nothing is a different thing from never having
+  // run, and saying which is the difference between "it is working" and "it is
+  // broken". The date is what makes that checkable.
+  if (latest.found.length === 0) {
+    return (
+      <div className="mt-4 border-t border-black/[0.05] pt-3">
+        <p className="text-xs text-[#86868b]">
+          Last sweep {new Date(latest.scheduled_for).toLocaleString()} found
+          nothing.
+        </p>
+        {lastWithFinds && (
+          <p className="mt-1 text-[11px] text-[#86868b]">
+            Previously, on{' '}
+            {new Date(lastWithFinds.scheduled_for).toLocaleDateString()}, it
+            found {lastWithFinds.found.length}.
+          </p>
+        )}
+      </div>
     )
   }
 
