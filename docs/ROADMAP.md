@@ -156,7 +156,19 @@ Goal: let one AniOS conversation create editable technical diagrams and locally 
   peak VRAM, and total deck latency before enabling it by default. The current
   shared RTX 5080 qualification intentionally keeps both provider paths at
   concurrency one.
-- `PLANNED`: source-grounded presentation research and citations, reusable theme/master libraries, diagram-asset hydration, arbitrary existing-PPTX import, automated visual-diff review with minimum-readable-font enforcement, sustained multi-host load/latency testing, and distributed GPU-capacity scheduling. The current worker queue is durable and horizontally claim-safe, but it is not yet a general distributed scheduler. Raster image pixels are not decomposed into editable drawing primitives, although the image object remains replaceable in PowerPoint.
+- `IMPLEMENTED, NOT SOLVED`: source-grounded deck research. `DeckResearch` runs
+  one privacy-screened search per deck at outline time — before layouts are
+  chosen, because that is where a slide is told to carry a number — and quotes
+  bounded sources into the outline and every slide request, with the rule that
+  an unsupported figure must become a plainer layout. The brief is reduced to
+  its research subject first; sent verbatim it returned a slideware marketing
+  page. Measured on the same brief and model, the grounded run gave six crewed
+  landings against the ungrounded run's seven, and the right Apollo 8 date, but
+  still placed Charles Duke on Apollo 15. Grounding reduces invented figures at
+  the current 4B presentation role; it does not remove them, and this stays open
+  until a deck's figures can be trusted without checking. Per-claim citations
+  remain `PLANNED`.
+- `PLANNED`: presentation citations, reusable theme/master libraries, diagram-asset hydration, arbitrary existing-PPTX import, automated visual-diff review with minimum-readable-font enforcement, sustained multi-host load/latency testing, and distributed GPU-capacity scheduling. The current worker queue is durable and horizontally claim-safe, but it is not yet a general distributed scheduler. Raster image pixels are not decomposed into editable drawing primitives, although the image object remains replaceable in PowerPoint.
 - `VERIFIED`: explicit diagram requests create user-scoped PostgreSQL artifact records with pending/ready/failed lifecycle, conversation/trace provenance, provider/model metadata, recent owned history, scoped deletion, active-conversation transcript/artifact restoration after full reload, local Mermaid/SVG downloads, and shielded failed/cancelled terminal cleanup after client disconnect. Retention cleanup remains `PLANNED`.
 - `VERIFIED`: deterministic application policy routes explicit diagram requests through a specialized typed `DiagramAgent` LangGraph workflow plus provider/repository contracts; the configured diagram model produces only a bounded specification and cannot select providers, write storage, or control hardware. Raster generation and vision now use focused provider/service contracts; autonomous image agents and multi-agent visual workers remain `PLANNED`.
 - `VERIFIED`: the local Mermaid provider validates allowlisted passive source, performs one bounded format-correction retry, streams artifact lifecycle events, and lazily renders editable source as strict SVG in chat with visible generation/render failure states.
