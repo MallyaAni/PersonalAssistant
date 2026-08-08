@@ -448,6 +448,13 @@ services:
       - DISCOVERY_PLACE_RESOLVER_URL=${DISCOVERY_PLACE_RESOLVER_URL:-https://nominatim.openstreetmap.org/reverse}
       - DISCOVERY_PLACE_RESOLVER_USER_AGENT=${DISCOVERY_PLACE_RESOLVER_USER_AGENT:-AniOS/1.0 (local personal assistant)}
       - DISCOVERY_EGRESS_ENABLED=${DISCOVERY_EGRESS_ENABLED:-false}
+      # Which server owns the Apple device, and what its send tool is called.
+      # The worker had these and this did not, so a send from the API would
+      # resolve the tool name to its code default - `send_message`, which the
+      # bridge does not expose - and fail as a withdrawn tool, with nothing
+      # pointing at the missing key.
+      - DISCOVERY_IMESSAGE_SERVER_ID=${DISCOVERY_IMESSAGE_SERVER_ID:-imessage}
+      - DISCOVERY_IMESSAGE_TOOL=${DISCOVERY_IMESSAGE_TOOL:-send_message}
       - DISCOVERY_CALENDAR_BASE_URL=${DISCOVERY_CALENDAR_BASE_URL:-http://localhost:8000/api/v1/discovery}
       # vLLM runs as pinned sibling services with independent generation and
       # embedding endpoints.
