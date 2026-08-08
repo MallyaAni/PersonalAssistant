@@ -133,7 +133,17 @@ def normalize_recipient(value: str) -> str:
     cleaned = value.strip()
     if "@" in cleaned:
         return cleaned.casefold()
-    return _NON_DIGITS.sub("", cleaned)
+    digits = _NON_DIGITS.sub("", cleaned)
+    # `+12025550143` and `2025550143` are the same phone. Comparing raw digits
+    # made them different, so an allowlist written with the country code refused
+    # the address AniOS actually stored — a refusal at the last hop, for a
+    # recipient who had done nothing wrong. The leading 1 is dropped only when
+    # what remains is a full ten-digit number, so an international number that
+    # legitimately begins with one is left intact. AniOS applies the same rule
+    # in backend/discovery/addressing.py; the two must agree.
+    if len(digits) == 11 and digits.startswith("1"):
+        return digits[1:]
+    return digits
 
 
 def check_recipient(config: BridgeConfig, recipient: str) -> str:

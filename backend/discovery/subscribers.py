@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.discovery.addressing import normalize_address
 from backend.discovery.errors import DiscoveryProfileLimitError
 from backend.discovery.types import label_digest
 from backend.models.discovery_subscriber import DiscoverySubscriber
@@ -67,11 +68,16 @@ class SubscriberRepository:
     ) -> Subscriber:
         if channel not in SUBSCRIBER_CHANNELS:
             raise ValueError(f"Unsupported subscriber channel: {channel}")
+        # Stored as written, identified as normalized. Normalizing the stored
+        # value too would strip the leading + from an international number, and
+        # that + is part of how the address routes — the equivalence between
+        # `+1 202…` and `202…` is worth asserting, rewriting the destination is
+        # not.
         cleaned = address.strip()
         if not cleaned:
             raise ValueError("A subscriber address must not be blank.")
 
-        digest = label_digest(cleaned)
+        digest = label_digest(normalize_address(cleaned))
         row = await self._by_digest(user_id, channel, digest)
         now = datetime.now(UTC)
         if row is None:
@@ -130,9 +136,13 @@ class SubscriberRepository:
             raise ValueError(f"Unsupported subscriber channel: {channel}")
         existing = await self.list_subscribers(user_id)
         cleaned = address.strip()
-        digest = label_digest(cleaned) if cleaned else ""
+        digest = label_digest(normalize_address(cleaned)) if cleaned else ""
+        # Comparison is on the normalized form, so re-subscribing with the same
+        # number written differently updates one subscription instead of
+        # colliding with the one-per-account rule for no visible reason.
         already = any(
-            label_digest(item.address) == digest and item.channel == channel
+            label_digest(normalize_address(item.address)) == digest
+            and item.channel == channel
             for item in existing
         )
         # One per account. A guest choosing where their own digest goes is
@@ -169,6 +179,21 @@ class SubscriberRepository:
         await self.session.commit()
         await self.session.refresh(row)
         return _to_subscriber(row)
+
+    # Refuse a request outright. The operator decides for the machine, so this
+    # is not scoped to the asking account the way `delete` is.
+    #
+    # The row is removed rather than flagged: a denied request that lingers in
+    # the list is indistinguishable from one still waiting, and the person can
+    # simply ask again if it was a mistake. Approving is the decision that
+    # deserves a record, and it keeps one.
+    async def deny(self, subscriber_id: uuid.UUID) -> bool:
+        row = await self.session.get(DiscoverySubscriber, subscriber_id)
+        if row is None:
+            return False
+        await self.session.delete(row)
+        await self.session.commit()
+        return True
 
     # Every subscription on the machine, for the operator's view.
     async def list_all(self) -> tuple[tuple[str, Subscriber], ...]:
