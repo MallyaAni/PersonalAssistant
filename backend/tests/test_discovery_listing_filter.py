@@ -170,3 +170,47 @@ def test_a_social_profile_is_never_a_happening(url):
 )
 def test_a_real_happening_still_survives(title, url):
     assert looks_like_a_directory(title, url) is False
+
+
+# Both of these reached the digest Scout sent at 14:20, so they are shapes taken
+# from real delivered output rather than imagined.
+@pytest.mark.parametrize(
+    ("title", "url"),
+    [
+        # The giveaway sits in the middle segment, and anchoring the
+        # place-scoped rule at the start of the whole title missed it.
+        (
+            "Free Concerts | Upcoming Events near Arlington, VA | Live Music Project",
+            "https://www.livemusicproject.org/events/free?near=arlington-va",
+        ),
+        # An advertisement, titled to sound like an offer worth taking. Only the
+        # destination gives it away.
+        (
+            "Join now and get 50% off a Club membership",
+            "https://click.linksynergy.com/fs-bin/click?id=5lRxBRhs1h0",
+        ),
+    ],
+)
+def test_the_junk_from_the_second_delivered_digest_is_refused(title, url):
+    assert looks_like_a_directory(title, url) is True
+
+
+# Judging each segment must not start eating events whose titles carry a venue
+# or a series after a separator, which is how many of them are written.
+@pytest.mark.parametrize(
+    ("title", "url"),
+    [
+        ("Water Lantern Festival", "https://www.waterlanternfestival.com/events/dc"),
+        (
+            "Concert in the Park - The Nighthawks",
+            "https://parks.arlingtonva.us/events/12",
+        ),
+        (
+            "Jazz Soiree | The Phillips Collection",
+            "https://phillipscollection.org/event/1",
+        ),
+        ("Hillwood After Hours Garden Party", "https://hillwoodmuseum.org/events/hah"),
+    ],
+)
+def test_a_segmented_title_is_not_assumed_to_be_a_listing(title, url):
+    assert looks_like_a_directory(title, url) is False

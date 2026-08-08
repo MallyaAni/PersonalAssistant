@@ -28,6 +28,20 @@ _SPECIFIC_EVENT_PATH = re.compile(
     re.IGNORECASE,
 )
 
+# A tracking redirect. An affiliate link is an advertisement whatever it is
+# titled — "Join now and get 50% off a Club membership" reached a delivered
+# digest as though it were a happening. The destination is the only reliable
+# tell, because the title is written to sound like an offer worth taking.
+_AFFILIATE_HOST = re.compile(
+    r"^https?://([^/]*\.)?("
+    r"click\.linksynergy\.com|linksynergy\.com|anrdoezrs\.net|dpbolvw\.net"
+    r"|jdoqocy\.com|kqzyfj\.com|tkqlhce\.com|shareasale\.com|awin1\.com"
+    r"|prf\.hn|go\.skimresources\.com|rstyle\.me|avantlink\.com"
+    r"|partnerize\.com|impact\.com|sjv\.io|pxf\.io"
+    r")/",
+    re.IGNORECASE,
+)
+
 # A person's or venue's profile page. It may announce happenings, but it is not
 # one, and its title is whatever the account is called plus a date — which is
 # exactly the shape a real listing has, so the URL is the only reliable tell.
@@ -89,6 +103,8 @@ def looks_like_a_directory(title: str, url: str | None) -> bool:
     # anything and its titles look exactly like real listings.
     if url and _SOCIAL_PROFILE.search(url):
         return True
+    if url and _AFFILIATE_HOST.search(url):
+        return True
     if url and _SPECIFIC_EVENT_PATH.search(url):
         return False
     if url and _DIRECTORY_PATH.search(url):
@@ -96,4 +112,12 @@ def looks_like_a_directory(title: str, url: str | None) -> bool:
     cleaned = " ".join(title.split())
     if _DIRECTORY_TITLE.search(cleaned):
         return True
-    return bool(_PLACE_SCOPED_PLURAL.search(cleaned))
+    # A title is often several segments — "Free Concerts | Upcoming Events near
+    # Arlington, VA | Live Music Project" — and the giveaway sits in the middle
+    # one. Anchoring the place-scoped rule at the start of the whole string
+    # missed exactly that, so each segment is judged on its own.
+    return any(
+        _PLACE_SCOPED_PLURAL.search(segment.strip())
+        for segment in re.split(r"[|–—]|\s-\s", cleaned)
+        if segment.strip()
+    )

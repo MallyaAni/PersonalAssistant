@@ -39,6 +39,7 @@ from backend.discovery.events import (
     clean_url,
 )
 from backend.discovery.fetching import RequestBudget, fetch_feed
+from backend.discovery.listing_filter import looks_like_a_directory
 
 _NEXT_DATA = re.compile(
     r'<script[^>]+id="__NEXT_DATA__"[^>]*>(.*?)</script>', re.S | re.I
@@ -135,6 +136,13 @@ def _events_from_embedded_links(source_id: str, document: str) -> list[Discovere
         title = clean_text(_first_string(node.get("title")), MAX_TITLE_CHARS)
         url = clean_url(raw_url)
         if not title or not url:
+            continue
+        # A curated page carries more than happenings: affiliate offers,
+        # discount codes, a link to the author's other accounts. The same
+        # structural test the search enumerator uses refuses them here, which it
+        # was not doing — so "Join now and get 50% off a Club membership"
+        # reached a delivered digest as though it were something to go to.
+        if looks_like_a_directory(title, url):
             continue
         found.append(
             DiscoveredEvent(
