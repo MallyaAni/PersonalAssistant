@@ -26,6 +26,14 @@ MAX_URL_CHARS = 2_048
 # reviewer while remaining present in the data.
 _CONTROL_CHARACTERS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 
+# Up to the first sentence end followed by a space. Requiring the space is what
+# keeps "Sept. 12" and "www.example.com" from reading as an ending.
+_FIRST_SENTENCE = re.compile(r"(.+?[.!?])\s+\S")
+
+# Below this a leading "sentence" is far more likely an abbreviation than a
+# name, so the original title is kept whole.
+MIN_SENTENCE_TITLE_CHARS = 25
+
 
 class FeedError(RuntimeError):
     """Raised when a source cannot be read or its payload is unusable."""
@@ -75,6 +83,29 @@ def clean_text(value: str | None, limit: int) -> str | None:
     stripped = _CONTROL_CHARACTERS.sub("", value)
     collapsed = " ".join(stripped.split())
     return collapsed[:limit] or None
+
+
+# A name, not the paragraph a page opened with.
+#
+# Some sites put a whole description in the title, and truncating that to fit a
+# message cuts mid-word: "Country Dance at Faith Lutheran Church in Arlington.
+# Lessons: Love, JoAnn (LD), East Coas…" is what reached a delivered digest.
+# Everything after the first sentence there is detail the summary already
+# carries, so the sentence is the name and the rest is not.
+#
+# Only applied when the first sentence is itself substantial. "Dr. Dog at the
+# Anthem" must not become "Dr." — an abbreviation is not the end of a sentence,
+# and the length floor is what tells the two apart without a list of titles.
+def clean_title(value: str | None, limit: int = MAX_TITLE_CHARS) -> str | None:
+    cleaned = clean_text(value, limit)
+    if cleaned is None:
+        return None
+    sentence = _FIRST_SENTENCE.match(cleaned)
+    if sentence is not None:
+        candidate = sentence.group(1).strip()
+        if len(candidate) >= MIN_SENTENCE_TITLE_CHARS:
+            return candidate
+    return cleaned
 
 
 # Accept only web URLs. A feed may carry javascript:, data:, or file: targets,

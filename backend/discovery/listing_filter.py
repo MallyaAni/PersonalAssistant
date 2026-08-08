@@ -55,7 +55,13 @@ _SOCIAL_PROFILE = re.compile(
 # Faceted search, category browsing, and location landing pages.
 _DIRECTORY_PATH = re.compile(
     r"(/find/|/near/|/browse/|/search|/category/|/categories/|/things-to-do"
-    r"|/directory|/listings?/|/events/p/|/b/[a-z]{2}--)",
+    r"|/directory|/listings?/|/events/p/|/b/[a-z]{2}--"
+    # A standing programme rather than a date. Arlington County's own site put
+    # a concert series at /Government/Programs/Arts/Programs/Lubber-Run, which
+    # is a description of a thing the county runs every summer.
+    r"|/government/|/programs?/|/department|/venues?/|/venue-info"
+    # A roster page, which is the same object as a calendar.
+    r"|/lineup|/line-up|/schedule/?$|/calendar/?$)",
     re.IGNORECASE,
 )
 
@@ -81,7 +87,13 @@ _DIRECTORY_TITLE = re.compile(
     r"|\b(concerts?|events?|shows?|gigs?)\s+in\s+(january|february|march|april"
     r"|may|june|july|august|september|october|november|december)\b"
     # "... 2026 - 2027 | Find A Race": one happening does not span two years.
-    r"|\b20\d{2}\s*[-–]\s*20\d{2}\b)",
+    r"|\b20\d{2}\s*[-–]\s*20\d{2}\b"
+    # "The Renegade VA - Lineup" led a delivered digest. A lineup is the roster
+    # of who is playing across many nights — the venue's calendar under another
+    # name — and its summary said so: "events ... from Tuesday through Saturday".
+    r"|\blineup\b|\bline-?up\b"
+    # "Upcoming Events", "This Week in ...": a heading, not a happening.
+    r"|^\s*upcoming\b|^\s*this\s+(week|weekend|month)\b)",
     re.IGNORECASE,
 )
 

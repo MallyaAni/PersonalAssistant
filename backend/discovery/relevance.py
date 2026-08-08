@@ -15,6 +15,7 @@ from datetime import UTC, datetime
 
 from backend.discovery.events import DiscoveredEvent
 from backend.discovery.novelty import ScoredCandidate
+from backend.discovery.url_dates import looks_past
 
 # How far ahead a sweep looks. Something happening tonight is not actionable
 # from a weekly digest, and something a year out is not yet a plan.
@@ -24,6 +25,28 @@ MAX_LEAD_DAYS = 60
 # A candidate must clear this to be shown at all. An empty digest is a better
 # outcome than a padded one: the loop's credibility rests on not crying wolf.
 MIN_SCORE = 0.25
+
+# How far the best interest must beat the second best before it is named as the
+# reason a find was chosen. Below this the find still ranks on its score, but it
+# is reported with no matched interest rather than a confidently wrong one.
+#
+# Measured rather than picked, against this user's five interests:
+#
+#   Water Lantern Festival    -> Line Dancing 0.616, margin 0.010   wrong
+#   Nat'l Building Museum Party -> Concerts   0.600, margin 0.005   wrong
+#   Planet Word Afterhours    -> Concerts     0.604, margin 0.021   wrong
+#   Live Jazz Trio, Blues Alley -> Concerts   0.612, margin 0.045   right
+#   Guided Sunrise Hike       -> Hiking       0.582, margin 0.059   right
+#   Country Dance, Faith Lutheran -> Line Dancing 0.592, margin 0.078  right
+#   Beginner Line Dancing     -> Line Dancing 0.778, margin 0.262   right
+#   Virginia Wine Festival    -> Wine Tasting 0.787, margin 0.236   right
+#
+# Note the absolute scores separate nothing: the three wrong matches score
+# 0.600-0.616 and a real concert scores 0.612. Only the gap to the runner-up
+# tells them apart, which is why this is a margin and not a floor. The wrong
+# ones stop at 0.021 and the right ones start at 0.045, so the bound sits in
+# between with room on both sides.
+MIN_ATTRIBUTION_MARGIN = 0.035
 
 # How many events one digest may carry.
 MAX_SELECTED = 8
@@ -119,6 +142,11 @@ class RelevanceRanker:
             # excluded; only one with no start at all becomes a mention.
             if not schedulable and starts_at is not None:
                 continue
+            # A mention still has to be about something that has not happened.
+            # The lead-time check above cannot see this: it reads `starts_at`,
+            # and these have none. The publisher's own URL often does.
+            if starts_at is None and looks_past(candidate.event.url, moment.date()):
+                continue
             score, matched = self._score(candidate)
             if score < MIN_SCORE:
                 continue
@@ -153,6 +181,7 @@ class RelevanceRanker:
         if candidate.embedding is None or not self.interest_vectors:
             return 0.0, None
         best = 0.0
+        runner_up = 0.0
         matched: str | None = None
         for label, vector in self.interest_vectors.items():
             similarity = cosine_similarity(candidate.embedding, vector)
@@ -161,8 +190,20 @@ class RelevanceRanker:
             weight = self.interest_strengths.get(label, 2) / 2.0
             weighted = similarity * weight
             if weighted > best:
-                best = weighted
+                best, runner_up = weighted, best
                 matched = label
+            elif weighted > runner_up:
+                runner_up = weighted
+        # A near-tie is not a match, it is a nearest neighbour.
+        #
+        # Every interest sits somewhere in the same space, so the best one is
+        # always *something* — "Water Lantern Festival" scored 0.616 against
+        # Line Dancing, and a jazz soirée scored 0.612 against Wine Tasting.
+        # Both were the top of a cluster where every interest scored within a
+        # hair of every other. Naming one of those is worse than naming none:
+        # it is a stated reason that happens to be wrong.
+        if best - runner_up < MIN_ATTRIBUTION_MARGIN:
+            return best, None
         return best, matched
 
 

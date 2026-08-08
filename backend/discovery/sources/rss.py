@@ -24,6 +24,7 @@ from backend.discovery.events import (
     EventSource,
     FeedError,
     clean_text,
+    clean_title,
     clean_url,
 )
 from backend.discovery.fetching import RequestBudget, fetch_feed
@@ -78,7 +79,7 @@ def parse_feed(payload: str, source_id: str) -> tuple[DiscoveredEvent, ...]:
 
 
 def _build_event(entry: ElementTree.Element, source_id: str) -> DiscoveredEvent | None:
-    title = clean_text(_text(entry, "title", f"{_ATOM}title"), MAX_TITLE_CHARS)
+    title = clean_title(_text(entry, "title", f"{_ATOM}title"), MAX_TITLE_CHARS)
     if title is None:
         return None
 

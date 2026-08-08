@@ -35,6 +35,7 @@ from backend.discovery.events import (
     DiscoveredEvent,
     EventSource,
     clean_text,
+    clean_title,
     clean_url,
 )
 from backend.discovery.fetching import RequestBudget
@@ -210,7 +211,7 @@ def _events_from(
 def _to_event(
     source_id: str, title: str, content: str, url: str
 ) -> DiscoveredEvent | None:
-    cleaned_title = clean_text(title, MAX_TITLE_CHARS)
+    cleaned_title = clean_title(title, MAX_TITLE_CHARS)
     if cleaned_title is None:
         return None
     summary = clean_text(content, MAX_SUMMARY_CHARS)

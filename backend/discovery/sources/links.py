@@ -36,6 +36,7 @@ from backend.discovery.events import (
     EventSource,
     FeedError,
     clean_text,
+    clean_title,
     clean_url,
 )
 from backend.discovery.fetching import RequestBudget, fetch_feed
@@ -109,7 +110,7 @@ def _events_from_json_ld(source_id: str, document: str) -> list[DiscoveredEvent]
             if not any(str(kind).lower() == "event" for kind in kinds):
                 continue
             url = clean_url(_first_string(node.get("url")))
-            title = clean_text(_first_string(node.get("name")), MAX_TITLE_CHARS)
+            title = clean_title(_first_string(node.get("name")), MAX_TITLE_CHARS)
             if not url or not title:
                 continue
             found.append(
@@ -144,7 +145,7 @@ def _events_from_embedded_links(source_id: str, document: str) -> list[Discovere
         raw_url = node.get("url")
         if not isinstance(raw_url, str) or not raw_url.lower().startswith(_WEB_SCHEMES):
             continue
-        title = clean_text(_first_string(node.get("title")), MAX_TITLE_CHARS)
+        title = clean_title(_first_string(node.get("title")), MAX_TITLE_CHARS)
         url = clean_url(raw_url)
         if not title or not url:
             continue

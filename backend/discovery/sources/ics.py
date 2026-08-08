@@ -19,6 +19,7 @@ from backend.discovery.events import (
     DiscoveredEvent,
     EventSource,
     clean_text,
+    clean_title,
     clean_url,
 )
 from backend.discovery.fetching import RequestBudget, fetch_feed
@@ -105,7 +106,7 @@ def _build_event(
         # First occurrence wins; a repeated property is not merged.
         fields.setdefault(name, (params, value))
 
-    title = clean_text(_value(fields, "SUMMARY"), MAX_TITLE_CHARS)
+    title = clean_title(_value(fields, "SUMMARY"), MAX_TITLE_CHARS)
     if title is None:
         # A listing with no title cannot be shown to anyone usefully.
         return None

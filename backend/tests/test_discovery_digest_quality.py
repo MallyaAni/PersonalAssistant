@@ -1,0 +1,222 @@
+"""Four ways a digest read badly, each taken from a delivered message.
+
+None of these were crashes. Every one of them shipped, was read by a person,
+and made the agent look like it was not paying attention — which is the only
+failure mode that matters for something that messages you unprompted.
+"""
+
+from datetime import UTC, date, datetime, timedelta
+
+from backend.discovery.events import DiscoveredEvent, clean_title
+from backend.discovery.listing_filter import looks_like_a_directory
+from backend.discovery.relevance import (
+    MIN_ATTRIBUTION_MARGIN,
+    RelevanceRanker,
+    ScoredCandidate,
+)
+from backend.discovery.url_dates import date_from_url, looks_past
+
+_TODAY = date(2026, 8, 8)
+_NOW = datetime(2026, 8, 8, 12, 0, tzinfo=UTC)
+
+
+# --- 1. an interest named when the match was really a tie ---------------------
+
+
+def _ranker(**vectors: list[float]) -> RelevanceRanker:
+    return RelevanceRanker(vectors, {label: 2 for label in vectors})
+
+
+def _candidate(embedding: list[float]) -> ScoredCandidate:
+    event = DiscoveredEvent(
+        source_id="s",
+        external_id="e",
+        title="Water Lantern Festival",
+        starts_at=None,
+        ends_at=None,
+        place=None,
+        url="https://example.org/e",
+        summary=None,
+    )
+    return ScoredCandidate(event, embedding)
+
+
+def test_a_clear_winner_is_still_named():
+    ranker = _ranker(dancing=[1.0, 0.0], wine=[0.0, 1.0])
+
+    score, matched = ranker.score(_candidate([1.0, 0.0]))
+
+    assert matched == "dancing"
+    assert score > 0.9
+
+
+def test_a_near_tie_reports_no_interest_rather_than_a_wrong_one():
+    # "Water Lantern Festival" was announced as matching Line Dancing at 0.616
+    # while every other interest scored within a hair of it. The score is real;
+    # the reason was not.
+    ranker = _ranker(dancing=[1.0, 0.02], wine=[1.0, 0.0])
+
+    score, matched = ranker.score(_candidate([1.0, 0.01]))
+
+    assert matched is None
+    # Still scored, so it can still be selected on merit.
+    assert score > 0.5
+
+
+def test_the_margin_is_what_decides_attribution():
+    ranker = _ranker(a=[1.0, 0.0], b=[0.0, 1.0])
+    scores = [
+        ranker.score(_candidate([1.0, ratio / 100])) for ratio in range(0, 100, 10)
+    ]
+    # Every named result beat its runner-up by the stated margin; nothing is
+    # named on a smaller gap.
+    assert all(score >= MIN_ATTRIBUTION_MARGIN for score, name in scores if name)
+
+
+# --- 2. an event that had already happened -----------------------------------
+
+
+def test_the_date_a_publisher_put_in_its_own_url_is_read():
+    assert date_from_url("https://x.org/event/2026-08-06-phillips-after-5") == date(
+        2026, 8, 6
+    )
+    assert date_from_url("https://nvcwda.org/events/country-dance-august-01-2026") == (
+        date(2026, 8, 1)
+    )
+    assert date_from_url("https://x.org/e/01-august-2026") == date(2026, 8, 1)
+    assert date_from_url("https://x.org/events/2026/08/06/thing") == date(2026, 8, 6)
+
+
+def test_a_url_without_a_date_states_none():
+    assert date_from_url("https://x.org/events/summer-concert") is None
+    assert date_from_url("https://x.org/e/2026-13-45") is None
+    assert date_from_url(None) is None
+
+
+def test_a_find_dated_before_today_by_its_url_has_passed():
+    # The jazz evening announced two days after it happened.
+    assert looks_past("https://x.org/event/2026-08-06-after-5", _TODAY) is True
+
+
+def test_a_find_dated_today_survives():
+    # An evening event is still ahead of someone reading in the morning, and a
+    # slug carries no time of day to decide otherwise.
+    assert looks_past("https://x.org/event/2026-08-08-tonight", _TODAY) is False
+
+
+def test_a_month_is_only_past_once_every_day_in_it_is():
+    assert looks_past("https://x.org/e/august-2026", _TODAY) is False
+    assert looks_past("https://x.org/e/july-2026", _TODAY) is True
+
+
+def test_an_undated_find_that_already_happened_is_not_selected():
+    ranker = _ranker(dancing=[1.0, 0.0])
+    passed = ScoredCandidate(
+        DiscoveredEvent(
+            source_id="s",
+            external_id="e1",
+            title="Phillips After 5",
+            starts_at=None,
+            ends_at=None,
+            place=None,
+            url="https://x.org/event/2026-08-06-phillips-after-5",
+            summary=None,
+        ),
+        [1.0, 0.0],
+    )
+    upcoming = ScoredCandidate(
+        DiscoveredEvent(
+            source_id="s",
+            external_id="e2",
+            title="Phillips After 5",
+            starts_at=None,
+            ends_at=None,
+            place=None,
+            url="https://x.org/event/2026-08-20-phillips-after-5",
+            summary=None,
+        ),
+        [1.0, 0.0],
+    )
+
+    ranked = ranker.rank((passed, upcoming), now=_NOW)
+
+    assert [item.candidate.event.external_id for item in ranked] == ["e2"]
+
+
+def test_a_dated_event_is_still_judged_on_its_real_start():
+    # The URL fallback must not override a start the source actually stated.
+    ranker = _ranker(dancing=[1.0, 0.0])
+    stale_slug_future_event = ScoredCandidate(
+        DiscoveredEvent(
+            source_id="s",
+            external_id="e1",
+            title="Series Announced",
+            starts_at=_NOW + timedelta(days=10),
+            ends_at=None,
+            place=None,
+            url="https://x.org/posted/2026-01-01/next-season",
+            summary=None,
+        ),
+        [1.0, 0.0],
+    )
+
+    ranked = ranker.rank((stale_slug_future_event,), now=_NOW)
+
+    assert len(ranked) == 1
+
+
+# --- 3. a listing page dressed as a happening --------------------------------
+
+
+def test_a_lineup_is_a_calendar_under_another_name():
+    assert looks_like_a_directory(
+        "The Renegade VA - Lineup",
+        "https://renegadeva.com/arlington-clarendon-the-renegade-va-lineup",
+    )
+
+
+def test_a_standing_programme_is_refused_on_its_url_not_its_name():
+    # This one led a delivered digest. The decision is made on the path — a
+    # county's standing arts programme — rather than on "Series" in the title,
+    # because "Eventide Concert Series Opening Night" is a real night out and a
+    # rule keyed on the word would throw it away with this.
+    assert looks_like_a_directory(
+        "Lubber Run Amphitheater – Free Concert Series - Arlington County",
+        "https://www.arlingtonva.us/Government/Programs/Arts/Programs/Lubber-Run",
+    )
+
+
+def test_a_real_happening_with_series_in_its_name_survives():
+    # The rules must not eat the thing they are meant to protect.
+    assert not looks_like_a_directory(
+        "Eventide Concert Series Opening Night", "https://sollys.com/event/eventide"
+    )
+    assert not looks_like_a_directory(
+        "Lubber Run Amphitheater - Free Concert Series",
+        "https://parks.arlingtonva.us/lubber-run",
+    )
+    assert not looks_like_a_directory(
+        "Water Lantern Festival", "https://waterlanternfestival.com/e/dc-2026"
+    )
+
+
+# --- 4. a paragraph where a name should be -----------------------------------
+
+
+def test_a_sentence_length_title_is_cut_at_the_sentence():
+    title = clean_title(
+        "Country Dance at Faith Lutheran Church in Arlington. Lessons: Love, "
+        "JoAnn (LD), East Coast Swing with Ken"
+    )
+
+    assert title == "Country Dance at Faith Lutheran Church in Arlington."
+
+
+def test_an_abbreviation_is_not_a_sentence_ending():
+    assert clean_title("Dr. Dog at the Anthem") == "Dr. Dog at the Anthem"
+    assert clean_title("Mt. Vernon Wine Fest") == "Mt. Vernon Wine Fest"
+
+
+def test_an_ordinary_title_is_left_alone():
+    assert clean_title("Water Lantern Festival") == "Water Lantern Festival"
+    assert clean_title(None) is None
