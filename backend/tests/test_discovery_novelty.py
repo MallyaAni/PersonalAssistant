@@ -35,6 +35,17 @@ from backend.discovery.sources_repository import DiscoverySourceRepository
 from backend.discovery.types import DiscoveryProfile, Interest
 from backend.models.discovery_source import DiscoverySeenItem, DiscoverySource
 
+
+# These tests are about novelty, so they state the setting they need. Reading it
+# from the deployment's own configuration made the suite pass or fail depending
+# on what an operator had switched off that afternoon — which it did.
+@pytest.fixture(autouse=True)
+def _novelty_enabled(monkeypatch):
+    from backend.config.settings import settings
+
+    monkeypatch.setattr(settings, "DISCOVERY_NOVELTY_ENABLED", True)
+
+
 _NOW = datetime(2026, 8, 1, 12, 0, tzinfo=UTC)
 
 
