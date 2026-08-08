@@ -74,6 +74,22 @@ const formatHour = (value: number, minutes = 0): string => {
 // sweep time is a worse choice than four.
 const QUARTERS = [0, 15, 30, 45]
 
+// The same field takes a US number or an Apple ID, so the phone mask applies
+// only while what is typed could still become a number. A hard +1 prefix would
+// make the email case impossible to type.
+const looksLikeAPhone = (value: string): boolean => !/[a-z@]/i.test(value)
+
+// Group digits as they are typed, so nobody has to decide whether dashes
+// matter. They never did — the address is reduced to one canonical form before
+// it is stored or compared — but being shown the shape is what stops the
+// question being asked.
+const formatPhoneDigits = (value: string): string => {
+  const digits = value.replace(/\D/g, '').slice(0, 10)
+  if (digits.length <= 3) return digits
+  if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`
+  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`
+}
+
 // "Arlington, Virginia, US" rather than "Arlington". A town name alone is
 // ambiguous across countries, so what is saved is shown in full.
 const describePlace = (place: { label: string; region?: string | null }): string =>
@@ -111,6 +127,10 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
   const [trial, setTrial] = useState<SweepResult | null>(null)
   const [subscription, setSubscription] = useState<GuestSubscription | null>(null)
   const [addressDraft, setAddressDraft] = useState('')
+  // The subscribe/unsubscribe dialog. Unsubscribing silently on one click is
+  // the wrong default for the control that decides whether anyone is messaged
+  // at all, and subscribing needs somewhere to ask for the address.
+  const [deliveryOpen, setDeliveryOpen] = useState(false)
   const [schedule, setSchedule] = useState<DiscoverySchedule | null>(null)
   const [cadence, setCadence] = useState<'daily' | 'weekly'>('weekly')
   const [hour, setHour] = useState(9)
@@ -118,12 +138,17 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
   const [weekday, setWeekday] = useState(4)
 
   const reload = useCallback(async () => {
-    const [profile, feeds, saved, familiar] = await Promise.all([
+    const [profile, feeds, saved, familiar, subscribed] = await Promise.all([
       getDiscoveryProfile(userId),
       getDiscoverySources(userId),
       getDiscoverySchedule(userId),
       getDiscoveryKnown(userId),
+      // Never loaded, so `subscription` stayed null forever and the state badge
+      // and Unsubscribe button — both already written — could not render. An
+      // account that had subscribed looked identical to one that never had.
+      getSubscription(userId).catch(() => null),
     ])
+    setSubscription(subscribed)
     setInterests(profile.interests)
     setLocalities(profile.localities)
     setSources(feeds)
@@ -369,21 +394,34 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
 
   const subscribe = () =>
     perform('subscribe', async () => {
-      const value = addressDraft.trim()
-      if (!value) throw new Error('Enter the number or Apple ID to message.')
+      const typed = addressDraft.trim()
+      if (!typed) throw new Error('Enter the number or Apple ID to message.')
+      // The prefix is shown rather than typed, so it has to be added back here.
+      const value = looksLikeAPhone(typed)
+        ? `+1${typed.replace(/\D/g, '')}`
+        : typed
+      if (looksLikeAPhone(typed) && typed.replace(/\D/g, '').length !== 10) {
+        throw new Error('A US number needs ten digits.')
+      }
       const result = await requestSubscription(userId, 'imessage', value)
       setAddressDraft('')
+      // Say that the request was sent, and that waiting is the normal next
+      // state rather than something having gone wrong. "Asked." read as though
+      // the interface had given up halfway through a sentence.
+      setDeliveryOpen(false)
       setNotice(
         result.approved
-          ? 'Subscribed.'
-          : 'Asked. It starts once the operator allows messages to that address.',
+          ? 'Subscribed. Scout will message that address after each sweep.'
+          : 'Request sent. Scout will start messaging that address once the '
+            + 'operator approves it.',
       )
     })
 
   const unsubscribe = () =>
     perform('subscribe', async () => {
       await cancelSubscription(userId)
-      setNotice('Unsubscribed.')
+      setDeliveryOpen(false)
+      setNotice('Unsubscribed. Scout will stop messaging that address.')
     })
 
   const saveSchedule = () =>
@@ -416,8 +454,130 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
     interests.length > 0 ? '' : 'at least one interest',
   ].filter(Boolean)
 
+  // One pill, top right, saying whether anyone is being messaged and opening the
+  // only place that changes it. A dot carries the state at a glance: green when
+  // it is live, amber while the operator has not allowed the address yet, grey
+  // when nobody is subscribed.
+  const deliveryDot = !subscription
+    ? 'bg-[#c7c7cc]'
+    : subscription.approved
+      ? 'bg-[#248a3d]'
+      : 'bg-[#b25e00]'
+  const deliveryLabel = !subscription
+    ? 'Not subscribed'
+    : subscription.approved
+      ? 'Subscribed'
+      : 'Waiting for approval'
+
   return (
     <div className="mt-5 border-t border-black/[0.05] pt-5">
+      <div className="mb-3 flex items-center justify-end">
+        <button
+          onClick={() => setDeliveryOpen(true)}
+          disabled={busy !== ''}
+          aria-haspopup="dialog"
+          className="flex h-8 items-center gap-2 rounded-full border border-black/[0.08] px-3 text-xs font-medium text-[#1d1d1f] hover:border-black/20 disabled:opacity-40"
+        >
+          <span className={`h-2 w-2 rounded-full ${deliveryDot}`} />
+          {deliveryLabel}
+        </button>
+      </div>
+
+      {deliveryOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Where Scout sends your digest"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+          onClick={() => setDeliveryOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl"
+            onClick={event => event.stopPropagation()}
+          >
+            {subscription ? (
+              <>
+                {/* Asked rather than assumed: this is the switch that decides
+                    whether anyone hears from Scout at all, and one stray click
+                    should not silently end the digests. */}
+                <h3 className="text-[15px] font-semibold">Stop the messages?</h3>
+                <p className="mt-1.5 text-xs leading-5 text-[#6e6e73]">
+                  Scout will keep finding things and showing them here — it just
+                  will not message you. You can subscribe again whenever.
+                </p>
+                <div className="mt-4 flex justify-end gap-2">
+                  <button
+                    onClick={() => setDeliveryOpen(false)}
+                    className="h-9 rounded-xl border border-black/[0.08] px-3 text-sm font-medium"
+                  >
+                    Keep them
+                  </button>
+                  <button
+                    onClick={() => void unsubscribe()}
+                    disabled={busy !== ''}
+                    className="h-9 rounded-xl bg-[#b3261e] px-3 text-sm font-medium text-white disabled:opacity-40"
+                  >
+                    {busy === 'subscribe' ? 'Stopping…' : 'Unsubscribe'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 className="text-[15px] font-semibold">Get Scout's digest</h3>
+                <p className="mt-1.5 text-xs leading-5 text-[#6e6e73]">
+                  Where should it message you? An operator approves the address
+                  before anything is sent.
+                </p>
+                <div className="mt-3 flex h-10 items-center rounded-xl border border-black/[0.08] focus-within:border-[#0071e3]">
+                  {looksLikeAPhone(addressDraft) && (
+                    <span className="pl-3 text-sm text-[#6e6e73]">+1</span>
+                  )}
+                  <input
+                    value={addressDraft}
+                    onChange={event => {
+                      const next = event.target.value
+                      setAddressDraft(
+                        looksLikeAPhone(next) ? formatPhoneDigits(next) : next,
+                      )
+                    }}
+                    onKeyDown={event => {
+                      if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
+                        event.preventDefault()
+                        void subscribe()
+                      }
+                    }}
+                    autoFocus
+                    inputMode="tel"
+                    placeholder="xxx-xxx-xxxx or you@icloud.com"
+                    aria-label="Your number or Apple ID"
+                    className="h-full min-w-0 flex-1 rounded-xl bg-transparent px-2 text-sm outline-none"
+                  />
+                </div>
+                <p className="mt-1.5 text-[11px] text-[#86868b]">
+                  Just the ten digits — or type an Apple ID instead.
+                </p>
+                <div className="mt-4 flex justify-end gap-2">
+                  <button
+                    onClick={() => setDeliveryOpen(false)}
+                    className="h-9 rounded-xl border border-black/[0.08] px-3 text-sm font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => void subscribe()}
+                    disabled={busy !== ''}
+                    className="flex h-9 items-center gap-1.5 rounded-xl bg-[#1d1d1f] px-3 text-sm font-medium text-white disabled:opacity-40"
+                  >
+                    {busy === 'subscribe' ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                    Subscribe
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {error && (
         <p className="mb-3 rounded-xl bg-[#fff1f0] px-3 py-2 text-xs text-[#b3261e]">{error}</p>
       )}
@@ -789,19 +949,34 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
           </div>
         ) : (
           <div className="flex flex-wrap gap-2">
-            <input
-              value={addressDraft}
-              onChange={event => setAddressDraft(event.target.value)}
-              onKeyDown={event => {
-                if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
-                  event.preventDefault()
-                  void subscribe()
-                }
-              }}
-              placeholder="Your number or Apple ID"
-              aria-label="Your number or Apple ID"
-              className="h-10 min-w-0 flex-1 rounded-xl border border-black/[0.08] px-3 text-sm outline-none focus:border-[#0071e3]"
-            />
+            {/* The country code is shown, not typed, and digits are grouped as
+                they arrive. Formatting never mattered to the backend, but being
+                asked for "your number" with no shape is what made people wonder
+                whether it did. */}
+            <div className="flex h-10 min-w-0 flex-1 items-center rounded-xl border border-black/[0.08] focus-within:border-[#0071e3]">
+              {looksLikeAPhone(addressDraft) && (
+                <span className="pl-3 text-sm text-[#6e6e73]">+1</span>
+              )}
+              <input
+                value={addressDraft}
+                onChange={event => {
+                  const next = event.target.value
+                  setAddressDraft(
+                    looksLikeAPhone(next) ? formatPhoneDigits(next) : next,
+                  )
+                }}
+                onKeyDown={event => {
+                  if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
+                    event.preventDefault()
+                    void subscribe()
+                  }
+                }}
+                inputMode="tel"
+                placeholder="xxx-xxx-xxxx or you@icloud.com"
+                aria-label="Your number or Apple ID"
+                className="h-full min-w-0 flex-1 rounded-xl bg-transparent px-2 text-sm outline-none"
+              />
+            </div>
             <button
               onClick={() => void subscribe()}
               disabled={busy !== ''}
@@ -810,6 +985,13 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
               {busy === 'subscribe' ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
               Subscribe
             </button>
+            {/* Any form works — the address is reduced to one canonical shape
+                before it is stored or compared, so dashes, spaces, brackets and
+                a +1 all mean the same number. Saying so stops someone guessing
+                at a format that used to matter. */}
+            <p className="w-full text-[11px] text-[#86868b]">
+              Just the ten digits — or type an Apple ID instead.
+            </p>
           </div>
         )}
         <p className="mt-2 text-[11px] leading-4 text-[#86868b]">
