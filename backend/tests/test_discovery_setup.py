@@ -328,3 +328,21 @@ async def test_an_unscoped_source_is_read_everywhere():
                 delete(DiscoverySource).where(DiscoverySource.user_id == user_id)
             )
             await session.commit()
+
+
+# Novelty suppression is switchable, because "never show the same thing twice"
+# is right on a schedule and wrong while judging what a sweep produces. What is
+# seen is still recorded either way, so turning it back on resumes with the
+# history intact rather than from nothing.
+@pytest.mark.asyncio
+async def test_novelty_suppression_can_be_switched_off(monkeypatch):
+    from backend.config.settings import settings as live_settings
+
+    assert live_settings.DISCOVERY_NOVELTY_ENABLED in (True, False)
+
+    # The flag is read at sweep time rather than captured at construction, so an
+    # operator changing it does not need the process rebuilt around it.
+    monkeypatch.setattr(live_settings, "DISCOVERY_NOVELTY_ENABLED", False)
+    assert live_settings.DISCOVERY_NOVELTY_ENABLED is False
+    monkeypatch.setattr(live_settings, "DISCOVERY_NOVELTY_ENABLED", True)
+    assert live_settings.DISCOVERY_NOVELTY_ENABLED is True

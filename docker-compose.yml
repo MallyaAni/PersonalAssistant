@@ -377,6 +377,10 @@ services:
       - SEARCH_MCP_SERVER_ID=${SEARCH_MCP_SERVER_ID:-internet}
       - SEARCH_MCP_TOOL_NAME=${SEARCH_MCP_TOOL_NAME:-search_web}
       - DISCOVERY_WEB_SEARCH_ENABLED=${DISCOVERY_WEB_SEARCH_ENABLED:-true}
+      # Off means every sweep reports everything it finds, including what it
+      # has shown before. Useful while judging output; not what you want on a
+      # schedule.
+      - DISCOVERY_NOVELTY_ENABLED=${DISCOVERY_NOVELTY_ENABLED:-true}
       - DISCOVERY_WEB_QUERIES_PER_SWEEP=${DISCOVERY_WEB_QUERIES_PER_SWEEP:-4}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
@@ -448,6 +452,9 @@ services:
       - DISCOVERY_PLACE_RESOLVER_URL=${DISCOVERY_PLACE_RESOLVER_URL:-https://nominatim.openstreetmap.org/reverse}
       - DISCOVERY_PLACE_RESOLVER_USER_AGENT=${DISCOVERY_PLACE_RESOLVER_USER_AGENT:-AniOS/1.0 (local personal assistant)}
       - DISCOVERY_EGRESS_ENABLED=${DISCOVERY_EGRESS_ENABLED:-false}
+      # Must match the worker's value: the API can run a sweep too, and the
+      # two disagreeing means a rehearsal and a real run filter differently.
+      - DISCOVERY_NOVELTY_ENABLED=${DISCOVERY_NOVELTY_ENABLED:-true}
       # Which server owns the Apple device, and what its send tool is called.
       # The worker had these and this did not, so a send from the API would
       # resolve the tool name to its code default - `send_message`, which the

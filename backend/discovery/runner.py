@@ -242,9 +242,13 @@ class DiscoveryRunner:
         # A rehearsal treats everything as new. Applying novelty would show an
         # empty result to anyone who had already run a real sweep, which is the
         # opposite of what a rehearsal is for.
+        # A rehearsal never applies novelty, and an operator can switch it off
+        # entirely. What is seen is still recorded either way, so turning it
+        # back on resumes with the history intact rather than from nothing.
+        suppress_seen = persist and settings.DISCOVERY_NOVELTY_ENABLED
         novel = (
             await self.novelty.novel(user_id, candidates, now=moment)
-            if persist
+            if suppress_seen
             else candidates
         )
 

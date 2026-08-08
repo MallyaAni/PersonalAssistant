@@ -170,6 +170,12 @@ class Settings(BaseSettings):
     # enough to cover an ordinary trip, short enough that forgetting to say you
     # came back costs a couple of digests rather than every digest from now on.
     DISCOVERY_TRIP_DAYS: int = Field(default=14, ge=1, le=180)
+    # Whether a sweep hides what it has already shown. On by default, because
+    # "never show the same thing twice" is what stops a weekly digest becoming
+    # the same list every week. Turning it off makes every sweep report
+    # everything it finds, which is what you want while judging output quality
+    # and not what you want on a schedule.
+    DISCOVERY_NOVELTY_ENABLED: bool = True
     DISCOVERY_PLACE_RESOLVER: Literal["", "nominatim"] = ""
     DISCOVERY_PLACE_RESOLVER_URL: str = "https://nominatim.openstreetmap.org/reverse"
     DISCOVERY_PLACE_RESOLVER_USER_AGENT: str = "AniOS/1.0 (local personal assistant)"
