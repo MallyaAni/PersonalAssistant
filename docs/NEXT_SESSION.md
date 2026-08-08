@@ -5,7 +5,63 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 [ROADMAP.md](ROADMAP.md), and stable architecture facts in
 [ARCHITECTURE.md](ARCHITECTURE.md).
 
-Last updated: 2026-08-03, America/New_York (defect-fix session)
+Last updated: 2026-08-08, America/New_York (iMessage bridge Mac-side verification)
+
+## Scout's iMessage channel — VERIFIED working end to end
+
+The bridge (`bridges/imessage_mac/`) is running on a real Mac (not AniOS's
+Windows host) and a message sent through it was confirmed received on the
+allowlisted phone. Both the header-auth transport fix (`d3001d9`) and the
+backend's own missing `docker-compose.yml` allowlist entries for
+`DISCOVERY_IMESSAGE_SERVER_ID`/`DISCOVERY_IMESSAGE_TOOL` (`6e77969` — the
+fourth instance of the environment-allowlist trap this session) were needed
+before this worked; either alone left it silently broken.
+
+What the Mac side needed, none of which is obvious from the bridge's own code:
+
+- **Python 3.10+, not the system `python3`.** A stock macOS install (and this
+  Mac specifically) ships an ancient `python3` (3.7 here) via an old
+  python.org installer; `mcp` requires 3.10+ and fails at `pip install` with
+  "no matching distribution found for mcp", which names the package rather
+  than the interpreter as the cause. Installing a newer Python via Homebrew on
+  an unsupported-for-bottles macOS version (this Mac: Ventura 13.7, Intel)
+  means several dependencies build from source, and that build fails outright
+  if Xcode Command Line Tools are older than Xcode 15.2 — this Mac's shipped
+  CLT was from 2019 (`clang 11.0.0`) and needed
+  `sudo rm -rf /Library/Developer/CommandLineTools && sudo xcode-select --install`
+  before Homebrew's `openssl@3`/`readline` builds would even compile.
+- **The Automation permission prompt is silent when nobody can answer it.**
+  The first `osascript` call to Messages/System Events from a non-interactive
+  or remote-controlled shell hangs for the AppleEvent timeout
+  (`-1712`) and never surfaces a clickable dialog. It only works once someone
+  runs an AppleScript call to Messages from an interactive Terminal window
+  they're physically at, and clicks Allow.
+- **The bridge needs the Mac to actually stay up.** `pmset -g` showed
+  `sleep 1` (1 minute) by default on this machine; fixed with
+  `sudo pmset -c sleep 0` and `sudo pmset -c disksleep 0` (scoped to AC power
+  only, on purpose — battery behavior is untouched). A laptop's lid still
+  forces sleep regardless of `pmset` unless it's in clamshell mode with an
+  external display attached.
+- **The process itself needs to survive logout/crash, which `nohup` does
+  not.** It now runs as a `launchd` LaunchAgent at
+  `~/Library/LaunchAgents/com.anios.imessage-bridge.plist`
+  (`RunAtLoad` + `KeepAlive`, verified by `kill -9`-ing the process and
+  watching it respawn under a new PID within seconds). This only starts once
+  the Mac's user account is actually logged into a GUI session — it is a
+  LaunchAgent, not a LaunchDaemon, because Messages automation needs a real
+  Aqua session, not just a booted machine.
+
+**The Mac's LAN IP is the address in `MCP_SERVERS_JSON`, and it can move.**
+Same failure shape as the tunnel hostname below: if this Mac's DHCP lease
+changes, the configured `url` silently points at nothing and AniOS-side
+delivery starts failing with no signal pointing at the address as the cause.
+Consider a static DHCP reservation for this Mac if the bridge is meant to be
+depended on rather than just demoed.
+
+**The shared bridge token has already been rotated once** after an earlier
+value was pasted into a chat transcript relaying setup instructions between
+the two machines. Treat any token that has appeared in a conversation as
+burned; regenerate rather than reuse.
 
 ## Public access is a temporary Cloudflare quick tunnel
 
