@@ -39,6 +39,11 @@ from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
+# Where AniOS puts the shared secret. Configured on its side as a per-server
+# header, so it never becomes a tool argument the outbound privacy gate would
+# refuse to send.
+BRIDGE_TOKEN_HEADER = "x-anios-bridge-token"
+
 # Bounds mirroring the caller's, enforced again here because a bridge that
 # trusts its caller's limits has no limits.
 MAX_BODY_CHARS = 4_000
@@ -225,7 +230,6 @@ def create_bridge(config: BridgeConfig) -> FastMCP:
 
     @server.tool()
     def send_imessage(
-        token: str,
         to: str,
         body: str,
         attachment_name: str | None = None,
@@ -233,12 +237,11 @@ def create_bridge(config: BridgeConfig) -> FastMCP:
         attachment_base64: str | None = None,
     ) -> str:
         """Send one iMessage, optionally with a calendar file attached."""
-        # Compared in constant time so the token cannot be recovered by timing
-        # repeated calls.
-        import hmac
-
-        if not hmac.compare_digest(token, config.token):
-            raise BridgeError("Invalid bridge token.")
+        # The token is checked at the transport, not here. It used to be a tool
+        # argument, which cannot work against AniOS: every string argument is
+        # screened by the outbound privacy gate before it leaves, and a
+        # high-entropy secret is precisely what that gate refuses to send. A
+        # header is also simply the right place for a credential.
         return send_message(
             config,
             to,
@@ -251,13 +254,38 @@ def create_bridge(config: BridgeConfig) -> FastMCP:
     return server
 
 
+# Wrap the MCP app so an unauthenticated request is refused before it reaches
+# any tool. Anything on the network can open an HTTP port; without this the
+# bridge is an open "send an iMessage as me" endpoint.
+def build_app(config: BridgeConfig) -> "Any":
+    import hmac
+
+    from starlette.middleware.base import BaseHTTPMiddleware
+    from starlette.responses import JSONResponse
+
+    app = create_bridge(config).streamable_http_app()
+
+    # Compared in constant time so the token cannot be recovered by timing.
+    async def authenticate(request: "Any", call_next: "Any") -> "Any":
+        supplied = request.headers.get(BRIDGE_TOKEN_HEADER, "")
+        if not hmac.compare_digest(supplied, config.token):
+            # No detail: a caller that guessed wrong learns only that it did.
+            return JSONResponse({"error": "unauthorized"}, status_code=401)
+        return await call_next(request)
+
+    app.add_middleware(BaseHTTPMiddleware, dispatch=authenticate)
+    return app
+
+
 def main() -> None:
     if sys.platform != "darwin":
         # Refuse loudly rather than failing later with a confusing osascript
         # error. This only ever works on a Mac.
         raise SystemExit("The iMessage bridge only runs on macOS.")
+    import uvicorn
+
     config = BridgeConfig.from_environment()
-    create_bridge(config).run(transport="streamable-http")
+    uvicorn.run(build_app(config), host=config.host, port=config.port)
 
 
 if __name__ == "__main__":
@@ -265,7 +293,9 @@ if __name__ == "__main__":
 
 
 __all__: list[Any] = [
+    "BRIDGE_TOKEN_HEADER",
     "BridgeConfig",
+    "build_app",
     "BridgeError",
     "check_recipient",
     "create_bridge",

@@ -24,6 +24,12 @@ can refuse regardless of what AniOS was persuaded to ask for.
 token this is an open "send an iMessage as me" endpoint. There is no default and
 it refuses to start without one.
 
+It is checked at the transport, as the `x-anios-bridge-token` header, and an
+unauthenticated request is refused before it reaches any tool. It was originally
+a tool argument, which cannot work against AniOS: every string argument passes
+the outbound privacy gate before leaving, and a high-entropy secret is exactly
+what that gate exists to stop.
+
 **No AppleScript interpolation.** Arguments reach `osascript` as argv and are
 read with `on run argv`, so a message body containing quotes or backslashes is
 data, never script. Building the script by string formatting is how a bridge like
@@ -39,7 +45,9 @@ Apple ID is a much larger thing than this needs to be.
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
+# Print it — the same value goes into the AniOS side below.
 export IMESSAGE_BRIDGE_TOKEN="$(python3 -c 'import secrets;print(secrets.token_urlsafe(32))')"
+echo "$IMESSAGE_BRIDGE_TOKEN"
 export IMESSAGE_BRIDGE_RECIPIENTS="+15550100,+15550101"
 # Loopback by default. Set this only when AniOS is on another machine.
 export IMESSAGE_BRIDGE_HOST=0.0.0.0
@@ -64,10 +72,16 @@ egress:
 ```jsonc
 [
   {
-    "id": "imessage",
-    "transport": "streamable-http",
+    // `server_id`, not `id`, and `http`, not `streamable-http` — those are the
+    // names the parser reads, and an entry it cannot parse is skipped silently.
+    "server_id": "imessage",
+    "transport": "http",
     "url": "http://<mac-lan-ip>:8010/mcp",
-    "risk_classification": "consequential",
+    "headers": { "x-anios-bridge-token": "<the token printed above>" },
+    // Sending is not replay-safe: a dropped connection does not prove the
+    // message was not delivered. Only `read_only` and `trusted` are retried, so
+    // this must be neither, or a timeout can send the same digest twice.
+    "risk_classification": "untrusted",
     "enabled": true
   }
 ]

@@ -1,3 +1,9 @@
-# The bridge needs only an MCP server. Everything else it uses is stdlib, so a
-# Mac running this pulls in nothing that could reach the network on its own.
-mcp>=1.2.0
+# The bridge needs only an MCP server and something to serve it. Everything else
+# it uses is stdlib, so a Mac running this pulls in nothing that could reach the
+# network on its own.
+#
+# Capped below 2.0 for the same reason AniOS is: 2.0 removes
+# mcp.server.fastmcp, so an unbounded range means a fresh install on the Mac
+# fails to import while an older machine keeps working.
+mcp>=1.2.0,<2.0.0
+uvicorn>=0.30.0
