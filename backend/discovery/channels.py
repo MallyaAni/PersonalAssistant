@@ -32,6 +32,19 @@ class DeliveryError(RuntimeError):
     """Raised when a channel could not deliver, with no side effect."""
 
 
+class ChannelRefusedError(DeliveryError):
+    """The far side answered and declined, with a reason worth recording.
+
+    Distinct from a transport failure because it is *deterministic*: the same
+    send will be refused again, so retrying is pointless rather than merely
+    unsafe. The code names something an operator can fix.
+    """
+
+    def __init__(self, code: str) -> None:
+        super().__init__(code)
+        self.code = code
+
+
 @dataclass(frozen=True, slots=True)
 class Attachment:
     """A file travelling with the message.
@@ -177,6 +190,11 @@ class MessagesAppChannel(NotificationChannel):
             arguments["attachment_base64"] = attachment.encoded()
         try:
             await self.invoke_tool(self.tool_name, arguments)
+        except ChannelRefusedError as refused:
+            # The bridge answered, so nothing is in doubt about whether it sent:
+            # it did not. Not marked replayable all the same, because the same
+            # refusal would follow every retry until a person changes something.
+            return DeliveryResult(delivered=False, error_code=refused.code)
         except Exception as exc:
             # The provider's own error text is not propagated: it can contain
             # the address, and a failure reason is not worth leaking one. Only

@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+import json
 import os
 import re
 import subprocess
@@ -57,7 +58,15 @@ ALLOWED_MEDIA_TYPES = frozenset({"text/calendar"})
 ALLOWED_SUFFIXES = frozenset({".ics"})
 
 # Phone numbers and Apple IDs, normalized for comparison against the allowlist.
-_NON_DIGITS = re.compile(r"[^\d+]")
+#
+# Digits only. This kept `+` once, which quietly defeated the country-code rule
+# below: `+17032613382` does not start with "1", so the leading digit was never
+# dropped, and the same phone written `+1703...` and `703...` compared as two
+# different people. AniOS strips to digits in backend/discovery/addressing.py,
+# so keeping the plus here also broke the agreement the two are supposed to
+# hold — an approved recipient refused at the last hop for writing her own
+# number the other way.
+_NON_DIGITS = re.compile(r"[^0-9]")
 
 
 class BridgeError(RuntimeError):
@@ -101,6 +110,9 @@ class BridgeConfig:
     allowed_recipients: frozenset[str]
     host: str
     port: int
+    # Where recipients granted by AniOS are recorded, and whether AniOS may
+    # grant any. Both off unless the Mac's operator turns them on.
+    grants_path: Path | None = None
 
     @classmethod
     def from_environment(cls) -> BridgeConfig:
@@ -124,7 +136,70 @@ class BridgeConfig:
             # deliberate act, not the out-of-the-box state.
             host=os.environ.get("IMESSAGE_BRIDGE_HOST", "127.0.0.1"),
             port=int(os.environ.get("IMESSAGE_BRIDGE_PORT", "8010")),
+            grants_path=_grants_path(),
         )
+
+
+# Where granted recipients live, or None when granting is switched off.
+#
+# Off by default, and that default is the point. Letting AniOS extend this list
+# means whoever holds the bridge token can decide who this Mac messages as its
+# owner — which is a different, larger permission than "message these people".
+# Turning it on is the Mac operator's decision to delegate that, made once and
+# explicitly, rather than something inherited from installing the bridge.
+def _grants_path() -> Path | None:
+    if os.environ.get("IMESSAGE_BRIDGE_ALLOW_GRANTS", "").strip().lower() not in {
+        "1",
+        "true",
+        "yes",
+    }:
+        return None
+    configured = os.environ.get("IMESSAGE_BRIDGE_GRANTS", "").strip()
+    if configured:
+        return Path(configured).expanduser()
+    return Path.home() / ".anios-imessage-bridge" / "granted-recipients.json"
+
+
+# Recipients AniOS has been allowed to add, read fresh on every check.
+#
+# Read from disk each time rather than cached at startup, because the point of
+# granting is that approving a subscription works *now*. A cached list would
+# reintroduce exactly the failure this exists to remove: an approval that looks
+# done and a bridge that still refuses until someone restarts it.
+def load_grants(config: BridgeConfig) -> frozenset[str]:
+    if config.grants_path is None or not config.grants_path.exists():
+        return frozenset()
+    try:
+        stored = json.loads(config.grants_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        # A corrupt grant file must not take the bridge down, and must not
+        # silently widen the allowlist either. It reads as no grants.
+        return frozenset()
+    if not isinstance(stored, list):
+        return frozenset()
+    return frozenset(
+        normalize_recipient(str(item)) for item in stored if str(item).strip()
+    )
+
+
+# Record one granted recipient. Returns whether it was newly added.
+def store_grant(config: BridgeConfig, recipient: str) -> bool:
+    if config.grants_path is None:
+        raise BridgeError(
+            "This bridge does not accept grants. "
+            "Set IMESSAGE_BRIDGE_ALLOW_GRANTS=true to let AniOS add recipients."
+        )
+    normalized = normalize_recipient(recipient)
+    if not normalized:
+        raise BridgeError("A recipient is required.")
+    existing = load_grants(config)
+    if normalized in existing or normalized in config.allowed_recipients:
+        return False
+    config.grants_path.parent.mkdir(parents=True, exist_ok=True)
+    config.grants_path.write_text(
+        json.dumps(sorted(existing | {normalized}), indent=2), encoding="utf-8"
+    )
+    return True
 
 
 # Compare recipients by digits so "+1 (555) 010-0" and "+15550100" are one
@@ -150,7 +225,11 @@ def check_recipient(config: BridgeConfig, recipient: str) -> str:
     normalized = normalize_recipient(recipient)
     if not normalized:
         raise BridgeError("A recipient is required.")
-    if normalized not in config.allowed_recipients:
+    # Two sources, one rule: what the Mac's operator wrote in the environment,
+    # plus anyone AniOS was permitted to grant. The environment list is never
+    # rewritten, so the operator's own choices survive a grant file being
+    # deleted, and deleting it revokes every grant at once.
+    if normalized not in config.allowed_recipients | load_grants(config):
         # Deliberately does not echo the recipient: the refusal reason should
         # not become a way to probe who is on the list.
         raise BridgeError("That recipient is not on this bridge's allowlist.")
@@ -261,6 +340,16 @@ def create_bridge(config: BridgeConfig) -> FastMCP:
             attachment_base64,
         )
 
+    @server.tool()
+    def allow_recipient(to: str) -> str:
+        """Permit one recipient, so an approved subscription can be messaged."""
+        # Approving a subscription in AniOS and hand-editing a list on the Mac
+        # are two records of the same decision, and they drifted: a recipient
+        # was approved, the digest was built on time, and the bridge refused it
+        # at the last hop. One approval should reach both.
+        added = store_grant(config, to)
+        return "Recipient allowed." if added else "Recipient was already allowed."
+
     return server
 
 
@@ -321,6 +410,8 @@ __all__: list[Any] = [
     "check_recipient",
     "create_bridge",
     "decode_attachment",
+    "load_grants",
     "normalize_recipient",
     "send_message",
+    "store_grant",
 ]

@@ -1,3 +1,4 @@
+import logging
 from datetime import UTC, datetime
 from functools import lru_cache
 from typing import Annotated
@@ -37,6 +38,7 @@ from backend.core.llm import LLMClient, create_inference_provider
 from backend.core.model_gate import ModelExecutionGate
 from backend.database.session import get_db
 from backend.discovery.channels import (
+    ChannelRefusedError,
     MessagesAppChannel,
     NotificationChannel,
     NullChannel,
@@ -104,6 +106,8 @@ from backend.services.tracing import (
 )
 from backend.services.vision_analysis_service import VisionAnalysisService
 from backend.vision.lm_studio import create_vision_provider
+
+logger = logging.getLogger(__name__)
 
 
 # Reuse one concurrency-limited embedding adapter across application requests.
@@ -933,8 +937,51 @@ async def _invoke_discovery_tool(tool_name: str, arguments: dict[str, str]) -> o
     # The service reports a tool-side failure in the result rather than raising,
     # and a channel must never report a success it did not have.
     if result.is_error:
-        raise RuntimeError("imessage tool reported an error")
+        raise ChannelRefusedError(_refusal_code(result))
     return result
+
+
+# Why the bridge refused, as a code rather than its own words.
+#
+# The text is deliberately not propagated — it is written by another machine and
+# can name the recipient. But collapsing every refusal to one opaque failure had
+# a real cost: a digest was built on time, refused because the recipient was not
+# on the Mac's allowlist, and recorded only as `channel_failed`. Finding that out
+# took a hand-written probe against the bridge. The distinction below is the one
+# an operator can act on: fix the allowlist, or fix the bridge.
+def _refusal_code(result: object) -> str:
+    text = str(getattr(result, "content", "") or "").casefold()
+    if "allowlist" in text or "not on this bridge" in text:
+        return "recipient_not_allowed"
+    return "channel_failed"
+
+
+# Ask the bridge to permit an address the operator has just approved.
+#
+# Never raises into the approval. A bridge that is asleep, older than this
+# feature, or configured to refuse grants must not turn a successful approval
+# into a failed request — the approval is real either way, and the digest path
+# already reports its own delivery failures.
+async def grant_recipient_on_bridge(channel: str, address: str) -> str:
+    if channel != "imessage" or not settings.DISCOVERY_EGRESS_ENABLED:
+        return "not_applicable"
+    try:
+        result = await get_mcp_invocation_service().invoke(
+            settings.DISCOVERY_IMESSAGE_SERVER_ID,
+            "allow_recipient",
+            {"to": address},
+            confirmed=True,
+        )
+    except Exception:
+        logger.warning("bridge_grant_unreachable", extra={"channel": channel})
+        return "unreachable"
+    if result.is_error:
+        # Most likely an older bridge with no such tool, or one whose operator
+        # has not opted into grants. Both are states a person has to resolve on
+        # the Mac, so they are reported rather than retried.
+        logger.warning("bridge_grant_refused", extra={"channel": channel})
+        return "refused"
+    return "granted"
 
 
 def get_tool_memory_service(

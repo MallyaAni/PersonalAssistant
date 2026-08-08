@@ -25,7 +25,9 @@ from server import (  # noqa: E402
     BridgeError,
     check_recipient,
     decode_attachment,
+    load_grants,
     normalize_recipient,
+    store_grant,
 )
 
 _CALENDAR = b"BEGIN:VCALENDAR\r\nVERSION:2.0\r\nEND:VCALENDAR\r\n"
@@ -134,3 +136,103 @@ def test_a_valid_calendar_attachment_decodes():
     )
     assert name == "discoveries.ics"
     assert content == _CALENDAR
+
+
+# --- granting a recipient the operator approved in AniOS ----------------------
+#
+# Approving a subscription in AniOS and listing the number on the Mac were two
+# records of one decision, kept by hand, and they drifted: a subscriber was
+# approved, her digest was built on time, and the bridge refused it at the last
+# hop. The grant path exists to make one approval reach both.
+
+
+def _granting_config(tmp_path: Path, recipients: tuple[str, ...] = ("+15550100",)):
+    return BridgeConfig(
+        token="secret",
+        allowed_recipients=frozenset(normalize_recipient(r) for r in recipients),
+        host="127.0.0.1",
+        port=8010,
+        grants_path=tmp_path / "granted.json",
+    )
+
+
+def test_granting_is_refused_unless_the_operator_turned_it_on():
+    # Letting AniOS extend the allowlist is a larger permission than sending to
+    # a fixed list, so it is never acquired by simply installing the bridge.
+    with pytest.raises(BridgeError, match="does not accept grants"):
+        store_grant(_config(), "+15550111")
+
+
+def test_a_granted_recipient_becomes_sendable(tmp_path):
+    config = _granting_config(tmp_path)
+
+    with pytest.raises(BridgeError, match="allowlist"):
+        check_recipient(config, "+17032613382")
+
+    assert store_grant(config, "+17032613382") is True
+    # No restart between the grant and the send: an approval has to work now,
+    # which is exactly what a startup-cached allowlist could not do.
+    assert check_recipient(config, "+17032613382") == "+17032613382"
+
+
+def test_a_grant_is_matched_however_the_number_was_written(tmp_path):
+    config = _granting_config(tmp_path)
+    store_grant(config, "+1 (703) 261-3382")
+
+    assert check_recipient(config, "7032613382") == "7032613382"
+
+
+def test_granting_the_same_person_twice_is_not_an_error(tmp_path):
+    config = _granting_config(tmp_path)
+
+    assert store_grant(config, "+17032613382") is True
+    assert store_grant(config, "7032613382") is False
+
+
+def test_someone_already_in_the_environment_list_is_not_regranted(tmp_path):
+    config = _granting_config(tmp_path, ("+15550100",))
+    assert store_grant(config, "+15550100") is False
+
+
+def test_the_operators_own_list_survives_a_deleted_grant_file(tmp_path):
+    config = _granting_config(tmp_path, ("+15550100",))
+    store_grant(config, "+17032613382")
+    config.grants_path.unlink()
+
+    # Deleting the file revokes every grant at once and leaves the operator's
+    # own choices untouched.
+    assert check_recipient(config, "+15550100") == "+15550100"
+    with pytest.raises(BridgeError, match="allowlist"):
+        check_recipient(config, "+17032613382")
+
+
+def test_a_corrupt_grant_file_never_widens_the_allowlist(tmp_path):
+    config = _granting_config(tmp_path)
+    config.grants_path.write_text("{not json", encoding="utf-8")
+
+    assert load_grants(config) == frozenset()
+    with pytest.raises(BridgeError, match="allowlist"):
+        check_recipient(config, "+17032613382")
+
+
+@pytest.mark.parametrize(
+    "written",
+    [
+        "+17032613382",
+        "17032613382",
+        "7032613382",
+        "+1 (703) 261-3382",
+        "703-261-3382",
+        "me@icloud.com",
+        "ME@iCloud.com",
+    ],
+)
+def test_the_bridge_and_anios_agree_on_every_way_a_number_is_written(written):
+    # These are two programs on two machines that must reach the same answer,
+    # and nothing else forces them to. Keeping "+" on this side once made
+    # "+1703..." and "703..." different people to the bridge and the same person
+    # to AniOS, so an approved recipient was refused at the last hop for writing
+    # her number the other way.
+    from backend.discovery.addressing import normalize_address
+
+    assert normalize_recipient(written) == normalize_address(written)

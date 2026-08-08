@@ -25,6 +25,7 @@ from backend.core.dependencies import (
     DbDependency,
     DependencyDiscoverySubscribers,
     get_search_budget,
+    grant_recipient_on_bridge,
 )
 from backend.discovery.search_budget import (
     GUEST_DAILY_QUERIES,
@@ -353,7 +354,15 @@ async def approve_subscription(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Subscription not found."
         )
-    return {"id": person.id, "approved": person.approved}
+    # Carry the same decision to the machine that actually sends.
+    #
+    # Approving here and listing the number on the Mac were two records of one
+    # choice, kept by hand, and they drifted: a subscriber was approved, her
+    # digest was built on time, and the bridge refused it at the last hop with
+    # nothing in the run to say why. The operator had done everything the UI
+    # asked for.
+    granted = await grant_recipient_on_bridge(person.channel, person.address)
+    return {"id": person.id, "approved": person.approved, "bridge": granted}
 
 
 # Refuse a request to be messaged by this machine.
