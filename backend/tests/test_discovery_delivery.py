@@ -86,7 +86,7 @@ def test_an_empty_selection_produces_no_message():
     assert render_message((), _BASE) is None
 
 
-def test_the_message_carries_a_local_time_and_a_calendar_link():
+def test_the_message_carries_a_local_time_and_the_source_link():
     message = render_message(
         (_ranked("Jazz at the Green"),), _BASE, timezone="America/New_York"
     )
@@ -95,8 +95,12 @@ def test_the_message_carries_a_local_time_and_a_calendar_link():
     assert "Jazz at the Green" in message
     # 2026-08-11T12:00Z is 08:00 in New York, not 12:00.
     assert "8:00am" in message
-    assert f"{_BASE}/" in message
-    assert ".ics" in message
+    # The source's own link, which resolves from anywhere. No calendar file and
+    # no calendar link: an attachment nobody asked for is friction on a phone,
+    # and a link back to this machine only works on its network.
+    assert "https://example.org/" in message
+    assert ".ics" not in message
+    assert "Add:" not in message
 
 
 def test_an_unknown_timezone_falls_back_rather_than_failing():
@@ -267,90 +271,44 @@ async def test_re_enrolling_the_same_address_updates_one_permission():
         await _cleanup(user_id)
 
 
-def test_the_calendar_travels_as_one_attachable_file():
-    from backend.discovery.delivery import build_calendar_attachment
+# Something that already happened is worse than nothing: it is the clearest
+# possible signal that whatever sent it is not paying attention. Selection
+# applies a lead-time window, but a digest can be rendered from a stored run
+# long after the sweep that produced it.
+def test_an_event_that_has_already_happened_is_never_sent():
+    past = _ranked("Last week's concert", days_ahead=-7)
+    future = _ranked("Next week's concert", days_ahead=7)
 
-    attachment = build_calendar_attachment((_ranked("Jazz"), _ranked("Blues", 12)))
+    message = render_message((past, future), timezone="America/New_York", now=_NOW)
 
-    assert attachment is not None
-    assert attachment.filename == "discoveries.ics"
-    assert attachment.media_type == "text/calendar"
-    document = attachment.content.decode("utf-8")
-    # One document, both events, so a phone can offer to add them together.
-    assert document.count("BEGIN:VEVENT") == 2
-    assert not attachment.too_large
+    assert message is not None
+    assert "Next week's concert" in message
+    assert "Last week's concert" not in message
 
 
-def test_a_digest_with_nothing_datable_has_no_attachment():
-    undated = RankedCandidate(
-        ScoredCandidate(
-            DiscoveredEvent(
-                source_id="web",
-                external_id="u1",
-                title="Weekly group walks",
-                starts_at=None,
-                ends_at=None,
-                place=None,
-                url="https://example.org/walks",
-                summary=None,
-            ),
-            None,
-        ),
-        0.8,
-        "hiking",
+# A digest of only past finds is no digest at all, and saying nothing beats
+# sending a list of things that are over.
+def test_a_digest_of_only_past_events_sends_nothing():
+    assert render_message((_ranked("Over already", days_ahead=-2),), now=_NOW) is None
+
+
+# An undated find cannot have passed. Nobody said when it happens, so it is a
+# standing thing rather than a missed one.
+def test_an_undated_find_is_not_treated_as_past():
+    event = DiscoveredEvent(
+        source_id="src-1",
+        external_id="evt-undated",
+        title="A trail worth walking",
+        starts_at=None,
+        ends_at=None,
+        place=None,
+        # A trail is a place rather than a page, so it may carry no link.
+        url=None,
+        summary=None,
     )
-    from backend.discovery.delivery import build_calendar_attachment
+    undated = RankedCandidate(ScoredCandidate(event, None), 0.9, "hiking")
 
-    assert build_calendar_attachment((undated,)) is None
+    message = render_message((undated,), now=_NOW)
 
-
-@pytest.mark.asyncio
-async def test_delivery_attaches_the_calendar_and_drops_the_links():
-    # A link only resolves on the sender's network; the attachment is what makes
-    # this work for a recipient on mobile data.
-    user_id = f"sub_{uuid.uuid4().hex[:12]}"
-    try:
-        async with AsyncSessionLocal() as session:
-            repo = SubscriberRepository(session)
-            await repo.enroll(user_id, "imessage", "+15550100", consented=True)
-            channel = _RecordingChannel()
-
-            await DigestDelivery(repo, {"imessage": channel}).deliver(
-                user_id, (_ranked("Jazz"),), _BASE
-            )
-
-            _address, message = channel.sent[0]
-            assert channel.attachments[0] is not None
-            assert "Add: " not in message
-            assert "the calendar file is attached" in message
-    finally:
-        await _cleanup(user_id)
-
-
-@pytest.mark.asyncio
-async def test_an_oversized_attachment_is_refused_rather_than_sent():
-    channel = MessagesAppChannel(lambda *_: None, "send_message")
-    huge = Attachment("x.ics", "text/calendar", b"x" * (256 * 1024 + 1))
-
-    result = await channel.send("+15550100", "hi", huge)
-
-    assert result.delivered is False
-    assert result.error_code == "attachment_too_large"
-
-
-@pytest.mark.asyncio
-async def test_the_bridge_receives_the_file_encoded_for_a_json_boundary():
-    import base64
-
-    captured: dict[str, object] = {}
-
-    async def _capture(tool_name: str, arguments: dict[str, str]) -> object:
-        captured.update(arguments)
-        return None
-
-    attachment = Attachment("discoveries.ics", "text/calendar", b"BEGIN:VCALENDAR")
-    await MessagesAppChannel(_capture, "send_message").send("+1555", "hi", attachment)
-
-    assert captured["attachment_name"] == "discoveries.ics"
-    assert captured["attachment_media_type"] == "text/calendar"
-    assert base64.b64decode(str(captured["attachment_base64"])) == b"BEGIN:VCALENDAR"
+    assert message is not None
+    assert "A trail worth walking" in message

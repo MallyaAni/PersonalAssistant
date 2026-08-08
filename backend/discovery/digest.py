@@ -9,7 +9,7 @@ parties over a channel that cannot be unsent.
 So the shape is fixed and only bounded field values vary.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
 from backend.discovery.relevance import RankedCandidate
@@ -21,26 +21,38 @@ MAX_PLACE_CHARS = 60
 MAX_SUMMARY_CHARS = 170
 
 
-# One line per event, in the recipient's own words as far as possible: what,
-# when, where. The calendar link is what makes it actionable.
+# One entry per find: what it is, when, where, and a link when the source gave
+# one. No calendar file and no calendar link — a message is read on a phone in a
+# few seconds, and an attachment nobody asked for is friction rather than help.
+#
+# `calendar_base_url` is accepted and ignored so existing callers keep working;
+# it is removed once none pass it.
 def render_message(
     selected: tuple[RankedCandidate, ...],
-    calendar_base_url: str | None,
+    calendar_base_url: str | None = None,
     timezone: str = "America/New_York",
     limit: int = MAX_EVENTS_IN_MESSAGE,
     notable: tuple[RankedCandidate, ...] = (),
+    now: datetime | None = None,
 ) -> str | None:
     """Return the digest text, or None when there is nothing worth sending."""
+    zone = _zone(timezone)
+    moment = now or datetime.now(UTC)
+    # Something that already happened is worse than nothing: it is the clearest
+    # possible signal that whatever sent it is not paying attention. Selection
+    # already applies a lead-time window, but a digest can be rendered from a
+    # stored run long after the sweep that produced it.
+    selected = tuple(item for item in selected if not _has_passed(item, moment))
+    notable = tuple(item for item in notable if not _has_passed(item, moment))
     if not selected and not notable:
         # Silence is a valid outcome. Sending "nothing this week" every week is
         # how a proactive assistant trains people to ignore it.
         return None
 
-    zone = _zone(timezone)
     dated = [item for item in selected if item.event.starts_at is not None]
     undated = [item for item in selected if item.event.starts_at is None]
 
-    lines = _render_dated(dated, calendar_base_url, zone, limit)
+    lines = _render_dated(dated, zone, limit)
     mentions = _render_undated(undated)
     if lines and mentions:
         lines.append("")
@@ -49,20 +61,22 @@ def render_message(
     return "\n".join(lines) if lines else None
 
 
+# Whether this find is already in the past. An undated find cannot have passed:
+# nobody said when it happens, so it is a standing thing rather than a missed
+# one.
+def _has_passed(item: RankedCandidate, moment: datetime) -> bool:
+    starts_at = item.event.starts_at
+    return starts_at is not None and starts_at < moment
+
+
 def _render_dated(
     dated: list[RankedCandidate],
-    calendar_base_url: str | None,
     zone: ZoneInfo,
     limit: int,
 ) -> list[str]:
     if not dated:
         return []
-    heading = (
-        "Coming up near you:"
-        if calendar_base_url
-        else "Coming up near you — the calendar file is attached:"
-    )
-    lines = [heading, ""]
+    lines = ["Coming up near you:", ""]
     for item in dated[:limit]:
         event = item.event
         line = f"• {_bound(event.title, MAX_TITLE_CHARS)}"
@@ -76,11 +90,11 @@ def _render_dated(
         # title alone, which is how you get ignored.
         if event.summary:
             lines.append(f"  {_bound(event.summary, MAX_SUMMARY_CHARS)}")
-        # No link when the calendar file travels with the message: the
-        # attachment is what the recipient taps, and a link would be the one
-        # that only resolves on the sender's network.
-        if calendar_base_url:
-            lines.append(f"  Add: {_calendar_url(calendar_base_url, item)}")
+        # The source's own link, which works from anywhere. Not every find has
+        # one — a trail or a park is a place rather than a page — and a line
+        # saying nothing is worse than no line.
+        if event.url:
+            lines.append(f"  {event.url}")
     remaining = len(dated) - limit
     if remaining > 0:
         lines.extend(["", f"and {remaining} more"])
@@ -115,10 +129,6 @@ def _format_when(starts_at: datetime | None, zone: ZoneInfo) -> str | None:
     meridiem = "am" if local.hour < 12 else "pm"
     clock = f"{hour}:{local.minute:02d}{meridiem}"
     return f"{local.strftime('%a %b')} {local.day}, {clock}"
-
-
-def _calendar_url(base: str, item: RankedCandidate) -> str:
-    return f"{base.rstrip('/')}/{item.candidate.digest}.ics"
 
 
 def _bound(value: str, limit: int) -> str:
