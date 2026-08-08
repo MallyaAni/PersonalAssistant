@@ -356,6 +356,24 @@ async def approve_subscription(
     return {"id": person.id, "approved": person.approved}
 
 
+# Refuse a request to be messaged by this machine.
+#
+# Approving had no counterpart, so the only way to decline was to leave the
+# request sitting in the list forever — which reads exactly like one nobody has
+# looked at yet.
+@router.post("/subscriptions/{subscriber_id}/deny", status_code=status.HTTP_200_OK)
+async def deny_subscription(
+    admin: AdminDependency,
+    subscriber_id: UUID,
+    subscribers: DependencyDiscoverySubscribers,
+) -> dict[str, object]:
+    if not await subscribers.deny(subscriber_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Subscription not found."
+        )
+    return {"id": str(subscriber_id), "denied": True}
+
+
 class SearchLimitRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

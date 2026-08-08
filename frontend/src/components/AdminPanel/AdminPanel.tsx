@@ -1,8 +1,18 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Check, Copy, Loader2, RefreshCw, ShieldCheck, Trash2, UserPlus } from 'lucide-react'
+import {
+  Check,
+  Copy,
+  Loader2,
+  RefreshCw,
+  ShieldCheck,
+  Trash2,
+  UserPlus,
+  X,
+} from 'lucide-react'
 
 import {
   approveSubscription,
+  denySubscription,
   createAdminInvite,
   decideAccessRequest,
   getAccessRequests,
@@ -108,6 +118,11 @@ const AdminPanel = () => {
 
   const permit = (subscription: AdminSubscription) =>
     perform(`permit-${subscription.id}`, () => approveSubscription(subscription.id))
+
+  // Declining is a decision, and it needs to be expressible. Without it the
+  // only way to say no was to leave the request sitting there indefinitely.
+  const refuse = (subscription: AdminSubscription) =>
+    perform(`deny-${subscription.id}`, () => denySubscription(subscription.id))
 
   // Both windows travel together: the endpoint writes both, so sending only the
   // edited one would clear the other. Blank means "use the default", not
@@ -249,6 +264,13 @@ const AdminPanel = () => {
                     className="ml-auto flex h-8 items-center gap-1 rounded-full bg-[#1d1d1f] px-3 text-xs font-medium text-white disabled:opacity-40"
                   >
                     <Check size={12} /> Allow
+                  </button>
+                  <button
+                    onClick={() => void refuse(item)}
+                    disabled={busy !== ''}
+                    className="flex h-8 items-center gap-1 rounded-full border border-black/[0.08] px-3 text-xs font-medium text-[#b23c3c] disabled:opacity-40"
+                  >
+                    <X size={12} /> Deny
                   </button>
                 </div>
               ))}

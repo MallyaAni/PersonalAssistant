@@ -2502,6 +2502,19 @@ export const approveSubscription = async (subscriberId: string): Promise<void> =
   );
 };
 
+// Refuse a request to be messaged. Approving had no counterpart, so declining
+// meant leaving the request in the list — which looks exactly like one nobody
+// has got to yet.
+export const denySubscription = async (subscriberId: string): Promise<void> => {
+  await readJson(
+    await fetch(`${adminBase}/subscriptions/${subscriberId}/deny`, {
+      method: 'POST',
+      credentials: 'include',
+    }),
+    'Could not deny that subscription.',
+  );
+};
+
 // Both windows are sent on every call because the endpoint writes both. Sending
 // only the edited one would silently clear the other.
 // Suspend or restore an account. Reversible on purpose: the account and
