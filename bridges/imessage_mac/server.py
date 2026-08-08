@@ -282,6 +282,17 @@ def main() -> None:
         # Refuse loudly rather than failing later with a confusing osascript
         # error. This only ever works on a Mac.
         raise SystemExit("The iMessage bridge only runs on macOS.")
+    if sys.version_info < (3, 10):
+        # macOS still ships 3.9 as `python3`, and mcp requires 3.10. Building the
+        # venv with the system interpreter therefore fails at `pip install` with
+        # "no matching distribution found for mcp", which names the package
+        # rather than the actual cause.
+        raise SystemExit(
+            "This bridge needs Python 3.10 or newer; "
+            f"this is {sys.version_info.major}.{sys.version_info.minor}. "
+            "macOS ships 3.9 as python3 — install a newer one and rebuild the "
+            "virtual environment with it."
+        )
     import uvicorn
 
     config = BridgeConfig.from_environment()

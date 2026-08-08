@@ -41,8 +41,20 @@ Apple ID is a much larger thing than this needs to be.
 
 ## Setup on the Mac
 
+**Python 3.10 or newer is required**, because `mcp` requires it. macOS still
+ships 3.9 as `python3`, and building the environment with that fails at install
+time with `no matching distribution found for mcp` — which names the package
+rather than the version that caused it. Check first, and use the newer
+interpreter by name:
+
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
+python3 --version                  # 3.10+? if not:
+ls /usr/local/bin/python3.* /opt/homebrew/bin/python3.* 2>/dev/null
+brew install python@3.12           # or the installer from python.org
+```
+
+```bash
+python3.12 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
 # Print it — the same value goes into the AniOS side below.
