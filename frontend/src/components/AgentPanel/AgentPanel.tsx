@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 
 import { getAgents, type AgentSummary } from '../../services/api'
+import ScoutDelivery from './ScoutDelivery'
 import ScoutFindings from './ScoutFindings'
 import ScoutSetup from './ScoutSetup'
 
@@ -129,6 +130,13 @@ const AgentPanel = ({ userId, onOpenView }: AgentPanelProps) => {
                           <span className={`h-2 w-2 rounded-full ${style.dot}`} />
                           {style.label}
                         </span>
+                        {/* Whether the agent is reaching you is the first thing
+                            worth knowing about it, and the thing most likely to
+                            need changing in a hurry. It was behind Configure,
+                            below the place and interest editors. */}
+                        {agent.id === 'discovery' && (
+                          <ScoutDelivery userId={userId} onChanged={() => void load(false)} />
+                        )}
                       </div>
                       <p className="mt-1 text-sm leading-5 text-[#6e6e73]">{agent.role}</p>
                       <p className="mt-2 text-sm font-medium text-[#1d1d1f]">{agent.detail}</p>
