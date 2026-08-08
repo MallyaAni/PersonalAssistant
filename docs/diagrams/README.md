@@ -26,6 +26,17 @@ The self-contained [published architecture page](../architecture.html) includes 
 
 Yellow dashed nodes identify a scaffolded component or a known current limitation. They do not claim planned behavior is implemented. Update a diagram only when the corresponding architecture changes, then render and check the complete suite using the commands in [the development guide](../DEVELOPMENT_GUIDE.md#architecture-diagram-maintenance).
 
+## One view per agent
+
+The subsystem views show a pipeline. These answer a different question, and the
+one that matters most when reading an agent: **what does the model actually
+decide, and what is decided for it?**
+
+| Agent | What the model decides | Source | SVG |
+| --- | --- | --- | --- |
+| Scout | Only how a find reads. What qualifies is deterministic. | [source](agent-scout.mmd) | [view](agent-scout.svg) |
+| Deck | Content and slide shape. Geometry, storage and promotion are not its to make. | [source](agent-deck.mmd) | [view](agent-deck.svg) |
+
 ## Readability contract
 
 Each diagram answers one engineering question. Prefer 15 or fewer conceptual nodes and 18 or fewer primary edges; exceed those guides only when removing a boundary would make the view misleading. Use short noun labels, one main reading direction, and shared boundary nodes instead of drawing every component-to-store or component-to-provider dependency.

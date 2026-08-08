@@ -26,6 +26,8 @@ const diagramNames = [
   "memory-subsystem",
   "memory-overview",
   "discovery-subsystem",
+  "agent-scout",
+  "agent-deck",
   "tool-memory-subsystem",
   "visual-artifact-subsystem",
   "visual-memory-editing-target",

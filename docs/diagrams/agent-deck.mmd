@@ -1,0 +1,37 @@
+---
+title: Deck — what the agent decides, and what it does not
+---
+flowchart TB
+    Ask([Explicit presentation request]) --> Supervisor[Typed supervisor route]
+    Supervisor --> Job[(Durable owned job)]
+    Job --> Worker[Leased background worker]
+
+    Worker --> Research[One grounded search<br/>subject, not the brief]
+    Research --> Outline[Model plans the outline<br/>and each slide's shape]
+    Outline --> Slide[Model writes one slide at a time]
+
+    Slide --> Compile[Deterministic compiler<br/>geometry Â· seven layouts Â· stable ids]
+    Compile --> Visual{Worth an image?}
+    Visual -->|bounded, best effort| Image[HiDream via ComfyUI]
+    Visual -->|no| Render
+    Image --> Render[PptxGenJS Â· OOXML Â· LibreOffice]
+    Render --> Revision[(Append-only revision)]
+
+    Decides[The model decides content and shape.<br/>Geometry, storage and promotion<br/>are never its to make]
+    Decides -.-> Outline
+    Decides -.-> Slide
+
+    Boundary[A figure the sources do not support<br/>must become a plainer layout]
+    Boundary -.-> Research
+
+    classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
+    classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
+    classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
+    classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
+    classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
+    class Ask interface;
+    class Supervisor,Worker,Compile,Visual,Render,Research application;
+    class Job,Revision data;
+    class Image external;
+    class Outline,Slide data;
+    class Decides,Boundary warning;
