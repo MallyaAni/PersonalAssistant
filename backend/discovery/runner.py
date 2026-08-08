@@ -36,6 +36,7 @@ from backend.discovery.relevance import (
 )
 from backend.discovery.search_budget import SearchBudget
 from backend.discovery.sources.ics import IcsEventSource
+from backend.discovery.sources.links import LinkPageEventSource
 from backend.discovery.sources.rss import RssEventSource
 from backend.discovery.sources.web import WebEventSource
 from backend.discovery.sources_repository import DiscoverySourceRepository, FeedSource
@@ -221,8 +222,19 @@ class DiscoveryRunner:
         """
         moment = now or datetime.now(UTC)
         budget = RequestBudget(limit=budget_limit)
+        # Where the user actually is, which scopes both what is read and what
+        # counts as already known.
+        primary = profile.active_locality
 
-        configured = await self.sources.list_sources(user_id, enabled_only=True)
+        # Scoped to where the user currently is. A page of DC events is worth
+        # nothing in Denver, and reading it anyway is how a digest fills with
+        # things happening several hundred miles away.
+        configured = await self.sources.list_sources(
+            user_id,
+            enabled_only=True,
+            locality_label=primary.label if primary else None,
+            scoped=True,
+        )
         events, failed = await self._collect(user_id, configured, budget)
         events = events + await self._search_events(user_id, profile, budget)
 
@@ -236,9 +248,8 @@ class DiscoveryRunner:
             else candidates
         )
 
-        # Scoped to where the user currently is, so travelling to a new place
-        # starts from nothing known and everything ordinary there is a find.
-        primary = profile.active_locality
+        # Scoped the same way, so travelling to a new place starts from nothing
+        # known and everything ordinary there is a find.
         novel, hidden_count = await self.familiarity.filter_known(
             user_id, primary.label if primary else None, novel
         )
@@ -455,6 +466,8 @@ class DiscoveryRunner:
 def _adapter_for(source: FeedSource, budget: RequestBudget) -> EventSource:
     if source.kind == "ics":
         return IcsEventSource(source.id, source.url, budget=budget)
+    if source.kind == "links":
+        return LinkPageEventSource(source.id, source.url, budget=budget)
     return RssEventSource(source.id, source.url, budget=budget)
 
 

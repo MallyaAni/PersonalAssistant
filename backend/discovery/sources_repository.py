@@ -4,14 +4,17 @@ import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.discovery.errors import DiscoveryProfileLimitError
 from backend.discovery.types import label_digest
 from backend.models.discovery_source import DiscoverySource
 
-SOURCE_KINDS = ("ics", "rss")
+# `links` is a hand-curated page of links rather than a feed: someone who
+# follows a city keeps one, search will not surface it, and its entries are
+# undated by nature.
+SOURCE_KINDS = ("ics", "rss", "links")
 
 # Bounds a sweep's cost before it starts. The request budget is the runtime
 # guard; this is the one the user sees when they add a feed too many.
@@ -28,6 +31,9 @@ class FeedSource:
     label: str | None
     enabled: bool
     last_error: str | None
+    # None means everywhere. A page of DC events is worth nothing in Denver, and
+    # a national feed is worth the same in both.
+    locality_digest: str | None = None
 
 
 class DiscoverySourceRepository:
@@ -36,12 +42,28 @@ class DiscoverySourceRepository:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
+    # `locality_label` narrows the list to feeds worth reading where the user
+    # currently is: those tied to that place, plus those tied to none. Omitted,
+    # every source is returned — which is what the management screen wants, and
+    # what a sweep must not do.
     async def list_sources(
-        self, user_id: str, enabled_only: bool = False
+        self,
+        user_id: str,
+        enabled_only: bool = False,
+        locality_label: str | None = None,
+        scoped: bool = False,
     ) -> tuple[FeedSource, ...]:
         stmt = select(DiscoverySource).where(DiscoverySource.user_id == user_id)
         if enabled_only:
             stmt = stmt.where(DiscoverySource.enabled.is_(True))
+        if scoped:
+            digest = label_digest(locality_label) if locality_label else None
+            stmt = stmt.where(
+                or_(
+                    DiscoverySource.locality_digest.is_(None),
+                    DiscoverySource.locality_digest == digest,
+                )
+            )
         rows = (await self.session.execute(stmt)).scalars().all()
         return tuple(_to_source(row) for row in rows)
 
@@ -54,6 +76,7 @@ class DiscoverySourceRepository:
         url: str,
         label: str | None = None,
         enabled: bool = True,
+        locality_label: str | None = None,
     ) -> FeedSource:
         if kind not in SOURCE_KINDS:
             raise ValueError(f"Unsupported source kind: {kind}")
@@ -71,12 +94,18 @@ class DiscoverySourceRepository:
                 url_digest=digest,
                 label=label,
                 enabled=enabled,
+                locality_digest=(
+                    label_digest(locality_label) if locality_label else None
+                ),
             )
             self.session.add(existing)
         else:
             existing.kind = kind
             existing.label = label if label is not None else existing.label
             existing.enabled = enabled
+            existing.locality_digest = (
+                label_digest(locality_label) if locality_label else None
+            )
         await self.session.commit()
         await self.session.refresh(existing)
         return _to_source(existing)
@@ -128,4 +157,5 @@ def _to_source(row: DiscoverySource) -> FeedSource:
         label=row.label,
         enabled=row.enabled,
         last_error=row.last_error,
+        locality_digest=row.locality_digest,
     )

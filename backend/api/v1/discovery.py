@@ -295,10 +295,14 @@ async def set_current_place(
 class SourceRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    kind: Literal["ics", "rss"]
+    kind: Literal["ics", "rss", "links"]
     url: str = Field(min_length=8, max_length=MAX_URL_CHARS)
     label: str | None = Field(default=None, max_length=MAX_LABEL_CHARS)
     enabled: bool = True
+    # A hand-curated page of one city's events is worth nothing in another, so
+    # a source is tied to where the user was when they added it. `everywhere`
+    # is for the feed that travels — a national listing, a sport, a hobby.
+    everywhere: bool = False
 
 
 @router.get("/sources")
@@ -306,6 +310,9 @@ async def list_sources(
     user_id: UserId,
     sources: DependencyDiscoverySources,
 ) -> dict[str, object]:
+    # Every source, not just the ones live here: this is the screen for
+    # managing them, and hiding a source because you travelled would read as
+    # having lost it.
     configured = await sources.list_sources(user_id)
     return {"user_id": user_id, "sources": [asdict(item) for item in configured]}
 
@@ -315,10 +322,22 @@ async def put_source(
     user_id: UserId,
     body: SourceRequest,
     sources: DependencyDiscoverySources,
+    profile_service: DependencyDiscoveryProfileService,
 ) -> dict[str, object]:
+    # Tied to where the user is now unless they say it travels with them.
+    locality_label: str | None = None
+    if not body.everywhere:
+        profile = await profile_service.get_profile(user_id)
+        here = profile.active_locality
+        locality_label = here.label if here else None
     try:
         source = await sources.upsert_source(
-            user_id, body.kind, body.url, body.label, body.enabled
+            user_id,
+            body.kind,
+            body.url,
+            body.label,
+            body.enabled,
+            locality_label=locality_label,
         )
     except DiscoveryProfileLimitError as exc:
         raise HTTPException(

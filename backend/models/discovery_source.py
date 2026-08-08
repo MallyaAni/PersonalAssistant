@@ -52,6 +52,10 @@ class DiscoverySource(Base):
     url_digest: Mapped[str] = mapped_column(String(64), nullable=False)
     label: Mapped[str | None] = mapped_column(EncryptedText, nullable=True)
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    # Which place this feed is about. Null means everywhere, which is what every
+    # source added before scoping existed still means. A digest rather than a
+    # foreign key, matching familiarity: it survives a place being renamed.
+    locality_digest: Mapped[str | None] = mapped_column(String(64), nullable=True)
     # Why a feed last failed, so a persistently broken source is visible to the
     # user rather than silently contributing nothing to every sweep.
     last_error: Mapped[str | None] = mapped_column(String(60), nullable=True)

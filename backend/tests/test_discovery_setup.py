@@ -249,3 +249,82 @@ def test_an_already_recorded_interest_is_not_re_proposed():
     )
 
     assert propose_interests(records, _profile()) == ()
+
+
+# A page of one city's events is worth nothing in another. Familiarity was
+# already scoped per place; sources were not, so a curated DC page kept being
+# read after someone travelled — filling a digest with things happening several
+# hundred miles away.
+@pytest.mark.asyncio
+async def test_a_source_is_only_read_where_it_belongs():
+    import uuid as _uuid
+
+    from sqlalchemy import delete
+
+    from backend.database.session import AsyncSessionLocal
+    from backend.discovery.sources_repository import DiscoverySourceRepository
+    from backend.models.discovery_source import DiscoverySource
+
+    user_id = f"src_{_uuid.uuid4().hex[:8]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            repo = DiscoverySourceRepository(session)
+            await repo.upsert_source(
+                user_id, "links", "https://example.org/dc", locality_label="Arlington"
+            )
+            # No place: a national feed travels with the user.
+            await repo.upsert_source(user_id, "rss", "https://example.org/national")
+
+            here = await repo.list_sources(
+                user_id, enabled_only=True, locality_label="Arlington", scoped=True
+            )
+            away = await repo.list_sources(
+                user_id, enabled_only=True, locality_label="Denver", scoped=True
+            )
+            everything = await repo.list_sources(user_id)
+
+        assert {item.url for item in here} == {
+            "https://example.org/dc",
+            "https://example.org/national",
+        }
+        # The DC page goes quiet; the national one still travels.
+        assert {item.url for item in away} == {"https://example.org/national"}
+        # Managing sources must still show all of them, or travelling would
+        # read as having lost one.
+        assert len(everything) == 2
+    finally:
+        async with AsyncSessionLocal() as session:
+            await session.execute(
+                delete(DiscoverySource).where(DiscoverySource.user_id == user_id)
+            )
+            await session.commit()
+
+
+# A source that existed before scoping has no place and must keep behaving
+# exactly as it did: read everywhere.
+@pytest.mark.asyncio
+async def test_an_unscoped_source_is_read_everywhere():
+    import uuid as _uuid
+
+    from sqlalchemy import delete
+
+    from backend.database.session import AsyncSessionLocal
+    from backend.discovery.sources_repository import DiscoverySourceRepository
+    from backend.models.discovery_source import DiscoverySource
+
+    user_id = f"src_{_uuid.uuid4().hex[:8]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            repo = DiscoverySourceRepository(session)
+            await repo.upsert_source(user_id, "ics", "https://example.org/anywhere")
+            for place in ("Arlington", "Denver", None):
+                live = await repo.list_sources(
+                    user_id, enabled_only=True, locality_label=place, scoped=True
+                )
+                assert len(live) == 1
+    finally:
+        async with AsyncSessionLocal() as session:
+            await session.execute(
+                delete(DiscoverySource).where(DiscoverySource.user_id == user_id)
+            )
+            await session.commit()

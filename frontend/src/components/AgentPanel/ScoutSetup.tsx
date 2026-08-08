@@ -70,9 +70,19 @@ const formatHour = (value: number, minutes = 0): string => {
   return `${value % 12 || 12}:${String(minutes).padStart(2, '0')}${meridiem}`
 }
 
-// Quarter hours only. The API accepts any minute, but a 60-item list to pick a
-// sweep time is a worse choice than four.
-const QUARTERS = [0, 15, 30, 45]
+// Five-minute steps: fine enough to say when you actually want it, short
+// enough to scan. The API takes any minute; sixty options to pick a sweep time
+// is a list nobody reads.
+const MINUTES = Array.from({ length: 12 }, (_, index) => index * 5)
+const CLOCK_HOURS = Array.from({ length: 12 }, (_, index) => index + 1)
+
+// The schedule is stored as a 24-hour value because that is what the API and
+// the slot maths use. People do not read one, so the control is split into the
+// three parts they would say out loud.
+const toClockHour = (hour: number): number => hour % 12 || 12
+const toMeridiem = (hour: number): 'am' | 'pm' => (hour < 12 ? 'am' : 'pm')
+const to24Hour = (clockHour: number, meridiem: 'am' | 'pm'): number =>
+  meridiem === 'am' ? clockHour % 12 : (clockHour % 12) + 12
 
 // The same field takes a US number or an Apple ID, so the phone mask applies
 // only while what is typed could still become a number. A hard +1 prefix would
@@ -1040,14 +1050,16 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
             </select>
           )}
           <select
-            value={hour}
-            onChange={event => setHour(Number(event.target.value))}
+            value={toClockHour(hour)}
+            onChange={event =>
+              setHour(to24Hour(Number(event.target.value), toMeridiem(hour)))
+            }
             aria-label="Hour"
-            className="h-10 rounded-xl border border-black/[0.08] bg-white px-3 text-sm outline-none focus:border-[#0071e3]"
+            className="h-10 rounded-xl border border-black/[0.08] bg-white px-2 text-sm outline-none focus:border-[#0071e3]"
           >
-            {Array.from({ length: 24 }, (_, value) => (
+            {CLOCK_HOURS.map(value => (
               <option key={value} value={value}>
-                {formatHour(value)}
+                {value}
               </option>
             ))}
           </select>
@@ -1055,13 +1067,24 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
             value={minute}
             onChange={event => setMinute(Number(event.target.value))}
             aria-label="Minutes past the hour"
-            className="h-10 rounded-xl border border-black/[0.08] bg-white px-3 text-sm outline-none focus:border-[#0071e3]"
+            className="h-10 rounded-xl border border-black/[0.08] bg-white px-2 text-sm outline-none focus:border-[#0071e3]"
           >
-            {QUARTERS.map(value => (
+            {MINUTES.map(value => (
               <option key={value} value={value}>
-                :{String(value).padStart(2, '0')}
+                {String(value).padStart(2, '0')}
               </option>
             ))}
+          </select>
+          <select
+            value={toMeridiem(hour)}
+            onChange={event =>
+              setHour(to24Hour(toClockHour(hour), event.target.value as 'am' | 'pm'))
+            }
+            aria-label="Morning or afternoon"
+            className="h-10 rounded-xl border border-black/[0.08] bg-white px-2 text-sm outline-none focus:border-[#0071e3]"
+          >
+            <option value="am">am</option>
+            <option value="pm">pm</option>
           </select>
           <button
             onClick={() => void saveSchedule()}
