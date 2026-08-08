@@ -18,6 +18,7 @@ import asyncio
 import socket
 import uuid
 from contextlib import suppress
+from datetime import UTC, datetime
 from typing import Any
 
 from backend.config.settings import settings
@@ -51,6 +52,20 @@ class DiscoveryWorker:
 
     # Queue whatever is due. Separate from claiming so a failure to produce
     # cannot consume the lease of something already running.
+    # How long to wait before the next slot is due, so the producer wakes for
+    # the schedule rather than on a fixed drumbeat.
+    async def seconds_until_due(self) -> float:
+        async with AsyncSessionLocal() as session:
+            due = await DiscoveryRunRepository(session).next_due_at()
+        if due is None:
+            # Nothing scheduled: fall back to the ordinary idle cadence, which
+            # is also how a schedule created while sleeping gets noticed.
+            return float(settings.DISCOVERY_POLL_SECONDS)
+        remaining = (due - datetime.now(UTC)).total_seconds()
+        # Never longer than the idle cadence, or a schedule added or moved while
+        # asleep would not be seen until the old slot came round.
+        return max(0.0, min(remaining, float(settings.DISCOVERY_POLL_SECONDS)))
+
     async def enqueue_due(self) -> int:
         async with AsyncSessionLocal() as session:
             created = await DiscoveryRunRepository(session).enqueue_due_runs()
@@ -175,6 +190,11 @@ def _calendar_base(user_id: str) -> str:
 
 # A digest is read in the recipient's local time, and the user's primary place
 # is where that comes from.
+# A due slot that cannot be claimed would otherwise spin this loop as fast as
+# the database can answer.
+_MIN_IDLE_SECONDS = 0.5
+
+
 def _timezone_for(profile: Any) -> str:
     primary = getattr(profile, "active_locality", None)
     if primary is not None and getattr(primary, "timezone", None):
@@ -190,8 +210,14 @@ async def run() -> None:
     while True:
         await worker.enqueue_due()
         handled = await worker.run_once()
-        if not handled:
-            await asyncio.sleep(settings.DISCOVERY_POLL_SECONDS)
+        if handled:
+            continue
+        # Sleep until the next slot rather than for a fixed interval, so a
+        # sweep asked for at 17:10:00 starts then instead of somewhere in the
+        # following minute. The floor keeps a due-but-unclaimable slot from
+        # spinning the loop.
+        delay = await worker.seconds_until_due()
+        await asyncio.sleep(max(delay, _MIN_IDLE_SECONDS))
 
 
 def main() -> None:

@@ -10,7 +10,7 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any, cast
 
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -246,6 +246,19 @@ class DiscoveryRunRepository:
             }
             for row in rows
         )
+
+    # When the next sweep is due across every enabled schedule.
+    #
+    # The producer slept a fixed interval, so a slot at 17:10:00 was noticed
+    # somewhere in the following minute. Sleeping until the slot instead makes
+    # the sweep start when it was asked to.
+    async def next_due_at(self) -> datetime | None:
+        value = await self.session.scalar(
+            select(func.min(DiscoverySchedule.next_run_at)).where(
+                DiscoverySchedule.enabled.is_(True)
+            )
+        )
+        return value
 
     async def request_cancel(self, user_id: str, run_id: str) -> bool:
         stmt = (

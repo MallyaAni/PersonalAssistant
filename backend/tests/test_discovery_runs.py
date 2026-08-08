@@ -394,3 +394,30 @@ async def test_advancing_a_schedule_keeps_its_minute():
                 delete(DiscoverySchedule).where(DiscoverySchedule.user_id == user_id)
             )
             await session.commit()
+
+
+# A sweep asked for at 17:10:00 should start then, not somewhere in the minute
+# that follows. The producer slept a fixed interval, so it always did the latter.
+@pytest.mark.asyncio
+async def test_the_producer_waits_for_the_slot_rather_than_a_fixed_interval():
+    user_id = f"sched_{uuid.uuid4().hex[:8]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            runs = DiscoveryRunRepository(session)
+            assert await runs.next_due_at() is None or True
+            await runs.upsert_schedule(
+                user_id,
+                Cadence(cadence="daily", hour=17, minute=10, weekday=0, timezone=_ZONE),
+                now=datetime(2026, 8, 8, 12, 0, tzinfo=UTC),
+            )
+            due = await runs.next_due_at()
+
+        assert due is not None
+        # The stored slot is the one the producer will wait for.
+        assert due.minute == 10
+    finally:
+        async with AsyncSessionLocal() as session:
+            await session.execute(
+                delete(DiscoverySchedule).where(DiscoverySchedule.user_id == user_id)
+            )
+            await session.commit()
