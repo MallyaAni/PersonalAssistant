@@ -28,6 +28,16 @@ _SPECIFIC_EVENT_PATH = re.compile(
     re.IGNORECASE,
 )
 
+# A person's or venue's profile page. It may announce happenings, but it is not
+# one, and its title is whatever the account is called plus a date — which is
+# exactly the shape a real listing has, so the URL is the only reliable tell.
+# An Instagram profile reached a live digest as though it were a concert.
+_SOCIAL_PROFILE = re.compile(
+    r"^https?://(www\.)?(instagram\.com|facebook\.com|x\.com|twitter\.com"
+    r"|tiktok\.com|threads\.net|linkedin\.com)/",
+    re.IGNORECASE,
+)
+
 # Faceted search, category browsing, and location landing pages.
 _DIRECTORY_PATH = re.compile(
     r"(/find/|/near/|/browse/|/search|/category/|/categories/|/things-to-do"
@@ -45,7 +55,19 @@ _DIRECTORY_TITLE = re.compile(
     # "Arlington, VA Events, Calendar & Tickets" — the ticketing sites separate
     # the words, so requiring "events & tickets" adjacent missed them.
     r"|\bcalendar\s*(and|&|\+)\s*tickets\b"
-    r"|\b(complete\s+)?guide\s+to\b|\bultimate\s+guide\b)",
+    r"|\b(complete\s+)?guide\s+to\b|\bultimate\s+guide\b"
+    # All three of these reached a delivered digest, so they are shapes taken
+    # from real output rather than guessed at.
+    #
+    # "Arlington, Virginia Concert Tickets 2026 - 2027 | JamBase": an
+    # aggregator selling entry to whatever is on.
+    r"|\b(concert|event|show|game)\s+tickets\b"
+    # "Arlington Concerts in August 2026 - American Arenas": a month-scoped
+    # plural is a listing for that month, however specific the month sounds.
+    r"|\b(concerts?|events?|shows?|gigs?)\s+in\s+(january|february|march|april"
+    r"|may|june|july|august|september|october|november|december)\b"
+    # "... 2026 - 2027 | Find A Race": one happening does not span two years.
+    r"|\b20\d{2}\s*[-–]\s*20\d{2}\b)",
     re.IGNORECASE,
 )
 
@@ -63,6 +85,10 @@ _PLACE_SCOPED_PLURAL = re.compile(
 
 # Whether this result is a page listing happenings rather than one happening.
 def looks_like_a_directory(title: str, url: str | None) -> bool:
+    # Checked before the specific-event path, because a social URL can contain
+    # anything and its titles look exactly like real listings.
+    if url and _SOCIAL_PROFILE.search(url):
+        return True
     if url and _SPECIFIC_EVENT_PATH.search(url):
         return False
     if url and _DIRECTORY_PATH.search(url):

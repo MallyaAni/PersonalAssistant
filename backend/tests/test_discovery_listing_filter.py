@@ -108,3 +108,65 @@ def test_a_broad_query_s_directory_pages_are_refused(title):
 )
 def test_a_happening_named_event_something_survives(title):
     assert looks_like_a_directory(title, None) is False
+
+
+# Three of the five entries in the first digest Scout actually delivered were
+# not happenings: a ticketing aggregator, a month-scoped concert listing, and an
+# Instagram profile. These are the exact titles and URLs that were sent.
+@pytest.mark.parametrize(
+    ("title", "url"),
+    [
+        (
+            "Arlington, Virginia Concert Tickets 2026 - 2027 | JamBase",
+            "https://www.jambase.com/arlington",
+        ),
+        (
+            "Arlington Concerts in August 2026 - American Arenas",
+            "https://americanarenas.com/arlington",
+        ),
+        (
+            "Clarendon / Arlington, VA (@therenegadeva)",
+            "https://www.instagram.com/therenegadeva/",
+        ),
+    ],
+)
+def test_the_junk_from_the_first_delivered_digest_is_refused(title, url):
+    assert looks_like_a_directory(title, url) is True
+
+
+# A social profile is never one happening, whatever it is called. Its title is
+# an account name plus a date, which is the same shape a real listing has, so
+# the URL is the only reliable signal.
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://www.instagram.com/somevenue/",
+        "https://facebook.com/somevenue",
+        "https://x.com/somevenue",
+        "https://www.tiktok.com/@somevenue",
+    ],
+)
+def test_a_social_profile_is_never_a_happening(url):
+    assert looks_like_a_directory("Some Venue · August 3, 2026", url) is True
+
+
+# The widened rules must not start eating real events. A concert with a name is
+# a concert; a film festival called "Event Horizon" is a happening.
+@pytest.mark.parametrize(
+    ("title", "url"),
+    [
+        ("Arlington County Fair", "https://arlingtoncountyfair.us/"),
+        (
+            "Lubber Run Amphitheater - Free Concert Series",
+            "https://parks.arlingtonva.us/lubber-run",
+        ),
+        (
+            "Concert in the Park: The Nighthawks",
+            "https://parks.arlingtonva.us/events/12",
+        ),
+        ("Event Horizon Film Festival", "https://ehff.org/2026"),
+        ("2026 NOVA Running Club 5K", "https://runsignup.com/Race/VA/Arlington/NOVA5K"),
+    ],
+)
+def test_a_real_happening_still_survives(title, url):
+    assert looks_like_a_directory(title, url) is False
