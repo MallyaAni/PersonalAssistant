@@ -361,3 +361,36 @@ def test_a_quarter_past_slot_is_still_strictly_future():
     assert upcoming.astimezone(zone).date() == exactly_on_slot.date() + timedelta(
         days=1
     )
+
+
+# Advancing a schedule must keep the minute it was set to. The stored row kept
+# the right value, so a schedule rebuilt at :00 only showed up as a sweep that
+# had silently moved half an hour earlier.
+@pytest.mark.asyncio
+async def test_advancing_a_schedule_keeps_its_minute():
+    user_id = f"sched_{uuid.uuid4().hex[:8]}"
+    zone = ZoneInfo(_ZONE)
+    try:
+        async with AsyncSessionLocal() as session:
+            runs = DiscoveryRunRepository(session)
+            await runs.upsert_schedule(
+                user_id,
+                Cadence(cadence="daily", hour=9, minute=45, weekday=0, timezone=_ZONE),
+                now=datetime(2026, 8, 4, 12, 0, tzinfo=UTC),
+            )
+            # Due now, so the producer advances it to the following slot.
+            await runs.enqueue_due_runs(now=datetime(2026, 8, 6, 20, 0, tzinfo=UTC))
+            saved = await runs.get_schedule(user_id)
+
+        assert saved is not None
+        assert saved["minute"] == 45
+        assert saved["next_run_at"].astimezone(zone).minute == 45
+    finally:
+        async with AsyncSessionLocal() as session:
+            await session.execute(
+                delete(DiscoveryRun).where(DiscoveryRun.user_id == user_id)
+            )
+            await session.execute(
+                delete(DiscoverySchedule).where(DiscoverySchedule.user_id == user_id)
+            )
+            await session.commit()

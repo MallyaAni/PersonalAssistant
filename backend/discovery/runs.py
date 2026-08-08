@@ -93,6 +93,11 @@ class DiscoveryRunRepository:
             cadence = Cadence(
                 cadence=schedule.cadence,
                 hour=schedule.hour,
+                # Omitted when minutes were added, so advancing a schedule
+                # rebuilt it at :00 and quietly moved a 9:15 sweep to 9:00 the
+                # first time it ran. The stored row kept the right minute, which
+                # is what made it invisible: only the next slot was wrong.
+                minute=schedule.minute,
                 weekday=schedule.weekday,
                 timezone=schedule.timezone,
             )
