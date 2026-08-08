@@ -74,14 +74,25 @@ class LinkPageEventSource(EventSource):
 
     async def fetch(self) -> tuple[DiscoveredEvent, ...]:
         document = await fetch_feed(self.url, budget=self.budget)
-        events = list(_events_from_json_ld(self._source_id, document))
-        events.extend(_events_from_embedded_links(self._source_id, document))
+        events = parse_link_page(self._source_id, document)
         if not events:
             # Loud rather than empty. A page whose shape changed and a page with
             # nothing on it look identical from here, and only one of them is
             # worth telling someone about.
             raise FeedError("No links or events could be read from that page.")
-        return tuple(_deduplicate(events)[:MAX_EVENTS_PER_SOURCE])
+        return events
+
+
+# Read a page that has already been fetched.
+#
+# Split out from `fetch` so a caller holding the document does not have to ask
+# for it again. Source expansion probes a page with every adapter in turn, and
+# going back through `fetch` for this one meant every candidate site was
+# requested twice — which is both slower and worse manners.
+def parse_link_page(source_id: str, document: str) -> tuple[DiscoveredEvent, ...]:
+    events = list(_events_from_json_ld(source_id, document))
+    events.extend(_events_from_embedded_links(source_id, document))
+    return tuple(_deduplicate(events)[:MAX_EVENTS_PER_SOURCE])
 
 
 # Real venue pages embed schema.org Events, which carry an explicit start.

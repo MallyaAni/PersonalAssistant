@@ -537,6 +537,27 @@ async def suggest_sources(
     }
 
 
+# Propose feeds from where this user's own past finds pointed.
+#
+# The counterpart to the endpoint above, and deliberately separate: it spends no
+# search allowance and needs no locality, because it reads digests already on
+# disk rather than asking anyone anything. A curated page is a list of venues,
+# and a venue that keeps coming up usually publishes its own calendar — which
+# keeps working after the curator stops posting or the user moves away.
+#
+# Still only proposals. Nothing here adds a source; that stays an explicit act.
+@router.get("/sources/suggest/from-history")
+async def suggest_sources_from_history(
+    user_id: UserId,
+    setup: DependencyDiscoverySetup,
+) -> dict[str, object]:
+    candidates = await setup.suggest_from_link_graph(user_id)
+    return {
+        "user_id": user_id,
+        "candidates": [asdict(candidate) for candidate in candidates],
+    }
+
+
 # Propose interests from memory the user already approved. These are candidates,
 # never facts: accepting one is a separate call, and that acceptance is what
 # records it as user-stated.

@@ -21,6 +21,9 @@ from backend.discovery.interest_finder import (
     InterestProposal,
     propose_interests,
 )
+from backend.discovery.link_graph import MAX_RUNS_READ, LinkGraphExpander
+from backend.discovery.runs import DiscoveryRunRepository
+from backend.discovery.sources_repository import DiscoverySourceRepository
 from backend.discovery.types import DiscoveryProfile
 from backend.models.memory import MemoryFact
 
@@ -52,6 +55,24 @@ class DiscoverySetupService:
         return await self.finder.suggest(
             primary.label,
             tuple(interest.label for interest in profile.interests),
+        )
+
+    # Propose sources from where this user's own past finds pointed.
+    #
+    # Separate from `suggest_feeds` because it needs no search and no locality:
+    # it reads history the user already has. That makes it the only proposal
+    # path that keeps working once the metered allowance is spent, and the only
+    # one that improves as the agent runs rather than only at setup.
+    async def suggest_from_link_graph(
+        self, user_id: str
+    ) -> tuple[FeedCandidate, ...]:
+        runs = await DiscoveryRunRepository(self.session).recent_runs(
+            user_id, limit=MAX_RUNS_READ
+        )
+        known = await DiscoverySourceRepository(self.session).list_sources(user_id)
+        return await LinkGraphExpander().propose(
+            tuple(str(run.get("digest_json") or "") or None for run in runs),
+            tuple(source.url for source in known),
         )
 
     async def suggest_interests(

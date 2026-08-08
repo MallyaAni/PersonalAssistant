@@ -9,6 +9,7 @@ import os
 import uuid
 from datetime import UTC, datetime, timedelta
 
+import httpx
 import pytest
 from sqlalchemy import delete
 
@@ -140,7 +141,52 @@ async def test_a_channel_failure_is_never_reported_as_success():
     result = await channel.send("+15550100", "hello")
 
     assert result.delivered is False
+    # A failure of unknown shape says nothing about whether the bridge sent the
+    # message before it broke, so it is not marked replayable.
+    assert result.error_code == "channel_failed"
+    assert result.unsent is False
+
+
+@pytest.mark.asyncio
+async def test_a_connection_that_was_never_established_is_replayable():
+    async def _refuse(tool_name: str, arguments: dict[str, str]) -> object:
+        raise httpx.ConnectError("connection refused")
+
+    result = await MessagesAppChannel(_refuse, "send_message").send("+1555", "hi")
+
+    assert result.delivered is False
     assert result.error_code == "channel_unreachable"
+    # Nothing reached the bridge, so sending again cannot duplicate anything.
+    assert result.unsent is True
+
+
+@pytest.mark.asyncio
+async def test_a_connect_failure_wrapped_in_a_group_is_still_replayable():
+    # The MCP client raises connect errors inside an ExceptionGroup, so the
+    # unwrapping is the thing under test rather than an implementation detail.
+    async def _refuse(tool_name: str, arguments: dict[str, str]) -> object:
+        raise ExceptionGroup("unhandled", [httpx.ConnectTimeout("timed out")])
+
+    result = await MessagesAppChannel(_refuse, "send_message").send("+1555", "hi")
+
+    assert result.error_code == "channel_unreachable"
+    assert result.unsent is True
+
+
+@pytest.mark.asyncio
+async def test_a_group_holding_one_ambiguous_failure_is_not_replayable():
+    async def _mixed(tool_name: str, arguments: dict[str, str]) -> object:
+        raise ExceptionGroup(
+            "unhandled",
+            [httpx.ConnectError("refused"), httpx.ReadTimeout("reply lost")],
+        )
+
+    result = await MessagesAppChannel(_mixed, "send_message").send("+1555", "hi")
+
+    # A read timeout happens after the request is on the wire: the message may
+    # well have gone. One of those in the group taints the whole thing.
+    assert result.error_code == "channel_failed"
+    assert result.unsent is False
 
 
 @pytest.mark.asyncio

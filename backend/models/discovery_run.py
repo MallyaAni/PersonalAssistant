@@ -115,9 +115,27 @@ class DiscoveryRun(Base):
     digest_json: Mapped[str | None] = mapped_column(EncryptedText, nullable=True)
     # Set once, when the digest actually reaches the user. A resumed run that
     # already carries this must never deliver again.
+    #
+    # Cleared in exactly one case: the channel proved the message never left the
+    # machine. That is not a weakening of the write-once rule but the same rule
+    # stated precisely — this marks a send that was *committed to*, and a send
+    # that provably never happened was never committed to.
     delivered_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    # When the next delivery attempt becomes allowed. Null means nothing is
+    # waiting: either the digest was delivered, or it was given up on.
+    deliver_after: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    delivery_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # The exact text of a pending digest, kept so a retry sends what the first
+    # attempt would have sent.
+    #
+    # Re-rendering later would not be the same message: rendering drops events
+    # that have already started, so a digest retried at 9pm would silently lose
+    # the evening it was written to announce. Stored sealed, like the digest.
+    delivery_message: Mapped[str | None] = mapped_column(EncryptedText, nullable=True)
     started_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

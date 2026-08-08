@@ -10,16 +10,61 @@ sets the rules here:
 - consent and revocation are checked at send time against the current row, not
   against whatever the sweep saw when it started;
 - one subscriber failing does not stop the others, and does not fail the run.
+
+That claim-first rule cost a real digest, which is why the retry below exists.
+A sweep finished at 5:30pm while the Mac that sends was asleep; the send failed,
+the claim stood, and the run recorded a clean success with the failure visible
+only as `last_error` on the subscriber row. Nobody was told, and nothing tried
+again.
+
+The retry does not weaken the rule. It rests on a distinction the channel now
+draws: a connection that was never *established* proves the message never left,
+while anything after the request is on the wire proves nothing at all. Only the
+first releases the claim. An ambiguous failure still loses the digest on
+purpose, because the alternative is sending it twice.
 """
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 
 from backend.discovery.channels import NotificationChannel
 from backend.discovery.digest import render_message
 from backend.discovery.relevance import RankedCandidate
 from backend.discovery.runs import DiscoveryRunRepository
 from backend.discovery.subscribers import Subscriber, SubscriberRepository
+
+# How long to keep trying an unreachable bridge, and how fast to back off.
+#
+# The deadline is what keeps a digest from becoming a nuisance. Today's events
+# are worth reading a few hours late; they are not worth a phone buzzing at 3am
+# about a concert that finished. Six hours covers a laptop shut for the evening
+# and stops well short of the next morning.
+DELIVERY_DEADLINE = timedelta(hours=6)
+DELIVERY_RETRY_BASE = timedelta(minutes=5)
+DELIVERY_RETRY_MAX = timedelta(hours=1)
+
+# Enough doublings to pass the cap above (5min << 4 = 80min > 1h), and few
+# enough that the arithmetic stays small whatever the stored counter says.
+_MAX_DOUBLINGS = 8
+
+
+# When the next attempt should happen, or None once it is no longer worth one.
+def next_delivery_attempt(
+    scheduled_for: datetime,
+    attempts: int,
+    now: datetime,
+) -> datetime | None:
+    # Exponential, so a machine that is off for the evening is not polled every
+    # five minutes for six hours.
+    #
+    # The exponent is bounded rather than the product: capping afterwards means
+    # computing the huge value first, and `2 ** 99` overflows the multiplication
+    # before any cap can apply. The attempt counter is durable, so a run that
+    # somehow accumulates them would have crashed the worker here.
+    doublings = min(max(0, attempts), _MAX_DOUBLINGS)
+    step = min(DELIVERY_RETRY_BASE * (2**doublings), DELIVERY_RETRY_MAX)
+    when = now + step
+    return None if when > scheduled_for + DELIVERY_DEADLINE else when
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,6 +73,8 @@ class DeliveryReport:
     delivered: int
     skipped: int
     failures: tuple[str, ...]
+    # Set when the digest provably never left and is waiting for another try.
+    retry_at: datetime | None = None
 
     @property
     def sent_anything(self) -> bool:
@@ -58,6 +105,9 @@ class DigestDelivery:
         run_id: str | None = None,
         worker_id: str | None = None,
         now: datetime | None = None,
+        # The slot this digest belongs to, which is what the retry deadline is
+        # measured from. A sweep that started late does not get extra hours.
+        scheduled_for: datetime | None = None,
     ) -> DeliveryReport:
         # No attachment. A calendar file arriving unasked is friction on a
         # phone, and the message is read in a few seconds either way — so a
@@ -76,12 +126,57 @@ class DigestDelivery:
         if not await self._claim(run_id, worker_id):
             return DeliveryReport(attempted=0, delivered=0, skipped=0, failures=())
 
+        return await self._send_to_all(
+            user_id,
+            message,
+            run_id=run_id,
+            scheduled_for=scheduled_for or now or datetime.now(UTC),
+            attempts=0,
+            now=now,
+        )
+
+    # Send a digest that was rendered earlier and never made it out.
+    #
+    # The stored text is resent verbatim rather than rebuilt, because rendering
+    # is time-dependent: it drops events that have already started, so a rebuilt
+    # digest would quietly shrink between the slot and the retry.
+    async def redeliver(
+        self,
+        user_id: str,
+        message: str,
+        run_id: str,
+        scheduled_for: datetime,
+        attempts: int,
+        now: datetime | None = None,
+    ) -> DeliveryReport:
+        return await self._send_to_all(
+            user_id,
+            message,
+            run_id=run_id,
+            scheduled_for=scheduled_for,
+            attempts=attempts,
+            now=now,
+        )
+
+    async def _send_to_all(
+        self,
+        user_id: str,
+        message: str,
+        run_id: str | None,
+        scheduled_for: datetime | None,
+        attempts: int,
+        now: datetime | None = None,
+    ) -> DeliveryReport:
         recipients = await self.subscribers.list_subscribers(
             user_id, deliverable_only=True
         )
         delivered = 0
         skipped = 0
         failures: list[str] = []
+        # A retry is only safe when *every* failure proved nothing was sent. One
+        # ambiguous result among them and the whole digest stays put, because
+        # there is no per-recipient record of who already received it.
+        unsent = True
         for subscriber in recipients:
             if not subscriber.deliverable:
                 skipped += 1
@@ -102,13 +197,59 @@ class DigestDelivery:
                 skipped += 1
             else:
                 failures.append(subscriber.id)
+                unsent = unsent and result.unsent
 
+        retry_at = await self._schedule_retry(
+            run_id=run_id,
+            message=message,
+            scheduled_for=scheduled_for,
+            attempts=attempts,
+            delivered=delivered,
+            failures=failures,
+            unsent=unsent,
+            now=now,
+        )
         return DeliveryReport(
             attempted=len(recipients),
             delivered=delivered,
             skipped=skipped,
             failures=tuple(failures),
+            retry_at=retry_at,
         )
+
+    # Hand the digest back for a later attempt, or close it out for good.
+    async def _schedule_retry(
+        self,
+        run_id: str | None,
+        message: str,
+        scheduled_for: datetime | None,
+        attempts: int,
+        delivered: int,
+        failures: list[str],
+        unsent: bool,
+        now: datetime | None,
+    ) -> datetime | None:
+        if self.runs is None or run_id is None or scheduled_for is None:
+            return None
+        moment = now or datetime.now(UTC)
+        if not failures:
+            # Either it went, or there was nobody to send to. Both are settled.
+            await self.runs.settle_delivery(run_id, None, delivered=delivered > 0)
+            return None
+        if delivered or not unsent:
+            # Something arrived, or something might have. Retrying would risk a
+            # second copy, so this digest ends here whatever happened to it.
+            await self.runs.settle_delivery(
+                run_id, "delivery_failed", delivered=delivered > 0
+            )
+            return None
+        retry_at = next_delivery_attempt(scheduled_for, attempts, moment)
+        if retry_at is None:
+            # Out of time. A digest this old is no longer worth arriving.
+            await self.runs.settle_delivery(run_id, "delivery_expired")
+            return None
+        await self.runs.defer_delivery(run_id, message, retry_at)
+        return retry_at
 
     # Write-once delivery. Returns False when this run already delivered, which
     # is what makes a resumed run safe to re-enter.

@@ -59,6 +59,19 @@ class Attachment:
 class DeliveryResult:
     delivered: bool
     error_code: str | None = None
+    # Whether the message provably never left this machine.
+    #
+    # This is the only fact that makes a second attempt safe, and it is much
+    # narrower than "the send failed". A dropped connection mid-request does not
+    # say whether the bridge sent the message before the reply was lost, so
+    # resending on that would be how someone gets the same digest twice. A
+    # connection that was never *established* carries no such doubt: nothing
+    # reached the bridge, so nothing was sent.
+    #
+    # Defaults to False. A channel that has not thought about the question gets
+    # the safe answer, since a wrong True duplicates a message and a wrong False
+    # only loses one.
+    unsent: bool = False
 
 
 class NotificationChannel(ABC):
@@ -164,11 +177,55 @@ class MessagesAppChannel(NotificationChannel):
             arguments["attachment_base64"] = attachment.encoded()
         try:
             await self.invoke_tool(self.tool_name, arguments)
-        except Exception:
+        except Exception as exc:
             # The provider's own error text is not propagated: it can contain
-            # the address, and a failure reason is not worth leaking one.
-            return DeliveryResult(delivered=False, error_code="channel_unreachable")
+            # the address, and a failure reason is not worth leaking one. Only
+            # the shape of the failure is kept, because that is what decides
+            # whether trying again could duplicate a message.
+            if _never_connected(exc):
+                return DeliveryResult(
+                    delivered=False, error_code="channel_unreachable", unsent=True
+                )
+            return DeliveryResult(delivered=False, error_code="channel_failed")
         return DeliveryResult(delivered=True)
+
+
+# Connection-establishment failures, which prove the request never arrived.
+#
+# Deliberately not the full set of transport errors. A read timeout or a broken
+# pipe happens *after* the request is on the wire, and the bridge may well have
+# sent the message before the reply was lost — so those are excluded, and the
+# digest is dropped rather than risked twice.
+_NEVER_CONNECTED: tuple[type[BaseException], ...] = (
+    ConnectionRefusedError,
+    # A stdio bridge that is not installed cannot have sent anything either.
+    FileNotFoundError,
+)
+
+# httpx is how a remote bridge is reached, and its connect errors are not
+# OSError subclasses, so they have to be named. This was worth checking rather
+# than assuming: they are also wrapped in an ExceptionGroup by the MCP client,
+# which is why the unwrapping below exists.
+try:  # pragma: no cover - exercised whenever a remote bridge is configured
+    import httpx
+
+    _NEVER_CONNECTED = (*_NEVER_CONNECTED, httpx.ConnectError, httpx.ConnectTimeout)
+except ImportError:  # pragma: no cover
+    pass
+
+
+# Whether a failure proves the send never reached the bridge.
+def _never_connected(exc: BaseException, depth: int = 0) -> bool:
+    # An ExceptionGroup is what the MCP client raises, so the real cause is a
+    # level or two down. Bounded so a self-referential group cannot spin.
+    if depth > 4:
+        return False
+    nested = getattr(exc, "exceptions", None)
+    if nested:
+        # Every branch must be a connect failure. One ambiguous member means the
+        # whole group is ambiguous.
+        return all(_never_connected(item, depth + 1) for item in nested)
+    return isinstance(exc, _NEVER_CONNECTED)
 
 
 # What a channel needs from the MCP layer, so this module depends on the

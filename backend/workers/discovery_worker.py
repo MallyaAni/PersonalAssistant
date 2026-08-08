@@ -76,6 +76,46 @@ class DiscoveryWorker:
             )
         return len(created)
 
+    # Send at most one digest that was rendered earlier and never got out.
+    #
+    # Separate from the sweep path because there is no sweep to do: the digest
+    # already exists, and re-running the search to rebuild it would spend
+    # metered calls to reproduce something already on disk.
+    async def deliver_pending(self) -> bool:
+        async with AsyncSessionLocal() as session:
+            runs = DiscoveryRunRepository(session)
+            pending = await runs.claim_pending_delivery(self.worker_id)
+            if pending is None:
+                return False
+            message = pending.get("delivery_message")
+            run_id = str(pending["id"])
+            if not message:
+                # Nothing to send. Recorded rather than retried forever, since
+                # a pending delivery with no text cannot become one.
+                await runs.settle_delivery(run_id, "delivery_lost")
+                return True
+            report = await DigestDelivery(
+                SubscriberRepository(session),
+                get_discovery_channels(),
+                runs,
+            ).redeliver(
+                str(pending["user_id"]),
+                str(message),
+                run_id=run_id,
+                scheduled_for=pending["scheduled_for"],
+                attempts=int(pending["delivery_attempts"]),
+            )
+        logger.info(
+            "discovery_digest_redelivered",
+            extra={
+                "run_id": run_id,
+                "delivered": report.delivered,
+                "attempt": pending["delivery_attempts"],
+                "retry_at": report.retry_at.isoformat() if report.retry_at else None,
+            },
+        )
+        return True
+
     # Claim and execute at most one run, so the loop stays testable.
     async def run_once(self) -> bool:
         async with AsyncSessionLocal() as session:
@@ -124,6 +164,7 @@ class DiscoveryWorker:
                     timezone=_timezone_for(profile),
                     run_id=run_id,
                     worker_id=self.worker_id,
+                    scheduled_for=run.get("scheduled_for"),
                 )
                 await runs.mark_ready(run_id, self.worker_id)
 
@@ -211,6 +252,10 @@ async def run() -> None:
         await worker.enqueue_due()
         handled = await worker.run_once()
         if handled:
+            continue
+        # Only when no sweep is waiting. A digest whose retry is due is less
+        # urgent than a slot that is due now, and the retry has hours of budget.
+        if await worker.deliver_pending():
             continue
         # Sleep until the next slot rather than for a fixed interval, so a
         # sweep asked for at 17:10:00 starts then instead of somewhere in the
