@@ -1624,6 +1624,76 @@ test('requires approval before saving a response-style proposal', async ({ page 
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
+// A typed place must be able to say which Arlington it means.
+//
+// The form had one box and sent only `label`, so typing could not set a region
+// at all: "Arlington" was stored region-less, which is the ambiguity the web
+// source warns about, and "Arlington, Virginia" was stored as a town with that
+// entire string as its name. Only "Use my location" ever set a region, which is
+// why a denied permission left the user worse off than granting it.
+for (const width of [1280, 390]) {
+  test(`saves a typed town and its region as separate fields at ${width}px`, async ({ page }) => {
+  await page.setViewportSize({ width, height: 900 })
+  const saved: Array<Record<string, unknown>> = []
+  await page.route('**/api/v1/agents/**', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ user_id: 'ani.mallya', agents: [{
+      id: 'discovery', name: 'Scout', role: 'Finds things happening near you.',
+      status: 'idle', detail: 'Ready.', trigger: 'On request',
+      last_active_at: null, facts: [],
+    }] }),
+  }))
+  await page.route('**/api/v1/discovery/ani.mallya', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ user_id: 'ani.mallya', interests: [], localities: [] }),
+  }))
+  await page.route('**/api/v1/discovery/ani.mallya/sources', route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({ sources: [] }) }))
+  await page.route('**/api/v1/discovery/ani.mallya/schedule', route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({ schedule: null }) }))
+  await page.route('**/api/v1/discovery/ani.mallya/known', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ locality: null, known: [] }) }))
+  await page.route('**/api/v1/discovery/ani.mallya/localities', async route => {
+    const body = route.request().postDataJSON() as Record<string, unknown>
+    saved.push(body)
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'loc-1', label: body.label, region: body.region, radius_km: 25,
+        timezone: 'America/New_York', is_primary: true, is_travel_active: false,
+      }),
+    })
+  })
+
+  await page.goto('/')
+  if (width < 768) await page.getByRole('button', { name: 'Show Sidebar' }).click()
+  await page.getByLabel('Agents').click()
+  await page.getByRole('button', { name: 'Configure' }).click()
+
+  // Both inputs have to be usable, not merely present: a phone is where the
+  // location button is most likely to be refused and typing is the fallback.
+  for (const label of ['Town or city', 'State or country']) {
+    const box = await page.getByLabel(label).boundingBox()
+    expect(box, `${label} at ${width}px`).not.toBeNull()
+    expect(box!.width, `${label} width at ${width}px`).toBeGreaterThan(90)
+    expect(box!.x + box!.width, `${label} right edge at ${width}px`).toBeLessThanOrEqual(width)
+    expect(box!.height, `${label} tap height at ${width}px`).toBeGreaterThanOrEqual(36)
+  }
+
+  await page.getByLabel('Town or city').fill('Arlington')
+  // With no region the form says why that is a problem, before anything saves.
+  await expect(page.getByText(/add a state or country/i)).toBeVisible()
+
+  await page.getByLabel('State or country').fill('Virginia')
+  await expect(page.getByText('Arlington, Virginia').first()).toBeVisible()
+  await page.getByRole('button', { name: 'Save' }).first().click()
+
+  await expect.poll(() => saved.length).toBeGreaterThan(0)
+  expect(saved[0]).toMatchObject({ label: 'Arlington', region: 'Virginia' })
+  })
+}
+
 // Verify chat approval routes locality and interest proposals through memory-owned APIs.
 test('approves home locality and interest proposals from chat', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)

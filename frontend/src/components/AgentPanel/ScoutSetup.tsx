@@ -82,6 +82,27 @@ const to24Hour = (clockHour: number, meridiem: 'am' | 'pm'): number =>
 
 // "Arlington, Virginia, US" rather than "Arlington". A town name alone is
 // ambiguous across countries, so what is saved is shown in full.
+// What the region field offers as suggestions. Free text either way — this is
+// a shortcut for the common case, not a list of permitted answers.
+//
+// It exists offline on purpose. A search-as-you-type place lookup would be the
+// nicer answer, but the only geocoder this deployment can reach is disabled by
+// default and OpenStreetMap's usage policy rules out a request per keystroke,
+// so a bundled list is what can be relied on to be there.
+const REGION_SUGGESTIONS = [
+  'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado',
+  'Connecticut', 'Delaware', 'District of Columbia', 'Florida', 'Georgia',
+  'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky',
+  'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota',
+  'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire',
+  'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota',
+  'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island',
+  'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont',
+  'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming',
+  'Australia', 'Canada', 'France', 'Germany', 'India', 'Ireland', 'Japan',
+  'Mexico', 'Netherlands', 'New Zealand', 'Spain', 'United Kingdom',
+]
+
 const describePlace = (place: { label: string; region?: string | null }): string =>
   place.region ? `${place.label}, ${place.region}` : place.label
 
@@ -95,6 +116,7 @@ interface ScoutSetupProps {
 // never holds state the backend does not already have.
 const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
   const [place, setPlace] = useState('')
+  const [region, setRegion] = useState('')
   const [savedPlace, setSavedPlace] = useState<DiscoveryLocality | null>(null)
   const [localities, setLocalities] = useState<DiscoveryLocality[]>([])
   const [activeTravel, setActiveTravel] = useState<DiscoveryLocality | null>(null)
@@ -144,6 +166,7 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
     setActiveTravel(profile.localities.find(item => item.is_travel_active) ?? null)
     setSavedPlace(primary ?? null)
     if (primary && !place) setPlace(primary.label)
+    if (primary && !region) setRegion(primary.region ?? '')
   }, [userId, place])
 
   useEffect(() => {
@@ -180,6 +203,13 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
       if (!label) throw new Error('Enter a town or city.')
       const saved = await putDiscoveryLocality(userId, {
         label,
+        // Typing could not set this at all before, so a typed place was always
+        // region-less while "Use my location" set one — and a bare town name is
+        // ambiguous to a search engine exactly as it is to a person. Anyone who
+        // typed "Arlington" got results from Texas and Washington alongside
+        // Virginia; anyone who typed "Arlington, Virginia" had the whole string
+        // stored as the town's name.
+        region: region.trim() || null,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       })
       setNotice(`Saved. Looking around ${describePlace(saved)}.`)
@@ -199,7 +229,10 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
           maximumAge: 600_000,
         })
       }).catch(() => {
-        throw new Error('Location permission was declined.')
+        throw new Error(
+          'Location permission was declined, so type the town and its state '
+          + 'or country instead.',
+        )
       })
       const resolved = await resolveDiscoveryLocality(
         userId,
@@ -231,6 +264,7 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
         return
       }
       setPlace(resolved.label)
+      setRegion(resolved.stored_region ?? resolved.region ?? '')
       setMovedPrompt('')
       setNotice(
         `You're around ${resolved.display}. Only the town was stored, never coordinates.`,
@@ -426,8 +460,34 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
             }}
             placeholder="Town or city"
             aria-label="Town or city"
-            className="h-10 min-w-0 flex-1 rounded-xl border border-black/[0.08] px-3 text-sm outline-none focus:border-[#0071e3]"
+            autoComplete="address-level2"
+            className="h-10 min-w-0 flex-1 basis-[40%] rounded-xl border border-black/[0.08] px-3 text-sm outline-none focus:border-[#0071e3]"
           />
+          <input
+            value={region}
+            onChange={event => setRegion(event.target.value)}
+            onKeyDown={event => {
+              if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
+                event.preventDefault()
+                void savePlace()
+              }
+            }}
+            placeholder="State or country"
+            aria-label="State or country"
+            list="scout-region-options"
+            autoComplete="address-level1"
+            className="h-10 min-w-0 flex-1 basis-[40%] rounded-xl border border-black/[0.08] px-3 text-sm outline-none focus:border-[#0071e3]"
+          />
+          {/* Suggestions, not a whitelist: the field stays free text so
+              anywhere in the world can be typed. A datalist is offered rather
+              than a geocoding search because the place resolver is off by
+              default, and OpenStreetMap's usage policy rules out sending a
+              request per keystroke to the one resolver this deployment has. */}
+          <datalist id="scout-region-options">
+            {REGION_SUGGESTIONS.map(option => (
+              <option key={option} value={option} />
+            ))}
+          </datalist>
           <button
             onClick={() => void savePlace()}
             disabled={busy !== ''}
@@ -444,11 +504,32 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
             Use my location
           </button>
         </div>
+        {/* Say exactly what will be stored before it is stored. The two fields
+            are kept apart rather than parsed out of one string because that is
+            how they are stored and searched, and a comma in a single box gave
+            no hint that "Arlington, Virginia" would become a town of that
+            name. */}
+        {place.trim() && (
+          <p className="mt-2 text-xs text-[#6e6e73]">
+            Scout will look around{' '}
+            <strong className="font-medium text-[#1d1d1f]">
+              {region.trim() ? `${place.trim()}, ${region.trim()}` : place.trim()}
+            </strong>
+            {!region.trim() && (
+              <span className="text-[#b25e00]">
+                {' '}— add a state or country, or results may come from a town of
+                the same name somewhere else.
+              </span>
+            )}
+          </p>
+        )}
         {savedPlace ? (
           <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-[#248a3d]">
             <Check size={13} />
             Saved — looking around {describePlace(savedPlace)}
-            {place.trim() && place.trim() !== savedPlace.label && (
+            {place.trim()
+              && (place.trim() !== savedPlace.label
+                || region.trim() !== (savedPlace.region ?? '')) && (
               <span className="font-normal text-[#b25e00]">· unsaved edit</span>
             )}
           </p>
