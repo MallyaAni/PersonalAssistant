@@ -414,6 +414,14 @@ class DiscoveryRunner:
             event = item.event
             source = event.summary or await self._page_text(event.url, budget)
             described = await self.describer.describe(event.title, source, today)
+            if described.is_a_listing:
+                # A page listing happenings is not one, and an embedding scores
+                # "Events in Arlington" as an excellent match for someone
+                # interested in local events. `listing_filter` rejects what a
+                # URL or title gives away; this is the same judgement made on
+                # the page's own prose, which is the only thing that can tell a
+                # festival's home page from its programme.
+                continue
             if described.already_happened:
                 # The page says it is over. Nothing else in the sweep could know
                 # that: these are the finds with no published start, so no clock

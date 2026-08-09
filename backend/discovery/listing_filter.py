@@ -64,7 +64,12 @@ _DIRECTORY_PATH = re.compile(
     # forms are how a venue names the same page — a hotel's
     # /calendar-of-events reached a delivered digest as a happening.
     r"|/lineup|/line-up|/schedule/?$|/calendar/?$"
-    r"|/calendar-of-events|/events?-calendar|/calendar-of)",
+    r"|/calendar-of-events|/events?-calendar|/calendar-of"
+    # What is on at every screen in a town, which is a listing however it is
+    # titled. A live digest carried "Movie theaters in Alexandria" and "Movie
+    # showtimes near Alexandria" — three of its four items were pages like
+    # these — and neither title used any of the category words below.
+    r"|/showtimes?|/movie-times|/theat(er|re)s/|/cinemas?/)",
     re.IGNORECASE,
 )
 

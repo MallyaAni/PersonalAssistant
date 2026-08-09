@@ -9,7 +9,7 @@ running event: nothing in the query was about him, and ranking was then asked to
 sort candidates that were never chosen with him in mind.
 
 This module asks the local model, once per sweep, to turn each approved interest
-plus what memory knows about the person into two short pieces of text:
+plus whatever memory knows about the person into two short pieces of text:
 
 - a **search subject** — "casual weekend group runs" rather than "Run Clubs" —
   which is substituted into the existing query skeleton;
@@ -33,6 +33,16 @@ Three rules keep this from undoing what has already been measured:
 The ranking profile never leaves the machine: it is embedded locally and
 compared locally. Only the subject reaches a search provider, which is why the
 two are validated to different standards.
+
+**It runs even when memory is empty**, which was not the original design and is
+where most of the measured benefit turned out to be. A real digest attributed
+"COLLECTIVE at The Light Horse" to the interest "Horses" — a concert matched to
+an equestrian interest by the name of the pub it was in. Scored against the bare
+label the cross-encoder agreed, and confidently: Horses by a margin of 5.40.
+Scored against "horse riding, equestrian shows and stables" the same find went
+to Music by 4.44, and Horses fell from -0.9 to -8.1. Nothing about that needed
+to know anything about the person; it needed the interest to be more than two
+words.
 """
 
 import asyncio
@@ -121,7 +131,9 @@ class SweepAim:
         return {aim.label: aim.profile for aim in self.aims}
 
     # The unaimed sweep: every interest as its own bare label. This is what runs
-    # when there is no model, no memory, or nothing usable came back.
+    # when there is no model or nothing usable came back — not when memory is
+    # empty, which is the common case and still benefits: a two-word label
+    # cannot be matched against an event description at all.
     @staticmethod
     def from_labels(labels: tuple[str, ...]) -> "SweepAim":
         return SweepAim(
@@ -145,14 +157,19 @@ becomes "casual weekend group runs". With no fact bearing on an interest, return
 that interest's own words unchanged. Never write a person's name, an address, an
 age, a contact detail, or anything about health, money, or legal matters.
 
-profile: one plain sentence describing what this person is looking for within
-that interest, for matching against event descriptions. It may use the facts
-more fully than the subject does. Still no names and no contact details.
+profile: one plain sentence saying what kind of happening this interest names,
+for matching against event descriptions. Write one for every interest, whether
+or not any fact bears on it. "Horses" on its own becomes "horse riding,
+equestrian shows and stables"; a fact saying they ride at weekends makes it
+"weekend horse riding and equestrian shows". Two words cannot be matched against
+an event description — this sentence is what gets compared, so it has to say
+what the interest actually means. Still no names and no contact details.
 
-Use only the facts given. Do not invent a preference, an ability, a companion, or
-a constraint that no fact states. An interest with nothing relevant in the facts
-is returned as it was written. Return one entry per interest, with the interest
-copied exactly as given."""
+Use only the facts given for anything about the person. Do not invent a
+preference, an ability, a companion, or a constraint that no fact states. An
+interest with nothing relevant in the facts keeps its own words as the subject
+and still gets a described profile. Return one entry per interest, with the
+interest copied exactly as given."""
 
 
 class AimPlanner:
@@ -181,10 +198,7 @@ class AimPlanner:
         place: str = "",
     ) -> SweepAim:
         fallback = SweepAim.from_labels(labels)
-        if self.writer is None or context.is_empty or not labels:
-            # With nothing known about the person there is nothing to aim with,
-            # and a model asked to personalize from an empty context invents the
-            # person instead.
+        if self.writer is None or not labels:
             return fallback
         planned = await self._ask(labels[: self.max_aims], context)
         if not planned:
@@ -211,10 +225,19 @@ class AimPlanner:
     async def _ask(
         self, labels: tuple[str, ...], context: PersonalContext
     ) -> dict[str, tuple[str, str]] | None:
-        prompt = (
-            "Facts this person has approved about themselves:\n"
-            f"{context.render()}\n\n"
-            "Their interests:\n" + "\n".join(f"- {label}" for label in labels)
+        # Said explicitly rather than left blank. An empty heading reads as an
+        # omission, and a model fills an omission in.
+        facts = (
+            f"Facts this person has approved about themselves:\n{context.render()}"
+            if not context.is_empty
+            else (
+                "This person has approved no facts about themselves yet, so "
+                "describe each interest on its own terms and infer nothing "
+                "about them."
+            )
+        )
+        prompt = f"{facts}\n\nTheir interests:\n" + "\n".join(
+            f"- {label}" for label in labels
         )
         try:
             result = await asyncio.to_thread(

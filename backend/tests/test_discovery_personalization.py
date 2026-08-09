@@ -24,7 +24,7 @@ os.environ.setdefault("SECRET_KEY", "test-secret-key-only-for-testing")
 os.environ["POSTGRES_HOST"] = "localhost"
 
 from backend.database.session import AsyncSessionLocal
-from backend.discovery.aiming import AimPlanner, SweepAim
+from backend.discovery.aiming import AimPlanner
 from backend.discovery.events import DiscoveredEvent
 from backend.discovery.novelty import ScoredCandidate, SeenItemRepository
 from backend.discovery.personal_context import PersonalContext, PersonalContextReader
@@ -421,15 +421,25 @@ async def test_every_failure_lands_on_the_old_behaviour(planner: AimPlanner):
 
 
 @pytest.mark.asyncio
-async def test_an_empty_memory_asks_the_model_nothing():
-    writer = _StubWriter()
+async def test_an_empty_memory_still_describes_each_interest():
+    writer = _StubWriter(
+        '{"aims": [{"interest": "Horses", "subject": "Horses", '
+        '"profile": "horse riding, equestrian shows and stables"}]}'
+    )
 
-    aim = await AimPlanner(writer).plan(("Run Clubs",), PersonalContext(), "Arlington")
+    aim = await AimPlanner(writer).plan(("Horses",), PersonalContext(), "Alexandria")
 
-    # With nothing known there is nothing to aim with, and a model asked to
-    # personalize from an empty context invents the person instead.
-    assert writer.prompts == []
-    assert aim == SweepAim.from_labels(("Run Clubs",))
+    # Most of the measured benefit is here rather than in personalization. A
+    # real digest attributed "COLLECTIVE at The Light Horse" to "Horses" — a
+    # concert matched to an equestrian interest by the name of the pub. Two
+    # words cannot be matched against an event description at all.
+    assert writer.prompts, "the model is asked even with nothing known"
+    assert "no facts about themselves yet" in writer.prompts[0]
+    assert aim.vector_texts() == {
+        "Horses": "horse riding, equestrian shows and stables"
+    }
+    # The query is untouched, so no metered search behaviour changes with it.
+    assert aim.subjects() == ("Horses",)
 
 
 # --- ordering the shortlist -------------------------------------------------
@@ -537,6 +547,39 @@ async def test_an_empty_memory_leaves_the_order_alone():
 
     assert writer.prompts == []
     assert [item.event.title for item in ordered] == ["First", "Second"]
+
+
+# --- listings ----------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_a_page_of_happenings_is_dropped_even_when_its_url_hides_it():
+    from backend.discovery.summarize import EventDescriber
+
+    writer = _StubWriter(
+        '{"name": "Alexandria Film Festival", "description": "A programme '
+        'listing this season of screenings.", "already_happened": false, '
+        '"is_a_listing": true}'
+    )
+
+    readable = await EventDescriber(writer).describe(
+        "Alexandria Film Festival",
+        "Our 2026 programme. Browse every screening and buy tickets.",
+    )
+
+    # Three of four items in a real digest were pages like this. No URL or
+    # title gave them away; the page's own prose does.
+    assert readable.is_a_listing is True
+
+
+@pytest.mark.asyncio
+async def test_nothing_is_called_a_listing_when_the_model_is_silent():
+    from backend.discovery.summarize import EventDescriber
+
+    readable = await EventDescriber(None).describe("A concert", "One night only.")
+
+    # A find is never dropped because the model was not asked or failed.
+    assert readable.is_a_listing is False
 
 
 # --- one whole sweep --------------------------------------------------------
