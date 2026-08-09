@@ -811,17 +811,34 @@ class ConversationService:
         ):
             yield event
 
+    # The interests this person already follows, or nothing when the profile
+    # cannot be read. A missing catalogue costs deduplication, never the turn.
+    async def _known_interests(self, user_id: str) -> tuple[str, ...]:
+        if self.discovery_profile is None:
+            return ()
+        try:
+            profile = await self.discovery_profile.get_profile(user_id)
+        except Exception:
+            return ()
+        return tuple(interest.label for interest in profile.interests)
+
     # Ask the focused local model for user-stated interests without blocking
     # chat when that secondary classification fails.
     async def _classify_interest_labels(
         self,
         query: str,
         trace_id: str,
+        user_id: str,
     ) -> tuple[str, ...]:
         if self.interest_proposals is None:
             return ()
         try:
-            proposal = await self.interest_proposals.propose(query)
+            # What they already follow goes in with the message, so a new way of
+            # saying something they have already told us comes back as the label
+            # they already have rather than as a fourth near-copy of it.
+            proposal = await self.interest_proposals.propose(
+                query, await self._known_interests(user_id)
+            )
             return proposal.labels if proposal is not None else ()
         except Exception:
             # Classification may fail closed, but a secondary memory helper
@@ -921,7 +938,9 @@ class ConversationService:
         # the real save state leaves nothing to route around. The proposal is
         # Scout interests use a focused local semantic classifier; every other
         # proposal remains a narrow deterministic boundary.
-        interest_labels = await self._classify_interest_labels(query, trace_id)
+        interest_labels = await self._classify_interest_labels(
+            query, trace_id, user_id
+        )
         proposal = _memory_proposal(
             query,
             conversation_id,

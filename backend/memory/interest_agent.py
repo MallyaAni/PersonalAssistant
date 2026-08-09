@@ -40,7 +40,41 @@ class ScoutInterestProposalAgent:
         self.max_tokens = max_tokens
 
     # Understand one utterance and return only validated user-stated interests.
-    async def propose(self, query: str) -> ScoutInterestProposal | None:
+    #
+    # `known` is what this person already follows. Passing it is what stops the
+    # profile silently filling with the same interest four times: one message
+    # naming three kinds of theater produced "Community Theater", "Professional
+    # Theater" and "Musical Theater" beside an existing "Theater", and nothing
+    # afterwards could tell they were one thing.
+    #
+    # That matters beyond tidiness. Relevance names the interest a find matched
+    # only when the best one beats the runner-up by a margin, and interests
+    # this close sit on top of each other — so no theater event could ever clear
+    # it, and every one was reported with no reason at all.
+    #
+    # The judgement is the model's rather than a rule's. "Musical Theater" falls
+    # under "Theater" by its words, but "Community Theater" and "Professional
+    # Theater" are the same interest with no word in common to notice it by, and
+    # measuring the two against each other in the embedding space does not
+    # separate them either: the pairs that must merge score 0.749-0.902 and the
+    # pairs that must stay apart score 0.718-0.822, which overlap. Knowing that
+    # two phrasings mean one interest is a language question, so it is asked
+    # here, once, at the moment the user says it.
+    async def propose(
+        self,
+        query: str,
+        known: tuple[str, ...] = (),
+    ) -> ScoutInterestProposal | None:
+        catalogue = (
+            "The user already follows: "
+            + ", ".join(f'"{label}"' for label in known)
+            + ". When a stated interest is the same thing as one of these, or a "
+            "kind of it, return that existing label exactly as written instead "
+            "of a new one. Only return a new label for something genuinely not "
+            "covered. "
+            if known
+            else ""
+        )
         result = await asyncio.to_thread(
             self.llm.chat,
             [
@@ -51,13 +85,18 @@ class ScoutInterestProposalAgent:
                         "the user states their own current interests, likes, hobbies, "
                         "or topics they enjoy. Extract every distinct interest as a "
                         "short topic label. A comma-separated list produces separate "
-                        "labels. A request to remember the interests still counts. "
+                        "labels, unless several of them name the same interest — "
+                        "return that once, under the broadest wording the user used. "
+                        "A request to remember the interests still counts. "
                         "Set explicit=false with an empty list when the message only "
                         "asks a question, discusses a topic, describes another person, "
                         "says the user dislikes something, or says a former interest "
                         "is no longer current. Do not infer unstated interests. "
-                        'Examples: "My interests are basketball, soccer" -> true, '
-                        '["basketball", "soccer"]. "What sports are nearby?" -> '
+                        + catalogue
+                        + 'Examples: "My interests are basketball, soccer" -> true, '
+                        '["basketball", "soccer"]. "I like community theater, '
+                        'professional theater, and musical theater" -> true, '
+                        '["theater"]. "What sports are nearby?" -> '
                         'false, []. "My daughter likes ballet, but I do not" -> '
                         "false, []. Return only the required JSON."
                     ),

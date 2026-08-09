@@ -91,9 +91,17 @@ class FixedInterestAgent:
     # Store the labels that the conversation service should offer for approval.
     def __init__(self, labels: tuple[str, ...]) -> None:
         self.labels = labels
+        # What the service said this user already follows, so a test can assert
+        # the catalogue reaches the agent that does the merging.
+        self.known: tuple[str, ...] | None = None
 
     # Return one bounded proposal for the current test utterance.
-    async def propose(self, query: str) -> ScoutInterestProposal | None:
+    async def propose(
+        self,
+        query: str,
+        known: tuple[str, ...] = (),
+    ) -> ScoutInterestProposal | None:
+        self.known = known
         return ScoutInterestProposal(self.labels) if self.labels else None
 
 
