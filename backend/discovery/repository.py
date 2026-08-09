@@ -51,12 +51,6 @@ class DiscoveryProfileRepository:
         rows = (await self.session.execute(stmt)).scalars().all()
         return tuple(_to_locality(row) for row in rows)
 
-    async def count_interests(self, user_id: str) -> int:
-        return len(await self.list_interests(user_id))
-
-    async def count_localities(self, user_id: str) -> int:
-        return len(await self.list_localities(user_id))
-
     # Add or update by normalized label so re-adding an interest adjusts it
     # rather than creating a second row the user would have to delete twice.
     async def upsert_interest(

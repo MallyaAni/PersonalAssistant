@@ -171,11 +171,11 @@ Key settings are:
 | `DIAGRAM_LLM_BASE_URL` | blank | Diagram specialist endpoint; blank falls back through main and global endpoints |
 | `DIAGRAM_LLM_MODEL` | blank | Mermaid planning model; current qualified setting is `qwen/qwen3.5-4b` |
 | `DIAGRAM_LLM_REASONING_EFFORT` | `none` | Diagram-role reasoning control |
-| `MEMORY_PROPOSAL_INFERENCE_ADAPTER` | blank | Scout-interest classifier adapter; blank inherits `INFERENCE_ADAPTER` |
-| `MEMORY_PROPOSAL_LLM_BASE_URL` | blank | Scout-interest classifier endpoint; blank falls back through main and global endpoints |
-| `MEMORY_PROPOSAL_LLM_MODEL` | blank | Structured semantic-interest model; current qualified setting is `qwen/qwen3.5-4b` |
+| `MEMORY_PROPOSAL_INFERENCE_ADAPTER` | blank | Typed semantic-memory agent adapter; blank inherits `INFERENCE_ADAPTER` |
+| `MEMORY_PROPOSAL_LLM_BASE_URL` | blank | Typed semantic-memory endpoint; blank falls back through main and global endpoints |
+| `MEMORY_PROPOSAL_LLM_MODEL` | blank | Grammar-constrained memory-proposal model; current qualified setting is `qwen/qwen3.5-4b` |
 | `MEMORY_PROPOSAL_LLM_REASONING_EFFORT` | `none` | Keep `none` for this bounded call; reasoning can otherwise consume the answer budget |
-| `MEMORY_PROPOSAL_MAX_TOKENS` | `128` | Structured classifier output budget, valid from 32 through 512 |
+| `MEMORY_PROPOSAL_MAX_TOKENS` | `256` | Typed semantic-memory output budget, valid from 32 through 512 |
 | `LLM_API_KEY` | none | Optional Bearer token when the compatible inference server requires one |
 | `LLM_TIMEOUT_SECONDS` | `120` | Provider request timeout in seconds |
 | `EMBEDDING_INFERENCE_ADAPTER` | blank | Embedding-role adapter; blank inherits `INFERENCE_ADAPTER` |
@@ -272,7 +272,7 @@ DIAGRAM_LLM_MODEL=qwen/qwen3.5-4b
 DIAGRAM_LLM_REASONING_EFFORT=none
 MEMORY_PROPOSAL_LLM_MODEL=qwen/qwen3.5-4b
 MEMORY_PROPOSAL_LLM_REASONING_EFFORT=none
-MEMORY_PROPOSAL_MAX_TOKENS=128
+MEMORY_PROPOSAL_MAX_TOKENS=256
 VISION_INFERENCE_ADAPTER=openai_compatible
 VISION_LLM_BASE_URL=http://127.0.0.1:8003
 VISION_MODEL=qwen/qwen3.5-4b
@@ -633,9 +633,23 @@ mkdir -p data/models/nomic-embed-vision-v1.5
 curl -L -o data/models/nomic-embed-vision-v1.5/model.onnx   https://huggingface.co/nomic-ai/nomic-embed-vision-v1.5/resolve/main/onnx/model.onnx
 ```
 
-Without the file the provider reports `is_enabled() == False`, images are simply
-never embedded, and every other path still works. After adding it, backfill any
-images stored earlier:
+Scout's shortlist reranker needs local cross-encoder weights, on the same terms —
+gitignored, baked into the image by `COPY . .`, and optional:
+
+```bash
+mkdir -p data/models/ms-marco-minilm-l6-v2
+curl -L -o data/models/ms-marco-minilm-l6-v2/model.onnx      https://huggingface.co/cross-encoder/ms-marco-MiniLM-L6-v2/resolve/main/onnx/model.onnx
+curl -L -o data/models/ms-marco-minilm-l6-v2/tokenizer.json  https://huggingface.co/cross-encoder/ms-marco-MiniLM-L6-v2/resolve/main/tokenizer.json
+```
+
+Both files must be present or the provider reports `is_enabled() == False` and a
+sweep ranks on embeddings alone, exactly as it did before the stage existed. It
+runs in-process on CPU, so it needs no GPU share and keeps working while the card
+is lent to ComfyUI.
+
+Without the vision file the provider reports `is_enabled() == False`, images are
+simply never embedded, and every other path still works. After adding it,
+backfill any images stored earlier:
 
 ```bash
 docker compose exec backend python -m backend.cli.backfill_image_embeddings   --user-id <user> --apply

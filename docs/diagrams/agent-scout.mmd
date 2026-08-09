@@ -2,7 +2,7 @@
 title: Scout Agent Responsibilities
 ---
 flowchart TB
-    Statement([User states interests]) --> Extract[Qwen 3.5 4B<br/>extracts explicit interests]
+    Statement([User states profile facts]) --> Extract[Qwen 3.5 4B<br/>returns typed memory proposals]
     Extract --> Review{Visible approval}
     Review -->|approved| Profile[(User-scoped Scout profile)]
     Review -->|dismissed| NoWrite[Nothing saved]
@@ -15,7 +15,8 @@ flowchart TB
     Sweep --> Sources[Feeds and bounded<br/>MCP/Tavily searches]
     Sources --> Safety[Structural filtering<br/>novelty · familiarity]
     Safety --> Ranking[Nomic semantic ranking<br/>interest strength]
-    Ranking --> Reorder[Qwen 3.5 4B<br/>orders the shortlist]
+    Ranking --> Precision[MiniLM cross-encoder<br/>reads each pair together]
+    Precision --> Reorder[Qwen 3.5 4B<br/>orders the shortlist]
     Facts --> Reorder
     Reorder --> Description[Qwen 3.5 4B<br/>writes descriptions]
     Description --> Digest[Digest and calendar]
@@ -33,5 +34,5 @@ flowchart TB
     class Statement,Review,NoWrite,Trigger,Digest interface;
     class Sweep,Sources,Safety,Ranking application;
     class Profile,Facts data;
-    class Extract,Aim,Reorder,Description model;
+    class Extract,Aim,Precision,Reorder,Description model;
     class Rule warning;

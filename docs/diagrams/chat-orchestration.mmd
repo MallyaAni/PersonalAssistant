@@ -3,8 +3,8 @@ title: Chat and Delegation Flow
 ---
 flowchart TB
     User([User message]) --> API[Chat API]
-    API --> Interest[Qwen 3.5 4B<br/>semantic interest classifier]
-    Interest --> Proposal[Visible Scout memory proposal<br/>no write before approval]
+    API --> Interest[Qwen 3.5 4B<br/>typed semantic memory agent]
+    Interest --> Proposal[Visible memory proposal set<br/>no write before approval]
     API --> Supervisor{MainSupervisorAgent<br/>deterministic routing}
 
     Supervisor -->|presentation| Presentation[Queue durable<br/>PresentationAgent job]

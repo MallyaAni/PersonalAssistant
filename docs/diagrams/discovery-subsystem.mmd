@@ -18,7 +18,8 @@ flowchart LR
     Sweep --> Search[MCP web search<br/>Tavily fallback]
     Search --> Candidates[Typed candidate events]
     Candidates --> Rank[Nomic embeddings<br/>deterministic novelty and ranking]
-    Rank --> Reorder[Qwen 3.5 4B<br/>orders the qualified shortlist]
+    Rank --> Precision[MiniLM cross-encoder<br/>CPU: orders and attributes]
+    Precision --> Reorder[Qwen 3.5 4B<br/>orders the qualified shortlist]
     Context --> Reorder
     Reorder --> Describe[Qwen 3.5 4B<br/>bounded descriptions]
     Describe --> Result[Digest and calendar]
@@ -30,4 +31,4 @@ flowchart LR
     class User,Chat,Approval,Stop,Result interface;
     class Memory,Profile,Context data;
     class Schedule,Sweep,Feeds,Search,Candidates,Rank application;
-    class Understand,Aim,Reorder,Describe model;
+    class Understand,Aim,Precision,Reorder,Describe model;

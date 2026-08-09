@@ -82,10 +82,6 @@ class DeliveryReport:
     # Set when the digest provably never left and is waiting for another try.
     retry_at: datetime | None = None
 
-    @property
-    def sent_anything(self) -> bool:
-        return self.delivered > 0
-
 
 class DigestDelivery:
     """Send one digest to the people permitted to receive it."""

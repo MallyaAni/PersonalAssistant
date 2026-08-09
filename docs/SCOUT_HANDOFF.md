@@ -8,14 +8,22 @@ This file is only the things a fresh session cannot discover by reading code.
 Memory now reaches the sweep at both ends: `personal_context.py` reads approved
 facts, `aiming.py` turns each interest into a search subject and a ranking
 vector, and `reranking.py` orders the shortlist against the same facts. The
-query skeleton and the query budget are unchanged. Full evidence and the
-measured numbers are in `docs/NEXT_SESSION.md`; the negative result about
-exclusion wording is recorded in `reranking.py`'s own docstring because it will
-otherwise be re-attempted.
+query skeleton and the query budget are unchanged.
+
+Ranking is now a three-stage cascade, each stage using the instrument suited to
+its question: embeddings for recall (`relevance.py`), a local ONNX cross-encoder
+for precision and attribution (`precision.py`), then the model for constraints
+memory states (`reranking.py`). Only the first decides eligibility.
+
+Full evidence and the measured numbers are in `docs/NEXT_SESSION.md`. Two
+negative results are recorded in the code itself because they will otherwise be
+re-attempted: the exclusion wording in `reranking.py`, and the sigmoid-versus-
+logit measurement in `cross_encoder.py`.
 
 **It is not deployed.** The images were not rebuilt, so nothing has run through
-a container. Rebuild `backend` and `discovery-worker`, then `docker compose
-restart gateway`.
+a container. The cross-encoder also needs its weights fetched first (see
+`DEVELOPMENT_GUIDE.md`) or it disables itself and ranking is embeddings-only.
+Rebuild `backend` and `discovery-worker`, then `docker compose restart gateway`.
 
 ## The next task
 
@@ -25,13 +33,13 @@ restart gateway`.
 account. For `ani.mallya` the personal context reads empty, so the planner is
 never called and every query is still the bare interest label.
 
-So the constraint has moved upstream, from discovery to capture. `chat` only
-proposes a fact when one of the extractors in `backend/memory/proposals.py`
-claims the utterance, and those are regex-shaped: the semantic-fact catch-all
-needs an explicit "remember that…". Meanwhile `ScoutInterestProposalAgent`
-already shows the shape that works — the local model reads one utterance and
-proposes something the user approves in a visible card. The same thing for
-*facts about the person* is what would fill this in.
+The capture constraint has now been addressed in source. One local
+`MemoryProposalAgent` reads the whole current utterance and returns typed,
+approval-gated profile and general-memory candidates. No regex or keyword
+extractor decides what the user meant. The next proof needed for Scout is a
+real approved personal fact beyond name/interests, followed by a sweep that
+shows the bounded fact changes search aiming or reranking without leaking raw
+personal text.
 
 Two cautions from the work just done:
 
@@ -55,10 +63,29 @@ Two cautions from the work just done:
    explicitly located at Globe Life Field in Arlington, Texas. A stated place
    that contradicts the active locality should be rejected before the digest, in
    code.
-3. **Describe before re-ranking, if the budget allows.** The re-ranker sees
-   scraped page titles because `_make_readable` runs after selection. It gets
-   the summary text too, so it is not blind, but a readable name would help it.
+3. **Describe before re-ranking, if the budget allows.** Both re-rank stages see
+   scraped page titles because `_make_readable` runs after selection. They get
+   the summary text too, so neither is blind, but a readable name would help.
    The cost is describing a shortlist of sixteen rather than a digest of eight.
+4. **Let the model decide "is this a page about one happening or a list of
+   them".** `listing_filter.py` decides it from a keyword vocabulary, and
+   measured against realistic titles it misses 3 of 6 directory pages phrased
+   without its words ("Community Bulletin Board", "Arlington Farmers Markets",
+   "Trail Guide: Northern Virginia") while wrongly rejecting none of 4 real
+   happenings. The URL half of that filter is genuinely structural and should
+   stay. The title half is a language judgement, and it is nearly free to fix:
+   `summarize.py` already sends the page text to the model and already returns a
+   typed decision that drops finds (`already_happened`), so this is one more
+   field on a call that is already being made, judged on the page rather than
+   the title. Keep the deterministic filter in front of it, the way
+   `CascadingSearchRouter` keeps its rules in front of its classifier.
+
+**Do not "improve" these with a model.** They look like the same kind of code
+and are not: `core/egress.py` (a model asked to redact its own prompt can be
+talked out of it, a pattern cannot), the date patterns in `sources/web.py` and
+`url_dates.py` (a read date is the whole guarantee; an inferred one is a
+confidently wrong calendar entry), and the validators in `auth_service.py` and
+`presentations/validation.py`.
 
 ## State to know
 

@@ -2375,3 +2375,85 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   the Scout discovery and Scout agent views.
 - Not deployed: the images were not rebuilt and no sweep has run through the
   built containers.
+
+## 2026-08-09 — Multi-fact profile capture reaches Scout
+
+- Bounded preferred-name extraction before a following `and I` or `but I`
+  clause, fixing `Jen and i like acting` being proposed as a name.
+- Allowed one chat turn to stream all compatible profile-memory proposals while
+  preserving the single-best rule for general semantic and episodic memory.
+- Queued memory proposals in the chat UI so approving a name reveals the
+  interests from the same sentence instead of silently losing them.
+- Rebuilt the backend and verified the exact message through authenticated HTTP
+  and real Chromium as `testuser`: the profile became `Jen`, Scout contained
+  `acting`, `theater`, and `networking events`, the queue and loading state
+  cleared, and browser and backend error checks were empty.
+- Verified 72 focused backend tests, Ruff, three focused Playwright proposal
+  regressions, and the frontend production build. A broader title grep timed out
+  without a result and remains explicitly unverified.
+- Follow-up runtime tracing showed a repeated `testuser` attempt submitted only
+  the interest approval even though the name was first in the browser queue.
+  Replaced the anonymous `1 more proposal` hint with a preview of every queued
+  value and an **Approve all** action that preserves failed/unattempted items.
+- Verified the exact sentence and combined action in real Chromium: preferred
+  name returned 200, Scout interests returned 201, readback returned `Jen` plus
+  all three interests, and browser error and loading checks were clean.
+
+## 2026-08-09 — Replaced regex memory capture with semantic typed proposals
+
+- Removed the production regex proposal module and the superseded dedicated
+  Scout-interest agent.
+- Added one grammar-constrained Qwen memory-proposal agent covering preferred
+  name, response style, locality, interests, entity relationship, workflow,
+  titled reference, semantic fact, and episodic event without phrase routing.
+- Kept interpretation separate from authority: deterministic code validates
+  model fields and visible approval routes them to typed, user-scoped stores.
+- Verified real Qwen understands both the exact reported sentence and a
+  paraphrase without the former trigger phrasing, rejects a hypothetical
+  question, and semantically reuses existing Scout labels.
+- Corrected a live semantic-fact miss where Qwen treated a named pet as an
+  interest or returned nothing. Meaning-based examples now separate stable
+  personal facts, genuine interests, and recall questions without application
+  phrase matching; five positive/negative live controls pass.
+- Rebuilt the backend and verified exact combined approval through real
+  authenticated Chromium as `testuser`; both writes and persisted readback
+  passed with clean browser and backend error checks.
+- Verified 82 focused backend tests, Ruff, two focused Playwright acceptances,
+  frontend production build, 17 rendered diagrams, and the published
+  architecture page.
+
+## 2026-08-09 — A cross-encoder between the embeddings and the model
+
+- Added `backend/embeddings/cross_encoder.py` and the `RerankProvider`
+  interface: a local ONNX cross-encoder (`ms-marco-MiniLM-L6-v2`, 22M) scoring
+  query/document pairs in-process on CPU, following the lazy-load,
+  missing-file-disables shape `NomicVisionEmbeddingProvider` established. CPU
+  because the card is fully committed to generation and lent to ComfyUI, and
+  because a weekly batch of a few hundred short pairs measured 8 ms per pair.
+- Added `backend/discovery/precision.py` between deterministic ranking and the
+  memory re-ranker. Embeddings admit a shortlist twice the digest's width, the
+  cross-encoder orders and re-attributes it, then the model applies approved
+  memory. The new stage can neither admit nor drop, so eligibility stays where
+  it was calibrated.
+- Measured over the eight candidates whose cosine scores `relevance.py`
+  tabulates: cosine attributed 5 of 8 correctly and named the wrong interest
+  three times; the cross-encoder attributed all eight correctly across four
+  query framings.
+- Recorded two measured corrections in the code. The provider returns raw
+  logits rather than sigmoid probabilities, because the squashed scores put the
+  gap between a right and a wrong attribution at 0.000 versus 0.001 where
+  log-odds separate 0.29 from 1.49; and interest strength is deliberately not
+  applied at this stage, because recall already applied it and multiplying a
+  negative log-odds by a strength ratio would rank the interests a user cares
+  most about *lowest*.
+- `MIN_ATTRIBUTION_MARGIN` here is 1.0 in log-odds and is not comparable to
+  `relevance.py`'s 0.035 in cosine; the measured table is in the module.
+- Added `DISCOVERY_CROSS_ENCODER_*` settings, the Compose allowlist entry for
+  both services, and a `tokenizers` pin capped below its next major.
+- Removed unreferenced `count_interests`, `count_localities`, and
+  `sent_anything`.
+- Verified 991 backend tests with `AUTH_REQUIRED=false`, including 10 new ones;
+  Ruff and strict MyPy clean; 17 diagrams synchronized after adding the stage to
+  the Scout discovery and Scout agent views.
+- Not deployed: the images were not rebuilt and no sweep has run through the
+  built containers.
