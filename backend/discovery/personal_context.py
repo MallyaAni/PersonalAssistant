@@ -33,6 +33,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.egress import OutboundPrivacyPolicy
+from backend.discovery.events import clean_text
 from backend.discovery.projection import LOCALITY_KEY, is_interest_key
 from backend.models.memory import MemoryFact, SemanticMemory
 
@@ -51,6 +52,42 @@ MAX_SEMANTIC_MEMORIES = 8
 # helps choose an event, and a name actively harms: it identifies the searcher
 # in text that leaves the machine.
 _EXCLUDED_FACT_KEYS = frozenset({"preferred_name", "response_style"})
+
+# How much fact history one read scans. Bounded for the same reason the setup
+# service bounds it: a user with a long memory must not turn a read into an
+# unbounded one.
+MAX_FACTS_READ = 60
+
+
+# The current version of every approved, unexpired fact for one user.
+#
+# `DISTINCT ON (fact_key)` with a matching order asks PostgreSQL for one row per
+# key — the newest approved version — instead of reading a whole fact history
+# and discarding the superseded rows afterwards.
+#
+# Shared rather than written twice. Scout reads this in two places for two
+# different reasons: to propose interests during setup, and to aim a sweep. Two
+# copies of "approved, current, and not expired" is how a superseded fact
+# eventually reaches one of them and not the other.
+async def current_approved_facts(
+    session: AsyncSession,
+    user_id: str,
+    now: datetime | None = None,
+    limit: int = MAX_FACTS_READ,
+) -> tuple[MemoryFact, ...]:
+    moment = now or datetime.now(UTC)
+    stmt = (
+        select(MemoryFact)
+        .where(
+            MemoryFact.user_id == user_id,
+            MemoryFact.approval_state == "approved",
+            or_(MemoryFact.expires_at.is_(None), MemoryFact.expires_at > moment),
+        )
+        .order_by(MemoryFact.fact_key, MemoryFact.version.desc())
+        .distinct(MemoryFact.fact_key)
+        .limit(limit)
+    )
+    return tuple((await session.execute(stmt)).scalars().all())
 
 
 @dataclass(frozen=True, slots=True)
@@ -112,7 +149,10 @@ class PersonalContextReader:
     # statement is dropped silently and never logged: the whole point of the
     # block is that its text must not be repeated anywhere.
     def _admit(self, raw: str, statements: list[str], seen: set[str]) -> None:
-        text = " ".join(raw.split())[:MAX_STATEMENT_CHARS]
+        # The same bounding every other untrusted string in this subsystem gets.
+        # It also strips control characters, which a hand-rolled whitespace
+        # collapse does not — and these strings are about to enter a prompt.
+        text = clean_text(raw, MAX_STATEMENT_CHARS)
         if not text:
             return
         screened = self.privacy.sanitize(text)
@@ -126,33 +166,10 @@ class PersonalContextReader:
 
     # The approved, unexpired, non-projection facts, newest version of each key.
     async def _facts(self, user_id: str, moment: datetime) -> list[str]:
-        rows = (
-            (
-                await self.session.execute(
-                    select(MemoryFact)
-                    .where(
-                        MemoryFact.user_id == user_id,
-                        MemoryFact.approval_state == "approved",
-                        or_(
-                            MemoryFact.expires_at.is_(None),
-                            MemoryFact.expires_at > moment,
-                        ),
-                    )
-                    .order_by(MemoryFact.fact_key, MemoryFact.version.desc())
-                )
-            )
-            .scalars()
-            .all()
-        )
+        rows = await current_approved_facts(self.session, user_id, moment)
         statements: list[str] = []
-        claimed: set[str] = set()
         for row in rows:
             key = row.fact_key
-            if key in claimed:
-                # Ordered by descending version, so the first row for a key is
-                # the current one and the rest are its history.
-                continue
-            claimed.add(key)
             if key in _EXCLUDED_FACT_KEYS or key == LOCALITY_KEY:
                 continue
             if is_interest_key(key):

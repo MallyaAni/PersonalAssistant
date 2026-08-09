@@ -9,9 +9,6 @@ is a separate, explicit call, which is what records `user_explicit` provenance
 rather than inferring it.
 """
 
-from datetime import UTC, datetime
-
-from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.interfaces import SearchProvider
@@ -22,15 +19,16 @@ from backend.discovery.interest_finder import (
     propose_interests,
 )
 from backend.discovery.link_graph import MAX_RUNS_READ, LinkGraphExpander
+from backend.discovery.personal_context import current_approved_facts
 from backend.discovery.runs import DiscoveryRunRepository
 from backend.discovery.sources_repository import DiscoverySourceRepository
 from backend.discovery.types import DiscoveryProfile
-from backend.models.memory import MemoryFact
 
-# Only approved facts are read. The memory subsystem distinguishes what the user
-# confirmed from what was inferred, and proposing interests from inferences would
-# build a profile out of things they never said.
-_APPROVED = "approved"
+# Only approved facts are read, and only their current version: the shared
+# reader in `personal_context` owns that rule for the whole subsystem. The
+# memory subsystem distinguishes what the user confirmed from what was
+# inferred, and proposing interests from inferences would build a profile out
+# of things they never said.
 
 # How much memory one proposal pass reads. Bounded because this runs while the
 # user waits.
@@ -63,9 +61,7 @@ class DiscoverySetupService:
     # it reads history the user already has. That makes it the only proposal
     # path that keeps working once the metered allowance is spent, and the only
     # one that improves as the agent runs rather than only at setup.
-    async def suggest_from_link_graph(
-        self, user_id: str
-    ) -> tuple[FeedCandidate, ...]:
+    async def suggest_from_link_graph(self, user_id: str) -> tuple[FeedCandidate, ...]:
         runs = await DiscoveryRunRepository(self.session).recent_runs(
             user_id, limit=MAX_RUNS_READ
         )
@@ -87,19 +83,9 @@ class DiscoverySetupService:
     # Expired facts are excluded for the same reason: retention already decided
     # they should no longer be acted on.
     async def _approved_facts(self, user_id: str) -> tuple[dict[str, object], ...]:
-        now = datetime.now(UTC)
-        stmt = (
-            select(MemoryFact)
-            .where(
-                MemoryFact.user_id == user_id,
-                MemoryFact.approval_state == _APPROVED,
-                or_(MemoryFact.expires_at.is_(None), MemoryFact.expires_at > now),
-            )
-            .order_by(MemoryFact.fact_key, MemoryFact.version.desc())
-            .distinct(MemoryFact.fact_key)
-            .limit(MAX_FACTS_SCANNED)
+        rows = await current_approved_facts(
+            self.session, user_id, limit=MAX_FACTS_SCANNED
         )
-        rows = (await self.session.execute(stmt)).scalars().all()
         return tuple(
             {
                 "value": row.value,

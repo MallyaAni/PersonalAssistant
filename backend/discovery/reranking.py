@@ -60,7 +60,7 @@ from backend.discovery.relevance import (
     MAX_SELECTED,
     MAX_UNDATED,
     RankedCandidate,
-    within_lead_time,
+    cap_by_lead_time,
 )
 from backend.discovery.summarize import DescriptionWriter
 
@@ -157,15 +157,7 @@ class MemoryReranker:
             shortlist[index]
             for index in sorted(kept, key=lambda index: ranks.get(index, index))
         ]
-        dated = [
-            item for item in ordered if within_lead_time(item.event.starts_at, moment)
-        ]
-        undated = [
-            item
-            for item in ordered
-            if not within_lead_time(item.event.starts_at, moment)
-        ]
-        return tuple(dated[:limit]) + tuple(undated[:undated_limit])
+        return cap_by_lead_time(ordered, moment, limit, undated_limit)
 
     # Ask for an order, or accept the one we already have. Returns a rank per
     # shortlist position and the set of positions to drop.

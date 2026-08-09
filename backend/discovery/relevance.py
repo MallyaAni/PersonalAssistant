@@ -10,6 +10,7 @@ The model is not absent from the feature — it writes the digest a user reads.
 It just does not decide what qualifies.
 """
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -105,6 +106,28 @@ def within_lead_time(
     return lead.days <= MAX_LEAD_DAYS
 
 
+# Cut ranked finds to a digest's size, capping dated finds and undated mentions
+# separately and always listing the dated ones first.
+#
+# An undated find cannot become a calendar entry, so however well it reads it
+# must never displace one. That rule is why a single cap cannot serve both, and
+# every place that truncates a ranked list has to apply it — ranking, the
+# memory re-ranker, and the runner's own fallback all pass through here so they
+# cannot drift apart. Relative order within each group is preserved, so the
+# caller decides the order and this decides only what fits.
+def cap_by_lead_time(
+    items: Sequence["RankedCandidate"],
+    now: datetime,
+    limit: int = MAX_SELECTED,
+    undated_limit: int = MAX_UNDATED,
+) -> tuple["RankedCandidate", ...]:
+    dated = [item for item in items if within_lead_time(item.event.starts_at, now)]
+    undated = [
+        item for item in items if not within_lead_time(item.event.starts_at, now)
+    ]
+    return tuple(dated[:limit]) + tuple(undated[:undated_limit])
+
+
 class RelevanceRanker:
     """Score candidates against interest vectors weighted by their strength."""
 
@@ -133,8 +156,7 @@ class RelevanceRanker:
         it never displaces one.
         """
         moment = now or datetime.now(UTC)
-        dated: list[RankedCandidate] = []
-        undated: list[RankedCandidate] = []
+        admitted: list[RankedCandidate] = []
         for candidate in candidates:
             starts_at = candidate.event.starts_at
             schedulable = within_lead_time(starts_at, moment)
@@ -150,14 +172,14 @@ class RelevanceRanker:
             score, matched = self._score(candidate)
             if score < MIN_SCORE:
                 continue
-            entry = RankedCandidate(
-                candidate=candidate, score=score, matched_interest=matched
+            admitted.append(
+                RankedCandidate(
+                    candidate=candidate, score=score, matched_interest=matched
+                )
             )
-            (dated if schedulable else undated).append(entry)
 
-        dated.sort(key=self._order)
-        undated.sort(key=self._order)
-        return tuple(dated[:limit]) + tuple(undated[:undated_limit])
+        admitted.sort(key=self._order)
+        return cap_by_lead_time(admitted, moment, limit, undated_limit)
 
     # Score first, then soonest. A tie resolves toward the thing the user must
     # decide about first; an undated entry sorts last within its own group.

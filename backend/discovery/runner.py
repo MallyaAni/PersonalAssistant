@@ -48,7 +48,7 @@ from backend.discovery.relevance import (
     RankedCandidate,
     RelevanceRanker,
     candidate_text,
-    within_lead_time,
+    cap_by_lead_time,
 )
 from backend.discovery.reranking import MemoryReranker
 from backend.discovery.search_budget import SearchBudget
@@ -513,13 +513,13 @@ class DiscoveryRunner:
         limit: int,
     ) -> tuple[RankedCandidate, ...]:
         if not settings.DISCOVERY_MEMORY_RERANK_ENABLED:
-            return _truncate(shortlist, now, limit)
+            return cap_by_lead_time(shortlist, now, limit, MAX_UNDATED)
         try:
             return await self.reranker.order(
                 shortlist, context, now=now, limit=limit, undated_limit=MAX_UNDATED
             )
         except Exception:
-            return _truncate(shortlist, now, limit)
+            return cap_by_lead_time(shortlist, now, limit, MAX_UNDATED)
 
     # Search for what no feed publishes. Failure here is silent by design: a
     # sweep with working feeds must not fail because a search provider is down.
@@ -615,22 +615,6 @@ class DiscoveryRunner:
         if len(vectors) != len(texts):
             return [None] * len(texts)
         return list(vectors)
-
-
-# Cut a shortlist to the digest's size without reordering it. Dated finds and
-# undated mentions stay capped separately, exactly as ranking caps them: an
-# undated find cannot become a calendar entry, so it must never displace one.
-def _truncate(
-    shortlist: tuple[RankedCandidate, ...],
-    now: datetime,
-    limit: int,
-    undated_limit: int = MAX_UNDATED,
-) -> tuple[RankedCandidate, ...]:
-    dated = [item for item in shortlist if within_lead_time(item.event.starts_at, now)]
-    undated = [
-        item for item in shortlist if not within_lead_time(item.event.starts_at, now)
-    ]
-    return tuple(dated[:limit]) + tuple(undated[:undated_limit])
 
 
 def _adapter_for(source: FeedSource, budget: RequestBudget) -> EventSource:

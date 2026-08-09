@@ -44,6 +44,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from backend.core.egress import OutboundPrivacyPolicy
 from backend.discovery.personal_context import PersonalContext
+from backend.discovery.sources.web import MONTH_STEMS
 from backend.discovery.summarize import DescriptionWriter
 from backend.discovery.types import normalize_label
 
@@ -63,9 +64,9 @@ MAX_AIMS = 10
 
 # A date in the subject would collide with the month and year the skeleton
 # appends, producing "run clubs September 2026 Arlington, Virginia August 2026".
-_MONTH_WORDS = re.compile(
-    r"\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\b", re.IGNORECASE
-)
+# The stems come from the skeleton's own module so the two cannot disagree about
+# what a month looks like.
+_MONTH_WORDS = re.compile(rf"\b({MONTH_STEMS})[a-z]*\b", re.IGNORECASE)
 _ANY_DIGIT = re.compile(r"\d")
 
 # Search operators and punctuation that would change how a provider parses the

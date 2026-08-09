@@ -49,7 +49,11 @@ MAX_RESULTS_PER_QUERY = 8
 # Three-letter stems, so "Sept", "Sep." and "September" all match one branch.
 # Listing full names only would silently miss the abbreviations that dominate
 # real listings.
-_MONTHS = "jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec"
+#
+# Public because the query skeleton below appends a month, so anything building
+# a subject to go in front of it has to recognise the same set to avoid saying
+# the month twice. One list, or the two drift.
+MONTH_STEMS = "jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec"
 
 # Explicit, unambiguous date forms only. Anything requiring inference — "this
 # weekend", "next Saturday", "summer" — is deliberately absent, because
@@ -59,13 +63,13 @@ _DATE_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\b(?P<y>20\d{2})-(?P<m>\d{1,2})-(?P<d>\d{1,2})\b"),
     # September 12, 2026  /  Sept 12 2026
     re.compile(
-        rf"\b(?P<mon>{_MONTHS})[a-z]*\.?\s+(?P<d>\d{{1,2}})(?:st|nd|rd|th)?,?\s+"
+        rf"\b(?P<mon>{MONTH_STEMS})[a-z]*\.?\s+(?P<d>\d{{1,2}})(?:st|nd|rd|th)?,?\s+"
         rf"(?P<y>20\d{{2}})\b",
         re.IGNORECASE,
     ),
     # 12 September 2026
     re.compile(
-        rf"\b(?P<d>\d{{1,2}})(?:st|nd|rd|th)?\s+(?P<mon>{_MONTHS})[a-z]*\.?,?\s+"
+        rf"\b(?P<d>\d{{1,2}})(?:st|nd|rd|th)?\s+(?P<mon>{MONTH_STEMS})[a-z]*\.?,?\s+"
         rf"(?P<y>20\d{{2}})\b",
         re.IGNORECASE,
     ),
