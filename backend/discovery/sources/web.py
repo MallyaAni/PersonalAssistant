@@ -101,7 +101,7 @@ class WebEventSource(EventSource):
         source_id: str,
         search: SearchProvider,
         locality: str,
-        interests: tuple[str, ...],
+        subjects: tuple[str, ...],
         budget: RequestBudget | None = None,
         max_queries: int = MAX_QUERIES_PER_SWEEP,
         region: str | None = None,
@@ -114,7 +114,12 @@ class WebEventSource(EventSource):
         # person: querying "hiking near Arlington" returns Texas and Washington
         # alongside Virginia. The region is what makes the query mean one place.
         self.region = region
-        self.interests = interests
+        # What each query is about. An interest label is the floor — "Run Clubs"
+        # — and `aiming.py` substitutes something aimed at this person when
+        # memory supports one, such as "casual weekend group runs". Either way
+        # it is one short noun phrase, because the skeleton around it is what
+        # was measured.
+        self.subjects = subjects
         self.budget = budget
         self.max_queries = max_queries
         self.include_general = include_general
@@ -154,9 +159,13 @@ class WebEventSource(EventSource):
         self.budget.spend()
         return True
 
-    # One query per interest, because a combined query returns results matching
+    # One query per subject, because a combined query returns results matching
     # none of them well. Bounded so the metered cost of a sweep is knowable
     # before it runs.
+    #
+    # The skeleton is fixed and the subject is the only variable. What a subject
+    # says can be aimed at one person; how the query is shaped cannot, because
+    # that shape is what was measured.
     def _queries(self, now: datetime | None = None) -> tuple[str, ...]:
         place = clean_text(self.locality, 80) or ""
         region = clean_text(self.region, 80)
@@ -177,10 +186,10 @@ class WebEventSource(EventSource):
         # request here rather than on the fourth variation of one interest.
         if self.include_general:
             queries.append(f"events happening in {place} {when}".strip())
-        for interest in self.interests[: self.max_queries]:
-            label = clean_text(interest, 60)
-            if label:
-                queries.append(f"{label} {place} {when}".strip())
+        for subject in self.subjects[: self.max_queries]:
+            topic = clean_text(subject, 60)
+            if topic:
+                queries.append(f"{topic} {place} {when}".strip())
         if not queries:
             queries.append(f"local events {place} {when}".strip())
         return tuple(queries[: self.max_queries])

@@ -183,6 +183,18 @@ class Settings(BaseSettings):
     # everything it finds, which is what you want while judging output quality
     # and not what you want on a schedule.
     DISCOVERY_NOVELTY_ENABLED: bool = True
+    # Whether a sweep aims its searches at the person rather than at the topic.
+    # On, the local model turns each approved interest plus what memory knows
+    # into the subject of a query and the vector candidates are scored against;
+    # off, both are the bare interest label, which is what every sweep before
+    # this did. Kept switchable because search is metered: a worse subject
+    # spends real budget, so the two must be comparable across real sweeps.
+    DISCOVERY_PERSONAL_QUERIES_ENABLED: bool = True
+    # Whether the model reorders the qualified shortlist against approved
+    # memory. It can never admit a find deterministic ranking rejected — only
+    # reorder what qualified, and drop one whose own text states a restriction
+    # an approved fact contradicts.
+    DISCOVERY_MEMORY_RERANK_ENABLED: bool = True
     DISCOVERY_PLACE_RESOLVER: Literal["", "nominatim"] = ""
     DISCOVERY_PLACE_RESOLVER_URL: str = "https://nominatim.openstreetmap.org/reverse"
     DISCOVERY_PLACE_RESOLVER_USER_AGENT: str = "AniOS/1.0 (local personal assistant)"

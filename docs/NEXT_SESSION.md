@@ -5,7 +5,96 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 [ROADMAP.md](ROADMAP.md), and stable architecture facts in
 [ARCHITECTURE.md](ARCHITECTURE.md).
 
-Last updated: 2026-08-09, America/New_York (jenos1 Scout delivery diagnosis)
+Last updated: 2026-08-09, America/New_York (Scout aims at the person)
+
+## Scout searches and ranks for the person — VERIFIED in source, NOT DEPLOYED
+
+A sweep used to be handed a two-word interest label and a city, so the query was
+`{label} {place} {month year}` and the vector a candidate was scored against was
+the embedding of `label`. Approved memory reached neither. Three new modules
+close that:
+
+- `discovery/personal_context.py` reads one account's **approved, unexpired**
+  facts and remembered sentences, skips the interest and locality projections
+  (already typed into the profile), drops `preferred_name` and `response_style`,
+  screens every statement through the same `OutboundPrivacyPolicy` that guards
+  chat search, and bounds the result to 12 statements of 200 characters;
+- `discovery/aiming.py` asks Qwen once per sweep to turn each interest plus
+  those facts into a **search subject** and a **ranking profile**. The skeleton
+  `{subject} {place} {month year}` and the query budget are unchanged. A subject
+  carrying a digit, a month, the place, query syntax, or anything the egress
+  screen would rewrite is rejected and the bare label used instead;
+- `discovery/reranking.py` ranks a shortlist twice as wide as the digest and has
+  Qwen order it against the same facts. It can never admit what deterministic
+  ranking rejected, and if it excluded everything the deterministic order ships.
+
+Both stages are behind `DISCOVERY_PERSONAL_QUERIES_ENABLED` and
+`DISCOVERY_MEMORY_RERANK_ENABLED` (default true, added to the Compose allowlist
+for `backend` and `discovery-worker`, verified present in `docker compose
+config`). With either off, or with no model, no memory, or an unparseable reply,
+the sweep searches and ranks exactly as it did before.
+
+### Measured against the live runtime, read-only, no search budget spent
+
+Real vLLM (`qwen/qwen3.5-4b`) and the real embedding service, for a person whose
+approved facts said they run casually at weekends, are a man, prefer
+beginner-friendly things they can attend alone, like live jazz and dislike
+stadium shows, and do not drink:
+
+```
+Run Clubs    -> casual weekend group runs   Hiking  -> beginner-friendly hikes
+Concerts     -> live jazz and blues         Line Dancing / Wine Tasting -> unchanged
+```
+
+Best-interest margins, bare label vs aimed vector:
+
+| candidate | bare | aimed |
+| --- | --- | --- |
+| Saturday Morning Social Run | 0.633, margin 0.071 | 0.757, **margin 0.132** |
+| Live Jazz Trio at Blues Alley | 0.644, margin 0.054 | 0.737, **margin 0.118** |
+| Beginner Line Dancing Social | 0.768, margin 0.208 | 0.843, margin 0.206 |
+| Stadium Tour: Arena Rock | 0.640, margin 0.119 | 0.690, margin 0.159 |
+
+Genuine matches separate roughly twice as far — which is what
+`MIN_ATTRIBUTION_MARGIN` (0.035) exists to cope with. **And enrichment cannot
+encode exclusion**: the stadium show scored *higher* after enrichment for
+someone whose facts say they dislike stadium shows. That is the case for having
+both stages rather than either.
+
+The re-ranker put the social run, the jazz trio and the beginner class first and
+pushed the stadium show, the wine festival and a women-only race last — correct
+for this person, deterministic across repeated greedy runs.
+
+### The women-only defect is mitigated, not fixed
+
+The re-ranker ranked the stated women-only race last and did **not** exclude it,
+for a person whose facts state they are a man. Strengthening the wording was
+tried and measured, and is recorded in `reranking.py`: with a worked example it
+excluded all three restricted-or-disliked items — turning two *preferences* into
+eligibility bars — and on a control context with **no fact about gender** it
+still excluded the women-only race. That is the inference this must never make.
+The conservative wording stayed. Audience restriction still needs the
+deterministic route: a restricted-audience field read out of the page in
+`summarize.py`, said in the digest, filtered by code against an explicit fact.
+
+### The binding constraint is upstream: memory is empty
+
+`memory_facts` holds exactly three non-projection rows across the whole
+database, all `preferred_name` (which this deliberately never reads), and
+`semantic_memory` holds one row belonging to a throwaway test account. So for
+`ani.mallya` the personal context reads empty, the planner is not called, and
+every query is the bare label — verified by running the planner against that
+real account. The plumbing is in place and has nothing to carry. Making Scout
+personal from here is a memory-capture problem, not a discovery problem.
+
+- Regression: **1020 backend tests pass** with `AUTH_REQUIRED=false`, including
+  28 new ones; Ruff and strict MyPy clean on `backend/discovery` (two
+  pre-existing `link_graph.py` errors untouched); 17 diagrams synchronized.
+- `UNVERIFIED`: no sweep has run through the built containers. The images were
+  not rebuilt and `backend`/`discovery-worker` were not recreated, because doing
+  so drops live users on the tunnel. Rebuild both, then `docker compose restart
+  gateway`, before claiming live behaviour.
+
 
 ## Scout account isolation restored at the live runtime — VERIFIED
 
@@ -71,8 +160,9 @@ masked `jenos1` destination.
 Add and validate geographic result rejection. The live Arlington, Virginia
 rehearsal correctly found local basketball/baseball results but also admitted a
 college-baseball result explicitly located at Globe Life Field in Arlington,
-Texas. Keep query planning and ranking deterministic; reject an explicit place
-that contradicts the active locality/region before it can enter the digest.
+Texas. Reject an explicit place that contradicts the active locality/region
+before it can enter the digest — deterministically, in code: this is a string
+comparison against a stated place, not a judgement.
 
 ## Scout rejects explicitly past search results — VERIFIED
 

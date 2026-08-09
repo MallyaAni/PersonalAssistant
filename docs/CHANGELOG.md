@@ -2332,3 +2332,46 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   returned to login without Console/page errors or failed requests.
 - Verified 45 focused backend tests, two focused browser tests, and the frontend
   production build.
+
+## 2026-08-09 — Scout searches and ranks for the person, not the topic
+
+- Added `backend/discovery/personal_context.py`: one narrow door between
+  approved personal memory and a sweep. It reads approved, unexpired facts and
+  remembered sentences, skips the interest and locality projections already
+  typed into the Scout profile, never reads `preferred_name` or
+  `response_style`, screens every statement through the shared
+  `OutboundPrivacyPolicy`, and bounds the result to 12 statements.
+- Added `backend/discovery/aiming.py`: one grammar-constrained, greedy model
+  call per sweep turns each interest plus those facts into a search subject and
+  a ranking profile. The measured query skeleton `{subject} {place} {month
+  year}` and the query budget are unchanged, and a subject carrying a digit, a
+  month, the place, query syntax, or personal framing is rejected in favour of
+  the bare label.
+- Added `backend/discovery/reranking.py`: the deterministic ranker now produces
+  a shortlist twice the digest's width and the model orders it against the same
+  facts. It cannot admit anything deterministic ranking rejected, keeps dated
+  finds and undated mentions capped separately, and falls back to the
+  deterministic order when it would return nothing.
+- Interest vectors are now the aimed profile rather than the bare label, keyed
+  by the user's own label so a digest still names the interest they stated.
+- Measured against the live `qwen/qwen3.5-4b` and embedding service, read-only:
+  aimed vectors roughly doubled the attribution margin for genuine matches
+  (0.071 to 0.132 for a social run, 0.054 to 0.118 for a jazz trio) and could
+  not suppress a disliked stadium show, which scored higher after enrichment.
+  The re-ranker ordered the same shortlist correctly and deterministically.
+- Recorded, in `reranking.py`, a measured negative result: strengthening the
+  exclusion wording made the model exclude preferences as if they were
+  eligibility bars, and exclude a women-only event for a person with no fact
+  about gender. The conservative wording was kept and audience restriction was
+  left to the deterministic route.
+- Added `DISCOVERY_PERSONAL_QUERIES_ENABLED` and
+  `DISCOVERY_MEMORY_RERANK_ENABLED` to settings and to the Compose environment
+  allowlist for both `backend` and `discovery-worker`, verified present in the
+  rendered `docker compose config`.
+- Verified 1020 backend tests with `AUTH_REQUIRED=false`, including 28 new ones
+  covering what may be read out of memory, the unchanged skeleton and budget,
+  and every failure path landing on the previous behaviour; Ruff and strict
+  MyPy clean over `backend/discovery`; 17 diagrams synchronized after updating
+  the Scout discovery and Scout agent views.
+- Not deployed: the images were not rebuilt and no sweep has run through the
+  built containers.

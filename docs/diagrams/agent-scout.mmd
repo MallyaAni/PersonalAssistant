@@ -6,13 +6,18 @@ flowchart TB
     Extract --> Review{Visible approval}
     Review -->|approved| Profile[(User-scoped Scout profile)]
     Review -->|dismissed| NoWrite[Nothing saved]
+    Review -->|approved| Facts[(Approved memory facts)]
 
     Trigger([Schedule or Look now]) --> Sweep[Scout sweep]
     Profile --> Sweep
+    Facts --> Aim[Qwen 3.5 4B<br/>aims subjects and vectors]
+    Aim --> Sweep
     Sweep --> Sources[Feeds and bounded<br/>MCP/Tavily searches]
     Sources --> Safety[Structural filtering<br/>novelty · familiarity]
     Safety --> Ranking[Nomic semantic ranking<br/>interest strength]
-    Ranking --> Description[Qwen 3.5 4B<br/>writes descriptions]
+    Ranking --> Reorder[Qwen 3.5 4B<br/>orders the shortlist]
+    Facts --> Reorder
+    Reorder --> Description[Qwen 3.5 4B<br/>writes descriptions]
     Description --> Digest[Digest and calendar]
 
     Rule[Application code owns persistence,<br/>qualification, budgets and delivery]
@@ -27,6 +32,6 @@ flowchart TB
     classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
     class Statement,Review,NoWrite,Trigger,Digest interface;
     class Sweep,Sources,Safety,Ranking application;
-    class Profile data;
-    class Extract,Description model;
+    class Profile,Facts data;
+    class Extract,Aim,Reorder,Description model;
     class Rule warning;

@@ -382,6 +382,13 @@ services:
       # schedule.
       - DISCOVERY_NOVELTY_ENABLED=${DISCOVERY_NOVELTY_ENABLED:-true}
       - DISCOVERY_WEB_QUERIES_PER_SWEEP=${DISCOVERY_WEB_QUERIES_PER_SWEEP:-4}
+      # Whether a sweep aims its queries and its ranking at the person using
+      # approved memory, or searches the bare interest label as it always did.
+      # Both must match the backend's values: the API runs rehearsals, and a
+      # rehearsal that aims differently from the scheduled run is not a
+      # rehearsal of anything.
+      - DISCOVERY_PERSONAL_QUERIES_ENABLED=${DISCOVERY_PERSONAL_QUERIES_ENABLED:-true}
+      - DISCOVERY_MEMORY_RERANK_ENABLED=${DISCOVERY_MEMORY_RERANK_ENABLED:-true}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - GOOGLE_SEARCH_ENABLED=${GOOGLE_SEARCH_ENABLED:-false}
@@ -455,6 +462,11 @@ services:
       # Must match the worker's value: the API can run a sweep too, and the
       # two disagreeing means a rehearsal and a real run filter differently.
       - DISCOVERY_NOVELTY_ENABLED=${DISCOVERY_NOVELTY_ENABLED:-true}
+      # Must match the worker's values for the same reason: a rehearsal run
+      # from here has to aim its queries and its ranking exactly as the
+      # scheduled sweep will.
+      - DISCOVERY_PERSONAL_QUERIES_ENABLED=${DISCOVERY_PERSONAL_QUERIES_ENABLED:-true}
+      - DISCOVERY_MEMORY_RERANK_ENABLED=${DISCOVERY_MEMORY_RERANK_ENABLED:-true}
       # Which server owns the Apple device, and what its send tool is called.
       # The worker had these and this did not, so a send from the API would
       # resolve the tool name to its code default - `send_message`, which the

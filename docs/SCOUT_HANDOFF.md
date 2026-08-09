@@ -3,76 +3,77 @@
 Read `AGENTS.md` first; it covers the working method and the operational traps.
 This file is only the things a fresh session cannot discover by reading code.
 
+## What just landed
+
+Memory now reaches the sweep at both ends: `personal_context.py` reads approved
+facts, `aiming.py` turns each interest into a search subject and a ranking
+vector, and `reranking.py` orders the shortlist against the same facts. The
+query skeleton and the query budget are unchanged. Full evidence and the
+measured numbers are in `docs/NEXT_SESSION.md`; the negative result about
+exclusion wording is recorded in `reranking.py`'s own docstring because it will
+otherwise be re-attempted.
+
+**It is not deployed.** The images were not rebuilt, so nothing has run through
+a container. Rebuild `backend` and `discovery-worker`, then `docker compose
+restart gateway`.
+
 ## The next task
 
-**Put what memory knows about the user into the Tavily search queries.**
+**Give Scout something to know.** The plumbing built above has nothing to carry:
+`memory_facts` holds three non-projection rows in the entire database, all
+`preferred_name`, and `semantic_memory` holds one row belonging to a throwaway
+account. For `ani.mallya` the personal context reads empty, so the planner is
+never called and every query is still the bare interest label.
 
-Today a query is a template in `backend/discovery/sources/web.py::_queries`:
+So the constraint has moved upstream, from discovery to capture. `chat` only
+proposes a fact when one of the extractors in `backend/memory/proposals.py`
+claims the utterance, and those are regex-shaped: the semantic-fact catch-all
+needs an explicit "remember that…". Meanwhile `ScoutInterestProposalAgent`
+already shows the shape that works — the local model reads one utterance and
+proposes something the user approves in a visible card. The same thing for
+*facts about the person* is what would fill this in.
 
-```python
-queries.append(f"{label} {place} {when}")   # "Run Clubs Arlington, Virginia August 2026"
-```
+Two cautions from the work just done:
 
-The only things about a person that reach a search are a two-word interest label
-and their city. Every approved fact in memory reaches nothing — the sweep is
-handed a `DiscoveryProfile` (interests + localities) and never reads memory.
-
-That is why a man was sent a women-only running event: the query contains no
-person, so the results are for everyone, and ranking is then asked to sort
-candidates that were never chosen with him in mind. This is upstream of ranking
-and worth doing first — better candidates beat better sorting.
-
-**The agreed shape:**
-
-- the **model chooses the subject** of each query, from approved memory facts —
-  "casual weekend group runs" rather than "Run Clubs";
-- the **template keeps its skeleton**, `{subject} {place} {month year}`;
-- the **query budget is unchanged** — same count, better aimed.
-
-Do not let the model write free-form queries. The current phrasing was measured,
-and the comment in `_queries` records it: `"events near X upcoming"` kept **0 of
-5** results while naming the month kept **6 of 9** across three interests. The
-`{place} {month year}` skeleton is what makes results be about one happening
-rather than a directory page.
-
-Two things this needs that do not exist: the runner has no access to memory
-facts, and search is metered — a bad query spends real budget, so compare
-candidate quality across a couple of real sweeps before trusting it.
+- capture is what makes this real, and it is also what makes it sensitive. A
+  proposal card is the boundary: nothing reaches a sweep that the user did not
+  approve, and `personal_context.py` re-checks that at read time;
+- do not measure this with a synthetic profile alone. The aiming stage was
+  measured with a hand-written context because no real one existed, and that
+  measurement cannot tell you whether real captured facts are the *kind* of
+  facts that aim a query well.
 
 ## Also queued, in priority order
 
-1. **Audience restrictions.** Scout suggested a women-only event to a man.
-   `summarize.py` already reads page text and already drops finds (that is how
-   `already_happened` works), so add a restricted-audience field. Then:
-   *first* say it in the digest name so the user can judge, *second* filter only
-   against an explicitly stated fact in approved memory. Never infer an
-   attribute like gender from a name or from behaviour. Some "Women's Run"
-   events are open to all, which is why visibility comes before filtering.
-2. **Rank against a richer user vector.** `runner.py::_interest_vectors` embeds
-   the bare label, so the entire user representation is a two-word string. This
-   is why scores cluster: measured over real candidates, a genuine concert
-   scored 0.612 against "Concerts" and a lantern festival scored 0.616 against
-   "Line Dancing". That clustering is what forced `MIN_ATTRIBUTION_MARGIN`
-   (0.035). Measure before shipping: score real candidates against thin labels
-   vs enriched vectors and check the correct ones actually separate. Embeddings
-   will never encode exclusion, so this does not replace item 1.
-3. **One-line test fix.** `backend/tests/test_discovery_delivery.py` still
-   asserts the old opening; it needs `startswith("Scout · ")`. Left unstaged
-   because Codex has uncommitted work in that same file.
+1. **Audience restrictions, deterministically.** Still open, and now with
+   evidence about how *not* to do it. `summarize.py` already reads page text and
+   already drops finds, so add a restricted-audience field there. Say it in the
+   digest name first so the user can judge; filter only in code, only against an
+   explicitly stated fact in approved memory. Do not push this into the
+   re-ranker's prompt — that was measured and it inferred gender from nothing.
+2. **Geographic rejection.** The Arlington, Virginia rehearsal admitted a result
+   explicitly located at Globe Life Field in Arlington, Texas. A stated place
+   that contradicts the active locality should be rejected before the digest, in
+   code.
+3. **Describe before re-ranking, if the budget allows.** The re-ranker sees
+   scraped page titles because `_make_readable` runs after selection. It gets
+   the summary text too, so it is not blind, but a readable name would help it.
+   The cost is describing a shortlist of sixteen rather than a digest of eight.
 
 ## State to know
 
-- **Seen items were purged** (all users) to get clean test results.
-- **`DISCOVERY_NOVELTY_ENABLED=false`.** Digests repeat until this is turned
-  back on; it must be on before anything runs unattended.
+- **`DISCOVERY_NOVELTY_ENABLED=false`** in `.env`. Digests repeat until this is
+  turned back on; it must be on before anything runs unattended.
+- **Seen items were purged** for `ani.mallya` to get clean test results.
 - **The Mac bridge grants work.** `IMESSAGE_BRIDGE_ALLOW_GRANTS=true` is set and
   `allow_recipient` was verified returning "Recipient allowed."
 - **The public URL is a quick tunnel** (`scripts/start-tunnel.sh`). It dies on
   reboot and mints a new random hostname every start. A named tunnel is free but
   needs a domain on Cloudflare DNS.
-- **Test baseline: ~19 failures on the host**, all `401 Unauthorized` in API
-  tests, all pre-existing. Do not chase them. Confirm any new failure against a
-  clean worktree at `HEAD` before assuming it is yours.
+- **Run the backend suite with `AUTH_REQUIRED=false`.** With it, 1020 tests pass
+  on this host. Without it, roughly nineteen legacy anonymous API tests return
+  401 and look like regressions. Four more modules fail on Windows for optional
+  dependencies that live only in the container.
 - **Codex also edits this tree.** Check `git status` before committing and stage
   only your own files.
 
@@ -87,3 +88,7 @@ candidate quality across a couple of real sweeps before trusting it.
   change needs `docker compose build gateway`.
 - **Recreating `backend` drops live users** on the tunnel. It has happened twice,
   and once a real user reported the agent as broken because of it.
+- **An optional field in a response grammar is a field the model will skip.**
+  The re-ranker's `excluded` list was never emitted at all until the schema
+  marked it required — three greedy runs returned only an order. If a model
+  seems to be ignoring part of a contract, check whether the grammar lets it.

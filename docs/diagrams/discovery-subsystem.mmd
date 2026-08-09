@@ -12,10 +12,15 @@ flowchart LR
     Schedule[Schedule or Look now] --> Sweep[Scout sweep]
     Profile --> Sweep
     Feeds[Configured feeds] --> Sweep
+    Memory --> Context[Screened personal context<br/>approved · bounded]
+    Context --> Aim[Qwen 3.5 4B<br/>query subject and ranking vector]
+    Aim --> Sweep
     Sweep --> Search[MCP web search<br/>Tavily fallback]
     Search --> Candidates[Typed candidate events]
     Candidates --> Rank[Nomic embeddings<br/>deterministic novelty and ranking]
-    Rank --> Describe[Qwen 3.5 4B<br/>bounded descriptions]
+    Rank --> Reorder[Qwen 3.5 4B<br/>orders the qualified shortlist]
+    Context --> Reorder
+    Reorder --> Describe[Qwen 3.5 4B<br/>bounded descriptions]
     Describe --> Result[Digest and calendar]
 
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
@@ -23,6 +28,6 @@ flowchart LR
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     class User,Chat,Approval,Stop,Result interface;
-    class Memory,Profile data;
+    class Memory,Profile,Context data;
     class Schedule,Sweep,Feeds,Search,Candidates,Rank application;
-    class Understand,Describe model;
+    class Understand,Aim,Reorder,Describe model;

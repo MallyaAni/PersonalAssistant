@@ -10,6 +10,14 @@ consume a slot in the digest, and the digest is persisted before anything tries
 to deliver it, so a crash between the two leaves work to resume rather than work
 to redo.
 
+What the user has approved being known by is read once, before any query is
+spent, and used at both ends of the sweep: `aiming.py` turns it into the subject
+of each search and the vector each candidate is scored against, and
+`reranking.py` orders the qualified shortlist against the same facts. Reading it
+once is what stops a sweep searching for one person and ranking for another.
+Every part of that degrades to the bare interest labels, so a sweep with no
+model, no memory, or an unreachable runtime does exactly what it did before.
+
 Nothing here reaches outward. A sweep writes a digest; delivering it is a
 separate, permissioned stage.
 """
@@ -22,6 +30,7 @@ from typing import Protocol
 
 from backend.config.settings import settings
 from backend.core.interfaces import SearchProvider
+from backend.discovery.aiming import AimPlanner, SweepAim
 from backend.discovery.errors import DiscoveryError
 from backend.discovery.events import DiscoveredEvent, EventSource, FeedError
 from backend.discovery.familiarity import FamiliarItemRepository, FamiliarityFilter
@@ -32,12 +41,16 @@ from backend.discovery.fetching import (
 )
 from backend.discovery.notable import NotableSelector
 from backend.discovery.novelty import NoveltyFilter, ScoredCandidate, SeenItemRepository
+from backend.discovery.personal_context import PersonalContext, PersonalContextReader
 from backend.discovery.relevance import (
     MAX_SELECTED,
+    MAX_UNDATED,
     RankedCandidate,
     RelevanceRanker,
     candidate_text,
+    within_lead_time,
 )
+from backend.discovery.reranking import MemoryReranker
 from backend.discovery.search_budget import SearchBudget
 from backend.discovery.sources.ics import IcsEventSource
 from backend.discovery.sources.links import LinkPageEventSource
@@ -49,7 +62,13 @@ from backend.discovery.summarize import (
     EventDescriber,
     text_from_html,
 )
-from backend.discovery.types import DiscoveryProfile
+from backend.discovery.types import DiscoveryProfile, Locality
+
+# How much wider than the digest the shortlist is ranked before the model orders
+# it. Two gives the re-ranker a real choice — sixteen finds for an eight-item
+# digest — while a sweep that found fewer than that behaves exactly as it did
+# before, because there is nothing extra to drop.
+SHORTLIST_FACTOR = 2
 
 
 # Only what a sweep needs from the embedding provider, so the runner can be
@@ -198,6 +217,16 @@ class DiscoveryRunner:
         # Only the selected finds are described, so the model runs a handful of
         # times per sweep rather than once per candidate.
         self.describer = EventDescriber(writer)
+        # What memory knows about the person this sweep is for. Reading it is
+        # the whole reason a query can be about someone rather than about a
+        # topic; without it both stages below fall back to bare labels.
+        self.personal = PersonalContextReader(seen.session)
+        # Turns each interest into a search subject and a ranking vector aimed
+        # at that person. One model call per sweep.
+        self.aiming = AimPlanner(writer)
+        # Orders the qualified shortlist against the same facts. One more call,
+        # and it can only reorder what deterministic ranking already admitted.
+        self.reranker = MemoryReranker(writer)
         # Search is the one metered component here and its key belongs to the
         # operator, so an account's monthly spend is bounded independently of
         # any single run's request budget.
@@ -244,7 +273,14 @@ class DiscoveryRunner:
             scoped=True,
         )
         events, failed = await self._collect(user_id, configured, budget)
-        events = events + await self._search_events(user_id, profile, budget)
+
+        # Read once and used twice: the same approved facts aim the queries and
+        # order the result. Deliberately the same context, so a sweep cannot
+        # search for one person and rank for another.
+        context = await self._personal_context(user_id, moment)
+        aim = await self._aim(profile, context, primary)
+
+        events = events + await self._search_events(user_id, profile, budget, aim)
 
         candidates = await self._embed(events)
         # A rehearsal treats everything as new. Applying novelty would show an
@@ -267,12 +303,22 @@ class DiscoveryRunner:
         )
 
         ranker = RelevanceRanker(
-            interest_vectors=await self._interest_vectors(profile),
+            interest_vectors=await self._interest_vectors(profile, aim),
             interest_strengths={
                 interest.label: interest.strength for interest in profile.interests
             },
         )
-        selected = ranker.rank(novel, now=moment, limit=limit)
+        # Ranked wider than the digest, then ordered against what memory knows.
+        # Deterministic scoring still decides what is eligible; the model only
+        # decides which of the eligible finds this person hears about first, and
+        # the shortlist is what gives that decision anything to work with.
+        shortlist = ranker.rank(
+            novel,
+            now=moment,
+            limit=limit * SHORTLIST_FACTOR,
+            undated_limit=MAX_UNDATED * SHORTLIST_FACTOR,
+        )
+        selected = await self._order(shortlist, context, moment, limit)
 
         # Chosen before anything is recorded as seen. Afterwards these
         # candidates would be in the history they are measured against, and
@@ -422,10 +468,67 @@ class DiscoveryRunner:
             collected.extend(events)
         return tuple(collected), tuple(failed)
 
+    # What this account has approved being known by, or nothing. A sweep must
+    # never fail because memory could not be read, and with both personalizing
+    # stages switched off there is nothing to read it for.
+    async def _personal_context(self, user_id: str, now: datetime) -> PersonalContext:
+        if not (
+            settings.DISCOVERY_PERSONAL_QUERIES_ENABLED
+            or settings.DISCOVERY_MEMORY_RERANK_ENABLED
+        ):
+            return PersonalContext()
+        try:
+            return await self.personal.read(user_id, now=now)
+        except Exception:
+            return PersonalContext()
+
+    # Aim every interest at this person, or leave them as bare labels. The
+    # fallback is not a degraded mode: it is exactly how every sweep before this
+    # searched and ranked.
+    async def _aim(
+        self,
+        profile: DiscoveryProfile,
+        context: PersonalContext,
+        primary: Locality | None,
+    ) -> SweepAim:
+        labels = tuple(interest.label for interest in profile.interests)
+        if not settings.DISCOVERY_PERSONAL_QUERIES_ENABLED:
+            return SweepAim.from_labels(labels)
+        place = primary.label if primary else ""
+        if primary is not None and primary.region:
+            place = f"{place}, {primary.region}"
+        try:
+            return await self.aiming.plan(labels, context, place)
+        except Exception:
+            return SweepAim.from_labels(labels)
+
+    # Order the shortlist against approved memory and cut it to the digest's
+    # size. With the model path off or unavailable this is the plain truncation
+    # `RelevanceRanker.rank` would have done on its own.
+    async def _order(
+        self,
+        shortlist: tuple[RankedCandidate, ...],
+        context: PersonalContext,
+        now: datetime,
+        limit: int,
+    ) -> tuple[RankedCandidate, ...]:
+        if not settings.DISCOVERY_MEMORY_RERANK_ENABLED:
+            return _truncate(shortlist, now, limit)
+        try:
+            return await self.reranker.order(
+                shortlist, context, now=now, limit=limit, undated_limit=MAX_UNDATED
+            )
+        except Exception:
+            return _truncate(shortlist, now, limit)
+
     # Search for what no feed publishes. Failure here is silent by design: a
     # sweep with working feeds must not fail because a search provider is down.
     async def _search_events(
-        self, user_id: str, profile: DiscoveryProfile, budget: RequestBudget
+        self,
+        user_id: str,
+        profile: DiscoveryProfile,
+        budget: RequestBudget,
+        aim: SweepAim,
     ) -> tuple[DiscoveredEvent, ...]:
         if self.search is None or not settings.DISCOVERY_WEB_SEARCH_ENABLED:
             return ()
@@ -450,7 +553,9 @@ class DiscoveryRunner:
             search=self.search,
             locality=primary.label,
             region=primary.region,
-            interests=tuple(interest.label for interest in profile.interests),
+            # The subject of each query, aimed at this person where memory
+            # supported one and the plain interest label everywhere else.
+            subjects=aim.subjects(),
             budget=budget,
             max_queries=granted,
         )
@@ -477,13 +582,22 @@ class DiscoveryRunner:
             for event, vector in zip(events, vectors, strict=True)
         )
 
+    # The vectors a candidate is scored against.
+    #
+    # Embedding the bare label made the whole user representation a two-word
+    # string, which is why scores clustered: a genuine concert scored 0.612
+    # against "Concerts" while a lantern festival scored 0.616 against "Line
+    # Dancing". Where memory supported an aimed profile, that sentence is
+    # embedded instead — but the key stays the user's own label, so a digest
+    # still names the interest they stated rather than a phrasing of ours.
     async def _interest_vectors(
-        self, profile: DiscoveryProfile
+        self, profile: DiscoveryProfile, aim: SweepAim
     ) -> dict[str, list[float]]:
         labels = [interest.label for interest in profile.interests]
         if not labels:
             return {}
-        vectors = await self._embed_batch(labels)
+        aimed = aim.vector_texts()
+        vectors = await self._embed_batch([aimed.get(label, label) for label in labels])
         return {
             label: vector
             for label, vector in zip(labels, vectors, strict=True)
@@ -501,6 +615,22 @@ class DiscoveryRunner:
         if len(vectors) != len(texts):
             return [None] * len(texts)
         return list(vectors)
+
+
+# Cut a shortlist to the digest's size without reordering it. Dated finds and
+# undated mentions stay capped separately, exactly as ranking caps them: an
+# undated find cannot become a calendar entry, so it must never displace one.
+def _truncate(
+    shortlist: tuple[RankedCandidate, ...],
+    now: datetime,
+    limit: int,
+    undated_limit: int = MAX_UNDATED,
+) -> tuple[RankedCandidate, ...]:
+    dated = [item for item in shortlist if within_lead_time(item.event.starts_at, now)]
+    undated = [
+        item for item in shortlist if not within_lead_time(item.event.starts_at, now)
+    ]
+    return tuple(dated[:limit]) + tuple(undated[:undated_limit])
 
 
 def _adapter_for(source: FeedSource, budget: RequestBudget) -> EventSource:
