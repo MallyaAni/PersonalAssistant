@@ -16,7 +16,9 @@ This document separates current security facts from future requirements. A contr
 - Login names and owned data identities are separate even when their values are
   equal. The current primary account uses `ani.mallya` for both; every protected
   handler uses that server-derived owner and rejects a different path/body user
-  with 403. Authentication is enabled in the current local `.env`.
+  with 403. Authentication is enabled in the current local `.env` and the live
+  backend was re-verified with `AUTH_REQUIRED=true`; an owner-token cross-read
+  of another Scout profile returns 403 and an anonymous read returns 401.
 - Account storage contains the normalized login name, stable owner ID, Argon2id
   hash, active flag, and timestamps. Session storage contains the owner, token
   digest, expiry, and optional revocation time—never the raw token. Memory
@@ -51,7 +53,9 @@ This document separates current security facts from future requirements. A contr
   not accept a local-storage user switch. Browser local storage contains only
   per-owner conversation and presentation job identifiers. Trusted-local mode
   deliberately returns configured owner `ani.mallya` without login, so it must
-  not be exposed to another person or a public URL.
+  not be exposed to another person or a public URL. The mobile navigation
+  drawer displays the active account beside a labeled logout action so account
+  switching does not depend on recognizing a compact header icon.
 - Assistant text is treated as untrusted CommonMark. ReactMarkdown creates approved React elements without enabling raw HTML parsing; browser acceptance proves an injected image/event handler creates no element and executes no script. User messages remain literal text.
 - Preferred-name and response-style proposals are not persisted before explicit UI approval. Generic fact approval, correction, export, and deletion are constrained to the token subject when auth is enabled; auth-disabled mode remains caller-user-ID scoped.
 - Semantic memory content is sent over the private Compose network to the `vllm-embedding` service. The configured embedding endpoint does not request provider-side storage, but vLLM process logging/configuration must still be reviewed for sensitive use.

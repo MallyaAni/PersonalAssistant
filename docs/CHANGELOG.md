@@ -2310,3 +2310,25 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   and the frontend production build. Cleared only the 28 `ani.mallya`
   `discovery_seen_items` rows afterward at the user's request so the next test
   begins with an empty seen set.
+
+## 2026-08-08 — Scout runtime isolation and mobile account controls verified
+
+- Traced a reported cross-user 9:30 PM Scout delivery through schedules, runs,
+  profile interests, subscribers, and delivery records. The 9:30 schedule and
+  successful phone delivery both belonged to `ani.mallya`; `jenos1` retained a
+  separate 7:45 schedule, subscriber address, and disjoint interest profile.
+- Found the actual isolation failure at deployment: the running backend was a
+  stale container with authentication disabled despite current Compose and
+  `.env` configuration requiring it. Recreated the backend with
+  `AUTH_REQUIRED=true` and restarted the gateway.
+- Verified live API ownership: each user can read their own Scout state, an
+  `ani.mallya` token receives 403 for the `jenos1` profile, and an anonymous
+  request receives 401. Backend logs contain both decisions without exceptions.
+- Added an explicit two-user delivery regression proving a digest selects only
+  the requested owner's approved subscriber.
+- Added visible account identity and a labeled logout action to the mobile
+  navigation drawer. At 390x844, Chromium exercised the rebuilt production
+  gateway, showed the live authenticated owner, received 204 from logout, and
+  returned to login without Console/page errors or failed requests.
+- Verified 45 focused backend tests, two focused browser tests, and the frontend
+  production build.

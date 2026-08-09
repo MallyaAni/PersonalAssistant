@@ -1036,6 +1036,17 @@ The password must contain at least 12 characters and is never printed. Enable
 `AUTH_REQUIRED=true`, recreate the backend, and use a cookie jar for direct API
 acceptance:
 
+```powershell
+docker compose up -d --force-recreate backend
+docker compose restart gateway
+docker compose exec -T backend python -c "from backend.config.settings import settings; print(settings.AUTH_REQUIRED)"
+```
+
+Require the last command to print `True`. A stale container can retain an old
+`AUTH_REQUIRED=false` value even when `.env` and `docker compose config` now say
+`true`; inspecting the source or `.env` is not runtime proof of the ownership
+boundary.
+
 ```bash
 curl -c anios-cookie.txt -X POST http://localhost:8000/api/v1/auth/login \
   -H "Origin: http://localhost:5173" \

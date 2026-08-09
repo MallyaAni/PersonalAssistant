@@ -5,7 +5,74 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 [ROADMAP.md](ROADMAP.md), and stable architecture facts in
 [ARCHITECTURE.md](ARCHITECTURE.md).
 
-Last updated: 2026-08-08, America/New_York (Scout future-date quality)
+Last updated: 2026-08-09, America/New_York (jenos1 Scout delivery diagnosis)
+
+## Scout account isolation restored at the live runtime — VERIFIED
+
+A report that a `jenos1` 9:30 PM subscription triggered the primary user's
+phone exposed two separate facts. PostgreSQL already held distinct owners:
+`ani.mallya` owns the 9:30 PM schedule and five interests, while `jenos1` now
+owns a 10:00 PM schedule and twelve different interests. Their subscriber address
+digests are also different, and the 9:30 delivery belongs to the
+`ani.mallya` run and subscriber. The worker reads the run's `user_id` and uses
+that same owner for profile retrieval and subscriber selection.
+
+The first failing boundary was nevertheless security-critical: the live
+backend was a stale container with `AUTH_REQUIRED=false`, even though `.env`
+and the current Compose rendering both specify `true`. In trusted-local mode
+the ownership dependency intentionally accepts caller-supplied user IDs. The
+backend was recreated from current Compose configuration and the gateway was
+restarted. Direct live bearer requests now prove:
+
+- both owners can read their own profile and schedule (HTTP 200);
+- the interest sets are separate and disjoint (five vs. twelve);
+- an `ani.mallya` token cannot read `/discovery/jenos1` (HTTP 403);
+- an anonymous request cannot read `/discovery/ani.mallya` (HTTP 401);
+- backend logs record those 403/401 decisions without an exception.
+
+The phone UI also hid the signed-in identity and represented logout only as an
+unlabeled compact-header icon. The mobile navigation drawer now shows
+`Signed in as <user>` beside a labeled **Sign out** action. Playwright at
+390x844 exercised both the deterministic app and the rebuilt production
+gateway: it opened the drawer, confirmed the live authenticated account,
+received HTTP 204 from logout, and reached the login screen with no Console or
+page errors or failed network requests.
+
+Regression evidence: the auth, delivery, schedule, and worker suites pass 45
+tests, including a new two-user delivery assertion that only the requested
+owner's approved address is selected; two focused mobile browser tests pass;
+and the production frontend build passes.
+
+### `jenos1` phone delivery — FAILED at the Mac grant boundary
+
+The current Mac MCP bridge advertises both `send_imessage` and
+`allow_recipient`, but an idempotent grant for the already consented and
+operator-approved `jenos1` subscriber returns a tool error that explicitly
+identifies bridge grants as disabled. The subscriber remains deliverable in
+AniOS but has zero successful deliveries and `recipient_not_allowed`; nothing
+was redirected to `ani.mallya`.
+
+The latest 10:00 PM run fetched five candidates and persisted five selected
+future/undated items. Its `delivered_at` field is only the claim-before-send
+marker and is not evidence of receipt: the subscriber row was not touched and
+the user received nothing. A read-only replay of that stored digest through the
+current delivery logic selects exactly the one `jenos1` subscriber and would
+make one channel call. Do not replay the old message; its durable retry payload
+has already been cleared.
+
+The Mac LaunchAgent must persist `IMESSAGE_BRIDGE_ALLOW_GRANTS=true` (and may
+set an explicit writable `IMESSAGE_BRIDGE_GRANTS` path), then reload/restart
+the bridge. Re-approve the existing subscription or invoke the idempotent grant
+again, confirm `granted`, and validate a new owned digest reaches only the
+masked `jenos1` destination.
+
+### Next atomic Scout task after delivery is verified
+
+Add and validate geographic result rejection. The live Arlington, Virginia
+rehearsal correctly found local basketball/baseball results but also admitted a
+college-baseball result explicitly located at Globe Life Field in Arlington,
+Texas. Keep query planning and ranking deterministic; reject an explicit place
+that contradicts the active locality/region before it can enter the digest.
 
 ## Scout rejects explicitly past search results — VERIFIED
 
@@ -44,14 +111,6 @@ At the user's request, all 28 `discovery_seen_items` rows owned by
 The scoped count is now zero; `jenos1` and `del_2a87abb15636` rows were left
 unchanged. Interests, locality, schedules, subscriptions, familiar-item
 dismissals, memory, and run history were not deleted.
-
-### Next atomic Scout task
-
-Add and validate geographic result rejection. The live Arlington, Virginia
-rehearsal correctly found local basketball/baseball results but also admitted a
-college-baseball result explicitly located at Globe Life Field in Arlington,
-Texas. Keep query planning and ranking deterministic; reject an explicit place
-that contradicts the active locality/region before it can enter the digest.
 
 ## Semantic chat interests now configure Scout — VERIFIED
 

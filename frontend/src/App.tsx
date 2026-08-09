@@ -108,6 +108,8 @@ const AuthenticatedApp = ({ auth, onSignedOut }: AuthenticatedAppProps) => {
             if (window.innerWidth < 768) setSidebarOpen(false)
           }}
           onNewConversation={startNewConversation}
+          canSignOut={auth.authentication_required}
+          onSignOut={() => void signOut()}
         />
       )}
       <main className="relative flex min-w-0 flex-1 flex-col bg-[#f5f5f7]">
@@ -132,7 +134,7 @@ const AuthenticatedApp = ({ auth, onSignedOut }: AuthenticatedAppProps) => {
               <button
                 aria-label="Sign out"
                 onClick={() => void signOut()}
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-black/[0.08] bg-white text-[#1d1d1f] hover:bg-[#f5f5f7]"
+                className="hidden h-10 w-10 items-center justify-center rounded-full border border-black/[0.08] bg-white text-[#1d1d1f] hover:bg-[#f5f5f7] sm:flex"
               >
                 <LogOut size={17} />
               </button>

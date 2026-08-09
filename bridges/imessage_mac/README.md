@@ -61,12 +61,21 @@ pip install -r requirements.txt
 export IMESSAGE_BRIDGE_TOKEN="$(python3 -c 'import secrets;print(secrets.token_urlsafe(32))')"
 echo "$IMESSAGE_BRIDGE_TOKEN"
 export IMESSAGE_BRIDGE_RECIPIENTS="+15550100,+15550101"
+# Let an AniOS operator approval add a recipient to a separate persisted file.
+export IMESSAGE_BRIDGE_ALLOW_GRANTS=true
+export IMESSAGE_BRIDGE_GRANTS="$HOME/.anios-imessage-bridge/granted-recipients.json"
 # Loopback by default. Set this only when AniOS is on another machine.
 export IMESSAGE_BRIDGE_HOST=0.0.0.0
 export IMESSAGE_BRIDGE_PORT=8010
 
 python3 server.py
 ```
+
+When the bridge runs as a LaunchAgent, put both grant variables in its
+`EnvironmentVariables` dictionary and reload the agent. Setting them only in an
+interactive Terminal does not reach an already-running LaunchAgent. The grant
+file is an extension of the operator's allowlist: keep it private and writable
+only by the logged-in bridge account.
 
 The Mac also needs to be:
 

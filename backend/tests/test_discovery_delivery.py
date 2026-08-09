@@ -239,6 +239,30 @@ async def test_delivery_reaches_only_consented_subscribers():
         await _cleanup(user_id)
 
 
+# Prove a digest for one account cannot select another account's approved address.
+@pytest.mark.asyncio
+async def test_delivery_reaches_only_the_requested_users_subscriber():
+    first_user = f"sub_{uuid.uuid4().hex[:12]}"
+    second_user = f"sub_{uuid.uuid4().hex[:12]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            repo = SubscriberRepository(session)
+            await repo.enroll(first_user, "imessage", "+15550100", consented=True)
+            await repo.enroll(second_user, "imessage", "+15550199", consented=True)
+            channel = _RecordingChannel()
+
+            report = await DigestDelivery(repo, {"imessage": channel}).deliver(
+                second_user, (_ranked("Jazz"),), _BASE
+            )
+
+            assert report.delivered == 1
+            assert len(channel.sent) == 1
+            assert channel.sent[0][0] == "+15550199"
+    finally:
+        await _cleanup(first_user)
+        await _cleanup(second_user)
+
+
 @pytest.mark.asyncio
 async def test_revocation_stops_delivery_and_invalidates_the_shared_link():
     user_id = f"sub_{uuid.uuid4().hex[:12]}"
@@ -377,5 +401,7 @@ def test_an_undated_digest_explains_the_uncertainty_naturally():
     message = render_message((undated,), now=_NOW)
 
     assert message is not None
-    assert message.startswith("I found this, but couldn't confirm the date:")
+    # The digest opens with who it is from; the heading follows it.
+    assert message.startswith("Scout · ")
+    assert "I found this, but couldn't confirm the date:" in message
     assert "Worth a look" not in message

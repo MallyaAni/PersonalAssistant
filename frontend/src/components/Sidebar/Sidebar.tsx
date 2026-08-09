@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { deleteConversation, listConversations, type ConversationSummary } from '../../services/api'
-import { Bot, BrainCircuit, Image, MessageCircle, Presentation, ShieldCheck, Trash2 } from 'lucide-react'
+import { Bot, BrainCircuit, Image, LogOut, MessageCircle, Presentation, ShieldCheck, Trash2 } from 'lucide-react'
 
 interface SidebarProps {
   activeView: 'chat' | 'memory' | 'artifacts' | 'presentations' | 'agents' | 'admin'
@@ -12,6 +12,8 @@ interface SidebarProps {
   activeConversationId?: string
   onOpenConversation?: (conversationId: string) => void
   onNewConversation?: () => void
+  canSignOut?: boolean
+  onSignOut?: () => void
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -22,6 +24,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   activeConversationId,
   onOpenConversation,
   onNewConversation,
+  canSignOut = false,
+  onSignOut,
 }) => {
   const [history, setHistory] = useState<ConversationSummary[]>([])
   // A failed load and an empty history looked identical, which is how a
@@ -178,9 +182,26 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
       )}
-      <div className="mt-auto hidden rounded-2xl bg-[#f5f5f7] px-4 py-3 lg:block">
-        <p className="text-xs font-medium text-[#1d1d1f]">Local by default</p>
-        <p className="mt-0.5 text-[11px] leading-4 text-[#86868b]">Your assistant runs on your machine.</p>
+      <div className="mt-auto space-y-3">
+        {canSignOut && onSignOut && (
+          // Keep account identity beside the exit action so a phone user can
+          // verify which Scout profile is active before changing its settings.
+          <section aria-label="Account controls" className="rounded-2xl bg-[#f5f5f7] px-3 py-3">
+            <p className="truncate px-1 text-xs text-[#6e6e73]">Signed in as {userId}</p>
+            <button
+              type="button"
+              onClick={onSignOut}
+              className="mt-2 flex h-10 w-full items-center gap-3 rounded-xl px-3 text-sm font-medium text-[#1d1d1f] hover:bg-white"
+            >
+              <LogOut size={17} />
+              <span>Sign out</span>
+            </button>
+          </section>
+        )}
+        <div className="hidden rounded-2xl bg-[#f5f5f7] px-4 py-3 lg:block">
+          <p className="text-xs font-medium text-[#1d1d1f]">Local by default</p>
+          <p className="mt-0.5 text-[11px] leading-4 text-[#86868b]">Your assistant runs on your machine.</p>
+        </div>
       </div>
     </aside>
   )

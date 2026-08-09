@@ -659,6 +659,26 @@ test('renders a responsive search-first chat shell', async ({ page }) => {
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
+// Keep the active account and logout action explicit on a phone, where the
+// compact header otherwise makes it easy to configure Scout under the wrong user.
+test('shows mobile account identity and logout in the navigation drawer', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.route('http://localhost:8000/api/v1/auth/logout', route => route.fulfill({
+    status: 204,
+  }))
+
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Show Sidebar' }).click()
+
+  const accountControls = page.getByRole('region', { name: 'Account controls' })
+  await expect(accountControls.getByText('Signed in as ani.mallya')).toBeVisible()
+  await accountControls.getByRole('button', { name: 'Sign out' }).click()
+
+  await expect(page.getByRole('heading', { name: 'Sign in to AniOS' })).toBeVisible()
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
 test('ignores client-stored user spoofing and scopes conversations by authenticated user', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   const legacyConversation = '11111111-1111-4111-8111-111111111111'
