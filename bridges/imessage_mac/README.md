@@ -74,7 +74,10 @@ The Mac also needs to be:
 - **granted Automation permission** for Messages — macOS prompts on the first
   send, and it must be accepted while someone is at the keyboard;
 - **awake and logged in.** Messages can only send from an active user session, so
-  sleep silently breaks this. `caffeinate -s` or an Energy Saver change.
+  sleep silently breaks this. `caffeinate -s` prevents sleep only while the Mac
+  is on AC power; use `caffeinate -i` for a battery-safe idle-sleep assertion,
+  or change the applicable macOS power setting. Closing the laptop lid still
+  sleeps the Mac unless it is in supported clamshell mode.
 
 ## Pointing AniOS at it
 

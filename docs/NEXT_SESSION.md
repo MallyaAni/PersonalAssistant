@@ -123,12 +123,17 @@ What the Mac side needed, none of which is obvious from the bridge's own code:
   (`-1712`) and never surfaces a clickable dialog. It only works once someone
   runs an AppleScript call to Messages from an interactive Terminal window
   they're physically at, and clicks Allow.
-- **The bridge needs the Mac to actually stay up.** `pmset -g` showed
-  `sleep 1` (1 minute) by default on this machine; fixed with
-  `sudo pmset -c sleep 0` and `sudo pmset -c disksleep 0` (scoped to AC power
-  only, on purpose — battery behavior is untouched). A laptop's lid still
-  forces sleep regardless of `pmset` unless it's in clamshell mode with an
-  external display attached.
+- **The bridge needs the Mac to actually stay up.** `pmset -g` shows battery
+  `sleep 1` (one minute); its existing AC settings are `sleep 0` and
+  `disksleep 0`. `caffeinate -s` is AC-only, so it cannot keep this laptop awake
+  on battery. A separate LaunchAgent at
+  `~/Library/LaunchAgents/com.anios.imessage-bridge-awake.plist` now runs
+  `caffeinate -i` with `RunAtLoad` + `KeepAlive`. It was verified on 2026-08-08:
+  the assertion appeared as `PreventUserIdleSystemSleep`, killing it made
+  launchd respawn it with a new PID, and the bridge continued to return its
+  expected unauthenticated `401`. A laptop's lid still forces sleep regardless
+  of this assertion unless it is in clamshell mode with an external display
+  attached.
 - **The process itself needs to survive logout/crash, which `nohup` does
   not.** It now runs as a `launchd` LaunchAgent at
   `~/Library/LaunchAgents/com.anios.imessage-bridge.plist`
