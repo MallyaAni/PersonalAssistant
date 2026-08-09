@@ -1946,6 +1946,29 @@ export const getDiscoveryProfile = async (
   return { interests: payload.interests ?? [], localities: payload.localities ?? [] };
 };
 
+// Ask the local model which real places a part-typed name might be.
+//
+// Suggestions only: the fields stay free text, and an empty list is a normal
+// answer rather than an error, so the form works exactly the same when the
+// model is unreachable.
+export const suggestDiscoveryLocality = async (
+  userId: string,
+  query: string,
+  signal?: AbortSignal,
+): Promise<Array<{ label: string; region: string }>> => {
+  const response = await authenticatedFetch(
+    `${discoveryBase(userId)}/locality/suggest?q=${encodeURIComponent(query)}`,
+    { signal },
+  )
+  if (!response.ok) return []
+  const body = (await response.json()) as {
+    suggestions?: Array<{ label?: unknown; region?: unknown }>
+  }
+  return (body.suggestions ?? [])
+    .filter(item => typeof item.label === 'string' && typeof item.region === 'string')
+    .map(item => ({ label: String(item.label), region: String(item.region) }))
+}
+
 export const putDiscoveryLocality = async (
   userId: string,
   body: { label: string; region?: string | null; timezone?: string; is_primary?: boolean },

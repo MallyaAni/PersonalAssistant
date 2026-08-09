@@ -29,6 +29,7 @@ import {
   putDiscoveryInterest,
   putDiscoveryCurrentPlace,
   putDiscoveryLocality,
+  suggestDiscoveryLocality,
   putDiscoverySchedule,
   putDiscoverySource,
   resolveDiscoveryLocality,
@@ -82,27 +83,6 @@ const to24Hour = (clockHour: number, meridiem: 'am' | 'pm'): number =>
 
 // "Arlington, Virginia, US" rather than "Arlington". A town name alone is
 // ambiguous across countries, so what is saved is shown in full.
-// What the region field offers as suggestions. Free text either way — this is
-// a shortcut for the common case, not a list of permitted answers.
-//
-// It exists offline on purpose. A search-as-you-type place lookup would be the
-// nicer answer, but the only geocoder this deployment can reach is disabled by
-// default and OpenStreetMap's usage policy rules out a request per keystroke,
-// so a bundled list is what can be relied on to be there.
-const REGION_SUGGESTIONS = [
-  'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado',
-  'Connecticut', 'Delaware', 'District of Columbia', 'Florida', 'Georgia',
-  'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky',
-  'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota',
-  'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire',
-  'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota',
-  'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island',
-  'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont',
-  'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming',
-  'Australia', 'Canada', 'France', 'Germany', 'India', 'Ireland', 'Japan',
-  'Mexico', 'Netherlands', 'New Zealand', 'Spain', 'United Kingdom',
-]
-
 const describePlace = (place: { label: string; region?: string | null }): string =>
   place.region ? `${place.label}, ${place.region}` : place.label
 
@@ -117,6 +97,7 @@ interface ScoutSetupProps {
 const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
   const [place, setPlace] = useState('')
   const [region, setRegion] = useState('')
+  const [suggestions, setSuggestions] = useState<Array<{ label: string; region: string }>>([])
   const [savedPlace, setSavedPlace] = useState<DiscoveryLocality | null>(null)
   const [localities, setLocalities] = useState<DiscoveryLocality[]>([])
   const [activeTravel, setActiveTravel] = useState<DiscoveryLocality | null>(null)
@@ -196,6 +177,30 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
       setBusy('')
     }
   }
+
+  // Ask for completions a beat after typing stops, never per keystroke.
+  //
+  // The call is local and greedy, so the same prefix always gives the same list
+  // and it can be abandoned freely. An in-flight request is aborted when the
+  // text moves on, which is what stops an earlier prefix landing after a later
+  // one and overwriting it.
+  useEffect(() => {
+    const typed = place.trim()
+    if (typed.length < 2 || typed === savedPlace?.label) {
+      setSuggestions([])
+      return
+    }
+    const controller = new AbortController()
+    const timer = window.setTimeout(() => {
+      void suggestDiscoveryLocality(userId, typed, controller.signal)
+        .then(setSuggestions)
+        .catch(() => setSuggestions([]))
+    }, 350)
+    return () => {
+      window.clearTimeout(timer)
+      controller.abort()
+    }
+  }, [place, savedPlace?.label, userId])
 
   const savePlace = () =>
     perform('place', async () => {
@@ -474,20 +479,9 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
             }}
             placeholder="State or country"
             aria-label="State or country"
-            list="scout-region-options"
             autoComplete="address-level1"
             className="h-10 min-w-0 flex-1 basis-[40%] rounded-xl border border-black/[0.08] px-3 text-sm outline-none focus:border-[#0071e3]"
           />
-          {/* Suggestions, not a whitelist: the field stays free text so
-              anywhere in the world can be typed. A datalist is offered rather
-              than a geocoding search because the place resolver is off by
-              default, and OpenStreetMap's usage policy rules out sending a
-              request per keystroke to the one resolver this deployment has. */}
-          <datalist id="scout-region-options">
-            {REGION_SUGGESTIONS.map(option => (
-              <option key={option} value={option} />
-            ))}
-          </datalist>
           <button
             onClick={() => void savePlace()}
             disabled={busy !== ''}
@@ -504,6 +498,31 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
             Use my location
           </button>
         </div>
+        {suggestions.length > 0 && (
+          <ul className="mt-2 divide-y divide-black/[0.06] overflow-hidden rounded-xl border border-black/[0.08]">
+            {suggestions.map(option => (
+              <li key={`${option.label}|${option.region}`}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Both halves at once. Picking a place should never leave
+                    // the region still to be worked out by hand.
+                    setPlace(option.label)
+                    setRegion(option.region)
+                    setSuggestions([])
+                  }}
+                  className="flex min-h-11 w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-[#f5f5f7]"
+                >
+                  <MapPin size={14} className="flex-none text-[#86868b]" />
+                  <span className="min-w-0 truncate">
+                    <span className="font-medium">{option.label}</span>
+                    <span className="text-[#6e6e73]">, {option.region}</span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
         {/* Say exactly what will be stored before it is stored. The two fields
             are kept apart rather than parsed out of one string because that is
             how they are stored and searched, and a comma in a single box gave

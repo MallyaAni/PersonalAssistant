@@ -1631,6 +1631,67 @@ test('requires approval before saving a response-style proposal', async ({ page 
 // source warns about, and "Arlington, Virginia" was stored as a town with that
 // entire string as its name. Only "Use my location" ever set a region, which is
 // why a denied permission left the user worse off than granting it.
+// Picking a suggestion fills both halves, so nobody has to know the format.
+test('completes a part-typed place and fills the region with it', async ({ page }) => {
+  const asked: string[] = []
+  const saved: Array<Record<string, unknown>> = []
+  await page.route('**/api/v1/agents/**', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ user_id: 'ani.mallya', agents: [{
+      id: 'discovery', name: 'Scout', role: 'Finds things happening near you.',
+      status: 'idle', detail: 'Ready.', trigger: 'On request',
+      last_active_at: null, facts: [],
+    }] }),
+  }))
+  await page.route('**/api/v1/discovery/ani.mallya', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ user_id: 'ani.mallya', interests: [], localities: [] }) }))
+  for (const path of ['sources', 'schedule', 'known']) {
+    await page.route(`**/api/v1/discovery/ani.mallya/${path}`, route => route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ sources: [], schedule: null, locality: null, known: [] }) }))
+  }
+  await page.route('**/api/v1/discovery/ani.mallya/locality/suggest**', route => {
+    asked.push(new URL(route.request().url()).searchParams.get('q') ?? '')
+    return route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ suggestions: [
+        { label: 'Arlington', region: 'Texas' },
+        { label: 'Arlington', region: 'Virginia' },
+      ] }),
+    })
+  })
+  await page.route('**/api/v1/discovery/ani.mallya/localities', async route => {
+    saved.push(route.request().postDataJSON() as Record<string, unknown>)
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({ id: 'l1', label: 'Arlington', region: 'Virginia',
+        radius_km: 25, timezone: 'America/New_York', is_primary: true,
+        is_travel_active: false }) })
+  })
+
+  await page.goto('/')
+  await page.getByLabel('Agents').click()
+  await page.getByRole('button', { name: 'Configure' }).click()
+  await page.getByLabel('Town or city').fill('Arlingt')
+
+  // Both namesakes are offered, which is the point of suggesting at all.
+  const virginia = page.getByRole('button', { name: /Arlington, Virginia/ })
+  await expect(virginia).toBeVisible()
+  await expect(page.getByRole('button', { name: /Arlington, Texas/ })).toBeVisible()
+
+  await virginia.click()
+  // Picking one supplies the half nobody knew the format for.
+  await expect(page.getByLabel('Town or city')).toHaveValue('Arlington')
+  await expect(page.getByLabel('State or country')).toHaveValue('Virginia')
+
+  await page.getByRole('button', { name: 'Save' }).first().click()
+  await expect.poll(() => saved.length).toBeGreaterThan(0)
+  expect(saved[0]).toMatchObject({ label: 'Arlington', region: 'Virginia' })
+  // Debounced, not per keystroke.
+  expect(asked.length).toBeLessThanOrEqual(2)
+})
+
 for (const width of [1280, 390]) {
   test(`saves a typed town and its region as separate fields at ${width}px`, async ({ page }) => {
   await page.setViewportSize({ width, height: 900 })

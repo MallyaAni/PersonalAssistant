@@ -4,7 +4,7 @@ from dataclasses import asdict
 from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import select
 
@@ -21,6 +21,7 @@ from backend.core.dependencies import (
     DependencyDiscoverySources,
     DependencyDiscoverySubscribers,
     DependencyPlaceResolver,
+    DependencyPlaceSuggester,
     EmbeddingDependency,
 )
 from backend.discovery.calendar import (
@@ -38,6 +39,7 @@ from backend.discovery.locating import (
     resolve_place,
 )
 from backend.discovery.novelty import ScoredCandidate, item_digest
+from backend.discovery.place_suggest import MAX_QUERY_CHARS
 from backend.discovery.reachability import (
     calendar_base_url,
     is_reachable_from_other_devices,
@@ -580,6 +582,31 @@ class ResolveLocationRequest(BaseModel):
 
     latitude: float = Field(ge=-90, le=90)
     longitude: float = Field(ge=-180, le=180)
+
+
+# Complete a place name someone is part-way through typing.
+#
+# The paired write stores a town and a region separately, because a town alone is
+# ambiguous — the same reason `sources/web.py` puts the region in every query. So
+# whoever types a place has to supply both, and previously had to already know
+# which of "Arlington", "Arlington, VA", and "Arlington, Virginia" was wanted.
+#
+# Answered by the local model rather than a geocoder: the one geocoder reachable
+# here is off by default and its usage policy rules out a request per keystroke,
+# while the local model costs no egress and knows both halves of the answer. It
+# suggests only; the fields stay free text.
+@router.get("/locality/suggest")
+async def suggest_locality(
+    user_id: UserId,
+    suggester: DependencyPlaceSuggester,
+    q: Annotated[str, Query(max_length=MAX_QUERY_CHARS)] = "",
+) -> dict[str, object]:
+    places = await suggester.suggest(q)
+    return {
+        "suggestions": [
+            {"label": place.town, "region": place.region} for place in places
+        ]
+    }
 
 
 # Name the town containing a coordinate, without keeping the coordinate.

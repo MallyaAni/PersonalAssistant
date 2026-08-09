@@ -53,6 +53,7 @@ from backend.discovery.locating import (
     PlaceResolver,
 )
 from backend.discovery.novelty import SeenItemRepository
+from backend.discovery.place_suggest import PlaceSuggester
 from backend.discovery.repository import DiscoveryProfileRepository
 from backend.discovery.runner import DiscoveryRunner
 from backend.discovery.runs import DiscoveryRunRepository
@@ -912,6 +913,18 @@ def get_search_budget() -> SearchBudget:
         enabled=settings.MODEL_GATE_ENABLED,
         monthly_credits=settings.SEARCH_MONTHLY_CREDITS,
     )
+
+
+# One suggester shared across requests; it holds only the model client.
+@lru_cache(maxsize=1)
+def get_place_suggester() -> PlaceSuggester:
+    return PlaceSuggester(get_llm_client())
+
+
+DependencyPlaceSuggester = Annotated[
+    PlaceSuggester,
+    Depends(get_place_suggester),
+]
 
 
 def get_discovery_runner(
