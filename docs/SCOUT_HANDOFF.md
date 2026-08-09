@@ -20,10 +20,9 @@ negative results are recorded in the code itself because they will otherwise be
 re-attempted: the exclusion wording in `reranking.py`, and the sigmoid-versus-
 logit measurement in `cross_encoder.py`.
 
-**It is not deployed.** The images were not rebuilt, so nothing has run through
-a container. The cross-encoder also needs its weights fetched first (see
-`DEVELOPMENT_GUIDE.md`) or it disables itself and ranking is embeddings-only.
-Rebuild `backend` and `discovery-worker`, then `docker compose restart gateway`.
+All of it is deployed. The cross-encoder needs its weights fetched on a fresh
+checkout (see `DEVELOPMENT_GUIDE.md`) or it disables itself and ranking falls
+back to embeddings alone.
 
 ## Measure before changing anything
 
@@ -85,22 +84,16 @@ Two cautions from the work just done:
    distinction, the date parsing, and the geography problem at once. Feeds are
    already the "source of record" in the design; almost nobody configures one,
    so web search does all the work and fights this fight every sweep.
-3. **Describe before re-ranking, if the budget allows.** Both re-rank stages see
+5. **Describe before re-ranking, if the budget allows.** Both re-rank stages see
    scraped page titles because `_make_readable` runs after selection. They get
    the summary text too, so neither is blind, but a readable name would help.
    The cost is describing a shortlist of sixteen rather than a digest of eight.
-4. **Let the model decide "is this a page about one happening or a list of
-   them".** `listing_filter.py` decides it from a keyword vocabulary, and
-   measured against realistic titles it misses 3 of 6 directory pages phrased
-   without its words ("Community Bulletin Board", "Arlington Farmers Markets",
-   "Trail Guide: Northern Virginia") while wrongly rejecting none of 4 real
-   happenings. The URL half of that filter is genuinely structural and should
-   stay. The title half is a language judgement, and it is nearly free to fix:
-   `summarize.py` already sends the page text to the model and already returns a
-   typed decision that drops finds (`already_happened`), so this is one more
-   field on a call that is already being made, judged on the page rather than
-   the title. Keep the deterministic filter in front of it, the way
-   `CascadingSearchRouter` keeps its rules in front of its classifier.
+6. **Make the model's listing verdict good enough to act on — or delete it.**
+   `summarize.py` already computes `is_a_listing` and nothing uses it, because
+   acting on it emptied a live digest: it called a single Eventbrite event a
+   listing and passed an index of festivals. It gets to drop finds again only
+   when it beats `listing_filter` on the labelled cases. Until then it is a
+   field being computed for nothing, and that is a fair reason to remove it.
 
 **Do not "improve" these with a model.** They look like the same kind of code
 and are not: `core/egress.py` (a model asked to redact its own prompt can be
