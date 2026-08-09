@@ -1,0 +1,407 @@
+{
+  "about": "Every item that reached a real stored digest, labelled once so ranking changes can be measured instead of eyeballed. Extracted from discovery_runs; duplicates by (title, url) removed. Extended with a live London sweep for testuser, which is where the model's listing verdict was measured and rejected.",
+  "labelled_by": "Claude, from the URL and the page's own title. These are seeded judgements meant to be corrected: change a label here and the harness follows it.",
+  "labels": {
+    "kind": "happening = one thing you could go to. listing = a page of things: a calendar, a roster, a showtimes page, a tag archive, a venue's home page.",
+    "interest": "The interest a digest should name for this find, or null when none should be named.",
+    "place_matches": "false when the find is explicitly somewhere other than the locality that was searched."
+  },
+  "cases": [
+    {
+      "title": "John Anderson at Arlington Music Hall",
+      "url": "https://arlingtonmusichall.org/eventbrite-event/john-anderson-classic-country-live",
+      "summary": "Country legend John Anderson performs a live classic country show for fans at Arlington Music Hall.",
+      "locality": "Arlington, Virginia",
+      "interests": [
+        "live music",
+        "line dancing",
+        "hiking",
+        "wine tasting",
+        "concerts"
+      ],
+      "kind": "happening",
+      "interest": "live music",
+      "place_matches": true
+    },
+    {
+      "title": "Dancin' at Arlington Senior Center",
+      "url": "https://jkdance.com",
+      "summary": "Beginner country line dancing for seniors.",
+      "locality": "Arlington, Virginia",
+      "interests": [
+        "live music",
+        "line dancing",
+        "hiking",
+        "wine tasting",
+        "concerts"
+      ],
+      "kind": "happening",
+      "interest": "line dancing",
+      "place_matches": true,
+      "note": "A bare domain, so no URL signal marks it either way. The title names one happening."
+    },
+    {
+      "title": "Ricky Skaggs at Arlington Music Hall",
+      "url": "https://concertfix.com/concerts/arlington-tx",
+      "summary": "Ricky Skaggs and Kentucky Thunder perform live at the Arlington Music Hall for music fans on Friday, August 28, 2026.",
+      "locality": "Arlington, Virginia",
+      "interests": [
+        "live music",
+        "line dancing",
+        "hiking",
+        "wine tasting",
+        "concerts"
+      ],
+      "kind": "listing",
+      "interest": null,
+      "place_matches": false,
+      "note": "A concerts index for Arlington, Texas, delivered to someone in Arlington, Virginia. Both defects in one row."
+    },
+    {
+      "title": "COLLECTIVE at The Light Horse",
+      "url": "https://www.shazam.com/event/644aede1-632c-4fab-821d-b965ae6ba9e2",
+      "summary": "COLLECTIVE performs a concert for fans at The Light Horse.",
+      "locality": "Alexandria, Virginia",
+      "interests": [
+        "Horses",
+        "Dogs",
+        "Movies",
+        "Social",
+        "Network",
+        "Books",
+        "Theater",
+        "Shopping",
+        "Music"
+      ],
+      "kind": "happening",
+      "interest": "Music",
+      "place_matches": true,
+      "note": "Delivered naming the interest Horses, after the pub it is in."
+    },
+    {
+      "title": "COLLECTIVE concert - Alexandria, The Light Horse, Oct 03, 2026, 9:30 PM",
+      "url": "https://www.shazam.com/event/644aede1-632c-4fab-821d-b965ae6ba9e2",
+      "summary": "The band COLLECTIVE performs a concert at The Light Horse in Alexandria on October 3, 2026.",
+      "locality": "Alexandria, Virginia",
+      "interests": [
+        "Horses",
+        "Dogs",
+        "Movies",
+        "Social",
+        "Network",
+        "Books",
+        "Theater",
+        "Shopping",
+        "Music"
+      ],
+      "kind": "happening",
+      "interest": "Music",
+      "place_matches": true
+    },
+    {
+      "title": "ALX Dog Walk - Alexandria Animals",
+      "url": "https://alexandriaanimals.org/event/alx-dog-walk",
+      "summary": "The ALX Dog Walk event brings together pet owners and the community for a morning walk in Alexandria on April 18, 2026.",
+      "locality": "Alexandria, Virginia",
+      "interests": [
+        "Horses",
+        "Dogs",
+        "Movies",
+        "Social",
+        "Network",
+        "Books",
+        "Theater",
+        "Shopping",
+        "Music"
+      ],
+      "kind": "happening",
+      "interest": "Dogs",
+      "place_matches": true
+    },
+    {
+      "title": "HORSE SHOWS | Alexandria Fair",
+      "url": "https://www.alexandriafair.org/copy-of-horse-show-information",
+      "summary": "The Alexandria Fair hosts horse shows for exhibitors on August 29th through 31st.",
+      "locality": "Alexandria, Virginia",
+      "interests": [
+        "Horses",
+        "Dogs",
+        "Movies",
+        "Social",
+        "Network",
+        "Books",
+        "Theater",
+        "Shopping",
+        "Music"
+      ],
+      "kind": "happening",
+      "interest": "Horses",
+      "place_matches": true
+    },
+    {
+      "title": "Library Cat - Alexandria Library",
+      "url": "https://alexlibraryva.org/library-cat-17647",
+      "summary": "Alexandria Library residents can vote for their favorite cat or dog to be the featured pet of the year through August 3.",
+      "locality": "Alexandria, Virginia",
+      "interests": [
+        "Horses",
+        "Dogs",
+        "Movies",
+        "Social",
+        "Network",
+        "Books",
+        "Theater",
+        "Shopping",
+        "Music"
+      ],
+      "kind": "happening",
+      "interest": null,
+      "place_matches": true,
+      "note": "One specific thing with a deadline, but a vote rather than an outing. No interest fits it well enough to name."
+    },
+    {
+      "title": "Alexandria Film Festival | Films, Events and Community",
+      "url": "https://www.alexfilmfest.com",
+      "summary": "The Alexandria Film Festival invites filmmakers worldwide to submit entries for its 20th annual event, which will feature a screening of the film",
+      "locality": "Alexandria, Virginia",
+      "interests": [
+        "Horses",
+        "Dogs",
+        "Movies",
+        "Social",
+        "Network",
+        "Books",
+        "Theater",
+        "Shopping",
+        "Music"
+      ],
+      "kind": "listing",
+      "interest": null,
+      "place_matches": true,
+      "note": "A festival's own home page: a programme, not a screening. No URL or title gives it away."
+    },
+    {
+      "title": "Film screening at The Lyceum",
+      "url": "https://www.alexfilmfest.com",
+      "summary": "A film screening of ASK E. JEAN for the community.",
+      "locality": "Alexandria, Virginia",
+      "interests": [
+        "Horses",
+        "Dogs",
+        "Movies",
+        "Social",
+        "Network",
+        "Books",
+        "Theater",
+        "Shopping",
+        "Music"
+      ],
+      "kind": "listing",
+      "interest": null,
+      "place_matches": true,
+      "note": "Same home page, described as though it were one screening."
+    },
+    {
+      "title": "Movie theaters in Alexandria",
+      "url": "https://www.atomtickets.com/theaters/va-alexandria",
+      "summary": "Watch various films including Spider-Man and Grateful Dead meet-ups at local venues.",
+      "locality": "Alexandria, Virginia",
+      "interests": [
+        "Horses",
+        "Dogs",
+        "Movies",
+        "Social",
+        "Network",
+        "Books",
+        "Theater",
+        "Shopping",
+        "Music"
+      ],
+      "kind": "listing",
+      "interest": null,
+      "place_matches": true
+    },
+    {
+      "title": "Alexandria, VA Movie Theaters",
+      "url": "https://www.atomtickets.com/theaters/va-alexandria",
+      "summary": "A local theater in Alexandria, VA, hosts a variety of movies including new releases and special events like a Grateful Dead meet-up.",
+      "locality": "Alexandria, Virginia",
+      "interests": [
+        "Horses",
+        "Dogs",
+        "Movies",
+        "Social",
+        "Network",
+        "Books",
+        "Theater",
+        "Shopping",
+        "Music"
+      ],
+      "kind": "listing",
+      "interest": null,
+      "place_matches": true
+    },
+    {
+      "title": "Movie showtimes near Alexandria",
+      "url": "https://www.moviefone.com/showtimes/theaters/alexandria-va/22301",
+      "summary": "Movies are playing at local theaters for moviegoers.",
+      "locality": "Alexandria, Virginia",
+      "interests": [
+        "Horses",
+        "Dogs",
+        "Movies",
+        "Social",
+        "Network",
+        "Books",
+        "Theater",
+        "Shopping",
+        "Music"
+      ],
+      "kind": "listing",
+      "interest": null,
+      "place_matches": true
+    },
+    {
+      "title": "Alexandria Bay Events | Alexandria Bay Chamber of Commerce",
+      "url": "https://visitalexbay.org/events",
+      "summary": "The Alexandria Bay Chamber of Commerce hosts a series of community events including block dances, an Invasion Day celebration, and a parade for reside",
+      "locality": "Alexandria, Virginia",
+      "interests": [
+        "Horses",
+        "Dogs",
+        "Movies",
+        "Social",
+        "Network",
+        "Books",
+        "Theater",
+        "Shopping",
+        "Music"
+      ],
+      "kind": "listing",
+      "interest": null,
+      "place_matches": false,
+      "note": "Alexandria Bay is in New York. A chamber-of-commerce events index, for the wrong Alexandria."
+    },
+    {
+      "title": "therapy with horses Archives - The Zebra-Good News in Alexandria",
+      "url": "https://thezebra.org/tag/therapy-with-horses",
+      "summary": "Simple Changes, a local nonprofit in Alexandria, VA, offers free mental health services through equine-assisted activities.",
+      "locality": "Alexandria, Virginia",
+      "interests": [
+        "Horses",
+        "Dogs",
+        "Movies",
+        "Social",
+        "Network",
+        "Books",
+        "Theater",
+        "Shopping",
+        "Music"
+      ],
+      "kind": "listing",
+      "interest": null,
+      "place_matches": true,
+      "note": "A tag archive on a news site. \"Archives\" is in the title and /tag/ is in the URL."
+    },
+    {
+      "title": "What's on in London during August 2026 – calendar",
+      "url": "https://www.londonxlondon.com/whats-on-london-august/",
+      "summary": "This calendar lists various cultural activities and library visits happening in London during August 2026.",
+      "locality": "London, England",
+      "interests": [
+        "line dancing",
+        "salsa",
+        "dancing",
+        "country two step/swing",
+        "bachata"
+      ],
+      "kind": "listing",
+      "interest": null,
+      "place_matches": true
+    },
+    {
+      "title": "Line Dancing London: Best Nights, Classes & Events 2026",
+      "url": "https://www.designmynight.com/london/line-dancing-london",
+      "summary": "Line dancing events and classes for people in London.",
+      "locality": "London, England",
+      "interests": [
+        "line dancing",
+        "salsa",
+        "dancing",
+        "country two step/swing",
+        "bachata"
+      ],
+      "kind": "listing",
+      "interest": null,
+      "place_matches": true,
+      "note": "A city guide's round-up. \"Best\" appears mid-title, so the title pattern anchored at the start misses it."
+    },
+    {
+      "title": "Country dance party w/ Line Dancing & Live Music",
+      "url": "https://www.eventbrite.com/e/brandons-barn-dance-country-dance-party",
+      "summary": "A country dance party featuring line dancing and live music for attendees.",
+      "locality": "London, England",
+      "interests": [
+        "line dancing",
+        "salsa",
+        "dancing",
+        "country two step/swing",
+        "bachata"
+      ],
+      "kind": "happening",
+      "interest": "line dancing",
+      "place_matches": true,
+      "note": "One ticketed event at an /e/ URL. The model's listing verdict threw this away and emptied the digest."
+    },
+    {
+      "title": "Performance & Dance - Spring/Summer 2026 | Southbank Centre",
+      "url": "https://www.southbankcentre.co.uk/whats-on/performance-dance",
+      "summary": "This programme showcases cutting-edge new work from international and UK-based artists in theatre, dance, and circus.",
+      "locality": "London, England",
+      "interests": [
+        "line dancing",
+        "salsa",
+        "dancing",
+        "country two step/swing",
+        "bachata"
+      ],
+      "kind": "listing",
+      "interest": null,
+      "place_matches": true,
+      "note": "A venue's season programme."
+    },
+    {
+      "title": "Salsa Festivals & Congress in England 2026",
+      "url": "https://www.salsafestivals.co.uk/england",
+      "summary": "Salsa festivals in Birmingham and across England during 2026.",
+      "locality": "London, England",
+      "interests": [
+        "line dancing",
+        "salsa",
+        "dancing",
+        "country two step/swing",
+        "bachata"
+      ],
+      "kind": "listing",
+      "interest": null,
+      "place_matches": false,
+      "note": "An index of festivals, and in Birmingham rather than London. The model passed this one as a happening."
+    },
+    {
+      "title": "London Salsa & Bachata Dancing Calendar: Events",
+      "url": "https://www.salsajams.com/london-calendar",
+      "summary": "A calendar of salsa and bachata dancing events across London.",
+      "locality": "London, England",
+      "interests": [
+        "line dancing",
+        "salsa",
+        "dancing",
+        "country two step/swing",
+        "bachata"
+      ],
+      "kind": "listing",
+      "interest": null,
+      "place_matches": true
+    }
+  ]
+}
