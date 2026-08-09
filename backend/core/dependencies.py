@@ -7,7 +7,7 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.agents.diagram import DiagramAgent
-from backend.agents.presentation import PresentationAgent
+from backend.agents.deck import PresentationAgent
 from backend.agents.registry import AgentRegistry
 from backend.agents.supervisor import MainSupervisorAgent
 from backend.artifacts.diagram import LLMDiagramProvider

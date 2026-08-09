@@ -3,7 +3,7 @@ from typing import Any
 
 import pytest
 
-from backend.agents.presentation import PresentationAgent
+from backend.agents.deck import PresentationAgent
 from backend.presentations.provider import (
     LLMPresentationProvider,
     PresentationProvider,

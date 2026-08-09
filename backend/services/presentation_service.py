@@ -6,7 +6,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any
 from uuid import UUID
 
-from backend.agents.presentation import PresentationAgent
+from backend.agents.deck import PresentationAgent
 from backend.artifacts.types import ImageGenerationRequest
 from backend.core.interfaces import BinaryArtifactRepository, BinaryArtifactStore
 from backend.presentations.planner import DeckDraft

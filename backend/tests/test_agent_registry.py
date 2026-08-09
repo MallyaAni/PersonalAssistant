@@ -78,7 +78,9 @@ async def test_a_feed_is_only_demanded_when_search_cannot_enumerate(monkeypatch)
     # an interest and a place are enough. Demanding a feed anyway would send the
     # user hunting for .ics URLs they do not need.
     user_id = f"reg_{uuid.uuid4().hex[:12]}"
-    import backend.agents.registry as registry_module
+    # `_can_search` moved with Scout's card when each agent got its own
+    # folder; the registry no longer knows anything about any one agent.
+    import backend.agents.scout.card as scout_card
 
     try:
         async with AsyncSessionLocal() as session:
@@ -86,10 +88,10 @@ async def test_a_feed_is_only_demanded_when_search_cannot_enumerate(monkeypatch)
                 user_id, "hiking", 3, "user_explicit"
             )
 
-            monkeypatch.setattr(registry_module, "_can_search", lambda: True)
+            monkeypatch.setattr(scout_card, "_can_search", lambda: True)
             with_search = await AgentRegistry(session).describe_all(user_id)
 
-            monkeypatch.setattr(registry_module, "_can_search", lambda: False)
+            monkeypatch.setattr(scout_card, "_can_search", lambda: False)
             without_search = await AgentRegistry(session).describe_all(user_id)
 
         searching = next(a for a in with_search if a.id == "discovery")
