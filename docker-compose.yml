@@ -389,6 +389,11 @@ services:
       # rehearsal of anything.
       - DISCOVERY_PERSONAL_QUERIES_ENABLED=${DISCOVERY_PERSONAL_QUERIES_ENABLED:-true}
       - DISCOVERY_MEMORY_RERANK_ENABLED=${DISCOVERY_MEMORY_RERANK_ENABLED:-true}
+      # The cross-encoder that orders the shortlist. It runs in-process on CPU
+      # from weights baked into the image, so this switch is the only thing
+      # either service needs; both must agree, or a rehearsal orders finds
+      # differently from the scheduled sweep that follows it.
+      - DISCOVERY_CROSS_ENCODER_ENABLED=${DISCOVERY_CROSS_ENCODER_ENABLED:-true}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - GOOGLE_SEARCH_ENABLED=${GOOGLE_SEARCH_ENABLED:-false}
@@ -467,6 +472,11 @@ services:
       # scheduled sweep will.
       - DISCOVERY_PERSONAL_QUERIES_ENABLED=${DISCOVERY_PERSONAL_QUERIES_ENABLED:-true}
       - DISCOVERY_MEMORY_RERANK_ENABLED=${DISCOVERY_MEMORY_RERANK_ENABLED:-true}
+      # The cross-encoder that orders the shortlist. It runs in-process on CPU
+      # from weights baked into the image, so this switch is the only thing
+      # either service needs; both must agree, or a rehearsal orders finds
+      # differently from the scheduled sweep that follows it.
+      - DISCOVERY_CROSS_ENCODER_ENABLED=${DISCOVERY_CROSS_ENCODER_ENABLED:-true}
       # Which server owns the Apple device, and what its send tool is called.
       # The worker had these and this did not, so a send from the API would
       # resolve the tool name to its code default - `send_message`, which the
@@ -497,7 +507,7 @@ services:
       - MEMORY_PROPOSAL_LLM_BASE_URL=http://vllm-main:8000
       - MEMORY_PROPOSAL_LLM_MODEL=qwen/qwen3.5-4b
       - MEMORY_PROPOSAL_LLM_REASONING_EFFORT=${MEMORY_PROPOSAL_LLM_REASONING_EFFORT:-none}
-      - MEMORY_PROPOSAL_MAX_TOKENS=${MEMORY_PROPOSAL_MAX_TOKENS:-128}
+      - MEMORY_PROPOSAL_MAX_TOKENS=${MEMORY_PROPOSAL_MAX_TOKENS:-256}
       - VISION_INFERENCE_ADAPTER=${VISION_INFERENCE_ADAPTER:-}
       - VISION_LLM_BASE_URL=http://vllm-main:8000
       - VISION_MODEL=qwen/qwen3.5-4b

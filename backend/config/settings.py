@@ -58,7 +58,7 @@ class Settings(BaseSettings):
     MEMORY_PROPOSAL_LLM_REASONING_EFFORT: Literal[
         "none", "minimal", "low", "medium", "high", "xhigh"
     ] = "none"
-    MEMORY_PROPOSAL_MAX_TOKENS: int = Field(default=128, ge=32, le=512)
+    MEMORY_PROPOSAL_MAX_TOKENS: int = Field(default=256, ge=32, le=512)
 
     VISION_INFERENCE_ADAPTER: Literal["", "openai_compatible"] = ""
     EMBEDDING_INFERENCE_ADAPTER: Literal["", "openai_compatible"] = ""
@@ -195,6 +195,19 @@ class Settings(BaseSettings):
     # reorder what qualified, and drop one whose own text states a restriction
     # an approved fact contradicts.
     DISCOVERY_MEMORY_RERANK_ENABLED: bool = True
+    # A local cross-encoder that reads an interest and a candidate as one
+    # sequence, used to order the shortlist embeddings admitted. It runs
+    # in-process on CPU because the card is fully committed to generation and
+    # image work, and because a weekly batch of a few hundred short pairs does
+    # not need a GPU. Missing weights disable it and the embedding order stands.
+    DISCOVERY_CROSS_ENCODER_ENABLED: bool = True
+    DISCOVERY_CROSS_ENCODER_MODEL_PATH: str = (
+        "data/models/ms-marco-minilm-l6-v2/model.onnx"
+    )
+    DISCOVERY_CROSS_ENCODER_TOKENIZER_PATH: str = (
+        "data/models/ms-marco-minilm-l6-v2/tokenizer.json"
+    )
+    DISCOVERY_CROSS_ENCODER_THREADS: int = Field(default=2, ge=1, le=16)
     DISCOVERY_PLACE_RESOLVER: Literal["", "nominatim"] = ""
     DISCOVERY_PLACE_RESOLVER_URL: str = "https://nominatim.openstreetmap.org/reverse"
     DISCOVERY_PLACE_RESOLVER_USER_AGENT: str = "AniOS/1.0 (local personal assistant)"

@@ -231,6 +231,33 @@ class VisionProvider(ABC):
     ) -> VisionAnalysis: ...
 
 
+class RerankProvider(ABC):
+    """Replaceable cross-encoder that scores a query and a document together.
+
+    Distinct from `EmbeddingProvider` because the question is different. An
+    embedding is computed once per text and compared afterwards; a rerank score
+    exists only for a pair and cannot be cached against either half. That makes
+    it too expensive to run over everything and accurate enough to decide a
+    shortlist, which is the whole reason both exist.
+
+    Synchronous, matching the embedding contract: callers move it off the event
+    loop rather than awaiting it.
+    """
+
+    # Report whether the provider is configured; callers must fall back if not.
+    @abstractmethod
+    def is_enabled(self) -> bool: ...
+
+    # Score (query, document) pairs, returning one value per pair in the order
+    # they were given, higher meaning more relevant.
+    #
+    # The scale is log-odds, not a probability, and is comparable only within
+    # one batch from one checkpoint. Callers rank and compare with it; nobody
+    # should read an absolute value as a confidence.
+    @abstractmethod
+    def score(self, pairs: list[tuple[str, str]]) -> list[float]: ...
+
+
 class SearchProvider(ABC):
     """Replaceable web-search backend returning untrusted third-party results."""
 

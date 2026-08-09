@@ -29,7 +29,7 @@ from datetime import UTC, datetime
 from typing import Protocol
 
 from backend.config.settings import settings
-from backend.core.interfaces import SearchProvider
+from backend.core.interfaces import RerankProvider, SearchProvider
 from backend.discovery.aiming import AimPlanner, SweepAim
 from backend.discovery.errors import DiscoveryError
 from backend.discovery.events import DiscoveredEvent, EventSource, FeedError
@@ -42,6 +42,7 @@ from backend.discovery.fetching import (
 from backend.discovery.notable import NotableSelector
 from backend.discovery.novelty import NoveltyFilter, ScoredCandidate, SeenItemRepository
 from backend.discovery.personal_context import PersonalContext, PersonalContextReader
+from backend.discovery.precision import PrecisionRanker
 from backend.discovery.relevance import (
     MAX_SELECTED,
     MAX_UNDATED,
@@ -196,6 +197,7 @@ class DiscoveryRunner:
         search_budget: SearchBudget | None = None,
         is_operator: bool = False,
         search_limit: int | None = None,
+        cross_encoder: RerankProvider | None = None,
     ) -> None:
         self.sources = sources
         self.seen = seen
@@ -227,6 +229,11 @@ class DiscoveryRunner:
         # Orders the qualified shortlist against the same facts. One more call,
         # and it can only reorder what deterministic ranking already admitted.
         self.reranker = MemoryReranker(writer)
+        # Between the two: a local cross-encoder that reads each interest and
+        # candidate as one sequence. Embeddings decide what qualifies, this
+        # decides the order among them, the model above applies what memory
+        # knows. Absent weights leave the embedding order untouched.
+        self.precision = PrecisionRanker(cross_encoder)
         # Search is the one metered component here and its key belongs to the
         # operator, so an account's monthly spend is bounded independently of
         # any single run's request budget.
@@ -318,6 +325,10 @@ class DiscoveryRunner:
             limit=limit * SHORTLIST_FACTOR,
             undated_limit=MAX_UNDATED * SHORTLIST_FACTOR,
         )
+        # Then read each pair properly. Embeddings compared the two halves
+        # without ever seeing them together, which is why they cluster; this
+        # reorders what they admitted and re-decides which interest to name.
+        shortlist = await self.precision.order(shortlist, aim)
         selected = await self._order(shortlist, context, moment, limit)
 
         # Chosen before anything is recorded as seen. Afterwards these

@@ -14,6 +14,10 @@ Pillow>=11.0.0
 python-multipart>=0.0.20
 numpy>=2.0.0
 onnxruntime>=1.20.0
+# Loads the cross-encoder's tokenizer.json directly, so reranking needs no
+# torch or transformers. Capped below the next major: this repo has already
+# been broken once by an open-ended pin resolving to a breaking release.
+tokenizers>=0.20.0,<1.0.0
 # Capped below 2.0: it removes mcp.server.fastmcp, which every built-in server
 # and the local-capabilities sidecar import. The range was open, so an image
 # rebuilt after that release silently lost web search and both stdio servers

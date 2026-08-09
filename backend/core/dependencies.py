@@ -30,6 +30,7 @@ from backend.core.interfaces import (
     ConversationTracer,
     ImageEditProvider,
     ImageProvider,
+    RerankProvider,
     SearchProvider,
     VisionEmbeddingProvider,
     VisionProvider,
@@ -61,6 +62,7 @@ from backend.discovery.setup_service import DiscoverySetupService
 from backend.discovery.sources_repository import DiscoverySourceRepository
 from backend.discovery.subscribers import SubscriberRepository
 from backend.embeddings.base import EmbeddingProvider
+from backend.embeddings.cross_encoder import OnnxCrossEncoder
 from backend.embeddings.lm_studio import create_embedding_provider
 from backend.embeddings.nomic_vision import NomicVisionEmbeddingProvider
 from backend.mcp.client import SessionMCPToolLister
@@ -68,7 +70,7 @@ from backend.mcp.config import parse_server_configs
 from backend.mcp.invocation import SessionMCPToolInvoker
 from backend.mcp.types import MCPServerConfig
 from backend.memory.coordinator import MemoryCoordinatorAgent
-from backend.memory.interest_agent import ScoutInterestProposalAgent
+from backend.memory.proposal_agent import MemoryProposalAgent
 from backend.memory.retrieval import SemanticRetrievalPolicy
 from backend.presentations.provider import LLMPresentationProvider
 from backend.presentations.renderer import PptxGenJSRenderer
@@ -272,9 +274,9 @@ def get_memory_proposal_llm_client() -> LLMClient:
     )
 
 
-# Give chat a semantic interest classifier with no persistence capability.
-def get_scout_interest_proposal_agent() -> ScoutInterestProposalAgent:
-    return ScoutInterestProposalAgent(
+# Give chat one semantic typed-memory classifier with no persistence capability.
+def get_memory_proposal_agent() -> MemoryProposalAgent:
+    return MemoryProposalAgent(
         get_memory_proposal_llm_client(),
         max_tokens=settings.MEMORY_PROPOSAL_MAX_TOKENS,
     )
@@ -306,9 +308,9 @@ DiagramLlmDependency = Annotated[
     LLMClient,
     Depends(get_diagram_llm_client),
 ]
-ScoutInterestProposalDependency = Annotated[
-    ScoutInterestProposalAgent,
-    Depends(get_scout_interest_proposal_agent),
+MemoryProposalDependency = Annotated[
+    MemoryProposalAgent,
+    Depends(get_memory_proposal_agent),
 ]
 RepositoryDependency = Annotated[
     SQLAlchemyConversationRepository,
@@ -338,6 +340,21 @@ def get_vision_embedding_provider() -> VisionEmbeddingProvider:
         model_path=settings.VISION_EMBEDDING_MODEL_PATH,
         dimension=settings.VISION_EMBEDDING_DIMENSION,
         intra_op_threads=settings.VISION_EMBEDDING_THREADS,
+    )
+
+
+# Reuse one ONNX session across sweeps for the same reason the vision embedder
+# does: the weights load once, not once per run. Returns None when the feature
+# is switched off, so the caller holds nothing rather than holding a provider
+# that always refuses.
+@lru_cache(maxsize=1)
+def get_cross_encoder() -> RerankProvider | None:
+    if not settings.DISCOVERY_CROSS_ENCODER_ENABLED:
+        return None
+    return OnnxCrossEncoder(
+        model_path=settings.DISCOVERY_CROSS_ENCODER_MODEL_PATH,
+        tokenizer_path=settings.DISCOVERY_CROSS_ENCODER_TOKENIZER_PATH,
+        intra_op_threads=settings.DISCOVERY_CROSS_ENCODER_THREADS,
     )
 
 
@@ -908,6 +925,7 @@ def get_discovery_runner(
         search=get_search_provider(),
         writer=get_llm_client(),
         search_budget=get_search_budget(),
+        cross_encoder=get_cross_encoder(),
     )
 
 
@@ -927,6 +945,7 @@ def get_discovery_runner_for_session(session: AsyncSession) -> DiscoveryRunner:
         search=get_search_provider(),
         writer=get_llm_client(),
         search_budget=get_search_budget(),
+        cross_encoder=get_cross_encoder(),
     )
 
 
@@ -1234,7 +1253,7 @@ def get_conversation_service(
     supervisor: MainSupervisorDependency,
     presentation_jobs: PresentationJobDependency,
     discovery_profile: DependencyDiscoveryProfileService,
-    interest_proposals: ScoutInterestProposalDependency,
+    memory_proposals: MemoryProposalDependency,
 ) -> ConversationService:
     return ConversationService(
         memory=memory,
@@ -1262,7 +1281,7 @@ def get_conversation_service(
             or settings.LLM_MODEL
         ),
         discovery_profile=discovery_profile,
-        interest_proposals=interest_proposals,
+        memory_proposals=memory_proposals,
     )
 
 
