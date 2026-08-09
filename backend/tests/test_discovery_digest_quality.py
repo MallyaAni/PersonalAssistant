@@ -7,10 +7,12 @@ failure mode that matters for something that messages you unprompted.
 
 from datetime import UTC, date, datetime, timedelta
 
+from backend.discovery.digest import render_message
 from backend.discovery.events import DiscoveredEvent, clean_title
 from backend.discovery.listing_filter import looks_like_a_directory
 from backend.discovery.relevance import (
     MIN_ATTRIBUTION_MARGIN,
+    RankedCandidate,
     RelevanceRanker,
     ScoredCandidate,
 )
@@ -220,3 +222,59 @@ def test_an_abbreviation_is_not_a_sentence_ending():
 def test_an_ordinary_title_is_left_alone():
     assert clean_title("Water Lantern Festival") == "Water Lantern Festival"
     assert clean_title(None) is None
+
+
+# --- 5. a time nobody published ----------------------------------------------
+
+
+def _dated(title: str, starts_at: datetime) -> RankedCandidate:
+    event = DiscoveredEvent(
+        source_id="s",
+        external_id="e",
+        title=title,
+        starts_at=starts_at,
+        ends_at=None,
+        place=None,
+        url="https://example.org/e",
+        summary=None,
+    )
+    return RankedCandidate(ScoredCandidate(event, None), 0.9, "concerts")
+
+
+def test_a_date_with_no_time_is_never_given_one():
+    # Sources overwhelmingly publish a bare date, which parses to midnight UTC.
+    # Converting that into the reader's zone moved it to the previous evening
+    # and printed a clock: a concert listed for Oct 3 was announced as "Fri Oct
+    # 2, 8:00pm", directly under a title reading "Oct 03, 2026, 9:30 PM".
+    message = render_message(
+        (_dated("COLLECTIVE concert", datetime(2026, 10, 3, tzinfo=UTC)),),
+        timezone="America/New_York",
+    )
+
+    assert message is not None
+    assert "Sat Oct 3" in message
+    # The day it was published for, and no invented clock.
+    assert "Oct 2" not in message
+    assert "8:00pm" not in message
+    assert "12:00am" not in message
+
+
+def test_a_real_start_time_is_still_shown_in_the_readers_zone():
+    # The fix must not flatten times that were actually published: 12:00Z is
+    # 08:00 in New York, and saying only "Aug 11" would lose the evening.
+    message = render_message(
+        (_dated("Jazz at the Green", datetime(2026, 8, 11, 12, 0, tzinfo=UTC)),),
+        timezone="America/New_York",
+    )
+
+    assert message is not None
+    assert "8:00am" in message
+
+
+def test_a_venue_calendar_is_not_a_happening():
+    # "Old Town Alexandria Events" on a /calendar-of-events path reached a
+    # delivered digest with an invented start time attached to it.
+    assert looks_like_a_directory(
+        "Old Town Alexandria Events - The Alexandrian | Marriott",
+        "https://www.thealexandrian.com/hotel/calendar-of-events",
+    )

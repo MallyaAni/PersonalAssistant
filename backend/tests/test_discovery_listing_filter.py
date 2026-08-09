@@ -40,6 +40,13 @@ from backend.discovery.listing_filter import looks_like_a_directory
         ),
         ("Top 10 things to do in Arlington", "https://example.org/guide"),
         ("Hiking trails near me", "https://example.org/trails"),
+        # A plural category on a section path, listed here rather than as a
+        # survivor: there is no single thing to attend, and the same shape
+        # ("Old Town Alexandria Events") reached a delivered digest.
+        (
+            "Nature and History Events",
+            "https://www.arlingtonva.us/Parks-Recreation/Parks-Events/nature-events",
+        ),
     ],
 )
 def test_directory_pages_are_recognized(title: str, url: str):
@@ -56,10 +63,6 @@ def test_directory_pages_are_recognized(title: str, url: str):
         (
             "Free Hike with a Naturalist | River Legacy Foundation",
             "https://riverlegacy.org/event/hike-with-a-naturalist-march-21",
-        ),
-        (
-            "Nature and History Events",
-            "https://www.arlingtonva.us/Parks-Recreation/Parks-Events/nature-events",
         ),
         ("Guided Nature Walk at Long Branch", "https://arlingtonva.us/e/guided-walk"),
     ],

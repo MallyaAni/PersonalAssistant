@@ -129,11 +129,31 @@ def _render_undated(undated: list[RankedCandidate]) -> list[str]:
 def _format_when(starts_at: datetime | None, zone: ZoneInfo) -> str | None:
     if starts_at is None:
         return None
+    if _is_date_only(starts_at):
+        # A date the source stated with no time, which is most of them. Shifting
+        # it into the reader's zone moves it to the previous evening and prints
+        # a clock nobody published: a concert listed for Oct 3 was announced as
+        # "Fri Oct 2, 8:00pm", one line below a title that said Oct 03, 9:30 PM.
+        # The date is what was known, so the date is all that is said.
+        stated = starts_at.astimezone(UTC)
+        return f"{stated.strftime('%a %b')} {stated.day}"
     local = starts_at.astimezone(zone)
     hour = local.hour % 12 or 12
     meridiem = "am" if local.hour < 12 else "pm"
     clock = f"{hour}:{local.minute:02d}{meridiem}"
     return f"{local.strftime('%a %b')} {local.day}, {clock}"
+
+
+# Whether a start carries only a date.
+#
+# Midnight UTC exactly is what a date-only value becomes once parsed — schema.org
+# `"startDate": "2026-10-03"` and an ICS `VALUE=DATE` both land here. A real
+# happening beginning at 00:00:00 UTC to the second is rare enough that reading
+# one as date-only costs a time nobody would have trusted anyway, while the
+# reverse invents one for every find that never had a time at all.
+def _is_date_only(starts_at: datetime) -> bool:
+    stated = starts_at.astimezone(UTC)
+    return (stated.hour, stated.minute, stated.second) == (0, 0, 0)
 
 
 def _bound(value: str, limit: int) -> str:

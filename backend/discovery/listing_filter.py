@@ -60,8 +60,11 @@ _DIRECTORY_PATH = re.compile(
     # a concert series at /Government/Programs/Arts/Programs/Lubber-Run, which
     # is a description of a thing the county runs every summer.
     r"|/government/|/programs?/|/department|/venues?/|/venue-info"
-    # A roster page, which is the same object as a calendar.
-    r"|/lineup|/line-up|/schedule/?$|/calendar/?$)",
+    # A roster page, which is the same object as a calendar. The hyphenated
+    # forms are how a venue names the same page — a hotel's
+    # /calendar-of-events reached a delivered digest as a happening.
+    r"|/lineup|/line-up|/schedule/?$|/calendar/?$"
+    r"|/calendar-of-events|/events?-calendar|/calendar-of)",
     re.IGNORECASE,
 )
 
@@ -104,7 +107,11 @@ _DIRECTORY_TITLE = re.compile(
 # Plural, and only at the start: "Event Horizon Film Festival" is a happening,
 # and a rule keyed on the singular would throw it away.
 _PLACE_SCOPED_PLURAL = re.compile(
-    r"^\s*[\w\s&'-]*\bevents?\b\s+(in|near|around)\s+|^\s*events\b",
+    r"^\s*[\w\s&'-]*\bevents?\b\s+(in|near|around)\s+|^\s*events\b"
+    # "Old Town Alexandria Events" — the place first and the plural last, which
+    # the leading forms above both miss. Anchored to the end of the segment so
+    # "Events Center Opening Night" is untouched.
+    r"|\bevents\s*$",
     re.IGNORECASE,
 )
 
