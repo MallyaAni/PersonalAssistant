@@ -30,7 +30,9 @@ from backend.discovery.projection import (
 )
 from backend.discovery.repository import DiscoveryProfileRepository
 from backend.discovery.service import DiscoveryProfileService
+from backend.discovery.types import MAX_INTERESTS_PER_USER
 from backend.main import app
+from backend.memory.errors import MemoryConflictError
 from backend.memory.repository import MemoryRepository
 from backend.models.discovery import DiscoveryInterest, DiscoveryLocality
 from backend.models.memory import MemoryFact
@@ -234,6 +236,89 @@ def test_chat_approval_endpoints_project_locality_and_interest():
     finally:
         with TestClient(app) as client:
             client.delete(f"/api/v1/memory/{user_id}")
+
+
+# Approve a semantic interest list atomically and keep its projection user-scoped.
+def test_chat_interest_batch_projects_only_into_its_owner() -> None:
+    owner = f"batch_owner_{uuid.uuid4().hex[:10]}"
+    other = f"batch_other_{uuid.uuid4().hex[:10]}"
+    labels = ["basketball", "soccer", "baseball", "hiking"]
+    try:
+        with TestClient(app) as client:
+            approved = client.post(
+                f"/api/v1/memory/{owner}/profile/discovery-interests",
+                json={
+                    "labels": labels,
+                    "source_conversation_id": ("11111111-1111-4111-8111-111111111111"),
+                    "source_trace_id": "44444444-4444-4444-8444-444444444444",
+                },
+            )
+            owner_profile = client.get(f"/api/v1/discovery/{owner}")
+            other_profile = client.get(f"/api/v1/discovery/{other}")
+            owner_memory = client.get(f"/api/v1/memory/{owner}")
+
+        assert approved.status_code == 201
+        assert {item["label"] for item in owner_profile.json()["interests"]} == set(
+            labels
+        )
+        assert other_profile.json()["interests"] == []
+        assert {fact["value"] for fact in owner_memory.json()["facts"]} == set(labels)
+    finally:
+        with TestClient(app) as client:
+            client.delete(f"/api/v1/memory/{owner}")
+            client.delete(f"/api/v1/memory/{other}")
+
+
+# Prove a capacity failure rolls back every fact and projection in the batch.
+@pytest.mark.asyncio
+async def test_chat_interest_batch_is_all_or_nothing_at_profile_capacity() -> None:
+    user_id = f"batch_limit_{uuid.uuid4().hex[:10]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            profile = DiscoveryProfileRepository(session)
+            for index in range(MAX_INTERESTS_PER_USER - 1):
+                await profile.upsert_interest(user_id, f"seed {index}", 2, "manual")
+
+            repository = MemoryRepository(session)
+            conversation_id = "11111111-1111-4111-8111-111111111111"
+            trace_id = "55555555-5555-4555-8555-555555555555"
+            items = []
+            for label in ("would fit alone", "would exceed capacity"):
+                fact = interest_fact(label)
+                items.append(
+                    {
+                        "user_id": user_id,
+                        "fact_type": fact.fact_type,
+                        "fact_key": fact.fact_key,
+                        "value": fact.value,
+                        "purpose": fact.purpose,
+                        "source_conversation_id": conversation_id,
+                        "source_trace_id": trace_id,
+                        "expires_at": None,
+                        "extra_data": {"source": "test"},
+                    }
+                )
+
+            with pytest.raises(MemoryConflictError):
+                await repository.approve_facts(items)
+
+            stored = await profile.list_interests(user_id)
+            facts = list(
+                (
+                    await session.execute(
+                        select(MemoryFact).where(MemoryFact.user_id == user_id)
+                    )
+                )
+                .scalars()
+                .all()
+            )
+            assert len(stored) == MAX_INTERESTS_PER_USER - 1
+            assert {interest.label for interest in stored}.isdisjoint(
+                {"would fit alone", "would exceed capacity"}
+            )
+            assert facts == []
+    finally:
+        await _cleanup(user_id)
 
 
 # Verify removing a typed profile value also clears its approved memory fact.

@@ -286,7 +286,7 @@ function diagramEventStream(
   return frames.join('\n')
 }
 
-// Give deterministic tests one server-derived identity without bypassing login in live runs.
+// Give deterministic tests one server-derived identity and empty owned history.
 test.beforeEach(async ({ page }, testInfo) => {
   if (testInfo.title.includes('@live')) return
   await page.route('http://localhost:8000/api/v1/auth/session', route => route.fulfill({
@@ -296,8 +296,40 @@ test.beforeEach(async ({ page }, testInfo) => {
       authentication_required: true,
       user_id: 'ani.mallya',
       expires_at: '2026-08-09T00:00:00Z',
+      is_admin: false,
     }),
   }))
+  await page.route('http://localhost:8000/api/v1/conversations/ani.mallya', route =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ conversations: [] }),
+    }),
+  )
+  await page.route('http://localhost:8000/api/v1/discovery/ani.mallya/subscription', route =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ subscription: null, egress_enabled: false }),
+    }),
+  )
+  await page.route('http://localhost:8000/api/v1/discovery/ani.mallya/runs?limit=5', route =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ runs: [] }),
+    }),
+  )
+  await page.route('http://localhost:8000/api/v1/discovery/ani.mallya/search-usage', route =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        today: { used: 0, limit: 10, remaining: 10 },
+        month: { used: 0, limit: 1000, remaining: 1000 },
+      }),
+    }),
+  )
 })
 
 // Verify login is the only initial view and logout removes private workspace state.
@@ -1556,6 +1588,62 @@ test('approves home locality and interest proposals from chat', async ({ page })
       },
     },
   ])
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// Save every semantically extracted interest through one visible approval action.
+test('approves a semantic interest list for Scout from chat', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const approvals: Array<Record<string, unknown>> = []
+
+  await page.route('http://localhost:8000/api/v1/chat', async route => {
+    const payload = route.request().postDataJSON()
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body: chatEventStream(
+        'semantic-interest-trace',
+        payload.conversation_id,
+        'Those sound like great interests.',
+        undefined,
+        undefined,
+        {
+          kind: 'discovery_interests',
+          labels: ['basketball', 'soccer', 'baseball', 'hiking'],
+        },
+      ),
+    })
+  })
+  await page.route(
+    'http://localhost:8000/api/v1/memory/*/profile/discovery-interests',
+    async route => {
+      approvals.push(route.request().postDataJSON())
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ facts: [{}, {}, {}, {}], deduplicated: [false, false, false, false] }),
+      })
+    },
+  )
+
+  await page.goto('/')
+  const { textarea, sendButton } = chatControls(page)
+  await textarea.fill('My interests are basketball, soccer, baseball, hiking')
+  await sendButton.click()
+
+  await expect(page.getByLabel('Interest memory proposal')).toContainText(
+    'basketball, soccer, baseball, hiking',
+  )
+  expect(approvals).toEqual([])
+  await page.getByRole('button', { name: 'Approve Scout interests' }).click()
+  await expect(
+    page.getByText('Saved Scout interests: basketball, soccer, baseball, hiking'),
+  ).toBeVisible()
+  expect(approvals).toEqual([{
+    labels: ['basketball', 'soccer', 'baseball', 'hiking'],
+    source_conversation_id: expect.any(String),
+    source_trace_id: 'semantic-interest-trace',
+  }])
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
@@ -4112,64 +4200,102 @@ test('@live manages Scout memory, travel, strength, and dismissal undo', async (
   }
 })
 
-// Verify real chat turns can propose and approve the facts that configure Scout.
-test('@live approves Scout home and interest facts from chat', async ({ page }) => {
+// Verify semantic chat interests become the signed-in user's visible Scout profile.
+test('@live approves semantic Scout interests from authenticated chat', async ({ page }) => {
   test.skip(process.env.ANIOS_E2E_LIVE !== '1', 'Set ANIOS_E2E_LIVE=1 to contact the live application')
+  const username = process.env.ANIOS_E2E_USERNAME ?? ''
+  const password = process.env.ANIOS_E2E_PASSWORD ?? ''
+  test.skip(!username || !password, 'Set ANIOS_E2E_USERNAME and ANIOS_E2E_PASSWORD')
   test.setTimeout(120_000)
-  const errors = observeBlockingBrowserErrors(page)
   const apiUrl = process.env.ANIOS_API_URL ?? 'http://localhost:8000'
-  const stamp = Date.now()
-  const userId = `live_scout_chat_${stamp}`
-  const interestLabel = `urban hiking ${stamp}`
-  await page.addInitScript(id => localStorage.setItem('anios_user_id', id), userId)
+  const frontendOrigin = new URL(
+    process.env.ANIOS_FRONTEND_URL ?? 'http://localhost:5173',
+  ).origin
+  const labels = ['basketball', 'soccer', 'baseball', 'hiking']
 
   try {
     await page.goto('/')
-    const { textarea, sendButton } = chatControls(page)
+    await page.getByLabel('Username').fill(username)
+    await page.getByLabel('Password').fill(password)
+    await page.getByRole('button', { name: 'Continue' }).click()
+    await expect(page.getByText(`Signed in as ${username}`)).toBeVisible()
+    const errors = observeBlockingBrowserErrors(page)
 
-    const localityResponse = page.waitForResponse(response => (
-      response.url() === `${apiUrl}/api/v1/chat` &&
-      response.request().method() === 'POST'
-    ))
-    await textarea.fill('I live in Arlington, Virginia.')
-    await sendButton.click()
-    const localityStream = await localityResponse
-    expect(localityStream.status()).toBe(200)
-    expect(await localityStream.finished()).toBeNull()
-    await expect(page.getByLabel('Home locality memory proposal')).toContainText(
-      'Arlington, Virginia',
-      { timeout: 30_000 },
-    )
-    await page.getByRole('button', { name: 'Approve home locality' }).click()
-    await expect(page.getByText('Saved home locality: Arlington, Virginia')).toBeVisible()
+    const cleared = await page.request.delete(`${apiUrl}/api/v1/memory/${username}`, {
+      headers: { Origin: frontendOrigin },
+    })
+    expect(cleared.status()).toBe(200)
+    const { textarea, sendButton } = chatControls(page)
 
     const interestResponse = page.waitForResponse(response => (
       response.url() === `${apiUrl}/api/v1/chat` &&
       response.request().method() === 'POST'
     ))
-    await textarea.fill(`I am interested in ${interestLabel}.`)
+    await textarea.fill('My interests are basketball, soccer, baseball, hiking')
     await sendButton.click()
     const interestStream = await interestResponse
     expect(interestStream.status()).toBe(200)
     expect(await interestStream.finished()).toBeNull()
     await expect(page.getByLabel('Interest memory proposal')).toContainText(
-      interestLabel,
+      labels.join(', '),
       { timeout: 30_000 },
     )
-    await page.getByRole('button', { name: 'Approve interest' }).click()
-    await expect(page.getByText(`Saved interest: ${interestLabel}`)).toBeVisible()
+    const approvalResponse = page.waitForResponse(response => (
+      response.url() === `${apiUrl}/api/v1/memory/${username}/profile/discovery-interests` &&
+      response.request().method() === 'POST'
+    ))
+    await page.getByRole('button', { name: 'Approve Scout interests' }).click()
+    expect((await approvalResponse).status()).toBe(201)
+    await expect(page.getByText(`Saved Scout interests: ${labels.join(', ')}`)).toBeVisible()
+    await expect(textarea).toBeEnabled()
 
-    const profile = await page.request.get(`${apiUrl}/api/v1/discovery/${userId}`)
+    await page.getByLabel('Agents').click()
+    await page.getByRole('button', { name: 'Configure' }).click()
+    for (const label of labels) {
+      await expect(page.getByLabel(`Importance of ${label}`)).toHaveValue('2')
+    }
+
+    const profile = await page.request.get(`${apiUrl}/api/v1/discovery/${username}`)
     expect(profile.status()).toBe(200)
     const body = await profile.json()
-    expect(body.localities).toEqual([
-      expect.objectContaining({ label: 'Arlington', region: 'Virginia', is_primary: true }),
-    ])
-    expect(body.interests).toEqual([
-      expect.objectContaining({ label: interestLabel, strength: 2 }),
-    ])
+    expect(body.interests.map((interest: { label: string }) => interest.label).sort())
+      .toEqual([...labels].sort())
     expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
   } finally {
-    await page.request.delete(`${apiUrl}/api/v1/memory/${userId}`)
+    await page.request.delete(`${apiUrl}/api/v1/memory/${username}`, {
+      headers: { Origin: frontendOrigin },
+    })
   }
+})
+
+// Verify Scout's real browser rehearsal uses honest, readable uncertain-date copy.
+test('@live renders future-safe Scout wording for the signed-in profile', async ({ page }) => {
+  test.skip(process.env.ANIOS_E2E_LIVE !== '1', 'Set ANIOS_E2E_LIVE=1 to contact the live application')
+  const userId = process.env.ANIOS_E2E_USERNAME ?? ''
+  const bearerToken = process.env.ANIOS_E2E_BEARER_TOKEN ?? ''
+  test.skip(!userId || !bearerToken, 'Set ANIOS_E2E_USERNAME and ANIOS_E2E_BEARER_TOKEN')
+  test.setTimeout(120_000)
+  const errors = observeBlockingBrowserErrors(page)
+  await page.setExtraHTTPHeaders({ Authorization: `Bearer ${bearerToken}` })
+
+  await page.goto('/')
+  await expect(page.getByText(`Signed in as ${userId}`)).toBeVisible()
+  await page.getByLabel('Agents').click()
+  await page.getByRole('button', { name: 'Configure' }).click()
+  const sweepResponse = page.waitForResponse(response => (
+    response.url().includes(`/api/v1/discovery/${userId}/sweep?commit=false`) &&
+    response.request().method() === 'POST'
+  ))
+  await page.getByRole('button', { name: 'Try it' }).click()
+  const rehearsalResponse = await sweepResponse
+  expect(rehearsalResponse.status()).toBe(200)
+  expect(await rehearsalResponse.finished()).toBeNull()
+
+  const rehearsal = page.getByText('Rehearsal — nothing was saved').locator('..')
+  await expect(rehearsal).toContainText(
+    /Coming up near you:|I found (this|a few possibilities), but couldn't confirm/,
+    { timeout: 90_000 },
+  )
+  await expect(rehearsal).not.toContainText('Worth a look — no date given')
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })

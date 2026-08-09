@@ -2,38 +2,27 @@
 title: Scout Discovery Subsystem
 ---
 flowchart LR
-    User([User])
-    Chat[Chat approvals]
-    Setup[Scout setup]
+    User([User]) --> Chat[Chat or Scout setup]
+    Chat --> Understand[Qwen 3.5 4B<br/>semantic interest proposal]
+    Understand --> Approval{User approves?}
+    Approval -->|yes| Memory[Approved memory facts]
+    Approval -->|no| Stop[No write]
+    Memory --> Profile[(Scout profile<br/>home · current place · weighted interests)]
 
-    Memory[Approved memory facts<br/>home and interests]
-    Projection[Bidirectional profile projection]
-    Profile[(Scout profile<br/>home Â· where you are Â· weighted interests)]
-
-    Schedule[Durable schedule]
-    Sources[Feeds and bounded web results]
-    Sweep[Scout sweep]
-    Rank[Novelty and deterministic ranking]
-    History[(Seen and familiar items)]
-    Result[Digest and calendar]
-
-    User --> Chat --> Memory
-    User --> Setup
-    Setup -->|profile edits| Projection
-    Memory --> Projection --> Profile
-    Setup -->|where you are, strength| Profile
-    Setup -->|undo dismissal| History
-
-    Schedule --> Sweep
-    Sources --> Sweep
-    Profile --> Sweep --> Rank
-    History --> Rank
-    Rank --> History
-    Rank --> Result
+    Schedule[Schedule or Look now] --> Sweep[Scout sweep]
+    Profile --> Sweep
+    Feeds[Configured feeds] --> Sweep
+    Sweep --> Search[MCP web search<br/>Tavily fallback]
+    Search --> Candidates[Typed candidate events]
+    Candidates --> Rank[Nomic embeddings<br/>deterministic novelty and ranking]
+    Rank --> Describe[Qwen 3.5 4B<br/>bounded descriptions]
+    Describe --> Result[Digest and calendar]
 
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
     classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
-    class User,Chat,Setup,Result interface;
-    class Projection,Schedule,Sources,Sweep,Rank application;
-    class Memory,Profile,History data;
+    classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
+    class User,Chat,Approval,Stop,Result interface;
+    class Memory,Profile data;
+    class Schedule,Sweep,Feeds,Search,Candidates,Rank application;
+    class Understand,Describe model;

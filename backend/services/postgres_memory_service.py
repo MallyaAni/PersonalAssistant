@@ -5,6 +5,7 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.interfaces import MemoryService, SemanticMemoryWriter
+from backend.discovery.projection import interest_fact
 from backend.embeddings.base import EmbeddingProvider
 from backend.memory.repository import MemoryRepository
 from backend.memory.retrieval import SemanticRetrievalPolicy
@@ -94,6 +95,44 @@ class PostgresMemoryService(MemoryService, SemanticMemoryWriter):
             extra_data=metadata,
         )
         return {"fact": fact.to_dict(), "deduplicated": deduplicated}
+
+    # Approve one semantic Scout proposal as an all-or-nothing fact batch.
+    async def approve_discovery_interests(
+        self,
+        *,
+        user_id: str,
+        labels: list[str],
+        source_conversation_id: str,
+        source_trace_id: str,
+    ) -> dict[str, Any]:
+        items = []
+        seen: set[str] = set()
+        for label in labels:
+            fact = interest_fact(label)
+            if fact.fact_key in seen:
+                continue
+            seen.add(fact.fact_key)
+            items.append(
+                {
+                    "user_id": user_id,
+                    "fact_type": fact.fact_type,
+                    "fact_key": fact.fact_key,
+                    "value": fact.value,
+                    "purpose": fact.purpose,
+                    "source_conversation_id": source_conversation_id,
+                    "source_trace_id": source_trace_id,
+                    "expires_at": None,
+                    "extra_data": {
+                        "source": "chat_approval",
+                        "classifier": "semantic_interest_agent",
+                    },
+                }
+            )
+        results = await self.repo.approve_facts(items)
+        return {
+            "facts": [fact.to_dict() for fact, _ in results],
+            "deduplicated": [deduplicated for _, deduplicated in results],
+        }
 
     # Delete one user-owned fact.
     async def delete_fact(self, user_id: str, fact_id: str) -> bool:

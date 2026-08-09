@@ -165,6 +165,11 @@ The following controls are requirements for future milestones, not current featu
   sources, seen items, subscribers, familiar items, schedules, and runs. Public
   API tests seed every table, verify exported categories and deletion counts,
   assert no owned rows remain, and prove another user's rows are untouched.
+- `VERIFIED`: semantic Scout-interest capture sends only the current utterance
+  to the configured local Qwen endpoint, requires grammar-constrained bounded
+  output, and gives the classifier no persistence or tool capability. The user
+  must approve the visible proposal before an atomic user-scoped fact/profile
+  write; rejection, model failure, or a capacity conflict writes nothing.
 
 ## Security review for a change
 

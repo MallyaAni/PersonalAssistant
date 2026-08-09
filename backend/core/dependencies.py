@@ -68,6 +68,7 @@ from backend.mcp.config import parse_server_configs
 from backend.mcp.invocation import SessionMCPToolInvoker
 from backend.mcp.types import MCPServerConfig
 from backend.memory.coordinator import MemoryCoordinatorAgent
+from backend.memory.interest_agent import ScoutInterestProposalAgent
 from backend.memory.retrieval import SemanticRetrievalPolicy
 from backend.presentations.provider import LLMPresentationProvider
 from backend.presentations.renderer import PptxGenJSRenderer
@@ -257,6 +258,28 @@ def get_diagram_llm_client() -> LLMClient:
     )
 
 
+# Build the small structured classifier independently from the response role.
+def get_memory_proposal_llm_client() -> LLMClient:
+    return _build_llm_client(
+        settings.MEMORY_PROPOSAL_INFERENCE_ADAPTER or settings.INFERENCE_ADAPTER,
+        settings.MEMORY_PROPOSAL_LLM_BASE_URL
+        or settings.MAIN_LLM_BASE_URL
+        or settings.LLM_BASE_URL,
+        settings.MEMORY_PROPOSAL_LLM_MODEL
+        or settings.MAIN_LLM_MODEL
+        or settings.LLM_MODEL,
+        settings.MEMORY_PROPOSAL_LLM_REASONING_EFFORT,
+    )
+
+
+# Give chat a semantic interest classifier with no persistence capability.
+def get_scout_interest_proposal_agent() -> ScoutInterestProposalAgent:
+    return ScoutInterestProposalAgent(
+        get_memory_proposal_llm_client(),
+        max_tokens=settings.MEMORY_PROPOSAL_MAX_TOKENS,
+    )
+
+
 def get_conversation_repository(
     db: DbDependency,
 ) -> SQLAlchemyConversationRepository:
@@ -282,6 +305,10 @@ PresentationLlmDependency = Annotated[
 DiagramLlmDependency = Annotated[
     LLMClient,
     Depends(get_diagram_llm_client),
+]
+ScoutInterestProposalDependency = Annotated[
+    ScoutInterestProposalAgent,
+    Depends(get_scout_interest_proposal_agent),
 ]
 RepositoryDependency = Annotated[
     SQLAlchemyConversationRepository,
@@ -1207,6 +1234,7 @@ def get_conversation_service(
     supervisor: MainSupervisorDependency,
     presentation_jobs: PresentationJobDependency,
     discovery_profile: DependencyDiscoveryProfileService,
+    interest_proposals: ScoutInterestProposalDependency,
 ) -> ConversationService:
     return ConversationService(
         memory=memory,
@@ -1234,6 +1262,7 @@ def get_conversation_service(
             or settings.LLM_MODEL
         ),
         discovery_profile=discovery_profile,
+        interest_proposals=interest_proposals,
     )
 
 

@@ -390,6 +390,13 @@ export interface DiscoveryInterestProposal {
   trace_id: string;
 }
 
+export interface DiscoveryInterestsProposal {
+  kind: 'discovery_interests';
+  labels: string[];
+  conversation_id: string;
+  trace_id: string;
+}
+
 export interface DiscoveryLocalityProposal {
   kind: 'discovery_locality';
   label: string;
@@ -442,6 +449,7 @@ export type MemoryProposal =
   | PreferredNameProposal
   | ResponseStyleProposal
   | DiscoveryInterestProposal
+  | DiscoveryInterestsProposal
   | DiscoveryLocalityProposal
   | EntityProposal
   | ProcedureProposal
@@ -883,6 +891,24 @@ export function approveDiscoveryInterest(
       method: 'POST',
       body: JSON.stringify({
         label: proposal.label,
+        source_conversation_id: proposal.conversation_id,
+        source_trace_id: proposal.trace_id,
+      }),
+    },
+  )
+}
+
+// Approve one semantic list and let memory configure Scout atomically.
+export function approveDiscoveryInterests(
+  userId: string,
+  proposal: DiscoveryInterestsProposal,
+) {
+  return apiRequest<{ facts: Array<Record<string, unknown>>; deduplicated: boolean[] }>(
+    `/api/v1/memory/${encodeURIComponent(userId)}/profile/discovery-interests`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        labels: proposal.labels,
         source_conversation_id: proposal.conversation_id,
         source_trace_id: proposal.trace_id,
       }),
@@ -1355,6 +1381,7 @@ export async function* streamChat(userId: string, conversationId: string, query:
             'preferred_name',
             'response_style',
             'discovery_interest',
+            'discovery_interests',
             'discovery_locality',
             'entity',
             'procedure',
@@ -1390,6 +1417,22 @@ export async function* streamChat(userId: string, conversationId: string, query:
           proposal = {
             kind,
             label,
+            conversation_id: proposalConversationId,
+            trace_id: proposalTraceId,
+          }
+        } else if (kind === 'discovery_interests') {
+          const { labels } = event.data
+          if (
+            !Array.isArray(labels)
+            || labels.length === 0
+            || labels.length > 8
+            || labels.some(label => typeof label !== 'string' || !label.trim())
+          ) {
+            throw new Error('Interest-list memory proposal is invalid')
+          }
+          proposal = {
+            kind,
+            labels: labels as string[],
             conversation_id: proposalConversationId,
             trace_id: proposalTraceId,
           }
@@ -2558,7 +2601,7 @@ export const requestSubscription = async (
   address: string,
 ): Promise<GuestSubscription> =>
   readJson(
-    await fetch(`${discoveryBase(userId)}/subscription`, {
+    await authenticatedFetch(`${discoveryBase(userId)}/subscription`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ channel, address }),
@@ -2570,14 +2613,14 @@ export const getSubscription = async (
   userId: string,
 ): Promise<GuestSubscription | null> => {
   const payload = await readJson(
-    await fetch(`${discoveryBase(userId)}/subscription`),
+    await authenticatedFetch(`${discoveryBase(userId)}/subscription`),
     'Could not load your subscription.',
   );
   return payload.subscription ?? null;
 };
 
 export const cancelSubscription = async (userId: string): Promise<void> => {
-  const response = await fetch(`${discoveryBase(userId)}/subscription`, {
+  const response = await authenticatedFetch(`${discoveryBase(userId)}/subscription`, {
     method: 'DELETE',
   });
   if (!response.ok && response.status !== 404) {

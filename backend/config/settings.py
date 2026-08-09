@@ -52,6 +52,13 @@ class Settings(BaseSettings):
     DIAGRAM_LLM_REASONING_EFFORT: Literal[
         "none", "minimal", "low", "medium", "high", "xhigh"
     ] = "none"
+    MEMORY_PROPOSAL_INFERENCE_ADAPTER: Literal["", "openai_compatible"] = ""
+    MEMORY_PROPOSAL_LLM_BASE_URL: str = ""
+    MEMORY_PROPOSAL_LLM_MODEL: str = ""
+    MEMORY_PROPOSAL_LLM_REASONING_EFFORT: Literal[
+        "none", "minimal", "low", "medium", "high", "xhigh"
+    ] = "none"
+    MEMORY_PROPOSAL_MAX_TOKENS: int = Field(default=128, ge=32, le=512)
 
     VISION_INFERENCE_ADAPTER: Literal["", "openai_compatible"] = ""
     EMBEDDING_INFERENCE_ADAPTER: Literal["", "openai_compatible"] = ""

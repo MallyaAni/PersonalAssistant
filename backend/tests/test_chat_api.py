@@ -10,6 +10,7 @@ os.environ.setdefault("SECRET_KEY", "test-secret-key-only-for-testing")
 from backend.core.llm import LLMClient
 from backend.main import app
 from backend.mcp.invocation import MCPInvocationError, ToolCallResult
+from backend.memory.interest_agent import ScoutInterestProposal
 from backend.services.conversation_service import ConversationService
 from backend.services.mcp_tool_orchestration_service import MCPToolPlan
 from backend.tests.doubles import (
@@ -82,6 +83,18 @@ class MemoryWithInjectionShapedContext(StubMemoryService):
                 "retrieval": {"cosine_distance": 0.1, "relevance_score": 0.9},
             }
         ]
+
+
+class FixedInterestAgent:
+    """Return configured semantic labels without invoking a real model."""
+
+    # Store the labels that the conversation service should offer for approval.
+    def __init__(self, labels: tuple[str, ...]) -> None:
+        self.labels = labels
+
+    # Return one bounded proposal for the current test utterance.
+    async def propose(self, query: str) -> ScoutInterestProposal | None:
+        return ScoutInterestProposal(self.labels) if self.labels else None
 
 
 class FixedToolOrchestration:
@@ -285,19 +298,26 @@ async def test_conversation_service_proposes_name_without_writing_memory():
         ),
         (
             "I am interested in hiking.",
-            "discovery_interest",
-            {"label": "hiking"},
+            "discovery_interests",
+            {"labels": ["hiking"]},
+        ),
+        (
+            "My interests are basketball, soccer, baseball, hiking",
+            "discovery_interests",
+            {"labels": ["basketball", "soccer", "baseball", "hiking"]},
         ),
     ],
 )
 async def test_conversation_service_proposes_discovery_profile_memory(
     query, kind, expected
 ):
+    labels = tuple(expected.get("labels", ()))
     service = ConversationService(
         memory=StubMemoryService(),
         llm=StubLLM(),
         repository=CapturingConversationRepository(),
         tracer=StubTracer(),
+        interest_proposals=FixedInterestAgent(labels),
     )
 
     events = [event async for event in service.process_request("proposal_user", query)]

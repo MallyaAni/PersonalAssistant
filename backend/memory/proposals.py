@@ -48,12 +48,6 @@ _LOCALITY_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
-_INTEREST_PATTERN = re.compile(
-    r"\b(?:i(?:'m|\s+am)\s+interested\s+in|my\s+interests?\s+include)\s+"
-    r"([^\r\n.!?;,]{1,80})",
-    re.IGNORECASE,
-)
-
 _ENTITY_PATTERN = re.compile(
     r"\bremember\s+that\s+([^\r\n.!?;]{1,300})\s+is\s+my\s+" r"([^\r\n.!?;]{1,100})",
     re.IGNORECASE,
@@ -72,7 +66,7 @@ _KNOWLEDGE_PATTERN = re.compile(
 )
 
 # Every proposer above captures one narrow, pre-agreed shape: a name, a style, a
-# locality, an interest, a person, a workflow, a titled reference. Nothing
+# locality, a person, a workflow, or a titled reference. Nothing
 # captured an ordinary fact about the user's life, so "Remember that my dog is
 # called Biscuit." matched no rule and reached no store while the assistant said
 # it had made a note. This is the catch-all for an explicit save request, and it
@@ -166,15 +160,6 @@ def propose_locality(query: str) -> dict[str, str | None] | None:
     if not label or len(label) > 80 or len(region) > 80:
         return None
     return {"label": label, "region": region or None}
-
-
-# Extract one explicitly stated interest without persisting it.
-def propose_interest(query: str) -> str | None:
-    match = _INTEREST_PATTERN.search(query)
-    if match is None:
-        return None
-    label = match.group(1).strip().strip('"')
-    return label if label else None
 
 
 # Extract an explicitly stated person or organization without persisting it.

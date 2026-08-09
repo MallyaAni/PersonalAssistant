@@ -358,3 +358,24 @@ def test_an_undated_find_is_not_treated_as_past():
 
     assert message is not None
     assert "A trail worth walking" in message
+
+
+# Keep uncertain-date recommendations honest without sounding like raw system output.
+def test_an_undated_digest_explains_the_uncertainty_naturally():
+    event = DiscoveredEvent(
+        source_id="src-1",
+        external_id="evt-undated-copy",
+        title="Museum late night",
+        starts_at=None,
+        ends_at=None,
+        place=None,
+        url="https://example.org/late-night",
+        summary=None,
+    )
+    undated = RankedCandidate(ScoredCandidate(event, None), 0.9, "museums")
+
+    message = render_message((undated,), now=_NOW)
+
+    assert message is not None
+    assert message.startswith("I found this, but couldn't confirm the date:")
+    assert "Worth a look" not in message

@@ -107,7 +107,12 @@ def _render_dated(
 def _render_undated(undated: list[RankedCandidate]) -> list[str]:
     if not undated:
         return []
-    lines = ["Worth a look — no date given:", ""]
+    heading = (
+        "I found this, but couldn't confirm the date:"
+        if len(undated) == 1
+        else "I found a few possibilities, but couldn't confirm their dates:"
+    )
+    lines = [heading, ""]
     for item in undated:
         lines.append(f"• {_bound(item.event.title, MAX_TITLE_CHARS)}")
         if item.event.summary:

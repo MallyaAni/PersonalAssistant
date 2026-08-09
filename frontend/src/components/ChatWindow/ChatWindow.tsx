@@ -5,6 +5,7 @@ import Composer from '../Composer/Composer'
 import {
   approveEntity,
   approveDiscoveryInterest,
+  approveDiscoveryInterests,
   approveDiscoveryLocality,
   approveEpisodic,
   approveKnowledge,
@@ -49,6 +50,7 @@ const proposalLabel = (proposal: MemoryProposal) => ({
   preferred_name: 'Preferred name memory proposal',
   response_style: 'Response style memory proposal',
   discovery_interest: 'Interest memory proposal',
+  discovery_interests: 'Interest memory proposal',
   discovery_locality: 'Home locality memory proposal',
   entity: 'Entity memory proposal',
   procedure: 'Procedure memory proposal',
@@ -63,6 +65,7 @@ const proposalValue = (proposal: MemoryProposal) => {
     return proposal.value
   }
   if (proposal.kind === 'discovery_interest') return proposal.label
+  if (proposal.kind === 'discovery_interests') return proposal.labels.join(', ')
   if (proposal.kind === 'discovery_locality') {
     return proposal.region ? `${proposal.label}, ${proposal.region}` : proposal.label
   }
@@ -79,6 +82,7 @@ const proposalType = (proposal: MemoryProposal) => ({
   preferred_name: 'preferred name',
   response_style: 'response style',
   discovery_interest: 'interest',
+  discovery_interests: 'Scout interests',
   discovery_locality: 'home locality',
   entity: 'person or organization',
   procedure: 'reusable workflow',
@@ -495,6 +499,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         await approveResponseStyle(userId, memoryProposal)
       } else if (memoryProposal.kind === 'discovery_interest') {
         await approveDiscoveryInterest(userId, memoryProposal)
+      } else if (memoryProposal.kind === 'discovery_interests') {
+        await approveDiscoveryInterests(userId, memoryProposal)
       } else if (memoryProposal.kind === 'discovery_locality') {
         await approveDiscoveryLocality(userId, memoryProposal)
       } else if (memoryProposal.kind === 'entity') {

@@ -7,7 +7,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from backend.database.locks import transaction_advisory_lock
-from backend.discovery.errors import DiscoveryProjectionConflictError
+from backend.discovery.errors import (
+    DiscoveryProfileLimitError,
+    DiscoveryProjectionConflictError,
+)
 from backend.discovery.projection import DiscoveryProjection
 from backend.memory.errors import MemoryConflictError
 from backend.models.conversation import Conversation
@@ -156,103 +159,145 @@ class MemoryRepository:
         extra_data: dict[str, Any],
     ) -> tuple[MemoryFact, bool]:
         try:
-            source_trace_uuid = uuid.UUID(source_trace_id)
-            normalized_value = value.strip().casefold()
-            # A transaction-scoped advisory lock also serializes the first write,
-            # when no fact row exists yet for SELECT ... FOR UPDATE to lock.
-            await transaction_advisory_lock(self.session, "fact", user_id, fact_key)
-            existing = (
-                await self.session.execute(
-                    select(MemoryFact).where(
-                        MemoryFact.user_id == user_id,
-                        MemoryFact.fact_key == fact_key,
-                        MemoryFact.source_trace_id == source_trace_uuid,
-                    )
-                )
-            ).scalar_one_or_none()
-            if existing is not None:
-                if existing.fact_type != fact_type:
-                    raise MemoryConflictError(
-                        "The fact key is already associated with another fact type"
-                    )
-                if existing.normalized_value != normalized_value:
-                    raise MemoryConflictError(
-                        "The source trace is already associated with another value"
-                    )
-                await self.session.commit()
-                return existing, True
-
-            facts = list(
-                (
-                    await self.session.execute(
-                        select(MemoryFact)
-                        .where(
-                            MemoryFact.user_id == user_id,
-                            MemoryFact.fact_key == fact_key,
-                        )
-                        .order_by(MemoryFact.version.desc())
-                        .with_for_update()
-                    )
-                )
-                .scalars()
-                .all()
-            )
-            latest = facts[0] if facts else None
-            if latest is not None and latest.fact_type != fact_type:
-                raise MemoryConflictError(
-                    "The fact key is already associated with another fact type"
-                )
-            effective_at = datetime.now(UTC)
-            current = next(
-                (
-                    fact
-                    for fact in facts
-                    if fact.approval_state == "approved"
-                    and (fact.expires_at is None or fact.expires_at > effective_at)
-                ),
-                None,
-            )
-            if current is not None and current.normalized_value == normalized_value:
-                await self._apply_fact_projection(user_id, fact_key, current.value)
-                await self.session.commit()
-                return current, True
-
-            for fact in facts:
-                if fact.approval_state == "approved":
-                    fact.approval_state = "superseded"
-
-            memory_fact = MemoryFact(
+            memory_fact, deduplicated = await self._approve_fact_uncommitted(
                 user_id=user_id,
                 fact_type=fact_type,
                 fact_key=fact_key,
                 value=value,
-                normalized_value=normalized_value,
-                approval_state="approved",
-                confidence=1.0,
                 purpose=purpose,
-                source_conversation_id=(
-                    uuid.UUID(source_conversation_id)
-                    if source_conversation_id is not None
-                    else None
-                ),
-                source_trace_id=source_trace_uuid,
-                version=(latest.version + 1) if latest else 1,
-                supersedes_id=latest.id if latest else None,
-                embedding_model=None,
-                embedding_version=None,
-                embedding_dimension=None,
+                source_conversation_id=source_conversation_id,
+                source_trace_id=source_trace_id,
                 expires_at=expires_at,
                 extra_data=extra_data,
             )
-            self.session.add(memory_fact)
-            await self._apply_fact_projection(user_id, fact_key, value)
-
             await self.session.commit()
             await self.session.refresh(memory_fact)
-            return memory_fact, False
+            return memory_fact, deduplicated
         except Exception:
             await self.session.rollback()
             raise
+
+    # Persist several approved facts in one transaction or none of them.
+    async def approve_facts(
+        self,
+        facts: list[dict[str, Any]],
+    ) -> list[tuple[MemoryFact, bool]]:
+        try:
+            results: list[tuple[MemoryFact, bool]] = []
+            # Stable lock order prevents two overlapping lists from deadlocking.
+            for item in sorted(facts, key=lambda value: str(value["fact_key"])):
+                results.append(await self._approve_fact_uncommitted(**item))
+            await self.session.commit()
+            for memory_fact, _ in results:
+                await self.session.refresh(memory_fact)
+            return results
+        except Exception:
+            await self.session.rollback()
+            raise
+
+    # Stage one fact and its projection without ending the caller's transaction.
+    async def _approve_fact_uncommitted(
+        self,
+        *,
+        user_id: str,
+        fact_type: str,
+        fact_key: str,
+        value: str,
+        purpose: str,
+        source_conversation_id: str | None,
+        source_trace_id: str,
+        expires_at: datetime | None,
+        extra_data: dict[str, Any],
+    ) -> tuple[MemoryFact, bool]:
+        source_trace_uuid = uuid.UUID(source_trace_id)
+        normalized_value = value.strip().casefold()
+        # A transaction-scoped advisory lock also serializes the first write,
+        # when no fact row exists yet for SELECT ... FOR UPDATE to lock.
+        await transaction_advisory_lock(self.session, "fact", user_id, fact_key)
+        existing = (
+            await self.session.execute(
+                select(MemoryFact).where(
+                    MemoryFact.user_id == user_id,
+                    MemoryFact.fact_key == fact_key,
+                    MemoryFact.source_trace_id == source_trace_uuid,
+                )
+            )
+        ).scalar_one_or_none()
+        if existing is not None:
+            if existing.fact_type != fact_type:
+                raise MemoryConflictError(
+                    "The fact key is already associated with another fact type"
+                )
+            if existing.normalized_value != normalized_value:
+                raise MemoryConflictError(
+                    "The source trace is already associated with another value"
+                )
+            return existing, True
+
+        stored = list(
+            (
+                await self.session.execute(
+                    select(MemoryFact)
+                    .where(
+                        MemoryFact.user_id == user_id,
+                        MemoryFact.fact_key == fact_key,
+                    )
+                    .order_by(MemoryFact.version.desc())
+                    .with_for_update()
+                )
+            )
+            .scalars()
+            .all()
+        )
+        latest = stored[0] if stored else None
+        if latest is not None and latest.fact_type != fact_type:
+            raise MemoryConflictError(
+                "The fact key is already associated with another fact type"
+            )
+        effective_at = datetime.now(UTC)
+        current = next(
+            (
+                fact
+                for fact in stored
+                if fact.approval_state == "approved"
+                and (fact.expires_at is None or fact.expires_at > effective_at)
+            ),
+            None,
+        )
+        if current is not None and current.normalized_value == normalized_value:
+            await self._apply_fact_projection(user_id, fact_key, current.value)
+            return current, True
+
+        for stored_fact in stored:
+            if stored_fact.approval_state == "approved":
+                stored_fact.approval_state = "superseded"
+
+        memory_fact = MemoryFact(
+            user_id=user_id,
+            fact_type=fact_type,
+            fact_key=fact_key,
+            value=value,
+            normalized_value=normalized_value,
+            approval_state="approved",
+            confidence=1.0,
+            purpose=purpose,
+            source_conversation_id=(
+                uuid.UUID(source_conversation_id)
+                if source_conversation_id is not None
+                else None
+            ),
+            source_trace_id=source_trace_uuid,
+            version=(latest.version + 1) if latest else 1,
+            supersedes_id=latest.id if latest else None,
+            embedding_model=None,
+            embedding_version=None,
+            embedding_dimension=None,
+            expires_at=expires_at,
+            extra_data=extra_data,
+        )
+        self.session.add(memory_fact)
+        await self._apply_fact_projection(user_id, fact_key, value)
+        return memory_fact, False
 
     async def clear_preferred_name_facts(self, user_id: str) -> UserProfile | None:
         await self.clear_fact_key(user_id, "preferred_name")
@@ -316,7 +361,10 @@ class MemoryRepository:
                     await projection.revoke_fact(user_id, fact_key)
                 else:
                     await projection.apply_fact(user_id, fact_key, value)
-            except DiscoveryProjectionConflictError as exc:
+            except (
+                DiscoveryProfileLimitError,
+                DiscoveryProjectionConflictError,
+            ) as exc:
                 raise MemoryConflictError(str(exc)) from exc
             return
         profile = await self.get_user_profile(user_id)

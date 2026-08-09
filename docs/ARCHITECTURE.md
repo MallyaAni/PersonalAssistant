@@ -63,8 +63,9 @@ vLLM is part of the default Compose runtime. The pinned `vllm-main` service expo
 A request is not one model call. Several models run at different stages, and on
 this machine they share **one GPU**, so calls serialize - a turn's latency is
 dominated by how many model calls it makes, not by any single one. Memory
-retrieval planning and memory proposals are **deterministic** keyword logic and
-cost no model call.
+retrieval planning remains deterministic. Explicit Scout-interest recognition
+is a focused structured Qwen call; other memory proposal types remain
+deterministic.
 
 A chat turn, in order:
 
@@ -77,7 +78,8 @@ A chat turn, in order:
 | Image-recall routing | the same classifier model | GPU | only when the query plausibly names a stored image (gated) |
 | Tool selection | `qwen/qwen3.5-4b` (`MAIN_LLM_MODEL`) native tool-calls through `vllm-main` | GPU | only when MCP tools are relevant |
 | Response generation | `qwen/qwen3.5-4b` (`MAIN_LLM_MODEL`) through `vllm-main` | GPU | ordinary non-delegated turns; the streamed answer |
-| Memory proposal | none (deterministic patterns) | CPU | every turn |
+| Scout-interest proposal | `qwen/qwen3.5-4b` (`MEMORY_PROPOSAL_LLM_MODEL`) with grammar-constrained JSON and reasoning disabled | GPU (`vllm-main`) | every ordinary chat turn; fail-closed with no write authority |
+| Other memory proposals | none (deterministic patterns) | CPU | every ordinary chat turn |
 
 A plain message ("my name is Ani") therefore makes about three model calls: one
 text embedding plus two main-role calls (the search classifier and the
@@ -514,14 +516,18 @@ copy stays encrypted at rest. Interest provenance is validated against an allowe
 set so an inferred value cannot be stored as a user-stated one, and the list is
 bounded because every label is eligible to enter a chat prompt. Home coordinates
 are deliberately absent: they would be the most sensitive value the application
-holds and nothing consumes them yet. The profile is rendered into ordinary chat
-context, so the assistant answers from the same record a scheduled run reads.
+holds and nothing consumes them yet. The profile is not injected wholesale into
+ordinary chat because a standing interest list biased unrelated answers. Scout
+sweeps consume it; chat uses the normal relevance-bounded memory path.
 
 Home and interests are approved personal-memory facts, while the typed discovery
 rows are the projection Scout needs for deterministic ranking. Chat recognizes
-the bounded explicit forms "I live in ..." and "I am interested in ..." and
-offers an approval card; approval writes the versioned fact and its profile
-projection in one transaction. Editing the Scout panel takes the reverse path:
+home statements with a narrow deterministic rule and sends the current utterance
+to a focused local Qwen classifier for explicit current interests. It returns up
+to eight short labels through a JSON grammar and has no persistence capability.
+One visible approval writes the full interest batch and its profile projections
+in one transaction; rejection or classification failure writes nothing. Editing
+the Scout panel takes the reverse path:
 the profile edit is immediately usable and records the corresponding approved
 fact with profile-edit provenance. Removing either value clears the fact history
 that owns the projection. Interest fact keys use a namespace plus the normalized
@@ -648,8 +654,12 @@ Two rules keep that from undoing the loop's other properties. A start time is
 result text, and anything requiring a reference point the snippet does not carry
 — "this weekend", "next Saturday" — yields no start at all. An undated find is
 still surfaced, as a link in a separate section of the digest, and cannot become
-a `VEVENT`. And the query count is bounded before the sweep runs, because search
-is the only metered component here.
+a `VEVENT`. An explicit date before the current day is a different state and is
+rejected at conversion; collapsing it into the undated state previously let a
+finished event back into the digest. The renderer states that an undated find's
+date could not be confirmed rather than presenting it as verified upcoming.
+And the query count is bounded before the sweep runs, because search is the only
+metered component here.
 
 `backend/discovery/summarize.py` makes a find readable enough to decide on. A
 scraped page title names the site rather than the happening — "Nature and History
@@ -658,10 +668,11 @@ recipient cannot judge that. Cleanup is deterministic and strips a trailing
 segment only when it looks like a CMS site name, so a genuinely hyphenated title
 survives.
 
-This is the one place a model belongs in the subsystem. Deciding *what qualifies*
-stays deterministic, because a sweep runs unattended and must not vary by
-sampling; turning a scraped paragraph into a sentence a person can read is what a
-model is for. It answers into a decoding grammar with a bounded field, greedily,
+The sweep uses a model only to turn a selected scraped paragraph into a sentence
+a person can read. Deciding *what qualifies* stays deterministic because a sweep
+runs unattended and must not vary by sampling. The separate chat-time interest
+classifier proposes user-authored profile input and never ranks events.
+Descriptions answer into a decoding grammar with a bounded field, greedily,
 so the same page describes itself the same way each sweep. No URL survives from
 model output — links come from the typed record, so a page cannot put a link of
 its choosing in front of a recipient — and any failure falls back to a
@@ -909,7 +920,14 @@ The active collaborators are:
 
 Notification and external-agent collaborators are not part of current dependency assembly. Internet search and guarded MCP execution are assembled; knowledge ingestion/retrieval is implemented as a local memory store, while a complete RAG pipeline remains `SCAFFOLDED`.
 
-Chat memory capture is a narrow deterministic approval boundary. The conversation service recognizes explicit preferred-name, response-style, person/relationship, reusable workflow, and titled-reference statements and emits at most one typed proposal; the proposal itself is not persisted. A general-fact proposer is the catch-all beneath those shapes: it fires only on an explicit save request that no narrower proposer claimed, keeps the stated fact rather than the instruction wrapping it, and stores it as semantic memory on approval. Without it the structured matchers covered only pre-agreed shapes, so an ordinary fact about the user's life reached no store at all while the assistant reported that it had.
+Chat memory capture is a typed approval boundary. Preferred-name,
+response-style, locality, person/relationship, workflow, titled-reference,
+episodic, and explicit general-fact proposals remain narrow deterministic rules.
+Scout interests use a focused local `ScoutInterestProposalAgent` backed by Qwen
+3.5 4B: it understands natural phrasing, ownership, current-versus-former
+interest, negation, and multi-item lists, then returns at most eight
+grammar-constrained labels. It cannot persist. The proposal remains ephemeral
+until approval atomically creates all facts and Scout projections.
 
 The proposal is decided **before** the answer is generated, and the turn's real save state is rendered into the system prompt. The model has no write tool, so a helpful assistant answering "remember this" claims a save that never happened; telling it only that it cannot write to memory proved insufficient, because it re-expressed the same claim passively ("your personal memory has been updated"). Naming what is actually about to happen, and the sentence to write, removes the thing to route around. Emission over SSE still follows the saved turn. It also proactively proposes an episodic memory when a turn narrates a first-person past-tense event - the only proposer that fires without explicit save intent, so it is the lowest priority (any explicit statement above wins) and is kept high-precision with a curated verb set and a question guard to avoid a nuisance proposal. The frontend explicitly approves or rejects every proposal. Approval uses the existing typed store API with source conversation/trace provenance. The model never receives a durable-write tool, and unrestricted implicit fact extraction remains intentionally unsupported.
 

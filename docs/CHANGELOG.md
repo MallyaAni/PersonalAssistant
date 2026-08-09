@@ -2272,3 +2272,41 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   the new rule is keyed on the plural at the start of a title.
 - 896 backend tests pass; Ruff, Black and MyPy clean; gateway rebuilt and the
   served bundle confirmed to carry the section.
+
+## 2026-08-08 — Semantic chat interests configure Scout
+
+- Replaced Scout's single-value interest regex with a focused local
+  `qwen/qwen3.5-4b` classifier that produces grammar-constrained, bounded
+  multi-interest proposals while understanding ownership, negation, and former
+  interests. Reasoning is disabled so the 128-token budget reaches final JSON.
+- Kept consent application-owned: the classifier cannot write memory or call
+  tools, the browser displays one approval card, and approval atomically writes
+  every approved fact and user-scoped Scout profile projection. Capacity failure
+  maps to a memory conflict and rolls the entire batch back.
+- Fixed Scout subscription UI calls to use the authenticated request boundary;
+  this removed post-login 401s from the Agents view.
+- Verified the exact four-interest sentence through direct authenticated SSE and
+  Chromium, including approval, stream termination, loading cleanup, Scout UI
+  readback, and clean post-login Console/page behavior. A live Scout rehearsal
+  then exercised MCP → Tavily, Nomic ranking, and Qwen descriptions over those
+  interests and an Arlington, Virginia locality.
+- 127 relevant backend tests, two deterministic Scout browser tests, the live
+  authenticated browser test, Ruff, strict MyPy, the production frontend build,
+  and architecture synchronization pass.
+
+## 2026-08-08 — Scout past-event rejection and readable uncertainty verified
+
+- Fixed the web-result boundary that collapsed an explicit past date into the
+  same `None` value as an absent date, allowing a finished event to return as an
+  undated recommendation.
+- Kept genuinely undated links but changed the digest to say plainly that Scout
+  could not confirm their dates instead of using the mechanical `Worth a look —
+  no date given` heading.
+- Repeated the authenticated `ani.mallya` acceptance through live MCP/Tavily,
+  Nomic ranking, the rebuilt API, and Chromium's real **Try it** interaction;
+  the stale candidate was rejected, the new copy rendered, and no blocking
+  browser or backend error occurred.
+- Verified 286 discovery tests, Ruff, strict MyPy, focused Scout browser tests,
+  and the frontend production build. Cleared only the 28 `ani.mallya`
+  `discovery_seen_items` rows afterward at the user's request so the next test
+  begins with an empty seen set.

@@ -5,7 +5,94 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 [ROADMAP.md](ROADMAP.md), and stable architecture facts in
 [ARCHITECTURE.md](ARCHITECTURE.md).
 
-Last updated: 2026-08-08, America/New_York (iMessage bridge Mac-side verification)
+Last updated: 2026-08-08, America/New_York (Scout future-date quality)
+
+## Scout rejects explicitly past search results — VERIFIED
+
+The live `ani.mallya` rehearsal reproduced two user-visible problems: Scout
+returned a prior line-dancing event as an undated possibility, and its message
+opened with the mechanical phrase `Worth a look — no date given`. The first
+failure was at web-result conversion: an explicit date before today and no
+date at all both became `None`, so relevance treated the past event as an
+undated mention.
+
+`WebEventSource` now preserves the distinction long enough to reject an
+explicit date before today. Current and future explicit dates retain their
+typed value; genuinely undated results remain bounded mentions. The fixed
+digest renderer now says either `I found this, but couldn't confirm the date`
+or the plural equivalent instead of implying an undated result is confirmed
+upcoming.
+
+Live authenticated evidence on the rebuilt backend:
+
+- the same non-persisting `ani.mallya` rehearsal exercised four MCP
+  `internet/search_web` calls through Tavily, Nomic embedding/ranking, and the
+  digest renderer with no backend exception;
+- the candidate pool fell from 27 to 26 because the explicitly past result was
+  rejected before ranking;
+- the returned message used the new uncertainty wording and contained no old
+  heading;
+- Chromium opened the real signed-in `ani.mallya` Scout panel, ran **Try it**,
+  rendered the new wording, and reported no blocking Console or page errors;
+- 286 discovery backend tests, Ruff, strict MyPy, five focused Scout browser
+  tests (two passed and three correctly skipped without live credentials), the
+  separately credentialed live browser acceptance, and the frontend production
+  build passed.
+
+At the user's request, all 28 `discovery_seen_items` rows owned by
+`ani.mallya` were deleted after validation so another real test starts clean.
+The scoped count is now zero; `jenos1` and `del_2a87abb15636` rows were left
+unchanged. Interests, locality, schedules, subscriptions, familiar-item
+dismissals, memory, and run history were not deleted.
+
+### Next atomic Scout task
+
+Add and validate geographic result rejection. The live Arlington, Virginia
+rehearsal correctly found local basketball/baseball results but also admitted a
+college-baseball result explicitly located at Globe Life Field in Arlington,
+Texas. Keep query planning and ranking deterministic; reject an explicit place
+that contradicts the active locality/region before it can enter the digest.
+
+## Semantic chat interests now configure Scout — VERIFIED
+
+The original `testuser` failure was at chat capture, not Scout retrieval: the
+profile had no interests because the old single-value regex did not understand
+`My interests are basketball, soccer, baseball, hiking`. That keyword extractor
+has been removed from Scout's production path.
+
+`ScoutInterestProposalAgent` now sends only the current utterance to the local
+`qwen/qwen3.5-4b` vLLM role with grammar-constrained JSON and
+`reasoning_effort=none`. It distinguishes the user's current interests from
+questions, other people's interests, negation, and former interests, and returns
+up to eight labels. It has no persistence or tool capability. Chat shows one
+approval card; approval writes every fact and Scout projection in one database
+transaction. A capacity or projection failure rolls the full batch back.
+
+Live authenticated evidence on the rebuilt backend:
+
+- direct `POST /api/v1/chat` returned a complete SSE stream with one
+  `discovery_interests` proposal containing basketball, soccer, baseball, and
+  hiking;
+- direct approval returned 201 and the owned Scout profile contained exactly
+  those four `user_explicit` interests;
+- Chromium repeated the conversation, approved the card, opened Agents → Scout
+  → Configure, and saw all four strength controls; streaming terminated, the
+  composer re-enabled, and post-login Console/page errors were empty;
+- another profile remained empty in the integration test;
+- a live non-persisting Scout rehearsal in Arlington, Virginia spent four MCP
+  `internet/search_web` requests, each reached Tavily with HTTP 200, Nomic
+  embedded/ranked the candidates, and Qwen produced the visible descriptions.
+
+The browser run also found and fixed an adjacent authenticated Scout UI defect:
+subscription read/write/delete used bare `fetch`, omitted the session cookie,
+and emitted 401s. They now use the shared authenticated request boundary.
+
+Validation: 127 relevant backend tests passed; Ruff and strict MyPy passed; two
+deterministic Scout browser tests passed; the authenticated live Scout browser
+test passed; the frontend production build passed; all 17 canonical diagrams
+and `architecture.html` are synchronized. A combined full-backend/full-browser
+run exceeded its 10-minute orchestration ceiling and ended with a Playwright
+EPIPE, so the complete suites are `UNVERIFIED` for this tree rather than failed.
 
 ## Scout's iMessage channel — VERIFIED working end to end
 

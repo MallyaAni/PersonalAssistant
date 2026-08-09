@@ -27,10 +27,10 @@ from backend.core.llm import LLMClient
 from backend.discovery.service import DiscoveryProfileService
 from backend.mcp.invocation import MCPInvocationError
 from backend.memory.coordinator import MemoryCoordinatorAgent
+from backend.memory.interest_agent import ScoutInterestProposalAgent
 from backend.memory.proposals import (
     propose_entity,
     propose_episodic,
-    propose_interest,
     propose_knowledge,
     propose_locality,
     propose_preferred_name,
@@ -95,6 +95,7 @@ def _memory_proposal(
     query: str,
     conversation_id: str,
     trace_id: str,
+    interest_labels: tuple[str, ...] = (),
 ) -> dict[str, Any] | None:
     preferred_name = propose_preferred_name(query)
     if preferred_name:
@@ -120,11 +121,10 @@ def _memory_proposal(
             "conversation_id": conversation_id,
             "trace_id": trace_id,
         }
-    interest = propose_interest(query)
-    if interest:
+    if interest_labels:
         return {
-            "kind": "discovery_interest",
-            "label": interest,
+            "kind": "discovery_interests",
+            "labels": list(interest_labels),
             "conversation_id": conversation_id,
             "trace_id": trace_id,
         }
@@ -170,6 +170,9 @@ def _memory_proposal(
 def _proposal_summary(proposal: dict[str, Any] | None) -> str:
     if proposal is None:
         return ""
+    labels = proposal.get("labels")
+    if isinstance(labels, list):
+        return ", ".join(str(label) for label in labels)[:200]
     for field in ("content", "value", "canonical_name", "name", "title", "label"):
         value = proposal.get(field)
         if isinstance(value, str) and value.strip():
@@ -200,6 +203,7 @@ class ConversationService:
         presentation_jobs: PresentationJobService | None = None,
         presentation_model: str | None = None,
         discovery_profile: DiscoveryProfileService | None = None,
+        interest_proposals: ScoutInterestProposalAgent | None = None,
     ):
         self.memory = memory
         self.assistant_graph = build_assistant_graph(llm)
@@ -232,6 +236,7 @@ class ConversationService:
         self.presentation_jobs = presentation_jobs
         self.presentation_model = presentation_model
         self.discovery_profile = discovery_profile
+        self.interest_proposals = interest_proposals
 
     # Return the registered subagent selected by the first-step supervisor.
     #
@@ -806,6 +811,28 @@ class ConversationService:
         ):
             yield event
 
+    # Ask the focused local model for user-stated interests without blocking
+    # chat when that secondary classification fails.
+    async def _classify_interest_labels(
+        self,
+        query: str,
+        trace_id: str,
+    ) -> tuple[str, ...]:
+        if self.interest_proposals is None:
+            return ()
+        try:
+            proposal = await self.interest_proposals.propose(query)
+            return proposal.labels if proposal is not None else ()
+        except Exception:
+            # Classification may fail closed, but a secondary memory helper
+            # must never prevent the user's actual conversation response.
+            logger.warning(
+                "Scout interest classification failed for trace %s",
+                trace_id,
+                exc_info=True,
+            )
+            return ()
+
     # Retrieve context, run the primary response model, and persist one turn.
     async def _process_assistant_request(
         self,
@@ -892,8 +919,15 @@ class ConversationService:
         # answered "your personal memory has been updated" - true-sounding,
         # passive, and wrong. A blanket prohibition invites that; a statement of
         # the real save state leaves nothing to route around. The proposal is
-        # pure keyword logic over the query, so computing it here costs nothing.
-        proposal = _memory_proposal(query, conversation_id, trace_id)
+        # Scout interests use a focused local semantic classifier; every other
+        # proposal remains a narrow deterministic boundary.
+        interest_labels = await self._classify_interest_labels(query, trace_id)
+        proposal = _memory_proposal(
+            query,
+            conversation_id,
+            trace_id,
+            interest_labels,
+        )
         context["memory_save"] = {
             "offered": proposal is not None,
             "value": _proposal_summary(proposal),

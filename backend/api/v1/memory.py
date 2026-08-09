@@ -105,6 +105,23 @@ class DiscoveryInterestApprovalRequest(BaseModel):
         return normalized
 
 
+class DiscoveryInterestsApprovalRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    labels: list[str] = Field(min_length=1, max_length=8)
+    source_conversation_id: uuid.UUID
+    source_trace_id: uuid.UUID
+
+    # Trim every proposed topic and reject blank or oversized labels.
+    @field_validator("labels")
+    @classmethod
+    def normalize_labels(cls, values: list[str]) -> list[str]:
+        normalized = [" ".join(value.split()) for value in values]
+        if any(not value or len(value) > MAX_LABEL_CHARS for value in normalized):
+            raise ValueError("interest labels must be non-blank and within bounds")
+        return normalized
+
+
 class DiscoveryLocalityApprovalRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -272,6 +289,24 @@ async def approve_discovery_interest(
             source_trace_id=str(body.source_trace_id),
             expires_at=None,
             metadata={"source": "chat_approval"},
+        )
+    except MemoryConflictError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+# Approve one semantic list and project every interest in one transaction.
+@router.post("/{user_id}/profile/discovery-interests", status_code=201)
+async def approve_discovery_interests(
+    user_id: UserId,
+    body: DiscoveryInterestsApprovalRequest,
+    service: DependencyMemoryService,
+) -> dict[str, Any]:
+    try:
+        return await service.approve_discovery_interests(
+            user_id=user_id,
+            labels=body.labels,
+            source_conversation_id=str(body.source_conversation_id),
+            source_trace_id=str(body.source_trace_id),
         )
     except MemoryConflictError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc

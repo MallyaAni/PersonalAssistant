@@ -171,6 +171,11 @@ Key settings are:
 | `DIAGRAM_LLM_BASE_URL` | blank | Diagram specialist endpoint; blank falls back through main and global endpoints |
 | `DIAGRAM_LLM_MODEL` | blank | Mermaid planning model; current qualified setting is `qwen/qwen3.5-4b` |
 | `DIAGRAM_LLM_REASONING_EFFORT` | `none` | Diagram-role reasoning control |
+| `MEMORY_PROPOSAL_INFERENCE_ADAPTER` | blank | Scout-interest classifier adapter; blank inherits `INFERENCE_ADAPTER` |
+| `MEMORY_PROPOSAL_LLM_BASE_URL` | blank | Scout-interest classifier endpoint; blank falls back through main and global endpoints |
+| `MEMORY_PROPOSAL_LLM_MODEL` | blank | Structured semantic-interest model; current qualified setting is `qwen/qwen3.5-4b` |
+| `MEMORY_PROPOSAL_LLM_REASONING_EFFORT` | `none` | Keep `none` for this bounded call; reasoning can otherwise consume the answer budget |
+| `MEMORY_PROPOSAL_MAX_TOKENS` | `128` | Structured classifier output budget, valid from 32 through 512 |
 | `LLM_API_KEY` | none | Optional Bearer token when the compatible inference server requires one |
 | `LLM_TIMEOUT_SECONDS` | `120` | Provider request timeout in seconds |
 | `EMBEDDING_INFERENCE_ADAPTER` | blank | Embedding-role adapter; blank inherits `INFERENCE_ADAPTER` |
@@ -265,6 +270,9 @@ PRESENTATION_LLM_MODEL=qwen/qwen3.5-4b
 PRESENTATION_LLM_REASONING_EFFORT=none
 DIAGRAM_LLM_MODEL=qwen/qwen3.5-4b
 DIAGRAM_LLM_REASONING_EFFORT=none
+MEMORY_PROPOSAL_LLM_MODEL=qwen/qwen3.5-4b
+MEMORY_PROPOSAL_LLM_REASONING_EFFORT=none
+MEMORY_PROPOSAL_MAX_TOKENS=128
 VISION_INFERENCE_ADAPTER=openai_compatible
 VISION_LLM_BASE_URL=http://127.0.0.1:8003
 VISION_MODEL=qwen/qwen3.5-4b
@@ -909,6 +917,22 @@ The test uses a unique user and removes it through the public memory delete-all
 API. Inspect backend logs afterward for the matching user identifier and any
 exception; HTTP success alone is not sufficient.
 
+For a non-persisting quality rehearsal against an existing signed-in profile,
+issue a short-lived token without printing it and run the focused browser path:
+
+```powershell
+$token = (docker compose exec -T backend python -m backend.cli.issue_token --user ani.mallya --ttl-seconds 900 | Select-Object -Last 1).Trim()
+$env:ANIOS_E2E_LIVE='1'
+$env:ANIOS_E2E_USERNAME='ani.mallya'
+$env:ANIOS_E2E_BEARER_TOKEN=$token
+cd frontend
+.\node_modules\.bin\playwright.cmd test --grep "future-safe Scout wording"
+```
+
+This presses **Try it**, which runs the real search, embedding, description,
+and rendering path with `commit=false`; it must not add seen rows or run
+history. Treat the token as a credential even though it expires quickly.
+
 ### Deterministic and live LLM validation
 
 Keep these checks separate:
@@ -1172,6 +1196,16 @@ npx.cmd playwright test --grep "image conversation routes through generation"
 The cancellation check waits until the owned row is `pending`, presses Cancel, then requires `failed` with `error_code=cancelled`, a matching ComfyUI `/interrupt`, no backend exception, cleared UI loading, and scoped cleanup.
 
 For the supported preferred-name workflow, submit a statement such as `My preferred name is Validation Name.` For response style, use a narrow statement such as `Please be concise.` Neither proposal writes memory. Approve through the browser; preferred names use `/profile/preferred-name`, while response style uses the generic `/facts` endpoint. Verify rejection-without-write, approval, correction/supersession, projection, expiry, and deletion.
+
+For Scout-interest capture, submit `My interests are basketball, soccer,
+baseball, hiking`. Require one `discovery_interests` SSE proposal containing all
+four labels, no write before approval, and one successful request to
+`/profile/discovery-interests`. Then open Agents → Scout → Configure and require
+all four strength controls. Inspect the backend environment for
+`MEMORY_PROPOSAL_LLM_MODEL=qwen/qwen3.5-4b` and
+`MEMORY_PROPOSAL_LLM_REASONING_EFFORT=none`; a value only in `.env` is not
+evidence. A negative phrase such as `My daughter likes ballet, but I do not`
+must produce no interest proposal.
 
 To validate conversation history, send two requests with the same `user_id` and `conversation_id`, put a unique fact only in the first query, and require the second response to reproduce it. Confirm the two rows share that conversation ID, the traces differ per request, and the second prompt itself does not contain the expected fact.
 

@@ -1,36 +1,32 @@
 ---
-title: Scout — what the agent decides, and what it does not
+title: Scout Agent Responsibilities
 ---
 flowchart TB
-    Clock([Schedule slot, user's own timezone]) --> Producer[Exactly-once slot claim]
-    Producer --> Sweep[Leased sweep]
+    Statement([User states interests]) --> Extract[Qwen 3.5 4B<br/>extracts explicit interests]
+    Extract --> Review{Visible approval}
+    Review -->|approved| Profile[(User-scoped Scout profile)]
+    Review -->|dismissed| NoWrite[Nothing saved]
 
-    Sweep --> Read{Where to read}
-    Read -->|feeds scoped to this place| Feeds[iCalendar Â· RSS Â· curated link page]
-    Read -->|one query per interest, bounded| Web[Web search]
+    Trigger([Schedule or Look now]) --> Sweep[Scout sweep]
+    Profile --> Sweep
+    Sweep --> Sources[Feeds and bounded<br/>MCP/Tavily searches]
+    Sources --> Safety[Structural filtering<br/>novelty · familiarity]
+    Safety --> Ranking[Nomic semantic ranking<br/>interest strength]
+    Ranking --> Description[Qwen 3.5 4B<br/>writes descriptions]
+    Description --> Digest[Digest and calendar]
 
-    Feeds --> Filter[Structural listing filter<br/>directories Â· ads Â· social]
-    Web --> Filter
-    Filter --> Novel[Novelty: identity, then near-duplicate]
-    Novel --> Known[Familiarity: what you said you know]
-    Known --> Rank[Deterministic ranking<br/>best single interest Ã— strength]
-    Rank --> Unusual[Unlikeness pass<br/>at most two, matching no interest]
-
-    Unusual --> Write[Model writes each description]
-    Write --> Digest[Digest assembled from typed records]
-    Digest --> Egress[Outbound permission Â· consent Â· approval]
-    Egress --> Bridge[Mac bridge Â· allowlist]
-
-    Decides[The model decides one thing:<br/>how a find reads.<br/>What qualifies is deterministic]
-    Decides -.-> Write
+    Rule[Application code owns persistence,<br/>qualification, budgets and delivery]
+    Rule -.-> Review
+    Rule -.-> Safety
+    Rule -.-> Ranking
 
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
     classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
-    classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
+    classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
-    class Clock interface;
-    class Producer,Sweep,Read,Filter,Novel,Known,Rank,Unusual,Digest,Egress application;
-    class Feeds,Web,Bridge external;
-    class Write data;
-    class Decides warning;
+    class Statement,Review,NoWrite,Trigger,Digest interface;
+    class Sweep,Sources,Safety,Ranking application;
+    class Profile data;
+    class Extract,Description model;
+    class Rule warning;

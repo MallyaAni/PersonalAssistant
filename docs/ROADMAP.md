@@ -354,11 +354,15 @@ Deliver as separately verified atomic stages, in this order:
   value can never be written as though the user asked for it, and the interest
   list is bounded because every label is eligible to enter a prompt. Coordinates
   are deliberately not stored until a source needs them. Live-verified: the
-  profile round-trips through the owned API, a delete with another user's
-  identifier returns 404 without removing the row, and an ordinary chat turn
-  answered from the profile alone. Explicit chat statements about home and
-  interests now produce approval cards; approval writes the memory fact and
-  Scout projection, while panel edits record the same approved fact.
+  profile round-trips through the owned API and a delete with another user's
+  identifier returns 404 without removing the row. Explicit chat statements
+  about home produce deterministic approval cards. A local Qwen 3.5 4B
+  classifier semantically recognizes explicit current user interests—including
+  natural phrasing, negation, ownership, and lists—and proposes up to eight at
+  once; one approval writes the facts and Scout projections atomically, while
+  panel edits record the same approved fact. A live authenticated browser run
+  projected basketball, soccer, baseball, and hiking from one chat statement
+  into Scout with no post-login console or page errors.
 
   `VERIFIED` profile-control closure: export and delete-all cover all eight
   discovery table families; familiar-item dismissals are reviewable and
@@ -431,6 +435,11 @@ Deliver as separately verified atomic stages, in this order:
   something strongly matching one stated interest — and must clear a floor and a
   lead-time window to be shown at all. An empty digest is a better outcome than
   a padded one.
+
+  Explicit dates before the current day are rejected during web-result
+  conversion rather than collapsed into the genuinely undated mention path.
+  Undated links remain bounded and are labeled as date-unconfirmed in the
+  user-facing digest.
 
   Live-verified against a real public calendar: 42 events yielded 34 novel
   candidates and 1 selection, and an immediately repeated sweep over the

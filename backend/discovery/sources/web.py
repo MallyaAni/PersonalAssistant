@@ -208,6 +208,7 @@ def _events_from(
     return events
 
 
+# Convert one search result while refusing a date the source says has passed.
 def _to_event(
     source_id: str, title: str, content: str, url: str
 ) -> DiscoveredEvent | None:
@@ -215,6 +216,10 @@ def _to_event(
     if cleaned_title is None:
         return None
     summary = clean_text(content, MAX_SUMMARY_CHARS)
+    date_text = f"{cleaned_title} {summary or ''}"
+    stated_date = _extract_stated_date(date_text)
+    if stated_date is not None and stated_date.date() < datetime.now(UTC).date():
+        return None
     return DiscoveredEvent(
         source_id=source_id,
         # The URL is the only stable identity a search result has; two feeds
@@ -222,7 +227,7 @@ def _to_event(
         external_id=url,
         title=cleaned_title,
         # Read, never inferred. None means "worth showing, cannot be scheduled".
-        starts_at=extract_explicit_date(f"{cleaned_title} {summary or ''}"),
+        starts_at=stated_date,
         ends_at=None,
         place=clean_text(None, MAX_PLACE_CHARS),
         url=url,
@@ -238,6 +243,14 @@ def _to_event(
 # rather than claiming a start nobody published.
 def extract_explicit_date(text: str, now: datetime | None = None) -> datetime | None:
     moment = now or datetime.now(UTC)
+    parsed = _extract_stated_date(text)
+    if parsed is None or parsed.date() < moment.date():
+        return None
+    return parsed
+
+
+# Parse the first explicit calendar date without deciding whether it is current.
+def _extract_stated_date(text: str) -> datetime | None:
     for pattern in _DATE_PATTERNS:
         match = pattern.search(text)
         if match is None:
@@ -256,9 +269,6 @@ def extract_explicit_date(text: str, now: datetime | None = None) -> datetime | 
                 int(groups["y"]), month_number, int(groups["d"]), tzinfo=UTC
             )
         except ValueError:
-            continue
-        # A page describing last year's hike is not an upcoming event.
-        if parsed < moment:
             continue
         return parsed
     return None

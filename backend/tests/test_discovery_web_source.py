@@ -84,6 +84,32 @@ def test_a_past_date_is_not_an_upcoming_event():
     assert extract_explicit_date("Trail cleanup March 3, 2026", now=_NOW) is None
 
 
+# Verify an explicitly old result is rejected instead of being relabeled undated.
+@pytest.mark.asyncio
+async def test_a_result_with_an_explicit_past_date_is_not_returned():
+    search = _StubSearch(
+        [
+            (
+                "Museum afterhours",
+                "https://museum.example/afterhours",
+                "This event took place on July 21, 2020.",
+            ),
+            (
+                "Museum late night September 12, 2099",
+                "https://museum.example/late-night",
+                "An evening programme at the museum.",
+            ),
+        ]
+    )
+    source = WebEventSource("web-search", search, "Arlington", ("museums",))
+
+    events = await source.fetch()
+
+    assert [event.title for event in events] == [
+        "Museum late night September 12, 2099"
+    ]
+
+
 @pytest.mark.asyncio
 async def test_results_become_events_and_undated_ones_stay_unschedulable():
     search = _StubSearch(
@@ -237,9 +263,9 @@ def test_the_digest_separates_datable_events_from_mentions():
 
     assert message is not None
     assert "Coming up near you:" in message
-    assert "Worth a look — no date given:" in message
+    assert "I found this, but couldn't confirm the date:" in message
     # A mention carries a link, never a calendar entry: nobody said when it is.
-    added = message.split("Worth a look")[1]
+    added = message.split("couldn't confirm the date:")[1]
     assert "Add:" not in added
     assert "https://example.org/Weekly group walks" in added
 
@@ -250,4 +276,4 @@ def test_a_digest_of_only_mentions_is_still_worth_sending():
 
     assert message is not None
     assert "Coming up near you:" not in message
-    assert "Worth a look" in message
+    assert "I found this, but couldn't confirm the date:" in message

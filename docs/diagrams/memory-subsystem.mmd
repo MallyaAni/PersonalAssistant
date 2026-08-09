@@ -5,6 +5,8 @@ flowchart TB
     Chat([Chat turn])
     UI([Memory and Scout UI])
 
+    Proposal[Qwen 3.5 4B<br/>semantic interest proposal]
+    Review{Visible approval}
     Coordinator[MemoryCoordinatorAgent]
     Services[Application-owned services and write policy<br/>user scope · consent where required]
     Retrieval[Scope, expiry,<br/>relevance and dedup]
@@ -21,6 +23,7 @@ flowchart TB
 
     Main[Qwen 3.5 4B<br/>assistant call via vLLM]
 
+    Chat --> Proposal --> Review --> Services
     Chat --> Coordinator
     UI --> Services
     Coordinator --> Services
@@ -42,7 +45,7 @@ flowchart TB
     classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
-    class Chat,UI interface;
+    class Chat,UI,Review interface;
     class Coordinator,Services,Retrieval,Context,Inference,Maintenance,Discovery application;
     class Short,Long,Database data;
-    class TextEmbed,Main model;
+    class TextEmbed,Main,Proposal model;
