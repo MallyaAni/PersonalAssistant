@@ -1387,6 +1387,7 @@ export async function* streamChat(userId: string, conversationId: string, query:
             'procedure',
             'knowledge',
             'episodic',
+            'semantic_fact',
           ]
             .includes(String(kind)) ||
           typeof proposalConversationId !== 'string' ||
@@ -1482,13 +1483,13 @@ export async function* streamChat(userId: string, conversationId: string, query:
             conversation_id: proposalConversationId,
             trace_id: proposalTraceId,
           }
-        } else if (kind === 'episodic') {
+        } else if (kind === 'episodic' || kind === 'semantic_fact') {
           const { content } = event.data
           if (typeof content !== 'string' || !content.trim()) {
-            throw new Error('Episodic memory proposal is invalid')
+            throw new Error('Text memory proposal is invalid')
           }
           proposal = {
-            kind: 'episodic',
+            kind,
             content,
             conversation_id: proposalConversationId,
             trace_id: proposalTraceId,

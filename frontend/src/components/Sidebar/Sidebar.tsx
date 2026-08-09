@@ -186,7 +186,14 @@ const Sidebar: React.FC<SidebarProps> = ({
         {canSignOut && onSignOut && (
           // Keep account identity beside the exit action so a phone user can
           // verify which Scout profile is active before changing its settings.
-          <section aria-label="Account controls" className="rounded-2xl bg-[#f5f5f7] px-3 py-3">
+          //
+          // Drawer widths only. From md this sidebar is part of the layout and
+          // sits beside a header that carries both, so rendering them here too
+          // put two sign-out buttons on screen at once.
+          <section
+            aria-label="Account controls"
+            className="rounded-2xl bg-[#f5f5f7] px-3 py-3 md:hidden"
+          >
             <p className="truncate px-1 text-xs text-[#6e6e73]">Signed in as {userId}</p>
             <button
               type="button"

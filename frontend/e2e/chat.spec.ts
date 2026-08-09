@@ -127,6 +127,36 @@ function chatEventStream(
   return frames.join('\n')
 }
 
+// Build one deterministic chat response containing several approval proposals.
+function multiProposalEventStream(
+  traceId: string,
+  conversationId: string,
+  response: string,
+  proposals: Array<Record<string, unknown>>,
+) {
+  const frames = [
+    'event: start',
+    `data: ${JSON.stringify({ trace_id: traceId, conversation_id: conversationId })}`,
+    '',
+    'event: delta',
+    `data: ${JSON.stringify({ content: response })}`,
+    '',
+  ]
+  for (const proposal of proposals) {
+    frames.push(
+      'event: memory_proposal',
+      `data: ${JSON.stringify({
+        ...proposal,
+        conversation_id: conversationId,
+        trace_id: traceId,
+      })}`,
+      '',
+    )
+  }
+  frames.push('event: done', 'data: {}', '', '')
+  return frames.join('\n')
+}
+
 // Build one deterministic MCP lifecycle followed by a completed chat answer.
 function toolEventStream(
   conversationId: string,
@@ -381,9 +411,16 @@ test('requires invite credentials before showing the private workspace', async (
 
   await page.getByLabel('Password').fill('correct test password')
   await page.getByRole('button', { name: 'Continue' }).click()
-  await expect(page.getByText('Signed in as friend.user')).toBeVisible()
+  // Rendered twice by design — the mobile drawer and the desktop header —
+  // so this asserts on one of them rather than on the page.
+  await expect(
+    page.getByRole('main').getByText('Signed in as friend.user'),
+  ).toBeVisible()
   await expect(page.getByLabel('Message AniOS')).toBeVisible()
-  await page.getByRole('button', { name: 'Sign out' }).click()
+  // Two sign-out controls exist on purpose: a labelled row in the mobile
+  // drawer and an icon button in the desktop header. This is the desktop
+  // viewport, so it clicks the icon.
+  await page.getByLabel('Sign out').click()
   await expect(page.getByRole('heading', { name: 'Sign in to AniOS' })).toBeVisible()
   await expect(page.getByLabel('Message AniOS')).not.toBeVisible()
   expect(errors.pageErrors).toEqual([])
@@ -392,46 +429,47 @@ test('requires invite credentials before showing the private workspace', async (
 })
 
 // Verify invited profile creation validates secrets and enters the owned workspace.
-test('creates a profile with a one-time invitation from the login screen', async ({ page }) => {
+test('records an access request instead of creating an account outright', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
-  let registrationPayload: Record<string, string> | null = null
+  let requestPayload: Record<string, unknown> | null = null
   await page.unroute('http://localhost:8000/api/v1/auth/session')
   await page.route('http://localhost:8000/api/v1/auth/session', route => route.fulfill({
     status: 401,
     contentType: 'application/json',
     body: JSON.stringify({ detail: 'Authentication required' }),
   }))
-  await page.route('http://localhost:8000/api/v1/auth/register', async route => {
-    registrationPayload = route.request().postDataJSON() as Record<string, string>
+  await page.route('http://localhost:8000/api/v1/auth/request-access', async route => {
+    requestPayload = route.request().postDataJSON() as Record<string, unknown>
     await route.fulfill({
-      status: 200,
+      status: 201,
       contentType: 'application/json',
-      headers: { 'Set-Cookie': 'anios_session=registration-test; Path=/; HttpOnly; SameSite=Lax' },
-      body: JSON.stringify({
-        authentication_required: true,
-        user_id: 'new.friend',
-        expires_at: '2026-08-09T00:00:00Z',
-      }),
+      body: JSON.stringify({ request_token: 'pending-token', status: 'pending' }),
     })
   })
 
   await page.goto('/')
-  await page.getByRole('button', { name: 'Create an invited profile' }).click()
+  await page.getByRole('button', { name: 'Request an account' }).click()
   await expect(page.getByRole('heading', { name: 'Create your profile' })).toBeVisible()
   await page.getByLabel('Username').fill('new.friend')
   await page.getByLabel('Password', { exact: true }).fill('a sufficiently long password')
   await page.getByLabel('Confirm password').fill('a different long password')
-  await page.getByLabel('Invitation code').fill('one-time-invitation-code')
-  await page.getByRole('button', { name: 'Create profile' }).click()
+  await page.getByRole('button', { name: 'Request access' }).click()
   await expect(page.getByRole('alert')).toContainText('Passwords do not match')
 
   await page.getByLabel('Confirm password').fill('a sufficiently long password')
-  await page.getByRole('button', { name: 'Create profile' }).click()
-  await expect(page.getByText('Signed in as new.friend')).toBeVisible()
-  expect(registrationPayload).toEqual({
+  await page.getByLabel('Your name').fill('New Friend')
+  await page.getByRole('button', { name: 'Request access' }).click()
+
+  // Signing up does not sign you in. The owner has to approve the request
+  // before the account exists at all, and the screen has to say so rather than
+  // implying a workspace is waiting.
+  await expect(page.getByRole('heading', { name: 'Request sent' })).toBeVisible()
+  await expect(page.getByLabel('Message AniOS')).not.toBeVisible()
+  expect(requestPayload).toEqual({
+    display_name: 'New Friend',
     username: 'new.friend',
     password: 'a sufficiently long password',
-    invite_code: 'one-time-invitation-code',
+    reason: null,
   })
   expect(errors.pageErrors).toEqual([])
   expect(errors.consoleErrors.every(message => message.includes('401 (Unauthorized)'))).toBe(true)
@@ -661,6 +699,56 @@ test('renders a responsive search-first chat shell', async ({ page }) => {
 
 // Keep the active account and logout action explicit on a phone, where the
 // compact header otherwise makes it easy to configure Scout under the wrong user.
+// Count how many of a locator's matches are actually on screen. Playwright's
+// own visibility rules, rather than offsetParent, which reports null for a
+// fixed-position element and would call the mobile drawer invisible.
+const countVisible = async (locator: import('@playwright/test').Locator) => {
+  const total = await locator.count()
+  let visible = 0
+  for (let index = 0; index < total; index += 1) {
+    if (await locator.nth(index).isVisible()) visible += 1
+  }
+  return visible
+}
+
+// Exactly one way to sign out, and one statement of who is signed in.
+//
+// The sidebar rendered account controls and the header rendered its own, gated
+// on different breakpoints: the header on sm, the sidebar's on nothing at all.
+// Since the sidebar opens by default from 768px, every desktop window showed
+// two sign-out buttons and two identity lines. One test per width, because each
+// needs a fresh mount: the sidebar decides whether it is a drawer once, at
+// mount, from the width it sees then.
+for (const width of [1440, 1024, 820, 768]) {
+  test(`offers one identity and one sign-out at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await page.goto('/')
+    await expect(page.getByRole('heading', { name: 'AniOS' })).toBeVisible()
+
+    // The sidebar's copy is display:none from md, so it leaves the
+    // accessibility tree entirely rather than merely sitting off screen.
+    await expect(page.getByRole('button', { name: 'Sign out' })).toHaveCount(1)
+    await expect(countVisible(page.getByText(/^Signed in as /))).resolves.toBe(1)
+  })
+}
+
+for (const width of [700, 640, 500, 390]) {
+  test(`keeps identity and sign-out in the drawer at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await page.goto('/')
+    await expect(page.getByRole('heading', { name: 'AniOS' })).toBeVisible()
+
+    // Below md the header shows neither; the menu button is the way in.
+    await expect(countVisible(page.getByRole('button', { name: 'Sign out' }))).resolves.toBe(0)
+    await page.getByRole('button', { name: 'Show Sidebar' }).click()
+
+    const drawer = page.getByRole('region', { name: 'Account controls' })
+    await expect(drawer.getByRole('button', { name: 'Sign out' })).toBeVisible()
+    await expect(drawer.getByText(/^Signed in as /)).toBeVisible()
+    await expect(countVisible(page.getByRole('button', { name: 'Sign out' }))).resolves.toBe(1)
+  })
+}
+
 test('shows mobile account identity and logout in the navigation drawer', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   await page.setViewportSize({ width: 390, height: 844 })
@@ -1412,7 +1500,9 @@ test('renders a visible error and clears loading state when chat fails', async (
 
   await expect(page.getByText('Thinking...', { exact: true })).toBeVisible()
   rejectRequest()
-  await expect(page.getByText('Unable to send message. Please try again.', { exact: true })).toBeVisible()
+  await expect(
+    page.getByText('AniOS did not respond, so nothing was sent.', { exact: false }),
+  ).toBeVisible()
   await expect(page.getByText('Thinking...', { exact: true })).not.toBeVisible()
   await expect(page.getByRole('paragraph').filter({ hasText: uniqueMessage })).toBeVisible()
   await expect(textarea).toBeEnabled()
@@ -1664,6 +1754,161 @@ test('approves a semantic interest list for Scout from chat', async ({ page }) =
     source_conversation_id: expect.any(String),
     source_trace_id: 'semantic-interest-trace',
   }])
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// A proposal belongs to the turn that produced it, and must not outlive it.
+//
+// The queue that lets one message offer several facts has no other exit: each
+// approval or dismissal removes exactly one entry. Ignoring a card and carrying
+// on left it on screen for the rest of the conversation, growing by one every
+// time another fact was noticed, and offering to save facts about a message
+// several turns old.
+test('retires an ignored proposal when the next turn begins', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  let turn = 0
+
+  await page.route('http://localhost:8000/api/v1/chat', async route => {
+    const payload = route.request().postDataJSON()
+    turn += 1
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body: multiProposalEventStream(
+        `turn-${turn}-trace`,
+        payload.conversation_id,
+        turn === 1 ? 'Nice to meet you, Jen.' : 'Noted.',
+        turn === 1
+          ? [{ kind: 'preferred_name', value: 'Jen' }]
+          : [{ kind: 'response_style', value: 'concise' }],
+      ),
+    })
+  })
+
+  await page.goto('/')
+  const { textarea, sendButton } = chatControls(page)
+  await textarea.fill('hi my name is Jen')
+  await sendButton.click()
+  await expect(page.getByLabel('Preferred name memory proposal')).toContainText('Jen')
+
+  // Ignore it entirely and send another message.
+  await textarea.fill('please keep answers concise')
+  await sendButton.click()
+
+  await expect(page.getByLabel('Response style memory proposal')).toContainText('concise')
+  // The first turn's card is gone rather than queued behind this one, so there
+  // is one proposal to answer and no "approve all".
+  await expect(page.getByText('Also ready to save:')).not.toBeVisible()
+  await expect(page.getByRole('button', { name: /Approve all/ })).not.toBeVisible()
+  // The name card itself is gone. "Jen" is still in the transcript, which is
+  // why this asserts on the proposal rather than on the text.
+  await expect(page.getByLabel('Preferred name memory proposal')).not.toBeVisible()
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+
+// Keep both profile proposals actionable when one introduction contains both facts.
+test('approves a name and Scout interests from one chat turn', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const approvals: Array<{ path: string; body: Record<string, unknown> }> = []
+
+  await page.route('http://localhost:8000/api/v1/chat', async route => {
+    const payload = route.request().postDataJSON()
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body: multiProposalEventStream(
+        'multi-profile-trace',
+        payload.conversation_id,
+        'Nice to meet you, Jen.',
+        [
+          { kind: 'preferred_name', value: 'Jen' },
+          {
+            kind: 'discovery_interests',
+            labels: ['acting', 'theater', 'networking events'],
+          },
+        ],
+      ),
+    })
+  })
+  await page.route(
+    /http:\/\/localhost:8000\/api\/v1\/memory\/[^/]+\/profile\/(preferred-name|discovery-interests)/,
+    async route => {
+      approvals.push({
+        path: new URL(route.request().url()).pathname,
+        body: route.request().postDataJSON(),
+      })
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ facts: [], deduplicated: [] }),
+      })
+    },
+  )
+
+  await page.goto('/')
+  const { textarea, sendButton } = chatControls(page)
+  await textarea.fill('hi my name is Jen and i like acting, theater, networking events')
+  await sendButton.click()
+
+  await expect(page.getByLabel('Preferred name memory proposal')).toContainText('Jen')
+  await expect(page.getByText('Also ready to save:')).toBeVisible()
+  await expect(page.getByLabel('Preferred name memory proposal')).toContainText(
+    'acting, theater, networking events',
+  )
+  await page.getByRole('button', { name: 'Approve all 2' }).click()
+  await expect(page.getByText('Saved 2 profile memories.')).toBeVisible()
+  await expect(page.getByLabel('Preferred name memory proposal')).not.toBeVisible()
+
+  expect(approvals).toHaveLength(2)
+  expect(approvals[0].body).toMatchObject({ name: 'Jen' })
+  expect(approvals[1].body).toMatchObject({
+    labels: ['acting', 'theater', 'networking events'],
+  })
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// Parse and approve a semantically selected general fact without dropping the stream.
+test('approves a semantic fact proposal from chat', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  let approval: Record<string, unknown> | null = null
+  await page.route('http://localhost:8000/api/v1/chat', async route => {
+    const payload = route.request().postDataJSON()
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body: chatEventStream(
+        'semantic-fact-trace',
+        payload.conversation_id,
+        'I prepared that fact for review.',
+        undefined,
+        undefined,
+        { kind: 'semantic_fact', content: 'My dog is called Biscuit.' },
+      ),
+    })
+  })
+  await page.route('http://localhost:8000/api/v1/memory/*/semantic', async route => {
+    approval = route.request().postDataJSON()
+    await route.fulfill({
+      status: 201,
+      contentType: 'application/json',
+      body: JSON.stringify({ id: 'semantic-fact-id' }),
+    })
+  })
+
+  await page.goto('/')
+  const { textarea, sendButton } = chatControls(page)
+  await textarea.fill('Please keep track of what my dog is called.')
+  await sendButton.click()
+  await expect(page.getByLabel('Fact memory proposal')).toContainText(
+    'My dog is called Biscuit.',
+  )
+  await page.getByRole('button', { name: 'Approve fact' }).click()
+  await expect(page.getByText('Saved fact: My dog is called Biscuit.')).toBeVisible()
+  expect(approval).toMatchObject({
+    content: 'My dog is called Biscuit.',
+    purpose: 'chat_approval',
+  })
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
@@ -4048,7 +4293,11 @@ test('reports a location without changing where the user lives', async ({ page }
   await page.getByRole('button', { name: 'Configure' }).click()
   await page.getByRole('button', { name: 'Use my location' }).click()
 
-  await expect(page.getByText('Looking around Denver')).toBeVisible()
+  // The chat banner and the Scout status line both say this; assert on the
+  // banner rather than on whichever the page happens to render first.
+  await expect(
+    page.getByText('Looking around Denver, Colorado for now.'),
+  ).toBeVisible()
   // The whole point: home is untouched, so the memory fact behind it is too.
   expect(localities[0].is_primary).toBe(true)
   expect(localities[0].label).toBe('Arlington')

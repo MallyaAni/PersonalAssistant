@@ -118,7 +118,13 @@ const AuthenticatedApp = ({ auth, onSignedOut }: AuthenticatedAppProps) => {
             <span className="anios-wordmark flex h-9 w-9 flex-none items-center justify-center rounded-xl text-sm font-semibold text-white">A</span>
             <div className="min-w-0">
               <h1 className="truncate text-[17px] font-semibold tracking-[-0.02em]">AniOS</h1>
-              <p className="hidden text-xs text-[#6e6e73] sm:block">Signed in as {userId}</p>
+              {/* Account identity and sign-out live in exactly one place at any
+                  width. Below md the sidebar is a drawer and owns them; from md
+                  it is part of the layout, but it can also be collapsed, so the
+                  header owns them there instead. Both were previously gated on
+                  sm while the sidebar's copy was gated on nothing at all, so
+                  every desktop window opened showing two of each. */}
+              <p className="hidden text-xs text-[#6e6e73] md:block">Signed in as {userId}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -134,7 +140,7 @@ const AuthenticatedApp = ({ auth, onSignedOut }: AuthenticatedAppProps) => {
               <button
                 aria-label="Sign out"
                 onClick={() => void signOut()}
-                className="hidden h-10 w-10 items-center justify-center rounded-full border border-black/[0.08] bg-white text-[#1d1d1f] hover:bg-[#f5f5f7] sm:flex"
+                className="hidden h-10 w-10 items-center justify-center rounded-full border border-black/[0.08] bg-white text-[#1d1d1f] hover:bg-[#f5f5f7] md:flex"
               >
                 <LogOut size={17} />
               </button>

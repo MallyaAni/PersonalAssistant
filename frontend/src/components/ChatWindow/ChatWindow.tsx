@@ -174,7 +174,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   restoreConversation,
 }) => {
   const [messages, setMessages] = useState<Message[]>([])
-  const [memoryProposal, setMemoryProposal] = useState<MemoryProposal | null>(null)
+  const [memoryProposals, setMemoryProposals] = useState<MemoryProposal[]>([])
   const [memoryNotice, setMemoryNotice] = useState('')
   const [memoryError, setMemoryError] = useState('')
   const [isSavingMemory, setIsSavingMemory] = useState(false)
@@ -217,6 +217,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   // Append a complete user or assistant message to the transcript.
   const handleNewMessage = (role: 'user' | 'assistant', content: string) => {
     setMessages(prev => [...prev, { role, content }])
+    // A new turn retires the previous turn's unanswered proposals. They were
+    // about the message before this one, and the queue has no other way to end:
+    // approving and dismissing each remove one entry, so ignoring a card and
+    // carrying on would otherwise leave it on screen for the rest of the
+    // conversation, growing by one every time another fact was noticed.
+    if (role === 'user') {
+      setMemoryProposals([])
+    }
   }
 
   // Append streamed assistant text to the latest response.
@@ -232,12 +240,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     })
   }
 
-  // Display a memory proposal for explicit user approval.
+  // Queue each memory proposal so a multi-fact message loses none of them.
   const handleMemoryProposal = (proposal: MemoryProposal) => {
-    setMemoryProposal(proposal)
+    setMemoryProposals(current => [...current, proposal])
     setMemoryNotice('')
     setMemoryError('')
   }
+
+  const memoryProposal = memoryProposals[0] ?? null
 
   // Mark the latest assistant response as actively generating a diagram.
   const handleArtifactStarted = (artifactId: string) => {
@@ -487,40 +497,73 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       : message))
   }
 
+  // Persist one approved proposal through its typed memory endpoint.
+  const saveMemoryProposal = async (proposal: MemoryProposal) => {
+      if (proposal.kind === 'preferred_name') {
+        await approvePreferredName(userId, proposal)
+      } else if (proposal.kind === 'response_style') {
+        await approveResponseStyle(userId, proposal)
+      } else if (proposal.kind === 'discovery_interest') {
+        await approveDiscoveryInterest(userId, proposal)
+      } else if (proposal.kind === 'discovery_interests') {
+        await approveDiscoveryInterests(userId, proposal)
+      } else if (proposal.kind === 'discovery_locality') {
+        await approveDiscoveryLocality(userId, proposal)
+      } else if (proposal.kind === 'entity') {
+        await approveEntity(userId, proposal)
+      } else if (proposal.kind === 'procedure') {
+        await approveProcedure(userId, proposal)
+      } else if (proposal.kind === 'episodic') {
+        await approveEpisodic(userId, proposal)
+      } else if (proposal.kind === 'semantic_fact') {
+        await approveSemanticFact(userId, proposal)
+      } else {
+        await approveKnowledge(userId, proposal)
+      }
+  }
+
   // Save the visible memory proposal after the user approves it.
   const approveMemoryProposal = async () => {
     if (!memoryProposal || isSavingMemory) return
     setIsSavingMemory(true)
     setMemoryError('')
     try {
-      if (memoryProposal.kind === 'preferred_name') {
-        await approvePreferredName(userId, memoryProposal)
-      } else if (memoryProposal.kind === 'response_style') {
-        await approveResponseStyle(userId, memoryProposal)
-      } else if (memoryProposal.kind === 'discovery_interest') {
-        await approveDiscoveryInterest(userId, memoryProposal)
-      } else if (memoryProposal.kind === 'discovery_interests') {
-        await approveDiscoveryInterests(userId, memoryProposal)
-      } else if (memoryProposal.kind === 'discovery_locality') {
-        await approveDiscoveryLocality(userId, memoryProposal)
-      } else if (memoryProposal.kind === 'entity') {
-        await approveEntity(userId, memoryProposal)
-      } else if (memoryProposal.kind === 'procedure') {
-        await approveProcedure(userId, memoryProposal)
-      } else if (memoryProposal.kind === 'episodic') {
-        await approveEpisodic(userId, memoryProposal)
-      } else if (memoryProposal.kind === 'semantic_fact') {
-        await approveSemanticFact(userId, memoryProposal)
-      } else {
-        await approveKnowledge(userId, memoryProposal)
-      }
+      await saveMemoryProposal(memoryProposal)
       setMemoryNotice(
         `Saved ${proposalType(memoryProposal)}: ${proposalValue(memoryProposal)}`,
       )
-      setMemoryProposal(null)
+      setMemoryProposals(current => current.slice(1))
     } catch (error) {
       setMemoryError(
         error instanceof Error ? error.message : 'Unable to save memory.',
+      )
+    } finally {
+      setIsSavingMemory(false)
+    }
+  }
+
+  // Save every visible queued fact while retaining anything after a failed write.
+  const approveAllMemoryProposals = async () => {
+    if (memoryProposals.length < 2 || isSavingMemory) return
+    const pending = [...memoryProposals]
+    let savedCount = 0
+    setIsSavingMemory(true)
+    setMemoryError('')
+    try {
+      for (const proposal of pending) {
+        await saveMemoryProposal(proposal)
+        savedCount += 1
+      }
+      setMemoryProposals(current => current.filter(item => !pending.includes(item)))
+      setMemoryNotice(`Saved ${savedCount} profile memories.`)
+    } catch (error) {
+      const saved = pending.slice(0, savedCount)
+      setMemoryProposals(current => current.filter(item => !saved.includes(item)))
+      setMemoryNotice(savedCount ? `Saved ${savedCount} profile memories.` : '')
+      setMemoryError(
+        error instanceof Error
+          ? `Could not save the remaining memories. ${error.message}`
+          : 'Could not save the remaining memories.',
       )
     } finally {
       setIsSavingMemory(false)
@@ -532,7 +575,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     const type = memoryProposal ? proposalType(memoryProposal) : ''
     setMemoryNotice(type ? `${type[0].toUpperCase()}${type.slice(1)} was not saved.` : '')
     setMemoryError('')
-    setMemoryProposal(null)
+    setMemoryProposals(current => current.slice(1))
   }
 
   const hasMessages = messages.length > 0
@@ -584,11 +627,33 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             Save <strong>{proposalValue(memoryProposal)}</strong> as {proposalType(memoryProposal)} memory?
           </p>
           <p className="mt-1 text-sm text-[#6e6e73]">Nothing is saved until you approve.</p>
+          {memoryProposals.length > 1 && (
+            <div className="mt-2 rounded-xl bg-[#f5f5f7] px-3 py-2 text-sm text-[#6e6e73]">
+              <p className="font-medium text-[#1d1d1f]">Also ready to save:</p>
+              <ul className="mt-1 list-disc pl-5">
+                {/* One turn shares one trace, so kind and trace together are
+                    not unique the moment a message yields two facts of the same
+                    kind — which is the case this queue exists for. */}
+                {memoryProposals.slice(1).map((proposal, index) => (
+                  <li key={`${proposal.trace_id}-${proposal.kind}-${index}`}>
+                    {proposalType(proposal)}: {proposalValue(proposal)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div className="mt-3 flex gap-2">
+            {memoryProposals.length > 1 && (
+              <button
+                onClick={() => void approveAllMemoryProposals()}
+                disabled={isSavingMemory}
+                className="rounded-full bg-[#0071e3] px-4 py-2 text-sm font-medium text-white hover:bg-[#0077ed] disabled:bg-[#d2d2d7]"
+              >Approve all {memoryProposals.length}</button>
+            )}
             <button
               onClick={() => void approveMemoryProposal()}
               disabled={isSavingMemory}
-              className="rounded-full bg-[#0071e3] px-4 py-2 text-sm font-medium text-white hover:bg-[#0077ed] disabled:bg-[#d2d2d7]"
+              className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-[#1d1d1f] hover:bg-[#f5f5f7] disabled:text-[#86868b]"
             >Approve {proposalType(memoryProposal)}</button>
             <button
               onClick={rejectMemoryProposal}
