@@ -45,6 +45,30 @@ const isTextDocument = (file: File): boolean =>
   file.type.startsWith('text/')
   || /\.(txt|md|markdown|csv|json|log|ya?ml)$/i.test(file.name)
 
+// Say which of the two failures happened, because the fix differs.
+//
+// This read "Unable to send message. Please try again." for both, and a user
+// hit it while AniOS was being restarted underneath her. Trying again was
+// exactly the wrong advice — nothing she typed was going anywhere until the
+// machine came back — and "unable to send message" gave no hint that the
+// server, rather than her message, was the problem. She retried for two
+// minutes and then reported the agent as broken.
+//
+// The browser reports an unreachable server as a TypeError from fetch itself,
+// with no response to read, which is what separates the two cases here.
+const describeSendFailure = (error: unknown): string => {
+  if (error instanceof TypeError) {
+    return (
+      'AniOS did not respond, so nothing was sent. It may be restarting — ' +
+      'your message is still in the box, so you can send it again in a moment.'
+    )
+  }
+  // Anything else came back *from* AniOS, so it can say what it objected to.
+  return error instanceof Error && error.message
+    ? error.message
+    : 'That message could not be sent.'
+}
+
 interface ComposerProps {
   userId: string;
   conversationId: string;
@@ -228,7 +252,7 @@ const Composer: React.FC<ComposerProps> = ({
       setAttachedFile(file)
       if (action === 'chat') {
         console.warn('Chat request failed:', err)
-        onStreamUpdate('Unable to send message. Please try again.')
+        onStreamUpdate(describeSendFailure(err))
       } else if (action === 'ingest') {
         const message = err instanceof Error ? err.message : 'Unable to save the document.'
         setVisualError(message)
