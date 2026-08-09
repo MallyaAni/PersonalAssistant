@@ -25,7 +25,11 @@ from backend.core.interfaces import SearchProvider
 from backend.discovery.errors import DiscoveryError
 from backend.discovery.events import DiscoveredEvent, EventSource, FeedError
 from backend.discovery.familiarity import FamiliarItemRepository, FamiliarityFilter
-from backend.discovery.fetching import DEFAULT_RUN_REQUEST_BUDGET, RequestBudget
+from backend.discovery.fetching import (
+    DEFAULT_RUN_REQUEST_BUDGET,
+    RequestBudget,
+    fetch_feed,
+)
 from backend.discovery.notable import NotableSelector
 from backend.discovery.novelty import NoveltyFilter, ScoredCandidate, SeenItemRepository
 from backend.discovery.relevance import (
@@ -40,7 +44,11 @@ from backend.discovery.sources.links import LinkPageEventSource
 from backend.discovery.sources.rss import RssEventSource
 from backend.discovery.sources.web import WebEventSource
 from backend.discovery.sources_repository import DiscoverySourceRepository, FeedSource
-from backend.discovery.summarize import DescriptionWriter, EventDescriber
+from backend.discovery.summarize import (
+    DescriptionWriter,
+    EventDescriber,
+    text_from_html,
+)
 from backend.discovery.types import DiscoveryProfile
 
 
@@ -296,8 +304,8 @@ class DiscoveryRunner:
 
         # Both sections get readable titles and descriptions; an unusual find is
         # no easier to judge from a scraped page title than a matching one.
-        selected = await self._make_readable(selected)
-        notable = await self._make_readable(notable)
+        selected = await self._make_readable(selected, budget, moment)
+        notable = await self._make_readable(notable, budget, moment)
 
         # Everything considered is recorded, but only what was selected counts
         # as announced. An item ranked out stays eligible for a later sweep,
@@ -338,12 +346,24 @@ class DiscoveryRunner:
     # recipient cannot judge "Official Website of Arlington County" — so this
     # runs before the digest is persisted rather than at render time.
     async def _make_readable(
-        self, selected: tuple[RankedCandidate, ...]
+        self,
+        selected: tuple[RankedCandidate, ...],
+        budget: RequestBudget | None = None,
+        now: datetime | None = None,
     ) -> tuple[RankedCandidate, ...]:
+        today = (now or datetime.now(UTC)).date()
         readable: list[RankedCandidate] = []
         for item in selected:
             event = item.event
-            described = await self.describer.describe(event.title, event.summary)
+            source = event.summary or await self._page_text(event.url, budget)
+            described = await self.describer.describe(event.title, source, today)
+            if described.already_happened:
+                # The page says it is over. Nothing else in the sweep could know
+                # that: these are the finds with no published start, so no clock
+                # of ours can rule them out, and a digest announcing a deadline
+                # that has passed is the clearest possible sign that whatever
+                # sent it is not paying attention.
+                continue
             readable.append(
                 RankedCandidate(
                     candidate=ScoredCandidate(
@@ -359,6 +379,22 @@ class DiscoveryRunner:
                 )
             )
         return tuple(readable)
+
+    # The destination's own prose, for a find that arrived without any.
+    #
+    # Only for what has already been selected, so this reads a handful of pages
+    # rather than every candidate, and it spends the sweep's own budget so a
+    # digest can never cost more requests than the run was allowed. A failure
+    # leaves the find exactly as it was: unreadable is better than absent.
+    async def _page_text(
+        self, url: str | None, budget: RequestBudget | None
+    ) -> str | None:
+        if not url or budget is None or budget.remaining <= 0:
+            return None
+        try:
+            return text_from_html(await fetch_feed(url, budget=budget))
+        except Exception:
+            return None
 
     # Read every configured feed. One broken source degrades that source rather
     # than failing the sweep, because a user with five feeds should still hear

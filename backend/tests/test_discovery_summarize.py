@@ -250,6 +250,6 @@ async def test_the_model_is_asked_for_both_fields():
 
     schema = writer.schemas[0]
     assert schema is not None
-    assert set(schema["required"]) == {"name", "description"}
+    assert set(schema["required"]) == {"name", "description", "already_happened"}
     # Bounded in the grammar, not merely requested in prose.
     assert schema["properties"]["name"]["maxLength"] == MAX_NAME_CHARS

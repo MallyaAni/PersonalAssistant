@@ -57,8 +57,30 @@ def render_message(
     if lines and mentions:
         lines.append("")
     lines.extend(mentions)
+    if not lines:
+        return None
 
-    return "\n".join(lines) if lines else None
+    # An opening, so the message reads as something sent on purpose.
+    #
+    # Without one a digest of undated finds began "I found a few possibilities,
+    # but couldn't confirm their dates:" — a caveat as the first thing anyone
+    # sees, from a number they may not recognize, with no indication of what it
+    # is or why it arrived. Fixed wording rather than written each time: this is
+    # the same sentence every day, and a model composing it afresh would vary it
+    # for no reason and could vary it into something wrong.
+    return "\n".join([_greeting(moment, zone), ""] + lines)
+
+
+# "Scout · Saturday morning" — who it is from and when it was put together.
+def _greeting(moment: datetime, zone: ZoneInfo) -> str:
+    local = moment.astimezone(zone)
+    if local.hour < 12:
+        part = "morning"
+    elif local.hour < 17:
+        part = "afternoon"
+    else:
+        part = "evening"
+    return f"Scout · {local.strftime('%A')} {part}"
 
 
 # Whether this find is already in the past. An undated find cannot have passed:
