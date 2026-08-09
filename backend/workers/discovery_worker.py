@@ -25,6 +25,7 @@ from backend.config.settings import settings
 from backend.core.dependencies import (
     get_discovery_channels,
     get_discovery_runner_for_session,
+    grant_recipient_on_bridge,
 )
 from backend.core.logging_config import get_logger
 from backend.database.session import AsyncSessionLocal
@@ -98,6 +99,7 @@ class DiscoveryWorker:
                 SubscriberRepository(session),
                 get_discovery_channels(),
                 runs,
+                grant_recipient_on_bridge,
             ).redeliver(
                 str(pending["user_id"]),
                 str(message),
@@ -157,6 +159,7 @@ class DiscoveryWorker:
                     SubscriberRepository(session),
                     get_discovery_channels(),
                     runs,
+                    grant_recipient_on_bridge,
                 ).deliver(
                     user_id,
                     result.selected,

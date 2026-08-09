@@ -206,3 +206,91 @@ def test_the_backoff_is_capped_and_then_stops_entirely():
 
     # ...until the deadline, after which there is nothing worth sending.
     assert next_delivery_attempt(_SLOT, 0, _SLOT + DELIVERY_DEADLINE) is None
+
+
+# --- a recipient the sending machine does not know yet ------------------------
+
+
+_NOT_ALLOWED = DeliveryResult(delivered=False, error_code="recipient_not_allowed")
+
+
+def _delivery_with_granter(outcome: str):
+    runs = _Runs()
+    channel = _Channel(_NOT_ALLOWED)
+    granted: list[tuple[str, str]] = []
+
+    async def _grant(channel_id: str, address: str) -> str:
+        granted.append((channel_id, address))
+        return outcome
+
+    delivery = DigestDelivery(_Subscribers(), {"imessage": channel}, runs, _grant)
+    return delivery, runs, granted
+
+
+@pytest.mark.asyncio
+async def test_a_refused_recipient_is_granted_and_the_digest_retried():
+    # Granting happens when an operator approves, which does nothing for anyone
+    # approved before that existed. The first refused send is the only moment
+    # left to fix them.
+    delivery, runs, granted = _delivery_with_granter("granted")
+
+    report = await delivery.redeliver(
+        "jenos1", "tonight in DC", "run-1", _SLOT, attempts=0, now=_SLOT
+    )
+
+    assert granted == [("imessage", "2025550143")]
+    # The bridge refused before sending, so nothing went out and it will accept
+    # the address now: safe to try again.
+    assert report.retry_at is not None
+    assert len(runs.deferred) == 1
+    assert runs.settled == []
+
+
+@pytest.mark.asyncio
+async def test_a_bridge_that_will_not_grant_leaves_the_refusal_standing():
+    # Grants switched off, or a bridge that cannot be reached. Both need a
+    # person, so the digest is not retried against an unchanged refusal.
+    delivery, runs, granted = _delivery_with_granter("refused")
+
+    report = await delivery.redeliver(
+        "jenos1", "tonight in DC", "run-1", _SLOT, attempts=0, now=_SLOT
+    )
+
+    assert granted  # it was attempted
+    assert report.retry_at is None
+    assert runs.deferred == []
+    assert runs.settled == ["delivery_failed"]
+
+
+@pytest.mark.asyncio
+async def test_an_unapproved_recipient_is_never_granted():
+    # Granting only ever restates a decision an operator already made. It must
+    # not become a way for a pending request to permit itself.
+    runs = _Runs()
+    granted: list[str] = []
+
+    async def _grant(channel_id: str, address: str) -> str:
+        granted.append(address)
+        return "granted"
+
+    pending = replace(_SUBSCRIBER, approved=False)
+    delivery = DigestDelivery(
+        _Subscribers((pending,)), {"imessage": _Channel(_NOT_ALLOWED)}, runs, _grant
+    )
+
+    await delivery.redeliver("jenos1", "hi", "run-1", _SLOT, attempts=0, now=_SLOT)
+
+    assert granted == []
+    assert runs.settled == ["delivery_failed"]
+
+
+@pytest.mark.asyncio
+async def test_without_a_granter_the_refusal_is_simply_reported():
+    delivery, runs, _ = _delivery(_NOT_ALLOWED)
+
+    report = await delivery.redeliver(
+        "jenos1", "hi", "run-1", _SLOT, attempts=0, now=_SLOT
+    )
+
+    assert report.retry_at is None
+    assert runs.settled == ["delivery_failed"]

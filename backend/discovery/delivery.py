@@ -24,14 +24,20 @@ first releases the claim. An ambiguous failure still loses the digest on
 purpose, because the alternative is sending it twice.
 """
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
-from backend.discovery.channels import NotificationChannel
+from backend.discovery.channels import DeliveryResult, NotificationChannel
 from backend.discovery.digest import render_message
 from backend.discovery.relevance import RankedCandidate
 from backend.discovery.runs import DiscoveryRunRepository
 from backend.discovery.subscribers import Subscriber, SubscriberRepository
+
+# Permitting one address on the machine that sends, returning what happened.
+# A plain callable so this module depends on the capability rather than on the
+# MCP layer that provides it.
+type RecipientGranter = Callable[[str, str], Awaitable[str]]
 
 # How long to keep trying an unreachable bridge, and how fast to back off.
 #
@@ -89,10 +95,42 @@ class DigestDelivery:
         subscribers: SubscriberRepository,
         channels: dict[str, NotificationChannel],
         runs: DiscoveryRunRepository | None = None,
+        granter: "RecipientGranter | None" = None,
     ) -> None:
         self.subscribers = subscribers
         self.channels = channels
         self.runs = runs
+        self.granter = granter
+
+    # Tell the sending machine about a recipient it does not know, then let the
+    # digest be tried again.
+    #
+    # Granting happens when an operator approves, which does nothing for anyone
+    # approved before that existed — and there is no moment left at which to fix
+    # them, because approval has already passed. This is that moment: the first
+    # send that gets refused. It also covers the operator enabling grants on the
+    # bridge later, which is otherwise a change with no event attached to it.
+    #
+    # Only ever a re-statement of a decision already made. A subscriber reaching
+    # here is approved and unrevoked; nothing is being permitted that an operator
+    # did not already permit.
+    async def _grant_and_reconsider(
+        self,
+        subscriber: Subscriber,
+        result: DeliveryResult,
+    ) -> DeliveryResult:
+        if self.granter is None or not subscriber.approved:
+            return result
+        if await self.granter(subscriber.channel, subscriber.address) != "granted":
+            # Grants are switched off on the bridge, or it cannot be reached.
+            # Either is for a person to resolve, so the refusal stands as it was.
+            return result
+        # The bridge refused before sending, so nothing went out, and it will
+        # accept this address now. That makes the digest safe to send again —
+        # which is the whole point of noticing.
+        return DeliveryResult(
+            delivered=False, error_code="recipient_not_allowed", unsent=True
+        )
 
     async def deliver(
         self,
@@ -189,6 +227,8 @@ class DigestDelivery:
                 )
                 continue
             result = await channel.send(subscriber.address, message)
+            if result.error_code == "recipient_not_allowed":
+                result = await self._grant_and_reconsider(subscriber, result)
             await self.subscribers.record_delivery(subscriber.id, result.error_code)
             if result.delivered:
                 delivered += 1
