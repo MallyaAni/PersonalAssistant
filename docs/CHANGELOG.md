@@ -2457,3 +2457,31 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   the Scout discovery and Scout agent views.
 - Not deployed: the images were not rebuilt and no sweep has run through the
   built containers.
+
+## 2026-08-09 — Measurement, and an agent per folder
+
+- Reviewed the digest jenos1 actually received and found three defects: a
+  concert attributed to the interest "Horses" after the pub it was in, three of
+  four items being pages of happenings rather than happenings, and vacuous
+  summaries. `AimPlanner` now runs even when memory is empty — which is every
+  account today — so an interest is described rather than compared as a
+  two-word string. Verified end to end: the same find moves from Horses to
+  Music.
+- Recorded a negative result: the cross-encoder makes that same "Light Horse"
+  mistake more confidently than cosine did. Lexical overlap is what a
+  cross-encoder is strongest at, so it cannot be the fix for it.
+- Added and then withdrew a model judgement of whether a page is a listing. It
+  emptied a live digest — on a London sweep it called four of five shortlisted
+  finds listings, including a single Eventbrite event, while passing an index of
+  festivals in another city. It is still computed for tuning and no longer drops
+  anything.
+- Added `backend/cli/evaluate_discovery_ranking` and 21 labelled items taken
+  from real digests. Baseline: listing recall 0.46, happening retention 1.00.
+  Retention is floored at 1.0 and recall is not, because an admitted listing
+  wastes a slot while a rejected happening leaves no trace it existed.
+- Gave each agent a folder: `agents/scout/`, `agents/deck/`, `agents/diagram/`,
+  with shared shapes in `agents/cards.py` and a registry that is a tuple of
+  describers. Scout's sweep stays in `backend/discovery/`, because the
+  dependency runs agents → domain and moving it would close a cycle.
+- Verified 1011 backend tests, Ruff, strict MyPy, and an unchanged harness
+  scorecard across the restructure.

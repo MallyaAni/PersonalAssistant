@@ -25,6 +25,18 @@ a container. The cross-encoder also needs its weights fetched first (see
 `DEVELOPMENT_GUIDE.md`) or it disables itself and ranking is embeddings-only.
 Rebuild `backend` and `discovery-worker`, then `docker compose restart gateway`.
 
+## Measure before changing anything
+
+`python -m backend.cli.evaluate_discovery_ranking` scores filtering against 21
+items that reached real digests; `--with-model` also scores attribution. The
+baseline is listing recall 0.46 and happening retention 1.00, and the seven
+listings still getting through are named in the output — that is the work queue.
+
+This exists because two changes were shipped on single examples and both were
+wrong: a cross-encoder reported as improving attribution that made the same
+error more confidently on the first real digest, and a listing filter that
+emptied a live digest. Use the harness.
+
 ## The next task
 
 **Give Scout something to know.** The plumbing built above has nothing to carry:
@@ -59,10 +71,20 @@ Two cautions from the work just done:
    digest name first so the user can judge; filter only in code, only against an
    explicitly stated fact in approved memory. Do not push this into the
    re-ranker's prompt — that was measured and it inferred gender from nothing.
-2. **Geographic rejection.** The Arlington, Virginia rehearsal admitted a result
-   explicitly located at Globe Life Field in Arlington, Texas. A stated place
-   that contradicts the active locality should be rejected before the digest, in
-   code.
+2. **Geographic rejection.** Still open, and now visible in the labelled cases:
+   `concertfix.com/concerts/arlington-tx` reached an Arlington, Virginia digest,
+   and a chamber-of-commerce index for Alexandria Bay, New York reached an
+   Alexandria, Virginia one. Deterministic, cheap, and it has waited long
+   enough.
+3. **Route listings to the feed proposer instead of the bin.** `feed_finder` and
+   `LinkGraphExpander` already propose sources from discovered pages. "Movie
+   showtimes near Alexandria" is a bad digest item and a good source candidate,
+   so the biggest failure mode becomes an asset rather than a rejection.
+4. **A structured event source.** Ticketmaster, Eventbrite, or Songkick return
+   events with start times and coordinates, which removes the listing/happening
+   distinction, the date parsing, and the geography problem at once. Feeds are
+   already the "source of record" in the design; almost nobody configures one,
+   so web search does all the work and fights this fight every sweep.
 3. **Describe before re-ranking, if the budget allows.** Both re-rank stages see
    scraped page titles because `_make_readable` runs after selection. They get
    the summary text too, so neither is blind, but a readable name would help.

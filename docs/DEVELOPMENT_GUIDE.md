@@ -53,7 +53,7 @@ Qwen can create a review candidate from the current canonical source and explici
 python -m backend.cli.generate_architecture_candidate `
   --diagram visual-artifact-subsystem `
   --request "Show the dedicated diagram agent and reviewed candidate workflow." `
-  --context backend/agents/diagram.py `
+  --context backend/agents/diagram/agent.py `
   --context backend/architecture/candidates.py `
   --require-label DiagramAgent `
   --require-label ArchitectureCandidateService `
@@ -89,6 +89,19 @@ unverifiable and cannot fail a build:
 python -m backend.cli.evaluate_search_routing --patterns-only   # deterministic, no model
 python -m backend.cli.evaluate_search_routing                   # full cascade
 ```
+
+Discovery ranking is scored the same way, against items that reached real
+digests and are labelled in `backend/discovery/evaluation_cases.json`:
+
+```bash
+python -m backend.cli.evaluate_discovery_ranking                # filtering only, no model
+python -m backend.cli.evaluate_discovery_ranking --with-model   # also scores attribution
+```
+
+The labels are seeded judgements and say so in the file. Correcting one changes
+the score, which is the intended way to disagree with it. The deterministic half
+runs in the suite, so a change that starts throwing away real happenings fails
+there rather than being noticed later by someone reading a thin digest.
 
 Both exit non-zero below their floor, so either can gate a pipeline. The floors
 follow the mode: patterns alone cannot reach the cascade's recall, and holding

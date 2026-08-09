@@ -78,7 +78,7 @@ A chat turn, in order:
 | Image-recall routing | the same classifier model | GPU | only when the query plausibly names a stored image (gated) |
 | Tool selection | `qwen/qwen3.5-4b` (`MAIN_LLM_MODEL`) native tool-calls through `vllm-main` | GPU | only when MCP tools are relevant |
 | Response generation | `qwen/qwen3.5-4b` (`MAIN_LLM_MODEL`) through `vllm-main` | GPU | ordinary non-delegated turns; the streamed answer |
-| Scout-interest proposal | `qwen/qwen3.5-4b` (`MEMORY_PROPOSAL_LLM_MODEL`) with grammar-constrained JSON and reasoning disabled | GPU (`vllm-main`) | every ordinary chat turn; fail-closed with no write authority |
+| Typed memory proposal | `qwen/qwen3.5-4b` (`MEMORY_PROPOSAL_LLM_MODEL`) with grammar-constrained JSON and reasoning disabled | GPU (`vllm-main`) | every ordinary chat turn; fail-closed with no write authority |
 | Other memory proposals | none (deterministic patterns) | CPU | every ordinary chat turn |
 
 A plain message ("my name is Ani") therefore makes about three model calls: one
@@ -767,6 +767,18 @@ ties break on declared priority rather than on registration order.
 agents exist today: **Scout**, the ambient discovery loop, and **Deck**, the
 presentation specialist.
 
+Each agent owns a folder — `agents/scout/`, `agents/deck/`, `agents/diagram/` —
+holding what that agent *decides*: its card, and any prompt or orchestration
+specific to it. The shared shapes live in `agents/cards.py` and the registry is
+a tuple of describers, so adding an agent is adding a folder rather than editing
+the module every other agent lives in.
+
+The dependency runs one way: this layer imports domain packages and none of them
+import back. Scout's sweep therefore stays in `backend/discovery/` — moving it
+under `agents/scout/` would make `discovery.runner` import from `agents`, which
+`agents.registry` already imports from. An agent folder holds what it decides;
+its domain package holds the machinery it drives.
+
 The registry stores nothing. Every field is derived from the tables each agent
 already writes — schedules, runs, sources, subscribers, presentation jobs — so
 the tab cannot drift from reality by being updated in the wrong place, and an
@@ -920,16 +932,18 @@ The active collaborators are:
 
 Notification and external-agent collaborators are not part of current dependency assembly. Internet search and guarded MCP execution are assembled; knowledge ingestion/retrieval is implemented as a local memory store, while a complete RAG pipeline remains `SCAFFOLDED`.
 
-Chat memory capture is a typed approval boundary. Preferred-name,
-response-style, locality, person/relationship, workflow, titled-reference,
-episodic, and explicit general-fact proposals remain narrow deterministic rules.
-Scout interests use a focused local `ScoutInterestProposalAgent` backed by Qwen
-3.5 4B: it understands natural phrasing, ownership, current-versus-former
-interest, negation, and multi-item lists, then returns at most eight
-grammar-constrained labels. It cannot persist. The proposal remains ephemeral
-until approval atomically creates all facts and Scout projections.
+Chat memory capture is a typed approval boundary. One local
+`MemoryProposalAgent`, backed by Qwen 3.5 4B, semantically interprets the whole
+current utterance and returns grammar-constrained candidates for preferred name,
+response style, locality, interests, entity relationship, workflow, titled
+reference, semantic fact, and episodic event. Phrase matching and regular
+expressions do not decide memory meaning. Deterministic application code only
+bounds and validates the structured fields, adds ownership provenance, and
+routes an approved proposal to its typed store. The agent cannot persist, and
+every proposal remains ephemeral until visible user approval creates the facts
+and any Scout projection.
 
-The proposal is decided **before** the answer is generated, and the turn's real save state is rendered into the system prompt. The model has no write tool, so a helpful assistant answering "remember this" claims a save that never happened; telling it only that it cannot write to memory proved insufficient, because it re-expressed the same claim passively ("your personal memory has been updated"). Naming what is actually about to happen, and the sentence to write, removes the thing to route around. Emission over SSE still follows the saved turn. It also proactively proposes an episodic memory when a turn narrates a first-person past-tense event - the only proposer that fires without explicit save intent, so it is the lowest priority (any explicit statement above wins) and is kept high-precision with a curated verb set and a question guard to avoid a nuisance proposal. The frontend explicitly approves or rejects every proposal. Approval uses the existing typed store API with source conversation/trace provenance. The model never receives a durable-write tool, and unrestricted implicit fact extraction remains intentionally unsupported.
+The proposal is decided **before** the answer is generated, and the turn's real save state is rendered into the system prompt. The model has no write tool, so a helpful assistant answering "remember this" claims a save that never happened; telling it only that it cannot write to memory proved insufficient, because it re-expressed the same claim passively ("your personal memory has been updated"). Naming what is actually about to happen, and the value to write, removes the thing to route around. Emission over SSE still follows the saved turn. Profile facts may coexist in one decision; non-profile memory keeps one best typed candidate to limit noise. The frontend explicitly approves or rejects every proposal and can approve a visible set together. Approval uses the existing typed store API with source conversation/trace provenance. The model never receives a durable-write tool, and silent persistence remains unsupported.
 
 ### Agent orchestration
 
