@@ -105,6 +105,46 @@ single action. Network evidence was preferred name 200 plus Scout interests
 cleared, the composer enabled, and Console, page, and network-failure lists were
 empty. The focused Playwright regression and production frontend build pass.
 
+## Next task: move Scout's prompts into Scout's folder
+
+The folder-per-agent rule says an agent folder holds what it *decides* and its
+domain package holds the machinery it drives. Scout's four prompts — the things
+that decide — are still in `backend/discovery/`, which does not follow the rule
+the layout was introduced for. That is an inconsistency, not a design.
+
+The reason given at the time was a dependency cycle: `agents/registry.py`
+imports `discovery.reachability`, so `discovery.runner` importing
+`agents/scout/aiming` would close one. That is real but it is not the obstacle
+it looked like, for two reasons.
+
+**`SweepAim` and `InterestAim` are data, not decisions.** Move those dataclasses
+to `discovery/types.py` and `precision.py` keeps working without importing
+anything from `agents`.
+
+**The runner already takes its collaborators by injection.** `EmbeddingClient`,
+`AdapterFactory` and `DescriptionWriter` are Protocols it is handed. Add the
+planner, the re-ranker and the describer the same way, and `discovery.runner`
+never imports `agents` at all — `core/dependencies.py` wires them, which is
+where every other collaborator is already wired.
+
+So:
+
+    agents/scout/aiming.py        AimPlanner + its prompt
+    agents/scout/reranking.py     MemoryReranker + its prompt
+    agents/scout/place_suggest.py PlaceSuggester + its prompt
+    agents/scout/describing.py    the describe prompt from summarize.py
+    discovery/types.py            InterestAim, SweepAim
+    discovery/summarize.py        keeps the deterministic cleanup and fallbacks
+    discovery/runner.py           Protocols, no agents import
+
+About ten files including tests, the CLI harness, and `api/v1/discovery.py`
+(which imports `place_suggest` for the completion endpoint). Behaviour-preserving
+throughout: the harness scorecard and the full suite are the proof, exactly as
+they were for the first restructure.
+
+Leave `personal_context.py` in `discovery/`. It is read by `setup_service` too,
+so it is shared domain rather than one agent's decision.
+
 ## Where the prompts are
 
 Every prompt Scout injects, so they can be read in one place:
