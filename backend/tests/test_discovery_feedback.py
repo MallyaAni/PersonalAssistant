@@ -64,6 +64,33 @@ async def test_a_bubble_carries_the_record_s_own_link():
 
 
 @pytest.mark.asyncio
+async def test_the_cap_holds_and_says_what_it_held_back():
+    busy = SELECTED + (
+        _candidate("Third find", datetime(2026, 11, 16, 20, 0, tzinfo=UTC)),
+        _candidate("Fourth find", datetime(2026, 11, 17, 20, 0, tzinfo=UTC)),
+        _candidate("Fifth find", datetime(2026, 11, 18, 20, 0, tzinfo=UTC)),
+    )
+
+    bubbles = await write_bubbles(busy, writer=None, now=NOW)
+
+    # Three notifications, not five. Each find is its own message now, so the
+    # count is the number of times a phone buzzes.
+    assert len(bubbles) == 3
+    # And the two held back are said, on the last bubble rather than in one of
+    # their own — an extra notification would undo what the cap is for.
+    assert "+2 more find" in bubbles[-1].text
+    # Still a real find underneath, so a tapback on it means that find.
+    assert bubbles[-1].item_digest
+
+
+@pytest.mark.asyncio
+async def test_nothing_is_held_back_when_everything_fits():
+    bubbles = await write_bubbles(SELECTED, writer=None, now=NOW)
+
+    assert all("more find" not in bubble.text for bubble in bubbles)
+
+
+@pytest.mark.asyncio
 async def test_nothing_live_produces_no_bubbles():
     past = (_candidate("Over already", datetime(2026, 11, 1, tzinfo=UTC)),)
 

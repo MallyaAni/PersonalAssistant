@@ -50,9 +50,10 @@ MAX_GREETING_CHARS = 110
 # it sits under a name and a date they can already see.
 MAX_LINE_CHARS = 200
 
-# How many finds one message may carry. Unchanged from the assembled version:
-# a digest longer than this is not read.
-MAX_LINES = 6
+# How many lines the model may write. Matches the delivery cap rather than
+# exceeding it: a line written for a find that will not be sent is a wasted
+# generation, and one written for a find that does not exist is worse.
+MAX_LINES = 3
 
 _URL_IN_TEXT = re.compile(r"https?://\S+|\bwww\.\S+", re.IGNORECASE)
 
@@ -121,7 +122,7 @@ def _schema(count: int) -> dict[str, Any]:
     }
 
 
-_SYSTEM = """You write the weekly message from Scout, which looks for things
+_SYSTEM = f"""You write the weekly message from Scout, which looks for things
 happening near someone based on what they have told it they like.
 
 Write it the way a friend with good taste would text them about what they turned
@@ -132,10 +133,18 @@ greeting: one line to open. Say something true about this particular batch — t
 kind of week it is for them, what ties these together, what stands out. Not a
 generic hello, not their name, not the date, not "hope you're well".
 
+Finish that line inside {MAX_GREETING_CHARS} characters. Write a short complete
+sentence rather than starting a long one: there is a hard limit and a sentence
+that runs into it is cut where it stands, which is the first thing they see.
+
 lines: one per find, using the index it was given. Say what it is and why it is
 worth their time, in one or two sentences, in your own words. You are given a
 name, what it is, when it happens and where — that is everything you know, and
 you must not add a detail beyond it.
+
+Finish each line inside {MAX_LINE_CHARS} characters. The same hard limit applies
+here: a second sentence that will not fit is worse than one that ends, because
+what arrives is the first sentence plus half of the second.
 
 Where a find has a "when", repeat that text exactly as it is written. Do not
 reword it, do not work out a weekday from it, and do not replace it with "this
