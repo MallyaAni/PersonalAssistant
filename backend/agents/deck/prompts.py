@@ -26,6 +26,18 @@ PLANNING_PREAMBLE = (
 )
 
 
+# Parameterised, because this is the only call that tells the model where in
+# the deck it is. "Slide 3 of 7" is what stops each slide restating the
+# subject instead of advancing it. The trailing blank line belongs here so the
+# caller only ever concatenates sources onto it.
+def slide_content_preamble(index: int, total: int, deck_title: str) -> str:
+    return (
+        f"You are AniOS PresentationAgent completing one slide "
+        f"({index} of {total}) for the deck '{deck_title}'. "
+        f"{_slide_content_contract()} {SLIDE_CONTENT_PREAMBLE}\n\n"
+    )
+
+
 SLIDE_CONTENT_PREAMBLE = (
     "Keep the supplied title, purpose, and layout exactly; the deck's shape was "
     "already decided. Supply whatever that layout needs. This slide advances the "

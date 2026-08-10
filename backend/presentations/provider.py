@@ -14,6 +14,7 @@ from backend.agents.deck.prompts import (
     _deck_outline_contract,
     _deck_plan_contract,
     _slide_content_contract,
+    slide_content_preamble,
 )
 from backend.core.llm import LLMClient
 from backend.core.model_gate import ModelExecutionGate
@@ -343,17 +344,10 @@ class LLMPresentationProvider(PresentationProvider):
                 {
                     "role": "system",
                     "content": (
-                        "You are AniOS PresentationAgent completing one slide "
-                        f"({index} of {len(outline.slides)}) for the deck "
-                        f"'{outline.title}'. {_slide_content_contract()} "
-                        "Keep the supplied title, purpose, and layout exactly; "
-                        "the deck's shape was already decided. Supply whatever "
-                        "that layout needs. This slide advances the deck rather "
-                        "than summarising it: write only what belongs to this "
-                        "beat, do not repeat what an earlier slide covered, and "
-                        "carry the beat into visual_prompt so any image matches "
-                        "this point in the arc rather than the subject in "
-                        "general.\n\n" + rendered_sources
+                        slide_content_preamble(
+                            index, len(outline.slides), outline.title
+                        )
+                        + rendered_sources
                     ),
                 },
                 {

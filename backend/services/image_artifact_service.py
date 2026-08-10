@@ -95,8 +95,6 @@ class ImageArtifactService:
                 else:
                     await asyncio.sleep(0.5 * (attempt + 1))
 
-    # Return one owned artifact's record (no bytes) for ownership and metadata
-    # reads such as a refinement's parent prompt.
     async def get_owned_record(
         self,
         user_id: str,

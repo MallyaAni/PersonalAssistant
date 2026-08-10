@@ -137,12 +137,19 @@ Diagram and memory capture are done too — `agents/diagram/prompts.py` and
 not something the workspace lists; it is a step in every conversation, and the
 folder exists only so its prompt sits with it.
 
-**One thing left, and it is small.** `presentations/provider.py` still holds the
-slide-content preamble inline, because that one is parameterised — it names
-which slide of how many is being written, which is what stops each slide
-restating the subject. It wants to be a function in `agents/deck/prompts.py`
-taking index, total and deck title. An attempt at it broke the file on a string
-escape and was reverted rather than left half-applied.
+Every agent prompt now lives with its agent. `presentations/provider.py` holds
+none: the slide-content preamble became `slide_content_preamble(index, total,
+deck_title)` in `agents/deck/prompts.py`, parameterised because it is the only
+call that tells the model where in the deck it is.
+
+A codebase audit found **no unused modules at all**. Seventeen public
+definitions read as unreferenced and all but two were false positives — pydantic
+validators, FastAPI routes, MCP tool decorators, protocols used in string
+annotations, and one aliased import. `get_owned_record` and `clear_style` were
+genuinely dead and are gone. `apply_slide_edit` is still unreferenced and is
+deliberately left: the roadmap records slide editing as verified, so it is
+either an edit path nothing applies or a gap in that claim, and deleting it
+would hide the question.
 
 **Not moved on purpose:** `search/classifier.py` and
 `artifacts/image_recall_classifier.py`. Both call a model, and both route rather
