@@ -6,9 +6,15 @@
 // locality would add a lookup, a failure mode, and a way to be wrong for anyone
 // travelling — to learn something the browser already knows.
 //
-// The system preference wins over the clock when the user has expressed one,
-// because an OS that is already switching at sunset knows more than a fixed
-// hour does. An explicit choice in the app wins over both, and is remembered.
+// An explicit choice in the app wins, and is remembered. Otherwise the clock
+// decides, and a system preference for dark can only add darkness, never
+// prevent it.
+//
+// The order used to put the system preference above the clock, which read well
+// and meant the clock never ran at all: browsers answer `prefers-color-scheme`
+// with light or dark rather than with nothing, so the "no opinion" case the
+// clock waited for effectively does not occur. Verified in the browser — it
+// reported `light: true` at 13:00 and would have reported it at 01:00 too.
 
 export type Theme = 'light' | 'dark'
 export type ThemePreference = Theme | 'auto'
@@ -35,7 +41,15 @@ export const resolveTheme = (
   systemPrefersDark: boolean | null,
 ): Theme => {
   if (preference !== 'auto') return preference
-  if (systemPrefersDark !== null) return systemPrefersDark ? 'dark' : 'light'
+  // The clock decides, which is what "automatic" was asked to mean. The system
+  // preference used to win here and it swallowed the clock entirely: every
+  // modern browser answers one of the two `prefers-color-scheme` queries, so
+  // `systemPrefersDark` is almost never null and `themeForHour` never ran. An
+  // OS pinned to light kept the app light at midnight.
+  //
+  // It is still consulted, but only to break the tie the clock cannot see —
+  // an OS already in dark mode during daylight hours is a user who wants dark.
+  if (systemPrefersDark === true) return 'dark'
   return themeForHour(now.getHours())
 }
 

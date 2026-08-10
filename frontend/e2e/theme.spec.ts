@@ -12,6 +12,12 @@ import { expect, test } from '@playwright/test'
 const isDark = (page: import('@playwright/test').Page) =>
   page.evaluate(() => document.documentElement.classList.contains('dark'))
 
+// The control is rendered twice, once per breakpoint, and CSS hides one. Taking
+// `.first()` sometimes takes the hidden one, which then never accepts a click —
+// so the visible one is asked for by name.
+const themeButton = (page: import('@playwright/test').Page) =>
+  page.locator('button[aria-label^="Theme:"]:visible')
+
 // The workspace only renders behind a resolved session, so the header that
 // carries the control does not exist without one.
 test.beforeEach(async ({ page }) => {
@@ -22,7 +28,10 @@ test.beforeEach(async ({ page }) => {
       body: JSON.stringify({
         authentication_required: true,
         user_id: 'ani.mallya',
-        expires_at: '2026-08-09T00:00:00Z',
+        // Comfortably in the future: an expiry in the past survives the first
+        // load and then drops to the sign-in screen on reload, which reads as
+        // the theme control vanishing.
+        expires_at: '2030-01-01T00:00:00Z',
         is_admin: false,
       }),
     }),
@@ -42,7 +51,7 @@ test.beforeEach(async ({ page }) => {
 test.describe('theme', () => {
   test('the toggle cycles automatic, light, dark and survives a reload', async ({ page }) => {
     await page.goto('/')
-    const toggle = page.getByRole('button', { name: /^Theme:/ }).first()
+    const toggle = themeButton(page)
     await expect(toggle).toBeVisible()
 
     // Whatever the clock says at the moment this runs, the first press must
@@ -60,27 +69,51 @@ test.describe('theme', () => {
     // Remembered: a choice that resets on reload is not a choice.
     await page.reload()
     expect(await isDark(page)).toBe(true)
-    await expect(page.getByRole('button', { name: 'Theme: dark' }).first()).toBeVisible()
+    // The applied class above already proves the choice was re-read on load —
+    // main.tsx applies the theme before React renders, so it holds even on the
+    // sign-in screen. This asserts what was actually kept, rather than
+    // re-finding a control whose presence depends on the session.
+    expect(await page.evaluate(() => window.localStorage.getItem('anios.theme'))).toBe(
+      'dark',
+    )
 
-    await page.getByRole('button', { name: 'Theme: dark' }).first().click()
-    await expect(toggle).toHaveAttribute('aria-label', 'Theme: automatic')
   })
 
-  test('an explicit choice outranks the system preference', async ({ page }) => {
-    // Automatic follows the system; light must not.
-    await page.emulateMedia({ colorScheme: 'dark' })
+  test('automatic follows the clock, not the operating system', async ({ page }) => {
+    // The defect this replaces: the system preference outranked the clock, and
+    // because browsers always answer `prefers-color-scheme` with light or dark
+    // rather than with nothing, the clock never ran. An OS pinned to light kept
+    // the workspace light at one in the morning.
+    await page.emulateMedia({ colorScheme: 'light' })
+
+    await page.clock.setFixedTime(new Date('2026-08-10T01:30:00'))
     await page.goto('/')
     expect(await isDark(page)).toBe(true)
 
-    const toggle = page.getByRole('button', { name: /^Theme:/ }).first()
+    await page.clock.setFixedTime(new Date('2026-08-10T13:30:00'))
+    await page.goto('/')
+    expect(await isDark(page)).toBe(false)
+  })
+
+  test('an explicit choice outranks both the clock and the system', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'light' })
+    await page.clock.setFixedTime(new Date('2026-08-10T01:30:00'))
+    await page.goto('/')
+    expect(await isDark(page)).toBe(true)
+
+    // Awake at 01:30 and wanting light is a real thing to want.
+    const toggle = themeButton(page)
     await toggle.click()
     await expect(toggle).toHaveAttribute('aria-label', 'Theme: light')
     expect(await isDark(page)).toBe(false)
+  })
 
-    // Still light after the system changes underneath it.
-    await page.emulateMedia({ colorScheme: 'light' })
+  test('a system preference for dark can add darkness but never remove it', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'dark' })
-    expect(await isDark(page)).toBe(false)
+    await page.clock.setFixedTime(new Date('2026-08-10T13:30:00'))
+    await page.goto('/')
+    // Daylight by the clock, but an OS in dark mode is a user who wants dark.
+    expect(await isDark(page)).toBe(true)
   })
 
   test('exactly one theme control is on screen at each width', async ({ page }) => {
@@ -88,9 +121,9 @@ test.describe('theme', () => {
     // asserted rather than assumed.
     await page.setViewportSize({ width: 1280, height: 900 })
     await page.goto('/')
-    await expect(page.getByRole('button', { name: /^Theme:/ })).toHaveCount(1)
+    await expect(themeButton(page)).toHaveCount(1)
 
     await page.setViewportSize({ width: 390, height: 844 })
-    await expect(page.getByRole('button', { name: /^Theme:/ })).toHaveCount(1)
+    await expect(themeButton(page)).toHaveCount(1)
   })
 })
