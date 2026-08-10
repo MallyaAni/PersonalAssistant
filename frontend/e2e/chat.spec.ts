@@ -1895,7 +1895,7 @@ test('approves a semantic interest list for Scout from chat', async ({ page }) =
 // on left it on screen for the rest of the conversation, growing by one every
 // time another fact was noticed, and offering to save facts about a message
 // several turns old.
-test('retires an ignored proposal when the next turn begins', async ({ page }) => {
+test('gives an unanswered proposal one more turn, then retires it', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   let turn = 0
 
@@ -1908,10 +1908,8 @@ test('retires an ignored proposal when the next turn begins', async ({ page }) =
       body: multiProposalEventStream(
         `turn-${turn}-trace`,
         payload.conversation_id,
-        turn === 1 ? 'Nice to meet you, Jen.' : 'Noted.',
-        turn === 1
-          ? [{ kind: 'preferred_name', value: 'Jen' }]
-          : [{ kind: 'response_style', value: 'concise' }],
+        'Noted.',
+        turn === 1 ? [{ kind: 'preferred_name', value: 'Jen' }] : [],
       ),
     })
   })
@@ -1922,21 +1920,20 @@ test('retires an ignored proposal when the next turn begins', async ({ page }) =
   await sendButton.click()
   await expect(page.getByLabel('Preferred name memory proposal')).toContainText('Jen')
 
-  // Ignore it entirely and send another message.
-  await textarea.fill('please keep answers concise')
+  // One more turn without answering it. It must survive: a user typing again is
+  // not a user declining. Throwing it away here is how an account ended up with
+  // a name saved and its interests silently dropped.
+  await textarea.fill('and something else')
   await sendButton.click()
+  await expect(page.getByLabel('Preferred name memory proposal')).toContainText('Jen')
 
-  await expect(page.getByLabel('Response style memory proposal')).toContainText('concise')
-  // The first turn's card is gone rather than queued behind this one, so there
-  // is one proposal to answer and no "approve all".
-  await expect(page.getByText('Also ready to save:')).not.toBeVisible()
-  await expect(page.getByRole('button', { name: /Approve all/ })).not.toBeVisible()
-  // The name card itself is gone. "Jen" is still in the transcript, which is
-  // why this asserts on the proposal rather than on the text.
+  // A second turn passes over it. Now it is stale and goes, so a card cannot
+  // sit on screen for the rest of the conversation.
+  await textarea.fill('and another thing')
+  await sendButton.click()
   await expect(page.getByLabel('Preferred name memory proposal')).not.toBeVisible()
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
-
 
 // Keep both profile proposals actionable when one introduction contains both facts.
 test('approves a name and Scout interests from one chat turn', async ({ page }) => {

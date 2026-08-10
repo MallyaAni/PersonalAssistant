@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Sparkles } from 'lucide-react'
 import MessageList from '../MessageList/MessageList'
 import Composer from '../Composer/Composer'
@@ -174,7 +174,20 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   restoreConversation,
 }) => {
   const [messages, setMessages] = useState<Message[]>([])
-  const [memoryProposals, setMemoryProposals] = useState<MemoryProposal[]>([])
+  // Each queued proposal remembers which turn it arrived in, so an unanswered
+  // one gets exactly one more turn to be answered before it is retired. Both
+  // extremes were wrong in production: keeping them forever left a card on
+  // screen for the rest of the conversation, growing by one each time another
+  // fact was noticed; clearing them on the next message silently threw away
+  // the interests card a user was about to approve, which is how one account
+  // ended up with a name saved and no interests.
+  const [memoryProposals, setMemoryProposals] =
+    useState<Array<{ proposal: MemoryProposal; turn: number }>>([])
+  // A ref, not state: a proposal arrives from the stream after the turn has
+  // already advanced, and a state value captured in that closure is the
+  // previous turn's. Tagging with a stale turn retired every card one turn
+  // early, which is the bug this counter exists to prevent.
+  const turnRef = useRef(0)
   const [memoryNotice, setMemoryNotice] = useState('')
   const [memoryError, setMemoryError] = useState('')
   const [isSavingMemory, setIsSavingMemory] = useState(false)
@@ -223,7 +236,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     // carrying on would otherwise leave it on screen for the rest of the
     // conversation, growing by one every time another fact was noticed.
     if (role === 'user') {
-      setMemoryProposals([])
+      const next = turnRef.current + 1
+      turnRef.current = next
+      // One turn of grace. A card from the turn just gone is still answerable;
+      // anything older has been passed over twice and is stale.
+      setMemoryProposals(current =>
+        current.filter(item => item.turn >= next - 1))
     }
   }
 
@@ -242,12 +260,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
   // Queue each memory proposal so a multi-fact message loses none of them.
   const handleMemoryProposal = (proposal: MemoryProposal) => {
-    setMemoryProposals(current => [...current, proposal])
+    setMemoryProposals(current => [
+      ...current,
+      { proposal, turn: turnRef.current },
+    ])
     setMemoryNotice('')
     setMemoryError('')
   }
 
-  const memoryProposal = memoryProposals[0] ?? null
+  const memoryProposal = memoryProposals[0]?.proposal ?? null
 
   // Mark the latest assistant response as actively generating a diagram.
   const handleArtifactStarted = (artifactId: string) => {
@@ -545,7 +566,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   // Save every visible queued fact while retaining anything after a failed write.
   const approveAllMemoryProposals = async () => {
     if (memoryProposals.length < 2 || isSavingMemory) return
-    const pending = [...memoryProposals]
+    const pending = memoryProposals.map(item => item.proposal)
     let savedCount = 0
     setIsSavingMemory(true)
     setMemoryError('')
@@ -554,11 +575,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         await saveMemoryProposal(proposal)
         savedCount += 1
       }
-      setMemoryProposals(current => current.filter(item => !pending.includes(item)))
+      setMemoryProposals(current => current.filter(item => !pending.includes(item.proposal)))
       setMemoryNotice(`Saved ${savedCount} profile memories.`)
     } catch (error) {
       const saved = pending.slice(0, savedCount)
-      setMemoryProposals(current => current.filter(item => !saved.includes(item)))
+      setMemoryProposals(current => current.filter(item => !saved.includes(item.proposal)))
       setMemoryNotice(savedCount ? `Saved ${savedCount} profile memories.` : '')
       setMemoryError(
         error instanceof Error
@@ -634,7 +655,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                 {/* One turn shares one trace, so kind and trace together are
                     not unique the moment a message yields two facts of the same
                     kind — which is the case this queue exists for. */}
-                {memoryProposals.slice(1).map((proposal, index) => (
+                {memoryProposals.slice(1).map(({ proposal }, index) => (
                   <li key={`${proposal.trace_id}-${proposal.kind}-${index}`}>
                     {proposalType(proposal)}: {proposalValue(proposal)}
                   </li>
