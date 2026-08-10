@@ -2485,3 +2485,31 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   dependency runs agents → domain and moving it would close a cycle.
 - Verified 1011 backend tests, Ruff, strict MyPy, and an unchanged harness
   scorecard across the restructure.
+
+## 2026-08-10 — Delivery unblocked, and dates read rather than judged
+
+- Found why scheduled digests stopped arriving, and it was not the Mac. The
+  outbound privacy screen refused any run of 13 to 19 digits as a payment card,
+  and `.../senior-line-dancing-2026-109463698` is thirteen digits — as is every
+  Eventbrite link. The tool call raised `argument_withheld`, delivery recorded
+  its catch-all `channel_failed`, and it read for hours as the bridge refusing.
+  The card pattern now ignores a URL's scheme, host and path, and requires a
+  Luhn checksum and an issuer prefix, so an ISBN or an order number is no longer
+  mistaken for a card. Verified both digests delivered, and `redeliver()`
+  exercised for testuser.
+- Added `geography.py`: a find is refused when it names a region explicitly and
+  none of them is the user's. Measured before wiring: catches the Arlington
+  Texas index that reached an Arlington Virginia digest, keeps 18 of 18 local
+  finds. Misses two, named in the scorecard, which now fails a run outright if
+  geographic rejection ever removes a local find.
+- A stated deadline is now read deterministically. jenos1 was offered a vote
+  closing "through August 3" on August 10; the describe prompt does ask about
+  this and a 4B model comparing two dates is not a clock. Removed
+  `is_a_listing`, which had added a fourth required field to that same
+  160-token call and whose answer nothing used.
+- Novelty turned back on in `.env` and verified in both services.
+- Dark mode groundwork: `theme.ts` decides from the clock on the user's own
+  device — no location and no memory, because `new Date()` is already in their
+  timezone — with the system preference winning when set. `theme-palette.json`
+  maps all 40 interface colours to dark counterparts. The toggle and browser
+  verification are not done; treat the visual result as unverified.

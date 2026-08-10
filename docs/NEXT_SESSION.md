@@ -105,6 +105,26 @@ single action. Network evidence was preferred name 200 plus Scout interests
 cleared, the composer enabled, and Console, page, and network-failure lists were
 empty. The focused Playwright regression and production frontend build pass.
 
+## Where the prompts are
+
+Every prompt Scout injects, so they can be read in one place:
+
+| What it decides | File |
+| --- | --- |
+| Search subject and ranking vector per interest | `backend/discovery/aiming.py:147` |
+| Order of the qualified shortlist against memory | `backend/discovery/reranking.py:102` |
+| A find's name, its one-line description, and whether the page says it is over | `backend/discovery/summarize.py:183` |
+| Place-name completion while typing | `backend/discovery/place_suggest.py:83` |
+
+`docs/ARCHITECTURE.md` has the table of when each runs and what it costs.
+
+Two of these are load-bearing in ways that are not obvious. `aiming.py` runs
+even when memory is empty, which is every account today, because a two-word
+interest cannot be matched against an event description at all. And
+`summarize.py`'s `already_happened` is asked but no longer trusted alone: a
+stated deadline is read deterministically in `url_dates.deadline_has_passed`,
+after a digest offered a vote that closed a week earlier.
+
 ## Scout: where it stands and what is next
 
 `python -m backend.cli.evaluate_discovery_ranking` scores the pipeline against
