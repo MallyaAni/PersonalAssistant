@@ -434,7 +434,12 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
   // one here left "Look now" permanently dead for an account with a place, two
   // interests and no feeds - which a rehearsal proved finds real local events -
   // while "Try it", the same pipeline one flag apart, stayed enabled.
-  const ready = Boolean(savedPlace) && interests.length > 0
+  // A schedule is stored in the timezone of the user's place, so without a place
+  // there is no zone to store it in — the API refuses one with a 409. Naming the
+  // condition separately from `ready` matters because the two have different
+  // remedies: no place disables the clock, no interests only disables the save.
+  const placed = Boolean(savedPlace)
+  const ready = placed && interests.length > 0
   const missing = [
     savedPlace ? '' : 'a place',
     interests.length > 0 ? '' : 'at least one interest',
@@ -859,7 +864,7 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
           {schedule && (
             <button
               onClick={() => void stopSchedule()}
-              disabled={busy !== ''}
+              disabled={busy !== '' || !placed}
               className="text-xs font-medium text-[#b3261e] disabled:opacity-40"
             >
               Turn off
@@ -870,6 +875,7 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
           <select
             value={cadence}
             onChange={event => setCadence(event.target.value as 'daily' | 'weekly')}
+            disabled={!placed}
             aria-label="How often"
             className="h-10 rounded-xl border border-black/[0.08] bg-white px-3 text-sm outline-none focus:border-[#0071e3]"
           >
@@ -880,7 +886,8 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
             <select
               value={weekday}
               onChange={event => setWeekday(Number(event.target.value))}
-              aria-label="Day of the week"
+              disabled={!placed}
+            aria-label="Day of the week"
               className="h-10 rounded-xl border border-black/[0.08] bg-white px-3 text-sm outline-none focus:border-[#0071e3]"
             >
               {WEEKDAYS.map((label, index) => (
@@ -895,6 +902,7 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
             onChange={event =>
               setHour(to24Hour(Number(event.target.value), toMeridiem(hour)))
             }
+            disabled={!placed}
             aria-label="Hour"
             className="h-10 rounded-xl border border-black/[0.08] bg-white px-2 text-sm outline-none focus:border-[#0071e3]"
           >
@@ -907,6 +915,7 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
           <select
             value={minute}
             onChange={event => setMinute(Number(event.target.value))}
+            disabled={!placed}
             aria-label="Minutes past the hour"
             className="h-10 rounded-xl border border-black/[0.08] bg-white px-2 text-sm outline-none focus:border-[#0071e3]"
           >
@@ -921,6 +930,7 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
             onChange={event =>
               setHour(to24Hour(toClockHour(hour), event.target.value as 'am' | 'pm'))
             }
+            disabled={!placed}
             aria-label="Morning or afternoon"
             className="h-10 rounded-xl border border-black/[0.08] bg-white px-2 text-sm outline-none focus:border-[#0071e3]"
           >
@@ -945,9 +955,16 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
             <Check size={13} />
             Next sweep {new Date(schedule.next_run_at).toLocaleString()}
           </p>
-        ) : (
+        ) : placed ? (
           <p className="mt-2 text-xs font-medium text-[#b25e00]">
             Not scheduled — it only runs when you press “Look now”.
+          </p>
+        ) : (
+          /* Said rather than merely enforced: a disabled clock with no reason
+             reads as a broken control. */
+          <p className="mt-2 text-xs font-medium text-[#b25e00]">
+            Set where you are first — a time is stored in the timezone of your
+            place, so there is nothing to store it in yet.
           </p>
         )}
       </section>
