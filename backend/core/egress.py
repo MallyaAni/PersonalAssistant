@@ -78,6 +78,42 @@ def _without_url_paths(text: str) -> str:
     return _URL_UP_TO_QUERY.sub(" ", text)
 
 
+# Whether a run of digits is actually a payment card, rather than any other long
+# number a person might reasonably ask about.
+#
+# Length alone was refusing ordinary questions — "what is ISBN 9780306406157
+# about" and "order number 1234567890123 status" were both withheld, silently,
+# with the user told nothing. Cards are not arbitrary digits: they carry a Luhn
+# check digit and are issued under known prefixes. Requiring both is the
+# standard test and it costs nothing.
+#
+# The trade is deliberate and small. A mistyped card no longer matches — but a
+# mistyped card is not a working card, and the credential and account patterns
+# still read the same text. What it buys is that a library catalogue number
+# stops being treated as a payment instrument.
+def _is_card_number(digits: str) -> bool:
+    # Visa 4, Mastercard 5 and its 2-series, Amex 3, Discover/UnionPay 6.
+    if not digits or digits[0] not in "23456":
+        return False
+    total = 0
+    for index, character in enumerate(reversed(digits)):
+        value = int(character)
+        if index % 2:
+            value *= 2
+            if value > 9:
+                value -= 9
+        total += value
+    return total % 10 == 0
+
+
+# Report whether any digit run in the text is a payment card.
+def _carries_card_number(text: str) -> bool:
+    return any(
+        _is_card_number(re.sub(r"[ -]", "", match.group()))
+        for match in _CARD_NUMBER.finditer(text)
+    )
+
+
 _SECRET_PATTERNS = tuple((re.compile(p, re.IGNORECASE), c) for p, c in _SECRETS)
 _PERSONAL_PATTERNS = tuple(
     (re.compile(p, re.IGNORECASE), c) for p, c in _PERSONAL_SENSITIVE
@@ -137,7 +173,7 @@ class OutboundPrivacyPolicy:
         for pattern, category in _SECRET_PATTERNS:
             if pattern.search(text):
                 blocked.append(category)
-        if _CARD_NUMBER.search(_without_url_paths(text)):
+        if _carries_card_number(_without_url_paths(text)):
             blocked.append("account_identifier")
         if blocked:
             # Nothing is sent, and the caller must not log the original text.

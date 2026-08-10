@@ -17,7 +17,9 @@ from backend.discovery.evaluation import (
     load_cases,
     score_attribution,
     score_filtering,
+    score_geography,
 )
+from backend.discovery.geography import contradicts_locality
 from backend.discovery.listing_filter import looks_like_a_directory
 
 # What the current pipeline is expected to hold, so a regression fails rather
@@ -93,7 +95,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     cases = load_cases()
 
     filtering = score_filtering(cases, looks_like_a_directory)
-    result: dict[str, object] = {"cases": len(cases), "filtering": filtering.as_dict()}
+    geography = score_geography(cases, contradicts_locality)
+    result: dict[str, object] = {
+        "cases": len(cases),
+        "filtering": filtering.as_dict(),
+        # `listing_recall` here reads as "elsewhere caught" and
+        # `happening_retention` as "local kept"; the shape is shared.
+        "geography": geography.as_dict(),
+    }
 
     failures: list[str] = []
     floor = args.min_listing_recall
@@ -101,6 +110,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         floor = FLOORS["listing_recall"]
     if filtering.listing_recall < floor:
         failures.append(f"listing_recall {filtering.listing_recall:.2f} < {floor:.2f}")
+    if geography.happening_retention < 1.0:
+        failures.append(
+            "geographic rejection removed a local find: "
+            + ", ".join(geography.wrongly_rejected)
+        )
     if filtering.happening_retention < FLOORS["happening_retention"]:
         failures.append(
             f"happening_retention {filtering.happening_retention:.2f} < "

@@ -39,6 +39,7 @@ from backend.discovery.events import (
     clean_url,
 )
 from backend.discovery.fetching import RequestBudget
+from backend.discovery.geography import contradicts_locality
 from backend.discovery.listing_filter import looks_like_a_directory
 
 # One query per interest, capped. A user with twenty interests must not turn one
@@ -148,7 +149,9 @@ class WebEventSource(EventSource):
             except Exception:
                 # One failed query degrades coverage, never the sweep.
                 continue
-            events.extend(_events_from(self._source_id, results.results, seen_urls))
+            events.extend(
+                _events_from(self._source_id, results.results, seen_urls, self.region)
+            )
             if len(events) >= MAX_EVENTS_PER_SOURCE:
                 return tuple(events[:MAX_EVENTS_PER_SOURCE])
         return tuple(events)
@@ -202,7 +205,10 @@ class WebEventSource(EventSource):
 # Turn one query's results into typed events, skipping anything already taken and
 # anything that is a page listing happenings rather than one happening.
 def _events_from(
-    source_id: str, results: "Iterable[Any]", seen_urls: set[str]
+    source_id: str,
+    results: "Iterable[Any]",
+    seen_urls: set[str],
+    region: str | None = None,
 ) -> list[DiscoveredEvent]:
     events: list[DiscoveredEvent] = []
     for result in results:
@@ -214,6 +220,11 @@ def _events_from(
         # someone interested in local events, which is exactly the wrong answer,
         # so this is decided structurally rather than semantically.
         if looks_like_a_directory(result.title, url):
+            continue
+        # The query named the place and the result is about a different one.
+        # A concerts index for Arlington, Texas reached a digest belonging to
+        # someone in Arlington, Virginia; the page said so and nothing read it.
+        if contradicts_locality(result.title, result.content, url, region):
             continue
         event = _to_event(source_id, result.title, result.content, url)
         if event is not None:

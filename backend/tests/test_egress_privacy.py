@@ -133,3 +133,36 @@ def test_a_real_card_number_is_still_refused(policy, text):
 
     assert screened.allowed is False
     assert "account_identifier" in screened.categories
+
+
+# Length alone is not a payment card. Refusing every long number withheld
+# ordinary questions — an ISBN lookup and an order-number query were both
+# blocked, silently, with nothing said to the user. A card carries a Luhn check
+# digit and an issuer prefix; requiring both is the standard test.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "what is ISBN 9780306406157 about",
+        "order number 1234567890123 status",
+        "flight BA2490 confirmation 5551234567890",
+        "what happened in 1234567890123456",
+    ],
+)
+def test_a_long_number_that_is_not_a_card_passes(policy, text):
+    assert policy.sanitize(text).allowed is True
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "my card is 4111 1111 1111 1111",
+        "pay with 5555555555554444",
+        "amex 378282246310005",
+        "discover 6011111111111117",
+    ],
+)
+def test_a_real_card_is_still_refused_by_checksum(policy, text):
+    screened = policy.sanitize(text)
+
+    assert screened.allowed is False
+    assert "account_identifier" in screened.categories

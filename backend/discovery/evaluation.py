@@ -165,6 +165,41 @@ def score_filtering(
     )
 
 
+# Score geographic rejection: does it refuse finds that name another region
+# while keeping every local one? The retention half is the one that matters —
+# refusing a local find deletes something the user wanted.
+def score_geography(
+    cases: tuple[EvaluationCase, ...],
+    refuses: "object",
+) -> FilterScore:
+    elsewhere = caught = local = kept = 0
+    wrongly_rejected: list[str] = []
+    still_admitted: list[str] = []
+    for case in cases:
+        region = case.locality.split(",")[-1].strip() if "," in case.locality else None
+        rejected = bool(refuses(case.title, case.summary, case.url, region))  # type: ignore[operator]
+        if case.place_matches:
+            local += 1
+            if rejected:
+                wrongly_rejected.append(case.title)
+            else:
+                kept += 1
+        else:
+            elsewhere += 1
+            if rejected:
+                caught += 1
+            else:
+                still_admitted.append(case.title)
+    return FilterScore(
+        listings=elsewhere,
+        listings_rejected=caught,
+        happenings=local,
+        happenings_kept=kept,
+        wrongly_rejected=tuple(wrongly_rejected),
+        still_admitted=tuple(still_admitted),
+    )
+
+
 # Score attribution from an already-computed decision per case, so this module
 # needs no model and the caller decides how the interest was chosen.
 def score_attribution(
