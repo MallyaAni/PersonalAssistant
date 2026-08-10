@@ -26,7 +26,7 @@ turns each one into something you can act on.
 | Subsystem view | [discovery-subsystem.svg](diagrams/discovery-subsystem.svg) |
 | Agent folder | `backend/agents/scout/` |
 | Domain package | `backend/discovery/` |
-| Prompts | `aiming.py` · `reranking.py` · `describing.py` · `place_suggest.py` |
+| Prompts | `aiming.py` · `reranking.py` · `describing.py` · `place_suggest.py` · `timezones.py` |
 | Card | `agents/scout/card.py` |
 | Functional tests | `backend/tests/functional/test_prompt_behaviour.py` |
 | Quality harness | `python -m backend.cli.evaluate_discovery_ranking` |
@@ -111,6 +111,45 @@ Listed so the distinction is a decision rather than an oversight.
 | --- | --- | --- |
 | Search freshness | whether a turn needs the web | `backend/search/classifier.py` |
 | Image recall | whether a query names a stored image | `backend/artifacts/image_recall_classifier.py` |
+
+## Every model call, and what it costs
+
+One model serves all of it: `LLM_MODEL=qwen/qwen3.5-4b` on vLLM. The
+role-specific settings — `MAIN_LLM_MODEL`, `PRESENTATION_LLM_MODEL`,
+`DIAGRAM_LLM_MODEL`, `MEMORY_PROPOSAL_LLM_MODEL` — all resolve to that same
+model today, so the routing exists but selects nothing. Scout has no role
+setting at all.
+
+The constraint that decides this is the card: an RTX 5080 has 16 GB and the
+serving stack already holds about 13 GB. There is no room for a second resident
+model, so "a better model for this call" means replacing the one model for
+every call, not adding one.
+
+| Agent | Call | Tokens | Temp | Grammar |
+| --- | --- | --- | --- | --- |
+| Scout | `aiming.py` — search subjects and vectors | 1024 | 0.0 | yes |
+| Scout | `reranking.py` — order a qualified shortlist | 256 | 0.0 | yes |
+| Scout | `describing.py` — how a find reads | default | 0.0 | yes |
+| Scout | `place_suggest.py` — place completion | 220 | 0.0 | yes |
+| Scout | `timezones.py` — place to IANA zone | 32 | 0.0 | yes |
+| Deck | `provider.py` — plan, outline, slide, new slide, revision | caller | **default** | yes |
+| Diagram | `diagram.py` — Mermaid source | 2048 | 0.0 | yes |
+| Memory capture | `proposal_agent.py` — what to offer saving | 256 | 0.0 | yes |
+| *(not an agent)* | `search/classifier.py` — does this need fresh search | 4 | 0.0 | yes |
+| *(not an agent)* | `image_recall_classifier.py` — is this about an old image | 4 | 0.0 | yes |
+| *(not an agent)* | `image_style_service.py` — style from profile | 160 | default | no |
+
+**Temp matters more than it looks.** Everything reproducible runs greedy.
+Deck's two call sites and the image-style call still run at the provider
+default, so the same request can produce a different deck each time. Diagram
+did too, and it hid a real defect: eight identical requests scored 0/8 and then
+3/8 with nothing changed, which reads as flakiness rather than as a bug.
+
+**Where the model is genuinely weak.** Diagram is the only call with a measured
+failure that survives a correct prompt: asked for a state machine it returns
+`"source": "stateDiagram-v2"` with no body. Flowcharts, which is what nearly
+every request is, run 6/6 in the functional tests. Everything else here is held
+by functional tests against the running model.
 
 ## Adding an agent
 

@@ -119,6 +119,11 @@ _DIAGRAM_REPLY_SCHEMA: dict[str, Any] = {
 }
 
 
+# `<br>`, `<br/>`, `<br />` — any spelling of an HTML line break, used by the
+# model as a line separator.
+_HTML_LINE_BREAK = re.compile(r"\s*<\s*br\s*/?\s*>\s*", re.IGNORECASE)
+
+
 # Validate and normalize a provider-produced Mermaid specification.
 def validate_diagram_specification(payload: dict[str, Any]) -> DiagramSpecification:
     title = _validated_title(payload)
@@ -127,6 +132,13 @@ def validate_diagram_specification(payload: dict[str, Any]) -> DiagramSpecificat
         raise ValueError("Mermaid source is required")
 
     source = source.strip().replace("\r\n", "\n")
+    # A line break written as HTML. Inside a JSON string the model reaches for
+    # <br/> instead of an escaped newline, and the result is rejected whole —
+    # measured across eight varied requests, the graph itself was correct every
+    # time it did this: right nodes, right branches, right labels. Repaired
+    # here rather than answered with a larger model, because nothing about the
+    # reasoning was wrong.
+    source = _HTML_LINE_BREAK.sub("\n", source)
     if source.startswith("```"):
         source = re.sub(r"^```(?:mermaid)?\s*", "", source, flags=re.IGNORECASE)
         source = re.sub(r"\s*```$", "", source).strip()
@@ -176,6 +188,12 @@ class LLMDiagramProvider(DiagramProvider):
                 messages,
                 2_048,
                 response_schema=_DIAGRAM_REPLY_SCHEMA,
+                # Greedy, as every other call here is. This one ran at the
+                # provider default, so the same request drew a different
+                # diagram each time and a failure could not be reproduced long
+                # enough to diagnose — eight requests scored 0/8 and then 3/8
+                # with nothing changed in between.
+                temperature=0.0,
             )
             content = result.get("content")
             try:
