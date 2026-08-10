@@ -207,6 +207,29 @@ async def test_diagram_returns_renderable_mermaid_within_bounds(llm):
     assert "```" not in source
 
 
+def _kinds(result) -> set[str]:
+    return {str(p.get("kind")) for p in result.proposals}
+
+
+async def test_memory_capture_takes_a_name_and_interests_from_one_message(llm):
+    from backend.memory.proposal_agent import MemoryProposalAgent
+
+    result = await MemoryProposalAgent(llm).propose(
+        "Hi my name is Arsalon and I like surfing, motorbikes and coffee"
+    )
+
+    # The positive control. Without it the two tests below pass whenever the
+    # agent returns nothing at all, which is exactly how they were first
+    # written — asserting absence against an attribute that never existed, so
+    # they were green while proving nothing.
+    assert _kinds(result) == {"preferred_name", "discovery_interests"}, result.proposals
+    labels = next(
+        p["labels"] for p in result.proposals if p["kind"] == "discovery_interests"
+    )
+    # A comma-separated list is several interests, not one.
+    assert len(labels) >= 3, labels
+
+
 async def test_memory_capture_ignores_a_question(llm):
     from backend.memory.proposal_agent import MemoryProposalAgent
 
@@ -214,13 +237,7 @@ async def test_memory_capture_ignores_a_question(llm):
 
     # A question is not a fact. Capturing one puts words in the user's mouth on
     # an approval card.
-    assert result is None or not any(
-        [
-            getattr(result, "preferred_name", None),
-            getattr(result, "interests", None),
-            getattr(result, "semantic_fact", None),
-        ]
-    ), result
+    assert result.proposals == (), result.proposals
 
 
 async def test_memory_capture_does_not_take_someone_elses_preference(llm):
@@ -230,5 +247,4 @@ async def test_memory_capture_does_not_take_someone_elses_preference(llm):
         "My daughter loves ballet, but I have never been interested in it."
     )
 
-    interests = " ".join(getattr(result, "interests", None) or []).casefold()
-    assert "ballet" not in interests, result
+    assert "ballet" not in str(result.proposals).casefold(), result.proposals
