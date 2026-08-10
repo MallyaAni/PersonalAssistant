@@ -18,10 +18,20 @@ os.environ["POSTGRES_HOST"] = "localhost"
 from fastapi.testclient import TestClient
 from sqlalchemy import delete
 
+from backend.core.auth import issue_user_token
 from backend.database.session import AsyncSessionLocal
 from backend.main import app
 from backend.models.discovery import DiscoveryLocality
 from backend.models.discovery_run import DiscoverySchedule
+
+
+# The deployment requires authentication, and pytest reads the same .env, so a
+# request without a token never reaches the code under test — it 401s and the
+# assertion below reports a status nobody wrote a route for.
+def _as(user_id: str) -> TestClient:
+    return TestClient(
+        app, headers={"Authorization": f"Bearer {issue_user_token(user_id)}"}
+    )
 
 
 async def _cleanup(user_id: str) -> None:
@@ -39,7 +49,7 @@ async def _cleanup(user_id: str) -> None:
 async def test_a_schedule_is_refused_until_a_place_exists():
     user_id = f"sch_{uuid.uuid4().hex[:12]}"
     try:
-        with TestClient(app) as client:
+        with _as(user_id) as client:
             response = client.put(
                 f"/api/v1/discovery/{user_id}/schedule",
                 json={"cadence": "daily", "hour": 9, "minute": 0},
@@ -56,7 +66,7 @@ async def test_a_schedule_is_refused_until_a_place_exists():
 async def test_the_schedule_takes_its_zone_from_the_place_not_the_caller():
     user_id = f"sch_{uuid.uuid4().hex[:12]}"
     try:
-        with TestClient(app) as client:
+        with _as(user_id) as client:
             client.put(
                 f"/api/v1/discovery/{user_id}/localities",
                 json={

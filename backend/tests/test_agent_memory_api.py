@@ -8,9 +8,16 @@ os.environ["DEBUG"] = "false"
 os.environ.setdefault("SECRET_KEY", "test-secret-key-only-for-testing")
 os.environ["POSTGRES_HOST"] = "localhost"
 
+from backend.core.auth import issue_user_token
 from backend.core.dependencies import get_embedding_provider
 from backend.embeddings.base import EmbeddingProvider
 from backend.main import app
+
+
+# The deployment requires authentication and pytest reads the same .env, so an
+# unauthenticated request 401s before reaching the code under test.
+def _bearer(user_id: str) -> dict[str, str]:
+    return {"Authorization": f"Bearer {issue_user_token(user_id)}"}
 
 
 # Build a deterministic embedding vector for API tests.
@@ -48,7 +55,7 @@ def test_semantic_cache_and_session_working_memory_are_scoped_and_expiring():
     )
 
     try:
-        with TestClient(app) as client:
+        with TestClient(app, headers=_bearer(user_id)) as client:
             cached = client.put(
                 f"/api/v1/memory/{user_id}/agent/cache",
                 json={
@@ -75,6 +82,7 @@ def test_semantic_cache_and_session_working_memory_are_scoped_and_expiring():
                     "query": "How should I format this?",
                     "model": "memory-coordinator-v1",
                 },
+                headers=_bearer(other_user),
             )
             assert other_hit.json()["entry"] is None
 
@@ -97,7 +105,8 @@ def test_semantic_cache_and_session_working_memory_are_scoped_and_expiring():
             ]
             assert (
                 client.get(
-                    f"/api/v1/memory/{other_user}/agent/working/{conversation_id}"
+                    f"/api/v1/memory/{other_user}/agent/working/{conversation_id}",
+                    headers=_bearer(other_user),
                 ).json()["items"]
                 == []
             )
@@ -130,7 +139,7 @@ def test_procedure_entity_and_relation_memory_are_approved_and_user_scoped():
     )
 
     try:
-        with TestClient(app) as client:
+        with TestClient(app, headers=_bearer(user_id)) as client:
             procedure_payload = {
                 "name": "Weekly project review",
                 "description": "Review current project progress",
@@ -161,6 +170,7 @@ def test_procedure_entity_and_relation_memory_are_approved_and_user_scoped():
                 client.get(
                     f"/api/v1/memory/{other_user}/agent/procedures/search",
                     params={"query": "project review"},
+                    headers=_bearer(other_user),
                 ).json()["procedures"]
                 == []
             )
@@ -210,7 +220,11 @@ def test_procedure_entity_and_relation_memory_are_approved_and_user_scoped():
                     "attributes": {},
                     "source_trace_id": trace_id,
                 },
+                headers=_bearer(other_user),
             )
+            # 404 rather than 403: the point being measured is that another
+            # user's entity ids do not exist for this user, which is only
+            # reachable once the request is authorized as that user.
             assert cross_user_relation.status_code == 404
     finally:
         app.dependency_overrides.pop(get_embedding_provider, None)
@@ -228,7 +242,7 @@ def test_knowledge_and_summary_memory_search_delete_and_snapshot():
     )
 
     try:
-        with TestClient(app) as client:
+        with TestClient(app, headers=_bearer(user_id)) as client:
             document_payload = {
                 "title": "Northstar project notes",
                 "content": (
@@ -258,6 +272,7 @@ def test_knowledge_and_summary_memory_search_delete_and_snapshot():
                 client.get(
                     f"/api/v1/memory/{other_user}/agent/knowledge/search",
                     params={"query": "Northstar project"},
+                    headers=_bearer(other_user),
                 ).json()["chunks"]
                 == []
             )

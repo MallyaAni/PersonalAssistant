@@ -18,6 +18,7 @@ os.environ.setdefault("SECRET_KEY", "test-secret-key-only-for-testing")
 os.environ["POSTGRES_HOST"] = "localhost"
 
 from backend.agents.registry import AgentRegistry
+from backend.core.auth import issue_user_token
 from backend.database.session import AsyncSessionLocal
 from backend.discovery.repository import DiscoveryProfileRepository
 from backend.discovery.runs import DiscoveryRunRepository
@@ -184,7 +185,11 @@ async def test_a_running_sweep_reports_as_working():
 
 def test_the_api_returns_every_agent_for_a_user():
     user_id = f"reg_{uuid.uuid4().hex[:12]}"
-    with TestClient(app) as client:
+    # The deployment requires authentication and pytest reads the same .env, so
+    # an unauthenticated request 401s before reaching the route under test.
+    with TestClient(
+        app, headers={"Authorization": f"Bearer {issue_user_token(user_id)}"}
+    ) as client:
         response = client.get(f"/api/v1/agents/{user_id}")
 
         assert response.status_code == 200
