@@ -1008,11 +1008,27 @@ async def _invoke_discovery_tool(tool_name: str, arguments: dict[str, str]) -> o
 # on the Mac's allowlist, and recorded only as `channel_failed`. Finding that out
 # took a hand-written probe against the bridge. The distinction below is the one
 # an operator can act on: fix the allowlist, or fix the bridge.
+# The reason is also logged, once, because twice now a delivery failure has been
+# diagnosable only by hand-probing the Mac — the second time costing an evening
+# and a dozen test messages to a real phone to establish that one digest failed
+# and a dozen similar strings did not. The bridge's own contract is that its
+# error text is the first line of stderr with the arguments stripped, so it
+# names a cause and never a recipient. Logging that is the difference between
+# "channel_failed" and "Messages timed out".
 def _refusal_code(result: object) -> str:
-    text = str(getattr(result, "content", "") or "").casefold()
+    raw = str(getattr(result, "content", "") or "")
+    text = raw.casefold()
     if "allowlist" in text or "not on this bridge" in text:
-        return "recipient_not_allowed"
-    return "channel_failed"
+        code = "recipient_not_allowed"
+    elif "timed out" in text or "timeout" in text or "-1712" in text:
+        code = "channel_timeout"
+    else:
+        code = "channel_failed"
+    logger.warning(
+        "discovery_channel_refused",
+        extra={"code": code, "bridge_reason": raw[:200]},
+    )
+    return code
 
 
 # Ask the bridge to permit an address the operator has just approved.

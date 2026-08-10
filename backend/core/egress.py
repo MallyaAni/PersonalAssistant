@@ -17,7 +17,6 @@ _SECRETS: tuple[tuple[str, str], ...] = (
         "account_identifier",
     ),
     (r"\b\d{3}-\d{2}-\d{4}\b", "account_identifier"),
-    (r"\b(?:\d[ -]?){13,19}\b", "account_identifier"),
     # Precise location, as distinct from naming a city.
     (
         r"\b\d{1,5}\s+[A-Z][a-z]+\s+(street|st|avenue|ave|road|rd|lane|ln|drive|dr)\b",
@@ -57,6 +56,27 @@ _PERSONAL_SENSITIVE: tuple[tuple[str, str], ...] = (
         "legal",
     ),
 )
+
+# A run of 13 to 19 digits is a payment card — in prose. In a URL it is an
+# identifier, and blocking those silently broke real delivery: a digest naming
+# `.../senior-line-dancing-2026-109463698` was withheld because that id is
+# thirteen digits once the punctuation is ignored, and every Eventbrite link
+# ends in one of these. Nothing said so. The tool call raised
+# `argument_withheld`, delivery recorded the catch-all `channel_failed`, and it
+# read for hours as the Mac refusing to send.
+#
+# So this one pattern is checked against text whose URL scheme, host, and path
+# have been masked. The query string and fragment are deliberately left visible,
+# because that is where a card or a credential would actually be passed, and
+# every other secret pattern still sees the whole URL.
+_CARD_NUMBER = re.compile(r"\b(?:\d[ -]?){13,19}\b")
+_URL_UP_TO_QUERY = re.compile(r"https?://[^\s?#]+", re.IGNORECASE)
+
+
+# Blank out the part of a URL that legitimately carries long numeric ids.
+def _without_url_paths(text: str) -> str:
+    return _URL_UP_TO_QUERY.sub(" ", text)
+
 
 _SECRET_PATTERNS = tuple((re.compile(p, re.IGNORECASE), c) for p, c in _SECRETS)
 _PERSONAL_PATTERNS = tuple(
@@ -117,6 +137,8 @@ class OutboundPrivacyPolicy:
         for pattern, category in _SECRET_PATTERNS:
             if pattern.search(text):
                 blocked.append(category)
+        if _CARD_NUMBER.search(_without_url_paths(text)):
+            blocked.append("account_identifier")
         if blocked:
             # Nothing is sent, and the caller must not log the original text.
             return SanitizedQuery(

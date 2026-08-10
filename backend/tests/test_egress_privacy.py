@@ -97,3 +97,39 @@ def test_a_secret_outranks_an_otherwise_minimizable_query(policy):
     # The credential decides the outcome regardless of the rest.
     assert result.allowed is False
     assert "credential" in result.categories
+
+
+# A long numeric id in a URL is not a payment card, and treating it as one
+# stopped real digests going out.
+#
+# The failure was expensive to find: the tool call raised `argument_withheld`,
+# delivery recorded its catch-all `channel_failed`, and it read as the Mac
+# refusing to send. It reproduced on exactly one character — the id reaches
+# thirteen digits, and every Eventbrite link ends in one of these.
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://www.active.com/goochland-va/dance/classes/senior-line-dancing-2026-109463698",
+        "https://www.eventbrite.com/e/barn-dance-tickets-1234567890123",
+        "See https://example.org/events/20260810123456789 for details",
+    ],
+)
+def test_a_long_id_in_a_url_path_is_not_a_card_number(policy, url):
+    assert policy.sanitize(url).allowed is True
+
+
+# The relaxation is scoped to the part of a URL that carries ids. A card or a
+# credential is passed in the query string, which is still read.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Call me on 4111 1111 1111 1111 today",
+        "card 4111-1111-1111-1111",
+        "https://pay.example.com/checkout?cc=4111111111111111",
+    ],
+)
+def test_a_real_card_number_is_still_refused(policy, text):
+    screened = policy.sanitize(text)
+
+    assert screened.allowed is False
+    assert "account_identifier" in screened.categories
