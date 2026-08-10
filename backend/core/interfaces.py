@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any
+from typing import Any, Protocol
 
 from backend.artifacts.types import (
     DiagramSpecification,
@@ -229,6 +229,28 @@ class VisionProvider(ABC):
         history: list[dict[str, str]],
         prompt: str,
     ) -> VisionAnalysis: ...
+
+
+class TextWriter(Protocol):
+    """The inference provider, narrowed to one grammar-constrained call.
+
+    Every agent that asks a model for a typed answer needs exactly this and
+    nothing more: messages in, a bounded schema, a temperature, JSON out. It
+    lives here rather than inside any one agent because the *mechanism* is
+    shared even though no two agents send the same prompt — which is precisely
+    the line between what is reusable and what belongs to an agent.
+
+    Synchronous, matching the runtime's own contract; callers move it off the
+    event loop rather than awaiting it.
+    """
+
+    def chat(
+        self,
+        messages: list[dict[str, str]],
+        max_tokens: int = 1024,
+        response_schema: dict[str, Any] | None = None,
+        temperature: float | None = None,
+    ) -> dict[str, Any]: ...
 
 
 class RerankProvider(ABC):

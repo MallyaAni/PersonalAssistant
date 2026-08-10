@@ -33,7 +33,13 @@ import json
 import re
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
-from typing import Any, Protocol
+from typing import Any
+
+from backend.core.interfaces import TextWriter
+
+# The mechanism is shared; only the prompt below belongs to Scout. Kept under
+# the old name here so the move of the protocol is not also a rename.
+DescriptionWriter = TextWriter
 
 # One line. Long enough to say what a thing is, short enough to read in a message
 # among five others.
@@ -105,22 +111,6 @@ class Readable:
     # True only when the page itself says the thing is over. Defaults to False
     # so a find is never dropped because the model was not asked or failed.
     already_happened: bool = False
-
-
-class DescriptionWriter(Protocol):
-    """The inference provider, narrowed to what this needs.
-
-    Synchronous, matching the runtime's own contract; calls are moved off the
-    event loop rather than awaited.
-    """
-
-    def chat(
-        self,
-        messages: list[dict[str, str]],
-        max_tokens: int = 1024,
-        response_schema: dict[str, Any] | None = None,
-        temperature: float | None = None,
-    ) -> dict[str, Any]: ...
 
 
 # Drop a trailing site name. "Nature and History Events – Official Website of

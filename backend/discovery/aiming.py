@@ -53,9 +53,9 @@ from dataclasses import dataclass
 from pydantic import BaseModel, ConfigDict, Field
 
 from backend.core.egress import OutboundPrivacyPolicy
+from backend.core.interfaces import TextWriter
 from backend.discovery.personal_context import PersonalContext
 from backend.discovery.sources.web import MONTH_STEMS
-from backend.discovery.summarize import DescriptionWriter
 from backend.discovery.types import normalize_label
 
 # Short enough that the place and the month still dominate the query. A subject
@@ -179,7 +179,7 @@ class AimPlanner:
     # sweep can be exercised end to end without a model by passing None.
     def __init__(
         self,
-        writer: DescriptionWriter | None,
+        writer: TextWriter | None,
         privacy: OutboundPrivacyPolicy | None = None,
         max_aims: int = MAX_AIMS,
         max_tokens: int = 1024,

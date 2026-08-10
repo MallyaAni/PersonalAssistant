@@ -29,7 +29,7 @@ from datetime import UTC, datetime
 from typing import Protocol
 
 from backend.config.settings import settings
-from backend.core.interfaces import RerankProvider, SearchProvider
+from backend.core.interfaces import RerankProvider, SearchProvider, TextWriter
 from backend.discovery.aiming import AimPlanner, SweepAim
 from backend.discovery.errors import DiscoveryError
 from backend.discovery.events import DiscoveredEvent, EventSource, FeedError
@@ -58,11 +58,7 @@ from backend.discovery.sources.links import LinkPageEventSource
 from backend.discovery.sources.rss import RssEventSource
 from backend.discovery.sources.web import WebEventSource
 from backend.discovery.sources_repository import DiscoverySourceRepository, FeedSource
-from backend.discovery.summarize import (
-    DescriptionWriter,
-    EventDescriber,
-    text_from_html,
-)
+from backend.discovery.summarize import EventDescriber, text_from_html
 from backend.discovery.types import DiscoveryProfile, Locality
 from backend.discovery.url_dates import deadline_has_passed
 
@@ -194,7 +190,7 @@ class DiscoveryRunner:
         embeddings: EmbeddingClient,
         adapter_factory: AdapterFactory | None = None,
         search: SearchProvider | None = None,
-        writer: DescriptionWriter | None = None,
+        writer: TextWriter | None = None,
         search_budget: SearchBudget | None = None,
         is_operator: bool = False,
         search_limit: int | None = None,

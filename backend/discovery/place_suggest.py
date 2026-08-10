@@ -41,7 +41,7 @@ from dataclasses import dataclass
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from backend.discovery.summarize import DescriptionWriter
+from backend.core.interfaces import TextWriter
 from backend.discovery.types import MAX_LABEL_CHARS, MAX_REGION_CHARS, normalize_label
 
 # Below this there is nothing to go on and every name in the world matches.
@@ -101,7 +101,7 @@ class PlaceSuggester:
 
     # The writer is the same narrow inference contract the rest of discovery
     # uses, so None simply means no suggestions rather than an error.
-    def __init__(self, writer: DescriptionWriter | None, max_tokens: int = 220) -> None:
+    def __init__(self, writer: TextWriter | None, max_tokens: int = 220) -> None:
         self.writer = writer
         self.max_tokens = max_tokens
 

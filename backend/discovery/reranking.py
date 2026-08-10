@@ -55,6 +55,7 @@ from datetime import UTC, datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from backend.core.interfaces import TextWriter
 from backend.discovery.personal_context import PersonalContext
 from backend.discovery.relevance import (
     MAX_SELECTED,
@@ -62,7 +63,6 @@ from backend.discovery.relevance import (
     RankedCandidate,
     cap_by_lead_time,
 )
-from backend.discovery.summarize import DescriptionWriter
 
 # How many shortlisted finds one call may consider. Beyond this the tail keeps
 # its deterministic order, which is what it had before this existed.
@@ -124,7 +124,7 @@ class MemoryReranker:
     # means the sweep runs entirely deterministically.
     def __init__(
         self,
-        writer: DescriptionWriter | None,
+        writer: TextWriter | None,
         max_considered: int = MAX_CONSIDERED,
         max_tokens: int = 256,
     ) -> None:
