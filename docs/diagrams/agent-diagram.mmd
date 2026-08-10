@@ -1,0 +1,27 @@
+---
+title: Diagram Agent Responsibilities
+---
+flowchart TB
+    Ask([User asks for a diagram]) --> Route[Deterministic request check]
+    Route -->|not a diagram request| Chat[Ordinary chat answer]
+    Route -->|is one| Model[Qwen 3.5 4B<br/>writes title, type, Mermaid]
+    Model --> Validate{Validator}
+    Validate -->|rejected| Retry[One retry, same prompt]
+    Retry --> Model
+    Validate -->|rejected twice| Fail[No artifact, visible failure]
+    Validate -->|accepted| Store[(Editable artifact)]
+    Store --> Render[Browser renders Mermaid]
+
+    Rule[The prompt asks for bounds.<br/>The validator decides:<br/>no HTML, no click or init directives,<br/>no URLs, 40 nodes, 80 edges]
+    Rule -.-> Validate
+
+    classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
+    classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
+    classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
+    classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
+    classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
+    class Ask,Chat,Render,Fail interface;
+    class Route,Validate,Retry application;
+    class Store data;
+    class Model model;
+    class Rule warning;

@@ -100,6 +100,7 @@ Model behavior is considered verified only when a functional test sends the real
 
 - [Agent instructions](AGENTS.md)
 - [Architecture](docs/ARCHITECTURE.md)
+- [Agent catalog](docs/AGENT_CATALOG.md): every specialized agent, what its model decides, and where its prompt, card and diagram live.
 - [Canonical system diagram](docs/diagrams/anios-system.svg)
 - [Scalable inference target](docs/diagrams/inference-scaling-target.svg)
 - [Authentication and ownership](docs/diagrams/authentication-subsystem.svg)

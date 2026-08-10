@@ -36,6 +36,8 @@ decide, and what is decided for it?**
 | --- | --- | --- | --- |
 | Scout | Only how a find reads. What qualifies is deterministic. | [source](agent-scout.mmd) | [view](agent-scout.svg) |
 | Deck | Content and slide shape. Geometry, storage and promotion are not its to make. | [source](agent-deck.mmd) | [view](agent-deck.svg) |
+| Diagram | The Mermaid, within bounds it is asked for and the validator enforces. | [source](agent-diagram.mmd) | [view](agent-diagram.svg) |
+| Memory capture | What is worth offering to save. Whether it is saved is the user's. | [source](agent-memory.mmd) | [view](agent-memory.svg) |
 
 ## Readability contract
 

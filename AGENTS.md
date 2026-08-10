@@ -24,6 +24,7 @@ Read [Security](docs/SECURITY.md) when a task affects data, credentials, authent
 - After three unsuccessful targeted hypotheses, stop editing and report the evidence, attempts, and next investigation needed.
 - Judge a retrieval, ranking, or filtering change with `python -m backend.cli.evaluate_discovery_ranking`, not by reading a few results. Two changes were shipped here on a single example each: a cross-encoder reported as improving attribution that made the same mistake more confidently on the first real digest, and a listing filter that emptied a live one. The labelled cases are seeded judgements — correct a label rather than working around the score.
 - Keep business logic separate from framework and infrastructure details where the existing architecture supports it.
+- A new agent is not finished until it has a folder under `backend/agents/<name>/`, a diagram pair in `docs/diagrams/agent-<name>.mmd` registered in the renderer and the catalog, a functional test, and a row in `docs/AGENT_CATALOG.md`. That file states the checklist; follow it rather than copying whichever agent was written last.
 - Every prompt is a feature and gets a functional test, in the same change that writes it. `backend/tests/` is layered by what a test proves: the existing modules cover structure and units, `functional/` covers what a model actually answers, and an integration test covers a path across several components. A new prompt with no functional test is an untested feature however many structural tests surround it.
 - A prompt belongs to the agent whose judgement it encodes, and lives in that agent's folder under `backend/agents/<name>/`. The *mechanism* for calling a model is shared and reusable — grammar-constrained, greedy, bounded, with a deterministic fallback — but the prompt, its schema, and the validation of its output never are. Filing a prompt under the domain package it happens to act on is how Scout's four prompts ended up in `backend/discovery/` while `backend/agents/scout/` held only a status card.
 - Add a brief, plain-language comment immediately above every newly written function or method explaining what it accomplishes. This includes production code, local helpers, API handlers, frontend functions, tests, CLI entry points, and migration functions. Put the comment above any decorators, and update it whenever the function's purpose changes.
@@ -177,6 +178,9 @@ restart gateway` after any `up -d backend`.
 - `docs/CHANGELOG.md`: append-only history of meaningful verified changes.
 - `docs/SECURITY.md`: current security posture and planned controls.
 - `docs/diagrams/`: canonical architecture-as-code sources and their generated sharing formats.
+- `docs/AGENT_CATALOG.md`: every specialized agent, what its model decides, where its
+  prompt and card live, and what is deliberately decided for it. A new agent adds a
+  row here and a diagram pair; the file states the whole checklist.
 - `docs/adr/`: durable architectural decisions.
 
 After implementation or debugging, rewrite `NEXT_SESSION.md` when runtime evidence or the next task changed. Update other documents only when facts within their ownership changed. Never record code as complete in the changelog unless its intended behavior passed functional validation.
