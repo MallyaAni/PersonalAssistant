@@ -127,8 +127,12 @@ Three things made it work, and are worth not undoing:
   body. There is no cycle — `agents/registry.py` reaches only
   `discovery/reachability.py`, which imports nothing back.
 
-**Still to do, the same move for everyone else.** Deck's five prompts are in
-`presentations/provider.py`, Diagram's in `artifacts/diagram.py`, memory
+Deck is done too: `agents/deck/prompts.py` holds all five — the four contract
+builders and the preambles that open each call — and `presentations/provider.py`
+keeps the machinery, the JSON extraction, the per-layout schema and the view
+builders that decide what a slide looks like to the model.
+
+**Still to do:** Diagram's prompt is in `artifacts/diagram.py` and memory
 capture's in `memory/proposal_agent.py`. Search routing and image recall are in
 `search/classifier.py` and `artifacts/image_recall_classifier.py`, and those two
 may be policies rather than agents — decide that before moving them.
