@@ -159,6 +159,31 @@ workspace will never list. Decide that before moving them. Search routing and im
 `search/classifier.py` and `artifacts/image_recall_classifier.py`, and those two
 may be policies rather than agents — decide that before moving them.
 
+## A functional suite, and what it found immediately
+
+`backend/tests/functional/` sends each prompt to the real model and asserts on
+the answer. Fifteen behaviours, chosen from what each prompt claims to do rather
+than from past incidents: an interest becomes matchable text, a subject carries
+no place or date, personalisation is visible when a fact exists, a finished page
+is reported as finished and a weekly class is not, a description never carries a
+link, a shared place name completes to more than one region, a nonsense name
+completes to nothing, ordering follows the facts, a weak match is not excluded,
+and capture ignores a question or another person's preference.
+
+Fourteen pass. One is marked `xfail` and is a **real product defect, not a flaky
+test**: asked for a three-step pipeline, the diagram model returned
+`<!template>flowchart TD:[order[]((Order Received))]...` — markup the renderer
+cannot draw — and on retry failed validation outright, so that request produces
+nothing at all. The prompt already forbids HTML and requires the source to start
+with its declaration; the model ignores both on this shape of request. The fix
+is a worked example in the prompt or a repair pass before validation, and it
+needs measuring across several requests rather than the one.
+
+Two things to keep doing here. Assert on properties, not wording, so a reworded
+prompt survives and a changed behaviour does not. And write the test from what
+the prompt claims, not from what has gone wrong before — this suite was written
+that way and found a defect nobody had reported.
+
 ## Where the prompts are
 
 Every prompt Scout injects, so they can be read in one place:

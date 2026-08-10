@@ -90,6 +90,25 @@ python -m backend.cli.evaluate_search_routing --patterns-only   # deterministic,
 python -m backend.cli.evaluate_search_routing                   # full cascade
 ```
 
+Functional tests exercise the real prompts against the real local model and
+assert on the behaviour of the answer, which is the half the rest of the suite
+cannot see:
+
+```bash
+python -m pytest backend/tests/functional -q     # needs vLLM; skips without it
+```
+
+They skip rather than fail when the runtime is unreachable, so a machine without
+a model still runs everything else — but a skip is not a pass, and a prompt
+change should be judged by running these. Every prompt under test is greedy, so
+an assertion is reproducible rather than a coin flip.
+
+Assert on properties, never on wording: that an interest becomes more than two
+words, that a subject carries no place or date, that a page saying "thanks to
+everyone who came" is reported as over and a weekly class is not, that a
+description contains no link, that a name meaning several places completes to
+several. A prompt may be reworded; the behaviour it exists to produce may not.
+
 Discovery ranking is scored the same way, against items that reached real
 digests and are labelled in `backend/discovery/evaluation_cases.json`:
 
