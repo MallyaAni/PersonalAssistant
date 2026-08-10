@@ -24,6 +24,7 @@ Read [Security](docs/SECURITY.md) when a task affects data, credentials, authent
 - After three unsuccessful targeted hypotheses, stop editing and report the evidence, attempts, and next investigation needed.
 - Judge a retrieval, ranking, or filtering change with `python -m backend.cli.evaluate_discovery_ranking`, not by reading a few results. Two changes were shipped here on a single example each: a cross-encoder reported as improving attribution that made the same mistake more confidently on the first real digest, and a listing filter that emptied a live one. The labelled cases are seeded judgements — correct a label rather than working around the score.
 - Keep business logic separate from framework and infrastructure details where the existing architecture supports it.
+- Every prompt is a feature and gets a functional test, in the same change that writes it. `backend/tests/` is layered by what a test proves: the existing modules cover structure and units, `functional/` covers what a model actually answers, and an integration test covers a path across several components. A new prompt with no functional test is an untested feature however many structural tests surround it.
 - A prompt belongs to the agent whose judgement it encodes, and lives in that agent's folder under `backend/agents/<name>/`. The *mechanism* for calling a model is shared and reusable — grammar-constrained, greedy, bounded, with a deterministic fallback — but the prompt, its schema, and the validation of its output never are. Filing a prompt under the domain package it happens to act on is how Scout's four prompts ended up in `backend/discovery/` while `backend/agents/scout/` held only a status card.
 - Add a brief, plain-language comment immediately above every newly written function or method explaining what it accomplishes. This includes production code, local helpers, API handlers, frontend functions, tests, CLI entry points, and migration functions. Put the comment above any decorators, and update it whenever the function's purpose changes.
 - Do not hardcode production secrets or log credentials, tokens, or unnecessary personal data.
@@ -51,9 +52,29 @@ Before declaring a task complete:
 2. Exercise the actual user or system acceptance path.
 3. Validate expected content, state transitions, side effects, persistence, logs, and error handling—not only reachability.
 4. Run relevant automated tests and builds.
-5. Report every applicable criterion as `VERIFIED`, `FAILED`, or `UNVERIFIED` with concrete evidence.
+5. If the change adds or alters a prompt, add a functional test in `backend/tests/functional/` and run it. A test that a model was called, or that its answer parsed, does not show that it answered well.
+6. Report every applicable criterion as `VERIFIED`, `FAILED`, or `UNVERIFIED` with concrete evidence.
 
 User-interface behavior is `VERIFIED` only after an automated browser test or a documented manual browser session exercises the intended workflow. Serving HTML or reaching an API is insufficient. UI validation should fail on page exceptions, blocking console errors, failed required network requests, incorrect rendered content, broken interactions, or missing required persistence.
+
+Model behavior is `VERIFIED` only after a functional test exercises the real
+prompt against the real runtime and asserts on what came back. Structural tests —
+that a call happens, that a schema is shaped a certain way, that a failure
+degrades safely — prove wiring and would not notice a prompt that had quietly
+stopped working, which is the failure a user actually meets. `python -m pytest
+backend/tests/functional -q` skips without a runtime, and a skip is not a pass.
+
+Write those tests from what the prompt claims to do, not from the last thing
+that went wrong. Assert on properties rather than wording — that an interest
+becomes more than two words, that a subject carries no place or date, that a page
+saying it is finished is reported as finished and a weekly class is not, that a
+description carries no link — so a reworded prompt survives and a changed
+behavior fails. The first suite written this way found a defect nobody had
+reported, on its first run.
+
+When one of those tests fails against a real product defect, mark it `xfail`
+with the evidence in the reason. Do not delete it, and do not loosen the
+assertion until it passes: that converts a finding into a false clean run.
 
 If functional validation cannot be performed, do not label the behavior verified. Follow [docs/DEVELOPMENT_GUIDE.md](docs/DEVELOPMENT_GUIDE.md).
 

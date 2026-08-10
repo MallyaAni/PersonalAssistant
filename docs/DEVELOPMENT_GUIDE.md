@@ -90,6 +90,14 @@ python -m backend.cli.evaluate_search_routing --patterns-only   # deterministic,
 python -m backend.cli.evaluate_search_routing                   # full cascade
 ```
 
+Tests are layered by what they prove, not by what they touch:
+
+| Folder | Proves |
+| --- | --- |
+| `backend/tests/` | units and structure — a call is made, a schema is shaped, a failure degrades safely |
+| `backend/tests/functional/` | what a model actually answers, against the real runtime |
+| `frontend/e2e/` | what a person sees, in a real browser |
+
 Functional tests exercise the real prompts against the real local model and
 assert on the behaviour of the answer, which is the half the rest of the suite
 cannot see:

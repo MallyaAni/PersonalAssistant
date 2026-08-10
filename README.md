@@ -94,6 +94,8 @@ These addresses being reachable does not prove chat or persistence works. Follow
 
 User-visible behavior is considered verified only when the intended workflow is exercised through an automated browser test or a documented manual browser session. API reachability alone cannot verify the frontend.
 
+Model behavior is considered verified only when a functional test sends the real prompt to the real runtime and asserts on the answer (`backend/tests/functional/`). A passing structural test shows the call was made and parsed, which is not the same as it being right.
+
 ## Documentation
 
 - [Agent instructions](AGENTS.md)
