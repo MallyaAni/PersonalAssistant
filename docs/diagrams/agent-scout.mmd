@@ -20,7 +20,9 @@ flowchart TB
     Facts --> Reorder
     Reorder --> Description[Qwen 3.5 4B<br/>writes descriptions]
     Description --> Message[Qwen 3.5 4B<br/>writes the message]
-    Message --> Digest[Digest to subscribers]
+    Message --> Digest[One message per find]
+    Digest --> Tapback([Thumbs up or down])
+    Tapback --> Signal[(Recorded, unused so far)]
 
     Rule[Application code owns persistence,<br/>qualification, budgets and delivery]
     Rule -.-> Review
@@ -35,8 +37,8 @@ flowchart TB
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
-    class Statement,Review,NoWrite,Trigger,Digest interface;
+    class Statement,Review,NoWrite,Trigger,Digest,Tapback interface;
     class Sweep,Sources,Safety,Ranking application;
-    class Profile,Facts data;
+    class Profile,Facts,Signal data;
     class Extract,Aim,Precision,Reorder,Description,Message model;
     class Rule,Clock warning;

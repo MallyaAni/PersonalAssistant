@@ -67,9 +67,47 @@ export IMESSAGE_BRIDGE_GRANTS="$HOME/.anios-imessage-bridge/granted-recipients.j
 # Loopback by default. Set this only when AniOS is on another machine.
 export IMESSAGE_BRIDGE_HOST=0.0.0.0
 export IMESSAGE_BRIDGE_PORT=8010
+# Optional, and off unless you turn it on. See "Reading reactions" below.
+export IMESSAGE_BRIDGE_READ_REACTIONS=true
 
 python3 server.py
 ```
+
+## Reading reactions
+
+Scout sends a digest as one message per find so each can carry a tapback — the
+👍 or 👎 you get by long-pressing a bubble. That is the only way it learns what
+someone actually liked, rather than what they said they already knew.
+
+Apple provides no callback when a reaction is left, so the only way to see one is
+to read the Messages database. That needs **Full Disk Access** for whatever runs
+this bridge (`Terminal`, or the LaunchAgent's executable), which is a different
+and larger grant than the automation permission sending needs. It is therefore
+off by default, and turning it on is a deliberate decision:
+
+```bash
+export IMESSAGE_BRIDGE_READ_REACTIONS=true
+# Optional; defaults to ~/Library/Messages/chat.db
+export IMESSAGE_BRIDGE_MESSAGES_DB="$HOME/Library/Messages/chat.db"
+```
+
+What it reads is deliberately narrow, and worth checking against the code rather
+than taking on trust:
+
+- the database is opened **read-only and immutable**, so this cannot write to it
+  or take a lock Messages would notice;
+- two queries only. One finds the identifier of the message just sent, by
+  recipient and matching text. The other returns tapbacks whose target is one of
+  the identifiers AniOS supplies — identifiers this bridge handed out itself
+  when it sent those messages;
+- **no message text is ever returned.** The reaction query selects the target
+  identifier, the reaction type, and a timestamp. There is no tool here that can
+  be asked what anyone has said;
+- only 👍 and 👎 are reported. The other four tapbacks are ambiguous about
+  whether someone wants more of something.
+
+Leave it off and everything still works: digests send exactly as before, and
+AniOS records that it sent them with no identifier and collects no feedback.
 
 When the bridge runs as a LaunchAgent, put both grant variables in its
 `EnvironmentVariables` dictionary and reload the agent. Setting them only in an

@@ -47,6 +47,14 @@ from the typed record and is never asked of the model, because this string
 reaches third parties over a channel that cannot be unsent. With no runtime the
 assembled shape still ships — worse to read, and it always arrives.
 
+**The first positive signal.** A digest is sent as one message per find, so each
+carries a tapback — 👍 or 👎 on the bubble itself. That is the only thing Scout
+knows that means *more like that one*; dismissal means "I already knew this" and
+silence means nothing at all. Reactions are recorded in `discovery_sent_finds`
+against the same `item_digest` novelty and familiarity key on, and **nothing in
+ranking reads them yet**: a loop trained on a handful of tapbacks would learn
+noise. The cost is a burst of notifications instead of one.
+
 **Measured weakness: aiming barely personalises.** Given an approved fact
 bearing on an interest, the fact reaches the profile 2 times in 5 and the search
 subject 0 times in 5. The previous prompt scored 1 and 1, and its single subject

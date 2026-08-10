@@ -20,6 +20,7 @@ path renders that string here and requires it back verbatim. Links come from the
 typed record on both paths and are never asked of the model.
 """
 
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
@@ -39,6 +40,95 @@ MAX_SUMMARY_CHARS = 170
 #
 # `calendar_base_url` is accepted and ignored so existing callers keep working;
 # it is removed once none pass it.
+@dataclass(frozen=True, slots=True)
+class Bubble:
+    """One message to send, and the find it is about.
+
+    The greeting is a bubble with no find: it carries no identity and draws no
+    useful reaction, but it arrives first and says what this is.
+    """
+
+    text: str
+    item_digest: str | None = None
+    label: str | None = None
+
+
+# Split a digest into the messages it should be sent as, one per find.
+#
+# A tapback attaches to a bubble, so this is what makes per-find feedback
+# possible at all: sent as one message, a digest can only be rated as a whole.
+# The cost is real and is the reason this is a separate function rather than the
+# only way — five notifications instead of one.
+async def write_bubbles(
+    selected: tuple[RankedCandidate, ...],
+    writer: DigestWriter | None = None,
+    timezone: str = "America/New_York",
+    limit: int = MAX_EVENTS_IN_MESSAGE,
+    now: datetime | None = None,
+) -> tuple[Bubble, ...]:
+    zone = _zone(timezone)
+    moment = now or datetime.now(UTC)
+    live = tuple(item for item in selected if not _has_passed(item, moment))
+    if not live:
+        return ()
+    kept = list(live)[:limit]
+    finds = tuple(
+        Find(
+            index=position,
+            name=" ".join(item.event.title.split()),
+            description=item.event.summary,
+            when=_format_when(item.event.starts_at, zone),
+            place=item.event.place or None,
+        )
+        for position, item in enumerate(kept)
+    )
+    written = None if writer is None else await writer.write(finds)
+    if written is None:
+        # No model. Each find still gets its own bubble, because the feedback
+        # this exists for must not depend on the runtime being up.
+        return tuple(
+            Bubble(
+                text=_assembled_bubble(item, zone),
+                item_digest=item.candidate.digest,
+                label=item.event.title,
+            )
+            for item in kept
+        )
+
+    bubbles = [Bubble(text=written.greeting)]
+    for line in written.lines:
+        item = kept[line.index]
+        text = line.text
+        # The source's own link, from the typed record, never from the model.
+        if item.event.url:
+            text = f"{text}\n{item.event.url}"
+        bubbles.append(
+            Bubble(
+                text=text,
+                item_digest=item.candidate.digest,
+                label=item.event.title,
+            )
+        )
+    return tuple(bubbles)
+
+
+# One find as its own message when there is no model to word it.
+def _assembled_bubble(item: RankedCandidate, zone: ZoneInfo) -> str:
+    event = item.event
+    line = _bound(event.title, MAX_TITLE_CHARS)
+    when = _format_when(event.starts_at, zone)
+    if when:
+        line += f" — {when}"
+    if event.place:
+        line += f" ({_bound(event.place, MAX_PLACE_CHARS)})"
+    parts = [line]
+    if event.summary:
+        parts.append(_bound(event.summary, MAX_SUMMARY_CHARS))
+    if event.url:
+        parts.append(event.url)
+    return "\n".join(parts)
+
+
 async def write_message(
     selected: tuple[RankedCandidate, ...],
     writer: DigestWriter | None = None,

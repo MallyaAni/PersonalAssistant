@@ -49,12 +49,14 @@ from backend.discovery.channels import (
 )
 from backend.discovery.fact_recorder import MemoryFactRecorder
 from backend.discovery.familiarity import FamiliarItemRepository
+from backend.discovery.feedback import SentFindRepository
 from backend.discovery.locating import (
     DisabledPlaceResolver,
     NominatimPlaceResolver,
     PlaceResolver,
 )
 from backend.discovery.novelty import SeenItemRepository
+from backend.discovery.reactions import ReactionCollector
 from backend.discovery.repository import DiscoveryProfileRepository
 from backend.discovery.runner import DiscoveryRunner
 from backend.discovery.runs import DiscoveryRunRepository
@@ -934,6 +936,16 @@ DependencyPlaceSuggester = Annotated[
 # assembled shape instead of failing.
 def get_digest_writer() -> DigestWriter:
     return DigestWriter(get_llm_client())
+
+
+# Reads tapbacks off the bubbles already sent, through the same trusted MCP
+# boundary the send itself uses, so the same allowlist and audit apply.
+def get_reaction_collector(session: AsyncSession) -> ReactionCollector:
+    return ReactionCollector(
+        SentFindRepository(session),
+        _invoke_discovery_tool,
+        settings.DISCOVERY_REACTIONS_TOOL,
+    )
 
 
 def get_discovery_runner(

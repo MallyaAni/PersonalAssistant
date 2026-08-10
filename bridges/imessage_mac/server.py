@@ -31,10 +31,12 @@ import binascii
 import json
 import os
 import re
+import sqlite3
 import subprocess
 import sys
 import tempfile
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -113,6 +115,20 @@ class BridgeConfig:
     # Where recipients granted by AniOS are recorded, and whether AniOS may
     # grant any. Both off unless the Mac's operator turns them on.
     grants_path: Path | None = None
+    # Whether this bridge may read the Messages database, and where it is.
+    #
+    # Off unless the operator turns it on, and separate from sending on purpose:
+    # sending needs automation permission, reading needs Full Disk Access, and
+    # those are different grants protecting different things. With it off, every
+    # send still works and reports no identifier, which costs feedback and
+    # nothing else.
+    #
+    # What it is used for is deliberately narrow. Two queries, both keyed on
+    # messages this bridge itself sent: the identifier of the message just sent,
+    # and the tapbacks attached to identifiers AniOS supplies. No message bodies
+    # are read, no conversation is enumerated, and nothing about anyone's other
+    # correspondence is reachable through it.
+    messages_db: Path | None = None
 
     @classmethod
     def from_environment(cls) -> BridgeConfig:
@@ -137,6 +153,7 @@ class BridgeConfig:
             host=os.environ.get("IMESSAGE_BRIDGE_HOST", "127.0.0.1"),
             port=int(os.environ.get("IMESSAGE_BRIDGE_PORT", "8010")),
             grants_path=_grants_path(),
+            messages_db=_messages_db(),
         )
 
 
@@ -261,6 +278,143 @@ def decode_attachment(
     return safe_name, content
 
 
+# Where the Messages database is, or None when reading it is switched off.
+#
+# Off by default for the same reason granting is: it is a permission the Mac's
+# operator gives deliberately, not one inherited from installing the bridge.
+def _messages_db() -> Path | None:
+    if os.environ.get("IMESSAGE_BRIDGE_READ_REACTIONS", "").strip().lower() not in {
+        "1",
+        "true",
+        "yes",
+    }:
+        return None
+    raw = os.environ.get("IMESSAGE_BRIDGE_MESSAGES_DB", "").strip()
+    path = Path(raw) if raw else Path.home() / "Library" / "Messages" / "chat.db"
+    return path if path.exists() else None
+
+
+# Read-only connection to the Messages database, or None when unavailable.
+#
+# Opened through an immutable URI so this cannot write, cannot create the file,
+# and cannot take a lock that would interfere with Messages itself.
+def _open_messages(config: BridgeConfig) -> sqlite3.Connection | None:
+    if config.messages_db is None:
+        return None
+    try:
+        return sqlite3.connect(
+            f"file:{config.messages_db}?immutable=1", uri=True, timeout=2.0
+        )
+    except sqlite3.Error:
+        # Almost always Full Disk Access not granted. Not fatal: sending is
+        # unaffected and this only costs the identifier.
+        return None
+
+
+# The identifier of the message just sent to this recipient, if it can be read.
+#
+# Correlated by recipient and recency rather than returned by the send, because
+# AppleScript's `send` hands back nothing. The window is deliberately tight and
+# the text is compared, so a message the operator typed by hand a moment earlier
+# cannot be mistaken for ours.
+def latest_sent_guid(
+    config: BridgeConfig, recipient: str, body: str
+) -> str | None:
+    connection = _open_messages(config)
+    if connection is None:
+        return None
+    try:
+        rows = connection.execute(
+            """
+            SELECT message.guid, message.text
+            FROM message
+            JOIN handle ON message.handle_id = handle.ROWID
+            WHERE message.is_from_me = 1
+              AND handle.id = ?
+            ORDER BY message.date DESC
+            LIMIT 5
+            """,
+            (recipient,),
+        ).fetchall()
+    except sqlite3.Error:
+        return None
+    finally:
+        connection.close()
+    wanted = body.strip()
+    for guid, text in rows:
+        if (text or "").strip() == wanted:
+            return str(guid)
+    return None
+
+
+# Which of the given messages have been reacted to, and how.
+#
+# Only the identifiers AniOS supplies are looked at, and only the reaction type
+# is returned. Tapbacks live in the same table as messages, distinguished by
+# `associated_message_type`: 2001 is a thumbs up and 2002 a thumbs down, while
+# 3001 and 3002 are those same reactions being removed again.
+def read_tapbacks(
+    config: BridgeConfig, guids: list[str]
+) -> list[dict[str, object]]:
+    if not guids:
+        return []
+    connection = _open_messages(config)
+    if connection is None:
+        return []
+    # The association is stored as a prefixed copy of the target's identifier
+    # ("p:0/<guid>"), so matching is on the suffix rather than on equality.
+    wanted = {guid.split(";")[-1]: guid for guid in guids if guid}
+    if not wanted:
+        return []
+    try:
+        rows = connection.execute(
+            """
+            SELECT associated_message_guid, associated_message_type, date
+            FROM message
+            WHERE associated_message_type IN (2001, 2002, 3001, 3002)
+              AND is_from_me = 0
+            ORDER BY date ASC
+            """
+        ).fetchall()
+    except sqlite3.Error:
+        return []
+    finally:
+        connection.close()
+
+    # Latest wins: someone who thumbs-ups and then removes it has no opinion,
+    # and someone who switches from down to up has changed their mind.
+    latest: dict[str, dict[str, object]] = {}
+    for associated, kind, when in rows:
+        suffix = str(associated or "").split("/")[-1]
+        guid = wanted.get(suffix)
+        if guid is None:
+            continue
+        if kind in (3001, 3002):
+            latest.pop(guid, None)
+            continue
+        latest[guid] = {
+            "message_guid": guid,
+            "reaction": "liked" if kind == 2001 else "disliked",
+            "at": _apple_epoch(when),
+        }
+    return list(latest.values())
+
+
+# Apple stores message times as nanoseconds since 2001-01-01 UTC.
+def _apple_epoch(value: object) -> str | None:
+    try:
+        seconds = int(value) / 1_000_000_000
+    except (TypeError, ValueError):
+        return None
+    # `timezone.utc` rather than `datetime.UTC`: the alias needs 3.11 and this
+    # file runs on whatever Python the Mac's operator built the venv with, which
+    # the setup only requires to be 3.10 or newer.
+    return (
+        datetime(2001, 1, 1, tzinfo=timezone.utc)  # noqa: UP017
+        + timedelta(seconds=seconds)
+    ).isoformat()
+
+
 def run_osascript(script: str, arguments: list[str]) -> None:
     result = subprocess.run(
         ["osascript", "-e", script, "--", *arguments],
@@ -295,7 +449,10 @@ def send_message(
     )
     if attachment is None:
         run_osascript(_SEND_TEXT, [recipient, text])
-        return "sent"
+        # The identifier a tapback will point at, when this Mac allows it to be
+        # read. "sent" otherwise, which is what every caller understood before
+        # feedback existed and still handles.
+        return latest_sent_guid(config, recipient, text) or "sent"
 
     safe_name, content = attachment
     # Written inside a directory that is removed however this returns, so a
@@ -350,13 +507,23 @@ def create_bridge(config: BridgeConfig) -> FastMCP:
         added = store_grant(config, to)
         return "Recipient allowed." if added else "Recipient was already allowed."
 
+    @server.tool()
+    def read_reactions(message_guids: list[str]) -> str:
+        """Report thumbs-up and thumbs-down tapbacks on messages this sent."""
+        # Answers only about identifiers the caller already has, which are the
+        # ones this bridge handed back when it sent them. It cannot be asked
+        # "what has been said to you lately", no message text is read, and a Mac
+        # that has not been given Full Disk Access returns an empty list rather
+        # than an error — the digest still went, and only the feedback is lost.
+        return json.dumps({"reactions": read_tapbacks(config, message_guids)})
+
     return server
 
 
 # Wrap the MCP app so an unauthenticated request is refused before it reaches
 # any tool. Anything on the network can open an HTTP port; without this the
 # bridge is an open "send an iMessage as me" endpoint.
-def build_app(config: BridgeConfig) -> "Any":
+def build_app(config: BridgeConfig) -> Any:
     import hmac
 
     from starlette.middleware.base import BaseHTTPMiddleware
@@ -365,7 +532,7 @@ def build_app(config: BridgeConfig) -> "Any":
     app = create_bridge(config).streamable_http_app()
 
     # Compared in constant time so the token cannot be recovered by timing.
-    async def authenticate(request: "Any", call_next: "Any") -> "Any":
+    async def authenticate(request: Any, call_next: Any) -> Any:
         supplied = request.headers.get(BRIDGE_TOKEN_HEADER, "")
         if not hmac.compare_digest(supplied, config.token):
             # No detail: a caller that guessed wrong learns only that it did.

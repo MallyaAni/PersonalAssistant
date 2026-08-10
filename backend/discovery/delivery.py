@@ -30,7 +30,8 @@ from datetime import UTC, datetime, timedelta
 
 from backend.agents.scout.digesting import DigestWriter
 from backend.discovery.channels import DeliveryResult, NotificationChannel
-from backend.discovery.digest import write_message
+from backend.discovery.digest import Bubble, write_bubbles
+from backend.discovery.feedback import SentFindRepository
 from backend.discovery.relevance import RankedCandidate
 from backend.discovery.runs import DiscoveryRunRepository
 from backend.discovery.subscribers import Subscriber, SubscriberRepository
@@ -97,12 +98,16 @@ class DigestDelivery:
         # a digest that reads like a form letter still beats one that a missing
         # runtime stopped from arriving at all.
         digest_writer: "DigestWriter | None" = None,
+        # Files each bubble so a tapback has something to join to. Optional: a
+        # deployment without it delivers exactly as well and learns nothing.
+        sent_finds: "SentFindRepository | None" = None,
     ) -> None:
         self.subscribers = subscribers
         self.channels = channels
         self.runs = runs
         self.granter = granter
         self.digest_writer = digest_writer
+        self.sent_finds = sent_finds
 
     # Tell the sending machine about a recipient it does not know, then let the
     # digest be tried again.
@@ -148,14 +153,23 @@ class DigestDelivery:
         # The slot this digest belongs to, which is what the retry deadline is
         # measured from. A sweep that started late does not get extra hours.
         scheduled_for: datetime | None = None,
+        # Where these finds were offered. Carried onto each feedback row for the
+        # same reason familiarity is scoped to a place: liking a trail in
+        # Arlington says nothing about one in Denver.
+        locality: str | None = None,
     ) -> DeliveryReport:
         # No attachment. A calendar file arriving unasked is friction on a
         # phone, and the message is read in a few seconds either way — so a
         # digest is now text plus the source's own link, which works from
         # anywhere without this machine being reachable at all.
-        message = await write_message(
+        bubbles = await write_bubbles(
             selected, writer=self.digest_writer, timezone=timezone, now=now
         )
+        # What a retry would resend, and what settles the run when nothing is
+        # worth sending. A retry sends one message rather than the burst: the
+        # bubbles it would need to react to have already been sent once, and
+        # sending them again to re-enable feedback would duplicate a digest.
+        message = "\n\n".join(bubble.text for bubble in bubbles) if bubbles else None
         if message is None:
             # Nothing worth sending. Recording the run as delivered still
             # matters: it stops a resumed attempt from re-deciding and sending
@@ -175,6 +189,8 @@ class DigestDelivery:
             scheduled_for=scheduled_for or now or datetime.now(UTC),
             attempts=0,
             now=now,
+            bubbles=bubbles,
+            locality=locality,
         )
 
     # Send a digest that was rendered earlier and never made it out.
@@ -200,6 +216,77 @@ class DigestDelivery:
             now=now,
         )
 
+    # Send one subscriber their digest, as a burst of bubbles or as one message.
+    #
+    # Ordinary delivery sends a bubble per find so each can carry a tapback. A
+    # redelivery has no bubbles and sends the stored text whole, because those
+    # finds were already sent once and resending them to collect feedback would
+    # be sending the digest twice.
+    #
+    # The first bubble decides whether a retry is safe. If it provably never
+    # left, nothing did; if anything after it fails, part of the digest is
+    # already on someone's phone and a retry would duplicate it.
+    async def _send_one(
+        self,
+        subscriber: Subscriber,
+        channel: NotificationChannel,
+        message: str,
+        bubbles: tuple[Bubble, ...],
+        user_id: str,
+        run_id: str | None,
+        locality: str | None,
+    ) -> DeliveryResult:
+        if not bubbles:
+            return await channel.send(subscriber.address, message)
+
+        first: DeliveryResult | None = None
+        for bubble in bubbles:
+            result = await channel.send(subscriber.address, bubble.text)
+            if first is None:
+                first = result
+            if not result.delivered:
+                # Stop rather than press on: a gap in the middle of a digest is
+                # worse than a short one, and every later bubble would fail the
+                # same way.
+                return DeliveryResult(
+                    delivered=False,
+                    error_code=result.error_code,
+                    unsent=result.unsent and result is first,
+                )
+            if bubble.item_digest or bubble.label:
+                await self._remember(
+                    bubble, result, user_id, run_id, locality, subscriber
+                )
+        return first or DeliveryResult(delivered=False, error_code="nothing_to_send")
+
+    # File one bubble so a tapback on it has something to land on.
+    #
+    # Best-effort by design. A digest that failed because its bookkeeping row
+    # would not write is a bad trade, so this swallows everything and costs at
+    # most one bubble's opinion.
+    async def _remember(
+        self,
+        bubble: Bubble,
+        result: DeliveryResult,
+        user_id: str,
+        run_id: str | None,
+        locality: str | None,
+        subscriber: Subscriber,
+    ) -> None:
+        if self.sent_finds is None:
+            return
+        try:
+            await self.sent_finds.record_sent(
+                user_id=user_id,
+                item_digest=bubble.item_digest,
+                label=bubble.label,
+                locality=locality,
+                message_guid=result.provider_message_id,
+                run_id=run_id,
+            )
+        except Exception:
+            return
+
     async def _send_to_all(
         self,
         user_id: str,
@@ -208,6 +295,8 @@ class DigestDelivery:
         scheduled_for: datetime | None,
         attempts: int,
         now: datetime | None = None,
+        bubbles: tuple[Bubble, ...] = (),
+        locality: str | None = None,
     ) -> DeliveryReport:
         recipients = await self.subscribers.list_subscribers(
             user_id, deliverable_only=True
@@ -230,7 +319,9 @@ class DigestDelivery:
                     subscriber.id, "channel_unconfigured"
                 )
                 continue
-            result = await channel.send(subscriber.address, message)
+            result = await self._send_one(
+                subscriber, channel, message, bubbles, user_id, run_id, locality
+            )
             if result.error_code == "recipient_not_allowed":
                 result = await self._grant_and_reconsider(subscriber, result)
             await self.subscribers.record_delivery(subscriber.id, result.error_code)

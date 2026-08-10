@@ -26,11 +26,13 @@ from backend.core.dependencies import (
     get_digest_writer,
     get_discovery_channels,
     get_discovery_runner_for_session,
+    get_reaction_collector,
     grant_recipient_on_bridge,
 )
 from backend.core.logging_config import get_logger
 from backend.database.session import AsyncSessionLocal
 from backend.discovery.delivery import DigestDelivery
+from backend.discovery.feedback import SentFindRepository
 from backend.discovery.reachability import (
     calendar_base_url,
     is_reachable_from_other_devices,
@@ -119,6 +121,25 @@ class DiscoveryWorker:
         )
         return True
 
+    # Ask the Mac which digest bubbles were reacted to, and record what it says.
+    #
+    # Separate from the sweep and delivery paths because it shares nothing with
+    # them: no run is claimed, no message is sent, and a failure means only that
+    # this pass learned nothing.
+    async def collect_reactions(self) -> int:
+        if not settings.DISCOVERY_EGRESS_ENABLED:
+            return 0
+        try:
+            async with AsyncSessionLocal() as session:
+                collected = await get_reaction_collector(session).collect()
+                await session.commit()
+                return collected
+        except Exception:
+            # An unreachable bridge, a Mac without Full Disk Access, a bridge
+            # too old to have the tool. None of them are worth a loud failure on
+            # a loop whose real job is delivering digests.
+            return 0
+
     # Claim and execute at most one run, so the loop stays testable.
     async def run_once(self) -> bool:
         async with AsyncSessionLocal() as session:
@@ -162,6 +183,7 @@ class DiscoveryWorker:
                     runs,
                     grant_recipient_on_bridge,
                     get_digest_writer(),
+                    SentFindRepository(session),
                 ).deliver(
                     user_id,
                     result.selected,
@@ -170,6 +192,7 @@ class DiscoveryWorker:
                     run_id=run_id,
                     worker_id=self.worker_id,
                     scheduled_for=run.get("scheduled_for"),
+                    locality=_locality_for(profile),
                 )
                 await runs.mark_ready(run_id, self.worker_id)
 
@@ -248,6 +271,17 @@ def _timezone_for(profile: Any) -> str:
     return "America/New_York"
 
 
+# Where these finds were offered, recorded alongside any reaction to them.
+# Scoped for the same reason familiarity is: liking a trail in Arlington says
+# nothing about one in Denver.
+def _locality_for(profile: Any) -> str | None:
+    primary = getattr(profile, "active_locality", None)
+    if primary is None:
+        return None
+    label = getattr(primary, "label", None) or getattr(primary, "city", None)
+    return str(label) if label else None
+
+
 # Poll without holding a transaction open while idle. Producing and consuming
 # share one cadence: a sweep is weekly, so nothing here needs to be prompt.
 async def run() -> None:
@@ -262,6 +296,10 @@ async def run() -> None:
         # urgent than a slot that is due now, and the retry has hours of budget.
         if await worker.deliver_pending():
             continue
+        # Apple gives no callback when someone reacts, so this is a poll, and it
+        # runs last on purpose: a tapback is worth reading soon and never
+        # urgently, and nothing acts on one yet.
+        await worker.collect_reactions()
         # Sleep until the next slot rather than for a fixed interval, so a
         # sweep asked for at 17:10:00 starts then instead of somewhere in the
         # following minute. The floor keeps a due-but-unclaimable slot from

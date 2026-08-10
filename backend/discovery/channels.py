@@ -85,6 +85,14 @@ class DeliveryResult:
     # the safe answer, since a wrong True duplicates a message and a wrong False
     # only loses one.
     unsent: bool = False
+    # The provider's own identifier for the message that was sent, when it can
+    # say. For iMessage this is the GUID a tapback points at, which is the only
+    # join between a bubble and the reaction it later draws.
+    #
+    # Absent is ordinary rather than exceptional: the bridge reads it from the
+    # Messages database, which needs a permission the send itself does not, so a
+    # Mac without it delivers perfectly and reports no feedback.
+    provider_message_id: str | None = None
 
 
 class NotificationChannel(ABC):
@@ -189,7 +197,7 @@ class MessagesAppChannel(NotificationChannel):
             arguments["attachment_media_type"] = attachment.media_type
             arguments["attachment_base64"] = attachment.encoded()
         try:
-            await self.invoke_tool(self.tool_name, arguments)
+            answer = await self.invoke_tool(self.tool_name, arguments)
         except ChannelRefusedError as refused:
             # The bridge answered, so nothing is in doubt about whether it sent:
             # it did not. Not marked replayable all the same, because the same
@@ -205,7 +213,32 @@ class MessagesAppChannel(NotificationChannel):
                     delivered=False, error_code="channel_unreachable", unsent=True
                 )
             return DeliveryResult(delivered=False, error_code="channel_failed")
-        return DeliveryResult(delivered=True)
+        return DeliveryResult(delivered=True, provider_message_id=_guid(answer))
+
+
+# The message identifier out of a bridge answer, when there is one.
+#
+# The bridge used to answer "sent" and now answers a GUID, so both shapes reach
+# here and neither is an error: an older bridge, or one that cannot read the
+# Messages database, delivers exactly as well and simply reports no identifier.
+# Anything that is not GUID-shaped is discarded rather than stored, because a
+# value that is not a real message id can only ever fail to join.
+def _guid(answer: object) -> str | None:
+    # The invoker returns a tool result whose text is the bridge's answer, but
+    # this contract is a plain callable and a test may hand back the string
+    # itself. Both are read the same way.
+    raw = answer if isinstance(answer, str) else getattr(answer, "content", None)
+    if not isinstance(raw, str):
+        return None
+    candidate = raw.strip()
+    if not candidate or len(candidate) > 120:
+        return None
+    # Apple's identifiers are uppercase hex with dashes, often prefixed by the
+    # service. "sent" and "sent with attachment" fail this and are meant to.
+    stripped = candidate.split(";")[-1]
+    if len(stripped) < 30 or " " in stripped:
+        return None
+    return candidate
 
 
 # Connection-establishment failures, which prove the request never arrived.

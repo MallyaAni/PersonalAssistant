@@ -157,6 +157,10 @@ class Settings(BaseSettings):
     DISCOVERY_RUN_LEASE_SECONDS: float = Field(default=300.0, gt=0, le=3_600)
     DISCOVERY_RUN_HEARTBEAT_SECONDS: float = Field(default=60.0, gt=0, le=600)
     DISCOVERY_IMESSAGE_TOOL: str = "send_message"
+    # Reads thumbs-up and thumbs-down tapbacks off the bubbles already sent.
+    # A bridge without this tool simply answers nothing, and no feedback is
+    # collected — delivery is unaffected either way.
+    DISCOVERY_REACTIONS_TOOL: str = "read_reactions"
     # Which operator-trusted MCP server owns the Apple device that sends.
     DISCOVERY_IMESSAGE_SERVER_ID: str = "imessage"
     # The public base a subscriber's calendar link is built from. Local by
