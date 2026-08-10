@@ -20,6 +20,9 @@ from backend.models.discovery import DiscoveryInterest, DiscoveryLocality
 
 LOCALITY_KEY = "discovery_locality"
 INTEREST_KEY_PREFIX = "discovery_interest_"
+# What an unresolvable place falls back to. Named so the assumption is visible
+# rather than repeated as a literal in three places.
+DEFAULT_TIMEZONE = "America/New_York"
 FACT_TYPE = "profile"
 PURPOSE = "personalization"
 
@@ -132,7 +135,11 @@ class DiscoveryProjection:
                 label_digest=digest,
                 region=region or None,
                 radius_km=25,
-                timezone="America/New_York",
+                # Resolved from the place itself. Hardcoding a zone here put an
+                # account living in Bali on Virginia time, so a digest set for
+                # 11:15 fired at 23:15 where they were. The fallback is only
+                # what an unresolvable place gets.
+                timezone=await self._timezone_for(label, region or None),
                 is_primary=True,
             )
             self.session.add(existing)
@@ -140,6 +147,23 @@ class DiscoveryProjection:
             existing.label = label
             existing.region = region or None
             existing.is_primary = True
+
+    # Name the zone a place is in, falling back to the deployment default.
+    #
+    # A model answers and `zoneinfo` checks the answer, so an invented zone
+    # cannot be stored. Kept here rather than at the API boundary because this
+    # is the path a place takes when it arrives through a chat approval, which
+    # is the path that had no browser timezone to use.
+    async def _timezone_for(self, value: str, region: str | None) -> str:
+        from backend.agents.scout.timezones import TimezoneResolver
+        from backend.core.dependencies import get_llm_client
+
+        try:
+            resolved = await TimezoneResolver(get_llm_client()).resolve(value, region)
+        except Exception:
+            resolved = None
+        return resolved or DEFAULT_TIMEZONE
+
 
     # Upsert one interest only when its value matches the fact's stable key.
     async def _apply_interest(self, user_id: str, fact_key: str, value: str) -> None:
