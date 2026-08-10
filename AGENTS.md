@@ -125,6 +125,23 @@ while the only origin is plain HTTP leaves no working login anywhere: the
 browser refuses the cookie and there is no HTTPS origin yet. Change it in the
 same step that makes an HTTPS origin real.
 
+**A subset of the test suite can fail where the whole suite passes.** `.env`
+sets `AUTH_REQUIRED=true` and pytest reads the same file, so any test that calls
+a protected route without a token gets 401. The full run only passes because
+`test_auth.py` sets `settings.AUTH_REQUIRED` and restores it to false, and every
+later module silently depends on that side effect. Run a `-k` subset and the
+same tests 401. So: give a test its own token — `TestClient(app,
+headers={"Authorization": f"Bearer {issue_user_token(user_id)}"})` — rather than
+relying on the order. A cross-user request needs *that* user's token, or it
+returns 403 before reaching the code, and a scoping test then passes for the
+wrong reason.
+
+**Do not write regex escapes through a shell heredoc.** A `` written that way
+reached `listing_filter.py` as a literal backspace byte (0x08). Ruff, MyPy and
+the tests all passed; the rule silently matched nothing, and the only sign was
+an evaluation number that would not move. Use the Edit tool for regex, or
+`chr(92)`, and check with `python -c "print(open(f,encoding='utf-8').read().count(chr(8)))"`.
+
 **Verify a claim against the running container, not the source.** A rebuilt
 image, a stale container, and an edited file are three different states. Several
 defects here were only visible by asking the live system what it actually had.
