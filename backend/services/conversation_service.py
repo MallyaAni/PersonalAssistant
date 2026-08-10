@@ -27,17 +27,7 @@ from backend.core.llm import LLMClient
 from backend.discovery.service import DiscoveryProfileService
 from backend.mcp.invocation import MCPInvocationError
 from backend.memory.coordinator import MemoryCoordinatorAgent
-from backend.memory.interest_agent import ScoutInterestProposalAgent
-from backend.memory.proposals import (
-    propose_entity,
-    propose_episodic,
-    propose_knowledge,
-    propose_locality,
-    propose_preferred_name,
-    propose_procedure,
-    propose_response_style,
-    propose_semantic_fact,
-)
+from backend.memory.proposal_agent import MemoryProposalAgent
 from backend.models.schemas import ChatStreamEvent
 from backend.search.budgeted import SearchBudgetExceededError
 from backend.search.cascade import CascadingSearchRouter
@@ -90,86 +80,25 @@ def _image_aware_search_query(
     return f"{subject}. Referenced image description: {description}"
 
 
-# Build at most one explicit, non-persisted memory proposal for a chat request.
-def _memory_proposal(
-    query: str,
+# Add source identity to each semantically selected, non-persisted proposal.
+def _memory_proposals(
+    candidates: tuple[dict[str, Any], ...],
     conversation_id: str,
     trace_id: str,
-    interest_labels: tuple[str, ...] = (),
-) -> dict[str, Any] | None:
-    preferred_name = propose_preferred_name(query)
-    if preferred_name:
-        return {
-            "kind": "preferred_name",
-            "value": preferred_name,
+) -> tuple[dict[str, Any], ...]:
+    return tuple(
+        {
+            **candidate,
             "conversation_id": conversation_id,
             "trace_id": trace_id,
         }
-    response_style = propose_response_style(query)
-    if response_style:
-        return {
-            "kind": "response_style",
-            "value": response_style,
-            "conversation_id": conversation_id,
-            "trace_id": trace_id,
-        }
-    locality = propose_locality(query)
-    if locality:
-        return {
-            "kind": "discovery_locality",
-            **locality,
-            "conversation_id": conversation_id,
-            "trace_id": trace_id,
-        }
-    if interest_labels:
-        return {
-            "kind": "discovery_interests",
-            "labels": list(interest_labels),
-            "conversation_id": conversation_id,
-            "trace_id": trace_id,
-        }
-    structured_proposals = (
-        ("entity", propose_entity(query)),
-        ("procedure", propose_procedure(query)),
-        ("knowledge", propose_knowledge(query)),
+        for candidate in candidates
     )
-    for kind, value in structured_proposals:
-        if value is not None:
-            return {
-                "kind": kind,
-                **value,
-                "conversation_id": conversation_id,
-                "trace_id": trace_id,
-            }
-    # The catch-all for an explicit save request. It runs after every structured
-    # proposer so a narrower shape still wins, and before the episodic proposer
-    # because an explicit "remember this" outranks a proactively noticed event.
-    semantic_fact = propose_semantic_fact(query)
-    if semantic_fact:
-        return {
-            "kind": "semantic_fact",
-            "content": semantic_fact,
-            "conversation_id": conversation_id,
-            "trace_id": trace_id,
-        }
-    # Lowest priority: this is the only proposal made without explicit save
-    # intent, so any of the above wins over a proactively noticed event.
-    episodic = propose_episodic(query)
-    if episodic:
-        return {
-            "kind": "episodic",
-            "content": episodic,
-            "conversation_id": conversation_id,
-            "trace_id": trace_id,
-        }
-    return None
 
 
 # Describe the pending save in one short line for the prompt. Only the value the
 # user themselves stated is echoed, so nothing new is disclosed to the model.
-def _proposal_summary(proposal: dict[str, Any] | None) -> str:
-    if proposal is None:
-        return ""
+def _proposal_summary(proposal: dict[str, Any]) -> str:
     labels = proposal.get("labels")
     if isinstance(labels, list):
         return ", ".join(str(label) for label in labels)[:200]
@@ -178,6 +107,12 @@ def _proposal_summary(proposal: dict[str, Any] | None) -> str:
         if isinstance(value, str) and value.strip():
             return value.strip()[:200]
     return ""
+
+
+# Describe all pending profile saves so the assistant accurately explains consent.
+def _proposal_summaries(proposals: tuple[dict[str, Any], ...]) -> str:
+    summaries = filter(None, (_proposal_summary(item) for item in proposals))
+    return "; ".join(summaries)[:400]
 
 
 class ConversationService:
@@ -203,7 +138,7 @@ class ConversationService:
         presentation_jobs: PresentationJobService | None = None,
         presentation_model: str | None = None,
         discovery_profile: DiscoveryProfileService | None = None,
-        interest_proposals: ScoutInterestProposalAgent | None = None,
+        memory_proposals: MemoryProposalAgent | None = None,
     ):
         self.memory = memory
         self.assistant_graph = build_assistant_graph(llm)
@@ -236,7 +171,7 @@ class ConversationService:
         self.presentation_jobs = presentation_jobs
         self.presentation_model = presentation_model
         self.discovery_profile = discovery_profile
-        self.interest_proposals = interest_proposals
+        self.memory_proposals = memory_proposals
 
     # Return the registered subagent selected by the first-step supervisor.
     #
@@ -822,29 +757,23 @@ class ConversationService:
             return ()
         return tuple(interest.label for interest in profile.interests)
 
-    # Ask the focused local model for user-stated interests without blocking
-    # chat when that secondary classification fails.
-    async def _classify_interest_labels(
+    # Ask the focused local model for typed memory without blocking the chat turn.
+    async def _classify_memory_proposals(
         self,
         query: str,
         trace_id: str,
         user_id: str,
-    ) -> tuple[str, ...]:
-        if self.interest_proposals is None:
+    ) -> tuple[dict[str, Any], ...]:
+        if self.memory_proposals is None:
             return ()
         try:
-            # What they already follow goes in with the message, so a new way of
-            # saying something they have already told us comes back as the label
-            # they already have rather than as a fourth near-copy of it.
-            proposal = await self.interest_proposals.propose(
+            result = await self.memory_proposals.propose(
                 query, await self._known_interests(user_id)
             )
-            return proposal.labels if proposal is not None else ()
+            return result.proposals
         except Exception:
-            # Classification may fail closed, but a secondary memory helper
-            # must never prevent the user's actual conversation response.
             logger.warning(
-                "Scout interest classification failed for trace %s",
+                "Semantic memory proposal classification failed for trace %s",
                 trace_id,
                 exc_info=True,
             )
@@ -935,21 +864,17 @@ class ConversationService:
         # told what is actually about to happen. Told only "you cannot save", it
         # answered "your personal memory has been updated" - true-sounding,
         # passive, and wrong. A blanket prohibition invites that; a statement of
-        # the real save state leaves nothing to route around. The proposal is
-        # Scout interests use a focused local semantic classifier; every other
-        # proposal remains a narrow deterministic boundary.
-        interest_labels = await self._classify_interest_labels(
-            query, trace_id, user_id
-        )
-        proposal = _memory_proposal(
-            query,
+        # the real save state leaves nothing to route around. Every proposal is
+        # selected semantically, then validated and approval-gated.
+        candidates = await self._classify_memory_proposals(query, trace_id, user_id)
+        proposals = _memory_proposals(
+            candidates,
             conversation_id,
             trace_id,
-            interest_labels,
         )
         context["memory_save"] = {
-            "offered": proposal is not None,
-            "value": _proposal_summary(proposal),
+            "offered": bool(proposals),
+            "value": _proposal_summaries(proposals),
         }
 
         initial_state = AgentState(
@@ -988,7 +913,7 @@ class ConversationService:
         )
         # Emitted after the turn is saved, as before; it was decided before the
         # answer was generated so the reply could describe it honestly.
-        if proposal is not None:
+        for proposal in proposals:
             yield {
                 "event": "memory_proposal",
                 "data": proposal,

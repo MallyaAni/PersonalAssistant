@@ -10,7 +10,7 @@ os.environ.setdefault("SECRET_KEY", "test-secret-key-only-for-testing")
 from backend.core.llm import LLMClient
 from backend.main import app
 from backend.mcp.invocation import MCPInvocationError, ToolCallResult
-from backend.memory.interest_agent import ScoutInterestProposal
+from backend.memory.proposal_agent import MemoryProposalResult
 from backend.services.conversation_service import ConversationService
 from backend.services.mcp_tool_orchestration_service import MCPToolPlan
 from backend.tests.doubles import (
@@ -85,12 +85,12 @@ class MemoryWithInjectionShapedContext(StubMemoryService):
         ]
 
 
-class FixedInterestAgent:
-    """Return configured semantic labels without invoking a real model."""
+class FixedMemoryProposalAgent:
+    """Return configured semantic proposals without invoking a real model."""
 
     # Store the labels that the conversation service should offer for approval.
-    def __init__(self, labels: tuple[str, ...]) -> None:
-        self.labels = labels
+    def __init__(self, proposals: tuple[dict[str, object], ...]) -> None:
+        self.proposals = proposals
         # What the service said this user already follows, so a test can assert
         # the catalogue reaches the agent that does the merging.
         self.known: tuple[str, ...] | None = None
@@ -100,9 +100,9 @@ class FixedInterestAgent:
         self,
         query: str,
         known: tuple[str, ...] = (),
-    ) -> ScoutInterestProposal | None:
+    ) -> MemoryProposalResult:
         self.known = known
-        return ScoutInterestProposal(self.labels) if self.labels else None
+        return MemoryProposalResult(self.proposals)
 
 
 class FixedToolOrchestration:
@@ -264,6 +264,9 @@ async def test_conversation_service_proposes_name_without_writing_memory():
         llm=StubLLM(),
         repository=repository,
         tracer=StubTracer(),
+        memory_proposals=FixedMemoryProposalAgent(
+            ({"kind": "preferred_name", "value": "Proposed Name"},)
+        ),
     )
 
     events = [
@@ -319,13 +322,13 @@ async def test_conversation_service_proposes_name_without_writing_memory():
 async def test_conversation_service_proposes_discovery_profile_memory(
     query, kind, expected
 ):
-    labels = tuple(expected.get("labels", ()))
+    candidate = {"kind": kind, **expected}
     service = ConversationService(
         memory=StubMemoryService(),
         llm=StubLLM(),
         repository=CapturingConversationRepository(),
         tracer=StubTracer(),
-        interest_proposals=FixedInterestAgent(labels),
+        memory_proposals=FixedMemoryProposalAgent((candidate,)),
     )
 
     events = [event async for event in service.process_request("proposal_user", query)]
@@ -335,6 +338,49 @@ async def test_conversation_service_proposes_discovery_profile_memory(
     )
     assert proposal["kind"] == kind
     assert {key: proposal[key] for key in expected} == expected
+
+
+# Verify one introduction offers both the bounded name and semantic Scout interests.
+@pytest.mark.asyncio
+async def test_conversation_service_proposes_name_and_interests_together():
+    service = ConversationService(
+        memory=StubMemoryService(),
+        llm=StubLLM(),
+        repository=CapturingConversationRepository(),
+        tracer=StubTracer(),
+        memory_proposals=FixedMemoryProposalAgent(
+            (
+                {"kind": "preferred_name", "value": "Jen"},
+                {
+                    "kind": "discovery_interests",
+                    "labels": ["acting", "theater", "networking events"],
+                },
+            )
+        ),
+    )
+
+    events = [
+        event
+        async for event in service.process_request(
+            "testuser",
+            "hi my name is Jen and i like acting, theater, networking events",
+        )
+    ]
+
+    proposals = [
+        event["data"] for event in events if event["event"] == "memory_proposal"
+    ]
+    assert [
+        (item["kind"], item.get("value"), item.get("labels"))
+        for item in proposals
+    ] == [
+        ("preferred_name", "Jen", None),
+        (
+            "discovery_interests",
+            None,
+            ["acting", "theater", "networking events"],
+        ),
+    ]
 
 
 @pytest.mark.asyncio

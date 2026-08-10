@@ -1,0 +1,82 @@
+﻿backend\artifacts\image_recall_router.py:10:_CLASSIFIER_GATE = re.compile(
+backend\artifacts\image_subject.py:29:_VERB_LED = re.compile(
+backend\artifacts\image_subject.py:40:_NOUN_LED = re.compile(
+backend\artifacts\image_subject.py:49:_BARE_VERB = re.compile(
+backend\artifacts\image_subject.py:77:_PERSON = re.compile(
+backend\artifacts\image_prompt_match.py:86:        for word in re.findall(r"[a-z0-9]+", query.lower())
+backend\artifacts\image_routing.py:33:_CREATED_REFERENCE_PATTERN = re.compile(
+backend\artifacts\image_routing.py:41:_HISTORICAL_CREATION_PATTERN = re.compile(
+backend\artifacts\image_routing.py:49:    (re.compile(pattern, re.IGNORECASE), reason) for pattern, reason in _RECALL_SIGNALS
+backend\artifacts\image_routing.py:53:_CREATION_PATTERN = re.compile(
+backend\artifacts\diagram.py:13:DIAGRAM_REQUEST_PATTERN = re.compile(
+backend\artifacts\diagram.py:20:UNSAFE_MERMAID_PATTERN = re.compile(
+backend\artifacts\diagram.py:66:        stripped = re.sub(r"^```(?:json)?\s*", "", stripped, flags=re.IGNORECASE)
+backend\artifacts\diagram.py:67:        stripped = re.sub(r"\s*```$", "", stripped)
+backend\artifacts\diagram.py:83:    normalized_type = re.sub(r"\s+", " ", declared_type.strip().lower())
+backend\artifacts\diagram.py:130:        source = re.sub(r"^```(?:mermaid)?\s*", "", source, flags=re.IGNORECASE)
+backend\artifacts\diagram.py:131:        source = re.sub(r"\s*```$", "", source).strip()
+backend\api\v1\tool_memory.py:44:        if not re.fullmatch(r"[0-9a-fA-F]{64}", value):
+backend\core\egress.py:61:_SECRET_PATTERNS = tuple((re.compile(p, re.IGNORECASE), c) for p, c in _SECRETS)
+backend\core\egress.py:63:    (re.compile(p, re.IGNORECASE), c) for p, c in _PERSONAL_SENSITIVE
+backend\core\egress.py:68:_POSSESSIVE = re.compile(
+backend\core\egress.py:71:_SELF_REFERENCE = re.compile(
+backend\presentations\validation.py:8:_SLIDE_PATH = re.compile(r"^ppt/slides/slide\d+\.xml$")
+backend\presentations\validation.py:33:            slide_names = sorted(name for name in names if _SLIDE_PATH.match(name))
+backend\presentations\research.py:48:    re.compile(
+backend\presentations\research.py:58:    re.compile(
+backend\presentations\research.py:68:    re.compile(
+backend\presentations\research.py:83:    subject = re.sub(r"\s{2,}", " ", subject).strip(" ,;.-")
+backend\discovery\events.py:27:_CONTROL_CHARACTERS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+backend\discovery\events.py:31:_FIRST_SENTENCE = re.compile(r"(.+?[.!?])\s+\S")
+backend\discovery\events.py:103:    sentence = _FIRST_SENTENCE.match(cleaned)
+backend\discovery\feed_finder.py:38:_FEED_HINTS = re.compile(
+backend\presentations\provider.py:69:        stripped = re.sub(r"^```(?:json)?\s*", "", stripped, flags=re.IGNORECASE)
+backend\presentations\provider.py:70:        stripped = re.sub(r"\s*```$", "", stripped)
+backend\agents\delegation.py:49:    return re.compile(source, re.IGNORECASE)
+backend\presentations\planner.py:199:    match = re.search(r"\b([1-9]|[12]\d|30)\s*[- ]*slides?\b", prompt, re.IGNORECASE)
+backend\discovery\listing_filter.py:26:_SPECIFIC_EVENT_PATH = re.compile(
+backend\discovery\listing_filter.py:35:_AFFILIATE_HOST = re.compile(
+backend\discovery\listing_filter.py:49:_SOCIAL_PROFILE = re.compile(
+backend\discovery\listing_filter.py:56:_DIRECTORY_PATH = re.compile(
+backend\discovery\listing_filter.py:74:_DIRECTORY_TITLE = re.compile(
+backend\discovery\listing_filter.py:109:_PLACE_SCOPED_PLURAL = re.compile(
+backend\discovery\listing_filter.py:140:        for segment in re.split(r"[|–—]|\s-\s", cleaned)
+backend\search\routing.py:66:    (re.compile(pattern, re.IGNORECASE), reason) for pattern, reason in _SIGNALS
+backend\search\routing.py:70:_YEAR_PATTERN = re.compile(r"\b(20[2-9][0-9])\b")
+backend\search\routing.py:88:_SELF_REFERENCE = re.compile(
+backend\discovery\aiming.py:69:_MONTH_WORDS = re.compile(rf"\b({MONTH_STEMS})[a-z]*\b", re.IGNORECASE)
+backend\discovery\aiming.py:70:_ANY_DIGIT = re.compile(r"\d")
+backend\discovery\aiming.py:74:_QUERY_SYNTAX = re.compile(r'["\'()\[\]{}<>|&+~^:;/\\]')
+backend\discovery\aiming.py:255:        for part in re.split(r"[,/]", place or ""):
+backend\discovery\addressing.py:24:_NON_DIGITS = re.compile(r"[^0-9]")
+backend\search\query.py:5:_LEADING_CONTROL = re.compile(
+backend\search\query.py:11:_TRAILING_CONTROL = re.compile(
+backend\mcp\inspection.py:34:    (re.compile(p, re.IGNORECASE), label) for p, label in _INJECTION_MARKERS
+backend\search\hybrid.py:12:_CROSS_CHECK = re.compile(
+backend\services\agent_memory_manager.py:528:        paragraphs = [part.strip() for part in re.split(r"\n\s*\n", content)]
+backend\services\auth_service.py:16:_USERNAME_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._-]{0,49}$")
+backend\services\auth_service.py:57:    if not _USERNAME_PATTERN.fullmatch(normalized):
+backend\tests\test_delegation_registry.py:141:                required=(re.compile(r"budget", re.IGNORECASE),),
+backend\services\conversation_service.py:52:_MARKDOWN_NOISE = re.compile(r"[#*_`>\[\]]+")
+backend\discovery\sources\ics.py:28:_FOLD = re.compile(r"\r?\n[ \t]")
+backend\discovery\sources\links.py:45:_NEXT_DATA = re.compile(
+backend\discovery\sources\links.py:48:_JSON_LD = re.compile(
+backend\discovery\sources\web.py:63:    re.compile(r"\b(?P<y>20\d{2})-(?P<m>\d{1,2})-(?P<d>\d{1,2})\b"),
+backend\discovery\sources\web.py:65:    re.compile(
+backend\discovery\sources\web.py:71:    re.compile(
+backend\discovery\url_dates.py:55:_ISO = re.compile(rf"(?<!\d)(20\d{{2}})[-/](0?[1-9]|1[0-2])[-/]({_DAY})(?!\d)")
+backend\discovery\url_dates.py:58:_MONTH_FIRST = re.compile(
+backend\discovery\url_dates.py:64:_DAY_FIRST = re.compile(
+backend\discovery\types.py:97:    return re.sub(r"\s+", " ", folded)
+backend\discovery\summarize.py:52:_SITE_MARKERS = re.compile(
+backend\discovery\summarize.py:58:_MARKDOWN_NOISE = re.compile(r"[#*_`>\[\]]+")
+backend\discovery\summarize.py:59:_URL_IN_TEXT = re.compile(r"https?://\S+", re.IGNORECASE)
+backend\discovery\summarize.py:64:_SCRIPT_OR_STYLE = re.compile(
+backend\discovery\summarize.py:67:_HTML_TAG = re.compile(r"<[^>]+>")
+backend\discovery\summarize.py:154:    sentence = re.split(r"(?<=[.!?])\s+", text)[0]
+backend\services\inference_benchmark_service.py:256:                re.fullmatch(r"RED_SQUARE[.!]?", analysis.content.strip(), re.I)
+backend\services\inference_benchmark_service.py:310:    return len(re.findall(r"\w+|[^\w\s]", content, re.UNICODE))
+backend\services\presentation_service.py:530:        safe_title = re.sub(
+backend\services\tool_memory_service.py:20:_SENSITIVE_MARKER = re.compile(
+backend\services\vector_dimension_migration_service.py:69:    if re.fullmatch(r"[a-zA-Z_][a-zA-Z0-9_]*", value) is None:
+backend\services\vector_dimension_migration_service.py:96:    match = re.fullmatch(r"vector\((\d+)\)", str(formatted))

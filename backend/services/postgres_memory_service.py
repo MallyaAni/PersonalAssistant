@@ -124,7 +124,7 @@ class PostgresMemoryService(MemoryService, SemanticMemoryWriter):
                     "expires_at": None,
                     "extra_data": {
                         "source": "chat_approval",
-                        "classifier": "semantic_interest_agent",
+                        "classifier": "semantic_memory_proposal_agent",
                     },
                 }
             )

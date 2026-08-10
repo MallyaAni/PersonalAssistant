@@ -5,7 +5,146 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 [ROADMAP.md](ROADMAP.md), and stable architecture facts in
 [ARCHITECTURE.md](ARCHITECTURE.md).
 
-Last updated: 2026-08-09, America/New_York (Scout aims at the person)
+Last updated: 2026-08-09, America/New_York (semantic memory capture verified)
+
+## Memory meaning is selected semantically, not by regex — VERIFIED
+
+The first fix for `hi my name is Jen and i like acting, theater, networking
+events` bounded a preferred-name regex. That contradicted the established
+requirement that memory understand the user's meaning rather than accumulate
+phrase rules. The production regex proposal module and its tests have now been
+removed.
+
+One local `MemoryProposalAgent` backed by `qwen/qwen3.5-4b` reads the whole
+current utterance and returns grammar-constrained typed candidates for preferred
+name, response style, locality, interests, entity relationship, workflow,
+titled reference, semantic fact, and episodic event. Application code only
+validates bounds and safe field shapes, attaches conversation/trace provenance,
+and routes visible user approval; the model still has no persistence authority.
+Profile facts may coexist, while general memory keeps one best candidate to
+limit noisy proposals. The previous dedicated interest agent was removed.
+
+Real Qwen evidence:
+
+- the exact reported sentence returned `preferred_name = Jen` and `acting`,
+  `theater`, `networking events`;
+- `Everyone knows me as Jen. Stage performance and professional mixers are my
+  thing.` returned the same preferred name and semantically mapped the interests
+  onto the existing `testuser` labels instead of creating duplicates;
+- `Would someone named Jen enjoy theater?` returned no proposal.
+- the first semantic-fact rehearsal exposed an over-conservative/misclassified
+  pet fact; after tightening the semantic contract, three different ways of
+  saying the dog is called Biscuit all returned `semantic_fact`, `I love
+  training dogs` returned only interest `dog training`, and the dog-name
+  question still returned nothing.
+
+The rebuilt backend and real authenticated Chromium path as `testuser` showed
+both exact proposals, **Approve all 2** issued preferred-name 200 and interests
+201, and readback returned `Jen` plus all three interests. Loading cleared, the
+composer re-enabled, and browser Console, page, failed-network, and backend
+exception checks were empty. The container received the increased 256-token
+structured-output budget.
+
+- Regression: 82 focused backend tests pass; Ruff passes; two focused
+  Playwright tests and the frontend production build pass; 17 architecture diagrams
+  and the published architecture page are synchronized.
+- MyPy reached two pre-existing errors in `backend/discovery/link_graph.py`.
+- Next atomic Scout task remains the Mac recipient-grant repair described below.
+
+## One introduction now captures name and Scout interests — VERIFIED
+
+The exact `testuser` message `hi my name is Jen and i like acting, theater,
+networking events` exposed two boundaries. Preferred-name extraction consumed
+the following `and I ...` clause, producing `Jen and i like acting`, and the
+conversation service allowed only one memory proposal per turn, so that bad
+name proposal suppressed the semantic interest result. The focused Qwen
+classifier itself was correct and returned `acting`, `theater`, and `networking
+events` before any code changed.
+
+Name extraction now ends before a following `and I` or `but I` clause. A chat
+turn may emit every compatible profile proposal (name, response style,
+locality, and Scout interests), while general semantic/episodic memory keeps
+the existing single-best rule. The frontend queues the streamed proposals so
+each remains independently approval-gated rather than the last event replacing
+the first.
+
+The backend image was rebuilt from the working tree, `backend` was recreated,
+and the gateway restarted. Through the real authenticated HTTP path as
+`testuser`, the exact message streamed `preferred_name = Jen` followed by the
+three Scout interests; approvals returned 200 and 201. Readback returned
+profile name `Jen` and all three interests. A real headless Chromium session as
+`testuser` rendered both cards in order, approved them, cleared the queue and
+loading state, and recorded no Console, page, or failed-network errors. Backend
+logs contain the chat and both approval requests with no exception.
+
+- Regression: 72 focused backend tests pass; Ruff passes; three focused
+  Playwright proposal regressions pass; the frontend production build passes.
+- `FAILED` validation command: a broad title-based Playwright grep did not
+  finish within 180 seconds and emitted no result. This does not invalidate the
+  exact deterministic browser test or the real integrated Chromium acceptance,
+  both of which passed.
+- Next atomic Scout task remains the Mac recipient-grant repair described below;
+  after delivery is verified, add deterministic geographic result rejection.
+
+### Follow-up: multi-fact consent is now explicit — VERIFIED
+
+The user then cleared `testuser` memory and repeated the same sentence. Runtime
+logs showed the chat completed but the browser submitted only the Scout-interest
+approval; no preferred-name request reached the backend. A read-only Chromium
+replay proved the name was correctly first in the queue, but the card described
+the second fact only as `1 more memory proposal waiting`, making it easy to skip
+one fact and assume the other approval covered the sentence.
+
+The approval card now previews every queued value and offers **Approve all 2**
+while retaining per-item approval and dismissal. Batch UX saves each typed
+endpoint in order; if a later request fails, already saved facts are reported,
+the failed and unattempted proposals remain actionable, and the error is shown.
+A real Chromium run as `testuser` submitted the exact sentence and used that
+single action. Network evidence was preferred name 200 plus Scout interests
+201; readback was name `Jen` and all three interests. The card and loading state
+cleared, the composer enabled, and Console, page, and network-failure lists were
+empty. The focused Playwright regression and production frontend build pass.
+
+## Scout: where it stands and what is next
+
+`python -m backend.cli.evaluate_discovery_ranking` scores the pipeline against
+21 items that reached real digests. Baseline: **listing recall 0.46, happening
+retention 1.00**. The seven listings still getting through are named in the
+output — that is the work queue, not an aggregate to admire. `--with-model` also
+scores attribution through the aiming and cross-encoder stages.
+
+Ranking is a three-stage cascade: embeddings for recall (`relevance.py`), a
+local ONNX cross-encoder for precision and attribution (`precision.py`), then
+the model for what memory states (`reranking.py`). Only the first decides
+eligibility. All of it is deployed; a fresh checkout must fetch the
+cross-encoder weights (`DEVELOPMENT_GUIDE.md`) or that stage disables itself.
+
+Queued, in priority order:
+
+1. **Audience restrictions, deterministically.** `summarize.py` already reads
+   page text and already drops finds, so add a restricted-audience field there.
+   Say it in the digest name first so the user can judge; filter only in code,
+   only against an explicitly stated fact. Do not push this into the re-ranker's
+   prompt — measured, and it inferred gender from nothing.
+2. **Geographic rejection.** Visible in the labelled cases:
+   `concertfix.com/concerts/arlington-tx` reached an Arlington, Virginia digest,
+   and a chamber-of-commerce index for Alexandria Bay, New York reached an
+   Alexandria, Virginia one. Deterministic, cheap, and long overdue.
+3. **Route listings to the feed proposer rather than the bin.** `feed_finder`
+   and `LinkGraphExpander` already propose sources from discovered pages. "Movie
+   showtimes near Alexandria" is a bad digest item and a good source candidate.
+4. **A structured event source.** Ticketmaster, Eventbrite, or Songkick return
+   events with start times and coordinates, removing the listing/happening
+   distinction, the date parsing, and the geography problem at once. Feeds are
+   already the design's "source of record"; almost nobody configures one, so web
+   search does all the work and fights this fight every sweep.
+5. **Earn back or delete `is_a_listing`.** It is computed and unused.
+
+Volatile state: **`DISCOVERY_NOVELTY_ENABLED=false`** in `.env`, so digests
+repeat until it is turned back on — it must be on before anything runs
+unattended. Seen items were purged for `ani.mallya`. The Mac bridge grants work.
+`jenos1` has "Social" and "Network" as separate interests, almost certainly one
+phrase split at capture, and it will keep producing odd matches until corrected.
 
 ## Scout searches and ranks for the person — VERIFIED in source, NOT DEPLOYED
 
@@ -202,20 +341,15 @@ The scoped count is now zero; `jenos1` and `del_2a87abb15636` rows were left
 unchanged. Interests, locality, schedules, subscriptions, familiar-item
 dismissals, memory, and run history were not deleted.
 
-## Semantic chat interests now configure Scout — VERIFIED
+## Semantic chat interests configure Scout — VERIFIED, generalized
 
-The original `testuser` failure was at chat capture, not Scout retrieval: the
-profile had no interests because the old single-value regex did not understand
-`My interests are basketball, soccer, baseball, hiking`. That keyword extractor
-has been removed from Scout's production path.
-
-`ScoutInterestProposalAgent` now sends only the current utterance to the local
-`qwen/qwen3.5-4b` vLLM role with grammar-constrained JSON and
-`reasoning_effort=none`. It distinguishes the user's current interests from
-questions, other people's interests, negation, and former interests, and returns
-up to eight labels. It has no persistence or tool capability. Chat shows one
-approval card; approval writes every fact and Scout projection in one database
-transaction. A capacity or projection failure rolls the full batch back.
+The original `testuser` failure was at chat capture, not Scout retrieval. That
+focused interest classifier has since been generalized into the typed
+`MemoryProposalAgent` described at the top of this handoff. It still sends only
+the current utterance and existing interest catalogue to local Qwen, has no
+persistence or tool capability, and returns up to eight validated labels.
+Approval writes every selected interest fact and Scout projection in one
+database transaction; a capacity or projection failure rolls the batch back.
 
 Live authenticated evidence on the rebuilt backend:
 
@@ -363,10 +497,10 @@ Details in [CHANGELOG.md](CHANGELOG.md).
 
 ### 1. Explicit "remember this" — VERIFIED fixed
 
-Was: all eight extractors in `backend/memory/proposals.py` returned `None` for
-"Remember that my dog is called Biscuit.", and the assistant claimed a save
-anyway. Now `propose_semantic_fact` catches an explicit save request that no
-narrower proposer claimed, and the reply is honest.
+Was: the former phrase extractors returned no proposal for "Remember that my
+dog is called Biscuit.", and the assistant claimed a save anyway. The current
+typed semantic agent selects `semantic_fact` without a phrase rule, while the
+pre-answer save-state prompt keeps the reply honest.
 
 Re-run of the original reproduction, through the API with auth on:
 

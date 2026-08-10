@@ -22,6 +22,7 @@ Read [Security](docs/SECURITY.md) when a task affects data, credentials, authent
 - Preserve unrelated user changes and recheck files that may be changing concurrently.
 - Reproduce a failure, identify the first failing boundary, test one evidence-backed hypothesis, make one targeted change, and repeat the original acceptance path.
 - After three unsuccessful targeted hypotheses, stop editing and report the evidence, attempts, and next investigation needed.
+- Judge a retrieval, ranking, or filtering change with `python -m backend.cli.evaluate_discovery_ranking`, not by reading a few results. Two changes were shipped here on a single example each: a cross-encoder reported as improving attribution that made the same mistake more confidently on the first real digest, and a listing filter that emptied a live one. The labelled cases are seeded judgements — correct a label rather than working around the score.
 - Keep business logic separate from framework and infrastructure details where the existing architecture supports it.
 - Add a brief, plain-language comment immediately above every newly written function or method explaining what it accomplishes. This includes production code, local helpers, API handlers, frontend functions, tests, CLI entry points, and migration functions. Put the comment above any decorators, and update it whenever the function's purpose changes.
 - Do not hardcode production secrets or log credentials, tokens, or unnecessary personal data.
@@ -124,6 +125,19 @@ published address rather than letting DNS pick one:
 socket.create_connection((ip, 443), 10)
 ssl.create_default_context().wrap_socket(raw, server_hostname=HOST)
 ```
+
+**An optional field in a response grammar is a field the model will skip.** The
+re-ranker's `excluded` list was never emitted at all until the schema marked it
+required — three greedy runs returned only an order, so the question was not
+being answered so much as skipped. If a model appears to ignore part of a
+contract, check whether the grammar lets it.
+
+**A model judging its own input needs measuring across a set, not an example.**
+`summarize.py` computes `is_a_listing` and nothing acts on it, because acting on
+it emptied a live digest: on a London sweep it called four of five shortlisted
+finds listings, including a single Eventbrite event, while passing an index of
+festivals in another city. The field stays only because the evaluation harness
+needs something to tune against.
 
 **Recreating the backend requires restarting the gateway.** Nginx resolves its
 upstream once at startup, so a recreated `backend` gets a new container IP that

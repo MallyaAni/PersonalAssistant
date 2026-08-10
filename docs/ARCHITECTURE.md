@@ -79,12 +79,31 @@ A chat turn, in order:
 | Tool selection | `qwen/qwen3.5-4b` (`MAIN_LLM_MODEL`) native tool-calls through `vllm-main` | GPU | only when MCP tools are relevant |
 | Response generation | `qwen/qwen3.5-4b` (`MAIN_LLM_MODEL`) through `vllm-main` | GPU | ordinary non-delegated turns; the streamed answer |
 | Typed memory proposal | `qwen/qwen3.5-4b` (`MEMORY_PROPOSAL_LLM_MODEL`) with grammar-constrained JSON and reasoning disabled | GPU (`vllm-main`) | every ordinary chat turn; fail-closed with no write authority |
-| Other memory proposals | none (deterministic patterns) | CPU | every ordinary chat turn |
 
 A plain message ("my name is Ani") therefore makes about three model calls: one
 text embedding plus two main-role calls (the search classifier and the
 response). Pointing `SEARCH_CLASSIFIER_MODEL` at a dedicated qualified model
 moves both bounded routing classifiers off the main response model.
+
+One Scout sweep, in order. This is the densest model path in the system, and
+every stage degrades to the one before it rather than failing the sweep:
+
+| Stage | Model | Runs on | When |
+| --- | --- | --- | --- |
+| Query and vector aiming | `qwen/qwen3.5-4b` (`MAIN_LLM_MODEL`), grammar-constrained, greedy | GPU (`vllm-main`) | once per sweep; describes each interest so it is more than a two-word string |
+| Candidate and interest embedding | `text-embedding-nomic-embed-text-v1.5` (`EMBEDDING_MODEL`) | GPU (`vllm-embedding`) | one batch per sweep, feeding novelty, familiarity, and recall ranking |
+| Precision ranking and attribution | `ms-marco-MiniLM-L6-v2` cross-encoder, ONNX | CPU, in-process | one forward pass per (interest, candidate) pair over the shortlist; absent weights disable it |
+| Shortlist ordering against memory | `qwen/qwen3.5-4b` (`MAIN_LLM_MODEL`), grammar-constrained, greedy | GPU (`vllm-main`) | once per sweep, and only when approved facts exist |
+| Find naming and description | `qwen/qwen3.5-4b` (`MAIN_LLM_MODEL`), grammar-constrained, greedy | GPU (`vllm-main`) | once per selected find, after selection rather than per candidate |
+
+So a sweep costs about two main-role calls plus one per delivered find, one
+embedding batch, and a few hundred CPU cross-encoder passes. Everything is
+greedy: an unattended weekly job that sampled differently each run could not be
+compared against itself.
+
+Scout also completes a place name while it is being typed —
+`qwen/qwen3.5-4b`, grammar-constrained, debounced at 350 ms rather than per
+keystroke — which is interactive rather than part of a sweep.
 
 Image and presentation paths:
 

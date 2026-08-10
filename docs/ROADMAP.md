@@ -84,7 +84,7 @@ Current evidence as of 2026-07-17:
   MFA/recovery, and backup/log deletion. Shared login/registration attempt
   limiting, invited password enrollment, and revocable browser sessions are
   now verified.
-- `VERIFIED` (bounded): automatic approval-gated episodic capture from conversations. A deterministic proposer recognizes a narrated first-person past-tense event (a curated verb set, question-guarded, the user's own sentence kept as content) and emits it as the lowest-priority typed proposal, so any explicit intent wins over it. Approval routes through the existing `POST /memory/{user}/episodic` boundary with chat provenance; rejection writes nothing, preserving the "no silent model extraction" principle. Live-verified end to end: a chat turn emitted the episodic proposal over SSE and approval persisted it. Recall is intentionally conservative (deterministic patterns, not an LLM classifier); broadening it with a bounded classifier remains `PLANNED`.
+- `VERIFIED` (bounded): approval-gated episodic capture from conversations. The grammar-constrained semantic memory agent may select one concrete first-person past experience as the lowest-priority non-profile candidate. Approval routes through the existing `POST /memory/{user}/episodic` boundary with chat provenance; rejection writes nothing, preserving the "no silent model extraction" principle.
 
 Delivered local-development capabilities include:
 
