@@ -29,6 +29,7 @@ Two rules keep this from turning into a crawler:
 
 import json
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass
 from urllib.parse import urlsplit, urlunsplit
 
@@ -241,8 +242,10 @@ def _root_of(url: str) -> str:
 
 
 # A parse failure means "not this format", not "expansion is broken".
-def _parse_quietly(parse) -> tuple[DiscoveredEvent, ...]:
+def _parse_quietly(
+    parse: Callable[[], tuple[DiscoveredEvent, ...]],
+) -> tuple[DiscoveredEvent, ...]:
     try:
-        return parse()
+        return tuple(parse())
     except Exception:
         return ()

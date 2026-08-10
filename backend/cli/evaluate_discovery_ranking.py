@@ -14,6 +14,7 @@ import json
 from collections.abc import Sequence
 
 from backend.discovery.evaluation import (
+    EvaluationCase,
     load_cases,
     score_attribution,
     score_filtering,
@@ -54,7 +55,9 @@ def build_parser() -> argparse.ArgumentParser:
 # Name the interest the pipeline would give each labelled happening, using the
 # same two stages a sweep uses: the aimed profile as the query, the
 # cross-encoder as the scorer.
-async def _attribute(cases: tuple) -> dict[str, str | None]:
+async def _attribute(
+    cases: tuple[EvaluationCase, ...],
+) -> dict[str, str | None]:
     from backend.agents.scout.aiming import AimPlanner
     from backend.core.dependencies import get_cross_encoder, get_llm_client
     from backend.discovery.personal_context import PersonalContext
@@ -62,6 +65,13 @@ async def _attribute(cases: tuple) -> dict[str, str | None]:
 
     planner = AimPlanner(get_llm_client())
     encoder = get_cross_encoder()
+    if encoder is None:
+        # Scoring attribution without the cross-encoder would report a
+        # number for a pipeline that is not the one running.
+        raise SystemExit(
+            "Attribution scoring needs the cross-encoder; its weights are missing "
+            "or DISCOVERY_CROSS_ENCODER_ENABLED is off."
+        )
     named: dict[str, str | None] = {}
     # One plan per distinct interest set, because that is once per user rather
     # than once per find.
