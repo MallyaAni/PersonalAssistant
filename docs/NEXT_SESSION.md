@@ -127,6 +127,31 @@ Measured against that, almost none of them do:
 `backend/agents/` currently holds status cards and a graph, which is the least
 agent-specific thing in any of them.
 
+### Three couplings, not one
+
+An earlier note in this file said the only blocker was `discovery/runner.py`.
+That was asserted rather than checked, and it is wrong. There are three:
+
+1. **`runner.py`** imports `aiming`, `reranking` and `precision`. Fixed by
+   injection — it already takes `EmbeddingClient`, `AdapterFactory` and
+   `DescriptionWriter` as Protocols, so the planner and re-ranker join them and
+   `core/dependencies.py` wires them, as it does every other collaborator.
+2. **`precision.py`** imports `SweepAim` from `aiming`, and only that. `SweepAim`
+   and `InterestAim` are data, so they move to `discovery/types.py` and the
+   import disappears.
+3. **`summarize.py` is two things in one module**, and this is the one that was
+   missed. It holds Scout's describe prompt *and* the `DescriptionWriter`
+   protocol that `aiming`, `reranking`, `place_suggest`, `familiarity` and
+   `runner` all import — five modules. Splitting it means the protocol moves to
+   a shared home (`core/interfaces.py`, beside the other provider contracts),
+   the deterministic helpers `clean_title`, `summarize_deterministically` and
+   `text_from_html` stay in `discovery/`, and only `_PROMPT` and
+   `EventDescriber` move to `agents/scout/`.
+
+So the move touches roughly fifteen files rather than ten, and the third point
+is the one to do first: until `DescriptionWriter` lives somewhere shared, every
+agent's prompt module drags Scout's describe module in behind it.
+
 ### Doing it without inverting the layering
 
 The folder-per-agent rule says an agent folder holds what it *decides* and its
