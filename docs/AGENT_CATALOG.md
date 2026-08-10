@@ -28,7 +28,7 @@ turns each one into something you can act on.
 | Domain package | `backend/discovery/` |
 | Prompts | `aiming.py` · `reranking.py` · `describing.py` · `place_suggest.py` · `timezones.py` |
 | Card | `agents/scout/card.py` |
-| Functional tests | `test_prompt_behaviour.py` · `test_timezone_prompt_behaviour.py` |
+| Functional tests | `test_prompt_behaviour.py` · `test_aiming_behaviour.py` · `test_description_quality.py` · `test_timezone_prompt_behaviour.py` |
 | Quality harness | `python -m backend.cli.evaluate_discovery_ranking` |
 
 **What the model decides:** the subject of each search, the vector a candidate is
@@ -37,6 +37,17 @@ reads. **What is decided for it:** what qualifies. Novelty, familiarity,
 lead time, geography and the request budget are deterministic, because a sweep
 runs unattended and a sampled judgement would make the same feed produce
 different results on different days.
+
+**Measured weakness: aiming barely personalises.** Given an approved fact
+bearing on an interest, the fact reaches the profile 2 times in 5 and the search
+subject 0 times in 5. The previous prompt scored 1 and 1, and its single subject
+win was "Board Games" — the label most resembling the worked example it was
+taught with, "Run Clubs". Both prompts' examples were therefore doing more
+priming than teaching, and the test that used to pass was rewarding it. The
+examples are now interests nobody here holds, so a passing case is a general
+one. The gap is recorded as a non-strict `xfail` in `test_aiming_behaviour.py`
+rather than loosened, because the module's whole premise is that a sweep is
+aimed at someone.
 
 ## Deck — presentations
 
@@ -139,7 +150,7 @@ every call, not adding one.
 | --- | --- | --- | --- | --- |
 | Scout | `aiming.py` — search subjects and vectors | 1024 | 0.0 | yes |
 | Scout | `reranking.py` — order a qualified shortlist | 256 | 0.0 | yes |
-| Scout | `describing.py` — how a find reads | default | 0.0 | yes |
+| Scout | `describing.py` — how a find reads | 160 | 0.0 | yes |
 | Scout | `place_suggest.py` — place completion | 220 | 0.0 | yes |
 | Scout | `timezones.py` — place to IANA zone | 32 | 0.0 | yes |
 | Deck | `provider.py` — plan, outline, slide, new slide, revision | caller | **default** | yes |
