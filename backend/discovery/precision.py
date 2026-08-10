@@ -22,7 +22,23 @@ Two properties are kept deliberately:
 
 - **it reorders, it does not admit.** Nothing enters the digest here that
   deterministic ranking rejected. A stage that could admit would be a second,
-  differently-calibrated definition of what qualifies;
+  differently-calibrated definition of what qualifies.
+
+  This was tested rather than assumed, because "let the better scorer decide
+  admission" is an obvious-sounding change. Scored over the 21 labelled cases in
+  `evaluation_cases.json`, against the label "a happening, in the right place,
+  matching an interest", the two groups overlap almost end to end: wanted finds
+  run -2.162 to 5.511 and unwanted ones -11.248 to 5.315, and the best bar
+  available keeps 7 of 7 wanted while admitting 9 of 14 unwanted. The top-scoring
+  item in the whole set is a *listing* — "Line Dancing London: Best Nights,
+  Classes & Events 2026" at 5.315 — beating every genuine happening, while a real
+  concert sits at -2.162.
+
+  That is not a calibration problem. A directory page about line dancing is
+  maximally relevant to line dancing, and this scorer measures topical relevance,
+  which is a different question from "is this one thing you could go to" —
+  `listing_filter.py` answers that deterministically — and a different question
+  again from "would this person enjoy it", which nothing here measures yet;
 - **absence is not failure.** With no weights, a disabled provider, or any error,
   the shortlist keeps the order and attribution embeddings gave it. That is the
   behaviour the sweep had before this stage existed.
