@@ -255,7 +255,11 @@ def test_the_digest_separates_datable_events_from_mentions():
     )
     mention = RankedCandidate(_candidate("Weekly group walks", None), 0.8, "hiking")
 
-    message = render_message((dated, mention), "https://example.org/cal")
+    # `now` is passed because the renderer drops events that have already
+    # started. Without it this read the real clock, so the test passed until
+    # wall time moved past its fixed date and then failed for reasons that had
+    # nothing to do with what it checks.
+    message = render_message((dated, mention), "https://example.org/cal", now=_NOW)
 
     assert message is not None
     assert "Coming up near you:" in message

@@ -159,7 +159,27 @@ workspace will never list. Decide that before moving them. Search routing and im
 `search/classifier.py` and `artifacts/image_recall_classifier.py`, and those two
 may be policies rather than agents — decide that before moving them.
 
-## Schedules run on the wrong clock for anyone outside the US East Coast
+## Schedules now take their zone from the user's place — half fixed
+
+`PUT /schedule` no longer reads the caller's timezone. It takes the zone from the
+user's primary locality, and refuses with 409 when there is no locality yet:
+a time means nothing without the zone it is in, so the place has to come first.
+The request still accepts a `timezone` field and ignores it, so existing clients
+do not break on an unknown key.
+
+**What is still wrong.** The locality's own zone can be wrong, so the schedule
+now faithfully inherits a wrong zone. `projection.py` hardcodes
+`America/New_York` when a place is created from a chat approval, which is how an
+account in Canggu, Bali holds a locality — and therefore now a schedule — in
+Virginia time. Existing rows are unchanged: arsalon's schedule still reads
+America/New_York and will until his locality does.
+
+The remaining work is resolving a place to a zone: the Nominatim resolver
+already returns coordinates that map to one, or a bundled table. Until then the
+Scout panel is the only path that stores a true zone, because the browser sends
+`Intl.DateTimeFormat().resolvedOptions().timeZone`.
+
+## Original diagnosis
 
 Diagnosed, not fixed. The scheduling mechanism is timezone-aware — each row in
 `discovery_schedules` carries a `timezone` and `next_run_at` is computed from

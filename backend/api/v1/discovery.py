@@ -696,6 +696,9 @@ class ScheduleRequest(BaseModel):
     minute: int = Field(default=0, ge=0, le=59)
     # Monday is 0, matching datetime.weekday(). Ignored for a daily cadence.
     weekday: int = Field(default=4, ge=0, le=6)
+    # Accepted and ignored. The zone comes from the user's locality, because a
+    # caller-supplied one is the browser's and is wrong for anyone whose place
+    # is elsewhere. Kept so existing clients do not break on an unknown field.
     timezone: str = Field(default="America/New_York", min_length=1, max_length=64)
     enabled: bool = True
 
@@ -716,14 +719,29 @@ async def put_schedule(
     user_id: UserId,
     body: ScheduleRequest,
     runs: DependencyDiscoveryRuns,
+    service: DependencyDiscoveryProfileService,
 ) -> dict[str, object]:
+    # A time means nothing without the zone it is in, and the zone belongs to
+    # where the user is. Taking it from the request let a browser in one country
+    # set a clock for someone living in another: an account in Canggu, Bali held
+    # a schedule reading 11:15 America/New_York, which fires at 23:15 local.
+    primary = (await service.get_profile(user_id)).primary_locality
+    if primary is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Set where you are before setting a time. A schedule is stored "
+                "in the timezone of your place, so there is nothing to store it "
+                "in yet."
+            ),
+        )
     try:
         cadence = Cadence(
             cadence=body.cadence,
             hour=body.hour,
             minute=body.minute,
             weekday=body.weekday,
-            timezone=body.timezone,
+            timezone=primary.timezone,
         )
         saved = await runs.upsert_schedule(user_id, cadence, enabled=body.enabled)
     except ValueError as exc:
