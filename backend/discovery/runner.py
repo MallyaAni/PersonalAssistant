@@ -64,6 +64,7 @@ from backend.discovery.summarize import (
     text_from_html,
 )
 from backend.discovery.types import DiscoveryProfile, Locality
+from backend.discovery.url_dates import deadline_has_passed
 
 # How much wider than the digest the shortlist is ranked before the model orders
 # it. Two gives the re-ranker a real choice — sixteen finds for an eight-item
@@ -414,19 +415,15 @@ class DiscoveryRunner:
             event = item.event
             source = event.summary or await self._page_text(event.url, budget)
             described = await self.describer.describe(event.title, source, today)
-            # `described.is_a_listing` is deliberately *not* acted on here.
-            #
-            # It was, for one commit, and it emptied a real digest. Measured
-            # over a London sweep: five finds reached the shortlist and the
-            # model called four of them listings, including a single Eventbrite
-            # event at an `/e/` URL — while passing "Salsa Festivals & Congress
-            # in England 2026", which is an index. Nothing was delivered.
-            #
-            # The judgement was adopted on one example that it got right. It is
-            # still computed, because it costs nothing on a call already being
-            # made and the evaluation harness needs it to tune against; it does
-            # not get to silence a digest until it beats `listing_filter` on the
-            # labelled cases.
+            # Read before the model is trusted with it. The describe call does
+            # ask — "Today is {today}, set already_happened when a deadline has
+            # gone by" — and a real digest still offered a vote that closed on
+            # August 3 to someone reading it on August 10. A stated deadline is
+            # arithmetic, and arithmetic belongs here rather than in a 4B model.
+            if deadline_has_passed(source, today) or deadline_has_passed(
+                event.summary, today
+            ):
+                continue
             if described.already_happened:
                 # The page says it is over. Nothing else in the sweep could know
                 # that: these are the finds with no published start, so no clock

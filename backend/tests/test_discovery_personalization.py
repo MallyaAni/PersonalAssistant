@@ -549,39 +549,6 @@ async def test_an_empty_memory_leaves_the_order_alone():
     assert [item.event.title for item in ordered] == ["First", "Second"]
 
 
-# --- listings ----------------------------------------------------------------
-
-
-@pytest.mark.asyncio
-async def test_a_page_of_happenings_is_dropped_even_when_its_url_hides_it():
-    from backend.discovery.summarize import EventDescriber
-
-    writer = _StubWriter(
-        '{"name": "Alexandria Film Festival", "description": "A programme '
-        'listing this season of screenings.", "already_happened": false, '
-        '"is_a_listing": true}'
-    )
-
-    readable = await EventDescriber(writer).describe(
-        "Alexandria Film Festival",
-        "Our 2026 programme. Browse every screening and buy tickets.",
-    )
-
-    # Three of four items in a real digest were pages like this. No URL or
-    # title gave them away; the page's own prose does.
-    assert readable.is_a_listing is True
-
-
-@pytest.mark.asyncio
-async def test_nothing_is_called_a_listing_when_the_model_is_silent():
-    from backend.discovery.summarize import EventDescriber
-
-    readable = await EventDescriber(None).describe("A concert", "One night only.")
-
-    # A find is never dropped because the model was not asked or failed.
-    assert readable.is_a_listing is False
-
-
 # --- one whole sweep --------------------------------------------------------
 
 

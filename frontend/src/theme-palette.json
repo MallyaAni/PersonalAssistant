@@ -1,0 +1,205 @@
+{
+  "about": "The single source of truth for dark mode. Each row is a light value, the dark value that replaces it, and the role it plays \u2014 the role is what makes a mapping reviewable. src/theme.css is generated from this; a test fails when a colour used in a component is missing here.",
+  "palette": [
+    {
+      "light": "#f5f5f7",
+      "dark": "#1c1c1e",
+      "role": "app background and subtle fills"
+    },
+    {
+      "light": "#ffffff",
+      "dark": "#2c2c2e",
+      "role": "raised surfaces"
+    },
+    {
+      "light": "#fbfbfd",
+      "dark": "#242426",
+      "role": "faint surface"
+    },
+    {
+      "light": "#f9f9fb",
+      "dark": "#242426",
+      "role": "faint surface"
+    },
+    {
+      "light": "#1d1d1f",
+      "dark": "#f5f5f7",
+      "role": "primary text, and the solid dark button"
+    },
+    {
+      "light": "#333336",
+      "dark": "#e5e5ea",
+      "role": "primary text, lifted"
+    },
+    {
+      "light": "#424245",
+      "dark": "#c7c7cc",
+      "role": "strong grey"
+    },
+    {
+      "light": "#3a3a3c",
+      "dark": "#d1d1d6",
+      "role": "chip grey"
+    },
+    {
+      "light": "#6e6e73",
+      "dark": "#a1a1a6",
+      "role": "secondary text"
+    },
+    {
+      "light": "#86868b",
+      "dark": "#8e8e93",
+      "role": "tertiary text"
+    },
+    {
+      "light": "#a1a1a6",
+      "dark": "#8e8e93",
+      "role": "tertiary text, lifted"
+    },
+    {
+      "light": "#4d5156",
+      "dark": "#a1a1a6",
+      "role": "search-result body"
+    },
+    {
+      "light": "#e8e8ed",
+      "dark": "#3a3a3c",
+      "role": "hairline fill"
+    },
+    {
+      "light": "#d2d2d7",
+      "dark": "#48484a",
+      "role": "disabled fill"
+    },
+    {
+      "light": "#c7c7cc",
+      "dark": "#48484a",
+      "role": "disabled fill"
+    },
+    {
+      "light": "#0071e3",
+      "dark": "#0a84ff",
+      "role": "accent"
+    },
+    {
+      "light": "#0077ed",
+      "dark": "#3b9bff",
+      "role": "accent, hover"
+    },
+    {
+      "light": "#0066cc",
+      "dark": "#0a84ff",
+      "role": "accent, pressed"
+    },
+    {
+      "light": "#0058b0",
+      "dark": "#5aa9ff",
+      "role": "accent, pressed"
+    },
+    {
+      "light": "#0055b3",
+      "dark": "#5aa9ff",
+      "role": "accent text on tint"
+    },
+    {
+      "light": "#1a0dab",
+      "dark": "#8ab4f8",
+      "role": "external link"
+    },
+    {
+      "light": "#8ab4f8",
+      "dark": "#8ab4f8",
+      "role": "external link, already dark"
+    },
+    {
+      "light": "#a7c9eb",
+      "dark": "#2a4a6b",
+      "role": "accent hairline"
+    },
+    {
+      "light": "#c9342f",
+      "dark": "#ff6961",
+      "role": "danger"
+    },
+    {
+      "light": "#b42318",
+      "dark": "#ff6961",
+      "role": "danger text"
+    },
+    {
+      "light": "#b3261e",
+      "dark": "#ff6961",
+      "role": "danger text"
+    },
+    {
+      "light": "#b23c3c",
+      "dark": "#ff6961",
+      "role": "danger text"
+    },
+    {
+      "light": "#ffe5e2",
+      "dark": "#3a1f1e",
+      "role": "danger tint"
+    },
+    {
+      "light": "#fff1f0",
+      "dark": "#3a1f1e",
+      "role": "danger tint"
+    },
+    {
+      "light": "#b25e00",
+      "dark": "#ffb340",
+      "role": "warning text"
+    },
+    {
+      "light": "#ff9f0a",
+      "dark": "#ff9f0a",
+      "role": "warning, already dark"
+    },
+    {
+      "light": "#fff4e5",
+      "dark": "#3a2c15",
+      "role": "warning tint"
+    },
+    {
+      "light": "#248a3d",
+      "dark": "#30d158",
+      "role": "success"
+    },
+    {
+      "light": "#34c759",
+      "dark": "#30d158",
+      "role": "success"
+    },
+    {
+      "light": "#e8f5ec",
+      "dark": "#14301c",
+      "role": "success tint"
+    },
+    {
+      "light": "#f0f7ff",
+      "dark": "#16233a",
+      "role": "info tint"
+    },
+    {
+      "light": "#eef8ff",
+      "dark": "#16233a",
+      "role": "info tint"
+    },
+    {
+      "light": "#e8f2ff",
+      "dark": "#16233a",
+      "role": "info tint"
+    },
+    {
+      "light": "#eef6ff",
+      "dark": "#16233a",
+      "role": "info tint"
+    },
+    {
+      "light": "#e8f0fe",
+      "dark": "#16233a",
+      "role": "info tint"
+    }
+  ]
+}

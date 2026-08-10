@@ -121,3 +121,71 @@ def _safe_date(year: int, month: int, day: int) -> date | None:
         return date(year, month, day)
     except ValueError:
         return None
+
+
+# A deadline stated without a year — "through August 3", "until Sept 12".
+#
+# The explicit-date parser deliberately requires a year, because a bare month
+# and day is ambiguous. A deadline is the case where it is not: nobody writes
+# "open through August 3" about next year, so the current year is what they
+# meant, and if that has passed the thing is over.
+#
+# This exists because asking the model was not enough. The describe call already
+# says "Today is {today}. Set already_happened true when a deadline has gone by",
+# and a real digest still offered a vote that closed on August 3 to someone
+# reading it on August 10. Date arithmetic is not what a 4B model is for; it is
+# what a date library is for.
+_MONTH_INDEX = {
+    month: index
+    for index, month in enumerate(
+        (
+            "jan",
+            "feb",
+            "mar",
+            "apr",
+            "may",
+            "jun",
+            "jul",
+            "aug",
+            "sep",
+            "oct",
+            "nov",
+            "dec",
+        ),
+        start=1,
+    )
+}
+
+_DEADLINE = re.compile(
+    r"\b(?:through|until|thru|ends?|clos(?:e|es|ing)|deadline)\s+"
+    r"(?P<mon>jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+"
+    r"(?P<day>\d{1,2})(?:st|nd|rd|th)?\b(?!\s*,?\s*20\d{2})",
+    re.IGNORECASE,
+)
+
+# How long after a stated deadline a find is still allowed through. A day, so a
+# timezone difference between the page and this machine cannot drop something
+# that is still open where it is happening.
+_DEADLINE_GRACE_DAYS = 1
+
+
+# Whether the text states a deadline, in the current year, that has already gone.
+def deadline_has_passed(text: str | None, today: date) -> bool:
+    if not text:
+        return False
+    for match in _DEADLINE.finditer(text):
+        month = _MONTH_INDEX.get(match.group("mon").lower()[:3])
+        if month is None:
+            continue
+        try:
+            stated = date(today.year, month, int(match.group("day")))
+        except ValueError:
+            continue
+        # A deadline late in the year read in January is last year's phrasing
+        # only if it is wildly ahead; treat anything more than six months out as
+        # belonging to the year just gone rather than inventing a future.
+        if (stated - today).days > 183:
+            stated = date(today.year - 1, month, int(match.group("day")))
+        if (today - stated).days > _DEADLINE_GRACE_DAYS:
+            return True
+    return False

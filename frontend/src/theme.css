@@ -1,0 +1,235 @@
+/* Dark mode as one reviewable table, not 756 edits.
+ *
+ * The interface uses Tailwind arbitrary colours — 524 of them across 16 files,
+ * plus 232 more using alpha black and white. Migrating each to a semantic token
+ * is the right end state and a large mechanical change with real breakage risk,
+ * so this is the bridge: every compiled utility is re-declared once under
+ * `.dark`, generated from src/theme-palette.json.
+ *
+ * GENERATED — edit the palette, not this file.
+ *
+ * The weakness of this approach is that a new colour stays light while
+ * everything round it turns dark, silently. So a test reads the palette, scans
+ * the components, and fails when one is unmapped. It found fourteen the first
+ * time it ran. */
+
+/* app background and subtle fills */
+.dark .bg-\[\#f5f5f7\] { background-color: #1c1c1e; }
+.dark .text-\[\#f5f5f7\] { color: #1c1c1e; }
+.dark .border-\[\#f5f5f7\] { border-color: #1c1c1e; }
+
+/* raised surfaces */
+.dark .bg-\[\#ffffff\] { background-color: #2c2c2e; }
+.dark .text-\[\#ffffff\] { color: #2c2c2e; }
+.dark .border-\[\#ffffff\] { border-color: #2c2c2e; }
+
+/* faint surface */
+.dark .bg-\[\#fbfbfd\] { background-color: #242426; }
+.dark .text-\[\#fbfbfd\] { color: #242426; }
+.dark .border-\[\#fbfbfd\] { border-color: #242426; }
+
+/* faint surface */
+.dark .bg-\[\#f9f9fb\] { background-color: #242426; }
+.dark .text-\[\#f9f9fb\] { color: #242426; }
+.dark .border-\[\#f9f9fb\] { border-color: #242426; }
+
+/* primary text, and the solid dark button */
+.dark .bg-\[\#1d1d1f\] { background-color: #f5f5f7; }
+.dark .text-\[\#1d1d1f\] { color: #f5f5f7; }
+.dark .border-\[\#1d1d1f\] { border-color: #f5f5f7; }
+
+/* primary text, lifted */
+.dark .bg-\[\#333336\] { background-color: #e5e5ea; }
+.dark .text-\[\#333336\] { color: #e5e5ea; }
+.dark .border-\[\#333336\] { border-color: #e5e5ea; }
+
+/* strong grey */
+.dark .bg-\[\#424245\] { background-color: #c7c7cc; }
+.dark .text-\[\#424245\] { color: #c7c7cc; }
+.dark .border-\[\#424245\] { border-color: #c7c7cc; }
+
+/* chip grey */
+.dark .bg-\[\#3a3a3c\] { background-color: #d1d1d6; }
+.dark .text-\[\#3a3a3c\] { color: #d1d1d6; }
+.dark .border-\[\#3a3a3c\] { border-color: #d1d1d6; }
+
+/* secondary text */
+.dark .bg-\[\#6e6e73\] { background-color: #a1a1a6; }
+.dark .text-\[\#6e6e73\] { color: #a1a1a6; }
+.dark .border-\[\#6e6e73\] { border-color: #a1a1a6; }
+
+/* tertiary text */
+.dark .bg-\[\#86868b\] { background-color: #8e8e93; }
+.dark .text-\[\#86868b\] { color: #8e8e93; }
+.dark .border-\[\#86868b\] { border-color: #8e8e93; }
+
+/* tertiary text, lifted */
+.dark .bg-\[\#a1a1a6\] { background-color: #8e8e93; }
+.dark .text-\[\#a1a1a6\] { color: #8e8e93; }
+.dark .border-\[\#a1a1a6\] { border-color: #8e8e93; }
+
+/* search-result body */
+.dark .bg-\[\#4d5156\] { background-color: #a1a1a6; }
+.dark .text-\[\#4d5156\] { color: #a1a1a6; }
+.dark .border-\[\#4d5156\] { border-color: #a1a1a6; }
+
+/* hairline fill */
+.dark .bg-\[\#e8e8ed\] { background-color: #3a3a3c; }
+.dark .text-\[\#e8e8ed\] { color: #3a3a3c; }
+.dark .border-\[\#e8e8ed\] { border-color: #3a3a3c; }
+
+/* disabled fill */
+.dark .bg-\[\#d2d2d7\] { background-color: #48484a; }
+.dark .text-\[\#d2d2d7\] { color: #48484a; }
+.dark .border-\[\#d2d2d7\] { border-color: #48484a; }
+
+/* disabled fill */
+.dark .bg-\[\#c7c7cc\] { background-color: #48484a; }
+.dark .text-\[\#c7c7cc\] { color: #48484a; }
+.dark .border-\[\#c7c7cc\] { border-color: #48484a; }
+
+/* accent */
+.dark .bg-\[\#0071e3\] { background-color: #0a84ff; }
+.dark .text-\[\#0071e3\] { color: #0a84ff; }
+.dark .border-\[\#0071e3\] { border-color: #0a84ff; }
+
+/* accent, hover */
+.dark .bg-\[\#0077ed\] { background-color: #3b9bff; }
+.dark .text-\[\#0077ed\] { color: #3b9bff; }
+.dark .border-\[\#0077ed\] { border-color: #3b9bff; }
+
+/* accent, pressed */
+.dark .bg-\[\#0066cc\] { background-color: #0a84ff; }
+.dark .text-\[\#0066cc\] { color: #0a84ff; }
+.dark .border-\[\#0066cc\] { border-color: #0a84ff; }
+
+/* accent, pressed */
+.dark .bg-\[\#0058b0\] { background-color: #5aa9ff; }
+.dark .text-\[\#0058b0\] { color: #5aa9ff; }
+.dark .border-\[\#0058b0\] { border-color: #5aa9ff; }
+
+/* accent text on tint */
+.dark .bg-\[\#0055b3\] { background-color: #5aa9ff; }
+.dark .text-\[\#0055b3\] { color: #5aa9ff; }
+.dark .border-\[\#0055b3\] { border-color: #5aa9ff; }
+
+/* external link */
+.dark .bg-\[\#1a0dab\] { background-color: #8ab4f8; }
+.dark .text-\[\#1a0dab\] { color: #8ab4f8; }
+.dark .border-\[\#1a0dab\] { border-color: #8ab4f8; }
+
+/* external link, already dark */
+.dark .bg-\[\#8ab4f8\] { background-color: #8ab4f8; }
+.dark .text-\[\#8ab4f8\] { color: #8ab4f8; }
+.dark .border-\[\#8ab4f8\] { border-color: #8ab4f8; }
+
+/* accent hairline */
+.dark .bg-\[\#a7c9eb\] { background-color: #2a4a6b; }
+.dark .text-\[\#a7c9eb\] { color: #2a4a6b; }
+.dark .border-\[\#a7c9eb\] { border-color: #2a4a6b; }
+
+/* danger */
+.dark .bg-\[\#c9342f\] { background-color: #ff6961; }
+.dark .text-\[\#c9342f\] { color: #ff6961; }
+.dark .border-\[\#c9342f\] { border-color: #ff6961; }
+
+/* danger text */
+.dark .bg-\[\#b42318\] { background-color: #ff6961; }
+.dark .text-\[\#b42318\] { color: #ff6961; }
+.dark .border-\[\#b42318\] { border-color: #ff6961; }
+
+/* danger text */
+.dark .bg-\[\#b3261e\] { background-color: #ff6961; }
+.dark .text-\[\#b3261e\] { color: #ff6961; }
+.dark .border-\[\#b3261e\] { border-color: #ff6961; }
+
+/* danger text */
+.dark .bg-\[\#b23c3c\] { background-color: #ff6961; }
+.dark .text-\[\#b23c3c\] { color: #ff6961; }
+.dark .border-\[\#b23c3c\] { border-color: #ff6961; }
+
+/* danger tint */
+.dark .bg-\[\#ffe5e2\] { background-color: #3a1f1e; }
+.dark .text-\[\#ffe5e2\] { color: #3a1f1e; }
+.dark .border-\[\#ffe5e2\] { border-color: #3a1f1e; }
+
+/* danger tint */
+.dark .bg-\[\#fff1f0\] { background-color: #3a1f1e; }
+.dark .text-\[\#fff1f0\] { color: #3a1f1e; }
+.dark .border-\[\#fff1f0\] { border-color: #3a1f1e; }
+
+/* warning text */
+.dark .bg-\[\#b25e00\] { background-color: #ffb340; }
+.dark .text-\[\#b25e00\] { color: #ffb340; }
+.dark .border-\[\#b25e00\] { border-color: #ffb340; }
+
+/* warning, already dark */
+.dark .bg-\[\#ff9f0a\] { background-color: #ff9f0a; }
+.dark .text-\[\#ff9f0a\] { color: #ff9f0a; }
+.dark .border-\[\#ff9f0a\] { border-color: #ff9f0a; }
+
+/* warning tint */
+.dark .bg-\[\#fff4e5\] { background-color: #3a2c15; }
+.dark .text-\[\#fff4e5\] { color: #3a2c15; }
+.dark .border-\[\#fff4e5\] { border-color: #3a2c15; }
+
+/* success */
+.dark .bg-\[\#248a3d\] { background-color: #30d158; }
+.dark .text-\[\#248a3d\] { color: #30d158; }
+.dark .border-\[\#248a3d\] { border-color: #30d158; }
+
+/* success */
+.dark .bg-\[\#34c759\] { background-color: #30d158; }
+.dark .text-\[\#34c759\] { color: #30d158; }
+.dark .border-\[\#34c759\] { border-color: #30d158; }
+
+/* success tint */
+.dark .bg-\[\#e8f5ec\] { background-color: #14301c; }
+.dark .text-\[\#e8f5ec\] { color: #14301c; }
+.dark .border-\[\#e8f5ec\] { border-color: #14301c; }
+
+/* info tint */
+.dark .bg-\[\#f0f7ff\] { background-color: #16233a; }
+.dark .text-\[\#f0f7ff\] { color: #16233a; }
+.dark .border-\[\#f0f7ff\] { border-color: #16233a; }
+
+/* info tint */
+.dark .bg-\[\#eef8ff\] { background-color: #16233a; }
+.dark .text-\[\#eef8ff\] { color: #16233a; }
+.dark .border-\[\#eef8ff\] { border-color: #16233a; }
+
+/* info tint */
+.dark .bg-\[\#e8f2ff\] { background-color: #16233a; }
+.dark .text-\[\#e8f2ff\] { color: #16233a; }
+.dark .border-\[\#e8f2ff\] { border-color: #16233a; }
+
+/* info tint */
+.dark .bg-\[\#eef6ff\] { background-color: #16233a; }
+.dark .text-\[\#eef6ff\] { color: #16233a; }
+.dark .border-\[\#eef6ff\] { border-color: #16233a; }
+
+/* info tint */
+.dark .bg-\[\#e8f0fe\] { background-color: #16233a; }
+.dark .text-\[\#e8f0fe\] { color: #16233a; }
+.dark .border-\[\#e8f0fe\] { border-color: #16233a; }
+
+/* Hairlines are black at low alpha in light and white in dark: the colour
+   itself flips, which no per-colour mapping can express. */
+.dark .border-black\/\[0\.05\] { border-color: rgb(255 255 255 / 0.05); }
+.dark .border-black\/\[0\.06\] { border-color: rgb(255 255 255 / 0.06); }
+.dark .border-black\/\[0\.07\] { border-color: rgb(255 255 255 / 0.07); }
+.dark .border-black\/\[0\.08\] { border-color: rgb(255 255 255 / 0.08); }
+.dark .border-black\/\[0\.14\] { border-color: rgb(255 255 255 / 0.14); }
+.dark .border-black\/10 { border-color: rgb(255 255 255 / 10); }
+.dark .border-black\/15 { border-color: rgb(255 255 255 / 15); }
+.dark .border-black\/20 { border-color: rgb(255 255 255 / 20); }
+.dark .bg-black\/\[0\.06\] { background-color: rgb(255 255 255 / 0.08); }
+.dark .bg-white { background-color: #2c2c2e; }
+.dark .bg-white\/70 { background-color: rgb(44 44 46 / 0.7); }
+.dark .bg-white\/80 { background-color: rgb(44 44 46 / 0.8); }
+
+/* `text-white` stays white where it sits on the accent. The exception is the
+   solid dark button, whose background inverts to a light surface, so that one
+   pairing is re-stated rather than left as white on white. */
+.dark .bg-\[\#1d1d1f\] { color: #1c1c1e; }
+.dark .hover:bg-black:hover { background-color: #e5e5ea; }
