@@ -132,8 +132,23 @@ builders and the preambles that open each call — and `presentations/provider.p
 keeps the machinery, the JSON extraction, the per-layout schema and the view
 builders that decide what a slide looks like to the model.
 
-**Still to do:** Diagram's prompt is in `artifacts/diagram.py` and memory
-capture's in `memory/proposal_agent.py`. Search routing and image recall are in
+Diagram and memory capture are done too — `agents/diagram/prompts.py` and
+`agents/memory/prompts.py`. Memory capture has no registry card because it is
+not something the workspace lists; it is a step in every conversation, and the
+folder exists only so its prompt sits with it.
+
+**One thing left, and it is small.** `presentations/provider.py` still holds the
+slide-content preamble inline, because that one is parameterised — it names
+which slide of how many is being written, which is what stops each slide
+restating the subject. It wants to be a function in `agents/deck/prompts.py`
+taking index, total and deck title. An attempt at it broke the file on a string
+escape and was reverted rather than left half-applied.
+
+**Not moved on purpose:** `search/classifier.py` and
+`artifacts/image_recall_classifier.py`. Both call a model, and both route rather
+than produce work — they decide whether to search or to look for an image.
+Treating a routing policy as an agent would put a folder round something the
+workspace will never list. Decide that before moving them. Search routing and image recall are in
 `search/classifier.py` and `artifacts/image_recall_classifier.py`, and those two
 may be policies rather than agents — decide that before moving them.
 

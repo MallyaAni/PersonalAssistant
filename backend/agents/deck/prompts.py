@@ -25,6 +25,7 @@ PLANNING_PREAMBLE = (
     "accurate, executive-ready presentation content. "
 )
 
+
 SLIDE_CONTENT_PREAMBLE = (
     "Keep the supplied title, purpose, and layout exactly; the deck's shape was "
     "already decided. Supply whatever that layout needs. This slide advances the "

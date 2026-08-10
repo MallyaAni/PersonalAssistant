@@ -7,6 +7,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from backend.agents.memory.prompts import MEMORY_PROPOSAL_SYSTEM
 from backend.core.llm import LLMClient
 from backend.discovery.types import MAX_LABEL_CHARS, MAX_REGION_CHARS, normalize_label
 
@@ -110,32 +111,7 @@ class MemoryProposalAgent:
                 {
                     "role": "system",
                     "content": (
-                        "Semantically interpret only the current user message. "
-                        "Return typed memory candidates only for facts the user "
-                        "states about themself or explicitly asks to preserve. Do "
-                        "not depend on particular trigger words. Never infer a fact, "
-                        "convert a question into memory, or capture something about "
-                        "another person as the user's own preference. Extract every "
-                        "compatible profile fact in one response. preferred_name is "
-                        "only the name the user says they use. interests are current "
-                        "likes, hobbies, activities, or topics, with comma-separated "
-                        "items kept distinct unless they mean the same broader "
-                        "interest. locality is where the user says they live. "
-                        "A pet, family relationship, ownership fact, name, or other "
-                        "personal detail is not an interest unless the user also "
-                        "says they enjoy it. response_style is only an explicit "
-                        "preference for concise "
-                        "or detailed replies. entity, procedure, knowledge, and "
-                        "semantic_fact hold stable first-person information likely "
-                        "to matter in a future conversation. A semantic fact may be "
-                        "offered when the user clearly states it even without a "
-                        "particular save command, because nothing is persisted until "
-                        "visible approval. "
-                        "episodic_event may capture a concrete first-person past "
-                        "experience, never a hypothetical or question. Prefer a "
-                        "specific typed field over semantic_fact and do not duplicate "
-                        "one fact across fields. Leave every unsupported field null "
-                        "or empty. "
+                        MEMORY_PROPOSAL_SYSTEM
                         + catalogue
                         + 'Meaning examples: "Remember that my dog is called '
                         'Biscuit" and "Please keep track of the fact that my dog is '
