@@ -105,7 +105,29 @@ single action. Network evidence was preferred name 200 plus Scout interests
 cleared, the composer enabled, and Console, page, and network-failure lists were
 empty. The focused Playwright regression and production frontend build pass.
 
-## Next task: move Scout's prompts into Scout's folder
+## Next task: every agent's prompt belongs in its own folder
+
+This is broader than Scout, and the rule is simpler than the one first written
+down. The mechanism for calling a model is shared and reusable. The prompt is
+not: it is the agent's judgement written out, and it is different for every
+agent even when the calling code is identical. So a prompt lives with its agent,
+always.
+
+Measured against that, almost none of them do:
+
+| Agent | Prompt lives in | Should be |
+| --- | --- | --- |
+| Scout | `discovery/aiming.py`, `reranking.py`, `summarize.py`, `place_suggest.py` | `agents/scout/` |
+| Deck | `presentations/provider.py` (five prompts) | `agents/deck/` |
+| Diagram | `artifacts/diagram.py` | `agents/diagram/` |
+| Memory capture | `memory/proposal_agent.py` | `agents/memory/` |
+| Search routing | `search/classifier.py` | its own folder, or accept it is a policy rather than an agent |
+| Image recall | `artifacts/image_recall_classifier.py` | as above |
+
+`backend/agents/` currently holds status cards and a graph, which is the least
+agent-specific thing in any of them.
+
+### Doing it without inverting the layering
 
 The folder-per-agent rule says an agent folder holds what it *decides* and its
 domain package holds the machinery it drives. Scout's four prompts — the things
