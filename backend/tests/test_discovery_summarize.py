@@ -134,34 +134,40 @@ async def test_a_url_never_survives_from_model_output():
 
 
 @pytest.mark.asyncio
-async def test_an_inference_failure_falls_back_rather_than_failing():
+async def test_an_inference_failure_leaves_the_find_undescribed():
     writer = _StubWriter(None, fail=True)
 
     result = await EventDescriber(writer).describe(
         "Walk", "Join a naturalist for a two-mile walk. More text."
     )
 
-    assert result.description == "Join a naturalist for a two-mile walk."
+    # A scraped first paragraph used to stand in here. It was never something a
+    # person could decide on, and it made a describing failure read as a
+    # description; the find now renders as its name, date and link.
+    assert result.description is None
 
 
 @pytest.mark.asyncio
-async def test_an_empty_written_description_falls_back():
+async def test_an_empty_written_description_leaves_the_find_undescribed():
     writer = _StubWriter("   ")
 
     result = await EventDescriber(writer).describe("Walk", "A short walk happens.")
 
-    assert result.description == "A short walk happens."
+    assert result.description is None
 
 
 @pytest.mark.asyncio
-async def test_no_writer_still_produces_something_readable():
+async def test_no_writer_still_names_the_find():
     result = await EventDescriber(None).describe(
         "Nature Walk | Arlington County Government",
         "Join a naturalist for a walk.",
     )
 
+    # The source's own title is what a find is called when nothing said
+    # anything. That is not a rewriting of model output — there is none — and a
+    # find with no name at all cannot be rendered.
     assert result.title == "Nature Walk"
-    assert result.description == "Join a naturalist for a walk."
+    assert result.description is None
 
 
 @pytest.mark.asyncio
@@ -234,12 +240,18 @@ async def test_a_link_can_never_reach_the_reader_through_the_name():
 
 
 @pytest.mark.asyncio
-async def test_a_long_name_is_bounded():
-    writer = _StubWriter("A band plays.", name="x" * 400)
+async def test_the_length_bound_is_carried_by_the_grammar_not_by_a_trim():
+    writer = _StubWriter("A band plays.", name="Gig at the Hall")
 
-    readable = await EventDescriber(writer).describe("Gig", "A band plays.")
+    await EventDescriber(writer).describe("Gig", "A band plays.")
 
-    assert len(readable.title) <= MAX_NAME_CHARS
+    # The bound used to be applied twice: once by the decoding grammar while the
+    # tokens were chosen, and again by a slice afterwards. Only the first can
+    # produce a finished sentence — the second cuts one mid-clause — so the trim
+    # is gone and this asserts the remaining bound is really being sent.
+    schema = writer.schemas[0]
+    assert schema["properties"]["name"]["maxLength"] == MAX_NAME_CHARS
+    assert schema["properties"]["description"]["maxLength"] == MAX_DESCRIPTION_CHARS
 
 
 @pytest.mark.asyncio
