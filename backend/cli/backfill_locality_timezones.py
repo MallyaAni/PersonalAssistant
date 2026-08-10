@@ -17,6 +17,7 @@ exactly as it is, and so is a zone somebody set deliberately.
 import argparse
 import asyncio
 from collections.abc import Sequence
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 
@@ -24,6 +25,7 @@ from backend.agents.scout.timezones import TimezoneResolver
 from backend.core.dependencies import get_llm_client
 from backend.database.session import AsyncSessionLocal
 from backend.discovery.projection import DEFAULT_TIMEZONE
+from backend.discovery.schedule import Cadence, next_run_at
 from backend.models.discovery import DiscoveryLocality
 from backend.models.discovery_run import DiscoverySchedule
 
@@ -68,12 +70,26 @@ async def run(apply: bool) -> int:
                 .all()
             )
             for schedule in schedules:
-                if schedule.timezone == DEFAULT_TIMEZONE:
-                    print(
-                        f"        schedule {schedule.hour:02d}:{schedule.minute:02d}"
-                        f" -> {resolved}"
-                    )
-                    schedule.timezone = resolved
+                if schedule.timezone != DEFAULT_TIMEZONE:
+                    continue
+                schedule.timezone = resolved
+                # The armed instant was computed from the old zone, so moving
+                # the zone alone leaves the sweep firing at the hour the wrong
+                # zone implied — which is the bug, not a smaller version of it.
+                schedule.next_run_at = next_run_at(
+                    Cadence(
+                        cadence=schedule.cadence,
+                        hour=schedule.hour,
+                        weekday=schedule.weekday,
+                        timezone=resolved,
+                        minute=schedule.minute,
+                    ),
+                    datetime.now(UTC),
+                )
+                print(
+                    f"        schedule {schedule.hour:02d}:{schedule.minute:02d}"
+                    f" -> {resolved}, next run {schedule.next_run_at}"
+                )
         if apply:
             await session.commit()
     print(
