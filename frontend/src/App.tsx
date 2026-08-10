@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { LogOut, Menu, Plus } from 'lucide-react'
+import ThemeToggle from './components/ThemeToggle/ThemeToggle'
 import AgentPanel from './components/AgentPanel/AgentPanel'
 import AdminPanel from './components/AdminPanel/AdminPanel'
 import ArtifactPanel from './components/ArtifactPanel/ArtifactPanel'
@@ -136,6 +137,7 @@ const AuthenticatedApp = ({ auth, onSignedOut }: AuthenticatedAppProps) => {
               <Plus size={17} strokeWidth={2.25} />
               <span className="hidden sm:inline">New chat</span>
             </button>
+            <ThemeToggle className="hidden h-10 w-10 items-center justify-center rounded-full border border-black/[0.08] bg-white text-[#1d1d1f] hover:bg-[#f5f5f7] md:flex" />
             {auth.authentication_required && (
               <button
                 aria-label="Sign out"

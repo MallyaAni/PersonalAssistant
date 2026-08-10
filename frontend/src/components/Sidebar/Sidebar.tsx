@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { deleteConversation, listConversations, type ConversationSummary } from '../../services/api'
+import ThemeToggle from '../ThemeToggle/ThemeToggle'
 import { Bot, BrainCircuit, Image, LogOut, MessageCircle, Presentation, ShieldCheck, Trash2 } from 'lucide-react'
 
 interface SidebarProps {
@@ -183,6 +184,15 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
       )}
       <div className="mt-auto space-y-3">
+        {/* Drawer width only: from md the header carries this control, and
+            rendering both would put two on screen at once — the same mistake
+            that once produced two sign-out buttons. Kept outside the account
+            section because that section only exists when sign-out does, and a
+            user with no account still has a theme. */}
+        <ThemeToggle
+          withLabel
+          className="flex h-10 w-full items-center gap-3 rounded-xl bg-[#f5f5f7] px-3 text-sm font-medium text-[#1d1d1f] hover:bg-white md:hidden"
+        />
         {canSignOut && onSignOut && (
           // Keep account identity beside the exit action so a phone user can
           // verify which Scout profile is active before changing its settings.

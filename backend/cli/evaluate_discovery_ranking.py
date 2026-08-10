@@ -30,7 +30,7 @@ from backend.discovery.listing_filter import looks_like_a_directory
 # rejecting a real happening removes something the user would have wanted and
 # leaves no trace that it ever existed.
 FLOORS = {
-    "listing_recall": 0.45,
+    "listing_recall": 0.80,
     "happening_retention": 1.0,
     "attribution_accuracy": 0.60,
 }

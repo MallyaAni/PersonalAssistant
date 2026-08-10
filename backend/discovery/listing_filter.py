@@ -69,7 +69,22 @@ _DIRECTORY_PATH = re.compile(
     # titled. A live digest carried "Movie theaters in Alexandria" and "Movie
     # showtimes near Alexandria" — three of its four items were pages like
     # these — and neither title used any of the category words below.
-    r"|/showtimes?|/movie-times|/theat(er|re)s/|/cinemas?/)",
+    r"|/showtimes?|/movie-times|/theat(er|re)s/|/cinemas?/"
+    # A taxonomy page: every post filed under a term. "therapy with horses
+    # Archives - The Zebra" is what one looks like when a search engine titles
+    # it, and the word "Archives" in the title comes from the template rather
+    # than from anything happening.
+    r"|/tags?/|/topics?/|/archives?/"
+    # A roster scoped to a place, which the ticketing aggregators express as a
+    # city-state slug: concertfix.com/concerts/arlington-tx is everything
+    # playing in that city. The title is the next show on the page, so it names
+    # a real artist at a real venue — "Ricky Skaggs at Arlington Music Hall" —
+    # and nothing about it reads as a directory.
+    r"|/(concerts?|shows?|gigs?|events?)/[a-z0-9-]+-[a-z]{2}/?$"
+    # A venue's programme. Southbank Centre's /whats-on/performance-dance is a
+    # season of many things; the title rule already catches "What's On" when a
+    # page says it, and this catches the ones that only say it in the path.
+    r"|/whats-on|/what-s-on)",
     re.IGNORECASE,
 )
 
@@ -100,6 +115,12 @@ _DIRECTORY_TITLE = re.compile(
     # of who is playing across many nights — the venue's calendar under another
     # name — and its summary said so: "events ... from Tuesday through Saturday".
     r"|\blineup\b|\bline-?up\b"
+    # "Salsa Festivals & Congress in England 2026": a plural scoped to a place
+    # and a year is that year's roster. Strictly plural, because "COLLECTIVE
+    # concert - Alexandria, The Light Horse, Oct 03, 2026" is one happening
+    # that also ends in a year, and an optional "s" here would throw it away.
+    r"|\b(festivals|congresses|concerts|events|shows|gigs|classes|nights)\b"
+    r"[^|]*\b20\d{2}\s*$"
     # "Upcoming Events", "This Week in ...": a heading, not a happening.
     r"|^\s*upcoming\b|^\s*this\s+(week|weekend|month)\b)",
     re.IGNORECASE,
@@ -135,6 +156,18 @@ def looks_like_a_directory(title: str, url: str | None) -> bool:
         return True
     cleaned = " ".join(title.split())
     if _DIRECTORY_TITLE.search(cleaned):
+        return True
+    # Several of these rules are anchored to the start of the title, because a
+    # leading "Best…" is a category page and a trailing one usually is not.
+    # A title is often several claims joined by a colon, though, and the
+    # anchored form then only sees the first: "Line Dancing London: Best
+    # Nights, Classes & Events 2026" reads as a happening until the segment
+    # after the colon is judged on its own.
+    if any(
+        _DIRECTORY_TITLE.search(segment.strip())
+        for segment in re.split(r"[:|–—]|\s-\s", cleaned)
+        if segment.strip()
+    ):
         return True
     # A title is often several segments — "Free Concerts | Upcoming Events near
     # Arlington, VA | Live Music Project" — and the giveaway sits in the middle
