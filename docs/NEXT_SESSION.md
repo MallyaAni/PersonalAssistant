@@ -159,6 +159,46 @@ workspace will never list. Decide that before moving them. Search routing and im
 `search/classifier.py` and `artifacts/image_recall_classifier.py`, and those two
 may be policies rather than agents — decide that before moving them.
 
+## Schedules run on the wrong clock for anyone outside the US East Coast
+
+Diagnosed, not fixed. The scheduling mechanism is timezone-aware — each row in
+`discovery_schedules` carries a `timezone` and `next_run_at` is computed from
+the local hour in it — but the timezone is never derived from where the user is:
+
+| user | locality | schedule tz | correct? |
+| --- | --- | --- | --- |
+| jenos1 | Alexandria, Virginia | America/New_York | yes |
+| ani.mallya | Virginia | America/New_York | yes |
+| arsalon | **Canggu, Bali, Indonesia** | **America/New_York** | **no** |
+
+arsalon's schedule reads 11:15. It fires at 11:15 New York, which is 15:15 UTC
+and 23:15 in Bali, so a morning digest arrives at eleven at night.
+
+`projection.py` hardcodes `timezone="America/New_York"` when it creates a
+locality, and a place approved from chat goes through that path — the label
+"Canggu, Bali, Indonesia" is stored while the clock stays in Virginia. The same
+default appears in `api/v1/discovery.py`, `delivery.py` and `digest.py`. Each is
+reasonable alone; together they mean the system assumes everyone is on the US
+East Coast and nothing ever contradicts it.
+
+`PUT /localities` does better: the frontend sends
+`Intl.DateTimeFormat().resolvedOptions().timeZone`, so a place typed into the
+Scout panel picks up the browser's zone. The chat-approval path has no browser
+timezone to pass, which is the path that produced this.
+
+Two parts, and the second is the real one:
+
+1. stop the projection inventing a zone — make the column nullable and resolve
+   at read time, so a wrong clock is visible rather than assumed;
+2. derive it from the place. "Canggu, Bali, Indonesia" to `Asia/Makassar` needs
+   a lookup: either the Nominatim resolver, which already returns coordinates
+   that map to a zone, or a bundled place-to-timezone table. The browser zone is
+   a fair proxy and is wrong for anyone travelling — which is exactly the case
+   Scout already models with travel mode, so it cannot be the whole answer.
+
+Until then, setting a place through the Scout panel from a browser in the right
+country stores the real zone, and re-saving the schedule picks it up.
+
 ## A functional suite, and what it found immediately
 
 `backend/tests/functional/` sends each prompt to the real model and asserts on
