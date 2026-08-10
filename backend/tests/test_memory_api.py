@@ -46,8 +46,8 @@ def _remove_test_user(user_id: str):
 def test_memory_api_persists_searches_scopes_and_deletes_personal_memory():
     user_id = f"memory_api_{uuid.uuid4()}"
     other_user = f"memory_api_{uuid.uuid4()}"
-    app.dependency_overrides[get_embedding_provider] = (
-        lambda: DeterministicEmbeddingProvider()
+    app.dependency_overrides[get_embedding_provider] = lambda: (
+        DeterministicEmbeddingProvider()
     )
 
     try:
@@ -242,8 +242,8 @@ def test_memory_api_persists_searches_scopes_and_deletes_personal_memory():
 
 
 def test_memory_api_rejects_empty_memory_content():
-    app.dependency_overrides[get_embedding_provider] = (
-        lambda: DeterministicEmbeddingProvider()
+    app.dependency_overrides[get_embedding_provider] = lambda: (
+        DeterministicEmbeddingProvider()
     )
     try:
         with TestClient(app) as client:
@@ -472,8 +472,8 @@ def test_preferred_name_approval_rejects_past_or_naive_expiry():
 
 def test_semantic_memory_metadata_and_expiry_are_enforced():
     user_id = f"sem_exp_{uuid.uuid4()}"
-    app.dependency_overrides[get_embedding_provider] = (
-        lambda: DeterministicEmbeddingProvider()
+    app.dependency_overrides[get_embedding_provider] = lambda: (
+        DeterministicEmbeddingProvider()
     )
     future = datetime.now(UTC) + timedelta(days=1)
 
@@ -521,8 +521,8 @@ def test_semantic_memory_metadata_and_expiry_are_enforced():
 
 def test_delete_all_propagates_to_conversations_and_tool_memory():
     user_id = f"prop_{uuid.uuid4()}"
-    app.dependency_overrides[get_embedding_provider] = (
-        lambda: DeterministicEmbeddingProvider()
+    app.dependency_overrides[get_embedding_provider] = lambda: (
+        DeterministicEmbeddingProvider()
     )
     descriptor = {
         "server_id": "calendar-mcp",

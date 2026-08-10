@@ -23,14 +23,14 @@ os.environ["DEBUG"] = "false"
 os.environ.setdefault("SECRET_KEY", "test-secret-key-only-for-testing")
 os.environ["POSTGRES_HOST"] = "localhost"
 
+from backend.agents.scout.aiming import AimPlanner
+from backend.agents.scout.reranking import MemoryReranker
 from backend.database.session import AsyncSessionLocal
-from backend.discovery.aiming import AimPlanner
 from backend.discovery.events import DiscoveredEvent
 from backend.discovery.novelty import ScoredCandidate, SeenItemRepository
 from backend.discovery.personal_context import PersonalContext, PersonalContextReader
 from backend.discovery.projection import interest_fact, locality_fact
 from backend.discovery.relevance import RankedCandidate
-from backend.discovery.reranking import MemoryReranker
 from backend.discovery.runner import DiscoveryRunner
 from backend.discovery.sources.web import WebEventSource
 from backend.discovery.sources_repository import DiscoverySourceRepository

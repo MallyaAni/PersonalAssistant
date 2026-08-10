@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.agents.deck import PresentationAgent
 from backend.agents.diagram import DiagramAgent
 from backend.agents.registry import AgentRegistry
+from backend.agents.scout.place_suggest import PlaceSuggester
 from backend.agents.supervisor import MainSupervisorAgent
 from backend.artifacts.diagram import LLMDiagramProvider
 from backend.artifacts.image import (
@@ -53,7 +54,6 @@ from backend.discovery.locating import (
     PlaceResolver,
 )
 from backend.discovery.novelty import SeenItemRepository
-from backend.discovery.place_suggest import PlaceSuggester
 from backend.discovery.repository import DiscoveryProfileRepository
 from backend.discovery.runner import DiscoveryRunner
 from backend.discovery.runs import DiscoveryRunRepository

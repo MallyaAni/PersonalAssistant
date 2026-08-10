@@ -267,7 +267,7 @@ class PresentationService:
                 continue
             artifact_id = str(artifact["id"])
             generated_artifact_ids.append(artifact_id)
-            alt_text = (f"{visual_prompt[:320]}. " f"Visual for {planned_slide.title}")[
+            alt_text = (f"{visual_prompt[:320]}. Visual for {planned_slide.title}")[
                 :400
             ]
             slides = [

@@ -48,7 +48,6 @@ words.
 import asyncio
 import json
 import re
-from dataclasses import dataclass
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -56,7 +55,7 @@ from backend.core.egress import OutboundPrivacyPolicy
 from backend.core.interfaces import TextWriter
 from backend.discovery.personal_context import PersonalContext
 from backend.discovery.sources.web import MONTH_STEMS
-from backend.discovery.types import normalize_label
+from backend.discovery.types import InterestAim, SweepAim, normalize_label
 
 # Short enough that the place and the month still dominate the query. A subject
 # longer than this stops being a kind of happening and starts being a sentence,
@@ -100,48 +99,6 @@ class _AimPlan(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     aims: list[_Aim] = Field(default_factory=list, max_length=MAX_AIMS)
-
-
-@dataclass(frozen=True, slots=True)
-class InterestAim:
-    """What one interest becomes when it is aimed at a particular person."""
-
-    label: str
-    # What the query skeleton searches for. Never more disclosing than the
-    # interest label itself.
-    subject: str
-    # What ranking embeds instead of the bare label. Stays on this machine.
-    profile: str
-
-
-@dataclass(frozen=True, slots=True)
-class SweepAim:
-    """Every interest of one sweep, aimed."""
-
-    aims: tuple[InterestAim, ...] = ()
-
-    # What the web source searches for, in the order the interests were given.
-    def subjects(self) -> tuple[str, ...]:
-        return tuple(aim.subject for aim in self.aims)
-
-    # What ranking embeds, keyed by the label a matched interest is reported as.
-    # The key stays the user's own label so a digest still names the interest
-    # they stated rather than a phrasing the model invented.
-    def vector_texts(self) -> dict[str, str]:
-        return {aim.label: aim.profile for aim in self.aims}
-
-    # The unaimed sweep: every interest as its own bare label. This is what runs
-    # when there is no model or nothing usable came back — not when memory is
-    # empty, which is the common case and still benefits: a two-word label
-    # cannot be matched against an event description at all.
-    @staticmethod
-    def from_labels(labels: tuple[str, ...]) -> "SweepAim":
-        return SweepAim(
-            tuple(
-                InterestAim(label=label, subject=label, profile=label)
-                for label in labels
-            )
-        )
 
 
 _SYSTEM = """You aim a weekly local-events search at one particular person.

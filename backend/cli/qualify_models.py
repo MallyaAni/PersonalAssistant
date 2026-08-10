@@ -131,17 +131,19 @@ def _qualify_supervisor(llm: InferenceProvider) -> list[CaseResult]:
         results.append(
             _measure(
                 name,
-                lambda prompt=prompt: _selected_tool(
-                    llm.chat_with_tools(
-                        [
-                            {"role": "system", "content": system},
-                            {"role": "user", "content": prompt},
-                        ],
-                        _supervisor_tools(),
-                        256,
+                lambda prompt=prompt: (
+                    _selected_tool(
+                        llm.chat_with_tools(
+                            [
+                                {"role": "system", "content": system},
+                                {"role": "user", "content": prompt},
+                            ],
+                            _supervisor_tools(),
+                            256,
+                        )
                     )
-                )
-                or "NO_TOOL",
+                    or "NO_TOOL"
+                ),
                 expected or "NO_TOOL",
             )
         )
@@ -166,8 +168,7 @@ async def _qualify_presentation(llm: InferenceProvider) -> list[CaseResult]:
         if deck is None:
             raise ValueError("Presentation provider emitted no progressive draft")
         observed = (
-            f"slides={len(deck.slides)};"
-            f"titles={[slide.title for slide in deck.slides]}"
+            f"slides={len(deck.slides)};titles={[slide.title for slide in deck.slides]}"
         )
         passed = len(deck.slides) == 2 and all(
             slide.title and slide.elements for slide in deck.slides

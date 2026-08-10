@@ -371,8 +371,7 @@ async def test_conversation_service_proposes_name_and_interests_together():
         event["data"] for event in events if event["event"] == "memory_proposal"
     ]
     assert [
-        (item["kind"], item.get("value"), item.get("labels"))
-        for item in proposals
+        (item["kind"], item.get("value"), item.get("labels")) for item in proposals
     ] == [
         ("preferred_name", "Jen", None),
         (

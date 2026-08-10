@@ -139,8 +139,7 @@ class VectorDimensionMigrationService:
                     table = _identifier(store.table)
                     remaining = await connection.scalar(
                         text(
-                            f"SELECT count(*) FROM {table} "
-                            "WHERE embedding_next IS NULL"
+                            f"SELECT count(*) FROM {table} WHERE embedding_next IS NULL"
                         )
                     )
                 result[store.table] = {
@@ -277,9 +276,7 @@ class VectorDimensionMigrationService:
             for store in stores:
                 table = _identifier(store.table)
                 remaining = await connection.scalar(
-                    text(
-                        f"SELECT count(*) FROM {table} " "WHERE embedding_next IS NULL"
-                    )
+                    text(f"SELECT count(*) FROM {table} WHERE embedding_next IS NULL")
                 )
                 if remaining:
                     raise RuntimeError(
@@ -297,8 +294,7 @@ class VectorDimensionMigrationService:
                 )
                 await connection.execute(
                     text(
-                        f"ALTER TABLE {table} RENAME COLUMN "
-                        "embedding_next TO embedding"
+                        f"ALTER TABLE {table} RENAME COLUMN embedding_next TO embedding"
                     )
                 )
                 await connection.execute(

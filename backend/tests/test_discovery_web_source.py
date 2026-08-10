@@ -105,9 +105,7 @@ async def test_a_result_with_an_explicit_past_date_is_not_returned():
 
     events = await source.fetch()
 
-    assert [event.title for event in events] == [
-        "Museum late night September 12, 2099"
-    ]
+    assert [event.title for event in events] == ["Museum late night September 12, 2099"]
 
 
 @pytest.mark.asyncio
@@ -238,9 +236,7 @@ def test_undated_finds_are_ranked_but_capped_below_dated_ones():
     ranker = RelevanceRanker({"hiking": [1.0] + [0.0] * 767}, {"hiking": 2})
     candidates = tuple(
         _candidate(f"walk-{index}", None) for index in range(MAX_UNDATED + 3)
-    ) + (
-        _candidate("dated", _NOW + timedelta(days=10)),
-    )
+    ) + (_candidate("dated", _NOW + timedelta(days=10)),)
 
     ranked = ranker.rank(candidates, now=_NOW)
 

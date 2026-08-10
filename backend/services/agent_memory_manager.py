@@ -377,8 +377,7 @@ class EntityStore(_VectorStore):
     ) -> dict[str, Any]:
         normalized_name = _normalized(canonical_name)
         canonical = (
-            f"{entity_type}\n{canonical_name}\n"
-            f"{json.dumps(attributes, sort_keys=True)}"
+            f"{entity_type}\n{canonical_name}\n{json.dumps(attributes, sort_keys=True)}"
         )
         embedding = await self._embed_text(canonical)
         await transaction_advisory_lock(

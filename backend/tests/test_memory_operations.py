@@ -44,8 +44,8 @@ def _cleanup(*user_ids: str) -> None:
 def test_operations_api_reports_scoped_backlog_vectors_and_invariants() -> None:
     user_id = f"ops_{uuid.uuid4()}"
     other_user = f"ops_{uuid.uuid4()}"
-    app.dependency_overrides[get_embedding_provider] = (
-        lambda: OperationsEmbeddingProvider()
+    app.dependency_overrides[get_embedding_provider] = lambda: (
+        OperationsEmbeddingProvider()
     )
 
     try:

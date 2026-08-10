@@ -55,8 +55,8 @@ def build_parser() -> argparse.ArgumentParser:
 # same two stages a sweep uses: the aimed profile as the query, the
 # cross-encoder as the scorer.
 async def _attribute(cases: tuple) -> dict[str, str | None]:
+    from backend.agents.scout.aiming import AimPlanner
     from backend.core.dependencies import get_cross_encoder, get_llm_client
-    from backend.discovery.aiming import AimPlanner
     from backend.discovery.personal_context import PersonalContext
     from backend.discovery.precision import MIN_ATTRIBUTION_MARGIN
 

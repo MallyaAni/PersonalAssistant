@@ -98,7 +98,7 @@ class MemoryProposalAgent:
     ) -> MemoryProposalResult:
         catalogue = (
             "The user already follows these Scout interests: "
-            + ", ".join(f'\"{label}\"' for label in known_interests)
+            + ", ".join(f'"{label}"' for label in known_interests)
             + ". Reuse an existing label exactly when a new phrase means the same "
             "interest or a narrower form of it. "
             if known_interests
@@ -142,8 +142,7 @@ class MemoryProposalAgent:
                         'called Biscuit" both produce semantic_fact "My dog is '
                         'called Biscuit." with no interest. "I love training dogs" '
                         'produces interest "dog training". "What is my dog called?" '
-                        "produces no proposal. "
-                        + "Return only the required JSON."
+                        "produces no proposal. " + "Return only the required JSON."
                     ),
                 },
                 {"role": "user", "content": query},

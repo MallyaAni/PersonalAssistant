@@ -14,7 +14,7 @@ import pytest
 os.environ["DEBUG"] = "false"
 os.environ.setdefault("SECRET_KEY", "test-secret-key-only-for-testing")
 
-from backend.discovery.aiming import InterestAim, SweepAim
+from backend.agents.scout.aiming import InterestAim, SweepAim
 from backend.discovery.events import DiscoveredEvent
 from backend.discovery.novelty import ScoredCandidate
 from backend.discovery.precision import PrecisionRanker

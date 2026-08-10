@@ -44,8 +44,8 @@ import asyncio
 from dataclasses import replace
 
 from backend.core.interfaces import RerankProvider
-from backend.discovery.aiming import SweepAim
 from backend.discovery.relevance import RankedCandidate, candidate_text
+from backend.discovery.types import SweepAim
 
 # How far the best interest must beat the second best before the digest names it
 # as the reason a find was chosen.

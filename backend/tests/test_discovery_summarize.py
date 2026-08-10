@@ -13,10 +13,10 @@ import pytest
 
 os.environ.setdefault("SECRET_KEY", "test-secret-key-only-for-testing")
 
+from backend.agents.scout.describing import EventDescriber
 from backend.discovery.summarize import (
     MAX_DESCRIPTION_CHARS,
     MAX_NAME_CHARS,
-    EventDescriber,
     clean_title,
     summarize_deterministically,
 )

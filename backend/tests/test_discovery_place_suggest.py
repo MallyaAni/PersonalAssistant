@@ -15,7 +15,7 @@ import pytest
 os.environ["DEBUG"] = "false"
 os.environ.setdefault("SECRET_KEY", "test-secret-key-only-for-testing")
 
-from backend.discovery.place_suggest import (
+from backend.agents.scout.place_suggest import (
     MAX_SUGGESTIONS,
     PlaceSuggester,
     PlaceSuggestion,

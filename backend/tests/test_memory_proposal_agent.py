@@ -72,9 +72,7 @@ async def test_semantic_agent_returns_no_unsupported_memory() -> None:
 # Normalize duplicate labels and preserve the user's existing broad interest.
 @pytest.mark.asyncio
 async def test_semantic_agent_validates_interest_labels() -> None:
-    llm = _DecisionLLM(
-        {"interests": [" Theater ", "theater", "Networking   Events"]}
-    )
+    llm = _DecisionLLM({"interests": [" Theater ", "theater", "Networking   Events"]})
 
     result = await MemoryProposalAgent(llm).propose(
         "Stage work and professional mixers are my thing.",

@@ -101,3 +101,45 @@ def normalize_label(value: str) -> str:
 # cannot be compared or constrained, so uniqueness rides on this digest.
 def label_digest(value: str) -> str:
     return hashlib.sha256(normalize_label(value).encode("utf-8")).hexdigest()
+
+
+@dataclass(frozen=True, slots=True)
+class InterestAim:
+    """What one interest becomes when it is aimed at a particular person."""
+
+    label: str
+    # What the query skeleton searches for. Never more disclosing than the
+    # interest label itself.
+    subject: str
+    # What ranking embeds instead of the bare label. Stays on this machine.
+    profile: str
+
+
+@dataclass(frozen=True, slots=True)
+class SweepAim:
+    """Every interest of one sweep, aimed."""
+
+    aims: tuple[InterestAim, ...] = ()
+
+    # What the web source searches for, in the order the interests were given.
+    def subjects(self) -> tuple[str, ...]:
+        return tuple(aim.subject for aim in self.aims)
+
+    # What ranking embeds, keyed by the label a matched interest is reported as.
+    # The key stays the user's own label so a digest still names the interest
+    # they stated rather than a phrasing the model invented.
+    def vector_texts(self) -> dict[str, str]:
+        return {aim.label: aim.profile for aim in self.aims}
+
+    # The unaimed sweep: every interest as its own bare label. This is what runs
+    # when there is no model or nothing usable came back — not when memory is
+    # empty, which is the common case and still benefits: a two-word label
+    # cannot be matched against an event description at all.
+    @staticmethod
+    def from_labels(labels: tuple[str, ...]) -> "SweepAim":
+        return SweepAim(
+            tuple(
+                InterestAim(label=label, subject=label, profile=label)
+                for label in labels
+            )
+        )

@@ -44,8 +44,8 @@ def test_tool_memory_indexes_safe_descriptors_preferences_and_outcomes():
     trace_id = str(uuid.uuid4())
     first_fingerprint = "a" * 64
     second_fingerprint = "b" * 64
-    app.dependency_overrides[get_embedding_provider] = (
-        lambda: DeterministicEmbeddingProvider()
+    app.dependency_overrides[get_embedding_provider] = lambda: (
+        DeterministicEmbeddingProvider()
     )
 
     try:

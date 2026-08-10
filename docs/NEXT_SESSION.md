@@ -105,92 +105,33 @@ single action. Network evidence was preferred name 200 plus Scout interests
 cleared, the composer enabled, and Console, page, and network-failure lists were
 empty. The focused Playwright regression and production frontend build pass.
 
-## Next task: every agent's prompt belongs in its own folder
+## Scout's prompts now live with Scout
 
-This is broader than Scout, and the rule is simpler than the one first written
-down. The mechanism for calling a model is shared and reusable. The prompt is
-not: it is the agent's judgement written out, and it is different for every
-agent even when the calling code is identical. So a prompt lives with its agent,
-always.
+Done. `agents/scout/` holds `aiming.py`, `reranking.py`, `describing.py` and
+`place_suggest.py` — every prompt Scout injects. `discovery/` keeps the
+machinery: the sweep, ranking, novelty, familiarity, delivery, and the
+deterministic half of describing (`clean_title`,
+`summarize_deterministically`, `text_from_html`), which never invents and which
+several modules share.
 
-Measured against that, almost none of them do:
+Three things made it work, and are worth not undoing:
 
-| Agent | Prompt lives in | Should be |
-| --- | --- | --- |
-| Scout | `discovery/aiming.py`, `reranking.py`, `summarize.py`, `place_suggest.py` | `agents/scout/` |
-| Deck | `presentations/provider.py` (five prompts) | `agents/deck/` |
-| Diagram | `artifacts/diagram.py` | `agents/diagram/` |
-| Memory capture | `memory/proposal_agent.py` | `agents/memory/` |
-| Search routing | `search/classifier.py` | its own folder, or accept it is a policy rather than an agent |
-| Image recall | `artifacts/image_recall_classifier.py` | as above |
+- `TextWriter` moved to `core/interfaces.py`. It had lived inside Scout's
+  describe module, so every agent-shaped module imported that module for a type
+  unrelated to Scout;
+- `InterestAim` and `SweepAim` moved to `discovery/types.py`. They are data, so
+  `precision.py` and `runner.py` take them from the domain and no type drags the
+  agent layer in behind it;
+- `runner.py` imports three classes from `agents/scout/`. That is the one edge
+  from domain to agent, and it is deliberate: the runner *is* Scout's sweep
+  body. There is no cycle — `agents/registry.py` reaches only
+  `discovery/reachability.py`, which imports nothing back.
 
-`backend/agents/` currently holds status cards and a graph, which is the least
-agent-specific thing in any of them.
-
-### Three couplings, not one
-
-An earlier note in this file said the only blocker was `discovery/runner.py`.
-That was asserted rather than checked, and it is wrong. There are three:
-
-1. **`runner.py`** imports `aiming`, `reranking` and `precision`. Fixed by
-   injection — it already takes `EmbeddingClient`, `AdapterFactory` and
-   `DescriptionWriter` as Protocols, so the planner and re-ranker join them and
-   `core/dependencies.py` wires them, as it does every other collaborator.
-2. **`precision.py`** imports `SweepAim` from `aiming`, and only that. `SweepAim`
-   and `InterestAim` are data, so they move to `discovery/types.py` and the
-   import disappears.
-3. **`summarize.py` is two things in one module**, and this is the one that was
-   missed. It holds Scout's describe prompt *and* the `DescriptionWriter`
-   protocol that `aiming`, `reranking`, `place_suggest`, `familiarity` and
-   `runner` all import — five modules. Splitting it means the protocol moves to
-   a shared home (`core/interfaces.py`, beside the other provider contracts),
-   the deterministic helpers `clean_title`, `summarize_deterministically` and
-   `text_from_html` stay in `discovery/`, and only `_PROMPT` and
-   `EventDescriber` move to `agents/scout/`.
-
-So the move touches roughly fifteen files rather than ten, and the third point
-is the one to do first: until `DescriptionWriter` lives somewhere shared, every
-agent's prompt module drags Scout's describe module in behind it.
-
-### Doing it without inverting the layering
-
-The folder-per-agent rule says an agent folder holds what it *decides* and its
-domain package holds the machinery it drives. Scout's four prompts — the things
-that decide — are still in `backend/discovery/`, which does not follow the rule
-the layout was introduced for. That is an inconsistency, not a design.
-
-The reason given at the time was a dependency cycle: `agents/registry.py`
-imports `discovery.reachability`, so `discovery.runner` importing
-`agents/scout/aiming` would close one. That is real but it is not the obstacle
-it looked like, for two reasons.
-
-**`SweepAim` and `InterestAim` are data, not decisions.** Move those dataclasses
-to `discovery/types.py` and `precision.py` keeps working without importing
-anything from `agents`.
-
-**The runner already takes its collaborators by injection.** `EmbeddingClient`,
-`AdapterFactory` and `DescriptionWriter` are Protocols it is handed. Add the
-planner, the re-ranker and the describer the same way, and `discovery.runner`
-never imports `agents` at all — `core/dependencies.py` wires them, which is
-where every other collaborator is already wired.
-
-So:
-
-    agents/scout/aiming.py        AimPlanner + its prompt
-    agents/scout/reranking.py     MemoryReranker + its prompt
-    agents/scout/place_suggest.py PlaceSuggester + its prompt
-    agents/scout/describing.py    the describe prompt from summarize.py
-    discovery/types.py            InterestAim, SweepAim
-    discovery/summarize.py        keeps the deterministic cleanup and fallbacks
-    discovery/runner.py           Protocols, no agents import
-
-About ten files including tests, the CLI harness, and `api/v1/discovery.py`
-(which imports `place_suggest` for the completion endpoint). Behaviour-preserving
-throughout: the harness scorecard and the full suite are the proof, exactly as
-they were for the first restructure.
-
-Leave `personal_context.py` in `discovery/`. It is read by `setup_service` too,
-so it is shared domain rather than one agent's decision.
+**Still to do, the same move for everyone else.** Deck's five prompts are in
+`presentations/provider.py`, Diagram's in `artifacts/diagram.py`, memory
+capture's in `memory/proposal_agent.py`. Search routing and image recall are in
+`search/classifier.py` and `artifacts/image_recall_classifier.py`, and those two
+may be policies rather than agents — decide that before moving them.
 
 ## Where the prompts are
 

@@ -22,8 +22,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--strict",
         action="store_true",
         help=(
-            "Fail on expired, stale-vector, or indexing backlog as well as "
-            "invariants."
+            "Fail on expired, stale-vector, or indexing backlog as well as invariants."
         ),
     )
     return parser

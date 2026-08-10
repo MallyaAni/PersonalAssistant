@@ -33,8 +33,7 @@ STORES = (
         "procedures",
         ProcedureMemory,
         lambda row: (
-            f"{row.name}\n{row.description}\n"
-            f"{json.dumps(row.steps, sort_keys=True)}"
+            f"{row.name}\n{row.description}\n{json.dumps(row.steps, sort_keys=True)}"
         ),
     ),
     ReembeddingStore(

@@ -28,9 +28,11 @@ from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from typing import Protocol
 
+from backend.agents.scout.aiming import AimPlanner
+from backend.agents.scout.describing import EventDescriber
+from backend.agents.scout.reranking import MemoryReranker
 from backend.config.settings import settings
 from backend.core.interfaces import RerankProvider, SearchProvider, TextWriter
-from backend.discovery.aiming import AimPlanner, SweepAim
 from backend.discovery.errors import DiscoveryError
 from backend.discovery.events import DiscoveredEvent, EventSource, FeedError
 from backend.discovery.familiarity import FamiliarItemRepository, FamiliarityFilter
@@ -51,15 +53,14 @@ from backend.discovery.relevance import (
     candidate_text,
     cap_by_lead_time,
 )
-from backend.discovery.reranking import MemoryReranker
 from backend.discovery.search_budget import SearchBudget
 from backend.discovery.sources.ics import IcsEventSource
 from backend.discovery.sources.links import LinkPageEventSource
 from backend.discovery.sources.rss import RssEventSource
 from backend.discovery.sources.web import WebEventSource
 from backend.discovery.sources_repository import DiscoverySourceRepository, FeedSource
-from backend.discovery.summarize import EventDescriber, text_from_html
-from backend.discovery.types import DiscoveryProfile, Locality
+from backend.discovery.summarize import text_from_html
+from backend.discovery.types import DiscoveryProfile, Locality, SweepAim
 from backend.discovery.url_dates import deadline_has_passed
 
 # How much wider than the digest the shortlist is ranked before the model orders

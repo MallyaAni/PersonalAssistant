@@ -43,8 +43,8 @@ def test_semantic_cache_and_session_working_memory_are_scoped_and_expiring():
     other_user = f"agent_cache_{uuid.uuid4()}"
     conversation_id = str(uuid.uuid4())
     expires_at = datetime.now(UTC) + timedelta(hours=1)
-    app.dependency_overrides[get_embedding_provider] = (
-        lambda: DeterministicEmbeddingProvider()
+    app.dependency_overrides[get_embedding_provider] = lambda: (
+        DeterministicEmbeddingProvider()
     )
 
     try:
@@ -125,8 +125,8 @@ def test_procedure_entity_and_relation_memory_are_approved_and_user_scoped():
     user_id = f"as_{uuid.uuid4()}"
     other_user = f"as_{uuid.uuid4()}"
     trace_id = str(uuid.uuid4())
-    app.dependency_overrides[get_embedding_provider] = (
-        lambda: DeterministicEmbeddingProvider()
+    app.dependency_overrides[get_embedding_provider] = lambda: (
+        DeterministicEmbeddingProvider()
     )
 
     try:
@@ -223,8 +223,8 @@ def test_knowledge_and_summary_memory_search_delete_and_snapshot():
     other_user = f"ak_{uuid.uuid4()}"
     trace_id = str(uuid.uuid4())
     conversation_id = str(uuid.uuid4())
-    app.dependency_overrides[get_embedding_provider] = (
-        lambda: DeterministicEmbeddingProvider()
+    app.dependency_overrides[get_embedding_provider] = lambda: (
+        DeterministicEmbeddingProvider()
     )
 
     try:

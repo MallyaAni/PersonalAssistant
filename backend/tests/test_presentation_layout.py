@@ -413,9 +413,9 @@ def test_every_layout_clears_the_image_column_when_a_visual_is_expected():
                 and element.y < 6.35
                 and element.y + element.h > 1.95
             )
-            assert (
-                not overlaps
-            ), f"{planned.layout}: {element.element_id} overlaps the image"
+            assert not overlaps, (
+                f"{planned.layout}: {element.element_id} overlaps the image"
+            )
 
 
 def test_layouts_use_the_full_width_without_an_expected_visual():

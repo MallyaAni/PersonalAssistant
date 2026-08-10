@@ -62,8 +62,7 @@ class VisionAnalysisService:
         try:
             await self.memory.save_semantic_memory(
                 user_id,
-                f"Description of an image the user has ({kind_label}): "
-                f"{analysis_text}",
+                f"Description of an image the user has ({kind_label}): {analysis_text}",
                 {
                     "artifact_id": artifact_id,
                     "conversation_id": str(artifact.get("conversation_id") or ""),

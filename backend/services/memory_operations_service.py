@@ -165,22 +165,22 @@ class MemoryOperationsService:
             [
                 "# HELP anios_memory_stale_vectors Vectors awaiting re-embedding.",
                 "# TYPE anios_memory_stale_vectors gauge",
-                f'anios_memory_stale_vectors {report["vectors"]["stale_total"]}',
+                f"anios_memory_stale_vectors {report['vectors']['stale_total']}",
                 "# HELP anios_memory_invariant_violations Broken memory invariants.",
                 "# TYPE anios_memory_invariant_violations gauge",
                 (
                     "anios_memory_invariant_violations "
-                    f'{sum(report["invariant_violations"].values())}'
+                    f"{sum(report['invariant_violations'].values())}"
                 ),
                 "# HELP anios_memory_database_query_latency_ms Database probe latency.",
                 "# TYPE anios_memory_database_query_latency_ms gauge",
                 (
                     "anios_memory_database_query_latency_ms "
-                    f'{report["database"]["query_latency_ms"]}'
+                    f"{report['database']['query_latency_ms']}"
                 ),
                 "# HELP anios_memory_healthy Memory health state as 1 or 0.",
                 "# TYPE anios_memory_healthy gauge",
-                f'anios_memory_healthy {int(report["status"] == "healthy")}',
+                f"anios_memory_healthy {int(report['status'] == 'healthy')}",
             ]
         )
         return "\n".join(lines) + "\n"

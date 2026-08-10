@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response, st
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import select
 
+from backend.agents.scout.place_suggest import MAX_QUERY_CHARS
 from backend.config.settings import settings
 from backend.core.auth import authorize_path_user
 from backend.core.dependencies import (
@@ -39,7 +40,6 @@ from backend.discovery.locating import (
     resolve_place,
 )
 from backend.discovery.novelty import ScoredCandidate, item_digest
-from backend.discovery.place_suggest import MAX_QUERY_CHARS
 from backend.discovery.reachability import (
     calendar_base_url,
     is_reachable_from_other_devices,

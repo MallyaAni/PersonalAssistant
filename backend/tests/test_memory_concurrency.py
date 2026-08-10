@@ -91,8 +91,8 @@ def test_concurrent_procedure_corrections_receive_unique_versions() -> None:
     user_id = f"conc_{uuid.uuid4()}"
     worker_count = 8
     barrier = threading.Barrier(worker_count)
-    app.dependency_overrides[get_embedding_provider] = (
-        lambda: ConcurrentEmbeddingProvider()
+    app.dependency_overrides[get_embedding_provider] = lambda: (
+        ConcurrentEmbeddingProvider()
     )
 
     # Submit one concurrent procedure approval and return its version.
