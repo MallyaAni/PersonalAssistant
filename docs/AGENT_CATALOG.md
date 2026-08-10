@@ -52,7 +52,7 @@ the conversation.
 | Domain package | `backend/presentations/` |
 | Prompts | `prompts.py` — five: deck plan, outline, slide content, new slide, revision |
 | Card | `agents/deck/card.py` |
-| Functional tests | none yet — the gap worth closing first |
+| Functional tests | `backend/tests/functional/test_deck_prompt_behaviour.py` — **written, not yet run against a live model** |
 
 **What the model decides:** content and slide shape. **What is decided for it:**
 geometry, storage, validation and promotion. Every figure must come from a
