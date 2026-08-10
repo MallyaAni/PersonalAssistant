@@ -26,9 +26,9 @@ turns each one into something you can act on.
 | Subsystem view | [discovery-subsystem.svg](diagrams/discovery-subsystem.svg) |
 | Agent folder | `backend/agents/scout/` |
 | Domain package | `backend/discovery/` |
-| Prompts | `aiming.py` · `reranking.py` · `describing.py` · `place_suggest.py` · `timezones.py` |
+| Prompts | `aiming.py` · `reranking.py` · `describing.py` · `digesting.py` · `place_suggest.py` · `timezones.py` |
 | Card | `agents/scout/card.py` |
-| Functional tests | `test_prompt_behaviour.py` · `test_aiming_behaviour.py` · `test_description_quality.py` · `test_timezone_prompt_behaviour.py` |
+| Functional tests | `test_prompt_behaviour.py` · `test_aiming_behaviour.py` · `test_description_quality.py` · `test_digest_writing.py` · `test_timezone_prompt_behaviour.py` |
 | Quality harness | `python -m backend.cli.evaluate_discovery_ranking` |
 
 **What the model decides:** the subject of each search, the vector a candidate is
@@ -37,6 +37,15 @@ reads. **What is decided for it:** what qualifies. Novelty, familiarity,
 lead time, geography and the request budget are deterministic, because a sweep
 runs unattended and a sampled judgement would make the same feed produce
 different results on different days.
+
+**The message is written, not assembled.** `digesting.py` composes the greeting
+and one line per find; `discovery/digest.py` supplies the facts and attaches the
+links. Two things stay in code because a 4B model must not hold them: the clock,
+rendered in the reader's zone and required back verbatim, after a concert listed
+for Oct 3 was once announced as "Fri Oct 2, 8:00pm"; and every URL, which comes
+from the typed record and is never asked of the model, because this string
+reaches third parties over a channel that cannot be unsent. With no runtime the
+assembled shape still ships — worse to read, and it always arrives.
 
 **Measured weakness: aiming barely personalises.** Given an approved fact
 bearing on an interest, the fact reaches the profile 2 times in 5 and the search
@@ -151,6 +160,7 @@ every call, not adding one.
 | Scout | `aiming.py` — search subjects and vectors | 1024 | 0.0 | yes |
 | Scout | `reranking.py` — order a qualified shortlist | 256 | 0.0 | yes |
 | Scout | `describing.py` — how a find reads | 160 | 0.0 | yes |
+| Scout | `digesting.py` — the message a subscriber gets | 700 | 0.0 | yes |
 | Scout | `place_suggest.py` — place completion | 220 | 0.0 | yes |
 | Scout | `timezones.py` — place to IANA zone | 32 | 0.0 | yes |
 | Deck | `provider.py` — plan, outline, slide, new slide, revision | caller | **default** | yes |

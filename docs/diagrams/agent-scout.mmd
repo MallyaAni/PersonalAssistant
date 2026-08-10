@@ -19,12 +19,16 @@ flowchart TB
     Precision --> Reorder[Qwen 3.5 4B<br/>orders the shortlist]
     Facts --> Reorder
     Reorder --> Description[Qwen 3.5 4B<br/>writes descriptions]
-    Description --> Digest[Digest and calendar]
+    Description --> Message[Qwen 3.5 4B<br/>writes the message]
+    Message --> Digest[Digest to subscribers]
 
     Rule[Application code owns persistence,<br/>qualification, budgets and delivery]
     Rule -.-> Review
     Rule -.-> Safety
     Rule -.-> Ranking
+
+    Clock[Times rendered in the reader's zone<br/>and links from the typed record<br/>never come from the model]
+    Clock -.-> Message
 
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
     classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
@@ -34,5 +38,5 @@ flowchart TB
     class Statement,Review,NoWrite,Trigger,Digest interface;
     class Sweep,Sources,Safety,Ranking application;
     class Profile,Facts data;
-    class Extract,Aim,Precision,Reorder,Description model;
-    class Rule warning;
+    class Extract,Aim,Precision,Reorder,Description,Message model;
+    class Rule,Clock warning;

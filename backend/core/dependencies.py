@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.agents.deck.agent import PresentationAgent
 from backend.agents.diagram import DiagramAgent
 from backend.agents.registry import AgentRegistry
+from backend.agents.scout.digesting import DigestWriter
 from backend.agents.scout.place_suggest import PlaceSuggester
 from backend.agents.supervisor import MainSupervisorAgent
 from backend.artifacts.diagram import LLMDiagramProvider
@@ -925,6 +926,14 @@ DependencyPlaceSuggester = Annotated[
     PlaceSuggester,
     Depends(get_place_suggester),
 ]
+
+
+# Writes the digest message. Assembled here rather than inside delivery so the
+# same runtime that describes a find also words the message about it, and so a
+# deployment with no model still delivers — `DigestWriter(None)` renders the
+# assembled shape instead of failing.
+def get_digest_writer() -> DigestWriter:
+    return DigestWriter(get_llm_client())
 
 
 def get_discovery_runner(

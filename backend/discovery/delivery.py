@@ -28,8 +28,9 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
+from backend.agents.scout.digesting import DigestWriter
 from backend.discovery.channels import DeliveryResult, NotificationChannel
-from backend.discovery.digest import render_message
+from backend.discovery.digest import write_message
 from backend.discovery.relevance import RankedCandidate
 from backend.discovery.runs import DiscoveryRunRepository
 from backend.discovery.subscribers import Subscriber, SubscriberRepository
@@ -92,11 +93,16 @@ class DigestDelivery:
         channels: dict[str, NotificationChannel],
         runs: DiscoveryRunRepository | None = None,
         granter: "RecipientGranter | None" = None,
+        # Writes the message. Optional, and absent means the assembled shape:
+        # a digest that reads like a form letter still beats one that a missing
+        # runtime stopped from arriving at all.
+        digest_writer: "DigestWriter | None" = None,
     ) -> None:
         self.subscribers = subscribers
         self.channels = channels
         self.runs = runs
         self.granter = granter
+        self.digest_writer = digest_writer
 
     # Tell the sending machine about a recipient it does not know, then let the
     # digest be tried again.
@@ -147,7 +153,9 @@ class DigestDelivery:
         # phone, and the message is read in a few seconds either way — so a
         # digest is now text plus the source's own link, which works from
         # anywhere without this machine being reachable at all.
-        message = render_message(selected, timezone=timezone, now=now)
+        message = await write_message(
+            selected, writer=self.digest_writer, timezone=timezone, now=now
+        )
         if message is None:
             # Nothing worth sending. Recording the run as delivered still
             # matters: it stops a resumed attempt from re-deciding and sending

@@ -1,17 +1,29 @@
 """Render a sweep into the message a person actually reads.
 
-Assembled from typed records rather than generated, for one specific reason:
-feed text is untrusted, and this string leaves the machine. A model asked to
-"write a friendly summary" of hostile input can be steered by that input into
-writing whatever the input wants — and here the output is delivered to third
-parties over a channel that cannot be unsent.
+Two paths, and which one runs depends only on whether there is a model.
 
-So the shape is fixed and only bounded field values vary.
+**Written.** `agents/scout/digesting.py` composes the greeting and one line per
+find, and this module supplies the facts and attaches the links. That is where
+the prose comes from now, because an assembled digest opened with the same six
+words every week and read like a form letter — which earns a form letter's
+attention.
+
+**Assembled.** Everything below, unchanged, for when there is no model. It is
+worse to read and impossible to subvert, and a digest that arrives beats one
+that does not.
+
+What stays in code either way is what a 4B model must not be trusted with. The
+clock is the sharp one: `_format_when` distinguishes a date the source stated
+with no time from a real start, after a concert listed for Oct 3 was announced
+as "Fri Oct 2, 8:00pm" — a date shifted into a zone it was never in. The written
+path renders that string here and requires it back verbatim. Links come from the
+typed record on both paths and are never asked of the model.
 """
 
 from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
+from backend.agents.scout.digesting import DigestWriter, Find
 from backend.discovery.relevance import RankedCandidate
 
 # What one message may carry. A digest longer than this is not read.
@@ -27,6 +39,56 @@ MAX_SUMMARY_CHARS = 170
 #
 # `calendar_base_url` is accepted and ignored so existing callers keep working;
 # it is removed once none pass it.
+async def write_message(
+    selected: tuple[RankedCandidate, ...],
+    writer: DigestWriter | None = None,
+    timezone: str = "America/New_York",
+    limit: int = MAX_EVENTS_IN_MESSAGE,
+    now: datetime | None = None,
+) -> str | None:
+    """Return the digest text, written by the model where one is available."""
+    zone = _zone(timezone)
+    moment = now or datetime.now(UTC)
+    live = tuple(item for item in selected if not _has_passed(item, moment))
+    if not live:
+        return None
+    if writer is None:
+        return render_message(selected, timezone=timezone, limit=limit, now=now)
+
+    # The facts, rendered here because the clock is not the model's to compute.
+    kept = list(live)[:limit]
+    finds = tuple(
+        Find(
+            index=position,
+            name=" ".join(item.event.title.split()),
+            description=item.event.summary,
+            when=_format_when(item.event.starts_at, zone),
+            place=item.event.place or None,
+        )
+        for position, item in enumerate(kept)
+    )
+    written = await writer.write(finds)
+    if written is None:
+        # No model answer. The assembled shape is worse to read and always
+        # arrives, which is the right way round for a weekly message.
+        return render_message(selected, timezone=timezone, limit=limit, now=now)
+
+    lines = [written.greeting, ""]
+    for line in written.lines:
+        item = kept[line.index]
+        lines.append(f"• {line.text}")
+        # The source's own link, from the typed record, never from the model.
+        # Not every find has one — a trail or a park is a place rather than a
+        # page — and a line saying nothing is worse than no line.
+        if item.event.url:
+            lines.append(f"  {item.event.url}")
+        lines.append("")
+    remaining = len(live) - len(written.lines)
+    if remaining > 0:
+        lines.append(f"and {remaining} more")
+    return "\n".join(lines).strip()
+
+
 def render_message(
     selected: tuple[RankedCandidate, ...],
     calendar_base_url: str | None = None,
@@ -35,7 +97,7 @@ def render_message(
     notable: tuple[RankedCandidate, ...] = (),
     now: datetime | None = None,
 ) -> str | None:
-    """Return the digest text, or None when there is nothing worth sending."""
+    """Return the assembled digest text, for when there is no model."""
     zone = _zone(timezone)
     moment = now or datetime.now(UTC)
     # Something that already happened is worse than nothing: it is the clearest

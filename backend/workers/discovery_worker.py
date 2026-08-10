@@ -23,6 +23,7 @@ from typing import Any
 
 from backend.config.settings import settings
 from backend.core.dependencies import (
+    get_digest_writer,
     get_discovery_channels,
     get_discovery_runner_for_session,
     grant_recipient_on_bridge,
@@ -160,6 +161,7 @@ class DiscoveryWorker:
                     get_discovery_channels(),
                     runs,
                     grant_recipient_on_bridge,
+                    get_digest_writer(),
                 ).deliver(
                     user_id,
                     result.selected,
