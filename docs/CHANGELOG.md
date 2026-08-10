@@ -2513,3 +2513,92 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   timezone — with the system preference winning when set. `theme-palette.json`
   maps all 40 interface colours to dark counterparts. The toggle and browser
   verification are not done; treat the visual result as unverified.
+
+## 2026-08-10 — A schedule runs on the user's own clock
+
+- A place saved through a chat approval was written with a hardcoded
+  `America/New_York`, so an account living in Canggu held a locality — and a
+  schedule inheriting its zone — in Virginia time, and the morning digest fired
+  at 23:15 where they were. `agents/scout/timezones.py` asks the local model for
+  the geography and `zoneinfo` checks the answer, so a zone the IANA database
+  has never contained cannot be stored and an unresolvable place keeps the
+  fallback every place had before. The checking is not decorative: asked for a
+  bare "Alexandria" the model answers `Africa/Cairo` for an account in
+  Alexandria, Virginia, which passing the locality's `region` settles.
+- The schedule API now refuses a schedule with no locality, because there is no
+  zone to store it in otherwise, and the Scout panel disables its clock until a
+  place is saved and says why rather than letting a time be picked and refused.
+- The locality backfill re-arms `next_run_at` when it moves a zone. Moving the
+  stored zone alone left the armed instant where the wrong zone had put it —
+  arsalon's 23:20 sweep still fired at 11:20 Bali time with the zone reading
+  correctly.
+- Verified against the running model in
+  `backend/tests/functional/test_timezone_prompt_behaviour.py`, over zones whose
+  name is not the nearest large city, countries spanning several zones, and one
+  unanswerable place.
+
+## 2026-08-10 — An interest survives how it is actually said
+
+- The capture prompt said not to depend on trigger words and did. Measured
+  against the running model, "I love woodworking" produced the interest while
+  "I am into woodworking", "I am a big fan of jazz" and "I do a lot of rock
+  climbing" produced nothing — and a dropped interest is never proposed, never
+  approved, and leaves no trace that anything was missed. The constructions are
+  now stated as a rule rather than generalized from one example, and a
+  multi-word interest is stated to be one label.
+- Held by ten phrasings of one interest plus four negatives, so a prompt
+  loosened to catch them cannot pass by proposing everything: 5 of 17 failed
+  before, 17 pass now, and it generalizes to held-out cases — "I am into
+  birdwatching" captures, "My brother is into cycling" and "I used to love
+  skiing but not anymore" stay empty.
+- Six tests were 401ing before reaching the code they were written to exercise,
+  because `.env` sets `AUTH_REQUIRED=true` and pytest reads the same file. They
+  now carry their own token, and a cross-user read carries the *other* user's
+  token so it keeps measuring data scoping rather than becoming a test of path
+  authorization that passes for the wrong reason.
+
+## 2026-08-10 — Listing rejection measured, and the theme control shipped
+
+- Four more listing shapes, each taken from a page that reached a real digest: a
+  taxonomy path, `/whats-on`, a place-scoped roster slug, and a strict plural
+  with a trailing year. Title rules also apply per colon-separated segment.
+  `listing_recall` 0.4615 → 0.8462 with `happening_retention` still 1.0 and
+  nothing wrongly rejected; the harness floor moves to 0.80 so a regression
+  fails rather than being noticed in a digest.
+- The theme engine decided correctly and ran exactly once, at load, so an
+  evening arriving while the tab was open went unnoticed and there was no way to
+  disagree with it. The toggle cycles automatic → light → dark and is remembered
+  across reloads.
+- Automatic then turned out never to have run on the clock at all: the system
+  preference was checked first and returns a positive match in every modern
+  browser, so `themeForHour` was unreachable and an OS pinned to light kept the
+  workspace light at 01:30. The clock now decides, and a system preference for
+  dark can add darkness but never remove it. Covered at fixed times rather than
+  at whatever hour the suite runs.
+
+## 2026-08-10 — Every agent documented, and the diagram defect diagnosed
+
+- `docs/AGENT_CATALOG.md` records every specialized agent: what its model
+  decides, what is deliberately decided for it, where its folder, prompts, card,
+  diagram and tests live, and the checklist for adding one. It also draws a line
+  the code drew and nothing wrote down — the search-freshness and image-recall
+  classifiers call a model and produce no work, so they are policies rather than
+  agents. The catalog carries every model call with its token budget,
+  temperature and grammar, and records that one model serves all of them.
+- Deck and Diagram each gained a diagram of what their model decides, and Deck
+  gained functional tests that pass against the real model.
+- The diagram agent's `xfail` said the model ignored the prompt on some shapes.
+  Across eight varied requests the defect was serialization, not reasoning:
+  inside a JSON string the model joins its Mermaid lines with `<br/>` rather
+  than escaped newlines, so a structurally correct graph was rejected whole.
+  Normalizing that break took the set from 3/8 to 7/8. The call had also run at
+  the provider default temperature, alone among the agents, which is why the
+  same eight requests scored 0/8 then 3/8 with nothing changed and the bug read
+  as a flaky test. It is greedy now and the test is six real cases. Asked for a
+  state machine the model still returns `stateDiagram-v2` with no body; that is
+  recorded and excluded rather than papered over.
+- The four agent views were registered in the renderer and the catalog but never
+  added to the published architecture page, which went on reporting "15 / 15
+  synchronized" while 19 sources existed. All 19 are now published, and the
+  count is read from the sources on disk and folded into the page fingerprint,
+  so the same omission fails the check instead of printing a reassuring number.

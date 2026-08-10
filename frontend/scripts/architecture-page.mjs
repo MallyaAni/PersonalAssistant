@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -70,6 +70,30 @@ const publishedDiagrams = [
     change: "How approved preferences become local findings without losing user control.",
   },
   {
+    name: "agent-scout",
+    title: "Scout — what the model decides",
+    scope: "Aiming, ranking, and description against deterministic qualification",
+    change: "Which judgements in a sweep are the model's and which are the code's.",
+  },
+  {
+    name: "agent-deck",
+    title: "Deck — what the model decides",
+    scope: "Content and slide shape against fixed geometry and promotion",
+    change: "Why a generated deck cannot invent a figure or promote itself.",
+  },
+  {
+    name: "agent-diagram",
+    title: "Diagram — what the model decides",
+    scope: "Mermaid source against a validator that can refuse it",
+    change: "How a diagram that will not render is stopped before it is stored.",
+  },
+  {
+    name: "agent-memory",
+    title: "Memory capture — what the model decides",
+    scope: "Typed candidates against visible approval and no persistence authority",
+    change: "Why nothing is remembered until a person approves it.",
+  },
+  {
     name: "tool-memory-subsystem",
     title: "Tool memory & MCP",
     scope: "Discovery, semantic selection, and safe invocation",
@@ -113,6 +137,16 @@ const publicationRedactions = [
   { find: "E:/AI/ComfyUI", replaceWith: "host ComfyUI install" },
 ];
 
+// Count the canonical Mermaid sources on disk, which is the denominator the
+// "synchronized" claim depends on. Reading the directory rather than trusting
+// the list above is the point: four agent views were added to the renderer and
+// the catalog and never published here, while a hardcoded "15 / 15" went on
+// claiming the page was complete.
+function countCanonicalSources() {
+  return readdirSync(diagramDirectory).filter((entry) => entry.endsWith(".mmd"))
+    .length;
+}
+
 const metrics = [
   {
     label: "First router",
@@ -134,9 +168,9 @@ const metrics = [
   },
   {
     label: "Canonical views",
-    value: "15 / 15",
+    value: `${publishedDiagrams.length} / ${countCanonicalSources()}`,
     note: "Mermaid, SVG, and page synchronized",
-    good: true,
+    good: publishedDiagrams.length === countCanonicalSources(),
   },
   {
     label: "Backend suite",
@@ -274,6 +308,12 @@ function calculatePageInputsHash() {
     digest.update(readRenderFingerprint(diagram.name));
     digest.update("\0");
   }
+  // The canonical count is an input because the page prints it. Without this a
+  // diagram added to the catalog but never published would leave the stored
+  // page saying one thing and a fresh build saying another, with the check
+  // reporting neither.
+  digest.update(String(countCanonicalSources()));
+  digest.update("\0");
   const moduleSource = readFileSync(fileURLToPath(import.meta.url), "utf8")
     .replace(/\r\n/g, "\n");
   digest.update(moduleSource);

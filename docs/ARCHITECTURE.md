@@ -16,7 +16,7 @@ The absence of one of these labels does not imply runtime verification.
 
 The editable source is [anios-system.mmd](diagrams/anios-system.mmd). It describes current implemented and explicitly scaffolded relationships only, including the typed main-supervisor route, editable diagrams, generated and uploaded raster artifacts, local binary storage, Compose-managed vLLM inference, ComfyUI, Qwen vision analysis, their browser integration, and the durable presentation worker. Aligned multimodal image embeddings and hybrid opt-in web research are included. General dynamic agent teams, A2A, and GPU-capacity leases remain outside the current diagram until their runtime boundaries exist. The render/check procedure is documented in [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md#architecture-diagram-maintenance).
 
-The self-contained [manager-facing architecture page](architecture.html) publishes all 15 canonical views with a current model-role summary, direct full-size SVG and Mermaid-source links, and independent per-diagram zoom controls. Thirteen views describe the current system; the separately labelled visual-memory/editing and inference-scaling targets describe accepted future designs without claiming implementation. Its opening orchestration contract states explicitly that `MainSupervisorAgent` is currently deterministic and makes no LLM call.
+The self-contained [manager-facing architecture page](architecture.html) publishes all 19 canonical views — fifteen subsystem views plus one per agent — with a current model-role summary, direct full-size SVG and Mermaid-source links, and independent per-diagram zoom controls. Seventeen views describe the current system; the separately labelled visual-memory/editing and inference-scaling targets describe accepted future designs without claiming implementation. Its opening orchestration contract states explicitly that `MainSupervisorAgent` is currently deterministic and makes no LLM call.
 
 ## Detailed subsystem diagrams
 
@@ -786,9 +786,11 @@ ties break on declared priority rather than on registration order.
 agents exist today: **Scout**, the ambient discovery loop, and **Deck**, the
 presentation specialist.
 
-Each agent owns a folder — `agents/scout/`, `agents/deck/`, `agents/diagram/` —
-holding what that agent *decides*: its card, and any prompt or orchestration
-specific to it. The shared shapes live in `agents/cards.py` and the registry is
+Each agent owns a folder — `agents/scout/`, `agents/deck/`, `agents/diagram/`,
+`agents/memory/` — holding what that agent *decides*: its card, and any prompt
+or orchestration specific to it. The last two have no card, because neither is
+something a person starts: the diagram agent answers a chat turn, and memory
+capture is a step in every one. The shared shapes live in `agents/cards.py` and the registry is
 a tuple of describers, so adding an agent is adding a folder rather than editing
 the module every other agent lives in.
 

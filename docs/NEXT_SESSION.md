@@ -5,7 +5,54 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 [ROADMAP.md](ROADMAP.md), and stable architecture facts in
 [ARCHITECTURE.md](ARCHITECTURE.md).
 
-Last updated: 2026-08-09, America/New_York (semantic memory capture verified)
+Last updated: 2026-08-10, America/New_York (agent documentation reconciled
+against the code; diagram suite and published page re-rendered and checked)
+
+## Documentation reconciled with the code — VERIFIED for the docs, INHERITED for the rest
+
+An audit of the agent documentation against `HEAD` found six drifts, all now
+repaired. They are listed because most were introduced by the very commit that
+changed the thing they describe — the code and one document moved, and the
+neighbouring document did not. That is the pattern to watch for:
+
+- `AGENT_CATALOG.md` still called the diagram agent's tests `xfail` and its
+  defect "intermittent", in the same file whose later section already recorded
+  the fix. The commit that fixed the defect updated the new table and left the
+  agent's own section behind.
+- The diagram catalog said Scout's model decides "only how a find reads", three
+  commits after it started aiming search subjects and reranking shortlists. The
+  `.mmd` was updated; the row above it was not.
+- Scout's and memory capture's rows omitted
+  `test_timezone_prompt_behaviour.py` and `test_interest_capture_behaviour.py`.
+  A catalog under-reporting its own functional coverage is the wrong direction
+  to be wrong in, given that a prompt without one is an untested feature.
+- `ARCHITECTURE.md` listed three agent folders where there are four, and
+  described the published page as 15 canonical views when 19 sources exist.
+- The four agent diagrams were registered in the renderer and the catalog but
+  never added to `architecture-page.mjs`, so no agent view was reachable from
+  the manager-facing page while its own metric read `15 / 15 synchronized`.
+
+All 19 views are now published. The count is read from the `.mmd` files on disk
+rather than hardcoded, and folded into the page fingerprint, so a diagram added
+to the catalog and not published now fails `docs:diagram:check` instead of
+leaving the page printing a reassuring number.
+
+Evidence from this session: `npm run docs:diagram` rendered 19 diagrams and the
+page; `npm run docs:diagram:check` reports **19 architecture diagrams are
+synchronized** and **Published architecture page is synchronized**; the four
+`agent-*` sections and the `19 / 19` metric are present in `architecture.html`.
+
+Everything else recorded below and in the changelog for 2026-08-10 is inherited
+from the commit record rather than re-verified here — no backend suite, browser
+session, or model run was executed in this session. The next task that touches
+runtime behavior should re-establish its own evidence rather than trusting this
+line.
+
+Known and deliberately unrepaired: asked for a **state machine** the diagram
+agent returns `"source": "stateDiagram-v2"` with no body. Flowcharts, which is
+nearly every request, run 6/6.
+
+Next atomic Scout task remains the Mac recipient-grant repair described below.
 
 ## Memory meaning is selected semantically, not by regex — VERIFIED
 

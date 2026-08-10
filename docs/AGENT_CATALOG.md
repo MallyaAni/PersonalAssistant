@@ -28,7 +28,7 @@ turns each one into something you can act on.
 | Domain package | `backend/discovery/` |
 | Prompts | `aiming.py` · `reranking.py` · `describing.py` · `place_suggest.py` · `timezones.py` |
 | Card | `agents/scout/card.py` |
-| Functional tests | `backend/tests/functional/test_prompt_behaviour.py` |
+| Functional tests | `test_prompt_behaviour.py` · `test_timezone_prompt_behaviour.py` |
 | Quality harness | `python -m backend.cli.evaluate_discovery_ranking` |
 
 **What the model decides:** the subject of each search, the vector a candidate is
@@ -52,7 +52,7 @@ the conversation.
 | Domain package | `backend/presentations/` |
 | Prompts | `prompts.py` — five: deck plan, outline, slide content, new slide, revision |
 | Card | `agents/deck/card.py` |
-| Functional tests | `backend/tests/functional/test_deck_prompt_behaviour.py` |
+| Functional tests | `test_deck_prompt_behaviour.py` |
 
 **What the model decides:** content and slide shape. **What is decided for it:**
 geometry, storage, validation and promotion. Every figure must come from a
@@ -71,7 +71,7 @@ Turns a request into an editable Mermaid diagram.
 | Agent folder | `backend/agents/diagram/` |
 | Domain package | `backend/artifacts/` |
 | Prompts | `prompts.py` — one |
-| Functional tests | `test_prompt_behaviour.py`, currently `xfail` |
+| Functional tests | `test_prompt_behaviour.py` — six request shapes |
 
 **What the model decides:** the Mermaid. **What is decided for it:** whether it
 is allowed to render. The prompt asks for bounds — no HTML, no click or init
@@ -79,9 +79,19 @@ directives, no URLs, forty nodes, eighty edges — and
 `validate_diagram_specification` enforces them, retrying once and refusing
 rather than shipping something that will not draw.
 
-Known defect: on some requests the model returns markup the renderer cannot
-draw, and the retry fails validation outright, so the request produces nothing.
-It is intermittent rather than constant.
+Known defect, narrowed: asked for a **state machine** the model returns
+`"source": "stateDiagram-v2"` with no body, so the request produces nothing.
+That is the model failing the task rather than mis-encoding it, so it is
+recorded and excluded from the test set rather than papered over. Flowcharts,
+which is what nearly every request asks for, run 6/6.
+
+What this used to say — that the failure was intermittent — was itself the bug.
+The call ran at the provider default temperature, so the same eight requests
+scored 0/8 and then 3/8 with nothing changed, which reads as flakiness. Made
+greedy, the real defect was visible in one run: inside a JSON string the model
+joins its Mermaid lines with `<br/>` rather than escaped newlines, and a
+structurally correct graph was rejected whole. Normalizing that break, as `\r\n`
+and code fences already were, took the set to 7/8.
 
 ## Memory capture — what is worth remembering
 
@@ -95,7 +105,7 @@ Reads each chat turn and offers typed candidates for saving.
 | Agent folder | `backend/agents/memory/` |
 | Domain package | `backend/memory/` |
 | Prompts | `prompts.py` — one |
-| Functional tests | `test_prompt_behaviour.py`, with a positive control |
+| Functional tests | `test_prompt_behaviour.py`, with a positive control · `test_interest_capture_behaviour.py` |
 
 **What the model decides:** what to offer. **What is decided for it:** whether
 anything is written. It has no persistence authority; every candidate appears on
