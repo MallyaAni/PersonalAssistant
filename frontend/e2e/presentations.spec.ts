@@ -655,10 +655,10 @@ test('keeps chat responsive while a presentation job runs in the background', as
   )).toBeVisible()
 
   await page.getByRole('button', { name: 'Conversations' }).click()
-  const textarea = page.getByLabel('Message AniOS')
+  const textarea = page.getByLabel('Message DeepMatter')
   await textarea.fill('UNIQUE_CHAT_DURING_PRESENTATION')
   await page.getByRole('button', { name: 'Send message' }).click()
-  await expect(page.getByLabel('AniOS answer').last()).toContainText(
+  await expect(page.getByLabel('DeepMatter answer').last()).toContainText(
     'CHAT_COMPLETED_WHILE_DECK_RUNNING',
   )
 
@@ -727,7 +727,7 @@ test('@live creates a deck in the background without blocking chat', async ({ pa
   )).toBeVisible()
 
   await page.getByRole('button', { name: 'Conversations' }).click()
-  const textarea = page.getByLabel('Message AniOS')
+  const textarea = page.getByLabel('Message DeepMatter')
   await textarea.fill(
     `Confirm in one sentence that chat remains responsive during deck creation, and include reference ${marker}.`,
   )
@@ -738,12 +738,12 @@ test('@live creates a deck in the background without blocking chat', async ({ pa
   )
   await page.getByRole('button', { name: 'Send message' }).click()
   expect((await chatResponse).status()).toBe(200)
-  await expect(page.getByLabel('AniOS answer').last()).toContainText(marker, {
+  await expect(page.getByLabel('DeepMatter answer').last()).toContainText(marker, {
     timeout: 120_000,
   })
   await expect(textarea).toBeEnabled()
   await expect(textarea).toHaveValue('')
-  await expect(page.getByLabel('AniOS is thinking')).toHaveCount(0)
+  await expect(page.getByLabel('DeepMatter is thinking')).toHaveCount(0)
 
   await page.getByRole('button', { name: 'Presentations' }).click()
   await expect(page.getByText(

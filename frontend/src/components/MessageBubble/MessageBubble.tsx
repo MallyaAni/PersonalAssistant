@@ -80,14 +80,14 @@ const MessageBubble: React.FC<MessageProps> = ({
   const visibleContent = isThinking ? 'Thinking...' : (envelope?.answer ?? content)
 
   return (
-    <article aria-label={isUser ? 'Your question' : (isThinking ? 'AniOS is thinking' : 'AniOS answer')} className={isUser ? 'border-b border-black/[0.07] pb-7' : 'rounded-[26px] border border-black/[0.06] bg-white p-5 shadow-[0_12px_40px_rgba(0,0,0,0.055)] md:p-7'}>
+    <article aria-label={isUser ? 'Your question' : (isThinking ? 'DeepMatter is thinking' : 'DeepMatter answer')} className={isUser ? 'border-b border-black/[0.07] pb-7' : 'rounded-[26px] border border-black/[0.06] bg-white p-5 shadow-[0_12px_40px_rgba(0,0,0,0.055)] md:p-7'}>
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <span className={`flex h-7 w-7 items-center justify-center rounded-lg ${isUser ? 'bg-[#e8f2ff] text-[#0071e3]' : 'anios-wordmark text-white'}`}>
             {isUser ? <Search size={14} strokeWidth={2.2} /> : <Sparkles size={14} strokeWidth={1.8} />}
           </span>
           <span className="text-xs font-semibold uppercase tracking-[0.1em] text-[#86868b]">
-            {isUser ? 'Your question' : 'AniOS answer'}
+            {isUser ? 'Your question' : 'DeepMatter answer'}
           </span>
         </div>
         {envelope && (

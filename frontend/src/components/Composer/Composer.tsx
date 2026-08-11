@@ -48,7 +48,7 @@ const isTextDocument = (file: File): boolean =>
 // Say which of the two failures happened, because the fix differs.
 //
 // This read "Unable to send message. Please try again." for both, and a user
-// hit it while AniOS was being restarted underneath her. Trying again was
+// hit it while DeepMatter was being restarted underneath her. Trying again was
 // exactly the wrong advice — nothing she typed was going anywhere until the
 // machine came back — and "unable to send message" gave no hint that the
 // server, rather than her message, was the problem. She retried for two
@@ -59,11 +59,11 @@ const isTextDocument = (file: File): boolean =>
 const describeSendFailure = (error: unknown): string => {
   if (error instanceof TypeError) {
     return (
-      'AniOS did not respond, so nothing was sent. It may be restarting — ' +
+      'DeepMatter did not respond, so nothing was sent. It may be restarting — ' +
       'your message is still in the box, so you can send it again in a moment.'
     )
   }
-  // Anything else came back *from* AniOS, so it can say what it objected to.
+  // Anything else came back *from* DeepMatter, so it can say what it objected to.
   return error instanceof Error && error.message
     ? error.message
     : 'That message could not be sent.'
@@ -324,8 +324,8 @@ const Composer: React.FC<ComposerProps> = ({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Message AniOS — attach a file, or say &ldquo;draw me&hellip;&rdquo;"
-          aria-label="Message AniOS"
+          placeholder="Message DeepMatter — attach a file, or say &ldquo;draw me&hellip;&rdquo;"
+          aria-label="Message DeepMatter"
           className="min-h-[44px] max-h-40 flex-1 resize-none bg-transparent py-3 text-[16px] leading-5 text-[#1d1d1f] outline-none placeholder:text-[#86868b]"
           rows={1}
           disabled={isSending}

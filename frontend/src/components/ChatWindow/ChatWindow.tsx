@@ -714,7 +714,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             onAgentFinished={handleAgentFinished}
           />
           {hasMessages && (
-            <p className="mt-2 text-center text-[11px] text-[#86868b]">AniOS can make mistakes. Check important information.</p>
+            <p className="mt-2 text-center text-[11px] text-[#86868b]">DeepMatter can make mistakes. Check important information.</p>
           )}
         </div>
       </div>

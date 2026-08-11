@@ -118,7 +118,7 @@ const AuthenticatedApp = ({ auth, onSignedOut }: AuthenticatedAppProps) => {
           <div className="flex min-w-0 items-center gap-3">
             <span className="anios-wordmark flex h-9 w-9 flex-none items-center justify-center rounded-xl text-sm font-semibold text-white">A</span>
             <div className="min-w-0">
-              <h1 className="truncate text-[17px] font-semibold tracking-[-0.02em]">AniOS</h1>
+              <h1 className="truncate text-[17px] font-semibold tracking-[-0.02em]">DeepMatter</h1>
               {/* Account identity and sign-out live in exactly one place at any
                   width. Below md the sidebar is a drawer and owns them; from md
                   it is part of the layout, but it can also be collapsed, so the
@@ -194,7 +194,7 @@ function App() {
     void getAuthSession()
       .then(setAuth)
       .catch(reason => {
-        setStartupError(reason instanceof Error ? reason.message : 'Unable to reach AniOS.')
+        setStartupError(reason instanceof Error ? reason.message : 'Unable to reach DeepMatter.')
         setAuth(null)
       })
   }, [])
@@ -209,7 +209,7 @@ function App() {
   if (auth === undefined) {
     return (
       <main className="flex min-h-dvh items-center justify-center bg-[#f5f5f7] text-[#6e6e73]">
-        <p role="status">Opening AniOS…</p>
+        <p role="status">Opening DeepMatter…</p>
       </main>
     )
   }

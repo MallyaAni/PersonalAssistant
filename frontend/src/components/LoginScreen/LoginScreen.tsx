@@ -93,12 +93,12 @@ const LoginScreen = ({ onAuthenticated }: LoginScreenProps) => {
           <span className="anios-wordmark mb-5 flex h-12 w-12 items-center justify-center rounded-2xl text-lg font-semibold text-white">A</span>
           <p className="mb-2 text-sm font-medium text-[#0071e3]">Private intelligence</p>
           <h1 id="login-title" className="text-[34px] font-semibold tracking-[-0.04em]">
-            {isRegistration ? 'Create your profile' : 'Sign in to AniOS'}
+            {isRegistration ? 'Create your profile' : 'Sign in to DeepMatter'}
           </h1>
           <p className="mt-2 text-[15px] leading-6 text-[#6e6e73]">
             {isRegistration
               ? 'Choose your credentials. The owner approves before the account is created.'
-              : 'Continue to your private AniOS workspace.'}
+              : 'Continue to your private DeepMatter workspace.'}
           </p>
         </div>
 

@@ -49,7 +49,7 @@ function observeBlockingBrowserErrors(page: Page) {
 
 // Return the composer controls by accessible name so attachment buttons cannot match.
 function chatControls(page: Page) {
-  const textarea = page.getByLabel('Message AniOS')
+  const textarea = page.getByLabel('Message DeepMatter')
   const sendButton = page.getByRole('button', { name: 'Send message' })
   return { textarea, sendButton }
 }
@@ -65,7 +65,7 @@ async function attachComposerFile(
 }
 
 function latestAssistantAnswer(page: Page) {
-  return page.getByLabel('AniOS answer').last()
+  return page.getByLabel('DeepMatter answer').last()
 }
 
 // Build one deterministic SSE response with an optional memory proposal.
@@ -176,7 +176,7 @@ function toolEventStream(
       status,
       message: status === 'succeeded'
         ? 'Tool completed.'
-        : 'Tool call was withheld by AniOS privacy or approval controls.',
+        : 'Tool call was withheld by DeepMatter privacy or approval controls.',
     })}`,
     '',
     'event: delta',
@@ -402,8 +402,8 @@ test('requires invite credentials before showing the private workspace', async (
   })
 
   await page.goto('/')
-  await expect(page.getByRole('heading', { name: 'Sign in to AniOS' })).toBeVisible()
-  await expect(page.getByLabel('Message AniOS')).not.toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Sign in to DeepMatter' })).toBeVisible()
+  await expect(page.getByLabel('Message DeepMatter')).not.toBeVisible()
   await page.getByLabel('Username').fill('friend.user')
   await page.getByLabel('Password').fill('wrong test password')
   await page.getByRole('button', { name: 'Continue' }).click()
@@ -416,13 +416,13 @@ test('requires invite credentials before showing the private workspace', async (
   await expect(
     page.getByRole('main').getByText('Signed in as friend.user'),
   ).toBeVisible()
-  await expect(page.getByLabel('Message AniOS')).toBeVisible()
+  await expect(page.getByLabel('Message DeepMatter')).toBeVisible()
   // Two sign-out controls exist on purpose: a labelled row in the mobile
   // drawer and an icon button in the desktop header. This is the desktop
   // viewport, so it clicks the icon.
   await page.getByLabel('Sign out').click()
-  await expect(page.getByRole('heading', { name: 'Sign in to AniOS' })).toBeVisible()
-  await expect(page.getByLabel('Message AniOS')).not.toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Sign in to DeepMatter' })).toBeVisible()
+  await expect(page.getByLabel('Message DeepMatter')).not.toBeVisible()
   expect(errors.pageErrors).toEqual([])
   expect(errors.consoleErrors.length).toBeGreaterThan(0)
   expect(errors.consoleErrors.every(message => message.includes('401 (Unauthorized)'))).toBe(true)
@@ -464,7 +464,7 @@ test('records an access request instead of creating an account outright', async 
   // before the account exists at all, and the screen has to say so rather than
   // implying a workspace is waiting.
   await expect(page.getByRole('heading', { name: 'Request sent' })).toBeVisible()
-  await expect(page.getByLabel('Message AniOS')).not.toBeVisible()
+  await expect(page.getByLabel('Message DeepMatter')).not.toBeVisible()
   expect(requestPayload).toEqual({
     display_name: 'New Friend',
     username: 'new.friend',
@@ -592,7 +592,7 @@ test('@live password login keeps one conversation private from another account',
   const uniqueMessage = `AUTH_ISOLATION_${Date.now()}`
 
   await page.goto('/')
-  await expect(page.getByRole('heading', { name: 'Sign in to AniOS' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Sign in to DeepMatter' })).toBeVisible()
   await page.getByLabel('Username').fill(firstLogin!)
   await page.getByLabel('Password').fill(firstPassword!)
   await page.getByRole('button', { name: 'Continue' }).click()
@@ -664,7 +664,7 @@ test('renders a responsive search-first chat shell', async ({ page }) => {
   await page.goto('/')
 
   await expect(page.getByRole('heading', { name: 'What can I help you find?' })).toBeVisible()
-  const composer = page.getByLabel('Message AniOS')
+  const composer = page.getByLabel('Message DeepMatter')
   await expect(composer).toBeVisible()
   await composer.fill('Native font check')
   const fonts = await composer.evaluate(element => {
@@ -723,7 +723,7 @@ for (const width of [1440, 1024, 820, 768]) {
   test(`offers one identity and one sign-out at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
     await page.goto('/')
-    await expect(page.getByRole('heading', { name: 'AniOS' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'DeepMatter' })).toBeVisible()
 
     // The sidebar's copy is display:none from md, so it leaves the
     // accessibility tree entirely rather than merely sitting off screen.
@@ -736,7 +736,7 @@ for (const width of [700, 640, 500, 390]) {
   test(`keeps identity and sign-out in the drawer at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
     await page.goto('/')
-    await expect(page.getByRole('heading', { name: 'AniOS' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'DeepMatter' })).toBeVisible()
 
     // Below md the header shows neither; the menu button is the way in.
     await expect(countVisible(page.getByRole('button', { name: 'Sign out' }))).resolves.toBe(0)
@@ -763,7 +763,7 @@ test('shows mobile account identity and logout in the navigation drawer', async 
   await expect(accountControls.getByText('Signed in as ani.mallya')).toBeVisible()
   await accountControls.getByRole('button', { name: 'Sign out' }).click()
 
-  await expect(page.getByRole('heading', { name: 'Sign in to AniOS' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Sign in to DeepMatter' })).toBeVisible()
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
@@ -1019,7 +1019,7 @@ test('shows an MCP refusal while the local answer still completes', async ({ pag
   await sendButton.click()
 
   const answer = latestAssistantAnswer(page)
-  await expect(answer.getByText(/withheld by AniOS privacy/)).toBeVisible()
+  await expect(answer.getByText(/withheld by DeepMatter privacy/)).toBeVisible()
   await expect(answer.getByText('I answered locally.')).toBeVisible()
   await expect(page.getByText('Thinking...', { exact: true })).not.toBeVisible()
   await expect(textarea).toBeEnabled()
@@ -1501,7 +1501,7 @@ test('renders a visible error and clears loading state when chat fails', async (
   await expect(page.getByText('Thinking...', { exact: true })).toBeVisible()
   rejectRequest()
   await expect(
-    page.getByText('AniOS did not respond, so nothing was sent.', { exact: false }),
+    page.getByText('DeepMatter did not respond, so nothing was sent.', { exact: false }),
   ).toBeVisible()
   await expect(page.getByText('Thinking...', { exact: true })).not.toBeVisible()
   await expect(page.getByRole('paragraph').filter({ hasText: uniqueMessage })).toBeVisible()
@@ -2550,7 +2550,7 @@ test('@live creates and renders a real diagram artifact', async ({ page }) => {
 })
 
 // Verify ordinary live chat renders and restores a real response from the configured provider.
-test('@live renders a real configured-provider response through AniOS', async ({ page }) => {
+test('@live renders a real configured-provider response through DeepMatter', async ({ page }) => {
   test.skip(process.env.ANIOS_E2E_LIVE !== '1', 'Set ANIOS_E2E_LIVE=1 to contact the configured live provider')
   test.setTimeout(240_000)
 
@@ -2862,7 +2862,7 @@ test('generates, restores, and deletes an owned image artifact', async ({ page }
   })
 
   await page.goto('/')
-  const textarea = page.getByLabel('Message AniOS')
+  const textarea = page.getByLabel('Message DeepMatter')
   await textarea.fill(prompt)
   const responsePromise = page.waitForResponse('http://localhost:8000/api/v1/images/generate')
   await page.getByRole('button', { name: 'Send message' }).click()
@@ -2929,7 +2929,7 @@ test('routes an explicit Chat request to image generation', async ({ page }) => 
   )
 
   await page.goto('/')
-  const textarea = page.getByLabel('Message AniOS')
+  const textarea = page.getByLabel('Message DeepMatter')
   await textarea.fill(prompt)
   const responsePromise = page.waitForResponse('http://localhost:8000/api/v1/images/generate')
   await page.getByRole('button', { name: 'Send message' }).click()
@@ -2983,7 +2983,7 @@ test('routes an image followup question to chat without regenerating', async ({ 
   })
 
   await page.goto('/')
-  const textarea = page.getByLabel('Message AniOS')
+  const textarea = page.getByLabel('Message DeepMatter')
   await textarea.fill(prompt)
   await page.getByRole('button', { name: 'Send message' }).click()
   await expect(page.getByLabel('Image: Generated image')).toBeVisible()
@@ -3061,7 +3061,7 @@ test('asks a followup question about a generated image and threads the answer', 
   )
 
   await page.goto('/')
-  const textarea = page.getByLabel('Message AniOS')
+  const textarea = page.getByLabel('Message DeepMatter')
   await textarea.fill(prompt)
   await page.getByRole('button', { name: 'Send message' }).click()
 
@@ -3146,7 +3146,7 @@ test('routes can-you image edits to refinement instead of vision Q&A', async ({ 
   )
 
   await page.goto('/')
-  const textarea = page.getByLabel('Message AniOS')
+  const textarea = page.getByLabel('Message DeepMatter')
   await textarea.fill(prompt)
   await page.getByRole('button', { name: 'Send message' }).click()
 
@@ -3236,7 +3236,7 @@ test('uploads, analyzes, and source-refines an image with visible results', asyn
     mimeType: 'image/png',
     buffer: TEST_PNG,
   })
-  const textarea = page.getByLabel('Message AniOS')
+  const textarea = page.getByLabel('Message DeepMatter')
   await textarea.fill('Describe the subject and color.')
   const responsePromise = page.waitForResponse('http://localhost:8000/api/v1/vision/analyze')
   await page.getByRole('button', { name: 'Send message' }).click()
@@ -3303,7 +3303,7 @@ test('shows an image failure, clears loading, and retries successfully', async (
   )
 
   await page.goto('/')
-  const textarea = page.getByLabel('Message AniOS')
+  const textarea = page.getByLabel('Message DeepMatter')
   await textarea.fill('Create an image for deterministic retry')
   await page.getByRole('button', { name: 'Send message' }).click()
   await expect(page.getByRole('alert').filter({ hasText: 'Unable to generate the image.' }).first()).toBeVisible()
@@ -3348,7 +3348,7 @@ test('shows every documented image-analysis failure contract', async ({ page }) 
     mimeType: 'image/png',
     buffer: TEST_PNG,
   })
-  const textarea = page.getByLabel('Message AniOS')
+  const textarea = page.getByLabel('Message DeepMatter')
   for (const scenario of scenarios) {
     status = scenario.status
     detail = scenario.detail
@@ -3384,7 +3384,7 @@ test('@live visual generation and analysis complete through the browser', async 
   try {
     await page.goto('/')
     await expect(page.getByText('Restoring conversation...')).not.toBeVisible()
-    const textarea = page.getByLabel('Message AniOS')
+    const textarea = page.getByLabel('Message DeepMatter')
     await textarea.fill(generationPrompt)
     const generationResponsePromise = page.waitForResponse(
       response => response.url() === 'http://localhost:8000/api/v1/images/generate',
@@ -3601,7 +3601,7 @@ test('@live image conversation routes through generation, chat, search, and memo
   try {
     await page.goto('/')
     await expect(page.getByText('Restoring conversation...')).not.toBeVisible()
-    const textarea = page.getByLabel('Message AniOS')
+    const textarea = page.getByLabel('Message DeepMatter')
     await textarea.fill(generationPrompt)
     const generationResponsePromise = page.waitForResponse(
       response => response.url() === 'http://localhost:8000/api/v1/images/generate',
@@ -3695,7 +3695,7 @@ test('@live cancelled image generation becomes a terminal failed artifact', asyn
   try {
     await page.goto('/')
     await expect(page.getByText('Restoring conversation...')).not.toBeVisible()
-    const textarea = page.getByLabel('Message AniOS')
+    const textarea = page.getByLabel('Message DeepMatter')
     await textarea.fill(`Create an image of a cancellation probe cobalt glass compass ${Date.now()}`)
     const requestPromise = page.waitForRequest(
       request => request.url() === 'http://localhost:8000/api/v1/images/generate',

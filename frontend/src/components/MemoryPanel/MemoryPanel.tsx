@@ -298,7 +298,7 @@ const MemoryPanel: React.FC<MemoryPanelProps> = ({ userId }) => {
       <div>
         <p className="mb-2 text-sm font-medium text-[#0071e3]">Your context</p>
         <h2 className="text-[34px] font-semibold tracking-[-0.04em] md:text-[42px]">Personal Memory</h2>
-        <p className="mt-2 text-sm text-slate-400">Review and control what AniOS remembers for your signed-in account.</p>
+        <p className="mt-2 text-sm text-slate-400">Review and control what DeepMatter remembers for your signed-in account.</p>
       </div>
 
       <p className="rounded-xl border border-black/[0.08] bg-white px-4 py-3 text-sm text-[#6e6e73]">
@@ -484,7 +484,7 @@ const MemoryPanel: React.FC<MemoryPanelProps> = ({ userId }) => {
       <details className="rounded border border-slate-800 bg-slate-900/30 p-4">
         <summary className="cursor-pointer font-semibold">Advanced: add memory manually</summary>
         <p className="mt-2 text-sm text-slate-400">
-          Normally AniOS should propose memories during conversation. These controls let you add one explicitly.
+          Normally DeepMatter should propose memories during conversation. These controls let you add one explicitly.
         </p>
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           <form

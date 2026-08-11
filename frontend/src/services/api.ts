@@ -30,7 +30,7 @@ export interface AuthSession {
 export async function getAuthSession(): Promise<AuthSession | null> {
   const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/auth/session`)
   if (response.status === 401) return null
-  if (!response.ok) throw new Error('Unable to check your AniOS session.')
+  if (!response.ok) throw new Error('Unable to check your DeepMatter session.')
   return response.json()
 }
 
