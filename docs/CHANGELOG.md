@@ -2631,3 +2631,34 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   on needs an ordinary user agent, or it measures the bot rule instead of AniOS.
 - Still manual: installing the tunnel as a Windows service, which needs an
   elevated shell. Until then the public address does not survive a reboot.
+
+## 2026-08-11 — Scout has a preference signal
+
+- A digest now sends as one message per find, and a thumbs-up or thumbs-down on
+  any of them is recorded against that find. First verified end to end tonight:
+  `liked` on "Garden of Tomorrow expansion", `disliked` on "Seven Wonders at
+  Tarara Winery", each carrying the locality and the same `item_digest` novelty
+  and familiarity key on — so a like, a dismissal and a suppression name the
+  same thing and stay comparable.
+- Nothing in ranking reads it yet, deliberately. A loop trained on two reactions
+  would learn noise.
+- Reactions are matched by **message body**, never by Apple's identifier. There
+  is none handed back at send time, and every way of recovering one afterwards
+  failed against a real Mac: never captured, captured pointing at the wrong
+  message, and pointing at a copy this machine never stored. The body is
+  composed here and shared by every copy of the message.
+- Recent macOS keeps most message bodies in `attributedBody` rather than `text`
+  — 54 of 64 in one sample — so the original lookup, which matched on `text`,
+  could never have worked whatever the permissions were.
+- The Messages database must be opened `mode=ro`, not `immutable=1`: immutable
+  makes SQLite skip the write-ahead log, which is exactly where a message sent
+  seconds ago still is.
+- **A reaction made on a phone in a thread with yourself cannot be linked.** The
+  phone holds a different message object; its tapback references a row the Mac
+  never stored, and reported `found: false` for both. The same reactions made in
+  Messages on the Mac recorded immediately. Subscribers are unaffected — a normal
+  recipient's reaction references the sender's own message — but it is the case
+  every test uses, and it cost most of the evening.
+- The digest also stopped silently dropping finds: asked for five lines the model
+  returned three, and two finds never arrived. Lines are matched to finds by
+  index now, and a find the model skipped is sent with its assembled line.

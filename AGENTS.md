@@ -171,6 +171,26 @@ else needs the hostname: the gateway serves the app and proxies `/api` on one
 origin, so the browser is same-origin, and `validate_browser_origin` accepts
 `https://<host>` from the request rather than from a list.
 
+**A reaction made on a phone, in a thread with yourself, cannot be linked.**
+Sending to your own Apple ID gives the phone a *different* message object from
+the one the Mac sent. React there and the tapback references the phone's copy —
+a row the Mac never stored — so it syncs across pointing at nothing. Verified:
+two reactions arrived as types 2001 and 2002 whose targets both reported
+`found: false` against the Messages database. No matching strategy fixes this,
+because the tapback-to-message link *is* that identifier. The same two reactions
+made in Messages **on the Mac** recorded immediately. Subscribers are unaffected:
+a normal recipient's reaction references the sender's own message. It is the
+owner's own thread that cannot work, which is the one every test uses.
+
+**Match a reaction by the message body, never by Apple's identifier.** There is
+no identifier handed back at send time, and every way of recovering one
+afterwards failed on a real Mac: never captured, captured but pointing at the
+wrong message, and pointing at a copy this machine never stored. The body is
+composed here, identifies the message rather than the row, and is shared by
+every copy of it. Note that recent macOS keeps most bodies in `attributedBody`
+rather than `text` — 54 of 64 in one sample — so anything matching on `text`
+alone matches almost nothing.
+
 **A Windows service reporting `Running` proves nothing.** The tunnel service
 installed cleanly, reported `Running`, and registered no connector for an hour,
 because Windows recorded its ImagePath as the bare executable with no arguments:

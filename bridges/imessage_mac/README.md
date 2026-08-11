@@ -94,17 +94,31 @@ export IMESSAGE_BRIDGE_MESSAGES_DB="$HOME/Library/Messages/chat.db"
 What it reads is deliberately narrow, and worth checking against the code rather
 than taking on trust:
 
-- the database is opened **read-only and immutable**, so this cannot write to it
-  or take a lock Messages would notice;
-- two queries only. One finds the identifier of the message just sent, by
-  recipient and matching text. The other returns tapbacks whose target is one of
-  the identifiers AniOS supplies — identifiers this bridge handed out itself
-  when it sent those messages;
-- **no message text is ever returned.** The reaction query selects the target
-  identifier, the reaction type, and a timestamp. There is no tool here that can
-  be asked what anyone has said;
+- the database is opened **read-only**, so this cannot write to it or take a
+  lock Messages would notice. Read-only rather than immutable, because immutable
+  makes SQLite skip the write-ahead log, where a message sent moments ago still
+  is;
+- AniOS asks with the **bodies of messages it composed itself**, and the bridge
+  answers by position: "the third one you gave me was thumbed up". It cannot be
+  asked about a message AniOS did not send, because it has nothing to match such
+  a message against;
+- **no message text is ever returned.** Bodies are read to compare them and
+  discarded; only positions, a reaction type and a timestamp come back. There is
+  no tool here that can be asked what anyone has said;
 - only 👍 and 👎 are reported. The other four tapbacks are ambiguous about
   whether someone wants more of something.
+
+### Reacting from a phone, in a thread with yourself
+
+A digest sent to your own Apple ID gives your phone a **different message object**
+from the one this Mac sent. React there and the tapback points at the phone's
+copy — a row this Mac never stored — so it arrives referencing nothing, and no
+amount of matching will connect it.
+
+React in Messages **on this Mac** and it records immediately. Subscribers are
+unaffected: a normal recipient's reaction references the sender's own message,
+which is the case the feature is built for. It is only the owner messaging
+themselves that cannot work, and that is exactly what testing tends to use.
 
 Leave it off and everything still works: digests send exactly as before, and
 AniOS records that it sent them with no identifier and collects no feedback.
