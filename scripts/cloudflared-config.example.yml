@@ -1,0 +1,26 @@
+# Named tunnel for deep-matter.com.
+#
+# Copy to the cloudflared config directory and fill in the tunnel UUID that
+# `cloudflared tunnel create anios` printed:
+#
+#   Windows: %USERPROFILE%\.cloudflared\config.yml
+#   macOS/Linux: ~/.cloudflared/config.yml
+#
+# The credentials file is written by that same command and is a secret: it is
+# the tunnel's identity, and anyone holding it can serve traffic on this
+# hostname. It belongs in the cloudflared directory and never in this repo.
+
+tunnel: REPLACE_WITH_TUNNEL_UUID
+credentials-file: REPLACE_WITH_PATH_TO/<TUNNEL_UUID>.json
+
+# Cloudflare terminates TLS, so the origin stays plain HTTP on loopback. The
+# gateway publishes only to 127.0.0.1, so nothing here is reachable from the LAN
+# or the internet except through this tunnel.
+ingress:
+  - hostname: deep-matter.com
+    service: http://localhost:8080
+  - hostname: www.deep-matter.com
+    service: http://localhost:8080
+  # Required last rule: anything not matched above is refused rather than
+  # falling through to whatever else happens to be listening.
+  - service: http_status:404

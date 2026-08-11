@@ -146,14 +146,30 @@ an evaluation number that would not move. Use the Edit tool for regex, or
 image, a stale container, and an edited file are three different states. Several
 defects here were only visible by asking the live system what it actually had.
 
-**Public access is a Cloudflare quick tunnel that dies with the machine.** Not
-Tailscale — that was tried and abandoned, and `docs/NEXT_SESSION.md` records
-what failed so it is not retried without new evidence. Restore the tunnel with
-`bash scripts/start-tunnel.sh`. The hostname is random on every start, so the
-script also rewrites `DISCOVERY_CALENDAR_BASE_URL`; a calendar invite pointing
-at a dead hostname fails on the recipient's phone rather than anywhere visible
-here. If the public URL stopped working, check the tunnel is still running
-before suspecting anything in the stack.
+**Public access is a Cloudflare tunnel, and which kind decides how much else
+moves.** Either kind is started with `bash scripts/start-tunnel.sh`, and if the
+public URL stopped working, check the tunnel is still running before suspecting
+anything in the stack.
+
+The site is served at **`deep-matter.com`**, registered through Cloudflare so
+the zone is already in the account. With `ANIOS_TUNNEL_NAME` and
+`ANIOS_PUBLIC_HOSTNAME` set, the script runs the named tunnel, the hostname is
+stable, and nothing downstream is rewritten. Setup is manual and one-time —
+`cloudflared tunnel login` is a browser flow writing a certificate into the
+operator's profile, so there is no token to configure and none should be pasted
+anywhere. The procedure is in `docs/DEVELOPMENT_GUIDE.md`.
+
+Left unset, it falls back to a quick tunnel whose hostname is random on every
+start, which is why the script rewrites `DISCOVERY_CALENDAR_BASE_URL` in that
+mode: an address embedded in an invite and left pointing at a dead hostname
+fails on the recipient's phone rather than anywhere visible here.
+
+**A real HTTPS origin is what makes `AUTH_COOKIE_SECURE` true**, and the two
+change together. True over plain HTTP leaves no working login anywhere — the
+browser refuses the cookie and there is no HTTPS origin to set it on. Nothing
+else needs the hostname: the gateway serves the app and proxies `/api` on one
+origin, so the browser is same-origin, and `validate_browser_origin` accepts
+`https://<host>` from the request rather than from a list.
 
 **Never verify public ingress from this desktop.** Some ingress resolves back to
 the local machine, so `curl` from the host returned 200 in 14 ms while the

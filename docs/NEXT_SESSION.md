@@ -644,48 +644,34 @@ value was pasted into a chat transcript relaying setup instructions between
 the two machines. Treat any token that has appeared in a conversation as
 burned; regenerate rather than reuse.
 
-## Public access is a temporary Cloudflare quick tunnel
+## Public access is moving to deep-matter.com
 
-Tailscale Funnel was abandoned after failing two different ways across two
-accounts, neither failure ours:
+`deep-matter.com` is registered through Cloudflare, so the zone is already in
+the account and DNS can point at a tunnel without moving nameservers.
 
-- tailnet `tail5a235a`: both published ingress addresses completed TCP and then
-  closed during the TLS handshake (`UNEXPECTED_EOF_WHILE_READING`), which is
-  what a browser reports as `ERR_SSL_PROTOCOL_ERROR`;
-- tailnet `tail080855` (a fresh account): Funnel and HTTPS certificates were
-  both granted at the control plane — `tailscale status --json` shows the
-  `funnel`, `https` and `funnel-ports` capabilities — and the Let's Encrypt
-  certificate issued, but **no A or AAAA records were ever published**, so
-  there was no address for anything to connect to.
+`scripts/start-tunnel.sh` runs a named tunnel when `ANIOS_TUNNEL_NAME` and
+`ANIOS_PUBLIC_HOSTNAME` are set, and falls back to a quick tunnel otherwise. The
+one-time setup is in [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md) — it needs a
+browser login to the Cloudflare account, so it is done by hand on the serving
+machine, and there is no token to configure.
 
-Renaming a node never produced address records in either tailnet, which is a
-second, separate quirk. Do not spend more time here without new evidence.
+Until that setup is done the address is still a `trycloudflare.com` quick
+tunnel, which **does not survive a reboot and takes a new random hostname every
+time**. The script rewrites `DISCOVERY_CALENDAR_BASE_URL` to match in that mode;
+recreate `backend` and `discovery-worker` afterwards so they read the new value.
+A named tunnel rewrites nothing, because nothing changes.
 
-The current URL is a `trycloudflare.com` quick tunnel. Restore it with:
-
-```bash
-bash scripts/start-tunnel.sh
-```
-
-which waits for the address, prints it, and rewrites
-`DISCOVERY_CALENDAR_BASE_URL` to match.
-
-**It does not survive a reboot and the hostname is random every time**, so every
-calendar link already sent stops resolving when it changes. The script handles
-the rewrite; recreate `backend` and `discovery-worker` afterwards so they read
-the new value.
-
-The fix is a named tunnel, which needs a domain on Cloudflare (~$10/yr). That
-buys a stable hostname and installation as a Windows service, so it starts
-before login. Until then "the desktop rebooted" means everyone's link is dead.
+`AUTH_COOKIE_SECURE` becomes true in the same step that makes the HTTPS origin
+real, and not before: true over plain HTTP leaves no working login anywhere.
 
 Docker services now carry `restart: unless-stopped`, so the stack itself
 returns when Docker Desktop starts. ComfyUI and local-capabilities deliberately
-do not — they hold the GPU.
+do not — they hold the GPU. Installing the tunnel as a service is what makes the
+public address survive a reboot too.
 
 ### Verify ingress from outside, never from this desktop
 
-Tailscale loops its own hostnames back locally, so `curl` from the host
+Some ingress resolves its own hostnames back locally, so `curl` from the host
 returned 200 in ~14 ms while the public path was dead. That produced a false
 "verified working" report that cost several rounds. Use a TLS handshake from
 inside a container, which has its own network namespace, and check **every**

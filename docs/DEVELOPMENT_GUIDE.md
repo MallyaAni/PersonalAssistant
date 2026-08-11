@@ -1131,13 +1131,61 @@ long-running image/presentation requests. Remote HTTPS ingress is a Cloudflare
 tunnel publishing only this gateway; PostgreSQL, Redis, vLLM, ComfyUI,
 renderers, and MCP ports stay private and friends install nothing.
 
-Tailscale Funnel was tried first and abandoned — see
-[NEXT_SESSION.md](NEXT_SESSION.md) for what failed and why retrying it needs
-new evidence. The tunnel in use is currently a quick tunnel whose hostname
-changes on every restart; a named tunnel needs a domain and would also install
-as a service so it survives a reboot. The same Docker Compose gateway is portable to macOS;
-follow the database/artifact/encryption-key migration procedure before moving
-hosts.
+The same Docker Compose gateway is portable to macOS; follow the
+database/artifact/encryption-key migration procedure before moving hosts.
+
+### The public hostname: deep-matter.com
+
+`deep-matter.com` is registered through Cloudflare, so the zone is already in
+the account and DNS can be pointed at a tunnel without moving nameservers.
+
+Setting up the named tunnel is a one-time manual job on the machine that serves.
+It is manual because `cloudflared tunnel login` is a browser flow that writes a
+certificate into the operator's own profile: there is no token to configure, and
+none should be pasted anywhere.
+
+```bash
+cloudflared tunnel login                      # browser, pick deep-matter.com
+cloudflared tunnel create anios               # prints a UUID and a credentials file
+cloudflared tunnel route dns anios deep-matter.com
+cloudflared tunnel route dns anios www.deep-matter.com
+```
+
+Then copy `scripts/cloudflared-config.example.yml` to the cloudflared config
+directory (`%USERPROFILE%\.cloudflared\config.yml` on Windows), fill in the UUID
+and the credentials path, and set in `.env`:
+
+```
+ANIOS_TUNNEL_NAME=anios
+ANIOS_PUBLIC_HOSTNAME=deep-matter.com
+AUTH_COOKIE_SECURE=true
+DISCOVERY_CALENDAR_BASE_URL=https://deep-matter.com/api/v1/discovery
+```
+
+`AUTH_COOKIE_SECURE` becomes true **in the same step**, not before: true over
+plain HTTP leaves no working login anywhere, because the browser refuses the
+cookie and there is no HTTPS origin to set it on. Recreate the services that
+read these — `docker compose up -d backend discovery-worker` — since a value in
+`.env` reaches nothing on its own.
+
+`bash scripts/start-tunnel.sh` then runs the named tunnel instead of a quick
+one, reports `https://deep-matter.com`, and rewrites nothing, because the
+hostname no longer changes. Installing it as a service (`cloudflared service
+install`) is what makes it survive a reboot.
+
+Verify from somewhere that is not this machine. A check from the host can
+resolve back to the local stack and report a healthy site that is publicly
+dead — that has happened here and was reported as verified:
+
+```bash
+docker compose exec -T backend python -c \
+  "import urllib.request;print(urllib.request.urlopen('https://deep-matter.com/healthz',timeout=15).status)"
+```
+
+Nothing in the application needs the hostname configured. The gateway serves the
+frontend and proxies `/api` on one origin, so the browser is same-origin with
+`deep-matter.com`, and `validate_browser_origin` already accepts
+`https://<host>` from the request itself rather than from a list.
 
 Legacy bearer tokens remain useful for scoped automation. Send
 `Authorization: Bearer <token>` on direct requests; the subject must exactly
