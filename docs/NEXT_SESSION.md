@@ -669,16 +669,42 @@ config` would not attach arguments, `service install` refused to touch an
 existing registration, and `service uninstall` left the key marked for deletion
 behind a process that would not die.
 
-The task is `DeepMatter tunnel`, running as SYSTEM at startup, restarting itself
-every minute if cloudflared stops:
+The task is `DeepMatter tunnel`, registered to run as SYSTEM at startup and to
+restart itself every minute if cloudflared stops.
+
+### It did not survive a reboot — OPEN, and the next thing to fix here
+
+The machine rebooted at 2026-08-11 08:49 and `deep-matter.com` served error
+**1033** — no connector registered — with no cloudflared process running at all.
+Docker came back correctly; the tunnel did not. The site was restored by hand
+with a user-space `cloudflared tunnel run anios`, **so it will go down again at
+the next reboot.**
+
+"The tunnel survives a reboot" was asserted from the task existing, never from a
+reboot. The reboot has now happened and disproved it. Nothing about durable
+public access should be believed here again without a reboot behind it.
+
+Diagnosing it needs an elevated shell, which was unavailable when this was
+found:
 
 ```powershell
-Get-ScheduledTaskInfo -TaskName "DeepMatter tunnel"   # LastTaskResult, not a status
+schtasks /query /tn "DeepMatter tunnel" /v /fo LIST | findstr /i "TaskName Status Last"
 ```
 
-It beats the service on three counts that mattered here: it starts at boot rather
-than sign-in, it restarts on failure, and it reports a real last-run result. The
-dead `Cloudflared` service can be removed with `sc.exe delete Cloudflared`.
+`Last Result` distinguishes the three cases: `0x0` with nothing running means
+cloudflared started and exited cleanly — most likely the boot race, where
+networking is not ready, it cannot reach Cloudflare, and quits. `-RestartCount`
+does not cover that, because it only fires when a task *fails*. A non-zero result
+names the failure. Task-not-found means it needs recreating.
+
+The likely fix is a startup delay plus restarting on any exit rather than only on
+failure. The `Cloudflared` service is still registered, `Stopped / Automatic`,
+and should be removed with `sc.exe delete Cloudflared` so two mechanisms are not
+competing.
+
+Note that a non-elevated shell can read neither `Get-ScheduledTask` nor
+`schtasks /query` for a SYSTEM-principal task — both return access denied — so
+the task's existence cannot be confirmed without elevation, only its effects.
 
 **One connector is not evidence.** Every check for an hour showed a healthy
 connector that was a foreground process started by hand; the service contributed
