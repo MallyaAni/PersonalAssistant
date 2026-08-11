@@ -569,6 +569,45 @@ encryption key. Settle recovery/escrow semantics before migrating content from
 the current optional server-wide encryption key; do not retrofit key derivation
 by rewriting user data without a tested backup and restore acceptance path.
 
+## Milestone 8: reclaiming storage — PLANNED
+
+Goal: stop unreferenced bytes accumulating, without giving up anything a person
+can see.
+
+Measured on 2026-08-11 before deciding anything, because the intuitive answers
+were both wrong:
+
+| | size |
+| --- | --- |
+| Artifacts on disk | **553 MB** across 137 files |
+| — orphaned: nothing in the database points at them | **460 MB**, 109 files |
+| — superseded renders, rebuildable from their spec | **80 MB**, 23 files |
+| Entire database | **17 MB** |
+| `presentation_revisions` (the history itself) | 504 kB |
+| Conversation transcripts | below the eight largest tables |
+
+- `PLANNED`: garbage-collect artifact files with no referencing row. This is 83%
+  of all storage and no behaviour depends on it — deleted presentations, failed
+  jobs, and replaced renders leave their bytes behind. A CLI that defaults to a
+  dry run and reports what it would remove, because this deletes user data
+  against a database with no backups.
+- `PLANNED`: drop the rendered `.pptx` of superseded revisions while keeping the
+  specification. A render is ~15 MB and regenerable from the spec it came from;
+  the spec is a few kB and is what undo needs. Deleting renders recovers the
+  space and keeps the history, which is the opposite trade to deleting history.
+- `PLANNED`: run both on a schedule rather than by hand. Raising
+  `IMAGE_EDIT_MEGAPIXELS` to 2.0 makes every new image larger, so decks grow
+  faster than they did when these numbers were taken.
+
+**Deliberately not planned: deleting conversation transcripts or presentation
+revision history.** Both were proposed as storage measures and neither is one.
+Transcripts are a rounding error — the whole database is smaller than a single
+rendered deck — and they carry the source conversation and trace provenance that
+approved memory facts point back at, so dropping them costs the ability to
+answer "where did this come from". Revision history is 504 kB and is what makes
+an edit undoable. Together they would recover under 1 MB of 553 MB while
+removing real function.
+
 The security and privacy gates in [SECURITY.md](SECURITY.md) apply throughout;
 enabling `AUTH_REQUIRED` and protecting the signing and encryption keys are
 prerequisites for any non-local, multi-person deployment.

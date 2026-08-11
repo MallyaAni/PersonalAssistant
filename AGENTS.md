@@ -171,6 +171,14 @@ else needs the hostname: the gateway serves the app and proxies `/api` on one
 origin, so the browser is same-origin, and `validate_browser_origin` accepts
 `https://<host>` from the request rather than from a list.
 
+**ComfyUI can be running with a dead CUDA context.** Its web UI keeps answering
+`/` with 200 while every GPU call fails with `torch.AcceleratorError: CUDA error:
+unknown error`, so it looks healthy from anywhere that checks the port or the
+page. `/system_stats` is the endpoint that tells the truth — it returns 500. A
+context cannot recover from this and the process must be restarted. It happened
+when vLLM restarted and reclaimed the card, which the GPU handoff makes routine,
+so expect it after any image job that coincides with a vLLM restart.
+
 **ComfyUI is a host process and nothing restarts it.** It runs from
 `COMFYUI_HOST_PATH` rather than in Compose — the host install is far lighter than
 the CUDA container image, and Qwen is quantized to FP8 specifically to leave GPU
