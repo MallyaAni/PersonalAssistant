@@ -29,7 +29,7 @@ from backend.core.dependencies import (
     get_reaction_collector,
     grant_recipient_on_bridge,
 )
-from backend.core.logging_config import get_logger
+from backend.core.logging_config import get_logger, setup_logging
 from backend.database.session import AsyncSessionLocal
 from backend.discovery.delivery import DigestDelivery
 from backend.discovery.feedback import SentFindRepository
@@ -309,6 +309,14 @@ async def run() -> None:
 
 
 def main() -> None:
+    # Configure logging here, because nothing else will.
+    #
+    # `setup_logging` runs in `main.py`, which a worker started as `python -m`
+    # never imports — so the root logger had no handlers and every `logger.info`
+    # in this process was discarded. The container reported healthy, the loop
+    # ran, and produced not one line: a sweep's whole record, including whether
+    # a digest was delivered, existed only in the database.
+    setup_logging("DEBUG" if settings.DEBUG else "INFO")
     asyncio.run(run())
 
 

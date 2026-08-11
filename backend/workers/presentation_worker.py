@@ -8,7 +8,7 @@ from backend.config.settings import settings
 from backend.core.dependencies import (
     get_background_presentation_service,
 )
-from backend.core.logging_config import get_logger
+from backend.core.logging_config import get_logger, setup_logging
 from backend.database.session import AsyncSessionLocal
 from backend.presentations.planner import DeckDraft
 from backend.services.presentation_job_repository import (
@@ -148,6 +148,10 @@ async def run() -> None:
 
 # Start the presentation worker as a standalone Compose process.
 def main() -> None:
+    # Same reason as the discovery worker: `setup_logging` lives in `main.py`,
+    # which this process never imports, so without this every line it logs is
+    # dropped by a root logger that has no handlers.
+    setup_logging("DEBUG" if settings.DEBUG else "INFO")
     asyncio.run(run())
 
 

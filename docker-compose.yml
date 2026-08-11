@@ -339,6 +339,12 @@ services:
       - -m
       - backend.workers.discovery_worker
     environment:
+      # Otherwise nothing this worker logs is visible until its stdout buffer
+      # fills, which for a loop that sleeps between sweeps is effectively never.
+      # The API appears to log fine without this only because uvicorn configures
+      # its own handlers; a plain `python -m` process does not, so a whole
+      # sweep's worth of evidence sat unflushed in a container reporting healthy.
+      - PYTHONUNBUFFERED=1
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
       - POSTGRES_DB=${POSTGRES_DB:-anios_db}
