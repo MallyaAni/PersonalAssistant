@@ -65,6 +65,31 @@ def _image_description(match: dict[str, Any]) -> str:
     return " ".join(str(description).split())[:_IMAGE_DESCRIPTION_CHARS]
 
 
+# Describe the picture an edited one was made from, when recall collapsed it.
+#
+# Absent for an image that is nobody's revision, so an ordinary match is
+# described exactly as it was before. `edited_from` is stated in the terms that
+# matter to a reader — an uploaded original is the user's own picture, and the
+# edits are listed oldest first so "the hat was replaced" is legible as history
+# rather than as what the picture always showed.
+def _image_lineage(match: dict[str, Any]) -> dict[str, Any]:
+    origin = match.get("origin")
+    if not isinstance(origin, dict):
+        return {}
+    described = " ".join(str(origin.get("description") or "").split())
+    lineage: dict[str, Any] = {
+        "edited_from": {
+            "supplied_by_user": origin.get("kind") == "uploaded_image",
+            "title": origin.get("title"),
+            "description": described[:_IMAGE_DESCRIPTION_CHARS],
+        }
+    }
+    edits = [str(edit) for edit in match.get("edits") or [] if str(edit).strip()]
+    if edits:
+        lineage["edits_applied"] = edits
+    return lineage
+
+
 # Add matched-image context only after the user explicitly asks for web search.
 def _image_aware_search_query(
     query: str,
@@ -538,6 +563,11 @@ class ConversationService:
                     "generation_prompt": (match.get("metadata") or {}).get(
                         "generation_prompt"
                     ),
+                    # Where an edited picture came from. Without it a photograph
+                    # the user supplied, once edited, reads as something the
+                    # assistant invented — and what the original showed is lost
+                    # even though it is the thing being asked about.
+                    **_image_lineage(match),
                 }
                 for match in image_matches
             ]

@@ -2689,3 +2689,31 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
 - The image card's button still guesses locally whether it will say "Refine" or
   "Ask", because that label updates on every keystroke; the send that follows
   asks the server, and the in-flight label is corrected from the answer.
+
+## 2026-08-11 — An edited photograph remembers what it was
+
+- Editing an uploaded picture lost the original's meaning. Recall collapses an
+  original when one of its own revisions also matches, so the same picture is
+  not shown twice — and everything the original knew was collapsed with it. A
+  photograph the user supplied survived only as a `generated_image` titled
+  "Edited image", described by an analysis of the edited pixels.
+- Asked "remember the picture I gave you of my hat? where can I find that hat?",
+  the assistant reported that the only image on record was one it had generated
+  from a creative request. Reproduced against the running model with the context
+  as it was: it named the *straw* hat from the edit as the hat in "the picture
+  you uploaded". The user's actual photograph showed a wide-brimmed black cowboy
+  hat, and that description was in the database the whole time.
+- `collapse_revision_chains` now carries the lineage onto the revision that
+  replaces the original: the root it descends from, whether the user supplied
+  it, what it showed, and every edit applied since, oldest first. The walk is
+  bounded and terminates on a cycle in stored metadata.
+- `_render_image_context` explains the new fields, including that the origin's
+  description is of the picture *before* the edits — without that, both hats are
+  in the prompt and nothing says which is current.
+- Verified against the running model with the same question: it now answers that
+  the uploaded picture showed a wide-brimmed black cowboy hat and that the straw
+  hat was the edit that followed.
+  `backend/tests/functional/test_image_lineage_behaviour.py` measures the recall,
+  that a supplied photograph is not called an invention, that the original and
+  the edit stay distinct and in order, and that a plain generated image gains no
+  lineage it does not have.

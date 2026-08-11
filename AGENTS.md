@@ -146,6 +146,17 @@ an evaluation number that would not move. Use the Edit tool for regex, or
 image, a stale container, and an edited file are three different states. Several
 defects here were only visible by asking the live system what it actually had.
 
+**Collapsing a result must not discard what it knew.** Image recall drops an
+original when one of its own revisions also matches, so the same picture is not
+offered twice. Everything the original knew went with it: a photograph the user
+uploaded and then edited survived only as a `generated_image` titled "Edited
+image", and asked about the hat in their own photo the assistant described the
+hat from the *edit* as the one they had uploaded — a confident false statement
+about the user's own belongings, with the true description sitting in the
+database. `collapse_revision_chains` now carries the root and the edits onto the
+survivor, and `_render_image_context` explains what they mean. Anywhere else
+that dedupes, ask what the dropped row was the only record of.
+
 **Do not route a user's intent with a regular expression.** Whether words about
 a picture ask for an edit or a description was decided by matching the first
 word against a verb list. It got "edit this image to give me a straw hat" right
