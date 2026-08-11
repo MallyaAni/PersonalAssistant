@@ -27,6 +27,29 @@ _FORMAT_DETAILS = {
 
 
 # Decode image headers and enforce bounded, single-frame supported media.
+# Return an edit at exactly the dimensions it was given.
+#
+# The model works on a 16-pixel latent grid, so a 206x206 source comes back as
+# 208x208 — near enough to be invisible, and still a different picture from the
+# one handed over. An edit is a change to an image, not a change to its size, so
+# the last step puts it back. Only ever a correction of a few pixels, because the
+# target is already capped at the source's own resolution.
+def _match_source_size(edited: bytes, source: bytes) -> bytes:
+    try:
+        with Image.open(io.BytesIO(source)) as original:
+            wanted = original.size
+        with Image.open(io.BytesIO(edited)) as result:
+            if result.size == wanted:
+                return edited
+            resized = result.convert("RGB").resize(wanted, Image.LANCZOS)
+            buffer = io.BytesIO()
+            resized.save(buffer, format="PNG")
+            return buffer.getvalue()
+    except (UnidentifiedImageError, OSError):
+        # An unreadable source is not worth failing a finished edit for.
+        return edited
+
+
 def validate_image_bytes(
     content: bytes,
     declared_mime_type: str | None,
@@ -333,6 +356,7 @@ class ComfyUIImageEditProvider(ComfyUIImageProvider, ImageEditProvider):
                     )
                     image_response.raise_for_status()
                     content = image_response.content
+                    content = _match_source_size(content, request.source_content)
                     validated = validate_image_bytes(
                         content,
                         image_response.headers.get("content-type", "").split(";")[0],

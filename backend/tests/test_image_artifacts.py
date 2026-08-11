@@ -662,3 +662,30 @@ def test_an_edit_never_asks_for_more_pixels_than_the_source_has():
     assert provider._target_megapixels(png(3000, 3000)) == 2.0
     # Unreadable bytes fall back rather than failing the edit.
     assert provider._target_megapixels(b"not an image") == 2.0
+
+
+def test_an_edit_comes_back_at_exactly_the_size_it_was_given():
+    import io as _io
+
+    from PIL import Image as _Image
+
+    from backend.artifacts.image import _match_source_size
+
+    def png(width: int, height: int) -> bytes:
+        buffer = _io.BytesIO()
+        _Image.new("RGB", (width, height), "white").save(buffer, format="PNG")
+        return buffer.getvalue()
+
+    # The model works on a 16-pixel latent grid, so 206 comes back as 208. An
+    # edit is a change to an image, not to its size.
+    corrected = _match_source_size(png(208, 208), png(206, 206))
+    with _Image.open(_io.BytesIO(corrected)) as image:
+        assert image.size == (206, 206)
+
+    # Already correct: returned untouched rather than re-encoded.
+    same = png(512, 512)
+    assert _match_source_size(same, png(512, 512)) is same
+
+    # An unreadable source must not lose a finished edit.
+    edited = png(64, 64)
+    assert _match_source_size(edited, b"not an image") is edited
