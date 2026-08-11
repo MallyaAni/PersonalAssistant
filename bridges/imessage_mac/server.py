@@ -425,6 +425,14 @@ def read_tapbacks(
     wanted = {guid.split(";")[-1]: guid for guid in guids if guid}
     if not wanted:
         return []
+    # Expand each identifier to every copy of that same message.
+    #
+    # A digest sent to the owner's own address exists twice: the row this Mac
+    # sent, and the row their phone received. A reaction left on the phone
+    # attaches to the received copy, so matching only the identifier handed back
+    # at send time finds nothing — which is exactly what happened, with the
+    # reaction sitting in the database as type 2001 the whole time.
+    wanted.update(_twins(connection, tuple(wanted.items())))
     # Constrained in SQL rather than filtered afterwards. Selecting every
     # reaction in the database and discarding most of them in Python reaches
     # every conversation on this Mac to answer a question about a handful of
@@ -469,6 +477,75 @@ def read_tapbacks(
             "at": _apple_epoch(when),
         }
     return list(latest.values())
+
+
+# Every other copy of the same messages, mapped back to the identifier asked
+# about.
+#
+# Two copies exist whenever someone messages their own address, and they carry
+# different identifiers. They are matched on body rather than on anything
+# structural because that is the only field both rows are guaranteed to share —
+# `handle_id`, direction and timestamps all differ between them.
+#
+# Nothing is returned to the caller from here: the body is read, compared, and
+# discarded inside this function, and only identifiers leave it.
+def _twins(
+    connection: sqlite3.Connection, asked: tuple[tuple[str, str], ...]
+) -> dict[str, str]:
+    bodies: dict[str, str] = {}
+    for suffix, original in asked:
+        try:
+            row = connection.execute(
+                "SELECT text, attributedBody FROM message WHERE guid LIKE ? LIMIT 1",
+                (f"%{suffix}",),
+            ).fetchone()
+        except sqlite3.Error:
+            return {}
+        if row is None:
+            continue
+        body = (row[0] or "").strip()
+        if not body and row[1]:
+            # The body lives in the attributed blob on recent macOS. Only a
+            # distinctive slice is needed to recognise the twin.
+            body = _readable(bytes(row[1]))
+        if body:
+            bodies[body[:120]] = original
+
+    if not bodies:
+        return {}
+    found: dict[str, str] = {}
+    try:
+        rows = connection.execute(
+            """
+            SELECT guid, text, attributedBody FROM message
+            WHERE date >= ?
+            ORDER BY date DESC LIMIT 400
+            """,
+            (_apple_time(datetime.now(timezone.utc) - timedelta(days=2)),),  # noqa: UP017
+        ).fetchall()
+    except sqlite3.Error:
+        return {}
+    for guid, text, blob in rows:
+        body = (text or "").strip() or (_readable(bytes(blob)) if blob else "")
+        original = bodies.get(body[:120]) if body else None
+        if original is not None:
+            found[str(guid).split(";")[-1]] = original
+    return found
+
+
+# The legible text inside an attributed-body blob, which is a binary plist with
+# the message wrapped in framing. Only used to recognise one message as a copy
+# of another, never returned.
+def _readable(blob: bytes) -> str:
+    try:
+        text = blob.decode("utf-8", "ignore")
+    except Exception:
+        return ""
+    # The body sits after the streamtyped header; keeping the printable run is
+    # enough to tell two copies of one message apart from a different message.
+    printable = "".join(ch if ch.isprintable() else "\n" for ch in text)
+    parts = [part.strip() for part in printable.split("\n") if len(part.strip()) > 12]
+    return max(parts, key=len) if parts else ""
 
 
 # Apple stores message times as nanoseconds since 2001-01-01 UTC.
