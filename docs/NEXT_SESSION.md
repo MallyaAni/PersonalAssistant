@@ -661,9 +661,30 @@ check), so a scripted request without an ordinary user agent reports 403 on
 every path and looks exactly like a dead site. That cost a round here. Send a
 normal `User-Agent` or the check measures the bot rule instead of AniOS.
 
-**Still manual: `cloudflared service install`**, which needs an elevated shell.
-Until it runs, the tunnel is a foreground process and the public address does
-not survive a reboot.
+**The tunnel runs as a Scheduled Task, not a Windows service.** The service was
+abandoned after six attempts: it installed, reported `Running`, and registered no
+connector, because Windows recorded its ImagePath as the bare executable with no
+arguments. With nothing to run it started, exited, and retried — and `sc.exe
+config` would not attach arguments, `service install` refused to touch an
+existing registration, and `service uninstall` left the key marked for deletion
+behind a process that would not die.
+
+The task is `DeepMatter tunnel`, running as SYSTEM at startup, restarting itself
+every minute if cloudflared stops:
+
+```powershell
+Get-ScheduledTaskInfo -TaskName "DeepMatter tunnel"   # LastTaskResult, not a status
+```
+
+It beats the service on three counts that mattered here: it starts at boot rather
+than sign-in, it restarts on failure, and it reports a real last-run result. The
+dead `Cloudflared` service can be removed with `sc.exe delete Cloudflared`.
+
+**One connector is not evidence.** Every check for an hour showed a healthy
+connector that was a foreground process started by hand; the service contributed
+nothing the entire time. `cloudflared tunnel info anios` must show the connector
+whose timestamp matches when the task started, and the only conclusive test is
+stopping every other connector and confirming the site still serves.
 
 `deep-matter.com` is registered through Cloudflare, so the zone is already in
 the account and DNS can point at a tunnel without moving nameservers.

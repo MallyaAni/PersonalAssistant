@@ -171,6 +171,22 @@ else needs the hostname: the gateway serves the app and proxies `/api` on one
 origin, so the browser is same-origin, and `validate_browser_origin` accepts
 `https://<host>` from the request rather than from a list.
 
+**A Windows service reporting `Running` proves nothing.** The tunnel service
+installed cleanly, reported `Running`, and registered no connector for an hour,
+because Windows recorded its ImagePath as the bare executable with no arguments:
+it started, had nothing to run, exited, retried. `sc.exe config` would not attach
+arguments, `service install` refused to touch an existing registration, and
+`service uninstall` left the key marked for deletion behind a process that would
+not die. The tunnel now runs as the `DeepMatter tunnel` Scheduled Task as SYSTEM
+at startup, which starts at boot rather than sign-in, restarts on failure, and
+reports a real `LastTaskResult`.
+
+**One connector is not evidence either.** Every check during that hour showed a
+healthy connector — it was a foreground process someone had started by hand.
+`cloudflared tunnel info anios` must show the connector whose timestamp matches
+when the task started, and the only conclusive test is stopping every other
+connector and confirming the site still serves.
+
 **Cloudflare answers a non-browser client with error 1010.** The browser
 integrity check refuses a plain scripted request on every path, which reads
 exactly like a dead site — 403 on `/`, `/healthz`, everything. Send an ordinary
