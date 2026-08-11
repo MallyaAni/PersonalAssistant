@@ -299,16 +299,42 @@ def _messages_db() -> Path | None:
 # Opened through an immutable URI so this cannot write, cannot create the file,
 # and cannot take a lock that would interfere with Messages itself.
 def _open_messages(config: BridgeConfig) -> sqlite3.Connection | None:
+    connection, _ = _open_messages_reporting(config)
+    return connection
+
+
+# Open the database read-only, and say why if it will not open.
+#
+# `mode=ro` first, and this ordering is load-bearing rather than a preference:
+# `immutable=1` tells SQLite the file cannot change, which makes it skip the
+# write-ahead log entirely. Messages keeps recent messages there before
+# checkpointing them, so the message this bridge sent a second ago — the whole
+# reason for looking — is usually in the WAL and invisible under `immutable`.
+#
+# `immutable` stays as a fallback because a read-only WAL connection needs the
+# `-shm` file to exist and be readable, which is true while Messages is running
+# and not guaranteed when it is closed. Stale data beats no data there, since
+# the fallback is only reached when the accurate mode cannot open at all.
+def _open_messages_reporting(
+    config: BridgeConfig,
+) -> tuple[sqlite3.Connection | None, str]:
     if config.messages_db is None:
-        return None
-    try:
-        return sqlite3.connect(
-            f"file:{config.messages_db}?immutable=1", uri=True, timeout=2.0
-        )
-    except sqlite3.Error:
-        # Almost always Full Disk Access not granted. Not fatal: sending is
-        # unaffected and this only costs the identifier.
-        return None
+        return None, "reading is switched off"
+    attempts = (
+        ("mode=ro", f"file:{config.messages_db}?mode=ro"),
+        ("immutable", f"file:{config.messages_db}?immutable=1"),
+    )
+    reasons = []
+    for label, uri in attempts:
+        try:
+            connection = sqlite3.connect(uri, uri=True, timeout=2.0)
+            # Connecting is lazy, so a permission problem surfaces on the first
+            # read rather than here. Ask something trivial to force it.
+            connection.execute("SELECT count(*) FROM sqlite_master").fetchone()
+            return connection, label
+        except sqlite3.Error as error:
+            reasons.append(f"{label}: {error}")
+    return None, "; ".join(reasons)
 
 
 # The identifier of the message just sent to this recipient, if it can be read.
@@ -470,12 +496,16 @@ def diagnose(config: BridgeConfig) -> dict[str, object]:
             "why": "IMESSAGE_BRIDGE_READ_REACTIONS is off, or the database path "
             "does not exist.",
         }
-    connection = _open_messages(config)
+    connection, how = _open_messages_reporting(config)
     if connection is None:
         return {
             "readable": False,
-            "why": "The database exists but could not be opened. This is almost "
-            "always Full Disk Access not granted to whatever runs this bridge.",
+            # SQLite's own words. "unable to open database file" is Full Disk
+            # Access not granted to whatever runs this bridge — and the grant is
+            # per executable, so granting it to Terminal does nothing for a
+            # LaunchAgent running a different Python.
+            "why": how,
+            "path": str(config.messages_db),
         }
     since = _apple_time(datetime.now(timezone.utc) - timedelta(days=1))  # noqa: UP017
     try:
@@ -499,6 +529,9 @@ def diagnose(config: BridgeConfig) -> dict[str, object]:
         connection.close()
     return {
         "readable": True,
+        # Which mode opened it. "immutable" means the write-ahead log is not
+        # being read, so a message sent moments ago may not be visible yet.
+        "opened_with": how,
         "sent_last_day": int(sent or 0),
         # The reason a body match can fail on a modern Mac: the text lives in
         # `attributedBody` instead, which the lookup now also reads.
