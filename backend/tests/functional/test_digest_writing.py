@@ -108,9 +108,26 @@ async def test_every_rendered_time_survives_verbatim(llm):
     # The one thing this prompt must not do. Each of these was worked out in the
     # reader's zone, including a date-only find that must not acquire a clock,
     # and a model that rewords "Sun Nov 15" into "this Sunday" has guessed.
+    #
+    # Dropping it is the same failure and easier to miss: a real digest went out
+    # reading "a tribute band plays Beach Boys songs outdoors at the farm", with
+    # no date anywhere in it.
     for find in FINDS:
         if find.when:
             assert find.when in joined, f"{find.when!r} missing from: {joined}"
+
+
+async def test_every_line_names_the_find_it_is_about(llm):
+    result = await DigestWriter(llm).write(FINDS)
+
+    by_index = {find.index: find for find in FINDS}
+    for line in result.lines:
+        name = by_index[line.index].name
+        # A line that describes without naming is unusable: there is nothing in
+        # it to look up, ask about, or turn up to. The name is given, so this is
+        # about reproducing it rather than inventing anything.
+        first = name.split()[0].casefold()
+        assert first in line.text.casefold(), f"{name!r} not named in: {line.text}"
 
 
 async def test_no_line_carries_an_address(llm):

@@ -99,6 +99,12 @@ _DIRECTORY_TITLE = re.compile(
     # the words, so requiring "events & tickets" adjacent missed them.
     r"|\bcalendar\s*(and|&|\+)\s*tickets\b"
     r"|\b(complete\s+)?guide\s+to\b|\bultimate\s+guide\b"
+    # "Virginia Festival Guide" reached a delivered digest and was described as
+    # "a roundup of festivals across Virginia" — a guide by another word order.
+    # The rules above are anchored to "guide to", which catches a guide that
+    # announces itself first and misses every one that trails, which is the more
+    # common shape: "<place> <category> Guide", "Restaurant Guide", "City Guide".
+    r"|\b(guide|roundup|round-?up|directory)\s*$"
     # All three of these reached a delivered digest, so they are shapes taken
     # from real output rather than guessed at.
     #

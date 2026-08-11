@@ -29,15 +29,14 @@ from backend.discovery.relevance import RankedCandidate
 
 # How many finds one digest sends.
 #
-# Three, because a find is now its own message and therefore its own
-# notification. At five this stops reading as a digest and starts reading as
-# someone texting you repeatedly, which is the fastest way to get muted — and a
-# muted thread costs every future digest, not just the noisy one.
+# Five. The whole week's shortlist goes to the phone, because the phone is where
+# this is read: a find held back to keep the thread quiet is a find nobody sees,
+# and there is no second place the reader was ever going to look for it.
 #
-# It binds in practice, unlike the eight it replaced. Across thirteen real runs
-# the finds reaching a digest ran one to five, averaging three, so this trims the
-# occasional busy week rather than sitting unused above the supply.
-MAX_EVENTS_IN_MESSAGE = 3
+# It sits at the top of what sweeps actually produce — across thirteen real runs
+# the finds reaching a digest ran one to five — so in practice everything that
+# qualifies is sent, and the bound only guards against an unusually busy week.
+MAX_EVENTS_IN_MESSAGE = 5
 MAX_TITLE_CHARS = 90
 MAX_PLACE_CHARS = 60
 MAX_SUMMARY_CHARS = 170
@@ -103,7 +102,7 @@ async def write_bubbles(
             )
             for item in kept
         ]
-        return _with_remainder(tuple(bubbles), len(live) - len(kept))
+        return tuple(bubbles)
 
     bubbles = [Bubble(text=written.greeting)]
     for line in written.lines:
@@ -119,24 +118,7 @@ async def write_bubbles(
                 label=item.event.title,
             )
         )
-    return _with_remainder(tuple(bubbles), len(live) - len(written.lines))
-
-
-# Say what was held back, on the last bubble rather than in one of its own.
-#
-# The cap exists to spend fewer notifications, so announcing it with an extra
-# notification would undo the thing it is for. Silence is worse though: a find
-# that qualified and was never mentioned is invisible, and invisible is how a
-# suppression goes unnoticed for months.
-def _with_remainder(bubbles: tuple[Bubble, ...], remaining: int) -> tuple[Bubble, ...]:
-    if remaining <= 0 or not bubbles:
-        return bubbles
-    last = bubbles[-1]
-    plural = "" if remaining == 1 else "s"
-    tail = f"{last.text}\n\n(+{remaining} more find{plural} in the app)"
-    return bubbles[:-1] + (
-        Bubble(text=tail, item_digest=last.item_digest, label=last.label),
-    )
+    return tuple(bubbles)
 
 
 # One find as its own message when there is no model to word it.

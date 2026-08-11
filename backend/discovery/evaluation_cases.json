@@ -402,6 +402,23 @@
       "kind": "listing",
       "interest": null,
       "place_matches": true
+    },
+    {
+      "title": "Virginia Festival Guide",
+      "url": "https://example.org/virginia-festival-guide",
+      "summary": "A roundup of festivals happening across Virginia this season.",
+      "locality": "Alexandria, Virginia",
+      "interests": [
+        "live music",
+        "line dancing",
+        "hiking",
+        "wine tasting",
+        "concerts"
+      ],
+      "kind": "listing",
+      "interest": null,
+      "place_matches": true,
+      "note": "Reached a delivered digest on 2026-08-11. A trailing 'Guide' is a roundup; the guide rules were anchored to 'guide to' and missed it."
     }
   ]
 }

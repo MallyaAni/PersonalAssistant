@@ -64,7 +64,7 @@ async def test_a_bubble_carries_the_record_s_own_link():
 
 
 @pytest.mark.asyncio
-async def test_the_cap_holds_and_says_what_it_held_back():
+async def test_the_whole_shortlist_reaches_the_phone():
     busy = SELECTED + (
         _candidate("Third find", datetime(2026, 11, 16, 20, 0, tzinfo=UTC)),
         _candidate("Fourth find", datetime(2026, 11, 17, 20, 0, tzinfo=UTC)),
@@ -73,21 +73,26 @@ async def test_the_cap_holds_and_says_what_it_held_back():
 
     bubbles = await write_bubbles(busy, writer=None, now=NOW)
 
-    # Three notifications, not five. Each find is its own message now, so the
-    # count is the number of times a phone buzzes.
-    assert len(bubbles) == 3
-    # And the two held back are said, on the last bubble rather than in one of
-    # their own — an extra notification would undo what the cap is for.
-    assert "+2 more find" in bubbles[-1].text
-    # Still a real find underneath, so a tapback on it means that find.
-    assert bubbles[-1].item_digest
+    # Five, because the phone is where this is read. A find held back to keep
+    # the thread quiet is a find nobody sees.
+    assert len(bubbles) == 5
+    assert all(bubble.item_digest for bubble in bubbles)
 
 
 @pytest.mark.asyncio
-async def test_nothing_is_held_back_when_everything_fits():
-    bubbles = await write_bubbles(SELECTED, writer=None, now=NOW)
+async def test_no_bubble_points_the_reader_somewhere_else():
+    busy = SELECTED + tuple(
+        _candidate(f"Find {n}", datetime(2026, 11, 16 + n, 20, 0, tzinfo=UTC))
+        for n in range(4)
+    )
 
-    assert all("more find" not in bubble.text for bubble in bubbles)
+    bubbles = await write_bubbles(busy, writer=None, now=NOW)
+
+    # A digest that ends by referring somewhere else is a digest that did not
+    # finish its job. The message is the product, not a notification about one.
+    for bubble in bubbles:
+        assert "in the app" not in bubble.text
+        assert "more find" not in bubble.text
 
 
 @pytest.mark.asyncio
