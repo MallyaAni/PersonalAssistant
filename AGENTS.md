@@ -171,6 +171,13 @@ else needs the hostname: the gateway serves the app and proxies `/api` on one
 origin, so the browser is same-origin, and `validate_browser_origin` accepts
 `https://<host>` from the request rather than from a list.
 
+**Cloudflare answers a non-browser client with error 1010.** The browser
+integrity check refuses a plain scripted request on every path, which reads
+exactly like a dead site — 403 on `/`, `/healthz`, everything. Send an ordinary
+`User-Agent` or the check measures the bot rule rather than AniOS. The test that
+proves the tunnel reaches the *application* is an API route returning 401, not a
+static page returning 200.
+
 **Never verify public ingress from this desktop.** Some ingress resolves back to
 the local machine, so `curl` from the host returned 200 in 14 ms while the
 public path was dead — and that was reported as verified. Run the check from

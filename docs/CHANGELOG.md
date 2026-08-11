@@ -2602,3 +2602,32 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   synchronized" while 19 sources existed. All 19 are now published, and the
   count is read from the sources on disk and folded into the page fingerprint,
   so the same omission fails the check instead of printing a reassuring number.
+
+## 2026-08-11 — AniOS is served at deep-matter.com
+
+- The public address is a named Cloudflare tunnel on a domain registered in the
+  same account, replacing a quick tunnel whose hostname was random on every
+  start and died with the machine. `scripts/start-tunnel.sh` runs the named
+  tunnel when `ANIOS_TUNNEL_NAME` and `ANIOS_PUBLIC_HOSTNAME` are set and falls
+  back to a quick tunnel otherwise, so a machine without the one-time setup is
+  unaffected. A named tunnel rewrites no downstream setting, because nothing
+  about the address changes.
+- `AUTH_COOKIE_SECURE` moved to true in the same step, which is the only safe
+  order: true over plain HTTP leaves no working login anywhere, because the
+  browser refuses the cookie and there is no HTTPS origin to set it on. Proved
+  it reached the container with `printenv` rather than trusting `.env`.
+- Nothing in the application needed the hostname. The gateway serves the app and
+  proxies `/api` on one origin, so the browser is same-origin, and
+  `validate_browser_origin` already derives `https://<host>` from the request
+  rather than from a configured list.
+- Verified from inside a container, never from the desktop, because a host check
+  can resolve back to the local stack and report a healthy site that is publicly
+  dead. DNS resolves to two Cloudflare edge addresses, both complete a TLS
+  handshake, `/healthz` returns 200 `ok`, `/` serves the compiled application,
+  and `/api/v1/agents/{user}` returns 401 from FastAPI — which is what proves
+  the whole path rather than just the edge.
+- Cloudflare's browser-integrity check answers a non-browser client with error
+  1010, so a plain scripted request looks like a dead site. Any check from now
+  on needs an ordinary user agent, or it measures the bot rule instead of AniOS.
+- Still manual: installing the tunnel as a Windows service, which needs an
+  elevated shell. Until then the public address does not survive a reboot.

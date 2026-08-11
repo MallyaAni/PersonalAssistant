@@ -644,7 +644,26 @@ value was pasted into a chat transcript relaying setup instructions between
 the two machines. Treat any token that has appeared in a conversation as
 burned; regenerate rather than reuse.
 
-## Public access is moving to deep-matter.com
+## Public access is deep-matter.com — VERIFIED
+
+Live as of 2026-08-11. Tunnel `anios`
+(`2a9093ad-4b7a-4fb2-8166-6f8de1eef5a4`), config in the operator's
+`.cloudflared/config.yml`, ingress validating `OK`, DNS already routed.
+
+Verified from inside a container rather than the desktop: DNS resolves to two
+Cloudflare edge addresses, both complete a TLS handshake, `/healthz` returns 200
+`ok`, `/` serves the compiled application, and `/api/v1/agents/{user}` returns
+401 from FastAPI — the last of which is what proves the tunnel reaches the app
+rather than just the edge.
+
+**Cloudflare answers a non-browser client with error 1010** (browser integrity
+check), so a scripted request without an ordinary user agent reports 403 on
+every path and looks exactly like a dead site. That cost a round here. Send a
+normal `User-Agent` or the check measures the bot rule instead of AniOS.
+
+**Still manual: `cloudflared service install`**, which needs an elevated shell.
+Until it runs, the tunnel is a foreground process and the public address does
+not survive a reboot.
 
 `deep-matter.com` is registered through Cloudflare, so the zone is already in
 the account and DNS can point at a tunnel without moving nameservers.
