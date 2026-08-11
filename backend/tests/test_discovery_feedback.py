@@ -79,6 +79,52 @@ async def test_the_whole_shortlist_reaches_the_phone():
     assert all(bubble.item_digest for bubble in bubbles)
 
 
+class _PartialWriter:
+    """A model that answers about only some of the finds it was given."""
+
+    def __init__(self, indices: tuple[int, ...]) -> None:
+        self.indices = indices
+
+    async def write(self, finds):
+        from backend.agents.scout.digesting import WrittenDigest, WrittenLine
+
+        return WrittenDigest(
+            greeting="A good week for it.",
+            lines=tuple(
+                WrittenLine(index=i, text=f"Line about find {i}, worth your time.")
+                for i in self.indices
+            ),
+        )
+
+
+@pytest.mark.asyncio
+async def test_a_find_the_model_skipped_is_still_sent():
+    busy = SELECTED + (
+        _candidate("Third find", datetime(2026, 11, 16, 20, 0, tzinfo=UTC)),
+        _candidate("Fourth find", datetime(2026, 11, 17, 20, 0, tzinfo=UTC)),
+        _candidate("Fifth find", datetime(2026, 11, 18, 20, 0, tzinfo=UTC)),
+    )
+
+    bubbles = await write_bubbles(busy, writer=_PartialWriter((0, 2)), now=NOW)
+
+    # Asked for five on a real digest, the model wrote three, and two finds
+    # simply never arrived — a shorter digest with nothing saying it was
+    # shorter. Which finds are sent is not the model's decision: it is given the
+    # ones that qualified, and its job is wording, not selection.
+    assert len(bubbles) == 6, bubbles  # greeting plus one per find
+    assert [bubble.label for bubble in bubbles[1:]] == [
+        "First find",
+        "Second find",
+        "Third find",
+        "Fourth find",
+        "Fifth find",
+    ]
+    # The ones it did write keep its words; the rest fall back to the assembled
+    # line rather than being dropped.
+    assert "Line about find 0" in bubbles[1].text
+    assert "Second find" in bubbles[2].text
+
+
 @pytest.mark.asyncio
 async def test_no_bubble_points_the_reader_somewhere_else():
     busy = SELECTED + tuple(

@@ -104,12 +104,20 @@ async def write_bubbles(
         ]
         return tuple(bubbles)
 
+    # Written lines by find, so a find the model skipped can be noticed rather
+    # than quietly lost. Asked for five, it returned three on a real digest and
+    # "Sounds of Summer" and "Seven Wonders at Tarara Winery" simply never
+    # arrived — a shorter digest with nothing anywhere saying it was shorter.
+    written_by_index = {line.index: line.text for line in written.lines}
+
     bubbles = [Bubble(text=written.greeting)]
-    for line in written.lines:
-        item = kept[line.index]
-        text = line.text
+    for position, item in enumerate(kept):
+        # The model's words where it wrote them, the assembled line where it did
+        # not. Which finds are sent is not the model's decision to make: it was
+        # given the ones that qualified, and its job is wording, not selection.
+        text = written_by_index.get(position) or _assembled_bubble(item, zone)
         # The source's own link, from the typed record, never from the model.
-        if item.event.url:
+        if item.event.url and item.event.url not in text:
             text = f"{text}\n{item.event.url}"
         bubbles.append(
             Bubble(
