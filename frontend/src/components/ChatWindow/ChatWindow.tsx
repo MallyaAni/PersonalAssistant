@@ -624,7 +624,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             <div className="anios-orb mb-7 flex h-16 w-16 items-center justify-center rounded-[22px] text-white md:h-[72px] md:w-[72px]">
               <Sparkles size={28} strokeWidth={1.7} />
             </div>
-            <p className="mb-2 text-sm font-medium text-[#0071e3]">Private, local assistance</p>
+            <p className="mb-2 text-sm font-medium text-[#0071e3]">Private intelligence</p>
             <h2 className="max-w-2xl text-balance text-[34px] font-semibold leading-[1.08] tracking-[-0.045em] text-[#1d1d1f] md:text-[52px]">
               What can I help you find?
             </h2>
