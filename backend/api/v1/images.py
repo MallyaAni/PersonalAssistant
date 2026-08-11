@@ -18,11 +18,17 @@ from backend.core.auth import (
 )
 from backend.core.dependencies import (
     ImageArtifactDependency,
+    ImageIntentDependency,
     ImageRefinementDependency,
     ImageStyleDependency,
     TracerDependency,
 )
-from backend.models.image import ImageGenerationBody, ImageRefineBody
+from backend.models.image import (
+    ImageGenerationBody,
+    ImageIntentBody,
+    ImageRefineBody,
+)
+from backend.services.image_intent import ASK, EDIT
 from backend.services.image_refinement_service import RefinementError
 
 logger = logging.getLogger(__name__)
@@ -114,6 +120,22 @@ async def generate_image(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Unable to generate the image.",
         ) from exc
+
+
+# Decide whether words typed while a picture is in view ask for it to change.
+#
+# Declared before the routes that take an artifact id so a literal "intent" can
+# never be matched as one. The caller acts on the answer; this only reads.
+@router.post("/intent", status_code=status.HTTP_200_OK)
+async def classify_image_intent(
+    body: ImageIntentBody,
+    service: ImageIntentDependency,
+    identity: IdentityDependency,
+) -> dict[str, Any]:
+    authorize_user(body.user_id, identity)
+    authorize_scope(identity, SCOPE_VISION)
+    edits = await service.edits_the_image(body.text)
+    return {"intent": EDIT if edits else ASK}
 
 
 # Edit one owned generated or uploaded image from its source pixels plus the

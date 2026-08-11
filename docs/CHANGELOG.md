@@ -2662,3 +2662,30 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
 - The digest also stopped silently dropping finds: asked for five lines the model
   returned three, and two finds never arrived. Lines are matched to finds by
   index now, and a find the model skipped is sent with its assembled line.
+
+## 2026-08-11 — An edit request is recognized by a model, not a verb list
+
+- Attaching a picture and asking for an edit in the same message now edits it.
+  Whether words about an image ask for a change or an answer is decided by the
+  main conversation model, answering into a two-value enum sent as a decoding
+  grammar (`backend/services/image_intent.py`), and one decision now serves the
+  composer, the upload path, and the image card's follow-up box.
+- The rule it replaced matched the first word against a list of verbs. Measured
+  against the phrasings people actually used, it routed "edit this image to give
+  me a straw hat" to the editor and "give me a straw hat", "put a hat on me",
+  "draw a hat on this" and "straw hat please" to a description. Its one branch
+  for polite phrasing could never fire: "can you edit this..." matched the edit
+  rule and was then rejected for starting with "can".
+- Each miss did more than fail. The instruction was put to the vision model as a
+  question, it answered that it cannot edit images, and that refusal was stored
+  and embedded as the description of the picture just uploaded. The edit request
+  no longer reaches the vision model at all — verified against the running
+  models, where the same upload and instruction now return `intent: edit` and a
+  real description of the picture.
+- `backend/tests/functional/test_image_intent_behaviour.py` measures the
+  classification against the live model: 15 edit phrasings, 10 questions, a
+  minimal pair that differs only by a question mark, and an injected instruction
+  that is classified rather than obeyed. All pass.
+- The image card's button still guesses locally whether it will say "Refine" or
+  "Ask", because that label updates on every keystroke; the send that follows
+  asks the server, and the in-flight label is corrected from the answer.

@@ -64,6 +64,23 @@ async function attachComposerFile(
   await (await chooserPromise).setFiles(file)
 }
 
+// Stand in for the server's image-intent classifier, which is a model call.
+//
+// Whether the model reads English correctly is measured against the running
+// model in `backend/tests/functional/test_image_intent_behaviour.py`. What these
+// tests measure is the routing that follows the answer, so the answer is fixed:
+// the listed texts are edits and everything else is a question.
+async function routeImageIntent(page: Page, edits: string[]) {
+  await page.route('http://localhost:8000/api/v1/images/intent', async route => {
+    const { text } = route.request().postDataJSON() as { text: string }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ intent: edits.includes(text) ? 'edit' : 'ask' }),
+    })
+  })
+}
+
 function latestAssistantAnswer(page: Page) {
   return page.getByLabel('DeepMatter answer').last()
 }
@@ -2954,6 +2971,7 @@ test('routes an image followup question to chat without regenerating', async ({ 
   let generationRequests = 0
   let chatBody: Record<string, unknown> = {}
 
+  await routeImageIntent(page, [])
   await page.route('http://localhost:8000/api/v1/images/generate', async route => {
     generationRequests += 1
     const payload = route.request().postDataJSON()
@@ -3012,6 +3030,7 @@ test('asks a followup question about a generated image and threads the answer', 
   let conversationId = ''
   let artifact: ReturnType<typeof imageArtifactRecord> | null = null
 
+  await routeImageIntent(page, [])
   await page.route('http://localhost:8000/api/v1/images/generate', async route => {
     const payload = route.request().postDataJSON()
     conversationId = String(payload.conversation_id)
@@ -3095,6 +3114,7 @@ test('routes can-you image edits to refinement instead of vision Q&A', async ({ 
   let refineBody: Record<string, unknown> = {}
   let askRequests = 0
 
+  await routeImageIntent(page, [feedback])
   await page.route('http://localhost:8000/api/v1/images/generate', async route => {
     const payload = route.request().postDataJSON()
     conversationId = String(payload.conversation_id)
@@ -3185,6 +3205,7 @@ test('uploads, analyzes, and source-refines an image with visible results', asyn
   let releaseAnalysis = () => {}
   const analysisGate = new Promise<void>(resolve => { releaseAnalysis = resolve })
 
+  await routeImageIntent(page, [feedback])
   await page.route('http://localhost:8000/api/v1/vision/analyze', async route => {
     multipartBody = route.request().postDataBuffer()?.toString('utf8') || ''
     const conversationMatch = multipartBody.match(/name="conversation_id"\r\n\r\n([^\r]+)/)
@@ -3267,6 +3288,94 @@ test('uploads, analyzes, and source-refines an image with visible results', asyn
     conversation_id: expect.any(String),
     feedback,
   })
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// Verify attaching a picture and asking for an edit in one message edits it.
+//
+// The obvious way to ask, and it described the picture instead: an attachment
+// routed to analysis whatever the words said, and the edit request was put to
+// the vision model, which answered that it cannot edit images. The server now
+// reads the words and says which it was, on the same call that stores the
+// upload — so the edit can run against an artifact that exists.
+test('edits an uploaded image when the same message asks for an edit', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const artifactId = '63636363-6363-4636-8636-636363636363'
+  const refinedId = '64646464-6464-4646-8646-646464646464'
+  const instruction = 'give me a straw hat'
+  const analysis = 'A person standing outdoors on a bright day.'
+  let analyzedPrompt = ''
+  let refinementBody: Record<string, unknown> = {}
+
+  await page.route('http://localhost:8000/api/v1/vision/analyze', async route => {
+    const body = route.request().postDataBuffer()?.toString('utf8') || ''
+    analyzedPrompt = body.match(/name="prompt"\r\n\r\n([^\r]+)/)?.[1] || ''
+    const conversationId = body.match(/name="conversation_id"\r\n\r\n([^\r]+)/)?.[1] || ''
+    await route.fulfill({
+      status: 201,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        artifact: imageArtifactRecord('uploaded_image', artifactId, conversationId, {
+          analysis_status: 'ready',
+          analysis,
+          analysis_model: 'google/gemma-4-12b',
+        }),
+        analysis,
+        model: 'google/gemma-4-12b',
+        // The server's reading of the words that came with the upload.
+        intent: 'edit',
+      }),
+    })
+  })
+  for (const id of [artifactId, refinedId]) {
+    await page.route(
+      `http://localhost:8000/api/v1/artifacts/ani.mallya/${id}/content`,
+      route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
+    )
+  }
+  await page.route(
+    `http://localhost:8000/api/v1/images/${artifactId}/refine`,
+    async route => {
+      refinementBody = route.request().postDataJSON() as Record<string, unknown>
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify(imageArtifactRecord(
+          'generated_image',
+          refinedId,
+          String(refinementBody.conversation_id),
+          {
+            parent_artifact_id: artifactId,
+            refinement_feedback: instruction,
+            edit_mode: 'source_conditioned',
+          },
+        )),
+      })
+    },
+  )
+
+  await page.goto('/')
+  await attachComposerFile(page, {
+    name: 'me.png',
+    mimeType: 'image/png',
+    buffer: TEST_PNG,
+  })
+  const textarea = page.getByLabel('Message DeepMatter')
+  await textarea.fill(instruction)
+  await page.getByRole('button', { name: 'Send message' }).click()
+
+  // The edited picture arrives without anyone touching the card's follow-up box.
+  await expect(page.getByLabel('Image: Generated image')).toHaveCount(1)
+  await expect(page.getByLabel('Image: Generated image').getByAltText(
+    'Generated visual result',
+  )).toBeVisible()
+  expect(refinementBody).toMatchObject({ user_id: 'ani.mallya', feedback: instruction })
+  // Forwarded verbatim: the server classifies these words, and substitutes a
+  // neutral question before the vision model sees them. Doing that swap here
+  // instead would leave the server classifying text nobody typed.
+  expect(analyzedPrompt).toBe(instruction)
+  await expect(textarea).toBeEnabled()
+  await expect(textarea).toHaveValue('')
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 

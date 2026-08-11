@@ -191,27 +191,26 @@ const Composer: React.FC<ComposerProps> = ({
         // instruction was put to the vision model as a question, which answered
         // that it cannot edit images — and that refusal was then indexed as the
         // picture's description.
-        const wantsEdit = shouldEditImage(prompt)
-        const question = wantsEdit || !prompt
-          ? 'Describe this image, including any text you can read.'
-          : prompt
+        //
+        // The server reads the words and says which it was, so the upload and
+        // the decision about it are one round trip.
         onSendMessage('user', prompt || `📎 ${(file as File).name}`)
         onThinkingChange(false)
         onVisualStarted('analyze')
         setVisualInFlight(true)
         const controller = new AbortController()
         requestController.current = controller
-        const artifact = await analyzeImage(
+        const { artifact, editRequested } = await analyzeImage(
           userId,
           conversationId,
-          question,
+          prompt || 'Describe this image, including any text you can read.',
           file as File,
           controller.signal,
         )
         onVisualReady(artifact)
         // The upload has to be stored before it can be edited, so the edit runs
         // against the artifact the analysis just created.
-        if (wantsEdit) {
+        if (editRequested) {
           const revision = await refineImage(
             userId,
             artifact.id,
@@ -232,7 +231,7 @@ const Composer: React.FC<ComposerProps> = ({
       // indistinguishable from the feature being broken. Only explicitly
       // edit-shaped text is taken, so ordinary conversation that happens to
       // follow an image still reaches the model.
-      if (editableImage && shouldEditImage(prompt)) {
+      if (editableImage && await shouldEditImage(userId, prompt)) {
         onThinkingChange(false)
         onVisualStarted('generate')
         setVisualInFlight(true)

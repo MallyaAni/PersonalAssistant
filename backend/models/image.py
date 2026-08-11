@@ -62,6 +62,24 @@ class ImageQuestionBody(BaseModel):
         return value
 
 
+class ImageIntentBody(BaseModel):
+    """Words typed while a picture is in view, awaiting a routing decision."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    user_id: str = Field(min_length=1, max_length=50)
+    text: str = Field(min_length=1, max_length=2_000)
+
+    # Trim identifiers and text while refusing whitespace-only values.
+    @field_validator("user_id", "text")
+    @classmethod
+    def reject_blank_text(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("must not be blank")
+        return value
+
+
 class ImageRefineBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

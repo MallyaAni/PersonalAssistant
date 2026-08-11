@@ -7,6 +7,12 @@ from backend.core.interfaces import (
     VisionProvider,
 )
 from backend.services.image_artifact_service import ImageArtifactService
+from backend.services.image_intent import (
+    ASK,
+    DESCRIBE_PROMPT,
+    EDIT,
+    ImageIntentClassifier,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +67,7 @@ class VisionAnalysisService:
         thread_context_turns: int = 8,
         thread_max_stored: int = 40,
         memory: SemanticMemoryWriter | None = None,
+        intent: ImageIntentClassifier | None = None,
     ) -> None:
         self.images = images
         self.repository = repository
@@ -68,6 +75,7 @@ class VisionAnalysisService:
         self.thread_context_turns = thread_context_turns
         self.thread_max_stored = thread_max_stored
         self.memory = memory
+        self.intent = intent
 
     # Index one image's description so images become semantically retrievable.
     # Only `content` reaches the assistant prompt, so it must name its own
@@ -116,6 +124,14 @@ class VisionAnalysisService:
         content: bytes,
         declared_mime_type: str | None,
     ) -> dict[str, Any]:
+        # Asked before the upload is put to the vision model, because the answer
+        # decides what to put to it. An edit request answered as a question is
+        # how "I cannot edit images" became a stored image description.
+        wants_edit = (
+            await self.intent.edits_the_image(prompt)
+            if self.intent is not None
+            else False
+        )
         artifact, validated_content = await self.images.store_upload(
             user_id,
             conversation_id,
@@ -126,7 +142,7 @@ class VisionAnalysisService:
         artifact_id = str(artifact["id"])
         try:
             analysis = await self.provider.analyze(
-                prompt,
+                DESCRIBE_PROMPT if wants_edit else prompt,
                 validated_content,
                 str(artifact["mime_type"]),
             )
@@ -152,6 +168,10 @@ class VisionAnalysisService:
             "artifact": updated,
             "analysis": analysis.content,
             "model": analysis.model,
+            # The caller edits the stored upload when this says so. It is
+            # reported rather than acted on here because the edit needs the
+            # artifact this call is still in the middle of creating.
+            "intent": EDIT if wants_edit else ASK,
         }
 
     # Answer one followup question about an owned image and persist the thread.

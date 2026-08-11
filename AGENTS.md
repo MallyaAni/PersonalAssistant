@@ -146,6 +146,19 @@ an evaluation number that would not move. Use the Edit tool for regex, or
 image, a stale container, and an edited file are three different states. Several
 defects here were only visible by asking the live system what it actually had.
 
+**Do not route a user's intent with a regular expression.** Whether words about
+a picture ask for an edit or a description was decided by matching the first
+word against a verb list. It got "edit this image to give me a straw hat" right
+and "give me a straw hat", "put a hat on me" and "draw a hat on this" all wrong,
+and its one branch for polite phrasing was unreachable — "can you edit this..."
+matched the edit rule and was then rejected for starting with "can". Every miss
+looked like the edit feature was broken, and because the misrouted instruction
+was then put to the vision model, its "I cannot edit images" was stored as that
+picture's description. The decision belongs to a model answering into a
+two-value enum: `backend/services/image_intent.py`, measured in
+`backend/tests/functional/test_image_intent_behaviour.py`. A test that mocks the
+classifier proves routing, never classification.
+
 **Public access is a Cloudflare tunnel, and which kind decides how much else
 moves.** Either kind is started with `bash scripts/start-tunnel.sh`, and if the
 public URL stopped working, check the tunnel is still running before suspecting

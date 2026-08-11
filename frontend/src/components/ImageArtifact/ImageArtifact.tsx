@@ -11,7 +11,7 @@ import {
   type ImageAnalysisTurn,
   type ImageArtifact as ImageArtifactRecord,
 } from '../../services/api'
-import { looksLikeQuestion, looksLikeRefinementRequest } from '../../services/imageIntent'
+import { looksLikeEditHint, shouldEditImage } from '../../services/imageIntent'
 
 interface ImageArtifactProps {
   artifact: ImageArtifactRecord;
@@ -39,6 +39,8 @@ const ImageArtifact = ({ artifact, onDeleted, onRetry, onRefined }: ImageArtifac
   const [question, setQuestion] = useState('')
   const [isAsking, setIsAsking] = useState(false)
   const [askError, setAskError] = useState('')
+  // The server's answer for the send in flight; null while nothing is in flight.
+  const [refining, setRefining] = useState<boolean | null>(null)
 
   // Resynchronize the visible thread whenever a different image is shown.
   useEffect(() => {
@@ -94,19 +96,20 @@ const ImageArtifact = ({ artifact, onDeleted, onRetry, onRefined }: ImageArtifac
     }
   }
 
-  // Any owned image with edit-shaped feedback uses the source-conditioned editor.
-  const willRefine = question.trim() !== ''
-    && (looksLikeRefinementRequest(question) || !looksLikeQuestion(question))
+  // What the send button says while the box is being typed into. A guess, and
+  // corrected from the server's answer once a send is actually in flight.
+  const willRefine = refining ?? looksLikeEditHint(question)
 
   // Route a follow-up: refine (regenerate) on feedback, or ask on a question.
   const submitFollowup = async (event: FormEvent) => {
     event.preventDefault()
     const trimmed = question.trim()
     if (!trimmed || isAsking) return
-    const refine = looksLikeRefinementRequest(trimmed) || !looksLikeQuestion(trimmed)
     setIsAsking(true)
     setAskError('')
     try {
+      const refine = await shouldEditImage(artifact.user_id, trimmed)
+      setRefining(refine)
       if (refine) {
         const revision = await refineImage(
           artifact.user_id,
@@ -125,6 +128,7 @@ const ImageArtifact = ({ artifact, onDeleted, onRetry, onRefined }: ImageArtifac
       setAskError(error instanceof Error ? error.message : 'Unable to apply this follow-up.')
     } finally {
       setIsAsking(false)
+      setRefining(null)
     }
   }
 

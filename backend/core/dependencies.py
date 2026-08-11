@@ -90,6 +90,7 @@ from backend.services.artifact_repository import SQLAlchemyArtifactRepository
 from backend.services.conversation_service import ConversationService
 from backend.services.diagram_artifact_service import DiagramArtifactService
 from backend.services.image_artifact_service import ImageArtifactService
+from backend.services.image_intent import ImageIntentClassifier
 from backend.services.image_refinement_service import ImageRefinementService
 from backend.services.image_style_service import ImageStyleService
 from backend.services.mcp_invocation_service import MCPInvocationService
@@ -735,12 +736,26 @@ VisionProviderDependency = Annotated[
 ]
 
 
+# Give both image paths one routing decision, made by the main conversation
+# model — the same model that used to answer "I cannot edit images" when an edit
+# request reached it as chat.
+def get_image_intent_classifier(llm: LlmDependency) -> ImageIntentClassifier:
+    return ImageIntentClassifier(llm, max_tokens=settings.IMAGE_INTENT_MAX_TOKENS)
+
+
+ImageIntentDependency = Annotated[
+    ImageIntentClassifier,
+    Depends(get_image_intent_classifier),
+]
+
+
 # Coordinate validated uploads with grounded local vision analysis.
 def get_vision_analysis_service(
     images: ImageArtifactDependency,
     repository: ArtifactRepositoryDependency,
     provider: VisionProviderDependency,
     memory: MemoryDependency,
+    intent: ImageIntentDependency,
 ) -> VisionAnalysisService:
     return VisionAnalysisService(
         images,
@@ -749,6 +764,7 @@ def get_vision_analysis_service(
         thread_context_turns=settings.VISION_THREAD_CONTEXT_TURNS,
         thread_max_stored=settings.VISION_THREAD_MAX_STORED,
         memory=memory,
+        intent=intent,
     )
 
 

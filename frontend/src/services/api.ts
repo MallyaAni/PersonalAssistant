@@ -1178,7 +1178,29 @@ export async function refineImage(
   return artifact
 }
 
+// Ask the server whether words typed about an image request a change to it.
+//
+// The decision is the model's, and it is made in one place so the composer, the
+// image card and the upload path cannot disagree about the same sentence.
+export async function classifyImageIntent(userId: string, text: string): Promise<boolean> {
+  const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/images/intent`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId, text }),
+  })
+  if (!response.ok) {
+    const detail = await response.json().catch(() => ({}))
+    throw new Error(apiErrorMessage(detail, response.status))
+  }
+  const result = await response.json() as Record<string, unknown>
+  return result.intent === 'edit'
+}
+
 // Upload and analyze one owned image with the configured local vision model.
+//
+// Returns the server's routing decision alongside the stored upload: an edit
+// cannot be started until the artifact exists, so the same call that creates it
+// reports whether one was asked for.
 export async function analyzeImage(
   userId: string,
   conversationId: string,
@@ -1208,7 +1230,7 @@ export async function analyzeImage(
   if (artifact.kind !== 'uploaded_image') {
     throw new Error('Image analysis returned an unexpected artifact')
   }
-  return artifact
+  return { artifact, editRequested: result.intent === 'edit' }
 }
 
 // Ask one followup question about an already-owned generated or uploaded image.

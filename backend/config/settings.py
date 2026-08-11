@@ -295,6 +295,8 @@ class Settings(BaseSettings):
     VISION_THREAD_CONTEXT_TURNS: int = Field(default=8, ge=1, le=50)
     # Total question/answer pairs retained in one image's stored analysis thread.
     VISION_THREAD_MAX_STORED: int = Field(default=40, ge=1, le=500)
+    # Room for {"intent":"edit"} and nothing else; the schema is the grammar.
+    IMAGE_INTENT_MAX_TOKENS: int = Field(default=16, ge=8, le=64)
 
     # Local image embeddings (nomic-embed-vision-v1.5, ONNX, CPU in-process).
     # Aligned to nomic-embed-text-v1.5, so images and text share one 768-dim
