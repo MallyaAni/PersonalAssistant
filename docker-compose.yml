@@ -608,8 +608,16 @@ services:
     container_name: anios_gateway
     # The tunnel targets one loopback-only port; no LAN or public socket is
     # opened, so ingress cannot reach anything the gateway does not serve.
+    #
+    # Both loopback families, because "localhost" does not mean one address. The
+    # tunnel running as a Windows service resolved it to ::1, found nothing
+    # listening, and answered every public request with 502 while the same URL
+    # worked from a user shell over 127.0.0.1. Binding both makes the origin
+    # reachable however the resolver happens to order them, and neither is
+    # reachable from outside this machine.
     ports:
       - "127.0.0.1:${ANIOS_GATEWAY_PORT:-8080}:8080"
+      - "[::1]:${ANIOS_GATEWAY_PORT:-8080}:8080"
     depends_on:
       - backend
     healthcheck:
