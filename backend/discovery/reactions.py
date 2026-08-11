@@ -26,7 +26,7 @@ logger = get_logger(__name__)
 
 # Reading reactions asks the bridge about specific messages, so the batch is
 # bounded by what fits one tool call rather than by cost.
-MAX_GUIDS_PER_POLL = 200
+MAX_BODIES_PER_POLL = 200
 
 type ToolInvoker = Callable[[str, dict[str, object]], Awaitable[object]]
 
@@ -47,13 +47,14 @@ class ReactionCollector:
     # One pass. Returns how many reactions were newly recorded, so a caller can
     # log something meaningful without reading the table again.
     async def collect(self) -> int:
-        guids = await self.sent_finds.awaiting_reaction(limit=MAX_GUIDS_PER_POLL)
-        if not guids:
+        pending = await self.sent_finds.awaiting_reaction(limit=MAX_BODIES_PER_POLL)
+        if not pending:
             return 0
+        # Positional, so the bridge answers about "the third body you were
+        # given" and never has to be told what any of them are for.
+        bodies = [body for _, body in pending]
         try:
-            answer = await self.invoke_tool(
-                self.tool_name, {"message_guids": list(guids)}
-            )
+            answer = await self.invoke_tool(self.tool_name, {"bodies": bodies})
         except Exception:
             # An unreachable Mac, a bridge without the tool, a refused call. All
             # of them mean "no feedback this time", and none of them are worth
@@ -61,11 +62,14 @@ class ReactionCollector:
             return 0
         recorded = 0
         for entry in _reactions(answer):
-            guid = entry.get("message_guid")
+            index = entry.get("index")
             reaction = entry.get("reaction")
-            if not isinstance(guid, str) or reaction not in (LIKED, DISLIKED):
+            if not isinstance(index, int) or not 0 <= index < len(pending):
                 continue
-            if await self.sent_finds.record_reaction(guid, reaction, _at(entry)):
+            if reaction not in (LIKED, DISLIKED):
+                continue
+            row_id, _ = pending[index]
+            if await self.sent_finds.record_reaction(row_id, reaction, _at(entry)):
                 recorded += 1
         if recorded:
             logger.info("discovery_reactions_recorded", extra={"count": recorded})

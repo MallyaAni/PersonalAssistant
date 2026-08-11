@@ -548,6 +548,104 @@ def _readable(blob: bytes) -> str:
     return max(parts, key=len) if parts else ""
 
 
+# Which of the given message bodies were thumbed up or down, by position.
+#
+# Matching on the body rather than on an identifier is the whole point. Apple
+# hands back no identifier at send time, the one this bridge looked up afterwards
+# proved wrong, and a reaction made on a phone can point at a copy of the message
+# this Mac never stored. The body is the one thing both copies share and the
+# caller already knows.
+#
+# Only positions are returned. Nothing about any message, and nothing about any
+# message the caller did not itself send, leaves here.
+def reactions_for_bodies(
+    config: BridgeConfig, bodies: list[str]
+) -> list[dict[str, object]]:
+    wanted = {
+        index: " ".join(body.split())[:BODY_MATCH_CHARS]
+        for index, body in enumerate(bodies or [])
+        if body and body.strip()
+    }
+    if not wanted:
+        return []
+    connection, _ = _open_messages_reporting(config)
+    if connection is None:
+        return []
+    try:
+        rows = connection.execute(
+            """
+            SELECT guid, text, attributedBody FROM message
+            WHERE date >= ?
+            ORDER BY date DESC LIMIT 600
+            """,
+            (_apple_time(datetime.now(timezone.utc) - timedelta(days=FEEDBACK_DAYS)),),  # noqa: UP017
+        ).fetchall()
+        by_guid = _copies_of(rows, wanted)
+        if not by_guid:
+            return []
+
+        clauses = " OR ".join("associated_message_guid LIKE ?" for _ in by_guid)
+        reacted = connection.execute(
+            f"""
+            SELECT associated_message_guid, associated_message_type, date
+            FROM message
+            WHERE associated_message_type IN (2001, 2002, 3001, 3002)
+              AND ({clauses})
+            ORDER BY date ASC
+            """,
+            [f"%{guid}" for guid in by_guid],
+        ).fetchall()
+    except sqlite3.Error:
+        return []
+    finally:
+        connection.close()
+
+    # Latest wins: a thumb added and then removed is no opinion, and one changed
+    # from down to up is a changed mind.
+    latest: dict[int, dict[str, object]] = {}
+    for associated, kind, when in reacted:
+        index = by_guid.get(str(associated or "").split("/")[-1])
+        if index is None:
+            continue
+        if kind in (3001, 3002):
+            latest.pop(index, None)
+            continue
+        latest[index] = {
+            "index": index,
+            "reaction": "liked" if kind == 2001 else "disliked",
+            "at": _apple_epoch(when),
+        }
+    return list(latest.values())
+
+
+# Every copy of every body asked about, mapped to the position it was given at.
+#
+# Both directions on purpose: the row this Mac sent and the row a phone received
+# are different rows with different identifiers, and a reaction can land on
+# either.
+def _copies_of(
+    rows: list[tuple[object, object, object]], wanted: dict[int, str]
+) -> dict[str, int]:
+    found: dict[str, int] = {}
+    for guid, text, blob in rows:
+        body = (str(text or "").strip()) or (_readable(bytes(blob)) if blob else "")
+        if not body:
+            continue
+        flat = " ".join(body.split())
+        for index, prefix in wanted.items():
+            if prefix and prefix in flat:
+                found[str(guid).split(";")[-1]] = index
+                break
+    return found
+
+
+# How much of a body is compared, and how far back a reaction is looked for.
+# Both mirror the caller's own bounds; a bridge that trusts its caller's limits
+# has no limits.
+BODY_MATCH_CHARS = 80
+FEEDBACK_DAYS = 8
+
+
 # Apple stores message times as nanoseconds since 2001-01-01 UTC.
 def _apple_epoch(value: object) -> str | None:
     try:
@@ -681,7 +779,8 @@ def _describe_targets(
         for target in targets:
             suffix = str(target).split("/")[-1]
             row = connection.execute(
-                "SELECT is_from_me, length(text) FROM message WHERE guid LIKE ? LIMIT 1",
+                "SELECT is_from_me, length(text) FROM message"
+                " WHERE guid LIKE ? LIMIT 1",
                 (f"%{suffix}",),
             ).fetchone()
             described.append(
@@ -802,7 +901,17 @@ def create_bridge(config: BridgeConfig) -> FastMCP:
         return json.dumps(diagnose(config))
 
     @server.tool()
-    def read_reactions(message_guids: list[str]) -> str:
+    def read_reactions(bodies: list[str]) -> str:
+        """Report thumbs-up and thumbs-down tapbacks on messages this sent."""
+        # Answers positionally: "the third body you gave me was thumbed up".
+        # The caller already knows what it sent, so nothing about any message
+        # needs to come back — and asking by body rather than by identifier is
+        # what makes this work at all, since a reaction can point at a copy of
+        # the message this Mac never stored.
+        return json.dumps({"reactions": reactions_for_bodies(config, bodies)})
+
+    @server.tool()
+    def read_reactions_by_guid(message_guids: list[str]) -> str:
         """Report thumbs-up and thumbs-down tapbacks on messages this sent."""
         # Answers only about identifiers the caller already has, which are the
         # ones this bridge handed back when it sent them. It cannot be asked

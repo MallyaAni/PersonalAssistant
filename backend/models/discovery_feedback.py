@@ -71,9 +71,16 @@ class DiscoverySentFind(Base):
     # The locality the find was offered in. A reaction means something in the
     # place it was given, for the same reason familiarity is scoped.
     locality: Mapped[str | None] = mapped_column(String(120), nullable=True)
-    # Apple's message identifier. Absent when the bridge could not read it back,
-    # which costs the feedback for that bubble and nothing else.
+    # Apple's message identifier, kept for tracing rather than for matching.
+    #
+    # It failed four ways against a real Mac: not captured, captured wrong,
+    # pointing at the copy the phone holds, and pointing at a row this machine
+    # never kept. A reaction is matched on `body_prefix` instead.
     message_guid: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    # The opening of what this bubble said, sealed. This is what a reaction is
+    # matched on: it identifies the message rather than the row, so it survives
+    # every way an identifier can be wrong.
+    body_prefix: Mapped[str | None] = mapped_column(EncryptedText(), nullable=True)
     sent_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

@@ -186,30 +186,30 @@ async def test_an_older_bridge_still_delivers_and_reports_no_identifier():
 class _Sent:
     """A feedback repository that records calls instead of rows."""
 
-    def __init__(self, pending: tuple[str, ...]) -> None:
+    def __init__(self, pending: tuple[tuple[str, str], ...]) -> None:
         self.pending = pending
         self.recorded: list[tuple[str, str]] = []
 
-    async def awaiting_reaction(self, limit: int = 200) -> tuple[str, ...]:
+    async def awaiting_reaction(self, limit: int = 200):
         return self.pending
 
-    async def record_reaction(self, guid, reaction, at=None) -> bool:
-        # Mirrors the real one: a GUID we never sent is not ours to record.
-        if guid not in self.pending:
+    async def record_reaction(self, row_id, reaction, at=None) -> bool:
+        # Mirrors the real one: a row it does not know is not its to record.
+        if row_id not in {identifier for identifier, _ in self.pending}:
             return False
-        self.recorded.append((guid, reaction))
+        self.recorded.append((row_id, reaction))
         return True
 
 
 @pytest.mark.asyncio
 async def test_reactions_are_recorded_against_the_bubbles_they_name():
-    sent = _Sent(("GUID-1", "GUID-2"))
+    sent = _Sent((("row-1", "A jazz trio plays"), ("row-2", "A guided marsh walk")))
     invoker = _Invoker(
         json.dumps(
             {
                 "reactions": [
-                    {"message_guid": "GUID-1", "reaction": "liked"},
-                    {"message_guid": "GUID-2", "reaction": "disliked"},
+                    {"index": 0, "reaction": "liked"},
+                    {"index": 1, "reaction": "disliked"},
                 ]
             }
         )
@@ -218,20 +218,19 @@ async def test_reactions_are_recorded_against_the_bubbles_they_name():
     recorded = await ReactionCollector(sent, invoker).collect()
 
     assert recorded == 2
-    assert sent.recorded == [("GUID-1", "liked"), ("GUID-2", "disliked")]
-    # Only the identifiers this asked about, which is what keeps the bridge from
-    # being a way to read anything else on that Mac.
-    assert invoker.calls[0][1] == {"message_guids": ["GUID-1", "GUID-2"]}
+    assert sent.recorded == [("row-1", "liked"), ("row-2", "disliked")]
+    # Bodies, positionally. The bridge is told what was sent and answers about
+    # position, so it never needs to know what any of it is for — and matching
+    # on the body is what survives an identifier being wrong.
+    assert invoker.calls[0][1] == {
+        "bodies": ["A jazz trio plays", "A guided marsh walk"]
+    }
 
 
 @pytest.mark.asyncio
-async def test_a_reaction_for_a_bubble_we_never_sent_is_ignored():
-    sent = _Sent(("GUID-1",))
-    invoker = _Invoker(
-        json.dumps(
-            {"reactions": [{"message_guid": "SOMEONE-ELSES", "reaction": "liked"}]}
-        )
-    )
+async def test_a_reaction_for_a_position_we_never_sent_is_ignored():
+    sent = _Sent((("row-1", "A jazz trio plays"),))
+    invoker = _Invoker(json.dumps({"reactions": [{"index": 7, "reaction": "liked"}]}))
 
     assert await ReactionCollector(sent, invoker).collect() == 0
     assert sent.recorded == []
@@ -239,7 +238,7 @@ async def test_a_reaction_for_a_bubble_we_never_sent_is_ignored():
 
 @pytest.mark.asyncio
 async def test_an_unreadable_answer_records_nothing_and_does_not_raise():
-    sent = _Sent(("GUID-1",))
+    sent = _Sent((("row-1", "A jazz trio plays"),))
 
     assert await ReactionCollector(sent, _Invoker("not json at all")).collect() == 0
     assert await ReactionCollector(sent, _Invoker(None)).collect() == 0
@@ -247,7 +246,7 @@ async def test_an_unreadable_answer_records_nothing_and_does_not_raise():
 
 @pytest.mark.asyncio
 async def test_an_unreachable_bridge_is_not_a_failure():
-    sent = _Sent(("GUID-1",))
+    sent = _Sent((("row-1", "A jazz trio plays"),))
 
     class _Broken:
         async def __call__(self, tool_name, arguments):
@@ -259,10 +258,8 @@ async def test_an_unreachable_bridge_is_not_a_failure():
 
 @pytest.mark.asyncio
 async def test_only_thumbs_are_taken_from_the_six_tapbacks():
-    sent = _Sent(("GUID-1",))
-    invoker = _Invoker(
-        json.dumps({"reactions": [{"message_guid": "GUID-1", "reaction": "loved"}]})
-    )
+    sent = _Sent((("row-1", "A jazz trio plays"),))
+    invoker = _Invoker(json.dumps({"reactions": [{"index": 0, "reaction": "loved"}]}))
 
     # Loved, laughed, emphasised and questioned are all ambiguous about wanting
     # more of something, and guessing would put noise in the only clean signal.

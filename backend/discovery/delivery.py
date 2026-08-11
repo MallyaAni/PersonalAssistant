@@ -283,6 +283,9 @@ class DigestDelivery:
                 locality=locality,
                 message_guid=result.provider_message_id,
                 run_id=run_id,
+                # What a reaction is matched on. The identifier above is kept
+                # for tracing; it failed four separate ways against a real Mac.
+                body=bubble.text,
                 # Whose copy this was. A digest goes to every subscriber, who may
                 # be other people, so without this a guest's thumbs-down is
                 # indistinguishable from the owner's and would train a feed that

@@ -54,6 +54,7 @@ class SentFindRepository:
         message_guid: str | None,
         run_id: str | None = None,
         subscriber_id: str | uuid.UUID | None = None,
+        body: str | None = None,
     ) -> None:
         # Without a GUID there is nothing a tapback could ever join to, so the
         # row would only ever be a record that something was sent. Kept anyway:
@@ -68,39 +69,41 @@ class SentFindRepository:
                 label=label,
                 locality=locality,
                 message_guid=message_guid,
+                body_prefix=body_prefix(body),
             )
         )
         await self.session.flush()
 
-    # Which bubbles are still worth asking the Mac about.
+    # Which bubbles are still worth asking the Mac about, as (id, body) pairs.
+    #
+    # Keyed by row rather than by anything Apple assigned, because the identifier
+    # is exactly what could not be relied on.
     async def awaiting_reaction(
         self, horizon_days: int = FEEDBACK_HORIZON_DAYS, limit: int = 200
-    ) -> tuple[str, ...]:
+    ) -> tuple[tuple[uuid.UUID, str], ...]:
         cutoff = datetime.now(UTC) - timedelta(days=horizon_days)
         rows = await self.session.execute(
-            select(DiscoverySentFind.message_guid)
+            select(DiscoverySentFind.id, DiscoverySentFind.body_prefix)
             .where(
-                DiscoverySentFind.message_guid.is_not(None),
+                DiscoverySentFind.body_prefix.is_not(None),
                 DiscoverySentFind.reacted_at.is_(None),
                 DiscoverySentFind.sent_at >= cutoff,
             )
             .order_by(DiscoverySentFind.sent_at.desc())
             .limit(limit)
         )
-        return tuple(guid for (guid,) in rows.all() if guid)
+        return tuple((row_id, body) for row_id, body in rows.all() if body)
 
-    # Write one reaction back. Ignores a GUID we did not send, which is what
-    # keeps a bridge — or a mistake in a query on it — from inventing opinions
-    # about finds that were never offered.
+    # Write one reaction back against a bubble this recorded sending. Ignores a
+    # row it does not know, which is what keeps a bridge — or a mistake in a
+    # query on it — from inventing opinions about finds never offered.
     async def record_reaction(
-        self, message_guid: str, reaction: str, at: datetime | None = None
+        self, row_id: uuid.UUID | str, reaction: str, at: datetime | None = None
     ) -> bool:
         if reaction not in (LIKED, DISLIKED):
             return False
         row = await self.session.scalar(
-            select(DiscoverySentFind).where(
-                DiscoverySentFind.message_guid == message_guid
-            )
+            select(DiscoverySentFind).where(DiscoverySentFind.id == _as_uuid(row_id))
         )
         if row is None:
             return False
@@ -124,6 +127,24 @@ class SentFindRepository:
             .limit(limit)
         )
         return tuple(rows.scalars().all())
+
+
+# How much of a bubble is enough to recognise it again.
+#
+# Long enough that two finds in one digest cannot collide, short enough to
+# survive whatever Messages does to a body on the way in — recent macOS keeps
+# most of them inside a binary blob, and only a contiguous run is reliably
+# findable there. Whitespace is collapsed on both sides of the comparison
+# because the stored text carries the newline before a link and the blob may
+# not.
+BODY_PREFIX_CHARS = 80
+
+
+# The opening of a message, normalised for comparison.
+def body_prefix(value: str | None) -> str | None:
+    if not value:
+        return None
+    return " ".join(value.split())[:BODY_PREFIX_CHARS] or None
 
 
 # A subscriber id as the column wants it, whatever the caller had.
