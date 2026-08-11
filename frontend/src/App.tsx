@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { LogOut, Menu, Plus } from 'lucide-react'
 import ThemeToggle from './components/ThemeToggle/ThemeToggle'
+import { Logo } from './components/Logo/Logo'
 import AgentPanel from './components/AgentPanel/AgentPanel'
 import AdminPanel from './components/AdminPanel/AdminPanel'
 import ArtifactPanel from './components/ArtifactPanel/ArtifactPanel'
@@ -116,7 +117,9 @@ const AuthenticatedApp = ({ auth, onSignedOut }: AuthenticatedAppProps) => {
       <main className="relative flex min-w-0 flex-1 flex-col bg-[#f5f5f7]">
         <header className="z-10 flex h-16 flex-none items-center justify-between border-b border-black/[0.06] bg-white/80 px-4 backdrop-blur-xl md:px-6">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="anios-wordmark flex h-9 w-9 flex-none items-center justify-center rounded-xl text-sm font-semibold text-white">A</span>
+            <span className="anios-wordmark flex h-9 w-9 flex-none items-center justify-center rounded-xl text-white">
+              <Logo className="h-6 w-6" title="DeepMatter" />
+            </span>
             <div className="min-w-0">
               <h1 className="truncate text-[17px] font-semibold tracking-[-0.02em]">DeepMatter</h1>
               {/* Account identity and sign-out live in exactly one place at any

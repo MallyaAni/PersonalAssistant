@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { ArrowLeft, ArrowRight, LockKeyhole, UserRound } from 'lucide-react'
 import { login, requestAccess, type AuthSession } from '../../services/api'
+import { Logo } from '../Logo/Logo'
 
 interface LoginScreenProps {
   onAuthenticated: (session: AuthSession) => void;
@@ -67,7 +68,7 @@ const LoginScreen = ({ onAuthenticated }: LoginScreenProps) => {
     return (
       <main className="flex min-h-dvh items-center justify-center bg-[#f5f5f7] px-5 py-10 text-[#1d1d1f]">
         <section className="w-full max-w-[420px] rounded-[28px] border border-black/[0.07] bg-white p-7 shadow-[0_24px_70px_rgba(0,0,0,0.10)] sm:p-9">
-          <span className="anios-wordmark mb-5 flex h-12 w-12 items-center justify-center rounded-2xl text-lg font-semibold text-white">A</span>
+          <span className="anios-wordmark mb-5 flex h-12 w-12 items-center justify-center rounded-2xl text-white"><Logo className="h-7 w-7" title="DeepMatter" /></span>
           <h1 className="text-[28px] font-semibold tracking-[-0.03em]">Request sent</h1>
           <p className="mt-2 text-[15px] leading-6 text-[#6e6e73]">
             The owner has to approve you before your account exists. Once they do,
@@ -90,7 +91,7 @@ const LoginScreen = ({ onAuthenticated }: LoginScreenProps) => {
     <main className="flex min-h-dvh items-center justify-center bg-[#f5f5f7] px-5 py-10 text-[#1d1d1f]">
       <section className="w-full max-w-[420px] rounded-[28px] border border-black/[0.07] bg-white p-7 shadow-[0_24px_70px_rgba(0,0,0,0.10)] sm:p-9" aria-labelledby="login-title">
         <div className="mb-8">
-          <span className="anios-wordmark mb-5 flex h-12 w-12 items-center justify-center rounded-2xl text-lg font-semibold text-white">A</span>
+          <span className="anios-wordmark mb-5 flex h-12 w-12 items-center justify-center rounded-2xl text-white"><Logo className="h-7 w-7" title="DeepMatter" /></span>
           <p className="mb-2 text-sm font-medium text-[#0071e3]">Private intelligence</p>
           <h1 id="login-title" className="text-[34px] font-semibold tracking-[-0.04em]">
             {isRegistration ? 'Create your profile' : 'Sign in to DeepMatter'}
