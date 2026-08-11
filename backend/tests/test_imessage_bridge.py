@@ -236,3 +236,25 @@ def test_the_bridge_and_anios_agree_on_every_way_a_number_is_written(written):
     from backend.discovery.addressing import normalize_address
 
     assert normalize_recipient(written) == normalize_address(written)
+
+
+def test_the_apple_epoch_survives_a_round_trip():
+    from datetime import UTC, datetime
+
+    from server import _apple_epoch, _apple_time
+
+    # The `date` column counts nanoseconds from 2001, not seconds from 1970, and
+    # the two differ by 31 years — enough that reading one as the other puts a
+    # reaction in 1970 and silently outside every window that looks for it.
+    moment = datetime(2026, 8, 11, 0, 45, 26, tzinfo=UTC)
+
+    assert _apple_epoch(_apple_time(moment)) == moment.isoformat()
+
+
+def test_a_reaction_time_the_database_cannot_supply_is_not_invented():
+    from server import _apple_epoch
+
+    # A null or unreadable date records the reaction without a time rather than
+    # dropping it: knowing someone liked a find matters more than knowing when.
+    assert _apple_epoch(None) is None
+    assert _apple_epoch("not a number") is None

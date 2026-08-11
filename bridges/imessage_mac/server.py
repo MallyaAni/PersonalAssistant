@@ -323,32 +323,61 @@ def latest_sent_guid(
     connection = _open_messages(config)
     if connection is None:
         return None
-    # Matched on the body rather than taking the newest outright, because the
-    # operator may have typed something to the same person in between. Only
-    # messages this Mac sent to this one recipient are considered, and only the
-    # handful that could plausibly be the one just sent.
+    # Deliberately not joined to `handle`, and deliberately not matched on the
+    # recipient string. The first version did both and found nothing on a real
+    # Mac, for three separate reasons, any one of which is enough:
+    #
+    # - an outgoing message often carries `handle_id = 0`, so the join drops it;
+    # - `handle.id` holds Apple's canonical form of an address, which is not
+    #   necessarily the string AniOS was configured to send to;
+    # - on recent macOS `message.text` is frequently NULL, because the body is
+    #   stored in the `attributedBody` blob instead.
+    #
+    # So: the newest few outgoing messages, bounded to the seconds around this
+    # send, matched on the body wherever the body can be read at all.
+    since = _apple_time(datetime.now(timezone.utc) - timedelta(seconds=SEND_WINDOW))  # noqa: UP017
     try:
         rows = connection.execute(
             """
-            SELECT message.guid, message.text
+            SELECT guid, text, attributedBody
             FROM message
-            JOIN handle ON message.handle_id = handle.ROWID
-            WHERE message.is_from_me = 1
-              AND handle.id = ?
-            ORDER BY message.date DESC
-            LIMIT 5
+            WHERE is_from_me = 1
+              AND date >= ?
+            ORDER BY date DESC
+            LIMIT 10
             """,
-            (recipient,),
+            (since,),
         ).fetchall()
     except sqlite3.Error:
         return None
     finally:
         connection.close()
+
     wanted = body.strip()
-    for guid, text in rows:
+    for guid, text, blob in rows:
         if (text or "").strip() == wanted:
             return str(guid)
+        # The body as it survives inside the attributed blob. Compared on a
+        # distinctive slice rather than the whole thing, because the blob wraps
+        # the text in binary plist framing and may hard-wrap it.
+        if blob and wanted[:60] and wanted[:60].encode("utf-8") in bytes(blob):
+            return str(guid)
+    # Nothing matched by content. The newest outgoing message inside the window
+    # is almost certainly the one just sent, but "almost" would attach someone
+    # else's reaction to a find, so this stops here and reports no identifier.
     return None
+
+
+# How many seconds around a send count as "the message just sent".
+SEND_WINDOW = 30
+
+# Apple's epoch for the `date` column: nanoseconds since 2001-01-01 UTC.
+_APPLE_EPOCH = datetime(2001, 1, 1, tzinfo=timezone.utc)  # noqa: UP017
+
+
+# A datetime as the Messages database stores it.
+def _apple_time(moment: datetime) -> int:
+    return int((moment - _APPLE_EPOCH).total_seconds() * 1_000_000_000)
 
 
 # Which of the given messages have been reacted to, and how.
@@ -429,6 +458,53 @@ def _apple_epoch(value: object) -> str | None:
         datetime(2001, 1, 1, tzinfo=timezone.utc)  # noqa: UP017
         + timedelta(seconds=seconds)
     ).isoformat()
+
+
+# Whether reading is configured and working, described without disclosing any of
+# it. Counts and shapes answer every setup question that matters; the contents
+# would answer none of them and are nobody's business but the Mac owner's.
+def diagnose(config: BridgeConfig) -> dict[str, object]:
+    if config.messages_db is None:
+        return {
+            "readable": False,
+            "why": "IMESSAGE_BRIDGE_READ_REACTIONS is off, or the database path "
+            "does not exist.",
+        }
+    connection = _open_messages(config)
+    if connection is None:
+        return {
+            "readable": False,
+            "why": "The database exists but could not be opened. This is almost "
+            "always Full Disk Access not granted to whatever runs this bridge.",
+        }
+    since = _apple_time(datetime.now(timezone.utc) - timedelta(days=1))  # noqa: UP017
+    try:
+        sent, without_text = connection.execute(
+            """
+            SELECT COUNT(*), SUM(CASE WHEN text IS NULL OR text = '' THEN 1 ELSE 0 END)
+            FROM message WHERE is_from_me = 1 AND date >= ?
+            """,
+            (since,),
+        ).fetchone()
+        tapbacks = connection.execute(
+            """
+            SELECT COUNT(*) FROM message
+            WHERE associated_message_type IN (2001, 2002, 3001, 3002) AND date >= ?
+            """,
+            (since,),
+        ).fetchone()[0]
+    except sqlite3.Error as error:
+        return {"readable": False, "why": f"Query failed: {type(error).__name__}"}
+    finally:
+        connection.close()
+    return {
+        "readable": True,
+        "sent_last_day": int(sent or 0),
+        # The reason a body match can fail on a modern Mac: the text lives in
+        # `attributedBody` instead, which the lookup now also reads.
+        "sent_without_plain_text": int(without_text or 0),
+        "tapbacks_last_day": int(tapbacks or 0),
+    }
 
 
 def run_osascript(script: str, arguments: list[str]) -> None:
@@ -522,6 +598,16 @@ def create_bridge(config: BridgeConfig) -> FastMCP:
         # at the last hop. One approval should reach both.
         added = store_grant(config, to)
         return "Recipient allowed." if added else "Recipient was already allowed."
+
+    @server.tool()
+    def describe_messages_access() -> str:
+        """Report whether reactions can be read, and in what shape, for setup."""
+        # Written because the first real run recorded three messages and no
+        # identifiers, and there were three equally plausible reasons. Counts
+        # and shapes only — no message text, no addresses, nothing about any
+        # conversation — so this answers "is it wired up" without becoming a way
+        # to read the Mac.
+        return json.dumps(diagnose(config))
 
     @server.tool()
     def read_reactions(message_guids: list[str]) -> str:
