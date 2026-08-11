@@ -658,7 +658,45 @@ def diagnose(config: BridgeConfig) -> dict[str, object]:
         # sent". These are opaque identifiers carrying no content, and comparing
         # them against what was stored is the only way to see the mismatch.
         "recent_thumb_targets": targets,
+        # For each of those targets: is the message it points at even on this
+        # Mac, and did this Mac send it?
+        #
+        # Expanding an identifier to its twin assumes both copies are here. If
+        # a reaction made on the phone points at a row this Mac never stored,
+        # no amount of matching will find it and the design has to change rather
+        # than the query. Existence and direction only — no content.
+        "thumb_target_rows": _describe_targets(config, targets),
     }
+
+
+# Whether each reaction target exists here, and which direction it went.
+def _describe_targets(
+    config: BridgeConfig, targets: list[str]
+) -> list[dict[str, object]]:
+    connection, _ = _open_messages_reporting(config)
+    if connection is None:
+        return []
+    described: list[dict[str, object]] = []
+    try:
+        for target in targets:
+            suffix = str(target).split("/")[-1]
+            row = connection.execute(
+                "SELECT is_from_me, length(text) FROM message WHERE guid LIKE ? LIMIT 1",
+                (f"%{suffix}",),
+            ).fetchone()
+            described.append(
+                {
+                    "target": suffix[:8],
+                    "found": row is not None,
+                    "is_from_me": None if row is None else int(row[0] or 0),
+                    "has_plain_text": None if row is None else bool(row[1]),
+                }
+            )
+    except sqlite3.Error:
+        return described
+    finally:
+        connection.close()
+    return described
 
 
 def run_osascript(script: str, arguments: list[str]) -> None:
