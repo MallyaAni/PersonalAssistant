@@ -53,7 +53,7 @@ class SentFindRepository:
         locality: str | None,
         message_guid: str | None,
         run_id: str | None = None,
-        subscriber_id: uuid.UUID | None = None,
+        subscriber_id: str | uuid.UUID | None = None,
     ) -> None:
         # Without a GUID there is nothing a tapback could ever join to, so the
         # row would only ever be a record that something was sent. Kept anyway:
@@ -63,7 +63,7 @@ class SentFindRepository:
             DiscoverySentFind(
                 user_id=user_id,
                 run_id=uuid.UUID(run_id) if run_id else None,
-                subscriber_id=subscriber_id,
+                subscriber_id=_as_uuid(subscriber_id),
                 item_digest=item_digest,
                 label=label,
                 locality=locality,
@@ -124,3 +124,17 @@ class SentFindRepository:
             .limit(limit)
         )
         return tuple(rows.scalars().all())
+
+
+# A subscriber id as the column wants it, whatever the caller had.
+#
+# The delivery layer carries subscriber ids as strings, the column is a UUID, and
+# an unparseable one records the bubble without an owner rather than losing the
+# row: knowing a find was sent and not reacted to is worth keeping either way.
+def _as_uuid(value: str | uuid.UUID | None) -> uuid.UUID | None:
+    if value is None or isinstance(value, uuid.UUID):
+        return value
+    try:
+        return uuid.UUID(str(value))
+    except ValueError:
+        return None

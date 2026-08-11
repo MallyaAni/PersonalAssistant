@@ -323,6 +323,10 @@ def latest_sent_guid(
     connection = _open_messages(config)
     if connection is None:
         return None
+    # Matched on the body rather than taking the newest outright, because the
+    # operator may have typed something to the same person in between. Only
+    # messages this Mac sent to this one recipient are considered, and only the
+    # handful that could plausibly be the one just sent.
     try:
         rows = connection.execute(
             """
@@ -366,15 +370,27 @@ def read_tapbacks(
     wanted = {guid.split(";")[-1]: guid for guid in guids if guid}
     if not wanted:
         return []
+    # Constrained in SQL rather than filtered afterwards. Selecting every
+    # reaction in the database and discarding most of them in Python reaches
+    # every conversation on this Mac to answer a question about a handful of
+    # messages; a LIKE per requested identifier reaches only those.
+    #
+    # `is_from_me` is deliberately *not* filtered. A digest sent from this Mac to
+    # the owner's own number is a thread with themselves, so their tapback comes
+    # back marked as from them — filtering those out dropped exactly the
+    # reactions this feature exists to collect.
+    clauses = " OR ".join("associated_message_guid LIKE ?" for _ in wanted)
+    parameters = [f"%{suffix}" for suffix in wanted]
     try:
         rows = connection.execute(
-            """
+            f"""
             SELECT associated_message_guid, associated_message_type, date
             FROM message
             WHERE associated_message_type IN (2001, 2002, 3001, 3002)
-              AND is_from_me = 0
+              AND ({clauses})
             ORDER BY date ASC
-            """
+            """,
+            parameters,
         ).fetchall()
     except sqlite3.Error:
         return []

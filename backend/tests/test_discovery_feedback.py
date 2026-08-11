@@ -219,6 +219,41 @@ async def test_only_thumbs_are_taken_from_the_six_tapbacks():
 
 
 @pytest.mark.asyncio
+async def test_each_bubble_records_which_subscriber_received_it():
+    import uuid as _uuid
+
+    from backend.discovery.feedback import SentFindRepository
+
+    recorded: list[dict] = []
+
+    class _Session:
+        def add(self, row):
+            recorded.append(
+                {"user_id": row.user_id, "subscriber_id": row.subscriber_id}
+            )
+
+        async def flush(self):
+            return None
+
+    guest = str(_uuid.uuid4())
+    await SentFindRepository(_Session()).record_sent(
+        user_id="alice",
+        item_digest="d" * 64,
+        label="A find",
+        locality="Arlington, Virginia",
+        message_guid="GUID-1",
+        subscriber_id=guest,
+    )
+
+    # A digest goes to every subscriber, and subscribers are other people. Which
+    # copy a reaction came back from is the whole boundary: without it a guest's
+    # thumbs-down is indistinguishable from the owner's, and would train a feed
+    # that is not theirs.
+    assert recorded[0]["user_id"] == "alice"
+    assert str(recorded[0]["subscriber_id"]) == guest
+
+
+@pytest.mark.asyncio
 async def test_a_delivery_result_defaults_to_no_identifier():
     # Every channel that has not thought about feedback reports none, rather
     # than something that would join to the wrong bubble.

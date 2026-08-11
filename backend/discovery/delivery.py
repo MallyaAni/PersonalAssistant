@@ -283,6 +283,11 @@ class DigestDelivery:
                 locality=locality,
                 message_guid=result.provider_message_id,
                 run_id=run_id,
+                # Whose copy this was. A digest goes to every subscriber, who may
+                # be other people, so without this a guest's thumbs-down is
+                # indistinguishable from the owner's and would train a feed that
+                # is not theirs.
+                subscriber_id=subscriber.id,
             )
         except Exception:
             return
