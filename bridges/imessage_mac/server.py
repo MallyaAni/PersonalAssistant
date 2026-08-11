@@ -523,6 +523,24 @@ def diagnose(config: BridgeConfig) -> dict[str, object]:
             """,
             (since,),
         ).fetchone()[0]
+        # Every association type seen recently, not just the four we map.
+        #
+        # A thumbs-up was left on a digest and read_reactions returned nothing,
+        # and there was no way to tell whether the reaction had not synced from
+        # the phone yet or had arrived under a type this does not recognise —
+        # recent iOS lets any emoji be a reaction, and those are not 2001. The
+        # type is a small integer and says nothing about any conversation.
+        kinds = connection.execute(
+            """
+            SELECT associated_message_type, COUNT(*)
+            FROM message
+            WHERE associated_message_type IS NOT NULL
+              AND associated_message_type != 0
+              AND date >= ?
+            GROUP BY associated_message_type ORDER BY 2 DESC
+            """,
+            (since,),
+        ).fetchall()
     except sqlite3.Error as error:
         return {"readable": False, "why": f"Query failed: {type(error).__name__}"}
     finally:
@@ -537,6 +555,11 @@ def diagnose(config: BridgeConfig) -> dict[str, object]:
         # `attributedBody` instead, which the lookup now also reads.
         "sent_without_plain_text": int(without_text or 0),
         "tapbacks_last_day": int(tapbacks or 0),
+        # {type: count} for every association seen in the last day. 2001 is a
+        # thumbs up and 2002 a thumbs down; anything else here is a reaction
+        # this bridge currently ignores, which is worth seeing rather than
+        # inferring from an empty result.
+        "association_types": {str(kind): int(count) for kind, count in kinds},
     }
 
 
