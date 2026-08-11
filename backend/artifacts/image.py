@@ -394,6 +394,23 @@ class ComfyUIImageEditProvider(ComfyUIImageProvider, ImageEditProvider):
         )
         return f"{relative_name} [temp]"
 
+    # Never ask for more pixels than the source actually has.
+    #
+    # This node scales *to* the target, so a small source is scaled up rather
+    # than left alone. A 206x206 upload was being enlarged to 1440x1440 — a
+    # sevenfold linear upscale — and no editor can invent that detail, so what
+    # came back was a large blurry version of a thumbnail. Capping at the
+    # source's own size means an edit is never worse than what it was given.
+    def _target_megapixels(self, source_content: bytes) -> float:
+        try:
+            with Image.open(io.BytesIO(source_content)) as image:
+                available = (image.width * image.height) / 1_000_000
+        except (UnidentifiedImageError, OSError):
+            return self.megapixels
+        if available <= 0:
+            return self.megapixels
+        return round(min(self.megapixels, available), 4)
+
     # Build ComfyUI's native FLUX.2 Klein source-conditioned workflow.
     def _edit_workflow(
         self,
@@ -434,7 +451,7 @@ class ComfyUIImageEditProvider(ComfyUIImageProvider, ImageEditProvider):
                 "inputs": {
                     "image": ["1", 0],
                     "upscale_method": self.scale_method,
-                    "megapixels": self.megapixels,
+                    "megapixels": self._target_megapixels(request.source_content),
                     "resolution_steps": 1,
                 },
             },

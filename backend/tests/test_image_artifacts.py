@@ -627,3 +627,38 @@ async def test_vision_failure_preserves_upload_with_failed_analysis(
     assert repository.record["status"] == "ready"
     assert repository.record["metadata"]["analysis_status"] == "failed"
     assert list(tmp_path.rglob("*.png")) != []
+
+
+def test_an_edit_never_asks_for_more_pixels_than_the_source_has():
+    import io as _io
+
+    from PIL import Image as _Image
+
+    from backend.artifacts.image import ComfyUIImageEditProvider
+
+    provider = ComfyUIImageEditProvider(
+        base_url="http://localhost:8188",
+        model="m.safetensors",
+        text_encoder="t.safetensors",
+        vae="v.safetensors",
+        timeout_seconds=1,
+        poll_seconds=0.1,
+        max_concurrency=1,
+        max_output_bytes=10_000_000,
+        max_pixels=20_000_000,
+        steps=4,
+        megapixels=2.0,
+    )
+
+    def png(width: int, height: int) -> bytes:
+        buffer = _io.BytesIO()
+        _Image.new("RGB", (width, height), "white").save(buffer, format="PNG")
+        return buffer.getvalue()
+
+    # A 206x206 upload was being enlarged to 1440x1440 and came back as a large
+    # blurry thumbnail. An edit can rewrite pixels; it cannot invent them.
+    assert provider._target_megapixels(png(206, 206)) < 0.05
+    # A source with room to spare still gets the configured budget.
+    assert provider._target_megapixels(png(3000, 3000)) == 2.0
+    # Unreadable bytes fall back rather than failing the edit.
+    assert provider._target_megapixels(b"not an image") == 2.0

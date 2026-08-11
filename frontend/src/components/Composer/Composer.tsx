@@ -185,7 +185,16 @@ const Composer: React.FC<ComposerProps> = ({
       }
 
       if (action === 'analyze') {
-        const question = prompt || 'Describe this image, including any text you can read.'
+        // Attaching a picture and asking for an edit in the same message is the
+        // obvious way to ask, and it used to describe the image instead: an
+        // attachment routed to analysis whatever the words said. Worse, the
+        // instruction was put to the vision model as a question, which answered
+        // that it cannot edit images — and that refusal was then indexed as the
+        // picture's description.
+        const wantsEdit = shouldEditImage(prompt)
+        const question = wantsEdit || !prompt
+          ? 'Describe this image, including any text you can read.'
+          : prompt
         onSendMessage('user', prompt || `📎 ${(file as File).name}`)
         onThinkingChange(false)
         onVisualStarted('analyze')
@@ -200,6 +209,17 @@ const Composer: React.FC<ComposerProps> = ({
           controller.signal,
         )
         onVisualReady(artifact)
+        // The upload has to be stored before it can be edited, so the edit runs
+        // against the artifact the analysis just created.
+        if (wantsEdit) {
+          const revision = await refineImage(
+            userId,
+            artifact.id,
+            prompt,
+            conversationId,
+          )
+          onImageRefined(revision)
+        }
         return
       }
 
