@@ -690,7 +690,34 @@ an outage. An edit typed into the main composer became an ordinary chat turn and
 the model answered that it could not edit images. That routing is fixed, and the
 first check for any image failure is `http://127.0.0.1:8188`.
 
-### It did not survive a reboot — OPEN, and the next thing to fix here
+### The tunnel now runs from a user logon task — TESTED, not assumed
+
+`DeepMatter tunnel (user)` runs cloudflared at sign-in as the logged-in user.
+Registered without elevation, which is the point: it can be read, started and
+stopped from an ordinary shell, so it can be *tested*. The SYSTEM task and the
+`cloudflared` service could be neither read nor repaired without admin, and both
+silently did nothing.
+
+Proven rather than inferred: the hand-started process was killed, leaving no
+cloudflared at all, the task was started, and the site came back on the
+connector the task registered — `/healthz` 200, `/` 200, and
+`/api/v1/agents/{user}` 401 from FastAPI, checked from inside a container.
+
+Signing in at logon rather than at boot is deliberate now, not a compromise.
+Docker Desktop starts at sign-in, so a tunnel that starts at boot spends the gap
+serving 502s to the world with no origin behind it. Both halves now wake
+together.
+
+`LastTaskResult` of `267009` (0x41301) means "currently running" and is the
+correct state for this task, not a failure.
+
+Still needing an elevated shell, and now only as tidying: `sc.exe delete
+Cloudflared` for the dead service, and removing the old SYSTEM `DeepMatter
+tunnel` task. Neither is harmful — both use the same corrected config, so if the
+old task ever does fire it registers a second connector, which Cloudflare treats
+as ordinary redundancy.
+
+### The earlier attempt, and why it failed
 
 The machine rebooted at 2026-08-11 08:49 and `deep-matter.com` served error
 **1033** — no connector registered — with no cloudflared process running at all.

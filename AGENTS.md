@@ -213,6 +213,15 @@ every copy of it. Note that recent macOS keeps most bodies in `attributedBody`
 rather than `text` — 54 of 64 in one sample — so anything matching on `text`
 alone matches almost nothing.
 
+**Prefer a user logon task to a SYSTEM one for anything here.** A task
+registered without elevation can be read, started and stopped from an ordinary
+shell, so it can be tested; a SYSTEM task cannot even be listed without admin,
+which is how one sat broken for a day while looking registered. Both host
+processes — `DeepMatter tunnel (user)` and `DeepMatter ComfyUI` — run at logon
+for that reason, and because Docker Desktop starts at sign-in too: a tunnel that
+starts at boot spends the gap serving 502s with no origin behind it. A
+`LastTaskResult` of `267009` (0x41301) means "currently running", not a failure.
+
 **A Windows service reporting `Running` proves nothing.** The tunnel service
 installed cleanly, reported `Running`, and registered no connector for an hour,
 because Windows recorded its ImagePath as the bare executable with no arguments:
