@@ -208,6 +208,12 @@ services:
       - IMAGE_EDIT_TEXT_ENCODER=${IMAGE_EDIT_TEXT_ENCODER:-qwen_3_4b.safetensors}
       - IMAGE_EDIT_VAE=${IMAGE_EDIT_VAE:-flux2-vae.safetensors}
       - IMAGE_EDIT_STEPS=${IMAGE_EDIT_STEPS:-4}
+      # How much of the source survives into the edit, and how it is
+      # resampled. Both were ComfyUI template defaults; `nearest-exact`
+      # stipples any photograph, and the megapixel budget is the ceiling
+      # on what comes back, because the output is generated at that size.
+      - IMAGE_EDIT_MEGAPIXELS=${IMAGE_EDIT_MEGAPIXELS:-2.0}
+      - IMAGE_EDIT_SCALE_METHOD=${IMAGE_EDIT_SCALE_METHOD:-lanczos}
       - ARTIFACT_STORAGE_ROOT=/app/data/artifacts
       - PRESENTATION_RENDERER_BASE_URL=http://presentation-renderer:8002
       - PRESENTATION_REQUIRE_OFFICE_VALIDATION=true
@@ -530,6 +536,12 @@ services:
       - IMAGE_EDIT_TEXT_ENCODER=${IMAGE_EDIT_TEXT_ENCODER:-qwen_3_4b.safetensors}
       - IMAGE_EDIT_VAE=${IMAGE_EDIT_VAE:-flux2-vae.safetensors}
       - IMAGE_EDIT_STEPS=${IMAGE_EDIT_STEPS:-4}
+      # How much of the source survives into the edit, and how it is
+      # resampled. Both were ComfyUI template defaults; `nearest-exact`
+      # stipples any photograph, and the megapixel budget is the ceiling
+      # on what comes back, because the output is generated at that size.
+      - IMAGE_EDIT_MEGAPIXELS=${IMAGE_EDIT_MEGAPIXELS:-2.0}
+      - IMAGE_EDIT_SCALE_METHOD=${IMAGE_EDIT_SCALE_METHOD:-lanczos}
       - ARTIFACT_STORAGE_ROOT=/app/data/artifacts
       - PRESENTATION_RENDERER_BASE_URL=http://presentation-renderer:8002
       - PRESENTATION_REQUIRE_OFFICE_VALIDATION=true

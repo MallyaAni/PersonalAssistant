@@ -89,7 +89,7 @@ def test_an_empty_selection_produces_no_message():
 
 def test_the_message_carries_a_local_time_and_the_source_link():
     message = render_message(
-        (_ranked("Jazz at the Green"),), _BASE, timezone="America/New_York"
+        (_ranked("Jazz at the Green"),), _BASE, timezone="America/New_York", now=_NOW
     )
 
     assert message is not None
@@ -105,12 +105,14 @@ def test_the_message_carries_a_local_time_and_the_source_link():
 
 
 def test_an_unknown_timezone_falls_back_rather_than_failing():
-    message = render_message((_ranked("Jazz"),), _BASE, timezone="Mars/Olympus")
+    message = render_message(
+        (_ranked("Jazz"),), _BASE, timezone="Mars/Olympus", now=_NOW
+    )
     assert message is not None
 
 
 def test_long_titles_are_bounded():
-    message = render_message((_ranked("x" * 400),), _BASE)
+    message = render_message((_ranked("x" * 400),), _BASE, now=_NOW)
     assert message is not None
     assert "…" in message
     assert len(message) < 1_000
@@ -229,7 +231,7 @@ async def test_delivery_reaches_only_consented_subscribers():
             channel = _RecordingChannel()
 
             report = await DigestDelivery(repo, {"imessage": channel}).deliver(
-                user_id, (_ranked("Jazz"),), _BASE
+                user_id, (_ranked("Jazz"),), _BASE, now=_NOW
             )
 
             assert report.delivered == 1
@@ -252,7 +254,7 @@ async def test_delivery_reaches_only_the_requested_users_subscriber():
             channel = _RecordingChannel()
 
             report = await DigestDelivery(repo, {"imessage": channel}).deliver(
-                second_user, (_ranked("Jazz"),), _BASE
+                second_user, (_ranked("Jazz"),), _BASE, now=_NOW
             )
 
             assert report.delivered == 1
@@ -276,7 +278,7 @@ async def test_revocation_stops_delivery_and_invalidates_the_shared_link():
             assert await repo.revoke(user_id, uuid.UUID(person.id)) is True
 
             report = await DigestDelivery(repo, {"imessage": channel}).deliver(
-                user_id, (_ranked("Jazz"),), _BASE
+                user_id, (_ranked("Jazz"),), _BASE, now=_NOW
             )
 
             assert report.delivered == 0
@@ -297,7 +299,7 @@ async def test_an_unconfigured_channel_skips_rather_than_sending_elsewhere():
             other = _RecordingChannel("shortcuts_pull")
 
             report = await DigestDelivery(repo, {"shortcuts_pull": other}).deliver(
-                user_id, (_ranked("Jazz"),), _BASE
+                user_id, (_ranked("Jazz"),), _BASE, now=_NOW
             )
 
             assert report.delivered == 0

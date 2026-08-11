@@ -290,6 +290,8 @@ class ComfyUIImageEditProvider(ComfyUIImageProvider, ImageEditProvider):
         max_output_bytes: int,
         max_pixels: int,
         steps: int,
+        megapixels: float = 1.0,
+        scale_method: str = "lanczos",
     ) -> None:
         super().__init__(
             base_url=base_url,
@@ -303,6 +305,8 @@ class ComfyUIImageEditProvider(ComfyUIImageProvider, ImageEditProvider):
         self.text_encoder = text_encoder
         self.vae = vae
         self.steps = steps
+        self.megapixels = megapixels
+        self.scale_method = scale_method
 
     # Upload the owned source, run the editor, and return one validated candidate.
     async def edit(self, request: ImageEditRequest) -> GeneratedImage:
@@ -420,12 +424,17 @@ class ComfyUIImageEditProvider(ComfyUIImageProvider, ImageEditProvider):
                 "class_type": "VAELoader",
                 "inputs": {"vae_name": self.vae},
             },
+            # The source is resampled here, and this node decides the quality
+            # ceiling of the whole edit: the output is generated at whatever
+            # size this produces. ComfyUI's own template uses `nearest-exact`,
+            # which drops pixels instead of averaging them and stipples skin and
+            # hair on any photograph.
             "5": {
                 "class_type": "ImageScaleToTotalPixels",
                 "inputs": {
                     "image": ["1", 0],
-                    "upscale_method": "nearest-exact",
-                    "megapixels": 1.0,
+                    "upscale_method": self.scale_method,
+                    "megapixels": self.megapixels,
                     "resolution_steps": 1,
                 },
             },

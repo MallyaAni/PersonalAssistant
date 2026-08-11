@@ -265,6 +265,7 @@ def test_a_real_start_time_is_still_shown_in_the_readers_zone():
     message = render_message(
         (_dated("Jazz at the Green", datetime(2026, 8, 11, 12, 0, tzinfo=UTC)),),
         timezone="America/New_York",
+        now=_NOW,
     )
 
     assert message is not None

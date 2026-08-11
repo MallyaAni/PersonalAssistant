@@ -87,6 +87,25 @@ class Settings(BaseSettings):
     IMAGE_EDIT_TEXT_ENCODER: str = "qwen_3_4b.safetensors"
     IMAGE_EDIT_VAE: str = "flux2-vae.safetensors"
     IMAGE_EDIT_STEPS: int = Field(default=4, ge=1, le=100)
+    # What the source is resampled to before editing, and how.
+    #
+    # Both were inherited from ComfyUI's own FLUX.2 Klein template and neither
+    # suits a photograph. `nearest-exact` drops pixels rather than averaging
+    # them, which is the worst filter available for downscaling: it aliases
+    # edges and stipples skin and hair. `lanczos` is what the same node offers
+    # for photographic downscale.
+    #
+    # The megapixel budget is the ceiling on what comes back, because the output
+    # is generated at the scaled size. At 1.0 an edit returned 1024x1024 however
+    # large the source was, which is why editing a phone photo produced something
+    # visibly worse than the original.
+    #
+    # 2.0 was measured on this card rather than assumed: with vLLM resident and
+    # 5,863 MiB free, an edit produced 1440x1440 in 39 seconds and did not run
+    # out of memory. The cost is bounded by this number rather than by the source,
+    # because the scale node normalises to it either way.
+    IMAGE_EDIT_MEGAPIXELS: float = Field(default=2.0, ge=0.25, le=4.0)
+    IMAGE_EDIT_SCALE_METHOD: str = "lanczos"
     # Realism steering. HiDream-O1 runs distilled at cfg=1.0, where a negative
     # prompt is inert, so photorealism is driven by appending this to the
     # positive prompt. It is added only when not already present; set it empty to

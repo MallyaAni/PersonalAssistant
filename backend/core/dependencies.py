@@ -600,6 +600,8 @@ def _build_comfyui_image_edit_provider() -> ComfyUIImageEditProvider:
         max_output_bytes=settings.IMAGE_MAX_OUTPUT_BYTES,
         max_pixels=settings.IMAGE_MAX_PIXELS,
         steps=settings.IMAGE_EDIT_STEPS,
+        megapixels=settings.IMAGE_EDIT_MEGAPIXELS,
+        scale_method=settings.IMAGE_EDIT_SCALE_METHOD,
     )
 
 
