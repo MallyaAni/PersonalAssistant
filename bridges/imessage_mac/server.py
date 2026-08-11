@@ -560,6 +560,23 @@ def diagnose(config: BridgeConfig) -> dict[str, object]:
         # this bridge currently ignores, which is worth seeing rather than
         # inferring from an empty result.
         "association_types": {str(kind): int(count) for kind, count in kinds},
+        # What the recent thumbs actually point at.
+        #
+        # A reaction was left, arrived as type 2001, and still matched none of
+        # the identifiers this bridge had handed out — so the question is no
+        # longer "is it there" but "is it pointing at the message we think we
+        # sent". These are opaque identifiers carrying no content, and comparing
+        # them against what was stored is the only way to see the mismatch.
+        "recent_thumb_targets": [
+            str(target)
+            for (target,) in connection.execute(
+                """
+                SELECT associated_message_guid FROM message
+                WHERE associated_message_type IN (2001, 2002)
+                ORDER BY date DESC LIMIT 5
+                """
+            ).fetchall()
+        ],
     }
 
 
