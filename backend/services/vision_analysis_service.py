@@ -14,6 +14,31 @@ logger = logging.getLogger(__name__)
 # the explicit approval path. This purpose marks application-generated text.
 VISUAL_ANALYSIS_PURPOSE = "visual_artifact_analysis"
 
+# How much of an analysis is worth keeping to find the image again.
+#
+# This exists so an image can be retrieved by describing it, and the subject is
+# named in the opening sentences; the rest is conversational tail. Stored whole,
+# one reply ran to 1,371 characters — of which the useful part was the first
+# line — and every image added another paragraph of prose to the database.
+MAX_INDEXED_CHARS = 400
+
+
+# The part of an analysis worth embedding, cut at a sentence where possible.
+#
+# Sentence-aware because a description severed mid-clause embeds worse than a
+# shorter complete one, and because the result is read by people in the panel.
+def _indexable(analysis_text: str) -> str:
+    collapsed = " ".join(analysis_text.split())
+    if len(collapsed) <= MAX_INDEXED_CHARS:
+        return collapsed
+    window = collapsed[:MAX_INDEXED_CHARS]
+    cut = max(window.rfind(". "), window.rfind("! "), window.rfind("? "))
+    # Only respect a sentence break in the last third, or a description whose
+    # first sentence is very short would be trimmed to almost nothing.
+    if cut > MAX_INDEXED_CHARS // 3:
+        return window[: cut + 1]
+    return window.rstrip() + "…"
+
 
 class VisionAnalysisError(RuntimeError):
     # Retain the valid upload identifier while exposing only a safe public failure.
@@ -62,7 +87,8 @@ class VisionAnalysisService:
         try:
             await self.memory.save_semantic_memory(
                 user_id,
-                f"Description of an image the user has ({kind_label}): {analysis_text}",
+                f"Description of an image the user has ({kind_label}):"
+                f" {_indexable(analysis_text)}",
                 {
                     "artifact_id": artifact_id,
                     "conversation_id": str(artifact.get("conversation_id") or ""),

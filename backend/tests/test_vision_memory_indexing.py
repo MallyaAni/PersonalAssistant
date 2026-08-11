@@ -144,3 +144,36 @@ async def test_blank_analysis_is_not_indexed():
     await _analyze(service)
 
     assert memory.saved == []
+
+
+@pytest.mark.asyncio
+async def test_a_long_analysis_is_trimmed_before_it_is_indexed():
+    from backend.services.vision_analysis_service import MAX_INDEXED_CHARS
+
+    memory = RecordingMemory()
+    service = _service(memory)
+    service.provider.content = (
+        "A magenta fox on a green platform. "
+        + "It also has a lot to say about the composition and the light. " * 40
+    )
+
+    await _analyze(service)
+
+    content = memory.saved[0]["content"]
+    # The subject is named in the opening sentences; the rest is conversational
+    # tail. One real reply ran to 1,371 characters, and every image was adding a
+    # paragraph of prose to the database and to this panel.
+    assert len(content) < MAX_INDEXED_CHARS + 100, len(content)
+    assert "A magenta fox on a green platform." in content
+
+
+@pytest.mark.asyncio
+async def test_a_derived_description_is_not_listed_back_as_a_fact():
+    from backend.services.postgres_memory_service import DERIVED_PURPOSES
+    from backend.services.vision_analysis_service import VISUAL_ANALYSIS_PURPOSE
+
+    # The snapshot that feeds "facts and preferences" filters on this set. An
+    # image description is written so a picture can be found by describing it;
+    # listing it as a fact once showed the assistant's own refusal to edit an
+    # image back to the user as something they had said about themselves.
+    assert VISUAL_ANALYSIS_PURPOSE in DERIVED_PURPOSES

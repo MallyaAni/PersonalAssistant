@@ -10,6 +10,11 @@ from backend.embeddings.base import EmbeddingProvider
 from backend.memory.repository import MemoryRepository
 from backend.memory.retrieval import SemanticRetrievalPolicy
 from backend.models.memory import UserProfile
+from backend.services.vision_analysis_service import VISUAL_ANALYSIS_PURPOSE
+
+# Semantic entries this system derived rather than the user stating them.
+# They are retrievable by embedding and must not be listed back as facts.
+DERIVED_PURPOSES = frozenset({VISUAL_ANALYSIS_PURPOSE})
 
 
 class PostgresMemoryService(MemoryService, SemanticMemoryWriter):
@@ -275,9 +280,21 @@ class PostgresMemoryService(MemoryService, SemanticMemoryWriter):
             memory.to_dict()
             for memory in await self.repo.get_episodic_memories(user_id, limit=limit)
         ]
+        # Derived entries are an index, not something the user told us.
+        #
+        # A vision analysis is written into semantic memory so an image can be
+        # found by describing it, and it is deliberately filed under its own
+        # purpose rather than as a stated fact. Nothing honoured that here, so
+        # the panel listed 1,300 characters of image description under "facts
+        # and preferences" — including, once, the assistant's own refusal to
+        # edit a picture, presented back to the user as a fact about them.
+        #
+        # Retrieval is unaffected: image recall searches by embedding, not
+        # through this snapshot.
         semantic = [
             memory.to_dict()
             for memory in await self.repo.list_semantic_memories(user_id, limit=limit)
+            if getattr(memory, "purpose", "") not in DERIVED_PURPOSES
         ]
         facts = [
             fact.to_dict()
