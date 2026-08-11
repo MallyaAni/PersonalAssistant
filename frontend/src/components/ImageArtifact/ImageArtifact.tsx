@@ -11,25 +11,13 @@ import {
   type ImageAnalysisTurn,
   type ImageArtifact as ImageArtifactRecord,
 } from '../../services/api'
+import { looksLikeQuestion, looksLikeRefinementRequest } from '../../services/imageIntent'
 
 interface ImageArtifactProps {
   artifact: ImageArtifactRecord;
   onDeleted?: (artifactId: string) => void;
   onRetry?: () => void;
   onRefined?: (artifact: ImageArtifactRecord) => void;
-}
-
-// Recognize a general image question after edit-shaped requests are considered.
-const looksLikeQuestion = (text: string): boolean => {
-  const normalized = text.trim().toLowerCase()
-  return normalized.endsWith('?')
-    || /^(what|which|who|where|when|why|how|is|are|was|were|do|does|did|can|could|would|will|should)\b/.test(normalized)
-}
-
-// Recognize polite question-shaped edit commands before general vision Q&A.
-const looksLikeRefinementRequest = (text: string): boolean => {
-  const normalized = text.trim().toLowerCase()
-  return /^(?:please\s+)?(?:(?:can|could|would|will)\s+(?:you|we)\s+)?(?:please\s+)?(?:make|change|turn|recolor|repaint|replace|remove|add|edit|modify|transform|adjust|brighten|darken|crop|resize|rotate|move)\b/.test(normalized)
 }
 
 // Download one already loaded private image without another provider request.

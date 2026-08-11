@@ -672,6 +672,24 @@ behind a process that would not die.
 The task is `DeepMatter tunnel`, registered to run as SYSTEM at startup and to
 restart itself every minute if cloudflared stops.
 
+### ComfyUI does not restart itself either — same reboot, same cause
+
+After the 08:49 reboot nothing was listening on 8188, so every image request
+failed while every container reported healthy. ComfyUI is a host process at
+`COMFYUI_HOST_PATH`, not a Compose service, so `restart: unless-stopped` never
+applied to it.
+
+It now has a `DeepMatter ComfyUI` logon task running the same command
+`start-anios.sh` uses. Unlike the tunnel's SYSTEM task, this one is readable
+from a non-elevated shell — action, arguments and working directory all verified
+— but it has still not survived an actual reboot, and that is the claim that
+already failed once here.
+
+The symptom is worth remembering: it presents as the assistant refusing, not as
+an outage. An edit typed into the main composer became an ordinary chat turn and
+the model answered that it could not edit images. That routing is fixed, and the
+first check for any image failure is `http://127.0.0.1:8188`.
+
 ### It did not survive a reboot — OPEN, and the next thing to fix here
 
 The machine rebooted at 2026-08-11 08:49 and `deep-matter.com` served error

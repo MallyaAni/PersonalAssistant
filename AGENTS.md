@@ -171,6 +171,20 @@ else needs the hostname: the gateway serves the app and proxies `/api` on one
 origin, so the browser is same-origin, and `validate_browser_origin` accepts
 `https://<host>` from the request rather than from a list.
 
+**ComfyUI is a host process and nothing restarts it.** It runs from
+`COMFYUI_HOST_PATH` rather than in Compose — the host install is far lighter than
+the CUDA container image, and Qwen is quantized to FP8 specifically to leave GPU
+headroom for it. So `restart: unless-stopped` does not apply, and after a reboot
+every image request fails while every container reports healthy. Started by
+`scripts/start-anios.sh`, by the `DeepMatter ComfyUI` logon task, or by hand;
+`docker compose --profile comfyui up -d` runs the containerized alternative.
+
+The failure reads as a refusal rather than an outage. The backend does return
+"The image generation backend (ComfyUI) isn't running", but an edit typed into
+the main composer used to become an ordinary chat turn, and the model — having
+no image tool — replied that it could not edit images. Check
+`http://127.0.0.1:8188` before believing the assistant declined anything.
+
 **A reaction made on a phone, in a thread with yourself, cannot be linked.**
 Sending to your own Apple ID gives the phone a *different* message object from
 the one the Mac sent. React there and the tapback references the phone's copy —

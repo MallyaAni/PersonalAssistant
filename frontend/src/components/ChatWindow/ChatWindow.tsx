@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Sparkles } from 'lucide-react'
 import MessageList from '../MessageList/MessageList'
 import Composer from '../Composer/Composer'
@@ -599,6 +599,28 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     setMemoryProposals(current => current.slice(1))
   }
 
+  // The image an edit typed into the composer should apply to: the most recent
+  // one in view. Without this, an edit request typed there becomes an ordinary
+  // chat turn and the model answers that it cannot edit images — which reads as
+  // the feature being broken rather than as it being in the wrong box.
+  const editableImage = useMemo<ImageArtifact | null>(() => {
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+      const message = messages[index]
+      // A diagram is also an artifact and is not editable this way, so the kind
+      // is checked rather than assumed from position.
+      const artifact = message.artifact
+      if (
+        artifact
+        && (artifact.kind === 'generated_image' || artifact.kind === 'uploaded_image')
+      ) {
+        return artifact as ImageArtifact
+      }
+      const matched = message.imageMatches?.[0]
+      if (matched) return matched
+    }
+    return null
+  }, [messages])
+
   const hasMessages = messages.length > 0
 
   return (
@@ -705,6 +727,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             onVisualReady={handleVisualReady}
             onVisualError={handleVisualError}
             onImageMatches={handleImageMatches}
+            editableImage={editableImage}
+            onImageRefined={handleImageRefined}
             onSearchStarted={handleSearchStarted}
             onSearchBlocked={handleSearchBlocked}
             onSearchSources={handleSearchSources}

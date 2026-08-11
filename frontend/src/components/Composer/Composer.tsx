@@ -4,6 +4,7 @@ import {
   analyzeImage,
   generateImage,
   ingestDocument,
+  refineImage,
   streamChat,
   type AgentActivity,
   type ImageArtifact,
@@ -12,6 +13,7 @@ import {
   type ToolActivity,
   type VisualArtifact,
 } from '../../services/api'
+import { shouldEditImage } from '../../services/imageIntent'
 import { submitOnEnter } from '../../utils/submitOnEnter'
 
 type ComposerAction = 'chat' | 'generate' | 'analyze' | 'ingest';
@@ -83,6 +85,9 @@ interface ComposerProps {
   onVisualReady: (artifact: ImageArtifact) => void;
   onVisualError: (message: string) => void;
   onImageMatches: (artifacts: ImageArtifact[]) => void;
+  // The image an edit typed here applies to, and where its revision goes.
+  editableImage: ImageArtifact | null;
+  onImageRefined: (artifact: ImageArtifact) => void;
   onSearchStarted: (minimized: boolean) => void;
   onSearchBlocked: (categories: string[]) => void;
   onSearchSources: (sources: SearchSource[]) => void;
@@ -107,6 +112,8 @@ const Composer: React.FC<ComposerProps> = ({
   onVisualReady,
   onVisualError,
   onImageMatches,
+  editableImage,
+  onImageRefined,
   onSearchStarted,
   onSearchBlocked,
   onSearchSources,
@@ -197,6 +204,27 @@ const Composer: React.FC<ComposerProps> = ({
       }
 
       onSendMessage('user', prompt)
+
+      // An edit typed here, rather than into the image card's follow-up box.
+      //
+      // Without this the same words became an ordinary chat turn: the model has
+      // no image tool, so it answered that it could not edit images, which is
+      // indistinguishable from the feature being broken. Only explicitly
+      // edit-shaped text is taken, so ordinary conversation that happens to
+      // follow an image still reaches the model.
+      if (editableImage && shouldEditImage(prompt)) {
+        onThinkingChange(false)
+        onVisualStarted('generate')
+        setVisualInFlight(true)
+        const revision = await refineImage(
+          userId,
+          editableImage.id,
+          prompt,
+          conversationId,
+        )
+        onImageRefined(revision)
+        return
+      }
 
       if (action === 'generate') {
         onThinkingChange(false)
