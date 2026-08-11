@@ -541,6 +541,19 @@ def diagnose(config: BridgeConfig) -> dict[str, object]:
             """,
             (since,),
         ).fetchall()
+        # Inside the try, because the finally below closes the connection before
+        # the return statement runs — which is exactly how the first version of
+        # this failed with "cannot operate on a closed database".
+        targets = [
+            str(target)
+            for (target,) in connection.execute(
+                """
+                SELECT associated_message_guid FROM message
+                WHERE associated_message_type IN (2001, 2002)
+                ORDER BY date DESC LIMIT 5
+                """
+            ).fetchall()
+        ]
     except sqlite3.Error as error:
         return {"readable": False, "why": f"Query failed: {type(error).__name__}"}
     finally:
@@ -567,16 +580,7 @@ def diagnose(config: BridgeConfig) -> dict[str, object]:
         # longer "is it there" but "is it pointing at the message we think we
         # sent". These are opaque identifiers carrying no content, and comparing
         # them against what was stored is the only way to see the mismatch.
-        "recent_thumb_targets": [
-            str(target)
-            for (target,) in connection.execute(
-                """
-                SELECT associated_message_guid FROM message
-                WHERE associated_message_type IN (2001, 2002)
-                ORDER BY date DESC LIMIT 5
-                """
-            ).fetchall()
-        ],
+        "recent_thumb_targets": targets,
     }
 
 
