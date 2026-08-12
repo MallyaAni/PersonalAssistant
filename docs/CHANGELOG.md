@@ -2747,3 +2747,23 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   edits in the order they were applied. The seed lookup uses the primary key
   index, and the foreign key's delete path uses the new index instead of
   scanning every artifact.
+
+## 2026-08-11 — Provenance stopped killing the chat stream
+
+- Merging the resolved lineage into the match records broke every chat turn that
+  recalled an image: those same records are streamed to the interface as the
+  `image_matches` event, the API encodes each event with `json.dumps`, and a
+  dataclass is not JSON. The user saw "Unable to complete the chat request" with
+  nothing to connect it to provenance.
+- The tests in place all passed. They asserted on objects in memory, and the
+  objects were correct; what none of them exercised was whether the transport
+  could carry them.
+- Provenance is prompt context and now travels beside the matches rather than
+  inside them, so nothing added for the model can reach the browser.
+- `test_every_streamed_retrieval_event_survives_the_json_encoder` drives the
+  real retrieval branch and encodes every event it yields, exactly as the API
+  does. Confirmed to fail against the defect and pass against the fix.
+- Verified end to end over real HTTP against the running stack, with the
+  question that failed: the assistant answers that the photograph is the user's
+  own, wearing a wide-brimmed black cowboy hat, and that the straw hat was the
+  edit made from it.

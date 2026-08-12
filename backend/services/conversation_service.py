@@ -74,9 +74,8 @@ def _image_description(match: dict[str, Any]) -> str:
 # matter to a reader — an uploaded original is the user's own picture, and the
 # edits are listed oldest first so "the hat was replaced" is legible as history
 # rather than as what the picture always showed.
-def _image_lineage(match: dict[str, Any]) -> dict[str, Any]:
-    lineage = match.get("lineage")
-    if not isinstance(lineage, Lineage):
+def _image_lineage(lineage: Lineage | None) -> dict[str, Any]:
+    if lineage is None:
         return {}
     described = str(lineage.origin.get("description") or "")
     rendered: dict[str, Any] = {
@@ -532,40 +531,40 @@ class ConversationService:
             # returned; only the latest revision of each lineage remains.
             ranked = collapse_revision_chains(ranked)
             ranked = prefer_prompt_matches(query, ranked)
-            selected = self.image_retrieval.select(ranked)[: self.image_search_limit]
-            return await self._with_lineage(user_id, selected)
+            return self.image_retrieval.select(ranked)[: self.image_search_limit]
         except Exception:
             # A retrieval failure degrades the answer; it must not fail the turn.
             logger.warning("Trace %s image search failed", trace_id, exc_info=True)
             return []
 
-    # Attach what each match was derived from, for the ones that were derived.
+    # What each match was derived from, keyed by artifact id.
     #
     # One query for the whole page of results, and it asks the parent edge
     # rather than the result set — so an edited photograph says it is a
     # photograph whether or not the original was itself retrieved. A failure
     # here costs provenance, never the answer.
-    async def _with_lineage(
+    #
+    # Deliberately returned beside the matches rather than merged into them.
+    # Merged, it rode along into the `image_matches` event, which is serialized
+    # to the browser as JSON — and a dataclass is not JSON, so every chat turn
+    # that recalled an image died in the encoder. The interface displays these
+    # artifacts; provenance is for the prompt, and the two do not travel
+    # together.
+    async def _resolve_lineage(
         self,
         user_id: str,
         matches: list[dict[str, Any]],
-    ) -> list[dict[str, Any]]:
+    ) -> dict[str, Lineage]:
         if self.lineage is None or not matches:
-            return matches
+            return {}
         try:
-            resolved = await self.lineage.resolve_lineage(
+            return await self.lineage.resolve_lineage(
                 user_id,
                 [str(match.get("id")) for match in matches],
             )
         except Exception:
             logger.warning("Image lineage lookup failed", exc_info=True)
-            return matches
-        return [
-            {**match, "lineage": found}
-            if (found := resolved.get(str(match.get("id"))))
-            else match
-            for match in matches
-        ]
+            return {}
 
     # Attach optional image and search context in place, streaming progress so
     # the interface can show retrieval and cite what it used.
@@ -584,6 +583,7 @@ class ConversationService:
             query_embedding,
         )
         if image_matches:
+            lineages = await self._resolve_lineage(user_id, image_matches)
             # Tell the model the images exist and are already shown, so it
             # describes them rather than claiming it cannot display images.
             context["images"] = [
@@ -599,7 +599,7 @@ class ConversationService:
                     # the user supplied, once edited, reads as something the
                     # assistant invented — and what the original showed is lost
                     # even though it is the thing being asked about.
-                    **_image_lineage(match),
+                    **_image_lineage(lineages.get(str(match.get("id")))),
                 }
                 for match in image_matches
             ]
