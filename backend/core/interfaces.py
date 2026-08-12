@@ -322,6 +322,16 @@ class SemanticMemoryWriter(ABC):
         expires_at: datetime | None = None,
     ) -> dict[str, Any]: ...
 
+    # Replace the one derived visual description owned by an artifact.
+    @abstractmethod
+    async def replace_visual_semantic_memory(
+        self,
+        user_id: str,
+        artifact_id: str,
+        content: str,
+        metadata: dict[str, Any],
+    ) -> dict[str, Any]: ...
+
 
 class VisionEmbeddingProvider(ABC):
     """Embeds images into the same latent space as the text embedder.

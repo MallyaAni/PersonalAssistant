@@ -85,6 +85,7 @@ class OpenAICompatibleVisionProvider(VisionProvider):
             "messages": messages,
             "max_tokens": self.max_tokens,
             "reasoning_effort": self.reasoning_effort,
+            "temperature": 0.0,
         }
         headers = {"Content-Type": "application/json"}
         if self.api_key:

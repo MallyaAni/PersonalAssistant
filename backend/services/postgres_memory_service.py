@@ -274,6 +274,28 @@ class PostgresMemoryService(MemoryService, SemanticMemoryWriter):
         )
         return memory.to_dict()
 
+    # Re-embed and replace one image's derived description without duplicates.
+    async def replace_visual_semantic_memory(
+        self,
+        user_id: str,
+        artifact_id: str,
+        content: str,
+        metadata: dict[str, Any],
+    ) -> dict[str, Any]:
+        embedding = await asyncio.to_thread(self.embeddings.embed_text, content)
+        memory = await self.repo.replace_visual_semantic_memory(
+            user_id=user_id,
+            artifact_id=artifact_id,
+            content=content,
+            embedding=embedding,
+            metadata=metadata,
+            purpose=VISUAL_ANALYSIS_PURPOSE,
+            embedding_model=getattr(self.embeddings, "model", "unknown"),
+            embedding_version=self.embedding_model_version,
+            embedding_dimension=len(embedding),
+        )
+        return memory.to_dict()
+
     async def update_memory(
         self,
         user_id: str,

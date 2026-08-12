@@ -517,6 +517,47 @@ class MemoryRepository:
         await self.session.refresh(new_mem)
         return new_mem
 
+    # Atomically replace the derived visual-memory row for one owned artifact.
+    async def replace_visual_semantic_memory(
+        self,
+        user_id: str,
+        artifact_id: str,
+        content: str,
+        embedding: list[float],
+        metadata: dict[str, Any],
+        purpose: str,
+        embedding_model: str,
+        embedding_version: str,
+        embedding_dimension: int,
+    ) -> SemanticMemory:
+        await transaction_advisory_lock(
+            self.session,
+            "visual-semantic-memory",
+            user_id,
+            artifact_id,
+        )
+        await self.session.execute(
+            delete(SemanticMemory).where(
+                SemanticMemory.user_id == user_id,
+                SemanticMemory.purpose == purpose,
+                SemanticMemory.extra_data["artifact_id"].astext == artifact_id,
+            )
+        )
+        memory = SemanticMemory(
+            user_id=user_id,
+            content=content,
+            embedding=embedding,
+            purpose=purpose,
+            embedding_model=embedding_model,
+            embedding_version=embedding_version,
+            embedding_dimension=embedding_dimension,
+            extra_data=metadata,
+        )
+        self.session.add(memory)
+        await self.session.commit()
+        await self.session.refresh(memory)
+        return memory
+
     async def list_semantic_memories(
         self, user_id: str, limit: int | None = None
     ) -> list[SemanticMemory]:

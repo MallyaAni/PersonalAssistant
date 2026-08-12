@@ -34,6 +34,27 @@ class RecordingMemory:
         )
         return {"id": "stub"}
 
+    # Capture the replacement contract used by derived image observations.
+    async def replace_visual_semantic_memory(
+        self,
+        user_id: str,
+        artifact_id: str,
+        content: str,
+        metadata: dict[str, Any],
+    ) -> dict[str, Any]:
+        if self.fail:
+            raise RuntimeError("embedding backend unavailable")
+        self.saved = [
+            {
+                "user_id": user_id,
+                "artifact_id": artifact_id,
+                "content": content,
+                "metadata": metadata,
+                "purpose": VISUAL_ANALYSIS_PURPOSE,
+            }
+        ]
+        return {"id": "stub"}
+
 
 class StubImages:
     async def store_upload(self, user_id, conversation_id, trace_id, content, mime):

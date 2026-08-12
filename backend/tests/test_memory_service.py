@@ -11,6 +11,7 @@ os.environ["SECRET_KEY"] = "test_secret_key_only_for_testing"
 
 from backend.database.session import async_engine
 from backend.embeddings.base import EmbeddingProvider
+from backend.memory.purposes import VISUAL_ANALYSIS_PURPOSE
 from backend.memory.retrieval import SemanticRetrievalPolicy
 from backend.models.memory import SemanticMemory, UserProfile
 from backend.services.postgres_memory_service import PostgresMemoryService
@@ -119,6 +120,52 @@ async def test_save_semantic_memory(memory_service, db_session):
     assert saved.user_id == user_id
     assert saved.content == content
     assert saved.extra_data == {"type": "preference"}
+
+
+# Re-observing pixels replaces stale derived text without touching another user.
+@pytest.mark.asyncio
+async def test_visual_semantic_memory_replacement_is_unique_and_user_scoped(
+    memory_service,
+    db_session,
+):
+    user_id = f"test_user_{uuid.uuid4()}"
+    other_user = f"test_user_{uuid.uuid4()}"
+    artifact_id = str(uuid.uuid4())
+    await memory_service.replace_visual_semantic_memory(
+        user_id,
+        artifact_id,
+        "The person wears a dark jacket.",
+        {"artifact_id": artifact_id},
+    )
+    await memory_service.replace_visual_semantic_memory(
+        user_id,
+        artifact_id,
+        "The person wears a dark jacket and white shirt.",
+        {"artifact_id": artifact_id},
+    )
+    await memory_service.replace_visual_semantic_memory(
+        other_user,
+        artifact_id,
+        "Another user's image.",
+        {"artifact_id": artifact_id},
+    )
+
+    rows = list(
+        (
+            await db_session.execute(
+                select(SemanticMemory).where(
+                    SemanticMemory.user_id == user_id,
+                    SemanticMemory.purpose == VISUAL_ANALYSIS_PURPOSE,
+                    SemanticMemory.extra_data["artifact_id"].astext == artifact_id,
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert [row.content for row in rows] == [
+        "The person wears a dark jacket and white shirt."
+    ]
 
 
 @pytest.mark.asyncio

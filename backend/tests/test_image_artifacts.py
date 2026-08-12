@@ -181,11 +181,15 @@ class StaticVisionProvider:
         content: bytes,
         mime_type: str,
     ) -> VisionAnalysis:
-        assert prompt == "Describe the validation image"
         assert content == _png_bytes()
         assert mime_type == "image/png"
+        answer = (
+            "A small blue rectangle."
+            if prompt != "Describe the validation image"
+            else "The validation image contains a small blue rectangle."
+        )
         return VisionAnalysis(
-            content="A small blue rectangle.",
+            content=answer,
             model="test-vision-model",
             metadata={"usage": {"total_tokens": 12}},
         )
@@ -594,10 +598,13 @@ async def test_vision_analysis_service_persists_upload_and_analysis(
         "image/png",
     )
 
-    assert result["analysis"] == "A small blue rectangle."
+    assert result["analysis"] == (
+        "The validation image contains a small blue rectangle."
+    )
     assert result["artifact"]["kind"] == "uploaded_image"
     assert result["artifact"]["metadata"]["analysis_status"] == "ready"
     assert result["artifact"]["metadata"]["analysis_model"] == ("test-vision-model")
+    assert result["artifact"]["metadata"]["analysis"] == "A small blue rectangle."
 
 
 # Verify invalid upload bytes are rejected before any artifact is created.

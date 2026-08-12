@@ -1,6 +1,11 @@
+import asyncio
 import logging
 from typing import Any
 
+from backend.agents.vision.observation import (
+    CANONICAL_OBSERVATION_PROMPT,
+    DEFAULT_UPLOAD_QUESTION,
+)
 from backend.core.interfaces import (
     BinaryArtifactRepository,
     SemanticMemoryWriter,
@@ -10,7 +15,6 @@ from backend.memory.purposes import VISUAL_ANALYSIS_PURPOSE
 from backend.services.image_artifact_service import ImageArtifactService
 from backend.services.image_intent import (
     ASK,
-    DESCRIBE_PROMPT,
     EDIT,
     ImageIntentClassifier,
 )
@@ -23,7 +27,7 @@ logger = logging.getLogger(__name__)
 # named in the opening sentences; the rest is conversational tail. Stored whole,
 # one reply ran to 1,371 characters — of which the useful part was the first
 # line — and every image added another paragraph of prose to the database.
-MAX_INDEXED_CHARS = 400
+MAX_INDEXED_CHARS = 1_200
 
 
 # The part of an analysis worth embedding, cut at a sentence where possible.
@@ -41,6 +45,11 @@ def _indexable(analysis_text: str) -> str:
     if cut > MAX_INDEXED_CHARS // 3:
         return window[: cut + 1]
     return window.rstrip() + "…"
+
+
+# Avoid a duplicate question call only for the browser's exact neutral default.
+def _needs_user_answer(prompt: str, wants_edit: bool) -> bool:
+    return not wants_edit and prompt.strip() != DEFAULT_UPLOAD_QUESTION
 
 
 class VisionAnalysisError(RuntimeError):
@@ -90,18 +99,22 @@ class VisionAnalysisService:
         kind_label = raw_kind.removesuffix("_image") or "stored"
         artifact_id = str(artifact.get("id"))
         try:
-            await self.memory.save_semantic_memory(
-                user_id,
+            content = (
                 f"Description of an image the user has ({kind_label}):"
-                f" {_indexable(analysis_text)}",
-                {
-                    "artifact_id": artifact_id,
-                    "conversation_id": str(artifact.get("conversation_id") or ""),
-                    "kind": str(artifact.get("kind") or ""),
-                    "source": "vision_analysis",
-                    "analysis_model": model,
-                },
-                purpose=VISUAL_ANALYSIS_PURPOSE,
+                f" {_indexable(analysis_text)}"
+            )
+            metadata = {
+                "artifact_id": artifact_id,
+                "conversation_id": str(artifact.get("conversation_id") or ""),
+                "kind": str(artifact.get("kind") or ""),
+                "source": "vision_analysis",
+                "analysis_model": model,
+            }
+            await self.memory.replace_visual_semantic_memory(
+                user_id,
+                artifact_id,
+                content,
+                metadata,
             )
         except Exception:
             # Indexing is an enhancement; a failure must not lose the analysis.
@@ -137,34 +150,79 @@ class VisionAnalysisService:
             declared_mime_type,
         )
         artifact_id = str(artifact["id"])
-        try:
-            analysis = await self.provider.analyze(
-                DESCRIBE_PROMPT if wants_edit else prompt,
+        requests = [
+            self.provider.analyze(
+                CANONICAL_OBSERVATION_PROMPT,
                 validated_content,
                 str(artifact["mime_type"]),
             )
-        except Exception as exc:
+        ]
+        needs_user_answer = _needs_user_answer(prompt, wants_edit)
+        if needs_user_answer:
+            requests.append(
+                self.provider.analyze(
+                    prompt,
+                    validated_content,
+                    str(artifact["mime_type"]),
+                )
+            )
+        results = await asyncio.gather(*requests, return_exceptions=True)
+        observation = results[0]
+        if isinstance(observation, BaseException):
             await self.repository.update_metadata(
                 artifact_id,
                 user_id,
                 {"analysis_status": "failed"},
             )
-            raise VisionAnalysisError(artifact_id) from exc
+            raise VisionAnalysisError(artifact_id) from observation
+
+        answer = observation
+        answer_status = "ready"
+        if needs_user_answer:
+            proposed_answer = results[1]
+            if isinstance(proposed_answer, BaseException):
+                answer_status = "fallback"
+                logger.warning(
+                    "User-facing image answer failed; using canonical observation",
+                    exc_info=(
+                        type(proposed_answer),
+                        proposed_answer,
+                        proposed_answer.__traceback__,
+                    ),
+                )
+            else:
+                answer = proposed_answer
+
+        metadata: dict[str, Any] = {
+            "analysis_status": "ready",
+            "analysis": observation.content,
+            "analysis_model": observation.model,
+            "analysis_answer_status": answer_status,
+            **observation.metadata,
+        }
+        if needs_user_answer:
+            metadata["analysis_thread"] = [
+                {
+                    "prompt": prompt,
+                    "answer": answer.content,
+                    "model": answer.model,
+                }
+            ]
         updated = await self.repository.update_metadata(
             artifact_id,
             user_id,
-            {
-                "analysis_status": "ready",
-                "analysis": analysis.content,
-                "analysis_model": analysis.model,
-                **analysis.metadata,
-            },
+            metadata,
         )
-        await self._index_analysis(user_id, updated, analysis.content, analysis.model)
+        await self._index_analysis(
+            user_id,
+            updated,
+            observation.content,
+            observation.model,
+        )
         return {
             "artifact": updated,
-            "analysis": analysis.content,
-            "model": analysis.model,
+            "analysis": answer.content,
+            "model": answer.model,
             # The caller edits the stored upload when this says so. It is
             # reported rather than acted on here because the edit needs the
             # artifact this call is still in the middle of creating.
@@ -183,7 +241,7 @@ class VisionAnalysisService:
         artifact, content = owned
         try:
             analysis = await self.provider.analyze(
-                DESCRIBE_PROMPT,
+                CANONICAL_OBSERVATION_PROMPT,
                 content,
                 str(artifact["mime_type"]),
             )

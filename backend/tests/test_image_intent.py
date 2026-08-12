@@ -12,7 +12,8 @@ from typing import Any
 import pytest
 
 from backend.artifacts.types import VisionAnalysis
-from backend.services.image_intent import DESCRIBE_PROMPT, ImageIntentClassifier
+from backend.agents.vision.observation import CANONICAL_OBSERVATION_PROMPT
+from backend.services.image_intent import ImageIntentClassifier
 from backend.services.vision_analysis_service import VisionAnalysisService
 
 
@@ -61,7 +62,12 @@ class RecordingVision:
 
     async def analyze(self, prompt, content, mime_type):
         self.asked.append(prompt)
-        return VisionAnalysis(content="A person outdoors.", model="test", metadata={})
+        content = (
+            "A person wearing a navy jacket and white shirt outdoors."
+            if prompt != "what is written on the sign?"
+            else "The sign says DANCE TONIGHT."
+        )
+        return VisionAnalysis(content=content, model="test", metadata={})
 
 
 async def _analyze(prompt: str, intent: str | None, fail: bool = False):
@@ -91,14 +97,28 @@ pytestmark = pytest.mark.asyncio
 # description of the picture the user had just uploaded.
 async def test_an_edit_request_is_not_the_question_put_to_the_vision_model() -> None:
     vision, result = await _analyze("give me a straw hat", "edit")
-    assert vision.asked == [DESCRIBE_PROMPT]
+    assert len(vision.asked) == 1
+    assert vision.asked[0] == CANONICAL_OBSERVATION_PROMPT
     assert result["intent"] == "edit"
 
 
 # A genuine question still reaches the vision model as the user wrote it.
 async def test_a_question_is_put_to_the_vision_model_unchanged() -> None:
     vision, result = await _analyze("what is written on the sign?", "ask")
-    assert vision.asked == ["what is written on the sign?"]
+    assert len(vision.asked) == 2
+    assert vision.asked[0] == CANONICAL_OBSERVATION_PROMPT
+    assert vision.asked[1] == "what is written on the sign?"
+    assert result["analysis"] == "The sign says DANCE TONIGHT."
+    assert result["artifact"]["metadata"]["analysis"] == (
+        "A person wearing a navy jacket and white shirt outdoors."
+    )
+    assert result["artifact"]["metadata"]["analysis_thread"] == [
+        {
+            "prompt": "what is written on the sign?",
+            "answer": "The sign says DANCE TONIGHT.",
+            "model": "test",
+        }
+    ]
     assert result["intent"] == "ask"
 
 
@@ -106,14 +126,17 @@ async def test_a_question_is_put_to_the_vision_model_unchanged() -> None:
 # still store and describe the picture rather than fail the request.
 async def test_a_classifier_failure_still_analyzes_the_upload() -> None:
     vision, result = await _analyze("give me a straw hat", None, fail=True)
-    assert vision.asked == ["give me a straw hat"]
+    assert len(vision.asked) == 2
+    assert vision.asked[0] == CANONICAL_OBSERVATION_PROMPT
+    assert vision.asked[1] == "give me a straw hat"
     assert result["intent"] == "ask"
-    assert result["analysis"] == "A person outdoors."
+    assert result["artifact"]["metadata"]["analysis"] == (
+        "A person wearing a navy jacket and white shirt outdoors."
+    )
 
 
-# No classifier at all is the same story: this is how every existing caller
-# constructs the service, and none of them should change behaviour.
-async def test_no_classifier_leaves_the_prompt_alone() -> None:
+# No classifier still separates reusable observation from the immediate answer.
+async def test_no_classifier_keeps_the_question_out_of_canonical_memory() -> None:
     vision = RecordingVision()
     service = VisionAnalysisService(StubImages(), StubRepository(), vision)
     result = await service.analyze_upload(
@@ -124,7 +147,9 @@ async def test_no_classifier_leaves_the_prompt_alone() -> None:
         content=b"bytes",
         declared_mime_type="image/png",
     )
-    assert vision.asked == ["describe this"]
+    assert len(vision.asked) == 2
+    assert vision.asked[0] == CANONICAL_OBSERVATION_PROMPT
+    assert vision.asked[1] == "describe this"
     assert result["intent"] == "ask"
 
 

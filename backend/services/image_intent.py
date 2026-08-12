@@ -25,6 +25,7 @@ import json
 import logging
 from typing import Any
 
+from backend.agents.vision.observation import CANONICAL_OBSERVATION_PROMPT
 from backend.core.interfaces import TextWriter
 
 logger = logging.getLogger(__name__)
@@ -35,7 +36,7 @@ logger = logging.getLogger(__name__)
 # the vision model — and what it answers becomes the stored description of the
 # upload. A neutral description is the useful thing to keep; the edit request is
 # not a description of anything.
-DESCRIBE_PROMPT = "Describe this image, including any text you can read."
+DESCRIBE_PROMPT = CANONICAL_OBSERVATION_PROMPT
 
 EDIT = "edit"
 ASK = "ask"
