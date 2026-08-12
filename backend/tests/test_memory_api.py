@@ -13,6 +13,7 @@ from backend.core.dependencies import get_embedding_provider
 from backend.database.session import SessionLocal
 from backend.embeddings.base import EmbeddingProvider
 from backend.main import app
+from backend.models.artifact import VisualArtifact
 from backend.models.conversation import Conversation
 from backend.models.memory import (
     EpisodicMemory,
@@ -36,6 +37,7 @@ class DeterministicEmbeddingProvider(EmbeddingProvider):
 
 def _remove_test_user(user_id: str):
     with SessionLocal() as session:
+        session.execute(delete(VisualArtifact).where(VisualArtifact.user_id == user_id))
         session.execute(delete(MemoryFact).where(MemoryFact.user_id == user_id))
         session.execute(delete(SemanticMemory).where(SemanticMemory.user_id == user_id))
         session.execute(delete(EpisodicMemory).where(EpisodicMemory.user_id == user_id))
@@ -202,6 +204,7 @@ def test_memory_api_persists_searches_scopes_and_deletes_personal_memory():
                 "procedures": 0,
                 "entities": 0,
                 "knowledge_documents": 0,
+                "artifacts": 0,
             }
 
             empty_snapshot = client.get(f"/api/v1/memory/{user_id}").json()
@@ -537,6 +540,18 @@ def test_delete_all_propagates_to_conversations_and_tool_memory():
     try:
         with SessionLocal() as session:
             session.add(
+                VisualArtifact(
+                    user_id=user_id,
+                    conversation_id=uuid.uuid4(),
+                    trace_id=uuid.uuid4(),
+                    kind="diagram",
+                    status="ready",
+                    title="Private diagram",
+                    provider="test",
+                    extra_data={},
+                )
+            )
+            session.add(
                 Conversation(
                     conversation_id=uuid.uuid4(),
                     user_id=user_id,
@@ -558,6 +573,7 @@ def test_delete_all_propagates_to_conversations_and_tool_memory():
             deleted = client.delete(f"/api/v1/memory/{user_id}").json()["deleted"]
             assert deleted["tool_descriptors"] == 1
             assert deleted["conversations"] == 1
+            assert deleted["artifacts"] == 1
             assert (
                 client.get(f"/api/v1/memory/{user_id}/export").json()["conversations"]
                 == []

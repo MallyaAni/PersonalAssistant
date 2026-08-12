@@ -47,6 +47,11 @@ This document separates current security facts from future requirements. A contr
 - Redis and PostgreSQL ports are published to the host by the development Compose configuration. Redis now stores only expiring model-execution coordination keys, foreground waiter counts, and opaque lease tokens; it receives no prompts, drafts, model answers, user IDs, or artifact content.
 - Personal-memory REST/UI deletion is implemented and queries filter by user ID. This is an authorization boundary only when signed-token authentication is enabled; auth-disabled mode is trusted-local logical scoping.
 - Agent-memory tables for cache, working state, procedures, entities/relations, knowledge, and summaries are user-scoped and covered by export/delete-all and scoped record deletion. A dry-run/apply service and CLI purge expired application rows; external scheduling and backup deletion are not implemented.
+- Personal-memory delete-all also removes the same owner's visual artifact rows,
+  derived visual descriptions/embeddings, and opaque binary files. Database
+  deletion returns only owned storage keys to the cleanup service; a file error
+  is surfaced and the existing storage collector remains the recovery boundary
+  for unavoidable database/filesystem non-atomicity.
 - `MemoryCoordinatorAgent` receives only typed store methods. It selects bounded context deterministically and does not give the configured generation model SQL, raw table, durable-write, tool-invocation, or authorization capabilities.
 - Retrieved personal, knowledge, procedure, entity, summary, and toolbox values are placed in a prompt section labeled as untrusted literal data. This is a defense-in-depth prompt boundary, not a complete prompt-injection sandbox.
 - The private UI obtains its user identity from `/api/v1/auth/session`; it does

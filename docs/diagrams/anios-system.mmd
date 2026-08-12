@@ -49,6 +49,7 @@ flowchart TB
     Identity --> Discovery
     Conversation <--> Memory
     Discovery <--> Memory
+    Memory -->|forget-me artifact cleanup| Visual
 
     Conversation --> Tools --> Integrations
     Discovery --> Tools

@@ -55,7 +55,10 @@ Current evidence as of 2026-07-17:
 - `VERIFIED`: profile upsert/readback, user-scoped episodic memory, metadata persistence, Nomic embedding generation, 768-dimensional pgvector storage, and semantic similarity retrieval pass integration tests.
 - `VERIFIED`: the graph consumes bounded profile, episodic, and semantic context labeled as untrusted data.
 - `VERIFIED`: REST and browser paths create, reload, recall, list, and delete personal memory; cross-user record deletion is rejected.
-- `VERIFIED`: a live Chromium path persisted a unique semantic memory, reloaded it, had Gemma recall it, deleted it, and confirmed database absence.
+- `VERIFIED`: live Chromium paths persisted and deleted semantic memory and a
+  real uploaded visual artifact. Delete-all removes owned artifact metadata,
+  derived visual memory, and binary bytes while preserving another user's
+  rows/files; the public browser confirms empty artifact history afterward.
 - `VERIFIED`: ordinary chat supplies the configured 10 newest chronological turns for the same user and conversation to Gemma. A real two-message Chromium exchange recalled a unique name stated only in the first message, reused one conversation ID, used distinct per-request traces, terminated both streams, and cleared loading state without blocking browser errors.
 - `VERIFIED`: chat can propose a preferred name without persisting it; real Chromium rejection wrote nothing, approval recalled the name in a new conversation, correction replaced it and recalled the replacement in another new conversation, another user remained isolated, and deletion cleared the profile value.
 - `VERIFIED`: approved preferred names are structured, user-scoped, versioned facts with source conversation/trace provenance, approval and supersession state, confidence, purpose, timestamps, optional expiry, and embedding metadata fields. Correction supersedes rather than overwrites the prior version; expired facts are not projected into chat context.

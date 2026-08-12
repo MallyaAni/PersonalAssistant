@@ -18,7 +18,9 @@ flowchart TB
     Inference[Provider-neutral<br/>inference adapter]
     TextEmbed[Nomic text embedding<br/>via vLLM]
     Database[(PostgreSQL and pgvector)]
-    Maintenance[Retention, re-embedding,<br/>health, export and delete]
+    Files[(Opaque visual artifact files)]
+    Maintenance[Retention, re-embedding,<br/>health, export and forget-me]
+    ArtifactCleanup[Owned artifact cleanup<br/>rows, embeddings and files]
     Discovery[Scout fact projection<br/>home and interests]
 
     Main[Qwen 3.5 4B<br/>assistant call via vLLM]
@@ -40,12 +42,15 @@ flowchart TB
     Short -->|expiring records| Database
     Long -->|durable records| Database
     Maintenance --> Database
+    Maintenance --> ArtifactCleanup
+    ArtifactCleanup --> Database
+    ArtifactCleanup --> Files
 
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
     classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     class Chat,UI,Review interface;
-    class Coordinator,Services,Retrieval,Context,Inference,Maintenance,Discovery application;
-    class Short,Long,Database data;
+    class Coordinator,Services,Retrieval,Context,Inference,Maintenance,ArtifactCleanup,Discovery application;
+    class Short,Long,Database,Files data;
     class TextEmbed,Main,Proposal model;

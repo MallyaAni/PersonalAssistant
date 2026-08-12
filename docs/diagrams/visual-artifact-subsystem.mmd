@@ -3,6 +3,7 @@ title: Visual Artifact Subsystem
 ---
 flowchart LR
     User([User]) --> UI[Chat and artifact UI]
+    Forget([Delete all personal memory])
     UI --> Guard[Owned visual API<br/>limits and integrity]
     MCP([Confirmed MCP call]) -.-> Guard
     Guard --> Route{Requested capability}
@@ -23,12 +24,14 @@ flowchart LR
     Recall --> Context[Owner-validated<br/>bounded visual context]
     Context --> UI
     Repository --> UI
+    Forget --> Cleanup[Owned bulk deletion]
+    Cleanup --> Repository
 
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
     classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
-    class User,UI,MCP interface;
-    class Guard,Route,Repository,Context application;
+    class User,UI,MCP,Forget interface;
+    class Guard,Route,Repository,Context,Cleanup application;
     class Store data;
     class Diagram,Image,Vision,Recall,Embed external;

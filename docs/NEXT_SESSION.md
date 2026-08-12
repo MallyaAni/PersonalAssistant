@@ -7,6 +7,40 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 
 Last updated: 2026-08-12, America/New_York
 
+## Delete all personal memory now removes visual artifacts — VERIFIED
+
+The reported failure reproduced with a disposable owner and a real stored PNG:
+`DELETE /api/v1/memory/{user_id}` returned 200, reported no artifact count, and
+left both the `visual_artifacts` row and opaque file reachable. The first
+failing boundary was the memory endpoint, which coordinated personal, agent,
+tool, conversation, and discovery deletion but never invoked artifact
+lifecycle cleanup.
+
+The endpoint now calls a lightweight `ArtifactDeletionService` after its memory
+stores are cleared. PostgreSQL deletes and returns every owned visual-artifact
+storage key, including rows without files such as diagrams; the service removes
+the corresponding opaque files and surfaces incomplete filesystem cleanup
+instead of falsely reporting success. Derived visual semantic records are also
+removed, and the response names the `artifacts` count. Cross-user tests prove
+another profile's artifact row and file remain intact.
+
+Evidence: 24 focused memory, artifact-lifecycle, discovery-coverage,
+agent-memory, and authorization tests pass; Ruff passes; the frontend production
+build passes. A rebuilt backend (`personalassistant-backend`, manifest
+`05c24d1f998e...`) was exercised with one owner and one control user: the owner
+changed from one artifact/file/visual memory to zero, while the control stayed
+at one artifact and one file. Backend logs show the exact DELETE and follow-up
+reads with no exception. A real Chromium run through `https://deep-matter.com`
+uploaded a valid PNG, clicked **Delete all personal memory**, received 200 with
+an artifact count, rendered the empty memory state, and observed an empty
+artifact API with no Console or page errors. All 19 canonical diagrams and the
+published architecture page are synchronized.
+
+Known unrelated validation failure: a focused MyPy invocation still reports
+the existing Pillow `LANCZOS`, conversation-service `Any`/optional embedder, and
+reaction-callback typing errors outside this change. It is not counted as a
+passing static gate.
+
 ## Visual style memory survives tab and conversation context — VERIFIED
 
 The exact `ani.mallya` question **how do you feel about my dress style?** twice

@@ -134,6 +134,10 @@ class ArtifactRepository(ABC):
     @abstractmethod
     async def delete(self, user_id: str, artifact_id: str) -> bool: ...
 
+    # Remove every artifact row for one user and return its owned storage keys.
+    @abstractmethod
+    async def delete_all_owned(self, user_id: str) -> tuple[int, list[str]]: ...
+
 
 class BinaryArtifactRepository(ArtifactRepository):
     # Persist a pending generated or uploaded image before binary work begins.

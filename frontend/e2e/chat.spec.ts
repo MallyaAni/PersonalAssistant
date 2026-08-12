@@ -1,7 +1,12 @@
 import { expect, test, type Page } from '@playwright/test'
+import { randomUUID } from 'node:crypto'
 
 const TEST_PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2O9sAAAAASUVORK5CYII=',
+  'base64',
+)
+const LIVE_TEST_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAGCAIAAABxZ0isAAAAFElEQVR4nGPkDzjBgA0wYRWlkwQAre0BMyym/B0AAAAASUVORK5CYII=',
   'base64',
 )
 
@@ -4275,6 +4280,72 @@ test('@live persists, recalls, and deletes personal memory', async ({ page }) =>
     expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
   } finally {
     await page.request.delete(`http://localhost:8000/api/v1/memory/${userId}`)
+  }
+})
+
+// Verify the browser forget-me action removes an uploaded artifact and its memory.
+test('@live delete all personal memory also deletes owned artifacts', async ({ page }) => {
+  test.skip(process.env.ANIOS_E2E_LIVE !== '1', 'Set ANIOS_E2E_LIVE=1 to contact the live application')
+  const userId = process.env.ANIOS_E2E_USERNAME ?? ''
+  const bearerToken = process.env.ANIOS_E2E_BEARER_TOKEN ?? ''
+  const apiUrl = process.env.ANIOS_API_URL ?? 'http://localhost:8000'
+  test.skip(!userId || !bearerToken, 'Set ANIOS_E2E_USERNAME and ANIOS_E2E_BEARER_TOKEN')
+  test.setTimeout(180_000)
+  const errors = observeBlockingBrowserErrors(page)
+  const authorization = { Authorization: `Bearer ${bearerToken}` }
+  await page.route('**/api/**', async route => {
+    await route.continue({
+      headers: { ...route.request().headers(), ...authorization },
+    })
+  })
+
+  try {
+    const upload = await page.request.post(`${apiUrl}/api/v1/vision/analyze`, {
+      headers: authorization,
+      multipart: {
+        user_id: userId,
+        conversation_id: randomUUID(),
+        prompt: 'Describe this deletion-test image briefly.',
+        image: {
+          name: 'memory-delete-probe.png',
+          mimeType: 'image/png',
+          buffer: LIVE_TEST_PNG,
+        },
+      },
+    })
+    expect(upload.status()).toBe(201)
+    expect((await page.request.get(`${apiUrl}/api/v1/artifacts/${userId}`, {
+      headers: authorization,
+    })).status()).toBe(200)
+
+    await page.goto('/')
+    await expect(
+      page.getByRole('main').getByText(`Signed in as ${userId}`),
+    ).toBeVisible()
+    await page.getByRole('button', { name: 'Memory', exact: true }).click()
+    await expect(page.getByRole('heading', { name: 'Personal Memory' })).toBeVisible()
+
+    page.once('dialog', dialog => dialog.accept())
+    const deleteResponse = page.waitForResponse(response => (
+      response.url().endsWith(`/api/v1/memory/${userId}`) &&
+      response.request().method() === 'DELETE'
+    ))
+    await page.getByRole('button', { name: 'Delete all personal memory' }).click()
+    const deleted = await deleteResponse
+    expect(deleted.status()).toBe(200)
+    expect((await deleted.json()).deleted.artifacts).toBeGreaterThanOrEqual(1)
+    await expect(page.getByText('No facts or preferences saved.')).toBeVisible()
+
+    const artifacts = await page.request.get(`${apiUrl}/api/v1/artifacts/${userId}`, {
+      headers: authorization,
+    })
+    expect(artifacts.status()).toBe(200)
+    expect(await artifacts.json()).toEqual([])
+    expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+  } finally {
+    await page.request.delete(`${apiUrl}/api/v1/memory/${userId}`, {
+      headers: authorization,
+    })
   }
 })
 

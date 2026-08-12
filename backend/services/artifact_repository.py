@@ -348,6 +348,26 @@ class SQLAlchemyArtifactRepository(
         await self.session.commit()
         return bool(getattr(result, "rowcount", 0))
 
+    # Delete all user-owned artifact rows and return binary keys for file cleanup.
+    async def delete_all_owned(self, user_id: str) -> tuple[int, list[str]]:
+        await self.session.execute(
+            delete(SemanticMemory).where(
+                SemanticMemory.user_id == user_id,
+                SemanticMemory.purpose == VISUAL_ANALYSIS_PURPOSE,
+            )
+        )
+        result = await self.session.execute(
+            delete(VisualArtifact)
+            .where(VisualArtifact.user_id == user_id)
+            .returning(VisualArtifact.storage_key)
+        )
+        deleted_keys = result.scalars().all()
+        storage_keys = [
+            key for key in deleted_keys if isinstance(key, str) and key
+        ]
+        await self.session.commit()
+        return len(deleted_keys), storage_keys
+
     # Load one artifact only when it belongs to the requested user.
     async def _owned_artifact(
         self,

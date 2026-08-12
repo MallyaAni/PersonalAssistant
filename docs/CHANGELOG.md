@@ -2898,3 +2898,15 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   published Cloudflare IPv4 addresses: application health and frontend returned
   200, and the protected agent route returned 401. A full Windows reboot remains
   unverified so the handoff does not overstate it.
+
+## 2026-08-12 — Personal-memory wipe now removes visual artifacts
+
+- Closed the forget-me boundary that left visual-artifact rows, embeddings, and
+  opaque image files behind after **Delete all personal memory** returned 200.
+- Added user-scoped bulk artifact deletion with returned storage keys,
+  incomplete-file-cleanup reporting, explicit deletion counts, and cross-user
+  row/file isolation coverage.
+- Verified the rebuilt backend with real owner/control files and derived visual
+  memory, then verified the public Cloudflare browser path with a real uploaded
+  PNG, the Memory-panel delete action, empty artifact history, terminal loading,
+  and no Console or page errors.

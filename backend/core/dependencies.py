@@ -87,6 +87,7 @@ from backend.search.mcp import MCPWebSearchProvider
 from backend.search.routing import SearchRoutingPolicy
 from backend.search.tavily import TavilySearchProvider
 from backend.services.agent_memory_manager import AgentMemoryManager
+from backend.services.artifact_deletion_service import ArtifactDeletionService
 from backend.services.artifact_repository import SQLAlchemyArtifactRepository
 from backend.services.conversation_service import ConversationService
 from backend.services.diagram_artifact_service import DiagramArtifactService
@@ -379,6 +380,20 @@ def get_binary_artifact_store() -> LocalBinaryArtifactStore:
 BinaryArtifactStoreDependency = Annotated[
     LocalBinaryArtifactStore,
     Depends(get_binary_artifact_store),
+]
+
+
+# Build the lightweight cross-store service used by the forget-me boundary.
+def get_artifact_deletion_service(
+    repository: ArtifactRepositoryDependency,
+    store: BinaryArtifactStoreDependency,
+) -> ArtifactDeletionService:
+    return ArtifactDeletionService(repository, store)
+
+
+ArtifactDeletionDependency = Annotated[
+    ArtifactDeletionService,
+    Depends(get_artifact_deletion_service),
 ]
 
 

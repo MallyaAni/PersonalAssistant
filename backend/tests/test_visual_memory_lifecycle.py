@@ -10,11 +10,13 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
+from backend.artifacts.storage import LocalBinaryArtifactStore
 from backend.database.session import ASYNC_DATABASE_URL
 from backend.memory.purposes import VISUAL_ANALYSIS_PURPOSE
 from backend.memory.repository import MemoryRepository
 from backend.models.artifact import VisualArtifact
 from backend.models.memory import SemanticMemory
+from backend.services.artifact_deletion_service import ArtifactDeletionService
 from backend.services.artifact_repository import SQLAlchemyArtifactRepository
 
 pytestmark = pytest.mark.asyncio
@@ -120,3 +122,57 @@ async def test_artifact_delete_removes_its_visual_memory(session: Any) -> None:
         )
     finally:
         await _cleanup(session, user_id)
+
+
+# Deleting all memory must remove owned artifact rows and bytes without crossing users.
+async def test_delete_all_owned_artifacts_removes_rows_bytes_and_visual_memory(
+    session: Any,
+    tmp_path: Any,
+) -> None:
+    user_id = f"va-{uuid.uuid4().hex[:24]}"
+    other_user = f"vo-{uuid.uuid4().hex[:24]}"
+    artifact_id = uuid.uuid4()
+    diagram_id = uuid.uuid4()
+    other_id = uuid.uuid4()
+    store = LocalBinaryArtifactStore(tmp_path)
+    owned_binary = await store.write(user_id, str(artifact_id), "png", b"owned")
+    other_binary = await store.write(other_user, str(other_id), "png", b"other")
+    owned = _artifact(user_id, artifact_id)
+    owned.storage_key = owned_binary.storage_key
+    diagram = _artifact(user_id, diagram_id)
+    diagram.kind = "diagram"
+    other = _artifact(other_user, other_id)
+    other.storage_key = other_binary.storage_key
+    session.add_all([owned, diagram, other, _memory(user_id, artifact_id)])
+    await session.commit()
+    try:
+        deleted = await ArtifactDeletionService(
+            SQLAlchemyArtifactRepository(session), store
+        ).delete_all_owned(user_id)
+
+        assert deleted == 2
+        assert not store._path_for_key(owned_binary.storage_key).exists()
+        assert store._path_for_key(other_binary.storage_key).exists()
+        assert not (
+            await session.scalars(
+                select(VisualArtifact).where(VisualArtifact.user_id == user_id)
+            )
+        ).all()
+        assert len(
+            (
+                await session.scalars(
+                    select(VisualArtifact).where(
+                        VisualArtifact.user_id == other_user
+                    )
+                )
+            ).all()
+        ) == 1
+        assert not (
+            await session.scalars(
+                select(SemanticMemory).where(SemanticMemory.user_id == user_id)
+            )
+        ).all()
+    finally:
+        await _cleanup(session, user_id)
+        await _cleanup(session, other_user)
+        await store.delete(other_binary.storage_key)

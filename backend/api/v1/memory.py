@@ -8,12 +8,14 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from backend.config.settings import settings
 from backend.core.auth import authorize_path_user
 from backend.core.dependencies import (
+    ArtifactDeletionDependency,
     DependencyAgentMemoryManager,
     DependencyMemoryService,
 )
 from backend.discovery.projection import interest_fact, locality_fact
 from backend.discovery.types import MAX_LABEL_CHARS, MAX_REGION_CHARS
 from backend.memory.errors import MemoryConflictError
+from backend.services.artifact_deletion_service import ArtifactDeletionError
 
 router = APIRouter(
     prefix="/memory",
@@ -498,7 +500,18 @@ async def delete_all_user_memory(
     user_id: UserId,
     service: DependencyMemoryService,
     agent_memory: DependencyAgentMemoryManager,
+    artifacts: ArtifactDeletionDependency,
 ) -> dict[str, dict[str, int]]:
     deleted = await service.delete_all_user_memory(user_id)
     deleted.update(await agent_memory.delete_all(user_id))
+    try:
+        deleted["artifacts"] = await artifacts.delete_all_owned(user_id)
+    except ArtifactDeletionError as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Memory records were deleted, but some artifact files could not "
+                "be removed. Run storage collection before retrying."
+            ),
+        ) from exc
     return {"deleted": deleted}
