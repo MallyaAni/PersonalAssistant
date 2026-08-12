@@ -809,10 +809,21 @@ stopped from an ordinary shell, so it can be *tested*. The SYSTEM task and the
 `cloudflared` service could be neither read nor repaired without admin, and both
 silently did nothing.
 
-Proven rather than inferred: the hand-started process was killed, leaving no
-cloudflared at all, the task was started, and the site came back on the
-connector the task registered — `/healthz` 200, `/` 200, and
-`/api/v1/agents/{user}` 401 from FastAPI, checked from inside a container.
+The task now starts `scripts/run-tunnel.ps1`, a small supervisor around
+cloudflared. This replaced reliance on Task Scheduler's `RestartCount`: killing
+the connector produced result `0xFFFFFFFF`, and Windows left the task stopped
+instead of retrying. With the supervisor installed, killing only cloudflared
+kept the task running and registered a replacement connector in about 15
+seconds.
+
+Proven rather than inferred on 2026-08-12: the task was installed from the
+repository, started with `LastTaskResult` 267009, its connector was killed, and
+the replacement served both Cloudflare IPv4 addresses. From inside the backend
+container, `/healthz` and `/` returned 200 and
+`/api/v1/agents/ani.mallya` returned the expected 401 on each address. Docker
+Desktop's `AutoStart` setting is also true. An actual Windows reboot after this
+supervisor change remains **UNVERIFIED** because verification did not interrupt
+the operator's machine.
 
 Signing in at logon rather than at boot is deliberate now, not a compromise.
 Docker Desktop starts at sign-in, so a tunnel that starts at boot spends the gap
@@ -833,8 +844,8 @@ as ordinary redundancy.
 The machine rebooted at 2026-08-11 08:49 and `deep-matter.com` served error
 **1033** — no connector registered — with no cloudflared process running at all.
 Docker came back correctly; the tunnel did not. The site was restored by hand
-with a user-space `cloudflared tunnel run anios`, **so it will go down again at
-the next reboot.**
+with a user-space `cloudflared tunnel run anios`. That failure led to the
+user-level supervised task described above.
 
 "The tunnel survives a reboot" was asserted from the task existing, never from a
 reboot. The reboot has now happened and disproved it. Nothing about durable

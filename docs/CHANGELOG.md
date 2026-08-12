@@ -2885,3 +2885,16 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   observation boundary. Its owned current-pixel analysis and semantic index now
   describe the straw hat and outfit, and the exact question passes through both
   direct chat and the public Cloudflare browser with that revision selected.
+
+## 2026-08-12 — Cloudflare connector startup made self-healing
+
+- Added a reproducible Windows user-logon task installer with a one-minute
+  delayed trigger, network requirement, and start-when-available behavior.
+- Replaced ineffective Task Scheduler process retry behavior with a task-owned
+  supervisor that relaunches cloudflared after transient exits. Killing the
+  connector registered a replacement in about 15 seconds while the task stayed
+  running.
+- Verified the replacement connector from the backend container across both
+  published Cloudflare IPv4 addresses: application health and frontend returned
+  200, and the protected agent route returned 401. A full Windows reboot remains
+  unverified so the handoff does not overstate it.

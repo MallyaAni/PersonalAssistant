@@ -1184,8 +1184,21 @@ read these — `docker compose up -d backend discovery-worker` — since a value
 
 `bash scripts/start-tunnel.sh` then runs the named tunnel instead of a quick
 one, reports `https://deep-matter.com`, and rewrites nothing, because the
-hostname no longer changes. Installing it as a service (`cloudflared service
-install`) is what makes it survive a reboot.
+hostname no longer changes. On the Windows host, install the user-level logon
+task once from a normal PowerShell terminal:
+
+```powershell
+& "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" `
+  -NoProfile -ExecutionPolicy Bypass -File scripts/install-tunnel-task.ps1
+```
+
+The task waits one minute after sign-in, requires networking, starts when that
+condition becomes available, and runs `scripts/run-tunnel.ps1`, which relaunches
+the connector after transient exits. User logon is the correct lifecycle
+boundary because Docker Desktop and the AniOS containers also return after
+sign-in. Inspect it with
+`Get-ScheduledTask -TaskName 'DeepMatter tunnel (user)'`; a running task reports
+`LastTaskResult` 267009 (`0x41301`).
 
 Verify from somewhere that is not this machine. A check from the host can
 resolve back to the local stack and report a healthy site that is publicly
