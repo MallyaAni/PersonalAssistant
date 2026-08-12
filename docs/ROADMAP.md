@@ -569,7 +569,7 @@ encryption key. Settle recovery/escrow semantics before migrating content from
 the current optional server-wide encryption key; do not retrofit key derivation
 by rewriting user data without a tested backup and restore acceptance path.
 
-## Milestone 8: reclaiming storage — PLANNED
+## Milestone 8: reclaiming storage — IN PROGRESS
 
 Goal: stop unreferenced bytes accumulating, without giving up anything a person
 can see.
@@ -586,18 +586,36 @@ were both wrong:
 | `presentation_revisions` (the history itself) | 504 kB |
 | Conversation transcripts | below the eight largest tables |
 
-- `PLANNED`: garbage-collect artifact files with no referencing row. This is 83%
-  of all storage and no behaviour depends on it — deleted presentations, failed
-  jobs, and replaced renders leave their bytes behind. A CLI that defaults to a
-  dry run and reports what it would remove, because this deletes user data
-  against a database with no backups.
+- `DONE` (2026-08-12): garbage-collect artifact files with no referencing row.
+  `backend/artifacts/collection.py` plans a sweep and
+  `python -m backend.cli.collect_storage` runs it, reporting by default and
+  deleting only with `--apply`. Three guards, each for a distinct way this could
+  destroy something irreplaceable: an unreadable reference table refuses the
+  sweep rather than treating "no references found" as "nothing is referenced";
+  files written within a grace period are left for the next sweep, because a
+  render writes bytes before it records a row; and a key that is absolute or
+  escapes the root is refused the same way a read would refuse it.
+
+  Ran on 2026-08-12: **109 files, 460.3 MB reclaimed**, leaving 30 referenced
+  files at 95.6 MB. Verified before deleting that all 109 filenames were
+  artifact ids with no surviving row in `visual_artifacts`,
+  `presentation_revisions` or `presentations`, and verified afterwards that all
+  30 survivors read back with matching SHA-256 and that every artifact the API
+  lists still downloads.
 - `PLANNED`: drop the rendered `.pptx` of superseded revisions while keeping the
   specification. A render is ~15 MB and regenerable from the spec it came from;
   the spec is a few kB and is what undo needs. Deleting renders recovers the
   space and keeps the history, which is the opposite trade to deleting history.
-- `PLANNED`: run both on a schedule rather than by hand. Raising
-  `IMAGE_EDIT_MEGAPIXELS` to 2.0 makes every new image larger, so decks grow
-  faster than they did when these numbers were taken.
+- `AVAILABLE, NOT ENABLED`: run it on a schedule rather than by hand. A
+  `storage-collection` service sweeps every six hours with a one-day grace
+  period, under the same `maintenance` profile as `memory-maintenance` — which
+  means neither runs until the profile is enabled:
+  `docker compose --profile maintenance up -d storage-collection`. Deleting a
+  row and deleting its bytes cannot be made atomic across a database and a
+  filesystem, so a leak stays possible however careful each call site is; a
+  sweep is what bounds it in time. Raising `IMAGE_EDIT_MEGAPIXELS` to 2.0 makes
+  every new image larger, so this accumulates faster than when these numbers
+  were taken.
 
 **Deliberately not planned: deleting conversation transcripts or presentation
 revision history.** Both were proposed as storage measures and neither is one.

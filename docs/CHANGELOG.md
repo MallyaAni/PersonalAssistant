@@ -2767,3 +2767,32 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   question that failed: the assistant answers that the photograph is the user's
   own, wearing a wide-brimmed black cowboy hat, and that the straw hat was the
   edit made from it.
+
+## 2026-08-12 — 460 MB of unreachable bytes reclaimed
+
+- Measured before deciding anything: 556 MB on disk, of which **460 MB across
+  109 files was referenced by nothing at all** — 83%, mostly rendered decks whose
+  rows were long gone. Metadata, by contrast, was 9.3 KB across 23 images, so the
+  earlier instinct to trim stored descriptions would have saved a rounding error.
+- `backend/artifacts/collection.py` plans a sweep;
+  `python -m backend.cli.collect_storage` runs it, reporting by default and
+  deleting only with `--apply`. Guards, each for a distinct way this could
+  destroy something irreplaceable: an unreadable reference table refuses the
+  sweep rather than reading "no references found" as "nothing is referenced"; a
+  file written within the grace period is left alone, because a render writes
+  bytes before it records its row; and a key that is absolute or escapes the root
+  is refused exactly as a read would refuse it.
+- Verified before deleting that all 109 filenames were artifact ids with no
+  surviving row in `visual_artifacts`, `presentation_revisions` or
+  `presentations`, and that referenced files found equalled keys on record.
+  Verified after that all 30 survivors read back with matching SHA-256, that
+  every artifact the API lists still downloads, and that image recall in chat
+  still answers correctly.
+- A `storage-collection` service sweeps every six hours with a one-day grace
+  period, under the same `maintenance` profile as `memory-maintenance`. That
+  profile is not enabled, so it does not run until someone turns it on.
+- Left alone deliberately: one image memory from 2026-08-02 at 1,191 characters,
+  written before the 400-character gist cap existed. Trimming it would recover
+  700 bytes and re-embedding a truncated description risks making a working
+  memory match worse. The gist cap is holding for everything written since —
+  246 to 438 characters.

@@ -688,6 +688,40 @@ services:
       db:
         condition: service_healthy
 
+  storage-collection:
+    # Deleting a row and deleting its bytes cannot be one atomic act across a
+    # database and a filesystem, so a leak stays possible however carefully
+    # each call site deletes. One sweep found 460 MB of 556 MB unreachable.
+    # This bounds that in time rather than letting it accumulate forever.
+    #
+    # The grace period is a day, far longer than the gap between a render
+    # writing its bytes and recording its row, because the cost of waiting is a
+    # delayed sweep and the cost of being wrong is someone's deck.
+    restart: unless-stopped
+    build: .
+    profiles: ["maintenance"]
+    command:
+      - python
+      - -m
+      - backend.cli.collect_storage
+      - --apply
+      - --grace-seconds
+      - "86400"
+      - --interval-seconds
+      - "21600"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_DB=${POSTGRES_DB:-anios_db}
+      - POSTGRES_HOST=db
+      - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (see .env.example)}
+      - ARTIFACT_STORAGE_ROOT=/app/data/artifacts
+    volumes:
+      - artifactdata:/app/data/artifacts
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   pgdata:
   artifactdata:

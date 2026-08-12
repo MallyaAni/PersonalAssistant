@@ -146,6 +146,18 @@ an evaluation number that would not move. Use the Edit tool for regex, or
 image, a stale container, and an edited file are three different states. Several
 defects here were only visible by asking the live system what it actually had.
 
+**Files outlive the rows that point at them, and always will.** Deleting a row
+and deleting its bytes cannot be made one atomic act across a database and a
+filesystem, so every call site can be correct and storage still leaks. It had
+reached 460 MB of 556 MB — 83% unreachable, mostly rendered decks whose rows
+were long gone. `backend/artifacts/collection.py` sweeps it;
+`python -m backend.cli.collect_storage` reports by default and needs `--apply`
+to delete. Before trusting a sweep, check that referenced files found equals
+keys on record — if they differ, the reference set is not what you think it is.
+The scheduled sweep is under the `maintenance` profile, which is **not enabled
+by default**, so neither it nor `memory-maintenance` is running unless someone
+turned the profile on.
+
 **Provenance is a property of the artifact, not a result of the query.** Image
 recall drops an original when one of its own revisions also matches, so the same
 picture is not offered twice — and everything the original knew went with it. A
