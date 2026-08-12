@@ -190,12 +190,17 @@ class DiscoveryRunRepository:
         digest_json: str,
         candidate_count: int,
         requests_spent: int,
+        decision_json: str | None = None,
     ) -> bool:
         run = await self._owned(run_id, worker_id)
         if run is None:
             await self.session.rollback()
             return False
         run.digest_json = digest_json
+        # Optional so a sweep that produced no decision record — an older
+        # runner, or a path that never ranked anything — still saves its digest.
+        if decision_json is not None:
+            run.decision_json = decision_json
         run.candidate_count = candidate_count
         run.requests_spent = requests_spent
         run.updated_at = datetime.now(UTC)

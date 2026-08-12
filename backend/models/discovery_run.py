@@ -113,6 +113,10 @@ class DiscoveryRun(Base):
     candidate_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     # The digest is user content, so it is sealed like every other stored text.
     digest_json: Mapped[str | None] = mapped_column(EncryptedText, nullable=True)
+    # What the ranker considered and why, chosen and rejected alike, written at
+    # the moment of selection. The digest records the outcome; this records the
+    # decision, which is what a later ranking model needs and cannot reconstruct.
+    decision_json: Mapped[str | None] = mapped_column(EncryptedText, nullable=True)
     # Set once, when the digest actually reaches the user. A resumed run that
     # already carries this must never deliver again.
     #

@@ -417,3 +417,45 @@ async def test_a_real_sweep_after_a_rehearsal_still_behaves_normally():
             assert again.selected == ()
     finally:
         await _cleanup(user_id)
+
+
+# A real sweep has to record what it weighed, not only what it chose.
+#
+# The decision log is built inside `sweep`, so this is the only place that shows
+# it is wired to the real shortlist rather than to a plausible-looking argument.
+@pytest.mark.asyncio
+async def test_a_sweep_records_the_decision_behind_its_selection():
+    user_id = f"dec_{uuid.uuid4().hex[:12]}"
+    events = (_event("evt-1", "Jazz at the Green"), _event("evt-2", "Jazz brunch"))
+    async with AsyncSessionLocal() as session:
+        sources = DiscoverySourceRepository(session)
+        source = await sources.upsert_source(
+            user_id, "ics", "https://example.org/feed.ics"
+        )
+        runner = DiscoveryRunner(
+            sources=sources,
+            seen=SeenItemRepository(session),
+            embeddings=_StubEmbeddings({"jazz": _vec(1.0)}),
+            adapter_factory=lambda _source, _budget: _StubSource(source.id, events),
+        )
+        profile = DiscoveryProfile(
+            interests=(
+                Interest(id="i1", label="jazz", strength=3, provenance="user_explicit"),
+            ),
+            localities=(),
+        )
+        result = await runner.sweep(user_id, profile, now=_NOW, persist=False)
+
+    assert result.decision is not None
+    considered = result.decision["considered"]
+    # Every selected find appears, with the slot it occupied and the score and
+    # interest that put it there — the features a reaction on its own lacks.
+    sent = {row["digest"]: row for row in considered if row["selected"]}
+    assert len(sent) == len(result.selected)
+    for row in sent.values():
+        assert row["position"] is not None
+        assert row["propensity"] == 1.0
+        assert isinstance(row["score"], float)
+    # And the context the run ranked against, so a label can be read in it.
+    assert result.decision["context"]["interests"]
+    assert result.decision["policy"] == "deterministic_top_k"

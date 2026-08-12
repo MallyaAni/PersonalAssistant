@@ -2796,3 +2796,32 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   700 bytes and re-embedding a truncated description risks making a working
   memory match worse. The gist cap is holding for everything written since —
   246 to 438 characters.
+
+## 2026-08-12 — Scout records the decision, not only the outcome
+
+- A reaction labels one item. It says nothing about which interest matched it,
+  how strongly it scored, what it beat, or where in the message it sat — and the
+  rejected candidates, the only evidence a rejection was wrong, were never
+  written down at all. Four thumbs with no features cannot train or evaluate
+  anything.
+- `backend/discovery/decision_log.py` records the whole decision at the moment
+  of selection: every shortlisted candidate with its score and matched interest,
+  whether it was sent, its slot in the message, and the propensity the policy
+  gave it. Stored sealed on the run beside the digest, in the same transaction,
+  so an outcome can never exist without the decision that produced it.
+- The shape is the one off-policy evaluation expects — context, action, reward,
+  pscore, position, action_context — so the data can go to a standard estimator
+  rather than being re-derived from whatever survived.
+- `policy` is recorded rather than assumed, and it currently reads
+  `deterministic_top_k`. That is a statement with teeth: a deterministic policy
+  assigns propensity 1.0 to what it chose and 0.0 to everything else, and an
+  action with zero logging probability contributes nothing to the usual
+  estimators. **This data alone cannot measure an alternative ranker.** That
+  needs exploration — sometimes sending something the policy did not rank first,
+  and recording the real chance it had. Logging propensity honestly now is what
+  will make that change visible in the data instead of silent.
+- Verified by driving a real sweep, not by constructing arguments to the builder:
+  every selected find appears with its slot, score, interest and propensity, and
+  the record survives the sealed column intact.
+- Existing runs have no decision on file, which is the truth: the column is
+  newer than they are.

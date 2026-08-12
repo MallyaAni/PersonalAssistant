@@ -31,6 +31,7 @@ from backend.core.dependencies import (
 )
 from backend.core.logging_config import get_logger, setup_logging
 from backend.database.session import AsyncSessionLocal
+from backend.discovery.decision_log import to_json
 from backend.discovery.delivery import DigestDelivery
 from backend.discovery.feedback import SentFindRepository
 from backend.discovery.reachability import (
@@ -175,6 +176,12 @@ class DiscoveryWorker:
                     result.to_digest_json(),
                     len(result.selected),
                     result.requests_spent,
+                    # Written in the same transaction as the digest, so a run
+                    # can never have an outcome on file with no record of the
+                    # decision that produced it.
+                    decision_json=(
+                        to_json(result.decision) if result.decision else None
+                    ),
                 )
 
                 report = await DigestDelivery(

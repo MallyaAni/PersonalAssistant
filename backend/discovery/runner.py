@@ -26,13 +26,14 @@ import asyncio
 import json
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
-from typing import Protocol
+from typing import Any, Protocol
 
 from backend.agents.scout.aiming import AimPlanner
 from backend.agents.scout.describing import EventDescriber
 from backend.agents.scout.reranking import MemoryReranker
 from backend.config.settings import settings
 from backend.core.interfaces import RerankProvider, SearchProvider, TextWriter
+from backend.discovery.decision_log import build_decision
 from backend.discovery.errors import DiscoveryError
 from backend.discovery.events import DiscoveredEvent, EventSource, FeedError
 from backend.discovery.familiarity import FamiliarItemRepository, FamiliarityFilter
@@ -99,6 +100,10 @@ class SweepResult:
     # rather than for matching an interest. Kept as their own field so they can
     # never quietly pad the matched list.
     notable: tuple[RankedCandidate, ...] = ()
+    # What the ranker considered and why, chosen and rejected alike. Recorded so
+    # the reactions collected on the message can later be joined to the decision
+    # that produced it; a thumb with no record of what it beat teaches nothing.
+    decision: dict[str, Any] | None = None
 
     # The persisted form. Deliberately not the model's output: a digest is
     # assembled from typed records so a feed cannot inject text that later
@@ -394,6 +399,17 @@ class DiscoveryRunner:
             failed_sources=failed,
             hidden_count=hidden_count,
             notable=notable,
+            # Built from the shortlist rather than from what was sent, because
+            # the rejected candidates are the half that a reaction alone can
+            # never supply. Both sections count as sent: an unusual find is in
+            # front of the person exactly as a matched one is.
+            decision=build_decision(
+                shortlist=shortlist,
+                selected=(*selected, *notable),
+                interests=tuple(aim.vector_texts()),
+                locality=primary.label if primary else None,
+                decided_at=moment,
+            ),
         )
 
     # Rewrite each selection's title and summary into something a person can
