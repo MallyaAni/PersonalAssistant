@@ -1,49 +1,36 @@
 ---
-title: Visual Memory and Editing Target
+title: Multimodal Artifact Reference and Image Editing
 ---
-flowchart TB
-    User([User]) --> Request{Create, recall,<br/>or edit an image?}
+flowchart LR
+    User([User message]) --> Choice{Artifact selected?}
+    Choice -->|yes| Selected[Explicit image ID]
+    Choice -->|no| Candidates[Owner-scoped semantic<br/>visual candidates]
+    Candidates --> Policy[Qwen 3.5 4B<br/>meaning-based selection]
+    Selected --> Guard[Ownership, readiness<br/>and lineage]
+    Policy --> Guard
 
-    subgraph Current[Implemented foundation]
-        Generate[Generate with HiDream]
-        Edit[Edit owned pixels<br/>with FLUX]
-        Artifact[Immutable image revision<br/>with lineage and SHA-256]
-        PixelIndex[(Nomic pixel-vector index)]
-        Generate --> Artifact
-        Edit --> Artifact
-        Artifact --> PixelIndex
-    end
+    Store[(Artifact metadata, descriptions,<br/>pixel and text vectors)] --> Candidates
+    Store --> Guard
+    Guard --> Action{Question or edit?}
+    Action -->|question| Answer[Grounded chat answer]
+    Action -->|edit| Edit[FLUX source edit]
+    Edit --> Revision[Immutable child revision]
+    Revision --> Store
+    Revision --> UI[Replace visible parent;<br/>retain lineage]
+    Answer --> UI
 
-    subgraph Planned[Planned memory-aware stages]
-        Observe[1. Qwen vision observation<br/>objects, attributes and OCR]
-        Semantic[(Typed observations<br/>and semantic vectors)]
-        Resolve[2. Resolve alias, meaning,<br/>conversation and recency]
-        Clarify{One confident<br/>owned match?}
-        Verify[3. Compare requested change<br/>with preserved content]
-        Promote{4. Promote candidate<br/>or keep parent}
-        Observe --> Semantic --> Resolve --> Clarify
-        Verify --> Promote
-    end
-
-    Request -->|create| Generate
-    Request -->|recall| Resolve
-    Request -->|edit| Resolve
-    Artifact -. ready event .-> Observe
-    PixelIndex --> Resolve
-    Clarify -->|ambiguous| Choice[Ask user to choose]
-    Clarify -->|matched edit| Edit
-    Edit -. candidate .-> Verify
-    Promote -. accepted .-> Artifact
-    Promote -->|rejected| Failure[Visible failure;<br/>parent remains current]
-    Artifact --> UI[Show current image<br/>and revision history]
-    Choice --> UI
-    Failure --> UI
+    Future[Planned: video observations and<br/>parsed PDF/RAG chunks use the same contract]
+    Verify[Planned: verify requested changes<br/>and preserved content before promotion]
+    Future -.-> Candidates
+    Edit -.-> Verify -.-> Revision
 
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
     classDef implemented fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
+    classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef planned fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
-    class User,Request,Choice,Failure,UI interface;
-    class Generate,Edit,Artifact implemented;
-    class PixelIndex data;
-    class Observe,Semantic,Resolve,Clarify,Verify,Promote planned;
+    class User,Choice,UI interface;
+    class Selected,Candidates,Guard,Action,Answer,Edit,Revision implemented;
+    class Store data;
+    class Policy model;
+    class Future,Verify planned;

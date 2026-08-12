@@ -3012,7 +3012,11 @@ test('routes an image followup question to chat without regenerating', async ({ 
   expect((await responsePromise).status()).toBe(200)
 
   expect(generationRequests).toBe(1)
-  expect(chatBody).toMatchObject({ user_id: 'ani.mallya', query: question })
+  expect(chatBody).toMatchObject({
+    user_id: 'ani.mallya',
+    query: question,
+    active_image_artifact_id: artifactId,
+  })
   await expect(latestAssistantAnswer(page).getByText(answer, { exact: true })).toBeVisible()
   await expect(page.getByText('Thinking...', { exact: true })).not.toBeVisible()
   await expect(textarea).toBeEnabled()
@@ -3020,21 +3024,91 @@ test('routes an image followup question to chat without regenerating', async ({ 
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
-// Verify a followup question about a generated image threads a grounded answer.
-test('asks a followup question about a generated image and threads the answer', async ({ page }) => {
+// Verify image-card selection disambiguates multiple images in the main composer.
+test('selects and clears image context when several images are visible', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const artifactIds = [
+    '25252525-2525-4252-8252-252525252525',
+    '26262626-2626-4262-8262-262626262626',
+  ]
+  let generationIndex = 0
+  const chatBodies: Record<string, unknown>[] = []
+
+  await routeImageIntent(page, [])
+  await page.route('http://localhost:8000/api/v1/images/generate', async route => {
+    const payload = route.request().postDataJSON()
+    const artifactId = artifactIds[generationIndex]
+    generationIndex += 1
+    await route.fulfill({
+      status: 201,
+      contentType: 'application/json',
+      body: JSON.stringify(imageArtifactRecord(
+        'generated_image',
+        artifactId,
+        String(payload.conversation_id),
+        { generation_prompt: String(payload.prompt) },
+      )),
+    })
+  })
+  for (const artifactId of artifactIds) {
+    await page.route(
+      `http://localhost:8000/api/v1/artifacts/ani.mallya/${artifactId}/content`,
+      route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
+    )
+  }
+  await page.route('http://localhost:8000/api/v1/chat', async route => {
+    const body = route.request().postDataJSON()
+    chatBodies.push(body)
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body: chatEventStream('selection-trace', String(body.conversation_id), 'Selected image answer.'),
+    })
+  })
+
+  await page.goto('/')
+  const textarea = page.getByLabel('Message DeepMatter')
+  for (const prompt of ['Create an image of a blue coupe', 'Create an image of a red roadster']) {
+    await textarea.fill(prompt)
+    await page.getByRole('button', { name: 'Send message' }).click()
+    await expect(textarea).toBeEnabled()
+  }
+
+  const cards = page.getByLabel('Image: Generated image')
+  await expect(cards).toHaveCount(2)
+  await expect(cards.nth(1).getByRole('button', { name: 'Using in chat' })).toBeVisible()
+  await cards.nth(0).getByRole('button', { name: 'Ask or edit' }).click()
+  await expect(cards.nth(0).getByRole('button', { name: 'Using in chat' })).toBeVisible()
+
+  await textarea.fill('What is distinctive about this one?')
+  await page.getByRole('button', { name: 'Send message' }).click()
+  await expect(textarea).toBeEnabled()
+  expect(chatBodies[0]).toMatchObject({ active_image_artifact_id: artifactIds[0] })
+
+  await page.getByRole('button', { name: 'Stop using selected image' }).click()
+  await expect(page.getByLabel(/Using image in chat:/)).toHaveCount(0)
+  await textarea.fill('Now answer without a selected image.')
+  await page.getByRole('button', { name: 'Send message' }).click()
+  await expect(textarea).toBeEnabled()
+  expect(chatBodies[1]).toMatchObject({ active_image_artifact_id: null })
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// Verify a generated-image question uses the selected image in the main chat.
+test('asks about a selected generated image from the main composer', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   const artifactId = '78787878-7878-4878-8878-787878787878'
   const prompt = 'Create an image of a deterministic cobalt origami whale'
   const question = 'What is in this image?'
   const answer = 'The image shows a single cobalt origami whale.'
   let conversationId = ''
-  let artifact: ReturnType<typeof imageArtifactRecord> | null = null
+  let chatBody: Record<string, unknown> = {}
 
   await routeImageIntent(page, [])
   await page.route('http://localhost:8000/api/v1/images/generate', async route => {
     const payload = route.request().postDataJSON()
     conversationId = String(payload.conversation_id)
-    artifact = imageArtifactRecord('generated_image', artifactId, conversationId, {
+    const artifact = imageArtifactRecord('generated_image', artifactId, conversationId, {
       seed: 42,
       steps: 28,
     })
@@ -3056,28 +3130,14 @@ test('asks a followup question about a generated image and threads the answer', 
     }),
   )
 
-  let askBody: Record<string, unknown> = {}
-  await page.route(
-    `http://localhost:8000/api/v1/vision/artifacts/${artifactId}/ask`,
-    async route => {
-      askBody = route.request().postDataJSON()
-      const updated = imageArtifactRecord('generated_image', artifactId, conversationId, {
-        seed: 42,
-        steps: 28,
-        analysis_status: 'ready',
-        analysis: answer,
-        analysis_model: 'google/gemma-4-12b',
-        analysis_thread: [
-          { prompt: String(askBody.prompt), answer, model: 'google/gemma-4-12b' },
-        ],
-      })
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ artifact: updated, analysis: answer, model: 'google/gemma-4-12b' }),
-      })
-    },
-  )
+  await page.route('http://localhost:8000/api/v1/chat', async route => {
+    chatBody = route.request().postDataJSON()
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body: chatEventStream('selected-image-trace', conversationId, answer),
+    })
+  })
 
   await page.goto('/')
   const textarea = page.getByLabel('Message DeepMatter')
@@ -3088,18 +3148,15 @@ test('asks a followup question about a generated image and threads the answer', 
   await expect(imageCard).toBeVisible()
   await expect(imageCard.getByAltText('Generated visual result')).toBeVisible()
 
-  const askInput = imageCard.getByLabel('Ask about or refine this image')
-  await askInput.fill(question)
-  const askResponse = page.waitForResponse(
-    `http://localhost:8000/api/v1/vision/artifacts/${artifactId}/ask`,
-  )
-  await imageCard.getByRole('button', { name: 'Ask' }).click()
-  expect((await askResponse).status()).toBe(200)
+  await expect(page.getByLabel(`Using image in chat: Generated image`)).toBeVisible()
+  await textarea.fill(question)
+  const chatResponse = page.waitForResponse('http://localhost:8000/api/v1/chat')
+  await page.getByRole('button', { name: 'Send message' }).click()
+  expect((await chatResponse).status()).toBe(200)
 
-  await expect(imageCard.getByText(answer, { exact: true })).toBeVisible()
-  await expect(imageCard.getByText(question, { exact: true })).toBeVisible()
-  await expect(askInput).toHaveValue('')
-  expect(askBody).toMatchObject({ user_id: 'ani.mallya', prompt: question })
+  expect(chatBody).toMatchObject({ query: question, active_image_artifact_id: artifactId })
+  await expect(latestAssistantAnswer(page).getByText(answer, { exact: true })).toBeVisible()
+  await expect(textarea).toHaveValue('')
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
@@ -3171,12 +3228,12 @@ test('routes can-you image edits to refinement instead of vision Q&A', async ({ 
   await page.getByRole('button', { name: 'Send message' }).click()
 
   const originalCard = page.getByLabel('Image: Generated image').first()
-  const followup = originalCard.getByLabel('Ask about or refine this image')
-  await followup.fill(feedback)
+  await expect(originalCard.getByRole('button', { name: 'Using in chat' })).toBeVisible()
+  await textarea.fill(feedback)
   const responsePromise = page.waitForResponse(
     `http://localhost:8000/api/v1/images/${originalId}/refine`,
   )
-  await originalCard.getByRole('button', { name: 'Refine' }).click()
+  await page.getByRole('button', { name: 'Send message' }).click()
   expect((await responsePromise).status()).toBe(201)
 
   await expect(page.getByLabel('Image: Generated image')).toHaveCount(1)
@@ -3184,6 +3241,9 @@ test('routes can-you image edits to refinement instead of vision Q&A', async ({ 
   await expect(page.getByLabel('Image: Generated image').getByAltText(
     'Generated visual result',
   )).toBeVisible()
+  await expect(page.getByText('Creating your image locally.', { exact: true })).not.toBeVisible()
+  await expect(page.getByText('Generating image...', { exact: true })).not.toBeVisible()
+  await expect(textarea).toBeEnabled()
   expect(refineBody).toMatchObject({
     user_id: 'ani.mallya',
     conversation_id: conversationId,
@@ -3276,13 +3336,15 @@ test('uploads, analyzes, and source-refines an image with visible results', asyn
   await expect(textarea).toBeEnabled()
   await expect(textarea).toHaveValue('')
   await expect(page.getByText('Analyzing image...', { exact: true })).not.toBeVisible()
-  const followup = imageCard.getByLabel('Ask about or refine this image')
-  await followup.fill(feedback)
-  await imageCard.getByRole('button', { name: 'Refine' }).click()
+  await expect(imageCard.getByRole('button', { name: 'Using in chat' })).toBeVisible()
+  await textarea.fill(feedback)
+  await page.getByRole('button', { name: 'Send message' }).click()
   await expect(page.getByLabel('Image: Generated image')).toHaveCount(1)
   await expect(page.getByLabel('Image: Generated image').getByAltText(
     'Generated visual result',
   )).toBeVisible()
+  await expect(page.getByText('Creating your image locally.', { exact: true })).not.toBeVisible()
+  await expect(page.getByText('Generating image...', { exact: true })).not.toBeVisible()
   expect(refinementBody).toMatchObject({
     user_id: 'ani.mallya',
     conversation_id: expect.any(String),
@@ -3364,7 +3426,7 @@ test('edits an uploaded image when the same message asks for an edit', async ({ 
   await textarea.fill(instruction)
   await page.getByRole('button', { name: 'Send message' }).click()
 
-  // The edited picture arrives without anyone touching the card's follow-up box.
+  // The edited picture arrives after the instruction is sent from the main composer.
   await expect(page.getByLabel('Image: Generated image')).toHaveCount(1)
   await expect(page.getByLabel('Image: Generated image').getByAltText(
     'Generated visual result',
@@ -3521,15 +3583,14 @@ test('@live visual generation and analysis complete through the browser', async 
     await expect(textarea).toHaveValue('')
 
     const refinementFeedback = 'change only the copper sphere to polished gold'
-    const refinementInput = generatedCard.getByLabel('Ask about or refine this image')
-    await refinementInput.fill(refinementFeedback)
+    await expect(generatedCard.getByRole('button', { name: 'Using in chat' })).toBeVisible()
+    await textarea.fill(refinementFeedback)
     const refinementResponsePromise = page.waitForResponse(
       response => response.url() ===
         `http://localhost:8000/api/v1/images/${generatedId}/refine`,
       { timeout: 120_000 },
     )
-    await generatedCard.getByRole('button', { name: 'Refine' }).click()
-    await expect(generatedCard.getByRole('button', { name: /^Refining/ })).toBeVisible()
+    await page.getByRole('button', { name: 'Send message' }).click()
     const refinementResponse = await refinementResponsePromise
     expect(refinementResponse.status()).toBe(201)
     const revision = await refinementResponse.json() as Record<string, unknown>
@@ -3554,8 +3615,7 @@ test('@live visual generation and analysis complete through the browser', async 
     await expect(page.getByLabel(/^Image: /)).toHaveCount(1)
     const revisedCard = page.getByLabel('Image: Edited image')
     await expect(revisedCard.getByAltText('Generated visual result')).toBeVisible()
-    await expect(page.getByText(/^Refining/)).not.toBeVisible()
-    await expect(refinementInput).not.toBeVisible()
+    await expect(textarea).toBeEnabled()
     await revisedCard.screenshot({ path: 'test-results/live-flux-refinement.png' })
 
     await page.getByRole('button', { name: 'Visual artifacts' }).click()
@@ -3607,15 +3667,14 @@ test('@live visual generation and analysis complete through the browser', async 
     await expect(textarea).toBeEnabled()
 
     const uploadFeedback = 'make only the background a soft warm gray'
-    const uploadRefinementInput = analyzedCard.getByLabel('Ask about or refine this image')
-    await uploadRefinementInput.fill(uploadFeedback)
+    await expect(analyzedCard.getByRole('button', { name: 'Using in chat' })).toBeVisible()
+    await textarea.fill(uploadFeedback)
     const uploadRefinementResponsePromise = page.waitForResponse(
       response => response.url() ===
         `http://localhost:8000/api/v1/images/${analyzedId}/refine`,
       { timeout: 120_000 },
     )
-    await analyzedCard.getByRole('button', { name: 'Refine' }).click()
-    await expect(analyzedCard.getByRole('button', { name: /^Refining/ })).toBeVisible()
+    await page.getByRole('button', { name: 'Send message' }).click()
     const uploadRefinementResponse = await uploadRefinementResponsePromise
     expect(uploadRefinementResponse.status()).toBe(201)
     const uploadRevision = await uploadRefinementResponse.json() as Record<string, unknown>

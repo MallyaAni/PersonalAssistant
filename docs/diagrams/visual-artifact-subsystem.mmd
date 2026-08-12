@@ -1,42 +1,27 @@
 ---
 title: Visual Artifact Subsystem
 ---
-flowchart TB
+flowchart LR
     User([User]) --> UI[Chat and artifact UI]
-    UI --> API[Owned visual APIs]
-    MCP([Confirmed local MCP call]) -.-> API
-    API --> Ownership[Ownership, limits<br/>and integrity checks]
+    UI --> Guard[Owned visual API<br/>limits and integrity]
+    MCP([Confirmed MCP call]) -.-> Guard
+    Guard --> Route{Requested capability}
 
-    subgraph Capabilities[Visual capabilities]
-        Diagram[DiagramAgent]
-        Image{New image<br/>or source edit?}
-        Vision[Image analysis<br/>and follow-up]
-        Inference[Provider-neutral<br/>inference adapters]
-    end
+    Route -->|diagram| Diagram[Qwen 3.5 4B<br/>validated Mermaid]
+    Route -->|new or edit| Image[HiDream generation<br/>or FLUX source edit]
+    Route -->|analyze| Vision[Qwen 3.5 4B<br/>grounded analysis]
+    Route -->|recall| Recall[Explicit image ID or Qwen<br/>semantic visual selection]
 
-    Ownership --> Diagram
-    Ownership --> Image
-    Ownership --> Vision
-
-    Diagram --> Inference
-    Vision --> Inference
-    Inference -->|diagram role| Qwen[Qwen 3.5 4B via vLLM]
-    Inference -->|vision role| Qwen
-    Qwen --> Mermaid[Validated Mermaid]
-    Image -->|new| HiDream[HiDream via ComfyUI]
-    Image -->|edit| Flux[FLUX.2 Klein via ComfyUI]
-    HiDream --> Pixels[Validated image bytes]
-    Flux --> Pixels
-
-    Qwen --> Analysis[Grounded analysis<br/>or threaded answer]
-
-    Mermaid --> Repository[Owned artifact repository]
-    Pixels --> Repository
-    Analysis --> Repository
-    Repository --> Storage[(PostgreSQL metadata and lineage<br/>opaque private files)]
-    Pixels --> VisionEmbed[Nomic vision embedding]
-    VisionEmbed --> Storage
-
+    Diagram --> Repository[Owned artifact repository]
+    Image --> Repository
+    Image -->|observe edited pixels| Vision
+    Vision --> Repository
+    Repository -->|artifact and derived-index lifecycle| Store[(PostgreSQL metadata and lineage<br/>opaque private files)]
+    Repository --> Embed[Nomic pixel and<br/>text embeddings]
+    Embed --> Store
+    Store --> Recall
+    Recall --> Context[Owner-validated<br/>bounded visual context]
+    Context --> UI
     Repository --> UI
 
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
@@ -44,6 +29,6 @@ flowchart TB
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
     class User,UI,MCP interface;
-    class API,Ownership,Diagram,Image,Vision,Inference,Mermaid,Pixels,Analysis,Repository application;
-    class Storage data;
-    class Qwen,HiDream,Flux,VisionEmbed external;
+    class Guard,Route,Repository,Context application;
+    class Store data;
+    class Diagram,Image,Vision,Recall,Embed external;

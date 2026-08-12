@@ -130,11 +130,28 @@ async def generate_image(
 async def classify_image_intent(
     body: ImageIntentBody,
     service: ImageIntentDependency,
+    images: ImageArtifactDependency,
     identity: IdentityDependency,
 ) -> dict[str, Any]:
     authorize_user(body.user_id, identity)
     authorize_scope(identity, SCOPE_VISION)
-    edits = await service.edits_the_image(body.text)
+    recent_context = ""
+    if body.artifact_id is not None:
+        artifact = await images.get_owned_record(body.user_id, str(body.artifact_id))
+        if artifact is None:
+            raise HTTPException(status_code=404, detail="Image not found.")
+        metadata = artifact.get("metadata") or {}
+        thread = metadata.get("analysis_thread")
+        if isinstance(thread, list):
+            recent_context = "\n".join(
+                f"User: {str(item.get('prompt', ''))[:300]}\n"
+                f"Assistant: {str(item.get('answer', ''))[:500]}"
+                for item in thread[-3:]
+                if isinstance(item, dict)
+            )
+        elif isinstance(metadata.get("analysis"), str):
+            recent_context = f"Image description: {metadata['analysis'][:1_000]}"
+    edits = await service.edits_the_image(body.text, recent_context)
     return {"intent": EDIT if edits else ASK}
 
 

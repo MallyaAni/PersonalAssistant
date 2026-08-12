@@ -2,7 +2,8 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import delete, func, or_
+from sqlalchemy import String, and_, delete, func, or_
+from sqlalchemy import cast as sql_cast
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -13,6 +14,7 @@ from backend.discovery.errors import (
 )
 from backend.discovery.projection import DiscoveryProjection
 from backend.memory.errors import MemoryConflictError
+from backend.models.artifact import VisualArtifact
 from backend.models.conversation import Conversation
 from backend.models.discovery import DiscoveryInterest, DiscoveryLocality
 from backend.models.discovery_familiar import DiscoveryFamiliarItem
@@ -438,6 +440,43 @@ class MemoryRepository:
             select(SemanticMemory, distance.label("cosine_distance"))
             .where(
                 SemanticMemory.user_id == user_id,
+                or_(
+                    SemanticMemory.expires_at.is_(None),
+                    SemanticMemory.expires_at > effective_at,
+                ),
+                distance <= max_cosine_distance,
+            )
+            .order_by(distance, SemanticMemory.id)
+            .limit(top_k)
+        )
+        result = await self.session.execute(stmt)
+        return [(memory, float(score)) for memory, score in result.all()]
+
+    # Retrieve one user's derived visual descriptions with a wider candidate bound.
+    async def get_visual_semantic_memories(
+        self,
+        user_id: str,
+        query_embedding: list[float],
+        top_k: int,
+        max_cosine_distance: float,
+    ) -> list[tuple[SemanticMemory, float]]:
+        distance = SemanticMemory.embedding.cosine_distance(query_embedding)
+        effective_at = datetime.now(UTC)
+        stmt = (
+            select(SemanticMemory, distance.label("cosine_distance"))
+            .join(
+                VisualArtifact,
+                and_(
+                    VisualArtifact.user_id == SemanticMemory.user_id,
+                    sql_cast(VisualArtifact.id, String)
+                    == SemanticMemory.extra_data["artifact_id"].astext,
+                ),
+            )
+            .where(
+                SemanticMemory.user_id == user_id,
+                SemanticMemory.purpose == "visual_artifact_analysis",
+                VisualArtifact.status == "ready",
+                VisualArtifact.kind.in_({"generated_image", "uploaded_image"}),
                 or_(
                     SemanticMemory.expires_at.is_(None),
                     SemanticMemory.expires_at > effective_at,

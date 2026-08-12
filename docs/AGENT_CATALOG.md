@@ -149,6 +149,7 @@ Listed so the distinction is a decision rather than an oversight.
 | --- | --- | --- |
 | Search freshness | whether a turn needs the web | `backend/search/classifier.py` |
 | Image recall | whether a query names a stored image | `backend/artifacts/image_recall_classifier.py` |
+| Visual-memory selection | which offered owned image descriptions materially help answer the current message | `backend/agents/vision/memory.py` |
 
 ## Every model call, and what it costs
 
@@ -176,6 +177,7 @@ every call, not adding one.
 | Memory capture | `proposal_agent.py` — what to offer saving | 256 | 0.0 | yes |
 | *(not an agent)* | `search/classifier.py` — does this need fresh search | 4 | 0.0 | yes |
 | *(not an agent)* | `image_recall_classifier.py` — is this about an old image | 4 | 0.0 | yes |
+| *(not an agent)* | `agents/vision/memory.py` — select relevant offered visual memories | 128 | 0.0 | yes |
 | *(not an agent)* | `image_style_service.py` — style from profile | 160 | default | no |
 
 **Temp matters more than it looks.** Everything reproducible runs greedy.

@@ -31,13 +31,17 @@ export const looksLikeEditHint = (text: string): boolean => {
 // Whether this text should edit the image in view rather than ask about it.
 //
 // Answers false when the classifier is unreachable, matching the server: an
-// image described when an edit was meant can be edited from the follow-up box,
+// image described when an edit was meant can be edited from the main composer,
 // and describing is what these paths did before any of this existed.
-export const shouldEditImage = async (userId: string, text: string): Promise<boolean> => {
+export const shouldEditImage = async (
+  userId: string,
+  text: string,
+  artifactId?: string,
+): Promise<boolean> => {
   const trimmed = text.trim()
   if (!trimmed) return false
   try {
-    return await classifyImageIntent(userId, trimmed)
+    return await classifyImageIntent(userId, trimmed, artifactId)
   } catch {
     return false
   }

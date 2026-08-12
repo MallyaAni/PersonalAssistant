@@ -322,6 +322,15 @@ the gateway does not know about, and every request 502s while both containers
 report healthy and the backend's own log says startup complete. `docker compose
 restart gateway` after any `up -d backend`.
 
+**Frontend changes reach Cloudflare only through a rebuilt gateway.** Port 5173
+is the bind-mounted Vite development container, but `deep-matter.com` terminates
+at the gateway image, whose Dockerfile compiles and copies its own immutable
+frontend bundle. Rebuilding or restarting `frontend` does not change that
+bundle. After a frontend change run `docker compose build gateway` followed by
+`docker compose up -d gateway`, then fetch the public hashed JavaScript asset
+from inside a container and prove it contains the new behavior. A public 200
+can still be stale UI.
+
 ## Documentation ownership
 
 - `README.md`: stable overview, entry points, and documentation map.

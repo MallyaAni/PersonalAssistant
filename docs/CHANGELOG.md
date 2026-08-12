@@ -2825,3 +2825,63 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   the record survives the sealed column intact.
 - Existing runs have no decision on file, which is the truth: the column is
   newer than they are.
+
+## 2026-08-12 — Image follow-ups moved into one explicit composer
+
+- Removed the competing textarea beneath every image card. The newest visible
+  image is shown as a removable thumbnail above the main composer, and **Ask or
+  edit** on any image switches the exact owned artifact used by the next
+  question or refinement.
+- Added deterministic Chromium coverage for two-image disambiguation, clearing
+  image context, exact `active_image_artifact_id` request bodies, grounded chat
+  questions, and generated/uploaded source refinements. All five focused paths
+  pass and the frontend production build succeeds.
+- Documented semantic visual selection as the default natural-reference path
+  and a type-neutral future contract for generated, uploaded, or discussed
+  artifacts, including planned video observations and parsed PDF/RAG chunks.
+- Corrected the public deployment boundary after `deep-matter.com` was found
+  serving the previous gateway-compiled bundle even though port 5173 had the
+  new source. Rebuilt and recreated the gateway; both Cloudflare edge addresses
+  now serve the new hashed bundle with the selection controls and without the
+  removed follow-up field. Added the required gateway rebuild to the operator
+  guide and agent instructions. A real authenticated Chromium run against
+  `https://deep-matter.com` restored an owned image and completed its grounded
+  main-composer follow-up with clean Console/page/required-Network state.
+- Traced `ani.mallya`'s exact **can you make it a straw hat instead?** turn from
+  its 201 refinement response to the ready child artifact and found that the
+  image card updated while a separate generation placeholder remained active.
+  Refinement completion now retires that one placeholder, and successful image
+  generation/refinement replaces transient starting copy with an explicit
+  terminal message. Generated- and uploaded-image Chromium refinement paths,
+  the production build, and the exact rebuilt bundle served by both Cloudflare
+  IPv4 edges all pass.
+
+## 2026-08-12 — Visual style memory rejects stale artifact handles
+
+- Traced the exact repeated **how do you feel about my dress style?** denial to
+  eight orphaned derived descriptions filling the visual-memory shortlist. The
+  semantic model selected a relevant outfit, but its deleted artifact handle
+  correctly failed the final ownership/readiness check and no live image reached
+  the answer model.
+- Visual candidate retrieval now joins descriptions to ready same-owner image
+  artifacts before limiting results. Artifact deletion removes its derived
+  visual description in the same PostgreSQL commit, while existing orphan rows
+  remain inert rather than being destructively cleaned from live data.
+- The image-memory prompt now gives a grounded style opinion without disclaiming
+  memory or sight, and avoids treating one observed outfit as a permanent user
+  preference. Focused PostgreSQL tests, real-Qwen functional tests, a direct
+  memory-only API turn, and authenticated Chromium through `deep-matter.com`
+  all pass.
+- Ready FLUX children now pass through local Qwen vision after editing and store
+  their own current-pixel analysis and derived semantic index. Observation is
+  best-effort so valid edited pixels are never discarded; a strict functional
+  `xfail` preserves the known degraded case where Qwen can prefer an origin
+  detail over a text-only edit delta when observation is unavailable.
+- Live acceptance created a source-conditioned straw-hat child, observed its
+  current pixels with Qwen, grounded direct chat and the public Chromium UI in
+  the straw hat, bomber jacket and white shirt, then deleted the temporary child
+  and verified both its artifact and derived semantic rows were removed.
+- Backfilled the reported existing straw-hat revision through the same local
+  observation boundary. Its owned current-pixel analysis and semantic index now
+  describe the straw hat and outfit, and the exact question passes through both
+  direct chat and the public Cloudflare browser with that revision selected.

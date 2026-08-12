@@ -1131,6 +1131,20 @@ long-running image/presentation requests. Remote HTTPS ingress is a Cloudflare
 tunnel publishing only this gateway; PostgreSQL, Redis, vLLM, ComfyUI,
 renderers, and MCP ports stay private and friends install nothing.
 
+The public UI is the gateway's compiled frontend, not the Vite development
+container. After any frontend source change, rebuilding `frontend` updates only
+`localhost:5173`; it does **not** update `deep-matter.com`. Rebuild and recreate
+the gateway before public verification:
+
+```powershell
+docker compose build gateway
+docker compose up -d gateway
+```
+
+Then fetch the public `index.html`, follow its hashed JavaScript asset, and
+verify that asset contains the new behavior from inside a container. A public
+HTTP 200 alone can still be an old compiled bundle.
+
 The same Docker Compose gateway is portable to macOS; follow the
 database/artifact/encryption-key migration procedure before moving hosts.
 
@@ -1289,11 +1303,23 @@ Require HTTP 201, `kind=uploaded_image`, ready binary integrity metadata, `analy
 
 For browser acceptance, also submit `create an image of ...` while Chat is selected. Require exactly one `/images/generate` request and the selected mode to change to Create image. Without changing that mode manually, ask a historical question such as `what car did we create an image of?`; require `/chat`, no second generation request, a grounded answer, terminal `done`, and cleared loading/input. Then explicitly ask to search the internet for that image, require image recall before the visible internet MCP lifecycle, and require source cards only when the provider returned non-empty results. Inspect Network and Console throughout. The Memory screen must not fetch the full export before a map-card click; selecting Semantic cache must return the owned export and display a bounded detail region without embedding vectors.
 
-Use the unified composer and image-card follow-up field for the remaining
-visual checks. Upload an image, wait for grounded Qwen analysis, then submit an
-edit-shaped instruction in that uploaded image's follow-up field and require
+Visual-memory acceptance must also work without a selected image ID. Analyze an
+owned portrait, start a separate conversation, and ask an appearance question
+such as `how do you feel about my dress style?`. Require an `image_matches`
+event, an answer grounded in visible outfit details, no claim that AniOS lacks
+the image or memory, terminal `done`, and cleared browser loading. Delete a
+separate test artifact and prove its `visual_artifact_analysis` semantic row is
+gone; also seed an orphaned derived row and prove it cannot enter the bounded
+candidate list ahead of a live same-owner artifact.
+
+Use the unified composer for the remaining visual checks. Upload an image, wait
+for grounded Qwen analysis, confirm its thumbnail appears as the selected image
+above the composer, then submit an edit-shaped instruction there and require
 the same FLUX endpoint, visible refinement progress, and in-place child
-replacement. Require visible generation/refinement/analysis progress, one
+replacement. With two images visible, select the older image through its
+**Ask or edit** action and require the next `/chat` or refinement request to
+carry that exact artifact ID; clearing the chip must send no active image.
+Require visible generation/refinement/analysis progress, one
 active image card after an edit, a terminal ready image and grounded analysis,
 enabled/cleared controls, navigation and full-reload restoration,
 artifact-history rendering, download/deletion, visible 413/422/502/503 errors,

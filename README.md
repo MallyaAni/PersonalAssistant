@@ -28,8 +28,8 @@ The repository contains:
   immutable edit lineage,
   in-place active revisions, grounded historical questions, guarded
   referenced-image web comparison, private previews, retry/cancel, reload
-  restoration, history, download, owned deletion, and threaded followup
-  questions on any owned image;
+  restoration, history, download, owned deletion, semantic visual recall, and
+  one main chat composer with explicit image selection when several images are visible;
 - a clickable Agent memory map whose bounded store details load on demand through the owned export boundary;
 - a durable Scout discovery agent whose approved home and interests share the
   personal-memory fact lifecycle, with editable ranking strength, reversible
@@ -69,6 +69,7 @@ incomplete startup whenever image generation is part of the acceptance path.
 Common entry points are:
 
 ```text
+Public UI:       https://deep-matter.com
 Backend health:  http://localhost:8000/health
 OpenAPI UI:      http://localhost:8000/docs
 Frontend:        http://localhost:5173
@@ -89,6 +90,10 @@ Presentations:   http://localhost:8000/api/v1/presentations/{user_id}
 Capability MCP:  http://localhost:8001/mcp
 PPTX renderer:   http://localhost:8002/health
 ```
+
+`deep-matter.com` is the hosted product surface. Cloudflare terminates HTTPS
+and the named `anios` tunnel forwards only to the loopback Nginx gateway; the
+database, model servers, workers, MCP, and ComfyUI remain private.
 
 These addresses being reachable does not prove chat or persistence works. Follow the functional validation protocol in the development guide.
 

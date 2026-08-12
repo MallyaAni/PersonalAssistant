@@ -1,8 +1,9 @@
-import React, { useRef, useState } from 'react'
-import { ArrowUp, Loader2, Paperclip, X } from 'lucide-react'
+import React, { useEffect, useRef, useState } from 'react'
+import { ArrowUp, Image as ImageIcon, Loader2, Paperclip, X } from 'lucide-react'
 import {
   analyzeImage,
   generateImage,
+  getArtifactImage,
   ingestDocument,
   refineImage,
   streamChat,
@@ -87,6 +88,7 @@ interface ComposerProps {
   onImageMatches: (artifacts: ImageArtifact[]) => void;
   // The image an edit typed here applies to, and where its revision goes.
   editableImage: ImageArtifact | null;
+  onClearEditableImage: () => void;
   onImageRefined: (artifact: ImageArtifact) => void;
   onSearchStarted: (minimized: boolean) => void;
   onSearchBlocked: (categories: string[]) => void;
@@ -113,6 +115,7 @@ const Composer: React.FC<ComposerProps> = ({
   onVisualError,
   onImageMatches,
   editableImage,
+  onClearEditableImage,
   onImageRefined,
   onSearchStarted,
   onSearchBlocked,
@@ -127,9 +130,41 @@ const Composer: React.FC<ComposerProps> = ({
   const [attachedFile, setAttachedFile] = useState<File | null>(null)
   const [visualInFlight, setVisualInFlight] = useState(false)
   const [visualError, setVisualError] = useState('')
+  const [activeImageUrl, setActiveImageUrl] = useState('')
   const requestController = useRef<AbortController | null>(null)
   const fileInput = useRef<HTMLInputElement | null>(null)
   const canSend = !isSending && (Boolean(input.trim()) || attachedFile !== null)
+
+  // Load a private thumbnail for the image currently targeted by the main composer.
+  useEffect(() => {
+    if (!editableImage) {
+      setActiveImageUrl('')
+      return
+    }
+    const controller = new AbortController()
+    let objectUrl = ''
+
+    // Resolve the selected image through its authenticated binary endpoint.
+    const loadThumbnail = async () => {
+      try {
+        const blob = await getArtifactImage(
+          editableImage.user_id,
+          editableImage.id,
+          controller.signal,
+        )
+        objectUrl = URL.createObjectURL(blob)
+        setActiveImageUrl(objectUrl)
+      } catch {
+        if (!controller.signal.aborted) setActiveImageUrl('')
+      }
+    }
+
+    void loadThumbnail()
+    return () => {
+      controller.abort()
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [editableImage])
 
   // Decide what a send should do: an attachment routes by file type, otherwise
   // an explicit "draw me..." becomes generation and everything else is chat.
@@ -224,14 +259,14 @@ const Composer: React.FC<ComposerProps> = ({
 
       onSendMessage('user', prompt)
 
-      // An edit typed here, rather than into the image card's follow-up box.
+      // An edit typed here applies to the image visibly selected above the composer.
       //
       // Without this the same words became an ordinary chat turn: the model has
       // no image tool, so it answered that it could not edit images, which is
       // indistinguishable from the feature being broken. Only explicitly
       // edit-shaped text is taken, so ordinary conversation that happens to
       // follow an image still reaches the model.
-      if (editableImage && await shouldEditImage(userId, prompt)) {
+      if (editableImage && await shouldEditImage(userId, prompt, editableImage.id)) {
         onThinkingChange(false)
         onVisualStarted('generate')
         setVisualInFlight(true)
@@ -257,7 +292,12 @@ const Composer: React.FC<ComposerProps> = ({
       }
 
       onThinkingChange(true)
-      for await (const update of streamChat(userId, conversationId, prompt)) {
+      for await (const update of streamChat(
+        userId,
+        conversationId,
+        prompt,
+        editableImage?.id,
+      )) {
         if (update.type === 'start') onStreamUpdate(update.content)
         else if (update.type === 'content') {
           onThinkingChange(false)
@@ -328,6 +368,39 @@ const Composer: React.FC<ComposerProps> = ({
 
   return (
     <div>
+      {editableImage && (
+        <div className="mb-2 flex items-center gap-2 px-2">
+          <span
+            aria-label={`Using image in chat: ${editableImage.title}`}
+            className="inline-flex max-w-full items-center gap-2 rounded-2xl border border-[#0071e3]/20 bg-[#f5faff] px-2 py-1.5 text-xs text-[#1d1d1f]"
+          >
+            {activeImageUrl ? (
+              <img
+                src={activeImageUrl}
+                alt=""
+                className="h-8 w-8 flex-none rounded-lg object-cover"
+              />
+            ) : (
+              <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-[#eaf4ff] text-[#0071e3]">
+                <ImageIcon size={15} />
+              </span>
+            )}
+            <span className="min-w-0">
+              <span className="block font-medium text-[#0066cc]">Using this image</span>
+              <span className="block max-w-48 truncate text-[#6e6e73]">{editableImage.title}</span>
+            </span>
+            <button
+              type="button"
+              aria-label="Stop using selected image"
+              onClick={onClearEditableImage}
+              disabled={isSending}
+              className="flex-none rounded-full p-1 text-[#6e6e73] hover:bg-[#e8f2ff] disabled:opacity-40"
+            >
+              <X size={14} />
+            </button>
+          </span>
+        </div>
+      )}
       {attachedFile && (
         <div className="mb-2 flex items-center gap-2 px-2">
           <span className="inline-flex max-w-full items-center gap-2 rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs text-[#1d1d1f]">

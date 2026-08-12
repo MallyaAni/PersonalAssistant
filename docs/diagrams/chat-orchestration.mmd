@@ -15,8 +15,11 @@ flowchart TB
     Inference -->|diagram role| DiagramModel[Qwen 3.5 4B<br/>diagram call via vLLM]
     DiagramModel --> Artifact[Validate and persist<br/>Mermaid artifact]
 
-    Supervisor -->|ordinary chat| Memory[MemoryCoordinatorAgent<br/>bounded retrieval]
-    Memory --> Optional{Need a tool<br/>or current web data?}
+    Supervisor -->|ordinary chat| Memory[MemoryCoordinatorAgent<br/>memory and artifact retrieval]
+    Memory --> Visual{Relevant stored<br/>image candidates?}
+    Visual -->|yes| VisualPolicy[Qwen 3.5 4B<br/>visual-memory selection]
+    Visual -->|no| Optional{Need a tool<br/>or current web data?}
+    VisualPolicy --> Optional
     Optional -->|tool| MCP[MCP selection<br/>and safety gates]
     Optional -->|web| Search[Privacy-screened<br/>internet search]
     Optional -->|neither| Context[Curated context]
@@ -40,6 +43,6 @@ flowchart TB
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef failure fill:#fff3cd,stroke:#b78b20,color:#4d3900;
     class User,UI interface;
-    class API,Supervisor,Presentation,Progress,Diagram,Artifact,Memory,Optional,MCP,Search,Context,Inference,Persist,Stream,Proposal application;
-    class Main,DiagramModel,Interest model;
+    class API,Supervisor,Presentation,Progress,Diagram,Artifact,Memory,Visual,Optional,MCP,Search,Context,Inference,Persist,Stream,Proposal application;
+    class Main,DiagramModel,Interest,VisualPolicy model;
     class Failure failure;

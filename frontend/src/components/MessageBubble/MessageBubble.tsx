@@ -27,7 +27,8 @@ interface MessageProps {
   toolActivities?: ToolActivity[];
   agentActivities?: AgentActivity[];
   onArtifactDeleted?: (artifactId: string) => void;
-  onImageRefined?: (artifact: ImageArtifactRecord) => void;
+  activeImageId?: string;
+  onImageSelect?: (artifact: ImageArtifactRecord) => void;
 }
 
 // Separate trace metadata from the visible assistant answer.
@@ -70,7 +71,8 @@ const MessageBubble: React.FC<MessageProps> = ({
   toolActivities,
   agentActivities,
   onArtifactDeleted,
-  onImageRefined,
+  activeImageId,
+  onImageSelect,
 }) => {
   const isUser = role === 'user';
   // Only image generation produces a square result worth reserving space for;
@@ -225,7 +227,12 @@ const MessageBubble: React.FC<MessageProps> = ({
       )}
       {!isUser && artifact?.kind === 'diagram' && <DiagramArtifact artifact={artifact} />}
       {!isUser && artifact && artifact.kind !== 'diagram' && (
-        <ImageArtifact artifact={artifact} onDeleted={onArtifactDeleted} onRefined={onImageRefined} />
+        <ImageArtifact
+          artifact={artifact}
+          onDeleted={onArtifactDeleted}
+          onSelect={onImageSelect}
+          isSelected={activeImageId === artifact.id}
+        />
       )}
       {!isUser && searchSources && searchSources.length > 0 && (
         <section className="mt-5" aria-label="Web sources used">
@@ -270,7 +277,8 @@ const MessageBubble: React.FC<MessageProps> = ({
               key={match.id}
               artifact={match}
               onDeleted={onArtifactDeleted}
-              onRefined={onImageRefined}
+              onSelect={onImageSelect}
+              isSelected={activeImageId === match.id}
             />
           ))}
         </section>

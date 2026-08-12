@@ -7,10 +7,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.core.interfaces import MemoryService, SemanticMemoryWriter
 from backend.discovery.projection import interest_fact
 from backend.embeddings.base import EmbeddingProvider
+from backend.memory.purposes import VISUAL_ANALYSIS_PURPOSE
 from backend.memory.repository import MemoryRepository
 from backend.memory.retrieval import SemanticRetrievalPolicy
 from backend.models.memory import UserProfile
-from backend.services.vision_analysis_service import VISUAL_ANALYSIS_PURPOSE
 
 # Semantic entries this system derived rather than the user stating them.
 # They are retrievable by embedding and must not be listed back as facts.
@@ -210,6 +210,30 @@ class PostgresMemoryService(MemoryService, SemanticMemoryWriter):
             self.retrieval_policy.max_cosine_distance,
         )
         return self.retrieval_policy.select(memories, top_k)
+
+    # Return a broad owned visual shortlist for a model to judge semantically.
+    async def get_visual_memory_candidates(
+        self,
+        user_id: str,
+        query_embedding: list[float],
+        top_k: int = 8,
+        max_cosine_distance: float = 0.65,
+    ) -> list[dict[str, Any]]:
+        rows = await self.repo.get_visual_semantic_memories(
+            user_id,
+            query_embedding,
+            top_k,
+            max_cosine_distance,
+        )
+        results: list[dict[str, Any]] = []
+        for memory, distance in rows:
+            item = memory.to_dict()
+            item["retrieval"] = {
+                "cosine_distance": round(distance, 6),
+                "relevance_score": round(max(0.0, 1.0 - distance), 6),
+            }
+            results.append(item)
+        return results
 
     async def save_episodic_memory(
         self,

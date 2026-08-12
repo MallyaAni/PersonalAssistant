@@ -29,9 +29,37 @@ class StubImages:
         return {"id": "revision", "kind": "generated_image"}
 
 
+class StubVision:
+    def __init__(self, fail: bool = False) -> None:
+        self.fail = fail
+        self.calls: list[tuple[str, str]] = []
+
+    # Return the observed child metadata or simulate an unavailable VLM.
+    async def observe_artifact(self, user_id: str, artifact_id: str) -> dict[str, Any]:
+        self.calls.append((user_id, artifact_id))
+        if self.fail:
+            raise RuntimeError("vision unavailable")
+        return {
+            "id": artifact_id,
+            "kind": "generated_image",
+            "metadata": {"analysis": "A blue sofa in the edited image."},
+        }
+
+
 # Build one refinement service around an isolated image-service double.
 def _service(record: dict[str, Any] | None) -> ImageRefinementService:
     return ImageRefinementService(StubImages(record))  # type: ignore[arg-type]
+
+
+# Build a refinement service that observes the child after the pixel edit.
+def _observed_service(
+    record: dict[str, Any] | None,
+    vision: StubVision,
+) -> ImageRefinementService:
+    return ImageRefinementService(  # type: ignore[arg-type]
+        StubImages(record),
+        vision,
+    )
 
 
 _GENERATED = {
@@ -111,6 +139,30 @@ async def test_refine_accepts_an_owned_uploaded_image() -> None:
     assert revision["id"] == "revision"
     assert images.edit_calls[0]["parent"] == upload
     assert images.edit_calls[0]["source_content"] == b"source pixels"
+
+
+# Successful refinement returns the child after Qwen observes its current pixels.
+@pytest.mark.asyncio
+async def test_refine_observes_the_ready_child() -> None:
+    vision = StubVision()
+    service = _observed_service(_GENERATED, vision)
+
+    revision = await service.refine("u", "orig", "make it blue", "c", "t")
+
+    assert vision.calls == [("u", "revision")]
+    assert revision["metadata"]["analysis"].startswith("A blue sofa")
+
+
+# Observation failure preserves the valid edited child rather than losing the work.
+@pytest.mark.asyncio
+async def test_refine_survives_post_edit_observation_failure() -> None:
+    vision = StubVision(fail=True)
+    service = _observed_service(_GENERATED, vision)
+
+    revision = await service.refine("u", "orig", "make it blue", "c", "t")
+
+    assert vision.calls == [("u", "revision")]
+    assert revision["id"] == "revision"
 
 
 # Missing, non-image, and blank-feedback inputs must fail before provider work.

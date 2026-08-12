@@ -298,7 +298,35 @@ async def test_followup_accumulates_thread_and_replays_history(tmp_path: Path) -
     assert repository.record is not None
     thread = repository.record["metadata"]["analysis_thread"]
     assert [entry["prompt"] for entry in thread] == ["What color?", "How many shapes?"]
-    assert repository.record["metadata"]["analysis"] == "answer to: How many shapes?"
+    assert "analysis" not in repository.record["metadata"]
+
+
+# A follow-up answer must not replace the neutral description used for recall.
+@pytest.mark.asyncio
+async def test_followup_preserves_the_canonical_visual_analysis(tmp_path: Path) -> None:
+    provider = ThreadVisionProvider()
+    ready, service, repository = await _ready_image_and_vision(tmp_path, provider)
+    assert repository.record is not None
+    repository.record["metadata"].update(
+        {
+            "analysis": "A person wearing a tailored navy jacket.",
+            "analysis_model": "vision-model",
+        }
+    )
+
+    await service.ask_about_artifact(
+        "vision-user",
+        ready["id"],
+        "Would a straw hat suit this outfit?",
+    )
+
+    assert repository.record["metadata"]["analysis"] == (
+        "A person wearing a tailored navy jacket."
+    )
+    assert repository.record["metadata"]["analysis_model"] == "vision-model"
+    assert repository.record["metadata"]["analysis_thread"][-1]["prompt"] == (
+        "Would a straw hat suit this outfit?"
+    )
 
 
 # Verify the replayed context and stored thread are both bounded independently.

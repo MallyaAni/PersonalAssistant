@@ -72,6 +72,11 @@ async def chat(
                 body.query,
                 str(body.conversation_id) if body.conversation_id else None,
                 body.metadata,
+                **(
+                    {"active_image_artifact_id": str(body.active_image_artifact_id)}
+                    if body.active_image_artifact_id
+                    else {}
+                ),
             ),
             model_gate,
         ),

@@ -20,7 +20,11 @@ from typing import Any
 import pytest
 
 from backend.artifacts.lineage import Lineage
-from backend.services.conversation_service import ConversationService, _image_lineage
+from backend.services.conversation_service import (
+    ConversationService,
+    _image_description,
+    _image_lineage,
+)
 
 
 class StubLineage:
@@ -96,9 +100,10 @@ async def test_resolving_lineage_never_touches_the_streamed_records() -> None:
 # Provenance is an enrichment. Losing it must not lose the images themselves.
 @pytest.mark.asyncio
 async def test_a_resolver_failure_resolves_to_nothing_rather_than_raising() -> None:
-    assert await _service(StubLineage(fail=True))._resolve_lineage(
-        "u", [{"id": "b"}]
-    ) == {}
+    assert (
+        await _service(StubLineage(fail=True))._resolve_lineage("u", [{"id": "b"}])
+        == {}
+    )
 
 
 @pytest.mark.asyncio
@@ -136,6 +141,30 @@ def test_a_match_with_no_lineage_renders_nothing() -> None:
     assert _image_lineage(None) == {}
 
 
+# Historical rows whose flat analysis was overwritten recover the neutral first turn.
+def test_image_description_prefers_the_canonical_thread_seed() -> None:
+    assert (
+        _image_description(
+            {
+                "metadata": {
+                    "analysis": "Here is the straw-hat change you requested.",
+                    "analysis_thread": [
+                        {
+                            "prompt": "Describe this image.",
+                            "answer": "A person wearing a black cowboy hat and jacket.",
+                        },
+                        {
+                            "prompt": "Give me a straw hat instead.",
+                            "answer": "Here is the requested change.",
+                        },
+                    ],
+                }
+            }
+        )
+        == "A person wearing a black cowboy hat and jacket."
+    )
+
+
 class StubRecall:
     async def decide(self, query):
         class Decision:
@@ -161,6 +190,41 @@ class StubMemory:
 class KeepAll:
     def select(self, ranked):
         return ranked
+
+
+class StubOwnedArtifacts:
+    """Return only the image owned by the requested account."""
+
+    def __init__(self, owner: str, artifact: dict[str, Any]) -> None:
+        self.owner = owner
+        self.artifact = artifact
+
+    # Enforce the same ownership result as the repository boundary.
+    async def get_owned(self, user_id: str, artifact_id: str):
+        if user_id != self.owner or artifact_id != self.artifact["id"]:
+            return None
+        return self.artifact
+
+
+class StubVisualMemory:
+    """Expose one broad visual-memory candidate without a database."""
+
+    # Return an already embedded visual description for semantic selection.
+    async def get_visual_memory_candidates(self, user_id, query_embedding):
+        return [
+            {
+                "content": "A person wearing a tailored navy jacket.",
+                "extra_data": {"artifact_id": "active"},
+            }
+        ]
+
+
+class StubVisualSelector:
+    """Select the one offered visual candidate by meaning."""
+
+    # Return the candidate that a real semantic selector would choose.
+    async def select(self, query, candidates):
+        return ("active",) if "style" in query else ()
 
 
 # The failure exactly as it reached the user: a chat turn that recalls an image
@@ -213,3 +277,110 @@ async def test_every_streamed_retrieval_event_survives_the_json_encoder() -> Non
     # The edit still reached the prompt knowing it was made from a photograph.
     assert context["images"][0]["edited_from"]["supplied_by_user"] is True
     assert context["images"][0]["edits_applied"] == ["give me a straw hat"]
+    assert "straw hat" in context["images"][0]["description"]
+    assert "black cowboy hat" in context["images"][0]["edited_from"]["description"]
+
+
+# A style question carries the image the browser is visibly discussing even
+# though its wording contains no image-recall vocabulary.
+@pytest.mark.asyncio
+async def test_active_owned_image_reaches_chat_context_without_recall_words() -> None:
+    upload = {
+        "id": "active",
+        "user_id": "owner",
+        "kind": "uploaded_image",
+        "status": "ready",
+        "title": "Uploaded image",
+        "metadata": {"analysis": "A person wearing a tailored navy jacket."},
+    }
+    service = ConversationService.__new__(ConversationService)
+    service.image_artifacts = StubOwnedArtifacts("owner", upload)
+    service.image_recall = None
+    service.image_search = None
+    service.lineage = None
+    service.search = None
+    service.search_routing = None
+
+    context: dict[str, Any] = {}
+    events = [
+        event
+        async for event in service._stream_retrieved_context(
+            context,
+            "owner",
+            "what do you think of my style?",
+            "trace",
+            None,
+            "active",
+        )
+    ]
+
+    assert events == []
+    assert context["images"][0]["description"] == (
+        "A person wearing a tailored navy jacket."
+    )
+
+
+# Supplying another account's identifier must add no visual context.
+@pytest.mark.asyncio
+async def test_active_image_from_another_user_never_reaches_chat_context() -> None:
+    upload = {
+        "id": "active",
+        "kind": "uploaded_image",
+        "status": "ready",
+        "metadata": {"analysis": "Private description."},
+    }
+    service = ConversationService.__new__(ConversationService)
+    service.image_artifacts = StubOwnedArtifacts("owner", upload)
+    service.image_recall = None
+    service.image_search = None
+    service.lineage = None
+    service.search = None
+    service.search_routing = None
+
+    context: dict[str, Any] = {}
+    async for _event in service._stream_retrieved_context(
+        context,
+        "other-user",
+        "what do you think of my style?",
+        "trace",
+        None,
+        "active",
+    ):
+        pass
+
+    assert "images" not in context
+
+
+# An older image can be recovered semantically when no visual is active.
+@pytest.mark.asyncio
+async def test_visual_memory_recalls_style_without_image_keywords() -> None:
+    upload = {
+        "id": "active",
+        "kind": "uploaded_image",
+        "status": "ready",
+        "metadata": {"analysis": "A person wearing a tailored navy jacket."},
+    }
+    service = ConversationService.__new__(ConversationService)
+    service.memory = StubVisualMemory()
+    service.visual_memory = StubVisualSelector()
+    service.image_artifacts = StubOwnedArtifacts("owner", upload)
+    service.image_recall = None
+    service.image_search = None
+    service.lineage = None
+    service.search = None
+    service.search_routing = None
+
+    context: dict[str, Any] = {}
+    events = [
+        event
+        async for event in service._stream_retrieved_context(
+            context,
+            "owner",
+            "what do you think of my style?",
+            "trace",
+            [0.1, 0.2],
+        )
+    ]
+
+    assert context["images"][0]["description"].endswith("navy jacket.")
+    assert events[0]["event"] == "image_matches"

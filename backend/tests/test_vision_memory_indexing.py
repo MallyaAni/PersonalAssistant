@@ -3,10 +3,8 @@ from typing import Any
 import pytest
 
 from backend.artifacts.types import VisionAnalysis
-from backend.services.vision_analysis_service import (
-    VISUAL_ANALYSIS_PURPOSE,
-    VisionAnalysisService,
-)
+from backend.memory.purposes import VISUAL_ANALYSIS_PURPOSE
+from backend.services.vision_analysis_service import VisionAnalysisService
 
 
 class RecordingMemory:
@@ -47,17 +45,30 @@ class StubImages:
         }
         return artifact, content
 
+    # Return an existing ready child so post-edit observation can inspect it.
+    async def read_owned(self, user_id, artifact_id):
+        return (
+            {
+                "id": artifact_id,
+                "conversation_id": "22222222-2222-4222-8222-222222222222",
+                "kind": "generated_image",
+                "mime_type": "image/png",
+            },
+            b"edited-pixels",
+        )
+
 
 class StubRepository:
-    def __init__(self) -> None:
+    def __init__(self, kind: str = "uploaded_image") -> None:
         self.metadata: dict[str, Any] = {}
+        self.kind = kind
 
     async def update_metadata(self, artifact_id, user_id, metadata):
         self.metadata.update(metadata)
         return {
             "id": artifact_id,
             "conversation_id": "22222222-2222-4222-8222-222222222222",
-            "kind": "uploaded_image",
+            "kind": self.kind,
             "metadata": dict(self.metadata),
         }
 
@@ -146,6 +157,27 @@ async def test_blank_analysis_is_not_indexed():
     assert memory.saved == []
 
 
+# A refined image receives its own current-pixel analysis and semantic index.
+@pytest.mark.asyncio
+async def test_existing_edited_artifact_is_observed_and_indexed() -> None:
+    memory = RecordingMemory()
+    service = VisionAnalysisService(
+        StubImages(),  # type: ignore[arg-type]
+        StubRepository("generated_image"),  # type: ignore[arg-type]
+        StubVision(),  # type: ignore[arg-type]
+        memory=memory,  # type: ignore[arg-type]
+    )
+
+    artifact = await service.observe_artifact(
+        "index_user",
+        "11111111-1111-4111-8111-111111111111",
+    )
+
+    assert artifact["metadata"]["analysis"] == "A magenta fox on a green platform."
+    assert memory.saved[0]["metadata"]["artifact_id"] == artifact["id"]
+    assert memory.saved[0]["metadata"]["kind"] == "generated_image"
+
+
 @pytest.mark.asyncio
 async def test_a_long_analysis_is_trimmed_before_it_is_indexed():
     from backend.services.vision_analysis_service import MAX_INDEXED_CHARS
@@ -169,8 +201,8 @@ async def test_a_long_analysis_is_trimmed_before_it_is_indexed():
 
 @pytest.mark.asyncio
 async def test_a_derived_description_is_not_listed_back_as_a_fact():
+    from backend.memory.purposes import VISUAL_ANALYSIS_PURPOSE
     from backend.services.postgres_memory_service import DERIVED_PURPOSES
-    from backend.services.vision_analysis_service import VISUAL_ANALYSIS_PURPOSE
 
     # The snapshot that feeds "facts and preferences" filters on this set. An
     # image description is written so a picture can be found by describing it;

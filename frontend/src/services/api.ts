@@ -1182,11 +1182,15 @@ export async function refineImage(
 //
 // The decision is the model's, and it is made in one place so the composer, the
 // image card and the upload path cannot disagree about the same sentence.
-export async function classifyImageIntent(userId: string, text: string): Promise<boolean> {
+export async function classifyImageIntent(
+  userId: string,
+  text: string,
+  artifactId?: string,
+): Promise<boolean> {
   const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/images/intent`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_id: userId, text }),
+    body: JSON.stringify({ user_id: userId, text, artifact_id: artifactId || null }),
   })
   if (!response.ok) {
     const detail = await response.json().catch(() => ({}))
@@ -1231,31 +1235,6 @@ export async function analyzeImage(
     throw new Error('Image analysis returned an unexpected artifact')
   }
   return { artifact, editRequested: result.intent === 'edit' }
-}
-
-// Ask one followup question about an already-owned generated or uploaded image.
-export async function askAboutImage(
-  userId: string,
-  artifactId: string,
-  prompt: string,
-  signal?: AbortSignal,
-) {
-  const result = await apiRequest<Record<string, unknown>>(
-    `/api/v1/vision/artifacts/${encodeURIComponent(artifactId)}/ask`,
-    {
-      method: 'POST',
-      signal,
-      body: JSON.stringify({ user_id: userId, prompt }),
-    },
-  )
-  if (!result.artifact || typeof result.artifact !== 'object' || Array.isArray(result.artifact)) {
-    throw new Error('Image question response is invalid')
-  }
-  const artifact = parseVisualArtifact(result.artifact as Record<string, unknown>)
-  if (artifact.kind !== 'generated_image' && artifact.kind !== 'uploaded_image') {
-    throw new Error('Image question returned an unexpected artifact')
-  }
-  return artifact
 }
 
 // One persisted question/answer pair from an image's analysis thread.
@@ -1328,7 +1307,12 @@ export async function getConversationSnapshot(
 }
 
 // Submit a chat message and yield typed server-sent stream updates.
-export async function* streamChat(userId: string, conversationId: string, query: string) {
+export async function* streamChat(
+  userId: string,
+  conversationId: string,
+  query: string,
+  activeImageArtifactId?: string,
+) {
   const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/chat`, {
     method: 'POST',
     headers: {
@@ -1337,6 +1321,7 @@ export async function* streamChat(userId: string, conversationId: string, query:
     body: JSON.stringify({ 
       user_id: userId, 
       conversation_id: conversationId,
+      active_image_artifact_id: activeImageArtifactId || null,
       query: query,
       metadata: {} 
     }),

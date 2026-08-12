@@ -140,3 +140,67 @@ async def test_a_plain_generated_image_is_not_described_as_an_edit(
     assert "cobalt" in answer or "blue" in answer, answer
     assert "photograph you" not in answer, answer
     assert "you uploaded" not in answer, answer
+
+
+# A recalled outfit should produce a grounded opinion, not a claim of blindness.
+async def test_it_answers_a_style_opinion_from_the_recalled_photo(llm: object) -> None:
+    answer = _answer(
+        llm,
+        "how do you feel about my dress style?",
+        {
+            "images": [
+                {
+                    "kind": "uploaded_image",
+                    "title": "Uploaded image",
+                    "created_at": "2026-08-12T04:10:00",
+                    "description": (
+                        "The user is wearing a wide-brimmed black cowboy hat, "
+                        "a dark blue bomber jacket, and a white T-shirt. The "
+                        "outfit has a confident, relaxed Western-casual look."
+                    ),
+                    "generation_prompt": None,
+                }
+            ]
+        },
+    )
+
+    assert "hat" in answer or "jacket" in answer, answer
+    assert any(
+        quality in answer
+        for quality in ("confident", "relaxed", "western", "casual", "stylish")
+    ), answer
+    assert not any(denial in answer for denial in _DENIALS), answer
+
+
+# An unobserved edit still carries the explicit delta and unchanged source details.
+@pytest.mark.xfail(
+    reason=(
+        "Qwen can still prefer the origin's black hat over an explicit straw-hat "
+        "edit when post-edit vision observation is unavailable"
+    ),
+    strict=True,
+)
+async def test_style_opinion_applies_the_edit_to_the_source_description(
+    llm: object,
+) -> None:
+    context = {
+        "images": [
+            {
+                **_CONTEXT["images"][0],
+                "description": (
+                    "The current image shows these completed edits: edit this "
+                    "to give me a straw hat. All unmentioned visible details "
+                    "remain as recorded in edited_from.description."
+                ),
+            }
+        ]
+    }
+
+    answer = _answer(llm, "how do you feel about my dress style?", context)
+
+    assert "straw" in answer, answer
+    assert "jacket" in answer or "shirt" in answer, answer
+    assert "please upload" not in answer, answer
+    assert "upload an image" not in answer, answer
+    assert "share a photo" not in answer, answer
+    assert not any(denial in answer for denial in _DENIALS), answer

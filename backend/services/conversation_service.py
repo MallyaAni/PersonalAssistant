@@ -10,6 +10,7 @@ from anyio import CancelScope
 from backend.agents.graph import build_assistant_graph
 from backend.agents.state import AgentState
 from backend.agents.supervisor import MainSupervisorAgent
+from backend.agents.vision.memory import VisualMemorySelector
 from backend.artifacts.diagram import is_diagram_request
 from backend.artifacts.image_lineage import collapse_revision_chains
 from backend.artifacts.image_prompt_match import prefer_prompt_matches
@@ -20,6 +21,7 @@ from backend.core.egress import OutboundPrivacyPolicy
 from backend.core.interfaces import (
     ArtifactEmbeddingStore,
     ArtifactLineageStore,
+    BinaryArtifactRepository,
     ConversationRepository,
     ConversationTracer,
     MemoryService,
@@ -63,7 +65,22 @@ def _plain_snippet(content: str) -> str:
 # Return the best bounded text provenance available for one stored image.
 def _image_description(match: dict[str, Any]) -> str:
     metadata = match.get("metadata") or {}
-    description = metadata.get("analysis") or metadata.get("generation_prompt") or ""
+    description = ""
+    thread = metadata.get("analysis_thread")
+    if isinstance(thread, list) and thread:
+        first = thread[0]
+        if (
+            isinstance(first, dict)
+            and str(first.get("prompt", "")).strip().casefold()
+            == "describe this image."
+        ):
+            description = str(first.get("answer") or "")
+    description = (
+        description
+        or metadata.get("analysis")
+        or metadata.get("generation_prompt")
+        or ""
+    )
     return " ".join(str(description).split())[:_IMAGE_DESCRIPTION_CHARS]
 
 
@@ -88,6 +105,21 @@ def _image_lineage(lineage: Lineage | None) -> dict[str, Any]:
     if lineage.edits:
         rendered["edits_applied"] = list(lineage.edits)
     return rendered
+
+
+# Describe an unobserved revision from its source plus explicit edit history.
+def _effective_image_description(
+    match: dict[str, Any],
+    lineage: Lineage | None,
+) -> str:
+    description = _image_description(match)
+    if description or lineage is None or not lineage.edits:
+        return description
+    edits = "; ".join(lineage.edits)
+    return (
+        f"The current image shows these completed edits: {edits}. All "
+        "unmentioned visible details remain as recorded in edited_from.description."
+    )[:_IMAGE_DESCRIPTION_CHARS]
 
 
 # Add matched-image context only after the user explicitly asks for web search.
@@ -155,6 +187,7 @@ class ConversationService:
         search_routing: CascadingSearchRouter | None = None,
         image_recall: CascadingImageRecallRouter | None = None,
         image_search: ArtifactEmbeddingStore | None = None,
+        image_artifacts: BinaryArtifactRepository | None = None,
         lineage: ArtifactLineageStore | None = None,
         image_search_limit: int = 5,
         image_retrieval: ImageRetrievalPolicy | None = None,
@@ -165,6 +198,7 @@ class ConversationService:
         presentation_model: str | None = None,
         discovery_profile: DiscoveryProfileService | None = None,
         memory_proposals: MemoryProposalAgent | None = None,
+        visual_memory: VisualMemorySelector | None = None,
     ):
         self.memory = memory
         self.assistant_graph = build_assistant_graph(llm)
@@ -177,6 +211,7 @@ class ConversationService:
         self.search_routing = search_routing
         self.image_recall = image_recall
         self.image_search = image_search
+        self.image_artifacts = image_artifacts
         self.lineage = lineage
         self.image_search_limit = image_search_limit
         # Screening is not optional: a missing policy would mean raw queries
@@ -199,6 +234,7 @@ class ConversationService:
         self.presentation_model = presentation_model
         self.discovery_profile = discovery_profile
         self.memory_proposals = memory_proposals
+        self.visual_memory = visual_memory
 
     # Return the registered subagent selected by the first-step supervisor.
     #
@@ -328,6 +364,7 @@ class ConversationService:
         conversation_id: str,
         trace_id: str,
         query_embedding: list[float] | None,
+        active_image_artifact_id: str | None = None,
     ) -> AsyncGenerator[ChatStreamEvent, None]:
         if self.tool_orchestration is None:
             return
@@ -470,6 +507,7 @@ class ConversationService:
         conversation_id: str,
         trace_id: str,
         query_embedding: list[float] | None,
+        active_image_artifact_id: str | None = None,
     ) -> AsyncGenerator[ChatStreamEvent, None]:
         async for event in self._stream_retrieved_context(
             context,
@@ -477,6 +515,7 @@ class ConversationService:
             query,
             trace_id,
             query_embedding,
+            active_image_artifact_id,
         ):
             yield event
         async for event in self._stream_tool_context(
@@ -566,6 +605,88 @@ class ConversationService:
             logger.warning("Image lineage lookup failed", exc_info=True)
             return {}
 
+    # Resolve an explicitly active image only when it is ready and owned by the caller.
+    async def _load_active_image(
+        self,
+        user_id: str,
+        artifact_id: str | None,
+    ) -> dict[str, Any] | None:
+        repository = getattr(self, "image_artifacts", None)
+        if repository is None or artifact_id is None:
+            return None
+        try:
+            artifact = await repository.get_owned(user_id, artifact_id)
+        except Exception:
+            logger.warning("Active image lookup failed", exc_info=True)
+            return None
+        if artifact is None or artifact.get("status") != "ready":
+            return None
+        if artifact.get("kind") not in {"generated_image", "uploaded_image"}:
+            return None
+        return artifact
+
+    # Semantically select older owned image memories when no image is active.
+    async def _load_visual_memory_matches(
+        self,
+        user_id: str,
+        query: str,
+        query_embedding: list[float] | None,
+    ) -> list[dict[str, Any]]:
+        selector = getattr(self, "visual_memory", None)
+        repository = getattr(self, "image_artifacts", None)
+        memory = getattr(self, "memory", None)
+        candidate_loader = getattr(memory, "get_visual_memory_candidates", None)
+        if selector is None or repository is None or candidate_loader is None:
+            return []
+        try:
+            vector = query_embedding or await memory.embed_query(query)
+            candidates = await candidate_loader(user_id, vector)
+            artifact_ids = await selector.select(query, candidates)
+            matches = []
+            for artifact_id in artifact_ids:
+                artifact = await repository.get_owned(user_id, artifact_id)
+                if (
+                    artifact is not None
+                    and artifact.get("status") == "ready"
+                    and artifact.get("kind") in {"generated_image", "uploaded_image"}
+                ):
+                    matches.append(artifact)
+            return matches
+        except Exception:
+            logger.warning("Visual-memory recall failed", exc_info=True)
+            return []
+
+    # Convert one stored image and its optional lineage into bounded prompt context.
+    def _image_context_item(
+        self,
+        match: dict[str, Any],
+        lineage: Lineage | None,
+    ) -> dict[str, Any]:
+        return {
+            "kind": match.get("kind"),
+            "title": match.get("title"),
+            "created_at": match.get("created_at"),
+            "description": _effective_image_description(match, lineage),
+            "generation_prompt": (match.get("metadata") or {}).get("generation_prompt"),
+            **_image_lineage(lineage),
+        }
+
+    # Put the explicitly active image first without duplicating a recalled match.
+    def _prompt_images(
+        self,
+        active_image: dict[str, Any] | None,
+        image_matches: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        prompt_images = list(image_matches)
+        if active_image is None:
+            return prompt_images
+        if any(
+            str(match.get("id")) == str(active_image.get("id"))
+            for match in prompt_images
+        ):
+            return prompt_images
+        return [active_image, *prompt_images]
+
     # Attach optional image and search context in place, streaming progress so
     # the interface can show retrieval and cite what it used.
     async def _stream_retrieved_context(
@@ -575,15 +696,27 @@ class ConversationService:
         query: str,
         trace_id: str,
         query_embedding: list[float] | None,
+        active_image_artifact_id: str | None = None,
     ) -> AsyncGenerator[ChatStreamEvent, None]:
+        active_image = await self._load_active_image(
+            user_id,
+            active_image_artifact_id,
+        )
         image_matches = await self._load_image_matches(
             user_id,
             query,
             trace_id,
             query_embedding,
         )
-        if image_matches:
-            lineages = await self._resolve_lineage(user_id, image_matches)
+        if active_image is None and not image_matches:
+            image_matches = await self._load_visual_memory_matches(
+                user_id,
+                query,
+                query_embedding,
+            )
+        prompt_images = self._prompt_images(active_image, image_matches)
+        if prompt_images:
+            lineages = await self._resolve_lineage(user_id, prompt_images)
             # Tell the model the images exist and are already shown, so it
             # describes them rather than claiming it cannot display images.
             context["images"] = [
@@ -591,7 +724,10 @@ class ConversationService:
                     "kind": match.get("kind"),
                     "title": match.get("title"),
                     "created_at": match.get("created_at"),
-                    "description": _image_description(match),
+                    "description": _effective_image_description(
+                        match,
+                        lineages.get(str(match.get("id"))),
+                    ),
                     "generation_prompt": (match.get("metadata") or {}).get(
                         "generation_prompt"
                     ),
@@ -601,8 +737,9 @@ class ConversationService:
                     # even though it is the thing being asked about.
                     **_image_lineage(lineages.get(str(match.get("id")))),
                 }
-                for match in image_matches
+                for match in prompt_images
             ]
+        if image_matches:
             yield {"event": "image_matches", "data": {"artifacts": image_matches}}
 
         if await self._should_search(query, trace_id):
@@ -765,6 +902,7 @@ class ConversationService:
         query: str,
         conversation_id: str | None = None,
         metadata: dict[str, Any] | None = None,
+        active_image_artifact_id: str | None = None,
     ) -> AsyncGenerator[ChatStreamEvent, None]:
         trace_id = self.tracer.start_trace(user_id)
         resolved_conversation_id = conversation_id or str(uuid.uuid4())
@@ -805,6 +943,7 @@ class ConversationService:
             resolved_conversation_id,
             trace_id,
             metadata or {},
+            active_image_artifact_id,
         ):
             yield event
 
@@ -849,6 +988,7 @@ class ConversationService:
         conversation_id: str,
         trace_id: str,
         metadata: dict[str, Any],
+        active_image_artifact_id: str | None = None,
     ) -> AsyncGenerator[ChatStreamEvent, None]:
         # 1. Plan and load only the context components needed for this request.
         plan_result = None
@@ -908,6 +1048,7 @@ class ConversationService:
             conversation_id,
             trace_id,
             query_embedding,
+            active_image_artifact_id,
         ):
             yield retrieval_event
 

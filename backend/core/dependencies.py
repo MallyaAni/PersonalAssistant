@@ -12,6 +12,7 @@ from backend.agents.registry import AgentRegistry
 from backend.agents.scout.digesting import DigestWriter
 from backend.agents.scout.place_suggest import PlaceSuggester
 from backend.agents.supervisor import MainSupervisorAgent
+from backend.agents.vision.memory import VisualMemorySelector
 from backend.artifacts.diagram import LLMDiagramProvider
 from backend.artifacts.image import (
     ComfyUIImageEditProvider,
@@ -691,8 +692,18 @@ ImageStyleDependency = Annotated[
 # Edit a generated or uploaded image from its owned pixels plus user feedback.
 def get_image_refinement_service(
     images: ImageArtifactDependency,
+    db: DbDependency,
+    memory: MemoryDependency,
 ) -> ImageRefinementService:
-    return ImageRefinementService(images=images)
+    observer = VisionAnalysisService(
+        images,
+        get_artifact_repository(db),
+        get_vision_provider(),
+        thread_context_turns=settings.VISION_THREAD_CONTEXT_TURNS,
+        thread_max_stored=settings.VISION_THREAD_MAX_STORED,
+        memory=memory,
+    )
+    return ImageRefinementService(images=images, vision=observer)
 
 
 ImageRefinementDependency = Annotated[
@@ -1335,6 +1346,7 @@ def get_conversation_service(
         search_routing=search_routing,
         image_recall=image_recall,
         image_search=artifacts,
+        image_artifacts=artifacts,
         # The same repository, asked a different question: what a match was
         # derived from, resolved from the parent edge rather than from whatever
         # else the query happened to return.
@@ -1354,6 +1366,7 @@ def get_conversation_service(
         ),
         discovery_profile=discovery_profile,
         memory_proposals=memory_proposals,
+        visual_memory=VisualMemorySelector(get_classifier_llm()),
     )
 
 

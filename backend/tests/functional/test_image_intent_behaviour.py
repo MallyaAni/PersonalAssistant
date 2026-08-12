@@ -80,6 +80,16 @@ async def test_near_identical_wording_routes_on_meaning(llm: object) -> None:
     assert await classifier.edits_the_image("a hat on him?") is False
 
 
+# A conversational acknowledgement inherits its meaning from the image thread.
+async def test_an_ambiguous_reply_uses_recent_image_context(llm: object) -> None:
+    classifier = ImageIntentClassifier(llm)
+    assert await classifier.edits_the_image(
+        "yes id like a straw hat instead",
+        "User: Would you prefer the cowboy hat or a straw hat?\n"
+        "Assistant: A straw hat would make the outfit feel more summery.",
+    ) is True
+
+
 # Page text and typed text both reach a model here, and one of them is hostile
 # by assumption. The classifier answers about the sentence rather than obeying
 # it — and the enum means the worst case is a wrong route, not a wrong action.

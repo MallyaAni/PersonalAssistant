@@ -17,7 +17,9 @@ from backend.core.interfaces import (
     ArtifactLineageStore,
     BinaryArtifactRepository,
 )
+from backend.memory.purposes import VISUAL_ANALYSIS_PURPOSE
 from backend.models.artifact import VisualArtifact
+from backend.models.memory import SemanticMemory
 
 
 class SQLAlchemyArtifactRepository(
@@ -246,9 +248,7 @@ class SQLAlchemyArtifactRepository(
         except ValueError:
             return {}
 
-        result = await self.session.execute(
-            text(
-                """
+        result = await self.session.execute(text("""
                 WITH RECURSIVE chain AS (
                     SELECT a.id AS origin_id, a.id, a.parent_artifact_id,
                            a.kind, a.title, a.extra_data, 0 AS depth
@@ -265,9 +265,7 @@ class SQLAlchemyArtifactRepository(
                 SELECT origin_id, id, kind, title, extra_data, depth
                   FROM chain
                  ORDER BY origin_id, depth DESC
-                """
-            ).bindparams(user_id=user_id, seeds=seeds, max_depth=max_depth)
-        )
+                """).bindparams(user_id=user_id, seeds=seeds, max_depth=max_depth))
 
         chains: dict[str, list[dict[str, Any]]] = {}
         for row in result.mappings():
@@ -334,6 +332,13 @@ class SQLAlchemyArtifactRepository(
 
     # Delete one user-owned artifact and report whether it existed.
     async def delete(self, user_id: str, artifact_id: str) -> bool:
+        await self.session.execute(
+            delete(SemanticMemory).where(
+                SemanticMemory.user_id == user_id,
+                SemanticMemory.purpose == VISUAL_ANALYSIS_PURPOSE,
+                SemanticMemory.extra_data["artifact_id"].astext == artifact_id,
+            )
+        )
         result = await self.session.execute(
             delete(VisualArtifact).where(
                 VisualArtifact.id == uuid.UUID(artifact_id),

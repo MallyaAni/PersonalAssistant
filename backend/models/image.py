@@ -68,6 +68,7 @@ class ImageIntentBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     user_id: str = Field(min_length=1, max_length=50)
+    artifact_id: UUID | None = None
     text: str = Field(min_length=1, max_length=2_000)
 
     # Trim identifiers and text while refusing whitespace-only values.

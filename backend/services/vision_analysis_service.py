@@ -6,6 +6,7 @@ from backend.core.interfaces import (
     SemanticMemoryWriter,
     VisionProvider,
 )
+from backend.memory.purposes import VISUAL_ANALYSIS_PURPOSE
 from backend.services.image_artifact_service import ImageArtifactService
 from backend.services.image_intent import (
     ASK,
@@ -15,10 +16,6 @@ from backend.services.image_intent import (
 )
 
 logger = logging.getLogger(__name__)
-
-# Derived index entries are kept distinct from user-stated facts, which follow
-# the explicit approval path. This purpose marks application-generated text.
-VISUAL_ANALYSIS_PURPOSE = "visual_artifact_analysis"
 
 # How much of an analysis is worth keeping to find the image again.
 #
@@ -174,6 +171,42 @@ class VisionAnalysisService:
             "intent": EDIT if wants_edit else ASK,
         }
 
+    # Observe an existing ready image and index what its current pixels show.
+    async def observe_artifact(
+        self,
+        user_id: str,
+        artifact_id: str,
+    ) -> dict[str, Any]:
+        owned = await self.images.read_owned(user_id, artifact_id)
+        if owned is None:
+            raise ArtifactNotFoundError("No ready owned image matched the request")
+        artifact, content = owned
+        try:
+            analysis = await self.provider.analyze(
+                DESCRIBE_PROMPT,
+                content,
+                str(artifact["mime_type"]),
+            )
+        except Exception as exc:
+            await self.repository.update_metadata(
+                artifact_id,
+                user_id,
+                {"analysis_status": "failed"},
+            )
+            raise VisionAnalysisError(artifact_id) from exc
+        updated = await self.repository.update_metadata(
+            artifact_id,
+            user_id,
+            {
+                "analysis_status": "ready",
+                "analysis": analysis.content,
+                "analysis_model": analysis.model,
+                **analysis.metadata,
+            },
+        )
+        await self._index_analysis(user_id, updated, analysis.content, analysis.model)
+        return updated
+
     # Answer one followup question about an owned image and persist the thread.
     async def ask_about_artifact(
         self,
@@ -206,8 +239,6 @@ class VisionAnalysisService:
             user_id,
             {
                 "analysis_status": "ready",
-                "analysis": analysis.content,
-                "analysis_model": analysis.model,
                 "analysis_thread": bounded,
             },
         )

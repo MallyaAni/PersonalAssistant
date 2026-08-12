@@ -139,6 +139,20 @@ async def test_the_call_is_greedy_and_constrained_to_the_two_answers() -> None:
     assert call["schema"]["additionalProperties"] is False
 
 
+# A short reply is interpreted using the bounded conversation about this image.
+async def test_recent_image_context_is_included_for_ambiguous_followups() -> None:
+    writer = FakeWriter("edit")
+    assert await ImageIntentClassifier(writer).edits_the_image(
+        "yes id like a straw hat instead",
+        "User: Would a straw hat work?\nAssistant: It would suit the outfit.",
+    ) is True
+
+    prompt = writer.calls[0]["prompt"]
+    assert "yes id like a straw hat instead" in prompt
+    assert "Would a straw hat work?" in prompt
+    assert "Classify the newest text" in prompt
+
+
 # Empty text is not a request for anything, and must not spend an inference call.
 async def test_blank_text_is_not_classified() -> None:
     writer = FakeWriter("edit")

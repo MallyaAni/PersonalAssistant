@@ -1,7 +1,11 @@
+import logging
 import secrets
 from typing import Any
 
 from backend.services.image_artifact_service import ImageArtifactService
+from backend.services.vision_analysis_service import VisionAnalysisService
+
+logger = logging.getLogger(__name__)
 
 _MAX_FEEDBACK_CHARS = 2000
 _PRESERVATION_SUFFIX = (
@@ -25,8 +29,10 @@ class ImageRefinementService:
     def __init__(
         self,
         images: ImageArtifactService,
+        vision: VisionAnalysisService | None = None,
     ) -> None:
         self.images = images
+        self.vision = vision
 
     # Resolve the owned parent bytes and create one source-conditioned child edit.
     async def refine(
@@ -52,7 +58,7 @@ class ImageRefinementService:
         provider_instruction = (
             f"Apply only this edit to image 1: {instruction}. {_PRESERVATION_SUFFIX}"
         )
-        return await self.images.edit(
+        revision = await self.images.edit(
             user_id=user_id,
             conversation_id=conversation_id,
             trace_id=trace_id,
@@ -62,3 +68,15 @@ class ImageRefinementService:
             seed=secrets.randbelow(2**63),
             user_feedback=instruction,
         )
+        if self.vision is None:
+            return revision
+        try:
+            return await self.vision.observe_artifact(user_id, str(revision["id"]))
+        except Exception:
+            # The edited pixels remain valid even when semantic observation fails.
+            logger.warning(
+                "Post-refinement vision observation failed for artifact %s",
+                revision.get("id"),
+                exc_info=True,
+            )
+            return revision

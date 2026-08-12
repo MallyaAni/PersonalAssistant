@@ -194,6 +194,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [isThinking, setIsThinking] = useState(false)
   const [isRestoring, setIsRestoring] = useState(restoreConversation)
   const [restoreError, setRestoreError] = useState('')
+  // Undefined follows the newest visible image, a string is an explicit choice,
+  // and null records that the user deliberately cleared image context.
+  const [selectedImageId, setSelectedImageId] = useState<string | null | undefined>(undefined)
+
+  // Start each conversation with its own newest-image context policy.
+  useEffect(() => {
+    setSelectedImageId(undefined)
+  }, [conversationId, userId])
 
   // Restore the persisted transcript only when this conversation survived a reload.
   useEffect(() => {
@@ -454,12 +462,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   }
 
   const handleVisualReady = (artifact: ImageArtifact) => {
+    setSelectedImageId(artifact.id)
     setMessages(prev => {
       const next = [...prev]
       for (let index = next.length - 1; index >= 0; index -= 1) {
         if (next[index].role === 'assistant' && next[index].artifactStatus === 'generating') {
           next[index] = {
             ...next[index],
+            content: artifact.kind === 'generated_image' ? 'Image ready.' : 'Image analyzed.',
             artifact,
             artifactId: artifact.id,
             artifactStatus: undefined,
@@ -473,23 +483,37 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     })
   }
 
-  // Replace the displayed parent with its linked revision while lineage stays persisted.
+  // Replace the parent revision and retire the completed image-generation placeholder.
   const handleImageRefined = (artifact: ImageArtifact) => {
     const parentId = String(artifact.metadata?.parent_artifact_id ?? '')
     if (!parentId) return
-    setMessages(prev => prev.map(message => {
-      const replacesPrimary = message.artifact?.id === parentId
-      const hasMatchedParent = message.imageMatches?.some(match => match.id === parentId) ?? false
-      if (!replacesPrimary && !hasMatchedParent) return message
-      return {
-        ...message,
-        artifact: replacesPrimary ? artifact : message.artifact,
-        artifactId: replacesPrimary ? artifact.id : message.artifactId,
-        imageMatches: hasMatchedParent
-          ? message.imageMatches?.map(match => (match.id === parentId ? artifact : match))
-          : message.imageMatches,
+    setSelectedImageId(current => current === parentId ? artifact.id : current)
+    setMessages(prev => {
+      const next = prev.map(message => {
+        const replacesPrimary = message.artifact?.id === parentId
+        const hasMatchedParent = message.imageMatches?.some(match => match.id === parentId) ?? false
+        if (!replacesPrimary && !hasMatchedParent) return message
+        return {
+          ...message,
+          content: replacesPrimary ? 'Image updated.' : message.content,
+          artifact: replacesPrimary ? artifact : message.artifact,
+          artifactId: replacesPrimary ? artifact.id : message.artifactId,
+          imageMatches: hasMatchedParent
+            ? message.imageMatches?.map(match => (match.id === parentId ? artifact : match))
+            : message.imageMatches,
+        }
+      })
+      for (let index = next.length - 1; index >= 0; index -= 1) {
+        if (
+          next[index].artifactStatus === 'generating'
+          && next[index].artifactActivity === 'Generating image...'
+        ) {
+          next.splice(index, 1)
+          break
+        }
       }
-    }))
+      return next
+    })
   }
 
   // Expose a visual request failure and clear its running state.
@@ -513,6 +537,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
   // Remove a deleted image from the visible transcript without deleting its text.
   const handleVisualDeleted = (artifactId: string) => {
+    setSelectedImageId(current => current === artifactId ? null : current)
     setMessages(prev => prev.map(message => message.artifact?.id === artifactId
       ? { ...message, artifact: undefined, artifactId: undefined, content: 'Image deleted.' }
       : message))
@@ -603,7 +628,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   // one in view. Without this, an edit request typed there becomes an ordinary
   // chat turn and the model answers that it cannot edit images — which reads as
   // the feature being broken rather than as it being in the wrong box.
-  const editableImage = useMemo<ImageArtifact | null>(() => {
+  const newestVisibleImage = useMemo<ImageArtifact | null>(() => {
     for (let index = messages.length - 1; index >= 0; index -= 1) {
       const message = messages[index]
       // A diagram is also an artifact and is not editable this way, so the kind
@@ -620,6 +645,21 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     }
     return null
   }, [messages])
+
+  // Resolve an explicit image choice, otherwise visibly follow the newest image.
+  const editableImage = useMemo<ImageArtifact | null>(() => {
+    if (selectedImageId === null) return null
+    if (selectedImageId === undefined) return newestVisibleImage
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+      const message = messages[index]
+      if (message.artifact?.id === selectedImageId) {
+        return message.artifact as ImageArtifact
+      }
+      const matched = message.imageMatches?.find(item => item.id === selectedImageId)
+      if (matched) return matched
+    }
+    return null
+  }, [messages, newestVisibleImage, selectedImageId])
 
   const hasMessages = messages.length > 0
 
@@ -638,7 +678,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
               messages={messages}
               isThinking={isThinking}
               onArtifactDeleted={handleVisualDeleted}
-              onImageRefined={handleImageRefined}
+              activeImageId={editableImage?.id}
+              onImageSelect={artifact => setSelectedImageId(artifact.id)}
             />
           </div>
         ) : (
@@ -728,6 +769,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             onVisualError={handleVisualError}
             onImageMatches={handleImageMatches}
             editableImage={editableImage}
+            onClearEditableImage={() => setSelectedImageId(null)}
             onImageRefined={handleImageRefined}
             onSearchStarted={handleSearchStarted}
             onSearchBlocked={handleSearchBlocked}

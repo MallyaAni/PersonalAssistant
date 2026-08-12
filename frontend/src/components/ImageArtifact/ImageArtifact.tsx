@@ -1,23 +1,21 @@
-import { useEffect, useState, type FormEvent } from 'react'
-import { Download, RefreshCw, Send, Trash2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Download, MessageCircle, RefreshCw, Trash2 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 
 import {
-  askAboutImage,
   deleteArtifact,
   getArtifactImage,
   readAnalysisThread,
-  refineImage,
   type ImageAnalysisTurn,
   type ImageArtifact as ImageArtifactRecord,
 } from '../../services/api'
-import { looksLikeEditHint, shouldEditImage } from '../../services/imageIntent'
 
 interface ImageArtifactProps {
   artifact: ImageArtifactRecord;
   onDeleted?: (artifactId: string) => void;
   onRetry?: () => void;
-  onRefined?: (artifact: ImageArtifactRecord) => void;
+  onSelect?: (artifact: ImageArtifactRecord) => void;
+  isSelected?: boolean;
 }
 
 // Download one already loaded private image without another provider request.
@@ -29,25 +27,24 @@ const downloadImage = (url: string, artifact: ImageArtifactRecord) => {
   link.click()
 }
 
-// Render, download, question, retry, and delete one owned generated or uploaded image.
-const ImageArtifact = ({ artifact, onDeleted, onRetry, onRefined }: ImageArtifactProps) => {
+// Render, select, download, retry, and delete one owned generated or uploaded image.
+const ImageArtifact = ({
+  artifact,
+  onDeleted,
+  onRetry,
+  onSelect,
+  isSelected = false,
+}: ImageArtifactProps) => {
   const [imageUrl, setImageUrl] = useState('')
   const [loadError, setLoadError] = useState('')
   const [deleteError, setDeleteError] = useState('')
   const [isDeleting, setIsDeleting] = useState(false)
   const [thread, setThread] = useState<ImageAnalysisTurn[]>(() => readAnalysisThread(artifact))
-  const [question, setQuestion] = useState('')
-  const [isAsking, setIsAsking] = useState(false)
-  const [askError, setAskError] = useState('')
-  // The server's answer for the send in flight; null while nothing is in flight.
-  const [refining, setRefining] = useState<boolean | null>(null)
 
-  // Resynchronize the visible thread whenever a different image is shown.
+  // Resynchronize the visible analysis history whenever a different image is shown.
   useEffect(() => {
     setThread(readAnalysisThread(artifact))
-    setQuestion('')
-    setAskError('')
-  }, [artifact.id])
+  }, [artifact])
 
   // Fetch private image bytes and release their browser URL after use.
   useEffect(() => {
@@ -96,46 +93,12 @@ const ImageArtifact = ({ artifact, onDeleted, onRetry, onRefined }: ImageArtifac
     }
   }
 
-  // What the send button says while the box is being typed into. A guess, and
-  // corrected from the server's answer once a send is actually in flight.
-  const willRefine = refining ?? looksLikeEditHint(question)
-
-  // Route a follow-up: refine (regenerate) on feedback, or ask on a question.
-  const submitFollowup = async (event: FormEvent) => {
-    event.preventDefault()
-    const trimmed = question.trim()
-    if (!trimmed || isAsking) return
-    setIsAsking(true)
-    setAskError('')
-    try {
-      const refine = await shouldEditImage(artifact.user_id, trimmed)
-      setRefining(refine)
-      if (refine) {
-        const revision = await refineImage(
-          artifact.user_id,
-          artifact.id,
-          trimmed,
-          artifact.conversation_id,
-        )
-        onRefined?.(revision)
-        setQuestion('')
-      } else {
-        const updated = await askAboutImage(artifact.user_id, artifact.id, trimmed)
-        setThread(readAnalysisThread(updated))
-        setQuestion('')
-      }
-    } catch (error) {
-      setAskError(error instanceof Error ? error.message : 'Unable to apply this follow-up.')
-    } finally {
-      setIsAsking(false)
-      setRefining(null)
-    }
-  }
-
   return (
     <section
       aria-label={`Image: ${artifact.title}`}
-      className="mt-5 overflow-hidden rounded-2xl border border-black/[0.08] bg-[#f9f9fb]"
+      className={`mt-5 overflow-hidden rounded-2xl border bg-[#f9f9fb] ${
+        isSelected ? 'border-[#0071e3]/35 ring-2 ring-[#0071e3]/10' : 'border-black/[0.08]'
+      }`}
     >
       <header className="flex flex-wrap items-start justify-between gap-3 border-b border-black/[0.07] px-4 py-3">
         <div>
@@ -146,6 +109,20 @@ const ImageArtifact = ({ artifact, onDeleted, onRetry, onRefined }: ImageArtifac
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          {onSelect && (
+            <button
+              type="button"
+              aria-pressed={isSelected}
+              onClick={() => onSelect(artifact)}
+              className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium ${
+                isSelected
+                  ? 'border-[#0071e3]/25 bg-[#eaf4ff] text-[#0066cc]'
+                  : 'border-black/10 bg-white text-[#1d1d1f] hover:bg-[#f5f5f7]'
+              }`}
+            >
+              <MessageCircle size={13} /> {isSelected ? 'Using in chat' : 'Ask or edit'}
+            </button>
+          )}
           {onRetry && (
             <button
               type="button"
@@ -202,37 +179,6 @@ const ImageArtifact = ({ artifact, onDeleted, onRetry, onRefined }: ImageArtifac
             ))}
           </div>
         )}
-        <form onSubmit={submitFollowup} className="mt-4 flex items-end gap-2">
-          <textarea
-            value={question}
-            onChange={event => setQuestion(event.target.value)}
-            onKeyDown={event => {
-              if (event.key !== 'Enter' || event.shiftKey) return
-              // An IME uses Enter to accept a candidate, not to send.
-              if (event.nativeEvent.isComposing) return
-              event.preventDefault()
-              // Match the button: an empty or in-flight question does nothing.
-              if (!isAsking && question.trim()) void submitFollowup(event)
-            }}
-            rows={1}
-            maxLength={2000}
-            disabled={isAsking}
-            placeholder="Ask about it, or say how to change it…"
-            aria-label="Ask about or refine this image"
-            className="min-h-[40px] flex-1 resize-y rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-[#1d1d1f] placeholder:text-[#a1a1a6] focus:border-black/25 focus:outline-none disabled:bg-[#f5f5f7]"
-          />
-          <button
-            type="submit"
-            disabled={isAsking || !question.trim()}
-            className="flex items-center gap-1.5 rounded-full bg-[#1d1d1f] px-4 py-2 text-xs font-medium text-white hover:bg-[#000] disabled:bg-[#c7c7cc]"
-          >
-            <Send size={13} />
-            {isAsking
-              ? (willRefine ? 'Refining…' : 'Asking…')
-              : (willRefine ? 'Refine' : 'Ask')}
-          </button>
-        </form>
-        {askError && <p role="alert" className="mt-2 text-sm text-[#c9342f]">{askError}</p>}
         {deleteError && <p role="alert" className="mt-3 text-sm text-[#c9342f]">{deleteError}</p>}
       </div>
     </section>

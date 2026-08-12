@@ -5,8 +5,119 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 [ROADMAP.md](ROADMAP.md), and stable architecture facts in
 [ARCHITECTURE.md](ARCHITECTURE.md).
 
-Last updated: 2026-08-10, America/New_York (agent documentation reconciled
-against the code; diagram suite and published page re-rendered and checked)
+Last updated: 2026-08-12, America/New_York
+
+## Visual style memory survives tab and conversation context — VERIFIED
+
+The exact `ani.mallya` question **how do you feel about my dress style?** twice
+received a denial even though the uploaded portrait had a stored Qwen analysis.
+The first failing boundary was the derived semantic shortlist: eight visual
+memories whose artifact rows had already been deleted ranked ahead of the live
+portrait. The semantic selector chose a relevant outfit description, but the
+required owner/readiness check rejected its missing handle, leaving generation
+with no image context.
+
+Visual-memory retrieval now joins each derived description to a ready image
+artifact owned by the same user before applying its result limit. Artifact
+deletion also removes its matching derived analysis row in the same PostgreSQL
+commit. Existing orphan rows are therefore inert without destructively changing
+the user's database. The image-memory prompt now answers appearance and style
+opinions directly from recalled evidence while treating one outfit as evidence,
+not a permanent wardrobe preference.
+
+The same investigation exposed that the straw-hat child had never been observed
+after FLUX finished, so its current pixels had no analysis of their own. Image
+refinement now sends the ready child to local Qwen vision, stores the child's
+analysis, and indexes that current description. A VLM failure preserves the
+valid edit and logs the degraded state. The text-lineage fallback remains a
+recorded `xfail`: Qwen can still prefer the origin's black-hat description over
+an explicit straw-hat delta when no child observation exists.
+
+Evidence: 34 focused repository, indexing, context, refinement, and real-Qwen
+tests pass, with one strict `xfail` for the documented no-observation fallback.
+The passing real-Qwen coverage includes semantic portrait selection, unrelated
+query rejection, lineage, and exact style-opinion behavior. After rebuilding
+backend image `9f817189f639...` and restarting the gateway, a direct authenticated
+chat request with no active image ID emitted `image_matches`, described the
+black cowboy hat, dark blue bomber jacket and white T-shirt, and terminated with
+`done`. An authenticated Chromium run through `https://deep-matter.com` restored
+the owned edited image, sent its exact artifact ID, rendered a grounded style
+answer, cleared loading, and completed without Console or required-Network
+failures.
+
+Live refine-observe acceptance then created temporary child
+`436002dc-c5aa-4253-b46b-c2cf9b3d4bf0` in 35 seconds. FLUX returned ready
+pixels, Qwen stored a current analysis naming the wide-brimmed straw cowboy hat,
+dark bomber jacket and white shirt, and direct chat answered from those current
+details. The public Chromium path passed with that exact child selected. Deleting
+the temporary child returned 200 and atomically changed both its artifact count
+and derived semantic-memory count from one to zero.
+The user's existing straw-hat child
+`24970e16-006f-46a9-b10e-74b891fcbe0f` was then observed once through the same
+Qwen boundary so it is no longer a legacy unobserved revision. Its current
+analysis names the straw hat, dark bomber jacket, white shirt and waterside
+sunset; the exact style question now answers from those details, and the public
+Chromium path passes with that artifact selected.
+
+## One image target in the main composer — VERIFIED
+
+The image card's persistent follow-up textarea was removed. The newest visible
+image now appears as a removable thumbnail reference above the main composer,
+and every visible image exposes **Ask or edit** so the user can explicitly
+switch the target when several images exist. Questions stream through `/chat`
+with that exact `active_image_artifact_id`; edit-shaped instructions use the
+same selected source and replace its visible card with the immutable child.
+Clearing the reference sends `active_image_artifact_id = null`.
+
+The explicit selection is an override, not the memory design. When no artifact
+is explicitly supplied, owner-scoped semantic visual candidates may be selected
+by the bounded Qwen visual-memory policy and are owner/readiness checked again
+before their descriptions and lineage enter the answer prompt. The durable
+target is type-neutral: generated, uploaded, or discussed artifacts share an
+owned handle, provenance and derived semantics; video observation and parsed
+PDF/RAG chunks remain planned additions to that contract.
+
+Evidence: five focused Chromium image workflows pass, including two-image
+selection/switch/clear, exact request-body IDs, ordinary questions, and
+generated/uploaded refinements. The frontend production build passes. A broad
+67-test Chromium run produced 61 passes and six unrelated failures in existing
+authentication/theme/navigation tests; rerunning those six serially reproduced
+them, so the broad suite remains `FAILED` and is not attributed to this image
+change. All 19 canonical diagrams and the published architecture page were
+rendered and synchronized after updating the three affected views.
+
+The first public deployment check was insufficient: `deep-matter.com` returned
+200, but the six-hour-old gateway image still served `index-C6UAPirx.js`, which
+contained the removed follow-up box. The Vite frontend container had the new
+source, but Cloudflare never points at port 5173; it points through the named
+`anios` tunnel to the gateway's compiled bundle on loopback port 8080. The
+gateway was rebuilt and recreated. Both published Cloudflare IPv4 addresses now
+serve `index-DdjG7VDH.js`; that exact public asset contains **Ask or edit** and
+**Using in chat**, does not contain **Ask about or refine this image**, and is
+returned with `Cache-Control: no-store` plus Cloudflare `DYNAMIC/BYPASS` status.
+An authenticated Chromium session then opened `https://deep-matter.com`,
+restored the owned uploaded image, displayed the main-composer image reference,
+sent the exact artifact ID to `/api/v1/chat`, received a grounded style answer,
+terminated streaming, and cleared loading with no Console, page, or required
+Network failures. The test's short-lived bearer is scoped to `/api/` requests
+so Cloudflare-injected third-party assets never receive it.
+
+The exact `ani.mallya` refinement **can you make it a straw hat instead?** then
+exposed a separate terminal-state defect. Artifact
+`24970e16-006f-46a9-b10e-74b891fcbe0f` became ready and replaced parent
+`5276e37b-2efc-4203-825b-b78ac8c977db`, and the refine request returned 201,
+but the browser retained the independent **Creating your image locally.** /
+**Generating image...** placeholder. Refinement completion now removes exactly
+the newest matching generation placeholder, and ready image cards replace
+transient starting copy with **Image ready.** or **Image updated.** Two focused
+Chromium workflows pass for generated and uploaded refinements, including
+terminal copy, cleared activity, and an enabled composer. The production build
+passes, and both public Cloudflare edges serve the rebuilt bundle containing
+those terminal states with `Cache-Control: no-store`.
+
+Next atomic task is to repair the
+browser suite's auth/theme isolation before treating its broad result as a
+clean regression gate.
 
 ## Documentation reconciled with the code — VERIFIED for the docs, INHERITED for the rest
 
