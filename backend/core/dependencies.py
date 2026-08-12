@@ -1335,6 +1335,10 @@ def get_conversation_service(
         search_routing=search_routing,
         image_recall=image_recall,
         image_search=artifacts,
+        # The same repository, asked a different question: what a match was
+        # derived from, resolved from the parent edge rather than from whatever
+        # else the query happened to return.
+        lineage=artifacts,
         image_search_limit=settings.VISION_SEARCH_MAX_RESULTS,
         image_retrieval=ImageRetrievalPolicy(
             max_distance=settings.VISION_SEARCH_MAX_COSINE_DISTANCE,

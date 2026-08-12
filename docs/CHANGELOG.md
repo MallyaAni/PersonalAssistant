@@ -2717,3 +2717,33 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   that a supplied photograph is not called an invention, that the original and
   the edit stay distinct and in order, and that a plain generated image gains no
   lineage it does not have.
+
+## 2026-08-11 — Provenance became a relationship
+
+- `parent_artifact_id` is a real column on `visual_artifacts` — indexed, with a
+  self-referencing foreign key that nulls on delete — rather than a note inside
+  `extra_data` that nothing could join on. Backfilled for every existing chain
+  whose parent still exists; the JSON key is still written and still read, so
+  nothing that depended on it changed.
+- `ArtifactLineageStore.resolve_lineage` answers what each artifact was derived
+  from: one bounded recursive query for a whole page of matches, returning the
+  root of each chain and the edits applied along it, oldest first. Ownership is
+  enforced at every hop, not only at the seed, so a stored identifier cannot
+  walk a chain into another account.
+- This replaces yesterday's approach of carrying the collapsed original onto its
+  revision, which could only answer when the original happened to match the same
+  query — precisely when the answer was least needed. `collapse_revision_chains`
+  went back to deciding what is shown and nothing more.
+- Nothing here is specific to images: it resolves the parent edge, so a trimmed
+  recording or a revised document is answered by the same code and the same
+  index the day those exist.
+- Measured against a real PostgreSQL rather than a fake repository, because the
+  walk, the ownership check and the depth bound are all SQL: seven tests, each
+  inside a transaction that is always rolled back, including the case the old
+  approach could not answer — an edit resolving its origin when the origin was
+  not itself retrieved.
+- Verified on the live database against a real three-step chain: the root, the
+  correct `supplied_by_user: false` for a generated original, and all three
+  edits in the order they were applied. The seed lookup uses the primary key
+  index, and the foreign key's delete path uses the new index instead of
+  scanning every artifact.

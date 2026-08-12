@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from datetime import datetime
 from typing import Any, Protocol
 
+from backend.artifacts.lineage import Lineage
 from backend.artifacts.types import (
     DiagramSpecification,
     GeneratedImage,
@@ -145,6 +147,7 @@ class BinaryArtifactRepository(ArtifactRepository):
         provider: str,
         model: str | None,
         title: str | None,
+        parent_artifact_id: str | None = None,
     ) -> dict[str, Any]: ...
 
     # Mark a pending image ready with opaque storage and integrity metadata.
@@ -331,6 +334,32 @@ class VisionEmbeddingProvider(ABC):
     # Embed one validated image into a unit-length vector.
     @abstractmethod
     def embed_image(self, content: bytes) -> list[float]: ...
+
+
+class ArtifactLineageStore(ABC):
+    """Where derived artifacts came from.
+
+    Separate from search because provenance is a property of an artifact, not a
+    result of a query. Conflating them is what let an edited photograph forget
+    it was a photograph whenever the original did not also match the query.
+
+    Nothing here is specific to images: it resolves the parent edge, so any
+    modality that records one is answered by the same implementation.
+    """
+
+    # Resolve the chain behind each requested artifact, in one round trip.
+    #
+    # Batched because recall holds several matches at once and per-match
+    # queries would put retrieval latency in the hands of how many pictures a
+    # user happened to edit. Artifacts with no parent are absent from the
+    # result rather than present and empty.
+    @abstractmethod
+    async def resolve_lineage(
+        self,
+        user_id: str,
+        artifact_ids: Sequence[str],
+        max_depth: int = 12,
+    ) -> dict[str, Lineage]: ...
 
 
 class ArtifactEmbeddingStore(ABC):

@@ -15,9 +15,11 @@ from backend.artifacts.image_lineage import collapse_revision_chains
 from backend.artifacts.image_prompt_match import prefer_prompt_matches
 from backend.artifacts.image_recall_router import CascadingImageRecallRouter
 from backend.artifacts.image_retrieval import ImageRetrievalPolicy
+from backend.artifacts.lineage import Lineage
 from backend.core.egress import OutboundPrivacyPolicy
 from backend.core.interfaces import (
     ArtifactEmbeddingStore,
+    ArtifactLineageStore,
     ConversationRepository,
     ConversationTracer,
     MemoryService,
@@ -73,21 +75,20 @@ def _image_description(match: dict[str, Any]) -> str:
 # edits are listed oldest first so "the hat was replaced" is legible as history
 # rather than as what the picture always showed.
 def _image_lineage(match: dict[str, Any]) -> dict[str, Any]:
-    origin = match.get("origin")
-    if not isinstance(origin, dict):
+    lineage = match.get("lineage")
+    if not isinstance(lineage, Lineage):
         return {}
-    described = " ".join(str(origin.get("description") or "").split())
-    lineage: dict[str, Any] = {
+    described = str(lineage.origin.get("description") or "")
+    rendered: dict[str, Any] = {
         "edited_from": {
-            "supplied_by_user": origin.get("kind") == "uploaded_image",
-            "title": origin.get("title"),
+            "supplied_by_user": lineage.supplied_by_user,
+            "title": lineage.origin.get("title"),
             "description": described[:_IMAGE_DESCRIPTION_CHARS],
         }
     }
-    edits = [str(edit) for edit in match.get("edits") or [] if str(edit).strip()]
-    if edits:
-        lineage["edits_applied"] = edits
-    return lineage
+    if lineage.edits:
+        rendered["edits_applied"] = list(lineage.edits)
+    return rendered
 
 
 # Add matched-image context only after the user explicitly asks for web search.
@@ -155,6 +156,7 @@ class ConversationService:
         search_routing: CascadingSearchRouter | None = None,
         image_recall: CascadingImageRecallRouter | None = None,
         image_search: ArtifactEmbeddingStore | None = None,
+        lineage: ArtifactLineageStore | None = None,
         image_search_limit: int = 5,
         image_retrieval: ImageRetrievalPolicy | None = None,
         search_privacy: OutboundPrivacyPolicy | None = None,
@@ -176,6 +178,7 @@ class ConversationService:
         self.search_routing = search_routing
         self.image_recall = image_recall
         self.image_search = image_search
+        self.lineage = lineage
         self.image_search_limit = image_search_limit
         # Screening is not optional: a missing policy would mean raw queries
         # leaving the machine, so one is always constructed.
@@ -529,11 +532,40 @@ class ConversationService:
             # returned; only the latest revision of each lineage remains.
             ranked = collapse_revision_chains(ranked)
             ranked = prefer_prompt_matches(query, ranked)
-            return self.image_retrieval.select(ranked)[: self.image_search_limit]
+            selected = self.image_retrieval.select(ranked)[: self.image_search_limit]
+            return await self._with_lineage(user_id, selected)
         except Exception:
             # A retrieval failure degrades the answer; it must not fail the turn.
             logger.warning("Trace %s image search failed", trace_id, exc_info=True)
             return []
+
+    # Attach what each match was derived from, for the ones that were derived.
+    #
+    # One query for the whole page of results, and it asks the parent edge
+    # rather than the result set — so an edited photograph says it is a
+    # photograph whether or not the original was itself retrieved. A failure
+    # here costs provenance, never the answer.
+    async def _with_lineage(
+        self,
+        user_id: str,
+        matches: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        if self.lineage is None or not matches:
+            return matches
+        try:
+            resolved = await self.lineage.resolve_lineage(
+                user_id,
+                [str(match.get("id")) for match in matches],
+            )
+        except Exception:
+            logger.warning("Image lineage lookup failed", exc_info=True)
+            return matches
+        return [
+            {**match, "lineage": found}
+            if (found := resolved.get(str(match.get("id"))))
+            else match
+            for match in matches
+        ]
 
     # Attach optional image and search context in place, streaming progress so
     # the interface can show retrieval and cite what it used.

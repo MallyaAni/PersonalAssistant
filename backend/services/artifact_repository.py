@@ -1,15 +1,30 @@
 import uuid
+from collections.abc import Sequence
 from typing import Any, cast
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.artifacts.lineage import (
+    MAX_LINEAGE_DEPTH,
+    Lineage,
+    as_metadata,
+    describe,
+)
 from backend.artifacts.types import DiagramSpecification, StoredBinary
-from backend.core.interfaces import ArtifactEmbeddingStore, BinaryArtifactRepository
+from backend.core.interfaces import (
+    ArtifactEmbeddingStore,
+    ArtifactLineageStore,
+    BinaryArtifactRepository,
+)
 from backend.models.artifact import VisualArtifact
 
 
-class SQLAlchemyArtifactRepository(BinaryArtifactRepository, ArtifactEmbeddingStore):
+class SQLAlchemyArtifactRepository(
+    BinaryArtifactRepository,
+    ArtifactEmbeddingStore,
+    ArtifactLineageStore,
+):
     # Bind artifact persistence to the request's asynchronous transaction session.
     def __init__(self, session: AsyncSession):
         self.session = session
@@ -87,6 +102,7 @@ class SQLAlchemyArtifactRepository(BinaryArtifactRepository, ArtifactEmbeddingSt
         provider: str,
         model: str | None,
         title: str | None,
+        parent_artifact_id: str | None = None,
     ) -> dict[str, Any]:
         if kind not in {"generated_image", "uploaded_image"}:
             raise ValueError("Binary artifact kind is not supported")
@@ -99,6 +115,12 @@ class SQLAlchemyArtifactRepository(BinaryArtifactRepository, ArtifactEmbeddingSt
             title=title,
             provider=provider,
             model=model,
+            # Recorded when the row is created rather than when it is marked
+            # ready, so a derivative that fails halfway still says what it was
+            # derived from instead of looking like an original that went wrong.
+            parent_artifact_id=(
+                uuid.UUID(parent_artifact_id) if parent_artifact_id else None
+            ),
             extra_data={},
         )
         self.session.add(artifact)
@@ -199,6 +221,86 @@ class SQLAlchemyArtifactRepository(BinaryArtifactRepository, ArtifactEmbeddingSt
             {**artifact.to_dict(), "distance": float(value)}
             for artifact, value in result.all()
         ]
+
+    # Resolve what each requested artifact was derived from, in one round trip.
+    #
+    # A recursive walk up the parent edge, seeded with every requested id at
+    # once, so a turn holding five matches costs one query rather than five
+    # chains of them. `user_id` is applied at every hop and not only at the
+    # seed: a chain must never leave the requesting user's own history, whatever
+    # a stored identifier points at.
+    #
+    # The edit that produced an artifact is recorded on that artifact, so the
+    # root contributes none and the rest read oldest-first once reversed.
+    async def resolve_lineage(
+        self,
+        user_id: str,
+        artifact_ids: Sequence[str],
+        max_depth: int = MAX_LINEAGE_DEPTH,
+    ) -> dict[str, Lineage]:
+        wanted = [str(value) for value in artifact_ids if value]
+        if not wanted:
+            return {}
+        try:
+            seeds = [uuid.UUID(value) for value in wanted]
+        except ValueError:
+            return {}
+
+        result = await self.session.execute(
+            text(
+                """
+                WITH RECURSIVE chain AS (
+                    SELECT a.id AS origin_id, a.id, a.parent_artifact_id,
+                           a.kind, a.title, a.extra_data, 0 AS depth
+                      FROM visual_artifacts a
+                     WHERE a.user_id = :user_id AND a.id = ANY(:seeds)
+                    UNION ALL
+                    SELECT c.origin_id, p.id, p.parent_artifact_id,
+                           p.kind, p.title, p.extra_data, c.depth + 1
+                      FROM chain c
+                      JOIN visual_artifacts p
+                        ON p.id = c.parent_artifact_id AND p.user_id = :user_id
+                     WHERE c.depth < :max_depth
+                )
+                SELECT origin_id, id, kind, title, extra_data, depth
+                  FROM chain
+                 ORDER BY origin_id, depth DESC
+                """
+            ).bindparams(user_id=user_id, seeds=seeds, max_depth=max_depth)
+        )
+
+        chains: dict[str, list[dict[str, Any]]] = {}
+        for row in result.mappings():
+            chains.setdefault(str(row["origin_id"]), []).append(dict(row))
+
+        lineages: dict[str, Lineage] = {}
+        for origin_id, rows in chains.items():
+            # Ordered deepest first, so the head is the oldest ancestor still on
+            # record and a single-row chain is an artifact with no parent.
+            if len(rows) < 2:
+                continue
+            root = rows[0]
+            edits = tuple(
+                feedback
+                for row in rows[1:]
+                if (
+                    feedback := str(
+                        as_metadata(row["extra_data"]).get("refinement_feedback") or ""
+                    ).strip()
+                )
+            )
+            root_metadata = as_metadata(root["extra_data"])
+            lineages[origin_id] = Lineage(
+                origin={
+                    "id": str(root["id"]),
+                    "kind": root["kind"],
+                    "title": root["title"],
+                    "metadata": root_metadata,
+                    "description": describe({"metadata": root_metadata}),
+                },
+                edits=edits,
+            )
+        return lineages
 
     # List artifacts owned by one user conversation in creation order.
     async def list_for_conversation(

@@ -84,6 +84,7 @@ class CapturingBinaryRepository:
         provider: str,
         model: str | None,
         title: str | None,
+        parent_artifact_id: str | None = None,
     ) -> dict[str, Any]:
         self.record = {
             "id": str(uuid.uuid4()),
@@ -95,6 +96,7 @@ class CapturingBinaryRepository:
             "provider": provider,
             "model": model,
             "title": title,
+            "parent_artifact_id": parent_artifact_id,
         }
         return dict(self.record)
 
@@ -497,6 +499,11 @@ async def test_image_artifact_service_persists_source_conditioned_edit(
     assert ready["model"] == "flux2-klein"
     assert ready["metadata"]["parent_artifact_id"] == "parent-image"
     assert ready["metadata"]["edit_mode"] == "source_conditioned"
+    # Recorded as an edge on the row itself, not only as a note in metadata:
+    # provenance is resolved by joining on it, and it is set when the row is
+    # created so an edit that fails halfway still says what it came from.
+    assert repository.record is not None
+    assert repository.record["parent_artifact_id"] == "parent-image"
     assert ready["metadata"]["refinement_feedback"] == "make this car red"
     assert ready["metadata"]["generation_prompt"] == ("a black sports car by the coast")
 

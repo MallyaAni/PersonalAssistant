@@ -3,7 +3,15 @@ from datetime import datetime
 from typing import Any
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import BigInteger, CheckConstraint, Index, Integer, String, Text
+from sqlalchemy import (
+    BigInteger,
+    CheckConstraint,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
@@ -42,6 +50,16 @@ class VisualArtifact(Base):
     )
     kind: Mapped[str] = mapped_column(String(20), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False)
+    # The artifact this one was derived from, as an edge rather than a note in
+    # `extra_data`. Recall resolves a whole chain by joining on it, so an edited
+    # picture can still say what it was made from when the original was not
+    # itself retrieved. Null once the parent is deleted: that history is gone.
+    parent_artifact_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("visual_artifacts.id", ondelete="SET NULL"),
+        index=True,
+        nullable=True,
+    )
     title: Mapped[str | None] = mapped_column(String(160), nullable=True)
     source_format: Mapped[str | None] = mapped_column(String(30), nullable=True)
     source: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -79,6 +97,9 @@ class VisualArtifact(Base):
             "trace_id": str(self.trace_id),
             "kind": self.kind,
             "status": self.status,
+            "parent_artifact_id": (
+                str(self.parent_artifact_id) if self.parent_artifact_id else None
+            ),
             "title": self.title,
             "source_format": self.source_format,
             "source": self.source,

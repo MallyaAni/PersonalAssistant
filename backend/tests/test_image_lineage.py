@@ -1,23 +1,12 @@
 from typing import Any
 
-from backend.artifacts.image_lineage import collapse_revision_chains
+from backend.artifacts.image_lineage import collapse_revision_chains, parent_of
 
 
-def _hit(
-    artifact_id: str,
-    parent: str | None = None,
-    kind: str = "generated_image",
-    analysis: str = "",
-    feedback: str = "",
-) -> dict[str, Any]:
-    metadata: dict[str, Any] = {}
-    if parent:
-        metadata["parent_artifact_id"] = parent
-    if analysis:
-        metadata["analysis"] = analysis
-    if feedback:
-        metadata["refinement_feedback"] = feedback
-    return {"id": artifact_id, "kind": kind, "title": artifact_id, "metadata": metadata}
+# Built the way retrieval returns them: the parent as a column, which is what
+# the migration backfilled and what every new derivative writes.
+def _hit(artifact_id: str, parent: str | None = None) -> dict[str, Any]:
+    return {"id": artifact_id, "parent_artifact_id": parent, "metadata": {}}
 
 
 def test_original_is_dropped_when_its_revision_also_matches() -> None:
@@ -40,49 +29,33 @@ def test_a_revision_whose_parent_is_absent_is_kept() -> None:
     assert [c["id"] for c in collapse_revision_chains(candidates)] == ["B", "C"]
 
 
-# The reported defect. A photograph was uploaded, edited, and the upload was
-# collapsed away — taking with it the only record of what the user actually
-# owned, while the surviving revision read as something the assistant invented.
-def test_the_collapsed_original_travels_with_the_revision() -> None:
-    upload = _hit(
-        "A",
-        kind="uploaded_image",
-        analysis="A man in a wide-brimmed black cowboy hat by a lake.",
-    )
-    revision = _hit("B", parent="A", feedback="edit this to give me a straw hat")
-    [survivor] = collapse_revision_chains([upload, revision])
-
-    assert survivor["id"] == "B"
-    assert survivor["origin"]["kind"] == "uploaded_image"
-    assert "black cowboy hat" in survivor["origin"]["description"]
-    assert survivor["edits"] == ["edit this to give me a straw hat"]
+# Deduplication decides what is shown and nothing else. What the dropped
+# original knew is resolved from the parent edge, for every survivor, whether or
+# not the original was retrieved — so nothing is carried here.
+def test_collapsing_does_not_annotate_the_survivor() -> None:
+    [survivor] = collapse_revision_chains([_hit("A"), _hit("B", parent="A")])
+    assert set(survivor) == {"id", "parent_artifact_id", "metadata"}
 
 
-# An edit of an edit still names the picture the user supplied, not the
-# intermediate one, and the edits read oldest first.
-def test_a_chain_reports_its_root_and_every_edit_in_order() -> None:
-    candidates = [
-        _hit("A", kind="uploaded_image", analysis="A red bicycle."),
-        _hit("B", parent="A", feedback="make it blue"),
-        _hit("C", parent="B", feedback="add a basket"),
-    ]
-    [survivor] = collapse_revision_chains(candidates)
-
-    assert survivor["origin"]["description"] == "A red bicycle."
-    assert survivor["edits"] == ["make it blue", "add a basket"]
+# A row written before the column existed, whose parent has since been deleted,
+# keeps only the metadata key. It is still a revision and still deduplicates.
+def test_a_parent_recorded_only_in_metadata_is_still_read() -> None:
+    legacy = {"id": "B", "metadata": {"parent_artifact_id": "A"}}
+    assert parent_of(legacy) == "A"
+    assert [c["id"] for c in collapse_revision_chains([_hit("A"), legacy])] == ["B"]
 
 
-# Nothing is invented for an image that is nobody's revision: an ordinary match
-# keeps exactly the shape it had before any of this.
-def test_an_image_with_no_lineage_gains_no_lineage_keys() -> None:
-    candidates = [_hit("A"), _hit("B", parent="A"), _hit("Z")]
-    survivors = {c["id"]: c for c in collapse_revision_chains(candidates)}
-    assert "origin" not in survivors["Z"]
-    assert "edits" not in survivors["Z"]
+# The column wins when both are present, because the foreign key is the one that
+# is null after the parent is deleted — the metadata key never notices.
+def test_the_column_is_preferred_over_the_metadata_copy() -> None:
+    both = {
+        "id": "C",
+        "parent_artifact_id": "B",
+        "metadata": {"parent_artifact_id": "A"},
+    }
+    assert parent_of(both) == "B"
 
 
-# A parent link pointing back into its own chain must not spin.
-def test_a_cycle_in_stored_lineage_terminates() -> None:
-    candidates = [_hit("A", parent="B"), _hit("B", parent="A"), _hit("C", parent="A")]
-    survivors = collapse_revision_chains(candidates)
-    assert [c["id"] for c in survivors] == ["C"]
+def test_an_artifact_with_no_parent_reports_none() -> None:
+    assert parent_of(_hit("A")) == ""
+    assert parent_of({"id": "A"}) == ""

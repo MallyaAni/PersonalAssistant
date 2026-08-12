@@ -215,6 +215,7 @@ class ImageArtifactService:
             provider=self.edit_provider_name or self.provider_name,
             model=self.edit_model_name or None,
             title="Edited image",
+            parent_artifact_id=str(parent.get("id") or "") or None,
         )
         artifact_id = str(artifact["id"])
         storage_key: str | None = None
