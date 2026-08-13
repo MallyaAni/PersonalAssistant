@@ -42,3 +42,34 @@ def collapse_revision_chains(
         for candidate in candidates
         if str(candidate.get("id")) not in superseded
     ]
+
+
+# Keep only the newest copy when the exact same file was uploaded more than
+# once.
+#
+# Nothing links these rows the way a revision links to its parent - each
+# upload is its own independent artifact - but an identical sha256 means
+# identical bytes, so a recall that returns three of them is the same
+# picture three times, not three pictures. Observed directly: the same file
+# uploaded across three separate conversations while testing all matched one
+# style question and were all shown. `created_at` here is already the
+# ISO-8601 string `to_dict()` produces, which sorts correctly as text.
+def collapse_duplicate_content(
+    candidates: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    newest_by_digest: dict[str, dict[str, Any]] = {}
+    for candidate in candidates:
+        digest = candidate.get("sha256")
+        if not digest:
+            continue
+        current = newest_by_digest.get(digest)
+        if current is None or candidate.get("created_at", "") > current.get(
+            "created_at", ""
+        ):
+            newest_by_digest[digest] = candidate
+    return [
+        candidate
+        for candidate in candidates
+        if not candidate.get("sha256")
+        or candidate is newest_by_digest[candidate["sha256"]]
+    ]

@@ -7,6 +7,39 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 
 Last updated: 2026-08-13, America/New_York
 
+## The gateway was a day-stale static build; recall showed one photo three times — VERIFIED
+
+**Read this first if a "fixed" frontend change is reported as not working.**
+`gateway` (port 8080, what the tunnel/deep-matter.com actually serves) bakes
+`frontend/dist` into its nginx image once at Docker *build* time and never
+watches the source tree again — `docker restart` or `up -d` alone changes
+nothing. It was found a full day stale, meaning an entire session's worth of
+frontend fixes had been invisible to the user throughout, and every hard
+refresh they tried was correctly fetching fresh bytes of the same stale
+build (`Cache-Control: no-store`, so it was never a browser-cache problem).
+Redeploy with `docker compose build gateway && docker compose up -d
+--no-deps gateway`, and verify with content, not timestamps —
+`docker exec anios_gateway grep -l "<string only in new code>"
+/usr/share/nginx/html/assets/*.js`. Documented in `AGENTS.md`'s Operational
+traps. Separately, even after a real gateway rebuild, one more report turned
+out to be a stale open *browser tab* specifically (confirmed by reading the
+exact persisted response text back out of the database, which proved the
+extra text the user saw was never generated server-side) — a tab keeps
+running its already-loaded JS regardless of the server, until it is actually
+reloaded.
+
+With the deploy pipeline no longer the confound, a real bug surfaced:
+asking a style question recalled the same uploaded photo three times as
+three separate "matches." Not a selection bug — the same file had genuinely
+been uploaded across three separate conversations while testing, so three
+real, independent, `sha256`-identical rows all legitimately matched. Added
+`collapse_duplicate_content` in `backend/artifacts/image_lineage.py` (a
+sibling to the existing `collapse_revision_chains`, but for independent rows
+provably the same file rather than a parent/child edit chain) and wired it
+into both image-recall paths. Full backend suite (1175 tests, 5 new) passes;
+Ruff passes. No frontend change this round, so no gateway rebuild was
+needed — only `docker restart anios_backend`.
+
 ## Dark-mode white bar fixed; the model stopped inventing a location — VERIFIED
 
 Two more reports from the same live-testing thread. **The dark-mode bug** was

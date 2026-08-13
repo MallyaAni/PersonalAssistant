@@ -3160,3 +3160,53 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   `theme.spec.ts` tests pass, including the full `theme.spec.ts` file (6
   tests, one new) and a full `chat.spec.ts` run (56/59, the same three
   pre-existing failures as before, confirmed unrelated via `git stash`).
+
+## 2026-08-13 — The gateway was a day-stale static build; recall stopped showing one photo three times
+
+- Root cause of a whole session's worth of "still happening" frontend
+  reports, finally found: `gateway` (`docker-compose.yml`, port 8080 — what
+  the tunnel and deep-matter.com actually serve) is a one-shot static build.
+  It runs `npm run build` once *inside its Docker image build* and bakes the
+  result into nginx; nothing about it watches the source tree afterward,
+  unlike `frontend` on `:5173`, the Vite dev server the user was never
+  actually using. Confirmed directly: the bundle it served still contained
+  the literal "1 matching image from your library" text removed hours
+  earlier that day, and older client-side regex-based image routing from
+  before the previous day's `MainActionSelector` migration. `docker restart`
+  or `up -d` alone reuses the stale image and deploys nothing — verified a
+  fix was actually live only after `docker compose build gateway && docker
+  compose up -d --no-deps gateway`, by grepping the deployed bundle for
+  strings that only exist in the new code. Documented as a new entry in
+  `AGENTS.md`'s "Operational traps" section so it is not rediscovered the
+  slow way again.
+- One report that survived a full gateway rebuild and a genuine hard
+  refresh (confirmed by pulling the exact persisted `response` text straight
+  from the database, which ended cleanly with no such text — proving
+  whatever the user was seeing was appended client-side, not generated)
+  turned out to still be a stale *browser tab* specifically: a tab open
+  since before the rebuild keeps running its already-loaded JavaScript until
+  it is actually reloaded, independent of whether the server behind it is
+  now correct.
+- A genuine bug, once the deploy pipeline itself stopped being the variable:
+  asking a style question recalled the same uploaded photo three times, each
+  as its own "match." Traced to the database, not the selection logic: the
+  same file had been uploaded across three separate conversations while
+  testing that day, so `_load_visual_memory_matches` correctly found three
+  real, independent, `sha256`-identical rows and correctly showed all three
+  — each one was a genuine match, three times over. Added
+  `collapse_duplicate_content` in `backend/artifacts/image_lineage.py`,
+  alongside the existing `collapse_revision_chains` it is a sibling to:
+  where that collapses a parent/child edit chain to its latest revision,
+  this collapses independent rows sharing an identical `sha256` (provably
+  the same file, not merely visually similar) to the newest copy. Wired into
+  both `_load_image_matches` (the explicit-recall path) and
+  `_load_visual_memory_matches` (the semantic-fallback path), since both
+  retrieve independently and neither previously deduplicated by content.
+- Evidence: full backend suite (1175 tests, 5 new) passes; Ruff passes on
+  every changed file. New unit coverage for the pure function
+  (`test_image_lineage.py`: newest-copy-wins, genuinely different images all
+  kept, a missing digest never falsely collapsed, survivor order follows
+  retrieval order rather than creation time) plus one integration test
+  through the real `_stream_retrieved_context` path
+  (`test_image_lineage_context.py`) reproducing the exact reported scenario
+  end to end.

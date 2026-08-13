@@ -227,6 +227,29 @@ class StubVisualSelector:
         return ("active",) if "style" in query else ()
 
 
+class StubOwnedArtifactsById:
+    """Return artifacts from a fixed id-to-record map, honoring ownership."""
+
+    def __init__(self, owner: str, artifacts: dict[str, dict[str, Any]]) -> None:
+        self.owner = owner
+        self.artifacts = artifacts
+
+    async def get_owned(self, user_id: str, artifact_id: str):
+        if user_id != self.owner:
+            return None
+        return self.artifacts.get(artifact_id)
+
+
+class StubVisualSelectorReturningMany:
+    """Select several offered candidates, simulating one file recalled three ways."""
+
+    def __init__(self, artifact_ids: tuple[str, ...]) -> None:
+        self.artifact_ids = artifact_ids
+
+    async def select(self, query, candidates):
+        return self.artifact_ids
+
+
 # The failure exactly as it reached the user: a chat turn that recalls an image
 # emits `image_matches`, the API encodes every event as JSON, and an object that
 # is not JSON kills the stream — reported as "Unable to complete the chat
@@ -383,3 +406,57 @@ async def test_visual_memory_recalls_style_without_image_keywords() -> None:
 
     assert context["images"][0]["description"].endswith("navy jacket.")
     assert events[0]["event"] == "image_matches"
+
+
+# The exact scenario reported live: the same photo, uploaded across three
+# separate conversations while testing, all matched one style question and
+# were all shown as if they were three different recalled images.
+@pytest.mark.asyncio
+async def test_the_same_uploaded_file_recalled_more_than_once_is_shown_once() -> None:
+    same_digest = "a" * 64
+    artifacts = {
+        artifact_id: {
+            "id": artifact_id,
+            "kind": "uploaded_image",
+            "status": "ready",
+            "sha256": same_digest,
+            "created_at": created_at,
+            "metadata": {"analysis": "A person wearing a black cowboy hat."},
+        }
+        for artifact_id, created_at in (
+            ("first", "2026-08-13T17:53:26"),
+            ("second", "2026-08-13T18:03:19"),
+            ("third", "2026-08-13T18:07:13"),
+        )
+    }
+    service = ConversationService.__new__(ConversationService)
+    service.memory = StubVisualMemory()
+    service.visual_memory = StubVisualSelectorReturningMany(
+        ("first", "second", "third")
+    )
+    service.image_artifacts = StubOwnedArtifactsById("owner", artifacts)
+    service.image_recall = None
+    service.image_search = None
+    service.lineage = None
+    service.search = None
+
+    context: dict[str, Any] = {}
+    events = [
+        event
+        async for event in service._stream_retrieved_context(
+            context,
+            "owner",
+            "what do you think of my style?",
+            "trace",
+            [0.1, 0.2],
+            None,
+        )
+    ]
+
+    shown = next(
+        event["data"]["artifacts"]
+        for event in events
+        if event["event"] == "image_matches"
+    )
+    # The newest copy survives, matching how a revision chain keeps the latest.
+    assert [item["id"] for item in shown] == ["third"]

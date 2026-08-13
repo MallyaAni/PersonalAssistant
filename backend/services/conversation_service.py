@@ -12,7 +12,10 @@ from anyio import CancelScope
 from backend.agents.graph import build_assistant_graph
 from backend.agents.state import AgentState
 from backend.agents.vision.memory import VisualMemorySelector
-from backend.artifacts.image_lineage import collapse_revision_chains
+from backend.artifacts.image_lineage import (
+    collapse_duplicate_content,
+    collapse_revision_chains,
+)
 from backend.artifacts.image_prompt_match import prefer_prompt_matches
 from backend.artifacts.image_recall_router import CascadingImageRecallRouter
 from backend.artifacts.image_retrieval import ImageRetrievalPolicy
@@ -849,6 +852,11 @@ class ConversationService:
             # Collapse refinement chains so an image and its revisions are not all
             # returned; only the latest revision of each lineage remains.
             ranked = collapse_revision_chains(ranked)
+            # The same file uploaded more than once (observed: re-uploading the
+            # same photo across separate conversations while testing) is not
+            # a revision chain - each row is independent - but it is still one
+            # picture, not several, so an exact-content duplicate collapses too.
+            ranked = collapse_duplicate_content(ranked)
             ranked = prefer_prompt_matches(query, ranked)
             return self.image_retrieval.select(ranked)[: self.image_search_limit]
         except Exception:
@@ -931,7 +939,10 @@ class ConversationService:
                     and artifact.get("kind") in {"generated_image", "uploaded_image"}
                 ):
                     matches.append(artifact)
-            return matches
+            # The same file uploaded more than once selects as several distinct
+            # candidates - each is a real, independent row - but showing every
+            # copy is the same picture repeated, not several relevant ones.
+            return collapse_duplicate_content(matches)
         except Exception:
             logger.warning("Visual-memory recall failed", exc_info=True)
             return []

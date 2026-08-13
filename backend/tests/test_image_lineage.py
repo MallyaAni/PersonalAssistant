@@ -1,6 +1,10 @@
 from typing import Any
 
-from backend.artifacts.image_lineage import collapse_revision_chains, parent_of
+from backend.artifacts.image_lineage import (
+    collapse_duplicate_content,
+    collapse_revision_chains,
+    parent_of,
+)
 
 
 # Built the way retrieval returns them: the parent as a column, which is what
@@ -59,3 +63,55 @@ def test_the_column_is_preferred_over_the_metadata_copy() -> None:
 def test_an_artifact_with_no_parent_reports_none() -> None:
     assert parent_of(_hit("A")) == ""
     assert parent_of({"id": "A"}) == ""
+
+
+# Built the way retrieval returns them: sha256 and created_at as the plain
+# ISO-8601 string `to_dict()` produces, with no parent/revision relationship
+# between rows - each upload is independent, unlike a refinement chain.
+def _upload(artifact_id: str, digest: str, created_at: str) -> dict[str, Any]:
+    return {"id": artifact_id, "sha256": digest, "created_at": created_at}
+
+
+# The exact scenario observed live: the same file uploaded across three
+# separate conversations all matched one recall and were all shown.
+def test_the_same_file_uploaded_more_than_once_collapses_to_the_newest() -> None:
+    candidates = [
+        _upload("A", "hash1", "2026-08-13T17:53:26"),
+        _upload("B", "hash1", "2026-08-13T18:03:19"),
+        _upload("C", "hash1", "2026-08-13T18:07:13"),
+    ]
+    assert [c["id"] for c in collapse_duplicate_content(candidates)] == ["C"]
+
+
+def test_genuinely_different_images_are_all_kept() -> None:
+    candidates = [
+        _upload("A", "hash1", "2026-08-13T17:00:00"),
+        _upload("B", "hash2", "2026-08-13T17:00:00"),
+        _upload("C", "hash3", "2026-08-13T17:00:00"),
+    ]
+    assert [c["id"] for c in collapse_duplicate_content(candidates)] == [
+        "A",
+        "B",
+        "C",
+    ]
+
+
+# A missing digest (an older row, or a source retrieval that never set one)
+# must not be treated as matching every other missing digest and collapsed
+# away together - only a real, shared hash proves two rows are the same file.
+def test_a_missing_digest_is_never_collapsed() -> None:
+    candidates = [
+        {"id": "A", "sha256": None, "created_at": "2026-08-13T17:00:00"},
+        {"id": "B", "created_at": "2026-08-13T17:00:01"},
+    ]
+    assert [c["id"] for c in collapse_duplicate_content(candidates)] == ["A", "B"]
+
+
+# Order among the survivors is the caller's retrieval order (relevance-ranked
+# or selector-chosen), not creation time - only which copy survives uses date.
+def test_survivor_order_follows_the_original_list_not_creation_time() -> None:
+    candidates = [
+        _upload("A", "hash1", "2026-08-13T18:07:13"),
+        _upload("B", "hash2", "2026-08-13T17:00:00"),
+    ]
+    assert [c["id"] for c in collapse_duplicate_content(candidates)] == ["A", "B"]
