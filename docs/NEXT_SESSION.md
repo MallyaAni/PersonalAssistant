@@ -7,6 +7,52 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 
 Last updated: 2026-08-13, America/New_York
 
+## Dark-mode white bar fixed; the model stopped inventing a location — VERIFIED
+
+Two more reports from the same live-testing thread. **The dark-mode bug** was
+a real gap in `theme.css`'s hand-maintained `.dark` overrides: an
+opacity-suffixed colour (`bg-[#f5f5f7]/90`, the composer bar's blur
+background) and a `hover:`-prefixed one each compile to their own distinct
+Tailwind class, so mapping the plain colour does not cover them — the
+composer bar stayed solid white. Fixed both, swapped two more unmapped
+colours for already-covered equivalents, and added a `theme.spec.ts` test
+that reads the actual computed `background-color` (confirmed it fails
+unfixed first). **Worth remembering:** this hand-maintained file's own header
+comment claims "a test reads the palette, scans the components, and fails
+when one is unmapped" — that test does not exist anywhere in the repo. Any
+new arbitrary-colour Tailwind class, especially with an opacity suffix or a
+`hover:`/`focus:` prefix, should be checked against `theme.css` by hand until
+that real generator/validator gets built.
+
+**The location hallucination** ("Do you have a preferred proximity to a city
+(like Milwaukee, where you seem based)", asked of a freshly wiped account
+with zero stored profile/facts/locality and no search having run) was traced
+conclusively to the text-generation call itself, not routing — confirmed via
+the trace (no search call) and the database (no stored fact named a city).
+Added an explicit instruction to `_build_system_prompt` in `graph.py`: never
+present a guess about the user's own personal facts as if it were known.
+**Caveat, stated plainly:** the new functional test
+(`test_it_does_not_invent_the_users_location`) could not be made to
+reliably fail against the unmodified prompt (4/4 attempts passed) — this
+looks like real-model non-determinism at the edge of a large shared prompt,
+not something fully under this repo's control. The instruction is kept
+because it is a sound guardrail on its own merits, but treat this fix as
+best-effort, not proven, if the report recurs. A genuine side effect:
+`test_style_opinion_applies_the_edit_to_the_source_description`, previously
+`xfail(strict=True)` for a known Qwen limitation, now XPASSes consistently
+(3/3) — the xfail marker was removed.
+
+Also confirmed (no code change) that the earlier `/images/intent` bypass and
+stale-`artifact_started`-validation reports are both actually resolved on
+current code — a fresh trace for a repeat of the same message went through
+`/api/v1/chat` correctly end to end. Remaining sightings of either are a
+stale browser tab, not a live bug.
+
+Evidence: full backend suite (1170 tests) passes; Ruff passes on every
+changed file; `tsc && vite build` passes; `theme.spec.ts` (6 tests, 1 new)
+and a full `chat.spec.ts` run (56/59, same three pre-existing failures
+confirmed via `git stash`) both pass.
+
 ## Recalled photos display compactly; editing explains a missing target — VERIFIED
 
 Direct follow-up feedback on the same day's "keeps showing the image" fix

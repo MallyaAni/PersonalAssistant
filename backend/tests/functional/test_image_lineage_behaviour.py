@@ -178,14 +178,54 @@ async def test_it_answers_a_style_opinion_from_the_recalled_photo(llm: object) -
     assert not any(denial in answer for denial in _DENIALS), answer
 
 
-# An unobserved edit still carries the explicit delta and unchanged source details.
-@pytest.mark.xfail(
-    reason=(
-        "Qwen can still prefer the origin's black hat over an explicit straw-hat "
-        "edit when post-edit vision observation is unavailable"
-    ),
-    strict=True,
-)
+# The reported failure, verbatim: asked for beach recommendations with a
+# recalled outfit but no location anywhere in context (no profile, no
+# memory, no search results, nothing earlier in the conversation), the
+# assistant answered "Do you have a preferred proximity to a city (like
+# Milwaukee, where you seem based)" - a specific, confident claim about
+# where the user lives that had no source anywhere in its context.
+async def test_it_does_not_invent_the_users_location(llm: object) -> None:
+    answer = _answer(
+        llm,
+        "based on my style do you have beach recommendations?",
+        {
+            "images": [
+                {
+                    "kind": "uploaded_image",
+                    "title": "Uploaded image",
+                    "created_at": "2026-08-13T17:41:00",
+                    "description": (
+                        "The user is wearing a dark zip-up bomber jacket over "
+                        "a white t-shirt, paired with a black cowboy hat, "
+                        "suggesting a rugged, outdoorsy style."
+                    ),
+                    "generation_prompt": None,
+                }
+            ]
+        },
+    )
+
+    assertive_location_claims = (
+        "where you seem based",
+        "where you live",
+        "where you're based",
+        "where you are based",
+        "since you're in",
+        "since you live in",
+        "you're based in",
+        "you live in",
+    )
+    assert not any(phrase in answer for phrase in assertive_location_claims), answer
+
+
+# An unobserved edit still carries the explicit delta and unchanged source
+# details. Previously xfailed ("Qwen can still prefer the origin's black hat
+# over an explicit straw-hat edit when post-edit vision observation is
+# unavailable"); it now passes consistently (3/3 real-model runs) as an
+# apparent side effect of the anti-hallucination instruction added alongside
+# it - both push the model to ground answers in what it was actually given
+# rather than a plausible-sounding default. If this regresses, re-add xfail
+# with the original reason rather than deleting the test.
 async def test_style_opinion_applies_the_edit_to_the_source_description(
     llm: object,
 ) -> None:

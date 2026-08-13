@@ -3110,3 +3110,53 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   `net::ERR_FILE_NOT_FOUND` console error, and a "Sign out" click racing a
   detached DOM node) were confirmed present on unmodified `HEAD` via
   `git stash` and are unrelated.
+
+## 2026-08-13 — Composer bar's dark-mode white bar; the model stopped inventing a city
+
+- Investigated a follow-up screenshot ("weird white partition" in dark mode):
+  `theme.css` hand-maps every compiled Tailwind arbitrary-colour class under
+  `.dark`, but two variants of an already-mapped colour compile to their own
+  distinct class that the base mapping does not reach — an opacity suffix
+  (`bg-[#f5f5f7]/90`, the floating composer bar's blur background bakes the
+  alpha into its own hex value) and a `hover:` prefix (`hover:bg-[#f5f5f7]`,
+  introduced by the same day's compact-thumbnail button). Both stayed solid
+  white against the dark surroundings. Mapped both, and swapped two other
+  unmapped colours (the composer's image-in-use chip, the thumbnail's loading
+  placeholder) for visually-equivalent ones already in the palette rather
+  than growing it further. A new `theme.spec.ts` test reads the composer
+  bar's actual computed `background-color` in dark mode; confirmed it fails
+  against the unfixed code first.
+- Separately, confirmed via trace that the reported "cowboy hat on beach"
+  `/images/intent` bypass (see prior entry) really was resolved: the same
+  message this time went through `/api/v1/chat` correctly and produced a
+  valid `generated_image` artifact end to end — the remaining
+  "Artifact start event is invalid" the user saw was a stale browser tab
+  (confirmed by cross-referencing the persisted turn against the report; no
+  code change needed).
+- Traced a new report: asked for beach recommendations with a freshly wiped
+  account (no profile, no facts, no locality, nothing earlier in the
+  conversation), the assistant answered "Do you have a preferred proximity to
+  a city (like Milwaukee, where you seem based)" — a specific, confident
+  claim about the user's location with no source anywhere in its context. Not
+  a routing bug: no search ran for that turn (verified against the trace) and
+  no stored fact named a city (verified against the database) — the
+  text-generation call fabricated it outright. Added an explicit instruction
+  to `_build_system_prompt` in `graph.py`: never present a guess about the
+  user's own personal facts (name, location, age, occupation) as if it were
+  known, state one only when actually supplied. Added
+  `test_it_does_not_invent_the_users_location`, though attempts to reproduce
+  the original failure against the unmodified prompt did not reliably fail
+  (4/4 passed) — real-model non-determinism at the edges of a shared prompt
+  is not fully controllable, so this is best-effort regression coverage
+  rather than a proven fix, kept because the instruction is a reasonable
+  guardrail regardless. Unexpected side effect, caught by re-running the full
+  file: `test_style_opinion_applies_the_edit_to_the_source_description`,
+  previously `xfail(strict=True)` for a known Qwen limitation (preferring an
+  edited photo's original detail over an explicit instructed change),
+  XPASSed consistently (3/3) — the xfail marker was removed rather than left
+  failing the suite.
+- Evidence: full backend suite (1170 tests) passes; Ruff passes on every
+  changed file; `tsc && vite build` passes; affected `chat.spec.ts` and
+  `theme.spec.ts` tests pass, including the full `theme.spec.ts` file (6
+  tests, one new) and a full `chat.spec.ts` run (56/59, the same three
+  pre-existing failures as before, confirmed unrelated via `git stash`).
