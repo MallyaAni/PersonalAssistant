@@ -29,7 +29,7 @@ AniOS currently has a modular FastAPI backend rather than independently deployed
 | Chat orchestration | Request ownership, typed supervisor delegation, deterministic web-search and image-recall routing, memory planning, history, LangGraph streaming, persistence, proposals, artifact branch, SSE | [source](diagrams/chat-orchestration.mmd) | [view](diagrams/chat-orchestration.svg) |
 | Search and research | Query minimization, cloud-worker isolation, Google/Tavily provider policy, quota, MCP serialization, and source provenance | [source](diagrams/search-research-subsystem.mmd) | [view](diagrams/search-research-subsystem.svg) |
 | Memory subsystem | All short/long-term forms, write authority, coordinator, typed services, pgvector retrieval, lifecycle and operations | [source](diagrams/memory-subsystem.mmd) | [view](diagrams/memory-subsystem.svg) |
-| Memory overview (manager) | Plain-language first-contact walkthrough of a memory turn, the approval gate, short-term vs long-term stores, and user data control | [source](diagrams/memory-overview.mmd) | [view](diagrams/memory-overview.svg) |
+| Memory overview (manager) | Plain-language first-contact walkthrough of a memory turn, auto-save with no approval step, short-term vs long-term stores, and user data control | [source](diagrams/memory-overview.mmd) | [view](diagrams/memory-overview.svg) |
 | Scout discovery | Approved home/interest facts, profile projection, travel locality, strength-weighted ranking, familiarity controls, durable sweeps, and outputs | [source](diagrams/discovery-subsystem.mmd) | [view](diagrams/discovery-subsystem.svg) |
 | Tool memory and MCP execution | Safe descriptors, approved preferences, sanitized outcomes, semantic tool discovery, main-model selection, policy-gated invocation, and bounded untrusted results | [source](diagrams/tool-memory-subsystem.mmd) | [view](diagrams/tool-memory-subsystem.svg) |
 | Visual artifacts | Diagram classification/rendering, HiDream generation, validated uploads, opaque binary storage, integrity/deletion, Qwen vision analysis, threaded followup questions, aligned image embeddings and margin-bounded retrieval | [source](diagrams/visual-artifact-subsystem.mmd) | [view](diagrams/visual-artifact-subsystem.svg) |
@@ -978,18 +978,20 @@ The active collaborators are:
 
 Notification and external-agent collaborators are not part of current dependency assembly. Internet search and guarded MCP execution are assembled; knowledge ingestion/retrieval is implemented as a local memory store, while a complete RAG pipeline remains `SCAFFOLDED`.
 
-Chat memory capture is a typed approval boundary. One local
+Chat memory capture is auto-saved, with no approval boundary. One local
 `MemoryProposalAgent`, backed by Qwen 3.5 4B, semantically interprets the whole
 current utterance and returns grammar-constrained candidates for preferred name,
 response style, locality, interests, entity relationship, workflow, titled
 reference, semantic fact, and episodic event. Phrase matching and regular
 expressions do not decide memory meaning. Deterministic application code only
 bounds and validates the structured fields, adds ownership provenance, and
-routes an approved proposal to its typed store. The agent cannot persist, and
-every proposal remains ephemeral until visible user approval creates the facts
-and any Scout projection.
+routes each candidate directly to its typed store the same turn it was
+classified. The agent itself cannot persist, but `ConversationService` writes
+on its behalf immediately, with no user approval step; a per-candidate save
+failure is dropped and logged rather than raised, so it costs only that one
+candidate, never the turn's reply or any other candidate saved alongside it.
 
-The proposal is decided **before** the answer is generated, and the turn's real save state is rendered into the system prompt. The model has no write tool, so a helpful assistant answering "remember this" claims a save that never happened; telling it only that it cannot write to memory proved insufficient, because it re-expressed the same claim passively ("your personal memory has been updated"). Naming what is actually about to happen, and the value to write, removes the thing to route around. Emission over SSE still follows the saved turn. Profile facts may coexist in one decision; non-profile memory keeps one best typed candidate to limit noise. The frontend explicitly approves or rejects every proposal and can approve a visible set together. Approval uses the existing typed store API with source conversation/trace provenance. The model never receives a durable-write tool, and silent persistence remains unsupported.
+The save happens **before** the answer is generated, and the turn's real save state is rendered into the system prompt. The model has no write tool, so a helpful assistant answering "remember this" claims a save that never happened; telling it only that it cannot write to memory proved insufficient, because it re-expressed the same claim passively ("your personal memory has been updated"). Naming what actually just happened, and the value that was written, removes the thing to route around. Emission over SSE still follows the saved turn. Profile facts may coexist in one decision; non-profile memory keeps one best typed candidate to limit noise. The frontend displays what was already saved as a reply-adjacent, read-only notice — visibility for debugging and correction, not a consent step — and never itself calls a write endpoint for a chat-classified candidate. The model never receives a durable-write tool; every write is decided and executed by application code before the reply is generated, and silent, unreported persistence remains unsupported (the notice is always emitted alongside the save).
 
 ### Agent orchestration
 

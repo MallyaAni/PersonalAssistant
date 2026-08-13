@@ -62,7 +62,7 @@ This document separates current security facts from future requirements. A contr
   drawer displays the active account beside a labeled logout action so account
   switching does not depend on recognizing a compact header icon.
 - Assistant text is treated as untrusted CommonMark. ReactMarkdown creates approved React elements without enabling raw HTML parsing; browser acceptance proves an injected image/event handler creates no element and executes no script. User messages remain literal text.
-- Preferred-name and response-style proposals are not persisted before explicit UI approval. Generic fact approval, correction, export, and deletion are constrained to the token subject when auth is enabled; auth-disabled mode remains caller-user-ID scoped.
+- Every chat-classified memory proposal (preferred name, response style, discovery interests/locality, entities, procedures, knowledge, episodic and semantic facts) is persisted immediately by the application, with no user approval step; the reply-adjacent card reports what was already written, for visibility and debugging, not consent. Generic fact correction, export, and deletion are constrained to the token subject when auth is enabled; auth-disabled mode remains caller-user-ID scoped.
 - Semantic memory content is sent over the private Compose network to the `vllm-embedding` service. The configured embedding endpoint does not request provider-side storage, but vLLM process logging/configuration must still be reviewed for sensitive use.
 - Knowledge chunks, procedures, entities, summaries, tool descriptors, and semantic-cache queries are also sent to the configured local embedding process. Do not ingest secrets or private documents until vLLM logging, retention, host access, and backup policy are acceptable for that data.
 - Internet research is an explicit outbound boundary: deterministic routing and
@@ -191,9 +191,10 @@ The following controls are requirements for future milestones, not current featu
   assert no owned rows remain, and prove another user's rows are untouched.
 - `VERIFIED`: semantic Scout-interest capture sends only the current utterance
   to the configured local Qwen endpoint, requires grammar-constrained bounded
-  output, and gives the classifier no persistence or tool capability. The user
-  must approve the visible proposal before an atomic user-scoped fact/profile
-  write; rejection, model failure, or a capacity conflict writes nothing.
+  output, and gives the classifier no persistence or tool capability. The
+  application immediately performs an atomic user-scoped fact/profile write
+  when the classifier proposes one, with no user approval step; model failure
+  or a capacity conflict writes nothing.
 
 ## Security review for a change
 

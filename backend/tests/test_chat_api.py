@@ -274,8 +274,11 @@ async def test_conversation_service_streams_and_persists_required_turn_fields():
     }
 
 
+# This app auto-saves every classified proposal immediately, with no approval
+# round-trip - the `memory_proposal` event now reports a record already
+# written, not one awaiting the user's sign-off.
 @pytest.mark.asyncio
-async def test_conversation_service_proposes_name_without_writing_memory():
+async def test_conversation_service_auto_saves_a_proposed_name():
     repository = CapturingConversationRepository()
     service = ConversationService(
         memory=StubMemoryService(),
@@ -315,7 +318,7 @@ async def test_conversation_service_proposes_name_without_writing_memory():
     )
 
 
-# Verify explicit residence and interest statements stream approval-gated proposals.
+# Verify explicit residence and interest statements are auto-saved and streamed.
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("query", "kind", "expected"),
@@ -398,6 +401,131 @@ async def test_conversation_service_proposes_name_and_interests_together():
             ["acting", "theater", "networking events"],
         ),
     ]
+
+
+class StubEntityStore:
+    """Record entity upserts without a database."""
+
+    def __init__(self) -> None:
+        self.calls: list[tuple] = []
+
+    async def upsert(
+        self,
+        user_id,
+        entity_type,
+        canonical_name,
+        attributes,
+        source_conversation_id,
+        source_trace_id,
+        expires_at,
+    ):
+        self.calls.append((user_id, entity_type, canonical_name, attributes))
+        return {"id": "entity-1"}
+
+
+class StubAgentMemoryManager:
+    """Expose only the entity store a test needs, without a database."""
+
+    def __init__(self) -> None:
+        self.entities = StubEntityStore()
+
+
+# A kind this app cannot yet auto-save without agent memory wired must be
+# dropped silently, never streamed as if it had been.
+@pytest.mark.asyncio
+async def test_conversation_service_drops_agent_memory_kind_when_not_wired():
+    service = ConversationService(
+        memory=StubMemoryService(),
+        llm=StubLLM(),
+        repository=CapturingConversationRepository(),
+        tracer=StubTracer(),
+        memory_proposals=FixedMemoryProposalAgent(
+            (
+                {
+                    "kind": "entity",
+                    "entity_type": "person",
+                    "canonical_name": "Jamie",
+                    "attributes": {"relationship": "coworker"},
+                },
+            )
+        ),
+    )
+
+    events = [
+        event async for event in service.process_request("proposal_user", "hi")
+    ]
+
+    assert not any(event["event"] == "memory_proposal" for event in events)
+
+
+# The same proposal, with agent memory wired, is auto-saved and streamed.
+@pytest.mark.asyncio
+async def test_conversation_service_auto_saves_agent_memory_kind_when_wired():
+    agent_memory = StubAgentMemoryManager()
+    service = ConversationService(
+        memory=StubMemoryService(),
+        llm=StubLLM(),
+        repository=CapturingConversationRepository(),
+        tracer=StubTracer(),
+        memory_proposals=FixedMemoryProposalAgent(
+            (
+                {
+                    "kind": "entity",
+                    "entity_type": "person",
+                    "canonical_name": "Jamie",
+                    "attributes": {"relationship": "coworker"},
+                },
+            )
+        ),
+        agent_memory=agent_memory,
+    )
+
+    events = [
+        event async for event in service.process_request("proposal_user", "hi")
+    ]
+
+    proposal = next(
+        event["data"] for event in events if event["event"] == "memory_proposal"
+    )
+    assert proposal["kind"] == "entity"
+    assert agent_memory.entities.calls == [
+        ("proposal_user", "person", "Jamie", {"relationship": "coworker"})
+    ]
+
+
+class BrokenApproveMemoryService(StubMemoryService):
+    """Fail every name save, so a save-time error can be observed in isolation."""
+
+    async def approve_preferred_name(self, *args, **kwargs):
+        raise RuntimeError("database unavailable")
+
+
+# One proposal failing to save must cost only that proposal - not the other
+# proposal in the same turn, and not the turn's own reply.
+@pytest.mark.asyncio
+async def test_conversation_service_a_failed_save_does_not_block_the_rest():
+    service = ConversationService(
+        memory=BrokenApproveMemoryService(),
+        llm=StubLLM(),
+        repository=CapturingConversationRepository(),
+        tracer=StubTracer(),
+        memory_proposals=FixedMemoryProposalAgent(
+            (
+                {"kind": "preferred_name", "value": "Proposed Name"},
+                {"kind": "discovery_interests", "labels": ["hiking"]},
+            )
+        ),
+    )
+
+    events = [
+        event async for event in service.process_request("proposal_user", "hi")
+    ]
+
+    proposals = [
+        event["data"] for event in events if event["event"] == "memory_proposal"
+    ]
+    assert [item["kind"] for item in proposals] == ["discovery_interests"]
+    assert events[-1]["event"] == "done"
 
 
 @pytest.mark.asyncio

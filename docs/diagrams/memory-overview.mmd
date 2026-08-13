@@ -17,20 +17,18 @@ flowchart TB
     Retrieve -. reads .-> Short
     Retrieve -. reads .-> Long
 
-    Answer -. may propose .-> Consent{Save something new?}
-    Consent -->|only after approval| Long
+    Answer -. classifies .-> Save[6. Auto-save whatever was<br/>classified as worth remembering]
+    Save -->|written immediately,<br/>no approval step| Long
 
-    Control[Inspect short-term state<br/>View, correct, export or delete durable memory]
+    Control[Inspect short-term state<br/>View, correct, export or delete durable memory<br/>same path for what auto-save wrote]
     Short --- Control
     Long --- Control
 
     classDef person fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
     classDef step fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
-    classDef gate fill:#fff3cd,stroke:#b78b20,color:#4d3900;
     classDef store fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef note fill:#f1edff,stroke:#8872c6,color:#2e2450;
     class User person;
-    class Route,Understand,Retrieve,Curate,Answer step;
-    class Consent gate;
+    class Route,Understand,Retrieve,Curate,Answer,Save step;
     class Short,Long store;
     class Control note;

@@ -224,30 +224,27 @@ def test_broadened_patterns_do_not_trigger_on_stable_questions(policy, query):
 
 
 # The model has no way to write memory, and nothing in the prompt said so, so it
-# answered "remember this" by claiming it had. Telling it only that it cannot
-# save was not enough either: it produced "your personal memory has been
-# updated" - passive, true-sounding, and false. The prompt therefore states the
-# turn's real save state and shows the sentence to write.
-def test_system_prompt_states_that_a_save_needs_approval():
+# answered "remember this" by claiming it had. That was fixed by naming the
+# real save state - but this app auto-saves with no approval step, so the real
+# state to hand the model, when something was classified, is "already saved."
+def test_system_prompt_states_that_a_save_already_happened():
     prompt = _build_system_prompt(
-        {"memory_save": {"offered": True, "value": "my dog is called Biscuit."}},
+        {"memory_save": {"saved": True, "value": "my dog is called Biscuit."}},
         now=datetime(2026, 7, 21, tzinfo=UTC),
     )
 
     assert "You cannot write to memory" in prompt
     assert "my dog is called Biscuit." in prompt
-    assert "nothing is stored yet" in prompt
-    # The wordings it actually reached for are named explicitly.
-    assert "your memory has been updated" in prompt
+    assert "just saved" in prompt
+    assert "already done" in prompt
 
 
-# A turn with no proposal must not leave the model guessing either, or it fills
-# the silence with a claim of its own.
+# A turn with no classified proposal must not leave the model guessing either,
+# or it fills the silence with a claim of its own.
 def test_system_prompt_says_when_nothing_will_be_saved():
     prompt = _build_system_prompt(
-        {"memory_save": {"offered": False, "value": ""}},
+        {"memory_save": {"saved": False, "value": ""}},
         now=datetime(2026, 7, 21, tzinfo=UTC),
     )
 
-    assert "no save card" in prompt
-    assert "nothing from this message will be stored" in prompt
+    assert "nothing from this message was saved to memory" in prompt

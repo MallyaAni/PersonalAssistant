@@ -123,7 +123,8 @@ and code fences already were, took the set to 7/8.
 
 ## Memory capture — what is worth remembering
 
-Reads each chat turn and offers typed candidates for saving.
+Reads each chat turn and classifies typed candidates, auto-saved with no
+approval step.
 
 | | |
 | --- | --- |
@@ -133,12 +134,14 @@ Reads each chat turn and offers typed candidates for saving.
 | Agent folder | `backend/agents/memory/` |
 | Domain package | `backend/memory/` |
 | Prompts | `prompts.py` — one |
-| Functional tests | `test_prompt_behaviour.py`, with a positive control · `test_interest_capture_behaviour.py` |
+| Functional tests | `test_prompt_behaviour.py`, with a positive control · `test_interest_capture_behaviour.py` · `test_memory_save_state_behaviour.py` |
 
-**What the model decides:** what to offer. **What is decided for it:** whether
-anything is written. It has no persistence authority; every candidate appears on
-an approval card, and only approval writes a fact and its Scout projection, in
-one transaction.
+**What the model decides:** what to classify as worth remembering. **What is
+decided for it:** whether anything is written. It has no persistence
+authority; `ConversationService` writes each candidate to its typed store and
+projects a Scout fact where applicable, in the same turn, before the reply is
+generated — no approval step gates the write. A per-candidate save failure is
+dropped and logged, costing only that one candidate.
 
 ## Not agents — model calls that route
 

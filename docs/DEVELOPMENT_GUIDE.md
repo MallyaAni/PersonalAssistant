@@ -1247,7 +1247,7 @@ Validate all applicable acceptance properties:
 - expected records or other side effects exist;
 - invalid input produces an intentional error.
 
-The successful chat stream is framed as `start`, zero or more `delta`, an optional non-persisted `memory_proposal`, optional `artifact_started`/`artifact_ready`/`artifact_error`, and `done` SSE events. The frontend treats missing start/done events, malformed frames, unexpected content types, and an `error` event as failures. A server-side streaming exception must expose only the generic error message to the client.
+The successful chat stream is framed as `start`, zero or more `delta`, an optional `memory_proposal` (already auto-saved by the time it is emitted), optional `artifact_started`/`artifact_ready`/`artifact_error`, and `done` SSE events. The frontend treats missing start/done events, malformed frames, unexpected content types, and an `error` event as failures. A server-side streaming exception must expose only the generic error message to the client.
 
 For a diagram acceptance, change the query to an explicit request such as `Create a flowchart showing DiagramStart to ValidateArtifact to DiagramComplete.` Verify `artifact_started` precedes either `artifact_ready` or `artifact_error`, `done` terminates the stream, and the artifact list reflects the terminal lifecycle:
 
@@ -1347,17 +1347,17 @@ npx.cmd playwright test --grep "image conversation routes through generation"
 
 The cancellation check waits until the owned row is `pending`, presses Cancel, then requires `failed` with `error_code=cancelled`, a matching ComfyUI `/interrupt`, no backend exception, cleared UI loading, and scoped cleanup.
 
-For the supported preferred-name workflow, submit a statement such as `My preferred name is Validation Name.` For response style, use a narrow statement such as `Please be concise.` Neither proposal writes memory. Approve through the browser; preferred names use `/profile/preferred-name`, while response style uses the generic `/facts` endpoint. Verify rejection-without-write, approval, correction/supersession, projection, expiry, and deletion.
+For the supported preferred-name workflow, submit a statement such as `My preferred name is Validation Name.` For response style, use a narrow statement such as `Please be concise.` Both are auto-saved by `ConversationService` before the reply is generated, through the same underlying calls the old browser approval used (`approve_preferred_name`, and `approve_fact` with `fact_key=response_style` for response style) — no browser action writes them. Verify the `memory_proposal` SSE event reflects a record that already exists (query the profile/facts endpoints directly, or the database), correction/supersession, projection, expiry, and deletion.
 
 For Scout-interest capture, submit `My interests are basketball, soccer,
 baseball, hiking`. Require one `discovery_interests` SSE proposal containing all
-four labels, no write before approval, and one successful request to
-`/profile/discovery-interests`. Then open Agents → Scout → Configure and require
-all four strength controls. Inspect the backend environment for
-`MEMORY_PROPOSAL_LLM_MODEL=qwen/qwen3.5-4b` and
-`MEMORY_PROPOSAL_LLM_REASONING_EFFORT=none`; a value only in `.env` is not
+four labels, already written by the time it streams — confirm with a direct
+read of `/profile/discovery-interests` rather than an approval action. Then
+open Agents → Scout → Configure and require all four strength controls.
+Inspect the backend environment for `MEMORY_PROPOSAL_LLM_MODEL=qwen/qwen3.5-4b`
+and `MEMORY_PROPOSAL_LLM_REASONING_EFFORT=none`; a value only in `.env` is not
 evidence. A negative phrase such as `My daughter likes ballet, but I do not`
-must produce no interest proposal.
+must produce no interest proposal and no write.
 
 To validate conversation history, send two requests with the same `user_id` and `conversation_id`, put a unique fact only in the first query, and require the second response to reproduce it. Confirm the two rows share that conversation ID, the traces differ per request, and the second prompt itself does not contain the expected fact.
 
@@ -1612,9 +1612,9 @@ Dimension migration is a maintenance-window operation across all seven vector-be
 
 The final switch locks all affected tables and, in one PostgreSQL transaction, verifies every shadow value, replaces the old columns, updates vector metadata, and recreates every HNSW cosine index. Do not use `--confirm-offline` while writers are still active.
 
-Normal chat manages cache, working state, and periodic rolling summaries automatically. Durable procedures, entities, knowledge, persona facts, and tool preferences require explicit user/API action; the model does not receive arbitrary store or SQL access.
+Normal chat manages cache, working state, and periodic rolling summaries automatically. Persona facts and tool preferences reached through direct API calls still require explicit user/API action; the model does not receive arbitrary store or SQL access.
 
-Chat offers approval cards for these explicit forms:
+Chat auto-saves these explicit forms with no approval step, before the reply is generated:
 
 - `My preferred name is Ani.` or `Call me Ani.`
 - `Please be concise.` or `I prefer responses to be detailed.`
@@ -1622,7 +1622,7 @@ Chat offers approval cards for these explicit forms:
 - `Remember this workflow: Morning launch. Steps: Open dashboard; review alerts.`
 - `Remember this reference: Studio access | The marker is violet seven.`
 
-Nothing durable is written until the user presses the proposal's approval button. `Not now` dismisses it without a memory API write. The entity, procedure, and knowledge approvals retain the source conversation and trace identifiers. This explicit grammar is intentional: AniOS does not silently extract arbitrary model-inferred facts.
+Each save uses the same typed store API a direct explicit call would, and retains the source conversation and trace identifiers. The `memory_proposal` SSE event reports a record that already exists, not a pending action — there is no approval button and no reject/dismiss step. This explicit grammar is intentional: AniOS does not silently extract arbitrary model-inferred facts, but it does not ask the user to confirm the ones it does extract, either.
 
 ### 4. Frontend evidence
 

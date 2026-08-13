@@ -5,7 +5,98 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 [ROADMAP.md](ROADMAP.md), and stable architecture facts in
 [ARCHITECTURE.md](ARCHITECTURE.md).
 
-Last updated: 2026-08-12, America/New_York
+Last updated: 2026-08-13, America/New_York
+
+## Chat memory proposals auto-save; a recalled photo stops repeating — VERIFIED
+
+Two independent requests this session: "automatically save things about a
+user in memory without asking them... it may become bothersome" (design
+decision: blanket auto-save, chosen over tiered-by-confidence when offered
+the choice), and, from a live look at `ani.mallya`'s real conversation
+history, "it keeps showing the image every time it says it recalls it" plus
+a reported "Artifact start event is invalid" error.
+
+**Auto-save.** Every proposal `MemoryProposalAgent` classifies from a chat
+turn is now persisted by `ConversationService._persist_memory_proposals`
+immediately, before the reply is generated — no approval round-trip, for any
+of the nine kinds the agent actually emits (`preferred_name`,
+`response_style`, `discovery_locality`, `discovery_interests`, `entity`,
+`procedure`, `knowledge`, `semantic_fact`, `episodic`). A dispatch table
+(`self._memory_proposal_savers`) maps each kind to its own `_save_*_proposal`
+method, mirroring the exact calls the retired REST approval endpoints used to
+make (`approve_preferred_name`, `approve_fact`, `approve_discovery_interests`,
+`save_semantic_memory`, `save_episodic_memory` on `MemoryService`;
+`entities.upsert`, `procedures.approve`, `knowledge.ingest` on
+`AgentMemoryManager` — newly wired into `ConversationService` as
+`agent_memory`, since it had no reference to it before and entity/
+procedure/knowledge proposals had no persistence path at all). A per-item
+save failure is caught, logged, and dropped — it costs only that one
+candidate, never the turn's answer or any other candidate saved alongside
+it (covered by `test_conversation_service_a_failed_save_does_not_block_the_rest`).
+`_render_save_state` in `graph.py` now tells the model "the following was
+saved" instead of "a save card is displayed, nothing is stored yet" —
+verified against the real model in `test_memory_save_state_behaviour.py`,
+which took two prompt revisions: the first "nothing was saved" wording still
+produced "I've noted that ..." from the real model despite an explicit ban
+on the word, and needed a worked positive/negative example to actually hold.
+The frontend's whole approve/reject queue was removed (`ChatWindow.tsx`:
+`saveMemoryProposal`, `approveMemoryProposal`, `approveAllMemoryProposals`,
+`rejectMemoryProposal`, the turn-based retirement grace period and its
+`turnRef`; `api.ts`: the ten `approve*` REST wrapper functions) and replaced
+with a read-only "Saved X as Y memory" notice that clears on the next
+question — nine `chat.spec.ts` tests were rewritten from
+approval-button-click assertions to auto-save display assertions.
+
+**Repeated image display.** Root cause, found by decrypting and reading
+`ani.mallya`'s actual conversation rows in the dev DB (read-only, via the
+running backend's own `FieldCipher` — see `backend/core/crypto.py`):
+`_load_visual_memory_matches` is a real semantic-recall model call (not
+regex) that correctly judges relevance on every turn merely *about* what a
+stored photo shows — so a multi-turn conversation about one outfit
+re-attached the same photo to almost every reply, true in isolation, noisy
+in aggregate. Fixed in `_stream_retrieved_context`
+(`conversation_service.py`): that semantic-fallback path is now deduplicated
+against artifact ids this conversation already displayed, tracked via the
+persisted turn's `extra_data.artifact_ids` (a new `context["shown_image_ids"]`
+side-channel carries this from retrieval to the persist call). An explicit
+recall ("show me that photo again") is never deduplicated — only the
+soft/incidental path is. Each prompt image now carries a `freshly_shown`
+flag; `_render_image_context` in `graph.py` was updated so the model never
+claims a picture "just appeared" when it is a repeat.
+
+**"Artifact start event is invalid".** Already fixed by the prior session's
+`d849522` (widened the frontend's `artifact_started` kind validation to
+accept `generated_image`, not only `diagram`). Confirmed live in the running
+dev container: `docker exec anios_frontend` showed `api.ts`'s mtime already
+reflected the fix before the reported chat turns happened. No new code
+needed. If it recurs, it is almost certainly a stale browser tab from before
+that fix — a hard refresh should clear it.
+
+**Not done, flagged for later:** `backend/artifacts/image_recall_router.py`
+(`CascadingImageRecallRouter`) and `image_routing.py`
+(`ImageRecallPolicy`) are still regex-plus-narrow-classifier — the same
+anti-pattern `MainActionSelector` replaced for search/image-generation/
+diagram/delegation routing last session, but this one decides whether to
+search the user's *own stored images* and was out of scope for today's two
+reported bugs. It was not the cause of either bug (confirmed by tracing the
+actual code path), but it is a standing violation of this repo's
+"smartness over regex" mandate and a reasonable next target if the user
+wants that architecture cleanup finished. See
+[[anios-smartness-over-regex]] context in memory if resuming this.
+
+Evidence: full backend suite (1170 tests) passes; Ruff passes on every
+changed file; `tsc && vite build` passes; the non-live `chat.spec.ts` suite
+passes (57 tests), including the nine rewritten memory-proposal tests and a
+new `clears the saved-memory notice on the next question` test; three
+pre-existing failures (a dark-mode `shellBackground` color assertion, a
+diagram-restore-after-reload timeout, one flaky `net::ERR_FILE_NOT_FOUND`
+console error) were confirmed present on unmodified `HEAD` via `git stash`
+and are unrelated. `docs:diagram:check` reports all 19 diagrams
+synchronized after editing `memory-overview.mmd`, `memory-subsystem.mmd`,
+`chat-orchestration.mmd`, and `agent-memory.mmd` to remove the retired
+"visible approval"/"Consent" gate nodes. Committed as `660229a` (image
+redisplay fix, pushed) plus the auto-save change (commit pending at time of
+writing — see git log for the actual SHA once pushed).
 
 ## Turn routing became one native tool-calling decision — VERIFIED
 

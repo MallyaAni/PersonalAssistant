@@ -3,7 +3,7 @@ import logging
 import re
 import secrets
 import uuid
-from collections.abc import AsyncGenerator, Sequence
+from collections.abc import AsyncGenerator, Awaitable, Callable, Sequence
 from typing import Any
 
 import httpx
@@ -29,6 +29,7 @@ from backend.core.interfaces import (
     SearchProvider,
 )
 from backend.core.llm import LLMClient
+from backend.discovery.projection import locality_fact
 from backend.discovery.service import DiscoveryProfileService
 from backend.mcp.invocation import MCPInvocationError
 from backend.memory.coordinator import MemoryCoordinatorAgent
@@ -36,6 +37,7 @@ from backend.memory.proposal_agent import MemoryProposalAgent
 from backend.models.schemas import ChatStreamEvent
 from backend.search.budgeted import SearchBudgetExceededError
 from backend.search.query import normalize_search_query
+from backend.services.agent_memory_manager import AgentMemoryManager
 from backend.services.diagram_artifact_service import DiagramArtifactService
 from backend.services.image_artifact_service import ImageArtifactService
 from backend.services.image_refinement_service import (
@@ -163,21 +165,6 @@ def _image_aware_search_query(
     return f"{subject}. Referenced image description: {description}"
 
 
-# Add source identity to each semantically selected, non-persisted proposal.
-def _memory_proposals(
-    candidates: tuple[dict[str, Any], ...],
-    conversation_id: str,
-    trace_id: str,
-) -> tuple[dict[str, Any], ...]:
-    return tuple(
-        {
-            **candidate,
-            "conversation_id": conversation_id,
-            "trace_id": trace_id,
-        }
-        for candidate in candidates
-    )
-
 
 # Describe the pending save in one short line for the prompt. Only the value the
 # user themselves stated is echoed, so nothing new is disclosed to the model.
@@ -227,6 +214,7 @@ class ConversationService:
         discovery_profile: DiscoveryProfileService | None = None,
         memory_proposals: MemoryProposalAgent | None = None,
         visual_memory: VisualMemorySelector | None = None,
+        agent_memory: AgentMemoryManager | None = None,
     ):
         self.memory = memory
         self.assistant_graph = build_assistant_graph(llm)
@@ -265,6 +253,23 @@ class ConversationService:
         self.discovery_profile = discovery_profile
         self.memory_proposals = memory_proposals
         self.visual_memory = visual_memory
+        self.agent_memory = agent_memory
+        # One saver per proposal kind, so persisting a batch is a lookup and a
+        # call rather than a branch per kind - see `_persist_memory_proposals`.
+        self._memory_proposal_savers: dict[
+            str,
+            Callable[[str, str, str, dict[str, Any]], Awaitable[bool]],
+        ] = {
+            "preferred_name": self._save_preferred_name_proposal,
+            "response_style": self._save_response_style_proposal,
+            "discovery_locality": self._save_discovery_locality_proposal,
+            "discovery_interests": self._save_discovery_interests_proposal,
+            "entity": self._save_entity_proposal,
+            "procedure": self._save_procedure_proposal,
+            "knowledge": self._save_knowledge_proposal,
+            "semantic_fact": self._save_semantic_fact_proposal,
+            "episodic": self._save_episodic_proposal,
+        }
 
     # Ask the model that is about to answer this turn what it actually needs,
     # in one native tool call. Every candidate -- live search, a new or edited
@@ -1301,6 +1306,212 @@ class ConversationService:
             )
             return ()
 
+    # Save a classified name preference immediately - no approval round-trip.
+    async def _save_preferred_name_proposal(
+        self,
+        user_id: str,
+        conversation_id: str,
+        trace_id: str,
+        candidate: dict[str, Any],
+    ) -> bool:
+        await self.memory.approve_preferred_name(
+            user_id, candidate["value"], conversation_id, trace_id
+        )
+        return True
+
+    # Save a classified reply-length preference immediately.
+    async def _save_response_style_proposal(
+        self,
+        user_id: str,
+        conversation_id: str,
+        trace_id: str,
+        candidate: dict[str, Any],
+    ) -> bool:
+        await self.memory.approve_fact(
+            user_id=user_id,
+            fact_type="profile",
+            fact_key="response_style",
+            value=candidate["value"],
+            purpose="personalization",
+            source_conversation_id=conversation_id,
+            source_trace_id=trace_id,
+            expires_at=None,
+            metadata={"source": "chat_auto_save"},
+        )
+        return True
+
+    # Save a classified home locality immediately, projected the same way an
+    # approved one always was.
+    async def _save_discovery_locality_proposal(
+        self,
+        user_id: str,
+        conversation_id: str,
+        trace_id: str,
+        candidate: dict[str, Any],
+    ) -> bool:
+        fact = locality_fact(candidate["label"], candidate.get("region"))
+        await self.memory.approve_fact(
+            user_id=user_id,
+            fact_type=fact.fact_type,
+            fact_key=fact.fact_key,
+            value=fact.value,
+            purpose=fact.purpose,
+            source_conversation_id=conversation_id,
+            source_trace_id=trace_id,
+            expires_at=None,
+            metadata={"source": "chat_auto_save"},
+        )
+        return True
+
+    # Save every classified Scout interest label in one projection.
+    async def _save_discovery_interests_proposal(
+        self,
+        user_id: str,
+        conversation_id: str,
+        trace_id: str,
+        candidate: dict[str, Any],
+    ) -> bool:
+        await self.memory.approve_discovery_interests(
+            user_id=user_id,
+            labels=candidate["labels"],
+            source_conversation_id=conversation_id,
+            source_trace_id=trace_id,
+        )
+        return True
+
+    # Save a classified person/organization relationship, when agent memory is wired.
+    async def _save_entity_proposal(
+        self,
+        user_id: str,
+        conversation_id: str,
+        trace_id: str,
+        candidate: dict[str, Any],
+    ) -> bool:
+        if self.agent_memory is None:
+            return False
+        await self.agent_memory.entities.upsert(
+            user_id,
+            candidate["entity_type"],
+            candidate["canonical_name"],
+            candidate.get("attributes") or {},
+            conversation_id,
+            trace_id,
+            None,
+        )
+        return True
+
+    # Save a classified reusable workflow, when agent memory is wired.
+    async def _save_procedure_proposal(
+        self,
+        user_id: str,
+        conversation_id: str,
+        trace_id: str,
+        candidate: dict[str, Any],
+    ) -> bool:
+        if self.agent_memory is None:
+            return False
+        await self.agent_memory.procedures.approve(
+            user_id,
+            candidate["name"],
+            candidate["description"],
+            candidate["steps"],
+            conversation_id,
+            trace_id,
+            None,
+            {},
+        )
+        return True
+
+    # Save a classified titled reference document, when agent memory is wired.
+    async def _save_knowledge_proposal(
+        self,
+        user_id: str,
+        conversation_id: str,
+        trace_id: str,
+        candidate: dict[str, Any],
+    ) -> bool:
+        if self.agent_memory is None:
+            return False
+        await self.agent_memory.knowledge.ingest(
+            user_id,
+            candidate["title"],
+            candidate["content"],
+            None,
+            "user_knowledge",
+            conversation_id,
+            trace_id,
+        )
+        return True
+
+    # Save a classified stable personal fact as a semantic memory.
+    async def _save_semantic_fact_proposal(
+        self,
+        user_id: str,
+        conversation_id: str,
+        trace_id: str,
+        candidate: dict[str, Any],
+    ) -> bool:
+        await self.memory.save_semantic_memory(
+            user_id, candidate["content"], {"source": "chat_auto_save"}
+        )
+        return True
+
+    # Save a classified one-off event as an episodic memory.
+    async def _save_episodic_proposal(
+        self,
+        user_id: str,
+        conversation_id: str,
+        trace_id: str,
+        candidate: dict[str, Any],
+    ) -> bool:
+        await self.memory.save_episodic_memory(
+            user_id, candidate["content"], {"source": "chat_auto_save"}
+        )
+        return True
+
+    # Persist every classified proposal immediately - this app's memory design
+    # is blanket auto-save with no approval round-trip. Asking the user to
+    # confirm the same small facts turn after turn earns no accuracy and costs
+    # real friction; what a small local classifier extracts from something the
+    # user just said is treated as said, not as a guess awaiting sign-off.
+    # What ships instead of a gate is visibility: the caller still emits one
+    # event per record actually written, so every save is visible and can be
+    # audited or deleted, same as any other memory record. A single bad
+    # candidate is dropped rather than raised, so it costs one save, never the
+    # turn's answer or every other save alongside it.
+    async def _persist_memory_proposals(
+        self,
+        user_id: str,
+        conversation_id: str,
+        trace_id: str,
+        candidates: tuple[dict[str, Any], ...],
+    ) -> tuple[dict[str, Any], ...]:
+        saved: list[dict[str, Any]] = []
+        for candidate in candidates:
+            kind = candidate.get("kind")
+            saver = self._memory_proposal_savers.get(str(kind))
+            if saver is None:
+                continue
+            try:
+                persisted = await saver(user_id, conversation_id, trace_id, candidate)
+            except Exception:
+                logger.warning(
+                    "Trace %s failed to auto-save a %s memory proposal",
+                    trace_id,
+                    kind,
+                    exc_info=True,
+                )
+                continue
+            if persisted:
+                saved.append(
+                    {
+                        **candidate,
+                        "conversation_id": conversation_id,
+                        "trace_id": trace_id,
+                    }
+                )
+        return tuple(saved)
+
     # Retrieve context, run the primary response model, and persist one turn.
     async def _process_assistant_request(
         self,
@@ -1387,20 +1598,18 @@ class ConversationService:
                 query_embedding=query_embedding,
             )
 
-        # Decided before the answer is generated, not after, so the model can be
-        # told what is actually about to happen. Told only "you cannot save", it
-        # answered "your personal memory has been updated" - true-sounding,
-        # passive, and wrong. A blanket prohibition invites that; a statement of
-        # the real save state leaves nothing to route around. Every proposal is
-        # selected semantically, then validated and approval-gated.
+        # Decided and persisted before the answer is generated, not after, so
+        # the model can be told what actually just happened. Told only "you
+        # cannot save", it answered "your personal memory has been updated" -
+        # true-sounding, passive, and wrong. This app auto-saves every
+        # candidate the classifier selects, with no approval round-trip, so
+        # the honest state to hand the model is "saved", not "offered".
         candidates = await self._classify_memory_proposals(query, trace_id, user_id)
-        proposals = _memory_proposals(
-            candidates,
-            conversation_id,
-            trace_id,
+        proposals = await self._persist_memory_proposals(
+            user_id, conversation_id, trace_id, candidates
         )
         context["memory_save"] = {
-            "offered": bool(proposals),
+            "saved": bool(proposals),
             "value": _proposal_summaries(proposals),
         }
 
@@ -1444,8 +1653,9 @@ class ConversationService:
             history,
             turn_metadata,
         )
-        # Emitted after the turn is saved, as before; it was decided before the
-        # answer was generated so the reply could describe it honestly.
+        # Emitted after the turn is saved, as before; each one was already
+        # persisted before the answer was generated, so the reply could
+        # describe it honestly and the interface can show what was written.
         for proposal in proposals:
             yield {
                 "event": "memory_proposal",

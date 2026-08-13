@@ -31,6 +31,74 @@ class StubMemoryService(MemoryService):
     async def embed_query(self, query: str) -> list[float]:
         return [0.0, 0.0, 0.0]
 
+    # Below: the concrete auto-save methods a real memory service exposes but
+    # the abstract interface above does not declare, needed so a
+    # ConversationService under test can persist a classified proposal
+    # immediately instead of raising AttributeError on this double.
+
+    # Record a preferred-name save without a database.
+    async def approve_preferred_name(
+        self,
+        user_id: str,
+        name: str,
+        source_conversation_id: str,
+        source_trace_id: str,
+        expires_at: Any = None,
+    ) -> dict[str, Any]:
+        return {"profile": {"user_id": user_id, "name": name}, "deduplicated": False}
+
+    # Record a generic typed fact save without a database.
+    async def approve_fact(
+        self,
+        *,
+        user_id: str,
+        fact_type: str,
+        fact_key: str,
+        value: str,
+        purpose: str,
+        source_conversation_id: str | None,
+        source_trace_id: str,
+        expires_at: Any,
+        metadata: dict[str, Any],
+    ) -> dict[str, Any]:
+        return {
+            "fact": {"fact_type": fact_type, "fact_key": fact_key, "value": value},
+            "deduplicated": False,
+        }
+
+    # Record a batch discovery-interest save without a database.
+    async def approve_discovery_interests(
+        self,
+        *,
+        user_id: str,
+        labels: list[str],
+        source_conversation_id: str,
+        source_trace_id: str,
+    ) -> dict[str, Any]:
+        return {"interests": list(labels)}
+
+    # Record an episodic memory save without a database.
+    async def save_episodic_memory(
+        self,
+        user_id: str,
+        content: str,
+        metadata: dict[str, Any],
+        purpose: str = "user_explicit",
+        expires_at: Any = None,
+    ) -> dict[str, Any]:
+        return {"content": content}
+
+    # Record a semantic memory save without a database.
+    async def save_semantic_memory(
+        self,
+        user_id: str,
+        content: str,
+        metadata: dict[str, Any],
+        purpose: str = "user_explicit",
+        expires_at: Any = None,
+    ) -> dict[str, Any]:
+        return {"content": content}
+
 
 class StubConversationRepository(ConversationRepository):
     async def get_history(

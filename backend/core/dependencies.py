@@ -1339,6 +1339,7 @@ def get_conversation_service(
     presentation_jobs: PresentationJobDependency,
     discovery_profile: DependencyDiscoveryProfileService,
     memory_proposals: MemoryProposalDependency,
+    agent_memory: DependencyAgentMemoryManager,
 ) -> ConversationService:
     return ConversationService(
         memory=memory,
@@ -1375,6 +1376,7 @@ def get_conversation_service(
         discovery_profile=discovery_profile,
         memory_proposals=memory_proposals,
         visual_memory=VisualMemorySelector(get_classifier_llm()),
+        agent_memory=agent_memory,
     )
 
 

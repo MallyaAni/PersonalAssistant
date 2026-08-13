@@ -4,7 +4,7 @@ title: Chat and Delegation Flow
 flowchart TB
     User([User message]) --> API[Chat API]
     API --> Interest[Qwen 3.5 4B<br/>typed semantic memory agent]
-    Interest --> Proposal[Visible memory proposal set<br/>no write before approval]
+    Interest --> Proposal[Auto-saved memory records<br/>written immediately, no approval step]
     API --> Selector{MainActionSelector<br/>one native tool call, all options together}
     Search_Tool[Live search_web schema] -.-> Selector
     Toolbox[User-registered<br/>MCP tools, shortlisted] -.-> Selector

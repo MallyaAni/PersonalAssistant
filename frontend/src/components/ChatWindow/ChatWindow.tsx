@@ -1,18 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Sparkles } from 'lucide-react'
 import MessageList from '../MessageList/MessageList'
 import Composer from '../Composer/Composer'
 import {
-  approveEntity,
-  approveDiscoveryInterest,
-  approveDiscoveryInterests,
-  approveDiscoveryLocality,
-  approveEpisodic,
-  approveKnowledge,
-  approveSemanticFact,
-  approvePreferredName,
-  approveProcedure,
-  approveResponseStyle,
   getConversationSnapshot,
   type AgentActivity,
   type MemoryProposal,
@@ -44,20 +34,6 @@ interface ChatWindowProps {
   conversationId: string;
   restoreConversation: boolean;
 }
-
-// Return the accessible label for one proposal card.
-const proposalLabel = (proposal: MemoryProposal) => ({
-  preferred_name: 'Preferred name memory proposal',
-  response_style: 'Response style memory proposal',
-  discovery_interest: 'Interest memory proposal',
-  discovery_interests: 'Interest memory proposal',
-  discovery_locality: 'Home locality memory proposal',
-  entity: 'Entity memory proposal',
-  procedure: 'Procedure memory proposal',
-  knowledge: 'Knowledge memory proposal',
-  episodic: 'Experience memory proposal',
-  semantic_fact: 'Fact memory proposal',
-})[proposal.kind]
 
 // Return the primary value shown for one proposal.
 const proposalValue = (proposal: MemoryProposal) => {
@@ -167,30 +143,18 @@ const restoredMessages = (
   return [...transcript, ...standaloneImages]
 }
 
-// Render the chat transcript, memory approvals, and message composer.
+// Render the chat transcript, recently auto-saved memory, and the composer.
 const ChatWindow: React.FC<ChatWindowProps> = ({
   userId,
   conversationId,
   restoreConversation,
 }) => {
   const [messages, setMessages] = useState<Message[]>([])
-  // Each queued proposal remembers which turn it arrived in, so an unanswered
-  // one gets exactly one more turn to be answered before it is retired. Both
-  // extremes were wrong in production: keeping them forever left a card on
-  // screen for the rest of the conversation, growing by one each time another
-  // fact was noticed; clearing them on the next message silently threw away
-  // the interests card a user was about to approve, which is how one account
-  // ended up with a name saved and no interests.
-  const [memoryProposals, setMemoryProposals] =
-    useState<Array<{ proposal: MemoryProposal; turn: number }>>([])
-  // A ref, not state: a proposal arrives from the stream after the turn has
-  // already advanced, and a state value captured in that closure is the
-  // previous turn's. Tagging with a stale turn retired every card one turn
-  // early, which is the bug this counter exists to prevent.
-  const turnRef = useRef(0)
-  const [memoryNotice, setMemoryNotice] = useState('')
-  const [memoryError, setMemoryError] = useState('')
-  const [isSavingMemory, setIsSavingMemory] = useState(false)
+  // Everything the backend auto-saved for the reply just given, so the
+  // interface can show what was written - not a queue awaiting approval,
+  // since nothing here is pending. Cleared on the next question rather than
+  // accumulated for the whole conversation.
+  const [memoryProposals, setMemoryProposals] = useState<MemoryProposal[]>([])
   const [isThinking, setIsThinking] = useState(false)
   const [isRestoring, setIsRestoring] = useState(restoreConversation)
   const [restoreError, setRestoreError] = useState('')
@@ -238,18 +202,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   // Append a complete user or assistant message to the transcript.
   const handleNewMessage = (role: 'user' | 'assistant', content: string) => {
     setMessages(prev => [...prev, { role, content }])
-    // A new turn retires the previous turn's unanswered proposals. They were
-    // about the message before this one, and the queue has no other way to end:
-    // approving and dismissing each remove one entry, so ignoring a card and
-    // carrying on would otherwise leave it on screen for the rest of the
-    // conversation, growing by one every time another fact was noticed.
+    // A save notice belongs to the reply that just finished; the next
+    // question starts a clean slate rather than accumulating every save
+    // notice from the whole conversation on screen.
     if (role === 'user') {
-      const next = turnRef.current + 1
-      turnRef.current = next
-      // One turn of grace. A card from the turn just gone is still answerable;
-      // anything older has been passed over twice and is stale.
-      setMemoryProposals(current =>
-        current.filter(item => item.turn >= next - 1))
+      setMemoryProposals([])
     }
   }
 
@@ -266,17 +223,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     })
   }
 
-  // Queue each memory proposal so a multi-fact message loses none of them.
+  // Record one memory record the backend already auto-saved, for display.
   const handleMemoryProposal = (proposal: MemoryProposal) => {
-    setMemoryProposals(current => [
-      ...current,
-      { proposal, turn: turnRef.current },
-    ])
-    setMemoryNotice('')
-    setMemoryError('')
+    setMemoryProposals(current => [...current, proposal])
   }
-
-  const memoryProposal = memoryProposals[0]?.proposal ?? null
 
   // Mark the latest assistant response as actively generating its artifact --
   // a diagram, or a picture the model chose to create or edit mid-chat.
@@ -546,87 +496,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       : message))
   }
 
-  // Persist one approved proposal through its typed memory endpoint.
-  const saveMemoryProposal = async (proposal: MemoryProposal) => {
-      if (proposal.kind === 'preferred_name') {
-        await approvePreferredName(userId, proposal)
-      } else if (proposal.kind === 'response_style') {
-        await approveResponseStyle(userId, proposal)
-      } else if (proposal.kind === 'discovery_interest') {
-        await approveDiscoveryInterest(userId, proposal)
-      } else if (proposal.kind === 'discovery_interests') {
-        await approveDiscoveryInterests(userId, proposal)
-      } else if (proposal.kind === 'discovery_locality') {
-        await approveDiscoveryLocality(userId, proposal)
-      } else if (proposal.kind === 'entity') {
-        await approveEntity(userId, proposal)
-      } else if (proposal.kind === 'procedure') {
-        await approveProcedure(userId, proposal)
-      } else if (proposal.kind === 'episodic') {
-        await approveEpisodic(userId, proposal)
-      } else if (proposal.kind === 'semantic_fact') {
-        await approveSemanticFact(userId, proposal)
-      } else {
-        await approveKnowledge(userId, proposal)
-      }
-  }
-
-  // Save the visible memory proposal after the user approves it.
-  const approveMemoryProposal = async () => {
-    if (!memoryProposal || isSavingMemory) return
-    setIsSavingMemory(true)
-    setMemoryError('')
-    try {
-      await saveMemoryProposal(memoryProposal)
-      setMemoryNotice(
-        `Saved ${proposalType(memoryProposal)}: ${proposalValue(memoryProposal)}`,
-      )
-      setMemoryProposals(current => current.slice(1))
-    } catch (error) {
-      setMemoryError(
-        error instanceof Error ? error.message : 'Unable to save memory.',
-      )
-    } finally {
-      setIsSavingMemory(false)
-    }
-  }
-
-  // Save every visible queued fact while retaining anything after a failed write.
-  const approveAllMemoryProposals = async () => {
-    if (memoryProposals.length < 2 || isSavingMemory) return
-    const pending = memoryProposals.map(item => item.proposal)
-    let savedCount = 0
-    setIsSavingMemory(true)
-    setMemoryError('')
-    try {
-      for (const proposal of pending) {
-        await saveMemoryProposal(proposal)
-        savedCount += 1
-      }
-      setMemoryProposals(current => current.filter(item => !pending.includes(item.proposal)))
-      setMemoryNotice(`Saved ${savedCount} profile memories.`)
-    } catch (error) {
-      const saved = pending.slice(0, savedCount)
-      setMemoryProposals(current => current.filter(item => !saved.includes(item.proposal)))
-      setMemoryNotice(savedCount ? `Saved ${savedCount} profile memories.` : '')
-      setMemoryError(
-        error instanceof Error
-          ? `Could not save the remaining memories. ${error.message}`
-          : 'Could not save the remaining memories.',
-      )
-    } finally {
-      setIsSavingMemory(false)
-    }
-  }
-
-  // Dismiss the visible memory proposal without saving it.
-  const rejectMemoryProposal = () => {
-    const type = memoryProposal ? proposalType(memoryProposal) : ''
-    setMemoryNotice(type ? `${type[0].toUpperCase()}${type.slice(1)} was not saved.` : '')
-    setMemoryError('')
-    setMemoryProposals(current => current.slice(1))
-  }
-
   // The image an edit typed into the composer should apply to: the most recent
   // one in view. Without this, an edit request typed there becomes an ordinary
   // chat turn and the model answers that it cannot edit images — which reads as
@@ -705,53 +574,23 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           Unable to restore this conversation. {restoreError}
         </p>
       )}
-      {memoryProposal && (
+      {memoryProposals.length > 0 && (
         <section
-          aria-label={proposalLabel(memoryProposal)}
+          role="status"
+          aria-label="Saved to memory"
           className="mx-auto mb-4 w-[calc(100%_-_2.5rem)] max-w-[756px] rounded-2xl border border-[#0071e3]/20 bg-white p-4 shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
         >
-          <p className="text-[15px] text-[#1d1d1f]">
-            Save <strong>{proposalValue(memoryProposal)}</strong> as {proposalType(memoryProposal)} memory?
-          </p>
-          <p className="mt-1 text-sm text-[#6e6e73]">Nothing is saved until you approve.</p>
-          {memoryProposals.length > 1 && (
-            <div className="mt-2 rounded-xl bg-[#f5f5f7] px-3 py-2 text-sm text-[#6e6e73]">
-              <p className="font-medium text-[#1d1d1f]">Also ready to save:</p>
-              <ul className="mt-1 list-disc pl-5">
-                {/* One turn shares one trace, so kind and trace together are
-                    not unique the moment a message yields two facts of the same
-                    kind — which is the case this queue exists for. */}
-                {memoryProposals.slice(1).map(({ proposal }, index) => (
-                  <li key={`${proposal.trace_id}-${proposal.kind}-${index}`}>
-                    {proposalType(proposal)}: {proposalValue(proposal)}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          <div className="mt-3 flex gap-2">
-            {memoryProposals.length > 1 && (
-              <button
-                onClick={() => void approveAllMemoryProposals()}
-                disabled={isSavingMemory}
-                className="rounded-full bg-[#0071e3] px-4 py-2 text-sm font-medium text-white hover:bg-[#0077ed] disabled:bg-[#d2d2d7]"
-              >Approve all {memoryProposals.length}</button>
-            )}
-            <button
-              onClick={() => void approveMemoryProposal()}
-              disabled={isSavingMemory}
-              className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-[#1d1d1f] hover:bg-[#f5f5f7] disabled:text-[#86868b]"
-            >Approve {proposalType(memoryProposal)}</button>
-            <button
-              onClick={rejectMemoryProposal}
-              disabled={isSavingMemory}
-              className="rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-medium text-[#1d1d1f] hover:bg-[#f5f5f7] disabled:text-[#86868b]"
-            >Not now</button>
-          </div>
+          <ul className="space-y-1">
+            {/* One turn shares one trace, so kind and trace together are not
+                unique the moment a message yields two facts of the same kind. */}
+            {memoryProposals.map((proposal, index) => (
+              <li key={`${proposal.trace_id}-${proposal.kind}-${index}`} className="text-[15px] text-[#1d1d1f]">
+                Saved <strong>{proposalValue(proposal)}</strong> as {proposalType(proposal)} memory.
+              </li>
+            ))}
+          </ul>
         </section>
       )}
-      {memoryNotice && <p role="status" className="mx-auto mb-3 w-full max-w-[756px] px-5 text-sm text-[#248a3d]">{memoryNotice}</p>}
-      {memoryError && <p role="alert" className="mx-auto mb-3 w-full max-w-[756px] px-5 text-sm text-[#c9342f]">{memoryError}</p>}
       <div className={hasMessages
         ? 'flex-none border-t border-black/[0.05] bg-[#f5f5f7]/90 px-5 pb-5 pt-4 backdrop-blur-xl md:px-8 md:pb-6'
         : 'pointer-events-none absolute inset-x-0 top-[calc(50%_+_125px)] px-5 md:px-8'

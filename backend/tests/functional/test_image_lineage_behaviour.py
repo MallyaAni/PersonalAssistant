@@ -184,7 +184,7 @@ async def test_a_repeated_recall_is_not_announced_as_freshly_shown(
 ) -> None:
     answer = _answer(
         llm,
-        "does that outfit match what I usually wear?",
+        "remind me what I was wearing in that photo",
         {
             "images": [
                 {

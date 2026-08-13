@@ -1584,71 +1584,32 @@ test('renders a visible error and clears loading state when chat fails', async (
   ).toEqual([])
 })
 
-test('requires explicit approval before saving a preferred-name proposal', async ({ page }) => {
+// The backend auto-saves a classified proposal before the reply streams, with
+// no approval round-trip - the frontend never calls a write endpoint for one.
+// It only has to show what was already written.
+test('shows an auto-saved preferred-name proposal from chat', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
-  const proposedNames = ['Rejected Name', 'Approved Name']
-  const approvals: Array<{
-    name: string;
-    source_conversation_id: string;
-    source_trace_id: string;
-  }> = []
-  let chatCount = 0
 
   await page.route('http://localhost:8000/api/v1/chat', async route => {
     const payload = route.request().postDataJSON()
-    const preferredName = proposedNames[chatCount++]
     await route.fulfill({
       status: 200,
       contentType: 'text/event-stream',
-      body: chatEventStream('proposal-trace', payload.conversation_id, 'ok', preferredName),
+      body: chatEventStream('proposal-trace', payload.conversation_id, 'ok', 'Approved Name'),
     })
   })
-  await page.route(
-    'http://localhost:8000/api/v1/memory/*/profile/preferred-name',
-    async route => {
-      approvals.push(route.request().postDataJSON())
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          user_id: 'ani.mallya',
-          profile: {
-            user_id: 'ani.mallya',
-            name: approvals.at(-1)!.name,
-            preferences: {},
-          },
-          fact: {},
-        }),
-      })
-    },
-  )
 
   await page.goto('/')
   const { textarea, sendButton } = chatControls(page)
-  await textarea.fill('My name is Rejected Name.')
-  await sendButton.click()
-  await expect(page.getByLabel('Preferred name memory proposal')).toContainText('Rejected Name')
-  expect(approvals).toEqual([])
-  await page.getByRole('button', { name: 'Not now' }).click()
-  await expect(page.getByText('Preferred name was not saved.')).toBeVisible()
-  expect(approvals).toEqual([])
-
   await textarea.fill('My name is Approved Name.')
   await sendButton.click()
-  await expect(page.getByLabel('Preferred name memory proposal')).toContainText('Approved Name')
-  await page.getByRole('button', { name: 'Approve preferred name' }).click()
-  await expect(page.getByText('Saved preferred name: Approved Name')).toBeVisible()
-  expect(approvals).toEqual([{
-    name: 'Approved Name',
-    source_conversation_id: expect.any(String),
-    source_trace_id: 'proposal-trace',
-  }])
+  await expect(page.getByText('Saved Approved Name as preferred name memory.')).toBeVisible()
+  await expect(page.getByRole('button', { name: /approve/i })).toHaveCount(0)
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
-test('requires approval before saving a response-style proposal', async ({ page }) => {
+test('shows an auto-saved response-style proposal from chat', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
-  const approvals: Array<Record<string, unknown>> = []
 
   await page.route('http://localhost:8000/api/v1/chat', async route => {
     const payload = route.request().postDataJSON()
@@ -1664,32 +1625,12 @@ test('requires approval before saving a response-style proposal', async ({ page 
       ),
     })
   })
-  await page.route('http://localhost:8000/api/v1/memory/*/facts', async route => {
-    approvals.push(route.request().postDataJSON())
-    await route.fulfill({
-      status: 201,
-      contentType: 'application/json',
-      body: JSON.stringify({ fact: {}, deduplicated: false }),
-    })
-  })
 
   await page.goto('/')
   const { textarea, sendButton } = chatControls(page)
   await textarea.fill('Please be concise.')
   await sendButton.click()
-  await expect(page.getByLabel('Response style memory proposal')).toContainText('concise')
-  expect(approvals).toEqual([])
-  await page.getByRole('button', { name: 'Approve response style' }).click()
-  await expect(page.getByText('Saved response style: concise')).toBeVisible()
-  expect(approvals).toEqual([{
-    fact_type: 'profile',
-    fact_key: 'response_style',
-    value: 'concise',
-    purpose: 'personalization',
-    source_conversation_id: expect.any(String),
-    source_trace_id: 'style-proposal-trace',
-    metadata: { source: 'chat_approval' },
-  }])
+  await expect(page.getByText('Saved concise as response style memory.')).toBeVisible()
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
@@ -1824,10 +1765,9 @@ for (const width of [1280, 390]) {
   })
 }
 
-// Verify chat approval routes locality and interest proposals through memory-owned APIs.
-test('approves home locality and interest proposals from chat', async ({ page }) => {
+// Verify chat auto-saves locality and interest proposals with no approval step.
+test('shows auto-saved home locality and interest proposals from chat', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
-  const approvals: Array<{ path: string; body: Record<string, unknown> }> = []
   let chatCount = 0
 
   await page.route('http://localhost:8000/api/v1/chat', async route => {
@@ -1848,63 +1788,22 @@ test('approves home locality and interest proposals from chat', async ({ page })
       ),
     })
   })
-  await page.route(
-    'http://localhost:8000/api/v1/memory/*/profile/discovery-*',
-    async route => {
-      approvals.push({
-        path: new URL(route.request().url()).pathname,
-        body: route.request().postDataJSON(),
-      })
-      await route.fulfill({
-        status: 201,
-        contentType: 'application/json',
-        body: JSON.stringify({ fact: {}, deduplicated: false }),
-      })
-    },
-  )
 
   await page.goto('/')
   const { textarea, sendButton } = chatControls(page)
   await textarea.fill('I live in Arlington, Virginia.')
   await sendButton.click()
-  await expect(page.getByLabel('Home locality memory proposal')).toContainText(
-    'Arlington, Virginia',
-  )
-  await page.getByRole('button', { name: 'Approve home locality' }).click()
-  await expect(page.getByText('Saved home locality: Arlington, Virginia')).toBeVisible()
+  await expect(page.getByText('Saved Arlington, Virginia as home locality memory.')).toBeVisible()
 
   await textarea.fill('I am interested in hiking.')
   await sendButton.click()
-  await expect(page.getByLabel('Interest memory proposal')).toContainText('hiking')
-  await page.getByRole('button', { name: 'Approve interest' }).click()
-  await expect(page.getByText('Saved interest: hiking')).toBeVisible()
-
-  expect(approvals).toEqual([
-    {
-      path: expect.stringContaining('/profile/discovery-locality'),
-      body: {
-        label: 'Arlington',
-        region: 'Virginia',
-        source_conversation_id: expect.any(String),
-        source_trace_id: 'discovery-proposal-trace',
-      },
-    },
-    {
-      path: expect.stringContaining('/profile/discovery-interest'),
-      body: {
-        label: 'hiking',
-        source_conversation_id: expect.any(String),
-        source_trace_id: 'discovery-proposal-trace',
-      },
-    },
-  ])
+  await expect(page.getByText('Saved hiking as interest memory.')).toBeVisible()
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
-// Save every semantically extracted interest through one visible approval action.
-test('approves a semantic interest list for Scout from chat', async ({ page }) => {
+// Every semantically extracted interest is auto-saved in one write.
+test('shows an auto-saved semantic interest list for Scout from chat', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
-  const approvals: Array<Record<string, unknown>> = []
 
   await page.route('http://localhost:8000/api/v1/chat', async route => {
     const payload = route.request().postDataJSON()
@@ -1924,47 +1823,22 @@ test('approves a semantic interest list for Scout from chat', async ({ page }) =
       ),
     })
   })
-  await page.route(
-    'http://localhost:8000/api/v1/memory/*/profile/discovery-interests',
-    async route => {
-      approvals.push(route.request().postDataJSON())
-      await route.fulfill({
-        status: 201,
-        contentType: 'application/json',
-        body: JSON.stringify({ facts: [{}, {}, {}, {}], deduplicated: [false, false, false, false] }),
-      })
-    },
-  )
 
   await page.goto('/')
   const { textarea, sendButton } = chatControls(page)
   await textarea.fill('My interests are basketball, soccer, baseball, hiking')
   await sendButton.click()
 
-  await expect(page.getByLabel('Interest memory proposal')).toContainText(
-    'basketball, soccer, baseball, hiking',
-  )
-  expect(approvals).toEqual([])
-  await page.getByRole('button', { name: 'Approve Scout interests' }).click()
   await expect(
-    page.getByText('Saved Scout interests: basketball, soccer, baseball, hiking'),
+    page.getByText('Saved basketball, soccer, baseball, hiking as Scout interests memory.'),
   ).toBeVisible()
-  expect(approvals).toEqual([{
-    labels: ['basketball', 'soccer', 'baseball', 'hiking'],
-    source_conversation_id: expect.any(String),
-    source_trace_id: 'semantic-interest-trace',
-  }])
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
-// A proposal belongs to the turn that produced it, and must not outlive it.
-//
-// The queue that lets one message offer several facts has no other exit: each
-// approval or dismissal removes exactly one entry. Ignoring a card and carrying
-// on left it on screen for the rest of the conversation, growing by one every
-// time another fact was noticed, and offering to save facts about a message
-// several turns old.
-test('gives an unanswered proposal one more turn, then retires it', async ({ page }) => {
+// A saved-memory notice belongs to the reply that produced it, not to the
+// whole conversation. The next question starts a clean slate immediately -
+// there is no grace period, because nothing here is awaiting an answer.
+test('clears the saved-memory notice on the next question', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   let turn = 0
 
@@ -1987,27 +1861,17 @@ test('gives an unanswered proposal one more turn, then retires it', async ({ pag
   const { textarea, sendButton } = chatControls(page)
   await textarea.fill('hi my name is Jen')
   await sendButton.click()
-  await expect(page.getByLabel('Preferred name memory proposal')).toContainText('Jen')
+  await expect(page.getByText('Saved Jen as preferred name memory.')).toBeVisible()
 
-  // One more turn without answering it. It must survive: a user typing again is
-  // not a user declining. Throwing it away here is how an account ended up with
-  // a name saved and its interests silently dropped.
   await textarea.fill('and something else')
   await sendButton.click()
-  await expect(page.getByLabel('Preferred name memory proposal')).toContainText('Jen')
-
-  // A second turn passes over it. Now it is stale and goes, so a card cannot
-  // sit on screen for the rest of the conversation.
-  await textarea.fill('and another thing')
-  await sendButton.click()
-  await expect(page.getByLabel('Preferred name memory proposal')).not.toBeVisible()
+  await expect(page.getByText('Saved Jen as preferred name memory.')).not.toBeVisible()
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
-// Keep both profile proposals actionable when one introduction contains both facts.
-test('approves a name and Scout interests from one chat turn', async ({ page }) => {
+// Both facts from one introduction are auto-saved and both are shown.
+test('shows every auto-saved memory from one chat turn', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
-  const approvals: Array<{ path: string; body: Record<string, unknown> }> = []
 
   await page.route('http://localhost:8000/api/v1/chat', async route => {
     const payload = route.request().postDataJSON()
@@ -2028,47 +1892,22 @@ test('approves a name and Scout interests from one chat turn', async ({ page }) 
       ),
     })
   })
-  await page.route(
-    /http:\/\/localhost:8000\/api\/v1\/memory\/[^/]+\/profile\/(preferred-name|discovery-interests)/,
-    async route => {
-      approvals.push({
-        path: new URL(route.request().url()).pathname,
-        body: route.request().postDataJSON(),
-      })
-      await route.fulfill({
-        status: 201,
-        contentType: 'application/json',
-        body: JSON.stringify({ facts: [], deduplicated: [] }),
-      })
-    },
-  )
 
   await page.goto('/')
   const { textarea, sendButton } = chatControls(page)
   await textarea.fill('hi my name is Jen and i like acting, theater, networking events')
   await sendButton.click()
 
-  await expect(page.getByLabel('Preferred name memory proposal')).toContainText('Jen')
-  await expect(page.getByText('Also ready to save:')).toBeVisible()
-  await expect(page.getByLabel('Preferred name memory proposal')).toContainText(
-    'acting, theater, networking events',
-  )
-  await page.getByRole('button', { name: 'Approve all 2' }).click()
-  await expect(page.getByText('Saved 2 profile memories.')).toBeVisible()
-  await expect(page.getByLabel('Preferred name memory proposal')).not.toBeVisible()
-
-  expect(approvals).toHaveLength(2)
-  expect(approvals[0].body).toMatchObject({ name: 'Jen' })
-  expect(approvals[1].body).toMatchObject({
-    labels: ['acting', 'theater', 'networking events'],
-  })
+  await expect(page.getByText('Saved Jen as preferred name memory.')).toBeVisible()
+  await expect(
+    page.getByText('Saved acting, theater, networking events as Scout interests memory.'),
+  ).toBeVisible()
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
-// Parse and approve a semantically selected general fact without dropping the stream.
-test('approves a semantic fact proposal from chat', async ({ page }) => {
+// Parse and display a semantically selected general fact without dropping the stream.
+test('shows an auto-saved semantic fact proposal from chat', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
-  let approval: Record<string, unknown> | null = null
   await page.route('http://localhost:8000/api/v1/chat', async route => {
     const payload = route.request().postDataJSON()
     await route.fulfill({
@@ -2077,19 +1916,11 @@ test('approves a semantic fact proposal from chat', async ({ page }) => {
       body: chatEventStream(
         'semantic-fact-trace',
         payload.conversation_id,
-        'I prepared that fact for review.',
+        'I noted that.',
         undefined,
         undefined,
         { kind: 'semantic_fact', content: 'My dog is called Biscuit.' },
       ),
-    })
-  })
-  await page.route('http://localhost:8000/api/v1/memory/*/semantic', async route => {
-    approval = route.request().postDataJSON()
-    await route.fulfill({
-      status: 201,
-      contentType: 'application/json',
-      body: JSON.stringify({ id: 'semantic-fact-id' }),
     })
   })
 
@@ -2097,52 +1928,10 @@ test('approves a semantic fact proposal from chat', async ({ page }) => {
   const { textarea, sendButton } = chatControls(page)
   await textarea.fill('Please keep track of what my dog is called.')
   await sendButton.click()
-  await expect(page.getByLabel('Fact memory proposal')).toContainText(
-    'My dog is called Biscuit.',
-  )
-  await page.getByRole('button', { name: 'Approve fact' }).click()
-  await expect(page.getByText('Saved fact: My dog is called Biscuit.')).toBeVisible()
-  expect(approval).toMatchObject({
-    content: 'My dog is called Biscuit.',
-    purpose: 'chat_approval',
-  })
+  await expect(
+    page.getByText('Saved My dog is called Biscuit. as fact memory.'),
+  ).toBeVisible()
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
-})
-
-test('keeps a preferred-name proposal actionable when approval fails', async ({ page }) => {
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
-    const payload = route.request().postDataJSON()
-    await route.fulfill({
-      status: 200,
-      contentType: 'text/event-stream',
-      body: chatEventStream(
-        'proposal-error-trace',
-        payload.conversation_id,
-        'ok',
-        'Retry Name',
-      ),
-    })
-  })
-  await page.route(
-    'http://localhost:8000/api/v1/memory/*/profile/preferred-name',
-    route => route.fulfill({
-      status: 500,
-      contentType: 'application/json',
-      body: JSON.stringify({ detail: 'Unable to save approved memory.' }),
-    }),
-  )
-
-  await page.goto('/')
-  const { textarea, sendButton } = chatControls(page)
-  await textarea.fill('My name is Retry Name.')
-  await sendButton.click()
-  await page.getByRole('button', { name: 'Approve preferred name' }).click()
-
-  await expect(page.getByRole('alert')).toHaveText('Unable to save approved memory.')
-  await expect(page.getByLabel('Preferred name memory proposal')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Approve preferred name' })).toBeEnabled()
-  await expect(textarea).toBeEnabled()
-  await expect(sendButton).toBeDisabled()
 })
 
 test('reuses a conversation ID and rotates it only for a new conversation', async ({ page }) => {
@@ -2395,17 +2184,10 @@ test('manages persisted personal memory through the browser', async ({ page }) =
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
-// Verify entity, workflow, and knowledge chat proposals never write before approval.
-test('reviews structured durable memory proposals before saving', async ({ page }) => {
+// Verify entity, workflow, and knowledge chat proposals are auto-saved and shown.
+test('shows auto-saved entity, procedure, and knowledge proposals from chat', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
-  const writes: Array<{ url: string; method: string; body: Record<string, unknown> }> = []
   const proposals = [
-    {
-      kind: 'entity',
-      entity_type: 'person',
-      canonical_name: 'Rejected Avery',
-      attributes: { relationship: 'dentist' },
-    },
     {
       kind: 'entity',
       entity_type: 'person',
@@ -2444,56 +2226,20 @@ test('reviews structured durable memory proposals before saving', async ({ page 
       ),
     })
   })
-  await page.route('http://localhost:8000/api/v1/memory/*/agent/**', async route => {
-    writes.push({
-      url: route.request().url(),
-      method: route.request().method(),
-      body: route.request().postDataJSON(),
-    })
-    await route.fulfill({
-      status: route.request().method() === 'POST' ? 201 : 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ id: crypto.randomUUID(), chunks: [] }),
-    })
-  })
 
   await page.goto('/')
   const { textarea, sendButton } = chatControls(page)
-  await textarea.fill('Reject entity proposal')
-  await sendButton.click()
-  await expect(page.getByLabel('Entity memory proposal')).toContainText('Rejected Avery')
-  expect(writes).toEqual([])
-  await page.getByRole('button', { name: 'Not now' }).click()
-  expect(writes).toEqual([])
 
   for (const expectation of [
-    ['Approve entity', 'Entity memory proposal', 'Approve person or organization'],
-    ['Approve procedure', 'Procedure memory proposal', 'Approve reusable workflow'],
-    ['Approve knowledge', 'Knowledge memory proposal', 'Approve reference knowledge'],
+    'Saved Approved Avery as person or organization memory.',
+    'Saved Morning launch as reusable workflow memory.',
+    'Saved Studio reference as reference knowledge memory.',
   ]) {
-    await textarea.fill(expectation[0])
+    await textarea.fill('Remember this')
     await sendButton.click()
-    await expect(page.getByLabel(expectation[1])).toBeVisible()
-    await page.getByRole('button', { name: expectation[2] }).click()
+    await expect(page.getByText(expectation)).toBeVisible()
   }
 
-  expect(writes).toHaveLength(3)
-  expect(writes.map(write => write.method)).toEqual(['PUT', 'POST', 'POST'])
-  expect(writes[0].body).toMatchObject({
-    canonical_name: 'Approved Avery',
-    source_conversation_id: expect.any(String),
-    source_trace_id: 'structured-proposal-trace',
-  })
-  expect(writes[1].body).toMatchObject({
-    name: 'Morning launch',
-    source_conversation_id: expect.any(String),
-    source_trace_id: 'structured-proposal-trace',
-  })
-  expect(writes[2].body).toMatchObject({
-    title: 'Studio reference',
-    source_conversation_id: expect.any(String),
-    source_trace_id: 'structured-proposal-trace',
-  })
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
@@ -3916,15 +3662,14 @@ test('@live cancelled image generation becomes a terminal failed artifact', asyn
   }
 })
 
-// Verify live structured proposals reject safely, persist on approval, and recall.
-test('@live reviews and recalls entity procedure and knowledge memory', async ({ page }) => {
+// Verify live structured proposals are auto-saved with no approval step, and recall.
+test('@live auto-saves and recalls entity, procedure, and knowledge memory', async ({ page }) => {
   test.skip(process.env.ANIOS_E2E_LIVE !== '1', 'Set ANIOS_E2E_LIVE=1 to contact the configured live provider')
   test.setTimeout(360_000)
 
   const errors = observeBlockingBrowserErrors(page)
   const stamp = Date.now()
   const userId = `capture_live_${stamp}`
-  const rejectedEntity = `RejectedPerson${stamp}`
   const entity = `Person${stamp}`
   const procedureCode = `WORKFLOW_${stamp}`
   const knowledgeCode = `REFERENCE_${stamp}`
@@ -3944,52 +3689,26 @@ test('@live reviews and recalls entity procedure and knowledge memory', async ({
     expect(await response.finished()).toBeNull()
     await expect(textarea).toBeEnabled({ timeout: 120_000 })
   }
+  const savedNotice = () => page.getByRole('status', { name: 'Saved to memory' })
 
   try {
     await page.goto('/')
-    await sendAndWait(`Remember that ${rejectedEntity} is my dentist.`)
-    await expect(page.getByLabel('Entity memory proposal')).toContainText(rejectedEntity)
-    let snapshot = await page.request.get(
-      `http://localhost:8000/api/v1/memory/${userId}/agent`,
-    )
-    expect((await snapshot.json()).entities).toBe(0)
-    await page.getByRole('button', { name: 'Not now' }).click()
-    snapshot = await page.request.get(
-      `http://localhost:8000/api/v1/memory/${userId}/agent`,
-    )
-    expect((await snapshot.json()).entities).toBe(0)
-
     await sendAndWait(`Remember that ${entity} is my dentist.`)
-    const entityApproval = page.waitForResponse(response =>
-      response.url().endsWith(`/api/v1/memory/${userId}/agent/entities`) &&
-      response.request().method() === 'PUT',
-    )
-    await page.getByRole('button', { name: 'Approve person or organization' }).click()
-    expect((await entityApproval).status()).toBe(200)
+    await expect(savedNotice()).toContainText(entity)
 
     await sendAndWait(
       `Remember this workflow: Morning ${stamp}. Steps: ` +
       `open ${procedureCode}; verify ${procedureCode}.`,
     )
-    const procedureApproval = page.waitForResponse(response =>
-      response.url().endsWith(`/api/v1/memory/${userId}/agent/procedures`) &&
-      response.request().method() === 'POST',
-    )
-    await page.getByRole('button', { name: 'Approve reusable workflow' }).click()
-    expect((await procedureApproval).status()).toBe(201)
+    await expect(savedNotice()).toContainText(`Morning ${stamp}`)
 
     await sendAndWait(
       `Remember this reference: Studio ${stamp} | ` +
       `The reference code is ${knowledgeCode}.`,
     )
-    const knowledgeApproval = page.waitForResponse(response =>
-      response.url().endsWith(`/api/v1/memory/${userId}/agent/knowledge`) &&
-      response.request().method() === 'POST',
-    )
-    await page.getByRole('button', { name: 'Approve reference knowledge' }).click()
-    expect((await knowledgeApproval).status()).toBe(201)
+    await expect(savedNotice()).toContainText(`Studio ${stamp}`)
 
-    snapshot = await page.request.get(
+    const snapshot = await page.request.get(
       `http://localhost:8000/api/v1/memory/${userId}/agent`,
     )
     expect(await snapshot.json()).toMatchObject({
@@ -4092,7 +3811,7 @@ test('@live recalls a prior turn in the same conversation', async ({ page }) => 
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
-test('@live approves a response-style proposal through chat', async ({ page }) => {
+test('@live auto-saves a response-style proposal from chat', async ({ page }) => {
   test.skip(process.env.ANIOS_E2E_LIVE !== '1', 'Set ANIOS_E2E_LIVE=1 to contact the configured live provider')
   test.setTimeout(180_000)
 
@@ -4105,17 +3824,10 @@ test('@live approves a response-style proposal through chat', async ({ page }) =
     const { textarea, sendButton } = chatControls(page)
     await textarea.fill('Please be concise.')
     await sendButton.click()
-    await expect(page.getByLabel('Response style memory proposal')).toContainText(
+    await expect(page.getByRole('status', { name: 'Saved to memory' })).toContainText(
       'concise',
       { timeout: 120_000 },
     )
-    const approvalResponse = page.waitForResponse(response =>
-      response.url().endsWith(`/api/v1/memory/${userId}/facts`) &&
-      response.request().method() === 'POST',
-    )
-    await page.getByRole('button', { name: 'Approve response style' }).click()
-    expect((await approvalResponse).status()).toBe(201)
-    await expect(page.getByText('Saved response style: concise')).toBeVisible()
 
     const snapshot = await page.request.get(
       `http://localhost:8000/api/v1/memory/${userId}`,
@@ -4136,7 +3848,7 @@ test('@live approves a response-style proposal through chat', async ({ page }) =
   }
 })
 
-test('@live approves, corrects, recalls, rejects, and deletes a preferred name', async ({ page }) => {
+test('@live auto-saves, corrects, recalls, and deletes a preferred name', async ({ page }) => {
   test.skip(process.env.ANIOS_E2E_LIVE !== '1', 'Set ANIOS_E2E_LIVE=1 to contact the configured live provider')
   test.setTimeout(240_000)
 
@@ -4144,7 +3856,6 @@ test('@live approves, corrects, recalls, rejects, and deletes a preferred name',
   const stamp = Date.now()
   const userId = `pname_live_${stamp}`
   const otherUser = `pname_other_${stamp}`
-  const rejectedName = `Rejected${stamp}`
   const approvedName = `Approved${stamp}`
   const correctedName = `Corrected${stamp}`
   await page.addInitScript(id => localStorage.setItem('anios_user_id', id), userId)
@@ -4165,22 +3876,10 @@ test('@live approves, corrects, recalls, rejects, and deletes a preferred name',
 
   try {
     await page.goto('/')
-    await sendAndWait(`My name is ${rejectedName}.`)
-    await expect(page.getByLabel('Preferred name memory proposal')).toContainText(rejectedName)
-    const beforeReject = await page.request.get(`http://localhost:8000/api/v1/memory/${userId}`)
-    expect((await beforeReject.json()).profile.name).toBeUndefined()
-    await page.getByRole('button', { name: 'Not now' }).click()
-    const afterReject = await page.request.get(`http://localhost:8000/api/v1/memory/${userId}`)
-    expect((await afterReject.json()).profile.name).toBeUndefined()
-
     await sendAndWait(`My name is ${approvedName}.`)
-    const approvalResponse = page.waitForResponse(response =>
-      response.url().endsWith(`/api/v1/memory/${userId}/profile/preferred-name`) &&
-      response.request().method() === 'POST',
-    )
-    await page.getByRole('button', { name: 'Approve preferred name' }).click()
-    expect((await approvalResponse).status()).toBe(200)
-    await expect(page.getByText(`Saved preferred name: ${approvedName}`)).toBeVisible()
+    await expect(page.getByRole('status', { name: 'Saved to memory' })).toContainText(approvedName)
+    const snapshot = await page.request.get(`http://localhost:8000/api/v1/memory/${userId}`)
+    expect((await snapshot.json()).profile.name).toBe(approvedName)
     const otherSnapshot = await page.request.get(`http://localhost:8000/api/v1/memory/${otherUser}`)
     expect((await otherSnapshot.json()).profile.name).toBeUndefined()
 
@@ -4189,9 +3888,7 @@ test('@live approves, corrects, recalls, rejects, and deletes a preferred name',
     await expect(latestAssistantAnswer(page).getByText(approvedName, { exact: false })).toBeVisible({ timeout: 120_000 })
 
     await sendAndWait(`My preferred name is ${correctedName}.`)
-    await expect(page.getByLabel('Preferred name memory proposal')).toContainText(correctedName)
-    await page.getByRole('button', { name: 'Approve preferred name' }).click()
-    await expect(page.getByText(`Saved preferred name: ${correctedName}`)).toBeVisible()
+    await expect(page.getByRole('status', { name: 'Saved to memory' })).toContainText(correctedName)
 
     await page.getByRole('button', { name: 'New conversation' }).click()
     await sendAndWait('What is my preferred name? Reply with only the name.')
@@ -4849,7 +4546,7 @@ test('@live manages Scout memory, travel, strength, and dismissal undo', async (
 })
 
 // Verify semantic chat interests become the signed-in user's visible Scout profile.
-test('@live approves semantic Scout interests from authenticated chat', async ({ page }) => {
+test('@live auto-saves semantic Scout interests from authenticated chat', async ({ page }) => {
   test.skip(process.env.ANIOS_E2E_LIVE !== '1', 'Set ANIOS_E2E_LIVE=1 to contact the live application')
   const username = process.env.ANIOS_E2E_USERNAME ?? ''
   const password = process.env.ANIOS_E2E_PASSWORD ?? ''
@@ -4884,17 +4581,10 @@ test('@live approves semantic Scout interests from authenticated chat', async ({
     const interestStream = await interestResponse
     expect(interestStream.status()).toBe(200)
     expect(await interestStream.finished()).toBeNull()
-    await expect(page.getByLabel('Interest memory proposal')).toContainText(
+    await expect(page.getByRole('status', { name: 'Saved to memory' })).toContainText(
       labels.join(', '),
       { timeout: 30_000 },
     )
-    const approvalResponse = page.waitForResponse(response => (
-      response.url() === `${apiUrl}/api/v1/memory/${username}/profile/discovery-interests` &&
-      response.request().method() === 'POST'
-    ))
-    await page.getByRole('button', { name: 'Approve Scout interests' }).click()
-    expect((await approvalResponse).status()).toBe(201)
-    await expect(page.getByText(`Saved Scout interests: ${labels.join(', ')}`)).toBeVisible()
     await expect(textarea).toBeEnabled()
 
     await page.getByLabel('Agents').click()

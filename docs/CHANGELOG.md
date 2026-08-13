@@ -2971,3 +2971,76 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
 - `MainSupervisorAgent`, `CascadingSearchRouter`, and `SearchRoutingPolicy`
   remain in the tree, still tested standalone, but are no longer reachable
   from a live turn.
+
+## 2026-08-13 — Chat memory proposals auto-save; a recalled photo stops repeating
+
+- Every proposal `MemoryProposalAgent` classifies from a chat turn (preferred
+  name, response style, home locality, Scout interests, entity, procedure,
+  knowledge, semantic fact, episodic event) is now persisted immediately by
+  `ConversationService`, before the reply is generated — no approval
+  round-trip. Asking the user to confirm the same small facts turn after turn
+  earned no accuracy and cost real friction; what ships instead is
+  visibility, not consent: the `memory_proposal` SSE event now reports a
+  record that already exists, and a per-candidate save failure is dropped and
+  logged rather than raised, so it costs only that one candidate, never the
+  turn's reply or any other candidate saved alongside it. `_render_save_state`
+  in `graph.py` was rewritten to the same "already saved" framing, following
+  this repository's own prior lesson: told only that it cannot save, the
+  model answered "your personal memory has been updated" — true-sounding,
+  passive, and false; naming the real state left nothing to route around. The
+  frontend's approve/reject queue (`saveMemoryProposal`,
+  `approveMemoryProposal`, `approveAllMemoryProposals`, `rejectMemoryProposal`,
+  the turn-based retirement grace period, and the ten REST `approve*` client
+  functions they called) was removed entirely; the reply-adjacent card is now
+  a read-only "Saved X as Y memory" notice that clears on the next question.
+- Investigated at the user's request from `ani.mallya`'s real conversation
+  history (decrypted read-only from the dev database): a chat turn that
+  merely referenced a previously generated photo for context (a style
+  question, no "show me" language) re-attached the full image card to the
+  reply. The cause was `_load_visual_memory_matches`, a real semantic-recall
+  model call that correctly judges relevance on every adjacent turn about the
+  same subject — so a multi-turn conversation about one outfit re-displayed
+  the same photo on almost every reply, true in isolation, noisy in
+  aggregate. Fixed in `_stream_retrieved_context`: that semantic-fallback path
+  is now deduplicated against artifact ids this conversation already
+  displayed (tracked via the persisted turn's `extra_data.artifact_ids`); an
+  explicit recall ("show me that photo again") is never deduplicated. Each
+  prompt image now carries a `freshly_shown` flag so the model is told,
+  per item, whether it is newly attached this turn or already shown earlier —
+  `_render_image_context` in `graph.py` was updated so it never claims a
+  picture "just appeared" when `freshly_shown` is false.
+- The separately reported "Artifact start event is invalid" error was found
+  to already be fixed by the prior session's `d849522` (the `artifact_started`
+  frontend validation was widened to accept `generated_image`, not only
+  `diagram`); confirmed live in the running dev container via the file's
+  modification time versus the conversation's timestamps. No new code change
+  was needed for it.
+- Evidence: the full backend suite (1170 tests) passes; Ruff passes on every
+  changed file; the frontend production build (`tsc && vite build`) passes;
+  the non-live browser suite passes, including nine `chat.spec.ts` tests
+  rewritten from approval-click interactions to auto-save display assertions
+  and a new dedup regression test; three pre-existing failures (a dark-mode
+  color assertion, a flaky reload timeout, one flaky console-resource error)
+  were confirmed present on unmodified `HEAD` and unrelated. New functional
+  tests against the real running model: `test_memory_save_state_behaviour.py`
+  (the model neither claims a save that did not happen nor describes a saved
+  fact as pending approval — the first version of the "did not happen" prompt
+  failed against the real model, which said "I've noted that ..." despite an
+  explicit ban on the word; a worked positive/negative example fixed it) and
+  a new case in `test_image_lineage_behaviour.py` (a repeated recall answers
+  from the recalled description without claiming a picture was just shown).
+- All ten proposal kinds were mapped to their exact persistence calls by
+  reading the REST handlers they used to require: `approve_preferred_name`,
+  `approve_fact` (locality and response style, via `locality_fact()`),
+  `approve_discovery_interests`, and `save_semantic_memory` /
+  `save_episodic_memory` on `MemoryService`; `entities.upsert`,
+  `procedures.approve`, and `knowledge.ingest` on the newly wired
+  `AgentMemoryManager` dependency (`ConversationService` had no reference to
+  it before this change, so entity/procedure/knowledge proposals silently had
+  no persistence path at all until now).
+- Updated `docs/SECURITY.md`, `docs/ARCHITECTURE.md`,
+  `docs/DEVELOPMENT_GUIDE.md`, and `docs/AGENT_CATALOG.md` to describe
+  auto-save instead of the retired approval boundary, and regenerated
+  `memory-overview.mmd`, `memory-subsystem.mmd`, `chat-orchestration.mmd`, and
+  `agent-memory.mmd` (removing the "visible approval"/"Consent" gate nodes)
+  plus their SVGs — `docs:diagram:check` reports all 19 diagrams synchronized.

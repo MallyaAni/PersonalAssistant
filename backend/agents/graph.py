@@ -126,19 +126,24 @@ def _render_tool_context(
 def _render_save_state(save: dict[str, Any]) -> str:
     if not save:
         return ""
-    if save.get("offered"):
+    if save.get("saved"):
         value = save.get("value") or "what the user just stated"
         return (
-            "\nThis turn: a save card for the following is displayed with your "
-            f"reply, and nothing is stored yet - {value}. Tell the user you can "
-            "save it once they approve it below. Do not write any sentence "
-            "meaning it is already saved, in any voice: not 'I've noted that', "
-            "not 'your memory has been updated', not 'that has been recorded'."
+            "\nThis turn: the application just saved the following to memory - "
+            f"{value}. You may tell the user it has been saved, noted, or "
+            "remembered, since it genuinely has - describe it as already done, "
+            "not as something pending or awaiting approval."
         )
     return (
-        "\nThis turn: no save card is being shown and nothing from this message "
-        "will be stored. Do not say or imply that anything was saved, noted, "
-        "recorded, remembered, or added to memory."
+        "\nThis turn: nothing from this message was saved to memory. Even if "
+        "they explicitly asked you to remember, note, or save something, do "
+        "not confirm that request in any form - not 'saved', not 'noted', not "
+        "'got it, I'll remember that', not any other acknowledgement implying "
+        "the request was carried out. Instead, engage with the substance of "
+        "what they said as you would for any other statement. Example: asked "
+        "to remember that their favorite color is teal, respond about the "
+        "color itself ('Teal is a great choice - it works well with...') "
+        "without confirming anything was stored."
     )
 
 
@@ -167,12 +172,15 @@ def _build_system_prompt(
         # and a helpful assistant answers "remember this" by saying it has. That
         # produced a confident "I've made a note of that" for a fact that
         # reached no store, which is worse than refusing outright: the user has
-        # no reason to check. Saving is the user's decision, taken on an
-        # approval card the application renders next to this reply.
-        "You cannot write to memory. Only the user can save something, by "
-        "approving a save card the application offers alongside your reply, and "
-        "you neither see nor control it. Reading what the application already "
-        "gave you above is not saving, so describe that memory normally."
+        # no reason to check. Saving is a separate classifier's decision, made
+        # before this reply is generated and never something this reply itself
+        # performs, approves, or controls.
+        "You cannot write to memory yourself. A separate classifier decides, "
+        "before this reply is generated, whether anything from the user's "
+        "message is worth remembering, and saves it automatically with no "
+        "approval step - you neither perform that save nor control it. Reading "
+        "what the application already gave you above is not saving, so "
+        "describe that memory normally."
         f"{_render_save_state(context_data.get('memory_save') or {})}"
     )
     search_context = _render_search_context(context_data.get("search") or [])
