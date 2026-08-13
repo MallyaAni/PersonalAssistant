@@ -38,6 +38,7 @@ _CONTEXT = {
             "created_at": "2026-08-11T22:46:57",
             "description": _EDITED,
             "generation_prompt": None,
+            "freshly_shown": True,
             "edited_from": {
                 "supplied_by_user": True,
                 "title": "Uploaded image",
@@ -132,6 +133,7 @@ async def test_a_plain_generated_image_is_not_described_as_an_edit(
                     "created_at": "2026-08-11T20:00:00",
                     "description": "A cobalt blue sports car on a wet road.",
                     "generation_prompt": "a cobalt blue sports car",
+                    "freshly_shown": True,
                 }
             ]
         },
@@ -159,6 +161,7 @@ async def test_it_answers_a_style_opinion_from_the_recalled_photo(llm: object) -
                         "outfit has a confident, relaxed Western-casual look."
                     ),
                     "generation_prompt": None,
+                    "freshly_shown": True,
                 }
             ]
         },
@@ -170,6 +173,53 @@ async def test_it_answers_a_style_opinion_from_the_recalled_photo(llm: object) -
         for quality in ("confident", "relaxed", "western", "casual", "stylish")
     ), answer
     assert not any(denial in answer for denial in _DENIALS), answer
+
+
+# The application withholds a repeat attachment when the same picture was
+# already shown earlier in this conversation - see conversation_service.py's
+# `_stream_retrieved_context` dedup. The model still has the description, but
+# must not tell the user a picture just appeared when nothing did.
+async def test_a_repeated_recall_is_not_announced_as_freshly_shown(
+    llm: object,
+) -> None:
+    answer = _answer(
+        llm,
+        "does that outfit match what I usually wear?",
+        {
+            "images": [
+                {
+                    "kind": "uploaded_image",
+                    "title": "Uploaded image",
+                    "created_at": "2026-08-12T04:10:00",
+                    "description": (
+                        "The user is wearing a wide-brimmed black cowboy hat, "
+                        "a dark blue bomber jacket, and a white T-shirt. The "
+                        "outfit has a confident, relaxed Western-casual look."
+                    ),
+                    "generation_prompt": None,
+                    "freshly_shown": False,
+                }
+            ]
+        },
+    )
+
+    assert "hat" in answer or "jacket" in answer, answer
+    assert not any(denial in answer for denial in _DENIALS), answer
+    claimed_new_attachment = any(
+        phrase in answer
+        for phrase in (
+            "just shown",
+            "just attached",
+            "just appeared",
+            "shown above",
+            "shown below",
+            "here's the image",
+            "here is the image",
+            "i've attached",
+            "i have attached",
+        )
+    )
+    assert not claimed_new_attachment, answer
 
 
 # An unobserved edit still carries the explicit delta and unchanged source details.
