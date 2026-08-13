@@ -3169,6 +3169,90 @@ test('routes can-you image edits to refinement instead of vision Q&A', async ({ 
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
+// An edit re-observes the result's pixels so it stays semantically findable,
+// which populates the same metadata.analysis field the upload flow uses to
+// show a "Describe this image" card - but nobody asked a question here, and
+// showing it anyway is exactly the leak reported live: "can you edit this to
+// a straw hat?" edited the picture cleanly, then also surfaced an unwanted
+// image description underneath it.
+test('does not surface the post-edit re-observation as an answer nobody asked for', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const originalId = '91919191-9191-4191-8191-919191919191'
+  const revisionId = '92929292-9292-4292-8292-929292929292'
+  const prompt = 'Create an image of a man wearing a black cowboy hat'
+  const feedback = 'can you edit this to a straw hat?'
+  const reindexedAnalysis = 'A man wearing a wide-brimmed straw hat on a pier.'
+  let conversationId = ''
+  const chatBodies: Record<string, unknown>[] = []
+
+  await page.route(
+    `http://localhost:8000/api/v1/artifacts/ani.mallya/${originalId}/content`,
+    route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
+  )
+  await page.route(
+    `http://localhost:8000/api/v1/artifacts/ani.mallya/${revisionId}/content`,
+    route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
+  )
+  await page.route('http://localhost:8000/api/v1/chat', async route => {
+    const body = route.request().postDataJSON() as Record<string, unknown>
+    chatBodies.push(body)
+    conversationId = conversationId || String(body.conversation_id)
+    if (chatBodies.length === 1) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/event-stream',
+        body: imageActionEventStream(
+          'generate-browser-trace',
+          conversationId,
+          originalId,
+          'generate',
+          'ready',
+          { generation_prompt: prompt },
+        ),
+      })
+      return
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body: imageActionEventStream(
+        'edit-browser-trace',
+        conversationId,
+        revisionId,
+        'edit',
+        'ready',
+        {
+          generation_prompt: prompt,
+          parent_artifact_id: originalId,
+          refinement_feedback: feedback,
+          analysis_status: 'ready',
+          analysis: reindexedAnalysis,
+          analysis_model: 'google/gemma-4-12b',
+          analysis_user_facing: false,
+        },
+      ),
+    })
+  })
+
+  await page.goto('/')
+  const textarea = page.getByLabel('Message DeepMatter')
+  await textarea.fill(prompt)
+  await page.getByRole('button', { name: 'Send message' }).click()
+
+  const originalCard = page.getByLabel('Image: Generated image').first()
+  await expect(originalCard.getByRole('button', { name: 'Using in chat' })).toBeVisible()
+  await textarea.fill(feedback)
+  const responsePromise = page.waitForResponse('http://localhost:8000/api/v1/chat')
+  await page.getByRole('button', { name: 'Send message' }).click()
+  expect((await responsePromise).status()).toBe(200)
+
+  await expect(page.getByText("Here's the edited image.", { exact: true })).toBeVisible()
+  await expect(page.getByLabel('Image: Generated image')).toHaveCount(2)
+  await expect(page.getByText(reindexedAnalysis)).not.toBeVisible()
+  await expect(page.getByText('Describe this image.', { exact: true })).not.toBeVisible()
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
 // Verify an uploaded image reaches the VLM and can become a linked FLUX revision.
 test('uploads, analyzes, and source-refines an image with visible results', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)

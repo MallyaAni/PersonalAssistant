@@ -215,3 +215,45 @@ async def test_an_edit_request_with_a_recent_picture_chooses_edit_image(selector
 async def test_an_unrelated_edit_request_does_not_choose_edit_image(selector, text):
     action = await selector.select("functional_test_user", text, [], None)
     assert not isinstance(action, EditImageAction), action
+
+
+# Replayed verbatim from a live trace (conversation 3d463775, 2026-08-13):
+# after the model described a black cowboy hat and the user had it edited to
+# straw, "which hat do you like better" made the selector choose edit_image -
+# synthesizing a paraphrased instruction that silently redid the same hat
+# swap instead of answering the comparison the user actually asked. This
+# exact replay could not be forced to fail again against the unfixed
+# description (12/12 passed) - a temperature-driven, low-probability slip
+# rather than a deterministic gap - so this is best-effort coverage for the
+# fixed wording, not proof the fix changed anything measurable.
+async def test_an_opinion_question_about_a_just_edited_picture_does_not_re_edit(
+    selector,
+):
+    history = [
+        {
+            "query": "do you like my style?",
+            "response": (
+                "Based on the photo from today (August 13, 2026), your style "
+                "leans into a rugged yet modern look. You're wearing a "
+                "classic **black cowboy hat** paired with a sleek **dark "
+                "zip-up bomber jacket** over a simple **white crew-neck "
+                "t-shirt**. This combination creates a cohesive "
+                '"outfitter" or western-meets-urban vibe, balanced by the '
+                "casual neatness of the all-black jacket and the relaxed "
+                "tone of the white tee.\n\nSince your hands are tucked into "
+                "the jacket pockets and you're leaning slightly forward, "
+                "there's a cool, confident posture to your style as well."
+            ),
+        },
+        {
+            "query": "can you edit this to a straw hat?",
+            "response": "Here's the edited image.",
+        },
+    ]
+    action = await selector.select(
+        "functional_test_user",
+        "amazing! which hat do you like better for this outfit?",
+        history,
+        "existing-outfit-artifact-id",
+    )
+    assert not isinstance(action, EditImageAction), action

@@ -259,6 +259,12 @@ class VisionAnalysisService:
                 "analysis_status": "ready",
                 "analysis": analysis.content,
                 "analysis_model": analysis.model,
+                # This re-describes an edit's current pixels only so the result
+                # stays semantically findable - unlike the upload flow, nothing
+                # ever shows this text to the user, so the frontend's legacy
+                # analysis-thread fallback must not surface it as if it were an
+                # answer to a question nobody asked.
+                "analysis_user_facing": False,
                 **analysis.metadata,
             },
         )

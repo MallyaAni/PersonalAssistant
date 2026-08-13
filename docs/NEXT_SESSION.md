@@ -7,6 +7,54 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 
 Last updated: 2026-08-13, America/New_York
 
+## An edit no longer echoes an unasked description, and stopped re-editing on an opinion question — VERIFIED (mostly)
+
+**The description leak** was reported live: "can you edit this to a straw
+hat?" edited cleanly, but also surfaced an unrequested "Describe this image"
+card underneath it. Root cause: `ImageRefinementService.refine` calls
+`VisionAnalysisService.observe_artifact` after every edit purely so the
+revision stays semantically findable (this was added in an earlier session
+to fix edited images being unrecallable) — but that write lands in the same
+`metadata.analysis` key the *upload* flow uses when the browser's
+caption-less default question is answered, and the frontend's
+`readAnalysisThread` legacy fallback (`frontend/src/services/api.ts`) cannot
+tell the two apart: `analysis` set with no `analysis_thread` always renders
+as a "Describe this image" card. Fixed by marking the reindex-only write
+`analysis_user_facing: false` and having the frontend check that flag before
+falling back to the legacy display. Confirmed with a real repro: the new
+Playwright test fails against the unfixed `api.ts` (analysis text visible)
+and passes against the fix; `test_vision_memory_indexing.py` asserts the new
+flag directly.
+
+**The re-edit-on-opinion bug**: pulled the actual trace (conversation
+`3d463775`, 2026-08-13 19:51–19:54) straight from the database rather than
+guessing. After the model described a black cowboy hat and it was edited to
+straw, "amazing! which hat do you like better for this outfit?" made
+`MainActionSelector` choose `edit_image` again, synthesizing a paraphrased
+instruction ("Replace the black cowboy hat with a straw hat") that silently
+redid the same edit — the response was "Here's the edited image.", not an
+answer to the comparison. The user resent the identical message 8 seconds
+later and that time got a real comparative answer, once the botched edit was
+sitting in history. **Worth remembering:** my first guess at which tool
+misfired was wrong — I assumed `generate_image` from "it starts regenerating
+another image," wrote a description fix and a test for that tool, and only
+the direct database trace (`extra_data.refinement_feedback` on the two
+generated-image rows) showed it was actually `edit_image` re-firing. Reverted
+the `generate_image` change before committing. Clarified `edit_image`'s own
+tool description (not the shared `_SYSTEM` prompt, per the established
+lesson that widening that degrades search-routing recall) to exclude an
+opinion/comparison/preference question about the picture, even when it names
+the same subject a recent edit changed. **Caveat, same shape as the location
+fix below:** a functional test replays the live trace verbatim, but could
+not be forced to fail again against the unfixed description (12/12 passed)
+— treat as a sound, best-effort guardrail, not a proven fix, if this
+recurs. The full `test_main_action_selector_behaviour.py` suite (17 tests,
+including the search-routing recall floor) stayed stable across three runs
+with the fix in place.
+
+Evidence: full backend suite (1175 tests) passes; Ruff passes on every
+changed file.
+
 ## The gateway was a day-stale static build; recall showed one photo three times — VERIFIED
 
 **Read this first if a "fixed" frontend change is reported as not working.**

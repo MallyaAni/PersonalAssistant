@@ -271,7 +271,12 @@ class MainActionSelector:
                 _EDIT_IMAGE_TOOL,
                 "Change the picture currently in view. Only for an actual "
                 "photo or generated image - a generic 'edit' request about a "
-                "resume, document, or plan is not this.",
+                "resume, document, or plan is not this. A question that asks "
+                "for an opinion, preference, or comparison about the picture "
+                "- such as which of two looks already shown is better, or "
+                "whether something suits it - is not this either, even when "
+                "it mentions the same subject an earlier edit changed: "
+                "answer that directly from what is already visible instead.",
                 _EDIT_IMAGE_SCHEMA,
             )
         )

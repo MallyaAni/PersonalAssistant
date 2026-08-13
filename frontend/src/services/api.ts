@@ -1046,6 +1046,13 @@ export function readAnalysisThread(artifact: ImageArtifact): ImageAnalysisTurn[]
       }))
       .filter(entry => entry.answer)
   }
+  // A re-observation written only to keep an edited image semantically
+  // findable was never shown to the user as an answer to anything - only a
+  // genuine legacy flat analysis (from the browser's default upload question,
+  // or a row written before this flag existed) falls back to display.
+  if (artifact.metadata.analysis_user_facing === false) {
+    return []
+  }
   const legacy = artifact.metadata.analysis
   if (typeof legacy === 'string' && legacy.trim()) {
     return [{ prompt: 'Describe this image.', answer: legacy.trim() }]

@@ -197,6 +197,10 @@ async def test_existing_edited_artifact_is_observed_and_indexed() -> None:
     assert artifact["metadata"]["analysis"] == "A magenta fox on a green platform."
     assert memory.saved[0]["metadata"]["artifact_id"] == artifact["id"]
     assert memory.saved[0]["metadata"]["kind"] == "generated_image"
+    # This text was never shown to the user as an answer - only written so the
+    # edited pixels stay findable. The frontend's legacy analysis-thread
+    # fallback relies on this marker to tell that apart from a real answer.
+    assert artifact["metadata"]["analysis_user_facing"] is False
 
 
 @pytest.mark.asyncio

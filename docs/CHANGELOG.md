@@ -3210,3 +3210,45 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   through the real `_stream_retrieved_context` path
   (`test_image_lineage_context.py`) reproducing the exact reported scenario
   end to end.
+
+## 2026-08-13 — An edit no longer echoes an unasked description, and stopped re-editing on an opinion question
+
+- An edit re-observes the result's pixels (`ImageRefinementService.refine` →
+  `VisionAnalysisService.observe_artifact`) purely so the new artifact stays
+  semantically findable — added in an earlier session to fix edited images
+  being unrecallable. That write landed in the same `metadata.analysis` key
+  the *upload* flow uses when the browser's default caption-less question is
+  answered, and the frontend's `readAnalysisThread` legacy fallback cannot
+  tell the two apart: any artifact with `analysis` set but no
+  `analysis_thread` gets shown as a "Describe this image" card, unconditionally,
+  right under the picture. Reported live: "can you edit this to a straw hat?"
+  edited cleanly, then also surfaced an unrequested description underneath it.
+  Fixed by marking the reindex-only write `analysis_user_facing: false` in
+  `backend/services/vision_analysis_service.py` and having
+  `frontend/src/services/api.ts`'s `readAnalysisThread` return no thread when
+  that flag is present, before it ever reaches the legacy fallback. The
+  upload flow's own use of the same key (where the description genuinely is
+  the chat answer) is untouched since it never sets the new flag.
+- Separately, read a real trace (conversation `3d463775`, 2026-08-13) where,
+  after editing a photo's hat, "amazing! which hat do you like better for
+  this outfit?" made `MainActionSelector` choose `edit_image` again —
+  synthesizing a paraphrased instruction ("Replace the black cowboy hat with
+  a straw hat") that silently redid the same edit instead of answering the
+  comparison. Clarified `edit_image`'s own tool description (not the shared
+  `_SYSTEM` prompt — widening that degraded unrelated search-routing recall
+  earlier this session) to exclude an opinion, preference, or comparison
+  question about the picture, even when it names the same subject a recent
+  edit changed.
+- Evidence: full backend suite (1175 tests) passes; Ruff passes on every
+  changed file. `test_vision_memory_indexing.py` now asserts
+  `analysis_user_facing is False` after `observe_artifact`. A new Playwright
+  test (`chat.spec.ts`) reproduces the exact leak against the unfixed
+  frontend (fails: analysis text visible) and passes against the fix. The
+  `edit_image` routing fix has a functional test replaying the live trace
+  verbatim, but that exact replay could not be forced to fail again against
+  the unfixed description (12/12 passed) — a temperature-driven,
+  low-probability slip rather than a deterministic gap, so it is recorded as
+  best-effort coverage, not proof the fix changed measured behavior. The
+  full `test_main_action_selector_behaviour.py` suite (17 tests, including
+  the search-routing recall floor) stayed stable across three separate runs
+  with the new `edit_image` wording in place.
