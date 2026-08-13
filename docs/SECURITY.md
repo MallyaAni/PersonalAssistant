@@ -86,7 +86,7 @@ This document separates current security facts from future requirements. A contr
   it contains no query or result text. Its 450/day default is a protective cap,
   not a contractual or distributed rate limit, and AniOS never enables billing
   automatically.
-- Qwen may choose at most one tool from a user-scoped semantic shortlist whose schemas were re-read from locally configured `trusted` or `read_only` MCP servers. The model cannot invoke directly: AniOS revalidates the live fingerprint, description, schema, arguments, and privacy policy. Consequential servers are not offered to autonomous chat selection.
+- Qwen may choose at most one action per turn from a single native tool-calling call offered by `MainActionSelector`: the live `search_web` schema, built-in image/diagram/delegation actions, and a user-scoped semantic shortlist of the user's own tools whose schemas were re-read from locally configured `trusted` or `read_only` MCP servers. A name the call did not actually offer this round is refused before any downstream effect, regardless of what the model returns. The model cannot invoke a toolbox tool directly: AniOS revalidates the live fingerprint, description, schema, arguments, and privacy policy. Consequential servers are not offered to autonomous chat selection.
 - The application-owned local capability FastMCP server is configured `untrusted` and
   requires explicit confirmation. Its schemas omit user, conversation, and
   trace identifiers; the backend forwards those values as request metadata
@@ -147,7 +147,16 @@ The following controls are requirements for future milestones, not current featu
   arguments and returns public artifact metadata only. Service-to-service
   authentication, network isolation, and per-server credential scopes remain
   `PLANNED`;
-- `VERIFIED`: a deterministic outbound-search gate decides whether current information is required before MCP search; the generation model cannot bypass or directly invoke this path;
+- `VERIFIED`: whether a turn needs live search is the main model's own native
+  tool-calling decision (`MainActionSelector`), not a deterministic gate — the
+  retired regex-plus-classifier cascade remains in the tree, tested standalone,
+  but is no longer reachable from a live turn. The model chooses to call the
+  tool and writes the query; it still cannot execute the call itself or reach
+  the network directly. The query it writes passes through the same
+  egress screening, minimization, and budget enforcement described below
+  regardless of how the decision was reached, and a tool name the model
+  returns that was not actually offered in that round's call is refused
+  before any downstream effect;
 - `VERIFIED` (bounded): outbound query classification/minimization blocks credentials, common account identifiers, and identifying personal framing; broader PII/document classification remains `PLANNED`;
 - `PLANNED`: user review of the sanitized query whenever useful search depends on private or materially identifying context; if a safe query cannot be formed, no request is sent;
 - `VERIFIED` (Tavily runtime; Google deterministic): search results are bounded

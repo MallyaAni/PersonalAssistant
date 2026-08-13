@@ -69,25 +69,20 @@ async function attachComposerFile(
   await (await chooserPromise).setFiles(file)
 }
 
-// Stand in for the server's image-intent classifier, which is a model call.
-//
-// Whether the model reads English correctly is measured against the running
-// model in `backend/tests/functional/test_image_intent_behaviour.py`. What these
-// tests measure is the routing that follows the answer, so the answer is fixed:
-// the listed texts are edits and everything else is a question.
-async function routeImageIntent(page: Page, edits: string[]) {
-  await page.route('http://localhost:8000/api/v1/images/intent', async route => {
-    const { text } = route.request().postDataJSON() as { text: string }
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ intent: edits.includes(text) ? 'edit' : 'ask' }),
-    })
-  })
-}
-
 function latestAssistantAnswer(page: Page) {
   return page.getByLabel('DeepMatter answer').last()
+}
+
+// Pull the artifact_ready payload out of a real chat SSE response. Generation
+// and editing now arrive this way instead of as a standalone REST response,
+// since the main model decides them inside the same streamed chat call.
+async function artifactReadyFromChatStream(
+  response: Awaited<ReturnType<Page['waitForResponse']>>,
+): Promise<Record<string, unknown>> {
+  const text = await response.text()
+  const match = text.match(/event: artifact_ready\r?\ndata: (.+)\r?\n/)
+  if (!match) throw new Error('Chat stream did not contain an artifact_ready event')
+  return JSON.parse(match[1]) as Record<string, unknown>
 }
 
 // Build one deterministic SSE response with an optional memory proposal.
@@ -331,6 +326,58 @@ function diagramEventStream(
     frames.push(
       'event: artifact_error',
       `data: ${JSON.stringify({ id: artifactId, message: 'Unable to create the diagram.' })}`,
+      '',
+    )
+  }
+  frames.push('event: done', 'data: {}', '', '')
+  return frames.join('\n')
+}
+
+// Build one deterministic image generate/edit artifact lifecycle. Generation and
+// editing now run inside the chat stream -- the main model decides them, so the
+// browser never calls /images/generate or /images/refine directly anymore.
+function imageActionEventStream(
+  traceId: string,
+  conversationId: string,
+  artifactId: string,
+  action: 'generate' | 'edit',
+  outcome: 'ready' | 'failed',
+  metadata: Record<string, unknown> = {},
+) {
+  const readyText = action === 'edit'
+    ? "Here's the edited image."
+    : "Here's the image you asked for."
+  const failedText = action === 'edit'
+    ? "I couldn't edit that image. Please try again."
+    : "I couldn't generate that image. Please try again."
+  const frames = [
+    'event: start',
+    `data: ${JSON.stringify({ trace_id: traceId, conversation_id: conversationId })}`,
+    '',
+    'event: artifact_started',
+    `data: ${JSON.stringify({ id: artifactId, kind: 'generated_image', status: 'pending' })}`,
+    '',
+    'event: delta',
+    `data: ${JSON.stringify({ content: outcome === 'ready' ? readyText : failedText })}`,
+    '',
+  ]
+  if (outcome === 'ready') {
+    frames.push(
+      'event: artifact_ready',
+      `data: ${JSON.stringify(
+        imageArtifactRecord('generated_image', artifactId, conversationId, metadata),
+      )}`,
+      '',
+    )
+  } else {
+    frames.push(
+      'event: artifact_error',
+      `data: ${JSON.stringify({
+        id: artifactId,
+        message: action === 'edit'
+          ? 'Unable to edit the image.'
+          : 'Unable to generate the image.',
+      })}`,
       '',
     )
   }
@@ -2838,21 +2885,28 @@ test('generates, restores, and deletes an owned image artifact', async ({ page }
   const prompt = 'Create an image of a deterministic cobalt origami whale'
   let conversationId = ''
   let artifact: ReturnType<typeof imageArtifactRecord> | null = null
-  let releaseGeneration = () => {}
-  const generationGate = new Promise<void>(resolve => { releaseGeneration = resolve })
 
-  await page.route('http://localhost:8000/api/v1/images/generate', async route => {
+  // Generation now runs inside the chat stream: the main model decides to
+  // create the picture and the browser learns about it through the same
+  // artifact_started/artifact_ready events a diagram uses.
+  await page.route('http://localhost:8000/api/v1/chat', async route => {
     const payload = route.request().postDataJSON()
     conversationId = String(payload.conversation_id)
     artifact = imageArtifactRecord('generated_image', artifactId, conversationId, {
       seed: 42,
       steps: 28,
     })
-    await generationGate
     await route.fulfill({
-      status: 201,
-      contentType: 'application/json',
-      body: JSON.stringify(artifact),
+      status: 200,
+      contentType: 'text/event-stream',
+      body: imageActionEventStream(
+        'generate-browser-trace',
+        conversationId,
+        artifactId,
+        'generate',
+        'ready',
+        { seed: 42, steps: 28 },
+      ),
     })
   })
   await page.route(
@@ -2886,17 +2940,13 @@ test('generates, restores, and deletes an owned image artifact', async ({ page }
   await page.goto('/')
   const textarea = page.getByLabel('Message DeepMatter')
   await textarea.fill(prompt)
-  const responsePromise = page.waitForResponse('http://localhost:8000/api/v1/images/generate')
+  const responsePromise = page.waitForResponse('http://localhost:8000/api/v1/chat')
   await page.getByRole('button', { name: 'Send message' }).click()
-  await expect(page.getByText('Generating image...', { exact: true })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Cancel visual request' })).toBeVisible()
-  releaseGeneration()
-  expect((await responsePromise).status()).toBe(201)
+  expect((await responsePromise).status()).toBe(200)
 
   const imageCard = page.getByLabel('Image: Generated image')
   await expect(imageCard).toBeVisible()
   await expect(imageCard.getByAltText('Generated visual result')).toBeVisible()
-  await expect(page.getByText('Generating image...', { exact: true })).not.toBeVisible()
   await expect(textarea).toBeEnabled()
   await expect(textarea).toHaveValue('')
 
@@ -2920,51 +2970,6 @@ test('generates, restores, and deletes an owned image artifact', async ({ page }
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
-// Verify natural-language image intent switches Chat to the image-generation path.
-test('routes an explicit Chat request to image generation', async ({ page }) => {
-  const errors = observeBlockingBrowserErrors(page)
-  const artifactId = '23232323-2323-4232-8232-232323232323'
-  const prompt = 'create an image of a car for me'
-  let generationBody: Record<string, unknown> = {}
-  let chatRequests = 0
-
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
-    chatRequests += 1
-    await route.abort()
-  })
-  await page.route('http://localhost:8000/api/v1/images/generate', async route => {
-    generationBody = route.request().postDataJSON()
-    await route.fulfill({
-      status: 201,
-      contentType: 'application/json',
-      body: JSON.stringify(imageArtifactRecord(
-        'generated_image',
-        artifactId,
-        String(generationBody.conversation_id),
-        { generation_prompt: prompt },
-      )),
-    })
-  })
-  await page.route(
-    `http://localhost:8000/api/v1/artifacts/ani.mallya/${artifactId}/content`,
-    route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
-  )
-
-  await page.goto('/')
-  const textarea = page.getByLabel('Message DeepMatter')
-  await textarea.fill(prompt)
-  const responsePromise = page.waitForResponse('http://localhost:8000/api/v1/images/generate')
-  await page.getByRole('button', { name: 'Send message' }).click()
-  expect((await responsePromise).status()).toBe(201)
-
-  expect(chatRequests).toBe(0)
-  expect(generationBody).toMatchObject({ user_id: 'ani.mallya', prompt })
-  await expect(page.getByLabel('Image: Generated image')).toBeVisible()
-  await expect(textarea).toBeEnabled()
-  await expect(textarea).toHaveValue('')
-  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
-})
-
 // Verify a historical image question uses chat without regenerating.
 test('routes an image followup question to chat without regenerating', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
@@ -2973,37 +2978,40 @@ test('routes an image followup question to chat without regenerating', async ({ 
   const question = 'what car did we create an image of?'
   const answer = 'We created an image of a cobalt sports car.'
   let conversationId = ''
-  let generationRequests = 0
-  let chatBody: Record<string, unknown> = {}
+  const chatBodies: Record<string, unknown>[] = []
 
-  await routeImageIntent(page, [])
-  await page.route('http://localhost:8000/api/v1/images/generate', async route => {
-    generationRequests += 1
-    const payload = route.request().postDataJSON()
-    conversationId = String(payload.conversation_id)
-    await route.fulfill({
-      status: 201,
-      contentType: 'application/json',
-      body: JSON.stringify(imageArtifactRecord(
-        'generated_image',
-        artifactId,
-        conversationId,
-        { generation_prompt: prompt },
-      )),
-    })
-  })
-  await page.route(
-    `http://localhost:8000/api/v1/artifacts/ani.mallya/${artifactId}/content`,
-    route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
-  )
+  // Both turns go through the same chat endpoint now; the second body's own
+  // fields prove the followup reused the image as context instead of the
+  // main model choosing to generate a second one.
   await page.route('http://localhost:8000/api/v1/chat', async route => {
-    chatBody = route.request().postDataJSON()
+    const payload = route.request().postDataJSON() as Record<string, unknown>
+    chatBodies.push(payload)
+    conversationId = conversationId || String(payload.conversation_id)
+    if (chatBodies.length === 1) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/event-stream',
+        body: imageActionEventStream(
+          'generate-browser-trace',
+          conversationId,
+          artifactId,
+          'generate',
+          'ready',
+          { generation_prompt: prompt },
+        ),
+      })
+      return
+    }
     await route.fulfill({
       status: 200,
       contentType: 'text/event-stream',
       body: chatEventStream('followup-trace', conversationId, answer),
     })
   })
+  await page.route(
+    `http://localhost:8000/api/v1/artifacts/ani.mallya/${artifactId}/content`,
+    route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
+  )
 
   await page.goto('/')
   const textarea = page.getByLabel('Message DeepMatter')
@@ -3016,8 +3024,8 @@ test('routes an image followup question to chat without regenerating', async ({ 
   await page.getByRole('button', { name: 'Send message' }).click()
   expect((await responsePromise).status()).toBe(200)
 
-  expect(generationRequests).toBe(1)
-  expect(chatBody).toMatchObject({
+  expect(chatBodies).toHaveLength(2)
+  expect(chatBodies[1]).toMatchObject({
     user_id: 'ani.mallya',
     query: question,
     active_image_artifact_id: artifactId,
@@ -3039,35 +3047,39 @@ test('selects and clears image context when several images are visible', async (
   let generationIndex = 0
   const chatBodies: Record<string, unknown>[] = []
 
-  await routeImageIntent(page, [])
-  await page.route('http://localhost:8000/api/v1/images/generate', async route => {
-    const payload = route.request().postDataJSON()
-    const artifactId = artifactIds[generationIndex]
-    generationIndex += 1
-    await route.fulfill({
-      status: 201,
-      contentType: 'application/json',
-      body: JSON.stringify(imageArtifactRecord(
-        'generated_image',
-        artifactId,
-        String(payload.conversation_id),
-        { generation_prompt: String(payload.prompt) },
-      )),
-    })
-  })
   for (const artifactId of artifactIds) {
     await page.route(
       `http://localhost:8000/api/v1/artifacts/ani.mallya/${artifactId}/content`,
       route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
     )
   }
+  // The first two turns are the model choosing to generate a picture; every
+  // turn after that is an ordinary answer using whichever image is selected.
   await page.route('http://localhost:8000/api/v1/chat', async route => {
-    const body = route.request().postDataJSON()
+    const body = route.request().postDataJSON() as Record<string, unknown>
     chatBodies.push(body)
+    const conversationId = String(body.conversation_id)
+    if (generationIndex < artifactIds.length) {
+      const artifactId = artifactIds[generationIndex]
+      generationIndex += 1
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/event-stream',
+        body: imageActionEventStream(
+          'generate-browser-trace',
+          conversationId,
+          artifactId,
+          'generate',
+          'ready',
+          { generation_prompt: String(body.query) },
+        ),
+      })
+      return
+    }
     await route.fulfill({
       status: 200,
       contentType: 'text/event-stream',
-      body: chatEventStream('selection-trace', String(body.conversation_id), 'Selected image answer.'),
+      body: chatEventStream('selection-trace', conversationId, 'Selected image answer.'),
     })
   })
 
@@ -3088,14 +3100,14 @@ test('selects and clears image context when several images are visible', async (
   await textarea.fill('What is distinctive about this one?')
   await page.getByRole('button', { name: 'Send message' }).click()
   await expect(textarea).toBeEnabled()
-  expect(chatBodies[0]).toMatchObject({ active_image_artifact_id: artifactIds[0] })
+  expect(chatBodies[2]).toMatchObject({ active_image_artifact_id: artifactIds[0] })
 
   await page.getByRole('button', { name: 'Stop using selected image' }).click()
   await expect(page.getByLabel(/Using image in chat:/)).toHaveCount(0)
   await textarea.fill('Now answer without a selected image.')
   await page.getByRole('button', { name: 'Send message' }).click()
   await expect(textarea).toBeEnabled()
-  expect(chatBodies[1]).toMatchObject({ active_image_artifact_id: null })
+  expect(chatBodies[3]).toMatchObject({ active_image_artifact_id: null })
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
@@ -3107,22 +3119,8 @@ test('asks about a selected generated image from the main composer', async ({ pa
   const question = 'What is in this image?'
   const answer = 'The image shows a single cobalt origami whale.'
   let conversationId = ''
-  let chatBody: Record<string, unknown> = {}
+  const chatBodies: Record<string, unknown>[] = []
 
-  await routeImageIntent(page, [])
-  await page.route('http://localhost:8000/api/v1/images/generate', async route => {
-    const payload = route.request().postDataJSON()
-    conversationId = String(payload.conversation_id)
-    const artifact = imageArtifactRecord('generated_image', artifactId, conversationId, {
-      seed: 42,
-      steps: 28,
-    })
-    await route.fulfill({
-      status: 201,
-      contentType: 'application/json',
-      body: JSON.stringify(artifact),
-    })
-  })
   await page.route(
     `http://localhost:8000/api/v1/artifacts/ani.mallya/${artifactId}/content`,
     route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
@@ -3134,9 +3132,25 @@ test('asks about a selected generated image from the main composer', async ({ pa
       body: JSON.stringify({ conversation_id: conversationId, turns: [], artifacts: [] }),
     }),
   )
-
   await page.route('http://localhost:8000/api/v1/chat', async route => {
-    chatBody = route.request().postDataJSON()
+    const body = route.request().postDataJSON() as Record<string, unknown>
+    chatBodies.push(body)
+    conversationId = conversationId || String(body.conversation_id)
+    if (chatBodies.length === 1) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/event-stream',
+        body: imageActionEventStream(
+          'generate-browser-trace',
+          conversationId,
+          artifactId,
+          'generate',
+          'ready',
+          { seed: 42, steps: 28 },
+        ),
+      })
+      return
+    }
     await route.fulfill({
       status: 200,
       contentType: 'text/event-stream',
@@ -3159,13 +3173,21 @@ test('asks about a selected generated image from the main composer', async ({ pa
   await page.getByRole('button', { name: 'Send message' }).click()
   expect((await chatResponse).status()).toBe(200)
 
-  expect(chatBody).toMatchObject({ query: question, active_image_artifact_id: artifactId })
+  expect(chatBodies[1]).toMatchObject({ query: question, active_image_artifact_id: artifactId })
   await expect(latestAssistantAnswer(page).getByText(answer, { exact: true })).toBeVisible()
   await expect(textarea).toHaveValue('')
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
 // Verify a polite question-shaped edit command creates a linked image revision.
+//
+// Both whether this is an edit at all, and the edit itself, are the main
+// model's own decisions now (edit_image in MainActionSelector), made in one
+// native tool call alongside every other option -- not a client-side guess
+// followed by a direct REST call. The browser only sees the chat stream, so
+// this test proves what used to be silent is now a visible reply: the
+// original stays, and the edited revision arrives as its own answer instead
+// of overwriting it without a trace.
 test('routes can-you image edits to refinement instead of vision Q&A', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   const originalId = '81818181-8181-4181-8181-818181818181'
@@ -3173,24 +3195,8 @@ test('routes can-you image edits to refinement instead of vision Q&A', async ({ 
   const prompt = 'Create an image of a blue sports car'
   const feedback = 'can you make this car red?'
   let conversationId = ''
-  let refineBody: Record<string, unknown> = {}
-  let askRequests = 0
+  const chatBodies: Record<string, unknown>[] = []
 
-  await routeImageIntent(page, [feedback])
-  await page.route('http://localhost:8000/api/v1/images/generate', async route => {
-    const payload = route.request().postDataJSON()
-    conversationId = String(payload.conversation_id)
-    await route.fulfill({
-      status: 201,
-      contentType: 'application/json',
-      body: JSON.stringify(imageArtifactRecord(
-        'generated_image',
-        originalId,
-        conversationId,
-        { generation_prompt: prompt },
-      )),
-    })
-  })
   await page.route(
     `http://localhost:8000/api/v1/artifacts/ani.mallya/${originalId}/content`,
     route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
@@ -3199,33 +3205,42 @@ test('routes can-you image edits to refinement instead of vision Q&A', async ({ 
     `http://localhost:8000/api/v1/artifacts/ani.mallya/${revisionId}/content`,
     route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
   )
-  await page.route(
-    `http://localhost:8000/api/v1/vision/artifacts/${originalId}/ask`,
-    async route => {
-      askRequests += 1
-      await route.abort()
-    },
-  )
-  await page.route(
-    `http://localhost:8000/api/v1/images/${originalId}/refine`,
-    async route => {
-      refineBody = route.request().postDataJSON()
+  await page.route('http://localhost:8000/api/v1/chat', async route => {
+    const body = route.request().postDataJSON() as Record<string, unknown>
+    chatBodies.push(body)
+    conversationId = conversationId || String(body.conversation_id)
+    if (chatBodies.length === 1) {
       await route.fulfill({
-        status: 201,
-        contentType: 'application/json',
-        body: JSON.stringify(imageArtifactRecord(
-          'generated_image',
-          revisionId,
+        status: 200,
+        contentType: 'text/event-stream',
+        body: imageActionEventStream(
+          'generate-browser-trace',
           conversationId,
-          {
-            generation_prompt: 'Create an image of a red sports car',
-            parent_artifact_id: originalId,
-            refinement_feedback: feedback,
-          },
-        )),
+          originalId,
+          'generate',
+          'ready',
+          { generation_prompt: prompt },
+        ),
       })
-    },
-  )
+      return
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body: imageActionEventStream(
+        'edit-browser-trace',
+        conversationId,
+        revisionId,
+        'edit',
+        'ready',
+        {
+          generation_prompt: prompt,
+          parent_artifact_id: originalId,
+          refinement_feedback: feedback,
+        },
+      ),
+    })
+  })
 
   await page.goto('/')
   const textarea = page.getByLabel('Message DeepMatter')
@@ -3235,26 +3250,20 @@ test('routes can-you image edits to refinement instead of vision Q&A', async ({ 
   const originalCard = page.getByLabel('Image: Generated image').first()
   await expect(originalCard.getByRole('button', { name: 'Using in chat' })).toBeVisible()
   await textarea.fill(feedback)
-  const responsePromise = page.waitForResponse(
-    `http://localhost:8000/api/v1/images/${originalId}/refine`,
-  )
+  const responsePromise = page.waitForResponse('http://localhost:8000/api/v1/chat')
   await page.getByRole('button', { name: 'Send message' }).click()
-  expect((await responsePromise).status()).toBe(201)
+  expect((await responsePromise).status()).toBe(200)
 
-  await expect(page.getByLabel('Image: Generated image')).toHaveCount(1)
-  await expect(page.getByText('Here is the updated image.', { exact: true })).toHaveCount(0)
-  await expect(page.getByLabel('Image: Generated image').getByAltText(
-    'Generated visual result',
-  )).toBeVisible()
-  await expect(page.getByText('Creating your image locally.', { exact: true })).not.toBeVisible()
-  await expect(page.getByText('Generating image...', { exact: true })).not.toBeVisible()
+  // The original is untouched and the edit arrives as a second, visible card.
+  await expect(page.getByLabel('Image: Generated image')).toHaveCount(2)
+  await expect(page.getByText("Here's the edited image.", { exact: true })).toBeVisible()
   await expect(textarea).toBeEnabled()
-  expect(refineBody).toMatchObject({
+  expect(chatBodies[1]).toMatchObject({
     user_id: 'ani.mallya',
     conversation_id: conversationId,
-    feedback,
+    query: feedback,
+    active_image_artifact_id: originalId,
   })
-  expect(askRequests).toBe(0)
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
@@ -3266,11 +3275,11 @@ test('uploads, analyzes, and source-refines an image with visible results', asyn
   const analysis = 'A cobalt origami whale floating above a white platform.'
   const feedback = 'Make only the whale violet'
   let multipartBody = ''
-  let refinementBody: Record<string, unknown> = {}
+  let conversationId = ''
+  const chatBodies: Record<string, unknown>[] = []
   let releaseAnalysis = () => {}
   const analysisGate = new Promise<void>(resolve => { releaseAnalysis = resolve })
 
-  await routeImageIntent(page, [feedback])
   await page.route('http://localhost:8000/api/v1/vision/analyze', async route => {
     multipartBody = route.request().postDataBuffer()?.toString('utf8') || ''
     const conversationMatch = multipartBody.match(/name="conversation_id"\r\n\r\n([^\r]+)/)
@@ -3295,26 +3304,29 @@ test('uploads, analyzes, and source-refines an image with visible results', asyn
     `http://localhost:8000/api/v1/artifacts/ani.mallya/${refinedId}/content`,
     route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
   )
-  await page.route(
-    `http://localhost:8000/api/v1/images/${artifactId}/refine`,
-    async route => {
-      refinementBody = route.request().postDataJSON() as Record<string, unknown>
-      await route.fulfill({
-        status: 201,
-        contentType: 'application/json',
-        body: JSON.stringify(imageArtifactRecord(
-          'generated_image',
-          refinedId,
-          String(refinementBody.conversation_id),
-          {
-            parent_artifact_id: artifactId,
-            refinement_feedback: feedback,
-            edit_mode: 'source_conditioned',
-          },
-        )),
-      })
-    },
-  )
+  // The followup edit now runs through the same chat stream every message
+  // takes; the main model chose edit_image, not a client-side guess.
+  await page.route('http://localhost:8000/api/v1/chat', async route => {
+    const body = route.request().postDataJSON() as Record<string, unknown>
+    chatBodies.push(body)
+    conversationId = conversationId || String(body.conversation_id)
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body: imageActionEventStream(
+        'edit-browser-trace',
+        conversationId,
+        refinedId,
+        'edit',
+        'ready',
+        {
+          parent_artifact_id: artifactId,
+          refinement_feedback: feedback,
+          edit_mode: 'source_conditioned',
+        },
+      ),
+    })
+  })
 
   await page.goto('/')
   await attachComposerFile(page, {
@@ -3348,12 +3360,12 @@ test('uploads, analyzes, and source-refines an image with visible results', asyn
   await expect(page.getByLabel('Image: Generated image').getByAltText(
     'Generated visual result',
   )).toBeVisible()
-  await expect(page.getByText('Creating your image locally.', { exact: true })).not.toBeVisible()
-  await expect(page.getByText('Generating image...', { exact: true })).not.toBeVisible()
-  expect(refinementBody).toMatchObject({
+  await expect(page.getByText("Here's the edited image.", { exact: true })).toBeVisible()
+  expect(chatBodies[0]).toMatchObject({
     user_id: 'ani.mallya',
     conversation_id: expect.any(String),
-    feedback,
+    query: feedback,
+    active_image_artifact_id: artifactId,
   })
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
@@ -3447,12 +3459,17 @@ test('edits an uploaded image when the same message asks for an edit', async ({ 
 })
 
 // Verify a provider failure is visible and the unchanged request can be retried.
-test('shows an image failure, clears loading, and retries successfully', async ({ page }) => {
+// Generation failures now surface through the ordinary chat-failure path
+// (the text is restored to the composer for a manual resend) rather than the
+// dedicated visual-error banner with its own Retry button, since generation
+// is no longer a separate client-triggered request the composer can retry on
+// the user's behalf.
+test('shows an image failure, clears loading, and can be resent', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   const artifactId = '78787878-7878-4878-8878-787878787878'
   let attempts = 0
 
-  await page.route('http://localhost:8000/api/v1/images/generate', async route => {
+  await page.route('http://localhost:8000/api/v1/chat', async route => {
     attempts += 1
     if (attempts === 1) {
       await route.fulfill({
@@ -3462,15 +3479,17 @@ test('shows an image failure, clears loading, and retries successfully', async (
       })
       return
     }
-    const payload = route.request().postDataJSON()
+    const payload = route.request().postDataJSON() as Record<string, unknown>
     await route.fulfill({
-      status: 201,
-      contentType: 'application/json',
-      body: JSON.stringify(imageArtifactRecord(
-        'generated_image',
-        artifactId,
+      status: 200,
+      contentType: 'text/event-stream',
+      body: imageActionEventStream(
+        'retry-browser-trace',
         String(payload.conversation_id),
-      )),
+        artifactId,
+        'generate',
+        'ready',
+      ),
     })
   })
   await page.route(
@@ -3482,12 +3501,11 @@ test('shows an image failure, clears loading, and retries successfully', async (
   const textarea = page.getByLabel('Message DeepMatter')
   await textarea.fill('Create an image for deterministic retry')
   await page.getByRole('button', { name: 'Send message' }).click()
-  await expect(page.getByRole('alert').filter({ hasText: 'Unable to generate the image.' }).first()).toBeVisible()
+  await expect(page.getByText('Unable to generate the image.', { exact: true })).toBeVisible()
   await expect(textarea).toBeEnabled()
   await expect(textarea).toHaveValue('Create an image for deterministic retry')
-  await page.getByRole('button', { name: 'Retry', exact: true }).click()
+  await page.getByRole('button', { name: 'Send message' }).click()
   await expect(page.getByLabel('Image: Generated image')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Retry', exact: true })).not.toBeVisible()
   expect(attempts).toBe(2)
   expect(errors.pageErrors).toEqual([])
   expect(errors.consoleErrors).toEqual([
@@ -3563,14 +3581,14 @@ test('@live visual generation and analysis complete through the browser', async 
     const textarea = page.getByLabel('Message DeepMatter')
     await textarea.fill(generationPrompt)
     const generationResponsePromise = page.waitForResponse(
-      response => response.url() === 'http://localhost:8000/api/v1/images/generate',
+      response => response.url() === 'http://localhost:8000/api/v1/chat',
       { timeout: 120_000 },
     )
     await page.getByRole('button', { name: 'Send message' }).click()
     await expect(page.getByText('Generating image...', { exact: true })).toBeVisible()
     const generationResponse = await generationResponsePromise
-    expect(generationResponse.status()).toBe(201)
-    const generated = await generationResponse.json() as Record<string, unknown>
+    expect(generationResponse.status()).toBe(200)
+    const generated = await artifactReadyFromChatStream(generationResponse)
     const generatedId = String(generated.id)
     createdIds.push(generatedId)
     expect(generated).toMatchObject({
@@ -3591,14 +3609,13 @@ test('@live visual generation and analysis complete through the browser', async 
     await expect(generatedCard.getByRole('button', { name: 'Using in chat' })).toBeVisible()
     await textarea.fill(refinementFeedback)
     const refinementResponsePromise = page.waitForResponse(
-      response => response.url() ===
-        `http://localhost:8000/api/v1/images/${generatedId}/refine`,
+      response => response.url() === 'http://localhost:8000/api/v1/chat',
       { timeout: 120_000 },
     )
     await page.getByRole('button', { name: 'Send message' }).click()
     const refinementResponse = await refinementResponsePromise
-    expect(refinementResponse.status()).toBe(201)
-    const revision = await refinementResponse.json() as Record<string, unknown>
+    expect(refinementResponse.status()).toBe(200)
+    const revision = await artifactReadyFromChatStream(refinementResponse)
     const revisionId = String(revision.id)
     createdIds.push(revisionId)
     expect(revision).toMatchObject({
@@ -3675,14 +3692,13 @@ test('@live visual generation and analysis complete through the browser', async 
     await expect(analyzedCard.getByRole('button', { name: 'Using in chat' })).toBeVisible()
     await textarea.fill(uploadFeedback)
     const uploadRefinementResponsePromise = page.waitForResponse(
-      response => response.url() ===
-        `http://localhost:8000/api/v1/images/${analyzedId}/refine`,
+      response => response.url() === 'http://localhost:8000/api/v1/chat',
       { timeout: 120_000 },
     )
     await page.getByRole('button', { name: 'Send message' }).click()
     const uploadRefinementResponse = await uploadRefinementResponsePromise
-    expect(uploadRefinementResponse.status()).toBe(201)
-    const uploadRevision = await uploadRefinementResponse.json() as Record<string, unknown>
+    expect(uploadRefinementResponse.status()).toBe(200)
+    const uploadRevision = await artifactReadyFromChatStream(uploadRefinementResponse)
     const uploadRevisionId = String(uploadRevision.id)
     createdIds.push(uploadRevisionId)
     expect(uploadRevision).toMatchObject({
@@ -3751,13 +3767,7 @@ test('@live image conversation routes through generation, chat, search, and memo
   const conversationId = '75757575-7575-4575-8575-757575757575'
   const generationPrompt = `create an image of a cobalt blue sports car on a coastal road LIVE_IMAGE_CHAT_${stamp}`
   const failedRequiredResponses: string[] = []
-  let generationRequests = 0
 
-  page.on('request', request => {
-    if (request.url() === 'http://localhost:8000/api/v1/images/generate') {
-      generationRequests += 1
-    }
-  })
   page.on('response', response => {
     if (
       response.url().startsWith('http://localhost:8000/api/v1/')
@@ -3777,13 +3787,13 @@ test('@live image conversation routes through generation, chat, search, and memo
     const textarea = page.getByLabel('Message DeepMatter')
     await textarea.fill(generationPrompt)
     const generationResponsePromise = page.waitForResponse(
-      response => response.url() === 'http://localhost:8000/api/v1/images/generate',
+      response => response.url() === 'http://localhost:8000/api/v1/chat',
       { timeout: 120_000 },
     )
     await page.getByRole('button', { name: 'Send message' }).click()
     const generationResponse = await generationResponsePromise
-    expect(generationResponse.status()).toBe(201)
-    const generated = await generationResponse.json() as Record<string, unknown>
+    expect(generationResponse.status()).toBe(200)
+    const generated = await artifactReadyFromChatStream(generationResponse)
     expect((generated.metadata as Record<string, unknown>).generation_prompt)
       .toBe(generationPrompt)
     await expect(page.getByLabel('Image: Generated image')).toBeVisible()
@@ -3799,7 +3809,9 @@ test('@live image conversation routes through generation, chat, search, and memo
     const followupResponse = await followupResponsePromise
     expect(followupResponse.status()).toBe(200)
     expect(await followupResponse.finished()).toBeNull()
-    expect(generationRequests).toBe(1)
+    // The followup answered from context rather than creating a second
+    // picture -- the only image card still on screen is the original.
+    await expect(page.getByLabel('Image: Generated image')).toHaveCount(1)
     await expect(latestAssistantAnswer(page)).toContainText(/cobalt blue sports car/i)
     await expect(page.getByText('Thinking...', { exact: true })).not.toBeVisible()
     await expect(textarea).toBeEnabled()
@@ -3836,7 +3848,7 @@ test('@live image conversation routes through generation, chat, search, and memo
     await expect(details).toBeVisible()
     await expect(details.getByText('Loading details...', { exact: true })).not.toBeVisible()
 
-    expect(generationRequests).toBe(1)
+    await expect(page.getByLabel('Image: Generated image')).toHaveCount(1)
     expect(failedRequiredResponses).toEqual([])
     expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
   } finally {
@@ -3871,7 +3883,7 @@ test('@live cancelled image generation becomes a terminal failed artifact', asyn
     const textarea = page.getByLabel('Message DeepMatter')
     await textarea.fill(`Create an image of a cancellation probe cobalt glass compass ${Date.now()}`)
     const requestPromise = page.waitForRequest(
-      request => request.url() === 'http://localhost:8000/api/v1/images/generate',
+      request => request.url() === 'http://localhost:8000/api/v1/chat',
     )
     await page.getByRole('button', { name: 'Send message' }).click()
     await requestPromise
@@ -3881,10 +3893,10 @@ test('@live cancelled image generation becomes a terminal failed artifact', asyn
       return artifacts[0]?.status
     }).toBe('pending')
 
-    await page.getByRole('button', { name: 'Cancel visual request' }).click()
-    await expect(page.getByRole('alert').filter({ hasText: 'Visual request cancelled.' }).first()).toBeVisible()
+    await page.getByRole('button', { name: 'Cancel request' }).click()
+    await expect(page.getByText('Request cancelled.', { exact: true }).first()).toBeVisible()
     await expect(textarea).toBeEnabled()
-    await expect(page.getByRole('button', { name: 'Cancel visual request' })).not.toBeVisible()
+    await expect(page.getByRole('button', { name: 'Cancel request' })).not.toBeVisible()
     await expect.poll(async () => {
       const response = await page.request.get(`http://localhost:8000/api/v1/artifacts/${userId}`)
       const artifacts = await response.json() as Array<Record<string, unknown>>

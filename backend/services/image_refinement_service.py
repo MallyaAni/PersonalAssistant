@@ -1,5 +1,6 @@
 import logging
 import secrets
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 from backend.services.image_artifact_service import ImageArtifactService
@@ -42,6 +43,7 @@ class ImageRefinementService:
         feedback: str,
         conversation_id: str,
         trace_id: str,
+        on_pending: Callable[[dict[str, Any]], Awaitable[None]] | None = None,
     ) -> dict[str, Any]:
         owned = await self.images.read_owned(user_id, artifact_id)
         if owned is None:
@@ -67,6 +69,7 @@ class ImageRefinementService:
             instruction=provider_instruction,
             seed=secrets.randbelow(2**63),
             user_feedback=instruction,
+            on_pending=on_pending,
         )
         if self.vision is None:
             return revision

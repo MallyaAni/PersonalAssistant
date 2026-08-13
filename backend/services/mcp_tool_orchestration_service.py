@@ -85,9 +85,28 @@ class MCPToolOrchestrationService:
             candidates.append((descriptor, live))
         return candidates
 
+    # Shortlist and validate live MCP candidates for one query, without deciding.
+    # Exposed so a caller composing a broader decision (built-in tools alongside
+    # the user's own registered ones) can build one combined tool list rather
+    # than making a second, separate native tool-calling call.
+    async def list_candidates(
+        self,
+        user_id: str,
+        query: str,
+        query_embedding: list[float] | None = None,
+    ) -> list[tuple[dict[str, Any], MCPTool]]:
+        descriptors = await self.memory.search_descriptors(
+            user_id,
+            query,
+            None,
+            self.top_k,
+            query_embedding=query_embedding,
+        )
+        return await self._resolve_candidates(descriptors)
+
     # Convert live candidates into provider-neutral OpenAI function definitions.
     @staticmethod
-    def _tool_definitions(
+    def tool_definitions(
         aliases: dict[str, tuple[dict[str, Any], MCPTool]],
     ) -> list[dict[str, Any]]:
         return [
@@ -147,19 +166,14 @@ class MCPToolOrchestrationService:
         query: str,
         query_embedding: list[float] | None = None,
     ) -> MCPToolPlan | None:
-        descriptors = await self.memory.search_descriptors(
-            user_id,
-            query,
-            None,
-            self.top_k,
-            query_embedding=query_embedding,
+        candidates = await self.list_candidates(
+            user_id, query, query_embedding=query_embedding
         )
-        candidates = await self._resolve_candidates(descriptors)
         if not candidates:
             return None
 
         aliases = {f"mcp_tool_{index}": item for index, item in enumerate(candidates)}
-        tools = self._tool_definitions(aliases)
+        tools = self.tool_definitions(aliases)
         messages: list[dict[str, Any]] = [
             {
                 "role": "system",

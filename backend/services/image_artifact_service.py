@@ -1,6 +1,7 @@
 import asyncio
 import hashlib
 import logging
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 from backend.artifacts.image import validate_image_bytes
@@ -115,6 +116,7 @@ class ImageArtifactService:
         request: ImageGenerationRequest,
         extra_metadata: dict[str, Any] | None = None,
         extra_style: str = "",
+        on_pending: Callable[[dict[str, Any]], Awaitable[None]] | None = None,
     ) -> dict[str, Any]:
         artifact = await self.repository.create_binary_pending(
             user_id=user_id,
@@ -127,6 +129,8 @@ class ImageArtifactService:
         )
         artifact_id = str(artifact["id"])
         storage_key: str | None = None
+        if on_pending is not None:
+            await on_pending(artifact)
         # The user's learned style steers the pixels but is not the recorded
         # intent, so it is applied to the provider request while the stored
         # generation_prompt stays the base prompt a later refinement builds on.
@@ -204,6 +208,7 @@ class ImageArtifactService:
         instruction: str,
         seed: int,
         user_feedback: str | None = None,
+        on_pending: Callable[[dict[str, Any]], Awaitable[None]] | None = None,
     ) -> dict[str, Any]:
         if self.edit_provider is None:
             raise RuntimeError("No source-conditioned image editor is configured")
@@ -219,6 +224,8 @@ class ImageArtifactService:
         )
         artifact_id = str(artifact["id"])
         storage_key: str | None = None
+        if on_pending is not None:
+            await on_pending(artifact)
         try:
             edited = await self.edit_provider.edit(
                 ImageEditRequest(

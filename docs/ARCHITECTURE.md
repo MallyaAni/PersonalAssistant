@@ -16,7 +16,7 @@ The absence of one of these labels does not imply runtime verification.
 
 The editable source is [anios-system.mmd](diagrams/anios-system.mmd). It describes current implemented and explicitly scaffolded relationships only, including the typed main-supervisor route, editable diagrams, generated and uploaded raster artifacts, local binary storage, Compose-managed vLLM inference, ComfyUI, Qwen vision analysis, their browser integration, and the durable presentation worker. Aligned multimodal image embeddings and hybrid opt-in web research are included. General dynamic agent teams, A2A, and GPU-capacity leases remain outside the current diagram until their runtime boundaries exist. The render/check procedure is documented in [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md#architecture-diagram-maintenance).
 
-The self-contained [manager-facing architecture page](architecture.html) publishes all 19 canonical views — fifteen subsystem views plus one per agent — with a current model-role summary, direct full-size SVG and Mermaid-source links, and independent per-diagram zoom controls. Seventeen views describe the current system; the separately labelled visual-memory/editing and inference-scaling targets describe accepted future designs without claiming implementation. Its opening orchestration contract states explicitly that `MainSupervisorAgent` is currently deterministic and makes no LLM call.
+The self-contained [manager-facing architecture page](architecture.html) publishes all 19 canonical views — fifteen subsystem views plus one per agent — with a current model-role summary, direct full-size SVG and Mermaid-source links, and independent per-diagram zoom controls. Seventeen views describe the current system; the separately labelled visual-memory/editing and inference-scaling targets describe accepted future designs without claiming implementation. Its opening orchestration contract states explicitly that `MainActionSelector` decides every turn's action with one native tool call made by the main model, not a regex or a narrow bounded classifier.
 
 ## Detailed subsystem diagrams
 
@@ -190,9 +190,15 @@ legacy direct Tavily adapter remains configurable. `HybridSearchProvider`
 prefers an isolated Google ADK worker when `GOOGLE_API_KEY` or
 `GEMINI_API_KEY` is configured, falls back to Tavily when Google is disabled,
 empty, unavailable, or over its local daily budget, and calls both providers
-only when the user explicitly asks to verify or cross-check. A deterministic
-`SearchRoutingPolicy` owned by the application decides when a turn needs live
-data; neither the local model nor the cloud worker owns outbound eligibility.
+only when the user explicitly asks to verify or cross-check. `MainActionSelector` offers the live `search_web` schema to the main model as
+one native tool alongside every other candidate action (a new or edited
+picture, a diagram, a specialist handoff, the user's own registered MCP
+tools); the model decides whether to call it and writes the query itself, in
+the same call that decides everything else about the turn. The retired
+`SearchRoutingPolicy`/`CascadingSearchRouter` regex-plus-classifier cascade
+remains in the tree, unused by the live path, for its own standalone
+benchmark (`python -m backend.cli.evaluate_search_routing`); neither the local
+model nor the cloud worker owns outbound eligibility beyond that one decision.
 
 The Google worker is a request-scoped `gemini-3.6-flash` ADK `Agent` with the
 native `google_search` tool. Each call creates a random in-memory session,
@@ -945,7 +951,7 @@ The active collaborators are:
 | `AgentMemoryManager` | implemented typed store facade | Owns user-scoped semantic-cache, working, procedure, entity/relation, knowledge, and summary stores without exposing raw tables to the coordinator or model |
 | `MemoryCoordinatorAgent` | implemented deterministic policy boundary | Searches every embedded store on each turn so anything relevant can be recalled regardless of phrasing, embeds the query once and reuses that vector across all of them, relies on each store's cosine-distance threshold and one shared cross-store relevance budget (with dedup and item/character caps) to keep only close matches, selects the non-embedded episodic store by explicit keyword intent, writes expiring session state, and periodically rolls conversation digests |
 | `ToolMemoryService` | implemented safe metadata boundary | Stores and retrieves user-scoped safe tool descriptors, approved preferences, and sanitized outcomes; invocation and authorization remain owned by the separate orchestration and policy boundaries |
-| `MainSupervisorAgent` | implemented first-step routing boundary | Runs one typed LangGraph policy node before retrieval; currently delegates explicit presentation creation to the registered `presentation_agent` and otherwise returns the turn to the ordinary assistant path |
+| `MainActionSelector` | implemented unified action-selection boundary | Offers search, image generation/edit, diagram, specialist delegation, and the user's own registered MCP tools to the main model as one native tool-calling decision, resolving live schemas and refusing any name the round did not actually offer; `MainSupervisorAgent`'s deterministic LangGraph policy node remains in the tree but is no longer wired into the live path |
 | `MCPToolOrchestrationService` | implemented model-selection boundary | Gives the configured main model a bounded live-validated shortlist, accepts at most one native tool call, and produces an application-owned plan without execution authority |
 | `MCPInvocationService` | implemented execution-policy boundary | Re-resolves live contracts, enforces local risk policy, validates and privacy-screens arguments, invokes stdio/HTTP tools, and bounds results as untrusted |
 | `MCPWebSearchProvider` | implemented read-only search boundary | Invokes the fixed internet MCP tool after deterministic routing and privacy minimization, then validates and filters compact result JSON |
@@ -987,7 +993,7 @@ The proposal is decided **before** the answer is generated, and the turn's real 
 
 ### Agent orchestration
 
-AniOS has a bounded hybrid supervisor plus three focused execution graphs. After the separate explicit-diagram branch, `MainSupervisorAgent` runs the first chat routing step as a typed LangGraph node. Its current deterministic capability policy delegates an explicit presentation-creation request to the registered `presentation_agent`; all other turns continue to the ordinary assistant and MCP paths. The browser receives `agent_started` and `agent_finished` events containing the exact specialist and configured model, while the delegated presentation continues as a durable background job. The ordinary assistant graph contains one streaming main-model node, `DiagramAgent` contains one asynchronous `generate_diagram` node, and `PresentationAgent` contains typed create, progressive-create, and revise operations around `PresentationProvider`.
+AniOS routes every turn through one native tool-calling decision before the assistant graph runs. `MainActionSelector` offers the live `search_web` schema, `generate_image`, `edit_image` (only when a picture is in view), `create_diagram`, `delegate_to_presentation_agent`, and the user's own semantically shortlisted MCP tools to the main model in a single call; the model picks at most one, or none, from genuine understanding of the request rather than from a regex or a narrow bounded classifier judging the question alone. `process_request` dispatches on whatever it picked: `create_diagram` and `delegate_to_presentation_agent` short-circuit into their own artifact/job lifecycles exactly as before, `generate_image`/`edit_image` run the same ComfyUI FLUX pipeline the old direct REST endpoints did but now inside the chat stream (so the exchange is visible in conversation history, which it previously was not), and `search_web`/a toolbox tool/no action continue into the ordinary assistant graph with that decision already made. The browser receives `agent_started`/`agent_finished` for a delegated specialist and `artifact_started`/`artifact_ready`/`artifact_error` for a diagram, a new image, or an edit — the same event pair a diagram always used, now shared by pictures too. The ordinary assistant graph contains one streaming main-model node, `DiagramAgent` contains one asynchronous `generate_diagram` node, and `PresentationAgent` contains typed create, progressive-create, and revise operations around `PresentationProvider`. `MainSupervisorAgent`'s deterministic LangGraph policy node and the retired `CascadingSearchRouter` remain in the tree, tested standalone, but neither is reachable from a live turn.
 
 This is deliberately narrower than a free-form LLM router. Deterministic registered intents provide a fast, testable first boundary; semantic MCP discovery plus native main-model tool selection handles eligible tools later in the ordinary path. The supervisor cannot invoke services, persist state, grant permissions, or invent capability IDs. The standalone presentation worker invokes the focused graph only after PostgreSQL claims a durable job. Application code owns authorization, scheduling, live contract revalidation, privacy, risk policy, invocation, persistence, and result attribution. Retrieved values and tool results are untrusted literal data and cannot grant permissions. A unified dynamic capability registry, ambiguity clarification/resume, researcher and reflection agents, A2A, and general agent-team scheduling remain `PLANNED`.
 
@@ -1175,20 +1181,29 @@ The current scaffold expresses this intended flow:
 
 ```text
 Frontend -> POST /api/v1/chat -> FastAPI dependency assembly
-         -> ConversationService -> MainSupervisorAgent
-         -> ordinary turn -> MemoryCoordinatorAgent -> typed stores
+         -> ConversationService -> MainActionSelector
+         -> (search_web | generate_image | edit_image | create_diagram
+             | delegate_to_presentation_agent | a toolbox tool | none),
+            the main model's own native tool-calling decision
+
+no action / search_web / toolbox tool -> MemoryCoordinatorAgent -> typed stores
          -> curated memory context -> LangGraph
          -> conversation repository -> streamed response
 
-Explicit presentation creation -> MainSupervisorAgent
-                              -> agent_started(PresentationAgent, model)
+delegate_to_presentation_agent -> agent_started(PresentationAgent, model)
                               -> durable PostgreSQL job -> presentation worker
                               -> agent_finished(queued) -> chat remains available
 
-Explicit diagram request -> ConversationService -> DiagramArtifactService
+create_diagram -> ConversationService -> DiagramArtifactService
                          -> pending artifact -> DiagramAgent -> local provider
                          -> validated Mermaid source -> ready/failed artifact SSE
                          -> strict in-browser SVG rendering
+
+generate_image / edit_image -> ImageArtifactService / ImageRefinementService
+                         -> pending artifact (artifact_started) -> ComfyUI FLUX
+                         -> ready/failed artifact (artifact_ready/artifact_error) SSE
+                         -> conversation turn persisted, unlike the direct REST
+                            endpoints these replace for chat-initiated requests
 
 Presentation brief -> PresentationService -> pending revision
                    -> PresentationAgent -> compact semantic plan

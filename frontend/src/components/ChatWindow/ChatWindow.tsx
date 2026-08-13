@@ -278,8 +278,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
   const memoryProposal = memoryProposals[0]?.proposal ?? null
 
-  // Mark the latest assistant response as actively generating a diagram.
-  const handleArtifactStarted = (artifactId: string) => {
+  // Mark the latest assistant response as actively generating its artifact --
+  // a diagram, or a picture the model chose to create or edit mid-chat.
+  const handleArtifactStarted = (artifactId: string, kind: 'diagram' | 'generated_image') => {
     setMessages(prev => {
       const next = [...prev]
       const index = latestAssistantIndex(next)
@@ -289,7 +290,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           artifactId,
           artifactStatus: 'generating',
           artifactError: undefined,
-          artifactActivity: 'Generating diagram...',
+          artifactActivity: kind === 'diagram' ? 'Generating diagram...' : 'Generating image...',
         }
       }
       return next
@@ -329,13 +330,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     })
   }
 
-  // Add an assistant placeholder while a local visual request is running.
-  const handleVisualStarted = (mode: 'generate' | 'analyze') => {
+  // Add an assistant placeholder while an uploaded image is being analyzed.
+  // Generation, editing, and diagrams all run through the chat stream instead
+  // and get their placeholder from handleArtifactStarted below.
+  const handleVisualStarted = (_mode: 'analyze') => {
     setMessages(prev => [...prev, {
       role: 'assistant',
-      content: mode === 'generate' ? 'Creating your image locally.' : 'Inspecting your image with Qwen.',
+      content: 'Inspecting your image with Qwen.',
       artifactStatus: 'generating',
-      artifactActivity: mode === 'generate' ? 'Generating image...' : 'Analyzing image...',
+      artifactActivity: 'Analyzing image...',
     }])
   }
 

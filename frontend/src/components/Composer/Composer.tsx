@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react'
 import { ArrowUp, Image as ImageIcon, Loader2, Paperclip, X } from 'lucide-react'
 import {
   analyzeImage,
-  generateImage,
   getArtifactImage,
   ingestDocument,
   refineImage,
@@ -14,31 +13,12 @@ import {
   type ToolActivity,
   type VisualArtifact,
 } from '../../services/api'
-import { shouldEditImage } from '../../services/imageIntent'
 import { submitOnEnter } from '../../utils/submitOnEnter'
 
-type ComposerAction = 'chat' | 'generate' | 'analyze' | 'ingest';
+type ComposerAction = 'chat' | 'analyze' | 'ingest';
 
 // Documents are read client-side and capped to the knowledge endpoint's limit.
 const MAX_DOCUMENT_CHARS = 200_000
-
-// Detect questions about an existing image before creation verbs can reroute them.
-const asksAboutExistingImage = (prompt: string): boolean => {
-  const normalized = prompt.trim().toLowerCase()
-  const isQuestion = normalized.endsWith('?')
-    || /^(what|which|who|where|when|why|how|is|are|was|were|did|does|do|can|could|would|will)\b/.test(normalized)
-  const referencesExistingVisual = /\b(this|that|the|last|previous|existing|create|created|generate|generated|make|made)\b/.test(normalized)
-    && /\b(image|picture|photo|artwork|illustration|car|vehicle|it)\b/.test(normalized)
-  return isQuestion && referencesExistingVisual
-}
-
-// Detect an explicit request to create a new image without treating history questions as creation.
-const requestsImageCreation = (prompt: string): boolean => {
-  if (asksAboutExistingImage(prompt)) return false
-  const normalized = prompt.trim().toLowerCase()
-  return /\b(create|generate|make|design)\b.{0,60}\b(image|picture|photo|artwork|illustration)\b/.test(normalized)
-    || /\b(draw|paint|sketch|render)\b/.test(normalized)
-}
 
 const isImageFile = (file: File): boolean =>
   ['image/png', 'image/jpeg', 'image/webp'].includes(file.type)
@@ -79,10 +59,10 @@ interface ComposerProps {
   onStreamUpdate: (content: string) => void;
   onThinkingChange: (isThinking: boolean) => void;
   onMemoryProposal: (proposal: MemoryProposal) => void;
-  onArtifactStarted: (artifactId: string) => void;
+  onArtifactStarted: (artifactId: string, kind: 'diagram' | 'generated_image') => void;
   onArtifactReady: (artifact: VisualArtifact) => void;
   onArtifactError: (artifactId: string, message: string) => void;
-  onVisualStarted: (mode: 'generate' | 'analyze') => void;
+  onVisualStarted: (mode: 'analyze') => void;
   onVisualReady: (artifact: ImageArtifact) => void;
   onVisualError: (message: string) => void;
   onImageMatches: (artifacts: ImageArtifact[]) => void;
@@ -129,6 +109,7 @@ const Composer: React.FC<ComposerProps> = ({
   const [isSending, setIsSending] = useState(false)
   const [attachedFile, setAttachedFile] = useState<File | null>(null)
   const [visualInFlight, setVisualInFlight] = useState(false)
+  const [chatInFlight, setChatInFlight] = useState(false)
   const [visualError, setVisualError] = useState('')
   const [activeImageUrl, setActiveImageUrl] = useState('')
   const requestController = useRef<AbortController | null>(null)
@@ -166,15 +147,18 @@ const Composer: React.FC<ComposerProps> = ({
     }
   }, [editableImage])
 
-  // Decide what a send should do: an attachment routes by file type, otherwise
-  // an explicit "draw me..." becomes generation and everything else is chat.
+  // Decide what a send should do: an attachment routes by file type; with no
+  // attachment it is always an ordinary chat turn. Whether that turn wants a
+  // new picture, a search, a diagram, or a specialist is not a client-side
+  // guess -- it is the main model's own decision, made with full context, on
+  // the server.
   const resolveAction = (file: File | null, prompt: string): ComposerAction | 'unsupported' => {
     if (file) {
       if (isImageFile(file)) return 'analyze'
       if (isTextDocument(file)) return 'ingest'
       return 'unsupported'
     }
-    return requestsImageCreation(prompt) ? 'generate' : 'chat'
+    return 'chat'
   }
 
   // Read a text document and index it into memory so it can be recalled later.
@@ -259,44 +243,29 @@ const Composer: React.FC<ComposerProps> = ({
 
       onSendMessage('user', prompt)
 
-      // An edit typed here applies to the image visibly selected above the composer.
-      //
-      // Without this the same words became an ordinary chat turn: the model has
-      // no image tool, so it answered that it could not edit images, which is
-      // indistinguishable from the feature being broken. Only explicitly
-      // edit-shaped text is taken, so ordinary conversation that happens to
-      // follow an image still reaches the model.
-      if (editableImage && await shouldEditImage(userId, prompt, editableImage.id)) {
-        onThinkingChange(false)
-        onVisualStarted('generate')
-        setVisualInFlight(true)
-        const revision = await refineImage(
-          userId,
-          editableImage.id,
-          prompt,
-          conversationId,
-        )
-        onImageRefined(revision)
-        return
-      }
-
-      if (action === 'generate') {
-        onThinkingChange(false)
-        onVisualStarted('generate')
-        setVisualInFlight(true)
-        const controller = new AbortController()
-        requestController.current = controller
-        const artifact = await generateImage(userId, conversationId, prompt, controller.signal)
-        onVisualReady(artifact)
-        return
-      }
+      // Whether this turn wants live search, a new or edited picture, a
+      // diagram, or a specialist -- or is just ordinary conversation -- is
+      // now the main model's own decision, made from full understanding of
+      // the request rather than a client-side guess at intent. It reaches
+      // that decision through the same streamed chat call every message
+      // takes, so the image currently in view is passed along as context for
+      // the "edit" option, and whichever action the model chooses (search,
+      // a new image, an edit, a diagram, or a delegated specialist) arrives
+      // back as ordinary chat stream events.
 
       onThinkingChange(true)
+      // The model may decide this turn is a slow generation or edit before the
+      // browser ever knows, so every chat send -- not only the old
+      // client-triggered visual ones -- needs to stay cancellable.
+      const chatController = new AbortController()
+      requestController.current = chatController
+      setChatInFlight(true)
       for await (const update of streamChat(
         userId,
         conversationId,
         prompt,
         editableImage?.id,
+        chatController.signal,
       )) {
         if (update.type === 'start') onStreamUpdate(update.content)
         else if (update.type === 'content') {
@@ -306,7 +275,7 @@ const Composer: React.FC<ComposerProps> = ({
         else if (update.type === 'memory_proposal') {
           onMemoryProposal(update.proposal)
         } else if (update.type === 'artifact_started') {
-          onArtifactStarted(update.artifactId)
+          onArtifactStarted(update.artifactId, update.kind)
         } else if (update.type === 'artifact_ready') {
           onThinkingChange(false)
           onArtifactReady(update.artifact)
@@ -338,8 +307,12 @@ const Composer: React.FC<ComposerProps> = ({
       setInput(prompt)
       setAttachedFile(file)
       if (action === 'chat') {
-        console.warn('Chat request failed:', err)
-        onStreamUpdate(describeSendFailure(err))
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          onStreamUpdate('Request cancelled.')
+        } else {
+          console.warn('Chat request failed:', err)
+          onStreamUpdate(describeSendFailure(err))
+        }
       } else if (action === 'ingest') {
         const message = err instanceof Error ? err.message : 'Unable to save the document.'
         setVisualError(message)
@@ -353,13 +326,14 @@ const Composer: React.FC<ComposerProps> = ({
     } finally {
       requestController.current = null
       setVisualInFlight(false)
+      setChatInFlight(false)
       onThinkingChange(false)
       setIsSending(false)
     }
   }
 
   // Cancel the active browser request and let the backend perform terminal cleanup.
-  const cancelVisualRequest = () => {
+  const cancelActiveRequest = () => {
     requestController.current?.abort()
   }
 
@@ -450,8 +424,8 @@ const Composer: React.FC<ComposerProps> = ({
           rows={1}
           disabled={isSending}
         />
-        {visualInFlight && (
-          <button type="button" aria-label="Cancel visual request" onClick={cancelVisualRequest} className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-[#f5f5f7] text-[#6e6e73] hover:bg-[#e8e8ed]">
+        {(visualInFlight || chatInFlight) && (
+          <button type="button" aria-label="Cancel request" onClick={cancelActiveRequest} className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-[#f5f5f7] text-[#6e6e73] hover:bg-[#e8e8ed]">
             <X size={18} />
           </button>
         )}

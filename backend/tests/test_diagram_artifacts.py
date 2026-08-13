@@ -26,11 +26,29 @@ from backend.core.llm import LLMClient
 from backend.main import app
 from backend.services.conversation_service import ConversationService
 from backend.services.diagram_artifact_service import DiagramArtifactService
+from backend.services.main_action_selector import CreateDiagramAction, MainAction
 from backend.tests.doubles import (
     StubConversationRepository,
     StubMemoryService,
     StubTracer,
 )
+
+
+class StubMainActionSelector:
+    """Return one fixed action without a native tool-calling round trip."""
+
+    def __init__(self, action: MainAction) -> None:
+        self.action = action
+
+    async def select(
+        self,
+        user_id,
+        query,
+        history,
+        active_image_artifact_id,
+        query_embedding=None,
+    ) -> MainAction:
+        return self.action
 
 
 class CapturingArtifactRepository(ArtifactRepository):
@@ -132,6 +150,14 @@ class CapturingArtifactRepository(ArtifactRepository):
             if not (record["user_id"] == user_id and record["id"] == artifact_id)
         ]
         return len(self.records) < before
+
+    # Delete every owned record, unused by these diagram-focused tests.
+    async def delete_all_owned(self, user_id: str) -> tuple[int, list[str]]:
+        owned = [record for record in self.records if record["user_id"] == user_id]
+        self.records = [
+            record for record in self.records if record["user_id"] != user_id
+        ]
+        return len(owned), []
 
     # Return one matching artifact for shared diagram and binary deletion routes.
     async def get_owned(
@@ -376,6 +402,9 @@ async def test_conversation_service_streams_ready_diagram_artifact() -> None:
         llm=NoopLLM(),
         repository=conversations,
         tracer=StubTracer(),
+        main_action_selector=StubMainActionSelector(  # type: ignore[arg-type]
+            CreateDiagramAction()
+        ),
         diagram_artifacts=DiagramArtifactService(
             DiagramAgent(StaticDiagramProvider()),
             artifacts,
@@ -418,6 +447,9 @@ async def test_conversation_service_streams_failed_diagram_artifact() -> None:
         llm=NoopLLM(),
         repository=conversations,
         tracer=StubTracer(),
+        main_action_selector=StubMainActionSelector(  # type: ignore[arg-type]
+            CreateDiagramAction()
+        ),
         diagram_artifacts=DiagramArtifactService(
             DiagramAgent(FailingDiagramProvider()),
             artifacts,
@@ -457,6 +489,9 @@ async def test_cancelled_diagram_generation_marks_pending_artifact_failed() -> N
         llm=NoopLLM(),
         repository=CapturingConversationRepository(),
         tracer=StubTracer(),
+        main_action_selector=StubMainActionSelector(  # type: ignore[arg-type]
+            CreateDiagramAction()
+        ),
         diagram_artifacts=DiagramArtifactService(
             DiagramAgent(BlockingDiagramProvider()),
             artifacts,

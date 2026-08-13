@@ -1,5 +1,4 @@
 import logging
-from datetime import UTC, datetime
 from functools import lru_cache
 from typing import Annotated
 
@@ -11,7 +10,6 @@ from backend.agents.diagram import DiagramAgent
 from backend.agents.registry import AgentRegistry
 from backend.agents.scout.digesting import DigestWriter
 from backend.agents.scout.place_suggest import PlaceSuggester
-from backend.agents.supervisor import MainSupervisorAgent
 from backend.agents.vision.memory import VisualMemorySelector
 from backend.artifacts.diagram import LLMDiagramProvider
 from backend.artifacts.image import (
@@ -81,10 +79,7 @@ from backend.presentations.provider import LLMPresentationProvider
 from backend.presentations.renderer import PptxGenJSRenderer
 from backend.presentations.research import DeckResearch
 from backend.search.budgeted import BudgetedSearchProvider
-from backend.search.cascade import CascadingSearchRouter
-from backend.search.classifier import LMStudioFreshnessClassifier
 from backend.search.mcp import MCPWebSearchProvider
-from backend.search.routing import SearchRoutingPolicy
 from backend.search.tavily import TavilySearchProvider
 from backend.services.agent_memory_manager import AgentMemoryManager
 from backend.services.artifact_deletion_service import ArtifactDeletionService
@@ -95,6 +90,7 @@ from backend.services.image_artifact_service import ImageArtifactService
 from backend.services.image_intent import ImageIntentClassifier
 from backend.services.image_refinement_service import ImageRefinementService
 from backend.services.image_style_service import ImageStyleService
+from backend.services.main_action_selector import MainActionSelector
 from backend.services.mcp_invocation_service import MCPInvocationService
 from backend.services.mcp_tool_orchestration_service import MCPToolOrchestrationService
 from backend.services.memory_operations_service import MemoryOperationsService
@@ -545,16 +541,6 @@ PresentationJobDependency = Annotated[
     Depends(get_presentation_job_service),
 ]
 
-
-# Build the typed first-step router without granting it execution authority.
-def get_main_supervisor_agent() -> MainSupervisorAgent:
-    return MainSupervisorAgent()
-
-
-MainSupervisorDependency = Annotated[
-    MainSupervisorAgent,
-    Depends(get_main_supervisor_agent),
-]
 
 
 # Share one handoff so generation and editing use the same sleep endpoint.
@@ -1307,28 +1293,31 @@ ImageRecallDependency = Annotated[
 ]
 
 
-# Compose free deterministic patterns with a bounded classifier fallback. The
-# classifier returns a judgement about the question, never a tool call, so the
-# application keeps ownership of routing.
-@lru_cache(maxsize=1)
-def get_search_router() -> CascadingSearchRouter:
-    classifier = (
-        LMStudioFreshnessClassifier(
-            get_classifier_llm(),
-            max_tokens=settings.SEARCH_CLASSIFIER_MAX_TOKENS,
-        )
-        if settings.SEARCH_CLASSIFIER_ENABLED
-        else None
-    )
-    return CascadingSearchRouter(
-        patterns=SearchRoutingPolicy(current_year=datetime.now(UTC).year),
-        classifier=classifier,
+# Compose the built-in actions (search, image generation/editing, diagrams,
+# specialist handoff) with the user's own registered tools into one native
+# tool-calling decision, made by the same model that answers the user -- not
+# by a battery of independent regexes and classifiers guessing beforehand.
+def get_main_action_selector(
+    llm: LlmDependency,
+    invocation: MCPInvocationDependency,
+    tool_orchestration: MCPToolOrchestrationDependency,
+    diagram_artifacts: DiagramArtifactDependency,
+    presentation_jobs: PresentationJobDependency,
+) -> MainActionSelector:
+    return MainActionSelector(
+        llm,
+        invocation,
+        settings.SEARCH_MCP_SERVER_ID,
+        settings.SEARCH_MCP_TOOL_NAME,
+        tool_orchestration,
+        diagram_enabled=diagram_artifacts is not None,
+        presentation_enabled=presentation_jobs is not None,
     )
 
 
-SearchRoutingDependency = Annotated[
-    CascadingSearchRouter,
-    Depends(get_search_router),
+MainActionSelectorDependency = Annotated[
+    MainActionSelector,
+    Depends(get_main_action_selector),
 ]
 
 
@@ -1340,11 +1329,13 @@ def get_conversation_service(
     memory_coordinator: MemoryCoordinatorDependency,
     diagram_artifacts: DiagramArtifactDependency,
     search: SearchDependency,
-    search_routing: SearchRoutingDependency,
     artifacts: ArtifactRepositoryDependency,
     image_recall: ImageRecallDependency,
     tool_orchestration: MCPToolOrchestrationDependency,
-    supervisor: MainSupervisorDependency,
+    main_action_selector: MainActionSelectorDependency,
+    image_generation: ImageArtifactDependency,
+    image_style: ImageStyleDependency,
+    image_refinement: ImageRefinementDependency,
     presentation_jobs: PresentationJobDependency,
     discovery_profile: DependencyDiscoveryProfileService,
     memory_proposals: MemoryProposalDependency,
@@ -1358,7 +1349,6 @@ def get_conversation_service(
         memory_coordinator=memory_coordinator,
         diagram_artifacts=diagram_artifacts,
         search=search,
-        search_routing=search_routing,
         image_recall=image_recall,
         image_search=artifacts,
         image_artifacts=artifacts,
@@ -1372,7 +1362,10 @@ def get_conversation_service(
             cluster_delta=settings.VISION_SEARCH_CLUSTER_DELTA,
         ),
         tool_orchestration=tool_orchestration,
-        supervisor=supervisor,
+        main_action_selector=main_action_selector,
+        image_generation=image_generation,
+        image_style=image_style,
+        image_refinement=image_refinement,
         presentation_jobs=presentation_jobs,
         presentation_model=(
             settings.PRESENTATION_LLM_MODEL

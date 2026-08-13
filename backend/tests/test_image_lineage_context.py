@@ -259,14 +259,13 @@ async def test_every_streamed_retrieval_event_survives_the_json_encoder() -> Non
     service.image_search_limit = 5
     service.lineage = StubLineage({"b": _PHOTO})
     service.search = None
-    service.search_routing = None
     service.tool_orchestration = None
 
     context: dict[str, Any] = {}
     events = [
         event
         async for event in service._stream_retrieved_context(
-            context, "u", "remember the cowboy image?", "trace", None
+            context, "u", "remember the cowboy image?", "trace", None, None
         )
     ]
 
@@ -299,7 +298,6 @@ async def test_active_owned_image_reaches_chat_context_without_recall_words() ->
     service.image_search = None
     service.lineage = None
     service.search = None
-    service.search_routing = None
 
     context: dict[str, Any] = {}
     events = [
@@ -309,6 +307,7 @@ async def test_active_owned_image_reaches_chat_context_without_recall_words() ->
             "owner",
             "what do you think of my style?",
             "trace",
+            None,
             None,
             "active",
         )
@@ -335,7 +334,6 @@ async def test_active_image_from_another_user_never_reaches_chat_context() -> No
     service.image_search = None
     service.lineage = None
     service.search = None
-    service.search_routing = None
 
     context: dict[str, Any] = {}
     async for _event in service._stream_retrieved_context(
@@ -343,6 +341,7 @@ async def test_active_image_from_another_user_never_reaches_chat_context() -> No
         "other-user",
         "what do you think of my style?",
         "trace",
+        None,
         None,
         "active",
     ):
@@ -368,7 +367,6 @@ async def test_visual_memory_recalls_style_without_image_keywords() -> None:
     service.image_search = None
     service.lineage = None
     service.search = None
-    service.search_routing = None
 
     context: dict[str, Any] = {}
     events = [
@@ -379,6 +377,7 @@ async def test_visual_memory_recalls_style_without_image_keywords() -> None:
             "what do you think of my style?",
             "trace",
             [0.1, 0.2],
+            None,
         )
     ]
 

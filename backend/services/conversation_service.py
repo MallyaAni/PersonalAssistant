@@ -1,22 +1,23 @@
 import asyncio
 import logging
 import re
+import secrets
 import uuid
 from collections.abc import AsyncGenerator
 from typing import Any
 
+import httpx
 from anyio import CancelScope
 
 from backend.agents.graph import build_assistant_graph
 from backend.agents.state import AgentState
-from backend.agents.supervisor import MainSupervisorAgent
 from backend.agents.vision.memory import VisualMemorySelector
-from backend.artifacts.diagram import is_diagram_request
 from backend.artifacts.image_lineage import collapse_revision_chains
 from backend.artifacts.image_prompt_match import prefer_prompt_matches
 from backend.artifacts.image_recall_router import CascadingImageRecallRouter
 from backend.artifacts.image_retrieval import ImageRetrievalPolicy
 from backend.artifacts.lineage import Lineage
+from backend.artifacts.types import ImageGenerationRequest
 from backend.core.egress import OutboundPrivacyPolicy
 from backend.core.interfaces import (
     ArtifactEmbeddingStore,
@@ -34,13 +35,25 @@ from backend.memory.coordinator import MemoryCoordinatorAgent
 from backend.memory.proposal_agent import MemoryProposalAgent
 from backend.models.schemas import ChatStreamEvent
 from backend.search.budgeted import SearchBudgetExceededError
-from backend.search.cascade import CascadingSearchRouter
 from backend.search.query import normalize_search_query
 from backend.services.diagram_artifact_service import DiagramArtifactService
-from backend.services.mcp_tool_orchestration_service import (
-    MCPToolOrchestrationService,
-    MCPToolSelectionError,
+from backend.services.image_artifact_service import ImageArtifactService
+from backend.services.image_refinement_service import (
+    ImageRefinementService,
+    RefinementError,
 )
+from backend.services.image_style_service import ImageStyleService
+from backend.services.main_action_selector import (
+    CreateDiagramAction,
+    DelegateAction,
+    EditImageAction,
+    GenerateImageAction,
+    MainAction,
+    MainActionSelector,
+    SearchAction,
+    ToolboxAction,
+)
+from backend.services.mcp_tool_orchestration_service import MCPToolOrchestrationService
 from backend.services.presentation_job_service import PresentationJobService
 
 logger = logging.getLogger(__name__)
@@ -122,6 +135,19 @@ def _effective_image_description(
     )[:_IMAGE_DESCRIPTION_CHARS]
 
 
+# Name an unreachable provider specifically -- the same distinction the
+# direct REST endpoints these actions replace already made. Read as an
+# ordinary refusal instead, a downed ComfyUI process looked like a declined
+# request rather than an outage nobody had started.
+def _image_provider_failure_message(exc: BaseException, action: str) -> str:
+    if isinstance(exc, httpx.ConnectError | httpx.ConnectTimeout):
+        return (
+            "The image generation backend (ComfyUI) isn't running. "
+            "Start it and try again."
+        )
+    return f"I couldn't {action} that image. Please try again."
+
+
 # Add matched-image context only after the user explicitly asks for web search.
 def _image_aware_search_query(
     query: str,
@@ -184,7 +210,6 @@ class ConversationService:
         memory_coordinator: MemoryCoordinatorAgent | None = None,
         diagram_artifacts: DiagramArtifactService | None = None,
         search: SearchProvider | None = None,
-        search_routing: CascadingSearchRouter | None = None,
         image_recall: CascadingImageRecallRouter | None = None,
         image_search: ArtifactEmbeddingStore | None = None,
         image_artifacts: BinaryArtifactRepository | None = None,
@@ -193,7 +218,10 @@ class ConversationService:
         image_retrieval: ImageRetrievalPolicy | None = None,
         search_privacy: OutboundPrivacyPolicy | None = None,
         tool_orchestration: MCPToolOrchestrationService | None = None,
-        supervisor: MainSupervisorAgent | None = None,
+        main_action_selector: MainActionSelector | None = None,
+        image_generation: ImageArtifactService | None = None,
+        image_style: ImageStyleService | None = None,
+        image_refinement: ImageRefinementService | None = None,
         presentation_jobs: PresentationJobService | None = None,
         presentation_model: str | None = None,
         discovery_profile: DiscoveryProfileService | None = None,
@@ -208,7 +236,6 @@ class ConversationService:
         self.memory_coordinator = memory_coordinator
         self.diagram_artifacts = diagram_artifacts
         self.search = search
-        self.search_routing = search_routing
         self.image_recall = image_recall
         self.image_search = image_search
         self.image_artifacts = image_artifacts
@@ -229,38 +256,40 @@ class ConversationService:
             cluster_delta=0.006,
         )
         self.tool_orchestration = tool_orchestration
-        self.supervisor = supervisor
+        self.main_action_selector = main_action_selector
+        self.image_generation = image_generation
+        self.image_style = image_style
+        self.image_refinement = image_refinement
         self.presentation_jobs = presentation_jobs
         self.presentation_model = presentation_model
         self.discovery_profile = discovery_profile
         self.memory_proposals = memory_proposals
         self.visual_memory = visual_memory
 
-    # Return the registered subagent selected by the first-step supervisor.
-    #
-    # A routing decision names a capability; it does not grant one. This resolves
-    # that name against what is actually wired up, so a policy for an agent with
-    # no handler falls through to the ordinary assistant instead of dropping the
-    # turn. Adding a specialist means adding it here as well as to the registry —
-    # deliberately two steps, because routing to something that cannot run is
-    # worse than not routing at all.
-    async def _delegated_capability(self, query: str) -> str | None:
-        if self.supervisor is None:
+    # Ask the model that is about to answer this turn what it actually needs,
+    # in one native tool call. Every candidate -- live search, a new or edited
+    # picture, a diagram, or a specialist handoff -- is offered together, so
+    # the choice (including choosing none of them) reflects the request as a
+    # whole rather than several independent guesses that never saw each other.
+    async def _select_main_action(
+        self,
+        user_id: str,
+        query: str,
+        history: list[dict[str, Any]],
+        active_image_artifact_id: str | None,
+    ) -> MainAction:
+        if self.main_action_selector is None:
             return None
-        decision = await self.supervisor.decide(query)
-        if decision.action != "delegate_agent":
+        try:
+            return await self.main_action_selector.select(
+                user_id,
+                query,
+                history,
+                active_image_artifact_id,
+            )
+        except Exception:
+            logger.warning("Main action selection failed", exc_info=True)
             return None
-        available = self._available_capabilities()
-        if decision.capability_id in available:
-            return decision.capability_id
-        return None
-
-    # Which specialists this conversation can actually delegate to right now.
-    def _available_capabilities(self) -> frozenset[str]:
-        available: set[str] = set()
-        if self.presentation_jobs is not None:
-            available.add("presentation_agent")
-        return frozenset(available)
 
     # Queue a specialist presentation job and persist the delegated chat turn.
     async def _process_presentation_delegation(
@@ -355,6 +384,216 @@ class ConversationService:
         yield {"event": "delta", "data": {"content": response_text}}
         yield {"event": "done", "data": {}}
 
+    # Yield `artifact_started` the moment a slow operation's pending row exists,
+    # rather than only once the whole thing finishes, so the interface shows the
+    # same live "generating" state a diagram gets. At most one event is yielded;
+    # the caller still awaits `operation` itself for the final result or error.
+    async def _stream_pending_started(
+        self,
+        operation: "asyncio.Task[dict[str, Any]]",
+        pending: dict[str, Any],
+        ready: asyncio.Event,
+        kind: str,
+    ) -> AsyncGenerator[ChatStreamEvent, None]:
+        ready_wait = asyncio.ensure_future(ready.wait())
+        done, _pending_futures = await asyncio.wait(
+            {operation, ready_wait}, return_when=asyncio.FIRST_COMPLETED
+        )
+        if ready_wait in done:
+            yield {
+                "event": "artifact_started",
+                "data": {"id": pending["id"], "kind": kind, "status": "pending"},
+            }
+        else:
+            ready_wait.cancel()
+
+    # Generate one image the main model chose to create, streaming the same
+    # artifact lifecycle a diagram uses, and persist the turn so this exchange
+    # remains visible to memory and future context -- unlike the direct REST
+    # path this replaces for chat, which never touched conversation history.
+    async def _process_image_generation(
+        self,
+        user_id: str,
+        query: str,
+        prompt: str,
+        conversation_id: str,
+        trace_id: str,
+        metadata: dict[str, Any],
+        history: list[dict[str, Any]],
+    ) -> AsyncGenerator[ChatStreamEvent, None]:
+        if self.image_generation is None:
+            raise RuntimeError("Image generation is not configured")
+        learned_style = (
+            await self.image_style.get_style(user_id)
+            if self.image_style is not None
+            else ""
+        )
+        pending: dict[str, Any] = {}
+        ready = asyncio.Event()
+
+        async def _on_pending(artifact: dict[str, Any]) -> None:
+            pending["id"] = str(artifact["id"])
+            ready.set()
+
+        task: asyncio.Task[dict[str, Any]] = asyncio.create_task(
+            self.image_generation.generate(
+                user_id=user_id,
+                conversation_id=conversation_id,
+                trace_id=trace_id,
+                request=ImageGenerationRequest(
+                    prompt=prompt,
+                    width=2048,
+                    height=2048,
+                    seed=secrets.randbelow(2**63),
+                ),
+                extra_style=learned_style,
+                on_pending=_on_pending,
+            )
+        )
+        async for event in self._stream_pending_started(
+            task, pending, ready, "generated_image"
+        ):
+            yield event
+
+        try:
+            artifact = await task
+        except Exception as exc:
+            logger.exception(
+                "Chat-initiated image generation failed for trace %s", trace_id
+            )
+            response_text = _image_provider_failure_message(exc, "generate")
+            await self._persist_completed_turn(
+                user_id,
+                conversation_id,
+                query,
+                response_text,
+                trace_id,
+                history,
+                {
+                    **metadata,
+                    "artifact_ids": [pending["id"]] if pending else [],
+                    "artifact_status": "failed",
+                },
+            )
+            yield {"event": "delta", "data": {"content": response_text}}
+            if pending.get("id"):
+                yield {
+                    "event": "artifact_error",
+                    "data": {"id": pending["id"], "message": response_text},
+                }
+            yield {"event": "done", "data": {}}
+            return
+
+        response_text = "Here's the image you asked for."
+        await self._persist_completed_turn(
+            user_id,
+            conversation_id,
+            query,
+            response_text,
+            trace_id,
+            history,
+            {**metadata, "artifact_ids": [str(artifact["id"])]},
+        )
+        yield {"event": "delta", "data": {"content": response_text}}
+        yield {"event": "artifact_ready", "data": artifact}
+        yield {"event": "done", "data": {}}
+
+    # Edit the picture currently in view as the main model chose to, streaming
+    # the same artifact lifecycle a diagram uses and persisting the turn -- the
+    # gap this closes is exactly the one reported: an edit request that changed
+    # a picture but left no reply and no trace in conversation history.
+    async def _process_image_edit(
+        self,
+        user_id: str,
+        query: str,
+        artifact_id: str,
+        instruction: str,
+        conversation_id: str,
+        trace_id: str,
+        metadata: dict[str, Any],
+        history: list[dict[str, Any]],
+    ) -> AsyncGenerator[ChatStreamEvent, None]:
+        if self.image_refinement is None:
+            raise RuntimeError("Image refinement is not configured")
+        pending: dict[str, Any] = {}
+        ready = asyncio.Event()
+
+        async def _on_pending(artifact: dict[str, Any]) -> None:
+            pending["id"] = str(artifact["id"])
+            ready.set()
+
+        task: asyncio.Task[dict[str, Any]] = asyncio.create_task(
+            self.image_refinement.refine(
+                user_id=user_id,
+                artifact_id=artifact_id,
+                feedback=instruction,
+                conversation_id=conversation_id,
+                trace_id=trace_id,
+                on_pending=_on_pending,
+            )
+        )
+        async for event in self._stream_pending_started(
+            task, pending, ready, "generated_image"
+        ):
+            yield event
+
+        try:
+            artifact = await task
+        except RefinementError as exc:
+            response_text = str(exc)
+            await self._persist_completed_turn(
+                user_id,
+                conversation_id,
+                query,
+                response_text,
+                trace_id,
+                history,
+                metadata,
+            )
+            yield {"event": "delta", "data": {"content": response_text}}
+            yield {"event": "done", "data": {}}
+            return
+        except Exception as exc:
+            logger.exception(
+                "Chat-initiated image edit failed for trace %s", trace_id
+            )
+            response_text = _image_provider_failure_message(exc, "edit")
+            await self._persist_completed_turn(
+                user_id,
+                conversation_id,
+                query,
+                response_text,
+                trace_id,
+                history,
+                {
+                    **metadata,
+                    "artifact_ids": [pending["id"]] if pending else [],
+                    "artifact_status": "failed",
+                },
+            )
+            yield {"event": "delta", "data": {"content": response_text}}
+            if pending.get("id"):
+                yield {
+                    "event": "artifact_error",
+                    "data": {"id": pending["id"], "message": response_text},
+                }
+            yield {"event": "done", "data": {}}
+            return
+
+        response_text = "Here's the edited image."
+        await self._persist_completed_turn(
+            user_id,
+            conversation_id,
+            query,
+            response_text,
+            trace_id,
+            history,
+            {**metadata, "artifact_ids": [str(artifact["id"])]},
+        )
+        yield {"event": "delta", "data": {"content": response_text}}
+        yield {"event": "artifact_ready", "data": artifact}
+        yield {"event": "done", "data": {}}
+
     # Select and execute at most one safe MCP tool while streaming its lifecycle.
     async def _stream_tool_context(
         self,
@@ -363,38 +602,11 @@ class ConversationService:
         query: str,
         conversation_id: str,
         trace_id: str,
-        query_embedding: list[float] | None,
-        active_image_artifact_id: str | None = None,
+        action: MainAction,
     ) -> AsyncGenerator[ChatStreamEvent, None]:
-        if self.tool_orchestration is None:
+        if self.tool_orchestration is None or not isinstance(action, ToolboxAction):
             return
-        try:
-            plan = await self.tool_orchestration.select(
-                user_id,
-                query,
-                query_embedding=query_embedding,
-            )
-        except MCPToolSelectionError:
-            logger.warning(
-                "Trace %s MCP tool selection failed",
-                trace_id,
-                exc_info=True,
-            )
-            context.setdefault("tool_notices", []).append(
-                {"status": "failed", "message": "Tool selection failed."}
-            )
-            yield {
-                "event": "tool_finished",
-                "data": {
-                    "server_id": "",
-                    "tool_name": "Tool selection",
-                    "status": "failed",
-                    "message": "AniOS could not select a tool. Answering without it.",
-                },
-            }
-            return
-        if plan is None:
-            return
+        plan = action.plan
 
         yield {
             "event": "tool_started",
@@ -507,6 +719,7 @@ class ConversationService:
         conversation_id: str,
         trace_id: str,
         query_embedding: list[float] | None,
+        action: MainAction,
         active_image_artifact_id: str | None = None,
     ) -> AsyncGenerator[ChatStreamEvent, None]:
         async for event in self._stream_retrieved_context(
@@ -515,6 +728,7 @@ class ConversationService:
             query,
             trace_id,
             query_embedding,
+            action,
             active_image_artifact_id,
         ):
             yield event
@@ -524,7 +738,7 @@ class ConversationService:
             query,
             conversation_id,
             trace_id,
-            query_embedding,
+            action,
         ):
             yield event
 
@@ -696,6 +910,7 @@ class ConversationService:
         query: str,
         trace_id: str,
         query_embedding: list[float] | None,
+        action: MainAction,
         active_image_artifact_id: str | None = None,
     ) -> AsyncGenerator[ChatStreamEvent, None]:
         active_image = await self._load_active_image(
@@ -742,9 +957,14 @@ class ConversationService:
         if image_matches:
             yield {"event": "image_matches", "data": {"artifacts": image_matches}}
 
-        if await self._should_search(query, trace_id):
+        if (
+            isinstance(action, SearchAction)
+            and self.search is not None
+            and self.search.is_enabled()
+        ):
+            logger.info("Trace %s routing to web search (reason=tool_call)", trace_id)
             search_results: list[dict[str, Any]]
-            outbound_query = _image_aware_search_query(query, image_matches)
+            outbound_query = _image_aware_search_query(action.query, image_matches)
             screened = self.search_privacy.sanitize(outbound_query)
             if not screened.allowed:
                 # Categories are logged, never the text that triggered them.
@@ -782,7 +1002,7 @@ class ConversationService:
                         },
                     }
                 search_results, search_succeeded = await self._load_search_context(
-                    screened.query, trace_id
+                    screened.query, trace_id, action.max_results
                 )
                 if tool_identity:
                     yield {
@@ -824,33 +1044,17 @@ class ConversationService:
                 },
             }
 
-    # Report whether this turn will search, without issuing the query. The
-    # decision may consult a bounded classifier, so it is awaited once and the
-    # result reused rather than recomputed for the provider call.
-    async def _should_search(self, query: str, trace_id: str) -> bool:
-        if self.search is None or self.search_routing is None:
-            return False
-        if not self.search.is_enabled():
-            return False
-        decision = await self.search_routing.decide(query)
-        if decision.should_search:
-            logger.info(
-                "Trace %s routing to web search (reason=%s)",
-                trace_id,
-                decision.reason,
-            )
-        return decision.should_search
-
-    # Fetch live results only when the deterministic policy asks for them.
+    # Fetch live results for the query the model chose when it called search_web.
     async def _load_search_context(
         self,
         query: str,
         trace_id: str,
+        max_results: int | None = None,
     ) -> tuple[list[dict[str, Any]], bool]:
         if self.search is None:
             return [], False
         try:
-            found = await self.search.search(query)
+            found = await self.search.search(query, max_results=max_results)
         except SearchBudgetExceededError as exhausted:
             # Distinct from an outage: nothing is broken and retrying will not
             # help. Returning silently would read as "the internet had nothing",
@@ -908,7 +1112,30 @@ class ConversationService:
         resolved_conversation_id = conversation_id or str(uuid.uuid4())
         logger.info("Started conversation trace %s", trace_id)
 
-        if self.diagram_artifacts is not None and is_diagram_request(query):
+        yield {
+            "event": "start",
+            "data": {
+                "trace_id": trace_id,
+                "conversation_id": resolved_conversation_id,
+            },
+        }
+
+        # One native tool-calling decision covers every candidate action for
+        # this turn. Recent history lets it recognize context (a location, an
+        # earlier answer) already given, rather than re-asking for it.
+        history = await self.repository.get_history(
+            resolved_conversation_id,
+            user_id,
+            self.history_turn_limit,
+        )
+        action = await self._select_main_action(
+            user_id, query, history, active_image_artifact_id
+        )
+
+        if (
+            isinstance(action, CreateDiagramAction)
+            and self.diagram_artifacts is not None
+        ):
             async for event in self._process_diagram_request(
                 user_id,
                 query,
@@ -919,20 +1146,51 @@ class ConversationService:
                 yield event
             return
 
-        yield {
-            "event": "start",
-            "data": {
-                "trace_id": trace_id,
-                "conversation_id": resolved_conversation_id,
-            },
-        }
-        if await self._delegated_capability(query) == "presentation_agent":
+        if (
+            isinstance(action, DelegateAction)
+            and action.capability_id == "presentation_agent"
+            and self.presentation_jobs is not None
+        ):
             async for event in self._process_presentation_delegation(
                 user_id,
                 query,
                 resolved_conversation_id,
                 trace_id,
                 metadata or {},
+            ):
+                yield event
+            return
+
+        if (
+            isinstance(action, GenerateImageAction)
+            and self.image_generation is not None
+        ):
+            async for event in self._process_image_generation(
+                user_id,
+                query,
+                action.prompt,
+                resolved_conversation_id,
+                trace_id,
+                metadata or {},
+                history,
+            ):
+                yield event
+            return
+
+        if (
+            isinstance(action, EditImageAction)
+            and active_image_artifact_id is not None
+            and self.image_refinement is not None
+        ):
+            async for event in self._process_image_edit(
+                user_id,
+                query,
+                active_image_artifact_id,
+                action.instruction,
+                resolved_conversation_id,
+                trace_id,
+                metadata or {},
+                history,
             ):
                 yield event
             return
@@ -944,6 +1202,7 @@ class ConversationService:
             trace_id,
             metadata or {},
             active_image_artifact_id,
+            preselected_action=action,
         ):
             yield event
 
@@ -989,6 +1248,7 @@ class ConversationService:
         trace_id: str,
         metadata: dict[str, Any],
         active_image_artifact_id: str | None = None,
+        preselected_action: MainAction = None,
     ) -> AsyncGenerator[ChatStreamEvent, None]:
         # 1. Plan and load only the context components needed for this request.
         plan_result = None
@@ -1048,6 +1308,7 @@ class ConversationService:
             conversation_id,
             trace_id,
             query_embedding,
+            preselected_action,
             active_image_artifact_id,
         ):
             yield retrieval_event
@@ -1139,13 +1400,6 @@ class ConversationService:
             user_id,
             self.history_turn_limit,
         )
-        yield {
-            "event": "start",
-            "data": {
-                "trace_id": trace_id,
-                "conversation_id": conversation_id,
-            },
-        }
         pending = await self.diagram_artifacts.begin(
             user_id,
             conversation_id,

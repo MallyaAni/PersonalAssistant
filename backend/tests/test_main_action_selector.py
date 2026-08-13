@@ -1,0 +1,299 @@
+import json
+
+import pytest
+
+from backend.core.llm import LLMClient
+from backend.mcp.types import MCPServerConfig, MCPTool
+from backend.services.main_action_selector import (
+    CreateDiagramAction,
+    DelegateAction,
+    EditImageAction,
+    GenerateImageAction,
+    MainActionSelector,
+    SearchAction,
+    ToolboxAction,
+)
+from backend.services.mcp_invocation_service import MCPInvocationService
+from backend.services.mcp_tool_orchestration_service import MCPToolOrchestrationService
+
+SEARCH_TOOL = MCPTool(
+    server_id="internet",
+    name="search_web",
+    description="Research a minimized public query.",
+    input_schema={
+        "type": "object",
+        "properties": {
+            "query": {"type": "string"},
+            "max_results": {"type": "integer"},
+        },
+        "required": ["query"],
+    },
+)
+WEATHER_TOOL = MCPTool(
+    server_id="weather",
+    name="current_weather",
+    description="Returns the current weather for a city.",
+    input_schema={
+        "type": "object",
+        "properties": {"city": {"type": "string"}},
+        "required": ["city"],
+    },
+)
+
+
+class FixedToolLLM(LLMClient):
+    """Return a controlled native tool decision and record exposed schemas."""
+
+    def __init__(self, message: dict) -> None:
+        self.message = message
+        self.tools: list[dict] = []
+        self.messages: list[dict] = []
+
+    def generate_text(self, prompt, max_tokens=1024):
+        return "unused"
+
+    def chat(self, messages, max_tokens=1024):
+        return {"content": "unused"}
+
+    def stream_chat(self, messages, max_tokens=1024):
+        yield "unused"
+
+    def chat_with_tools(self, messages, tools, max_tokens=256):
+        self.tools = tools
+        self.messages = messages
+        return self.message
+
+
+class FailingLLM(LLMClient):
+    def generate_text(self, prompt, max_tokens=1024):
+        return "unused"
+
+    def chat(self, messages, max_tokens=1024):
+        return {"content": "unused"}
+
+    def stream_chat(self, messages, max_tokens=1024):
+        yield "unused"
+
+    def chat_with_tools(self, messages, tools, max_tokens=256):
+        raise RuntimeError("runtime unreachable")
+
+
+class LiveLister:
+    """Return one live MCP contract regardless of which server is asked."""
+
+    def __init__(self, tools: dict[str, list[MCPTool]]) -> None:
+        self.tools = tools
+
+    async def list_tools(self, server):
+        return self.tools.get(server.server_id, [])
+
+
+class RecordingInvoker:
+    async def call_tool(self, server, tool_name, arguments):
+        raise AssertionError("execution is not exercised by the selector")
+
+
+class DescriptorMemory:
+    """Return one indexed toolbox descriptor without requiring PostgreSQL."""
+
+    def __init__(self, descriptors: list[dict] | None = None) -> None:
+        self.descriptors = (
+            descriptors
+            if descriptors is not None
+            else [
+                {
+                    "server_id": WEATHER_TOOL.server_id,
+                    "tool_name": WEATHER_TOOL.name,
+                    "schema_fingerprint": WEATHER_TOOL.schema_fingerprint,
+                }
+            ]
+        )
+
+    async def search_descriptors(
+        self, user_id, query, server_id, top_k, query_embedding=None
+    ):
+        return self.descriptors
+
+
+# Build a selector with both a live search tool and a toolbox candidate.
+def _selector(
+    message: dict,
+    diagram_enabled: bool = True,
+    presentation_enabled: bool = True,
+    search_risk: str = "read_only",
+    llm: LLMClient | None = None,
+) -> tuple[MainActionSelector, FixedToolLLM]:
+    fixed_llm = llm if isinstance(llm, FixedToolLLM) else FixedToolLLM(message)
+    invocation = MCPInvocationService(
+        RecordingInvoker(),  # type: ignore[arg-type]
+        LiveLister({"internet": [SEARCH_TOOL], "weather": [WEATHER_TOOL]}),  # type: ignore[arg-type]
+        (
+            MCPServerConfig(
+                server_id="internet", command="noop", risk_classification=search_risk
+            ),
+            MCPServerConfig(
+                server_id="weather", command="noop", risk_classification="read_only"
+            ),
+        ),
+    )
+    orchestration = MCPToolOrchestrationService(
+        DescriptorMemory(),  # type: ignore[arg-type]
+        invocation,
+        fixed_llm,
+    )
+    selector = MainActionSelector(
+        llm if llm is not None else fixed_llm,
+        invocation,
+        "internet",
+        "search_web",
+        orchestration,
+        diagram_enabled=diagram_enabled,
+        presentation_enabled=presentation_enabled,
+    )
+    return selector, fixed_llm
+
+
+def _tool_call(name: str, arguments: dict) -> dict:
+    return {
+        "tool_calls": [
+            {"function": {"name": name, "arguments": json.dumps(arguments)}}
+        ]
+    }
+
+
+@pytest.mark.asyncio
+async def test_model_choosing_search_writes_its_own_query():
+    selector, llm = _selector(
+        _tool_call("search_web", {"query": "current weather in Raleigh NC"})
+    )
+
+    action = await selector.select("ani.mallya", "what's it like outside", [], None)
+
+    assert action == SearchAction(
+        query="current weather in Raleigh NC", max_results=None
+    )
+    names = {tool["function"]["name"] for tool in llm.tools}
+    assert "search_web" in names
+
+
+@pytest.mark.asyncio
+async def test_no_tool_call_means_answer_directly():
+    selector, _llm = _selector({"content": "just answer normally"})
+
+    action = await selector.select("ani.mallya", "what is 2 plus 2", [], None)
+
+    assert action is None
+
+
+@pytest.mark.asyncio
+async def test_model_choosing_generate_image():
+    selector, _llm = _selector(
+        _tool_call("generate_image", {"prompt": "a red bicycle at sunset"})
+    )
+
+    action = await selector.select("ani.mallya", "draw me a bike", [], None)
+
+    assert action == GenerateImageAction(prompt="a red bicycle at sunset")
+
+
+@pytest.mark.asyncio
+async def test_edit_image_is_offered_only_with_an_active_image():
+    selector, llm = _selector(
+        _tool_call("edit_image", {"instruction": "add a straw hat"})
+    )
+
+    without_active = await selector.select("ani.mallya", "add a hat", [], None)
+    assert without_active is None
+    assert "edit_image" not in {tool["function"]["name"] for tool in llm.tools}
+
+    with_active = await selector.select(
+        "ani.mallya", "add a hat", [], "artifact-123"
+    )
+    assert with_active == EditImageAction(instruction="add a straw hat")
+    assert "edit_image" in {tool["function"]["name"] for tool in llm.tools}
+
+
+@pytest.mark.asyncio
+async def test_model_choosing_diagram():
+    selector, _llm = _selector(_tool_call("create_diagram", {}))
+
+    action = await selector.select(
+        "ani.mallya", "draw a flowchart of the deploy pipeline", [], None
+    )
+
+    assert action == CreateDiagramAction()
+
+
+@pytest.mark.asyncio
+async def test_diagram_not_offered_when_disabled():
+    selector, llm = _selector({"content": "no tool"}, diagram_enabled=False)
+
+    await selector.select("ani.mallya", "draw a flowchart", [], None)
+
+    assert "create_diagram" not in {tool["function"]["name"] for tool in llm.tools}
+
+
+@pytest.mark.asyncio
+async def test_model_choosing_presentation_delegation():
+    selector, _llm = _selector(_tool_call("delegate_to_presentation_agent", {}))
+
+    action = await selector.select(
+        "ani.mallya", "put together a six-slide deck", [], None
+    )
+
+    assert action == DelegateAction(capability_id="presentation_agent")
+
+
+@pytest.mark.asyncio
+async def test_presentation_not_offered_when_disabled():
+    selector, llm = _selector({"content": "no tool"}, presentation_enabled=False)
+
+    await selector.select("ani.mallya", "build me a deck", [], None)
+
+    assert "delegate_to_presentation_agent" not in {
+        tool["function"]["name"] for tool in llm.tools
+    }
+
+
+@pytest.mark.asyncio
+async def test_model_choosing_a_registered_toolbox_tool():
+    selector, _llm = _selector(
+        _tool_call("mcp_tool_0", {"city": "Raleigh"})
+    )
+
+    action = await selector.select("ani.mallya", "weather now", [], None)
+
+    assert isinstance(action, ToolboxAction)
+    assert action.plan.server_id == "weather"
+    assert action.plan.tool_name == "current_weather"
+    assert action.plan.arguments == {"city": "Raleigh"}
+
+
+@pytest.mark.asyncio
+async def test_search_not_offered_when_the_server_is_untrusted():
+    selector, llm = _selector({"content": "no tool"}, search_risk="untrusted")
+
+    await selector.select("ani.mallya", "what's happening in the news", [], None)
+
+    assert "search_web" not in {tool["function"]["name"] for tool in llm.tools}
+
+
+@pytest.mark.asyncio
+async def test_llm_failure_fails_closed_to_no_action():
+    selector, _llm = _selector({}, llm=FailingLLM())
+
+    action = await selector.select("ani.mallya", "anything", [], None)
+
+    assert action is None
+
+
+@pytest.mark.asyncio
+async def test_recent_history_reaches_the_decision_prompt():
+    selector, llm = _selector({"content": "no tool"})
+    history = [{"query": "I'm in Raleigh, NC", "response": "Got it."}]
+
+    await selector.select("ani.mallya", "any events tonight?", history, None)
+
+    sent = llm.messages[-1]["content"]
+    assert "I'm in Raleigh, NC" in sent
+    assert "any events tonight?" in sent

@@ -12,6 +12,7 @@ from backend.main import app
 from backend.mcp.invocation import MCPInvocationError, ToolCallResult
 from backend.memory.proposal_agent import MemoryProposalResult
 from backend.services.conversation_service import ConversationService
+from backend.services.main_action_selector import MainAction, ToolboxAction
 from backend.services.mcp_tool_orchestration_service import MCPToolPlan
 from backend.tests.doubles import (
     StubConversationRepository,
@@ -103,6 +104,23 @@ class FixedMemoryProposalAgent:
     ) -> MemoryProposalResult:
         self.known = known
         return MemoryProposalResult(self.proposals)
+
+
+class StubMainActionSelector:
+    """Return one fixed action without a native tool-calling round trip."""
+
+    def __init__(self, action: MainAction) -> None:
+        self.action = action
+
+    async def select(
+        self,
+        user_id,
+        query,
+        history,
+        active_image_artifact_id,
+        query_embedding=None,
+    ) -> MainAction:
+        return self.action
 
 
 class FixedToolOrchestration:
@@ -467,12 +485,21 @@ async def test_memory_values_remain_literal_untrusted_prompt_data():
 async def test_conversation_streams_tool_lifecycle_and_grounds_the_answer():
     llm = StubLLM()
     tools = FixedToolOrchestration()
+    plan = MCPToolPlan(
+        server_id="weather",
+        tool_name="current_weather",
+        arguments={"city": "Raleigh"},
+        expected_fingerprint="fingerprint",
+    )
     service = ConversationService(
         memory=StubMemoryService(),
         llm=llm,
         repository=CapturingConversationRepository(),
         tracer=StubTracer(),
         tool_orchestration=tools,  # type: ignore[arg-type]
+        main_action_selector=StubMainActionSelector(  # type: ignore[arg-type]
+            ToolboxAction(plan=plan)
+        ),
     )
 
     events = [
@@ -495,7 +522,6 @@ async def test_conversation_streams_tool_lifecycle_and_grounds_the_answer():
         "status": "succeeded",
         "message": "Tool completed.",
     }
-    assert tools.selected_embeddings == [[0.0, 0.0, 0.0]]
     system_prompt = llm.requests[0][0]["content"]
     assert "Raleigh is 72 F and clear." in system_prompt
     assert "untrusted third-party data" in system_prompt
@@ -505,6 +531,12 @@ async def test_conversation_streams_tool_lifecycle_and_grounds_the_answer():
 @pytest.mark.asyncio
 async def test_conversation_reports_tool_refusal_and_still_completes():
     llm = StubLLM()
+    plan = MCPToolPlan(
+        server_id="weather",
+        tool_name="current_weather",
+        arguments={"city": "Raleigh"},
+        expected_fingerprint="fingerprint",
+    )
     service = ConversationService(
         memory=StubMemoryService(),
         llm=llm,
@@ -513,6 +545,9 @@ async def test_conversation_reports_tool_refusal_and_still_completes():
         tool_orchestration=FixedToolOrchestration(
             MCPInvocationError("argument_withheld")
         ),  # type: ignore[arg-type]
+        main_action_selector=StubMainActionSelector(  # type: ignore[arg-type]
+            ToolboxAction(plan=plan)
+        ),
     )
 
     events = [

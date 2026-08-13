@@ -2910,3 +2910,64 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   memory, then verified the public Cloudflare browser path with a real uploaded
   PNG, the Memory-panel delete action, empty artifact history, terminal loading,
   and no Console or page errors.
+
+## 2026-08-12 — Turn routing became one native tool-calling decision
+
+- Replaced four independent deterministic gates — a regex-plus-classifier
+  cascade for web search, a regex for diagram requests, a regex delegation
+  policy for presentation creation, and a browser-side keyword regex for image
+  generation — with `MainActionSelector`: one native tool-calling call, made
+  by the same model that answers the user, offering search, image
+  generation/edit, diagrams, presentation delegation, and the user's own
+  registered MCP tools together and refusing to act on a name that round
+  never actually offered.
+- Folded image generation and editing into the chat stream. Both used to be
+  separate client-triggered REST calls invisible to conversation history —
+  which was the direct cause of a reported bug: an edit request changed the
+  picture but left no reply and no trace in memory. They now run inside
+  `process_request` and emit the same `artifact_started`/`artifact_ready`
+  lifecycle a diagram already used, so every exchange is persisted and an
+  edit gets a visible reply.
+- The routing prompt explicitly declines to guess a missing personal detail
+  (most concretely, the user's location) rather than silently assuming one
+  and searching anyway — the reported failure that started this change: a
+  request for tonight's events returned suggestions from unrelated cities
+  with no clarifying question asked.
+- Added a labelled-benchmark functional test
+  (`test_search_routing_quality_meets_the_retired_cascades_floor`) that holds
+  the new native tool-calling decision to the same recall/specificity floor
+  the retired regex-plus-classifier cascade was held to in
+  `evaluate_search_routing.py`, plus functional tests for the location-guessing
+  refusal, image/diagram/delegation routing, and ordinary questions choosing
+  no action — all against the real vLLM runtime and the real `internet` MCP
+  server. All 13 passed after one prompt revision driven by a real run: initial
+  recall was 0.76 against the cascade's 0.90 floor, missing implicit-officeholder
+  questions ("who is the prime minister of Canada"); naming that category
+  explicitly and telling the model to prefer calling the tool when genuinely
+  unsure closed the gap.
+- Evidence: the full backend suite (1166 tests) passes; Ruff passes on every
+  changed file; the frontend production build passes; the non-live browser
+  suite (61 tests) passes against a real Chromium instance and a real frontend
+  dev server, including every image-generation/edit test rewritten to mock the
+  chat SSE stream instead of the retired direct REST calls — one of which
+  caught a real bug before it shipped (the stream parser rejected any
+  `artifact_started` kind other than `"diagram"`, which would have broken
+  every chat-initiated image turn). Five pre-existing browser-suite failures
+  were confirmed present on unmodified `HEAD` and are unrelated. The
+  three `@live` image tests (real ComfyUI generation) were mechanically
+  updated to the same event-stream shape but could not be run in this
+  environment, since ComfyUI was not started; they remain unverified against
+  the live provider.
+- Restoring cancellability for a slow chat-initiated generation, discovered
+  missing while adapting the cancellation test, needed threading an
+  `AbortSignal` through `streamChat` and widening the composer's cancel
+  button beyond the retired visual-only request path.
+- Chat-initiated generation/edit failures now name an unreachable ComfyUI
+  specifically, matching the retired direct REST endpoints -- caught missing
+  while updating documentation, not by a test. A generic message would have
+  reintroduced the exact failure named in this repository's own operational
+  notes: a downed provider reading as a declined request rather than an
+  outage nobody had started.
+- `MainSupervisorAgent`, `CascadingSearchRouter`, and `SearchRoutingPolicy`
+  remain in the tree, still tested standalone, but are no longer reachable
+  from a live turn.

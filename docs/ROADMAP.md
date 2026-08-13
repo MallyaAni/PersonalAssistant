@@ -219,10 +219,19 @@ scale without coupling the system to the current RTX 5080 or planned DGX Spark.
 - `VERIFIED`: live-list/fingerprint/argument/privacy/risk invocation gates; consequential calls remain approval-gated but chat approval/resume is not implemented;
 - `VERIFIED`: semantic discovery over safe, versioned MCP tool descriptors and native configured-main-model selection from a bounded live-validated shortlist;
 - `VERIFIED`: user-scoped tool preference and usage-outcome memory;
-- `VERIFIED`: a typed hybrid `MainSupervisorAgent` LangGraph step delegates
-  explicit presentation creation to the registered durable specialist before
-  retrieval, emits visible agent/model lifecycle events, and leaves ordinary
-  turns to the existing main assistant/MCP path;
+- `VERIFIED`: `MainActionSelector` offers live search, image generation/edit,
+  diagrams, presentation delegation, and the user's own registered MCP tools
+  to the main model as one native tool-calling decision per turn, made from
+  genuine understanding rather than a regex or a narrow bounded classifier
+  judging the question alone; a labelled-benchmark functional test holds its
+  search recall/specificity to the floor the retired regex-plus-classifier
+  cascade (`MainSupervisorAgent`'s deterministic LangGraph delegation policy
+  and `CascadingSearchRouter`) was held to, and separate functional tests
+  cover image/diagram/delegation routing and refusing to guess a location it
+  does not know. Delegation still emits visible agent/model lifecycle events
+  and image/diagram actions still emit artifact lifecycle events, now shared
+  across all three since generation and editing also run inside the chat
+  stream instead of a separate client-triggered REST call;
 - `VERIFIED`: independently configurable main, presentation, and diagram model
   endpoints/identifiers/reasoning settings plus a repeatable comparative
   qualification harness. Qwen 3.5 4B passed bounded provider checks plus real

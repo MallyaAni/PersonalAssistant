@@ -5,24 +5,28 @@ flowchart TB
     User([User message]) --> API[Chat API]
     API --> Interest[Qwen 3.5 4B<br/>typed semantic memory agent]
     Interest --> Proposal[Visible memory proposal set<br/>no write before approval]
-    API --> Supervisor{MainSupervisorAgent<br/>deterministic routing}
+    API --> Selector{MainActionSelector<br/>one native tool call, all options together}
+    Search_Tool[Live search_web schema] -.-> Selector
+    Toolbox[User-registered<br/>MCP tools, shortlisted] -.-> Selector
 
-    Supervisor -->|presentation| Presentation[Queue durable<br/>PresentationAgent job]
+    Selector -->|delegate_to_presentation_agent| Presentation[Queue durable<br/>PresentationAgent job]
     Presentation --> Progress[Return job ID<br/>and background progress]
 
-    Supervisor -->|diagram| Diagram[DiagramAgent]
+    Selector -->|create_diagram| Diagram[DiagramAgent]
     Diagram --> Inference[Provider-neutral<br/>inference adapter]
     Inference -->|diagram role| DiagramModel[Qwen 3.5 4B<br/>diagram call via vLLM]
     DiagramModel --> Artifact[Validate and persist<br/>Mermaid artifact]
 
-    Supervisor -->|ordinary chat| Memory[MemoryCoordinatorAgent<br/>memory and artifact retrieval]
+    Selector -->|generate_image or edit_image| ImageAction[Generate or source-conditioned<br/>edit via ComfyUI FLUX]
+    ImageAction --> ImageArtifact[Persist ready/failed<br/>image artifact]
+
+    Selector -->|search_web, a toolbox<br/>tool, or neither| Memory[MemoryCoordinatorAgent<br/>memory and artifact retrieval]
     Memory --> Visual{Relevant stored<br/>image candidates?}
     Visual -->|yes| VisualPolicy[Qwen 3.5 4B<br/>visual-memory selection]
-    Visual -->|no| Optional{Need a tool<br/>or current web data?}
-    VisualPolicy --> Optional
-    Optional -->|tool| MCP[MCP selection<br/>and safety gates]
-    Optional -->|web| Search[Privacy-screened<br/>internet search]
-    Optional -->|neither| Context[Curated context]
+    Visual -->|no| Context[Curated context]
+    VisualPolicy --> Context
+    Selector -->|search_web query,<br/>model-authored| Search[Privacy-screened<br/>internet search]
+    Selector -->|toolbox tool| MCP[Guarded MCP<br/>invocation]
     MCP --> Context
     Search --> Context
 
@@ -33,6 +37,7 @@ flowchart TB
     Proposal --> Stream
 
     Artifact --> Stream
+    ImageArtifact --> Stream
     Progress --> Stream
     Stream --> UI[Visible answer, artifact,<br/>tool/search status, or job progress]
 
@@ -43,6 +48,6 @@ flowchart TB
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef failure fill:#fff3cd,stroke:#b78b20,color:#4d3900;
     class User,UI interface;
-    class API,Supervisor,Presentation,Progress,Diagram,Artifact,Memory,Visual,Optional,MCP,Search,Context,Inference,Persist,Stream,Proposal application;
+    class API,Selector,Search_Tool,Toolbox,Presentation,Progress,Diagram,Artifact,ImageAction,ImageArtifact,Memory,Visual,MCP,Search,Context,Inference,Persist,Stream,Proposal application;
     class Main,DiagramModel,Interest,VisualPolicy model;
     class Failure failure;

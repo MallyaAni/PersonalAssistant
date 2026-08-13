@@ -7,6 +7,98 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 
 Last updated: 2026-08-12, America/New_York
 
+## Turn routing became one native tool-calling decision — VERIFIED
+
+Two reports started this: a "suggestions for a bachata event tonight" request
+returned results from unrelated cities with no location ever asked for, and a
+"can you make me wear a straw hat here?" edit changed the picture with no
+reply and no trace in conversation history. Both traced to the same root
+cause — search routing, diagram detection, presentation delegation, and image
+generation were each decided by a separate deterministic gate (a
+regex-plus-classifier cascade, two plain regexes, and a browser-side keyword
+regex) running before the model that actually answers the user ever saw the
+request, and image generation/editing were client-triggered REST calls
+invisible to `conversations`.
+
+`MainActionSelector` (`backend/services/main_action_selector.py`) replaces all
+four with one native tool-calling decision made by the main model itself:
+`search_web` (live schema, model-authored query), `generate_image`,
+`edit_image` (offered only with an image in view), `create_diagram`,
+`delegate_to_presentation_agent`, and the user's own semantically shortlisted
+MCP tools, offered together in a single `chat_with_tools` call. It refuses to
+act on any name that round did not actually offer — defense against a
+malformed or unexpected provider response, not just an offline concern.
+`ConversationService.process_request` now calls it once and dispatches;
+`generate_image`/`edit_image` run inside the chat stream through the same
+`ImageArtifactService`/`ImageRefinementService` the retired REST endpoints
+used, emitting the same `artifact_started`/`artifact_ready`/`artifact_error`
+lifecycle a diagram already used — so the exchange is persisted and an edit
+gets a visible reply where it previously got neither.
+
+The routing prompt explicitly tells the model not to guess a missing personal
+detail (concretely, location) and call the tool with an assumption; it should
+call no tool instead, so the reply can ask. This is model behavior, not a
+separate feature — there is no code path that detects "location is missing"
+outside the model's own judgement in that one decision.
+
+Evidence: the full backend suite (1166 tests) passes; Ruff passes on every
+changed file; `tsc && vite build` passes for the frontend. Thirteen functional
+tests (`backend/tests/functional/test_main_action_selector_behaviour.py`) ran
+against the real vLLM runtime and the real `internet` MCP server (spawned
+live, no mocks) and all thirteen passed, including a labelled-benchmark test
+that holds the new decision to the exact recall/specificity floor
+`evaluate_search_routing.py` already held the retired cascade to. That test
+failed on its first real run — recall 0.759 against a 0.85 floor, missing
+implicit-officeholder questions like "who is the prime minister of Canada" —
+which is the kind of thing this rule exists to catch; naming that category
+explicitly in the prompt and telling the model to prefer calling the tool
+when genuinely unsure fixed it. The non-live browser suite (61 tests) passed
+against a real Chromium instance and a real frontend dev server, including
+every image-generation/edit test rewritten to mock the chat SSE stream
+instead of the retired direct REST calls. One of those rewrites caught a real
+bug before it shipped: the stream parser rejected any `artifact_started`
+`kind` other than `"diagram"`, which would have broken every chat-initiated
+image turn in the browser. Five pre-existing browser-suite failures
+(a theme/color assertion, a diagram-reload timing test, and three
+`presentations.spec.ts` tests) were confirmed present on unmodified `HEAD`
+via `git stash` and are unrelated.
+
+Known unverified: the three `@live` image tests that exercise real ComfyUI
+generation were mechanically updated to the new event-stream shape but could
+not be run in this environment — ComfyUI was not started (GPU-backed, profile
+-gated). They are updated in good faith, not exercised. A single combined
+real-browser-to-real-backend run (as opposed to a real browser against a
+mocked backend, and the real backend against a real model via the functional
+suite separately) was not performed either: `AUTH_REQUIRED=true` on the live
+account and no credential was available or attempted, correctly.
+
+Retiring the client-side routing surfaced a second gap while adapting its own
+test: chat-initiated image generation had no way to be cancelled mid-flight,
+because the "Cancel visual request" button and its `AbortController` were
+wired only to the retired client-triggered visual paths. Fixed by threading
+an `AbortSignal` through `streamChat` and widening the composer's cancel
+affordance to any in-flight chat request, not only the old visual ones.
+
+A third fidelity gap surfaced while updating `DEVELOPMENT_GUIDE.md`, not by a
+test: chat-initiated generation/edit failures used a generic message instead
+of naming an unreachable ComfyUI specifically, which is exactly the failure
+this repository's own operational notes warn reads as a declined request
+rather than an outage. `_image_provider_failure_message` in
+`conversation_service.py` now matches the retired REST endpoints' wording.
+
+`MainSupervisorAgent`, `DelegationRegistry`, `CascadingSearchRouter`, and
+`SearchRoutingPolicy` remain in the tree, still tested standalone
+(`test_supervisor.py`, `test_search_cascade.py`, `test_search_routing.py`,
+`evaluate_search_routing.py`), but none is reachable from a live turn.
+
+Diagrams: `chat-orchestration.mmd` redrawn around `MainActionSelector`, plus
+the generated architecture page's metrics strip and orchestration-contract
+paragraph. `visual-artifact-subsystem.mmd` deliberately left unchanged — its
+"Owned visual API" boundary and internal relationships did not change, only
+who calls into it. `npm run docs:diagram` regenerated all 19 SVGs and
+`architecture.html`; `npm run docs:diagram:check` confirms the full set and
+the published page are synchronized.
+
 ## Delete all personal memory now removes visual artifacts — VERIFIED
 
 The reported failure reproduced with a disposable owner and a real stored PNG:

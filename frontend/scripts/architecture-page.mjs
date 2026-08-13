@@ -149,10 +149,10 @@ function countCanonicalSources() {
 
 const metrics = [
   {
-    label: "First router",
-    value: "Deterministic",
-    note: "MainSupervisorAgent &middot; no LLM",
-    good: true,
+    label: "Turn routing",
+    value: "Native tool call",
+    note: "MainActionSelector &middot; one model decision, all options",
+    good: false,
   },
   {
     label: "Generation & vision",
@@ -174,7 +174,7 @@ const metrics = [
   },
   {
     label: "Backend suite",
-    value: "766 pass",
+    value: "1166 pass",
     note: "current full backend suite",
     good: true,
   },
@@ -378,11 +378,13 @@ ${pageStyles}
 full-system view, then use each subsystem diagram to trace ownership, model calls, persistence,
 trust boundaries, and user-visible lifecycle from entry point to result.</p>
 <p class="contract"><strong>Current orchestration contract:</strong>
-<code>MainSupervisorAgent</code> is a deterministic LangGraph router and makes no LLM call.
-It delegates registered presentation creation to a background worker; ordinary responses,
-presentation plans, diagram specifications, vision, and eligible MCP tool selection use Qwen
-through vLLM. Nomic supplies text embeddings through a separate vLLM service. Application code
-&mdash; never the models &mdash; owns authorization, persistence, provider policy, and execution.</p>
+<code>MainActionSelector</code> offers live search, image generation/edit, diagrams, presentation
+delegation, and the user's own registered MCP tools to the main model as one native tool-calling
+decision per turn, made from genuine understanding rather than a regex or a narrow bounded
+classifier judging the question alone. Ordinary responses, presentation plans, diagram
+specifications, vision, and the routing decision itself use Qwen through vLLM. Nomic supplies text
+embeddings through a separate vLLM service. Application code &mdash; never the models &mdash; owns
+authorization, persistence, provider policy, and execution.</p>
 
 <dl class="strip">
 ${cells}

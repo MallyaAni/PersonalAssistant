@@ -5,6 +5,7 @@ import pytest
 from backend.agents.supervisor import MainSupervisorAgent
 from backend.core.llm import LLMClient
 from backend.services.conversation_service import ConversationService
+from backend.services.main_action_selector import DelegateAction, MainAction
 
 
 class StubLlm(LLMClient):
@@ -60,6 +61,23 @@ class StubTracer:
         return None
 
 
+class StubMainActionSelector:
+    """Return one fixed action without a native tool-calling round trip."""
+
+    def __init__(self, action: MainAction) -> None:
+        self.action = action
+
+    async def select(
+        self,
+        user_id: str,
+        query: str,
+        history: list[dict[str, Any]],
+        active_image_artifact_id: str | None,
+        query_embedding: list[float] | None = None,
+    ) -> MainAction:
+        return self.action
+
+
 class StubJobs:
     """Capture durable presentation work queued by the supervisor."""
 
@@ -103,7 +121,9 @@ async def test_conversation_delegates_presentation_to_durable_job() -> None:
         llm=StubLlm(),
         repository=repository,  # type: ignore[arg-type]
         tracer=StubTracer(),  # type: ignore[arg-type]
-        supervisor=MainSupervisorAgent(),
+        main_action_selector=StubMainActionSelector(  # type: ignore[arg-type]
+            DelegateAction(capability_id="presentation_agent")
+        ),
         presentation_jobs=jobs,  # type: ignore[arg-type]
         presentation_model="qualified/presentation-model",
     )

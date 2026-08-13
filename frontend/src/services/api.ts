@@ -461,7 +461,7 @@ export type ChatStreamUpdate =
   | { type: 'start'; content: string }
   | { type: 'content'; content: string }
   | { type: 'memory_proposal'; proposal: MemoryProposal }
-  | { type: 'artifact_started'; artifactId: string }
+  | { type: 'artifact_started'; artifactId: string; kind: 'diagram' | 'generated_image' }
   | { type: 'artifact_ready'; artifact: VisualArtifact }
   | { type: 'image_matches'; artifacts: ImageArtifact[] }
   | { type: 'search_started'; minimized: boolean }
@@ -1178,28 +1178,6 @@ export async function refineImage(
   return artifact
 }
 
-// Ask the server whether words typed about an image request a change to it.
-//
-// The decision is the model's, and it is made in one place so the composer, the
-// image card and the upload path cannot disagree about the same sentence.
-export async function classifyImageIntent(
-  userId: string,
-  text: string,
-  artifactId?: string,
-): Promise<boolean> {
-  const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/images/intent`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_id: userId, text, artifact_id: artifactId || null }),
-  })
-  if (!response.ok) {
-    const detail = await response.json().catch(() => ({}))
-    throw new Error(apiErrorMessage(detail, response.status))
-  }
-  const result = await response.json() as Record<string, unknown>
-  return result.intent === 'edit'
-}
-
 // Upload and analyze one owned image with the configured local vision model.
 //
 // Returns the server's routing decision alongside the stored upload: an edit
@@ -1312,19 +1290,21 @@ export async function* streamChat(
   conversationId: string,
   query: string,
   activeImageArtifactId?: string,
+  signal?: AbortSignal,
 ) {
   const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/chat`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ 
-      user_id: userId, 
+    body: JSON.stringify({
+      user_id: userId,
       conversation_id: conversationId,
       active_image_artifact_id: activeImageArtifactId || null,
       query: query,
-      metadata: {} 
+      metadata: {}
     }),
+    signal,
   });
 
   if (!response.ok) {
@@ -1522,7 +1502,7 @@ export async function* streamChat(
         const { id, kind, status } = event.data
         if (
           typeof id !== 'string' ||
-          kind !== 'diagram' ||
+          (kind !== 'diagram' && kind !== 'generated_image') ||
           status !== 'pending'
         ) {
           throw new Error('Artifact start event is invalid')
@@ -1530,6 +1510,7 @@ export async function* streamChat(
         yield {
           type: 'artifact_started',
           artifactId: id,
+          kind,
         } satisfies ChatStreamUpdate
       } else if (event.event === 'artifact_ready') {
         yield {
