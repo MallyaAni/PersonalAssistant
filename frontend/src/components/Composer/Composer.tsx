@@ -346,7 +346,7 @@ const Composer: React.FC<ComposerProps> = ({
         <div className="mb-2 flex items-center gap-2 px-2">
           <span
             aria-label={`Using image in chat: ${editableImage.title}`}
-            className="inline-flex max-w-full items-center gap-2 rounded-2xl border border-[#0071e3]/20 bg-[#f5faff] px-2 py-1.5 text-xs text-[#1d1d1f]"
+            className="inline-flex max-w-full items-center gap-2 rounded-2xl border border-[#0071e3]/20 bg-[#f0f7ff] px-2 py-1.5 text-xs text-[#1d1d1f]"
           >
             {activeImageUrl ? (
               <img

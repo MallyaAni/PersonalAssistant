@@ -126,4 +126,58 @@ test.describe('theme', () => {
     await page.setViewportSize({ width: 390, height: 844 })
     await expect(themeButton(page)).toHaveCount(1)
   })
+
+  // theme.css re-declares every compiled utility class once under `.dark`,
+  // by hand, keyed to the exact class Tailwind emits — and an opacity suffix
+  // (`bg-[#f5f5f7]/90`) or a `hover:` prefix compiles to its own class,
+  // distinct from the plain colour, so mapping the plain one does not cover
+  // it. The floating composer bar uses the opacity form for its backdrop-blur
+  // background and stayed solid white in dark mode until that specific class
+  // was mapped. This sends one message so the bar renders in its styled
+  // (`hasMessages`) state and reads its computed colour back, rather than
+  // trusting that the right selector exists in theme.css.
+  test('the composer bar behind the message list is dark, not left white', async ({ page }) => {
+    await page.route('http://localhost:8000/api/v1/chat', async route => {
+      const payload = route.request().postDataJSON()
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/event-stream',
+        body: [
+          'event: start',
+          `data: ${JSON.stringify({ trace_id: 'theme-trace', conversation_id: payload.conversation_id })}`,
+          '',
+          'event: delta',
+          `data: ${JSON.stringify({ content: 'ok' })}`,
+          '',
+          'event: done',
+          'data: {}',
+          '',
+          '',
+        ].join('\n'),
+      })
+    })
+
+    await page.goto('/')
+    const toggle = themeButton(page)
+    await toggle.click()
+    await expect(toggle).toHaveAttribute('aria-label', 'Theme: light')
+    await toggle.click()
+    await expect(toggle).toHaveAttribute('aria-label', 'Theme: dark')
+
+    const textarea = page.getByLabel('Message DeepMatter')
+    await textarea.fill('hello')
+    await page.getByRole('button', { name: 'Send message' }).click()
+    await expect(textarea).toHaveValue('')
+
+    const composerBar = textarea.locator(
+      'xpath=ancestor::div[contains(@class,"backdrop-blur-xl")]',
+    )
+    const background = await composerBar.evaluate(
+      element => getComputedStyle(element).backgroundColor,
+    )
+    // The light value (#f5f5f7 at 90%) is rgb(245, 245, 247); its dark mapping
+    // (#1c1c1e at 90%) is rgb(28, 28, 30). Asserting the actual dark value,
+    // not just "not light", so a future edit to the mapping is also caught.
+    expect(background).toBe('rgba(28, 28, 30, 0.9)')
+  })
 })

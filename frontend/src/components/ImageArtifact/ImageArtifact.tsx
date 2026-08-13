@@ -108,7 +108,7 @@ const ImageArtifact = ({
         type="button"
         onClick={() => setIsExpanded(true)}
         aria-label={`Expand image: ${artifact.title}`}
-        className="mt-3 flex w-full items-center gap-3 rounded-xl border border-black/[0.08] bg-[#f9f9fb] px-3 py-2 text-left hover:bg-[#f2f2f5]"
+        className="mt-3 flex w-full items-center gap-3 rounded-xl border border-black/[0.08] bg-[#f9f9fb] px-3 py-2 text-left hover:bg-[#f5f5f7]"
       >
         <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white">
           {loadError ? (
@@ -116,7 +116,7 @@ const ImageArtifact = ({
           ) : imageUrl ? (
             <img src={imageUrl} alt="" className="h-full w-full object-cover" />
           ) : (
-            <span className="h-full w-full animate-pulse bg-[#e5e5ea]" />
+            <span className="h-full w-full animate-pulse bg-[#d2d2d7]" />
           )}
         </span>
         <span className="min-w-0">
