@@ -269,14 +269,18 @@ class MainActionSelector:
         tools.append(
             self._builtin_definition(
                 _EDIT_IMAGE_TOOL,
-                "Change the picture currently in view. Only for an actual "
-                "photo or generated image - a generic 'edit' request about a "
-                "resume, document, or plan is not this. A question that asks "
-                "for an opinion, preference, or comparison about the picture "
-                "- such as which of two looks already shown is better, or "
-                "whether something suits it - is not this either, even when "
-                "it mentions the same subject an earlier edit changed: "
-                "answer that directly from what is already visible instead.",
+                "Change the picture currently in view. Never for a resume, "
+                "document, plan, or schedule, even when the message says "
+                "'edit' and no other tool fits that request - answer those "
+                "directly instead of calling any tool. Only for a direct "
+                "instruction to change the picture, never for a question, "
+                "even one naming a specific alternative ('do you recommend "
+                "a straw hat instead?', 'which hat do you like better?', "
+                "'would this look better in blue?', 'should I go with the "
+                "other one?'): a question asks what you think, it does not "
+                "tell you to change anything, even when the same subject "
+                "was just edited - answer it directly from what is already "
+                "visible instead.",
                 _EDIT_IMAGE_SCHEMA,
             )
         )

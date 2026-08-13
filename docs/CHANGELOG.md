@@ -3252,3 +3252,40 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   full `test_main_action_selector_behaviour.py` suite (17 tests, including
   the search-routing recall floor) stayed stable across three separate runs
   with the new `edit_image` wording in place.
+
+## 2026-08-13 — The edit_image opinion-question fix was too narrow; broadened and measured properly
+
+- The fix above shipped and was live for the next report: "do you recommend a
+  straw hat instead?" (a differently-worded opinion question, same underlying
+  shape as the one already fixed) again made `MainActionSelector` choose
+  `edit_image` on a real trace. Called out directly: the first fix answered
+  the one reported phrase rather than the general pattern. Rewrote
+  `edit_image`'s description around the actual rule — a question is never an
+  instruction, no matter what alternative it names — instead of listing
+  specific comparison phrasings, and added four *different* opinion phrasings
+  as examples so the wording itself demonstrates it generalizes.
+- Verification this time used repeated trials instead of a single pass,
+  because a single clean run had already been shown (earlier fix, same file)
+  to hide a real gap. A parametrized test batches all four phrasings and
+  requires every one to pass together, not one at a time: 24/24 across six
+  independent runs, versus the single reported phrase this fix started from.
+- That process caught a second, unrelated, **pre-existing** flake in the same
+  tool description while iterating: "let's edit this project plan to push
+  the deadline back a week" already misfired into `edit_image` roughly half
+  the time on the *currently deployed* wording (2/4 direct trials), not
+  something this change introduced — confirmed with `git stash` against the
+  version already live. An intermediate draft of the broadened wording made
+  it worse (3/4). The wording that shipped adds an explicit "even when the
+  message says 'edit' and no other tool fits — answer directly instead of
+  calling any tool" clause, which brought it to roughly 1/6 (down from ~1/2),
+  a real reduction but not elimination — recorded honestly rather than
+  claimed as fixed, since a residual gap this size will still surface again.
+- The search-routing recall floor test failed once during this iteration's
+  final verification pass, then passed clean on three immediate reruns (the
+  same test, unchanged). Read as noise near this benchmark's known floor,
+  not a regression from the tool-specific wording change — worth flagging in
+  case it recurs, since a real regression and floor-adjacent noise look
+  identical in a single run.
+- Evidence: full backend suite (1175 tests) passes; Ruff passes.
+  `test_main_action_selector_behaviour.py` grew to 21 tests. No frontend
+  change, so no gateway rebuild — `docker restart anios_backend` only.

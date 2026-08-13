@@ -7,6 +7,48 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 
 Last updated: 2026-08-13, America/New_York
 
+## edit_image opinion-question fix broadened after a real recurrence — VERIFIED, residual gap disclosed
+
+**Read this if a picture gets edited when the user only asked a question about it.**
+The first fix (below) patched the exact reported phrase ("which hat do you
+like better") and shipped. The very next report, "do you recommend a straw
+hat instead?", was the same underlying bug in different words, and it still
+fired `edit_image`. **The lesson, stated plainly because it nearly repeats:**
+a functional test that passes on the one phrase from the bug report proves
+nothing about the general case — verify a batch of differently-worded
+phrasings together, not the reported one in isolation.
+
+Rewrote `edit_image`'s tool description in `main_action_selector.py` around
+the actual rule (a question is never an instruction, no matter what
+alternative it names) instead of enumerating comparison phrasings, and
+added a parametrized test with four different opinion phrasings that must
+*all* pass together. Result: 24/24 across six independent runs (up from a
+single reported phrase). While iterating, discovered — via `git stash`
+against the wording already live, not something this session introduced —
+that "let's edit this project plan to push the deadline back a week" was
+already misfiring into `edit_image` about half the time, unrelated to the
+opinion-question bug. Reduced to roughly 1/6 with an explicit "even when no
+other tool fits — answer directly instead of calling any tool" clause, but
+**not eliminated**; expect this exact phrasing to resurface. Also: the
+search-routing recall floor test failed once mid-iteration, then passed
+clean on three immediate reruns with nothing changed — treated as noise
+near this benchmark's known floor, not a regression, but flag it if it
+recurs since the two look identical in a single run.
+
+Full backend suite (1175 tests) passes; Ruff passes. No frontend change, so
+only `docker restart anios_backend` was needed, not a gateway rebuild.
+
+Separately, confirmed (not this session's doing) that the user's own browser
+called `DELETE /api/v1/memory/ani.mallya` around 21:10 UTC on 2026-08-13,
+wiping that account's full conversation/memory/artifact history — verified
+via the gateway's real access log (genuine Chrome UA, real external IP, not
+test traffic). Worth knowing if a "wipe memory" UI action is meant to be
+scoped to memory only: the endpoint (`DELETE /api/v1/memory/{user_id}`,
+`backend/memory/repository.py::delete_all_user_memory`) also deletes the
+`conversations` table for that user, i.e. full chat history, not just
+recall facts. Not changed this session since it wasn't confirmed to be
+unwanted behavior — flagging for a product decision, not filed as a bug.
+
 ## An edit no longer echoes an unasked description, and stopped re-editing on an opinion question — VERIFIED (mostly)
 
 **The description leak** was reported live: "can you edit this to a straw

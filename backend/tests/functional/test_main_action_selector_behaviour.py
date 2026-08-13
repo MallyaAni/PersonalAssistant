@@ -257,3 +257,41 @@ async def test_an_opinion_question_about_a_just_edited_picture_does_not_re_edit(
         "existing-outfit-artifact-id",
     )
     assert not isinstance(action, EditImageAction), action
+
+
+# The bug is the shape "a question about the picture, not an instruction to
+# change it" - not any one wording of it. A fix aimed at the single reported
+# phrase ("which hat do you like better") left this exact live follow-up,
+# worded differently, still re-editing: reported after the first fix had
+# already shipped. Held to every phrasing at once (not one at a time) so a
+# fix narrow enough to pass on the reported words alone cannot pass here.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "do you recommend a straw hat instead?",
+        "should I go with the straw hat instead?",
+        "what do you think, straw or cowboy?",
+        "would the cowboy hat have suited me better?",
+    ],
+)
+async def test_every_phrasing_of_an_opinion_question_avoids_re_editing(
+    selector, text
+):
+    history = [
+        {
+            "query": "do you like my style?",
+            "response": (
+                "You're wearing a classic **black cowboy hat** paired with a "
+                "sleek **dark zip-up bomber jacket** over a simple **white "
+                "crew-neck t-shirt**."
+            ),
+        },
+        {
+            "query": "can you edit this to a straw hat?",
+            "response": "Here's the edited image.",
+        },
+    ]
+    action = await selector.select(
+        "functional_test_user", text, history, "existing-outfit-artifact-id"
+    )
+    assert not isinstance(action, EditImageAction), action
