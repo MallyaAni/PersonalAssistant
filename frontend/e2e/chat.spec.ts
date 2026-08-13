@@ -385,6 +385,30 @@ function imageActionEventStream(
   return frames.join('\n')
 }
 
+// Build one deterministic chat response that recalls an owned image by meaning.
+function imageMatchEventStream(
+  traceId: string,
+  conversationId: string,
+  response: string,
+  artifact: Record<string, unknown>,
+) {
+  return [
+    'event: start',
+    `data: ${JSON.stringify({ trace_id: traceId, conversation_id: conversationId })}`,
+    '',
+    'event: delta',
+    `data: ${JSON.stringify({ content: response })}`,
+    '',
+    'event: image_matches',
+    `data: ${JSON.stringify({ artifacts: [artifact] })}`,
+    '',
+    'event: done',
+    'data: {}',
+    '',
+    '',
+  ].join('\n')
+}
+
 // Give deterministic tests one server-derived identity and empty owned history.
 test.beforeEach(async ({ page }, testInfo) => {
   if (testInfo.title.includes('@live')) return
@@ -2716,6 +2740,56 @@ test('generates, restores, and deletes an owned image artifact', async ({ page }
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
+// A recalled image is shown every time it is relevant, but compactly - the
+// full 620px card with its download/retry/delete toolbar is reserved for an
+// image just created or uploaded, not for a passing reference to one already
+// in the library. Expanding it reveals the same full card and controls.
+test('shows a recalled image as a compact thumbnail that expands on click', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const artifactId = '34343434-3434-4434-8434-343434343434'
+  let conversationId = ''
+
+  await page.route('http://localhost:8000/api/v1/chat', async route => {
+    const payload = route.request().postDataJSON()
+    conversationId = String(payload.conversation_id)
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body: imageMatchEventStream(
+        'recall-trace',
+        conversationId,
+        'Based on the photo, that jacket pairs well with dark jeans.',
+        imageArtifactRecord('uploaded_image', artifactId, conversationId),
+      ),
+    })
+  })
+  await page.route(
+    `http://localhost:8000/api/v1/artifacts/ani.mallya/${artifactId}/content`,
+    route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
+  )
+
+  await page.goto('/')
+  const textarea = page.getByLabel('Message DeepMatter')
+  await textarea.fill('does that jacket go with dark jeans?')
+  await page.getByRole('button', { name: 'Send message' }).click()
+
+  const collapsed = page.getByRole('button', { name: 'Expand image: Uploaded image' })
+  await expect(collapsed).toBeVisible()
+  await expect(page.getByLabel('Image: Uploaded image', { exact: true })).not.toBeVisible()
+  await expect(page.getByRole('button', { name: 'Download' })).not.toBeVisible()
+
+  await collapsed.click()
+  const expandedCard = page.getByLabel('Image: Uploaded image', { exact: true })
+  await expect(expandedCard).toBeVisible()
+  await expect(expandedCard.getByRole('button', { name: 'Download' })).toBeVisible()
+  await expect(expandedCard.getByRole('button', { name: 'Delete' })).toBeVisible()
+
+  await expandedCard.getByRole('button', { name: 'Collapse' }).click()
+  await expect(collapsed).toBeVisible()
+  await expect(page.getByLabel('Image: Uploaded image', { exact: true })).not.toBeVisible()
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
 // Verify a historical image question uses chat without regenerating.
 test('routes an image followup question to chat without regenerating', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
@@ -2922,6 +2996,88 @@ test('asks about a selected generated image from the main composer', async ({ pa
   expect(chatBodies[1]).toMatchObject({ query: question, active_image_artifact_id: artifactId })
   await expect(latestAssistantAnswer(page).getByText(answer, { exact: true })).toBeVisible()
   await expect(textarea).toHaveValue('')
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// Deleting the active image must not disable auto-following the newest
+// visible image for the rest of the conversation. It used to: the delete
+// handler cleared the selection to `null`, the same value a deliberate
+// "clear image context" click uses, so every later picture was silently
+// skipped and an edit request typed afterward found nothing to apply to
+// with no explanation. This proves a second, later image still becomes
+// active on its own after the first one is deleted.
+test('keeps auto-following the newest image after deleting the active one', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const firstId = '91919191-9191-4191-8191-919191919191'
+  const secondId = '92929292-9292-4292-8292-929292929292'
+  let conversationId = ''
+  const chatBodies: Record<string, unknown>[] = []
+  let deletedId = ''
+
+  await page.route(
+    `http://localhost:8000/api/v1/artifacts/ani.mallya/${firstId}/content`,
+    route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
+  )
+  await page.route(
+    `http://localhost:8000/api/v1/artifacts/ani.mallya/${secondId}/content`,
+    route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
+  )
+  await page.route(`http://localhost:8000/api/v1/artifacts/ani.mallya/${firstId}`, route => {
+    deletedId = firstId
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ status: 'deleted', id: firstId }),
+    })
+  })
+  await page.route('http://localhost:8000/api/v1/chat', async route => {
+    const body = route.request().postDataJSON() as Record<string, unknown>
+    chatBodies.push(body)
+    conversationId = conversationId || String(body.conversation_id)
+    if (chatBodies.length === 1) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/event-stream',
+        body: imageActionEventStream('gen-1-trace', conversationId, firstId, 'generate', 'ready'),
+      })
+      return
+    }
+    if (chatBodies.length === 2) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/event-stream',
+        body: imageActionEventStream('gen-2-trace', conversationId, secondId, 'generate', 'ready'),
+      })
+      return
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body: chatEventStream('followup-trace', conversationId, 'Sure, here is what I see.'),
+    })
+  })
+
+  await page.goto('/')
+  const textarea = page.getByLabel('Message DeepMatter')
+
+  await textarea.fill('Create an image of a red bicycle')
+  await page.getByRole('button', { name: 'Send message' }).click()
+  await expect(page.getByLabel('Image: Generated image')).toBeVisible()
+
+  await page.getByLabel('Image: Generated image').getByRole('button', { name: 'Delete' }).click()
+  await expect(page.getByLabel('Image: Generated image')).not.toBeVisible()
+  expect(deletedId).toBe(firstId)
+
+  await textarea.fill('Create an image of a blue bicycle')
+  await page.getByRole('button', { name: 'Send message' }).click()
+  await expect(page.getByLabel('Image: Generated image')).toBeVisible()
+
+  await textarea.fill('what do you think of it?')
+  const followupResponse = page.waitForResponse('http://localhost:8000/api/v1/chat')
+  await page.getByRole('button', { name: 'Send message' }).click()
+  expect((await followupResponse).status()).toBe(200)
+
+  expect(chatBodies[2]).toMatchObject({ active_image_artifact_id: secondId })
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 

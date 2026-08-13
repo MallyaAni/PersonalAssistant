@@ -3,7 +3,7 @@ import logging
 import re
 import secrets
 import uuid
-from collections.abc import AsyncGenerator, Awaitable, Callable, Sequence
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from typing import Any
 
 import httpx
@@ -599,6 +599,67 @@ class ConversationService:
         yield {"event": "artifact_ready", "data": artifact}
         yield {"event": "done", "data": {}}
 
+    # Route an edit-image decision to the real edit, or explain that nothing
+    # is in view to apply it to - a check only the application can make, since
+    # the model that chose this action has no way to know whether the
+    # interface actually has a picture selected.
+    async def _dispatch_edit_image_action(
+        self,
+        user_id: str,
+        query: str,
+        action: EditImageAction,
+        active_image_artifact_id: str | None,
+        conversation_id: str,
+        trace_id: str,
+        metadata: dict[str, Any],
+        history: list[dict[str, Any]],
+    ) -> AsyncGenerator[ChatStreamEvent, None]:
+        if active_image_artifact_id is not None:
+            async for event in self._process_image_edit(
+                user_id,
+                query,
+                active_image_artifact_id,
+                action.instruction,
+                conversation_id,
+                trace_id,
+                metadata,
+                history,
+            ):
+                yield event
+            return
+        async for event in self._process_missing_edit_target(
+            user_id, query, conversation_id, trace_id, metadata, history
+        ):
+            yield event
+
+    # Tell the user plainly that an edit has nothing to apply to, rather than
+    # answering the message as if it never mentioned a picture at all.
+    async def _process_missing_edit_target(
+        self,
+        user_id: str,
+        query: str,
+        conversation_id: str,
+        trace_id: str,
+        metadata: dict[str, Any],
+        history: list[dict[str, Any]],
+    ) -> AsyncGenerator[ChatStreamEvent, None]:
+        response_text = (
+            "I don't see a picture in view to edit. Select the one you want "
+            'changed - click "Ask or edit" on it, or ask me to show it again '
+            "- and I'll make the change from there."
+        )
+        await self._persist_completed_turn(
+            user_id,
+            conversation_id,
+            query,
+            response_text,
+            trace_id,
+            history,
+            metadata,
+        )
+        yield {"event": "delta", "data": {"content": response_text}}
+        yield {"event": "done", "data": {}}
+
     # Select and execute at most one safe MCP tool while streaming its lifecycle.
     async def _stream_tool_context(
         self,
@@ -726,7 +787,6 @@ class ConversationService:
         query_embedding: list[float] | None,
         action: MainAction,
         active_image_artifact_id: str | None = None,
-        history: Sequence[dict[str, Any]] = (),
     ) -> AsyncGenerator[ChatStreamEvent, None]:
         async for event in self._stream_retrieved_context(
             context,
@@ -736,7 +796,6 @@ class ConversationService:
             query_embedding,
             action,
             active_image_artifact_id,
-            history,
         ):
             yield event
         async for event in self._stream_tool_context(
@@ -908,69 +967,6 @@ class ConversationService:
             return prompt_images
         return [active_image, *prompt_images]
 
-    # Decide what this turn actually displays. A semantic-fallback match
-    # already shown earlier in this conversation is dropped from what gets
-    # (re-)attached, so an incidental mention doesn't re-attach the same
-    # picture every turn; an explicit recall or the active image is not
-    # filtered. Returns the matches to attach and every id visible on screen
-    # this turn (display matches plus the active image, if any).
-    @staticmethod
-    def _resolve_display(
-        image_matches: list[dict[str, Any]],
-        used_semantic_fallback: bool,
-        history: Sequence[dict[str, Any]],
-        active_image: dict[str, Any] | None,
-    ) -> tuple[list[dict[str, Any]], set[str]]:
-        display_matches = image_matches
-        if used_semantic_fallback and image_matches:
-            already_shown = {
-                str(artifact_id)
-                for turn in history
-                for artifact_id in (turn.get("metadata") or {}).get("artifact_ids")
-                or ()
-            }
-            display_matches = [
-                match
-                for match in image_matches
-                if str(match.get("id")) not in already_shown
-            ]
-        displayed_ids = {str(match.get("id")) for match in display_matches}
-        if active_image is not None:
-            displayed_ids.add(str(active_image.get("id")))
-        return display_matches, displayed_ids
-
-    # Resolve lineage once and render every prompt image, marking each with
-    # whether it is part of the display attached to this reply (`display_matches`
-    # plus the active image) or a repeat withheld as already shown.
-    async def _render_image_prompt_context(
-        self,
-        user_id: str,
-        prompt_images: list[dict[str, Any]],
-        displayed_ids: set[str],
-    ) -> list[dict[str, Any]]:
-        lineages = await self._resolve_lineage(user_id, prompt_images)
-        return [
-            {
-                "kind": match.get("kind"),
-                "title": match.get("title"),
-                "created_at": match.get("created_at"),
-                "description": _effective_image_description(
-                    match,
-                    lineages.get(str(match.get("id"))),
-                ),
-                "generation_prompt": (match.get("metadata") or {}).get(
-                    "generation_prompt"
-                ),
-                "freshly_shown": str(match.get("id")) in displayed_ids,
-                # Where an edited picture came from. Without it a photograph
-                # the user supplied, once edited, reads as something the
-                # assistant invented — and what the original showed is lost
-                # even though it is the thing being asked about.
-                **_image_lineage(lineages.get(str(match.get("id")))),
-            }
-            for match in prompt_images
-        ]
-
     # Attach optional image and search context in place, streaming progress so
     # the interface can show retrieval and cite what it used.
     async def _stream_retrieved_context(
@@ -982,7 +978,6 @@ class ConversationService:
         query_embedding: list[float] | None,
         action: MainAction,
         active_image_artifact_id: str | None = None,
-        history: Sequence[dict[str, Any]] = (),
     ) -> AsyncGenerator[ChatStreamEvent, None]:
         active_image = await self._load_active_image(
             user_id,
@@ -994,35 +989,39 @@ class ConversationService:
             trace_id,
             query_embedding,
         )
-        # An explicit ask ("show me that photo") always surfaces the picture
-        # again, however many times it is asked. The semantic fallback below
-        # is different: it fires on any turn that is merely *about* something
-        # the picture shows (style, appearance, belongings), so left
-        # unguarded it re-attached the same photo to almost every reply in a
-        # conversation that kept referencing it - true each time in isolation,
-        # noisy in aggregate. That path is deduplicated against what this
-        # conversation has already displayed; an explicit request never is.
-        used_semantic_fallback = False
         if active_image is None and not image_matches:
             image_matches = await self._load_visual_memory_matches(
                 user_id,
                 query,
                 query_embedding,
             )
-            used_semantic_fallback = True
-        display_matches, displayed_ids = self._resolve_display(
-            image_matches, used_semantic_fallback, history, active_image
-        )
         prompt_images = self._prompt_images(active_image, image_matches)
         if prompt_images:
-            context["images"] = await self._render_image_prompt_context(
-                user_id, prompt_images, displayed_ids
-            )
-        if display_matches:
-            context["shown_image_ids"] = [
-                str(match.get("id")) for match in display_matches
+            lineages = await self._resolve_lineage(user_id, prompt_images)
+            # Tell the model the images exist and are already shown, so it
+            # describes them rather than claiming it cannot display images.
+            context["images"] = [
+                {
+                    "kind": match.get("kind"),
+                    "title": match.get("title"),
+                    "created_at": match.get("created_at"),
+                    "description": _effective_image_description(
+                        match,
+                        lineages.get(str(match.get("id"))),
+                    ),
+                    "generation_prompt": (match.get("metadata") or {}).get(
+                        "generation_prompt"
+                    ),
+                    # Where an edited picture came from. Without it a photograph
+                    # the user supplied, once edited, reads as something the
+                    # assistant invented — and what the original showed is lost
+                    # even though it is the thing being asked about.
+                    **_image_lineage(lineages.get(str(match.get("id")))),
+                }
+                for match in prompt_images
             ]
-            yield {"event": "image_matches", "data": {"artifacts": display_matches}}
+        if image_matches:
+            yield {"event": "image_matches", "data": {"artifacts": image_matches}}
 
         if (
             isinstance(action, SearchAction)
@@ -1244,16 +1243,12 @@ class ConversationService:
                 yield event
             return
 
-        if (
-            isinstance(action, EditImageAction)
-            and active_image_artifact_id is not None
-            and self.image_refinement is not None
-        ):
-            async for event in self._process_image_edit(
+        if isinstance(action, EditImageAction) and self.image_refinement is not None:
+            async for event in self._dispatch_edit_image_action(
                 user_id,
                 query,
+                action,
                 active_image_artifact_id,
-                action.instruction,
                 resolved_conversation_id,
                 trace_id,
                 metadata or {},
@@ -1583,7 +1578,6 @@ class ConversationService:
             query_embedding,
             preselected_action,
             active_image_artifact_id,
-            history,
         ):
             yield retrieval_event
 
@@ -1638,12 +1632,6 @@ class ConversationService:
         response_text = "".join(response_chunks)
 
         # 4. Persist conversation
-        shown_image_ids = context.get("shown_image_ids")
-        turn_metadata = (
-            {**metadata, "artifact_ids": shown_image_ids}
-            if shown_image_ids
-            else metadata
-        )
         await self._persist_completed_turn(
             user_id,
             initial_state.conversation_id,
@@ -1651,7 +1639,7 @@ class ConversationService:
             response_text,
             trace_id,
             history,
-            turn_metadata,
+            metadata,
         )
         # Emitted after the turn is saved, as before; each one was already
         # persisted before the answer was generated, so the reply could

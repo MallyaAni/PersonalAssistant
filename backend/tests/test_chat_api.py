@@ -12,7 +12,11 @@ from backend.main import app
 from backend.mcp.invocation import MCPInvocationError, ToolCallResult
 from backend.memory.proposal_agent import MemoryProposalResult
 from backend.services.conversation_service import ConversationService
-from backend.services.main_action_selector import MainAction, ToolboxAction
+from backend.services.main_action_selector import (
+    EditImageAction,
+    MainAction,
+    ToolboxAction,
+)
 from backend.services.mcp_tool_orchestration_service import MCPToolPlan
 from backend.tests.doubles import (
     StubConversationRepository,
@@ -691,6 +695,44 @@ async def test_conversation_reports_tool_refusal_and_still_completes():
     assert "privacy" in finished["data"]["message"]
     assert events[-1]["event"] == "done"
     assert "withheld" in llm.requests[0][0]["content"]
+
+
+class RefusingImageRefinement:
+    """Fail loudly if an edit is attempted with nothing actually in view."""
+
+    async def refine(self, *args, **kwargs):
+        raise AssertionError("refine() must not run with no active image")
+
+
+# edit_image is now offered to the model every turn, active image or not -
+# the application, not the model, has to notice nothing is selected and say
+# so, rather than silently answering the message as ordinary chat.
+@pytest.mark.asyncio
+async def test_edit_with_no_active_image_explains_instead_of_guessing():
+    repository = CapturingConversationRepository()
+    service = ConversationService(
+        memory=StubMemoryService(),
+        llm=StubLLM(),
+        repository=repository,
+        tracer=StubTracer(),
+        main_action_selector=StubMainActionSelector(  # type: ignore[arg-type]
+            EditImageAction(instruction="add a straw hat")
+        ),
+        image_refinement=RefusingImageRefinement(),  # type: ignore[arg-type]
+    )
+
+    events = [
+        event
+        async for event in service.process_request(
+            "proposal_user",
+            "add a straw hat",
+        )
+    ]
+
+    assert [event["event"] for event in events] == ["start", "delta", "done"]
+    message = events[1]["data"]["content"]
+    assert "select the one you want" in message.casefold()
+    assert repository.saved_turns[0][1]["response"] == message
 
 
 @pytest.mark.parametrize(

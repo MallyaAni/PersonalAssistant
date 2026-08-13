@@ -266,12 +266,7 @@ const MessageBubble: React.FC<MessageProps> = ({
         </section>
       )}
       {!isUser && imageMatches && imageMatches.length > 0 && (
-        <section className="mt-4 space-y-3" aria-label="Matching images">
-          <p className="text-xs font-medium uppercase tracking-[0.08em] text-[#86868b]">
-            {imageMatches.length === 1
-              ? '1 matching image from your library'
-              : `${imageMatches.length} matching images from your library`}
-          </p>
+        <section className="mt-3 space-y-2" aria-label="Matching images">
           {imageMatches.map(match => (
             <ImageArtifact
               key={match.id}
@@ -279,6 +274,7 @@ const MessageBubble: React.FC<MessageProps> = ({
               onDeleted={onArtifactDeleted}
               onSelect={onImageSelect}
               isSelected={activeImageId === match.id}
+              compact
             />
           ))}
         </section>

@@ -258,14 +258,23 @@ class MainActionSelector:
                 _GENERATE_IMAGE_SCHEMA,
             )
         )
-        if active_image_artifact_id is not None:
-            tools.append(
-                self._builtin_definition(
-                    _EDIT_IMAGE_TOOL,
-                    "Change the picture currently in view.",
-                    _EDIT_IMAGE_SCHEMA,
-                )
+        # Offered unconditionally, unlike generate_image's implicit sibling: a
+        # request to change "the picture" can arrive before the application's
+        # own idea of what is active agrees, and the only way to find that out
+        # is to let the model decide edit intent from the conversation, then
+        # let the caller check whether anything is actually in view -
+        # otherwise a missing selection answered as an ordinary chat turn with
+        # no explanation, which read as the feature being broken rather than a
+        # picture nobody had picked.
+        tools.append(
+            self._builtin_definition(
+                _EDIT_IMAGE_TOOL,
+                "Change the picture currently in view. Only for an actual "
+                "photo or generated image - a generic 'edit' request about a "
+                "resume, document, or plan is not this.",
+                _EDIT_IMAGE_SCHEMA,
             )
+        )
         if self.diagram_enabled:
             tools.append(
                 self._builtin_definition(

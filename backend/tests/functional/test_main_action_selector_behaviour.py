@@ -25,6 +25,7 @@ from backend.search.routing_cases import ROUTING_CASES
 from backend.services.main_action_selector import (
     CreateDiagramAction,
     DelegateAction,
+    EditImageAction,
     GenerateImageAction,
     MainActionSelector,
     SearchAction,
@@ -179,3 +180,38 @@ async def test_an_explicit_deck_request_delegates_to_the_presentation_agent(
 async def test_an_ordinary_question_chooses_no_action(selector, text):
     action = await selector.select("functional_test_user", text, [], None)
     assert action is None, action
+
+
+# edit_image is now offered every turn, active image or not - the check that
+# something is actually selected moved to ConversationService, since only the
+# application knows the real UI state. This holds the selector itself to two
+# things: it must still recognize a genuine edit request when the
+# conversation clearly has a picture in it, and it must not be tempted into
+# calling edit_image by an unrelated "edit" request now that the tool is
+# always on the table.
+async def test_an_edit_request_with_a_recent_picture_chooses_edit_image(selector):
+    history = [
+        {
+            "query": "make me a picture of a red bicycle leaning against a brick wall",
+            "response": "Here's the image you asked for.",
+        }
+    ]
+    action = await selector.select(
+        "functional_test_user",
+        "make it black and white",
+        history,
+        None,
+    )
+    assert isinstance(action, EditImageAction), action
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "edit my resume to remove my last job",
+        "let's edit this project plan to push the deadline back a week",
+    ],
+)
+async def test_an_unrelated_edit_request_does_not_choose_edit_image(selector, text):
+    action = await selector.select("functional_test_user", text, [], None)
+    assert not isinstance(action, EditImageAction), action

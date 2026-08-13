@@ -489,8 +489,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   }
 
   // Remove a deleted image from the visible transcript without deleting its text.
+  //
+  // Clearing to `undefined`, not `null`, when the deleted image was the active
+  // one. `null` means the user deliberately detached image context and should
+  // stick; a deletion is not that choice, and leaving it `null` silently
+  // disabled auto-following the newest visible image for the rest of the
+  // conversation - so an edit request typed later, with no explanation, found
+  // nothing to apply to.
   const handleVisualDeleted = (artifactId: string) => {
-    setSelectedImageId(current => current === artifactId ? null : current)
+    setSelectedImageId(current => current === artifactId ? undefined : current)
     setMessages(prev => prev.map(message => message.artifact?.id === artifactId
       ? { ...message, artifact: undefined, artifactId: undefined, content: 'Image deleted.' }
       : message))

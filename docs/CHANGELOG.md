@@ -3044,3 +3044,69 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   `memory-overview.mmd`, `memory-subsystem.mmd`, `chat-orchestration.mmd`, and
   `agent-memory.mmd` (removing the "visible approval"/"Consent" gate nodes)
   plus their SVGs — `docs:diagram:check` reports all 19 diagrams synchronized.
+
+## 2026-08-13 — Recalled photos display compactly; editing explains a missing target
+
+- Reverted the same day's redisplay dedup after user feedback: the actual
+  complaint was never "shows too often" but that each occurrence used the
+  full 620px `ImageArtifact` card with its whole download/retry/delete
+  toolbar. `_stream_retrieved_context` now always emits `image_matches`
+  again for a relevant recall, exactly as before that dedup landed
+  (`freshly_shown`, `_resolve_display`, `_render_image_prompt_context`, and
+  their tests were removed with it). Instead, `ImageArtifact` gained a
+  `compact` prop: a recalled match now renders as a small thumbnail chip
+  ("From your library — tap to view") that expands to the identical full
+  card and controls on click, and collapses back on demand. Only the
+  `imageMatches` render path in `MessageBubble.tsx` uses it; an image just
+  generated, uploaded, or edited still shows full-size immediately, per the
+  user's own framing of the split.
+- Fixed a real bug surfaced while investigating why editing silently stopped
+  working after deleting a picture from chat: `handleVisualDeleted` reset
+  `selectedImageId` to `null` when the deleted image was the active one —
+  the same value a deliberate "clear image context" click uses. `null` means
+  "stay detached"; a deletion is not that choice, and leaving it there
+  silently disabled auto-following the newest visible image for the rest of
+  the conversation, so a later edit request found nothing to apply to with
+  no explanation. Changed to `undefined`, which resumes auto-follow.
+- `edit_image` is now offered to the model every turn, active image or not —
+  previously it was withheld unless the frontend already had one selected,
+  so a message like "make it black and white" with nothing selected fell
+  through to an ordinary reply that never mentioned a picture, reading as
+  the feature being broken. `ConversationService` now checks the real
+  selection state itself (the model has no way to know it) and, when the
+  model judged this an edit request but nothing is active, replies with
+  explicit guidance ("select the one you want changed... and I'll make the
+  change from there") instead of guessing or staying silent.
+  `_process_missing_edit_target`/`_dispatch_edit_image_action` persist this
+  reply like any other turn.
+- Always-offering `edit_image` needed two real-model-measured corrections.
+  First: a wordy negative example added to the shared `_SYSTEM` prompt
+  ("edit my resume is not this") fixed the false-positive but measurably
+  dropped the search-routing benchmark's recall to 0.79 against its 0.85
+  floor — confirmed by reverting on a clean tree, where it passed, and
+  reproducing the drop with the addition restored. Moving the same
+  clarification into `edit_image`'s own tool `description` field instead of
+  the shared system-prompt block fixed the false positive without touching
+  search routing: three consecutive real-model runs of the labelled
+  search-routing benchmark all passed. Second: even the shared-prompt
+  version needed the fix at all because "edit my resume to remove my last
+  job" was observed, on the real model, actually calling `edit_image` with
+  instruction "Remove the last job from the resume" — a genuine confusion
+  the tests now hold a floor against
+  (`test_an_unrelated_edit_request_does_not_choose_edit_image`).
+- New tests: `test_edit_with_no_active_image_explains_instead_of_guessing`
+  (backend unit), `test_an_edit_request_with_a_recent_picture_chooses_edit_image`
+  / `test_an_unrelated_edit_request_does_not_choose_edit_image` (functional,
+  real model), and two `chat.spec.ts` browser tests -
+  `shows a recalled image as a compact thumbnail that expands on click` and
+  `keeps auto-following the newest image after deleting the active one`,
+  the latter reproducing the exact reported sequence (generate, delete,
+  generate again, ask a followup) and asserting the second image's id
+  reaches `active_image_artifact_id` on its own.
+- Evidence: full backend suite (1170 tests) passes; Ruff passes on every
+  changed file; `tsc && vite build` passes; the non-live `chat.spec.ts` suite
+  passes (59 tests, two new); four pre-existing failures (the same dark-mode
+  and diagram-reload-timeout ones as the prior entry, one flaky
+  `net::ERR_FILE_NOT_FOUND` console error, and a "Sign out" click racing a
+  detached DOM node) were confirmed present on unmodified `HEAD` via
+  `git stash` and are unrelated.

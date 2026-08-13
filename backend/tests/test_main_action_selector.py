@@ -196,15 +196,19 @@ async def test_model_choosing_generate_image():
     assert action == GenerateImageAction(prompt="a red bicycle at sunset")
 
 
+# edit_image is offered every turn, active image or not: only the model can
+# judge whether the message wants a picture changed, and only the application
+# (ConversationService, not this selector) can check whether one is actually
+# in view to apply that to.
 @pytest.mark.asyncio
-async def test_edit_image_is_offered_only_with_an_active_image():
+async def test_edit_image_is_always_offered_regardless_of_active_image():
     selector, llm = _selector(
         _tool_call("edit_image", {"instruction": "add a straw hat"})
     )
 
     without_active = await selector.select("ani.mallya", "add a hat", [], None)
-    assert without_active is None
-    assert "edit_image" not in {tool["function"]["name"] for tool in llm.tools}
+    assert without_active == EditImageAction(instruction="add a straw hat")
+    assert "edit_image" in {tool["function"]["name"] for tool in llm.tools}
 
     with_active = await selector.select(
         "ani.mallya", "add a hat", [], "artifact-123"

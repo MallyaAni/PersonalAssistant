@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Download, MessageCircle, RefreshCw, Trash2 } from 'lucide-react'
+import { ChevronUp, Download, MessageCircle, RefreshCw, Trash2 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 
 import {
@@ -16,6 +16,11 @@ interface ImageArtifactProps {
   onRetry?: () => void;
   onSelect?: (artifact: ImageArtifactRecord) => void;
   isSelected?: boolean;
+  // A recalled reference to an owned image, distinct from one just created or
+  // uploaded: it starts as a small thumbnail rather than the full card, since
+  // it can be attached to nearly every reply in a conversation that keeps
+  // referencing it and a full-size card every time was the actual complaint.
+  compact?: boolean;
 }
 
 // Download one already loaded private image without another provider request.
@@ -34,12 +39,16 @@ const ImageArtifact = ({
   onRetry,
   onSelect,
   isSelected = false,
+  compact = false,
 }: ImageArtifactProps) => {
   const [imageUrl, setImageUrl] = useState('')
   const [loadError, setLoadError] = useState('')
   const [deleteError, setDeleteError] = useState('')
   const [isDeleting, setIsDeleting] = useState(false)
   const [thread, setThread] = useState<ImageAnalysisTurn[]>(() => readAnalysisThread(artifact))
+  // A compact reference starts collapsed to a thumbnail; expanding it reveals
+  // the same full detail and controls a freshly created image always shows.
+  const [isExpanded, setIsExpanded] = useState(!compact)
 
   // Resynchronize the visible analysis history whenever a different image is shown.
   useEffect(() => {
@@ -93,6 +102,33 @@ const ImageArtifact = ({
     }
   }
 
+  if (compact && !isExpanded) {
+    return (
+      <button
+        type="button"
+        onClick={() => setIsExpanded(true)}
+        aria-label={`Expand image: ${artifact.title}`}
+        className="mt-3 flex w-full items-center gap-3 rounded-xl border border-black/[0.08] bg-[#f9f9fb] px-3 py-2 text-left hover:bg-[#f2f2f5]"
+      >
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white">
+          {loadError ? (
+            <span className="text-[10px] font-medium text-[#c9342f]">!</span>
+          ) : imageUrl ? (
+            <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <span className="h-full w-full animate-pulse bg-[#e5e5ea]" />
+          )}
+        </span>
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-medium text-[#1d1d1f]">
+            {artifact.title}
+          </span>
+          <span className="block text-xs text-[#86868b]">From your library — tap to view</span>
+        </span>
+      </button>
+    )
+  }
+
   return (
     <section
       aria-label={`Image: ${artifact.title}`}
@@ -109,6 +145,15 @@ const ImageArtifact = ({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          {compact && (
+            <button
+              type="button"
+              onClick={() => setIsExpanded(false)}
+              className="flex items-center gap-1.5 rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs font-medium hover:bg-[#f5f5f7]"
+            >
+              <ChevronUp size={13} /> Collapse
+            </button>
+          )}
           {onSelect && (
             <button
               type="button"

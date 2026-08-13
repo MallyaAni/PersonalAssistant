@@ -7,6 +7,75 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 
 Last updated: 2026-08-13, America/New_York
 
+## Recalled photos display compactly; editing explains a missing target — VERIFIED
+
+Direct follow-up feedback on the same day's "keeps showing the image" fix
+below: the dedup was the wrong fix. The user's actual complaint was the
+*size* of the card, not the repetition — "is it feasible to have it show 1
+matching image every time it references it? the uploaded image card is
+huge." Reverted the dedup entirely (`freshly_shown`, `_resolve_display`,
+`_render_image_prompt_context`, and their tests all removed) and instead
+gave `ImageArtifact` a `compact` prop: a recalled match now renders as a
+small thumbnail chip that expands to the full 620px card with its
+download/retry/delete toolbar on click, and collapses back on demand. Only
+`MessageBubble.tsx`'s `imageMatches` path uses it — a freshly generated,
+uploaded, or edited picture still shows full-size immediately, per the
+user's own framing ("the image comes with the full llm response on the
+first time the image was created").
+
+Two more real bugs surfaced in the same exchange, both fixed:
+
+1. **Deleting an image silently disabled auto-follow for the rest of the
+   conversation.** `handleVisualDeleted` reset `selectedImageId` to `null`
+   when the deleted image was the active one — the same value a deliberate
+   "clear image context" click uses (see the comment at its declaration:
+   "null records that the user deliberately cleared image context").
+   Deletion is not that choice. Changed to `undefined`, which resumes
+   following the newest visible image automatically. Verified end-to-end in
+   `chat.spec.ts`'s `keeps auto-following the newest image after deleting
+   the active one`: generate, delete, generate a second image, ask a
+   followup — the second image's id reaches `active_image_artifact_id`
+   without any click.
+2. **An edit request with nothing selected answered as if it were never
+   asked.** `edit_image` was only ever offered to the model when the
+   frontend already had an active image, so a message like "make it black
+   and white" with nothing selected fell straight through to an ordinary
+   reply that never mentioned a picture — reading as the feature being
+   broken. `edit_image` is now offered every turn; `ConversationService`
+   checks the real selection itself (the model cannot) and, when the model
+   judged this an edit but nothing is active, replies with explicit
+   guidance instead of guessing.
+
+That second fix needed two real-model-measured prompt iterations, both
+worth remembering for next time:
+
+- A wordy exclusion example added to the *shared* `_SYSTEM` prompt fixed a
+  genuine false positive (the real model calling `edit_image` on "edit my
+  resume to remove my last job") but measurably dropped the search-routing
+  benchmark's recall to 0.79 against its 0.85 floor. Confirmed causally: the
+  clean tree passed, restoring the addition reproduced the drop. **Lesson:**
+  this selector makes one shared decision from one shared prompt across
+  every action; adding text to one tool's guidance can silently degrade an
+  unrelated tool's accuracy, even in a short, seemingly-isolated addition.
+- Moving the identical clarification into `edit_image`'s own tool
+  `description` field (not the shared instructions block) fixed the false
+  positive with no measurable effect on search routing — three consecutive
+  real-model benchmark runs all passed. Prefer the tool's own description
+  field over the shared system prompt when a per-tool correction is needed.
+
+Evidence: full backend suite (1170 tests) passes; Ruff passes on every
+changed file; `tsc && vite build` passes; non-live `chat.spec.ts` (59
+tests, two new) passes. New real-model functional tests:
+`test_an_edit_request_with_a_recent_picture_chooses_edit_image` and
+`test_an_unrelated_edit_request_does_not_choose_edit_image` in
+`test_main_action_selector_behaviour.py`, run 3x for the search-routing
+benchmark specifically to confirm the fix held. Four pre-existing e2e
+failures (dark-mode color assertion, diagram-reload timeout, one flaky
+`net::ERR_FILE_NOT_FOUND` console error, a "Sign out" click racing a
+detached DOM node) confirmed present on unmodified `HEAD` via `git stash`
+and unrelated. Diagram impact: NONE — internal refinement to existing
+components, no new component/store/boundary.
+
 ## Chat memory proposals auto-save; a recalled photo stops repeating — VERIFIED
 
 Two independent requests this session: "automatically save things about a

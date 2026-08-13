@@ -48,18 +48,13 @@ def _render_search_context(results: list[dict[str, Any]]) -> str:
     )
 
 
-# Describe images the application already matched, some displayed this turn.
+# Describe images the application already matched and is displaying this turn.
 def _render_image_context(images: list[dict[str, Any]]) -> str:
     if not images:
         return ""
     return (
         "\n\nThe application recalled these from the user's own history with "
-        "AniOS. Each item's `freshly_shown` says whether it is newly attached "
-        "to the interface with this reply (true) or was already shown earlier "
-        "in this same conversation and is not being repeated now (false). Do "
-        "not say a picture just appeared, was just attached, or is shown "
-        "below/above with this reply when `freshly_shown` is false - refer to "
-        "it as something already shown earlier instead. Either way, they are a "
+        "AniOS and is already displaying them in the interface. They are a "
         "shared record of work you and the user did together, not external "
         "search results: an item whose kind is generated_image was generated "
         "by AniOS for this user, and one whose kind is uploaded_image was "
