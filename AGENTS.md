@@ -146,6 +146,26 @@ an evaluation number that would not move. Use the Edit tool for regex, or
 image, a stale container, and an edited file are three different states. Several
 defects here were only visible by asking the live system what it actually had.
 
+**The `gateway` service is a one-shot static build, not the live app —
+`docker restart gateway` redeploys nothing.** `frontend`
+(`localhost:5173`) is the Vite dev server with the source bind-mounted, and
+hot-reloads on every save. `gateway` (`docker-compose.yml`'s `gateway`
+service, `Dockerfile.gateway`, port 8080 — what the tunnel and
+`deep-matter.com` actually point at) instead runs `npm run build` once
+*during its Docker image build* and bakes the resulting `dist/` into an
+nginx image; nothing about it watches the source tree afterward. A whole
+session's worth of frontend fixes were repeatedly reported as "still
+happening" — hard-refreshing changed nothing, because the browser really
+was getting fresh bytes (`Cache-Control: no-store` on that route) of a
+build frozen from a day earlier. Verify: `docker inspect anios_gateway
+--format '{{.Created}}'` against the last relevant commit's timestamp, or
+`docker exec anios_gateway grep -l "<a string only in the new code>"
+/usr/share/nginx/html/assets/*.js`. Redeploy with
+`docker compose build gateway && docker compose up -d --no-deps gateway` —
+a plain `docker restart` or `up -d` alone reuses the old image and changes
+nothing. If the user reports a frontend fix as not taking effect after a
+hard refresh, suspect this before suspecting the browser.
+
 **Files outlive the rows that point at them, and always will.** Deleting a row
 and deleting its bytes cannot be made one atomic act across a database and a
 filesystem, so every call site can be correct and storage still leaks. It had
