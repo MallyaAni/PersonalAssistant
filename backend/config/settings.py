@@ -249,7 +249,12 @@ class Settings(BaseSettings):
         le=200 * 1024 * 1024,
     )
     PRESENTATION_MAX_TOKENS: int = Field(default=8_192, ge=1_024, le=32_768)
-    PRESENTATION_PLAN_MAX_TOKENS: int = Field(default=2_048, ge=1_024, le=8_192)
+    # Measured 2026-08-14: a real "detailed... capabilities and where to use
+    # it" prompt produced a plan that needed ~2,000 tokens, close enough to
+    # the old 2,048 default that it truncated mid-JSON on 2 of 3 identical
+    # attempts - a real, pre-existing reliability gap, not a fluke. Doubled
+    # for headroom rather than tuned to the exact failure.
+    PRESENTATION_PLAN_MAX_TOKENS: int = Field(default=4_096, ge=1_024, le=8_192)
     PRESENTATION_REVISION_MAX_TOKENS: int = Field(
         default=1_024,
         ge=256,
