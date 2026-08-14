@@ -3457,3 +3457,41 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   the measurement script, not a defect in the model or in `stream_chat` -
   recorded so this false lead is not rediscovered later.
 - Full numbers and the latency table are in `ROADMAP.md` Milestone 9.
+
+## 2026-08-14 — Evaluated NVIDIA Nemotron 3 Super the same way: a genuinely mixed result, not a clean win
+
+- Installed Nemotron 3 Super (120B/12.7B active, NVFP4) via official vLLM
+  support (`nvcr.io/nvidia/vllm:26.03.post1-py3`) - the lower-risk candidate
+  identified after DeepSeek's presentation schema failure: officially
+  supported on Spark, native CUDA graphs, real `--enable-auto-tool-choice`
+  with a proper parser, not a bespoke community engine. Needed adding
+  `animallya96` to the Spark's `docker` group (one-time `sudo`, credential
+  given directly by the user, not stored); the container's own startup
+  error revealed `ds4-server` from the DeepSeek evaluation was still
+  resident holding ~115 of 121 GiB - stopped it and removed its crontab
+  entry, since the two models cannot coexist and only one should survive a
+  reboot. `--host 0.0.0.0` was set from the start this time.
+- Ran the identical three-part evaluation used for DeepSeek. Result is
+  genuinely mixed, not a win for either model across the board:
+  - Tool-calling: **62/63 (98.4%)** across 3 repeats of the 21-case battery,
+    measurably better than DeepSeek - and no haiku/limerick bias at all,
+    unlike DeepSeek's persistent gap on exactly those cases.
+  - Search-routing recall: **0.7931, fails the 0.85 floor** Qwen already
+    clears (DeepSeek: 0.8519, barely passing) - worse on the deliberately
+    hard implicit-volatile category specifically.
+  - Real reply latency, same code path and prompts as DeepSeek: average
+    total 57.6s (DeepSeek: 31.9s), and time-to-first-token averaging ~17s
+    (4.5-34.1s, highly variable) against DeepSeek's steady ~0.4-1.0s. vLLM's
+    published 22.7-23.7 tok/s figure describes decode throughput once
+    generation starts; it says nothing about the substantial, unpredictable
+    reasoning time before the first visible token, even at the model's own
+    minimum reasoning setting (`"low"` - vLLM rejects AniOS's `"none"`
+    default outright with a `400`, a real compatibility gap worth knowing
+    before configuring this model's reasoning-effort setting in production).
+- Net: official vendor support and a right-sized deployment did not
+  translate into a uniformly better model once actually measured - the
+  concrete reason this evaluation approach exists rather than choosing by
+  spec sheet and vendor reputation. Full numbers and reasoning in
+  `ROADMAP.md` Milestone 9. This evaluation does not choose between the two
+  models or promote either to `MAIN_LLM_BASE_URL` - that decision is still
+  open.

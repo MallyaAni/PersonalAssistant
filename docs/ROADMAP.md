@@ -798,3 +798,62 @@ Hardware inventory and access are documented in
   Windows-console `print()` encoding artifact in the measurement script
   itself, not a defect in the model's output or in `stream_chat` - recorded
   so the same false lead is not re-investigated later.
+
+- `DONE` (2026-08-14): installed and evaluated NVIDIA Nemotron 3 Super
+  (120B total / 12.7B active, NVFP4) via official vLLM support
+  (`nvcr.io/nvidia/vllm:26.03.post1-py3`), the lower-risk alternative
+  identified after the DeepSeek presentation failure - officially supported
+  on Spark, native CUDA graphs, real `--enable-auto-tool-choice` with a
+  proper tool-call parser, not a bespoke community engine. Real
+  infrastructure work along the way, not assumed: `animallya96` needed
+  adding to the `docker` group (one-time `sudo`, credential provided by the
+  user directly, not stored anywhere); the container's own weight-loading
+  error surfaced that `ds4-server` from the DeepSeek evaluation was still
+  resident, holding ~115 GiB of the Spark's 121 GiB - stopped it and removed
+  its crontab `@reboot` entry, since both models cannot fit at once and only
+  one should survive a reboot. `--host 0.0.0.0` was set from the start this
+  time, on the lesson learned twice already this session. Full load (model
+  download + safetensor loading) took ~36 minutes on this network; Docker's
+  own `--restart unless-stopped` gives it reboot persistence for free,
+  unlike `ds4-server`'s manual crontab fix.
+
+  **Same three-part evaluation as DeepSeek, genuinely mixed result - not a
+  clean win either direction:**
+  - **Tool-calling: measurably better than DeepSeek.** 62/63 (98.4%) across
+    3 full repeats of the 21-case battery - the one miss was the same
+    pre-existing "edit this project plan" flake already documented against
+    Qwen, not something new. No haiku/limerick bias at all; both passed
+    cleanly every time, unlike DeepSeek's persistent 50%/25% gap on exactly
+    those cases.
+  - **Search-routing recall: measurably worse than both DeepSeek and Qwen's
+    own floor.** 0.7931 recall (**fails** the 0.85 floor;
+    DeepSeek: 0.8519, barely passing) against 1.0000 specificity (matches
+    DeepSeek's strength there). All 8 misses were the deliberately-hard
+    implicit-volatile category (`"did the merger go through"`,
+    `"who won the 2026 super bowl"`, `"has the strike ended"` etc.) - more
+    of them than DeepSeek missed on the identical case set.
+  - **Real reply latency: worse than DeepSeek on this measurement, and by a
+    different, arguably more user-visible mechanism.** Same four prompts,
+    same code path (`build_assistant_graph`/`stream_chat`), `reasoning_effort
+    ="low"` (the model's own minimum - vLLM rejects AniOS's "none" default
+    outright, `400` with `"Input should be 'low', 'medium' or 'high'"`, a
+    real compatibility gap worth knowing before ever configuring
+    `ROUTING_LLM_REASONING_EFFORT`/`MAIN_LLM_REASONING_EFFORT` for this
+    model in production). Average total time 57.6s (vs DeepSeek's 31.9s,
+    Qwen's 6.4s) - but the more striking number is time-to-first-token:
+    4.5-34.1s, averaging ~17s, wildly variable by query, against DeepSeek's
+    steady ~0.4-1.0s and Qwen's ~0.1s. The vLLM blog's published
+    22.7-23.7 tok/s decode figure is real but incomplete for felt
+    responsiveness: it describes throughput once generation starts, and
+    says nothing about the reasoning time spent before the first visible
+    token, which is substantial and unpredictable here even at the model's
+    lowest reasoning setting.
+  - **Net read:** official vendor support and a right-sized, well-documented
+    deployment path did not translate into a uniformly better model once
+    actually measured - a direct, concrete instance of why this whole
+    evaluation exists rather than picking a model from specs and reputation
+    alone. Nemotron would be the stronger choice specifically for
+    tool-calling-heavy correctness; DeepSeek looks better for felt
+    responsiveness on ordinary chat, despite a slower raw decode rate.
+    Neither clears every bar `MAIN_LLM_BASE_URL` would need cleared, and
+    this evaluation does not pick one - that decision is still open.

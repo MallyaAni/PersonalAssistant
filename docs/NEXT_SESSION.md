@@ -7,6 +7,43 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 
 Last updated: 2026-08-14, America/New_York
 
+## DeepSeek vs Nemotron 3 Super evaluated head-to-head — genuinely mixed, no winner picked — VERIFIED
+
+**Decision still open, deliberately not made this session.** Both models
+were run through the identical three-part evaluation (tool-calling battery
+x3, search-routing benchmark, real reply latency) with results pointing in
+different directions - full numbers in `ROADMAP.md` Milestone 9:
+
+| | DeepSeek-V4-Flash (ds4-server) | Nemotron 3 Super (vLLM) |
+| --- | --- | --- |
+| Tool-calling (63 cases) | ~90%, real haiku/limerick gap | **98.4% (62/63)**, no bias found |
+| Search-routing recall | **0.8519** (passes 0.85 floor) | 0.7931 (fails the floor) |
+| Search-routing specificity | 0.9565 | 1.0000 |
+| Avg total reply time | **31.9s** | 57.6s |
+| Avg time-to-first-token | **~0.4-1.0s** | ~17s (4.5-34s, highly variable) |
+
+Nemotron wins tool-calling clearly; DeepSeek wins both routing recall and
+felt responsiveness (its TTFT advantage matters more for perceived
+speed than raw decode rate does). Neither clears every bar. **Only one can
+run at a time on this Spark** (both need most of its 128 GB) - currently
+Nemotron is the one loaded and running; DeepSeek's `ds4-server` was
+stopped and its crontab `@reboot` entry removed to avoid a memory conflict
+if the Spark reboots while Nemotron's Docker container (which does have
+`--restart unless-stopped`, so it survives a reboot on its own) is what
+should come back.
+
+Real compatibility finding worth remembering regardless of which model (if
+either) is ever promoted: vLLM rejects AniOS's `reasoning_effort="none"`
+default outright for Nemotron (`400`, `"Input should be 'low', 'medium' or
+'high'"`) - `ROUTING_LLM_REASONING_EFFORT`/`MAIN_LLM_REASONING_EFFORT` would
+need an explicit value for this model, not the blank default.
+
+Also from this session: `MainActionSelector`'s tool-calling model and the
+conversational-reply model can now be configured independently
+(`ROUTING_LLM_BASE_URL` etc., default-unchanged, see the entry below) - so
+whichever model (if any) eventually gets promoted for one role does not
+have to be promoted for both at once.
+
 ## Routing/reply split built and real latency measured: ~5x slower — VERIFIED
 
 **Next planned step, not started:** evaluate NVIDIA's own Nemotron 3 Super
