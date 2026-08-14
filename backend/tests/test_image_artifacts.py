@@ -453,6 +453,91 @@ def test_validate_image_bytes_accepts_real_png_and_rejects_mismatch() -> None:
         )
 
 
+def _jpeg_bytes(color: tuple[int, int, int] = (200, 100, 50)) -> bytes:
+    output = io.BytesIO()
+    Image.new("RGB", (8, 6), color).save(output, format="JPEG")
+    return output.getvalue()
+
+
+# Verify a real JPEG survives the names Windows actually gives it.
+#
+# Windows resolves a .jpg upload's type from the registry, which in some
+# configurations reports `image/jpg` or the legacy `image/pjpeg`; Chrome
+# forwards that verbatim, and a strict equality check rejected the user's own
+# photographs as a content mismatch. The aliases must resolve, and a genuinely
+# contradictory declaration must still be refused - that is the case the
+# mismatch check exists for.
+@pytest.mark.parametrize(
+    "declared",
+    ["image/jpeg", "image/jpg", "image/pjpeg", " IMAGE/JPG ", None],
+)
+def test_validate_image_bytes_accepts_jpeg_under_its_windows_aliases(
+    declared: str | None,
+) -> None:
+    validated = validate_image_bytes(
+        _jpeg_bytes(),
+        declared,
+        max_bytes=1024 * 1024,
+        max_pixels=1000,
+    )
+    assert validated.mime_type == "image/jpeg"
+    assert validated.extension == "jpg"
+
+
+def _mpo_bytes() -> bytes:
+    output = io.BytesIO()
+    Image.new("RGB", (8, 6), (200, 100, 50)).save(
+        output,
+        format="MPO",
+        append_images=[Image.new("RGB", (8, 6), (20, 60, 120))],
+    )
+    return output.getvalue()
+
+
+# Verify a phone photograph carrying a companion frame is accepted as a JPEG.
+#
+# Most phone cameras embed a second frame (depth map or wide-angle companion),
+# which Pillow reports as MPO while the browser still declares image/jpeg. The
+# format allow-list did not know the name and the frame count read as animation,
+# so two separate checks rejected an ordinary photograph.
+def test_validate_image_bytes_accepts_a_multi_frame_phone_jpeg() -> None:
+    validated = validate_image_bytes(
+        _mpo_bytes(),
+        "image/jpeg",
+        max_bytes=1024 * 1024,
+        max_pixels=1000,
+    )
+    assert (validated.mime_type, validated.extension) == ("image/jpeg", "jpg")
+
+
+# The companion-frame exemption must not readmit genuine animation.
+def test_validate_image_bytes_still_rejects_animated_media() -> None:
+    output = io.BytesIO()
+    Image.new("P", (8, 6)).save(
+        output,
+        format="GIF",
+        save_all=True,
+        append_images=[Image.new("P", (8, 6))],
+    )
+    with pytest.raises(ValueError, match="not supported"):
+        validate_image_bytes(
+            output.getvalue(),
+            None,
+            max_bytes=1024 * 1024,
+            max_pixels=1000,
+        )
+
+
+def test_validate_image_bytes_still_rejects_a_contradictory_declaration() -> None:
+    with pytest.raises(ValueError, match="does not match"):
+        validate_image_bytes(
+            _jpeg_bytes(),
+            "image/png",
+            max_bytes=1024 * 1024,
+            max_pixels=1000,
+        )
+
+
 # Verify generation persists, reads, integrity-checks, and deletes owned bytes.
 @pytest.mark.asyncio
 async def test_image_artifact_service_completes_binary_lifecycle(

@@ -3495,3 +3495,11 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   `ROADMAP.md` Milestone 9. This evaluation does not choose between the two
   models or promote either to `MAIN_LLM_BASE_URL` - that decision is still
   open.
+
+## 2026-08-14 — Promoted DeepSeek-V4-Flash to `MAIN_LLM_BASE_URL` after a blind quality read
+
+- Ran a blind 6-prompt quality comparison (tradeoff reasoning, debugging, multi-step arithmetic, technical depth, judgment, writing) through the real `build_assistant_graph`/`stream_chat` path for Qwen, DeepSeek, and Nemotron, answers shuffled and unlabeled before reading.
+- DeepSeek won or tied every category and never failed to answer. Nemotron hard-failed 2 of 6 (zero visible output, entire token budget spent on hidden reasoning) and severely truncated a third on a repeat run - confirms its latency problem is really an unreliability problem. Qwen itself had real quality gaps on the harder prompts: a garbled-text artifact, a debugging answer that never resolved, and a word-problem answer that ran out of budget before reaching a final number.
+- Set `MAIN_LLM_BASE_URL`/`MAIN_LLM_MODEL` to DeepSeek-V4-Flash for the `backend` service in `docker-compose.yml`. Explicitly pinned `ROUTING_LLM_BASE_URL`/`ROUTING_LLM_MODEL` to Qwen in the same block so `MainActionSelector`'s tool-calling does not silently follow `MAIN_LLM_*` - DeepSeek's own routing eval passed only barely (recall at the 0.85 floor), so there was no evidence to move it. `PRESENTATION_LLM_*` and `DIAGRAM_LLM_*` stay independently pinned to Qwen, untouched.
+- Verified live: `docker exec anios_backend printenv` confirmed the split landed; the real gateway path (`curl -H "Host: deep-matter.com" http://localhost:8080/api/v1/auth/session`) returned `401`, not `502`; a real `stream_chat` call through `get_llm_client()` inside the running `anios_backend` container returned a genuine DeepSeek reply. `ds4-server`'s `@reboot` crontab entry restored now that it backs a production role; `vllm-nemotron` stopped.
+- Accepted cost: ~5x Qwen's average reply latency (~32s vs ~6s), taken deliberately given the quality gap measured above. Full reasoning and evidence in `ROADMAP.md` Milestone 9.

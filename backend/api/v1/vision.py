@@ -82,6 +82,18 @@ async def analyze_image_upload(
             declared_mime_type=image.content_type,
         )
     except ValueError as exc:
+        # The reply to the user stays deliberately vague, but the log must not:
+        # this branch previously recorded nothing at all, so a rejected upload
+        # was indistinguishable from any other - format, dimensions, a declared
+        # type that did not match, or a ValueError raised much deeper in the
+        # call - and the only way to tell was to guess and redeploy.
+        logger.warning(
+            "Rejected image upload: %s (declared_type=%r, bytes=%d)",
+            exc,
+            image.content_type,
+            len(content),
+            extra={"trace_id": trace_id},
+        )
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="Uploaded image is invalid or unsupported.",

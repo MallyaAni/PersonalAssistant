@@ -857,3 +857,51 @@ Hardware inventory and access are documented in
     responsiveness on ordinary chat, despite a slower raw decode rate.
     Neither clears every bar `MAIN_LLM_BASE_URL` would need cleared, and
     this evaluation does not pick one - that decision is still open.
+
+- `DONE` (2026-08-14): ran a blind quality read to settle the open question
+  above on evidence instead of specs - 6 hard prompts (tradeoff reasoning,
+  debugging, multi-step arithmetic, technical depth, judgment, writing),
+  each sent through the real `build_assistant_graph`/`stream_chat` path to
+  Qwen, DeepSeek, and Nemotron, answers shown blind (shuffled A/B/C per
+  prompt, timing hidden) before reading. Full read (not benchmark scores):
+  - **DeepSeek won or tied every category and never failed to answer** -
+    the only model to solve the word problem correctly and completely, the
+    only one to catch both real causes of the debugging prompt (cache-key
+    collision and the race condition, not just one), best copy on the
+    writing prompt.
+  - **Nemotron hard-failed 2 of 6 prompts** (zero visible output - burned
+    the entire 1024-token production budget on hidden reasoning before
+    writing anything down) and severely truncated a third on a repeat run.
+    Confirms the earlier latency finding was not just "slow": at
+    `reasoning_effort=low`, its own minimum, it is unreliable at AniOS's
+    real settings roughly half the time, not just occasionally slow.
+  - **Qwen itself had real quality problems on the harder prompts** - a
+    garbled-text artifact mid-answer on the tradeoff question, a debugging
+    answer that second-guessed itself in circles without ever landing on
+    the fix, and it **never finished the word-problem answer at all**,
+    running out of its own token budget mid-simulation. Genuinely useful
+    context for the "is Qwen actually fine" question - on prompts this
+    hard, it wasn't.
+  - **Decision: promoted DeepSeek-V4-Flash to `MAIN_LLM_BASE_URL`** (reply
+    generation only) the same session. `MainActionSelector`'s tool-calling/
+    routing was deliberately pinned to Qwen via the `ROUTING_LLM_*` split
+    built earlier this milestone (`docker-compose.yml`'s `backend` service),
+    rather than left to fall back to `MAIN_LLM_*` - DeepSeek's own routing
+    eval passed only barely (recall right at the 0.85 floor), so there was
+    no evidence to justify moving tool-calling too. `PRESENTATION_LLM_*` and
+    `DIAGRAM_LLM_*` stay independently pinned to Qwen, untouched by this
+    change, for the same reason they were reverted earlier in this
+    milestone: neither's structured-output reliability on this engine has
+    been tested. Verified live, not just deployed: `docker exec anios_backend
+    printenv` confirmed the split landed correctly, the actual gateway path
+    (`curl -H "Host: deep-matter.com" ...`) returned `401` not `502` (this
+    time the recreate did not trigger the stale-DNS trap), and a real
+    `stream_chat` call through `get_llm_client()` inside the live
+    `anios_backend` container returned a genuine DeepSeek reply. Accepted
+    cost: ~5x Qwen's reply latency (~32s vs ~6s average total time),
+    explicitly chosen over Qwen's speed given the quality gap above.
+    ds4-server's `@reboot` crontab entry (removed when Nemotron took the
+    Spark's memory for its own evaluation) is restored, since DeepSeek is
+    now a production dependency, not just an eval target; `vllm-nemotron`
+    is stopped and does not restart itself (`unless-stopped` respects an
+    explicit `docker stop`).

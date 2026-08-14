@@ -21,8 +21,35 @@ from backend.core.interfaces import ImageEditProvider, ImageProvider
 
 _FORMAT_DETAILS = {
     "JPEG": ("image/jpeg", "jpg"),
+    # Pillow reports a JPEG that carries a second embedded frame - the depth
+    # map or wide-angle companion most phone cameras now write - as MPO rather
+    # than JPEG. It is a JPEG container: the leading frame is a complete,
+    # ordinary JPEG and the browser calls the file image/jpeg. Omitting it here
+    # made "Image format is not supported" the response to a large share of
+    # real photographs taken on a phone, while the same scene saved by any
+    # desktop tool went through.
+    "MPO": ("image/jpeg", "jpg"),
     "PNG": ("image/png", "png"),
     "WEBP": ("image/webp", "webp"),
+}
+
+# Formats whose extra frames are alternate stills, not animation. The frame
+# check below exists to keep animated GIF/WEBP out; an MPO's second frame is a
+# companion view of one moment, so counting it as animation rejects a still.
+_MULTI_FRAME_STILL_FORMATS = {"MPO"}
+
+# Browsers do not agree on what JPEG is called. Windows resolves a .jpg upload's
+# type from the registry, which in some configurations says `image/jpg` or the
+# legacy `image/pjpeg`, and Chrome forwards that verbatim - so a genuine JPEG
+# arrived declared under a name this module did not recognise and was rejected
+# as a content mismatch, with nothing in the message pointing at the real cause.
+# Only true aliases of an already-supported decoded format belong here: the
+# mismatch check below still rejects a declaration that actually contradicts the
+# bytes, which is the case it exists to catch.
+_MIME_ALIASES = {
+    "image/jpg": "image/jpeg",
+    "image/pjpeg": "image/jpeg",
+    "image/x-png": "image/png",
 }
 
 
@@ -65,11 +92,26 @@ def validate_image_bytes(
                 image_format = str(image.format or "").upper()
                 details = _FORMAT_DETAILS.get(image_format)
                 if details is None:
-                    raise ValueError("Image format is not supported")
+                    # Name the decoded format: the declared type is the
+                    # browser's guess and says nothing about what the bytes
+                    # actually are, which is what makes this class of rejection
+                    # so slow to diagnose from a log.
+                    raise ValueError(
+                        "Image format is not supported: "
+                        f"{image_format or 'unrecognised'}"
+                    )
                 mime_type, extension = details
-                if declared_mime_type and declared_mime_type.lower() != mime_type:
-                    raise ValueError("Declared image type does not match its content")
-                if int(getattr(image, "n_frames", 1)) != 1:
+                if declared_mime_type:
+                    declared = declared_mime_type.strip().lower()
+                    declared = _MIME_ALIASES.get(declared, declared)
+                    if declared != mime_type:
+                        raise ValueError(
+                            "Declared image type does not match its content"
+                        )
+                if (
+                    image_format not in _MULTI_FRAME_STILL_FORMATS
+                    and int(getattr(image, "n_frames", 1)) != 1
+                ):
                     raise ValueError("Animated images are not supported")
                 width, height = image.size
                 if width < 1 or height < 1 or width * height > max_pixels:

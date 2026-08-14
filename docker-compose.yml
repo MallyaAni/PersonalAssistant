@@ -503,10 +503,27 @@ services:
       - LLM_MODEL=qwen/qwen3.5-4b
       - INFERENCE_ADAPTER=${INFERENCE_ADAPTER:-openai_compatible}
       - INFERENCE_PROVIDER_NAME=vllm
+      # Conversational replies only (build_assistant_graph / stream_chat).
+      # DeepSeek-V4-Flash beat Qwen and Nemotron on every category of a
+      # blind 6-prompt evaluation (2026-08-14) and never failed to answer,
+      # unlike Nemotron (hard-failed 2/6, blew its token budget on hidden
+      # reasoning) and unlike Qwen itself, which never finished the
+      # multi-step word problem. Cost: ~5x Qwen's total reply time
+      # (~32s vs ~6s avg), accepted as the intelligence/speed tradeoff.
       - MAIN_INFERENCE_ADAPTER=${MAIN_INFERENCE_ADAPTER:-}
-      - MAIN_LLM_BASE_URL=http://vllm-main:8000
-      - MAIN_LLM_MODEL=qwen/qwen3.5-4b
+      - MAIN_LLM_BASE_URL=http://spark-b524.local:8888
+      - MAIN_LLM_MODEL=deepseek-v4-flash
       - MAIN_LLM_REASONING_EFFORT=${MAIN_LLM_REASONING_EFFORT:-none}
+      # MainActionSelector's tool-calling/routing stays on Qwen deliberately -
+      # pinned here rather than left to fall back to MAIN_LLM_*, since without
+      # this MainActionSelector's native tool calls would silently move to
+      # DeepSeek too. Qwen's routing/tool-calling was the proven baseline all
+      # session; DeepSeek's own routing eval passed only barely (recall right
+      # at the 0.85 floor), so there was no evidence to justify moving it.
+      - ROUTING_INFERENCE_ADAPTER=${ROUTING_INFERENCE_ADAPTER:-}
+      - ROUTING_LLM_BASE_URL=http://vllm-main:8000
+      - ROUTING_LLM_MODEL=qwen/qwen3.5-4b
+      - ROUTING_LLM_REASONING_EFFORT=${ROUTING_LLM_REASONING_EFFORT:-none}
       - PRESENTATION_INFERENCE_ADAPTER=${PRESENTATION_INFERENCE_ADAPTER:-}
       - PRESENTATION_LLM_BASE_URL=http://vllm-main:8000
       - PRESENTATION_LLM_MODEL=qwen/qwen3.5-4b

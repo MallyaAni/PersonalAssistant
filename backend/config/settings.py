@@ -312,6 +312,15 @@ class Settings(BaseSettings):
     VISION_THREAD_CONTEXT_TURNS: int = Field(default=8, ge=1, le=50)
     # Total question/answer pairs retained in one image's stored analysis thread.
     VISION_THREAD_MAX_STORED: int = Field(default=40, ge=1, le=500)
+    # Whether an image question is answered by the main model reasoning over
+    # what the VLM saw, instead of by the VLM itself. The VLM is chosen for
+    # describing pixels, not for judgement, so questions that need comparison or
+    # inference were previously answered at its reasoning ability rather than
+    # the strongest configured model's. Off restores the VLM-only answer exactly.
+    VISION_REASONING_ENABLED: bool = True
+    # Larger than VISION_MAX_TOKENS because this budget carries a reasoned
+    # answer, not a description, and the reply is what the user actually reads.
+    VISION_REASONING_MAX_TOKENS: int = Field(default=1024, ge=64, le=8192)
     # Room for {"intent":"edit"} and nothing else; the schema is the grammar.
     IMAGE_INTENT_MAX_TOKENS: int = Field(default=16, ge=8, le=64)
 

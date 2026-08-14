@@ -768,7 +768,13 @@ VisionProviderDependency = Annotated[
 # Give both image paths one routing decision, made by the main conversation
 # model — the same model that used to answer "I cannot edit images" when an edit
 # request reached it as chat.
-def get_image_intent_classifier(llm: LlmDependency) -> ImageIntentClassifier:
+def get_image_intent_classifier(llm: RoutingLlmDependency) -> ImageIntentClassifier:
+    # The routing model, not the main one. This is a constrained classification
+    # into a 16-token JSON schema, which is the routing model's proven job and
+    # not what the main model was promoted for: pointed at DeepSeek it returned
+    # unparseable content on every upload, and because the classifier answers
+    # False on any failure, that silently disabled edit-intent detection - an
+    # "edit this photo" upload was quietly treated as a question about it.
     return ImageIntentClassifier(llm, max_tokens=settings.IMAGE_INTENT_MAX_TOKENS)
 
 
@@ -785,6 +791,7 @@ def get_vision_analysis_service(
     provider: VisionProviderDependency,
     memory: MemoryDependency,
     intent: ImageIntentDependency,
+    llm: LlmDependency,
 ) -> VisionAnalysisService:
     return VisionAnalysisService(
         images,
@@ -794,6 +801,13 @@ def get_vision_analysis_service(
         thread_max_stored=settings.VISION_THREAD_MAX_STORED,
         memory=memory,
         intent=intent,
+        # The vision model sees; the main model reasons. This is the only place
+        # the two are combined, and it is deliberately the main client rather
+        # than the vision one - the whole point is to answer image questions
+        # with the strongest configured model instead of the VLM's own
+        # reasoning.
+        reasoner=llm if settings.VISION_REASONING_ENABLED else None,
+        reasoning_max_tokens=settings.VISION_REASONING_MAX_TOKENS,
     )
 
 

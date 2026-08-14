@@ -393,10 +393,14 @@ const Composer: React.FC<ComposerProps> = ({
         </div>
       )}
       <div className="composer-shell flex items-end gap-2 rounded-[28px] border border-black/[0.08] bg-white p-2 pl-2 focus-within:border-black/[0.16] focus-within:shadow-[0_2px_8px_rgba(0,0,0,0.05),0_14px_44px_rgba(0,0,0,0.1)]">
+        {/* Extensions are listed alongside the MIME types on purpose: Windows
+            resolves a .jpg's type from the registry, which can say image/jpg or
+            image/pjpeg rather than image/jpeg, and a MIME-only accept list then
+            hides the user's own photographs in the file dialog. */}
         <input
           ref={fileInput}
           type="file"
-          accept="image/png,image/jpeg,image/webp,text/plain,text/markdown,text/csv,.md,.markdown,.txt,.csv,.json,.log,.yml,.yaml"
+          accept="image/png,image/jpeg,image/jpg,image/pjpeg,image/webp,.jpg,.jpeg,.png,.webp,text/plain,text/markdown,text/csv,.md,.markdown,.txt,.csv,.json,.log,.yml,.yaml"
           className="sr-only"
           onChange={event => {
             setAttachedFile(event.target.files?.[0] ?? null)

@@ -286,7 +286,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const handleVisualStarted = (_mode: 'analyze') => {
     setMessages(prev => [...prev, {
       role: 'assistant',
-      content: 'Inspecting your image with Qwen.',
+      // Deliberately unnamed. This said "with Qwen" and stayed correct only
+      // by accident: image analysis runs on VISION_MODEL, a separate role
+      // from MAIN_LLM_MODEL, so moving the conversational model to DeepSeek
+      // left this true while looking stale. Naming a model here couples user
+      // copy to a value nobody updates together with docker-compose.yml.
+      content: 'Inspecting your image.',
       artifactStatus: 'generating',
       artifactActivity: 'Analyzing image...',
     }])

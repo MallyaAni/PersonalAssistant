@@ -6,11 +6,13 @@ from backend.agents.vision.observation import (
     CANONICAL_OBSERVATION_PROMPT,
     DEFAULT_UPLOAD_QUESTION,
 )
+from backend.agents.vision.reasoning import build_reasoning_messages
 from backend.core.interfaces import (
     BinaryArtifactRepository,
     SemanticMemoryWriter,
     VisionProvider,
 )
+from backend.core.llm import LLMClient
 from backend.memory.purposes import VISUAL_ANALYSIS_PURPOSE
 from backend.services.image_artifact_service import ImageArtifactService
 from backend.services.image_intent import (
@@ -74,6 +76,8 @@ class VisionAnalysisService:
         thread_max_stored: int = 40,
         memory: SemanticMemoryWriter | None = None,
         intent: ImageIntentClassifier | None = None,
+        reasoner: LLMClient | None = None,
+        reasoning_max_tokens: int = 1024,
     ) -> None:
         self.images = images
         self.repository = repository
@@ -82,6 +86,11 @@ class VisionAnalysisService:
         self.thread_max_stored = thread_max_stored
         self.memory = memory
         self.intent = intent
+        # Optional on purpose: unset, every answer is the vision model's own,
+        # exactly as before. The reindexing path constructs this service without
+        # a reasoner because it never answers anyone.
+        self.reasoner = reasoner
+        self.reasoning_max_tokens = reasoning_max_tokens
 
     # Index one image's description so images become semantically retrievable.
     # Only `content` reaches the assistant prompt, so it must name its own
@@ -123,6 +132,39 @@ class VisionAnalysisService:
                 artifact_id,
                 exc_info=True,
             )
+
+    # Answer an image question with the main model, grounded in what was seen.
+    #
+    # Returns the vision model's own answer unchanged when no reasoner is
+    # configured or the reasoning call fails: a reasoning outage must degrade to
+    # the previous behaviour, never to an error, because the user already has a
+    # usable answer in hand by this point and losing it to a second model's
+    # unavailability would be strictly worse than not reasoning at all.
+    async def _reason_about(
+        self,
+        question: str,
+        observation: str,
+        direct_answer: str,
+    ) -> tuple[str, bool]:
+        if self.reasoner is None or not question.strip():
+            return direct_answer, False
+        messages = build_reasoning_messages(question, observation, direct_answer)
+        try:
+            result = await asyncio.to_thread(
+                self.reasoner.chat,
+                messages,
+                self.reasoning_max_tokens,
+            )
+        except Exception:
+            logger.warning(
+                "Visual reasoning pass failed; using the vision model's answer",
+                exc_info=True,
+            )
+            return direct_answer, False
+        reasoned = str(result.get("content") or "").strip()
+        if not reasoned:
+            return direct_answer, False
+        return reasoned, True
 
     # Persist one validated upload and attach its successful grounded analysis.
     async def analyze_upload(
@@ -193,6 +235,20 @@ class VisionAnalysisService:
             else:
                 answer = proposed_answer
 
+        # The vision model has now seen the pixels; the reasoning about them is
+        # the main model's job. Only for a real question - the canonical
+        # description is an index entry, not an answer to anyone.
+        answer_text = answer.content
+        answer_model = answer.model
+        if needs_user_answer:
+            answer_text, reasoned = await self._reason_about(
+                prompt,
+                observation.content,
+                answer.content,
+            )
+            if reasoned:
+                answer_model = f"{answer.model}+{self.reasoner.model}"
+
         metadata: dict[str, Any] = {
             "analysis_status": "ready",
             "analysis": observation.content,
@@ -204,8 +260,8 @@ class VisionAnalysisService:
             metadata["analysis_thread"] = [
                 {
                     "prompt": prompt,
-                    "answer": answer.content,
-                    "model": answer.model,
+                    "answer": answer_text,
+                    "model": answer_model,
                 }
             ]
         updated = await self.repository.update_metadata(
@@ -221,8 +277,8 @@ class VisionAnalysisService:
         )
         return {
             "artifact": updated,
-            "analysis": answer.content,
-            "model": answer.model,
+            "analysis": answer_text,
+            "model": answer_model,
             # The caller edits the stored upload when this says so. It is
             # reported rather than acted on here because the edit needs the
             # artifact this call is still in the middle of creating.
@@ -294,8 +350,20 @@ class VisionAnalysisService:
             )
         except Exception as exc:
             raise VisionAnalysisError(artifact_id) from exc
+        # Ground the reasoning in the stored description as well as this turn's
+        # look at the pixels, so a follow-up keeps the detail the original
+        # observation captured rather than only what this answer happened to
+        # mention.
+        answer_text, reasoned = await self._reason_about(
+            prompt,
+            str(metadata.get("analysis") or analysis.content),
+            analysis.content,
+        )
+        answer_model = (
+            f"{analysis.model}+{self.reasoner.model}" if reasoned else analysis.model
+        )
         thread.append(
-            {"prompt": prompt, "answer": analysis.content, "model": analysis.model}
+            {"prompt": prompt, "answer": answer_text, "model": answer_model}
         )
         bounded = thread[-self.thread_max_stored :]
         updated = await self.repository.update_metadata(
@@ -308,8 +376,8 @@ class VisionAnalysisService:
         )
         return {
             "artifact": updated,
-            "analysis": analysis.content,
-            "model": analysis.model,
+            "analysis": answer_text,
+            "model": answer_model,
         }
 
     # Recover a prior question/answer thread, seeding it from legacy flat analysis.
