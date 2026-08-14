@@ -424,6 +424,78 @@ after changing GPU, model, precision, context, concurrency, or vLLM version.
 Health and model-list responses prove readiness only; repeat direct AniOS API,
 worker, browser, and ComfyUI coexistence acceptance after such changes.
 
+### Available hardware: NVIDIA DGX Spark
+
+A second inference host, an NVIDIA DGX Spark (GB10 Grace Blackwell Superchip,
+128 GB unified CPU/GPU memory, Ubuntu 24.04, sm_121), joined the local
+network on 2026-08-13, alongside the RTX 5080 above rather than replacing it.
+As of 2026-08-14 it serves AniOS's `PRESENTATION_LLM_BASE_URL` (see below);
+`MAIN_LLM_BASE_URL` and `MainActionSelector` still run entirely on the
+RTX 5080 — see Milestone 9 in `ROADMAP.md` for what has and has not been
+attempted.
+
+- Hostname: `spark-b524.local` (mDNS). SSH as `animallya96`, key-based
+  (`~/.ssh/id_ed25519_spark` on the dev machine, no passphrase).
+- The device's own DGX Dashboard (`dashboard-service -port 11000 serve`)
+  binds `127.0.0.1` only — it is not reachable directly over the LAN. A
+  Windows Scheduled Task, `AniOS-Spark-Dashboard-Tunnel`, holds an SSH `-L
+  11000:127.0.0.1:11000` tunnel open from logon so `http://localhost:11000/`
+  reaches it from the dev machine. The task script lives at
+  `~/.ssh/spark-tunnel-loop.sh` (Windows: `C:\Users\<user>\.ssh\`) and
+  retries in its own loop rather than relying on Task Scheduler's restart
+  count, because that count is exhausted by a Spark reboot before the device
+  finishes coming back up. Both the SSH key path and the `ssh` binary path
+  are hardcoded inside that script — Task Scheduler's launch environment
+  does not set `$HOME` or inherit `PATH` the way an interactive shell does,
+  and both silently broke the tunnel on first setup.
+- `http://spark-b524.local/` (the setup-hotspot onboarding page) stops
+  working once first-boot setup (`dgx-oobe.service`) completes and disables
+  itself — that is expected, not a fault.
+- NVIDIA's own vLLM container for this hardware requires `--enforce-eager`:
+  the sm_121 architecture has no full CUDA graph support yet, costing
+  roughly 20-30% throughput versus an architecture that has it. Quantize to
+  FP4/INT4 to fit larger models in the 128 GB unified pool; two Sparks can
+  pool 256 GB over a QSFP link for tensor parallelism via Ray, but only one
+  unit is on hand.
+- **DeepSeek-V4-Flash-0731 is installed and serving on the Spark**, port
+  `8888`, model id `deepseek-v4-flash`. Not vLLM — this quantization is a
+  custom asymmetric GGUF vLLM cannot read, served by `ds4-server`
+  ("DwarfStar 4", C/CUDA) from
+  [MiaAI-Lab/DeepSeek-v4-Flash-One-DGX-Spark](https://github.com/MiaAI-Lab/DeepSeek-v4-Flash-One-DGX-Spark).
+  Two things about it are easy to get wrong a second time:
+  - **It binds `127.0.0.1` only by default** (`ds4-serve` / `ds4-server`'s
+    `--host` flag, default `127.0.0.1`) — unreachable from the
+    `anios_backend` container, which needs the LAN interface directly, not a
+    Windows-side tunnel (that only helps this dev machine, not the
+    container). Must be launched with `--host 0.0.0.0`. Confirmed the failure
+    mode looks like an ordinary connection error
+    (`httpx.ConnectError: ... actively refused it`) with nothing in the
+    server's own log to suggest a binding problem — check `ss -tlnp | grep
+    8888` on the Spark first, not the client side, when this model stops
+    responding.
+  - **Nothing supervises it across a reboot** by design (no systemd unit is
+    installed; the README says to bring your own supervision). Fixed with a
+    user crontab `@reboot` entry (`crontab -l` on the Spark) rather than a
+    systemd unit, since `animallya96` does not have passwordless `sudo`.
+  - Relaunch by hand if both of the above ever need redoing:
+    `DS4_SRC_DIR=$HOME/code/ds4 DS4_GGUF_DIR=$HOME/gguf
+    $HOME/.local/bin/ds4-serve --host 0.0.0.0 --port 8888 -c 131072`. Context
+    is 131072 (not the model's native 1M) — deliberately conservative for a
+    first install on new hardware, not a hard limit; log is
+    `~/ds4-server.log`.
+  - Measured, cold single-turn decode throughput: **~5.7 tokens/sec**. Real
+    and slow enough to matter — treat any role this serves as async/batch,
+    not a synchronous chat path, until sustained-load numbers say otherwise.
+  - The `/v1/models` response carries an unusual, unrelated
+    `base_instructions` field containing a full Codex CLI system prompt —
+    an intentional compatibility feature (a "Codex model catalog" the
+    installer drops so OpenAI's Codex CLI can self-configure against this
+    server) confirmed harmless for AniOS: a direct
+    `/v1/chat/completions` call was checked and carries no such leakage, and
+    AniOS's own `LLMClient` only ever reads `.content` from a completion, not
+    the models-list metadata.
+- Migration ideas live in `ROADMAP.md`, Milestone 9.
+
 ### Qualify local models by role
 
 Run the bounded comparative harness sequentially so two candidates do not

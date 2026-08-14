@@ -642,3 +642,53 @@ removing real function.
 The security and privacy gates in [SECURITY.md](SECURITY.md) apply throughout;
 enabling `AUTH_REQUIRED` and protecting the signing and encryption keys are
 prerequisites for any non-local, multi-person deployment.
+
+## Milestone 9: local inference on the DGX Spark — IN PROGRESS
+
+Goal: use the DGX Spark's 128 GB unified memory for a substantially larger
+model than the RTX 5080's VRAM can hold, without disturbing the working
+RTX 5080 stack (`vllm-main`, `vllm-embedding`) it would sit alongside.
+
+Hardware inventory and access are documented in
+[DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md#available-hardware-nvidia-dgx-spark).
+
+- `DONE` (2026-08-14): DeepSeek-V4-Flash-0731 (284B total / 13B active MoE)
+  installed on the Spark via
+  [MiaAI-Lab/DeepSeek-v4-Flash-One-DGX-Spark](https://github.com/MiaAI-Lab/DeepSeek-v4-Flash-One-DGX-Spark)
+  → `Entrpi/ds4-on-spark`, wrapping `antirez/ds4` ("DwarfStar 4", C/CUDA, not
+  vLLM — vLLM cannot read this repo's asymmetric GGUF quantization). Both
+  install scripts were read in full before running anything on real hardware:
+  entirely user-space (`$HOME` only), no `sudo`, no unexplained network
+  calls, a real smoke test gating server start. Wired only into the
+  low-risk, non-tool-calling roles per the plan below —
+  `PRESENTATION_LLM_BASE_URL`/`PRESENTATION_LLM_MODEL` in `docker-compose.yml`
+  (`backend`, `presentation-worker`, `local-capabilities` services) — leaving
+  `MAIN_LLM_BASE_URL` and `MainActionSelector` routing untouched. Verified
+  with a real generation through the actual presentation code path
+  (`LLMPresentationProvider` via `get_presentation_llm_client()`, not just an
+  endpoint health check): a genuine 3-slide, non-repeating deck with no
+  invented statistics. Two real infrastructure bugs found and fixed along
+  the way, not staged as follow-ups: `ds4-server` defaults to binding
+  `127.0.0.1` only (unreachable from the `anios_backend` container until
+  restarted with `--host 0.0.0.0`), and nothing supervises it across a Spark
+  reboot by default (fixed with a user crontab `@reboot` entry — no `sudo`
+  needed, no systemd unit installed).
+  **Caveat, measured, not assumed:** decode throughput on a cold single-turn
+  request was ~5.7 tokens/sec — genuinely slow, consistent with the
+  `--enforce-eager`-class cost of this architecture lacking full CUDA graph
+  support. Tolerable for an async presentation job; would not be tolerable
+  for the synchronous main chat path, which is a second, independent reason
+  (beyond tool-calling risk) to not promote this to `MAIN_LLM_BASE_URL`
+  without first measuring sustained/concurrent throughput, not just a single
+  cold request.
+- `PLANNED`: qualify whichever model lands on `MAIN_LLM_BASE_URL` (if this
+  one, or another) through the same `backend.cli.qualify_models` harness the
+  RTX 5080 profile used, particularly its native tool-calling behavior — the
+  harness exists to catch exactly the class of routing regression this
+  project has repeatedly hit this way. Not started; `MainActionSelector`
+  still runs entirely on the RTX 5080's Qwen model.
+- `NOT ATTEMPTED`: this engine's OpenAI-compatible native tool-calling has
+  not been tested at all — the presentation role never calls tools, so
+  proving it out for the presentation prompt proves nothing about whether it
+  could ever replace `MainActionSelector`'s model. That question stays open
+  until it is tested directly, not inferred from unrelated success.

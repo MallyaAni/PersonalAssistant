@@ -5,7 +5,42 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 [ROADMAP.md](ROADMAP.md), and stable architecture facts in
 [ARCHITECTURE.md](ARCHITECTURE.md).
 
-Last updated: 2026-08-13, America/New_York
+Last updated: 2026-08-14, America/New_York
+
+## DeepSeek-V4-Flash now serves AniOS's presentation role, on the Spark — VERIFIED
+
+A DGX Spark joined the network (`spark-b524.local`, GB10, 128 GB unified
+memory) alongside the RTX 5080 already serving `vllm-main`/`vllm-embedding` —
+addition, not replacement. Full access, the dashboard tunnel, and the
+DeepSeek-V4-Flash install/serving details (including two real bugs found and
+fixed — loopback-only binding, no reboot supervision) are in
+[DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md#available-hardware-nvidia-dgx-spark).
+Full story and evidence in
+[ROADMAP.md](ROADMAP.md#milestone-9-local-inference-on-the-dgx-spark--in-progress).
+
+**What actually changed in the repo:** `docker-compose.yml` —
+`PRESENTATION_LLM_BASE_URL`/`PRESENTATION_LLM_MODEL` now point at
+`http://spark-b524.local:8888` / `deepseek-v4-flash` for the `backend`,
+`presentation-worker`, and `local-capabilities` services. `MAIN_LLM_BASE_URL`
+and `MainActionSelector` were deliberately left untouched — the risk there is
+the routing regressions this session already spent significant effort
+chasing on the RTX 5080's model, and that risk was not taken on today.
+
+**Verified how, and how not:** not by checking the endpoint responds — by
+running the actual `LLMPresentationProvider` code path
+(`get_presentation_llm_client()`) and confirming it returns a real,
+non-repeating, ungrounded-statistic-free 3-slide deck. Direct
+`/v1/chat/completions` call also checked by hand to confirm no leakage from
+an unrelated `base_instructions` field the `/v1/models` endpoint carries (a
+Codex-CLI-compatibility feature of the serving engine, confirmed harmless —
+detail in `DEVELOPMENT_GUIDE.md`).
+
+**What was not done:** `qualify_models` was not run against this model, and
+its tool-calling behavior has never been tested — the presentation role
+never calls a tool, so nothing here says anything about whether this model
+could ever safely sit behind `MAIN_LLM_BASE_URL`. Sustained/concurrent
+throughput was not measured either, only a single cold request
+(~5.7 tok/s decode) — real, but not necessarily the number under load.
 
 ## edit_image opinion-question fix broadened after a real recurrence — VERIFIED, residual gap disclosed
 

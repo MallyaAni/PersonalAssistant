@@ -3289,3 +3289,44 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
 - Evidence: full backend suite (1175 tests) passes; Ruff passes.
   `test_main_action_selector_behaviour.py` grew to 21 tests. No frontend
   change, so no gateway rebuild — `docker restart anios_backend` only.
+
+## 2026-08-14 — DeepSeek-V4-Flash on the DGX Spark now serves AniOS's presentation role
+
+- A DGX Spark (GB10, 128 GB unified memory) joined the network alongside the
+  RTX 5080 already serving `vllm-main`/`vllm-embedding` — addition, not
+  replacement. Set up SSH access and a self-healing dashboard tunnel first;
+  full detail (including two Task Scheduler bugs found and fixed along the
+  way — a double-shell-parsing failure on a path containing a space, and
+  Task Scheduler's launch `PATH` not including Git's `usr/bin`) is in
+  `DEVELOPMENT_GUIDE.md`.
+- Installed DeepSeek-V4-Flash-0731 (284B total / 13B active MoE) via
+  [MiaAI-Lab/DeepSeek-v4-Flash-One-DGX-Spark](https://github.com/MiaAI-Lab/DeepSeek-v4-Flash-One-DGX-Spark)
+  → `Entrpi/ds4-on-spark`, wrapping `antirez/ds4` ("DwarfStar 4", C/CUDA —
+  not vLLM, which cannot read this quantization's asymmetric GGUF format).
+  Read both install scripts in full before running anything on real
+  hardware: entirely user-space, no `sudo`, no unexplained network calls, a
+  real smoke test gates server start.
+- Wired only into `PRESENTATION_LLM_BASE_URL`/`PRESENTATION_LLM_MODEL` in
+  `docker-compose.yml` (`backend`, `presentation-worker`,
+  `local-capabilities`) — deliberately not `MAIN_LLM_BASE_URL`. The main
+  model drives `MainActionSelector`'s native tool-calling, which this session
+  (and prior ones) already spent significant effort tuning against the RTX
+  5080's model; that risk was not taken on today, and this engine's
+  tool-calling behavior has never been tested at all.
+- Two real bugs found and fixed during setup, not deferred: `ds4-server`
+  binds `127.0.0.1` only by default, unreachable from the `anios_backend`
+  container until restarted with `--host 0.0.0.0`; and nothing supervises it
+  across a Spark reboot by default, fixed with a user crontab `@reboot`
+  entry (no `sudo` available for a systemd unit).
+- Verified with a real generation through the actual presentation code path
+  (`LLMPresentationProvider` via `get_presentation_llm_client()`), not an
+  endpoint health check: a genuine 3-slide, non-repeating deck with no
+  invented statistics. A direct `/v1/chat/completions` call was also
+  checked by hand after noticing the server's `/v1/models` response carries
+  an unrelated embedded Codex CLI system prompt (an intentional
+  compatibility feature, confirmed not to leak into actual completions, and
+  confirmed that AniOS's `LLMClient` never reads that field anyway).
+- Measured, not assumed: cold single-turn decode throughput is
+  ~5.7 tokens/sec. Real and slow enough to matter for anything synchronous;
+  tolerable for the async presentation-job path this was wired into.
+  Sustained/concurrent throughput under real load was not measured.
