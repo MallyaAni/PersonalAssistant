@@ -254,7 +254,13 @@ class MainActionSelector:
         tools.append(
             self._builtin_definition(
                 _GENERATE_IMAGE_TOOL,
-                "Create a brand-new picture from a text description.",
+                "Create a brand-new picture from a text description. Only "
+                "when the user actually asks for an image, picture, "
+                "drawing, or artwork to be made - never for a request to "
+                "write text, such as a poem, haiku, story, or description, "
+                "even when its subject is visual (rain, a sunset, a "
+                "mountain): that is answered as words, not illustrated, "
+                "unless the user separately asks for a picture too.",
                 _GENERATE_IMAGE_SCHEMA,
             )
         )

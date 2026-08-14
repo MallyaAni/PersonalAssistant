@@ -3355,3 +3355,78 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   `gateway` proxies to needs a `gateway` restart afterward, and the only way
   to actually confirm that is a request through the gateway itself, not a
   container-internal or host-port check.
+
+## 2026-08-14 — Reverted the presentation role to Qwen; found and fixed a real, pre-existing budget bug
+
+- The DeepSeek-V4-Flash presentation attempt above failed on the user's
+  actual first request: a `pydantic.ValidationError` with `extra_forbidden`
+  on fields like `statistic` (schema wants `statistic_value`/
+  `statistic_label`) and `content` (schema wants `points`, etc.) — the
+  model's JSON was well-formed but did not use the exact field names AniOS's
+  `DeckOutline` contract requires. Reverted `PRESENTATION_LLM_BASE_URL`/
+  `PRESENTATION_LLM_MODEL` to `vllm-main`/`qwen/qwen3.5-4b` in
+  `docker-compose.yml` immediately rather than attempt a same-session fix.
+- Regenerating the user's exact prompt against the reverted (previously
+  "known-good") Qwen config to confirm the revert worked **also failed**,
+  2 of 3 identical attempts, with a different symptom: a JSON parse error
+  from truncated output. `PRESENTATION_PLAN_MAX_TOKENS` defaulted to 2,048;
+  this prompt's real plan needed close to that just for the outline. This is
+  a pre-existing bug independent of the Spark work — it would have hit
+  Qwen alone, on the original deployment, before any of this session's
+  changes. Raised the default to 4,096 in `backend/config/settings.py`;
+  3 of 3 identical attempts succeeded afterward.
+- Both fixes required a full `docker compose build` + `up -d --no-deps` +
+  `docker restart anios_gateway` cycle (the settings change is source code,
+  not an env var — `anios_backend` does not bind-mount the repo), verified
+  through the actual gateway path each time per the trap documented above.
+- Evidence: full backend suite (1175 tests) passes; Ruff passes. Verified
+  through the real `LLMPresentationProvider` code path at production
+  settings, not a mock or a single successful run — 3 consecutive real
+  generations of the exact prompt that originally failed.
+
+## 2026-08-14 — Evaluated DeepSeek-V4-Flash's native tool-calling directly; found and fixed a real generate_image gap
+
+- Built a standalone `MainActionSelector` pointed at
+  `spark-b524.local:8888`/`deepseek-v4-flash`, never touching the running
+  app's `MAIN_LLM_BASE_URL`, to answer directly whether this engine's
+  tool-calling is reliable enough to ever be considered for the main model —
+  the real question behind the presentation experiment, not inferred from
+  it. No regex or hardcoded routing anywhere in this evaluation or in
+  `MainActionSelector` itself; every decision is the model's own native tool
+  call, same as Qwen today.
+- Ran the same 52-case search-routing benchmark (`recall >= 0.85`,
+  `specificity >= 0.75`) Qwen was held to: **recall 0.8519, specificity
+  0.9565** — passes, with recall clearing the floor by under one case's
+  margin. All 4 misses were the deliberately hard category (ongoing-event
+  questions with no temporal marker).
+- Every tool call the model produced across the whole evaluation was valid,
+  correctly-typed JSON — a different and better property than the
+  presentation failure showed, which needed a complex nested schema rather
+  than tool-calling's flat arguments.
+- Found one real, reproducible judgment gap: "write a haiku about rain"
+  called `generate_image` to illustrate the rain instead of writing the
+  haiku (2/2 on discovery). Broadened `generate_image`'s tool description
+  around the general principle - text requests stay text even about a
+  visual subject - rather than the one reported phrase, mirroring the
+  `edit_image` fix pattern from earlier this session. Verified with poem,
+  story, and description phrasings across different subjects: fixed
+  cleanly. A second, more forceful version of the same description was
+  tried and rejected - it introduced two new regressions (a previously
+  100%-reliable diagram request, and the just-fixed poem case) without
+  fixing the remaining gap, a direct instance of the overfitting risk this
+  project has repeatedly been warned about. Reverted to the first,
+  non-regressing wording.
+- Disclosed, not hidden: short structured nature poetry specifically -
+  haiku and limerick - stayed materially less reliable even after the fix
+  (haiku 4/8, limerick 2/8 across combined runs), against ~100% for every
+  other case tested. Read as a strong, specific model prior rather than a
+  general problem. New regression coverage
+  (`test_a_request_to_write_about_a_visual_subject_does_not_generate_image`)
+  covers only the reliably-fixed cases, not the still-flaky ones, and was
+  verified against the currently-live Qwen model too (3/3) with no
+  regressions elsewhere in the suite.
+- Evidence: full backend suite (1175 tests) passes; Ruff passes. Net
+  conclusion recorded plainly in `ROADMAP.md`: more encouraging than the
+  presentation result, but not sufficient evidence yet to promote this
+  engine to `MAIN_LLM_BASE_URL` - the evidence base is single-digit repeats
+  per case, and the haiku/limerick gap is real and unresolved.

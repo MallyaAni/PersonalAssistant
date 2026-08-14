@@ -7,6 +7,82 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 
 Last updated: 2026-08-14, America/New_York
 
+## DeepSeek-V4-Flash tool-calling evaluated directly — encouraging, not yet sufficient — VERIFIED
+
+**The actual question behind the whole DGX Spark thread**: is this engine's
+native tool-calling reliable enough to ever justify `MAIN_LLM_BASE_URL`?
+Answered with real evidence, not inference from the (failed) presentation
+attempt: a standalone script built a real `MainActionSelector` pointed
+directly at the Spark's `deepseek-v4-flash` endpoint, never touching the
+running app's config. Full numbers and reasoning in `ROADMAP.md` Milestone 9
+and `CHANGELOG.md`; short version:
+
+- Search-routing benchmark (Qwen's own 52-case, 0.85/0.75 floor): **recall
+  0.8519, specificity 0.9565** — passes, recall by under one case's margin.
+- Every tool call made was valid JSON, no exceptions — better-behaved than
+  the presentation schema failure, which needed a complex nested schema
+  rather than tool-calling's flat arguments.
+- Found and fixed a real gap: "write a haiku about rain" called
+  `generate_image` instead of just writing it. Fixed generically (poem/
+  story/description all now correctly stay text), verified against the
+  *live* Qwen model too with no regressions — this fix is real and kept
+  regardless of what happens with DeepSeek. A more aggressive second attempt
+  at the same fix was tried, made things worse elsewhere, and was reverted -
+  worth remembering as a concrete example of the overfitting risk, not just
+  an abstract warning.
+- **Residual, disclosed gap**: haiku and limerick specifically stayed
+  materially unreliable even after the fix (4/8 and 2/8), against ~100% for
+  every other case. This looks like a strong, specific training-data prior,
+  not a general problem — but it is real and unresolved.
+
+**Net position**: more encouraging than the presentation result, on real
+numbers rather than optimism, but not enough to promote to
+`MAIN_LLM_BASE_URL` yet. The evidence base is single-digit repeats per case.
+Next step, not yet started: more repeated runs for a real confidence
+interval, and a judgment call on whether the haiku/limerick-class gap is
+acceptable for a model that will field creative-writing requests routinely.
+
+Evidence: full backend suite (1175 tests) passes; Ruff passes. New permanent
+test (`test_a_request_to_write_about_a_visual_subject_does_not_generate_image`)
+covers the reliably-fixed cases only, deliberately not the still-flaky ones.
+
+## Presentation role reverted to Qwen; a real, pre-existing token-budget bug found and fixed — VERIFIED
+
+**Read this first if the entry below (DeepSeek on the Spark) looks stale.**
+The user's actual first real request through the DeepSeek-on-Spark setup
+failed: `pydantic.ValidationError`, `extra_forbidden` on fields like
+`statistic` (schema wants `statistic_value`/`statistic_label`) — the
+model's JSON was well-formed, just not in AniOS's exact field names.
+`PRESENTATION_LLM_BASE_URL`/`PRESENTATION_LLM_MODEL` are back on
+`vllm-main`/`qwen/qwen3.5-4b` in `docker-compose.yml`. `MAIN_LLM_BASE_URL`
+was never touched either way.
+
+Regenerating the user's exact prompt against the reverted Qwen config to
+confirm the revert worked **also failed, 2 of 3 attempts** — a different
+symptom (truncated JSON), a different cause: `PRESENTATION_PLAN_MAX_TOKENS`
+defaulted to 2,048, and this prompt's real outline needed close to that.
+**This is a real bug that predates any Spark work** — it would have hit
+Qwen alone, on the original deployment. Raised the default to 4,096 in
+`backend/config/settings.py`; 3 of 3 identical attempts succeeded after.
+Both fixes needed a full `docker compose build` (not just `up -d` — this
+one is source code, `anios_backend` does not bind-mount) +
+`docker restart anios_gateway` (per the stale-DNS trap two entries below),
+verified through the actual gateway path each time this time, not a
+container-internal shortcut.
+
+Currently evaluating, separately, whether DeepSeek-V4-Flash's native
+tool-calling is reliable enough to ever justify promoting it to
+`MAIN_LLM_BASE_URL` — the user's own framing was "maximize the intelligence
+of the main model and its subagents," and the presentation schema failure
+is directly relevant evidence pointing toward caution there, not away from
+it. Results not yet in as of this write-up; look for a following entry or
+check `git log` if this note is stale.
+
+Evidence: full backend suite (1175 tests) passes; Ruff passes. Verified
+through the real `LLMPresentationProvider` code path at production
+settings — 3 consecutive real generations of the exact prompt that
+originally failed, not a mock or a single lucky run.
+
 ## DeepSeek-V4-Flash now serves AniOS's presentation role, on the Spark — VERIFIED
 
 A DGX Spark joined the network (`spark-b524.local`, GB10, 128 GB unified

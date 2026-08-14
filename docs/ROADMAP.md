@@ -652,43 +652,110 @@ RTX 5080 stack (`vllm-main`, `vllm-embedding`) it would sit alongside.
 Hardware inventory and access are documented in
 [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md#available-hardware-nvidia-dgx-spark).
 
-- `DONE` (2026-08-14): DeepSeek-V4-Flash-0731 (284B total / 13B active MoE)
-  installed on the Spark via
+- `DONE, THEN REVERTED` (2026-08-14): DeepSeek-V4-Flash-0731 (284B total /
+  13B active MoE) installed on the Spark via
   [MiaAI-Lab/DeepSeek-v4-Flash-One-DGX-Spark](https://github.com/MiaAI-Lab/DeepSeek-v4-Flash-One-DGX-Spark)
   → `Entrpi/ds4-on-spark`, wrapping `antirez/ds4` ("DwarfStar 4", C/CUDA, not
   vLLM — vLLM cannot read this repo's asymmetric GGUF quantization). Both
   install scripts were read in full before running anything on real hardware:
   entirely user-space (`$HOME` only), no `sudo`, no unexplained network
-  calls, a real smoke test gating server start. Wired only into the
-  low-risk, non-tool-calling roles per the plan below —
-  `PRESENTATION_LLM_BASE_URL`/`PRESENTATION_LLM_MODEL` in `docker-compose.yml`
-  (`backend`, `presentation-worker`, `local-capabilities` services) — leaving
-  `MAIN_LLM_BASE_URL` and `MainActionSelector` routing untouched. Verified
-  with a real generation through the actual presentation code path
-  (`LLMPresentationProvider` via `get_presentation_llm_client()`, not just an
-  endpoint health check): a genuine 3-slide, non-repeating deck with no
-  invented statistics. Two real infrastructure bugs found and fixed along
-  the way, not staged as follow-ups: `ds4-server` defaults to binding
-  `127.0.0.1` only (unreachable from the `anios_backend` container until
-  restarted with `--host 0.0.0.0`), and nothing supervises it across a Spark
-  reboot by default (fixed with a user crontab `@reboot` entry — no `sudo`
-  needed, no systemd unit installed).
-  **Caveat, measured, not assumed:** decode throughput on a cold single-turn
-  request was ~5.7 tokens/sec — genuinely slow, consistent with the
+  calls, a real smoke test gating server start. Wired into the low-risk,
+  non-tool-calling `PRESENTATION_LLM_BASE_URL`/`PRESENTATION_LLM_MODEL`
+  roles, leaving `MAIN_LLM_BASE_URL` untouched. An initial synthetic
+  verification (a simple 3-slide deck) passed clean; the user's actual first
+  real request then failed with a `pydantic.ValidationError` —
+  `extra_forbidden` on fields like `statistic` where the schema requires
+  `statistic_value`/`statistic_label`. The model's JSON was well-formed, just
+  not in AniOS's exact field names — real evidence about this engine's
+  structured-output reliability, not a fluke the first synthetic test missed
+  by chance. Reverted `PRESENTATION_LLM_BASE_URL`/`PRESENTATION_LLM_MODEL` to
+  `vllm-main`/`qwen/qwen3.5-4b` the same session.
+  Two real infrastructure bugs were found and fixed along the way regardless
+  of the revert, since they'll matter again if this is revisited: `ds4-server`
+  defaults to binding `127.0.0.1` only (unreachable from the `anios_backend`
+  container until restarted with `--host 0.0.0.0`), and nothing supervises it
+  across a Spark reboot by default (fixed with a user crontab `@reboot` entry
+  — no `sudo` needed, no systemd unit installed).
+  **Measured, not assumed:** decode throughput on a cold single-turn request
+  was ~5.7 tokens/sec — genuinely slow, consistent with the
   `--enforce-eager`-class cost of this architecture lacking full CUDA graph
-  support. Tolerable for an async presentation job; would not be tolerable
-  for the synchronous main chat path, which is a second, independent reason
-  (beyond tool-calling risk) to not promote this to `MAIN_LLM_BASE_URL`
-  without first measuring sustained/concurrent throughput, not just a single
-  cold request.
+  support. Would not be tolerable for a synchronous chat path even if the
+  schema issue were fixed — a second, independent reason (beyond tool-calling
+  risk) this is not close to ready for `MAIN_LLM_BASE_URL`.
+- `DONE` (2026-08-14, unrelated to DeepSeek): regenerating the user's failed
+  prompt against the *reverted* Qwen config, to confirm the revert worked,
+  also failed 2 of 3 attempts — truncated JSON, not a field-naming mismatch.
+  `PRESENTATION_PLAN_MAX_TOKENS` defaulted to 2,048 and this prompt's real
+  outline needed close to that. A genuine pre-existing bug, unrelated to any
+  model choice — it would have hit Qwen alone, on the original deployment.
+  Raised to 4,096 in `backend/config/settings.py`; 3 of 3 succeeded after,
+  full backend suite (1175 tests) still passes.
 - `PLANNED`: qualify whichever model lands on `MAIN_LLM_BASE_URL` (if this
   one, or another) through the same `backend.cli.qualify_models` harness the
   RTX 5080 profile used, particularly its native tool-calling behavior — the
   harness exists to catch exactly the class of routing regression this
   project has repeatedly hit this way. Not started; `MainActionSelector`
   still runs entirely on the RTX 5080's Qwen model.
-- `NOT ATTEMPTED`: this engine's OpenAI-compatible native tool-calling has
-  not been tested at all — the presentation role never calls tools, so
-  proving it out for the presentation prompt proves nothing about whether it
-  could ever replace `MainActionSelector`'s model. That question stays open
-  until it is tested directly, not inferred from unrelated success.
+- `DONE` (2026-08-14): tested this engine's native tool-calling directly —
+  a standalone script built a real `MainActionSelector` pointed at
+  `http://spark-b524.local:8888`/`deepseek-v4-flash`, never touching the
+  running app's `MAIN_LLM_BASE_URL`. No regex, no hardcoded routing anywhere
+  in this evaluation or in `MainActionSelector` itself — every decision is
+  the model's own native tool call, exactly as for Qwen today.
+  - **Search-routing benchmark** (the same 52-case, `recall >= 0.85 /
+    specificity >= 0.75` floor Qwen was held to): **recall 0.8519, specificity
+    0.9565** — a real pass, though recall clears the floor by less than one
+    case's worth of margin. All 4 misses were the deliberately-hard category
+    (implicit-volatile questions about ongoing events with no temporal
+    marker, e.g. "did the merger go through") — the exact category the
+    routing-cases file over-represents because it is where routing normally
+    breaks.
+  - **Tool-calling mechanics**: across every case tested, every tool call
+    the model made was valid, correctly-typed JSON — no malformed structure,
+    no wrong field names anywhere. That is a different and better property
+    than the presentation failure showed; deck generation needed a complex
+    nested schema, tool-calling here needs simple flat arguments, and this
+    engine handled the latter cleanly every time.
+  - **Tool-calling judgment**: found one real, reproducible gap - "write a
+    haiku about rain" called `generate_image` to illustrate the rain instead
+    of just writing the haiku (2/2 on first discovery). Broadened
+    `generate_image`'s own tool description in
+    `backend/services/main_action_selector.py` around the general principle
+    (judge only by whether the user's words ask for a picture; a request to
+    write text stays text even about a visual subject) rather than naming
+    the one reported case, mirroring the `edit_image` fix earlier this
+    session. Verified with varied phrasings across different subjects and
+    forms (poem, story, description), not the one reported case: fixed
+    cleanly and reproducibly. A second, more forceful rewrite of the same
+    description was tried and **rejected** — it did not fix the remaining
+    gap and introduced two new regressions elsewhere (a previously
+    100%-reliable diagram request, and the just-fixed poem case), a direct,
+    measured instance of the overfitting risk this project has been warned
+    about repeatedly. Reverted to the first, non-regressing wording.
+    **Residual gap, disclosed rather than hidden:** short, structured,
+    nature-themed poetry forms specifically - haiku and limerick - stayed
+    materially less reliable even after the fix: haiku 4/8 (50%), limerick
+    2/8 (25%) across combined runs, against ~100% for every one of the other
+    ~19 cases in the same battery (image requests, diagrams, delegation,
+    edit_image, the opinion-question non-re-edit batch, ordinary
+    no-action questions, and the broader poem/story/description class).
+    This reads as a strong, specific model prior (haiku and limerick are
+    frequently paired with an illustration in training data) that a tool
+    description did not fully override, not a general reliability problem.
+    New permanent regression coverage for the fixed cases (not the still-
+    flaky haiku/limerick ones, which are not pinned to an unstable
+    expectation) is in
+    `test_a_request_to_write_about_a_visual_subject_does_not_generate_image`
+    — verified against the currently-live Qwen model too (3/3), and the fix
+    caused no regressions across the rest of that suite (the only failures
+    on a full run were pre-existing, already-disclosed `edit_image`
+    flakiness from earlier this session, unrelated to this change).
+  - **Net read:** meaningfully more encouraging than the presentation
+    result, on real evidence rather than optimism - but recall sits right at
+    its floor, and the haiku/limerick gap is real and unresolved. Not
+    sufficient evidence to promote this to `MAIN_LLM_BASE_URL` yet; the
+    honest next step is more repeated runs building a wider confidence
+    interval (this evidence base is single-digit repeats per case), plus a
+    considered decision on whether the haiku/limerick-class gap is
+    acceptable for a main model that answers creative-writing requests
+    routinely.

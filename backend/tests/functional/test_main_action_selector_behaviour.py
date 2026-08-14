@@ -144,6 +144,30 @@ async def test_an_explicit_image_request_chooses_generate_image(selector, text):
     assert isinstance(action, GenerateImageAction), action
 
 
+# Found on a different model entirely (DeepSeek-V4-Flash, evaluated for a
+# possible future role, not currently in production): "write a haiku about
+# rain" called generate_image to illustrate the rain instead of just writing
+# the haiku - a visual subject read as an implicit picture request. Poem and
+# story prompts on the same visual subjects generalize the fix cleanly; short
+# nature-themed poetry forms (haiku, limerick specifically) stayed materially
+# less reliable even after two rounds of strengthening this description, so
+# they are deliberately left out of this assertion rather than pinned to a
+# flaky expectation - see ROADMAP.md Milestone 9 for the measured numbers.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "write a poem about the ocean",
+        "tell me a short story about a rainy day in autumn",
+        "describe a mountain sunset in vivid detail",
+    ],
+)
+async def test_a_request_to_write_about_a_visual_subject_does_not_generate_image(
+    selector, text
+):
+    action = await selector.select("functional_test_user", text, [], None)
+    assert not isinstance(action, GenerateImageAction), action
+
+
 @pytest.mark.parametrize(
     "text",
     [
