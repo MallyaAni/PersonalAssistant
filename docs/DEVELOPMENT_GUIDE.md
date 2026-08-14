@@ -203,6 +203,10 @@ Key settings are:
 | `MAIN_LLM_BASE_URL` | blank | Main response and native-tool endpoint; blank falls back to `LLM_BASE_URL` |
 | `MAIN_LLM_MODEL` | blank | Main response/native-tool model; blank falls back to `LLM_MODEL`; current qualified setting is `qwen/qwen3.5-4b` |
 | `MAIN_LLM_REASONING_EFFORT` | `none` | Main-role reasoning control |
+| `ROUTING_INFERENCE_ADAPTER` | blank | Routing-role adapter; blank inherits `MAIN_INFERENCE_ADAPTER` then `INFERENCE_ADAPTER` |
+| `ROUTING_LLM_BASE_URL` | blank | `MainActionSelector`'s tool-calling decision only; blank falls back through `MAIN_LLM_BASE_URL` to `LLM_BASE_URL`, reproducing the one-model-does-both default exactly. Set only to split routing from the reply model - e.g. testing a main-model swap without inheriting its untested native tool-calling behaviour (2026-08-14, see `ROADMAP.md` Milestone 9) |
+| `ROUTING_LLM_MODEL` | blank | Falls back the same way as `ROUTING_LLM_BASE_URL` |
+| `ROUTING_LLM_REASONING_EFFORT` | `none` | Routing-role reasoning control |
 | `PRESENTATION_INFERENCE_ADAPTER` | blank | Presentation-role adapter; blank inherits `INFERENCE_ADAPTER` |
 | `PRESENTATION_LLM_BASE_URL` | blank | Presentation specialist endpoint; blank falls back through main and global endpoints |
 | `PRESENTATION_LLM_MODEL` | blank | Progressive outline/slide/revision model; current qualified setting is `qwen/qwen3.5-4b` |

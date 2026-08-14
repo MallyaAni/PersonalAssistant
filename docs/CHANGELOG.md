@@ -3430,3 +3430,30 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   presentation result, but not sufficient evidence yet to promote this
   engine to `MAIN_LLM_BASE_URL` - the evidence base is single-digit repeats
   per case, and the haiku/limerick gap is real and unresolved.
+
+## 2026-08-14 — Split tool-calling from reply generation; measured a real ~5x latency cost
+
+- Added `ROUTING_LLM_BASE_URL`/`ROUTING_LLM_MODEL`/
+  `ROUTING_LLM_REASONING_EFFORT`, falling back to `MAIN_LLM_*` when unset so
+  default behaviour is unchanged (full 1175-test suite confirms it).
+  `MainActionSelector`'s tool-calling decision and the conversational reply
+  (`build_assistant_graph`/`stream_chat`) were already two separate model
+  calls internally, just sharing one client - this makes the split real and
+  configurable, so a main-model swap for reply quality does not have to also
+  inherit that model's untested tool-calling behaviour. Not deployed to
+  `docker-compose.yml` yet; this is measurement infrastructure.
+- Measured real end-to-end reply latency through the actual code path that
+  streams a reply to a user, Qwen vs DeepSeek-V4-Flash, four realistic
+  prompts, no mocking: **average 6.4s vs 31.9s, roughly 5x slower**, ranging
+  3-10x by query. Time-to-first-token stays close (~0.1s vs ~0.4-1.0s) -
+  DeepSeek does not feel stuck at the start, but visibly trickles in far
+  slower afterward.
+- Verified, not assumed, that DeepSeek's chain-of-thought does not leak into
+  the streamed reply: read `stream_chat`'s SSE parsing directly and
+  confirmed it only ever reads `delta.content`, never
+  `delta.reasoning_content`. A garbled character in the raw measurement
+  output (`Here\x92s` instead of a curly apostrophe) was chased to the byte
+  level and identified as a Windows-console `print()` encoding artifact in
+  the measurement script, not a defect in the model or in `stream_chat` -
+  recorded so this false lead is not rediscovered later.
+- Full numbers and the latency table are in `ROADMAP.md` Milestone 9.

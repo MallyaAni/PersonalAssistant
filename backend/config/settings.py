@@ -40,6 +40,18 @@ class Settings(BaseSettings):
     MAIN_LLM_REASONING_EFFORT: Literal[
         "none", "minimal", "low", "medium", "high", "xhigh"
     ] = "none"
+    # Blank means MainActionSelector's tool-calling decision rides the same
+    # model as the conversational reply (MAIN_LLM_*), same as before this
+    # setting existed. Set only when the two need to differ - e.g. a main
+    # model swap for reply quality that should not also inherit that model's
+    # untested (or known-weaker) native tool-calling behavior. Evaluated
+    # 2026-08-14 specifically for that scenario; see ROADMAP.md Milestone 9.
+    ROUTING_INFERENCE_ADAPTER: Literal["", "openai_compatible"] = ""
+    ROUTING_LLM_BASE_URL: str = ""
+    ROUTING_LLM_MODEL: str = ""
+    ROUTING_LLM_REASONING_EFFORT: Literal[
+        "none", "minimal", "low", "medium", "high", "xhigh"
+    ] = "none"
     PRESENTATION_INFERENCE_ADAPTER: Literal["", "openai_compatible"] = ""
     PRESENTATION_LLM_BASE_URL: str = ""
     PRESENTATION_LLM_MODEL: str = ""

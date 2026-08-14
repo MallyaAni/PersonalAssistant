@@ -759,3 +759,42 @@ Hardware inventory and access are documented in
     considered decision on whether the haiku/limerick-class gap is
     acceptable for a main model that answers creative-writing requests
     routinely.
+
+- `DONE` (2026-08-14): split `MainActionSelector`'s tool-calling model from
+  the conversational-reply model, so a main-model swap for reply quality
+  does not have to also inherit that model's tool-calling behaviour
+  wholesale. New `ROUTING_LLM_BASE_URL`/`ROUTING_LLM_MODEL`/
+  `ROUTING_LLM_REASONING_EFFORT` in `backend/config/settings.py`, falling
+  back to `MAIN_LLM_*` when unset (default behaviour is byte-for-byte
+  unchanged - full backend suite, 1175 tests, confirms it). Wired via a new
+  `get_routing_llm_client()`/`RoutingLlmDependency` in
+  `backend/core/dependencies.py`; `get_main_action_selector` now takes that
+  instead of the shared `LlmDependency`. Not deployed to `docker-compose.yml`
+  - this is infrastructure for measurement, not a production change yet.
+- `DONE` (2026-08-14): measured real end-to-end reply latency through the
+  actual `build_assistant_graph`/`stream_chat` code path (the literal
+  function that streams a reply to a user), Qwen vs DeepSeek-V4-Flash, four
+  realistic conversational prompts, no mocking:
+
+  | Query | Qwen | DeepSeek | Ratio |
+  | --- | --- | --- | --- |
+  | Rust learning path | 5.0s | 49.8s | 10x |
+  | REST vs GraphQL tradeoffs | 11.3s | 35.6s | 3.2x |
+  | Stress/deadline tips | 3.5s | 14.8s | 4.3x |
+  | MoE vs dense explainer | 6.0s | 27.5s | 4.6x |
+
+  Average 6.4s vs 31.9s - **roughly 5x slower**, ranging 3-10x by query.
+  Time-to-first-token stays close for both (~0.1s vs ~0.4-1.0s) - DeepSeek
+  does not feel stuck at the start, but the reply visibly trickles in far
+  slower afterward, and it tended to write somewhat longer answers in this
+  sample, compounding the wait rather than being the sole cause of it.
+  Confirmed by reading `backend/core/llm.py`'s `stream_chat`, not assumed:
+  it reads only `delta.content` from the SSE stream, never
+  `delta.reasoning_content`, so DeepSeek's chain-of-thought does not leak
+  into what a user would see - the length and slowness are both genuine,
+  not an artifact of hidden reasoning text streaming through. One apparent
+  garbled character in the raw output (`Here\x92s`, `\x92` instead of a
+  curly apostrophe) was chased down to the byte and found to be a
+  Windows-console `print()` encoding artifact in the measurement script
+  itself, not a defect in the model's output or in `stream_chat` - recorded
+  so the same false lead is not re-investigated later.

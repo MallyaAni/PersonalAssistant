@@ -7,6 +7,49 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 
 Last updated: 2026-08-14, America/New_York
 
+## Routing/reply split built and real latency measured: ~5x slower — VERIFIED
+
+**Next planned step, not started:** evaluate NVIDIA's own Nemotron 3 Super
+(120B total / 12.7B active) as a DGX Spark candidate instead of continuing
+to invest in DeepSeek-V4-Flash specifically. Real search found it officially
+supported on Spark with native vLLM + NVFP4 (not a bespoke third-party
+engine), right-sized for 128GB, and leading its size class on the
+Artificial Analysis Intelligence Index — a lower-risk bet on paper than
+DeepSeek's community-maintained `ds4-server`. Not yet installed or tested;
+no tool-calling evidence exists for it the way there now does for DeepSeek.
+
+**What shipped this round:** `MainActionSelector`'s tool-calling model can
+now be configured independently of the conversational-reply model
+(`ROUTING_LLM_BASE_URL`/`MODEL`/`REASONING_EFFORT` in
+`backend/config/settings.py`, wired via `get_routing_llm_client()` in
+`backend/core/dependencies.py`). Falls back to `MAIN_LLM_*` when unset, so
+this changes nothing by default — full 1175-test suite confirms it. Not
+deployed to `docker-compose.yml`; this exists so a main-model swap for reply
+quality doesn't have to also inherit that model's untested tool-calling
+behavior wholesale.
+
+**Real latency measured**, not estimated: sent the same four realistic
+conversational prompts through the actual `build_assistant_graph`/
+`stream_chat` code path (the literal function that streams a reply to a
+user) on both Qwen and DeepSeek-V4-Flash. **Average 6.4s vs 31.9s — roughly
+5x slower**, ranging 3-10x by query; full table in `ROADMAP.md` Milestone 9.
+Time-to-first-token stays close for both, so DeepSeek doesn't feel stuck at
+the start, but the reply visibly crawls in afterward.
+
+Verified DeepSeek's chain-of-thought does not leak into what streams to the
+user - read `stream_chat` directly, confirmed it only ever reads
+`delta.content`. Chased down an apparently-garbled character in the raw
+output to the exact byte and found it was a Windows-console `print()`
+encoding artifact in the measurement script itself, not a real defect -
+worth remembering so this isn't re-investigated from scratch later.
+
+**Where this leaves the decision**: DeepSeek-V4-Flash's tool-calling is
+genuinely decent (prior entry) and the routing risk can now be engineered
+around via this split - but a ~5x reply latency cost is a real, separate
+problem the split does not solve, since it's the model *generating the
+words the user watches stream in*. Whether that tradeoff is worth it is
+still an open, undecided call - not resolved by this entry.
+
 ## DeepSeek-V4-Flash tool-calling evaluated directly — encouraging, not yet sufficient — VERIFIED
 
 **The actual question behind the whole DGX Spark thread**: is this engine's

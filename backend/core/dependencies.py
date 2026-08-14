@@ -237,6 +237,22 @@ def get_llm_client() -> LLMClient:
     )
 
 
+# Build MainActionSelector's tool-calling model independently from the
+# conversational reply model. Falls back to MAIN_LLM_* so leaving this unset
+# reproduces today's behaviour exactly: one model does both jobs.
+def get_routing_llm_client() -> LLMClient:
+    return _build_llm_client(
+        settings.ROUTING_INFERENCE_ADAPTER
+        or settings.MAIN_INFERENCE_ADAPTER
+        or settings.INFERENCE_ADAPTER,
+        settings.ROUTING_LLM_BASE_URL
+        or settings.MAIN_LLM_BASE_URL
+        or settings.LLM_BASE_URL,
+        settings.ROUTING_LLM_MODEL or settings.MAIN_LLM_MODEL or settings.LLM_MODEL,
+        settings.ROUTING_LLM_REASONING_EFFORT,
+    )
+
+
 # Build the focused presentation model independently from the main agent.
 def get_presentation_llm_client() -> LLMClient:
     return _build_llm_client(
@@ -303,6 +319,7 @@ MemoryDependency = Annotated[
     Depends(get_memory_service),
 ]
 LlmDependency = Annotated[LLMClient, Depends(get_llm_client)]
+RoutingLlmDependency = Annotated[LLMClient, Depends(get_routing_llm_client)]
 PresentationLlmDependency = Annotated[
     LLMClient,
     Depends(get_presentation_llm_client),
@@ -1295,10 +1312,13 @@ ImageRecallDependency = Annotated[
 
 # Compose the built-in actions (search, image generation/editing, diagrams,
 # specialist handoff) with the user's own registered tools into one native
-# tool-calling decision, made by the same model that answers the user -- not
-# by a battery of independent regexes and classifiers guessing beforehand.
+# tool-calling decision -- not a battery of independent regexes and
+# classifiers guessing beforehand. By default this is the same model that
+# answers the user (ROUTING_LLM_* unset falls back to MAIN_LLM_*); the two
+# can be split when a main-model swap should not also inherit that model's
+# untested native tool-calling behaviour.
 def get_main_action_selector(
-    llm: LlmDependency,
+    llm: RoutingLlmDependency,
     invocation: MCPInvocationDependency,
     tool_orchestration: MCPToolOrchestrationDependency,
     diagram_artifacts: DiagramArtifactDependency,
