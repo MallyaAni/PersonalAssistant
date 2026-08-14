@@ -3330,3 +3330,28 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
   ~5.7 tokens/sec. Real and slow enough to matter for anything synchronous;
   tolerable for the async presentation-job path this was wired into.
   Sustained/concurrent throughput under real load was not measured.
+
+## 2026-08-14 — Recreating `backend` broke deep-matter.com until `gateway` was also restarted
+
+- Fallout of the change above: `docker compose up -d --no-deps backend
+  presentation-worker local-capabilities`, needed to pick up the new
+  `PRESENTATION_LLM_BASE_URL`, gave `anios_backend` a new Docker-internal IP.
+  `nginx.gateway.conf` resolves the `backend` hostname once, at worker
+  start, not per-request — `anios_gateway` (never restarted, since nothing
+  about the frontend it serves had changed) kept proxying `/api/` to the old
+  IP. Every request through `deep-matter.com` returned `502` with
+  `connect() failed (111: Connection refused)` in the gateway's log, while a
+  direct `docker exec anios_backend` call or `curl localhost:8000` from the
+  host both worked — both paths bypass the gateway's stale resolution
+  entirely, so neither could have shown the break, and neither did during
+  this session's earlier verification.
+- Fixed with `docker restart anios_gateway` (forces fresh DNS resolution;
+  no rebuild needed, the served bundle did not change) and verified through
+  the actual gateway path this time —
+  `curl -H "Host: deep-matter.com" http://localhost:8080/api/v1/auth/session`
+  went from `502` to the expected `401`.
+- Documented as a new entry in `AGENTS.md`'s "Operational traps" section,
+  next to the existing one-shot-static-build trap: recreating any service
+  `gateway` proxies to needs a `gateway` restart afterward, and the only way
+  to actually confirm that is a request through the gateway itself, not a
+  container-internal or host-port check.

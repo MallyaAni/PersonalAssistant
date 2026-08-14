@@ -166,6 +166,24 @@ a plain `docker restart` or `up -d` alone reuses the old image and changes
 nothing. If the user reports a frontend fix as not taking effect after a
 hard refresh, suspect this before suspecting the browser.
 
+**Recreating `anios_backend` breaks `gateway` until `gateway` is also
+restarted.** `nginx.gateway.conf` proxies `/api/` to `http://backend:8000`
+and resolves that hostname to an IP once, when its worker processes start —
+it does not re-resolve on a schedule. `docker compose up -d --no-deps
+backend` (needed for any `docker-compose.yml` environment change, per the
+first trap above) gives the recreated container a new Docker-internal IP;
+`gateway`, still running from before, keeps proxying to the old one and
+every request through `deep-matter.com` gets a `502` with `connect() failed
+(111: Connection refused)` in `docker logs anios_gateway`, while `docker
+exec anios_backend` and `curl localhost:8000` from the host both work fine
+— because both of those bypass the gateway's stale resolution entirely and
+so cannot reveal the break. Restart `gateway` (a plain `docker restart
+anios_gateway` — no rebuild needed, nothing about the served bundle
+changed) after recreating `backend` or any other service `gateway` proxies
+to, and verify through the actual gateway path, not a direct one:
+`curl -H "Host: deep-matter.com" http://localhost:8080/api/v1/auth/session`
+should read `401`, not `502`.
+
 **Files outlive the rows that point at them, and always will.** Deleting a row
 and deleting its bytes cannot be made one atomic act across a database and a
 filesystem, so every call site can be correct and storage still leaks. It had
