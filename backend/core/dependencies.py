@@ -111,6 +111,7 @@ from backend.services.tracing import (
     OpenTelemetryConversationTracer,
 )
 from backend.services.vision_analysis_service import VisionAnalysisService
+from backend.services.visual_search_grounding import VisualSearchGrounding
 from backend.vision.lm_studio import create_vision_provider
 
 logger = logging.getLogger(__name__)
@@ -792,6 +793,7 @@ def get_vision_analysis_service(
     memory: MemoryDependency,
     intent: ImageIntentDependency,
     llm: LlmDependency,
+    routing_llm: RoutingLlmDependency,
 ) -> VisionAnalysisService:
     return VisionAnalysisService(
         images,
@@ -808,6 +810,20 @@ def get_vision_analysis_service(
         # reasoning.
         reasoner=llm if settings.VISION_REASONING_ENABLED else None,
         reasoning_max_tokens=settings.VISION_REASONING_MAX_TOKENS,
+        # The decision to search is made by the routing model, for the same
+        # reason routing itself is: it is a tool call, which is that model's
+        # proven job. The search then grounds the main model's reasoning.
+        grounding=(
+            VisualSearchGrounding(
+                routing_llm,
+                get_mcp_invocation_service(),
+                settings.SEARCH_MCP_SERVER_ID,
+                settings.SEARCH_MCP_TOOL_NAME,
+                decision_max_tokens=settings.VISION_SEARCH_DECISION_MAX_TOKENS,
+            )
+            if settings.VISION_SEARCH_GROUNDING_ENABLED
+            else None
+        ),
     )
 
 

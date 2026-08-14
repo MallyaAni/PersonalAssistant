@@ -321,6 +321,15 @@ class Settings(BaseSettings):
     # Larger than VISION_MAX_TOKENS because this budget carries a reasoned
     # answer, not a description, and the reply is what the user actually reads.
     VISION_REASONING_MAX_TOKENS: int = Field(default=1024, ge=64, le=8192)
+    # Whether an image question may search the web to identify what was seen.
+    # Both models can describe an object correctly and still not know what it
+    # is - and the main model will name a recent device confidently and wrongly
+    # from stale memory - so identification is grounded in a real search. The
+    # decision to search is a native tool call by the routing model, never a
+    # keyword test against the answer.
+    VISION_SEARCH_GROUNDING_ENABLED: bool = True
+    # Room for one search_web tool call and its query, nothing more.
+    VISION_SEARCH_DECISION_MAX_TOKENS: int = Field(default=300, ge=32, le=2048)
     # Room for {"intent":"edit"} and nothing else; the schema is the grammar.
     IMAGE_INTENT_MAX_TOKENS: int = Field(default=16, ge=8, le=64)
 

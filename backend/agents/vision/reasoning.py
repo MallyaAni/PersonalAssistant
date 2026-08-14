@@ -20,6 +20,13 @@ evidence about the picture.
 Rules:
 - Never state a visual detail that is not in the notes. If the notes do not
   settle the question, say plainly what is missing rather than guessing.
+- Search results, when present, describe the wider world, not this picture.
+  Use them to identify or explain what the notes describe, and keep the
+  distinction honest: the notes say what is in the image, the results say what
+  such a thing is. Never restate a search result as something you saw.
+- If the search results do not match what the notes describe, trust the notes
+  and say the identification is uncertain. A confident wrong name is worse than
+  an honest "I can't tell precisely".
 - Do not mention the notes, the other model, or that you cannot see the image.
   Answer as though you looked at it yourself.
 - Follow the user's actual question. If they asked for an opinion or a
@@ -41,12 +48,20 @@ def build_reasoning_messages(
     question: str,
     observation: str,
     direct_answer: str | None,
+    search_results: str | None = None,
 ) -> list[dict[str, str]]:
     sections = [f"Notes describing the image:\n{observation.strip()}"]
     if direct_answer and direct_answer.strip():
         sections.append(
             "Notes from looking at the image with the user's question in mind:\n"
             f"{direct_answer.strip()}"
+        )
+    if search_results and search_results.strip():
+        # Labelled unambiguously as outside evidence. Presented as another kind
+        # of note, the model starts reporting search findings as things it saw.
+        sections.append(
+            "Web search results about the wider world, NOT observations of this "
+            f"image:\n{search_results.strip()}"
         )
     sections.append(f"The user's question:\n{question.strip()}")
     return [

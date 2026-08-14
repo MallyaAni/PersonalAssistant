@@ -99,3 +99,46 @@ async def test_reasoning_refuses_to_invent_detail_it_was_not_given() -> None:
             "unable",
         )
     )
+
+
+# Web evidence must be usable for identification without becoming a claim about
+# the pixels. This is the specific failure the labelled section guards: given a
+# search result, the model must name the device and still not assert that the
+# name was legible in the photograph.
+async def test_search_results_identify_without_being_reported_as_seen() -> None:
+    llm = get_llm_client()
+    messages = build_reasoning_messages(
+        question="What is this device?",
+        observation=(
+            "A small champagne-gold desktop computer with a dense perforated "
+            "metal front panel, roughly the footprint of a paperback book. No "
+            "legible branding or model text is visible on the chassis."
+        ),
+        direct_answer="A small gold-coloured computer with a perforated front.",
+        search_results=(
+            "The NVIDIA DGX Spark is a compact desktop AI supercomputer with a "
+            "distinctive gold-coloured chassis and a dense perforated front "
+            "grille. It is roughly 150mm square and sits on a desk rather than "
+            "in a rack."
+        ),
+    )
+    try:
+        result = llm.chat(messages, 800)
+    except Exception as exc:  # pragma: no cover - depends on the host runtime
+        pytest.skip(f"main model unreachable: {type(exc).__name__}")
+
+    answer = str(result.get("content") or "").lower()
+    assert "dgx spark" in answer
+    # It must not claim the name was readable on the device; the notes said the
+    # opposite, and inventing legible branding is the hallucination this whole
+    # labelling scheme exists to prevent.
+    assert not any(
+        phrase in answer
+        for phrase in (
+            "badge reads",
+            "label reads",
+            "text on the front reads",
+            "branding reads",
+            "logo reads",
+        )
+    )

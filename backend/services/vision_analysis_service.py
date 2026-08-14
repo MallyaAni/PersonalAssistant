@@ -13,6 +13,7 @@ from backend.core.interfaces import (
     VisionProvider,
 )
 from backend.core.llm import LLMClient
+from backend.services.visual_search_grounding import VisualSearchGrounding
 from backend.memory.purposes import VISUAL_ANALYSIS_PURPOSE
 from backend.services.image_artifact_service import ImageArtifactService
 from backend.services.image_intent import (
@@ -78,6 +79,7 @@ class VisionAnalysisService:
         intent: ImageIntentClassifier | None = None,
         reasoner: LLMClient | None = None,
         reasoning_max_tokens: int = 1024,
+        grounding: VisualSearchGrounding | None = None,
     ) -> None:
         self.images = images
         self.repository = repository
@@ -91,6 +93,10 @@ class VisionAnalysisService:
         # a reasoner because it never answers anyone.
         self.reasoner = reasoner
         self.reasoning_max_tokens = reasoning_max_tokens
+        # Also optional: unset, reasoning happens on model knowledge alone,
+        # which is why an unfamiliar device could be described accurately and
+        # still not named.
+        self.grounding = grounding
 
     # Index one image's description so images become semantically retrievable.
     # Only `content` reaches the assistant prompt, so it must name its own
@@ -148,7 +154,15 @@ class VisionAnalysisService:
     ) -> tuple[str, bool]:
         if self.reasoner is None or not question.strip():
             return direct_answer, False
-        messages = build_reasoning_messages(question, observation, direct_answer)
+        search_results = None
+        if self.grounding is not None:
+            search_results = await self.grounding.ground(question, observation)
+        messages = build_reasoning_messages(
+            question,
+            observation,
+            direct_answer,
+            search_results,
+        )
         try:
             result = await asyncio.to_thread(
                 self.reasoner.chat,
