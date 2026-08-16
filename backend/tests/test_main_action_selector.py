@@ -155,9 +155,7 @@ def _selector(
 
 def _tool_call(name: str, arguments: dict) -> dict:
     return {
-        "tool_calls": [
-            {"function": {"name": name, "arguments": json.dumps(arguments)}}
-        ]
+        "tool_calls": [{"function": {"name": name, "arguments": json.dumps(arguments)}}]
     }
 
 
@@ -210,9 +208,7 @@ async def test_edit_image_is_always_offered_regardless_of_active_image():
     assert without_active == EditImageAction(instruction="add a straw hat")
     assert "edit_image" in {tool["function"]["name"] for tool in llm.tools}
 
-    with_active = await selector.select(
-        "ani.mallya", "add a hat", [], "artifact-123"
-    )
+    with_active = await selector.select("ani.mallya", "add a hat", [], "artifact-123")
     assert with_active == EditImageAction(instruction="add a straw hat")
     assert "edit_image" in {tool["function"]["name"] for tool in llm.tools}
 
@@ -261,9 +257,7 @@ async def test_presentation_not_offered_when_disabled():
 
 @pytest.mark.asyncio
 async def test_model_choosing_a_registered_toolbox_tool():
-    selector, _llm = _selector(
-        _tool_call("mcp_tool_0", {"city": "Raleigh"})
-    )
+    selector, _llm = _selector(_tool_call("mcp_tool_0", {"city": "Raleigh"}))
 
     action = await selector.select("ani.mallya", "weather now", [], None)
 
@@ -289,6 +283,69 @@ async def test_llm_failure_fails_closed_to_no_action():
     action = await selector.select("ani.mallya", "anything", [], None)
 
     assert action is None
+
+
+# The whole point of deriving the reply prompt's capability list from here: what
+# conversation claims AniOS can do must be the same wording routing acts on. A
+# paraphrase in the prompt is how the two silently disagreed before.
+@pytest.mark.asyncio
+async def test_every_described_capability_carries_the_offered_tools_own_wording():
+    selector, llm = _selector({"content": "no tool"})
+
+    await selector.select("ani.mallya", "anything", [], None)
+    described = {item["description"] for item in selector.describe_capabilities()}
+
+    # Every built-in actually offered this turn is described in its own words.
+    # search_web is excluded: its offered description belongs to the live MCP
+    # contract, so the capability sentence for it is AniOS's own by design.
+    offered = {
+        tool["function"]["description"]
+        for tool in llm.tools
+        if tool["function"]["name"]
+        in {
+            "generate_image",
+            "edit_image",
+            "create_diagram",
+            "delegate_to_presentation_agent",
+        }
+    }
+    assert offered
+    assert offered <= described
+
+
+# A capability that cannot fire must not still be advertised. Both halves are
+# read from one list precisely so a disabled tool disappears from both at once.
+@pytest.mark.asyncio
+async def test_a_disabled_tool_is_neither_offered_nor_described():
+    selector, llm = _selector(
+        {"content": "no tool"}, diagram_enabled=False, presentation_enabled=False
+    )
+
+    await selector.select("ani.mallya", "anything", [], None)
+    labels = {item["label"] for item in selector.describe_capabilities()}
+    names = {tool["function"]["name"] for tool in llm.tools}
+
+    assert "Diagrams" not in labels
+    assert "Presentations" not in labels
+    assert "create_diagram" not in names
+    assert "delegate_to_presentation_agent" not in names
+    # The tools that remained callable are still described.
+    assert {"New images", "Image edits"} <= labels
+
+
+# Search availability follows the same rule, from policy rather than a probe:
+# an untrusted server means no search tool, so nothing should promise one.
+@pytest.mark.asyncio
+async def test_an_untrusted_search_server_is_not_described_as_a_capability():
+    trusted, _llm = _selector({"content": "no tool"})
+    untrusted, _untrusted_llm = _selector(
+        {"content": "no tool"}, search_risk="untrusted"
+    )
+
+    assert "Web search" in {item["label"] for item in trusted.describe_capabilities()}
+    assert "Web search" not in {
+        item["label"] for item in untrusted.describe_capabilities()
+    }
 
 
 @pytest.mark.asyncio

@@ -67,6 +67,102 @@ _EDIT_IMAGE_SCHEMA: dict[str, Any] = {
     "additionalProperties": False,
 }
 
+
+@dataclass(frozen=True, slots=True)
+class BuiltinTool:
+    """One built-in action, written down once and read by both callers.
+
+    The reply prompt has to tell the user what AniOS can do, and this selector
+    has to tell the routing model when each tool fires. Those were two hand-
+    written lists in two files saying the same thing in different words, which
+    is a drift waiting to happen: the prompt's wording would govern what the
+    assistant claims while the wording here governs what actually runs. One
+    row carries both, so a tool cannot be added, removed, or disabled in
+    routing while conversation goes on describing the old set.
+
+    `label` is what to call the capability in conversation; `description` is
+    the router's own account of what it does and when it applies, and is
+    reused verbatim rather than paraphrased.
+    """
+
+    name: str
+    label: str
+    description: str
+    schema: dict[str, Any]
+
+    # The same row as a capability line for the reply prompt's context.
+    def as_capability(self) -> dict[str, str]:
+        return {"label": self.label, "description": self.description}
+
+
+_GENERATE_IMAGE = BuiltinTool(
+    name=_GENERATE_IMAGE_TOOL,
+    label="New images",
+    description=(
+        "Create a brand-new picture from a text description. Only when the "
+        "user actually asks for an image, picture, drawing, or artwork to be "
+        "made - never for a request to write text, such as a poem, haiku, "
+        "story, or description, even when its subject is visual (rain, a "
+        "sunset, a mountain): that is answered as words, not illustrated, "
+        "unless the user separately asks for a picture too."
+    ),
+    schema=_GENERATE_IMAGE_SCHEMA,
+)
+# Offered unconditionally, unlike generate_image's implicit sibling: a request
+# to change "the picture" can arrive before the application's own idea of what
+# is active agrees, and the only way to find that out is to let the model
+# decide edit intent from the conversation, then let the caller check whether
+# anything is actually in view - otherwise a missing selection answered as an
+# ordinary chat turn with no explanation, which read as the feature being
+# broken rather than a picture nobody had picked.
+_EDIT_IMAGE = BuiltinTool(
+    name=_EDIT_IMAGE_TOOL,
+    label="Image edits",
+    description=(
+        "Change the picture currently in view. Never for a resume, document, "
+        "plan, or schedule, even when the message says 'edit' and no other "
+        "tool fits that request - answer those directly instead of calling "
+        "any tool. Only for a direct instruction to change the picture, never "
+        "for a question, even one naming a specific alternative ('do you "
+        "recommend a straw hat instead?', 'which hat do you like better?', "
+        "'would this look better in blue?', 'should I go with the other "
+        "one?'): a question asks what you think, it does not tell you to "
+        "change anything, even when the same subject was just edited - answer "
+        "it directly from what is already visible instead."
+    ),
+    schema=_EDIT_IMAGE_SCHEMA,
+)
+_CREATE_DIAGRAM = BuiltinTool(
+    name=_CREATE_DIAGRAM_TOOL,
+    label="Diagrams",
+    description=(
+        "Draft a technical diagram (flowchart, architecture, sequence, state, "
+        "class, or entity-relationship)."
+    ),
+    schema=_EMPTY_SCHEMA,
+)
+_DELEGATE_PRESENTATION = BuiltinTool(
+    name=_DELEGATE_PRESENTATION_TOOL,
+    label="Presentations",
+    description="Hand off to the specialist that builds slide decks.",
+    schema=_EMPTY_SCHEMA,
+)
+
+# Search is the one action whose tool description is not AniOS's to write: the
+# schema and wording offered to the router come from the live MCP contract
+# ("Research a minimized public query with bounded free-provider policy"),
+# which describes the server's interface rather than the product's capability,
+# and reading it costs a session against that server. Its routing rule lives in
+# _SYSTEM below instead, and this is the matching sentence for conversation.
+_SEARCH_CAPABILITY: dict[str, str] = {
+    "label": "Web search",
+    "description": (
+        "Look up current information on the web when the answer could have "
+        "changed since training - news, prices, availability, schedules, or "
+        "whoever currently holds a role, title, office, or record."
+    ),
+}
+
 _SYSTEM = (
     "You are choosing how to handle one user message before it is answered. "
     "You may call at most one of the tools offered below. Calling none is "
@@ -199,9 +295,7 @@ class MainActionSelector:
 
     # Resolve the live search_web schema, or omit the tool when it is unavailable.
     async def _search_tool_definition(self) -> dict[str, Any] | None:
-        if self.mcp_invocation is None:
-            return None
-        if not self.mcp_invocation.can_auto_invoke(self.search_server_id):
+        if self.mcp_invocation is None or not self._search_is_available():
             return None
         try:
             live = await self.mcp_invocation.resolve_tool(
@@ -220,6 +314,45 @@ class MainActionSelector:
                 "parameters": live.input_schema,
             },
         }
+
+    # The built-in tools this selector offers, in the order it presents them.
+    #
+    # One list read by both the routing call and the capability description, so
+    # a disabled diagram or presentation agent disappears from what the
+    # assistant says it can do at the same moment it stops being callable.
+    def _available_builtins(self) -> list[BuiltinTool]:
+        builtins = [_GENERATE_IMAGE, _EDIT_IMAGE]
+        if self.diagram_enabled:
+            builtins.append(_CREATE_DIAGRAM)
+        if self.presentation_enabled:
+            builtins.append(_DELEGATE_PRESENTATION)
+        return builtins
+
+    # Report whether local policy would let this turn search, without paying
+    # for a session against the search server.
+    #
+    # `select` resolves the live contract because it needs the real schema to
+    # call with; describing the capability needs neither the schema nor the
+    # server's own wording, and a second `list_tools` round-trip per turn would
+    # spawn the search server again for a sentence in a prompt.
+    def _search_is_available(self) -> bool:
+        if self.mcp_invocation is None:
+            return False
+        return self.mcp_invocation.can_auto_invoke(self.search_server_id)
+
+    # What AniOS can actually do, as the reply prompt should describe it.
+    #
+    # Read from the same rows `select` offers as tools rather than restated in
+    # the prompt, so the wording that governs conversation and the wording that
+    # governs routing are one string and cannot disagree.
+    def describe_capabilities(self) -> list[dict[str, str]]:
+        capabilities: list[dict[str, str]] = []
+        if self._search_is_available():
+            capabilities.append(dict(_SEARCH_CAPABILITY))
+        capabilities.extend(
+            builtin.as_capability() for builtin in self._available_builtins()
+        )
+        return capabilities
 
     @staticmethod
     def _builtin_definition(
@@ -251,62 +384,10 @@ class MainActionSelector:
         if search_tool is not None:
             tools.append(search_tool)
 
-        tools.append(
-            self._builtin_definition(
-                _GENERATE_IMAGE_TOOL,
-                "Create a brand-new picture from a text description. Only "
-                "when the user actually asks for an image, picture, "
-                "drawing, or artwork to be made - never for a request to "
-                "write text, such as a poem, haiku, story, or description, "
-                "even when its subject is visual (rain, a sunset, a "
-                "mountain): that is answered as words, not illustrated, "
-                "unless the user separately asks for a picture too.",
-                _GENERATE_IMAGE_SCHEMA,
-            )
+        tools.extend(
+            self._builtin_definition(builtin.name, builtin.description, builtin.schema)
+            for builtin in self._available_builtins()
         )
-        # Offered unconditionally, unlike generate_image's implicit sibling: a
-        # request to change "the picture" can arrive before the application's
-        # own idea of what is active agrees, and the only way to find that out
-        # is to let the model decide edit intent from the conversation, then
-        # let the caller check whether anything is actually in view -
-        # otherwise a missing selection answered as an ordinary chat turn with
-        # no explanation, which read as the feature being broken rather than a
-        # picture nobody had picked.
-        tools.append(
-            self._builtin_definition(
-                _EDIT_IMAGE_TOOL,
-                "Change the picture currently in view. Never for a resume, "
-                "document, plan, or schedule, even when the message says "
-                "'edit' and no other tool fits that request - answer those "
-                "directly instead of calling any tool. Only for a direct "
-                "instruction to change the picture, never for a question, "
-                "even one naming a specific alternative ('do you recommend "
-                "a straw hat instead?', 'which hat do you like better?', "
-                "'would this look better in blue?', 'should I go with the "
-                "other one?'): a question asks what you think, it does not "
-                "tell you to change anything, even when the same subject "
-                "was just edited - answer it directly from what is already "
-                "visible instead.",
-                _EDIT_IMAGE_SCHEMA,
-            )
-        )
-        if self.diagram_enabled:
-            tools.append(
-                self._builtin_definition(
-                    _CREATE_DIAGRAM_TOOL,
-                    "Draft a technical diagram (flowchart, architecture, "
-                    "sequence, state, class, or entity-relationship).",
-                    _EMPTY_SCHEMA,
-                )
-            )
-        if self.presentation_enabled:
-            tools.append(
-                self._builtin_definition(
-                    _DELEGATE_PRESENTATION_TOOL,
-                    "Hand off to the specialist that builds slide decks.",
-                    _EMPTY_SCHEMA,
-                )
-            )
 
         candidates: list[tuple[dict[str, Any], MCPTool]] = []
         if self.tool_orchestration is not None:

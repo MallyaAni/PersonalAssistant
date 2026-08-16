@@ -166,6 +166,25 @@ def _render_agent_context(agents: list[dict[str, Any]]) -> str:
     return "".join(lines)
 
 
+# Describe the actions the turn router can actually take, in the router's words.
+#
+# These lines were written out here as well, restating MainActionSelector's own
+# tool descriptions in different words. Two copies disagree eventually, and then
+# the prompt's wording governs what the assistant says it can do while the
+# tool's wording governs what actually fires - and the tool wording is the one
+# that gets tuned against real cases. Each entry now arrives from the selector
+# that offers it, so a tool that stopped being offered stops being advertised.
+def _render_capability_context(capabilities: list[dict[str, Any]]) -> str:
+    lines = []
+    for capability in capabilities[:10]:
+        label = str(capability.get("label") or "").strip()
+        description = str(capability.get("description") or "").strip()
+        if not label or not description:
+            continue
+        lines.append(f"- {label}: {description}\n")
+    return "".join(lines)
+
+
 def _build_system_prompt(
     context_data: dict[str, Any],
     now: datetime | None = None,
@@ -216,9 +235,11 @@ def _build_system_prompt(
         "capability and what setting it up needs; do not invent steps, and do "
         "not claim to have performed the setup yourself.\n"
         f"{_render_agent_context(context_data.get('agents') or [])}"
-        "- Diagrams: a rendered diagram from a description.\n"
-        "- Images: generating a new picture, or editing one already in view.\n"
-        "- Web search: current information when a question needs it.\n"
+        f"{_render_capability_context(context_data.get('capabilities') or [])}"
+        # Not derived with the rest: attaching a text file is read and indexed
+        # by the composer directly, so it is never a tool the turn router is
+        # offered and has no row there to read. It is still something the user
+        # can do, and the assistant should be able to say so.
         "- Documents: reading an attached text document into memory so it can "
         "be recalled later.\n"
         "Which of these runs is decided elsewhere, before this reply, from the "

@@ -239,6 +239,55 @@ def test_system_prompt_states_that_a_save_already_happened():
     assert "already done" in prompt
 
 
+# The capability lines are supplied by MainActionSelector, not written here, so
+# a tool it stopped offering stops being advertised without a prompt edit.
+def test_capability_lines_come_from_the_supplied_context():
+    prompt = _build_system_prompt(
+        {
+            "capabilities": [
+                {"label": "Diagrams", "description": "Draft a technical diagram."},
+                {"label": "Web search", "description": "Look up current information."},
+            ]
+        },
+        now=datetime(2026, 7, 21, tzinfo=UTC),
+    )
+
+    assert "- Diagrams: Draft a technical diagram.\n" in prompt
+    assert "- Web search: Look up current information.\n" in prompt
+
+
+# The failure this replaced: a hardcoded list kept claiming capabilities after
+# the tool behind one was gone. With none supplied, none may be claimed.
+def test_no_supplied_capability_is_claimed_when_none_are_offered():
+    prompt = _build_system_prompt({}, now=datetime(2026, 7, 21, tzinfo=UTC))
+
+    assert "- Diagrams:" not in prompt
+    assert "- Web search:" not in prompt
+    assert "- New images:" not in prompt
+    assert "- Image edits:" not in prompt
+    # Attaching a document is not a routed tool, so it is stated unconditionally.
+    assert "- Documents: reading an attached text document" in prompt
+
+
+# A malformed entry must drop out rather than render a half-line the model then
+# has to interpret.
+def test_incomplete_capability_entries_are_skipped():
+    prompt = _build_system_prompt(
+        {
+            "capabilities": [
+                {"label": "Diagrams", "description": ""},
+                {"label": "", "description": "Look up current information."},
+                {"label": "Web search", "description": "Look up current information."},
+            ]
+        },
+        now=datetime(2026, 7, 21, tzinfo=UTC),
+    )
+
+    assert "- Diagrams:" not in prompt
+    assert "- : " not in prompt
+    assert "- Web search: Look up current information.\n" in prompt
+
+
 # A turn with no classified proposal must not leave the model guessing either,
 # or it fills the silence with a claim of its own.
 def test_system_prompt_says_when_nothing_will_be_saved():

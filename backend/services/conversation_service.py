@@ -168,7 +168,6 @@ def _image_aware_search_query(
     return f"{subject}. Referenced image description: {description}"
 
 
-
 # Describe the pending save in one short line for the prompt. Only the value the
 # user themselves stated is echoed, so nothing new is disclosed to the model.
 def _proposal_summary(proposal: dict[str, Any]) -> str:
@@ -564,9 +563,7 @@ class ConversationService:
             yield {"event": "done", "data": {}}
             return
         except Exception as exc:
-            logger.exception(
-                "Chat-initiated image edit failed for trace %s", trace_id
-            )
+            logger.exception("Chat-initiated image edit failed for trace %s", trace_id)
             response_text = _image_provider_failure_message(exc, "edit")
             await self._persist_completed_turn(
                 user_id,
@@ -1316,6 +1313,21 @@ class ConversationService:
             for summary in summaries
         ]
 
+    # Read the built-in capabilities the selector offers, or nothing when there
+    # is no selector wired.
+    #
+    # Failing here must not cost the user their reply, for the same reason the
+    # agent roster above degrades quietly: this only enriches what the
+    # assistant can say about itself.
+    def _describe_capabilities(self) -> list[dict[str, str]]:
+        if self.main_action_selector is None:
+            return []
+        try:
+            return self.main_action_selector.describe_capabilities()
+        except Exception:
+            logger.warning("Capability list unavailable for context", exc_info=True)
+            return []
+
     async def _classify_memory_proposals(
         self,
         query: str,
@@ -1643,6 +1655,12 @@ class ConversationService:
         # tables, so this cannot advertise a capability an agent stopped
         # having, and adding an agent needs no prompt edit.
         context["agents"] = await self._describe_agents(user_id)
+        # What the turn router can actually do, read from the router itself
+        # rather than listed again in the prompt: the same rows it offers as
+        # tools are what the assistant is told it can do, so the two cannot
+        # drift apart into one wording for conversation and another for
+        # routing.
+        context["capabilities"] = self._describe_capabilities()
         context["memory_save"] = {
             "saved": bool(proposals),
             "value": _proposal_summaries(proposals),
