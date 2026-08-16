@@ -514,6 +514,13 @@ services:
       - MAIN_LLM_BASE_URL=http://spark-b524.local:8888
       - MAIN_LLM_MODEL=deepseek-v4-flash
       - MAIN_LLM_REASONING_EFFORT=${MAIN_LLM_REASONING_EFFORT:-none}
+      # Where the main model's work goes when the Spark is powered off. Without
+      # this the assistant is entirely down whenever that machine is, even
+      # though vllm-main is running healthily right here. Degraded replies beat
+      # no replies.
+      - MAIN_LLM_STANDBY_BASE_URL=http://vllm-main:8000
+      - MAIN_LLM_STANDBY_MODEL=qwen/qwen3.5-4b
+      - MAIN_LLM_STANDBY_REASONING_EFFORT=${MAIN_LLM_STANDBY_REASONING_EFFORT:-none}
       # MainActionSelector's tool-calling/routing stays on Qwen deliberately -
       # pinned here rather than left to fall back to MAIN_LLM_*, since without
       # this MainActionSelector's native tool calls would silently move to

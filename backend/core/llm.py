@@ -1,4 +1,5 @@
 import json
+import logging
 import threading
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
@@ -6,6 +7,8 @@ from contextlib import contextmanager
 from typing import Any, Literal, cast
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 InferenceProviderKind = Literal["openai_compatible"]
 
@@ -249,6 +252,92 @@ def create_inference_provider(
         timeout_seconds=timeout_seconds,
         reasoning_effort=reasoning_effort,
         client=client,
+    )
+
+
+class FallbackInferenceProvider(InferenceProvider):
+    """Serve from a primary provider, or a standby when it cannot be reached.
+
+    The main model runs on a separate machine that is not always powered on.
+    Without this, every reply, routing decision and classification raises the
+    moment that host is unreachable and the whole assistant is simply down -
+    even though a smaller model is running healthily on this box the entire
+    time. Degrading to the smaller model is far better than serving nothing.
+
+    Only transport failures fall back. A model that answers with an error is
+    answering, and hiding that behind a second model would mask real faults;
+    what is caught here is the case where no answer was obtainable at all.
+    """
+
+    def __init__(self, primary: InferenceProvider, standby: InferenceProvider) -> None:
+        self.primary = primary
+        self.standby = standby
+
+    # The primary's identity, so callers that record which model answered are
+    # not silently told the standby's name for work the primary did.
+    @property
+    def model(self) -> str:
+        return getattr(self.primary, "model", "")
+
+    def generate_text(self, prompt: str, max_tokens: int = 1024) -> str:
+        try:
+            return self.primary.generate_text(prompt, max_tokens)
+        except httpx.TransportError:
+            _log_fallback("generate_text")
+            return self.standby.generate_text(prompt, max_tokens)
+
+    def chat(
+        self,
+        messages: list[dict[str, str]],
+        max_tokens: int = 1024,
+        response_schema: dict[str, Any] | None = None,
+        temperature: float | None = None,
+    ) -> dict[str, Any]:
+        try:
+            return self.primary.chat(messages, max_tokens, response_schema, temperature)
+        except httpx.TransportError:
+            _log_fallback("chat")
+            return self.standby.chat(messages, max_tokens, response_schema, temperature)
+
+    def chat_with_tools(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]],
+        max_tokens: int = 256,
+    ) -> dict[str, Any]:
+        try:
+            return self.primary.chat_with_tools(messages, tools, max_tokens)
+        except httpx.TransportError:
+            _log_fallback("chat_with_tools")
+            return self.standby.chat_with_tools(messages, tools, max_tokens)
+
+    # Switch only before the first token reaches the caller.
+    #
+    # A stream that fails midway has already put words on the user's screen;
+    # restarting on the standby there would append a second, unrelated answer
+    # to the first half of one the primary began. So the first chunk is pulled
+    # inside the guard and the rest is relayed outside it.
+    def stream_chat(
+        self,
+        messages: list[dict[str, str]],
+        max_tokens: int = 1024,
+    ) -> Iterator[str]:
+        try:
+            stream = self.primary.stream_chat(messages, max_tokens)
+            first = next(stream, None)
+        except httpx.TransportError:
+            _log_fallback("stream_chat")
+            yield from self.standby.stream_chat(messages, max_tokens)
+            return
+        if first is not None:
+            yield first
+        yield from stream
+
+
+def _log_fallback(operation: str) -> None:
+    logger.warning(
+        "Primary inference host unreachable; serving %s from the standby model",
+        operation,
     )
 
 

@@ -36,7 +36,11 @@ from backend.core.interfaces import (
     VisionEmbeddingProvider,
     VisionProvider,
 )
-from backend.core.llm import LLMClient, create_inference_provider
+from backend.core.llm import (
+    FallbackInferenceProvider,
+    LLMClient,
+    create_inference_provider,
+)
 from backend.core.model_gate import ModelExecutionGate
 from backend.database.session import get_db
 from backend.discovery.channels import (
@@ -229,12 +233,29 @@ def _build_llm_client(
 
 
 # Build the primary conversation and supervisor model with legacy fallbacks.
+#
+# Wrapped in a standby when one is configured, because the main model now runs
+# on a separate machine that is not always powered on. Without this the whole
+# assistant is down whenever that host is - every reply, route and
+# classification raising a connection error - while a perfectly healthy smaller
+# model sits unused on this box.
 def get_llm_client() -> LLMClient:
-    return _build_llm_client(
+    primary = _build_llm_client(
         settings.MAIN_INFERENCE_ADAPTER or settings.INFERENCE_ADAPTER,
         settings.MAIN_LLM_BASE_URL or settings.LLM_BASE_URL,
         settings.MAIN_LLM_MODEL or settings.LLM_MODEL,
         settings.MAIN_LLM_REASONING_EFFORT,
+    )
+    if not settings.MAIN_LLM_STANDBY_BASE_URL:
+        return primary
+    return FallbackInferenceProvider(
+        primary,
+        _build_llm_client(
+            settings.MAIN_INFERENCE_ADAPTER or settings.INFERENCE_ADAPTER,
+            settings.MAIN_LLM_STANDBY_BASE_URL,
+            settings.MAIN_LLM_STANDBY_MODEL or settings.LLM_MODEL,
+            settings.MAIN_LLM_STANDBY_REASONING_EFFORT,
+        ),
     )
 
 

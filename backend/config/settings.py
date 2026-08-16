@@ -327,6 +327,16 @@ class Settings(BaseSettings):
     # from stale memory - so identification is grounded in a real search. The
     # decision to search is a native tool call by the routing model, never a
     # keyword test against the answer.
+    # Where the main model's work goes when its host cannot be reached at all.
+    # The main model runs on a separate machine that is not always powered on;
+    # unset, every reply and routing decision simply raises while it is off,
+    # which takes the whole assistant down rather than degrading it. Empty
+    # disables the standby and restores the previous all-or-nothing behaviour.
+    MAIN_LLM_STANDBY_BASE_URL: str = ""
+    MAIN_LLM_STANDBY_MODEL: str = ""
+    MAIN_LLM_STANDBY_REASONING_EFFORT: Literal[
+        "none", "minimal", "low", "medium", "high", "xhigh"
+    ] = "none"
     VISION_SEARCH_GROUNDING_ENABLED: bool = True
     # Room for one search_web tool call and its query, nothing more.
     VISION_SEARCH_DECISION_MAX_TOKENS: int = Field(default=300, ge=32, le=2048)
