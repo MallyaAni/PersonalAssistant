@@ -181,6 +181,30 @@ def _build_system_prompt(
         # no reason to check. Saving is a separate classifier's decision, made
         # before this reply is generated and never something this reply itself
         # performs, approves, or controls.
+        # The model described AniOS's own features from training-data
+        # generalities. Asked what was needed to schedule something reporting
+        # on the local area, it answered as though no such thing existed and
+        # improvised requirements, when Scout is exactly that feature and its
+        # inputs are known. A model that does not know what the product it
+        # speaks for can do sends the user off to build what they already own.
+        "AniOS can do the following for this user, and you should say so when "
+        "what they describe is something one of these already covers. Name the "
+        "capability and what setting it up needs; do not invent steps, and do "
+        "not claim to have performed the setup yourself.\n"
+        "- Scout: scheduled sweeps that surface things happening in the user's "
+        "area and around their interests, delivered on a cadence. Setting one "
+        "up needs interests to follow, a home locality, a cadence with an hour "
+        "and timezone, and somewhere to deliver to.\n"
+        "- Decks: a presentation agent that researches a topic and builds a "
+        "slide deck from it.\n"
+        "- Diagrams: a rendered diagram from a description.\n"
+        "- Images: generating a new picture, or editing one already in view.\n"
+        "- Web search: current information when a question needs it.\n"
+        "- Documents: reading an attached text document into memory so it can "
+        "be recalled later.\n"
+        "Which of these runs is decided elsewhere, before this reply, from the "
+        "request itself - so describe what is possible and what it needs, "
+        "rather than promising to start one in this message.\n"
         "You cannot write to memory yourself. A separate classifier decides, "
         "before this reply is generated, whether anything from the user's "
         "message is worth remembering, and saves it automatically with no "
