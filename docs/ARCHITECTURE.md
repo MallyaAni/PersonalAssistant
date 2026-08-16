@@ -109,7 +109,7 @@ Image and presentation paths:
 
 | Stage | Model | Runs on |
 | --- | --- | --- |
-| Image generation / slide image | `hidream_o1_image_dev_fp8_scaled.safetensors` (`IMAGE_MODEL`) via ComfyUI | GPU (shared with vLLM) |
+| Image generation / slide image | `flux-2-klein-4b-fp8.safetensors` (`IMAGE_MODEL`) via ComfyUI | GPU (shared with vLLM) |
 | Refinement prompt merge | `qwen/qwen3.5-4b` (`MAIN_LLM_MODEL`) | GPU |
 | Learned-style distillation | `qwen/qwen3.5-4b` (`MAIN_LLM_MODEL`) | GPU |
 | Image vision analysis (ask) | `qwen/qwen3.5-4b` (`VISION_MODEL`) | GPU |

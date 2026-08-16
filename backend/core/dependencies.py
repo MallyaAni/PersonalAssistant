@@ -609,9 +609,11 @@ def _build_comfyui_image_provider() -> ComfyUIImageProvider:
         max_concurrency=settings.IMAGE_MAX_CONCURRENCY,
         max_output_bytes=settings.IMAGE_MAX_OUTPUT_BYTES,
         max_pixels=settings.IMAGE_MAX_PIXELS,
+        text_encoder=settings.IMAGE_TEXT_ENCODER,
+        vae=settings.IMAGE_VAE,
+        steps=settings.IMAGE_GENERATION_STEPS,
         style_suffix=settings.IMAGE_STYLE_SUFFIX,
         portrait_suffix=settings.IMAGE_PORTRAIT_SUFFIX,
-        negative_prompt=settings.IMAGE_NEGATIVE_PROMPT,
     )
 
 
@@ -633,9 +635,9 @@ def get_image_edit_provider() -> ImageEditProvider:
 def _build_comfyui_image_edit_provider() -> ComfyUIImageEditProvider:
     return ComfyUIImageEditProvider(
         base_url=settings.IMAGE_PROVIDER_BASE_URL,
-        model=settings.IMAGE_EDIT_MODEL,
-        text_encoder=settings.IMAGE_EDIT_TEXT_ENCODER,
-        vae=settings.IMAGE_EDIT_VAE,
+        model=settings.IMAGE_MODEL,
+        text_encoder=settings.IMAGE_TEXT_ENCODER,
+        vae=settings.IMAGE_VAE,
         timeout_seconds=settings.IMAGE_PROVIDER_TIMEOUT_SECONDS,
         poll_seconds=settings.IMAGE_PROVIDER_POLL_SECONDS,
         max_concurrency=settings.IMAGE_MAX_CONCURRENCY,
@@ -674,7 +676,7 @@ def get_image_artifact_service(
         vision_embedding_model=settings.VISION_EMBEDDING_MODEL,
         edit_provider=edit_provider,
         edit_provider_name=settings.IMAGE_PROVIDER_NAME,
-        edit_model_name=settings.IMAGE_EDIT_MODEL,
+        edit_model_name=settings.IMAGE_MODEL,
     )
 
 
@@ -752,7 +754,7 @@ ImageRefinementDependency = Annotated[
 ]
 
 
-# Coordinate initial HiDream slide imagery and source-conditioned FLUX revisions.
+# Coordinate initial slide imagery and source-conditioned revisions, both FLUX.
 def get_presentation_image_service(
     presentations: PresentationDependency,
     images: ImageArtifactDependency,

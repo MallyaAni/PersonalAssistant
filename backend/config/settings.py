@@ -94,10 +94,10 @@ class Settings(BaseSettings):
     # Local visual generation and binary artifact storage
     IMAGE_PROVIDER_BASE_URL: str = "http://127.0.0.1:8188"
     IMAGE_PROVIDER_NAME: str = "comfyui"
-    IMAGE_MODEL: str = "hidream_o1_image_dev_fp8_scaled.safetensors"
-    IMAGE_EDIT_MODEL: str = "flux-2-klein-4b-fp8.safetensors"
-    IMAGE_EDIT_TEXT_ENCODER: str = "qwen_3_4b.safetensors"
-    IMAGE_EDIT_VAE: str = "flux2-vae.safetensors"
+    IMAGE_MODEL: str = "flux-2-klein-4b-fp8.safetensors"
+    IMAGE_TEXT_ENCODER: str = "qwen_3_4b.safetensors"
+    IMAGE_VAE: str = "flux2-vae.safetensors"
+    IMAGE_GENERATION_STEPS: int = Field(default=4, ge=1, le=100)
     IMAGE_EDIT_STEPS: int = Field(default=4, ge=1, le=100)
     # What the source is resampled to before editing, and how.
     #
@@ -118,10 +118,8 @@ class Settings(BaseSettings):
     # because the scale node normalises to it either way.
     IMAGE_EDIT_MEGAPIXELS: float = Field(default=2.0, ge=0.25, le=4.0)
     IMAGE_EDIT_SCALE_METHOD: str = "lanczos"
-    # Realism steering. HiDream-O1 runs distilled at cfg=1.0, where a negative
-    # prompt is inert, so photorealism is driven by appending this to the
-    # positive prompt. It is added only when not already present; set it empty to
-    # send the user's prompt verbatim.
+    # Realism steering is driven by appending this to the positive prompt. It is
+    # added only when not already present; set it empty to send prompts verbatim.
     # Realism comes from imperfection, not from asking for quality. The previous
     # suffix asked for "sharp focus, high detail, 4k, professional photography",
     # which are the exact terms that produce the glossy retouched stock-photo
@@ -147,13 +145,6 @@ class Settings(BaseSettings):
     # originally tuned for.
     IMAGE_PORTRAIT_SUFFIX: str = (
         "natural unretouched skin with pores and fine lines, flyaway hair"
-    )
-    # Steers away from the CGI look without forbidding any subject. Naming
-    # "person" here would break every portrait, so it names rendering styles
-    # rather than content.
-    IMAGE_NEGATIVE_PROMPT: str = (
-        "3d render, cgi, illustration, painting, cartoon, anime, plastic, "
-        "airbrushed, oversaturated, watermark, text, logo"
     )
     # A single GPU cannot hold the generation model and the diffusion model at
     # once. When enabled, AniOS sleeps local inference for the duration of one

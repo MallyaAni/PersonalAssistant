@@ -97,8 +97,11 @@ class PresentationImageService:
             user_id=user_id,
             conversation_id=str(presentation["conversation_id"]),
             trace_id=trace_id,
-            # HiDream-O1 is trained on 2048x2048 and produces its most realistic
-            # results there; wider sizes such as 2560x1440 look noticeably worse.
+            # Measured on HiDream-O1, which was trained at 2048x2048 and looked
+            # noticeably worse at wider sizes such as 2560x1440. Kept on the
+            # FLUX.2 Klein swap because the square also matches the square slide
+            # placement box, but the size itself is no longer model-justified
+            # and is worth re-measuring.
             # A square image also matches the square slide placement box, so it is
             # not stretched. (Off-list sizes like 1280x720 crash the sampler.)
             request=ImageGenerationRequest(

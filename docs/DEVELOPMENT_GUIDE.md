@@ -235,10 +235,10 @@ Key settings are:
 | `CONVERSATION_SUMMARY_INTERVAL` | `10` | Completed-turn interval for rolling conversation digests; valid range is 2 through 100 |
 | `IMAGE_PROVIDER_BASE_URL` | `http://127.0.0.1:8188` | Loopback ComfyUI server root; Compose uses `http://host.docker.internal:8188` |
 | `IMAGE_PROVIDER_NAME` | `comfyui` | Provider label persisted with generated artifacts |
-| `IMAGE_MODEL` | `hidream_o1_image_dev_fp8_scaled.safetensors` | Exact checkpoint filename exposed by ComfyUI |
-| `IMAGE_EDIT_MODEL` | `flux-2-klein-4b-fp8.safetensors` | Qualified four-step FLUX.2 Klein 4B Distilled source editor |
-| `IMAGE_EDIT_TEXT_ENCODER` | `qwen_3_4b.safetensors` | Qwen 3 encoder used only by the FLUX.2 edit workflow |
-| `IMAGE_EDIT_VAE` | `flux2-vae.safetensors` | FLUX.2 VAE used by the edit workflow |
+| `IMAGE_MODEL` | `flux-2-klein-4b-fp8.safetensors` | FLUX.2 Klein 4B Distilled, shared by generation and editing. Loaded through `UNETLoader` from `diffusion_models/`, not `CheckpointLoaderSimple` |
+| `IMAGE_TEXT_ENCODER` | `qwen_3_4b.safetensors` | Qwen 3 encoder for both image workflows (`CLIPLoader`, type `flux2`) |
+| `IMAGE_VAE` | `flux2-vae.safetensors` | FLUX.2 VAE for both image workflows |
+| `IMAGE_GENERATION_STEPS` | `4` | Distilled sampler step count for generation |
 | `IMAGE_EDIT_STEPS` | `4` | Qualified distilled edit step count; requalify quality and latency before changing |
 | `IMAGE_PROVIDER_TIMEOUT_SECONDS` | `600` | Whole image-job timeout including queue, sampling, and output fetch |
 | `IMAGE_PROVIDER_POLL_SECONDS` | `0.5` | Bounded terminal-history polling interval |
@@ -578,7 +578,7 @@ acceptance and not authorization to promote a candidate runtime.
 `scripts/start-anios.sh` brings the whole stack up with one command: it waits for `vllm-main`, then `vllm-embedding`, starts host ComfyUI if needed, applies migrations, starts the remaining Compose services, and waits for the backend and for ComfyUI when it launched it. It runs under any Bash, including Git Bash on Windows. Image generation needs ComfyUI running; when it is down, `POST /api/v1/images/generate` returns a `503` with `reason: image_provider_unreachable` and a message naming ComfyUI, which the composer surfaces verbatim.
 
 The verified Windows host uses ComfyUI 0.28.0, Python 3.14, PyTorch CUDA
-13.0, the official HiDream-O1 Dev FP8 checkpoint for generation, and the
+13.0, the FLUX.2 Klein 4B Distilled checkpoint shared by generation and editing, and the
 official ComfyUI FLUX.2 Klein 4B Distilled FP8 split workflow for editing. Keep
 this runtime outside the repository. The backend runs in Docker and reaches
 ComfyUI over `host.docker.internal:8188`, so ComfyUI must listen on `0.0.0.0`
@@ -595,13 +595,14 @@ $env:PIP_CACHE_DIR = 'E:\AI\pip-cache'
 
 $env:HF_HOME = 'E:\AI\huggingface-cache'
 $env:HF_XET_CACHE = 'E:\AI\huggingface-xet-cache'
-& "$comfyRoot\.venv\Scripts\hf.exe" download Comfy-Org/HiDream-O1-Image checkpoints/hidream_o1_image_dev_fp8_scaled.safetensors --local-dir "$comfyRoot\models"
-& "$comfyRoot\.venv\Scripts\hf.exe" download Comfy-Org/gemma-4 text_encoders/gemma4_e4b_it_fp8_scaled.safetensors --local-dir "$comfyRoot\models"
 ```
 
-Verify the checkpoint SHA-256 is `7cbf53a475e0a13f92f2ec08bcffdb9b9de4305ef3b6f35cdd784d09dcd8d0cc` and the prompt encoder is `bf0b4fa2e41a25684dc9e9b256cd505564f02fed09be3da95ce024e653e2c52b`. Start the runtime without opening a visible helper window:
+Generation and editing now share one FLUX.2 Klein checkpoint, so the three
+assets below are the only image models required; the HiDream checkpoint and its
+Gemma prompt encoder are no longer used and can be deleted to reclaim the disk.
+Start the runtime without opening a visible helper window:
 
-Install these three FLUX.2 edit assets through ComfyUI's official
+Install these three FLUX.2 assets through ComfyUI's official
 `image_flux2_klein_image_edit_4b_distilled` template or Hugging Face download
 tool, preserving the exact filenames:
 
@@ -908,7 +909,7 @@ Do not add `--volumes` unless deleting local PostgreSQL data is intentional and 
 
 #### Optional: ComfyUI image generation in Compose (`comfyui` profile)
 
-ComfyUI is opt-in because its image build downloads a multi-GB Blackwell-capable CUDA 12.8 PyTorch base and requires an NVIDIA GPU. Point `COMFYUI_HOST_PATH` at your existing ComfyUI install (default `E:/AI/ComfyUI`; it is bind-mounted read-write with its custom nodes and the HiDream checkpoint), then:
+ComfyUI is opt-in because its image build downloads a multi-GB Blackwell-capable CUDA 12.8 PyTorch base and requires an NVIDIA GPU. Point `COMFYUI_HOST_PATH` at your existing ComfyUI install (default `E:/AI/ComfyUI`; it is bind-mounted read-write with its custom nodes and the FLUX.2 Klein checkpoint), then:
 
 ```bash
 docker compose --profile comfyui up --build -d comfyui
@@ -1337,7 +1338,7 @@ Then submit a unique diagram request through Chromium. Require a rendered SVG, e
 
 For disconnect recovery, open the chat stream with a client that can stop reading immediately after the `artifact_started` data frame. Close the response, then list the scoped artifacts and require the new record to be `failed` with `error_code=cancelled`, no source, and no remaining `pending` record. Inspect logs for the same trace's `cancelled` lifecycle entry and delete the scoped validation record.
 
-For raster generation, keep both vLLM services and ComfyUI running and submit an allowlisted HiDream training resolution. The body is piped to `curl.exe` because Windows PowerShell 5 can mishandle large or completed `Invoke-WebRequest` responses:
+For raster generation, keep both vLLM services and ComfyUI running and submit an allowlisted training resolution. The body is piped to `curl.exe` because Windows PowerShell 5 can mishandle large or completed `Invoke-WebRequest` responses:
 
 ```powershell
 $imageBody = @{

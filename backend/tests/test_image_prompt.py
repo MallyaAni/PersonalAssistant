@@ -11,6 +11,9 @@ def _provider(style_suffix: str) -> ComfyUIImageProvider:
         max_concurrency=1,
         max_output_bytes=1024,
         max_pixels=4096,
+        text_encoder="qwen_3_4b.safetensors",
+        vae="flux2-vae.safetensors",
+        steps=4,
         style_suffix=style_suffix,
     )
 
@@ -41,6 +44,9 @@ def test_workflow_positive_node_uses_the_composed_prompt() -> None:
     workflow = provider._workflow(
         ImageGenerationRequest(prompt="a dog", width=1024, height=1024, seed=1)
     )
-    assert workflow["2"]["inputs"]["text"] == "a dog, photorealistic"
-    # The negative node stays empty: it is inert at the model's cfg=1.0.
-    assert workflow["3"]["inputs"]["text"] == ""
+    assert workflow["4"]["inputs"]["text"] == "a dog, photorealistic"
+    assert workflow["1"]["class_type"] == "UNETLoader"
+    assert workflow["2"]["inputs"]["type"] == "flux2"
+    assert workflow["6"]["class_type"] == "EmptyFlux2LatentImage"
+    assert workflow["7"]["inputs"]["steps"] == 4
+    assert workflow["8"]["inputs"]["noise_seed"] == 1

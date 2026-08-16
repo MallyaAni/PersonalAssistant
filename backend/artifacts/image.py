@@ -128,7 +128,7 @@ def validate_image_bytes(
 
 
 class ComfyUIImageProvider(ImageProvider):
-    # Configure one bounded local ComfyUI provider and its shared concurrency gate.
+    # Configure one bounded FLUX.2 Klein generator and its shared concurrency gate.
     def __init__(
         self,
         base_url: str,
@@ -138,22 +138,30 @@ class ComfyUIImageProvider(ImageProvider):
         max_concurrency: int,
         max_output_bytes: int,
         max_pixels: int,
+        text_encoder: str,
+        vae: str,
+        steps: int,
         style_suffix: str = "",
         portrait_suffix: str = "",
-        negative_prompt: str = "",
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.model = model
         self.style_suffix = style_suffix.strip().strip(",").strip()
         self.portrait_suffix = portrait_suffix.strip().strip(",").strip()
-        self.negative_prompt = negative_prompt.strip().strip(",").strip()
+        # No negative prompt: FLUX.2 Klein runs distilled at cfg 1.0, where the
+        # negative conditioning is inert, so the workflow zeroes it out rather
+        # than carrying text nothing reads. Realism is steered by the positive
+        # suffixes above instead.
         self.timeout_seconds = timeout_seconds
         self.poll_seconds = poll_seconds
         self.max_output_bytes = max_output_bytes
         self.max_pixels = max_pixels
+        self.text_encoder = text_encoder
+        self.vae = vae
+        self.steps = steps
         self._semaphore = asyncio.Semaphore(max_concurrency)
 
-    # Submit, monitor, fetch, and validate one local HiDream image job.
+    # Submit, monitor, fetch, and validate one local FLUX.2 Klein image job.
     async def generate(self, request: ImageGenerationRequest) -> GeneratedImage:
         async with self._semaphore:
             started_at = time.monotonic()
@@ -245,7 +253,7 @@ class ComfyUIImageProvider(ImageProvider):
                 json={"prompt_id": prompt_id},
             )
 
-    # Build the pinned minimal HiDream Dev API workflow.
+    # Build the native four-step FLUX.2 Klein text-to-image workflow.
     # Append the realism suffix unless the prompt already carries it, so the
     # user's wording leads and the style steer follows.
     def _positive_prompt(self, prompt: str) -> str:
@@ -266,73 +274,83 @@ class ComfyUIImageProvider(ImageProvider):
     def _workflow(self, request: ImageGenerationRequest) -> dict[str, Any]:
         return {
             "1": {
-                "class_type": "CheckpointLoaderSimple",
-                "inputs": {"ckpt_name": self.model},
+                "class_type": "UNETLoader",
+                "inputs": {"unet_name": self.model, "weight_dtype": "default"},
             },
             "2": {
+                "class_type": "CLIPLoader",
+                "inputs": {
+                    "clip_name": self.text_encoder,
+                    "type": "flux2",
+                    "device": "default",
+                },
+            },
+            "3": {
+                "class_type": "VAELoader",
+                "inputs": {"vae_name": self.vae},
+            },
+            "4": {
                 "class_type": "CLIPTextEncode",
                 "inputs": {
                     "text": self._positive_prompt(request.prompt),
-                    "clip": ["1", 1],
+                    "clip": ["2", 0],
                 },
-            },
-            # The negative conditioning was empty, so nothing counterweighted
-            # the checkpoint's own priors.
-            "3": {
-                "class_type": "CLIPTextEncode",
-                "inputs": {"text": self.negative_prompt, "clip": ["1", 1]},
-            },
-            "4": {
-                "class_type": "ModelNoiseScale",
-                "inputs": {"model": ["1", 0], "noise_scale": 7.6},
             },
             "5": {
-                "class_type": "BasicScheduler",
-                "inputs": {
-                    "model": ["4", 0],
-                    "scheduler": "normal",
-                    "steps": 28,
-                    "denoise": 1.0,
-                },
+                "class_type": "ConditioningZeroOut",
+                "inputs": {"conditioning": ["4", 0]},
             },
             "6": {
-                "class_type": "SamplerLCM",
-                "inputs": {
-                    "s_noise": 1.0,
-                    "s_noise_end": 1.0,
-                    "noise_clip_std": 2.5,
-                },
-            },
-            "7": {
-                "class_type": "EmptyHiDreamO1LatentImage",
+                "class_type": "EmptyFlux2LatentImage",
                 "inputs": {
                     "width": request.width,
                     "height": request.height,
                     "batch_size": 1,
                 },
             },
-            "8": {
-                "class_type": "SamplerCustom",
+            "7": {
+                "class_type": "Flux2Scheduler",
                 "inputs": {
-                    "model": ["4", 0],
-                    "add_noise": True,
-                    "noise_seed": request.seed,
-                    "cfg": 1.0,
-                    "positive": ["2", 0],
-                    "negative": ["3", 0],
-                    "sampler": ["6", 0],
-                    "sigmas": ["5", 0],
-                    "latent_image": ["7", 0],
+                    "steps": self.steps,
+                    "width": request.width,
+                    "height": request.height,
                 },
             },
+            "8": {
+                "class_type": "RandomNoise",
+                "inputs": {"noise_seed": request.seed},
+            },
             "9": {
-                "class_type": "VAEDecode",
-                "inputs": {"samples": ["8", 0], "vae": ["1", 2]},
+                "class_type": "CFGGuider",
+                "inputs": {
+                    "model": ["1", 0],
+                    "positive": ["4", 0],
+                    "negative": ["5", 0],
+                    "cfg": 1.0,
+                },
             },
             "10": {
+                "class_type": "KSamplerSelect",
+                "inputs": {"sampler_name": "euler"},
+            },
+            "11": {
+                "class_type": "SamplerCustomAdvanced",
+                "inputs": {
+                    "noise": ["8", 0],
+                    "guider": ["9", 0],
+                    "sampler": ["10", 0],
+                    "sigmas": ["7", 0],
+                    "latent_image": ["6", 0],
+                },
+            },
+            "12": {
+                "class_type": "VAEDecode",
+                "inputs": {"samples": ["11", 0], "vae": ["3", 0]},
+            },
+            "13": {
                 "class_type": "SaveImage",
                 "inputs": {
-                    "images": ["9", 0],
+                    "images": ["12", 0],
                     "filename_prefix": "anios_generated",
                 },
             },
@@ -366,6 +384,9 @@ class ComfyUIImageEditProvider(ComfyUIImageProvider, ImageEditProvider):
             max_concurrency=max_concurrency,
             max_output_bytes=max_output_bytes,
             max_pixels=max_pixels,
+            text_encoder=text_encoder,
+            vae=vae,
+            steps=steps,
         )
         self.text_encoder = text_encoder
         self.vae = vae

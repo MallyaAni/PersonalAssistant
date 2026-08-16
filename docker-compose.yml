@@ -204,9 +204,13 @@ services:
       - EMBEDDING_BASE_URL=http://vllm-embedding:8000
       - EMBEDDING_MODEL=text-embedding-nomic-embed-text-v1.5
       - IMAGE_PROVIDER_BASE_URL=http://host.docker.internal:8188
-      - IMAGE_EDIT_MODEL=${IMAGE_EDIT_MODEL:-flux-2-klein-4b-fp8.safetensors}
-      - IMAGE_EDIT_TEXT_ENCODER=${IMAGE_EDIT_TEXT_ENCODER:-qwen_3_4b.safetensors}
-      - IMAGE_EDIT_VAE=${IMAGE_EDIT_VAE:-flux2-vae.safetensors}
+      # One FLUX.2 Klein checkpoint serves generation and editing alike, so
+      # the model, text encoder and VAE are shared rather than per-role.
+      - IMAGE_MODEL=${IMAGE_MODEL:-flux-2-klein-4b-fp8.safetensors}
+      - IMAGE_TEXT_ENCODER=${IMAGE_TEXT_ENCODER:-qwen_3_4b.safetensors}
+      - IMAGE_VAE=${IMAGE_VAE:-flux2-vae.safetensors}
+      # The distilled model is a four-step sampler in both directions.
+      - IMAGE_GENERATION_STEPS=${IMAGE_GENERATION_STEPS:-4}
       - IMAGE_EDIT_STEPS=${IMAGE_EDIT_STEPS:-4}
       # How much of the source survives into the edit, and how it is
       # resampled. Both were ComfyUI template defaults; `nearest-exact`
@@ -283,6 +287,14 @@ services:
       - PRESENTATION_LLM_MODEL=qwen/qwen3.5-4b
       - PRESENTATION_LLM_REASONING_EFFORT=${PRESENTATION_LLM_REASONING_EFFORT:-none}
       - IMAGE_PROVIDER_BASE_URL=http://host.docker.internal:8188
+      # This worker creates slide imagery through the same provider the chat
+      # path uses, so it needs the same checkpoint. Without these it silently
+      # fell back to the built-in defaults, and changing IMAGE_MODEL would have
+      # moved chat images to a new model while leaving slides on the old one.
+      - IMAGE_MODEL=${IMAGE_MODEL:-flux-2-klein-4b-fp8.safetensors}
+      - IMAGE_TEXT_ENCODER=${IMAGE_TEXT_ENCODER:-qwen_3_4b.safetensors}
+      - IMAGE_VAE=${IMAGE_VAE:-flux2-vae.safetensors}
+      - IMAGE_GENERATION_STEPS=${IMAGE_GENERATION_STEPS:-4}
       - PRESENTATION_AUTO_IMAGE_MAX=${PRESENTATION_AUTO_IMAGE_MAX:-1}
       - PRESENTATION_AUTO_IMAGE_SIZE=${PRESENTATION_AUTO_IMAGE_SIZE:-1024}
       - ARTIFACT_STORAGE_ROOT=/app/data/artifacts
@@ -556,9 +568,13 @@ services:
       # `comfyui` service instead, run `--profile comfyui` and set this to
       # http://comfyui:8188 (that GPU image build needs ~10-20 GB free on C:).
       - IMAGE_PROVIDER_BASE_URL=http://host.docker.internal:8188
-      - IMAGE_EDIT_MODEL=${IMAGE_EDIT_MODEL:-flux-2-klein-4b-fp8.safetensors}
-      - IMAGE_EDIT_TEXT_ENCODER=${IMAGE_EDIT_TEXT_ENCODER:-qwen_3_4b.safetensors}
-      - IMAGE_EDIT_VAE=${IMAGE_EDIT_VAE:-flux2-vae.safetensors}
+      # One FLUX.2 Klein checkpoint serves generation and editing alike, so
+      # the model, text encoder and VAE are shared rather than per-role.
+      - IMAGE_MODEL=${IMAGE_MODEL:-flux-2-klein-4b-fp8.safetensors}
+      - IMAGE_TEXT_ENCODER=${IMAGE_TEXT_ENCODER:-qwen_3_4b.safetensors}
+      - IMAGE_VAE=${IMAGE_VAE:-flux2-vae.safetensors}
+      # The distilled model is a four-step sampler in both directions.
+      - IMAGE_GENERATION_STEPS=${IMAGE_GENERATION_STEPS:-4}
       - IMAGE_EDIT_STEPS=${IMAGE_EDIT_STEPS:-4}
       # How much of the source survives into the edit, and how it is
       # resampled. Both were ComfyUI template defaults; `nearest-exact`
@@ -673,6 +689,13 @@ services:
     build:
       context: ./docker/comfyui
     container_name: anios_comfyui
+    # Comes back when Docker does, like every other service here. This was the
+    # one that never got the line, which is exactly how it behaved: the whole
+    # stack returned after a reboot and image generation alone did not, with
+    # every container reporting healthy while every picture failed. `profiles`
+    # gates `up`, not restart -- once this container exists the daemon brings it
+    # back on its own.
+    restart: unless-stopped
     # Opt-in: heavy GPU image build. Start with `docker compose --profile comfyui up`.
     profiles: ["comfyui"]
     ports:
@@ -680,6 +703,30 @@ services:
     volumes:
       # Bind-mount your existing ComfyUI install (code, custom nodes, and models).
       - ${COMFYUI_HOST_PATH:-E:/AI/ComfyUI}:/comfyui
+    # `/` answers 200 from a ComfyUI whose CUDA context has died, so liveness is
+    # read from the endpoint that actually exercises the device. Docker will not
+    # restart on this by itself, but it makes the failure visible in `docker ps`
+    # instead of only in a user's failed image request.
+    # python3 rather than curl: this image ships neither curl nor wget, and a
+    # probe that cannot run reports the service unhealthy for the wrong reason.
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - |
+          import sys, urllib.request
+          try:
+              r = urllib.request.urlopen(
+                  "http://localhost:8188/system_stats", timeout=8
+              )
+          except Exception:
+              sys.exit(1)
+          sys.exit(0 if r.status == 200 else 1)
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 300s
     deploy:
       resources:
         reservations:
