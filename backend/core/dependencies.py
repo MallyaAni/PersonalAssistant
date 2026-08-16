@@ -581,7 +581,6 @@ PresentationJobDependency = Annotated[
 ]
 
 
-
 # Share one handoff so generation and editing use the same sleep endpoint.
 @lru_cache(maxsize=1)
 def get_gpu_handoff() -> InferenceGpuHandoff:
@@ -864,9 +863,7 @@ def build_deferred_vision_service(db: AsyncSession) -> VisionAnalysisService:
         images=None,
         repository=get_artifact_repository(db),
         provider=get_vision_provider(),
-        reasoner=(
-            get_llm_client() if settings.VISION_REASONING_ENABLED else None
-        ),
+        reasoner=(get_llm_client() if settings.VISION_REASONING_ENABLED else None),
         reasoning_max_tokens=settings.VISION_REASONING_MAX_TOKENS,
         grounding=(
             VisualSearchGrounding(
@@ -1045,9 +1042,14 @@ def get_search_budget() -> SearchBudget:
 
 
 # One suggester shared across requests; it holds only the model client.
+#
+# On the routing role for the same reason as `get_classifier_llm` above: this
+# returns a strict-JSON shortlist against an owned schema, and on the chat
+# model it came back as an empty tuple every time - a locality lookup that
+# silently found nothing rather than failing loudly.
 @lru_cache(maxsize=1)
 def get_place_suggester() -> PlaceSuggester:
-    return PlaceSuggester(get_llm_client())
+    return PlaceSuggester(get_routing_llm_client())
 
 
 DependencyPlaceSuggester = Annotated[
@@ -1350,7 +1352,18 @@ def get_image_recall_policy() -> ImageRecallPolicy:
 
 
 # Serve the routing classifier from a dedicated model when one is configured,
-# otherwise reuse the chat model's configuration.
+# otherwise follow the routing role rather than the chat model.
+#
+# Every caller here is a bounded judgement that must come back as strict JSON
+# against an application-owned schema, which is the same contract
+# MainActionSelector's tool-calling has - so it belongs on the routing role,
+# not on whichever model happens to write prose. Following the chat model
+# instead is what silently broke image recall: promoting `MAIN_LLM_*` to an
+# engine that treats a supplied JSON schema as advisory brought these along
+# with it, and `VisualMemorySelector` began returning nothing at all because
+# the well-formed reply named its fields `selected`/`reasoning` instead of
+# `artifact_ids`. `ROUTING_LLM_*` still falls back to `MAIN_LLM_*` when unset,
+# so an install that configures neither behaves exactly as before.
 #
 # Deliberately not cached. A provider serializes its own calls on an internal
 # lock, so one shared instance would make every concurrent chat queue behind
@@ -1358,12 +1371,16 @@ def get_image_recall_policy() -> ImageRecallPolicy:
 # decisions independent, and the runtime already serves several sequences.
 def get_classifier_llm() -> LLMClient:
     if not settings.SEARCH_CLASSIFIER_MODEL:
-        return get_llm_client()
+        return get_routing_llm_client()
     return _build_llm_client(
-        settings.MAIN_INFERENCE_ADAPTER or settings.INFERENCE_ADAPTER,
-        base_url=settings.MAIN_LLM_BASE_URL or settings.LLM_BASE_URL,
+        settings.ROUTING_INFERENCE_ADAPTER
+        or settings.MAIN_INFERENCE_ADAPTER
+        or settings.INFERENCE_ADAPTER,
+        base_url=settings.ROUTING_LLM_BASE_URL
+        or settings.MAIN_LLM_BASE_URL
+        or settings.LLM_BASE_URL,
         model=settings.SEARCH_CLASSIFIER_MODEL,
-        reasoning_effort=settings.MAIN_LLM_REASONING_EFFORT,
+        reasoning_effort=settings.ROUTING_LLM_REASONING_EFFORT,
     )
 
 

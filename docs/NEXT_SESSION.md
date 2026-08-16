@@ -5,43 +5,16 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 [ROADMAP.md](ROADMAP.md), and stable architecture facts in
 [ARCHITECTURE.md](ARCHITECTURE.md).
 
-Last updated: 2026-08-15, America/New_York
+Last updated: 2026-08-16, America/New_York
 
-## START HERE: two tasks queued, in this order — NOT STARTED
+## START HERE: one task queued — NOT STARTED
 
-Both come from one standing rule the user restated explicitly this session:
-**nothing in this project that can work smarter with semantic understanding
-should be done in a hardcoded manner.** The agent roster already obeys it
-(commit `f8bfc46`); these two are what is left.
+It comes from one standing rule the user restated explicitly: **nothing in this
+project that can work smarter with semantic understanding should be done in a
+hardcoded manner.** The agent roster obeys it (commit `f8bfc46`), and the tool
+bullets now do too (entry below); this is what is left.
 
-### 1. Derive the tool bullets from MainActionSelector — small, do first
-
-`_build_system_prompt` in `backend/agents/graph.py` still hardcodes four
-capability lines:
-
-```
-- Diagrams: a rendered diagram from a description.
-- Images: generating a new picture, or editing one already in view.
-- Web search: current information when a question needs it.
-- Documents: reading an attached text document into memory...
-```
-
-These restate `MainActionSelector`'s own tool descriptions
-(`backend/services/main_action_selector.py`, `_builtin_definition` calls),
-which are the single source of truth for what each tool does and when it
-fires — and which were carefully tuned this session for the "which hat do you
-like better" and "write a haiku" cases. Two copies can disagree, and then the
-prompt's wording governs conversation while the tool's wording governs
-routing.
-
-Do it the same way the agent roster was done: expose the tool name/description
-pairs from `MainActionSelector`, put them in the turn's context alongside
-`context["agents"]` (set in `ConversationService` near line 1617), and render
-them in `_render_agent_context`'s sibling. Keep the surrounding instruction
-text — knowing a capability exists must still not become claiming to have run
-it, which `test_it_does_not_claim_to_have_set_the_agent_up` asserts.
-
-### 2. Make agent setup something the conversation can actually do — larger
+### Make agent setup something the conversation can actually do — larger
 
 Today the assistant can *describe* what Scout needs but cannot collect it. It
 answers "give me those four things and I can set it up" and then nothing
@@ -75,10 +48,165 @@ Existing coverage to extend rather than duplicate:
 Everything below this section is verified and deployed. Chat runs on DeepSeek
 (Spark) with a Qwen standby that survives the Spark being powered off; image
 uploads answer in ~2.6s and reason afterwards; the model knows its own agent
-roster from the registry. Known-open, unrelated to the above:
+roster from the registry and its own tool list from the selector. Known-open,
+unrelated to the above:
 `test_search_routing_quality_meets_the_retired_cascades_floor` fails at 0.8276
 recall against its 0.85 floor (Qwen, pre-existing), and `ds4-server` still runs
 at `-c 1000000`, holding ~34 GB that a `-c 131072` restart would return.
+
+## Image recall was silently dead on DeepSeek; bounded classifiers moved to the routing role — VERIFIED
+
+**Read this before promoting any model to `MAIN_LLM_*` again.** Promoting
+DeepSeek on 2026-08-14 also moved every bounded strict-JSON classifier that
+followed the chat model, and `ds4-server` treats a supplied JSON schema as
+advisory. Two real, live, user-facing breakages resulted, both failing closed
+so nothing ever surfaced an error:
+
+- `VisualMemorySelector` — DeepSeek picked the **right** picture and returned
+  `{"selected": ["portrait"], "reasoning": ...}`; the schema wants
+  `artifact_ids`, so pydantic raised `extra_forbidden` and the code fell back
+  to "no images". Reproduced 3/3 on DeepSeek, passes 3/3 on Qwen, and Qwen is
+  25x faster here (1.6s vs 42s for the same two cases). Net effect: "how do
+  you feel about my dress style?" recalled nothing — the exact bug an earlier
+  session fixed and recorded as VERIFIED.
+- `PlaceSuggester` — returned `()` on DeepSeek every time; Qwen returns
+  Raleigh/North Carolina and Raleigh/Durham County.
+
+This is the **third** instance of one root cause. The presentation revert on
+08-14 was the same `extra_forbidden` field-naming failure, and pinning
+presentations to Qwen fixed that call site without anyone checking the others.
+
+Fixed at the principle rather than the symptom: `get_classifier_llm()` and
+`get_place_suggester()` now follow `ROUTING_LLM_*`, not `MAIN_LLM_*`. Every
+caller is a bounded judgement returning strict JSON against an
+application-owned schema — the same contract `MainActionSelector`'s
+tool-calling has — so it belongs with tool-calling, not with whichever model
+writes prose. `ROUTING_LLM_*` still falls back to `MAIN_LLM_*` when unset, so
+an install configuring neither is unchanged.
+
+`backend/tests/test_llm_role_wiring.py` (4 tests, new) now asserts the role map
+instead of trusting it. Safe by inspection and confirmed: memory proposals and
+presentations are independently pinned to Qwen, and the discovery worker still
+runs Qwen, so Scout's sweep-side strict JSON (aiming, reranking, timezones) was
+never affected.
+
+Evidence: full backend suite (1177 tests) passes; Ruff passes on changed files.
+Verified in the rebuilt, recreated production container (gateway restarted, 401
+not 502): both roles resolve to `vllm-main`/`qwen3.5-4b`, image recall returns
+`('portrait',)`, place suggestion returns both real Raleigh rows.
+
+## Second DGX Spark makes an NVFP4 vLLM DeepSeek real — RESEARCHED, NOT STARTED
+
+A second Spark arrives this week, and it changes the DeepSeek picture
+completely. The checkpoints and a purpose-built recipe already exist:
+
+- `nvidia/DeepSeek-V4-Flash-NVFP4` on Hugging Face — **284B total / 13B
+  activated**, MoE experts re-quantized to NVFP4 by NVIDIA modelopt with
+  attention, shared experts, router head and MTP left at FP8. Runs on vLLM and
+  SGLang, and the card explicitly states it **supports structured JSON output
+  and function/tool calling** — the exact capability `ds4-server` lacks.
+- `tonyd2wild/DeepSeek-v4-Flash-0731-DSpark-1M-NVFP4-KV-2x-DGX-Spark` — a
+  recipe for *precisely* this hardware: `tensor-parallel-size 2`, `nnodes 2`,
+  `distributed-executor-backend mp`, RoCE/InfiniBand NCCL between the boxes,
+  `max_model_len=1048576`, `nvfp4_ds_mla` KV cache, `max_num_seqs=6`,
+  speculative decode at 5 draft tokens.
+
+**Measured in that recipe, and it inverts the caution recorded elsewhere in
+this file:** peak decode **84.3 tok/s** on structured output, ~22 tok/s
+per-stream at concurrency 4, ~197 tok/s aggregate at concurrency 6, prefill
+2,639 tok/s at 100K depth. Today's `ds4-server` does **5.7 tok/s**. So vLLM is
+roughly 4x faster here, not slower — the "`--enforce-eager` on sm_121 will cost
+you" worry is already priced into those numbers.
+
+Nothing is displaced by this. Qwen serves the routing/classifier/vision roles
+from the **RTX 5080** (`vllm-main`), not from a Spark, so both Sparks can go to
+DeepSeek TP=2 while the split this file recommends stays intact.
+
+Current Spark state, measured over SSH rather than assumed: 121 GB usable,
+114 GB in use, 6 GB free; the GGUF is 86.7 GB
+(`IQ2XXS-w2Q2K-AProjQ8-SExpQ8-OutQ8` — ~2-bit bulk with 8-bit attention
+projections, shared experts and output), plus a separate 7.0 GB
+`DSpark-drafter` for speculative decode. NVFP4 is roughly double that bit
+budget, so this is a quality upgrade as well as a correctness one.
+
+**Do not plan on FP8 or BF16.** At 284B those need ~290 GB and ~580 GB of
+weights against ~242 GB usable across two Sparks. NVFP4 is the only format that
+fits, which is why the recipe uses it.
+
+Open items before committing: the RoCE/InfiniBand link between the two boxes
+(the guide's earlier note assumed Ray; this recipe uses `mp` with NCCL), and
+matching container images on both nodes. Acceptance test should be the schema
+question, not tokens/sec — hand it `VisualMemorySelection.model_json_schema()`
+and check whether `artifact_ids` comes back. If it does, the role pin above
+becomes optional rather than necessary (though Qwen is still 25x faster for
+these bounded calls, so keeping it is defensible on latency alone).
+
+## The capability bullets now come from MainActionSelector — VERIFIED
+
+`_build_system_prompt` no longer writes out what AniOS can do. Each built-in
+action is one `BuiltinTool` row in `main_action_selector.py` carrying the tool
+name, the schema, a conversational `label`, and the `description` — and that
+one description string is both what the router is offered and what the reply
+prompt is told, so the wording that governs conversation and the wording that
+governs routing can no longer disagree. `describe_capabilities()` reads the
+same `_available_builtins()` list `select()` offers, `ConversationService`
+puts it in `context["capabilities"]` beside `context["agents"]`, and
+`_render_capability_context` in `graph.py` renders it.
+
+Two things deliberately did **not** derive:
+
+- **Search.** Its offered description belongs to the live MCP contract
+  ("Research a minimized public query with bounded free-provider policy") —
+  the server's interface, not the product's capability — and reading it costs
+  a `list_tools` session per turn. Its routing rule already lives in `_SYSTEM`
+  rather than in a tool description, so `_SEARCH_CAPABILITY` is AniOS's own
+  sentence, gated on `can_auto_invoke` (in-memory, no probe).
+- **Documents.** Attaching a text file is read and indexed by the composer
+  directly and is never a tool the router sees, so there is no row to read. It
+  stays an unconditional line.
+
+**No routing text changed, and that was proved rather than asserted:** an AST
+comparison against `HEAD` shows all four tool descriptions and `_SYSTEM`
+byte-identical, and the tool payload `select()` actually builds at runtime is
+`json.dumps`-identical to the one `HEAD` builds, tool order included. So
+routing behaviour cannot have moved — worth knowing before re-investigating
+the selector's flakiness, below.
+
+**Evidence.** Full backend suite (1173 tests, 8 new structural) passes; Ruff
+and MyPy pass on every changed file. The functional suite
+(`test_capability_awareness_behaviour.py`, 7 tests, 3 new) passes 3/3
+consecutive runs against DeepSeek — the model that actually writes replies —
+and 4/4 against the Qwen standby. Then the real deployed path: rebuilt
+`backend`, recreated it, restarted `gateway` (401 not 502 through the gateway,
+per the stale-DNS trap), and sent a real authenticated `POST /api/v1/chat`
+through `deep-matter.com`'s gateway asking "What can you do with images?" The
+reply named creating, editing, and diagrams, quoting the actual tool
+descriptions back — "brand-new picture from a text description", "picture
+currently in view", "not for documents, plans, or schedules", and the exact
+six diagram kinds. That last clause is the tuned `edit_image` negative
+reaching conversation for the first time.
+
+**Measured, and worth not re-deriving.** A negative control ran the same three
+questions with the capability list emptied. The picture test is a real
+discriminator — 4/4 with the list, 0/4 and 1/4 without, across two batches.
+The diagram test is not: "diagram" appears 3 times in 4 without the list
+anyway. Tightening it to also require a kind AniOS actually draws discriminates
+properly (14/15 with, 1/4 without) but flaked once in fifteen, so it was left
+loose deliberately — a gate that fails 7% of the time gets ignored rather than
+read, and the picture test already carries the proof. That reasoning is in the
+test's own comment; do not "fix" it back without re-measuring.
+
+**Flagged, not mine, and worse than recorded:**
+`test_main_action_selector_behaviour.py` is materially flakier on Qwen (the
+routing model) than the 24/24-across-six-runs this file records for the
+opinion-question test. Five runs here: one clean, the others failing 1-3
+parametrized cases, with a *different* subset failing each time
+("what do you think, straw or cowboy?", "would the cowboy hat have suited me
+better?", "should I go with the straw hat instead?", and the already-documented
+"let's edit this project plan..."). Given the payload is provably identical to
+`HEAD`, this is either model-side drift or the original 24/24 being a lucky
+window. Worth a real repeat-count measurement before anyone tunes that prompt
+again on the assumption it regressed.
 
 ## DeepSeek vs Nemotron 3 Super evaluated head-to-head — genuinely mixed, no winner picked — VERIFIED
 
