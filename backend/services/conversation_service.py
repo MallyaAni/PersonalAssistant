@@ -199,6 +199,7 @@ class ConversationService:
         history_turn_limit: int = 10,
         memory_coordinator: MemoryCoordinatorAgent | None = None,
         diagram_artifacts: DiagramArtifactService | None = None,
+        agent_registry: Any | None = None,
         search: SearchProvider | None = None,
         image_recall: CascadingImageRecallRouter | None = None,
         image_search: ArtifactEmbeddingStore | None = None,
@@ -226,6 +227,7 @@ class ConversationService:
         self.history_turn_limit = history_turn_limit
         self.memory_coordinator = memory_coordinator
         self.diagram_artifacts = diagram_artifacts
+        self.agent_registry = agent_registry
         self.search = search
         self.image_recall = image_recall
         self.image_search = image_search
@@ -1291,6 +1293,29 @@ class ConversationService:
         return tuple(interest.label for interest in profile.interests)
 
     # Ask the focused local model for typed memory without blocking the chat turn.
+    # Read the live agent roster, or nothing when it cannot be read.
+    #
+    # A failure here must not cost the user their reply: the roster only enriches
+    # what the assistant can say about itself, and an answer without it is the
+    # behaviour that shipped for months.
+    async def _describe_agents(self, user_id: str) -> list[dict[str, Any]]:
+        if self.agent_registry is None:
+            return []
+        try:
+            summaries = await self.agent_registry.describe_all(user_id)
+        except Exception:
+            logger.warning("Agent roster unavailable for context", exc_info=True)
+            return []
+        return [
+            {
+                "name": summary.name,
+                "role": summary.role,
+                "trigger": summary.trigger,
+                "setup_needs": summary.setup_needs,
+            }
+            for summary in summaries
+        ]
+
     async def _classify_memory_proposals(
         self,
         query: str,
@@ -1613,6 +1638,11 @@ class ConversationService:
         proposals = await self._persist_memory_proposals(
             user_id, conversation_id, trace_id, candidates
         )
+        # What specialized agents exist, read from the registry rather than
+        # listed in the prompt: each agent describes itself from its own
+        # tables, so this cannot advertise a capability an agent stopped
+        # having, and adding an agent needs no prompt edit.
+        context["agents"] = await self._describe_agents(user_id)
         context["memory_save"] = {
             "saved": bool(proposals),
             "value": _proposal_summaries(proposals),

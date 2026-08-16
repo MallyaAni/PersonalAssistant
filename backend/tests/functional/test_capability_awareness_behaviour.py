@@ -15,10 +15,36 @@ from backend.core.dependencies import get_llm_client
 pytestmark = pytest.mark.asyncio
 
 
+# The roster ConversationService supplies, in the shape the registry produces.
+# Passed explicitly rather than left empty: the prompt renders whatever agents
+# exist and nothing when none do, so an empty context would test the absence of
+# a roster instead of the behaviour that ships.
+_ROSTER = [
+    {
+        "name": "Scout",
+        "role": (
+            "Finds things happening near you that match what you like, and "
+            "turns each one into a calendar entry"
+        ),
+        "trigger": "Weekly schedule",
+        "setup_needs": (
+            "interests to follow, a home locality, a cadence with an hour and "
+            "timezone, and somewhere to deliver to"
+        ),
+    },
+    {
+        "name": "Deck",
+        "role": "Plans and builds editable presentations in its own worker",
+        "trigger": "Delegated from chat",
+        "setup_needs": "",
+    },
+]
+
+
 async def _ask(question: str) -> str:
     llm = get_llm_client()
     messages = [
-        {"role": "system", "content": _build_system_prompt({})},
+        {"role": "system", "content": _build_system_prompt({"agents": _ROSTER})},
         {"role": "user", "content": question},
     ]
     try:

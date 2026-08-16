@@ -142,6 +142,30 @@ def _render_save_state(save: dict[str, Any]) -> str:
     )
 
 
+# Describe the specialized agents that actually exist, from the registry.
+#
+# Enumerated by hand this drifted the moment an agent changed, and the registry
+# already exists precisely so that adding an agent means adding a folder rather
+# than editing every place that lists them. Each entry is the agent's own
+# reading of itself, so this cannot claim a capability the agent stopped having.
+def _render_agent_context(agents: list[dict[str, Any]]) -> str:
+    lines = []
+    for agent in agents[:10]:
+        name = str(agent.get("name") or "").strip()
+        role = str(agent.get("role") or "").strip()
+        if not name or not role:
+            continue
+        trigger = str(agent.get("trigger") or "").strip()
+        needs = str(agent.get("setup_needs") or "").strip()
+        parts = [role.rstrip(".")]
+        if trigger:
+            parts.append(f"runs on: {trigger.rstrip('.').lower()}")
+        if needs:
+            parts.append(f"setting one up needs {needs.rstrip('.')}")
+        lines.append(f"- {name}: " + "; ".join(parts) + ".\n")
+    return "".join(lines)
+
+
 def _build_system_prompt(
     context_data: dict[str, Any],
     now: datetime | None = None,
@@ -191,12 +215,7 @@ def _build_system_prompt(
         "what they describe is something one of these already covers. Name the "
         "capability and what setting it up needs; do not invent steps, and do "
         "not claim to have performed the setup yourself.\n"
-        "- Scout: scheduled sweeps that surface things happening in the user's "
-        "area and around their interests, delivered on a cadence. Setting one "
-        "up needs interests to follow, a home locality, a cadence with an hour "
-        "and timezone, and somewhere to deliver to.\n"
-        "- Decks: a presentation agent that researches a topic and builds a "
-        "slide deck from it.\n"
+        f"{_render_agent_context(context_data.get('agents') or [])}"
         "- Diagrams: a rendered diagram from a description.\n"
         "- Images: generating a new picture, or editing one already in view.\n"
         "- Web search: current information when a question needs it.\n"

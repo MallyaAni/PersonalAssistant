@@ -1439,6 +1439,7 @@ def get_conversation_service(
     discovery_profile: DependencyDiscoveryProfileService,
     memory_proposals: MemoryProposalDependency,
     agent_memory: DependencyAgentMemoryManager,
+    agent_registry: DependencyAgentRegistry,
 ) -> ConversationService:
     return ConversationService(
         memory=memory,
@@ -1448,6 +1449,7 @@ def get_conversation_service(
         history_turn_limit=settings.CONVERSATION_HISTORY_TURNS,
         memory_coordinator=memory_coordinator,
         diagram_artifacts=diagram_artifacts,
+        agent_registry=agent_registry,
         search=search,
         image_recall=image_recall,
         image_search=artifacts,

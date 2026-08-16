@@ -39,6 +39,11 @@ class AgentSummary:
     # What it is waiting on or doing, in one line the user can act on.
     detail: str
     trigger: str
+    # What the user must supply before this agent can run, in prose. Empty
+    # for agents that need nothing set up in advance. Lives here so the
+    # assistant can answer "what do you need from me" from the agent's own
+    # account of itself rather than a list maintained somewhere else.
+    setup_needs: str = ""
     last_active_at: datetime | None = None
     facts: tuple[AgentFact, ...] = field(default=())
     # Which workspace view holds this agent's output, when it has one elsewhere.

@@ -96,6 +96,10 @@ async def describe(session: AsyncSession, user_id: str) -> AgentSummary:
         status=status,
         detail=detail,
         trigger="Weekly schedule" if schedule else "On request",
+        setup_needs=(
+            "interests to follow, a home locality, a cadence with an hour "
+            "and timezone, and somewhere to deliver to"
+        ),
         last_active_at=latest.completed_at if latest else None,
         facts=tuple(facts),
     )
