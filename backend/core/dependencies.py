@@ -854,6 +854,34 @@ VisionAnalysisDependency = Annotated[
 ]
 
 
+# Build the minimum needed to finish a deferred reasoning pass off-request.
+#
+# Only the repository, the reasoner and the grounding are wired: this path
+# neither sees pixels nor reindexes anything, it rewrites one stored answer. A
+# background task cannot borrow the request's session, so it is given its own.
+def build_deferred_vision_service(db: AsyncSession) -> VisionAnalysisService:
+    return VisionAnalysisService(
+        images=None,
+        repository=get_artifact_repository(db),
+        provider=get_vision_provider(),
+        reasoner=(
+            get_llm_client() if settings.VISION_REASONING_ENABLED else None
+        ),
+        reasoning_max_tokens=settings.VISION_REASONING_MAX_TOKENS,
+        grounding=(
+            VisualSearchGrounding(
+                get_routing_llm_client(),
+                get_mcp_invocation_service(),
+                settings.SEARCH_MCP_SERVER_ID,
+                settings.SEARCH_MCP_TOOL_NAME,
+                decision_max_tokens=settings.VISION_SEARCH_DECISION_MAX_TOKENS,
+            )
+            if settings.VISION_SEARCH_GROUNDING_ENABLED
+            else None
+        ),
+    )
+
+
 # Build the replaceable diagram provider around its configured local model.
 def get_diagram_provider(llm: DiagramLlmDependency) -> LLMDiagramProvider:
     return LLMDiagramProvider(

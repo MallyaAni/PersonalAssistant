@@ -189,6 +189,7 @@ class VisionAnalysisService:
         prompt: str,
         content: bytes,
         declared_mime_type: str | None,
+        defer_reasoning: bool = False,
     ) -> dict[str, Any]:
         # Asked before the upload is put to the vision model, because the answer
         # decides what to put to it. An edit request answered as a question is
@@ -252,9 +253,18 @@ class VisionAnalysisService:
         # The vision model has now seen the pixels; the reasoning about them is
         # the main model's job. Only for a real question - the canonical
         # description is an index entry, not an answer to anyone.
+        # Deferred, the caller gets the vision model's answer now and the
+        # reasoned one is written to this artifact afterwards. The whole chain
+        # - search decision, search, then the main model - runs to about
+        # seventeen seconds, and this endpoint sends nothing until it returns;
+        # a phone that locks or backgrounds during that silence drops the
+        # connection and the user sees a failure for work that fully succeeded.
         answer_text = answer.content
         answer_model = answer.model
-        if needs_user_answer:
+        reasoning_pending = False
+        if needs_user_answer and defer_reasoning and self.reasoner is not None:
+            reasoning_pending = True
+        elif needs_user_answer:
             answer_text, reasoned = await self._reason_about(
                 prompt,
                 observation.content,
@@ -293,11 +303,60 @@ class VisionAnalysisService:
             "artifact": updated,
             "analysis": answer_text,
             "model": answer_model,
+            # Tells the caller a better answer is coming for this artifact, so
+            # it knows to look again rather than poll something already final.
+            "reasoning_pending": reasoning_pending,
             # The caller edits the stored upload when this says so. It is
             # reported rather than acted on here because the edit needs the
             # artifact this call is still in the middle of creating.
             "intent": EDIT if wants_edit else ASK,
         }
+
+    # Replace a deferred answer with the reasoned one, after the reply was sent.
+    #
+    # Reads the grounding back off the artifact rather than taking it as
+    # arguments, because this runs in a different task from the request that
+    # stored it and the stored copy is the only thing guaranteed to still be
+    # true. Answers False when there was nothing to improve.
+    async def finish_deferred_reasoning(
+        self,
+        user_id: str,
+        artifact_id: str,
+    ) -> bool:
+        artifact = await self.repository.get_owned(user_id, artifact_id)
+        if artifact is None:
+            return False
+        metadata = artifact.get("metadata") or {}
+        thread = self._existing_thread(metadata)
+        if not thread:
+            return False
+        last = thread[-1]
+        answer_text, reasoned = await self._reason_about(
+            last.get("prompt", ""),
+            str(metadata.get("analysis") or ""),
+            last.get("answer", ""),
+        )
+        if not reasoned:
+            return False
+        thread[-1] = {
+            **last,
+            "answer": answer_text,
+            "model": f"{last.get('model', '')}+{self.reasoner.model}",
+        }
+        await self.repository.update_metadata(
+            artifact_id,
+            user_id,
+            {
+                "analysis_status": "ready",
+                "analysis_thread": thread,
+                # An explicit flag rather than leaving the client to infer this
+                # from the model string: a poll needs one unambiguous thing to
+                # wait for, and the answer text alone cannot say whether the
+                # reasoning ran or merely returned the same words.
+                "analysis_reasoned": True,
+            },
+        )
+        return True
 
     # Observe an existing ready image and index what its current pixels show.
     async def observe_artifact(

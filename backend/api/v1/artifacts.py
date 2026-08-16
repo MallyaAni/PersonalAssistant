@@ -84,6 +84,25 @@ async def list_conversation_artifacts(
     return await repository.list_for_conversation(user_id, str(conversation_id))
 
 
+# Return one owned artifact's record, so a caller can see work that finished
+# after its own request did. The upload reply is sent before the reasoning pass
+# completes; this is how the answer it produces is collected.
+@router.get("/{artifact_id}")
+async def get_artifact(
+    user_id: str,
+    artifact_id: UUID,
+    repository: ArtifactRepositoryDependency,
+    identity: IdentityDependency,
+) -> dict[str, Any]:
+    authorize_user(user_id, identity)
+    authorize_scope(identity, SCOPE_VISION)
+    artifact = await repository.get_owned(user_id, str(artifact_id))
+    if artifact is None:
+        raise HTTPException(status_code=404, detail="Artifact not found")
+    # The storage key is an internal detail and must not leave the service.
+    return {key: value for key, value in artifact.items() if key != "_storage_key"}
+
+
 # Delete one visual artifact only when it belongs to the requested user.
 @router.delete("/{artifact_id}")
 async def delete_artifact(

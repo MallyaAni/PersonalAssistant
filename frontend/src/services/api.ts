@@ -1022,7 +1022,13 @@ export async function analyzeImage(
   if (artifact.kind !== 'uploaded_image') {
     throw new Error('Image analysis returned an unexpected artifact')
   }
-  return { artifact, editRequested: result.intent === 'edit' }
+  // The server answers as soon as the picture has been looked at, and reasons
+  // about it afterwards, so a slow reply cannot outlive a phone's patience.
+  return {
+    artifact,
+    editRequested: result.intent === 'edit',
+    reasoningPending: result.reasoning_pending === true,
+  }
 }
 
 // One persisted question/answer pair from an image's analysis thread.
@@ -1078,6 +1084,18 @@ export async function getArtifactImage(
     throw new Error('Artifact content is not a supported image')
   }
   return response.blob()
+}
+
+// Fetch one owned artifact's current record.
+//
+// The upload reply is sent before the reasoning pass finishes, so this is how
+// the better answer is collected once it lands.
+export async function getArtifact(userId: string, artifactId: string, signal?: AbortSignal) {
+  const raw = await apiRequest<Record<string, unknown>>(
+    `/api/v1/artifacts/${encodeURIComponent(userId)}/${encodeURIComponent(artifactId)}`,
+    { signal },
+  )
+  return parseVisualArtifact(raw)
 }
 
 // Delete one visual artifact owned by the active user.

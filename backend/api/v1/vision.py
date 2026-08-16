@@ -2,7 +2,15 @@ import logging
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    File,
+    Form,
+    HTTPException,
+    UploadFile,
+    status,
+)
 
 from backend.config.settings import settings
 from backend.core.auth import (
@@ -11,7 +19,12 @@ from backend.core.auth import (
     authorize_scope,
     authorize_user,
 )
-from backend.core.dependencies import TracerDependency, VisionAnalysisDependency
+from backend.core.dependencies import (
+    TracerDependency,
+    VisionAnalysisDependency,
+    build_deferred_vision_service,
+)
+from backend.database.session import AsyncSessionLocal
 from backend.models.image import ImageQuestionBody
 from backend.services.vision_analysis_service import (
     ArtifactNotFoundError,
@@ -42,6 +55,27 @@ async def _read_bounded_upload(upload: UploadFile, maximum_bytes: int) -> bytes:
     return b"".join(chunks)
 
 
+# Finish one deferred reasoning pass on its own session, after the reply went out.
+#
+# Builds its own service rather than reusing the request's: that one holds a
+# session which closes with the response. Every failure is swallowed after
+# logging, because the user already has a usable answer on screen and the only
+# thing at stake here is replacing it with a better one.
+async def _finish_reasoning(user_id: str, artifact_id: str) -> None:
+    try:
+        async with AsyncSessionLocal() as db:
+            service = build_deferred_vision_service(db)
+            improved = await service.finish_deferred_reasoning(user_id, artifact_id)
+        if improved:
+            logger.info("Reasoned answer stored for artifact %s", artifact_id)
+    except Exception:
+        logger.warning(
+            "Deferred visual reasoning failed for artifact %s",
+            artifact_id,
+            exc_info=True,
+        )
+
+
 # Validate, persist, and analyze one owned image upload with the local VLM.
 @router.post("/analyze", status_code=status.HTTP_201_CREATED)
 async def analyze_image_upload(
@@ -52,6 +86,7 @@ async def analyze_image_upload(
     service: VisionAnalysisDependency,
     tracer: TracerDependency,
     identity: IdentityDependency,
+    background: BackgroundTasks,
 ) -> dict[str, Any]:
     normalized_user_id = user_id.strip()
     normalized_prompt = prompt.strip()
@@ -73,14 +108,26 @@ async def analyze_image_upload(
     finally:
         await image.close()
     try:
-        return await service.analyze_upload(
+        result = await service.analyze_upload(
             user_id=normalized_user_id,
             conversation_id=str(conversation_id),
             trace_id=trace_id,
             prompt=normalized_prompt,
             content=content,
             declared_mime_type=image.content_type,
+            defer_reasoning=True,
         )
+        # Runs after this response is delivered, on its own session, because
+        # the request's session closes with the reply. Holding the connection
+        # open for the reasoning chain instead is what made a phone that locks
+        # mid-upload report a failure for work the server completed.
+        if result.get("reasoning_pending"):
+            background.add_task(
+                _finish_reasoning,
+                normalized_user_id,
+                str(result["artifact"]["id"]),
+            )
+        return result
     except ValueError as exc:
         # The reply to the user stays deliberately vague, but the log must not:
         # this branch previously recorded nothing at all, so a rejected upload

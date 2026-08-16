@@ -297,6 +297,17 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     }])
   }
 
+  // Swap in the reasoned answer once it arrives, without adding a turn.
+  //
+  // The upload already rendered the vision model's answer; this replaces that
+  // same message's artifact so its analysis thread re-reads with the better
+  // one. A new message here would show the user two answers to one question.
+  const handleVisualReasoned = (artifact: ImageArtifact) => {
+    setMessages(prev => prev.map(message => (
+      message.artifactId === artifact.id ? { ...message, artifact } : message
+    )))
+  }
+
   // Attach a completed generated or uploaded image to its running placeholder.
   // Mark the pending assistant turn as searching so the interface can say so.
   const handleSearchStarted = (minimized: boolean) => {
@@ -620,6 +631,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             onArtifactError={handleArtifactError}
             onVisualStarted={handleVisualStarted}
             onVisualReady={handleVisualReady}
+            onVisualReasoned={handleVisualReasoned}
             onVisualError={handleVisualError}
             onImageMatches={handleImageMatches}
             editableImage={editableImage}

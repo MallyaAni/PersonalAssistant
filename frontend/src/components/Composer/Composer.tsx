@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { ArrowUp, Image as ImageIcon, Loader2, Paperclip, X } from 'lucide-react'
 import {
   analyzeImage,
+  getArtifact,
   getArtifactImage,
   ingestDocument,
   refineImage,
@@ -64,6 +65,7 @@ interface ComposerProps {
   onArtifactError: (artifactId: string, message: string) => void;
   onVisualStarted: (mode: 'analyze') => void;
   onVisualReady: (artifact: ImageArtifact) => void;
+  onVisualReasoned: (artifact: ImageArtifact) => void;
   onVisualError: (message: string) => void;
   onImageMatches: (artifacts: ImageArtifact[]) => void;
   // The image an edit typed here applies to, and where its revision goes.
@@ -92,6 +94,7 @@ const Composer: React.FC<ComposerProps> = ({
   onArtifactError,
   onVisualStarted,
   onVisualReady,
+  onVisualReasoned,
   onVisualError,
   onImageMatches,
   editableImage,
@@ -176,6 +179,29 @@ const Composer: React.FC<ComposerProps> = ({
     )
   }
 
+  // Collect the reasoned answer the server writes after the upload replies.
+  //
+  // Bounded rather than open-ended: reasoning that never lands leaves the
+  // vision model's answer standing, which is a complete answer already. Errors
+  // are swallowed for the same reason -- there is nothing to tell the user,
+  // because nothing was lost.
+  const pollForReasonedAnswer = async (artifactId: string) => {
+    for (let attempt = 0; attempt < 30; attempt += 1) {
+      await new Promise(resolve => setTimeout(resolve, 2_000))
+      try {
+        const artifact = await getArtifact(userId, artifactId)
+        if (artifact.kind !== 'uploaded_image' && artifact.kind !== 'generated_image') return
+        const metadata = artifact.metadata as Record<string, unknown> | undefined
+        if (metadata?.analysis_reasoned === true) {
+          onVisualReasoned(artifact)
+          return
+        }
+      } catch {
+        return
+      }
+    }
+  }
+
   // Submit the active chat, generation, analysis, or document-ingest request.
   const handleSend = async () => {
     const prompt = input.trim()
@@ -219,7 +245,7 @@ const Composer: React.FC<ComposerProps> = ({
         setVisualInFlight(true)
         const controller = new AbortController()
         requestController.current = controller
-        const { artifact, editRequested } = await analyzeImage(
+        const { artifact, editRequested, reasoningPending } = await analyzeImage(
           userId,
           conversationId,
           prompt || 'Describe this image, including any text you can read.',
@@ -227,6 +253,10 @@ const Composer: React.FC<ComposerProps> = ({
           controller.signal,
         )
         onVisualReady(artifact)
+        // The reasoned answer lands after this reply, so collect it separately
+        // rather than holding the upload open for it -- that wait is what a
+        // locked phone drops, reporting a failure for work that succeeded.
+        if (reasoningPending) void pollForReasonedAnswer(artifact.id)
         // The upload has to be stored before it can be edited, so the edit runs
         // against the artifact the analysis just created.
         if (editRequested) {
