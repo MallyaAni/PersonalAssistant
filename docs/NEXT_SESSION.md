@@ -5,7 +5,80 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 [ROADMAP.md](ROADMAP.md), and stable architecture facts in
 [ARCHITECTURE.md](ARCHITECTURE.md).
 
-Last updated: 2026-08-14, America/New_York
+Last updated: 2026-08-15, America/New_York
+
+## START HERE: two tasks queued, in this order — NOT STARTED
+
+Both come from one standing rule the user restated explicitly this session:
+**nothing in this project that can work smarter with semantic understanding
+should be done in a hardcoded manner.** The agent roster already obeys it
+(commit `f8bfc46`); these two are what is left.
+
+### 1. Derive the tool bullets from MainActionSelector — small, do first
+
+`_build_system_prompt` in `backend/agents/graph.py` still hardcodes four
+capability lines:
+
+```
+- Diagrams: a rendered diagram from a description.
+- Images: generating a new picture, or editing one already in view.
+- Web search: current information when a question needs it.
+- Documents: reading an attached text document into memory...
+```
+
+These restate `MainActionSelector`'s own tool descriptions
+(`backend/services/main_action_selector.py`, `_builtin_definition` calls),
+which are the single source of truth for what each tool does and when it
+fires — and which were carefully tuned this session for the "which hat do you
+like better" and "write a haiku" cases. Two copies can disagree, and then the
+prompt's wording governs conversation while the tool's wording governs
+routing.
+
+Do it the same way the agent roster was done: expose the tool name/description
+pairs from `MainActionSelector`, put them in the turn's context alongside
+`context["agents"]` (set in `ConversationService` near line 1617), and render
+them in `_render_agent_context`'s sibling. Keep the surrounding instruction
+text — knowing a capability exists must still not become claiming to have run
+it, which `test_it_does_not_claim_to_have_set_the_agent_up` asserts.
+
+### 2. Make agent setup something the conversation can actually do — larger
+
+Today the assistant can *describe* what Scout needs but cannot collect it. It
+answers "give me those four things and I can set it up" and then nothing
+happens, because the prompt correctly forbids claiming to have performed a
+setup it has no way to perform. Honest, but a dead end.
+
+The user's framing: *"the same settings in configuring the agent can be asked
+as follow up questions when the user is trying to set it up in the
+conversation."*
+
+Shape it so no agent needs its own code path:
+- `AgentSummary.setup_needs` (added in `f8bfc46`) already states each agent's
+  prerequisites in prose. Scout lists its four; Deck leaves it empty because
+  it needs nothing in advance.
+- The model decides what is still missing from what the user has already said
+  across turns — not a scripted form, and not regex over the reply. This is
+  the same "smartness over regex" requirement that governs routing.
+- Writes go through `DiscoveryProfileService` (interests, locality, schedule,
+  subscriber). Tables: `discovery_interests`, `discovery_localities`,
+  `discovery_schedules` (cadence/hour/weekday/timezone),
+  `discovery_subscribers` (channel/address).
+- A prompt change here is not complete without a functional test in
+  `backend/tests/functional/` that drives a real multi-turn setup against the
+  live runtime and asserts the profile actually landed.
+
+Existing coverage to extend rather than duplicate:
+`backend/tests/functional/test_capability_awareness_behaviour.py`.
+
+### State this picks up from
+
+Everything below this section is verified and deployed. Chat runs on DeepSeek
+(Spark) with a Qwen standby that survives the Spark being powered off; image
+uploads answer in ~2.6s and reason afterwards; the model knows its own agent
+roster from the registry. Known-open, unrelated to the above:
+`test_search_routing_quality_meets_the_retired_cascades_floor` fails at 0.8276
+recall against its 0.85 floor (Qwen, pre-existing), and `ds4-server` still runs
+at `-c 1000000`, holding ~34 GB that a `-c 131072` restart would return.
 
 ## DeepSeek vs Nemotron 3 Super evaluated head-to-head — genuinely mixed, no winner picked — VERIFIED
 
