@@ -18,7 +18,10 @@ flowchart TB
     DiagramModel --> Artifact[Validate and persist<br/>Mermaid artifact]
 
     Selector -->|generate_image or edit_image| ImageAction[Generate or source-conditioned<br/>edit via ComfyUI FLUX]
-    ImageAction --> ImageArtifact[Persist ready/failed<br/>image artifact]
+    ImageAction -->|explicit image| ImageArtifact[Persist ready/failed<br/>image artifact]
+    ImageAction -->|no explicit image| Referent[Qwen 3.5 4B<br/>owned-image referent resolution]
+    Referent -->|one match| ImageArtifact
+    Referent -->|ambiguous or absent| Stream
 
     Selector -->|search_web, a toolbox<br/>tool, or neither| Memory[MemoryCoordinatorAgent<br/>memory and artifact retrieval]
     Memory --> Visual{Relevant stored<br/>image candidates?}
@@ -49,5 +52,5 @@ flowchart TB
     classDef failure fill:#fff3cd,stroke:#b78b20,color:#4d3900;
     class User,UI interface;
     class API,Selector,Search_Tool,Toolbox,Presentation,Progress,Diagram,Artifact,ImageAction,ImageArtifact,Memory,Visual,MCP,Search,Context,Inference,Persist,Stream,Proposal application;
-    class Main,DiagramModel,Interest,VisualPolicy model;
+    class Main,DiagramModel,Interest,VisualPolicy,Referent model;
     class Failure failure;

@@ -108,6 +108,7 @@ from backend.services.presentation_job_repository import (
 from backend.services.presentation_job_service import PresentationJobService
 from backend.services.presentation_repository import SQLAlchemyPresentationRepository
 from backend.services.presentation_service import PresentationService
+from backend.services.referent_resolution import ReferentResolver
 from backend.services.repository import SQLAlchemyConversationRepository
 from backend.services.tool_memory_service import ToolMemoryService
 from backend.services.tracing import (
@@ -1495,6 +1496,9 @@ def get_conversation_service(
         memory_proposals=memory_proposals,
         visual_memory=VisualMemorySelector(get_classifier_llm()),
         agent_memory=agent_memory,
+        # A bounded strict-JSON judgement, so it belongs on the routing role
+        # with the rest of them rather than on whichever model writes prose.
+        referent_resolver=ReferentResolver(get_classifier_llm()),
     )
 
 

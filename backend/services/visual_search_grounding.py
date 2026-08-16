@@ -36,10 +36,19 @@ anything where being out of date or mistaken about a real-world fact would make
 the answer wrong. Naming something confidently from memory is exactly the
 failure a search prevents.
 
+A question asking you to judge, advise, warn, or recommend still needs the
+search whenever that judgement depends on knowing what the thing actually is -
+whether a mushroom is safe to eat, whether a snake is venomous, whether a
+vintage is good, whether a part will fit. Identify first, then judge. The test
+is simple: if learning the object's real name could change your answer, look it
+up rather than reasoning from appearance.
+
 Do not search when the description already contains everything the question
 needs - counting, comparing, reading values, judging colour or composition,
 giving an opinion about what is visible, or any question answerable from the
-description alone.
+description alone. A question is pure opinion only when it is about what is
+visible - colour, arrangement, mood, style, composition - and its answer would
+not change if you learned what the object was called.
 
 When you search, write the query from the distinctive visible details, not from
 a guess at the answer: describe the object's form, markings, colour, and any
@@ -90,16 +99,24 @@ class VisualSearchGrounding:
             },
         }
 
-    # Return web evidence for this question, or None to answer without it.
+    # Decide whether this question needs the web, returning the arguments the
+    # model wrote for the search, or None to answer without one.
     #
-    # Every failure answers None. This sits in front of an answer the user is
-    # waiting on and the reasoning step works without it, so an unreachable
-    # search must degrade to an ungrounded answer rather than fail the request.
-    async def ground(self, question: str, observation: str) -> str | None:
+    # Separated from `ground` so the judgement can be measured on its own. The
+    # decision is the half that goes wrong -- it was found answering identify-
+    # this-product questions from memory 5 times in 9 -- and an evaluation that
+    # has to spend live search quota per case is one nobody runs often enough
+    # to catch that.
+    async def decide(
+        self,
+        question: str,
+        observation: str,
+        tool: dict[str, Any] | None = None,
+    ) -> dict[str, Any] | None:
         if not question.strip() or self.llm is None:
             return None
-        tool = await self._tool_definition()
-        if tool is None:
+        resolved = tool if tool is not None else await self._tool_definition()
+        if resolved is None:
             return None
 
         messages = [
@@ -116,14 +133,27 @@ class VisualSearchGrounding:
             decision = await asyncio.to_thread(
                 self.llm.chat_with_tools,
                 messages,
-                [tool],
+                [resolved],
                 self.decision_max_tokens,
             )
         except Exception:
             logger.warning("Visual search decision failed", exc_info=True)
             return None
+        return _first_search_call(decision)
 
-        arguments = _first_search_call(decision)
+    # Return web evidence for this question, or None to answer without it.
+    #
+    # Every failure answers None. This sits in front of an answer the user is
+    # waiting on and the reasoning step works without it, so an unreachable
+    # search must degrade to an ungrounded answer rather than fail the request.
+    async def ground(self, question: str, observation: str) -> str | None:
+        if not question.strip() or self.llm is None:
+            return None
+        tool = await self._tool_definition()
+        if tool is None:
+            return None
+
+        arguments = await self.decide(question, observation, tool)
         if arguments is None:
             return None
 
@@ -181,7 +211,7 @@ def _first_search_call(message: dict[str, Any]) -> dict[str, Any] | None:
             try:
                 parsed = json.loads(raw)
             except json.JSONDecodeError:
-                logger.warning("Search arguments were not valid JSON: %r", raw[:200])
+                logger.warning("Search arguments were not valid JSON")
                 return None
             if isinstance(parsed, dict):
                 return parsed

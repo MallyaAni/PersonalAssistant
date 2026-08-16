@@ -5,9 +5,10 @@ flowchart LR
     User([User message]) --> Choice{Artifact selected?}
     Choice -->|yes| Selected[Explicit image ID]
     Choice -->|no| Candidates[Owner-scoped semantic<br/>visual candidates]
-    Candidates --> Policy[Qwen 3.5 4B<br/>meaning-based selection]
+    Candidates --> Policy[Qwen 3.5 4B<br/>referent resolution]
     Selected --> Guard[Ownership, readiness<br/>and lineage]
-    Policy --> Guard
+    Policy -->|one match| Guard
+    Policy -->|ambiguous or absent| Clarify[Show matching images<br/>or ask for detail]
 
     Store[(Artifact metadata, descriptions,<br/>pixel and text vectors)] --> Candidates
     Store --> Guard
@@ -18,6 +19,7 @@ flowchart LR
     Revision --> Store
     Revision --> UI[Replace visible parent;<br/>retain lineage]
     Answer --> UI
+    Clarify --> UI
 
     Future[Planned: video observations and<br/>parsed PDF/RAG chunks use the same contract]
     Verify[Planned: verify requested changes<br/>and preserved content before promotion]
@@ -30,7 +32,7 @@ flowchart LR
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef planned fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
     class User,Choice,UI interface;
-    class Selected,Candidates,Guard,Action,Answer,Edit,Revision implemented;
+    class Selected,Candidates,Guard,Action,Answer,Edit,Revision,Clarify implemented;
     class Store data;
     class Policy model;
     class Future,Verify planned;

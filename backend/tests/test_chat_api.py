@@ -455,9 +455,7 @@ async def test_conversation_service_drops_agent_memory_kind_when_not_wired():
         ),
     )
 
-    events = [
-        event async for event in service.process_request("proposal_user", "hi")
-    ]
+    events = [event async for event in service.process_request("proposal_user", "hi")]
 
     assert not any(event["event"] == "memory_proposal" for event in events)
 
@@ -484,9 +482,7 @@ async def test_conversation_service_auto_saves_agent_memory_kind_when_wired():
         agent_memory=agent_memory,
     )
 
-    events = [
-        event async for event in service.process_request("proposal_user", "hi")
-    ]
+    events = [event async for event in service.process_request("proposal_user", "hi")]
 
     proposal = next(
         event["data"] for event in events if event["event"] == "memory_proposal"
@@ -521,9 +517,7 @@ async def test_conversation_service_a_failed_save_does_not_block_the_rest():
         ),
     )
 
-    events = [
-        event async for event in service.process_request("proposal_user", "hi")
-    ]
+    events = [event async for event in service.process_request("proposal_user", "hi")]
 
     proposals = [
         event["data"] for event in events if event["event"] == "memory_proposal"
@@ -704,11 +698,13 @@ class RefusingImageRefinement:
         raise AssertionError("refine() must not run with no active image")
 
 
-# edit_image is now offered to the model every turn, active image or not -
-# the application, not the model, has to notice nothing is selected and say
-# so, rather than silently answering the message as ordinary chat.
+# edit_image is offered to the model every turn, active image or not - the
+# application, not the model, has to notice nothing is selected. With no
+# resolver wired there is nothing to resolve against, so this must still say
+# so plainly rather than silently answering the message as ordinary chat, and
+# must never reach refine() with a picture nobody identified.
 @pytest.mark.asyncio
-async def test_edit_with_no_active_image_explains_instead_of_guessing():
+async def test_edit_with_no_resolvable_target_says_so_instead_of_guessing():
     repository = CapturingConversationRepository()
     service = ConversationService(
         memory=StubMemoryService(),
@@ -731,8 +727,136 @@ async def test_edit_with_no_active_image_explains_instead_of_guessing():
 
     assert [event["event"] for event in events] == ["start", "delta", "done"]
     message = events[1]["data"]["content"]
-    assert "select the one you want" in message.casefold()
+    assert "don't have a picture" in message.casefold()
     assert repository.saved_turns[0][1]["response"] == message
+
+
+class StubReferentResolver:
+    """Return one controlled resolution without reaching a model."""
+
+    def __init__(self, matched) -> None:
+        self.matched = matched
+        self.asked: list[str] = []
+
+    async def resolve(self, reference, candidates):
+        from backend.services.referent_resolution import ReferentResolution
+
+        self.asked.append(reference)
+        return ReferentResolution(matched=tuple(self.matched))
+
+
+class RecordingImageRefinement:
+    """Record which artifact an edit was actually applied to."""
+
+    def __init__(self) -> None:
+        self.edited: list[str] = []
+
+    async def refine(self, *, user_id, artifact_id, feedback, **kwargs):
+        self.edited.append(artifact_id)
+        return {"id": "child-artifact", "status": "ready", "kind": "generated_image"}
+
+
+# The behaviour this replaced the dead end with: one confident match is edited
+# without the user selecting anything, and the reply names which picture it
+# chose so a wrong guess is visible in the same breath.
+@pytest.mark.asyncio
+async def test_a_confidently_resolved_target_is_edited_and_named():
+    from backend.services.referent_resolution import Referent
+
+    portrait = Referent(
+        handle="portrait-id",
+        kind="image",
+        description="A person in a black cowboy hat by the water.",
+        when="2026-08-14T18:00:00+00:00",
+        title="Uploaded image",
+    )
+    repository = CapturingConversationRepository()
+    refinement = RecordingImageRefinement()
+    service = ConversationService(
+        memory=StubMemoryService(),
+        llm=StubLLM(),
+        repository=repository,
+        tracer=StubTracer(),
+        main_action_selector=StubMainActionSelector(  # type: ignore[arg-type]
+            EditImageAction(instruction="make the hat straw")
+        ),
+        image_refinement=refinement,  # type: ignore[arg-type]
+        referent_resolver=StubReferentResolver([portrait]),  # type: ignore[arg-type]
+    )
+    service.image_referents = _StubSource([portrait])  # type: ignore[assignment]
+
+    events = [
+        event
+        async for event in service.process_request(
+            "proposal_user",
+            "make the hat straw",
+        )
+    ]
+
+    assert refinement.edited == ["portrait-id"]
+    text = "".join(
+        event["data"].get("content", "")
+        for event in events
+        if event["event"] == "delta"
+    )
+    assert "cowboy hat" in text
+    # The announcement survives into history, so the record says which picture
+    # was chosen rather than merely that one was.
+    assert "cowboy hat" in repository.saved_turns[0][1]["response"]
+
+
+# Several equally plausible pictures must become a question, never a guess.
+@pytest.mark.asyncio
+async def test_an_ambiguous_target_asks_which_one_and_edits_nothing():
+    from backend.services.referent_resolution import Referent
+
+    first = Referent(
+        handle="a", kind="image", description="A dark bomber jacket by the water."
+    )
+    second = Referent(
+        handle="b", kind="image", description="A dark bomber jacket on a night street."
+    )
+    service = ConversationService(
+        memory=StubMemoryService(),
+        llm=StubLLM(),
+        repository=CapturingConversationRepository(),
+        tracer=StubTracer(),
+        main_action_selector=StubMainActionSelector(  # type: ignore[arg-type]
+            EditImageAction(instruction="make the jacket red")
+        ),
+        image_refinement=RefusingImageRefinement(),  # type: ignore[arg-type]
+        referent_resolver=StubReferentResolver([first, second]),  # type: ignore[arg-type]
+    )
+    service.image_referents = _StubSource([first, second])  # type: ignore[assignment]
+
+    events = [
+        event
+        async for event in service.process_request(
+            "proposal_user",
+            "make the jacket red",
+        )
+    ]
+
+    text = "".join(
+        event["data"].get("content", "")
+        for event in events
+        if event["event"] == "delta"
+    )
+    assert "which of these" in text.casefold()
+    assert "by the water" in text
+    assert "night street" in text
+
+
+class _StubSource:
+    """Offer a fixed candidate list in place of a semantic index."""
+
+    kind = "image"
+
+    def __init__(self, referents) -> None:
+        self.referents = referents
+
+    async def candidates(self, user_id, reference, query_embedding):
+        return list(self.referents)
 
 
 @pytest.mark.parametrize(

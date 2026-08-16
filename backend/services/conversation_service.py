@@ -60,12 +60,20 @@ from backend.services.main_action_selector import (
 )
 from backend.services.mcp_tool_orchestration_service import MCPToolOrchestrationService
 from backend.services.presentation_job_service import PresentationJobService
+from backend.services.referent_resolution import (
+    Referent,
+    ReferentResolution,
+    ReferentResolver,
+)
+from backend.services.referent_sources import ImageReferentSource
 
 logger = logging.getLogger(__name__)
 
 # Snippet length shown beneath each cited source in the interface.
 _SNIPPET_CHARS = 240
 _IMAGE_DESCRIPTION_CHARS = 500
+# Long enough to identify a picture in a sentence, short enough to stay a label.
+_REFERENT_LABEL_CHARS = 90
 
 # Extracted page text arrives with Markdown headings, emphasis and list markers.
 # A citation is displayed as plain prose, so the syntax is stripped rather than
@@ -168,6 +176,35 @@ def _image_aware_search_query(
     return f"{subject}. Referenced image description: {description}"
 
 
+# Name one resolved referent the way a person would refer to it, preferring
+# what it is over what it is called: an artifact's stored title is often
+# "Edited image", which identifies nothing.
+def _referent_label(referent: Referent) -> str:
+    description = " ".join(str(referent.description or "").split())
+    if description:
+        trimmed = description[:_REFERENT_LABEL_CHARS].rstrip(" .,;:")
+        if len(description) > _REFERENT_LABEL_CHARS:
+            trimmed = trimmed.rsplit(" ", 1)[0]
+        return trimmed
+    title = str(referent.title or "").strip()
+    return title or "the picture you saved"
+
+
+# Say which picture is being changed, before changing it.
+def _editing_announcement(referent: Referent) -> str:
+    return f"Editing {_referent_label(referent)} -\n\n"
+
+
+# Ask which of several equally plausible pictures was meant.
+def _which_one_question(matched: tuple[Referent, ...]) -> str:
+    options = "\n".join(f"- {_referent_label(item)}" for item in matched)
+    return (
+        "I found more than one picture that could be the one you mean:\n\n"
+        f"{options}\n\n"
+        "Which of these should I change?"
+    )
+
+
 # Describe the pending save in one short line for the prompt. Only the value the
 # user themselves stated is echoed, so nothing new is disclosed to the model.
 def _proposal_summary(proposal: dict[str, Any]) -> str:
@@ -218,6 +255,7 @@ class ConversationService:
         memory_proposals: MemoryProposalAgent | None = None,
         visual_memory: VisualMemorySelector | None = None,
         agent_memory: AgentMemoryManager | None = None,
+        referent_resolver: ReferentResolver | None = None,
     ):
         self.memory = memory
         self.assistant_graph = build_assistant_graph(llm)
@@ -258,6 +296,15 @@ class ConversationService:
         self.memory_proposals = memory_proposals
         self.visual_memory = visual_memory
         self.agent_memory = agent_memory
+        self.referent_resolver = referent_resolver
+        # Built here rather than injected: it is a thin adapter over the two
+        # dependencies this service already holds, and the resolver it feeds is
+        # deliberately ignorant of what kind of thing it is choosing between.
+        self.image_referents = (
+            ImageReferentSource(memory, self.image_artifacts)
+            if referent_resolver is not None
+            else None
+        )
         # One saver per proposal kind, so persisting a batch is a lookup and a
         # call rather than a branch per kind - see `_persist_memory_proposals`.
         self._memory_proposal_savers: dict[
@@ -521,9 +568,15 @@ class ConversationService:
         trace_id: str,
         metadata: dict[str, Any],
         history: list[dict[str, Any]],
+        # Named ahead of the work when the target was resolved rather than
+        # selected. Streamed first and kept in the persisted turn, so history
+        # records which picture was chosen and not merely that one was.
+        lead_in: str = "",
     ) -> AsyncGenerator[ChatStreamEvent, None]:
         if self.image_refinement is None:
             raise RuntimeError("Image refinement is not configured")
+        if lead_in:
+            yield {"event": "delta", "data": {"content": lead_in}}
         pending: dict[str, Any] = {}
         ready = asyncio.Event()
 
@@ -592,7 +645,7 @@ class ConversationService:
             user_id,
             conversation_id,
             query,
-            response_text,
+            f"{lead_in}{response_text}",
             trace_id,
             history,
             {**metadata, "artifact_ids": [str(artifact["id"])]},
@@ -601,10 +654,14 @@ class ConversationService:
         yield {"event": "artifact_ready", "data": artifact}
         yield {"event": "done", "data": {}}
 
-    # Route an edit-image decision to the real edit, or explain that nothing
-    # is in view to apply it to - a check only the application can make, since
-    # the model that chose this action has no way to know whether the
-    # interface actually has a picture selected.
+    # Route an edit-image decision to the real edit, resolving which picture
+    # the user meant when the interface has none selected.
+    #
+    # An explicit selection is an override and still wins outright. Without
+    # one this used to dead-end, telling the user to go click something -
+    # answering a conversational request by sending them back to the
+    # interface. It now resolves the reference the same way recall does, and
+    # asks when it genuinely cannot tell.
     async def _dispatch_edit_image_action(
         self,
         user_id: str,
@@ -629,13 +686,68 @@ class ConversationService:
             ):
                 yield event
             return
+
+        resolution = await self._resolve_edit_target(user_id, action.instruction)
+        target = resolution.only
+        if target is not None:
+            # Naming what it chose is what makes choosing acceptable at all: a
+            # wrong guess is visible in the same breath and costs one
+            # generation, never the original, since an edit is an immutable
+            # child of the picture it came from.
+            async for event in self._process_image_edit(
+                user_id,
+                query,
+                target.handle,
+                action.instruction,
+                conversation_id,
+                trace_id,
+                metadata,
+                history,
+                lead_in=_editing_announcement(target),
+            ):
+                yield event
+            return
+
         async for event in self._process_missing_edit_target(
-            user_id, query, conversation_id, trace_id, metadata, history
+            user_id,
+            query,
+            conversation_id,
+            trace_id,
+            metadata,
+            history,
+            resolution,
         ):
             yield event
 
-    # Tell the user plainly that an edit has nothing to apply to, rather than
-    # answering the message as if it never mentioned a picture at all.
+    # Work out which owned picture an edit instruction is pointing at.
+    #
+    # Costs nothing on the ordinary path: it runs only when an edit arrived
+    # with no explicit selection, which is exactly the case that used to fail.
+    # A resolver failure degrades to "nothing matched", which asks rather than
+    # edits the wrong picture.
+    async def _resolve_edit_target(
+        self,
+        user_id: str,
+        instruction: str,
+    ) -> ReferentResolution:
+        if self.referent_resolver is None or self.image_referents is None:
+            return ReferentResolution(matched=())
+        try:
+            candidates = await self.image_referents.candidates(
+                user_id, instruction, None
+            )
+            return await self.referent_resolver.resolve(instruction, candidates)
+        except Exception:
+            logger.warning("Edit-target resolution failed", exc_info=True)
+            return ReferentResolution(matched=())
+
+    # Ask which picture was meant, or say plainly that there is none.
+    #
+    # Both are questions the conversation can carry: the next turn's routing
+    # sees this exchange in its history, so "the beach one" resolves without
+    # any pending-state machine. When several matched they are streamed as
+    # image matches too, so the interface offers the actual pictures to choose
+    # between rather than a sentence describing them.
     async def _process_missing_edit_target(
         self,
         user_id: str,
@@ -644,12 +756,22 @@ class ConversationService:
         trace_id: str,
         metadata: dict[str, Any],
         history: list[dict[str, Any]],
+        resolution: ReferentResolution | None = None,
     ) -> AsyncGenerator[ChatStreamEvent, None]:
-        response_text = (
-            "I don't see a picture in view to edit. Select the one you want "
-            'changed - click "Ask or edit" on it, or ask me to show it again '
-            "- and I'll make the change from there."
-        )
+        matched = resolution.matched if resolution is not None else ()
+        artifact_ids: list[str] = []
+        if matched:
+            response_text = _which_one_question(matched)
+            artifact_ids = [item.handle for item in matched]
+            shown = await self._load_referent_artifacts(user_id, artifact_ids)
+            if shown:
+                yield {"event": "image_matches", "data": {"matches": shown}}
+        else:
+            response_text = (
+                "I don't have a picture of yours that matches what you're "
+                "describing. Upload one, or tell me more about which picture "
+                "you mean and I'll find it."
+            )
         await self._persist_completed_turn(
             user_id,
             conversation_id,
@@ -657,10 +779,29 @@ class ConversationService:
             response_text,
             trace_id,
             history,
-            metadata,
+            {**metadata, "artifact_ids": artifact_ids} if artifact_ids else metadata,
         )
         yield {"event": "delta", "data": {"content": response_text}}
         yield {"event": "done", "data": {}}
+
+    # Load the owned artifact rows behind resolved handles, for display.
+    async def _load_referent_artifacts(
+        self,
+        user_id: str,
+        handles: list[str],
+    ) -> list[dict[str, Any]]:
+        if self.image_artifacts is None:
+            return []
+        found: list[dict[str, Any]] = []
+        for handle in handles:
+            try:
+                artifact = await self.image_artifacts.get_owned(user_id, handle)
+            except Exception:
+                logger.warning("Referent artifact unavailable", exc_info=True)
+                continue
+            if artifact is not None and artifact.get("status") == "ready":
+                found.append(artifact)
+        return found
 
     # Select and execute at most one safe MCP tool while streaming its lifecycle.
     async def _stream_tool_context(
