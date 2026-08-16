@@ -905,3 +905,26 @@ Hardware inventory and access are documented in
     now a production dependency, not just an eval target; `vllm-nemotron`
     is stopped and does not restart itself (`unless-stopped` respects an
     explicit `docker stop`).
+
+- `DONE` (2026-08-14): made the Spark's being off survivable, after it took the
+  whole assistant down. `FallbackInferenceProvider` serves main-role work from
+  `MAIN_LLM_STANDBY_*` (Qwen on `vllm-main`) when the primary host is
+  unreachable, on transport errors only, and switches `stream_chat` only before
+  its first token so a half-written reply is never continued by a second model.
+  Verified against the real outage, with the Spark genuinely powered off.
+  Its `@reboot` autostart was then verified against a genuine power cycle for
+  the first time: `ds4-server` up within a minute of boot, bound `0.0.0.0`, and
+  traffic back on DeepSeek with no intervention.
+- `PLANNED`: reclaim ~34 GB by restarting `ds4-server` at `-c 131072`. The
+  1M-token context costs 13.17 GiB of KV cache plus 20.80 GiB of context
+  buffers; nothing in AniOS approaches that length, and the server itself warns
+  that a managed KV cache at this size "may degrade performance" while forcing
+  the batch planner from 32 sequences down to 12. Reversible in one command,
+  worth doing on its own merits, and the precondition for any Spark-only
+  migration.
+- `OPEN`: `test_search_routing_quality_meets_the_retired_cascades_floor` fails
+  at 0.8276 recall against its 0.85 floor, measured 2026-08-14 against Qwen.
+  Pre-existing and unrelated to the model promotion - but worth recording that
+  DeepSeek scored 0.8519 on the same set, so the model kept for routing is
+  currently the weaker of the two at it, and is kept for latency rather than
+  accuracy.

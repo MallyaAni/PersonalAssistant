@@ -56,7 +56,7 @@ AniOS currently has a modular FastAPI backend rather than independently deployed
 
 The `frontend` container bind-mounts `./frontend` and runs Vite with polling so hot reload works across the Docker mount; its browser page still calls the backend at `localhost:8000`. The backend image has no source bind mount and does not use reload mode, so backend source changes require an image rebuild for container validation; a host-source Uvicorn run remains supported for backend development and must not share port `8000` with the Compose backend.
 
-vLLM is part of the default Compose runtime. The pinned `vllm-main` service exposes `Qwen/Qwen3.5-4B` as `qwen/qwen3.5-4b` at host port `8003`; the pinned `vllm-embedding` service exposes `nomic-ai/nomic-embed-text-v1.5` as `text-embedding-nomic-embed-text-v1.5` at port `8004`. Main, presentation, diagram, and vision roles currently share Qwen, while text retrieval uses Nomic; role settings remain independent and the legacy `LLM_MODEL` remains a fallback. The qualified single-RTX-5080 profile quantizes Qwen to FP8 on load with an FP8 KV cache, and explicitly selects a 16,384-token context, four generation sequences, a 4,096-token scheduler budget, V1 chunked prefill, asynchronous scheduling, and prefix caching; Nomic uses a 2,048-token context and sixteen sequences. FP8 halves resident weights from 8.61 GiB to 5.09 GiB, which is what allows the doubled context to fit alongside host ComfyUI: measured free GPU memory with both services resident rose from 1,860 MiB to 6,588 MiB, and cached tokens rose from 45,428 to 64,046. Prefix caching produced real hits and passed the role suite, but vLLM 0.23 labels its Qwen hybrid-GDN/Mamba `align` support experimental, so it is a bounded local-profile choice rather than an inherited multi-tenant default. Compose starts Qwen to health before Nomic because concurrent cold GPU initialization left no KV-cache blocks during acceptance. The one-command startup preserves that order, warms one constant non-sensitive generation and embedding request to pay deferred JIT costs, and starts host ComfyUI afterward. ComfyUI remains available as the opt-in Compose profile or the lighter host install at `COMFYUI_HOST_PATH` (default `E:/AI/ComfyUI`); the container backend reaches the host process at `http://host.docker.internal:8188`. Generated and uploaded bytes live below the configurable opaque local artifact root; Compose mounts `/app/data/artifacts` from the `artifactdata` volume.
+vLLM is part of the default Compose runtime. The pinned `vllm-main` service exposes `Qwen/Qwen3.5-4B` as `qwen/qwen3.5-4b` at host port `8003`; the pinned `vllm-embedding` service exposes `nomic-ai/nomic-embed-text-v1.5` as `text-embedding-nomic-embed-text-v1.5` at port `8004`. Roles no longer share one model: the conversational role runs on DeepSeek-V4-Flash on the DGX Spark while every other role stays on Qwen, as mapped in [Which model answers what](#which-model-answers-what) below. Role settings remain independent and the legacy `LLM_MODEL` remains a fallback. The qualified single-RTX-5080 profile quantizes Qwen to FP8 on load with an FP8 KV cache, and explicitly selects a 16,384-token context, four generation sequences, a 4,096-token scheduler budget, V1 chunked prefill, asynchronous scheduling, and prefix caching; Nomic uses a 2,048-token context and sixteen sequences. FP8 halves resident weights from 8.61 GiB to 5.09 GiB, which is what allows the doubled context to fit alongside host ComfyUI: measured free GPU memory with both services resident rose from 1,860 MiB to 6,588 MiB, and cached tokens rose from 45,428 to 64,046. Prefix caching produced real hits and passed the role suite, but vLLM 0.23 labels its Qwen hybrid-GDN/Mamba `align` support experimental, so it is a bounded local-profile choice rather than an inherited multi-tenant default. Compose starts Qwen to health before Nomic because concurrent cold GPU initialization left no KV-cache blocks during acceptance. The one-command startup preserves that order, warms one constant non-sensitive generation and embedding request to pay deferred JIT costs, and starts host ComfyUI afterward. ComfyUI remains available as the opt-in Compose profile or the lighter host install at `COMFYUI_HOST_PATH` (default `E:/AI/ComfyUI`); the container backend reaches the host process at `http://host.docker.internal:8188`. Generated and uploaded bytes live below the configurable opaque local artifact root; Compose mounts `/app/data/artifacts` from the `artifactdata` volume.
 
 ### Model calls per stage
 
@@ -522,6 +522,51 @@ artifact or deck metadata, never binary image/PPTX data or private storage keys.
 is classified `untrusted`, so calls require explicit confirmation and are not
 offered to ordinary autonomous chat selection until a browser
 proposal/approval/resume lifecycle exists.
+
+## Which model answers what
+
+Roles are wired independently in `docker-compose.yml`'s `backend` service and
+resolved by the `get_*_llm_client()` functions in `backend/core/dependencies.py`.
+Nothing infers a model from context: each caller asks for a named role, so
+changing one role never silently moves another.
+
+| Role | Setting prefix | Model today | What calls it |
+| --- | --- | --- | --- |
+| Conversational | `MAIN_LLM_*` | DeepSeek-V4-Flash on the Spark (`spark-b524.local:8888`) | `build_assistant_graph` replies, `ConversationService`, visual reasoning, MCP tool orchestration, image style, Scout digests and place suggestions |
+| Standby for the above | `MAIN_LLM_STANDBY_*` | Qwen (`vllm-main`) | Any main-role call, but only when the Spark is unreachable |
+| Routing / tool-calling | `ROUTING_LLM_*` | Qwen (`vllm-main`) | `MainActionSelector`, `ImageIntentClassifier`, the `VisualSearchGrounding` search decision |
+| Vision | `VISION_*` | Qwen (`vllm-main`, vision tower) | Canonical image observation and question-specific answers |
+| Presentation | `PRESENTATION_LLM_*` | Qwen (`vllm-main`) | Deck outline planning |
+| Diagram | `DIAGRAM_LLM_*` | Qwen (`vllm-main`) | Diagram source generation |
+| Memory proposal | `MEMORY_PROPOSAL_LLM_*` | Qwen (`vllm-main`) | Classifying what a turn is worth remembering |
+| Text embedding | `EMBEDDING_*` | Nomic (`vllm-embedding`) | Semantic memory and retrieval vectors |
+
+Each role falls back through the next-broader scope when unset
+(`ROUTING_LLM_* -> MAIN_LLM_* -> LLM_*`), so an unset role inherits rather than
+failing. That inheritance is why `ROUTING_LLM_*` is pinned explicitly rather
+than left blank: unset, tool-calling would have followed the conversational
+role onto DeepSeek.
+
+**Why the split is shaped this way.** DeepSeek answers conversationally because
+a blind six-prompt read put it ahead of both Qwen and Nemotron with no failures
+(2026-08-14; full evidence in `ROADMAP.md` Milestone 9). Everything else stayed
+on Qwen for reasons measured rather than assumed:
+
+- **Vision cannot move.** The DeepSeek build is text-only and cannot read pixels
+  at all. This alone keeps a second model resident.
+- **Strict JSON breaks on DeepSeek.** It returned unparseable output for every
+  16-token intent classification, and `extra_forbidden` field names for deck
+  schemas. Both were live defects, not hypotheticals.
+- **Routing stays on Qwen for latency, not accuracy.** DeepSeek actually scored
+  better on the routing benchmark (0.8519 against Qwen's 0.8276 on 2026-08-14).
+  But the routing call gates every turn, and Qwen returns in about a second
+  where DeepSeek adds five to ten before anything begins.
+
+An image question therefore touches three roles in order: vision describes the
+pixels, routing decides whether the question needs a web search, and the
+conversational model reasons over what the first two produced. Only the vision
+step blocks the HTTP response; the rest runs after it, per
+[the deferred reasoning path](#backend-boundaries).
 
 ## Backend boundaries
 
