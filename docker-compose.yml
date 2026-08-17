@@ -200,6 +200,10 @@ services:
       - VISION_LLM_BASE_URL=http://vllm-main:8000
       - VISION_MODEL=qwen/qwen3.5-4b
       - VISION_LLM_REASONING_EFFORT=${VISION_LLM_REASONING_EFFORT:-none}
+      # Not previously passed at all, so the one number that decides whether
+      # an upload's structured inspection fits could not be changed without
+      # a rebuild.
+      - VISION_MAX_TOKENS=${VISION_MAX_TOKENS:-1536}
       - VISION_ESCALATION_LLM_BASE_URL=${VISION_ESCALATION_LLM_BASE_URL:-}
       - VISION_ESCALATION_MODEL=${VISION_ESCALATION_MODEL:-}
       - VISION_ESCALATION_LLM_REASONING_EFFORT=${VISION_ESCALATION_LLM_REASONING_EFFORT:-none}
@@ -563,6 +567,10 @@ services:
       - VISION_LLM_BASE_URL=http://vllm-main:8000
       - VISION_MODEL=qwen/qwen3.5-4b
       - VISION_LLM_REASONING_EFFORT=${VISION_LLM_REASONING_EFFORT:-none}
+      # Not previously passed at all, so the one number that decides whether
+      # an upload's structured inspection fits could not be changed without
+      # a rebuild.
+      - VISION_MAX_TOKENS=${VISION_MAX_TOKENS:-1536}
       - VISION_ESCALATION_LLM_BASE_URL=${VISION_ESCALATION_LLM_BASE_URL:-}
       - VISION_ESCALATION_MODEL=${VISION_ESCALATION_MODEL:-}
       - VISION_ESCALATION_LLM_REASONING_EFFORT=${VISION_ESCALATION_LLM_REASONING_EFFORT:-none}

@@ -317,7 +317,14 @@ class Settings(BaseSettings):
     VISION_LLM_REASONING_EFFORT: Literal[
         "none", "minimal", "low", "medium", "high", "xhigh"
     ] = "none"
-    VISION_MAX_TOKENS: int = Field(default=512, ge=32, le=4096)
+    # Sized from measurement, not habit. This budget used to carry one
+    # description; it now carries a single-pass inspection - observation,
+    # the user's answer, grounding, a search query and any identifications -
+    # and the responsibility grew without the ceiling moving. Two real
+    # photographs came back at 488 completion tokens against the old 512, so
+    # an ordinary upload sat 24 tokens from truncated JSON, which fails the
+    # strict schema and answers a valid upload with a 502.
+    VISION_MAX_TOKENS: int = Field(default=1536, ge=32, le=4096)
     # Optional stronger VLM used once only when the primary sees diagnostic
     # evidence but cannot interpret it. Missing pixels and safety-sensitive
     # identification never spend this fallback.
