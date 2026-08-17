@@ -132,6 +132,15 @@ def _visible_evidence(items: list[dict[str, Any]] | tuple[Any, ...]) -> str:
     return "; ".join(seen)
 
 
+# Render one stored locality as a short phrase for the reasoning prompt.
+def _describe_locality(locality: Any) -> str:
+    label = str(getattr(locality, "label", "") or "").strip()
+    region = str(getattr(locality, "region", "") or "").strip()
+    if not label:
+        return ""
+    return f"{label}, {region}" if region else label
+
+
 # Give a specialist the unresolved task while preserving confirmed primary items.
 def _specialist_question(
     prompt: str,
@@ -173,6 +182,10 @@ class VisionAnalysisService:
         reasoning_max_tokens: int = 1024,
         grounding: VisualSearchGrounding | None = None,
         escalation_provider: VisionProvider | None = None,
+        # Reads the user's own stated home locality, which is a strong prior
+        # for identifying anything regional. Optional: without it the answer
+        # is exactly what it was, and a failure here never costs the answer.
+        profile: Any | None = None,
     ) -> None:
         self.images = images
         self.repository = repository
@@ -190,6 +203,7 @@ class VisionAnalysisService:
         # still not named.
         self.grounding = grounding
         self.escalation_provider = escalation_provider
+        self.profile = profile
 
     # Index one image's description so images become semantically retrievable.
     # Only `content` reaches the assistant prompt, so it must name its own
@@ -247,6 +261,7 @@ class VisionAnalysisService:
         grounding_decided: bool = False,
         search_query: str = "",
         candidates: list[dict[str, str]] | None = None,
+        stated_locality: str = "",
     ) -> tuple[str, bool]:
         if self.reasoner is None or not question.strip():
             return direct_answer, False
@@ -262,6 +277,7 @@ class VisionAnalysisService:
             observation,
             search_results,
             candidates,
+            stated_locality,
         )
         try:
             result = await asyncio.to_thread(
@@ -282,6 +298,33 @@ class VisionAnalysisService:
 
     # Obtain one upload result, retaining a one-call compatibility path for
     # older custom providers that only implement plain image analysis.
+    # Describe where the user has said they live, or nothing at all.
+    #
+    # Their own stated locality, never a guess. It weights which regionally
+    # common candidates to consider first, which is most of the distance
+    # between "some silvery fish" and a name - the same pixels are a different
+    # shortlist in Mumbai and in Maine. It says nothing about who they are, and
+    # the reasoning prompt is explicit that it must not be read that way.
+    async def _stated_locality(self, user_id: str) -> str:
+        if self.profile is None:
+            return ""
+        try:
+            profile = await self.profile.get_profile(user_id)
+        except Exception:
+            logger.warning("Locality unavailable for visual reasoning", exc_info=True)
+            return ""
+        localities = getattr(profile, "localities", ()) or ()
+        for locality in localities:
+            if getattr(locality, "is_primary", False):
+                described = _describe_locality(locality)
+                if described:
+                    return described
+        for locality in localities:
+            described = _describe_locality(locality)
+            if described:
+                return described
+        return ""
+
     async def _inspect_upload(
         self,
         question: str,
@@ -424,6 +467,7 @@ class VisionAnalysisService:
                     }
                     for item in inspection.identified_items
                 ],
+                stated_locality=await self._stated_locality(user_id),
             )
             if reasoned:
                 answer_model = (
@@ -530,6 +574,7 @@ class VisionAnalysisService:
                 for item in (metadata.get("analysis_identified_items") or [])
                 if isinstance(item, dict)
             ],
+            stated_locality=await self._stated_locality(user_id),
         )
         if not reasoned:
             return False

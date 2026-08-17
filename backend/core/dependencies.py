@@ -884,6 +884,7 @@ def get_vision_analysis_service(
     memory: MemoryDependency,
     llm: LlmDependency,
     routing_llm: RoutingLlmDependency,
+    db: DbDependency,
 ) -> VisionAnalysisService:
     return VisionAnalysisService(
         images,
@@ -914,6 +915,11 @@ def get_vision_analysis_service(
             else None
         ),
         escalation_provider=get_vision_escalation_provider(),
+        # The user's own stated home locality, which narrows which regionally
+        # common candidates to weigh first when identifying something. Built
+        # from the session rather than taking the request-scoped alias, which
+        # is declared further down this module than this factory.
+        profile=DiscoveryProfileService(DiscoveryProfileRepository(db)),
     )
 
 
@@ -946,6 +952,10 @@ def build_deferred_vision_service(db: AsyncSession) -> VisionAnalysisService:
             if settings.VISION_SEARCH_GROUNDING_ENABLED
             else None
         ),
+        # The user's own stated home locality, which is a strong prior for
+        # identifying anything regional. Built from this task's own session
+        # rather than injected, like everything else this service is given here.
+        profile=DiscoveryProfileService(DiscoveryProfileRepository(db)),
     )
 
 

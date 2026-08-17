@@ -160,17 +160,62 @@ async def test_reasoning_rejects_unsupported_species_candidates() -> None:
         pytest.skip(f"main model unreachable: {type(exc).__name__}")
 
     answer = str(result.get("content") or "").lower()
-    assert any(
-        phrase in answer
-        for phrase in (
-            "cannot identify",
-            "can't identify",
-            "cannot determine",
-            "can't determine",
-            "not possible to identify",
-        )
-    )
+    # Asserted as the property rather than one phrasing of it: the answer must
+    # say the identification cannot be made. Pinned to "cannot determine" it
+    # failed three runs in four on "the fish species cannot be determined",
+    # which is the behaviour this test exists to require.
+    assert "cannot" in answer or "can't" in answer or "not possible" in answer
+    assert any(word in answer for word in ("determin", "identif", "confirm", "tell"))
+    # The guarantee that actually matters, and the one hedging must not erode:
+    # with no candidate offered by the vision pass, no species may be supplied
+    # from world knowledge however strongly the question suggests a region.
     assert not any(
         candidate in answer
         for candidate in ("rohu", "catla", "indian eel", "snakehead", "hilsa")
     )
+
+
+# A hard identification must come back as hedged readings plus the one question
+# that would settle it, not as a refusal.
+#
+# Reported live: asked to identify fish in a photograph of prepared seafood, the
+# reply withheld every reading and offered nothing to do next, while the vision
+# pass had in fact read three of them.
+async def test_unsettled_identifications_are_offered_and_a_question_is_asked() -> None:
+    llm = get_llm_client()
+    messages = build_reasoning_messages(
+        question="identify and label the fish in this image",
+        observation=(
+            "Raw fish in containers and cut pieces on a wooden board, with "
+            "peeled shrimp in a bowl."
+        ),
+        candidates=[
+            {
+                "label": "Whole silvery fish (likely mackerel)",
+                "confidence": "low",
+                "basis": "visible silvery scales, fins and body shape",
+            },
+            {
+                "label": "Peeled shrimp",
+                "confidence": "high",
+                "basis": "whole peeled shrimp are visibly recognizable",
+            },
+        ],
+    )
+    try:
+        result = llm.chat(messages, 900)
+    except Exception as exc:  # pragma: no cover - depends on the host runtime
+        pytest.skip(f"main model unreachable: {type(exc).__name__}")
+    answer = str(result.get("content") or "")
+    lowered = answer.lower()
+
+    # The confident reading survives, and so does the hedged one.
+    assert "shrimp" in lowered
+    assert "mackerel" in lowered
+    # Hedged, never asserted as settled.
+    assert any(
+        word in lowered
+        for word in ("low confidence", "likely", "not certain", "uncertain", "possibly")
+    )
+    # And it asks for what would actually narrow it.
+    assert "?" in answer
