@@ -138,7 +138,13 @@ _CREATE_DIAGRAM = BuiltinTool(
     label="Diagrams",
     description=(
         "Draft a technical diagram (flowchart, architecture, sequence, state, "
-        "class, or entity-relationship)."
+        "class, or entity-relationship). Choose this over drawing a picture "
+        "whenever the thing asked for is a diagram of how something works or "
+        "is structured - an architecture, a pipeline, a data flow, a process, "
+        "a system - however the request is worded, including \"create an "
+        "image of\", \"draw\", or a setting like a whiteboard or slide. Those "
+        "need readable labels, which a diagram renders as real text and a "
+        "generated picture can only imitate."
     ),
     schema=_EMPTY_SCHEMA,
 )
@@ -189,9 +195,19 @@ _SYSTEM = (
     "Call edit_image only when the user wants a change made to the picture "
     "currently in view, describing that one change. A labelled or annotated "
     "version of the picture in view is an edit, not a brand-new image.\n\n"
-    "Call create_diagram only when the user explicitly asks for a technical "
-    "diagram: a flowchart, architecture, sequence, state, class, or "
-    "entity-relationship diagram.\n\n"
+    # "explicitly" made the wording decide instead of the subject, so "create
+    # an image of our architecture on a whiteboard" went to generate_image and
+    # came back with a diffusion model's imitation of writing. What separates
+    # these two is whether the result needs readable labels, not which noun the
+    # user happened to use.
+    "Call create_diagram when what is wanted is a diagram of how something "
+    "works or is structured - an architecture, pipeline, data flow, process, "
+    "system, sequence, state, class, or entity-relationship. Judge that by the "
+    "subject, not the noun: \"create an image of our data pipeline\", \"draw "
+    "the login flow\" and \"show me a picture of how the services connect\" "
+    "are all diagrams, whatever setting they name. A diagram renders real "
+    "text; a generated picture can only imitate writing, so anything needing "
+    "readable labels belongs here.\n\n"
     "Call delegate_to_presentation_agent only when the user explicitly asks "
     "to create a slide deck or presentation.\n\n"
     "None of these apply to a question about the user's own life, memory, "

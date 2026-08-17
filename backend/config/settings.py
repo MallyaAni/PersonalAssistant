@@ -180,6 +180,18 @@ class Settings(BaseSettings):
     # It also requires `--enable-sleep-mode`, `VLLM_SERVER_DEV_MODE=1`, and a KV
     # cache dtype other than fp8: an FP8 KV cache cannot be woken on vLLM 0.23.0
     # and strands the engine asleep.
+    #
+    # Retested 2026-08-17 against the current image, because generation had
+    # slowed to 88-112 s while a warm run takes 6.2 s and ComfyUI's log showed
+    # it swapping weights every job - exactly what this was built to stop. It
+    # cannot be used: with every documented precondition satisfied
+    # (`--enable-sleep-mode`, dev mode on, `--kv-cache-dtype auto`),
+    # `POST /sleep?level=1` hangs past 120 s, frees no GPU memory, and leaves
+    # EngineCore dead - every later request answers `EngineDeadError` until the
+    # container is restarted, which takes about 150 s. Reproduced twice.
+    # So the slow generations are not a missing handoff; do not turn this on
+    # hoping to recover them. The card genuinely holding both runtimes at once
+    # is the only fix available here.
     GPU_HANDOFF_ENABLED: bool = False
 
     # Ambient discovery egress. This is the first path in AniOS that reaches a
