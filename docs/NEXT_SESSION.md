@@ -7,14 +7,67 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 
 Last updated: 2026-08-17, America/New_York
 
+## START HERE: build the model-migration gate — NOT STARTED
+
+A second DGX Spark arrives this week, and three separate capabilities are
+currently capped by the same thing: bounded work running on Qwen 3.5 **4B**
+because the better model's engine cannot be trusted. Before anything is
+migrated, there needs to be a measurement that says whether a candidate model
+is actually better at these jobs. Swapping and hoping is what produced four
+of the outages recorded below.
+
+Two labelled sets, in the shape `backend/vision/grounding_cases.py` and
+`python -m backend.cli.evaluate_visual_grounding` already established this
+session — cases in a production module, a CLI that scores them, floors set from
+measurement with real margin, and a fast functional gate that catches collapse
+rather than refereeing a close call:
+
+1. **A tool confusion matrix for `MainActionSelector`.** Everything that exists
+   today asks a *binary* question about one tool (search vs no-search, does
+   `edit_image` fire). Nothing measures which tool gets chosen among all of
+   them, and that is where the failures actually are: agent-setup phrasings
+   reached `search_web`, the presentation agent and `edit_image`; a request for
+   a labelled architecture diagram reached `generate_image`. Report the matrix,
+   not an aggregate — the useful output is *what gets mistaken for what*.
+2. **An extraction set for `MemoryProposalAgent`.** Measured this session:
+   "I'm in Raleigh, NC and I'm into bachata, live music, and food festivals"
+   extracts 4/4; the identical sentence naming **Durham** extracts **0/4**;
+   "Boise, Idaho" 3/3. An imperative prefix ("Set up that scheduled roundup for
+   me. I'm in Durham…") also suppresses it. Deterministic at temperature 0 and
+   unchanged by the prompt, so this is model capacity, not wording.
+
+Both then become the acceptance test for `MAIN_LLM_STRUCTURED_OUTPUT` (below):
+flip it against a schema-enforcing engine and re-run, rather than promoting a
+model and waiting for a user to find the regression.
+
+### State this picks up from
+
+Everything below is verified and deployed unless labelled otherwise. Chat runs
+on DeepSeek (Spark); routing, vision, memory extraction and every strict-JSON
+caller run on Qwen (RTX 5080) for the reason in the capability entry. Image
+generation and editing are both FLUX.2 Klein. Scout's interests, locality and
+cadence are all collectable in conversation; delivery deliberately is not.
+
 ## One-call upload inspection with selective specialist escalation — VERIFIED / UNVERIFIED
 
 New image uploads now use one strict structured Qwen inspection for routing,
 durable observation, immediate answer, evidence sufficiency, grounding value,
 and stronger-reasoning need. Identification confidence is per visible item,
-not per image: high-confidence observations can be shown and indexed, medium
-items are explicitly unconfirmed, and low-confidence guesses are hidden.
-Safety-sensitive identification remains strict.
+not per image: high-confidence observations can be shown and indexed, and
+medium items are explicitly unconfirmed.
+
+**Superseded since:** low-confidence guesses are no longer hidden. Hiding them
+turned a partial identification into an apparent failure — asked to identify
+fish, all three readings came back `low`, every one was dropped, and the reply
+was "I can't reliably identify the exact name from this image" while the pass
+had in fact read one of them correctly. They now appear under an explicit
+"best guess only" heading, reach the reasoning pass with their confidences,
+and the reasoning prompt requires every candidate reported at its stated
+confidence, most confident first. Durable memory still withholds every
+unconfirmed name, and safety-sensitive identification still refuses outright.
+An unsettled identification also now ends by asking the one question that
+would narrow it, and grounds a search from the recorded `basis` strings, which
+cite visible evidence and name nothing.
 
 `model_uncertain` can make exactly one retry through the independently
 configured `VISION_ESCALATION_*` OpenAI-compatible role. Missing pixels and
@@ -36,19 +89,157 @@ composer re-enabled and emptied, and Console/page errors were empty. Focused
 backend focused tests pass 61/61; two real prompt functional cases pass; the frontend
 build passes.
 
-## START HERE: one task queued — NOT STARTED
+## Scout is now set up from conversation; delivery deliberately is not — VERIFIED
 
-### Make agent setup something the conversation can actually do
+The remaining queued task from the previous handoff is done. A stated run
+frequency is a `discovery_schedule` proposal with its own saver, taking the
+timezone from the user's own locality rather than asking a model to infer one.
+Interests, locality and cadence are all collectable in chat, including when
+the user asks to *change* one that already exists — the classifier previously
+read "can you change it to 9:25pm" as a question and captured nothing.
 
-The assistant can describe Scout's setup needs but cannot yet collect and
-apply them across a conversation. Use `AgentSummary.setup_needs` as the
-agent-owned semantic contract, let the model decide what is still missing from
-the conversation, and write through `DiscoveryProfileService`. Do not build a
-regex form. A real multi-turn functional test must prove that the profile was
-actually stored.
+`ScheduleDecision.minute` exists because "9:25pm" would otherwise have stored
+21:00, and `weekday` is required with no default because a default made the
+model skip it and land every weekly schedule on Monday.
 
-One pre-existing uncommitted prompt hardening remains in
-`backend/agents/vision/memory.py`; preserve it and keep its changes separable.
+**Delivery is not auto-saved, on purpose.** `SECURITY.md` enumerates the kinds
+that persist without approval and subscribers are not among them; enrollment
+is `consented=False` behind an operator step. The reply says so and links to
+`[Scout setup](#agents)`. Workspace views now follow the URL hash, so that
+link opens the panel — the app had no routing at all before, and a reported
+"the link never worked" was a browser tab loaded before the gateway rebuild.
+
+The agent roster carries each agent's live `status`, `detail` and `facts`, and
+prerequisites are rendered **only** while the agent reports `needs_setup` —
+listed unconditionally they read as a to-do list, and an account whose own
+line said `Interests 7, Subscribers 1, scheduled` was asked for all three
+again. The prompt now also states the converse rule: a count above zero means
+that part is done, so do not ask for it.
+
+Verified live against the real account: "can you change the schedule to
+10:40pm everyday?" saves `daily 22:40 America/New_York` and answers "The Scout
+schedule is now set to run every day at 10:40 PM", with no search and no
+images.
+
+## Image generation is fully FLUX, and ComfyUI restarts itself — VERIFIED
+
+The half-applied HiDream→FLUX swap did not run at all: `ComfyUIImageProvider`
+assigned `self.negative_prompt` from a parameter the same change had removed,
+so every construction raised `NameError`. One FLUX.2 Klein checkpoint now
+serves generation and editing, loaded through
+`UNETLoader`/`CLIPLoader(flux2)`/`VAELoader` — `CheckpointLoaderSimple` does
+not list it.
+
+The configuration chain was inconsistent with the code in three places, all
+now fixed: `.env` still pinned `IMAGE_MODEL` to HiDream and pydantic reads
+`.env` directly, so that value won on the host and in tests; `docker-compose`
+passed three retired `IMAGE_EDIT_*` keys and none of the new ones; and
+`presentation-worker` received no image-model setting at all despite creating
+slide imagery through the same provider.
+
+`comfyui` was the only service in the stack with **no restart policy** — which
+is exactly how it behaved, the whole stack returning after a reboot and image
+generation alone not. It now has `restart: unless-stopped` plus a healthcheck
+against `/system_stats` rather than `/`, because a dead CUDA context still
+answers `/` with 200. The probe uses `python3`/`urllib`: that image ships
+neither `curl` nor `wget`.
+
+Also: `VISION_MAX_TOKENS` was 512 while a real photograph's structured
+inspection measured 488 completion tokens — 24 tokens from truncated JSON,
+which fails the schema and answers a valid upload with a 502. Now 1536, and in
+the environment allowlist, which it was not.
+
+## Referents resolve semantically, across modalities — VERIFIED
+
+An edit with nothing selected used to dead-end by telling the user to go click
+something. `Referent`/`ReferentResolver`/`ReferentSource` now decide which
+owned thing a message points at; one confident match is edited and **named**
+in the reply, several become a question with the actual thumbnails, none says
+so plainly. Nothing in the resolver knows what an image is — proved by wiring
+two sources (visual observations and the `knowledge_chunks` HNSW index) and a
+functional test where a document and two pictures compete and the document
+wins on meaning. Video is a third source file, not a rewrite.
+
+## The GPU handoff cannot be used on this runtime — VERIFIED
+
+**Do not enable `GPU_HANDOFF_ENABLED` hoping to fix slow image generation.**
+Generation takes 88–112 s while a *warm* run takes 6.2 s, and ComfyUI's log
+shows it swapping weights every job (`Requested to load Flux2` /
+`Unloaded partially: 4555 MB freed`) because it cannot hold the UNet, text
+encoder and VAE beside resident vLLM on a 16 GB card. That is exactly the
+problem this setting was built for, and it does not work here.
+
+With every documented precondition satisfied — `--enable-sleep-mode`,
+`VLLM_SERVER_DEV_MODE=1`, and `--kv-cache-dtype auto`, so the known FP8-KV
+wake bug does not apply — `POST /sleep?level=1` hangs past 120 s, frees no GPU
+memory, and leaves `EngineCore` dead. Every later request answers
+`EngineDeadError` until `docker restart anios_vllm_main`, which takes about
+150 s. Reproduced twice, service restored both times.
+
+So the slow generations are not a missing handoff. The only fix available is
+the card genuinely not holding both runtimes: **when the second Spark lands,
+move Qwen to it and leave ComfyUI the whole 5080.** Do not move ComfyUI to a
+Spark — GB10 is ~273 GB/s against the 5080's ~960 GB/s, and diffusion is
+bandwidth-bound, so it would get slower.
+
+Also fixed here: `.env.example` shipped `VLLM_MAIN_KV_CACHE_DTYPE=fp8`, the
+exact value `docker-compose.yml` documents as stranding the engine asleep,
+silently overriding compose's own `auto` default for anyone who copied it.
+
+## One engine property explains four separate outages — VERIFIED
+
+`ds4-server` accepts a JSON schema and answers in whatever shape it likes;
+vLLM enforces it. That single fact caused, and was rediscovered at, four call
+sites: the presentation revert on 2026-08-14, image recall returning nothing,
+Scout's place suggester returning an empty tuple, and memory extraction. Each
+was fixed by pinning one more caller to Qwen.
+
+Measured rather than inferred: asked to extract a locality and interests, the
+main model reads **both correctly** and emits `"locality": "Raleigh, NC"`
+where the contract requires `{label, region}`, so the answer is discarded. The
+4B model behind the fallback shapes its answer correctly and understands less.
+Better reasoning is being thrown away for want of an enforced grammar.
+
+`MAIN_LLM_STRUCTURED_OUTPUT` now names that engine property.
+`get_reasoning_llm_client()` follows the main model for prose;
+`get_structured_llm_client()` follows it only when the capability is present
+and otherwise falls back to the routing role. Memory extraction, deck
+planning, place suggestion, visual memory and referent resolution all resolve
+through it, so a schema-enforcing main model moves them **together** rather
+than one at a time. `backend/tests/test_llm_role_wiring.py` asserts the map.
+`DiscoveryRunner` also took one writer for both its prose describer and its
+schema-bound aimer and reranker; those are separate roles now.
+
+## The 4B ceiling, with numbers — VERIFIED
+
+Three capabilities are limited by model size, not by prompts. Prompt work on
+each was stopped at the three-hypothesis rule; they move when the model moves.
+
+- **Routing.** Agent-setup phrasings: 25/30 call no tool, and the residue
+  scatters across `search_web`, `edit_image` *and* `generate_image` on wording
+  that differs only by the time of day — "…to 10:40pm everyday?" scored 5/5
+  where "…to 9:25pm everyday?" scored 1/5. Diagram-shaped requests reach
+  `create_diagram` 9/12.
+- **Extraction.** Raleigh 4/4, Durham 0/4, same sentence.
+- **Vision.** Fine-grained identification from cut pieces is at the ceiling;
+  `VISION_ESCALATION_MODEL` is the designed slot for a stronger VLM and is
+  **empty**, so `model_uncertain` currently escalates nowhere.
+
+## Prompts that still asserted a retired policy — VERIFIED
+
+Three separate defects this session were a prompt stating a rule that had
+since stopped being true. Worth checking for when behaviour contradicts code:
+
+- `"Call create_diagram only when the user **explicitly** asks"` made the noun
+  decide instead of the subject, so a labelled architecture diagram went to
+  FLUX and came back with a diffusion model's imitation of writing. Judging by
+  subject took diagram-shaped requests from 3/12 to 9/12 with picture-shaped
+  unaffected at 12/12 and the search floor still passing.
+- `"do not repeat candidate names … even to call them plausible"` in the visual
+  reasoning prompt discarded readings the vision pass had actually made.
+- `"do not claim to have performed the setup yourself"` outranked the save
+  state once a cadence could really be recorded, so the assistant answered a
+  saved schedule change with "I'm not going to change the schedule myself".
 
 ## Artifact recall is gated before vector search — VERIFIED
 

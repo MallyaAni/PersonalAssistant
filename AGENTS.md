@@ -84,6 +84,25 @@ If functional validation cannot be performed, do not label the behavior verified
 Each of these has cost real time or real data here. They are recorded because
 they are not discoverable from the code alone.
 
+**`.env` beats the compose default, so raising a default may change nothing.**
+Compose writes `KEY=${KEY:-new_default}`, and a `KEY=old_value` still sitting in
+`.env` wins. Raising `VISION_MAX_TOKENS` in `settings.py` *and* in
+`docker-compose.yml` left the container reading the old 512 because `.env` also
+set it; `IMAGE_MODEL` did the same, keeping HiDream after the code moved to
+FLUX. Pydantic reads `.env` directly too, so the host and the test suite can
+disagree with the container about the same setting. Change the value in every
+place that sets it, then read it back from the running container.
+
+**A prompt outlives the policy it was written for.** Three separate defects here
+were a prompt still asserting a rule that had stopped being true: "call
+create_diagram only when the user *explicitly* asks" sent labelled architecture
+diagrams to a diffusion model that can only imitate writing; "do not repeat
+candidate names, even to call them plausible" discarded identifications the
+vision pass had actually made; "do not claim to have performed the setup
+yourself" outranked the save state once a cadence really could be recorded, so
+the assistant disowned a change it had just made. When behaviour contradicts
+what the code does, read the prompt for a sentence that used to be right.
+
 **Adding a setting means editing `docker-compose.yml`, not just `.env`.** Every
 service declares an explicit environment allowlist, so a new key in `.env`
 reaches nothing. This has silently broken a feature three separate times —
