@@ -276,8 +276,46 @@ def get_routing_llm_client() -> LLMClient:
     )
 
 
+# Reasoning that returns prose or a free-form judgement.
+#
+# Follows the main model by design: this is the work a better main model makes
+# better, and it should not need a settings change per call site to benefit.
+def get_reasoning_llm_client() -> LLMClient:
+    return get_llm_client()
+
+
+# Reasoning that must come back as strict JSON against a schema this
+# application owns.
+#
+# Also follows the main model — but only when its engine actually enforces the
+# schema it is given. When it does not, this falls back to the routing role
+# rather than to a named model, so there is one place to change rather than one
+# per caller. That mattered: the same engine defect was found and patched three
+# times at three different call sites before it was expressed as a capability.
+#
+# The fallback is a real cost, not a neutral choice. The 4B classifier behind it
+# is measurably weaker at understanding an utterance — it extracts a locality
+# and interests from "I'm in Raleigh, NC and I'm into ..." and returns nothing
+# at all for the same sentence naming Durham, while the main model reads both
+# correctly and only fails to shape its answer. Flipping
+# MAIN_LLM_STRUCTURED_OUTPUT is what buys that back.
+def get_structured_llm_client() -> LLMClient:
+    if settings.MAIN_LLM_STRUCTURED_OUTPUT:
+        return get_llm_client()
+    return get_routing_llm_client()
+
+
 # Build the focused presentation model independently from the main agent.
 def get_presentation_llm_client() -> LLMClient:
+    # Deck planning answers into a strict typed specification, so unpinned it
+    # follows the structured role rather than the main model directly. This is
+    # the role the capability was learned on: promoting the main model here on
+    # 2026-08-14 produced well-formed JSON in the wrong field names
+    # (`statistic` where the contract wants `statistic_value`), and the fix was
+    # to pin this one call site to Qwen. Expressed as a capability, the same
+    # promotion is safe and reverses itself.
+    if not (settings.PRESENTATION_LLM_BASE_URL or settings.PRESENTATION_LLM_MODEL):
+        return get_structured_llm_client()
     return _build_llm_client(
         settings.PRESENTATION_INFERENCE_ADAPTER or settings.INFERENCE_ADAPTER,
         settings.PRESENTATION_LLM_BASE_URL
@@ -302,8 +340,18 @@ def get_diagram_llm_client() -> LLMClient:
     )
 
 
-# Build the small structured classifier independently from the response role.
+# Build the typed-memory classifier, pinned only when an operator pins it.
+#
+# Left unset it follows the structured role rather than naming a model, so
+# promoting a main model whose engine enforces schemas moves extraction with it.
+# That is the difference this indirection buys: extraction quality is a
+# reasoning problem, and it was stuck on a 4B model purely because the engine
+# behind the better one would not honour the contract.
 def get_memory_proposal_llm_client() -> LLMClient:
+    if not (
+        settings.MEMORY_PROPOSAL_LLM_BASE_URL or settings.MEMORY_PROPOSAL_LLM_MODEL
+    ):
+        return get_structured_llm_client()
     return _build_llm_client(
         settings.MEMORY_PROPOSAL_INFERENCE_ADAPTER or settings.INFERENCE_ADAPTER,
         settings.MEMORY_PROPOSAL_LLM_BASE_URL
@@ -1052,7 +1100,7 @@ def get_search_budget() -> SearchBudget:
 # silently found nothing rather than failing loudly.
 @lru_cache(maxsize=1)
 def get_place_suggester() -> PlaceSuggester:
-    return PlaceSuggester(get_routing_llm_client())
+    return PlaceSuggester(get_structured_llm_client())
 
 
 DependencyPlaceSuggester = Annotated[
@@ -1089,6 +1137,7 @@ def get_discovery_runner(
         embeddings=embeddings,
         search=get_search_provider(),
         writer=get_llm_client(),
+        structured_writer=get_structured_llm_client(),
         search_budget=get_search_budget(),
         cross_encoder=get_cross_encoder(),
     )
@@ -1109,6 +1158,7 @@ def get_discovery_runner_for_session(session: AsyncSession) -> DiscoveryRunner:
         embeddings=get_embedding_provider(),
         search=get_search_provider(),
         writer=get_llm_client(),
+        structured_writer=get_structured_llm_client(),
         search_budget=get_search_budget(),
         cross_encoder=get_cross_encoder(),
     )
@@ -1498,11 +1548,11 @@ def get_conversation_service(
         discovery_profile=discovery_profile,
         discovery_runs=discovery_runs,
         memory_proposals=memory_proposals,
-        visual_memory=VisualMemorySelector(get_classifier_llm()),
+        visual_memory=VisualMemorySelector(get_structured_llm_client()),
         agent_memory=agent_memory,
         # A bounded strict-JSON judgement, so it belongs on the routing role
         # with the rest of them rather than on whichever model writes prose.
-        referent_resolver=ReferentResolver(get_classifier_llm()),
+        referent_resolver=ReferentResolver(get_structured_llm_client()),
     )
 
 

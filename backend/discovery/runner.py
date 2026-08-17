@@ -197,6 +197,13 @@ class DiscoveryRunner:
         adapter_factory: AdapterFactory | None = None,
         search: SearchProvider | None = None,
         writer: TextWriter | None = None,
+        # The two model roles this sweep needs are not interchangeable.
+        # Describing a find is prose and wants the best model available;
+        # aiming and reranking answer into schemas this application owns and
+        # need an engine that enforces them. Passing one client for both is
+        # how a main-model promotion silently breaks half a sweep. Defaults
+        # to `writer`, so a caller that has only one still works.
+        structured_writer: TextWriter | None = None,
         search_budget: SearchBudget | None = None,
         is_operator: bool = False,
         search_limit: int | None = None,
@@ -222,16 +229,17 @@ class DiscoveryRunner:
         # Only the selected finds are described, so the model runs a handful of
         # times per sweep rather than once per candidate.
         self.describer = EventDescriber(writer)
+        structured = structured_writer or writer
         # What memory knows about the person this sweep is for. Reading it is
         # the whole reason a query can be about someone rather than about a
         # topic; without it both stages below fall back to bare labels.
         self.personal = PersonalContextReader(seen.session)
         # Turns each interest into a search subject and a ranking vector aimed
         # at that person. One model call per sweep.
-        self.aiming = AimPlanner(writer)
+        self.aiming = AimPlanner(structured)
         # Orders the qualified shortlist against the same facts. One more call,
         # and it can only reorder what deterministic ranking already admitted.
-        self.reranker = MemoryReranker(writer)
+        self.reranker = MemoryReranker(structured)
         # Between the two: a local cross-encoder that reads each interest and
         # candidate as one sequence. Embeddings decide what qualifies, this
         # decides the order among them, the model above applies what memory

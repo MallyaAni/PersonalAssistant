@@ -52,6 +52,25 @@ class Settings(BaseSettings):
     ROUTING_LLM_REASONING_EFFORT: Literal[
         "none", "minimal", "low", "medium", "high", "xhigh"
     ] = "none"
+    # Whether the main model's serving engine actually enforces a JSON schema
+    # it is handed, rather than accepting one and answering in whatever shape it
+    # likes.
+    #
+    # This is the single fact that decides whether the reasoning work of this
+    # application can follow the main model. It is a property of the *engine*,
+    # not the model: DeepSeek-V4-Flash reasons about an utterance better than
+    # the 4B classifier does — asked to extract a locality and interests it gets
+    # both right — but `ds4-server` returns `"locality": "Raleigh, NC"` where the
+    # contract requires `{label, region}`, so the answer is discarded. vLLM
+    # enforces the grammar and does not have this problem.
+    #
+    # Three separate outages traced to it before it was named: the presentation
+    # revert on 2026-08-14, image recall returning nothing, and Scout's place
+    # suggester returning an empty tuple. Each was fixed by moving one call site
+    # to Qwen, which is why the fix kept having to be repeated. Set this true
+    # when the main model is served by an engine that honours schemas, and every
+    # structured caller follows the main model at once.
+    MAIN_LLM_STRUCTURED_OUTPUT: bool = False
     PRESENTATION_INFERENCE_ADAPTER: Literal["", "openai_compatible"] = ""
     PRESENTATION_LLM_BASE_URL: str = ""
     PRESENTATION_LLM_MODEL: str = ""
