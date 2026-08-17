@@ -39,6 +39,8 @@ class ScheduleDecision(BaseModel):
     # optional field in a response grammar is a field the model skips, and a
     # schedule with no hour is not a schedule.
     hour: int = Field(ge=0, le=23)
+    # Minutes past the hour, so "9:25pm" is not silently rounded to 21:00.
+    minute: int = Field(ge=0, le=59)
     # Monday is 0, matching datetime.weekday(). Ignored for a daily cadence.
     #
     # Required, with no default: given one the model skipped the field and every
@@ -188,6 +190,7 @@ class MemoryProposalAgent:
                     "kind": "discovery_schedule",
                     "cadence": decision.schedule.cadence,
                     "hour": decision.schedule.hour,
+                    "minute": decision.schedule.minute,
                     "weekday": decision.schedule.weekday,
                 }
             )

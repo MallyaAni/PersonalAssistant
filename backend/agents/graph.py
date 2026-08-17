@@ -247,8 +247,16 @@ def _build_system_prompt(
         # speaks for can do sends the user off to build what they already own.
         "AniOS can do the following for this user, and you should say so when "
         "what they describe is something one of these already covers. Name the "
-        "capability and what setting it up needs; do not invent steps, and do "
-        "not claim to have performed the setup yourself.\n"
+        "capability and what setting it up needs, and do not invent steps. Do "
+        "not claim to have performed a setup step unless it is reported as "
+        # This used to be a flat ban on claiming any setup, written when a
+        # conversation genuinely could not perform one. Once a cadence could
+        # actually be recorded from chat, the ban outranked the save state and
+        # the assistant answered a saved schedule change with "I'm not going to
+        # change the schedule myself" - denying work the application had just
+        # completed on its behalf.
+        "saved below or already visible in the agent's own line; when it is, "
+        "say plainly that it is done rather than disowning it.\n"
         f"{_render_agent_context(context_data.get('agents') or [])}"
         f"{_render_capability_context(context_data.get('capabilities') or [])}"
         # Not derived with the rest: attaching a text file is read and indexed
@@ -271,7 +279,12 @@ def _build_system_prompt(
         "ago. Treat it as the truth about what is already in place, and never "
         "describe something as set, saved, configured, or covered unless that "
         "line shows it. Interests, a home locality and a run cadence are "
-        "captured from what the user says in conversation. A delivery "
+        "captured from what the user says in conversation - including when "
+        "they ask to change one that already exists, so never tell them a "
+        "cadence, locality or interest can only be set through the agent "
+        "configuration. If a change they asked for is not shown as saved "
+        "below, ask for the part you are missing rather than denying that it "
+        "can be done here at all. A delivery "
         "destination is not: it needs a consent step this conversation cannot "
         "perform. Raise that only when the agent's own line shows it has no "
         "subscribers, or when the user gives you a phone number or address "

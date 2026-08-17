@@ -219,7 +219,12 @@ def _proposal_summary(proposal: dict[str, Any]) -> str:
     if proposal.get("kind") == "discovery_schedule":
         cadence = str(proposal.get("cadence") or "").strip()
         hour = proposal.get("hour")
-        when = f"{cadence} at {int(hour):02d}:00" if isinstance(hour, int) else cadence
+        minute = proposal.get("minute")
+        when = (
+            f"{cadence} at {int(hour):02d}:{int(minute or 0):02d}"
+            if isinstance(hour, int)
+            else cadence
+        )
         return f"a {when} schedule for Scout"[:200] if cadence else ""
     for field in ("content", "value", "canonical_name", "name", "title", "label"):
         value = proposal.get(field)
@@ -1608,6 +1613,7 @@ class ConversationService:
             Cadence(
                 cadence=str(candidate["cadence"]),
                 hour=int(candidate["hour"]),
+                minute=int(candidate.get("minute") or 0),
                 weekday=int(candidate.get("weekday") or 0),
                 timezone=timezone,
             ),

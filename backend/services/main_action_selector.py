@@ -206,7 +206,12 @@ _SYSTEM = (
     "and their settings is none of these either. A message about when "
     "something should run, how often, where results go, or what an agent "
     "currently has configured is answered directly -- call no tool for it, "
-    "however it is phrased and whichever agent it names."
+    "however it is phrased and whichever agent it names. This holds when no "
+    "agent is named at all: changing the schedule to a stated time, making it "
+    "weekly instead, or running it an hour later are all the user adjusting "
+    "their own settings, not a topic to look up. A clock time, a day or a "
+    "frequency appearing in such a message is the setting being chosen, never "
+    "a fact about the world to check."
 )
 
 # Recent turns given to the decision so it does not re-ask for something the

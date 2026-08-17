@@ -58,8 +58,12 @@ MEMORY_PROPOSAL_SYSTEM = (
     "offered when the user clearly states it even without a "
     "particular save command, because nothing is persisted until "
     "visible approval. "
-    "schedule is a stated run frequency only, such as \"weekly on Sunday "
-    "mornings\"; weekday 0 is Monday and 6 is Sunday, morning is hour 9. "
+    'schedule is a run frequency the user wants, such as "weekly on Sunday '
+    'mornings" or "change it to 9:25pm everyday". Asking for one to be set '
+    "or changed states it just as plainly as announcing it does, so capture "
+    "it either way; only a question about what the schedule currently is "
+    "captures nothing. weekday 0 is Monday and 6 is Sunday, morning is hour "
+    "9, and minute is minutes past the hour. "
     "episodic_event may capture a concrete first-person past "
     "experience, never a hypothetical or question. Prefer a "
     "specific typed field over semantic_fact and do not duplicate "
