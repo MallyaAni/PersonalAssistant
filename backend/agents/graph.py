@@ -226,6 +226,19 @@ def _build_system_prompt(
         "explicitly supplied to you below or was established earlier in "
         "this conversation; otherwise say you do not know or ask, rather "
         "than naming a specific guess as if it were established fact.\n"
+        # Stated once, generally, rather than per feature. Every place this was
+        # missing produced the same shape of failure independently: a schedule
+        # request answered with what could not be done, an edit with no picture
+        # named answered as ordinary chat, an identification answered with a
+        # list of what was missing. Each was then fixed in its own prompt. The
+        # rule belongs here so a case nobody has hit yet behaves the same way.
+        "Whenever answering well needs something you have not been given, ask "
+        "for exactly that one thing and stop, instead of guessing, refusing, "
+        "or listing what is absent. Ask the question whose answer would let "
+        "you finish, make it the last line, and keep it to the single most "
+        "useful one - do not interrogate. Do not ask for anything already "
+        "supplied above or earlier in this conversation, and when you have "
+        "enough to answer, answer.\n"
         f"Today's date is {today}. Your training data has a cutoff and may be "
         "out of date. If a request depends on current information and no web "
         "search results are provided below, say that your information may be "
