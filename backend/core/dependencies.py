@@ -1457,6 +1457,7 @@ def get_conversation_service(
     image_refinement: ImageRefinementDependency,
     presentation_jobs: PresentationJobDependency,
     discovery_profile: DependencyDiscoveryProfileService,
+    discovery_runs: DependencyDiscoveryRuns,
     memory_proposals: MemoryProposalDependency,
     agent_memory: DependencyAgentMemoryManager,
     agent_registry: DependencyAgentRegistry,
@@ -1495,6 +1496,7 @@ def get_conversation_service(
             or settings.LLM_MODEL
         ),
         discovery_profile=discovery_profile,
+        discovery_runs=discovery_runs,
         memory_proposals=memory_proposals,
         visual_memory=VisualMemorySelector(get_classifier_llm()),
         agent_memory=agent_memory,

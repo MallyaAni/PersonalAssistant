@@ -23,6 +23,30 @@ class LocalityDecision(BaseModel):
     region: str | None = Field(default=None, max_length=MAX_REGION_CHARS)
 
 
+class ScheduleDecision(BaseModel):
+    """One explicitly stated cadence for the user's own scheduled sweep.
+
+    Timezone is deliberately absent. It is not something people say, and asking
+    the model to infer one from a city is asking it to guess a fact about the
+    user; the locality already carries a real timezone and the application reads
+    it from there.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    cadence: Literal["daily", "weekly"]
+    # 0-23 in the user's own local time. Required rather than optional: an
+    # optional field in a response grammar is a field the model skips, and a
+    # schedule with no hour is not a schedule.
+    hour: int = Field(ge=0, le=23)
+    # Monday is 0, matching datetime.weekday(). Ignored for a daily cadence.
+    #
+    # Required, with no default: given one the model skipped the field and every
+    # weekly schedule landed on Monday, including "weekly on Sunday mornings".
+    # An optional field in a response grammar is a field the model will skip.
+    weekday: int = Field(ge=0, le=6)
+
+
 class EntityDecision(BaseModel):
     """One explicitly identified person or organization relationship."""
 
@@ -65,6 +89,7 @@ class MemoryProposalDecision(BaseModel):
         max_length=8,
         description="Only activities, hobbies, subjects, or events the user likes.",
     )
+    schedule: ScheduleDecision | None = None
     entity: EntityDecision | None = None
     procedure: ProcedureDecision | None = None
     knowledge: KnowledgeDecision | None = None
@@ -157,6 +182,15 @@ class MemoryProposalAgent:
         interests = self._clean_interests(decision.interests)
         if interests:
             proposals.append({"kind": "discovery_interests", "labels": interests})
+        if decision.schedule:
+            proposals.append(
+                {
+                    "kind": "discovery_schedule",
+                    "cadence": decision.schedule.cadence,
+                    "hour": decision.schedule.hour,
+                    "weekday": decision.schedule.weekday,
+                }
+            )
         if not proposals:
             general = self._general_proposal(decision)
             if general:

@@ -33,6 +33,8 @@ from backend.core.interfaces import (
 )
 from backend.core.llm import LLMClient
 from backend.discovery.projection import locality_fact
+from backend.discovery.runs import DiscoveryRunRepository
+from backend.discovery.schedule import Cadence
 from backend.discovery.service import DiscoveryProfileService
 from backend.mcp.invocation import MCPInvocationError
 from backend.memory.coordinator import MemoryCoordinatorAgent
@@ -211,6 +213,14 @@ def _proposal_summary(proposal: dict[str, Any]) -> str:
     labels = proposal.get("labels")
     if isinstance(labels, list):
         return ", ".join(str(label) for label in labels)[:200]
+    # A cadence has no single value field, and unnamed it reached the reply as
+    # an empty string - so the model was told something had been saved without
+    # being told what, which is exactly when it invents the detail.
+    if proposal.get("kind") == "discovery_schedule":
+        cadence = str(proposal.get("cadence") or "").strip()
+        hour = proposal.get("hour")
+        when = f"{cadence} at {int(hour):02d}:00" if isinstance(hour, int) else cadence
+        return f"a {when} schedule for Scout"[:200] if cadence else ""
     for field in ("content", "value", "canonical_name", "name", "title", "label"):
         value = proposal.get(field)
         if isinstance(value, str) and value.strip():
@@ -252,6 +262,7 @@ class ConversationService:
         presentation_jobs: PresentationJobService | None = None,
         presentation_model: str | None = None,
         discovery_profile: DiscoveryProfileService | None = None,
+        discovery_runs: DiscoveryRunRepository | None = None,
         memory_proposals: MemoryProposalAgent | None = None,
         visual_memory: VisualMemorySelector | None = None,
         agent_memory: AgentMemoryManager | None = None,
@@ -293,6 +304,7 @@ class ConversationService:
         self.presentation_jobs = presentation_jobs
         self.presentation_model = presentation_model
         self.discovery_profile = discovery_profile
+        self.discovery_runs = discovery_runs
         self.memory_proposals = memory_proposals
         self.visual_memory = visual_memory
         self.agent_memory = agent_memory
@@ -315,6 +327,7 @@ class ConversationService:
             "response_style": self._save_response_style_proposal,
             "discovery_locality": self._save_discovery_locality_proposal,
             "discovery_interests": self._save_discovery_interests_proposal,
+            "discovery_schedule": self._save_discovery_schedule_proposal,
             "entity": self._save_entity_proposal,
             "procedure": self._save_procedure_proposal,
             "knowledge": self._save_knowledge_proposal,
@@ -1450,6 +1463,14 @@ class ConversationService:
                 "role": summary.role,
                 "trigger": summary.trigger,
                 "setup_needs": summary.setup_needs,
+                # Live state, not just capability. Without it the assistant can
+                # describe what Scout needs and cannot tell whether the user
+                # already has it, so it asks for things they supplied minutes
+                # ago and confirms an agent as ready when it is not. Each agent
+                # computes these from the tables it owns.
+                "status": summary.status,
+                "detail": summary.detail,
+                "facts": {fact.label: fact.value for fact in summary.facts},
             }
             for summary in summaries
         ]
@@ -1562,6 +1583,53 @@ class ConversationService:
             source_trace_id=trace_id,
         )
         return True
+
+    # Save a classified sweep cadence, when the schedule store is wired.
+    #
+    # The timezone is read from the user's own locality rather than guessed: a
+    # locality already carries a real one, and asking a model to infer a
+    # timezone from a city name is asking it to state a personal fact it does
+    # not know. With no locality yet there is nothing to anchor a local hour to,
+    # so the cadence is not saved and the reply asks for the place first.
+    async def _save_discovery_schedule_proposal(
+        self,
+        user_id: str,
+        conversation_id: str,
+        trace_id: str,
+        candidate: dict[str, Any],
+    ) -> bool:
+        if self.discovery_runs is None or self.discovery_profile is None:
+            return False
+        timezone = await self._primary_timezone(user_id)
+        if timezone is None:
+            return False
+        await self.discovery_runs.upsert_schedule(
+            user_id,
+            Cadence(
+                cadence=str(candidate["cadence"]),
+                hour=int(candidate["hour"]),
+                weekday=int(candidate.get("weekday") or 0),
+                timezone=timezone,
+            ),
+        )
+        return True
+
+    # The timezone of the user's primary locality, or None when they have none.
+    async def _primary_timezone(self, user_id: str) -> str | None:
+        try:
+            profile = await self.discovery_profile.get_profile(user_id)
+        except Exception:
+            logger.warning("Discovery profile unavailable for schedule", exc_info=True)
+            return None
+        localities = getattr(profile, "localities", ()) or ()
+        for locality in localities:
+            if getattr(locality, "is_primary", False):
+                return str(getattr(locality, "timezone", "") or "") or None
+        for locality in localities:
+            zone = str(getattr(locality, "timezone", "") or "")
+            if zone:
+                return zone
+        return None
 
     # Save a classified person/organization relationship, when agent memory is wired.
     async def _save_entity_proposal(

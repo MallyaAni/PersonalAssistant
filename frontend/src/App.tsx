@@ -41,11 +41,32 @@ interface AuthenticatedAppProps {
   onSignedOut: () => void;
 }
 
+type WorkspaceView = 'chat' | 'memory' | 'artifacts' | 'presentations' | 'agents' | 'admin'
+
+const WORKSPACE_VIEWS: readonly WorkspaceView[] = [
+  'chat',
+  'memory',
+  'artifacts',
+  'presentations',
+  'agents',
+  'admin',
+]
+
+// Read the view the URL is pointing at, defaulting to chat.
+//
+// The workspace was pure component state, so nothing outside the app could
+// address a panel. The assistant now answers "delivery has to be added in the
+// Scout panel" with a link, and a link needs somewhere to point.
+const readViewFromHash = (): WorkspaceView => {
+  const requested = window.location.hash.replace(/^#\/?/, '') as WorkspaceView
+  return WORKSPACE_VIEWS.includes(requested) ? requested : 'chat'
+}
+
 // Render the private workspace using only the server-authenticated user identity.
 const AuthenticatedApp = ({ auth, onSignedOut }: AuthenticatedAppProps) => {
   const userId = auth.user_id
   const [isSidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 768)
-  const [activeView, setActiveView] = useState<'chat' | 'memory' | 'artifacts' | 'presentations' | 'agents' | 'admin'>('chat')
+  const [activeView, setActiveView] = useState<WorkspaceView>(readViewFromHash)
   const [conversation, setConversation] = useState(() => getInitialConversation(userId))
   const [logoutError, setLogoutError] = useState('')
 
@@ -53,6 +74,24 @@ const AuthenticatedApp = ({ auth, onSignedOut }: AuthenticatedAppProps) => {
   useEffect(() => {
     localStorage.setItem(`anios_conversation_id:${userId}`, conversation.id)
   }, [conversation.id, userId])
+
+  // Follow the URL when it changes, so a link in a reply opens the panel it
+  // names — including when the user is already looking at the workspace and the
+  // browser therefore fires no navigation.
+  useEffect(() => {
+    const follow = () => setActiveView(readViewFromHash())
+    window.addEventListener('hashchange', follow)
+    return () => window.removeEventListener('hashchange', follow)
+  }, [])
+
+  // Keep the URL describing the visible panel, so the link is shareable and the
+  // back button behaves the way the address bar implies it will.
+  useEffect(() => {
+    const desired = activeView === 'chat' ? '' : `#${activeView}`
+    if (window.location.hash !== desired) {
+      window.history.replaceState(null, '', desired || window.location.pathname)
+    }
+  }, [activeView])
 
   // Reopen a stored conversation. `restore: true` is what makes the window load
   // its persisted turns rather than starting empty on the same id.

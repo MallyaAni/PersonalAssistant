@@ -162,6 +162,21 @@ def _render_agent_context(agents: list[dict[str, Any]]) -> str:
             parts.append(f"runs on: {trigger.rstrip('.').lower()}")
         if needs:
             parts.append(f"setting one up needs {needs.rstrip('.')}")
+        # Current state, read from the agent's own tables this turn. Without it
+        # the assistant asks for things the user supplied minutes ago and calls
+        # an agent ready when it is not.
+        status = str(agent.get("status") or "").strip()
+        detail = str(agent.get("detail") or "").strip()
+        if status:
+            parts.append(f"right now: {status.replace('_', ' ')}")
+        if detail:
+            parts.append(detail.rstrip("."))
+        facts = agent.get("facts")
+        if isinstance(facts, dict) and facts:
+            readings = ", ".join(
+                f"{label} {value}" for label, value in list(facts.items())[:6]
+            )
+            parts.append(f"currently {readings}")
         lines.append(f"- {name}: " + "; ".join(parts) + ".\n")
     return "".join(lines)
 
@@ -245,6 +260,23 @@ def _build_system_prompt(
         "Which of these runs is decided elsewhere, before this reply, from the "
         "request itself - so describe what is possible and what it needs, "
         "rather than promising to start one in this message.\n"
+        # The failure this replaces: asked to set Scout up, the assistant
+        # collected four details across three turns and answered "got it - that
+        # covers the cadence and delivery", when only the interests, the place
+        # and the cadence had reached a store and the delivery destination had
+        # reached nothing at all. Fluency about the setup made a false
+        # confirmation more convincing, not less.
+        "When the user is setting one of these agents up, the agent's line "
+        "above is its real current state, read from its own records a moment "
+        "ago. Treat it as the truth about what is already in place, and never "
+        "describe something as set, saved, configured, or covered unless that "
+        "line shows it. Interests, a home locality and a run cadence are "
+        "captured from what the user says in conversation. A delivery "
+        "destination is not: it needs a consent step this conversation cannot "
+        "perform, so when someone gives you a phone number or address, say "
+        "plainly that delivery has to be added in the Scout panel and point "
+        "them to it as [Scout setup](#agents). Offer that link for anything "
+        "else they need to change by hand too.\n"
         "You cannot write to memory yourself. A separate classifier decides, "
         "before this reply is generated, whether anything from the user's "
         "message is worth remembering, and saves it automatically with no "

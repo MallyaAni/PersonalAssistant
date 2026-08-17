@@ -35,16 +35,16 @@ MEMORY_PROPOSAL_SYSTEM = (
     "items kept distinct unless they mean the same broader "
     "interest. "
     "Any plain statement that the user currently enjoys or does "
-    "something is an interest, however it is worded. \"I love X\", "
-    "\"I am into X\", \"I'm a big fan of X\", \"I do a lot of X\", "
-    "\"X is my thing\", \"I have gotten into X lately\" and \"X is a "
-    "hobby of mine\" all state the same interest and must all "
+    'something is an interest, however it is worded. "I love X", '
+    '"I am into X", "I\'m a big fan of X", "I do a lot of X", '
+    '"X is my thing", "I have gotten into X lately" and "X is a '
+    'hobby of mine" all state the same interest and must all '
     "produce it. There is no phrasing that counts and no phrasing "
     "that does not; what matters is whether the user is saying "
     "this is theirs and current. "
     "When one sentence names several interests, return each of "
-    "them. Keep a multi-word interest as one label — \"swing "
-    "dancing\" and \"machine learning\" are each one interest, not "
+    'them. Keep a multi-word interest as one label — "swing '
+    'dancing" and "machine learning" are each one interest, not '
     "two, and splitting a phrase produces labels that mean "
     "nothing on their own. "
     "locality is where the user says they live. "
@@ -58,6 +58,8 @@ MEMORY_PROPOSAL_SYSTEM = (
     "offered when the user clearly states it even without a "
     "particular save command, because nothing is persisted until "
     "visible approval. "
+    "schedule is a stated run frequency only, such as \"weekly on Sunday "
+    "mornings\"; weekday 0 is Monday and 6 is Sunday, morning is hour 9. "
     "episodic_event may capture a concrete first-person past "
     "experience, never a hypothetical or question. Prefer a "
     "specific typed field over semantic_fact and do not duplicate "
