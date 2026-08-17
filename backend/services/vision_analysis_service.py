@@ -64,6 +64,15 @@ def _unsupported_answer(inspection: VisionUploadInspection) -> str:
     medium = [
         item for item in inspection.identified_items if item.confidence == "medium"
     ]
+    # Shown, clearly hedged, rather than dropped. Asked to identify fish in a
+    # photograph of prepared seafood the model returned three low-confidence
+    # readings - one of them "likely mackerel or sardine" for a whole fish that
+    # is a mackerel - and every one was discarded, so a partial success was
+    # reported as "I can't reliably identify the exact name from this image".
+    # A hedged best reading with its visible basis is more use than silence and
+    # no less honest; `safety_sensitive` above still refuses outright, which is
+    # where withholding a guess actually matters.
+    low = [item for item in inspection.identified_items if item.confidence == "low"]
     sections: list[str] = []
     if high:
         lines = "\n".join(f"- **{item.label}** — {item.basis}" for item in high)
@@ -71,6 +80,9 @@ def _unsupported_answer(inspection: VisionUploadInspection) -> str:
     if medium:
         lines = "\n".join(f"- **{item.label}** — {item.basis}" for item in medium)
         sections.append(f"**Possible, but not confirmed**\n\n{lines}")
+    if low:
+        lines = "\n".join(f"- **{item.label}** — {item.basis}" for item in low)
+        sections.append(f"**Best guess only — treat as unconfirmed**\n\n{lines}")
     if sections:
         return (
             "I can identify some visible items with different confidence levels:\n\n"
@@ -91,9 +103,7 @@ def _unsupported_observation(
     inspection: VisionUploadInspection,
 ) -> str:
     high = [item for item in inspection.identified_items if item.confidence == "high"]
-    confirmed = "; ".join(
-        f"{item.label} ({item.basis})" for item in high
-    )
+    confirmed = "; ".join(f"{item.label} ({item.basis})" for item in high)
     prefix = f"High-confidence visible items: {confirmed}. " if confirmed else ""
     return (
         f"{prefix}An uploaded image was discussed with this user request: {prompt}. "
@@ -102,15 +112,33 @@ def _unsupported_observation(
     )
 
 
+# What a search may be given about an image whose identities are unconfirmed.
+#
+# Every `basis` is the visible evidence the model cited, never the name it
+# guessed - "Visible silvery scales, fins" rather than "mackerel" - so this can
+# be handed to a web search without asserting an identity anywhere. It exists
+# because the sanitized observation above deliberately keeps none of that, and
+# a search given only "some requested identities could not be reliably
+# determined" has nothing to identify from.
+def _visible_evidence(items: list[dict[str, Any]] | tuple[Any, ...]) -> str:
+    seen: list[str] = []
+    for item in items:
+        basis = (
+            item.get("basis") if isinstance(item, dict) else getattr(item, "basis", "")
+        )
+        text = str(basis or "").strip()
+        if text and text not in seen:
+            seen.append(text)
+    return "; ".join(seen)
+
+
 # Give a specialist the unresolved task while preserving confirmed primary items.
 def _specialist_question(
     prompt: str,
     inspection: VisionUploadInspection,
 ) -> str:
     confirmed = [
-        item.label
-        for item in inspection.identified_items
-        if item.confidence == "high"
+        item.label for item in inspection.identified_items if item.confidence == "high"
     ]
     context = ", ".join(confirmed) if confirmed else "none"
     return (
@@ -218,6 +246,7 @@ class VisionAnalysisService:
         direct_answer: str,
         grounding_decided: bool = False,
         search_query: str = "",
+        candidates: list[dict[str, str]] | None = None,
     ) -> tuple[str, bool]:
         if self.reasoner is None or not question.strip():
             return direct_answer, False
@@ -232,6 +261,7 @@ class VisionAnalysisService:
             question,
             observation,
             search_results,
+            candidates,
         )
         try:
             result = await asyncio.to_thread(
@@ -353,9 +383,22 @@ class VisionAnalysisService:
         answer_text = immediate_answer
         answer_model = inspection.model
         reasoning_pending = False
+        # An identification the pixels cannot settle is exactly the case a web
+        # search exists to rescue, and it was the one case that never reached
+        # one: the model answered `model_uncertain` with no search query, the
+        # specialist escalation is unconfigured on this install, and
+        # `needs_reasoning` came back false - so asked to identify fish the
+        # reply was "could not be reliably determined" while the observation
+        # naming silvery scales and pale elongated fillets sat unused. Let the
+        # grounding step decide from that observation rather than dead-ending.
+        unresolved_identity = (
+            inspection.grounding == "unsupported"
+            and inspection.unsupported_reason == "model_uncertain"
+            and not escalated
+        )
         should_reason = (
             needs_user_answer
-            and inspection.needs_reasoning
+            and (inspection.needs_reasoning or unresolved_identity)
             and self.reasoner is not None
         )
         if should_reason and defer_reasoning:
@@ -363,10 +406,24 @@ class VisionAnalysisService:
         elif should_reason:
             answer_text, reasoned = await self._reason_about(
                 prompt,
-                observation_text,
+                (
+                    _visible_evidence(inspection.identified_items) or observation_text
+                    if unresolved_identity
+                    else observation_text
+                ),
                 immediate_answer,
-                grounding_decided=True,
+                # An uncertain inspection produced no query of its own, so let
+                # the grounding step read the evidence and write one.
+                grounding_decided=not unresolved_identity,
                 search_query=inspection.search_query,
+                candidates=[
+                    {
+                        "label": item.label,
+                        "confidence": item.confidence,
+                        "basis": item.basis,
+                    }
+                    for item in inspection.identified_items
+                ],
             )
             if reasoned:
                 answer_model = (
@@ -379,9 +436,16 @@ class VisionAnalysisService:
             "analysis_model": inspection.model,
             "analysis_answer_status": "ready",
             "analysis_grounding": inspection.grounding,
-            "analysis_grounding_decided": True,
+            # The upload endpoint defers reasoning, so this flag is what the
+            # background pass reads. Recorded as decided only when the
+            # inspection actually decided: left hardcoded true, an uncertain
+            # identification asked the grounding step to reuse a query it never
+            # produced, which searched for nothing at all.
+            "analysis_grounding_decided": not unresolved_identity,
             "analysis_search_query": inspection.search_query,
-            "analysis_needs_reasoning": inspection.needs_reasoning,
+            "analysis_needs_reasoning": (
+                inspection.needs_reasoning or unresolved_identity
+            ),
             "analysis_unsupported_reason": inspection.unsupported_reason,
             "analysis_escalated": escalated,
             "analysis_initial_model": initial_model,
@@ -446,12 +510,26 @@ class VisionAnalysisService:
         if not thread:
             return False
         last = thread[-1]
+        stored_analysis = str(metadata.get("analysis") or "")
+        # The stored analysis deliberately withholds unconfirmed identities, so
+        # for those it says almost nothing a search could use. The recorded
+        # evidence does, and names nothing.
+        grounding_decided = bool(metadata.get("analysis_grounding_decided"))
+        observation = stored_analysis
+        if not grounding_decided:
+            items = metadata.get("analysis_identified_items") or []
+            observation = _visible_evidence(items) or stored_analysis
         answer_text, reasoned = await self._reason_about(
             last.get("prompt", ""),
-            str(metadata.get("analysis") or ""),
+            observation,
             last.get("answer", ""),
-            grounding_decided=bool(metadata.get("analysis_grounding_decided")),
+            grounding_decided=grounding_decided,
             search_query=str(metadata.get("analysis_search_query") or ""),
+            candidates=[
+                item
+                for item in (metadata.get("analysis_identified_items") or [])
+                if isinstance(item, dict)
+            ],
         )
         if not reasoned:
             return False
@@ -459,8 +537,7 @@ class VisionAnalysisService:
             **last,
             "answer": answer_text,
             "model": (
-                f"{last.get('model', '')}+"
-                f"{getattr(self.reasoner, 'model', 'reasoner')}"
+                f"{last.get('model', '')}+{getattr(self.reasoner, 'model', 'reasoner')}"
             ),
         }
         await self.repository.update_metadata(
@@ -557,9 +634,7 @@ class VisionAnalysisService:
             if reasoned
             else analysis.model
         )
-        thread.append(
-            {"prompt": prompt, "answer": answer_text, "model": answer_model}
-        )
+        thread.append({"prompt": prompt, "answer": answer_text, "model": answer_model})
         bounded = thread[-self.thread_max_stored :]
         updated = await self.repository.update_metadata(
             artifact_id,

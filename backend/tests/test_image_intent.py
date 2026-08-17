@@ -313,10 +313,13 @@ async def test_the_call_is_greedy_and_constrained_to_the_two_answers() -> None:
 # A short reply is interpreted using the bounded conversation about this image.
 async def test_recent_image_context_is_included_for_ambiguous_followups() -> None:
     writer = FakeWriter("edit")
-    assert await ImageIntentClassifier(writer).edits_the_image(
-        "yes id like a straw hat instead",
-        "User: Would a straw hat work?\nAssistant: It would suit the outfit.",
-    ) is True
+    assert (
+        await ImageIntentClassifier(writer).edits_the_image(
+            "yes id like a straw hat instead",
+            "User: Would a straw hat work?\nAssistant: It would suit the outfit.",
+        )
+        is True
+    )
 
     prompt = writer.calls[0]["prompt"]
     assert "yes id like a straw hat instead" in prompt
@@ -336,3 +339,112 @@ async def test_blank_text_is_not_classified() -> None:
 async def test_an_unexpected_answer_is_not_an_edit() -> None:
     writer = FakeWriter("maybe")
     assert await ImageIntentClassifier(writer).edits_the_image("a straw hat") is False
+
+
+class LowConfidenceOnlyVision:
+    """Return only low-confidence readings, as a hard subject really does."""
+
+    # Mirror the reported case: prepared seafood, three hedged readings, no
+    # confident one, and no search query of the model's own.
+    async def inspect_upload(self, question, content, mime_type):
+        return VisionUploadInspection(
+            intent="ask",
+            observation="Raw fish in containers and cut pieces on a board.",
+            answer="I cannot reliably identify the exact species.",
+            grounding="unsupported",
+            search_query="",
+            needs_reasoning=False,
+            unsupported_reason="model_uncertain",
+            model="primary-vision",
+            metadata={},
+            identified_items=(
+                VisualIdentification(
+                    label="Whole silvery fish (likely mackerel)",
+                    confidence="low",
+                    basis="visible silvery scales, fins and body shape",
+                ),
+                VisualIdentification(
+                    label="Pink-fleshed steaks",
+                    confidence="low",
+                    basis="visible pinkish-red flesh and dark skin",
+                ),
+            ),
+        )
+
+
+# A partial identification must read as partial, not as total failure.
+#
+# Asked to identify fish, every reading came back low-confidence and all of
+# them were dropped, so a usable hedged answer was reported as "I can't
+# reliably identify the exact name from this image".
+@pytest.mark.asyncio
+async def test_low_confidence_readings_are_offered_rather_than_dropped() -> None:
+    service = VisionAnalysisService(
+        StubImages(),
+        StubRepository(),
+        LowConfidenceOnlyVision(),
+    )
+
+    result = await service.analyze_upload(
+        "u",
+        "33333333-3333-4333-8333-333333333333",
+        "t",
+        "identify and label the fish in this image",
+        b"bytes",
+        "image/png",
+        defer_reasoning=True,
+    )
+
+    answer = result["analysis"]
+    assert "mackerel" in answer.lower()
+    assert "Pink-fleshed steaks" in answer
+    # Offered, but never as settled fact.
+    assert "unconfirmed" in answer.lower()
+    # The durable record still withholds every unconfirmed name.
+    stored = result["artifact"]["metadata"]["analysis"]
+    assert "mackerel" not in stored.lower()
+
+
+# Withholding a guess is still right where acting on a wrong one causes harm.
+@pytest.mark.asyncio
+async def test_a_safety_sensitive_identification_still_refuses() -> None:
+    class SafetySensitiveVision:
+        # Report the same uncertainty under the safety-sensitive reason.
+        async def inspect_upload(self, question, content, mime_type):
+            return VisionUploadInspection(
+                intent="ask",
+                observation="Pale mushrooms with domed caps at the base of a tree.",
+                answer="I cannot confirm whether these are edible.",
+                grounding="unsupported",
+                search_query="",
+                needs_reasoning=False,
+                unsupported_reason="safety_sensitive",
+                model="primary-vision",
+                metadata={},
+                identified_items=(
+                    VisualIdentification(
+                        label="Field mushroom",
+                        confidence="low",
+                        basis="pale domed cap and white gills",
+                    ),
+                ),
+            )
+
+    service = VisionAnalysisService(
+        StubImages(),
+        StubRepository(),
+        SafetySensitiveVision(),
+    )
+
+    result = await service.analyze_upload(
+        "u",
+        "44444444-4444-4444-8444-444444444444",
+        "t",
+        "are these safe to eat?",
+        b"bytes",
+        "image/png",
+        defer_reasoning=True,
+    )
+
+    assert "Field mushroom" not in result["analysis"]
+    assert "safely confirm" in result["analysis"]

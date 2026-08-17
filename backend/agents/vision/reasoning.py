@@ -26,11 +26,17 @@ Rules:
   evidence that matches those details. A location suggested by the user, or the
   fact that something is common there, is never identifying evidence.
 - Processed, cut, cropped, blurry, or generic-looking subjects commonly lack
-  diagnostic features. When the neutral description says exact identification
-  is unsupported, do not repeat candidate names from the question-specific
-  notes anywhere in the answer, even to call them plausible or deny them.
-  State only the broad category that is supported and what would be needed to
-  identify it more precisely.
+  diagnostic features, and a candidate for one of those is a guess rather than
+  a reading. Give the guess anyway when the notes carry one, labelled at the
+  confidence the notes assign it, and say what would settle it. Someone asking
+  you to identify something is better served by "most likely mackerel, from the
+  silvery scales and body shape, though the markings are not clear enough to be
+  certain" than by a refusal that withholds a reading already taken. What is
+  forbidden is stating a candidate flatly, as though the pixels settled it.
+- Report every candidate the notes list, not only the confident ones. Dropping
+  the uncertain ones turns a partial identification into an apparent failure,
+  and dropping the confident ones alongside them discards what was actually
+  established.
 - Search results, when present, describe the wider world, not this picture.
   Use them to identify or explain what the notes describe, and keep the
   distinction honest: the notes say what is in the image, the results say what
@@ -59,8 +65,25 @@ def build_reasoning_messages(
     question: str,
     observation: str,
     search_results: str | None = None,
+    # Each candidate the vision pass proposed, with the confidence it assigned.
+    # Passed separately from the neutral description because these are readings
+    # rather than observations, and the answer must keep that distinction while
+    # still reporting them.
+    candidates: list[dict[str, str]] | None = None,
 ) -> list[dict[str, str]]:
     sections = [f"Notes describing the image:\n{observation.strip()}"]
+    if candidates:
+        listed = "\n".join(
+            f"- {item.get('label', '')} (confidence: {item.get('confidence', '')})"
+            f" - basis: {item.get('basis', '')}"
+            for item in candidates
+            if str(item.get("label") or "").strip()
+        )
+        if listed:
+            sections.append(
+                "Candidate identifications proposed by the model that saw the "
+                f"image, with its own confidence in each:\n{listed}"
+            )
     if search_results and search_results.strip():
         # Labelled unambiguously as outside evidence. Presented as another kind
         # of note, the model starts reporting search findings as things it saw.
@@ -70,9 +93,10 @@ def build_reasoning_messages(
         )
     sections.append(
         f"The user's question:\n{question.strip()}\n\n"
-        "Now answer from the neutral description first. If it says exact "
-        "identification is unsupported, omit every unsupported candidate name "
-        "from the final answer rather than repeating the guesses."
+        "Now answer from the neutral description first, then give every "
+        "candidate listed above at the confidence it was assigned, most "
+        "confident first. Never present an uncertain candidate as settled, and "
+        "never leave one out because it is uncertain."
     )
     return [
         {"role": "system", "content": VISUAL_REASONING_PROMPT},
