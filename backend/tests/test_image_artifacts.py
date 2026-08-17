@@ -17,6 +17,7 @@ from backend.artifacts.types import (
     ImageGenerationRequest,
     StoredBinary,
     VisionAnalysis,
+    VisionUploadInspection,
 )
 from backend.services.image_artifact_service import ImageArtifactService
 from backend.services.vision_analysis_service import (
@@ -174,6 +175,27 @@ class CapturingBinaryRepository:
 
 
 class StaticVisionProvider:
+    # Return one structured upload result from a single simulated image call.
+    async def inspect_upload(
+        self,
+        question: str,
+        content: bytes,
+        mime_type: str,
+    ) -> VisionUploadInspection:
+        assert content == _png_bytes()
+        assert mime_type == "image/png"
+        return VisionUploadInspection(
+            intent="ask",
+            observation="A small blue rectangle.",
+            answer="The validation image contains a small blue rectangle.",
+            grounding="not_needed",
+            search_query="",
+            needs_reasoning=False,
+            unsupported_reason="not_applicable",
+            model="test-vision-model",
+            metadata={"usage": {"total_tokens": 12}},
+        )
+
     # Return grounded deterministic text for upload orchestration tests.
     async def analyze(
         self,
@@ -196,6 +218,10 @@ class StaticVisionProvider:
 
 
 class FailingVisionProvider:
+    # Fail the only structured upload inspection with a private provider error.
+    async def inspect_upload(self, question, content, mime_type):
+        raise RuntimeError("private vision provider detail")
+
     # Raise a private provider error for visible analysis-failure state tests.
     async def analyze(
         self,
@@ -218,6 +244,7 @@ class ThreadVisionProvider:
         history: list[dict[str, str]],
         prompt: str,
     ) -> VisionAnalysis:
+        question = prompt.rsplit("User question:\n", 1)[-1]
         self.calls.append(
             {
                 "history": [dict(entry) for entry in history],
@@ -227,7 +254,7 @@ class ThreadVisionProvider:
             }
         )
         return VisionAnalysis(
-            content=f"answer to: {prompt}",
+            content=f"answer to: {question}",
             model="thread-model",
             metadata={},
         )

@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.agents.deck.agent import PresentationAgent
 from backend.agents.diagram import DiagramAgent
+from backend.agents.memory.artifact_context import ArtifactContextRouter
 from backend.agents.registry import AgentRegistry
 from backend.agents.scout.digesting import DigestWriter
 from backend.agents.scout.place_suggest import PlaceSuggester
@@ -831,6 +832,25 @@ def get_vision_provider() -> VisionProvider:
     )
 
 
+# Build the optional stronger VLM used only for genuine model uncertainty.
+@lru_cache(maxsize=1)
+def get_vision_escalation_provider() -> VisionProvider | None:
+    if not (
+        settings.VISION_ESCALATION_LLM_BASE_URL.strip()
+        and settings.VISION_ESCALATION_MODEL.strip()
+    ):
+        return None
+    return create_vision_provider(
+        adapter=settings.VISION_INFERENCE_ADAPTER or settings.INFERENCE_ADAPTER,
+        base_url=settings.VISION_ESCALATION_LLM_BASE_URL,
+        model=settings.VISION_ESCALATION_MODEL,
+        api_key=settings.LLM_API_KEY,
+        timeout_seconds=settings.LLM_TIMEOUT_SECONDS,
+        reasoning_effort=settings.VISION_ESCALATION_LLM_REASONING_EFFORT,
+        max_tokens=settings.VISION_MAX_TOKENS,
+    )
+
+
 VisionProviderDependency = Annotated[
     VisionProvider,
     Depends(get_vision_provider),
@@ -862,7 +882,6 @@ def get_vision_analysis_service(
     repository: ArtifactRepositoryDependency,
     provider: VisionProviderDependency,
     memory: MemoryDependency,
-    intent: ImageIntentDependency,
     llm: LlmDependency,
     routing_llm: RoutingLlmDependency,
 ) -> VisionAnalysisService:
@@ -873,7 +892,6 @@ def get_vision_analysis_service(
         thread_context_turns=settings.VISION_THREAD_CONTEXT_TURNS,
         thread_max_stored=settings.VISION_THREAD_MAX_STORED,
         memory=memory,
-        intent=intent,
         # The vision model sees; the main model reasons. This is the only place
         # the two are combined, and it is deliberately the main client rather
         # than the vision one - the whole point is to answer image questions
@@ -895,6 +913,7 @@ def get_vision_analysis_service(
             if settings.VISION_SEARCH_GROUNDING_ENABLED
             else None
         ),
+        escalation_provider=get_vision_escalation_provider(),
     )
 
 
@@ -1549,6 +1568,12 @@ def get_conversation_service(
         discovery_runs=discovery_runs,
         memory_proposals=memory_proposals,
         visual_memory=VisualMemorySelector(get_structured_llm_client()),
+        # The modality gate runs before any owner-scoped artifact vector index.
+        # Only images have a conversational context loader today; documents,
+        # audio and video can join by adding sources to the same contract.
+        artifact_context_router=ArtifactContextRouter(
+            get_structured_llm_client(), ("image",)
+        ),
         agent_memory=agent_memory,
         # A bounded strict-JSON judgement, so it belongs on the routing role
         # with the rest of them rather than on whichever model writes prose.

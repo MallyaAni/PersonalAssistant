@@ -232,6 +232,7 @@ const MessageBubble: React.FC<MessageProps> = ({
           onDeleted={onArtifactDeleted}
           onSelect={onImageSelect}
           isSelected={activeImageId === artifact.id}
+          showAnalysis={false}
         />
       )}
       {!isUser && searchSources && searchSources.length > 0 && (

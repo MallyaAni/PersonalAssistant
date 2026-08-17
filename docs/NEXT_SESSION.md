@@ -5,54 +5,96 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 [ROADMAP.md](ROADMAP.md), and stable architecture facts in
 [ARCHITECTURE.md](ARCHITECTURE.md).
 
-Last updated: 2026-08-16, America/New_York
+Last updated: 2026-08-17, America/New_York
+
+## One-call upload inspection with selective specialist escalation — VERIFIED / UNVERIFIED
+
+New image uploads now use one strict structured Qwen inspection for routing,
+durable observation, immediate answer, evidence sufficiency, grounding value,
+and stronger-reasoning need. Identification confidence is per visible item,
+not per image: high-confidence observations can be shown and indexed, medium
+items are explicitly unconfirmed, and low-confidence guesses are hidden.
+Safety-sensitive identification remains strict.
+
+`model_uncertain` can make exactly one retry through the independently
+configured `VISION_ESCALATION_*` OpenAI-compatible role. Missing pixels and
+safety-sensitive cases do not spend that retry. The current host leaves the
+specialist endpoint/model blank, so the real specialist runtime is
+`UNVERIFIED`; enabling one requires configuration, not another code change.
+
+Evidence from the rebuilt backend and restarted gateway: the real uploaded
+2340x4160 image returned 201 in about five seconds with peeled shrimp at high
+confidence, mackerel-like and eel-like items at medium confidence, and chopped
+pieces omitted at low confidence. Its durable observation retained only the
+high-confidence shrimp evidence. The unresolved remainder was classified
+`model_uncertain`; no specialist is configured. Logs show exactly one Qwen
+chat completion, zero web or
+DeepSeek reasoning calls, and one embedding write. The authenticated live
+Chromium workflow passed in 5.7 seconds: confidence headings and Markdown list items rendered, the
+private image rendered, `Image analyzed.` never appeared, loading cleared, the
+composer re-enabled and emptied, and Console/page errors were empty. Focused
+backend focused tests pass 61/61; two real prompt functional cases pass; the frontend
+build passes.
 
 ## START HERE: one task queued — NOT STARTED
 
-It comes from one standing rule the user restated explicitly: **nothing in this
-project that can work smarter with semantic understanding should be done in a
-hardcoded manner.** The agent roster obeys it (commit `f8bfc46`), and the tool
-bullets now do too (entry below); this is what is left.
+### Make agent setup something the conversation can actually do
 
-### Make agent setup something the conversation can actually do — larger
+The assistant can describe Scout's setup needs but cannot yet collect and
+apply them across a conversation. Use `AgentSummary.setup_needs` as the
+agent-owned semantic contract, let the model decide what is still missing from
+the conversation, and write through `DiscoveryProfileService`. Do not build a
+regex form. A real multi-turn functional test must prove that the profile was
+actually stored.
 
-Today the assistant can *describe* what Scout needs but cannot collect it. It
-answers "give me those four things and I can set it up" and then nothing
-happens, because the prompt correctly forbids claiming to have performed a
-setup it has no way to perform. Honest, but a dead end.
+One pre-existing uncommitted prompt hardening remains in
+`backend/agents/vision/memory.py`; preserve it and keep its changes separable.
 
-The user's framing: *"the same settings in configuring the agent can be asked
-as follow up questions when the user is trying to set it up in the
-conversation."*
+## Artifact recall is gated before vector search — VERIFIED
 
-Shape it so no agent needs its own code path:
-- `AgentSummary.setup_needs` (added in `f8bfc46`) already states each agent's
-  prerequisites in prose. Scout lists its four; Deck leaves it empty because
-  it needs nothing in advance.
-- The model decides what is still missing from what the user has already said
-  across turns — not a scripted form, and not regex over the reply. This is
-  the same "smartness over regex" requirement that governs routing.
-- Writes go through `DiscoveryProfileService` (interests, locality, schedule,
-  subscriber). Tables: `discovery_interests`, `discovery_localities`,
-  `discovery_schedules` (cadence/hour/weekday/timezone),
-  `discovery_subscribers` (channel/address).
-- A prompt change here is not complete without a functional test in
-  `backend/tests/functional/` that drives a real multi-turn setup against the
-  live runtime and asserts the profile actually landed.
+`ArtifactContextRouter` now makes one constrained semantic decision about
+which owned artifact modalities a message needs before any artifact embedding
+or candidate lookup. The current deployment offers image; the contract already
+distinguishes document, audio and video for future retrieval implementations.
+Visual selection remains as defense in depth after the gate, and selected rows
+are collapsed by lineage and duplicate content before reaching the prompt or
+browser.
 
-Existing coverage to extend rather than duplicate:
-`backend/tests/functional/test_capability_awareness_behaviour.py`.
+Real-model functional cases pass for personal style, worn items, prior image
+work, schedules, reminders, general knowledge, new-image creation, documents,
+audio and video. Through the real authenticated browser path, `what do you
+think of my style?` recalled two owned images, loaded both private binaries,
+rendered a grounded answer, terminated and cleared loading. The exact
+regression `yes id like scout for 9:40pm` emitted neither `image_matches` nor
+`search_started`, rendered no image, terminated and cleared loading. The two
+fresh-conversation live tests pass; the separate active-image fixture test was
+skipped because no fixture IDs were supplied.
 
-### State this picks up from
+## Native tool decisions no longer sample — VERIFIED
 
-Everything below this section is verified and deployed. Chat runs on DeepSeek
-(Spark) with a Qwen standby that survives the Spark being powered off; image
-uploads answer in ~2.6s and reason afterwards; the model knows its own agent
-roster from the registry and its own tool list from the selector. Known-open,
-unrelated to the above:
-`test_search_routing_quality_meets_the_retired_cascades_floor` fails at 0.8276
-recall against its 0.85 floor (Qwen, pre-existing), and `ds4-server` still runs
-at `-c 1000000`, holding ~34 GB that a `-c 131072` restart would return.
+`OpenAICompatibleInferenceProvider.chat_with_tools` now always sends
+`temperature: 0.0`. Tool selection is a bounded application decision, so it
+must not inherit a model runtime's creative sampling default. Before the
+change, the exact persisted Scout confirmation with its real four-turn history
+produced search 5/10, presentation delegation 1/10 and the correct no-tool
+decision 4/10.
+
+The real-model regression replays that confirmation five times and requires
+all five to choose no external tool. It passes against the configured routing
+runtime (`qwen/qwen3.5-4b`), and the existing labelled search-routing quality
+floor passes in the same run. Structural provider, selector and MCP
+orchestration coverage passes 27/27; Ruff passes on every changed Python file.
+The backend was rebuilt and recreated from this working tree and the gateway
+restarted afterward. A real authenticated `testuser` request through the
+gateway completed with start/delta/done, no error, no `search_started`, and no
+`image_matches`; backend trace `cbb5ca52-be65-470d-80ac-c5f6e25ce044`
+completed without a web-search routing log.
+
+The second DGX Spark does not change this immediate boundary. Once its
+vLLM-compatible DeepSeek V4 Flash checkpoint is online, qualify it against the
+same real-model routing suite before changing `ROUTING_LLM_*`; the current
+DeepSeek server remains the prose role because it does not enforce the strict
+structured/tool contract reliably.
 
 ## Image recall was silently dead on DeepSeek; bounded classifiers moved to the routing role — VERIFIED
 

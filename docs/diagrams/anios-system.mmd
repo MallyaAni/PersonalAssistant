@@ -24,8 +24,8 @@ flowchart TB
     subgraph LocalAI[Replaceable local AI and rendering]
         ModelGate[Redis model-priority gate]
         Inference[Provider-neutral<br/>inference adapters]
-        VLLM[vLLM services<br/>Qwen 3.5 4B: generation and vision<br/>Nomic: text embeddings]
-        Media[ComfyUI: HiDream and FLUX<br/>PptxGenJS and LibreOffice]
+        VLLM[vLLM services<br/>Qwen: routing and primary vision<br/>optional specialist VLM<br/>Nomic: text embeddings]
+        Media[ComfyUI: FLUX.2 Klein<br/>PptxGenJS and LibreOffice]
         VisionEmbed[Nomic vision embedding<br/>ONNX on CPU]
     end
 
@@ -48,6 +48,7 @@ flowchart TB
     Identity --> Visual
     Identity --> Discovery
     Conversation <--> Memory
+    Memory -->|modality-gated artifact recall| Visual
     Discovery <--> Memory
     Memory -->|forget-me artifact cleanup| Visual
 

@@ -157,8 +157,24 @@ class VisualSearchGrounding:
         if arguments is None:
             return None
 
+        return await self._invoke(arguments)
+
+    # Search a query already selected by the pixel-facing structured decision.
+    async def ground_query(self, query: str) -> str | None:
+        if not query.strip() or self.mcp_invocation is None:
+            return None
+        tool = await self._tool_definition()
+        if tool is None:
+            return None
+        return await self._invoke({"query": query.strip(), "max_results": 5})
+
+    # Invoke the owned search boundary and retain only useful bounded evidence.
+    async def _invoke(self, arguments: dict[str, Any]) -> str | None:
+        invocation = self.mcp_invocation
+        if invocation is None:
+            return None
         try:
-            result = await self.mcp_invocation.invoke(
+            result = await invocation.invoke(
                 self.search_server_id,
                 self.search_tool_name,
                 arguments,

@@ -11,6 +11,7 @@ from backend.artifacts.types import (
     ImageGenerationRequest,
     StoredBinary,
     VisionAnalysis,
+    VisionUploadInspection,
 )
 from backend.search.types import SearchResults
 
@@ -218,6 +219,15 @@ class ImageEditProvider(ABC):
 
 
 class VisionProvider(ABC):
+    # Inspect one new upload once for routing, memory, and its immediate answer.
+    @abstractmethod
+    async def inspect_upload(
+        self,
+        question: str,
+        content: bytes,
+        mime_type: str,
+    ) -> VisionUploadInspection: ...
+
     # Analyze one validated image without receiving storage or permission authority.
     @abstractmethod
     async def analyze(

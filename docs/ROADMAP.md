@@ -193,6 +193,16 @@ non-zero below a per-mode floor. The configured Qwen cascade passed all 52
 committed cases in the final live run with 1.0 recall, 1.0 specificity, no
 misses, and no unnecessary searches. Image-retrieval calibration remains manual
 and is the next evaluation gap.
+- `VERIFIED` (primary path): a new upload now makes one schema-constrained VLM
+  inspection for intent, durable observation, immediate answer, evidence
+  sufficiency, grounding value, and reasoning need. Each relevant image item has
+  its own high/medium/low visual confidence and evidence basis. High-confidence
+  observations may enter derived visual memory, medium candidates are shown as
+  unconfirmed, and low-confidence guesses are hidden. Safety-sensitive cases
+  stay strict. `model_uncertain` can retry once through an independently
+  configured specialist VLM; the branch and configuration are structurally
+  verified, while a real specialist runtime is `UNVERIFIED` because the role is
+  intentionally unset on the current host.
 - `VERIFIED`: threaded followup questions about any owned generated or uploaded image reuse the integrity-checked stored bytes and the same provider-neutral vision boundary, replay a bounded question/answer context, persist a size-bounded thread in artifact metadata, seed from a prior flat analysis, and reject unowned or non-ready images with 404 before any provider call. Deterministic Chromium plus backend/unit coverage pass, and live local-VLM calls completed through the visual MCP facade and current Qwen vLLM endpoint. The interactive follow-up thread lives only on the artifact record. The initial upload analysis is indexed into semantic memory as a provenance-labelled description and is recalled by an ordinary conversation turn (live-verified); shortlist retrieval requires the referenced artifact to remain ready and owned, and artifact deletion removes its derived index row in the same database commit. Indexing the follow-up thread itself remains `PLANNED`.
 - `VERIFIED`: the unified composer routes explicit natural-language new-image requests to image generation, image attachments to analysis, and image questions back to ordinary chat without creating another image. The newest visible image is shown as a removable thumbnail reference; every image card can explicitly replace it, so several visible images are unambiguous without maintaining a second input under each card. Chat sends the exact selected artifact ID, while an unselected visual question may use owner-scoped semantic descriptions to find relevant prior images. Imperative and polite question-shaped edits such as `can you make this car red?` send the integrity-checked source pixels, exact feedback, and preservation constraints through the four-step local FLUX.2 Klein 4B Distilled editor. The immutable child records its parent, source SHA-256, feedback, model, seed, steps, and latency, receives its own visual embedding, and replaces the active card in place. Focused Chromium covers selection, switching, clearing, questions, and generated/uploaded refinement; live RTX 5080 acceptance covers generated and uploaded parents plus slide-attached images. Prompt-only HiDream refinement and the experimental SAM recolor branch were removed after failing preservation or quality evidence.
 - `IN PROGRESS` (accepted design in ADR 0007): initial VLM descriptions and semantic/pixel vectors support owner-scoped image recall, and one bounded local-model policy selects relevant offered image IDs by meaning rather than trigger words. Ready FLUX refinements are now observed by the local Qwen vision boundary and receive their own derived description/index; observation failure preserves the valid edited artifact and degrades to lineage. Durable idempotent observation for every generated-image path, typed append-only semantics, calibrated alias/conversation/recency fusion, and semantic post-edit verification remain planned.
@@ -200,10 +210,10 @@ and is the next evaluation gap.
 - `VERIFIED`: an explicit internet search about a recalled image runs image retrieval first, appends only a bounded prompt/analysis description to the normalized subject, privacy-screens the combined query, invokes the read-only internet MCP tool, and never sends image bytes. Real Chromium verified generation, grounded followup, visible search-tool lifecycle, terminal streaming, cleared loading/input, and memory-map drilldown.
 - `VERIFIED`: deterministic and live Chromium acceptance covers diagrams, real ComfyUI image generation, multipart local-VLM analysis, private image rendering, progress/cancellation, retry, 413/422/502/503 failure display, navigation and reload restoration, history, download, owned deletion, clean successful Network/Console behavior, and terminal loading state.
 
-AniOS now uses one qualified local model across generation roles:
-`qwen/qwen3.5-4b` is the current main response/native-tool, diagram,
-presentation, architecture-candidate, and vision model, while Nomic remains
-the text embedding model. Both run through pinned vLLM Compose services. No model owns orchestration state or
+AniOS now separates model roles: DeepSeek writes conversational prose, Qwen
+handles bounded routing, structured work, and primary vision, and Nomic handles
+text and image embeddings. An optional specialist VLM role is configured
+independently and is currently unset. No model owns orchestration state or
 its own lifecycle. The application owns policy, durable jobs, resource leases,
 and provider recovery so specialized workers and future multi-agent graphs can
 scale without coupling the system to the current RTX 5080 or planned DGX Spark.

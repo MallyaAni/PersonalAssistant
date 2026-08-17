@@ -2,6 +2,18 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-17
+
+- Replaced the multi-call new-image analysis chain with one schema-constrained
+  primary VLM inspection. Identification confidence now belongs to each visible
+  item: high-confidence evidence may enter derived visual memory, medium items
+  are explicitly unconfirmed, and low-confidence guesses are hidden;
+  safety-sensitive cases remain strict. Added a one-shot
+  optional specialist-VLM retry for genuine primary-model uncertainty. The real
+  authenticated browser upload rendered candidates as Markdown, terminated,
+  cleared loading, and produced no blocking browser errors; the current host's
+  specialist role remains unconfigured and therefore runtime-unverified.
+
 ## 2026-07-15 — Documentation system consolidated
 
 - Replaced overlapping project, AI-context, engineering, debugging, completion, API, memory, RAG, and decision summaries with a ten-document system with explicit ownership.
@@ -3538,3 +3550,17 @@ real sweep gives the settings the *executing path* actually reads: 44 of them,
 - Gave the `comfyui` service `restart: unless-stopped`. It was the only service in the stack without a restart policy, which is exactly how it behaved — the whole stack returned after a reboot and image generation alone did not, with every container reporting healthy. `profiles` gates `up`, not restart, so an existing container now comes back with Docker on its own.
 - Added a ComfyUI healthcheck against `/system_stats` rather than `/`, because a ComfyUI whose CUDA context has died keeps answering `/` with 200 while every GPU call fails. Written with `python3`/`urllib` after finding the image ships neither `curl` nor `wget`; a probe that cannot run reports the service unhealthy for the wrong reason.
 - Evidence: full backend suite (1190 tests) passes; Ruff passes on every changed file; `docker compose --profile comfyui config` validates. Two real 1024x1024 FLUX generations completed through the actual provider against live ComfyUI (161s, then 235s after container recreation), and the recreated container reports `restart=unless-stopped` with `health=healthy`. Documentation updated where it was operational; ROADMAP and ADR entries naming HiDream are historical records and were left as written.
+
+## 2026-08-16 — Native tool decisions made deterministic
+
+- Reproduced the exact `ani.mallya` Scout confirmation with its real recent history: the unchanged request selected web search 5/10 times, presentation delegation 1/10, and correctly selected no tool only 4/10. `chat_with_tools` omitted temperature, so vLLM used its sampling default for an application decision.
+- Set native tool decisions to `temperature: 0.0` at the provider boundary so built-in routing and MCP tool selection cannot silently re-enable sampling at another call site.
+- Added provider-contract coverage and a real-model functional regression that repeats the reported Scout confirmation five times. All five now select no external tool, while the existing labelled search-routing quality floor still passes.
+- Evidence: 27 structural provider/action/MCP tests pass; both targeted real-model functional tests pass against `qwen/qwen3.5-4b` in 213.55 seconds; Ruff passes. Rebuilt and recreated the backend from the working tree and restarted the gateway. A real authenticated `testuser` chat through the gateway completed with start/delta/done and emitted neither `search_started` nor `image_matches`; its backend trace completed without a web-search routing log.
+
+## 2026-08-16 — Owned artifact retrieval now has a semantic modality gate
+
+- Added a constrained `ArtifactContextRouter` before artifact embedding and candidate lookup. It chooses among image, document, audio and video from meaning rather than keywords; only image retrieval is currently enabled, while the contract leaves the other modalities explicit for later index implementations.
+- Kept the visual-memory selector as defense in depth and now collapses selected revision chains and duplicate content before sending image context to the assistant or frontend.
+- Added real-model functional cases for personal appearance, prior images, schedules, reminders, general knowledge, new artifact generation and future document/audio/video references, plus structural coverage that an unrelated turn never reaches the embedder or artifact store.
+- Verified through authenticated Playwright against the running application: a fresh style question semantically recalled and loaded two owned private images and rendered a grounded response; the exact Scout scheduling regression emitted no visual-memory or search events. Both streams terminated and the composer cleared its loading state with no blocking Console or required-network failure.

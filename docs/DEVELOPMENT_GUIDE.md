@@ -268,6 +268,9 @@ Key settings are:
 | `VISION_LLM_REASONING_EFFORT` | `none` | Vision-role reasoning control |
 | `VISION_MODEL` | `qwen/qwen3.5-4b` | Local VLM served by `vllm-main`; independently replaceable from the chat setting |
 | `VISION_MAX_TOKENS` | `512` | Maximum grounded analysis output tokens |
+| `VISION_ESCALATION_LLM_BASE_URL` | blank | Optional OpenAI-compatible specialist VLM endpoint; blank disables escalation |
+| `VISION_ESCALATION_MODEL` | blank | Specialist model identifier; both endpoint and model are required |
+| `VISION_ESCALATION_LLM_REASONING_EFFORT` | `none` | Specialist-role reasoning control |
 | `SEARCH_PROVIDER_NAME` | `tavily` | Set `mcp` to route approved internet searches through the built-in read-only MCP server |
 | `SEARCH_API_KEY` | none | Tavily credential inherited only by the internet MCP child when allowlisted |
 | `SEARCH_MCP_SERVER_ID` | `internet` | Fixed server identity used after deterministic search routing |

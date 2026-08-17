@@ -51,16 +51,16 @@ async def test_reasoning_answers_a_question_the_description_only_implies() -> No
     observation = await _observe(
         "Describe this chart, including every number you can read."
     )
-    direct = await _observe(question)
 
     llm = get_llm_client()
     try:
-        result = llm.chat(build_reasoning_messages(question, observation, direct), 1024)
+        result = llm.chat(build_reasoning_messages(question, observation), 1024)
     except Exception as exc:  # pragma: no cover - depends on the host runtime
         pytest.skip(f"main model unreachable: {type(exc).__name__}")
 
     answer = str(result.get("content") or "").lower()
-    assert "q1" in answer
+    assert "90" in answer
+    assert "50" in answer
     # 90 vs 50 is an 80% increase; accept the common correct phrasings without
     # demanding one exact spelling of the number.
     assert any(token in answer for token in ("80%", "80 percent", "80.0%"))
@@ -74,7 +74,6 @@ async def test_reasoning_refuses_to_invent_detail_it_was_not_given() -> None:
     messages = build_reasoning_messages(
         question="What is the exact phone number printed on the sign?",
         observation="A green park bench beside a gravel path. No text is legible.",
-        direct_answer="I cannot make out any phone number in this image.",
     )
     try:
         result = llm.chat(messages, 512)
@@ -114,7 +113,6 @@ async def test_search_results_identify_without_being_reported_as_seen() -> None:
             "metal front panel, roughly the footprint of a paperback book. No "
             "legible branding or model text is visible on the chassis."
         ),
-        direct_answer="A small gold-coloured computer with a perforated front.",
         search_results=(
             "The NVIDIA DGX Spark is a compact desktop AI supercomputer with a "
             "distinctive gold-coloured chassis and a dense perforated front "
@@ -141,4 +139,38 @@ async def test_search_results_identify_without_being_reported_as_seen() -> None:
             "branding reads",
             "logo reads",
         )
+    )
+
+
+# Neutral visual evidence that lacks diagnostic anatomy must produce an honest
+# limitation without importing regional species guesses from world knowledge.
+async def test_reasoning_rejects_unsupported_species_candidates() -> None:
+    llm = get_llm_client()
+    messages = build_reasoning_messages(
+        question="Can you identify which fish these are specific to India?",
+        observation=(
+            "Several containers hold whole silver fish, cut fish steaks, "
+            "unlabelled pale fillets, and shrimp. The cuts obscure diagnostic "
+            "features, so the fish species cannot be determined from the image."
+        ),
+    )
+    try:
+        result = llm.chat(messages, 700)
+    except Exception as exc:  # pragma: no cover - depends on the host runtime
+        pytest.skip(f"main model unreachable: {type(exc).__name__}")
+
+    answer = str(result.get("content") or "").lower()
+    assert any(
+        phrase in answer
+        for phrase in (
+            "cannot identify",
+            "can't identify",
+            "cannot determine",
+            "can't determine",
+            "not possible to identify",
+        )
+    )
+    assert not any(
+        candidate in answer
+        for candidate in ("rohu", "catla", "indian eel", "snakehead", "hilsa")
     )

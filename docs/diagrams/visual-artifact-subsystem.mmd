@@ -10,8 +10,17 @@ flowchart LR
 
     Route -->|diagram| Diagram[Qwen 3.5 4B<br/>validated Mermaid]
     Route -->|new or edit| Image[HiDream generation<br/>or FLUX source edit]
-    Route -->|analyze| Vision[Qwen 3.5 4B<br/>grounded analysis]
+    Route -->|analyze| Inspect[Qwen 3.5 4B<br/>one structured inspection]
     Route -->|recall| Recall[Explicit image ID or Qwen<br/>semantic visual selection]
+
+    Inspect --> Evidence{Evidence result}
+    Evidence -->|answerable| Vision[Grounded answer]
+    Evidence -->|mixed or insufficient| Limit[Per-item confidence<br/>store only high-confidence evidence]
+    Evidence -->|safety-sensitive| Safety[Strict uncertainty]
+    Evidence -->|model uncertain| Specialist[Optional specialist VLM<br/>one retry]
+    Specialist --> Vision
+    Limit --> Repository
+    Safety --> Repository
 
     Diagram --> Repository[Owned artifact repository]
     Image --> Repository
@@ -32,6 +41,6 @@ flowchart LR
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
     class User,UI,MCP,Forget interface;
-    class Guard,Route,Repository,Context,Cleanup application;
+    class Guard,Route,Evidence,Repository,Context,Cleanup,Limit,Safety application;
     class Store data;
-    class Diagram,Image,Vision,Recall,Embed external;
+    class Diagram,Image,Inspect,Specialist,Vision,Recall,Embed external;

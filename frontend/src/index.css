@@ -148,7 +148,7 @@ summary:focus-visible {
 .assistant-markdown h3,
 .assistant-markdown h4 {
   margin: 1.35em 0 0.55em;
-  color: #1d1d1f;
+  color: inherit;
   font-weight: 650;
   line-height: 1.25;
   letter-spacing: -0.02em;
@@ -201,7 +201,7 @@ summary:focus-visible {
 }
 
 .assistant-markdown strong {
-  color: #1d1d1f;
+  color: inherit;
   font-weight: 700;
 }
 

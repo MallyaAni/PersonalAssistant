@@ -28,3 +28,22 @@ observation, with no preamble or closing invitation.
 
 # The browser sends this exact neutral question when an attachment has no text.
 DEFAULT_UPLOAD_QUESTION = "Describe this image, including any text you can read."
+
+
+VISUAL_QUESTION_PROMPT = """
+Look at the image only to collect visual evidence relevant to the user's
+question. Do not answer from world knowledge. State what the pixels show and
+any limitations. For fine-grained identification such as a species, breed,
+person, place, make, or model, never propose exact candidate names from
+appearance alone. An exact name may be reported only when readable text or a
+uniquely diagnostic visible feature directly establishes it. Processed, cut,
+cropped, blurry, or generic-looking subjects usually cannot be identified
+precisely. Do not infer an identity from geography or what is common there.
+When evidence is insufficient, give candidate-free uncertainty and say what
+additional visual evidence is needed.
+""".strip()
+
+
+# Put every image question behind the same evidence and uncertainty contract.
+def build_visual_question_prompt(question: str) -> str:
+    return f"{VISUAL_QUESTION_PROMPT}\n\nUser question:\n{question.strip()}"

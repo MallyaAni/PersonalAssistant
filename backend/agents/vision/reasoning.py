@@ -7,9 +7,9 @@ reasoning ability the VLM happened to have. This module keeps the VLM as the
 eyes and hands the reasoning to the main conversational model, which is the
 strongest model configured.
 
-Nothing here looks at the image. Both grounding texts come from the vision
-model, and the prompt forbids going beyond them, so the reasoning step cannot
-invent visual detail that was never observed.
+Nothing here looks at the image. The neutral observation comes from the vision
+model, and the prompt forbids going beyond it, so the reasoning step cannot
+promote the VLM's separate question-specific guesses into visual facts.
 """
 
 VISUAL_REASONING_PROMPT = """
@@ -20,6 +20,17 @@ evidence about the picture.
 Rules:
 - Never state a visual detail that is not in the notes. If the notes do not
   settle the question, say plainly what is missing rather than guessing.
+- Treat names proposed in the question-specific notes as hypotheses, not as
+  verified visual facts. An exact species, breed, person, place, make, or model
+  requires diagnostic details in the neutral image description or independent
+  evidence that matches those details. A location suggested by the user, or the
+  fact that something is common there, is never identifying evidence.
+- Processed, cut, cropped, blurry, or generic-looking subjects commonly lack
+  diagnostic features. When the neutral description says exact identification
+  is unsupported, do not repeat candidate names from the question-specific
+  notes anywhere in the answer, even to call them plausible or deny them.
+  State only the broad category that is supported and what would be needed to
+  identify it more precisely.
 - Search results, when present, describe the wider world, not this picture.
   Use them to identify or explain what the notes describe, and keep the
   distinction honest: the notes say what is in the image, the results say what
@@ -37,25 +48,19 @@ Rules:
 """.strip()
 
 
-# Assemble the reasoning turn from the two grounding texts and the question.
+# Assemble the reasoning turn from neutral visual and optional web evidence.
 #
 # Kept as a function so the exact wording is testable without a live model, and
-# so the observation and the question-specific answer stay separately labelled -
-# they carry different authority. The observation is a neutral description; the
-# direct answer was produced with the user's question already in view, so it is
-# the more targeted of the two and is presented last, nearest the question.
+# so question-specific VLM guesses never become evidence for a second model.
+# The service may still return that answer as a resilience fallback when the
+# reasoner is unavailable, but the normal final answer starts from the durable
+# neutral observation and independently sourced web evidence only.
 def build_reasoning_messages(
     question: str,
     observation: str,
-    direct_answer: str | None,
     search_results: str | None = None,
 ) -> list[dict[str, str]]:
     sections = [f"Notes describing the image:\n{observation.strip()}"]
-    if direct_answer and direct_answer.strip():
-        sections.append(
-            "Notes from looking at the image with the user's question in mind:\n"
-            f"{direct_answer.strip()}"
-        )
     if search_results and search_results.strip():
         # Labelled unambiguously as outside evidence. Presented as another kind
         # of note, the model starts reporting search findings as things it saw.
@@ -63,7 +68,12 @@ def build_reasoning_messages(
             "Web search results about the wider world, NOT observations of this "
             f"image:\n{search_results.strip()}"
         )
-    sections.append(f"The user's question:\n{question.strip()}")
+    sections.append(
+        f"The user's question:\n{question.strip()}\n\n"
+        "Now answer from the neutral description first. If it says exact "
+        "identification is unsupported, omit every unsupported candidate name "
+        "from the final answer rather than repeating the guesses."
+    )
     return [
         {"role": "system", "content": VISUAL_REASONING_PROMPT},
         {"role": "user", "content": "\n\n".join(sections)},

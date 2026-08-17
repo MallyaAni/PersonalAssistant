@@ -21,6 +21,7 @@ interface ImageArtifactProps {
   // it can be attached to nearly every reply in a conversation that keeps
   // referencing it and a full-size card every time was the actual complaint.
   compact?: boolean;
+  showAnalysis?: boolean;
 }
 
 // Download one already loaded private image without another provider request.
@@ -40,6 +41,7 @@ const ImageArtifact = ({
   onSelect,
   isSelected = false,
   compact = false,
+  showAnalysis = true,
 }: ImageArtifactProps) => {
   const [imageUrl, setImageUrl] = useState('')
   const [loadError, setLoadError] = useState('')
@@ -207,7 +209,7 @@ const ImageArtifact = ({
         ) : (
           <p role="status" className="animate-pulse text-sm text-[#6e6e73]">Loading image…</p>
         )}
-        {thread.length > 0 && (
+        {showAnalysis && thread.length > 0 && (
           <div className="mt-4 space-y-3" aria-live="polite">
             {thread.map((turn, index) => (
               <div key={index} className="rounded-xl bg-[#f5f5f7] p-4">

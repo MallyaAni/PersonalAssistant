@@ -69,3 +69,28 @@ class VisionAnalysis:
     content: str
     model: str
     metadata: dict[str, Any]
+
+
+@dataclass(frozen=True, slots=True)
+class VisualIdentification:
+    """One image item labelled with bounded visual confidence and evidence."""
+
+    label: str
+    confidence: str
+    basis: str
+
+
+@dataclass(frozen=True, slots=True)
+class VisionUploadInspection:
+    """One structured VLM result for upload routing, memory, and response."""
+
+    intent: str
+    observation: str
+    answer: str
+    grounding: str
+    search_query: str
+    needs_reasoning: bool
+    unsupported_reason: str
+    model: str
+    metadata: dict[str, Any]
+    identified_items: tuple[VisualIdentification, ...] = ()

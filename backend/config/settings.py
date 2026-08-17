@@ -318,6 +318,14 @@ class Settings(BaseSettings):
         "none", "minimal", "low", "medium", "high", "xhigh"
     ] = "none"
     VISION_MAX_TOKENS: int = Field(default=512, ge=32, le=4096)
+    # Optional stronger VLM used once only when the primary sees diagnostic
+    # evidence but cannot interpret it. Missing pixels and safety-sensitive
+    # identification never spend this fallback.
+    VISION_ESCALATION_LLM_BASE_URL: str = ""
+    VISION_ESCALATION_MODEL: str = ""
+    VISION_ESCALATION_LLM_REASONING_EFFORT: Literal[
+        "none", "minimal", "low", "medium", "high", "xhigh"
+    ] = "none"
     # Prior question/answer pairs replayed to the VLM alongside the anchored image.
     VISION_THREAD_CONTEXT_TURNS: int = Field(default=8, ge=1, le=50)
     # Total question/answer pairs retained in one image's stored analysis thread.

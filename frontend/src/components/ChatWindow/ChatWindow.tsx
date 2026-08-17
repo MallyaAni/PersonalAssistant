@@ -4,6 +4,7 @@ import MessageList from '../MessageList/MessageList'
 import Composer from '../Composer/Composer'
 import {
   getConversationSnapshot,
+  readAnalysisThread,
   type AgentActivity,
   type MemoryProposal,
   type ImageArtifact,
@@ -303,8 +304,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   // same message's artifact so its analysis thread re-reads with the better
   // one. A new message here would show the user two answers to one question.
   const handleVisualReasoned = (artifact: ImageArtifact) => {
+    const thread = readAnalysisThread(artifact)
+    const latestAnswer = thread[thread.length - 1]?.answer
     setMessages(prev => prev.map(message => (
-      message.artifactId === artifact.id ? { ...message, artifact } : message
+      message.artifactId === artifact.id
+        ? { ...message, artifact, content: latestAnswer || message.content }
+        : message
     )))
   }
 
@@ -431,6 +436,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   }
 
   const handleVisualReady = (artifact: ImageArtifact) => {
+    const thread = readAnalysisThread(artifact)
+    const latestAnswer = thread[thread.length - 1]?.answer
     setSelectedImageId(artifact.id)
     setMessages(prev => {
       const next = [...prev]
@@ -438,7 +445,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
         if (next[index].role === 'assistant' && next[index].artifactStatus === 'generating') {
           next[index] = {
             ...next[index],
-            content: artifact.kind === 'generated_image' ? 'Image ready.' : 'Image analyzed.',
+            content: artifact.kind === 'generated_image'
+              ? 'Image ready.'
+              : latestAnswer || 'I analyzed the image, but no answer was returned.',
             artifact,
             artifactId: artifact.id,
             artifactStatus: undefined,

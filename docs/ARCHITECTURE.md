@@ -71,13 +71,13 @@ A chat turn, in order:
 
 | Stage | Model | Runs on | When |
 | --- | --- | --- | --- |
-| Main supervisor route | none for explicit registered intents (typed deterministic LangGraph policy) | CPU | every chat turn before retrieval; currently delegates explicit presentation creation |
+| Main supervisor route | `qwen/qwen3.5-4b` (`ROUTING_LLM_MODEL`) with deterministic native tool calling | GPU (`vllm-main`) | every chat turn before retrieval; selects one built-in/MCP action or an ordinary reply |
 | Query embedding | `text-embedding-nomic-embed-text-v1.5` (`EMBEDDING_MODEL`) | GPU (`vllm-embedding`) | when personal semantic or agent-vector retrieval is selected; one vector is reused across stores and image recall |
 | Memory retrieval planning | none (deterministic patterns) | CPU | every turn |
-| Web-search routing | `SEARCH_CLASSIFIER_MODEL`, else the main role (`MAIN_LLM_MODEL`, then `LLM_MODEL`) | GPU | when patterns abstain (most non-temporal turns) |
+| Artifact modality gate | `qwen/qwen3.5-4b` (structured routing role) | GPU (`vllm-main`) | before an unselected turn may query a private artifact index; returns image now and can admit document, audio, or video sources later |
 | Image-recall routing | the same classifier model | GPU | only when the query plausibly names a stored image (gated) |
-| Tool selection | `qwen/qwen3.5-4b` (`MAIN_LLM_MODEL`) native tool-calls through `vllm-main` | GPU | only when MCP tools are relevant |
-| Response generation | `qwen/qwen3.5-4b` (`MAIN_LLM_MODEL`) through `vllm-main` | GPU | ordinary non-delegated turns; the streamed answer |
+| Tool selection | the main supervisor's same deterministic native tool decision | GPU (`vllm-main`) | every turn, with live MCP candidates included only when semantically shortlisted |
+| Response generation | `deepseek-v4-flash` (`MAIN_LLM_MODEL`) through the DGX Spark | GPU (DGX Spark) | ordinary non-delegated turns; the streamed answer, with Qwen standby on transport failure |
 | Typed memory proposal | `qwen/qwen3.5-4b` (`MEMORY_PROPOSAL_LLM_MODEL`) with grammar-constrained JSON and reasoning disabled | GPU (`vllm-main`) | every ordinary chat turn; fail-closed with no write authority |
 
 A plain message ("my name is Ani") therefore makes about three model calls: one
@@ -113,6 +113,7 @@ Image and presentation paths:
 | Refinement prompt merge | `qwen/qwen3.5-4b` (`MAIN_LLM_MODEL`) | GPU |
 | Learned-style distillation | `qwen/qwen3.5-4b` (`MAIN_LLM_MODEL`) | GPU |
 | Image vision analysis (ask) | `qwen/qwen3.5-4b` (`VISION_MODEL`) | GPU |
+| Image vision escalation | optional `VISION_ESCALATION_MODEL`, currently unset | configured OpenAI-compatible endpoint |
 | Image embedding (index and reconciler) | `nomic-embed-vision-v1.5` ONNX | CPU |
 | Deck outline, one slide-content microtask per slide, or slide revision | `qwen/qwen3.5-4b` (`PRESENTATION_LLM_MODEL`) | GPU |
 | Diagram generation | `qwen/qwen3.5-4b` (`DIAGRAM_LLM_MODEL`) | GPU |
@@ -152,11 +153,18 @@ aligned image vector makes it findable by what it actually depicts, including
 detail no caption mentioned. Generated images have no analysis text, so the
 vector is their only index.
 
-In chat, `ImageRecallPolicy` decides when a turn is a recall request and
-explicitly refuses creation requests, so "draw me a fox" can never be answered
-with an archived fox. Matches stream to the interface as an `image_matches` SSE
-event before the answer, and enter the prompt as untrusted quoted data telling
-the model the images are already displayed.
+In chat, a structured `ArtifactContextRouter` first decides which of the user's
+owned artifact modalities, if any, the answer actually depends on. It currently
+offers only the implemented image source, while its contract already admits
+document, audio, and video sources. Schedules, reminders, settings, general
+knowledge, and requests to create a new artifact stop before embeddings or any
+private artifact candidates are loaded. For an image-bearing request,
+`ImageRecallPolicy` handles explicit recall while the wider semantic-description
+path retrieves owner-scoped candidates and `VisualMemorySelector` chooses only
+offered IDs. Matches stream to the interface as an `image_matches` SSE event
+before the answer, and enter the prompt as untrusted quoted data telling the
+model the images are already displayed. Uploaded originals and their edited
+descendants collapse to the latest selected revision before rendering.
 
 `ImageRetrievalPolicy` decides which ranked hits are real matches, and it needs
 two bounds because a distance ceiling alone is provably insufficient. Measured
@@ -536,6 +544,7 @@ changing one role never silently moves another.
 | Standby for the above | `MAIN_LLM_STANDBY_*` | Qwen (`vllm-main`) | Any main-role call, but only when the Spark is unreachable |
 | Routing / tool-calling | `ROUTING_LLM_*` | Qwen (`vllm-main`) | `MainActionSelector`, `ImageIntentClassifier`, the `VisualSearchGrounding` search decision |
 | Vision | `VISION_*` | Qwen (`vllm-main`, vision tower) | Canonical image observation and question-specific answers |
+| Vision escalation | `VISION_ESCALATION_*` | Unconfigured | One specialist retry only when the primary reports visible diagnostic evidence it cannot interpret |
 | Presentation | `PRESENTATION_LLM_*` | Qwen (`vllm-main`) | Deck outline planning |
 | Diagram | `DIAGRAM_LLM_*` | Qwen (`vllm-main`) | Diagram source generation |
 | Memory proposal | `MEMORY_PROPOSAL_LLM_*` | Qwen (`vllm-main`) | Classifying what a turn is worth remembering |
@@ -955,9 +964,11 @@ The image-generation handler monitors HTTP disconnects around provider work. A b
 `backend/api/v1/conversations.py` returns a bounded, user-owned conversation snapshot containing persisted turns and their conversation artifacts. The frontend uses that read boundary to reconstruct the active transcript and ready/failed diagram cards after a full reload.
 
 The artifact-reference contract is intentionally broader than images even
-though only visual semantic resolution is implemented today. A future video or
-parsed PDF/RAG record must expose the same owned artifact handle, provenance,
-lineage, derived semantic descriptions, and modality-specific retrieval data.
+though only visual conversational loading is implemented today. The semantic
+modality gate already distinguishes image, document, audio, and video without
+querying their indexes; a future source then exposes the same owned artifact
+handle, provenance, lineage, derived semantic descriptions, and
+modality-specific retrieval data.
 Explicit selection is an override; semantic resolution remains the default for
 natural references. Private source bytes are never substituted for bounded
 derived context, and every resolved handle is owner-validated again before use.
@@ -1014,7 +1025,7 @@ The active collaborators are:
 | `ImageArtifactService` | implemented local binary artifact boundary | Coordinates generated/uploaded pending/ready/failed records, source-conditioned immutable refinements with parent/source-hash lineage, opaque atomic file storage, SHA-256/size integrity checks, owned content reads, and file-plus-row deletion |
 | `ComfyUIImageProvider` | implemented free local provider | Submits a pinned HiDream-O1 Dev workflow through ComfyUI, polls terminal history, fetches one output, validates it, and limits concurrent jobs to one |
 | `ComfyUIImageEditProvider` | implemented free local editor | Uploads the owned source to ComfyUI and runs a four-step FLUX.2 Klein 4B Distilled single-reference workflow with Qwen 3 4B text encoder and FLUX.2 VAE before bounded output validation |
-| `VisionAnalysisService` | implemented local VLM boundary | Persists a validated upload before sending its bytes and bounded prompt through the replaceable `VISION_MODEL` adapter, records ready/failed analysis metadata, and answers bounded followup questions on any owned image by re-reading stored bytes and maintaining a bounded persisted question/answer thread |
+| `VisionAnalysisService` | implemented local VLM boundary | Persists a validated upload and obtains one schema-constrained primary inspection for routing, durable observation, immediate answer, evidence sufficiency, grounding, and reasoning need. Each relevant visible item carries its own high/medium/low confidence and evidence basis: high-confidence observations may enter derived visual memory, medium hypotheses are shown as unconfirmed, and low-confidence guesses are hidden. Safety-sensitive identification remains strict; unresolved model uncertainty may retry once through an independently configured specialist VLM. Followups re-read owned bytes and retain a bounded persisted thread. |
 | `ArchitectureCandidateService` | implemented review-only maintenance boundary | Combines registered canonical source with bounded explicit repository evidence, requires selected visible labels, and returns a candidate without canonical write authority |
 | `SQLAlchemyArtifactRepository` | implemented user-scoped persistence boundary | Stores diagram source, lifecycle, conversation/trace provenance, provider/model metadata, and supports conversation listing plus individual and forget-me bulk deletion |
 | `ArtifactDeletionService` | implemented cross-store lifecycle boundary | Removes one user's visual rows and derived descriptions, then deletes the returned opaque binary keys while surfacing incomplete file cleanup |

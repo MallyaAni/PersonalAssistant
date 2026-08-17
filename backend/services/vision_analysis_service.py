@@ -5,22 +5,19 @@ from typing import Any
 from backend.agents.vision.observation import (
     CANONICAL_OBSERVATION_PROMPT,
     DEFAULT_UPLOAD_QUESTION,
+    build_visual_question_prompt,
 )
 from backend.agents.vision.reasoning import build_reasoning_messages
+from backend.artifacts.types import VisionUploadInspection
 from backend.core.interfaces import (
     BinaryArtifactRepository,
     SemanticMemoryWriter,
     VisionProvider,
 )
 from backend.core.llm import LLMClient
-from backend.services.visual_search_grounding import VisualSearchGrounding
-from backend.memory.purposes import VISUAL_ANALYSIS_PURPOSE
 from backend.services.image_artifact_service import ImageArtifactService
-from backend.services.image_intent import (
-    ASK,
-    EDIT,
-    ImageIntentClassifier,
-)
+from backend.services.image_intent import ASK, EDIT
+from backend.services.visual_search_grounding import VisualSearchGrounding
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +52,74 @@ def _needs_user_answer(prompt: str, wants_edit: bool) -> bool:
     return not wants_edit and prompt.strip() != DEFAULT_UPLOAD_QUESTION
 
 
+# Present each supported identification at its own evidence level.
+def _unsupported_answer(inspection: VisionUploadInspection) -> str:
+    if inspection.unsupported_reason == "safety_sensitive":
+        return (
+            "I can’t safely confirm the exact identity from this image alone. "
+            "Please use a qualified source or clearer identifying evidence before "
+            "acting on it."
+        )
+    high = [item for item in inspection.identified_items if item.confidence == "high"]
+    medium = [
+        item for item in inspection.identified_items if item.confidence == "medium"
+    ]
+    sections: list[str] = []
+    if high:
+        lines = "\n".join(f"- **{item.label}** — {item.basis}" for item in high)
+        sections.append(f"**High confidence**\n\n{lines}")
+    if medium:
+        lines = "\n".join(f"- **{item.label}** — {item.basis}" for item in medium)
+        sections.append(f"**Possible, but not confirmed**\n\n{lines}")
+    if sections:
+        return (
+            "I can identify some visible items with different confidence levels:\n\n"
+            + "\n\n".join(sections)
+            + "\n\nI couldn’t confidently identify every item. A clearer view of "
+            "distinctive features or a label would narrow down the rest."
+        )
+    return (
+        "I can’t reliably identify the exact name from this image. The visible "
+        "pixels do not contain enough diagnostic evidence. A clearer image showing "
+        "an intact subject, distinctive features, or a label would be needed."
+    )
+
+
+# Keep only high-confidence image evidence in durable semantic memory.
+def _unsupported_observation(
+    prompt: str,
+    inspection: VisionUploadInspection,
+) -> str:
+    high = [item for item in inspection.identified_items if item.confidence == "high"]
+    confirmed = "; ".join(
+        f"{item.label} ({item.basis})" for item in high
+    )
+    prefix = f"High-confidence visible items: {confirmed}. " if confirmed else ""
+    return (
+        f"{prefix}An uploaded image was discussed with this user request: {prompt}. "
+        "Some requested identities could not be reliably determined from the "
+        "available pixels."
+    )
+
+
+# Give a specialist the unresolved task while preserving confirmed primary items.
+def _specialist_question(
+    prompt: str,
+    inspection: VisionUploadInspection,
+) -> str:
+    confirmed = [
+        item.label
+        for item in inspection.identified_items
+        if item.confidence == "high"
+    ]
+    context = ", ".join(confirmed) if confirmed else "none"
+    return (
+        f"{prompt}\n\nA primary vision pass confirmed these high-confidence items: "
+        f"{context}. Re-evaluate the unresolved or lower-confidence items. Preserve "
+        "confirmed items unless the pixels clearly contradict them."
+    )
+
+
 class VisionAnalysisError(RuntimeError):
     # Retain the valid upload identifier while exposing only a safe public failure.
     def __init__(self, artifact_id: str) -> None:
@@ -76,10 +141,10 @@ class VisionAnalysisService:
         thread_context_turns: int = 8,
         thread_max_stored: int = 40,
         memory: SemanticMemoryWriter | None = None,
-        intent: ImageIntentClassifier | None = None,
         reasoner: LLMClient | None = None,
         reasoning_max_tokens: int = 1024,
         grounding: VisualSearchGrounding | None = None,
+        escalation_provider: VisionProvider | None = None,
     ) -> None:
         self.images = images
         self.repository = repository
@@ -87,7 +152,6 @@ class VisionAnalysisService:
         self.thread_context_turns = thread_context_turns
         self.thread_max_stored = thread_max_stored
         self.memory = memory
-        self.intent = intent
         # Optional on purpose: unset, every answer is the vision model's own,
         # exactly as before. The reindexing path constructs this service without
         # a reasoner because it never answers anyone.
@@ -97,6 +161,7 @@ class VisionAnalysisService:
         # which is why an unfamiliar device could be described accurately and
         # still not named.
         self.grounding = grounding
+        self.escalation_provider = escalation_provider
 
     # Index one image's description so images become semantically retrievable.
     # Only `content` reaches the assistant prompt, so it must name its own
@@ -151,16 +216,21 @@ class VisionAnalysisService:
         question: str,
         observation: str,
         direct_answer: str,
+        grounding_decided: bool = False,
+        search_query: str = "",
     ) -> tuple[str, bool]:
         if self.reasoner is None or not question.strip():
             return direct_answer, False
         search_results = None
         if self.grounding is not None:
-            search_results = await self.grounding.ground(question, observation)
+            if grounding_decided:
+                if search_query.strip():
+                    search_results = await self.grounding.ground_query(search_query)
+            else:
+                search_results = await self.grounding.ground(question, observation)
         messages = build_reasoning_messages(
             question,
             observation,
-            direct_answer,
             search_results,
         )
         try:
@@ -180,6 +250,33 @@ class VisionAnalysisService:
             return direct_answer, False
         return reasoned, True
 
+    # Obtain one upload result, retaining a one-call compatibility path for
+    # older custom providers that only implement plain image analysis.
+    async def _inspect_upload(
+        self,
+        question: str,
+        content: bytes,
+        mime_type: str,
+    ) -> VisionUploadInspection:
+        inspect = getattr(self.provider, "inspect_upload", None)
+        if callable(inspect):
+            inspected = await inspect(question, content, mime_type)
+            if not isinstance(inspected, VisionUploadInspection):
+                raise ValueError("Vision provider returned an invalid inspection")
+            return inspected
+        legacy = await self.provider.analyze(question, content, mime_type)
+        return VisionUploadInspection(
+            intent=ASK,
+            observation=legacy.content,
+            answer=legacy.content,
+            grounding="not_needed",
+            search_query="",
+            needs_reasoning=False,
+            unsupported_reason="not_applicable",
+            model=legacy.model,
+            metadata=legacy.metadata,
+        )
+
     # Persist one validated upload and attach its successful grounded analysis.
     async def analyze_upload(
         self,
@@ -191,14 +288,6 @@ class VisionAnalysisService:
         declared_mime_type: str | None,
         defer_reasoning: bool = False,
     ) -> dict[str, Any]:
-        # Asked before the upload is put to the vision model, because the answer
-        # decides what to put to it. An edit request answered as a question is
-        # how "I cannot edit images" became a stored image description.
-        wants_edit = (
-            await self.intent.edits_the_image(prompt)
-            if self.intent is not None
-            else False
-        )
         artifact, validated_content = await self.images.store_upload(
             user_id,
             conversation_id,
@@ -207,48 +296,50 @@ class VisionAnalysisService:
             declared_mime_type,
         )
         artifact_id = str(artifact["id"])
-        requests = [
-            self.provider.analyze(
-                CANONICAL_OBSERVATION_PROMPT,
+        try:
+            inspection = await self._inspect_upload(
+                prompt,
                 validated_content,
                 str(artifact["mime_type"]),
             )
-        ]
-        needs_user_answer = _needs_user_answer(prompt, wants_edit)
-        if needs_user_answer:
-            requests.append(
-                self.provider.analyze(
-                    prompt,
-                    validated_content,
-                    str(artifact["mime_type"]),
-                )
-            )
-        results = await asyncio.gather(*requests, return_exceptions=True)
-        observation = results[0]
-        if isinstance(observation, BaseException):
+        except Exception as exc:
             await self.repository.update_metadata(
                 artifact_id,
                 user_id,
                 {"analysis_status": "failed"},
             )
-            raise VisionAnalysisError(artifact_id) from observation
+            raise VisionAnalysisError(artifact_id) from exc
 
-        answer = observation
-        answer_status = "ready"
-        if needs_user_answer:
-            proposed_answer = results[1]
-            if isinstance(proposed_answer, BaseException):
-                answer_status = "fallback"
-                logger.warning(
-                    "User-facing image answer failed; using canonical observation",
-                    exc_info=(
-                        type(proposed_answer),
-                        proposed_answer,
-                        proposed_answer.__traceback__,
-                    ),
+        initial_model = inspection.model
+        escalated = False
+        if (
+            inspection.grounding == "unsupported"
+            and inspection.unsupported_reason == "model_uncertain"
+            and self.escalation_provider is not None
+        ):
+            try:
+                inspection = await self.escalation_provider.inspect_upload(
+                    _specialist_question(prompt, inspection),
+                    validated_content,
+                    str(artifact["mime_type"]),
                 )
-            else:
-                answer = proposed_answer
+                escalated = True
+            except Exception:
+                logger.warning(
+                    "Specialist vision escalation failed; retaining primary result",
+                    exc_info=True,
+                )
+
+        wants_edit = inspection.intent == EDIT
+        needs_user_answer = _needs_user_answer(prompt, wants_edit)
+        observation_text = inspection.observation
+        immediate_answer = inspection.answer
+        if inspection.grounding == "unsupported" and not wants_edit:
+            # The constrained enum is the application decision; free text can
+            # still contradict it. Do not store or show guessed identities once
+            # the same inspection says the pixels lack diagnostic evidence.
+            observation_text = _unsupported_observation(prompt, inspection)
+            immediate_answer = _unsupported_answer(inspection)
 
         # The vision model has now seen the pixels; the reasoning about them is
         # the main model's job. Only for a real question - the canonical
@@ -259,26 +350,50 @@ class VisionAnalysisService:
         # seventeen seconds, and this endpoint sends nothing until it returns;
         # a phone that locks or backgrounds during that silence drops the
         # connection and the user sees a failure for work that fully succeeded.
-        answer_text = answer.content
-        answer_model = answer.model
+        answer_text = immediate_answer
+        answer_model = inspection.model
         reasoning_pending = False
-        if needs_user_answer and defer_reasoning and self.reasoner is not None:
+        should_reason = (
+            needs_user_answer
+            and inspection.needs_reasoning
+            and self.reasoner is not None
+        )
+        if should_reason and defer_reasoning:
             reasoning_pending = True
-        elif needs_user_answer:
+        elif should_reason:
             answer_text, reasoned = await self._reason_about(
                 prompt,
-                observation.content,
-                answer.content,
+                observation_text,
+                immediate_answer,
+                grounding_decided=True,
+                search_query=inspection.search_query,
             )
             if reasoned:
-                answer_model = f"{answer.model}+{self.reasoner.model}"
+                answer_model = (
+                    f"{inspection.model}+{getattr(self.reasoner, 'model', 'reasoner')}"
+                )
 
         metadata: dict[str, Any] = {
             "analysis_status": "ready",
-            "analysis": observation.content,
-            "analysis_model": observation.model,
-            "analysis_answer_status": answer_status,
-            **observation.metadata,
+            "analysis": observation_text,
+            "analysis_model": inspection.model,
+            "analysis_answer_status": "ready",
+            "analysis_grounding": inspection.grounding,
+            "analysis_grounding_decided": True,
+            "analysis_search_query": inspection.search_query,
+            "analysis_needs_reasoning": inspection.needs_reasoning,
+            "analysis_unsupported_reason": inspection.unsupported_reason,
+            "analysis_escalated": escalated,
+            "analysis_initial_model": initial_model,
+            "analysis_identified_items": [
+                {
+                    "label": item.label,
+                    "confidence": item.confidence,
+                    "basis": item.basis,
+                }
+                for item in inspection.identified_items
+            ],
+            **inspection.metadata,
         }
         if needs_user_answer:
             metadata["analysis_thread"] = [
@@ -296,8 +411,8 @@ class VisionAnalysisService:
         await self._index_analysis(
             user_id,
             updated,
-            observation.content,
-            observation.model,
+            observation_text,
+            inspection.model,
         )
         return {
             "artifact": updated,
@@ -335,13 +450,18 @@ class VisionAnalysisService:
             last.get("prompt", ""),
             str(metadata.get("analysis") or ""),
             last.get("answer", ""),
+            grounding_decided=bool(metadata.get("analysis_grounding_decided")),
+            search_query=str(metadata.get("analysis_search_query") or ""),
         )
         if not reasoned:
             return False
         thread[-1] = {
             **last,
             "answer": answer_text,
-            "model": f"{last.get('model', '')}+{self.reasoner.model}",
+            "model": (
+                f"{last.get('model', '')}+"
+                f"{getattr(self.reasoner, 'model', 'reasoner')}"
+            ),
         }
         await self.repository.update_metadata(
             artifact_id,
@@ -419,7 +539,7 @@ class VisionAnalysisService:
                 content=content,
                 mime_type=str(artifact["mime_type"]),
                 history=recent,
-                prompt=prompt,
+                prompt=build_visual_question_prompt(prompt),
             )
         except Exception as exc:
             raise VisionAnalysisError(artifact_id) from exc
@@ -433,7 +553,9 @@ class VisionAnalysisService:
             analysis.content,
         )
         answer_model = (
-            f"{analysis.model}+{self.reasoner.model}" if reasoned else analysis.model
+            f"{analysis.model}+{getattr(self.reasoner, 'model', 'reasoner')}"
+            if reasoned
+            else analysis.model
         )
         thread.append(
             {"prompt": prompt, "answer": answer_text, "model": answer_model}

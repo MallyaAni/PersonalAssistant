@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { randomUUID } from 'node:crypto'
+import { readFileSync } from 'node:fs'
 
 const TEST_PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2O9sAAAAASUVORK5CYII=',
@@ -1122,6 +1123,7 @@ test('shows an MCP refusal while the local answer still completes', async ({ pag
 // Verify assistant CommonMark becomes semantic headings, emphasis, and lists.
 test('renders assistant markdown without interpreting raw HTML', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
+  await page.addInitScript(() => window.localStorage.setItem('anios.theme', 'dark'))
   const streamedChunks = [
     '### 1. The Immediate Tactical Opportunity\n\nYou are playing as **',
     'Black** and should consider *Queen to ',
@@ -1162,6 +1164,17 @@ test('renders assistant markdown without interpreting raw HTML', async ({ page }
     name: '1. The Immediate Tactical Opportunity',
   })).toBeVisible()
   await expect(answer.getByText('Black', { exact: true })).toHaveJSProperty('tagName', 'STRONG')
+  const strongColor = await answer.getByText('Black', { exact: true }).evaluate(
+    element => getComputedStyle(element).color,
+  )
+  const bodyColor = await answer.locator('.assistant-markdown').evaluate(
+    element => getComputedStyle(element).color,
+  )
+  expect(strongColor).toBe(bodyColor)
+  const headingColor = await answer.getByRole('heading', { level: 3 }).evaluate(
+    element => getComputedStyle(element).color,
+  )
+  expect(headingColor).toBe(bodyColor)
   await expect(answer.getByText('Queen to h6', { exact: true })).toHaveJSProperty('tagName', 'EM')
   await expect(answer.getByRole('listitem')).toHaveCount(2)
   await expect(answer.locator('img')).toHaveCount(0)
@@ -3330,7 +3343,8 @@ test('uploads, analyzes, and source-refines an image with visible results', asyn
 
   const imageCard = page.getByLabel('Image: Uploaded image')
   await expect(imageCard.getByAltText('Uploaded visual')).toBeVisible()
-  await expect(imageCard.getByText(analysis, { exact: true })).toBeVisible()
+  await expect(page.getByText(analysis, { exact: true })).toBeVisible()
+  await expect(page.getByText('Image analyzed.', { exact: true })).not.toBeVisible()
   expect(multipartBody).toContain('name="user_id"')
   expect(multipartBody).toContain('ani.mallya')
   expect(multipartBody).toContain('name="prompt"')
@@ -3740,6 +3754,60 @@ test('@live visual generation and analysis complete through the browser', async 
           `http://localhost:8000/api/v1/artifacts/${userId}/${String(artifact.id)}`,
         )
       }
+    }
+  }
+})
+
+// Verify a real uncertain image answer renders useful hypotheses and terminates.
+test('@live uncertain image analysis renders tentative candidates', async ({ page }) => {
+  test.setTimeout(120_000)
+  const token = process.env.ANIOS_E2E_BEARER_TOKEN ?? ''
+  const imagePath = process.env.ANIOS_E2E_VISION_IMAGE ?? ''
+  test.skip(!token || !imagePath, 'Set a bearer token and real vision image fixture.')
+  const errors = observeBlockingBrowserErrors(page)
+  const userId = process.env.ANIOS_E2E_VISION_USER ?? 'testuser'
+  const conversationId = randomUUID()
+  let artifactId = ''
+
+  await page.context().setExtraHTTPHeaders({ Authorization: `Bearer ${token}` })
+  await page.addInitScript(({ user, conversation }) => {
+    localStorage.setItem('anios_user_id', user)
+    localStorage.setItem('anios_conversation_id', conversation)
+  }, { user: userId, conversation: conversationId })
+
+  try {
+    await page.goto('/')
+    const { textarea, sendButton } = chatControls(page)
+    await attachComposerFile(page, {
+      name: 'uncertain-identification.jpg',
+      mimeType: 'image/jpeg',
+      buffer: readFileSync(imagePath),
+    })
+    const responsePromise = page.waitForResponse(response => (
+      response.url().endsWith('/api/v1/vision/analyze')
+      && response.request().method() === 'POST'
+    ))
+    await textarea.fill('can you identify the indian fish names of these?')
+    await sendButton.click()
+    await expect(page.getByText('Analyzing image...', { exact: true })).toBeVisible()
+    const response = await responsePromise
+    expect(response.status()).toBe(201)
+    const body = await response.json()
+    artifactId = String(body.artifact.id)
+    expect(body.artifact.metadata.analysis_grounding).toBe('unsupported')
+    expect(body.artifact.metadata.analysis_identified_items.length).toBeGreaterThan(0)
+    await expect(page.getByText(/confidence/i).first()).toBeVisible()
+    await expect(page.locator('.assistant-markdown li')).not.toHaveCount(0)
+    await expect(page.getByText('Image analyzed.', { exact: true })).not.toBeVisible()
+    await expect(page.getByText('Analyzing image...', { exact: true })).not.toBeVisible()
+    await expect(textarea).toBeEnabled()
+    await expect(textarea).toHaveValue('')
+    expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+  } finally {
+    if (artifactId) {
+      await page.request.delete(
+        `http://localhost:8000/api/v1/artifacts/${userId}/${artifactId}`,
+      )
     }
   }
 })

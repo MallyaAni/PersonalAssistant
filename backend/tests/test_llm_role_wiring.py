@@ -20,6 +20,7 @@ from backend.core.dependencies import (
     get_reasoning_llm_client,
     get_routing_llm_client,
     get_structured_llm_client,
+    get_vision_escalation_provider,
 )
 
 _MAIN = "http://main-role.invalid:9000"
@@ -160,3 +161,41 @@ def test_the_recall_classifier_stays_on_the_routing_role(split_roles):
 
     settings.MAIN_LLM_STRUCTURED_OUTPUT = True
     assert get_classifier_llm().base_url == _ROUTING
+
+
+# Restore the optional specialist-vision role and its cached provider after use.
+@pytest.fixture
+def vision_escalation_role():
+    original_url = settings.VISION_ESCALATION_LLM_BASE_URL
+    original_model = settings.VISION_ESCALATION_MODEL
+    get_vision_escalation_provider.cache_clear()
+    yield
+    settings.VISION_ESCALATION_LLM_BASE_URL = original_url
+    settings.VISION_ESCALATION_MODEL = original_model
+    get_vision_escalation_provider.cache_clear()
+
+
+# Leaving either specialist setting blank must preserve the single-VLM runtime.
+def test_incomplete_vision_escalation_configuration_is_disabled(
+    vision_escalation_role,
+):
+    settings.VISION_ESCALATION_LLM_BASE_URL = ""
+    settings.VISION_ESCALATION_MODEL = "specialist-model"
+    get_vision_escalation_provider.cache_clear()
+
+    assert get_vision_escalation_provider() is None
+
+
+# A complete specialist role resolves independently from the primary VLM.
+def test_configured_vision_escalation_role_builds_its_own_provider(
+    vision_escalation_role,
+):
+    settings.VISION_ESCALATION_LLM_BASE_URL = "http://vision-specialist.invalid:9003"
+    settings.VISION_ESCALATION_MODEL = "specialist-model"
+    get_vision_escalation_provider.cache_clear()
+
+    resolved = get_vision_escalation_provider()
+
+    assert resolved is not None
+    assert resolved.base_url == "http://vision-specialist.invalid:9003"
+    assert resolved.model == "specialist-model"

@@ -11,8 +11,11 @@ from typing import Any
 
 import pytest
 
-from backend.artifacts.types import VisionAnalysis
-from backend.agents.vision.observation import CANONICAL_OBSERVATION_PROMPT
+from backend.artifacts.types import (
+    VisionAnalysis,
+    VisionUploadInspection,
+    VisualIdentification,
+)
 from backend.services.image_intent import ImageIntentClassifier
 from backend.services.vision_analysis_service import VisionAnalysisService
 
@@ -55,28 +58,123 @@ class StubRepository:
 
 
 class RecordingVision:
-    """Remember what question the upload was actually put to."""
+    """Return one deterministic structured inspection and count image calls."""
 
-    def __init__(self) -> None:
+    def __init__(self, intent: str = "ask", fail: bool = False) -> None:
+        self.intent = intent
+        self.fail = fail
         self.asked: list[str] = []
 
-    async def analyze(self, prompt, content, mime_type):
-        self.asked.append(prompt)
-        content = (
-            "A person wearing a navy jacket and white shirt outdoors."
-            if prompt != "what is written on the sign?"
+    # Return routing, durable observation, and answer from one image request.
+    async def inspect_upload(self, question, content, mime_type):
+        self.asked.append(question)
+        if self.fail:
+            raise RuntimeError("inference runtime unreachable")
+        answer = (
+            "I will add a straw hat."
+            if self.intent == "edit"
             else "The sign says DANCE TONIGHT."
         )
-        return VisionAnalysis(content=content, model="test", metadata={})
+        return VisionUploadInspection(
+            intent=self.intent,
+            observation="A person wearing a navy jacket beside a sign.",
+            answer=answer,
+            grounding="not_needed",
+            search_query="",
+            needs_reasoning=False,
+            unsupported_reason="not_applicable",
+            model="test",
+            metadata={},
+        )
+
+    # Retain plain analysis for existing-artifact observation tests.
+    async def analyze(self, prompt, content, mime_type):
+        self.asked.append(prompt)
+        return VisionAnalysis(
+            content="A person wearing a navy jacket beside a sign.",
+            model="test",
+            metadata={},
+        )
+
+
+class UnsupportedVision:
+    """Return a contradictory unsupported decision with guessed identities."""
+
+    # Simulate a model whose enum is safe but whose prose still hallucinates.
+    async def inspect_upload(self, question, content, mime_type):
+        return VisionUploadInspection(
+            intent="ask",
+            observation="These are Rohu, Catla, and Hilsa.",
+            answer="The exact fish are Rohu, Catla, and Hilsa.",
+            grounding="unsupported",
+            search_query="",
+            needs_reasoning=False,
+            unsupported_reason="missing_visual_evidence",
+            model="test",
+            metadata={},
+            identified_items=(
+                VisualIdentification(
+                    label="Shrimp",
+                    confidence="high",
+                    basis="whole peeled shrimp are visibly recognizable",
+                ),
+                VisualIdentification(
+                    label="Rohu",
+                    confidence="medium",
+                    basis="plausible from the cut and Indian-market context",
+                ),
+            ),
+        )
+
+
+class ModelUncertainVision:
+    """Report visible diagnostic evidence that needs a stronger VLM."""
+
+    # Ask for specialist escalation without proposing a final identity.
+    async def inspect_upload(self, question, content, mime_type):
+        return VisionUploadInspection(
+            intent="ask",
+            observation="An intact device has several distinctive controls.",
+            answer="I cannot interpret the visible controls reliably.",
+            grounding="unsupported",
+            search_query="",
+            needs_reasoning=False,
+            unsupported_reason="model_uncertain",
+            model="primary-vision",
+            metadata={},
+        )
+
+
+class SpecialistVision:
+    """Return one stronger interpretation and count escalation calls."""
+
+    def __init__(self) -> None:
+        self.calls = 0
+        self.questions: list[str] = []
+
+    # Resolve the diagnostic evidence during one specialist inspection.
+    async def inspect_upload(self, question, content, mime_type):
+        self.calls += 1
+        self.questions.append(question)
+        return VisionUploadInspection(
+            intent="ask",
+            observation="An intact labelled oscilloscope with two channels.",
+            answer="This is a two-channel oscilloscope.",
+            grounding="not_needed",
+            search_query="",
+            needs_reasoning=False,
+            unsupported_reason="not_applicable",
+            model="specialist-vision",
+            metadata={},
+        )
 
 
 async def _analyze(prompt: str, intent: str | None, fail: bool = False):
-    vision = RecordingVision()
+    vision = RecordingVision(intent or "ask", fail)
     service = VisionAnalysisService(
         StubImages(),
         StubRepository(),
         vision,
-        intent=ImageIntentClassifier(FakeWriter(intent, fail)),
     )
     result = await service.analyze_upload(
         user_id="u",
@@ -92,25 +190,21 @@ async def _analyze(prompt: str, intent: str | None, fail: bool = False):
 pytestmark = pytest.mark.asyncio
 
 
-# The edit request must not be put to the vision model. Asked as a question it
-# answers that it cannot edit images, and that refusal was then stored as the
-# description of the picture the user had just uploaded.
+# One pixel-facing inspection routes an upload edit without a classifier call.
 async def test_an_edit_request_is_not_the_question_put_to_the_vision_model() -> None:
     vision, result = await _analyze("give me a straw hat", "edit")
     assert len(vision.asked) == 1
-    assert vision.asked[0] == CANONICAL_OBSERVATION_PROMPT
+    assert vision.asked[0] == "give me a straw hat"
     assert result["intent"] == "edit"
 
 
-# A genuine question still reaches the vision model as the user wrote it.
+# One inspection returns separately persisted observation and visible answer.
 async def test_a_question_is_put_to_the_vision_model_unchanged() -> None:
     vision, result = await _analyze("what is written on the sign?", "ask")
-    assert len(vision.asked) == 2
-    assert vision.asked[0] == CANONICAL_OBSERVATION_PROMPT
-    assert vision.asked[1] == "what is written on the sign?"
+    assert vision.asked == ["what is written on the sign?"]
     assert result["analysis"] == "The sign says DANCE TONIGHT."
     assert result["artifact"]["metadata"]["analysis"] == (
-        "A person wearing a navy jacket and white shirt outdoors."
+        "A person wearing a navy jacket beside a sign."
     )
     assert result["artifact"]["metadata"]["analysis_thread"] == [
         {
@@ -122,20 +216,13 @@ async def test_a_question_is_put_to_the_vision_model_unchanged() -> None:
     assert result["intent"] == "ask"
 
 
-# The upload is what the user is waiting on. An unreachable classifier must
-# still store and describe the picture rather than fail the request.
+# A failed single inspection leaves the upload in its retryable failure state.
 async def test_a_classifier_failure_still_analyzes_the_upload() -> None:
-    vision, result = await _analyze("give me a straw hat", None, fail=True)
-    assert len(vision.asked) == 2
-    assert vision.asked[0] == CANONICAL_OBSERVATION_PROMPT
-    assert vision.asked[1] == "give me a straw hat"
-    assert result["intent"] == "ask"
-    assert result["artifact"]["metadata"]["analysis"] == (
-        "A person wearing a navy jacket and white shirt outdoors."
-    )
+    with pytest.raises(Exception, match="Vision analysis failed"):
+        await _analyze("give me a straw hat", None, fail=True)
 
 
-# No classifier still separates reusable observation from the immediate answer.
+# A structured provider needs exactly one image call.
 async def test_no_classifier_keeps_the_question_out_of_canonical_memory() -> None:
     vision = RecordingVision()
     service = VisionAnalysisService(StubImages(), StubRepository(), vision)
@@ -147,10 +234,69 @@ async def test_no_classifier_keeps_the_question_out_of_canonical_memory() -> Non
         content=b"bytes",
         declared_mime_type="image/png",
     )
-    assert len(vision.asked) == 2
-    assert vision.asked[0] == CANONICAL_OBSERVATION_PROMPT
-    assert vision.asked[1] == "describe this"
+    assert vision.asked == ["describe this"]
     assert result["intent"] == "ask"
+
+
+# Unsupported identification must preserve confidence per visible item.
+async def test_unsupported_identification_keeps_item_level_confidence() -> None:
+    specialist = SpecialistVision()
+    service = VisionAnalysisService(
+        StubImages(),
+        StubRepository(),
+        UnsupportedVision(),
+        escalation_provider=specialist,
+    )
+
+    result = await service.analyze_upload(
+        "u",
+        "22222222-2222-4222-8222-222222222222",
+        "t",
+        "Identify the exact Indian fish names",
+        b"bytes",
+        "image/png",
+        defer_reasoning=True,
+    )
+
+    assert result["reasoning_pending"] is False
+    assert "High confidence" in result["analysis"]
+    assert "Possible, but not confirmed" in result["analysis"]
+    assert "Shrimp" in result["analysis"]
+    assert "Rohu" in result["analysis"]
+    assert "Rohu" not in result["artifact"]["metadata"]["analysis"]
+    assert "Shrimp" in result["artifact"]["metadata"]["analysis"]
+    items = result["artifact"]["metadata"]["analysis_identified_items"]
+    assert items[0]["confidence"] == "high"
+    assert items[1]["confidence"] == "medium"
+    assert specialist.calls == 0
+
+
+# Genuine model uncertainty gets exactly one configured specialist inspection.
+async def test_model_uncertainty_escalates_once_to_specialist() -> None:
+    specialist = SpecialistVision()
+    service = VisionAnalysisService(
+        StubImages(),
+        StubRepository(),
+        ModelUncertainVision(),
+        escalation_provider=specialist,
+    )
+
+    result = await service.analyze_upload(
+        "u",
+        "22222222-2222-4222-8222-222222222222",
+        "t",
+        "What device is this?",
+        b"bytes",
+        "image/png",
+    )
+
+    assert specialist.calls == 1
+    assert "Re-evaluate the unresolved" in specialist.questions[0]
+    assert result["analysis"] == "This is a two-channel oscilloscope."
+    assert result["model"] == "specialist-vision"
+    metadata = result["artifact"]["metadata"]
+    assert metadata["analysis_escalated"] is True
+    assert metadata["analysis_initial_model"] == "primary-vision"
 
 
 # Greedy, and constrained to two words. A classifier that could answer anything
