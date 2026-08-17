@@ -300,11 +300,13 @@ class VisionAnalysisService:
     # older custom providers that only implement plain image analysis.
     # Describe where the user has said they live, or nothing at all.
     #
-    # Their own stated locality, never a guess. It weights which regionally
-    # common candidates to consider first, which is most of the distance
-    # between "some silvery fish" and a name - the same pixels are a different
-    # shortlist in Mumbai and in Maine. It says nothing about who they are, and
-    # the reasoning prompt is explicit that it must not be read that way.
+    # Their own stated locality, never a guess, and deliberately a weak signal:
+    # it says where someone is, not where they are from. Treating it as a proxy
+    # for cuisine or background gets the common case backwards - a kitchen in
+    # Arlington full of Indian fish is ordinary, and a shortlist weighted to the
+    # Atlantic coast would push the right answer further away rather than
+    # nearer. It is offered as local availability only, and the reasoning prompt
+    # forbids ruling anything out on it or inferring anything about the person.
     async def _stated_locality(self, user_id: str) -> str:
         if self.profile is None:
             return ""
