@@ -219,12 +219,36 @@ class StubVisualMemory:
         ]
 
 
+class ForbiddenVisualMemory:
+    """Fail if an unrelated turn reaches embedding or candidate retrieval."""
+
+    # Prove the modality gate runs before query embedding.
+    async def embed_query(self, query):
+        raise AssertionError("unrelated turn reached artifact embedding")
+
+    # Prove the modality gate runs before the owner-scoped vector index.
+    async def get_visual_memory_candidates(self, user_id, query_embedding):
+        raise AssertionError("unrelated turn reached visual candidates")
+
+
 class StubVisualSelector:
     """Select the one offered visual candidate by meaning."""
 
     # Return the candidate that a real semantic selector would choose.
     async def select(self, query, candidates):
         return ("active",) if "style" in query else ()
+
+
+class StubArtifactContextRouter:
+    """Return a fixed semantic decision before artifact retrieval."""
+
+    # Configure whether the conversation requires owned image context.
+    def __init__(self, needs_image: bool = True) -> None:
+        self.needs_image = needs_image
+
+    # Return the image modality only for visual-context requests.
+    async def required_modalities(self, query):
+        return ("image",) if self.needs_image else ()
 
 
 class StubOwnedArtifactsById:
@@ -385,6 +409,7 @@ async def test_visual_memory_recalls_style_without_image_keywords() -> None:
     service = ConversationService.__new__(ConversationService)
     service.memory = StubVisualMemory()
     service.visual_memory = StubVisualSelector()
+    service.artifact_context_router = StubArtifactContextRouter()
     service.image_artifacts = StubOwnedArtifacts("owner", upload)
     service.image_recall = None
     service.image_search = None
@@ -406,6 +431,22 @@ async def test_visual_memory_recalls_style_without_image_keywords() -> None:
 
     assert context["images"][0]["description"].endswith("navy jacket.")
     assert events[0]["event"] == "image_matches"
+
+
+# A schedule confirmation must stop before embeddings or private candidates load.
+@pytest.mark.asyncio
+async def test_unrelated_turn_skips_the_visual_vector_index() -> None:
+    service = ConversationService.__new__(ConversationService)
+    service.memory = ForbiddenVisualMemory()
+    service.visual_memory = StubVisualSelector()
+    service.artifact_context_router = StubArtifactContextRouter(needs_image=False)
+    service.image_artifacts = StubOwnedArtifactsById("owner", {})
+
+    matches = await service._load_visual_memory_matches(
+        "owner", "yes id like scout for 9:40pm", None
+    )
+
+    assert matches == []
 
 
 # The exact scenario reported live: the same photo, uploaded across three
@@ -434,6 +475,7 @@ async def test_the_same_uploaded_file_recalled_more_than_once_is_shown_once() ->
     service.visual_memory = StubVisualSelectorReturningMany(
         ("first", "second", "third")
     )
+    service.artifact_context_router = StubArtifactContextRouter()
     service.image_artifacts = StubOwnedArtifactsById("owner", artifacts)
     service.image_recall = None
     service.image_search = None
@@ -460,3 +502,39 @@ async def test_the_same_uploaded_file_recalled_more_than_once_is_shown_once() ->
     )
     # The newest copy survives, matching how a revision chain keeps the latest.
     assert [item["id"] for item in shown] == ["third"]
+
+
+# One selected revision family renders only its latest child, not parent and edit.
+@pytest.mark.asyncio
+async def test_visual_memory_collapses_an_uploaded_image_and_its_edit() -> None:
+    artifacts = {
+        "original": {
+            "id": "original",
+            "kind": "uploaded_image",
+            "status": "ready",
+            "parent_artifact_id": None,
+            "sha256": "a" * 64,
+            "created_at": "2026-08-13T18:03:19",
+            "metadata": {"analysis": "A person wearing a black cowboy hat."},
+        },
+        "edit": {
+            "id": "edit",
+            "kind": "generated_image",
+            "status": "ready",
+            "parent_artifact_id": "original",
+            "sha256": "b" * 64,
+            "created_at": "2026-08-13T18:07:13",
+            "metadata": {"refinement_feedback": "replace it with a straw hat"},
+        },
+    }
+    service = ConversationService.__new__(ConversationService)
+    service.memory = StubVisualMemory()
+    service.visual_memory = StubVisualSelectorReturningMany(("original", "edit"))
+    service.artifact_context_router = StubArtifactContextRouter()
+    service.image_artifacts = StubOwnedArtifactsById("owner", artifacts)
+
+    matches = await service._load_visual_memory_matches(
+        "owner", "which hat suited me better?", [0.1, 0.2]
+    )
+
+    assert [item["id"] for item in matches] == ["edit"]

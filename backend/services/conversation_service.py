@@ -10,6 +10,7 @@ import httpx
 from anyio import CancelScope
 
 from backend.agents.graph import build_assistant_graph
+from backend.agents.memory.artifact_context import ArtifactContextRouter
 from backend.agents.state import AgentState
 from backend.agents.vision.memory import VisualMemorySelector
 from backend.artifacts.image_lineage import (
@@ -270,6 +271,7 @@ class ConversationService:
         discovery_runs: DiscoveryRunRepository | None = None,
         memory_proposals: MemoryProposalAgent | None = None,
         visual_memory: VisualMemorySelector | None = None,
+        artifact_context_router: ArtifactContextRouter | None = None,
         agent_memory: AgentMemoryManager | None = None,
         referent_resolver: ReferentResolver | None = None,
     ):
@@ -312,6 +314,7 @@ class ConversationService:
         self.discovery_runs = discovery_runs
         self.memory_proposals = memory_proposals
         self.visual_memory = visual_memory
+        self.artifact_context_router = artifact_context_router
         self.agent_memory = agent_memory
         self.referent_resolver = referent_resolver
         # Built here rather than injected: it is a thin adapter over the two
@@ -1079,12 +1082,22 @@ class ConversationService:
         query_embedding: list[float] | None,
     ) -> list[dict[str, Any]]:
         selector = getattr(self, "visual_memory", None)
+        context_router = getattr(self, "artifact_context_router", None)
         repository = getattr(self, "image_artifacts", None)
         memory = getattr(self, "memory", None)
         candidate_loader = getattr(memory, "get_visual_memory_candidates", None)
-        if selector is None or repository is None or candidate_loader is None:
+        if (
+            selector is None
+            or context_router is None
+            or repository is None
+            or memory is None
+            or candidate_loader is None
+        ):
             return []
         try:
+            required = await context_router.required_modalities(query)
+            if "image" not in required:
+                return []
             vector = query_embedding or await memory.embed_query(query)
             candidates = await candidate_loader(user_id, vector)
             artifact_ids = await selector.select(query, candidates)
@@ -1100,7 +1113,7 @@ class ConversationService:
             # The same file uploaded more than once selects as several distinct
             # candidates - each is a real, independent row - but showing every
             # copy is the same picture repeated, not several relevant ones.
-            return collapse_duplicate_content(matches)
+            return collapse_duplicate_content(collapse_revision_chains(matches))
         except Exception:
             logger.warning("Visual-memory recall failed", exc_info=True)
             return []

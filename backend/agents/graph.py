@@ -160,8 +160,6 @@ def _render_agent_context(agents: list[dict[str, Any]]) -> str:
         parts = [role.rstrip(".")]
         if trigger:
             parts.append(f"runs on: {trigger.rstrip('.').lower()}")
-        if needs:
-            parts.append(f"setting one up needs {needs.rstrip('.')}")
         # Current state, read from the agent's own tables this turn. Without it
         # the assistant asks for things the user supplied minutes ago and calls
         # an agent ready when it is not.
@@ -171,6 +169,13 @@ def _render_agent_context(agents: list[dict[str, Any]]) -> str:
             parts.append(f"right now: {status.replace('_', ' ')}")
         if detail:
             parts.append(detail.rstrip("."))
+        # Only while something is genuinely outstanding. Listed unconditionally
+        # this reads as a to-do list rather than as what the feature requires,
+        # and an account with seven interests, a locality and a subscriber was
+        # asked for all three again in the same breath as its own line
+        # reporting them.
+        if needs and status == "needs_setup":
+            parts.append(f"still needs {needs.rstrip('.')}")
         facts = agent.get("facts")
         if isinstance(facts, dict) and facts:
             readings = ", ".join(
@@ -278,7 +283,18 @@ def _build_system_prompt(
         "above is its real current state, read from its own records a moment "
         "ago. Treat it as the truth about what is already in place, and never "
         "describe something as set, saved, configured, or covered unless that "
-        "line shows it. Interests, a home locality and a run cadence are "
+        "line shows it. The same line is equally binding the other way: a "
+        # Told only not to over-claim, the model over-corrected and asked an
+        # account whose own line read "Interests 7, Subscribers 1, right now:
+        # scheduled" for its interests, its locality and a delivery
+        # destination, all in one reply. A count above zero is that thing
+        # being present.
+        "count above zero means that part is already done, so do not ask for "
+        "it, do not list it as still needed, and do not offer to set it up "
+        "again. Ask only for what the line shows is genuinely absent, and if "
+        "everything it needs is present, say it is ready rather than "
+        "restating the requirements. Interests, a home locality and a run "
+        "cadence are "
         "captured from what the user says in conversation - including when "
         "they ask to change one that already exists, so never tell them a "
         "cadence, locality or interest can only be set through the agent "

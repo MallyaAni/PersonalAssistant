@@ -208,8 +208,20 @@ async def test_edit_image_is_always_offered_regardless_of_active_image():
     assert without_active == EditImageAction(instruction="add a straw hat")
     assert "edit_image" in {tool["function"]["name"] for tool in llm.tools}
 
-    with_active = await selector.select("ani.mallya", "add a hat", [], "artifact-123")
-    assert with_active == EditImageAction(instruction="add a straw hat")
+
+# Give the model the real interface state so it cannot deny a visible selection.
+@pytest.mark.asyncio
+async def test_active_image_state_is_included_in_the_model_decision():
+    selector, llm = _selector({"content": "no tool"})
+
+    await selector.select(
+        "ani.mallya",
+        "can you generate a labelled image of this?",
+        [],
+        "artifact-123",
+    )
+
+    assert "picture is currently selected and visible" in llm.messages[1]["content"]
     assert "edit_image" in {tool["function"]["name"] for tool in llm.tools}
 
 

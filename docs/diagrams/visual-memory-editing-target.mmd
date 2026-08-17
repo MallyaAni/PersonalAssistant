@@ -4,7 +4,9 @@ title: Multimodal Artifact Reference and Image Editing
 flowchart LR
     User([User message]) --> Choice{Artifact selected?}
     Choice -->|yes| Selected[Explicit image ID]
-    Choice -->|no| Candidates[Owner-scoped semantic<br/>visual candidates]
+    Choice -->|no| Gate{Qwen 3.5 4B<br/>artifact modality gate}
+    Gate -->|image required| Candidates[Owner-scoped semantic<br/>visual candidates]
+    Gate -->|none required| Ordinary[Continue without<br/>private artifact retrieval]
     Candidates --> Policy[Qwen 3.5 4B<br/>referent resolution]
     Selected --> Guard[Ownership, readiness<br/>and lineage]
     Policy -->|one match| Guard
@@ -21,9 +23,9 @@ flowchart LR
     Answer --> UI
     Clarify --> UI
 
-    Future[Planned: video observations and<br/>parsed PDF/RAG chunks use the same contract]
+    Future[Planned sources: video, audio and<br/>parsed PDF/RAG chunks]
     Verify[Planned: verify requested changes<br/>and preserved content before promotion]
-    Future -.-> Candidates
+    Future -.-> Gate
     Edit -.-> Verify -.-> Revision
 
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
@@ -32,7 +34,7 @@ flowchart LR
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef planned fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
     class User,Choice,UI interface;
-    class Selected,Candidates,Guard,Action,Answer,Edit,Revision,Clarify implemented;
+    class Selected,Candidates,Guard,Action,Answer,Edit,Revision,Clarify,Ordinary implemented;
     class Store data;
-    class Policy model;
+    class Gate,Policy model;
     class Future,Verify planned;

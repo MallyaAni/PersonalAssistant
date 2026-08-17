@@ -23,10 +23,11 @@ flowchart TB
     Referent -->|one match| ImageArtifact
     Referent -->|ambiguous or absent| Stream
 
-    Selector -->|search_web, a toolbox<br/>tool, or neither| Memory[MemoryCoordinatorAgent<br/>memory and artifact retrieval]
-    Memory --> Visual{Relevant stored<br/>image candidates?}
-    Visual -->|yes| VisualPolicy[Qwen 3.5 4B<br/>visual-memory selection]
-    Visual -->|no| Context[Curated context]
+    Selector -->|search_web, a toolbox<br/>tool, or neither| Memory[MemoryCoordinatorAgent<br/>personal memory retrieval]
+    Memory --> ArtifactGate{Qwen 3.5 4B<br/>artifact modality gate}
+    ArtifactGate -->|image required| Visual[Owner-scoped visual<br/>semantic candidates]
+    ArtifactGate -->|no artifact needed| Context[Curated context]
+    Visual --> VisualPolicy[Qwen 3.5 4B<br/>visual-memory selection]
     VisualPolicy --> Context
     Selector -->|search_web query,<br/>model-authored| Search[Privacy-screened<br/>internet search]
     Selector -->|toolbox tool| MCP[Guarded MCP<br/>invocation]
@@ -52,5 +53,5 @@ flowchart TB
     classDef failure fill:#fff3cd,stroke:#b78b20,color:#4d3900;
     class User,UI interface;
     class API,Selector,Search_Tool,Toolbox,Presentation,Progress,Diagram,Artifact,ImageAction,ImageArtifact,Memory,Visual,MCP,Search,Context,Inference,Persist,Stream,Proposal application;
-    class Main,DiagramModel,Interest,VisualPolicy,Referent model;
+    class Main,DiagramModel,Interest,ArtifactGate,VisualPolicy,Referent model;
     class Failure failure;

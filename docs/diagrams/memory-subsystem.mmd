@@ -9,6 +9,8 @@ flowchart TB
     Coordinator[MemoryCoordinatorAgent]
     Services[Application-owned services and write policy<br/>user scope · owner-visible for correction or deletion]
     Retrieval[Scope, expiry,<br/>relevance and dedup]
+    ArtifactGate[Qwen 3.5 4B<br/>artifact modality gate]
+    ArtifactIndex[Owned artifact indexes<br/>queried only when required]
     Context[Bounded literal context]
 
     Short[Short term<br/>LLM context window<br/>Session working memory<br/>Semantic cache]
@@ -26,6 +28,7 @@ flowchart TB
 
     Chat --> Proposal --> Services
     Chat --> Coordinator
+    Chat --> ArtifactGate
     UI --> Services
     Coordinator --> Services
     Services --> Short
@@ -35,6 +38,8 @@ flowchart TB
     Short --> Retrieval
     Long --> Retrieval
     Retrieval --> Context --> Inference
+    ArtifactGate -->|required modalities| ArtifactIndex --> Context
+    ArtifactIndex --> Database
     Inference -->|main role| Main
     Services --> Inference
     Inference -->|embedding role| TextEmbed --> Database
@@ -50,6 +55,6 @@ flowchart TB
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     class Chat,UI interface;
-    class Coordinator,Services,Retrieval,Context,Inference,Maintenance,ArtifactCleanup,Discovery application;
+    class Coordinator,Services,Retrieval,ArtifactIndex,Context,Inference,Maintenance,ArtifactCleanup,Discovery application;
     class Short,Long,Database,Files data;
-    class TextEmbed,Main,Proposal model;
+    class TextEmbed,Main,Proposal,ArtifactGate model;

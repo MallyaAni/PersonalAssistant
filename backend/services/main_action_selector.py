@@ -119,7 +119,8 @@ _EDIT_IMAGE = BuiltinTool(
     name=_EDIT_IMAGE_TOOL,
     label="Image edits",
     description=(
-        "Change the picture currently in view. Never for a resume, document, "
+        "Change the picture currently in view, including adding labels or "
+        "annotations to it. Never for a resume, document, "
         "plan, or schedule, even when the message says 'edit' and no other "
         "tool fits that request - answer those directly instead of calling "
         "any tool. Only for a direct instruction to change the picture, never "
@@ -186,7 +187,8 @@ _SYSTEM = (
     "Call generate_image only when the user wants a brand-new picture made "
     "for them, describing exactly what to draw.\n\n"
     "Call edit_image only when the user wants a change made to the picture "
-    "currently in view, describing that one change.\n\n"
+    "currently in view, describing that one change. A labelled or annotated "
+    "version of the picture in view is an edit, not a brand-new image.\n\n"
     "Call create_diagram only when the user explicitly asks for a technical "
     "diagram: a flowchart, architecture, sequence, state, class, or "
     "entity-relationship diagram.\n\n"
@@ -415,11 +417,17 @@ class MainActionSelector:
         tools.extend(MCPToolOrchestrationService.tool_definitions(aliases))
 
         history_text = render_recent_history(history)
-        user_content = (
+        visual_state = (
+            "A picture is currently selected and visible to the user."
+            if active_image_artifact_id
+            else "No picture is currently selected in the interface."
+        )
+        message_text = (
             f"Recent conversation:\n{history_text}\n\nNewest message: {query}"
             if history_text
             else query
         )
+        user_content = f"Visual interface state: {visual_state}\n\n{message_text}"
         messages: list[dict[str, Any]] = [
             {"role": "system", "content": _SYSTEM},
             {"role": "user", "content": user_content},

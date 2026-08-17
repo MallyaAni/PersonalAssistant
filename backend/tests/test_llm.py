@@ -35,6 +35,43 @@ def test_inference_factory_rejects_unknown_adapter():
         )
 
 
+# Verify native tool routing disables sampling at the provider boundary.
+def test_native_tool_decisions_use_deterministic_decoding():
+    observed = {}
+
+    # Capture the exact OpenAI-compatible request without calling a model host.
+    def handler(request: httpx.Request) -> httpx.Response:
+        observed["payload"] = json.loads(request.content)
+        return httpx.Response(
+            200,
+            json={"choices": [{"message": {"role": "assistant", "content": ""}}]},
+        )
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        llm = OpenAICompatibleInferenceProvider(
+            base_url="http://127.0.0.1:8000",
+            model="qualified/router",
+            client=client,
+        )
+        message = llm.chat_with_tools(
+            [{"role": "user", "content": "Choose an action"}],
+            [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "search_web",
+                        "description": "Search current public information.",
+                        "parameters": {"type": "object", "properties": {}},
+                    },
+                }
+            ],
+        )
+
+    assert message["role"] == "assistant"
+    assert observed["payload"]["tool_choice"] == "auto"
+    assert observed["payload"]["temperature"] == 0.0
+
+
 def test_lm_studio_chat_uses_compatible_multiturn_contract():
     observed = {}
 

@@ -206,6 +206,28 @@ async def test_an_ordinary_question_chooses_no_action(selector, text):
     assert action is None, action
 
 
+# Repeatedly replay the reported Scout confirmation so a sampled false search
+# cannot hide behind one fortunate pass.
+async def test_a_scout_schedule_confirmation_never_calls_an_external_tool(selector):
+    history = [
+        {
+            "query": "what agents do i have scheduled?",
+            "response": "Scout is scheduled and ready for configuration.",
+        }
+    ]
+    decisions = [
+        await selector.select(
+            "functional_test_user",
+            "yes id like scout for 9:40pm",
+            history,
+            None,
+        )
+        for _ in range(5)
+    ]
+
+    assert decisions == [None] * 5, decisions
+
+
 # edit_image is now offered every turn, active image or not - the check that
 # something is actually selected moved to ConversationService, since only the
 # application knows the real UI state. This holds the selector itself to two
@@ -226,6 +248,18 @@ async def test_an_edit_request_with_a_recent_picture_chooses_edit_image(selector
         history,
         None,
     )
+    assert isinstance(action, EditImageAction), action
+
+
+# A labelled version modifies the selected pixels even though it says "generate".
+async def test_a_labelled_version_of_the_selected_image_chooses_edit_image(selector):
+    action = await selector.select(
+        "functional_test_user",
+        "can you generate a labelled image of this?",
+        [],
+        "selected-image-id",
+    )
+
     assert isinstance(action, EditImageAction), action
 
 

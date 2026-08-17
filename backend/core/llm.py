@@ -96,7 +96,7 @@ class OpenAICompatibleInferenceProvider(InferenceProvider):
 
         return {**result, "content": content_value.strip()}
 
-    # Return the provider message so the application can inspect native tool calls.
+    # Return one reproducible native-tool decision for application routing.
     def chat_with_tools(
         self,
         messages: list[dict[str, Any]],
@@ -108,6 +108,11 @@ class OpenAICompatibleInferenceProvider(InferenceProvider):
             "messages": messages,
             "tools": tools,
             "tool_choice": "auto",
+            # Tool selection is a bounded application decision, not creative
+            # prose. Leaving this unset used the runtime's sampling default and
+            # made one unchanged request alternate among search, delegation and
+            # no tool across repeated calls.
+            "temperature": 0.0,
             "max_tokens": max_tokens,
             "reasoning_effort": self.reasoning_effort,
         }

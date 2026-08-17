@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from backend.artifacts.types import VisionAnalysis
+from backend.artifacts.types import VisionAnalysis, VisionUploadInspection
 from backend.cli import benchmark_inference
 from backend.core.interfaces import VisionProvider
 from backend.core.llm import InferenceProvider
@@ -93,6 +93,29 @@ class FakeEmbeddingProvider(EmbeddingProvider):
 
 class FakeVisionProvider(VisionProvider):
     """Recognize the benchmark fixture without external inference."""
+
+    # Answer the single-pass upload inspection with the same fixture marker.
+    #
+    # The benchmark never calls this; it exists because the provider contract
+    # requires it, and a double that cannot be instantiated fails the role it
+    # was standing in for rather than the behaviour under test.
+    async def inspect_upload(
+        self,
+        question: str,
+        content: bytes,
+        mime_type: str,
+    ) -> VisionUploadInspection:
+        return VisionUploadInspection(
+            intent="describe",
+            observation="RED_SQUARE",
+            answer="RED_SQUARE",
+            grounding="",
+            search_query="",
+            needs_reasoning=False,
+            unsupported_reason="",
+            model="fake-vision",
+            metadata={},
+        )
 
     # Return the exact grounded marker expected for the owned fixture.
     async def analyze(
