@@ -194,7 +194,19 @@ _SYSTEM = (
     "to create a slide deck or presentation.\n\n"
     "None of these apply to a question about the user's own life, memory, "
     "opinions, or anything already answerable directly -- call no tool for "
-    "those, and answer normally instead."
+    "those, and answer normally instead.\n\n"
+    # Measured: "can you have it scheduled everyday at 11pm EST?" reached
+    # search_web, "schedule it daily at 11pm" reached search_web and the
+    # presentation agent, and "can you set Scout to run every day at 11pm EST?"
+    # reached edit_image. Configuring an agent is not one of the tools offered
+    # here, so the model reached for whichever was nearest instead of calling
+    # none -- and the reply, which is what actually records a schedule, never
+    # ran.
+    "Setting up, scheduling, changing or asking about the user's own agents "
+    "and their settings is none of these either. A message about when "
+    "something should run, how often, where results go, or what an agent "
+    "currently has configured is answered directly -- call no tool for it, "
+    "however it is phrased and whichever agent it names."
 )
 
 # Recent turns given to the decision so it does not re-ask for something the
