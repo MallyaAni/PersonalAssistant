@@ -4,6 +4,7 @@ import uuid
 from pathlib import Path
 from typing import Any, cast
 
+import httpx
 import pytest
 from fastapi import Request
 from PIL import Image
@@ -843,3 +844,25 @@ def test_an_edit_comes_back_at_exactly_the_size_it_was_given():
     # An unreadable source must not lose a finished edit.
     edited = png(64, 64)
     assert _match_source_size(edited, b"not an image") is edited
+
+
+# Each image-provider fault must read as the thing the user should do next.
+#
+# A refused connection means the service is down and needs starting; a
+# connection accepted and then dropped means it went away mid-job and will
+# likely be back. Reported identically, the second read as a flat refusal and
+# nobody knew that retrying was the right move.
+@pytest.mark.parametrize(
+    ("exc", "expected"),
+    [
+        (httpx.ConnectError("refused"), "isn't running"),
+        (httpx.ConnectTimeout("timed out"), "isn't running"),
+        (httpx.RemoteProtocolError("Server disconnected"), "stopped partway"),
+        (httpx.ReadTimeout("read timed out"), "stopped partway"),
+        (ValueError("something else"), "Please try again"),
+    ],
+)
+def test_image_failures_are_reported_as_different_faults(exc, expected):
+    from backend.services.conversation_service import _image_provider_failure_message
+
+    assert expected in _image_provider_failure_message(exc, "generate")

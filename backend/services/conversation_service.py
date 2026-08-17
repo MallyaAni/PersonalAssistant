@@ -161,6 +161,19 @@ def _image_provider_failure_message(exc: BaseException, action: str) -> str:
             "The image generation backend (ComfyUI) isn't running. "
             "Start it and try again."
         )
+    # A connection accepted and then dropped is a different fault from one
+    # refused: the image service was up, took the job, and went away during it.
+    # Observed live as `RemoteProtocolError: Server disconnected without
+    # sending a response`, with the container restarting in the same second and
+    # generation working again once it came back. Reported as the generic
+    # failure it read as a flat refusal, so nobody knew a retry was the right
+    # move - which is the same mistake the message above exists to correct.
+    if isinstance(exc, httpx.RemoteProtocolError | httpx.ReadTimeout | httpx.ReadError):
+        return (
+            "The image generation backend stopped partway through this "
+            f"request, so I couldn't {action} that image. It usually comes "
+            "back on its own within a few minutes - try again then."
+        )
     return f"I couldn't {action} that image. Please try again."
 
 
