@@ -166,6 +166,10 @@ services:
       - "6379:6379"
 
   local-capabilities:
+    # The one service that was missing this. After a host reboot every sibling
+    # came back and this did not, so the MCP capabilities server was simply
+    # absent and tool calls had nothing to reach.
+    restart: unless-stopped
     build: .
     container_name: anios_local_capabilities
     command:
