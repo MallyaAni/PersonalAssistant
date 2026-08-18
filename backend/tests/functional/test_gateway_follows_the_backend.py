@@ -79,7 +79,8 @@ def _stack_is_up():
     _docker("rm", "-f", PLACEHOLDER, check=False)
 
 
-def test_the_gateway_follows_the_backend_to_a_new_address(_stack_is_up):
+@pytest.mark.usefixtures("_stack_is_up")
+def test_the_gateway_follows_the_backend_to_a_new_address():
     network = _network()
     before = _address()
     started = _docker("inspect", "-f", "{{.State.StartedAt}}", GATEWAY)
