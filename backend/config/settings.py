@@ -1,3 +1,4 @@
+import os
 from typing import Literal
 
 from pydantic import Field
@@ -500,8 +501,20 @@ class Settings(BaseSettings):
     # defence in depth over, not a replacement for, OS full-disk encryption.
     ENCRYPTION_KEY: str = ""
 
+    # The deployed stack's `.env`, except under test.
+    #
+    # Settings are built once at import, so whatever `.env` says governs every
+    # test run on a machine that has one - and this repository's sets
+    # AUTH_REQUIRED=true, which made any test touching a protected route pass
+    # on a clean checkout and fail on a real workstation. The failure looked
+    # like the feature under test rather than like configuration, and cost two
+    # separate investigations. Under test the file is ignored outright, so a
+    # test's environment is the defaults plus what the test itself sets, and
+    # nothing a developer keeps locally can change a result.
     model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", extra="ignore"
+        env_file=None if os.getenv("ANIOS_TEST_MODE") else ".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
     )
 
 

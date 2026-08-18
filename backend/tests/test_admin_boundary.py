@@ -215,6 +215,14 @@ async def test_a_used_invitation_is_kept_as_a_record_rather_than_revoked():
             )
             assert registered.status_code == 200
 
+        # Registering signs the new guest in, and the reply's Set-Cookie lands
+        # in the same jar the operator was using - so anything sent afterwards
+        # on that client is the guest speaking, not the operator. This passed
+        # for a while only because the deployed AUTH_COOKIE_SECURE=true made
+        # httpx drop that cookie over plain http; with the suite no longer
+        # reading the deployment's .env, the cookie is kept and the admin call
+        # was refused. The operator's own client says who is asking.
+        async with _client(token) as client:
             listed = (await client.get("/api/v1/admin/invites")).json()["invites"]
             used = [item for item in listed if item["status"] == "used"]
             assert used, "the consumed invitation should be listed as used"
