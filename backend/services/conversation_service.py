@@ -1457,7 +1457,20 @@ class ConversationService:
                 break
             if round_number + 1 >= max(1, settings.SEARCH_MAX_ROUNDS):
                 break
-            better = self.search_planner.refine(question, gathered, tried)
+            # Rounds up to the minimum are not negotiated. Asked whether the
+            # results were sufficient, the model answered "yes" 8 times out of
+            # 8 on results that named two options and gave a figure for
+            # neither, and across four wordings of the question the rate moved
+            # between 0/8 and 3/5 with no trend - a judgement it does not make
+            # reliably, so the turn stops asking and simply looks again. Past
+            # the minimum its opinion is worth having, because by then the
+            # question is whether to keep going rather than whether to start.
+            if round_number + 1 < settings.SEARCH_MIN_ROUNDS:
+                better = self.search_planner.another_angle(
+                    question, gathered, tried
+                )
+            else:
+                better = self.search_planner.refine(question, gathered, tried)
             if not better:
                 break
             # Every outbound query is screened, not just the first: a refined

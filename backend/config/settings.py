@@ -473,6 +473,15 @@ class Settings(BaseSettings):
     # answer look identical to results that do, and nothing could try again.
     # Each extra round costs a search and a model call, so this is small.
     SEARCH_MAX_ROUNDS: int = Field(default=3, ge=1, le=5)
+    # How many of those rounds happen without asking the model first.
+    #
+    # Asked whether results were sufficient, it said yes 8 times out of 8
+    # on results naming two options and giving a figure for neither, and
+    # four wordings of the question moved the rate between 0/8 and 3/5
+    # with no trend. A second look is cheaper than a wrong answer built
+    # from memory, so it is taken rather than requested. Set to 1 to make
+    # every round conditional again.
+    SEARCH_MIN_ROUNDS: int = Field(default=2, ge=1, le=3)
     # Fixed read-only MCP boundary the turn's action selection calls into.
     SEARCH_MCP_SERVER_ID: str = "internet"
     SEARCH_MCP_TOOL_NAME: str = "search_web"

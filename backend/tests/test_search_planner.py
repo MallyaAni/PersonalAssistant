@@ -175,3 +175,66 @@ def test_list_markers_and_quotes_are_stripped():
     planner = SearchPlanner(StubLLM('- "DGX Spark 128GB unified memory"'))
 
     assert planner.compose("q", []) == "DGX Spark 128GB unified memory"
+
+
+# Both of these were produced by the real model and both would have been sent
+# to a search engine verbatim.
+def test_a_not_enough_verdict_is_not_searched_for():
+    planner = SearchPlanner(StubLLM("NOT ENOUGH"))
+
+    assert planner.refine("q", [{"title": "t"}], ["prev"]) == ""
+
+
+def test_a_label_the_model_invented_is_still_recognised():
+    planner = SearchPlanner(
+        StubLLM("Better search query: DeepSeek V4 Pro Flash memory requirement GB")
+    )
+
+    assert planner.refine("q", [{"title": "t"}], ["prev"]) == (
+        "DeepSeek V4 Pro Flash memory requirement GB"
+    )
+
+
+# A whole sentence before a colon is prose, not a label, and taking only what
+# follows it would throw away the part that says what to search for.
+def test_a_sentence_before_a_colon_is_not_treated_as_a_label():
+    planner = SearchPlanner(
+        StubLLM(
+            "The figure that decides this is the memory each one needs: "
+            "DeepSeek V4 Pro VRAM GB"
+        )
+    )
+
+    kept = planner.compose("q", [])
+
+    assert "figure that decides" in kept
+
+
+# The unconditional round. `refine` puts a yes/no in front of the model and it
+# takes the answer that ends the work; this asks for a query instead, which has
+# no cheap answer.
+def test_another_angle_asks_for_a_query_rather_than_permission():
+    llm = StubLLM("DeepSeek V4 Pro Flash parameter count memory GB")
+    planner = SearchPlanner(llm)
+
+    proposed = planner.another_angle(
+        "which fits one spark", [{"title": "V4 family overview"}], ["deepseek v4"]
+    )
+
+    assert proposed == "DeepSeek V4 Pro Flash parameter count memory GB"
+    # What has already been tried is stated, or it proposes the same thing.
+    assert "deepseek v4" in llm.asked[0]
+
+
+def test_another_angle_refuses_to_repeat_a_tried_query():
+    planner = SearchPlanner(StubLLM("DeepSeek V4"))
+
+    assert planner.another_angle("q", [{"title": "t"}], ["deepseek v4"]) == ""
+
+
+# It is asked for a query, but a model may still answer the question it was
+# not asked; a verdict is not something to search for.
+def test_another_angle_treats_a_verdict_as_no_proposal():
+    planner = SearchPlanner(StubLLM("ENOUGH"))
+
+    assert planner.another_angle("q", [{"title": "t"}], ["prev"]) == ""
