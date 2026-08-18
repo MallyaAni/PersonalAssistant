@@ -2,6 +2,37 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-18 — Edits that need the scene rebuilt
+
+- An edit asking for something the picture does not contain returned the
+  picture unchanged. "Make the image look like it came in its original
+  packaging" was routed to the source-conditioned editor, which cannot do it.
+  Four measurements against the shipped `flux-2-klein-4b`: reference-conditioned
+  editing left the image unchanged at 4 steps and again at 20; raising CFG from
+  1.0 to 3.0 shifted colour and contrast without carrying out the instruction;
+  and true img2img from the source latent at denoise 0.70 also left it
+  unchanged. The editor conditions on the source and is trained to preserve it,
+  so no wording or step count makes it restage a scene.
+- `edit_image` now states whether carrying out the instruction means restaging
+  the scene, decided by the model that reads the request. Verified against the
+  live model: packaging and "make it a winter scene" are restaging; recolouring
+  or removing one object is not.
+- A restaging edit is generated from a description of the source rather than
+  edited. The description is resolved in preference order - the stored
+  analysis, then the generation prompt, then a fresh vision pass - which is
+  what makes it work for an upload, for a generated image, and for an edited
+  descendant whose own generation prompt is empty. With nothing to describe it
+  falls back to the in-place edit rather than refusing the turn.
+- The result stays a child of its source, so lineage still reads, and is
+  recorded as `edit_mode: "restaged"` with the composed scene. The reply says
+  it is a new image based on the picture rather than an edit of it, because the
+  subjects are the user's and the surfaces and framing are not.
+
+Evidence: 1151 structural tests pass. The shipped path was run end to end
+against the real uploaded photograph and produced sealed labelled packaging,
+with `edit_mode: restaged` and the parent link intact - including the fallback
+tier, since that source had no stored analysis and had to be described fresh.
+
 ## 2026-08-18 — Outage and the guards that replace three written warnings
 
 - Fixed the site-wide `502`. `nginx.gateway.conf` proxied `/api/` to a literal

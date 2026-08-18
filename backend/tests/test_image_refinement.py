@@ -180,16 +180,43 @@ async def test_refine_rejects_invalid_parent_or_feedback() -> None:
 
 
 # The reported failure. "Make the image look like it came in its original
-# packaging" came back as the same photograph, because every edit was sent with
-# "do not add, remove, or move anything" appended - and that edit cannot be
-# carried out without adding something. The model obeyed the more specific
-# prohibition, which was the correct reading of a self-contradicting request.
-@pytest.mark.asyncio
-async def test_a_restaging_edit_is_not_told_to_add_nothing():
-    images = StubImages(_GENERATED)
-    service = ImageRefinementService(images)  # type: ignore[arg-type]
+# packaging" came back as the same photograph. The editor conditions on the
+# source and is trained to preserve it, so an edit that needs the scene rebuilt
+# is generated from a description of the source instead - and stays that
+# source's child, so the lineage still reads.
+class StubSceneWriter:
+    """Return one fixed scene without reaching a model."""
 
-    await service.refine(
+    def __init__(self, scene: str = "the same seafood, sealed in packaging") -> None:
+        self.scene = scene
+        self.prompts: list[str] = []
+
+    def chat(self, messages, *args, **kwargs):
+        self.prompts.append(messages[-1]["content"])
+        return {"content": self.scene}
+
+
+class StubGeneratingImages(StubImages):
+    """Record generation as well as editing, so the path taken is visible."""
+
+    def __init__(self, record) -> None:
+        super().__init__(record)
+        self.generate_calls: list[dict[str, Any]] = []
+
+    async def generate(self, **kwargs: Any) -> dict[str, Any]:
+        self.generate_calls.append(kwargs)
+        return {"id": "restaged", "kind": "generated_image"}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("kind", ["uploaded_image", "generated_image"])
+async def test_a_restaging_edit_is_generated_from_the_source_description(kind: str):
+    record = {**_GENERATED, "kind": kind, "metadata": {"analysis": "fish on a board"}}
+    images = StubGeneratingImages(record)
+    writer = StubSceneWriter()
+    service = ImageRefinementService(images, llm=writer)  # type: ignore[arg-type]
+
+    revision = await service.refine(
         "ani.mallya",
         "artifact-1",
         "Make the image look like it came in its original packaging",
@@ -198,30 +225,49 @@ async def test_a_restaging_edit_is_not_told_to_add_nothing():
         restages_the_scene=True,
     )
 
-    instruction = images.edit_calls[0]["instruction"]
-    assert "Do not add, remove, or move anything" not in instruction
-    assert "Apply only this edit" not in instruction
-    # What must survive is which things these are, not where they sit.
-    assert "identity of the subjects" in instruction
-    assert "may add whatever the instruction requires" in instruction
+    assert revision["id"] == "restaged"
+    # Generated, not edited: the editor cannot carry this out.
+    assert images.edit_calls == []
+    call = images.generate_calls[0]
+    assert call["request"].prompt == "the same seafood, sealed in packaging"
+    # Both halves reached the writer, or the scene cannot be consistent.
+    assert "fish on a board" in writer.prompts[0]
+    assert "original packaging" in writer.prompts[0]
+    # Lineage survives for an upload exactly as it does for a generated image.
+    assert call["parent"] == record
+    assert call["extra_metadata"]["edit_mode"] == "restaged"
+    assert call["extra_metadata"]["refinement_feedback"].startswith("Make the image")
+
+
+# Without a description there is nothing to generate from, and refusing the
+# turn would be worse than the weaker answer.
+@pytest.mark.asyncio
+async def test_a_restaging_edit_falls_back_to_editing_when_nothing_describes_it():
+    record = {**_GENERATED, "metadata": {}}
+    images = StubGeneratingImages(record)
+    service = ImageRefinementService(images, llm=StubSceneWriter())  # type: ignore[arg-type]
+
+    await service.refine(
+        "ani.mallya", "artifact-1", "put it in packaging", "c", "t",
+        restages_the_scene=True,
+    )
+
+    assert images.generate_calls == []
+    assert images.edit_calls, "the turn must still produce something"
 
 
 # The other half must not regress: a local change still has to leave the rest
 # of the picture alone, or one recoloured hat rebuilds the whole scene.
 @pytest.mark.asyncio
 async def test_a_local_edit_still_protects_everything_it_did_not_mention():
-    images = StubImages(_GENERATED)
-    service = ImageRefinementService(images)  # type: ignore[arg-type]
+    images = StubGeneratingImages(_GENERATED)
+    service = ImageRefinementService(images, llm=StubSceneWriter())  # type: ignore[arg-type]
 
     await service.refine(
-        "ani.mallya",
-        "artifact-1",
-        "make the hat black",
-        "conversation-1",
-        "trace-1",
+        "ani.mallya", "artifact-1", "make the hat black", "c", "t",
         restages_the_scene=False,
     )
 
+    assert images.generate_calls == []
     instruction = images.edit_calls[0]["instruction"]
     assert "Do not add, remove, or move anything" in instruction
-    assert "identity of the subjects" not in instruction

@@ -791,7 +791,12 @@ def get_image_refinement_service(
         thread_max_stored=settings.VISION_THREAD_MAX_STORED,
         memory=memory,
     )
-    return ImageRefinementService(images=images, vision=observer)
+    # The reasoning role writes the scene a restaging edit is generated from.
+    # It is prose describing a picture, not a schema to honour, so it belongs
+    # with the model that writes prose rather than with the structured roles.
+    return ImageRefinementService(
+        images=images, vision=observer, llm=get_reasoning_llm_client()
+    )
 
 
 ImageRefinementDependency = Annotated[

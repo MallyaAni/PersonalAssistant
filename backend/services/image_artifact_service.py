@@ -116,6 +116,14 @@ class ImageArtifactService:
         extra_metadata: dict[str, Any] | None = None,
         extra_style: str = "",
         on_pending: Callable[[dict[str, Any]], Awaitable[None]] | None = None,
+        # Set when this picture was built from one the user already has, rather
+        # than from nothing. The source-conditioned editor cannot restage a
+        # scene, so an edit that needs the scene rebuilt is carried out by
+        # generating from a description of the original - and the result is
+        # still that original's child. Without this the lineage breaks and the
+        # new picture looks unrelated to the one it came from.
+        parent: dict[str, Any] | None = None,
+        title: str = "Generated image",
     ) -> dict[str, Any]:
         artifact = await self.repository.create_binary_pending(
             user_id=user_id,
@@ -124,7 +132,10 @@ class ImageArtifactService:
             kind="generated_image",
             provider=self.provider_name,
             model=self.model_name,
-            title="Generated image",
+            title=title,
+            parent_artifact_id=(
+                str(parent.get("id") or "") or None if parent else None
+            ),
         )
         artifact_id = str(artifact["id"])
         storage_key: str | None = None

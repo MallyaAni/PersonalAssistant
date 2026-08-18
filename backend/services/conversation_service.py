@@ -710,7 +710,23 @@ class ConversationService:
             yield {"event": "done", "data": {}}
             return
 
-        response_text = "Here's the edited image."
+        # A restaged request was not edited, it was rebuilt: the editor
+        # conditions on the source and will not change a scene, so the picture
+        # was generated from a description of the original. Calling that "the
+        # edited image" would misrepresent what the user is looking at - the
+        # subjects are theirs, the surfaces and framing are not.
+        artifact_metadata = artifact.get("metadata")
+        artifact_metadata = (
+            artifact_metadata if isinstance(artifact_metadata, dict) else {}
+        )
+        if artifact_metadata.get("edit_mode") == "restaged":
+            response_text = (
+                "That change needed the whole scene rebuilt rather than "
+                "touched up, so this is a new image based on your picture "
+                "rather than an edit of it - the original is untouched."
+            )
+        else:
+            response_text = "Here's the edited image."
         await self._persist_completed_turn(
             user_id,
             conversation_id,

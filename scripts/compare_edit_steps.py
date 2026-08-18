@@ -20,10 +20,7 @@ from backend.artifacts.image import ComfyUIImageEditProvider
 from backend.artifacts.storage import LocalBinaryArtifactStore
 from backend.artifacts.types import ImageEditRequest
 from backend.config.settings import settings
-from backend.services.image_refinement_service import (
-    _KEEP_THE_SCENE,
-    _KEEP_THE_SUBJECTS,
-)
+from backend.services.image_refinement_service import _KEEP_THE_SCENE
 
 # Read through the store, not off the disk. Artifacts are sealed at rest
 # (`enc:1:` marker), so reading the file directly hands ComfyUI ciphertext and
@@ -60,8 +57,16 @@ async def main(label: str, steps: int, restages: bool) -> None:
 
     # Assembled exactly as ImageRefinementService assembles it, so what is
     # measured here is what the product sends.
+    # The permissive wording this measured, kept verbatim rather than imported:
+    # it was removed from the service once measurement showed the editor will
+    # not restage a scene however it is asked, and this records that finding.
+    permissive = (
+        "Keep the identity of the subjects exactly as they are. Everything "
+        "else serving the instruction may change, and you may add whatever "
+        "the instruction requires."
+    )
     if restages:
-        instruction = f"Edit image 1 as follows: {FEEDBACK}. {_KEEP_THE_SUBJECTS}"
+        instruction = f"Edit image 1 as follows: {FEEDBACK}. {permissive}"
     else:
         instruction = f"Apply only this edit to image 1: {FEEDBACK}. {_KEEP_THE_SCENE}"
 
