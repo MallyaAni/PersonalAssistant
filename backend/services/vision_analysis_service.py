@@ -440,6 +440,7 @@ class VisionAnalysisService:
             inspection.grounding == "unsupported"
             and inspection.unsupported_reason == "model_uncertain"
             and not escalated
+            and bool(inspection.identified_items)
         )
         should_reason = (
             needs_user_answer

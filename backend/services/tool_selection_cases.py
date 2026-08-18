@@ -1,4 +1,4 @@
-"""Labelled turns for measuring which tool the router actually picks.
+"""Labelled turns for measuring which built-in action the router picks.
 
 Every routing test that existed before this asked a binary question about one
 tool in isolation - did `search_web` fire, did `edit_image` fire - over a set
@@ -71,6 +71,19 @@ _SCOUT_HISTORY = (
     (
         "what agents do i have scheduled?",
         "Scout runs daily at 22:40. 0 feeds, 2 interests, 1 subscriber.",
+    ),
+)
+_EMAIL_DETAILS_HISTORY = (
+    (
+        "Can you draft me an email to my retail team to ask for shift coverage?",
+        "What shifts do you need covered, and how many people are needed?",
+    ),
+)
+_EMAIL_DRAFT_HISTORY = (
+    *_EMAIL_DETAILS_HISTORY,
+    (
+        "This Saturday, 8am to 7pm. Just one person.",
+        "Here is the draft. Would you like a more casual or formal tone?",
     ),
 )
 
@@ -189,6 +202,31 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
         "make it weekly instead", NO_TOOL, "agent_config", history=_SCOUT_HISTORY
     ),
     SelectionCase("what agents do i have scheduled?", NO_TOOL, "agent_config"),
+    # --- short answers continue the writing task already in progress --------
+    SelectionCase(
+        "This Saturday, 8am to 7pm",
+        NO_TOOL,
+        "writing_followup",
+        history=_EMAIL_DETAILS_HISTORY,
+    ),
+    SelectionCase(
+        "More casual",
+        NO_TOOL,
+        "writing_followup",
+        history=_EMAIL_DRAFT_HISTORY,
+    ),
+    SelectionCase(
+        "Add that I can swap next weekend",
+        NO_TOOL,
+        "writing_followup",
+        history=_EMAIL_DRAFT_HISTORY,
+    ),
+    SelectionCase(
+        "Ask them to reply by Thursday at noon",
+        NO_TOOL,
+        "writing_followup",
+        history=_EMAIL_DRAFT_HISTORY,
+    ),
     # --- writing about a visual subject is still writing --------------------
     SelectionCase("write me a haiku about rain", NO_TOOL, "creative_writing"),
     SelectionCase(
@@ -210,3 +248,15 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
 # same trap `backend/vision/grounding_cases.py` records. Compare two models
 # with the CLI, which reports the matrix; use this only as a gate.
 ACCURACY_FLOOR = 0.70
+
+# Preserve each built-in capability independently so a strong common class
+# cannot hide the collapse of a smaller, expensive one. These sit below the
+# measured current baseline, including the known 0.80 diagram result.
+PER_TOOL_ACCURACY_FLOORS: dict[str, float] = {
+    SEARCH: 0.75,
+    GENERATE_IMAGE: 0.75,
+    EDIT_IMAGE: 0.66,
+    CREATE_DIAGRAM: 0.60,
+    DELEGATE_PRESENTATION: 0.50,
+    NO_TOOL: 0.85,
+}

@@ -22,8 +22,8 @@ The repository contains:
   server with an isolated Google ADK research worker, Tavily fallback, bounded
   local quota protection and provider-attributed sources;
 - an explicit chat-to-Mermaid diagram path with user-scoped PostgreSQL artifact persistence and strict in-browser SVG rendering;
-- free local HiDream/ComfyUI image generation, four-step FLUX.2 Klein
-  source-aware editing of generated or uploaded images, and validated Qwen
+- free local four-step FLUX.2 Klein generation and source-aware editing through
+  ComfyUI for generated or uploaded images, plus validated Qwen
   vision analysis in the chat composer, with natural-language creation intent,
   immutable edit lineage,
   in-place active revisions, grounded historical questions, guarded
@@ -39,10 +39,10 @@ The repository contains:
   a durable worker executes the presentation LangGraph independently of chat,
   application code compiles strict editable deck specifications and ranked
   visual briefs, the worker progressively adds the highest-value applicable
-  HiDream visuals by default without making imagery a deck-success dependency, PptxGenJS
+  FLUX visuals by default without making imagery a deck-success dependency, PptxGenJS
   renders native Office objects, and LibreOffice validates each revision before
   reconnectable stage-weighted progress from outline through Office validation,
-  persistent per-slide feedback, additional HiDream generation, FLUX refinement
+  persistent per-slide feedback, additional FLUX generation and refinement
   of an attached slide image, history, preview, download, deletion, and explicit
   cleanup of failed decks without completed slides;
 - an agent-facing local FastMCP facade over the same visual and presentation

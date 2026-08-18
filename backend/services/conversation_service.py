@@ -18,7 +18,6 @@ from backend.artifacts.image_lineage import (
     collapse_revision_chains,
 )
 from backend.artifacts.image_prompt_match import prefer_prompt_matches
-from backend.artifacts.image_recall_router import CascadingImageRecallRouter
 from backend.artifacts.image_retrieval import ImageRetrievalPolicy
 from backend.artifacts.lineage import Lineage
 from backend.artifacts.types import ImageGenerationRequest
@@ -266,7 +265,6 @@ class ConversationService:
         diagram_artifacts: DiagramArtifactService | None = None,
         agent_registry: Any | None = None,
         search: SearchProvider | None = None,
-        image_recall: CascadingImageRecallRouter | None = None,
         image_search: ArtifactEmbeddingStore | None = None,
         image_artifacts: BinaryArtifactRepository | None = None,
         lineage: ArtifactLineageStore | None = None,
@@ -297,7 +295,6 @@ class ConversationService:
         self.diagram_artifacts = diagram_artifacts
         self.agent_registry = agent_registry
         self.search = search
-        self.image_recall = image_recall
         self.image_search = image_search
         self.image_artifacts = image_artifacts
         self.lineage = lineage
@@ -985,9 +982,7 @@ class ConversationService:
         ):
             yield event
 
-    # Find stored images whose pixels match the request, when the deterministic
-    # policy says this turn is a recall. Image vectors share the text latent
-    # space, so the query is embedded once by the ordinary text embedder.
+    # Find stored images whose pixels match a semantically approved recall.
     async def _load_image_matches(
         self,
         user_id: str,
@@ -995,15 +990,8 @@ class ConversationService:
         trace_id: str,
         query_embedding: list[float] | None,
     ) -> list[dict[str, Any]]:
-        if self.image_recall is None or self.image_search is None:
+        if self.image_search is None:
             return []
-        decision = await self.image_recall.decide(query)
-        if not decision.should_search:
-            return []
-
-        logger.info(
-            "Trace %s routing to image search (reason=%s)", trace_id, decision.reason
-        )
         try:
             vector = query_embedding or await self.memory.embed_query(query)
             # Over-fetch so the leading cluster is measured against true nearest
@@ -1095,22 +1083,17 @@ class ConversationService:
         query_embedding: list[float] | None,
     ) -> list[dict[str, Any]]:
         selector = getattr(self, "visual_memory", None)
-        context_router = getattr(self, "artifact_context_router", None)
         repository = getattr(self, "image_artifacts", None)
         memory = getattr(self, "memory", None)
         candidate_loader = getattr(memory, "get_visual_memory_candidates", None)
         if (
             selector is None
-            or context_router is None
             or repository is None
             or memory is None
             or candidate_loader is None
         ):
             return []
         try:
-            required = await context_router.required_modalities(query)
-            if "image" not in required:
-                return []
             vector = query_embedding or await memory.embed_query(query)
             candidates = await candidate_loader(user_id, vector)
             artifact_ids = await selector.select(query, candidates)
@@ -1130,6 +1113,39 @@ class ConversationService:
         except Exception:
             logger.warning("Visual-memory recall failed", exc_info=True)
             return []
+
+    # Decide once which private artifact indexes this turn is allowed to query.
+    async def _required_artifact_modalities(self, query: str) -> tuple[str, ...]:
+        router = getattr(self, "artifact_context_router", None)
+        if router is None:
+            return ()
+        return await router.required_modalities(query)
+
+    # Recall an image through one semantic gate and the two ranked image indexes.
+    async def _recall_image_matches(
+        self,
+        user_id: str,
+        query: str,
+        trace_id: str,
+        query_embedding: list[float] | None,
+    ) -> list[dict[str, Any]]:
+        required_modalities = await self._required_artifact_modalities(query)
+        if "image" not in required_modalities:
+            return []
+        logger.info("Trace %s semantically approved image recall", trace_id)
+        matches = await self._load_image_matches(
+            user_id,
+            query,
+            trace_id,
+            query_embedding,
+        )
+        if matches:
+            return matches
+        return await self._load_visual_memory_matches(
+            user_id,
+            query,
+            query_embedding,
+        )
 
     # Convert one stored image and its optional lineage into bounded prompt context.
     def _image_context_item(
@@ -1178,16 +1194,12 @@ class ConversationService:
             user_id,
             active_image_artifact_id,
         )
-        image_matches = await self._load_image_matches(
-            user_id,
-            query,
-            trace_id,
-            query_embedding,
-        )
-        if active_image is None and not image_matches:
-            image_matches = await self._load_visual_memory_matches(
+        image_matches: list[dict[str, Any]] = []
+        if active_image is None:
+            image_matches = await self._recall_image_matches(
                 user_id,
                 query,
+                trace_id,
                 query_embedding,
             )
         prompt_images = self._prompt_images(active_image, image_matches)

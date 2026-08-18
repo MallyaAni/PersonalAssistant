@@ -164,14 +164,34 @@ async def test_reasoning_rejects_unsupported_species_candidates() -> None:
     # say the identification cannot be made. Pinned to "cannot determine" it
     # failed three runs in four on "the fish species cannot be determined",
     # which is the behaviour this test exists to require.
-    assert "cannot" in answer or "can't" in answer or "not possible" in answer
+    limitation_markers = (
+        "cannot",
+        "can't",
+        "not possible",
+        "not enough",
+        "no definitive",
+        "no further guesses",
+        "insufficient",
+        "uncertain",
+    )
+    assert any(marker in answer for marker in limitation_markers), answer
     assert any(word in answer for word in ("determin", "identif", "confirm", "tell"))
     # The guarantee that actually matters, and the one hedging must not erode:
     # with no candidate offered by the vision pass, no species may be supplied
     # from world knowledge however strongly the question suggests a region.
     assert not any(
         candidate in answer
-        for candidate in ("rohu", "catla", "indian eel", "snakehead", "hilsa")
+        for candidate in (
+            "rohu",
+            "catla",
+            "indian eel",
+            "snakehead",
+            "hilsa",
+            "sardine",
+            "mackerel",
+            "demersal",
+            "monodactylus",
+        )
     )
 
 

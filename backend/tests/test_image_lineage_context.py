@@ -165,15 +165,6 @@ def test_image_description_prefers_the_canonical_thread_seed() -> None:
     )
 
 
-class StubRecall:
-    async def decide(self, query):
-        class Decision:
-            should_search = True
-            reason = "descriptive_reference"
-
-        return Decision()
-
-
 class StubSearch:
     def __init__(self, hits: list[dict[str, Any]]) -> None:
         self.hits = hits
@@ -245,9 +236,11 @@ class StubArtifactContextRouter:
     # Configure whether the conversation requires owned image context.
     def __init__(self, needs_image: bool = True) -> None:
         self.needs_image = needs_image
+        self.calls = 0
 
     # Return the image modality only for visual-context requests.
     async def required_modalities(self, query):
+        self.calls += 1
         return ("image",) if self.needs_image else ()
 
 
@@ -300,7 +293,8 @@ async def test_every_streamed_retrieval_event_survives_the_json_encoder() -> Non
 
     service = ConversationService.__new__(ConversationService)
     service.memory = StubMemory()
-    service.image_recall = StubRecall()
+    router = StubArtifactContextRouter()
+    service.artifact_context_router = router
     service.image_search = StubSearch([upload, edit])
     service.image_retrieval = KeepAll()
     service.image_search_limit = 5
@@ -341,7 +335,6 @@ async def test_active_owned_image_reaches_chat_context_without_recall_words() ->
     }
     service = ConversationService.__new__(ConversationService)
     service.image_artifacts = StubOwnedArtifacts("owner", upload)
-    service.image_recall = None
     service.image_search = None
     service.lineage = None
     service.search = None
@@ -377,7 +370,6 @@ async def test_active_image_from_another_user_never_reaches_chat_context() -> No
     }
     service = ConversationService.__new__(ConversationService)
     service.image_artifacts = StubOwnedArtifacts("owner", upload)
-    service.image_recall = None
     service.image_search = None
     service.lineage = None
     service.search = None
@@ -409,9 +401,9 @@ async def test_visual_memory_recalls_style_without_image_keywords() -> None:
     service = ConversationService.__new__(ConversationService)
     service.memory = StubVisualMemory()
     service.visual_memory = StubVisualSelector()
-    service.artifact_context_router = StubArtifactContextRouter()
+    router = StubArtifactContextRouter()
+    service.artifact_context_router = router
     service.image_artifacts = StubOwnedArtifacts("owner", upload)
-    service.image_recall = None
     service.image_search = None
     service.lineage = None
     service.search = None
@@ -431,6 +423,7 @@ async def test_visual_memory_recalls_style_without_image_keywords() -> None:
 
     assert context["images"][0]["description"].endswith("navy jacket.")
     assert events[0]["event"] == "image_matches"
+    assert router.calls == 1
 
 
 # A schedule confirmation must stop before embeddings or private candidates load.
@@ -439,14 +432,30 @@ async def test_unrelated_turn_skips_the_visual_vector_index() -> None:
     service = ConversationService.__new__(ConversationService)
     service.memory = ForbiddenVisualMemory()
     service.visual_memory = StubVisualSelector()
-    service.artifact_context_router = StubArtifactContextRouter(needs_image=False)
+    router = StubArtifactContextRouter(needs_image=False)
+    service.artifact_context_router = router
     service.image_artifacts = StubOwnedArtifactsById("owner", {})
 
-    matches = await service._load_visual_memory_matches(
-        "owner", "yes id like scout for 9:40pm", None
-    )
+    service.image_search = None
+    service.lineage = None
+    service.search = None
 
-    assert matches == []
+    context: dict[str, Any] = {}
+    events = [
+        event
+        async for event in service._stream_retrieved_context(
+            context,
+            "owner",
+            "yes id like scout for 9:40pm",
+            "trace",
+            None,
+            None,
+        )
+    ]
+
+    assert events == []
+    assert "images" not in context
+    assert router.calls == 1
 
 
 # The exact scenario reported live: the same photo, uploaded across three
@@ -477,7 +486,6 @@ async def test_the_same_uploaded_file_recalled_more_than_once_is_shown_once() ->
     )
     service.artifact_context_router = StubArtifactContextRouter()
     service.image_artifacts = StubOwnedArtifactsById("owner", artifacts)
-    service.image_recall = None
     service.image_search = None
     service.lineage = None
     service.search = None

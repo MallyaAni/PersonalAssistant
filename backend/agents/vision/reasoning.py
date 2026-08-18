@@ -33,10 +33,12 @@ Rules:
   silvery scales and body shape, though the markings are not clear enough to be
   certain" than by a refusal that withholds a reading already taken. What is
   forbidden is stating a candidate flatly, as though the pixels settled it.
-- Report every candidate the notes list, not only the confident ones. Dropping
-  the uncertain ones turns a partial identification into an apparent failure,
-  and dropping the confident ones alongside them discards what was actually
-  established.
+- Report every high-confidence candidate whose basis supports it. Report a
+  medium- or low-confidence candidate only when its stated basis still fits
+  the neutral description and is not contradicted by independent evidence.
+  Label every uncertain candidate plainly. It is acceptable to omit a weak
+  reading that conflicts with the visible evidence or search results; never
+  replace it with a new candidate from general knowledge.
 - Report only candidates the notes actually list. Hedging is permission to pass
   on a reading already taken, never permission to invent one: when no candidate
   is listed, say the identification cannot be made and name nothing, however
@@ -112,6 +114,17 @@ def build_reasoning_messages(
                 "Candidate identifications proposed by the model that saw the "
                 f"image, with its own confidence in each:\n{listed}"
             )
+        else:
+            sections.append(
+                "Candidate identifications proposed by the model that saw the "
+                "image: NONE. Do not name any candidate."
+            )
+    else:
+        sections.append(
+            "Candidate identifications proposed by the model that saw the image: "
+            "NONE. Do not name any species, breed, person, place, make, model, or "
+            "other identity from general knowledge."
+        )
     if search_results and search_results.strip():
         # Labelled unambiguously as outside evidence. Presented as another kind
         # of note, the model starts reporting search findings as things it saw.
@@ -121,10 +134,11 @@ def build_reasoning_messages(
         )
     sections.append(
         f"The user's question:\n{question.strip()}\n\n"
-        "Now answer from the neutral description first, then give every "
-        "candidate listed above at the confidence it was assigned, most "
-        "confident first. Never present an uncertain candidate as settled, and "
-        "never leave one out because it is uncertain. If any candidate is still "
+        "Now answer from the neutral description first. If candidate "
+        "identifications are listed above, give the supported ones at the "
+        "confidence assigned by the visual inspection, most confident first. "
+        "If the candidate section says NONE, name none. Never present an "
+        "uncertain candidate as settled. If any reported candidate is still "
         "unsettled, finish with a single direct question whose answer would "
         "most narrow it - where it came from, where it was bought, or the "
         "cuisine or region it is for. Ask that question outright as your last "

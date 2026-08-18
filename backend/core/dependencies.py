@@ -17,10 +17,7 @@ from backend.artifacts.image import (
     ComfyUIImageEditProvider,
     ComfyUIImageProvider,
 )
-from backend.artifacts.image_recall_classifier import LMStudioImageRecallClassifier
-from backend.artifacts.image_recall_router import CascadingImageRecallRouter
 from backend.artifacts.image_retrieval import ImageRetrievalPolicy
-from backend.artifacts.image_routing import ImageRecallPolicy
 from backend.artifacts.storage import LocalBinaryArtifactStore
 from backend.config.settings import settings
 from backend.core.gpu_handoff import (
@@ -1426,26 +1423,13 @@ MemoryCoordinatorDependency = Annotated[
 ]
 
 
-# Assemble the conversation service with model, memory, and repository dependencies.
-# Reuse one deterministic image-recall policy; the model never selects it.
-@lru_cache(maxsize=1)
-def get_image_recall_policy() -> ImageRecallPolicy:
-    return ImageRecallPolicy()
-
-
 # Serve the routing classifier from a dedicated model when one is configured,
 # otherwise follow the routing role rather than the chat model.
 #
-# Every caller here is a bounded judgement that must come back as strict JSON
-# against an application-owned schema, which is the same contract
-# MainActionSelector's tool-calling has - so it belongs on the routing role,
-# not on whichever model happens to write prose. Following the chat model
-# instead is what silently broke image recall: promoting `MAIN_LLM_*` to an
-# engine that treats a supplied JSON schema as advisory brought these along
-# with it, and `VisualMemorySelector` began returning nothing at all because
-# the well-formed reply named its fields `selected`/`reasoning` instead of
-# `artifact_ids`. `ROUTING_LLM_*` still falls back to `MAIN_LLM_*` when unset,
-# so an install that configures neither behaves exactly as before.
+# Every caller here makes a bounded routing judgement, so it belongs on the
+# routing role rather than whichever model happens to write prose. This remains
+# available to the search-routing evaluator; live artifact recall now uses the
+# structured routing client directly through `ArtifactContextRouter`.
 #
 # Deliberately not cached. A provider serializes its own calls on an internal
 # lock, so one shared instance would make every concurrent chat queue behind
@@ -1464,28 +1448,6 @@ def get_classifier_llm() -> LLMClient:
         model=settings.SEARCH_CLASSIFIER_MODEL,
         reasoning_effort=settings.ROUTING_LLM_REASONING_EFFORT,
     )
-
-
-# Deterministic recall patterns with a bounded classifier fallback for novel
-# phrasings; the classifier is gated to plausibly-image queries so unrelated
-# turns never pay for it, and it judges intent rather than selecting a tool.
-@lru_cache(maxsize=1)
-def get_image_recall_router() -> CascadingImageRecallRouter:
-    classifier = (
-        LMStudioImageRecallClassifier(
-            get_classifier_llm(),
-            max_tokens=settings.IMAGE_RECALL_CLASSIFIER_MAX_TOKENS,
-        )
-        if settings.IMAGE_RECALL_CLASSIFIER_ENABLED
-        else None
-    )
-    return CascadingImageRecallRouter(get_image_recall_policy(), classifier)
-
-
-ImageRecallDependency = Annotated[
-    CascadingImageRecallRouter,
-    Depends(get_image_recall_router),
-]
 
 
 # Compose the built-in actions (search, image generation/editing, diagrams,
@@ -1519,6 +1481,7 @@ MainActionSelectorDependency = Annotated[
 ]
 
 
+# Assemble the user-scoped conversation workflow from its application boundaries.
 def get_conversation_service(
     memory: MemoryDependency,
     llm: LlmDependency,
@@ -1528,7 +1491,6 @@ def get_conversation_service(
     diagram_artifacts: DiagramArtifactDependency,
     search: SearchDependency,
     artifacts: ArtifactRepositoryDependency,
-    image_recall: ImageRecallDependency,
     tool_orchestration: MCPToolOrchestrationDependency,
     main_action_selector: MainActionSelectorDependency,
     image_generation: ImageArtifactDependency,
@@ -1551,7 +1513,6 @@ def get_conversation_service(
         diagram_artifacts=diagram_artifacts,
         agent_registry=agent_registry,
         search=search,
-        image_recall=image_recall,
         image_search=artifacts,
         image_artifacts=artifacts,
         # The same repository, asked a different question: what a match was

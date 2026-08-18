@@ -169,6 +169,14 @@ class SpecialistVision:
         )
 
 
+class ForbiddenReasoner:
+    """Fail if an evidence-free uncertainty spends a main-model call."""
+
+    # Surface any accidental synchronous reasoning invocation immediately.
+    def chat(self, messages, max_tokens=512):
+        raise AssertionError("evidence-free uncertainty reached the reasoner")
+
+
 async def _analyze(prompt: str, intent: str | None, fail: bool = False):
     vision = RecordingVision(intent or "ask", fail)
     service = VisionAnalysisService(
@@ -299,6 +307,28 @@ async def test_model_uncertainty_escalates_once_to_specialist() -> None:
     assert metadata["analysis_initial_model"] == "primary-vision"
 
 
+# An uncertain inspection with no candidate cannot be rescued by web prose.
+async def test_candidate_free_uncertainty_skips_background_reasoning() -> None:
+    service = VisionAnalysisService(
+        StubImages(),
+        StubRepository(),
+        ModelUncertainVision(),
+        reasoner=ForbiddenReasoner(),
+    )
+
+    result = await service.analyze_upload(
+        "u",
+        "22222222-2222-4222-8222-222222222222",
+        "t",
+        "What device is this?",
+        b"bytes",
+        "image/png",
+        defer_reasoning=True,
+    )
+
+    assert result["reasoning_pending"] is False
+
+
 # Greedy, and constrained to two words. A classifier that could answer anything
 # else would put unvalidated model output into a routing decision.
 async def test_the_call_is_greedy_and_constrained_to_the_two_answers() -> None:
@@ -383,6 +413,7 @@ async def test_low_confidence_readings_are_offered_rather_than_dropped() -> None
         StubImages(),
         StubRepository(),
         LowConfidenceOnlyVision(),
+        reasoner=ForbiddenReasoner(),
     )
 
     result = await service.analyze_upload(
@@ -396,6 +427,7 @@ async def test_low_confidence_readings_are_offered_rather_than_dropped() -> None
     )
 
     answer = result["analysis"]
+    assert result["reasoning_pending"] is True
     assert "mackerel" in answer.lower()
     assert "Pink-fleshed steaks" in answer
     # Offered, but never as settled fact.

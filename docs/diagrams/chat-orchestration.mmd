@@ -25,7 +25,7 @@ flowchart TB
 
     Selector -->|search_web, a toolbox<br/>tool, or neither| Memory[MemoryCoordinatorAgent<br/>personal memory retrieval]
     Memory --> ArtifactGate{Qwen 3.5 4B<br/>artifact modality gate}
-    ArtifactGate -->|image required| Visual[Owner-scoped visual<br/>semantic candidates]
+    ArtifactGate -->|image required| Visual[Owner-scoped pixel-vector lookup<br/>then description-vector fallback]
     ArtifactGate -->|no artifact needed| Context[Curated context]
     Visual --> VisualPolicy[Qwen 3.5 4B<br/>visual-memory selection]
     VisualPolicy --> Context
@@ -35,7 +35,7 @@ flowchart TB
     Search --> Context
 
     Context --> Inference
-    Inference -->|main role| Main[Qwen 3.5 4B<br/>streaming call via vLLM]
+    Inference -->|main role| Main[DeepSeek-V4-Flash<br/>streaming call via DGX Spark]
     Main --> Persist[Persist completed turn<br/>and lifecycle updates]
     Persist --> Stream[SSE response]
     Proposal --> Stream

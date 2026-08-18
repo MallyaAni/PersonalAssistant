@@ -1,4 +1,4 @@
-"""Which tool the router picks, across every tool at once.
+"""Which built-in action the router picks across every built-in at once.
 
 The suites beside this one each hold a single tool to a floor over a set chosen
 for it. None of them can say what a wrong turn became, and that is the part
@@ -27,11 +27,11 @@ from backend.services.main_action_selector import MainActionSelector
 from backend.services.tool_selection_cases import (
     ACCURACY_FLOOR,
     EDIT_IMAGE,
+    GENERATE_IMAGE,
     NO_TOOL,
+    PER_TOOL_ACCURACY_FLOORS,
     SELECTION_CASES,
 )
-
-pytestmark = pytest.mark.asyncio
 
 # One pass over the whole set. The floor catches collapse rather than a close
 # call, so repetition buys accuracy this gate does not spend.
@@ -63,7 +63,7 @@ def scored():
 
 
 # The gate: selection as a whole must not collapse.
-async def test_tool_selection_accuracy_holds(scored):
+def test_tool_selection_accuracy_holds(scored):
     correct = sum(1 for expected, chosen, _ in scored if expected == chosen)
     accuracy = correct / len(scored)
 
@@ -78,7 +78,7 @@ async def test_tool_selection_accuracy_holds(scored):
 # The expensive cell, called out separately because the aggregate hides it: an
 # unwanted edit mutates an owned artifact and spends a real generation, so it
 # is not interchangeable with an unwanted search.
-async def test_nothing_is_mistaken_for_an_image_edit(scored):
+def test_nothing_is_mistaken_for_an_image_edit(scored):
     stray = [
         (expected, category)
         for expected, chosen, category in scored
@@ -90,7 +90,7 @@ async def test_nothing_is_mistaken_for_an_image_edit(scored):
 
 # Answering directly is the commonest correct decision and the one a router
 # under pressure abandons first, reaching for whichever tool is nearest.
-async def test_turns_needing_no_tool_do_not_reach_for_one(scored):
+def test_turns_needing_no_tool_do_not_reach_for_one(scored):
     observed = [
         (expected, chosen) for expected, chosen, _ in scored if expected == NO_TOOL
     ]
@@ -100,6 +100,43 @@ async def test_turns_needing_no_tool_do_not_reach_for_one(scored):
     assert kept / len(observed) >= 0.85, (kept, len(observed))
 
 
+# Preserve every smaller capability rather than letting no-tool accuracy hide it.
+def test_each_built_in_action_holds_its_measured_floor(scored):
+    for expected, floor in PER_TOOL_ACCURACY_FLOORS.items():
+        observed = [chosen for wanted, chosen, _ in scored if wanted == expected]
+        kept = sum(1 for chosen in observed if chosen == expected)
+
+        assert observed, f"the set must contain {expected} cases"
+        assert kept / len(observed) >= floor, (
+            expected,
+            kept,
+            len(observed),
+            observed,
+        )
+
+
+# Bound the known high-cost confusion where diffusion imitates diagram labels.
+def test_diagrams_do_not_collapse_into_generated_images(scored):
+    diagram_rows = [
+        chosen for expected, chosen, _ in scored if expected == "create_diagram"
+    ]
+    mistaken = sum(1 for chosen in diagram_rows if chosen == GENERATE_IMAGE)
+
+    assert diagram_rows
+    assert mistaken / len(diagram_rows) <= 0.40, (mistaken, len(diagram_rows))
+
+
+# Keep answers to a drafting question inside that writing task.
+def test_writing_followups_do_not_invoke_unrelated_tools(scored):
+    observed = [
+        chosen for _, chosen, category in scored if category == "writing_followup"
+    ]
+
+    assert observed
+    assert observed == [NO_TOOL] * len(observed), observed
+
+
+# Keep typos or unsupported expected actions out of the labelled corpus.
 def test_every_case_is_labelled_with_a_tool_that_exists():
     from backend.services.tool_selection_cases import TOOL_NAMES
 

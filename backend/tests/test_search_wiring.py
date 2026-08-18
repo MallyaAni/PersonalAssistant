@@ -2,8 +2,6 @@ from collections.abc import Iterator
 
 import pytest
 
-from backend.artifacts.image_recall_router import CascadingImageRecallRouter
-from backend.artifacts.image_routing import ImageRecallPolicy
 from backend.core.llm import LLMClient
 from backend.search.types import SearchResult, SearchResults
 from backend.services.conversation_service import ConversationService
@@ -112,6 +110,14 @@ class RecordingImageSearch:
         ]
 
 
+class AlwaysImageContextRouter:
+    """Approve image recall for tests exercising referenced-image search."""
+
+    # Return the one modality whose downstream behavior this fixture proves.
+    async def required_modalities(self, query: str) -> tuple[str, ...]:
+        return ("image",)
+
+
 async def _events(service: ConversationService, query: str) -> list[dict]:
     return [
         event
@@ -174,8 +180,8 @@ def _service(
         tracer=StubTracer(),
         search=search,  # type: ignore[arg-type]
         main_action_selector=StubMainActionSelector(action),  # type: ignore[arg-type]
-        image_recall=(
-            CascadingImageRecallRouter(ImageRecallPolicy()) if image_search else None
+        artifact_context_router=(
+            AlwaysImageContextRouter() if image_search else None
         ),
         image_search=image_search,  # type: ignore[arg-type]
     )

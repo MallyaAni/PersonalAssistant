@@ -10,7 +10,7 @@ flowchart TB
     Services[Application-owned services and write policy<br/>user scope · owner-visible for correction or deletion]
     Retrieval[Scope, expiry,<br/>relevance and dedup]
     ArtifactGate[Qwen 3.5 4B<br/>artifact modality gate]
-    ArtifactIndex[Owned artifact indexes<br/>queried only when required]
+    ArtifactIndex[Owned artifact indexes<br/>one semantic gate, queried only when required]
     Context[Bounded literal context]
 
     Short[Short term<br/>LLM context window<br/>Session working memory<br/>Semantic cache]

@@ -414,8 +414,6 @@ class Settings(BaseSettings):
     # -image queries, so unrelated turns never call it; it reuses the shared
     # classifier model, which is fastest when SEARCH_CLASSIFIER_MODEL is a small
     # model.
-    IMAGE_RECALL_CLASSIFIER_ENABLED: bool = True
-    IMAGE_RECALL_CLASSIFIER_MAX_TOKENS: int = Field(default=4, ge=1, le=16)
 
     # Web search. The MCP server prefers Google Grounding and falls back to
     # Tavily; both return untrusted third-party content.

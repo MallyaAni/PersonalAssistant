@@ -1,46 +1,31 @@
 ---
 title: Visual Artifact Subsystem
 ---
-flowchart LR
-    User([User]) --> UI[Chat and artifact UI]
-    Forget([Delete all personal memory])
-    UI --> Guard[Owned visual API<br/>limits and integrity]
-    MCP([Confirmed MCP call]) -.-> Guard
-    Guard --> Route{Requested capability}
+flowchart TB
+    User([User or confirmed MCP call]) --> Guard[Owned visual boundary<br/>limits, integrity and user scope]
+    Forget([Delete all personal memory]) --> Repository
+    Guard --> Route{Capability}
 
     Route -->|diagram| Diagram[Qwen 3.5 4B<br/>validated Mermaid]
-    Route -->|new or edit| Image[HiDream generation<br/>or FLUX source edit]
-    Route -->|analyze| Inspect[Qwen 3.5 4B<br/>one structured inspection]
-    Route -->|recall| Recall[Explicit image ID or Qwen<br/>semantic visual selection]
+    Route -->|new or edit| Image[FLUX.2 Klein<br/>generation or source edit]
+    Route -->|analyze| Vision[Qwen 3.5 4B inspection<br/>plus optional specialist retry]
+    Route -->|recall| Recall[One Qwen modality gate<br/>then ranked owned retrieval]
 
-    Inspect --> Evidence{Evidence result}
-    Evidence -->|answerable| Vision[Grounded answer]
-    Evidence -->|mixed or insufficient| Limit[Per-item confidence<br/>store only high-confidence evidence]
-    Evidence -->|safety-sensitive| Safety[Strict uncertainty]
-    Evidence -->|model uncertain| Specialist[Optional specialist VLM<br/>one retry]
-    Specialist --> Vision
-    Limit --> Repository
-    Safety --> Repository
-
+    Vision --> Confidence[Evidence-aware answer<br/>only high-confidence identity is indexed]
     Diagram --> Repository[Owned artifact repository]
     Image --> Repository
-    Image -->|observe edited pixels| Vision
-    Vision --> Repository
-    Repository -->|artifact and derived-index lifecycle| Store[(PostgreSQL metadata and lineage<br/>opaque private files)]
-    Repository --> Embed[Nomic pixel and<br/>text embeddings]
-    Embed --> Store
+    Confidence --> Repository
+    Repository --> Store[(PostgreSQL metadata, lineage and vectors<br/>opaque private files)]
     Store --> Recall
     Recall --> Context[Owner-validated<br/>bounded visual context]
-    Context --> UI
+    Context --> UI[Chat and artifact UI]
     Repository --> UI
-    Forget --> Cleanup[Owned bulk deletion]
-    Cleanup --> Repository
 
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
     classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
-    class User,UI,MCP,Forget interface;
-    class Guard,Route,Evidence,Repository,Context,Cleanup,Limit,Safety application;
+    class User,UI,Forget interface;
+    class Guard,Route,Repository,Context,Confidence application;
     class Store data;
-    class Diagram,Image,Inspect,Specialist,Vision,Recall,Embed external;
+    class Diagram,Image,Vision,Recall external;

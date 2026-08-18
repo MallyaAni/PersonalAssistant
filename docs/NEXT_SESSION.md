@@ -7,7 +7,7 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 
 Last updated: 2026-08-17, America/New_York
 
-## START HERE: build the model-migration gate — NOT STARTED
+## START HERE: finish the model-migration gate — IN PROGRESS
 
 A second DGX Spark arrives this week, and three separate capabilities are
 currently capped by the same thing: bounded work running on Qwen 3.5 **4B**
@@ -22,14 +22,12 @@ session — cases in a production module, a CLI that scores them, floors set fro
 measurement with real margin, and a fast functional gate that catches collapse
 rather than refereeing a close call:
 
-1. **A tool confusion matrix for `MainActionSelector`.** Everything that exists
-   today asks a *binary* question about one tool (search vs no-search, does
-   `edit_image` fire). Nothing measures which tool gets chosen among all of
-   them, and that is where the failures actually are: agent-setup phrasings
-   reached `search_web`, the presentation agent and `edit_image`; a request for
-   a labelled architecture diagram reached `generate_image`. Report the matrix,
-   not an aggregate — the useful output is *what gets mistaken for what*.
-2. **An extraction set for `MemoryProposalAgent`.** Measured this session:
+1. **Tool confusion matrix — IMPLEMENTED.**
+   `python -m backend.cli.evaluate_tool_selection` reports the built-in action
+   matrix and category breakdown. The functional gate preserves aggregate,
+   per-action, no-tool, stray-edit, and diagram-to-image bounds independently;
+   a strong common class cannot hide the collapse of a smaller capability.
+2. **Extraction set for `MemoryProposalAgent` — NOT STARTED.** Measured this session:
    "I'm in Raleigh, NC and I'm into bachata, live music, and food festivals"
    extracts 4/4; the identical sentence naming **Durham** extracts **0/4**;
    "Boise, Idaho" 3/3. An imperative prefix ("Set up that scheduled roundup for
@@ -48,6 +46,49 @@ caller run on Qwen (RTX 5080) for the reason in the capability entry. Image
 generation and editing are both FLUX.2 Klein. Scout's interests, locality and
 cadence are all collectable in conversation; delivery deliberately is not.
 
+## Elliptical writing follow-ups retain their task context — VERIFIED
+
+The latest `jenos1` email-drafting thread did not lose persisted history. The
+first failing boundary was Qwen's built-in action selection: after drafting a
+shift-coverage email, `More casual` was classified as an image edit, and an
+earlier answer supplying the requested date and time triggered web search.
+
+The action contract now requires short replies to continue the recent subject
+before considering a new one. Supplying requested dates, times, quantities, or
+deadlines for drafted material and revising the tone or wording of an email,
+message, document, plan, or other text select no tool. Image editing requires
+an established picture subject; words such as `casual` cannot turn an email
+revision into clothing or appearance work.
+
+The real Qwen functional matrix passes all seven tests, including four distinct
+writing follow-ups. The rebuilt backend was exercised through four authenticated
+`POST /api/v1/chat` turns as `testuser`: it retained Saturday 8am–7pm and one
+recipient, then rewrote that same email casually. All four traces completed and
+the logs contain no web-search, MCP tool execution, image-edit, or missing-image
+event for the thread.
+
+## Semantic artifact recall and calibrated vision gates — VERIFIED IN SOURCE
+
+The legacy regex-plus-classifier image-recall path is removed. An unselected
+turn now makes one structured `ArtifactContextRouter` decision before any
+private artifact index; an approved image request tries aligned pixel vectors
+and then the description-vector/`VisualMemorySelector` fallback. Unit coverage
+proves unrelated turns query neither index and the modality decision runs once.
+
+The vision reasoner now receives an explicit `NONE` candidate section, which
+stopped DeepSeek from inventing species when the VLM supplied none. Supported
+high-confidence candidates remain; weaker candidates must agree with their
+visible basis and any external evidence, and contradicted candidates may be
+omitted. Candidate-free uncertainty no longer spends web or main-model
+reasoning, while candidate-bearing uncertainty retains deferred reasoning.
+
+The built-in tool matrix now has per-action floors plus explicit bounds for
+stray edits, no-tool loss, and diagram-to-generated-image confusion. Real model
+functional validation passes 22/22; the complete non-functional backend suite
+passes 1209 tests; Ruff, the frontend build, and all 19 diagram checks pass.
+No browser behavior changed in this atomic task, so a new browser acceptance
+run was not required to establish these backend policy and documentation facts.
+
 ## One-call upload inspection with selective specialist escalation — VERIFIED / UNVERIFIED
 
 New image uploads now use one strict structured Qwen inspection for routing,
@@ -56,18 +97,19 @@ and stronger-reasoning need. Identification confidence is per visible item,
 not per image: high-confidence observations can be shown and indexed, and
 medium items are explicitly unconfirmed.
 
-**Superseded since:** low-confidence guesses are no longer hidden. Hiding them
+Low-confidence guesses are no longer categorically hidden. Hiding them
 turned a partial identification into an apparent failure — asked to identify
 fish, all three readings came back `low`, every one was dropped, and the reply
 was "I can't reliably identify the exact name from this image" while the pass
 had in fact read one of them correctly. They now appear under an explicit
-"best guess only" heading, reach the reasoning pass with their confidences,
-and the reasoning prompt requires every candidate reported at its stated
-confidence, most confident first. Durable memory still withholds every
-unconfirmed name, and safety-sensitive identification still refuses outright.
-An unsettled identification also now ends by asking the one question that
-would narrow it, and grounds a search from the recorded `basis` strings, which
-cite visible evidence and name nothing.
+"best guess only" heading and reach the reasoning pass with their confidences.
+The reasoning prompt preserves supported high-confidence readings, admits a
+weaker candidate only while its basis remains compatible with the neutral and
+external evidence, and may omit a contradicted candidate. Durable memory still
+withholds every unconfirmed name, and safety-sensitive identification still
+refuses outright. Candidate-free uncertainty names nothing and does not spend
+a web or main-model reasoning call; a candidate-bearing unsettled identification
+can ground from visible `basis` strings and ask the one question that narrows it.
 
 `model_uncertain` can make exactly one retry through the independently
 configured `VISION_ESCALATION_*` OpenAI-compatible role. Missing pixels and
@@ -75,19 +117,17 @@ safety-sensitive cases do not spend that retry. The current host leaves the
 specialist endpoint/model blank, so the real specialist runtime is
 `UNVERIFIED`; enabling one requires configuration, not another code change.
 
-Evidence from the rebuilt backend and restarted gateway: the real uploaded
+Prior deployed-browser evidence: the real uploaded
 2340x4160 image returned 201 in about five seconds with peeled shrimp at high
-confidence, mackerel-like and eel-like items at medium confidence, and chopped
-pieces omitted at low confidence. Its durable observation retained only the
+confidence, mackerel-like and eel-like items at medium confidence. Its durable observation retained only the
 high-confidence shrimp evidence. The unresolved remainder was classified
 `model_uncertain`; no specialist is configured. Logs show exactly one Qwen
 chat completion, zero web or
 DeepSeek reasoning calls, and one embedding write. The authenticated live
 Chromium workflow passed in 5.7 seconds: confidence headings and Markdown list items rendered, the
 private image rendered, `Image analyzed.` never appeared, loading cleared, the
-composer re-enabled and emptied, and Console/page errors were empty. Focused
-backend focused tests pass 61/61; two real prompt functional cases pass; the frontend
-build passes.
+composer re-enabled and emptied, and Console/page errors were empty. The newer
+source-level functional and build evidence is recorded in the section above.
 
 ## Scout is now set up from conversation; delivery deliberately is not — VERIFIED
 
@@ -935,17 +975,11 @@ reflected the fix before the reported chat turns happened. No new code
 needed. If it recurs, it is almost certainly a stale browser tab from before
 that fix — a hard refresh should clear it.
 
-**Not done, flagged for later:** `backend/artifacts/image_recall_router.py`
-(`CascadingImageRecallRouter`) and `image_routing.py`
-(`ImageRecallPolicy`) are still regex-plus-narrow-classifier — the same
-anti-pattern `MainActionSelector` replaced for search/image-generation/
-diagram/delegation routing last session, but this one decides whether to
-search the user's *own stored images* and was out of scope for today's two
-reported bugs. It was not the cause of either bug (confirmed by tracing the
-actual code path), but it is a standing violation of this repo's
-"smartness over regex" mandate and a reasonable next target if the user
-wants that architecture cleanup finished. See
-[[anios-smartness-over-regex]] context in memory if resuming this.
+**Resolved since:** the regex-plus-classifier `CascadingImageRecallRouter` and
+`ImageRecallPolicy` have been removed from the live path and repository. One
+structured `ArtifactContextRouter` decision now runs before either the aligned
+pixel-vector lookup or description-vector fallback, so an ordinary turn makes
+one modality decision and private candidates load only when it returns image.
 
 Evidence: full backend suite (1170 tests) passes; Ruff passes on every
 changed file; `tsc && vite build` passes; the non-live `chat.spec.ts` suite

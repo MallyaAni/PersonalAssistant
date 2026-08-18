@@ -1,5 +1,5 @@
 ---
-title: Deck — what the agent decides, and what it does not
+title: Deck - what the agent decides, and what it does not
 ---
 flowchart TB
     Ask([Explicit presentation request]) --> Supervisor[Typed supervisor route]
@@ -10,14 +10,14 @@ flowchart TB
     Research --> Outline[Model plans the outline<br/>and each slide's shape]
     Outline --> Slide[Model writes one slide at a time]
 
-    Slide --> Compile[Deterministic compiler<br/>geometry Â· seven layouts Â· stable ids]
+    Slide --> Compile[Deterministic compiler<br/>geometry - seven layouts - stable ids]
     Compile --> Visual{Worth an image?}
-    Visual -->|bounded, best effort| Image[HiDream via ComfyUI]
+    Visual -->|bounded, best effort| Image[FLUX.2 Klein via ComfyUI]
     Visual -->|no| Render
-    Image --> Render[PptxGenJS Â· OOXML Â· LibreOffice]
+    Image --> Render[PptxGenJS - OOXML - LibreOffice]
     Render --> Revision[(Append-only revision)]
 
-    Decides[The model decides content and shape.<br/>Geometry, storage and promotion<br/>are never its to make]
+    Decides[The model decides content and shape.<br/>Geometry, storage and promotion<br/>are application decisions]
     Decides -.-> Outline
     Decides -.-> Slide
 

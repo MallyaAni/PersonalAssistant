@@ -20,9 +20,9 @@ flowchart TB
     API -->|delete or reorder: no model| Permute[Deterministic deck permutation]
     Permute --> Render
     Compiler --> Visuals{Useful slide image?}
-    Visuals -->|yes, bounded| HiDream[HiDream via ComfyUI]
+    Visuals -->|yes, bounded| Flux[FLUX.2 Klein via ComfyUI]
     Visuals -->|no or unavailable| Render
-    HiDream --> Render[PptxGenJS render<br/>and Office validation]
+    Flux --> Render[PptxGenJS render<br/>and Office validation]
     Render --> Revision[(Append-only revision<br/>and private PPTX)]
     Revision --> Job
     Job -->|progress, reconnect and download| UI[Presentations UI]
@@ -39,5 +39,5 @@ flowchart TB
     class User,UI,Feedback,Structure interface;
     class API,Worker,Agent,Gate,Inference,Compiler,Permute,Visuals,Render,Research,Egress application;
     class Job,Revision data;
-    class Qwen,HiDream,Web external;
+    class Qwen,Flux,Web external;
     class Boundary warning;
