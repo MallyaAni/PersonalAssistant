@@ -103,3 +103,37 @@ def test_the_instruction_is_sent_verbatim():
         _node(graph, "CLIPTextEncode")["inputs"]["text"]
         == "put it in its original packaging"
     )
+
+
+# A quantized model is what makes Kontext usable on a 16GB card at all, and the
+# loader has to match the format or ComfyUI rejects the graph. The filename is
+# the only statement of format, so it decides - one setting rather than two
+# that can disagree.
+def test_a_gguf_model_selects_the_gguf_loaders():
+    graph = _graph(
+        model="flux1-kontext-dev-Q4_K_M.gguf",
+        t5_name="t5-v1_1-xxl-encoder-Q5_K_M.gguf",
+    )
+
+    assert _node(graph, "UnetLoaderGGUF")["inputs"]["unet_name"].endswith(".gguf")
+    encoders = _node(graph, "DualCLIPLoaderGGUF")["inputs"]
+    # CLIP-L stays unquantized; the mixed pair is what the GGUF loader is for.
+    assert encoders["clip_name1"] == "clip_l.safetensors"
+    assert encoders["clip_name2"].endswith(".gguf")
+
+
+def test_safetensors_weights_keep_the_stock_loaders():
+    graph = _graph()
+
+    assert _node(graph, "UNETLoader")
+    assert _node(graph, "DualCLIPLoader")
+    assert not [n for n in graph.values() if "GGUF" in n.get("class_type", "")]
+
+
+# Mixing formats must work in both directions: a quantized model with an
+# unquantized encoder is the configuration that fits this card best.
+def test_a_gguf_model_with_a_safetensors_encoder_mixes_loaders():
+    graph = _graph(model="flux1-kontext-dev-Q4_K_M.gguf")
+
+    assert _node(graph, "UnetLoaderGGUF")
+    assert _node(graph, "DualCLIPLoader")

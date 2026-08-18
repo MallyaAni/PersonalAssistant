@@ -698,19 +698,47 @@ class FluxKontextImageEditProvider(ComfyUIImageEditProvider):
     ) -> dict[str, Any]:
         return {
             "1": {"class_type": "LoadImage", "inputs": {"image": source_name}},
-            "2": {
-                "class_type": "UNETLoader",
-                "inputs": {"unet_name": self.model, "weight_dtype": "default"},
-            },
-            "3": {
-                "class_type": "DualCLIPLoader",
-                "inputs": {
-                    "clip_name1": self.clip_name,
-                    "clip_name2": self.t5_name,
-                    "type": "flux",
-                    "device": "default",
-                },
-            },
+            # The file extension states the format, so the loader follows from
+            # the filename rather than from a second setting that could
+            # disagree with it. A quantized Kontext is not an optimisation
+            # here, it is what makes the model usable at all: at fp8 it needs
+            # 11GB beside a 5GB text encoder on a 16GB card, spills about a
+            # gigabyte to a host with 1GB free, and thrashes so badly that not
+            # one of twenty sampling steps completed in twelve minutes.
+            "2": (
+                {
+                    "class_type": "UnetLoaderGGUF",
+                    "inputs": {"unet_name": self.model},
+                }
+                if self.model.endswith(".gguf")
+                else {
+                    "class_type": "UNETLoader",
+                    "inputs": {"unet_name": self.model, "weight_dtype": "default"},
+                }
+            ),
+            # Only the T5 half is ever quantized in practice - CLIP-L is small
+            # enough not to be worth it - and the GGUF loader accepts a mixed
+            # pair, so this keys off the encoder that actually varies.
+            "3": (
+                {
+                    "class_type": "DualCLIPLoaderGGUF",
+                    "inputs": {
+                        "clip_name1": self.clip_name,
+                        "clip_name2": self.t5_name,
+                        "type": "flux",
+                    },
+                }
+                if self.t5_name.endswith(".gguf")
+                else {
+                    "class_type": "DualCLIPLoader",
+                    "inputs": {
+                        "clip_name1": self.clip_name,
+                        "clip_name2": self.t5_name,
+                        "type": "flux",
+                        "device": "default",
+                    },
+                }
+            ),
             "4": {"class_type": "VAELoader", "inputs": {"vae_name": self.vae}},
             # Resampling decides the quality ceiling: the edit is produced at
             # whatever size this yields. `nearest-exact`, which ComfyUI's own

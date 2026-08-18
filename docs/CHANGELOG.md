@@ -2,6 +2,32 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-18 — FLUX.1 Kontext as the editor
+
+- Added `FluxKontextImageEditProvider` and switched editing to FLUX.1 Kontext.
+  Measured on the same photograph and the same instruction as the failures
+  above: "change the wooden cutting board to a bright blue plastic cutting
+  board" produced exactly that, with the fish, containers, bowls, table and
+  lighting pixel-preserved. That is a real edit of the user's own photograph,
+  which the FLUX.2 Klein editor could not do.
+- fp8 was unusable on a 16GB card and quantization is what made it work, not an
+  optimisation: Kontext at 11GB beside a 5GB text encoder spilled about a
+  gigabyte to a host with 1GB free and completed **none** of twenty sampling
+  steps in twelve minutes. At Q4_K_M with a Q5 T5 the same edit runs in ~103s
+  at 4.75s/step with roughly 6GB of headroom.
+- The loader follows the file extension rather than a second setting, so a
+  `.gguf` model selects `UnetLoaderGGUF` and a `.gguf` encoder selects
+  `DualCLIPLoaderGGUF`, mixed pairs included.
+- Kontext does **not** carry out "make the image look like it came in its
+  original packaging" either, at Q4, with or without the preservation clause.
+  That request restages the scene rather than editing it, which remains the
+  generation path added earlier the same day. The split now has a capable model
+  on each side rather than one model failing both.
+
+Evidence: 1160 structural tests pass. Four real ComfyUI runs recorded: Kontext
+Q4 on the packaging request with and without the preservation clause, the
+cutting-board control that succeeded, and the fp8 attempt that never sampled.
+
 ## 2026-08-18 — Edits that need the scene rebuilt
 
 - An edit asking for something the picture does not contain returned the
