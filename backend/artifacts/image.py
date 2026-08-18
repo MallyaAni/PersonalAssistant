@@ -637,3 +637,140 @@ class ComfyUIImageEditProvider(ComfyUIImageProvider, ImageEditProvider):
                 },
             },
         }
+
+
+class FluxKontextImageEditProvider(ComfyUIImageEditProvider):
+    """Edit a source image with the FLUX.1 Kontext ComfyUI workflow.
+
+    A different architecture from the FLUX.2 editor above, not a variant of it.
+    FLUX.2 Klein conditions on the source through `ReferenceLatent` and is
+    trained to preserve it: measured against the shipped 4B model, an
+    instruction requiring anything to be added left the picture unchanged at 4
+    steps and at 20, at CFG 3.0, and under true img2img at denoise 0.70. Kontext
+    is trained for instruction-following edits instead, so the instruction is
+    expected to carry.
+
+    The pieces differ accordingly: FLUX.1 text conditioning is CLIP-L plus T5
+    rather than one Qwen encoder, guidance is a `FluxGuidance` value rather than
+    CFG, and the VAE is FLUX.1's own. Sharing a class with the FLUX.2 editor
+    would mean a constructor whose arguments only apply half the time.
+    """
+
+    def __init__(
+        self,
+        base_url: str,
+        model: str,
+        clip_name: str,
+        t5_name: str,
+        vae: str,
+        timeout_seconds: float,
+        poll_seconds: float,
+        max_concurrency: int,
+        max_output_bytes: int,
+        max_pixels: int,
+        steps: int,
+        guidance: float = 2.5,
+        megapixels: float = 1.0,
+        scale_method: str = "lanczos",
+    ) -> None:
+        super().__init__(
+            base_url=base_url,
+            model=model,
+            text_encoder=t5_name,
+            vae=vae,
+            timeout_seconds=timeout_seconds,
+            poll_seconds=poll_seconds,
+            max_concurrency=max_concurrency,
+            max_output_bytes=max_output_bytes,
+            max_pixels=max_pixels,
+            steps=steps,
+            megapixels=megapixels,
+            scale_method=scale_method,
+        )
+        self.clip_name = clip_name
+        self.t5_name = t5_name
+        self.guidance = guidance
+
+    def _edit_workflow(
+        self,
+        request: ImageEditRequest,
+        source_name: str,
+    ) -> dict[str, Any]:
+        return {
+            "1": {"class_type": "LoadImage", "inputs": {"image": source_name}},
+            "2": {
+                "class_type": "UNETLoader",
+                "inputs": {"unet_name": self.model, "weight_dtype": "default"},
+            },
+            "3": {
+                "class_type": "DualCLIPLoader",
+                "inputs": {
+                    "clip_name1": self.clip_name,
+                    "clip_name2": self.t5_name,
+                    "type": "flux",
+                    "device": "default",
+                },
+            },
+            "4": {"class_type": "VAELoader", "inputs": {"vae_name": self.vae}},
+            # Resampling decides the quality ceiling: the edit is produced at
+            # whatever size this yields. `nearest-exact`, which ComfyUI's own
+            # template uses, drops pixels rather than averaging them and
+            # stipples skin and hair on a photograph.
+            "5": {
+                "class_type": "ImageScaleToTotalPixels",
+                "inputs": {
+                    "image": ["1", 0],
+                    "upscale_method": self.scale_method,
+                    "megapixels": self._target_megapixels(request.source_content),
+                    "resolution_steps": 1,
+                },
+            },
+            "6": {
+                "class_type": "CLIPTextEncode",
+                "inputs": {"clip": ["3", 0], "text": request.instruction.strip()},
+            },
+            "7": {
+                "class_type": "VAEEncode",
+                "inputs": {"pixels": ["5", 0], "vae": ["4", 0]},
+            },
+            # What makes this Kontext rather than plain img2img: the source
+            # latent is attached to the conditioning, and the instruction is
+            # read against it.
+            "8": {
+                "class_type": "ReferenceLatent",
+                "inputs": {"conditioning": ["6", 0], "latent": ["7", 0]},
+            },
+            # FLUX.1 is guidance-distilled and takes a guidance value on the
+            # conditioning instead of a CFG scale over a negative prompt.
+            "9": {
+                "class_type": "FluxGuidance",
+                "inputs": {"conditioning": ["8", 0], "guidance": self.guidance},
+            },
+            "10": {
+                "class_type": "ConditioningZeroOut",
+                "inputs": {"conditioning": ["6", 0]},
+            },
+            "11": {
+                "class_type": "KSampler",
+                "inputs": {
+                    "model": ["2", 0],
+                    "positive": ["9", 0],
+                    "negative": ["10", 0],
+                    "latent_image": ["7", 0],
+                    "seed": request.seed,
+                    "steps": self.steps,
+                    "cfg": 1.0,
+                    "sampler_name": "euler",
+                    "scheduler": "simple",
+                    "denoise": 1.0,
+                },
+            },
+            "12": {
+                "class_type": "VAEDecode",
+                "inputs": {"samples": ["11", 0], "vae": ["4", 0]},
+            },
+            "13": {
+                "class_type": "SaveImage",
+                "inputs": {"images": ["12", 0], "filename_prefix": "anios_edited"},
+            },
+        }

@@ -119,6 +119,27 @@ class Settings(BaseSettings):
     IMAGE_VAE: str = "flux2-vae.safetensors"
     IMAGE_GENERATION_STEPS: int = Field(default=4, ge=1, le=100)
     IMAGE_EDIT_STEPS: int = Field(default=4, ge=1, le=100)
+    # The FLUX.1 Kontext editing stack. Naming a model here replaces the
+    # FLUX.2 Klein editor for edits only; generation is untouched, and leaving
+    # it empty restores the previous behaviour exactly.
+    #
+    # Klein is a distilled generation model with the source attached as a
+    # reference, and it is trained to preserve that reference: an instruction
+    # requiring anything to be added left the picture unchanged at 4 steps and
+    # at 20, at CFG 3.0, and under true img2img at denoise 0.70. Kontext is
+    # trained to follow an editing instruction instead.
+    IMAGE_EDIT_MODEL: str = ""
+    IMAGE_EDIT_CLIP: str = "clip_l.safetensors"
+    IMAGE_EDIT_T5: str = "t5xxl_fp8_e4m3fn_scaled.safetensors"
+    IMAGE_EDIT_VAE: str = "ae.safetensors"
+    # Kept apart from IMAGE_EDIT_STEPS because the two editors want different
+    # numbers: four is Klein's operating point and far too few for Kontext,
+    # and one shared value would silently be wrong for whichever is not
+    # selected.
+    IMAGE_EDIT_KONTEXT_STEPS: int = Field(default=20, ge=1, le=100)
+    # How strongly the instruction is applied. FLUX.1 is guidance-distilled and
+    # takes this on the conditioning rather than as a CFG scale.
+    IMAGE_EDIT_GUIDANCE: float = Field(default=2.5, ge=0.0, le=10.0)
     # What the source is resampled to before editing, and how.
     #
     # Both were inherited from ComfyUI's own FLUX.2 Klein template and neither

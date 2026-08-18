@@ -16,6 +16,7 @@ from backend.artifacts.diagram import LLMDiagramProvider
 from backend.artifacts.image import (
     ComfyUIImageEditProvider,
     ComfyUIImageProvider,
+    FluxKontextImageEditProvider,
 )
 from backend.artifacts.image_retrieval import ImageRetrievalPolicy
 from backend.artifacts.storage import LocalBinaryArtifactStore
@@ -679,6 +680,25 @@ def get_image_edit_provider() -> ImageEditProvider:
 
 
 def _build_comfyui_image_edit_provider() -> ComfyUIImageEditProvider:
+    # Kontext when one is configured, the FLUX.2 editor otherwise. Both satisfy
+    # the same contract, so nothing above this cares which is running.
+    if settings.IMAGE_EDIT_MODEL:
+        return FluxKontextImageEditProvider(
+            base_url=settings.IMAGE_PROVIDER_BASE_URL,
+            model=settings.IMAGE_EDIT_MODEL,
+            clip_name=settings.IMAGE_EDIT_CLIP,
+            t5_name=settings.IMAGE_EDIT_T5,
+            vae=settings.IMAGE_EDIT_VAE,
+            timeout_seconds=settings.IMAGE_PROVIDER_TIMEOUT_SECONDS,
+            poll_seconds=settings.IMAGE_PROVIDER_POLL_SECONDS,
+            max_concurrency=settings.IMAGE_MAX_CONCURRENCY,
+            max_output_bytes=settings.IMAGE_MAX_OUTPUT_BYTES,
+            max_pixels=settings.IMAGE_MAX_PIXELS,
+            steps=settings.IMAGE_EDIT_KONTEXT_STEPS,
+            guidance=settings.IMAGE_EDIT_GUIDANCE,
+            megapixels=settings.IMAGE_EDIT_MEGAPIXELS,
+            scale_method=settings.IMAGE_EDIT_SCALE_METHOD,
+        )
     return ComfyUIImageEditProvider(
         base_url=settings.IMAGE_PROVIDER_BASE_URL,
         model=settings.IMAGE_MODEL,

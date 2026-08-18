@@ -229,6 +229,12 @@ services:
       # on what comes back, because the output is generated at that size.
       - IMAGE_EDIT_MEGAPIXELS=${IMAGE_EDIT_MEGAPIXELS:-2.0}
       - IMAGE_EDIT_SCALE_METHOD=${IMAGE_EDIT_SCALE_METHOD:-lanczos}
+      - IMAGE_EDIT_MODEL=${IMAGE_EDIT_MODEL:-}
+      - IMAGE_EDIT_CLIP=${IMAGE_EDIT_CLIP:-clip_l.safetensors}
+      - IMAGE_EDIT_T5=${IMAGE_EDIT_T5:-t5xxl_fp8_e4m3fn_scaled.safetensors}
+      - IMAGE_EDIT_VAE=${IMAGE_EDIT_VAE:-ae.safetensors}
+      - IMAGE_EDIT_KONTEXT_STEPS=${IMAGE_EDIT_KONTEXT_STEPS:-20}
+      - IMAGE_EDIT_GUIDANCE=${IMAGE_EDIT_GUIDANCE:-2.5}
       - ARTIFACT_STORAGE_ROOT=/app/data/artifacts
       - PRESENTATION_RENDERER_BASE_URL=http://presentation-renderer:8002
       - PRESENTATION_REQUIRE_OFFICE_VALIDATION=true
@@ -600,6 +606,12 @@ services:
       # on what comes back, because the output is generated at that size.
       - IMAGE_EDIT_MEGAPIXELS=${IMAGE_EDIT_MEGAPIXELS:-2.0}
       - IMAGE_EDIT_SCALE_METHOD=${IMAGE_EDIT_SCALE_METHOD:-lanczos}
+      - IMAGE_EDIT_MODEL=${IMAGE_EDIT_MODEL:-}
+      - IMAGE_EDIT_CLIP=${IMAGE_EDIT_CLIP:-clip_l.safetensors}
+      - IMAGE_EDIT_T5=${IMAGE_EDIT_T5:-t5xxl_fp8_e4m3fn_scaled.safetensors}
+      - IMAGE_EDIT_VAE=${IMAGE_EDIT_VAE:-ae.safetensors}
+      - IMAGE_EDIT_KONTEXT_STEPS=${IMAGE_EDIT_KONTEXT_STEPS:-20}
+      - IMAGE_EDIT_GUIDANCE=${IMAGE_EDIT_GUIDANCE:-2.5}
       - ARTIFACT_STORAGE_ROOT=/app/data/artifacts
       - PRESENTATION_RENDERER_BASE_URL=http://presentation-renderer:8002
       - PRESENTATION_REQUIRE_OFFICE_VALIDATION=true
