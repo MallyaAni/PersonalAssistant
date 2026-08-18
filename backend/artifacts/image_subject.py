@@ -65,25 +65,3 @@ def subject_of(prompt: str) -> str:
         if stripped and stripped != prompt.strip():
             return stripped
     return prompt.strip()
-
-
-# Words that mean the picture is of a person.
-#
-# Used to decide whether human-specific style detail applies. Deliberately
-# narrow: a false positive only adds skin and hair wording to something that has
-# neither, while a false negative merely loses a little portrait realism. The
-# expensive mistake — inventing a person in a picture that had none — is what
-# keeping these words out of the global suffix prevents.
-_PERSON = re.compile(
-    r"\b(person|people|человек|man|men|woman|women|boy|girl|child|children|kid|"
-    r"baby|guy|lady|gentleman|portrait|face|selfie|couple|crowd|family|"
-    r"someone|somebody|himself|herself|myself|worker|player|dancer|singer|"
-    r"artist|chef|doctor|nurse|teacher|student|soldier|athlete|model|"
-    r"he|she|him|her|his|hers|they|them|their|my|me|i)\b",
-    re.IGNORECASE,
-)
-
-
-# Whether the request is about a person, and so wants human style detail.
-def mentions_a_person(prompt: str) -> bool:
-    return bool(_PERSON.search(prompt))

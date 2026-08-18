@@ -53,17 +53,38 @@ def test_the_subject_keeps_its_own_detail():
     )
 
 
-def test_human_detail_applies_only_to_people():
-    from backend.artifacts.image_subject import mentions_a_person
+def test_human_detail_follows_the_models_own_answer():
+    from backend.artifacts.image import ComfyUIImageProvider
 
     # Skin and hair wording in the global style suffix put a person in every
     # image, which is how a request for a car returned a woman leaning out of
-    # one. It has to be conditional on the subject.
-    assert mentions_a_person("a woman leaning out of a car") is True
-    assert mentions_a_person("portrait of a chef") is True
-    assert mentions_a_person("a car") is False
-    assert mentions_a_person("a red ferrari on a mountain road") is False
-    assert mentions_a_person("a sunset over the ocean") is False
+    # one, so it has to be conditional on the subject. It used to be decided by
+    # a word list that matched "my", "me", "i" and "her" among others, so "draw
+    # me a picture of my car" was a person. The model that wrote the prompt now
+    # states the answer and this reads it.
+    provider = ComfyUIImageProvider(
+        base_url="http://localhost:8188",
+        model="m",
+        timeout_seconds=1,
+        poll_seconds=0.1,
+        max_concurrency=1,
+        max_output_bytes=1,
+        max_pixels=1,
+        text_encoder="e",
+        vae="v",
+        steps=4,
+        style_suffix="candid snapshot",
+        portrait_suffix="natural unretouched skin",
+    )
+
+    assert "natural unretouched skin" in provider._positive_prompt(
+        "a woman leaning out of a car", True
+    )
+    assert "natural unretouched skin" not in provider._positive_prompt(
+        "my car on a mountain road", False
+    )
+    # The style suffix is unconditional; only the human detail is not.
+    assert "candid snapshot" in provider._positive_prompt("my car", False)
 
 
 def test_the_style_suffix_names_no_body_parts():

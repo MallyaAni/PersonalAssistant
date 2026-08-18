@@ -50,9 +50,20 @@ _GENERATE_IMAGE_SCHEMA: dict[str, Any] = {
         "prompt": {
             "type": "string",
             "description": "Exactly what to draw, as a self-contained subject.",
-        }
+        },
+        # Asked here because the model already knows it, and the alternative
+        # was a word list. `mentions_a_person` matched "my", "me", "i", "her"
+        # among others, so "draw me a picture of my car" was a person and got
+        # skin-and-hair styling applied to a car.
+        "depicts_a_person": {
+            "type": "boolean",
+            "description": (
+                "True when the picture would show a person or people. False "
+                "for objects, places, animals, food, or diagrams."
+            ),
+        },
     },
-    "required": ["prompt"],
+    "required": ["prompt", "depicts_a_person"],
     "additionalProperties": False,
 }
 _EDIT_IMAGE_SCHEMA: dict[str, Any] = {
@@ -263,6 +274,10 @@ class GenerateImageAction:
     """The model decided this turn wants a brand-new picture."""
 
     prompt: str
+    # Stated by the model rather than inferred from its wording, so human style
+    # detail is applied to people and not to anything whose description happens
+    # to contain a pronoun.
+    depicts_a_person: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -531,7 +546,10 @@ class MainActionSelector:
         if name == _GENERATE_IMAGE_TOOL:
             prompt = arguments.get("prompt")
             if isinstance(prompt, str) and prompt.strip():
-                return GenerateImageAction(prompt=prompt.strip())
+                return GenerateImageAction(
+                    prompt=prompt.strip(),
+                    depicts_a_person=bool(arguments.get("depicts_a_person")),
+                )
             return None
         if name == _EDIT_IMAGE_TOOL:
             instruction = arguments.get("instruction")

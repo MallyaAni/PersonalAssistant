@@ -11,13 +11,6 @@ from backend.core.llm import LLMClient
 MAX_DIAGRAM_SOURCE_CHARS = 8_000
 MAX_DIAGRAM_LINES = 120
 MAX_DIAGRAM_TITLE_CHARS = 160
-DIAGRAM_REQUEST_PATTERN = re.compile(
-    r"(?is)\b(?:create|draw|generate|make|build|show|visuali[sz]e)\b.{0,80}"
-    r"\b(?:flowchart|diagram|architecture|sequence|state diagram|"
-    r"entity relationship|erd)\b"
-    r"|\b(?:flowchart|diagram|architecture diagram|sequence diagram)\b.{0,80}"
-    r"\b(?:for|of|showing|that)\b"
-)
 UNSAFE_MERMAID_PATTERN = re.compile(
     r"(?im)(?:^\s*(?:click|href)\b|%%\{|javascript\s*:|https?://|"
     r"<\s*/?\s*[a-z][^>]*>)"
@@ -53,11 +46,6 @@ DIAGRAM_DECLARATIONS = {
     "timeline": "timeline",
     "architecture": "architecture-beta",
 }
-
-
-# Detect only explicit user requests for a visual technical diagram.
-def is_diagram_request(query: str) -> bool:
-    return bool(DIAGRAM_REQUEST_PATTERN.search(query.strip()))
 
 
 # Extract the first JSON object from a model response without evaluating code.

@@ -13,7 +13,6 @@ os.environ.setdefault("SECRET_KEY", "test-secret-key-only-for-testing")
 from backend.agents.diagram import DiagramAgent
 from backend.artifacts.diagram import (
     LLMDiagramProvider,
-    is_diagram_request,
     validate_diagram_specification,
 )
 from backend.artifacts.types import DiagramSpecification
@@ -285,21 +284,6 @@ class RetryingJsonDiagramLLM(JsonDiagramLLM):
                 )
             }
         return super().chat(messages, max_tokens)
-
-
-# Verify deterministic routing requires an explicit diagram-generation request.
-@pytest.mark.parametrize(
-    ("query", "expected"),
-    [
-        ("Create a flowchart showing intake and review", True),
-        ("Visualize this process as a diagram", True),
-        ("Explain what an architecture diagram is", False),
-        ("Tell me about flowcharts", False),
-        ("Generate an image of a mountain", False),
-    ],
-)
-def test_diagram_request_classification(query: str, expected: bool) -> None:
-    assert is_diagram_request(query) is expected
 
 
 # Verify the validator accepts bounded passive Mermaid source.

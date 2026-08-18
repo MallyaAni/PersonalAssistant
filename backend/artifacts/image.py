@@ -10,7 +10,6 @@ from uuid import uuid4
 import httpx
 from PIL import Image, UnidentifiedImageError
 
-from backend.artifacts.image_subject import mentions_a_person
 from backend.artifacts.types import (
     GeneratedImage,
     ImageEditRequest,
@@ -256,7 +255,7 @@ class ComfyUIImageProvider(ImageProvider):
     # Build the native four-step FLUX.2 Klein text-to-image workflow.
     # Append the realism suffix unless the prompt already carries it, so the
     # user's wording leads and the style steer follows.
-    def _positive_prompt(self, prompt: str) -> str:
+    def _positive_prompt(self, prompt: str, depicts_a_person: bool = False) -> str:
         text = prompt.strip()
         parts = [text] if text else []
         if self.style_suffix and self.style_suffix.lower() not in text.lower():
@@ -265,7 +264,7 @@ class ComfyUIImageProvider(ImageProvider):
         # unconditionally it does not describe the subject, it invents one.
         if (
             self.portrait_suffix
-            and mentions_a_person(text)
+            and depicts_a_person
             and self.portrait_suffix.lower() not in text.lower()
         ):
             parts.append(self.portrait_suffix)
@@ -292,7 +291,9 @@ class ComfyUIImageProvider(ImageProvider):
             "4": {
                 "class_type": "CLIPTextEncode",
                 "inputs": {
-                    "text": self._positive_prompt(request.prompt),
+                    "text": self._positive_prompt(
+                        request.prompt, request.depicts_a_person
+                    ),
                     "clip": ["2", 0],
                 },
             },

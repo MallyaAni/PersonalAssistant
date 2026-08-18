@@ -19,6 +19,9 @@ class ImageGenerationRequest:
     width: int
     height: int
     seed: int
+    # Whether the picture shows a person, as stated by the model that wrote the
+    # prompt. Human style detail is applied on this rather than on a word list.
+    depicts_a_person: bool = False
 
 
 @dataclass(frozen=True, slots=True)

@@ -698,13 +698,16 @@ class RefusingImageRefinement:
         raise AssertionError("refine() must not run with no active image")
 
 
-# edit_image is offered to the model every turn, active image or not - the
-# application, not the model, has to notice nothing is selected. With no
-# resolver wired there is nothing to resolve against, so this must still say
-# so plainly rather than silently answering the message as ordinary chat, and
-# must never reach refine() with a picture nobody identified.
+# `edit_image` is offered every turn, so a turn with no visual context at all
+# can still be routed to it - and on a small routing model regularly is. Asked
+# to make a drafted email "more casual", the router chose edit_image and the
+# reply became "I don't have a picture of yours that matches what you're
+# describing", a false premise that read as the assistant losing the thread
+# when the thread was intact. With nothing owned to resolve against, the edit
+# decision was simply wrong, so the turn is answered normally and refine() is
+# never reached with a picture nobody identified.
 @pytest.mark.asyncio
-async def test_edit_with_no_resolvable_target_says_so_instead_of_guessing():
+async def test_an_edit_misroute_with_no_visual_context_answers_normally():
     repository = CapturingConversationRepository()
     service = ConversationService(
         memory=StubMemoryService(),
@@ -725,10 +728,15 @@ async def test_edit_with_no_resolvable_target_says_so_instead_of_guessing():
         )
     ]
 
-    assert [event["event"] for event in events] == ["start", "delta", "done"]
-    message = events[1]["data"]["content"]
-    assert "don't have a picture" in message.casefold()
-    assert repository.saved_turns[0][1]["response"] == message
+    streamed = "".join(
+        event["data"].get("content", "")
+        for event in events
+        if event["event"] == "delta"
+    )
+    # An ordinary answer, not an invented picture premise.
+    assert "don't have a picture" not in streamed.casefold()
+    assert "deterministic response" in streamed
+    assert repository.saved_turns
 
 
 class StubReferentResolver:

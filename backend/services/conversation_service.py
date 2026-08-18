@@ -507,6 +507,7 @@ class ConversationService:
         trace_id: str,
         metadata: dict[str, Any],
         history: list[dict[str, Any]],
+        depicts_a_person: bool = False,
     ) -> AsyncGenerator[ChatStreamEvent, None]:
         if self.image_generation is None:
             raise RuntimeError("Image generation is not configured")
@@ -532,6 +533,7 @@ class ConversationService:
                     width=2048,
                     height=2048,
                     seed=secrets.randbelow(2**63),
+                    depicts_a_person=depicts_a_person,
                 ),
                 extra_style=learned_style,
                 on_pending=_on_pending,
@@ -718,7 +720,29 @@ class ConversationService:
                 yield event
             return
 
-        resolution = await self._resolve_edit_target(user_id, action.instruction)
+        resolution, offered = await self._resolve_edit_target(
+            user_id, action.instruction
+        )
+        if not offered:
+            # Nothing this user owns was even a candidate, so this turn has no
+            # visual context at all and the edit decision was a misroute. Asked
+            # to make a drafted email "more casual", the router chose
+            # edit_image and the reply became "I don't have a picture of yours
+            # that matches what you're describing" - a false premise that read
+            # as the assistant losing the thread, when the thread was intact
+            # and only the branch was wrong. A misroute should cost nothing
+            # more than an ordinary answer.
+            async for event in self._process_assistant_request(
+                user_id,
+                query,
+                conversation_id,
+                trace_id,
+                metadata,
+                None,
+                preselected_action=None,
+            ):
+                yield event
+            return
         target = resolution.only
         if target is not None:
             # Naming what it chose is what makes choosing acceptable at all: a
@@ -756,21 +780,26 @@ class ConversationService:
     # with no explicit selection, which is exactly the case that used to fail.
     # A resolver failure degrades to "nothing matched", which asks rather than
     # edits the wrong picture.
+    # Returns the resolution and whether anything was offered to resolve
+    # against. Those are different answers: no candidate at all means the turn
+    # had no visual context and the edit decision was wrong, while candidates
+    # that none matched means the user does own pictures and none is the one.
     async def _resolve_edit_target(
         self,
         user_id: str,
         instruction: str,
-    ) -> ReferentResolution:
+    ) -> tuple[ReferentResolution, bool]:
         if self.referent_resolver is None or self.image_referents is None:
-            return ReferentResolution(matched=())
+            return ReferentResolution(matched=()), False
         try:
             candidates = await self.image_referents.candidates(
                 user_id, instruction, None
             )
-            return await self.referent_resolver.resolve(instruction, candidates)
+            resolved = await self.referent_resolver.resolve(instruction, candidates)
+            return resolved, bool(candidates)
         except Exception:
             logger.warning("Edit-target resolution failed", exc_info=True)
-            return ReferentResolution(matched=())
+            return ReferentResolution(matched=()), False
 
     # Ask which picture was meant, or say plainly that there is none.
     #
@@ -1446,6 +1475,7 @@ class ConversationService:
                 trace_id,
                 metadata or {},
                 history,
+                action.depicts_a_person,
             ):
                 yield event
             return
