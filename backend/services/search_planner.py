@@ -29,9 +29,11 @@ _COMPOSE = (
     "answer changes over time.\n"
     "A request with several requirements needs the one that decides the "
     "answer, not all of them at once.\n"
-    "Today is {today}. When the answer changes over time, search for now, not "
-    "for whenever you were trained - a year taken from your own memory is the "
-    "one thing guaranteed to return what is already out of date.\n"
+    "Today is {today}, and your own knowledge ends around {cutoff}. Everything "
+    "between those two dates is precisely what you cannot know and what this "
+    "search is for, so search for now rather than for the last state you "
+    "remember - a year taken from your own memory is the one thing guaranteed "
+    "to return what is already out of date.\n"
     "Reply with the query alone. No quotes, no explanation."
 )
 
@@ -51,9 +53,18 @@ class SearchPlanner:
     """Compose search queries with the model that has to use the answers."""
 
     # `now` is injectable so a test can pin the date a query is written for.
-    def __init__(self, llm: Any, now: datetime | None = None) -> None:
+    def __init__(
+        self,
+        llm: Any,
+        now: datetime | None = None,
+        # Where the model's own knowledge stops. Today's date says when
+        # now is; this says which of its beliefs are already stale, which
+        # is the half that decides whether it searches the right period.
+        cutoff: str = "",
+    ) -> None:
         self.llm = llm
         self.now = now
+        self.cutoff = cutoff.strip()
 
     # One query for this turn, or nothing when the model cannot improve on
     # what the router already chose.
@@ -65,7 +76,10 @@ class SearchPlanner:
         context = "\n".join(recent)
         asked = f"Conversation so far:\n{context}\n\n" if context else ""
         return self._ask(
-            _COMPOSE.format(today=(self.now or datetime.now(UTC)).date()),
+            _COMPOSE.format(
+                today=(self.now or datetime.now(UTC)).date(),
+                cutoff=self.cutoff or "an unstated date in the past",
+            ),
             f"{asked}Their message: {question}",
             "compose a search query",
         )

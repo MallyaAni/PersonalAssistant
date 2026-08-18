@@ -1553,7 +1553,10 @@ def get_conversation_service(
         # the results answered it are prose, not a schema, so neither is
         # bound to the routing model - and the model that has to use the
         # results is the one that should say what it needs.
-        search_planner=SearchPlanner(get_reasoning_llm_client()),
+        search_planner=SearchPlanner(
+            get_reasoning_llm_client(),
+            cutoff=settings.MAIN_LLM_TRAINING_CUTOFF,
+        ),
     )
 
 

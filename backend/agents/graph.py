@@ -7,6 +7,7 @@ from langgraph.config import get_stream_writer
 from langgraph.graph import END, StateGraph
 from typing_extensions import TypedDict
 
+from backend.config.settings import settings
 from backend.core.llm import LLMClient
 
 logger = logging.getLogger(__name__)
@@ -213,6 +214,24 @@ def _render_capability_context(capabilities: list[dict[str, Any]]) -> str:
     return "".join(lines)
 
 
+# State where the model's own knowledge stops, when that is configured.
+#
+# "Your training data has a cutoff" is true of every model and tells this one
+# nothing it can act on. A date it can compare against today is actionable:
+# anything that changed in between is not something it knows, however confident
+# it feels. Asked which models to host, the assistant named ones superseded
+# months earlier - by releases that postdated its training entirely.
+def _training_boundary() -> str:
+    cutoff = str(settings.MAIN_LLM_TRAINING_CUTOFF or "").strip()
+    if not cutoff:
+        return " Your training data has a cutoff and may be out of date."
+    return (
+        f" Your training data ends around {cutoff}; anything that happened or "
+        "changed after it is outside what you know, so treat your own sense of "
+        "the newest version, model, price, or officeholder as probably stale."
+    )
+
+
 def _build_system_prompt(
     context_data: dict[str, Any],
     now: datetime | None = None,
@@ -247,10 +266,9 @@ def _build_system_prompt(
         "useful one - do not interrogate. Do not ask for anything already "
         "supplied above or earlier in this conversation, and when you have "
         "enough to answer, answer.\n"
-        f"Today's date is {today}. Your training data has a cutoff and may be "
-        "out of date. If a request depends on current information and no web "
-        "search results are provided below, say that your information may be "
-        "outdated instead of guessing.\n"
+        f"Today's date is {today}.{_training_boundary()} If a request depends "
+        "on current information and no web search results are provided below, "
+        "say that your information may be outdated instead of guessing.\n"
         # Without this scope the model answers "what did we make?" by reasoning
         # about its training data and denies remembering work the application
         # is handing it in the same prompt.

@@ -191,6 +191,9 @@ services:
       - MAIN_INFERENCE_ADAPTER=${MAIN_INFERENCE_ADAPTER:-}
       - MAIN_LLM_BASE_URL=http://vllm-main:8000
       - MAIN_LLM_MODEL=qwen/qwen3.5-4b
+      # Empty rather than DeepSeek's date: a wrong cutoff is worse than
+      # none, because the model would trust everything before it.
+      - MAIN_LLM_TRAINING_CUTOFF=${QWEN_TRAINING_CUTOFF:-}
       - MAIN_LLM_REASONING_EFFORT=${MAIN_LLM_REASONING_EFFORT:-none}
       - PRESENTATION_INFERENCE_ADAPTER=${PRESENTATION_INFERENCE_ADAPTER:-}
       - PRESENTATION_LLM_BASE_URL=http://vllm-main:8000
@@ -467,6 +470,9 @@ services:
       - LLM_MODEL=qwen/qwen3.5-4b
       - MAIN_LLM_BASE_URL=http://vllm-main:8000
       - MAIN_LLM_MODEL=qwen/qwen3.5-4b
+      # Empty rather than DeepSeek's date: a wrong cutoff is worse than
+      # none, because the model would trust everything before it.
+      - MAIN_LLM_TRAINING_CUTOFF=${QWEN_TRAINING_CUTOFF:-}
       - INFERENCE_ADAPTER=${INFERENCE_ADAPTER:-openai_compatible}
       # Same shape of mistake: the default is a loopback address that resolves
       # to this container rather than to the shared Redis.
@@ -558,6 +564,12 @@ services:
       - MAIN_INFERENCE_ADAPTER=${MAIN_INFERENCE_ADAPTER:-}
       - MAIN_LLM_BASE_URL=http://spark-b524.local:8888
       - MAIN_LLM_MODEL=deepseek-v4-flash
+      # Belongs with the model above, not with the deployment: it states
+      # which of that model's beliefs are already stale, and the gap
+      # between it and today is what a web search is for. Change it when
+      # the model changes. DeepSeek does not publish cutoffs; this is the
+      # reported figure for deepseek-v4-flash.
+      - MAIN_LLM_TRAINING_CUTOFF=${MAIN_LLM_TRAINING_CUTOFF:-2026-04}
       - MAIN_LLM_REASONING_EFFORT=${MAIN_LLM_REASONING_EFFORT:-none}
       # Where the main model's work goes when the Spark is powered off. Without
       # this the assistant is entirely down whenever that machine is, even

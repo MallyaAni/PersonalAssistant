@@ -72,6 +72,19 @@ class Settings(BaseSettings):
     # when the main model is served by an engine that honours schemas, and every
     # structured caller follows the main model at once.
     MAIN_LLM_STRUCTURED_OUTPUT: bool = False
+    # When the reply model's training data ends, as YYYY-MM.
+    #
+    # Knowing today's date tells a model when "now" is. Knowing this tells it
+    # what it cannot possibly know, which is the more useful fact: everything
+    # between this month and today has to come from a search, and a model that
+    # does not know the boundary answers confidently from the wrong side of it.
+    # Asked which models to host, the assistant recommended ones superseded
+    # months earlier - a release from 2026-08-11 was four months past the
+    # configured cutoff and could not have been in training at all.
+    #
+    # DeepSeek does not publish cutoffs; 2026-04 is the reported figure for
+    # deepseek-v4-flash. Change it with the model, and empty it to say nothing.
+    MAIN_LLM_TRAINING_CUTOFF: str = "2026-04"
     PRESENTATION_INFERENCE_ADAPTER: Literal["", "openai_compatible"] = ""
     PRESENTATION_LLM_BASE_URL: str = ""
     PRESENTATION_LLM_MODEL: str = ""

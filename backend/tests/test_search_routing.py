@@ -156,3 +156,35 @@ def test_system_prompt_says_when_nothing_will_be_saved():
     )
 
     assert "nothing from this message was saved to memory" in prompt
+
+
+# "Your training data has a cutoff" is true of every model and gives this one
+# nothing to act on. A date it can compare against today is actionable: the gap
+# is precisely what it does not know. Asked which models to host, the assistant
+# recommended ones superseded by releases that postdated its training.
+def test_the_prompt_states_where_the_models_knowledge_stops():
+    from backend.config.settings import settings
+
+    original = settings.MAIN_LLM_TRAINING_CUTOFF
+    settings.MAIN_LLM_TRAINING_CUTOFF = "2026-04"
+    try:
+        prompt = _build_system_prompt({}, now=datetime(2026, 8, 18, tzinfo=UTC))
+    finally:
+        settings.MAIN_LLM_TRAINING_CUTOFF = original
+
+    assert "Today's date is 2026-08-18" in prompt
+    assert "2026-04" in prompt
+    assert "outside what you know" in prompt
+
+
+def test_an_unconfigured_cutoff_falls_back_to_the_general_caveat():
+    from backend.config.settings import settings
+
+    original = settings.MAIN_LLM_TRAINING_CUTOFF
+    settings.MAIN_LLM_TRAINING_CUTOFF = ""
+    try:
+        prompt = _build_system_prompt({}, now=datetime(2026, 8, 18, tzinfo=UTC))
+    finally:
+        settings.MAIN_LLM_TRAINING_CUTOFF = original
+
+    assert "has a cutoff and may be out of date" in prompt

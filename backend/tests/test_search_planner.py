@@ -106,3 +106,34 @@ def test_the_query_is_written_for_today_not_for_training():
 
     system = llm.system_prompts[0]
     assert "2026-08-18" in system
+
+
+# Your own cutoff is the more useful of the two dates: today says when now is,
+# the cutoff says which of your beliefs are already stale. The gap between them
+# is exactly what a search is for. A release on 2026-08-11 was four months past
+# the reply model's training and could not have been known at all.
+def test_the_query_is_written_knowing_where_its_knowledge_stops():
+    from datetime import UTC, datetime
+
+    llm = StubLLM("some query")
+    planner = SearchPlanner(
+        llm, now=datetime(2026, 8, 18, tzinfo=UTC), cutoff="2026-04"
+    )
+
+    planner.compose("which model should I host", [])
+
+    system = llm.system_prompts[0]
+    assert "2026-04" in system
+    assert "2026-08-18" in system
+
+
+# With no cutoff configured the prompt must still read as a sentence rather
+# than leaving a placeholder or crashing on the missing value.
+def test_an_unconfigured_cutoff_still_produces_a_usable_prompt():
+    llm = StubLLM("some query")
+
+    SearchPlanner(llm).compose("q", [])
+
+    system = llm.system_prompts[0]
+    assert "{cutoff}" not in system
+    assert "unstated date" in system
