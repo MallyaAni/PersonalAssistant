@@ -5,7 +5,7 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 [ROADMAP.md](ROADMAP.md), and stable architecture facts in
 [ARCHITECTURE.md](ARCHITECTURE.md).
 
-Last updated: 2026-08-17, America/New_York
+Last updated: 2026-08-18, America/New_York
 
 ## START HERE: finish the model-migration gate — IN PROGRESS
 
@@ -45,6 +45,45 @@ on DeepSeek (Spark); routing, vision, memory extraction and every strict-JSON
 caller run on Qwen (RTX 5080) for the reason in the capability entry. Image
 generation and editing are both FLUX.2 Klein. Scout's interests, locality and
 cadence are all collectable in conversation; delivery deliberately is not.
+
+## The retired routing tree is gone — VERIFIED
+
+`SearchRoutingPolicy`, `CascadingSearchRouter`, `MainSupervisorAgent`,
+`DelegationRegistry`, the bounded `QueryFreshnessClassifier`,
+`evaluate_search_routing.py`, the `SEARCH_CLASSIFIER_*` settings and
+`get_classifier_llm` are all deleted, with their standalone tests. Nothing in
+that set was reachable from a live turn. `backend/search/routing_cases.py`
+survives them on purpose: the labelled set is the measurement, not the thing
+measured, and the functional gate now holds the turn's action decision to the
+floor the cascade reached over the same 52 cases.
+
+## A tool with nothing to act on no longer takes the turn — VERIFIED
+
+`create_diagram` and `delegate_to_presentation_agent` took no arguments at all,
+so a turn routed to either by mistake arrived at the caller looking exactly
+like a real request and spent the whole turn on it - a deck queued about
+nothing, a diagram of nothing. Both now state a `subject`, and the rule
+`generate_image` and `edit_image` already applied covers all four: an empty
+required argument is not a decision, so no action is returned and the ordinary
+reply path answers, where the general ask rule asks for the one missing thing.
+An action whose service is not configured is dropped the same way rather than
+carried into the reply as a preselected action - only `SearchAction` and
+`ToolboxAction` survive to the reply path, because those are the two it can
+still execute.
+
+The live model fills the new argument without prompting changes:
+`evaluate_tool_selection` scores **108/108** over 36 cases at 3 reps with an
+empty confusion matrix, diagram 15/15 and deck 6/6 among them.
+
+## Known failing, deliberately marked
+
+`test_style_opinion_applies_the_edit_to_the_source_description` is `xfail`
+again, with the reason its own comment recorded for exactly this case: asked
+about an image whose description states a straw-hat edit, the chat model
+answers with the origin's black cowboy hat. 5/5 runs, reproduced on an
+unmodified tree, so it is a model regression rather than a code one. Left as
+a non-strict xfail so the day a model gets it right the run reports an
+unexpected pass.
 
 ## Elliptical writing follow-ups retain their task context — VERIFIED
 
@@ -1075,9 +1114,11 @@ rather than an outage. `_image_provider_failure_message` in
 `conversation_service.py` now matches the retired REST endpoints' wording.
 
 `MainSupervisorAgent`, `DelegationRegistry`, `CascadingSearchRouter`, and
-`SearchRoutingPolicy` remain in the tree, still tested standalone
-(`test_supervisor.py`, `test_search_cascade.py`, `test_search_routing.py`,
-`evaluate_search_routing.py`), but none is reachable from a live turn.
+`SearchRoutingPolicy` were left in the tree at the time, still tested
+standalone but unreachable from a live turn. They have since been deleted
+along with their tests and `evaluate_search_routing.py`; the labelled set they
+were scored on (`backend/search/routing_cases.py`) was kept and now measures
+the tool selector instead.
 
 Diagrams: `chat-orchestration.mmd` redrawn around `MainActionSelector`, plus
 the generated architecture page's metrics strip and orchestration-contract

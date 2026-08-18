@@ -189,7 +189,12 @@ async def test_an_explicit_deck_request_delegates_to_the_presentation_agent(
         [],
         None,
     )
-    assert action == DelegateAction(capability_id="presentation_agent")
+    assert isinstance(action, DelegateAction), action
+    assert action.capability_id == "presentation_agent"
+    # The subject is the model's own words, so only its presence is asserted:
+    # a delegation that cannot say what the deck is about is a misroute, and
+    # the selector drops it rather than queueing a job about nothing.
+    assert action.subject.strip()
 
 
 @pytest.mark.parametrize(

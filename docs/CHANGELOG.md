@@ -2,6 +2,38 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-18
+
+- Deleted the retired routing tree: `SearchRoutingPolicy`, `CascadingSearchRouter`,
+  `MainSupervisorAgent`, `DelegationRegistry`, the bounded
+  `QueryFreshnessClassifier`, `evaluate_search_routing.py`, the
+  `SEARCH_CLASSIFIER_*` settings and the LLM role that served them, plus their
+  standalone tests. None was reachable from a live turn. The 52-case labelled
+  set they were scored on is kept and now measures the turn's single action
+  decision against the same recall and specificity floor.
+- Made a built-in tool call with nothing to act on stop taking the turn.
+  `create_diagram` and `delegate_to_presentation_agent` took no arguments, so a
+  turn routed to either by mistake was indistinguishable from a real request
+  and spent the whole turn on it. Both now state their subject, and the rule
+  the other two built-ins already applied covers all four: no subject, no
+  action, and the turn is answered normally instead. An action whose service is
+  not configured is likewise dropped rather than carried into the reply.
+- Fixed the agent roster hiding what an agent needs whenever its status was
+  unknown rather than only when it was already running. Asked what a scheduled
+  local roundup requires, the assistant improvised inputs for a feature it
+  already has; 1/3 real-model runs before, 3/3 after.
+- Re-added `xfail` to `test_style_opinion_applies_the_edit_to_the_source_description`
+  with its originally recorded reason, as its own comment instructed. The chat
+  model answers with the origin's black hat over an explicit straw-hat edit,
+  5/5 runs, reproduced on an unmodified tree.
+
+Evidence: 1109 structural backend tests pass; 318 functional tests pass against
+the real vLLM runtime, the real MCP search server and real ComfyUI generation,
+with one expected failure recorded above; `evaluate_tool_selection` scores
+108/108 over 36 cases at 3 reps with an empty confusion matrix; Ruff passes;
+`tsc --noEmit` passes; all 19 diagrams and the published architecture page are
+synchronized.
+
 ## 2026-08-17
 
 - Replaced the multi-call new-image analysis chain with one schema-constrained

@@ -219,13 +219,21 @@ async def test_it_does_not_invent_the_users_location(llm: object) -> None:
 
 
 # An unobserved edit still carries the explicit delta and unchanged source
-# details. Previously xfailed ("Qwen can still prefer the origin's black hat
-# over an explicit straw-hat edit when post-edit vision observation is
-# unavailable"); it now passes consistently (3/3 real-model runs) as an
-# apparent side effect of the anti-hallucination instruction added alongside
-# it - both push the model to ground answers in what it was actually given
-# rather than a plausible-sounding default. If this regresses, re-add xfail
-# with the original reason rather than deleting the test.
+# details. Originally xfailed for exactly the reason below, then passing
+# consistently (3/3 real-model runs) once an anti-hallucination instruction was
+# added alongside it. It has regressed since the chat role moved to DeepSeek:
+# 5/5 runs on 2026-08-17 answered with the origin's black cowboy hat, ignoring
+# the straw-hat edit the description states, and the same 5/5 reproduce on an
+# unmodified tree. Marked expected-to-fail rather than deleted, so the day a
+# model gets this right the run reports it as an unexpected pass instead of
+# silently keeping a green tick nobody earned.
+@pytest.mark.xfail(
+    reason=(
+        "The chat model prefers the origin's black hat over an explicit "
+        "straw-hat edit when post-edit vision observation is unavailable"
+    ),
+    strict=False,
+)
 async def test_style_opinion_applies_the_edit_to_the_source_description(
     llm: object,
 ) -> None:

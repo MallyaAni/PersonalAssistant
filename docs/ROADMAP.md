@@ -187,11 +187,11 @@ text-text scores, so image vectors keep a separate column, index, and calibrated
 threshold rather than sharing one ranked list. Retrieval quality is measured
 rather than assumed: an 18-query labelled evaluation returns 14/14 correct
 top-1 matches and rejects 4/4 distractor queries, using a distance ceiling plus
-a required best-to-runner-up margin. Search routing now has a committed harness,
-`backend/cli/evaluate_search_routing.py`, which scores a labelled set and exits
-non-zero below a per-mode floor. The configured Qwen cascade passed all 52
-committed cases in the final live run with 1.0 recall, 1.0 specificity, no
-misses, and no unnecessary searches. Image-retrieval calibration remains manual
+a required best-to-runner-up margin. Tool selection now has a committed harness,
+`backend/cli/evaluate_tool_selection.py`, which scores a labelled set, reports
+a confusion matrix over the routed tools, and exits non-zero below the floor.
+Web search is one branch of it, scored over the same 52 cases the retired regex
+cascade was measured on. Image-retrieval calibration remains manual
 and is the next evaluation gap.
 - `VERIFIED` (primary path): a new upload now makes one schema-constrained VLM
   inspection for intent, durable observation, immediate answer, evidence
@@ -234,9 +234,9 @@ scale without coupling the system to the current RTX 5080 or planned DGX Spark.
   to the main model as one native tool-calling decision per turn, made from
   genuine understanding rather than a regex or a narrow bounded classifier
   judging the question alone; a labelled-benchmark functional test holds its
-  search recall/specificity to the floor the retired regex-plus-classifier
-  cascade (`MainSupervisorAgent`'s deterministic LangGraph delegation policy
-  and `CascadingSearchRouter`) was held to, and separate functional tests
+  search recall/specificity to the floor the regex-plus-classifier cascade
+  (`MainSupervisorAgent`'s deterministic LangGraph delegation policy and
+  `CascadingSearchRouter`, both since deleted) was held to, and separate functional tests
   cover image/diagram/delegation routing and refusing to guess a location it
   does not know. Delegation still emits visible agent/model lifecycle events
   and image/diagram actions still emit artifact lifecycle events, now shared
@@ -260,10 +260,12 @@ scale without coupling the system to the current RTX 5080 or planned DGX Spark.
   correctness, presentation buffered structured output, embedding batch
   latency/dimension, and fixed-fixture vision latency. Three sequential LM Studio
   baselines and the promoted vLLM RTX 5080 profile passed all five role checks;
-- `VERIFIED`: the configured Qwen search cascade passed the complete 52-case
-  routing evaluation with 1.0 recall and 1.0 specificity. Long-duration
-  accuracy drift, contexts above the verified 8k workstation profile, and DGX
-  Spark behavior remain unmeasured;
+- `VERIFIED`: the retired Qwen search cascade passed the complete 52-case
+  routing evaluation with 1.0 recall and 1.0 specificity before it was deleted;
+  the turn's single action decision is now held to that same floor over the
+  same set by a functional test against the real model. Long-duration accuracy
+  drift, contexts above the verified 8k workstation profile, and DGX Spark
+  behavior remain unmeasured;
 - `VERIFIED` (Tavily runtime; Google deterministic): deterministic
   privacy-preserving MCP internet research with an isolated Google ADK worker,
   Tavily fallback, explicit dual-provider verification, local non-content

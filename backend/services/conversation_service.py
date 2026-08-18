@@ -378,6 +378,38 @@ class ConversationService:
             logger.warning("Main action selection failed", exc_info=True)
             return None
 
+    # Answer the turn as though no tool had been chosen.
+    #
+    # Every branch below decides for itself whether it can actually act. When
+    # it cannot - nothing in view to edit, the service behind it unavailable -
+    # the turn is not a failure to report, it is a routing mistake, and the
+    # user asked a real question that still deserves an answer. Asked to make
+    # a drafted email "more casual", the router chose edit_image and the reply
+    # became "I don't have a picture of yours that matches what you're
+    # describing": a false premise that read as the assistant losing the
+    # thread, when the thread was intact and only the branch was wrong. A
+    # misroute should cost nothing more than an ordinary answer, so the action
+    # is dropped rather than carried into the reply path where it would shape
+    # the context all over again.
+    def _answer_without_the_tool(
+        self,
+        user_id: str,
+        query: str,
+        conversation_id: str,
+        trace_id: str,
+        metadata: dict[str, Any],
+        active_image_artifact_id: str | None = None,
+    ) -> AsyncGenerator[ChatStreamEvent, None]:
+        return self._process_assistant_request(
+            user_id,
+            query,
+            conversation_id,
+            trace_id,
+            metadata,
+            active_image_artifact_id,
+            preselected_action=None,
+        )
+
     # Queue a specialist presentation job and persist the delegated chat turn.
     async def _process_presentation_delegation(
         self,
@@ -725,21 +757,9 @@ class ConversationService:
         )
         if not offered:
             # Nothing this user owns was even a candidate, so this turn has no
-            # visual context at all and the edit decision was a misroute. Asked
-            # to make a drafted email "more casual", the router chose
-            # edit_image and the reply became "I don't have a picture of yours
-            # that matches what you're describing" - a false premise that read
-            # as the assistant losing the thread, when the thread was intact
-            # and only the branch was wrong. A misroute should cost nothing
-            # more than an ordinary answer.
-            async for event in self._process_assistant_request(
-                user_id,
-                query,
-                conversation_id,
-                trace_id,
-                metadata,
-                None,
-                preselected_action=None,
+            # visual context at all and the edit decision was a misroute.
+            async for event in self._answer_without_the_tool(
+                user_id, query, conversation_id, trace_id, metadata
             ):
                 yield event
             return
@@ -1494,6 +1514,13 @@ class ConversationService:
                 yield event
             return
 
+        # Reached when a branch above matched the action but not the service
+        # behind it - a diagram routed with no diagram service configured, a
+        # deck with no job queue. The chosen action cannot run, so it is
+        # dropped rather than carried into the reply as though it had: search
+        # and the user's own tools are the two that survive to here, because
+        # those are the ones the reply path can still execute.
+        runnable = isinstance(action, SearchAction | ToolboxAction)
         async for event in self._process_assistant_request(
             user_id,
             query,
@@ -1501,7 +1528,7 @@ class ConversationService:
             trace_id,
             metadata or {},
             active_image_artifact_id,
-            preselected_action=action,
+            preselected_action=action if runnable else None,
         ):
             yield event
 

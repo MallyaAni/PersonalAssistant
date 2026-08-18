@@ -12,7 +12,7 @@ flowchart TB
 
     subgraph Orchestration[Application-owned orchestration]
         Identity[Invited registration,<br/>session and ownership gate]
-        Supervisor{Main supervisor}
+        Supervisor{Main action selector}
         Conversation[Assistant and DiagramAgent]
         Presentation[PresentationAgent<br/>and durable worker]
         Memory[Memory coordinator]

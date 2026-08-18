@@ -5,7 +5,6 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from backend.artifacts.image import validate_image_bytes
-from backend.artifacts.image_subject import subject_of
 from backend.artifacts.types import (
     ImageEditRequest,
     ImageGenerationRequest,
@@ -135,11 +134,13 @@ class ImageArtifactService:
         # intent, so it is applied to the provider request while the stored
         # generation_prompt stays the base prompt a later refinement builds on.
         #
-        # The provider also gets the subject rather than the sentence: a
-        # diffusion model draws every token it is given, so leaving "generate an
-        # image of" in front of "a car" spends most of the prompt on words that
-        # describe nothing and lets the checkpoint's own bias fill the gap.
-        subject = subject_of(request.prompt)
+        # A diffusion model draws every token it is given, so the prompt has to
+        # be the subject rather than the sentence that asked for it - leaving
+        # "generate an image of" in front of "a car" spends most of the prompt
+        # on words that describe nothing. The model that writes this states the
+        # subject directly, which is what its tool schema asks for, so there is
+        # nothing left to strip and no phrasing to pattern-match.
+        subject = request.prompt.strip()
         style = extra_style.strip()
         provider_prompt = f"{subject}, {style}" if style else subject
         provider_request = (

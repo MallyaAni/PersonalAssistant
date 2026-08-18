@@ -39,11 +39,28 @@ _EDIT_IMAGE_TOOL = "edit_image"
 _CREATE_DIAGRAM_TOOL = "create_diagram"
 _DELEGATE_PRESENTATION_TOOL = "delegate_to_presentation_agent"
 
-_EMPTY_SCHEMA: dict[str, Any] = {
-    "type": "object",
-    "properties": {},
-    "additionalProperties": False,
-}
+# Asked of the two tools that otherwise take no arguments. The point is not to
+# pass it on - both of them read the request itself - but to make the model
+# state what it believes it was asked to make. A tool chosen by mistake has no
+# subject to state, and the caller can see that before spending the turn on it
+# instead of after, when a deck is already queued.
+def _subject_schema(what: str) -> dict[str, Any]:
+    return {
+        "type": "object",
+        "properties": {
+            "subject": {
+                "type": "string",
+                "description": (
+                    f"What the {what} is about, in a few words, taken from the "
+                    "request. Leave empty if the request does not say."
+                ),
+            }
+        },
+        "required": ["subject"],
+        "additionalProperties": False,
+    }
+
+
 _GENERATE_IMAGE_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
@@ -77,6 +94,18 @@ _EDIT_IMAGE_SCHEMA: dict[str, Any] = {
     "required": ["instruction"],
     "additionalProperties": False,
 }
+
+
+# The one argument a built-in tool cannot do without, or nothing.
+#
+# A tool call carrying an empty required string is not a decision the model
+# made, it is a tool it picked without being able to say what for. Every
+# built-in treats that as no call at all rather than acting on a blank.
+def _required_text(arguments: dict[str, Any], field: str) -> str | None:
+    value = arguments.get(field)
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    return None
 
 
 @dataclass(frozen=True, slots=True)
@@ -154,18 +183,18 @@ _CREATE_DIAGRAM = BuiltinTool(
         "class, or entity-relationship). Choose this over drawing a picture "
         "whenever the thing asked for is a diagram of how something works or "
         "is structured - an architecture, a pipeline, a data flow, a process, "
-        "a system - however the request is worded, including \"create an "
-        "image of\", \"draw\", or a setting like a whiteboard or slide. Those "
+        'a system - however the request is worded, including "create an '
+        'image of", "draw", or a setting like a whiteboard or slide. Those '
         "need readable labels, which a diagram renders as real text and a "
         "generated picture can only imitate."
     ),
-    schema=_EMPTY_SCHEMA,
+    schema=_subject_schema("diagram"),
 )
 _DELEGATE_PRESENTATION = BuiltinTool(
     name=_DELEGATE_PRESENTATION_TOOL,
     label="Presentations",
     description="Hand off to the specialist that builds slide decks.",
-    schema=_EMPTY_SCHEMA,
+    schema=_subject_schema("deck"),
 )
 
 # Search is the one action whose tool description is not AniOS's to write: the
@@ -226,8 +255,8 @@ _SYSTEM = (
     "Call create_diagram when what is wanted is a diagram of how something "
     "works or is structured - an architecture, pipeline, data flow, process, "
     "system, sequence, state, class, or entity-relationship. Judge that by the "
-    "subject, not the noun: \"create an image of our data pipeline\", \"draw "
-    "the login flow\" and \"show me a picture of how the services connect\" "
+    'subject, not the noun: "create an image of our data pipeline", "draw '
+    'the login flow" and "show me a picture of how the services connect" '
     "are all diagrams, whatever setting they name. A diagram renders real "
     "text; a generated picture can only imitate writing, so anything needing "
     "readable labels belongs here.\n\n"
@@ -291,12 +320,17 @@ class EditImageAction:
 class CreateDiagramAction:
     """The model decided this turn wants a technical diagram."""
 
+    # What the model believes it was asked to draw. Empty means it could not
+    # say, which is how a misroute looks from here.
+    subject: str = ""
+
 
 @dataclass(frozen=True, slots=True)
 class DelegateAction:
     """The model decided this turn belongs to a registered specialist."""
 
     capability_id: str
+    subject: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -544,22 +578,31 @@ class MainActionSelector:
                 max_results=max_results if isinstance(max_results, int) else None,
             )
         if name == _GENERATE_IMAGE_TOOL:
-            prompt = arguments.get("prompt")
-            if isinstance(prompt, str) and prompt.strip():
-                return GenerateImageAction(
-                    prompt=prompt.strip(),
-                    depicts_a_person=bool(arguments.get("depicts_a_person")),
-                )
-            return None
+            prompt = _required_text(arguments, "prompt")
+            if prompt is None:
+                return None
+            return GenerateImageAction(
+                prompt=prompt,
+                depicts_a_person=bool(arguments.get("depicts_a_person")),
+            )
         if name == _EDIT_IMAGE_TOOL:
-            instruction = arguments.get("instruction")
-            if isinstance(instruction, str) and instruction.strip():
-                return EditImageAction(instruction=instruction.strip())
-            return None
+            instruction = _required_text(arguments, "instruction")
+            return None if instruction is None else EditImageAction(instruction)
+        # The two below used to take no arguments, so a turn routed to either
+        # by mistake reached the caller looking exactly like a real request and
+        # took the whole turn. Both now state their subject, and the same rule
+        # the two above already applied covers all four: no subject means no
+        # decision, so the turn goes down the ordinary reply path where the
+        # assistant asks for the one thing it is missing, rather than queueing
+        # a subjectless deck or drawing a diagram of nothing.
         if name == _CREATE_DIAGRAM_TOOL:
-            return CreateDiagramAction()
+            subject = _required_text(arguments, "subject")
+            return None if subject is None else CreateDiagramAction(subject)
         if name == _DELEGATE_PRESENTATION_TOOL:
-            return DelegateAction(capability_id="presentation_agent")
+            subject = _required_text(arguments, "subject")
+            if subject is None:
+                return None
+            return DelegateAction("presentation_agent", subject)
 
         selected = aliases.get(str(name))
         if selected is None:

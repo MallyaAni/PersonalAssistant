@@ -4,7 +4,6 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any
 
-from backend.search.cascade import CascadingSearchRouter
 from backend.search.routing_cases import ROUTING_CASES, RoutingCase
 
 
@@ -73,7 +72,10 @@ class SearchRoutingEvaluator:
     # pattern-plus-classifier configurations are measured the same way.
     def __init__(
         self,
-        router: CascadingSearchRouter,
+        # Anything that decides one query. The retired pattern cascade was
+        # named here; the live caller passes an adapter over the tool
+        # selector, and this measures whichever it is given.
+        router: Any,
         cases: tuple[RoutingCase, ...] = ROUTING_CASES,
     ) -> None:
         self.router = router

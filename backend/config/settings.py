@@ -409,11 +409,6 @@ class Settings(BaseSettings):
     # clusters spanned ~0.004 and gapped to the rest by ~0.007+, so 0.006 keeps
     # the real matches together and excludes the field.
     VISION_SEARCH_CLUSTER_DELTA: float = Field(default=0.006, ge=0, le=1)
-    # A bounded single-token classifier resolves image references the recall
-    # patterns miss ("that thing we made yesterday"). It is gated to plausibly
-    # -image queries, so unrelated turns never call it; it reuses the shared
-    # classifier model, which is fastest when SEARCH_CLASSIFIER_MODEL is a small
-    # model.
 
     # Web search. The MCP server prefers Google Grounding and falls back to
     # Tavily; both return untrusted third-party content.
@@ -438,20 +433,7 @@ class Settings(BaseSettings):
     # nothing, because the prompt tells the model to prefer web results over its
     # own knowledge for time-sensitive facts.
     SEARCH_MIN_SCORE: float = Field(default=0.4, ge=0, le=1)
-    # Deterministic patterns recall only 45.6% of FreshQA questions whose
-    # answers change, because volatility is rarely phrased explicitly. A bounded
-    # local classifier judges whatever the patterns do not match, raising recall
-    # to 91.7% and accuracy to 82.5%. It costs one short model call on unmatched
-    # queries only; disable it to fall back to patterns alone.
-    SEARCH_CLASSIFIER_ENABLED: bool = True
-    SEARCH_CLASSIFIER_MAX_TOKENS: int = Field(default=4, ge=1, le=16)
-    # Empty uses LLM_MODEL. Smaller local models were measured on FreshQA and
-    # rejected: qwen3-1.7b scored 70.0% accuracy against a 70.0% "always search"
-    # baseline, contributing nothing over a constant answer, and qwen3-0.6b
-    # reached 70.8%. The 12B chat model reached 81.7% because it is the only
-    # candidate that actually discriminated.
-    SEARCH_CLASSIFIER_MODEL: str = ""
-    # Fixed read-only MCP boundary used after deterministic search routing.
+    # Fixed read-only MCP boundary the turn's action selection calls into.
     SEARCH_MCP_SERVER_ID: str = "internet"
     SEARCH_MCP_TOOL_NAME: str = "search_web"
     GOOGLE_API_KEY: str | None = Field(None, alias="GOOGLE_API_KEY")

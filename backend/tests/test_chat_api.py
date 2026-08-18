@@ -13,7 +13,10 @@ from backend.mcp.invocation import MCPInvocationError, ToolCallResult
 from backend.memory.proposal_agent import MemoryProposalResult
 from backend.services.conversation_service import ConversationService
 from backend.services.main_action_selector import (
+    CreateDiagramAction,
+    DelegateAction,
     EditImageAction,
+    GenerateImageAction,
     MainAction,
     ToolboxAction,
 )
@@ -737,6 +740,51 @@ async def test_an_edit_misroute_with_no_visual_context_answers_normally():
     assert "don't have a picture" not in streamed.casefold()
     assert "deterministic response" in streamed
     assert repository.saved_turns
+
+
+# The same rule, one level up. A branch matches on both the action and the
+# service behind it, so an action whose service is not configured falls past
+# every branch to the ordinary reply. It must arrive there as an ordinary turn:
+# carried through as a preselected action it would shape the reply's context
+# again, which is how a misroute stopped looking like a misroute and started
+# looking like the assistant losing the thread. Only search and the user's own
+# tools survive that far, because the reply path can still run those.
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "action",
+    [
+        CreateDiagramAction(subject="the deploy pipeline"),
+        DelegateAction(capability_id="presentation_agent", subject="batteries"),
+        GenerateImageAction(prompt="a red car"),
+    ],
+)
+async def test_an_action_with_no_service_behind_it_answers_normally(action):
+    llm = StubLLM()
+    repository = CapturingConversationRepository()
+    # No diagram_artifacts, no presentation_jobs, no image_generation.
+    service = ConversationService(
+        memory=StubMemoryService(),
+        llm=llm,
+        repository=repository,
+        tracer=StubTracer(),
+        main_action_selector=StubMainActionSelector(action),  # type: ignore[arg-type]
+    )
+
+    events = [
+        event async for event in service.process_request("proposal_user", "go on then")
+    ]
+
+    streamed = "".join(
+        event["data"].get("content", "")
+        for event in events
+        if event["event"] == "delta"
+    )
+    assert "deterministic response" in streamed
+    assert repository.saved_turns
+    # Nothing was started on the user's behalf that could not be finished.
+    assert not any(
+        event["event"] in {"artifact_started", "agent_started"} for event in events
+    )
 
 
 class StubReferentResolver:

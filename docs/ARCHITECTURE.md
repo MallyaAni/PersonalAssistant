@@ -81,9 +81,8 @@ A chat turn, in order:
 | Typed memory proposal | `qwen/qwen3.5-4b` (`MEMORY_PROPOSAL_LLM_MODEL`) with grammar-constrained JSON and reasoning disabled | GPU (`vllm-main`) | every ordinary chat turn; fail-closed with no write authority |
 
 A plain message ("my name is Ani") therefore makes about three model calls: one
-text embedding plus two main-role calls (the search classifier and the
-response). Pointing `SEARCH_CLASSIFIER_MODEL` at a dedicated qualified model
-moves both bounded routing classifiers off the main response model.
+text embedding plus two main-role calls (the turn's action selection and the
+response).
 
 One Scout sweep, in order. This is the densest model path in the system, and
 every stage degrades to the one before it rather than failing the sweep:
@@ -203,11 +202,11 @@ only when the user explicitly asks to verify or cross-check. `MainActionSelector
 one native tool alongside every other candidate action (a new or edited
 picture, a diagram, a specialist handoff, the user's own registered MCP
 tools); the model decides whether to call it and writes the query itself, in
-the same call that decides everything else about the turn. The retired
-`SearchRoutingPolicy`/`CascadingSearchRouter` regex-plus-classifier cascade
-remains in the tree, unused by the live path, for its own standalone
-benchmark (`python -m backend.cli.evaluate_search_routing`); neither the local
-model nor the cloud worker owns outbound eligibility beyond that one decision.
+the same call that decides everything else about the turn. The `SearchRoutingPolicy`/`CascadingSearchRouter` regex-plus-classifier
+cascade that used to make this call has been deleted; its labelled set
+(`backend/search/routing_cases.py`) outlived it and now holds the tool
+selector to the same recall and specificity floor. Neither the local model nor
+the cloud worker owns outbound eligibility beyond that one decision.
 
 The Google worker is a request-scoped `gemini-3.6-flash` ADK `Agent` with the
 native `google_search` tool. Each call creates a random in-memory session,
@@ -242,61 +241,36 @@ prompt to the normalized search subject, screens the combined text with
 never cross the outbound-search boundary. A blocked description blocks the
 whole provider call rather than falling back to the less useful raw question.
 
-Web-search routing is a cascade. Deterministic patterns answer the obvious cases for free
-and cannot drift; whatever they do not match is referred to a bounded local
-classifier that returns a single word. The classifier judges the *question*, not
-what to do about it, so the application keeps ownership of routing and a
-confused answer can at worst cause one unnecessary search. An unavailable
-classifier leaves the deterministic answer standing rather than turning every
-turn into a search.
+Web-search routing is one branch of the turn's single action decision, not a
+stage of its own. The model that reads the conversation decides whether the
+answer needs live data and writes the query itself, in the same call that
+decides everything else about the turn.
 
-Measured against FreshQA, which labels 600 questions fast-changing,
-slow-changing or never-changing, patterns alone recalled 45.6% of questions
-whose answers move, because volatility is rarely phrased explicitly: "When did
-OpenAI release GPT-5?" needs live data and contains no temporal marker. The
-cascade raises that to 86.9% and overall accuracy from 62.3% to 81.7%, at the
-cost of specificity falling to 69.4%. That trade is deliberate: an unnecessary
-search costs a second, while a missed one produces a confident stale answer.
+It replaced a cascade: deterministic patterns answering the obvious cases for
+free, with a bounded local classifier judging whatever they missed. Both have
+been deleted, and what they measured is worth keeping. Against FreshQA, which
+labels 600 questions fast-changing, slow-changing or never-changing, patterns
+alone recalled 45.6% of questions whose answers move, because volatility is
+rarely phrased explicitly - "When did OpenAI release GPT-5?" needs live data
+and contains no temporal marker. The cascade raised recall to 86.9% and
+accuracy from 62.3% to 81.7%, at the cost of specificity falling to 69.4%.
+Smaller classifiers could not do the job at all: against an "always search"
+baseline scoring 70.0% by ignoring the question entirely, qwen3-1.7b also
+scored 70.0% and qwen3-0.6b 70.8%, both effectively constant-YES answers.
 
-The prompt dominates the result, more than model size does. Zero-shot the same
-cascade recalled 59.5%; few-shot examples supplied as real conversation turns
-carry the gain. A completion-style prompt blob is silently reinterpreted by a
-chat template, and small models then answer conversationally instead of
-classifying, so the examples are sent as alternating user/assistant turns.
+The ceiling was structural rather than a matter of better patterns. A bare
+temporal word attaches equally to an information need ("what shipped last
+month") and to a statement about the user's own life ("I graduated last
+month"); the difference is intent, not vocabulary, and neither a pattern nor a
+one-word verdict on the question alone can see it, because the thing that
+separates them is the conversation around it. The cascade's own escape hatch
+admitted this - a first-person sentence with only a weak signal abstained and
+deferred - which is the decision the turn's model now makes with the
+conversation in front of it. Its recall and specificity are held to the floor
+the cascade reached, over the same labelled set
+(`backend/search/routing_cases.py`), by a functional test that runs the real
+model.
 
-Smaller local classifiers were measured and rejected. Against an "always
-search" baseline that ignores the question entirely and scores 70.0% accuracy,
-qwen3-1.7b also scored 70.0% and qwen3-0.6b 70.8%: both were effectively
-constant-YES answers costing a dependency and latency for nothing. The 12B chat
-model reached 81.7% because it was the only candidate that discriminated.
-`SEARCH_CLASSIFIER_MODEL` keeps the choice configurable should a better small
-model appear.
-
-Pattern coverage matches volatile *shapes*, not just temporal vocabulary. An earlier
-pattern set keyed on words like "latest" and "current" and reached only 11 of 18
-volatile queries in a 30-query labelled set: "who is the CEO of OpenAI",
-"how much does a Tesla Model 3 cost" and "is it raining in Seattle" all fell
-through and were answered from stale training data. Patterns for role holders,
-cost questions, market events, schedules, live metrics and unworded weather
-raised that to 18 of 18 while the 12 stable queries stayed correctly unrouted.
-Role matching is restricted to roles that actually turn over, so "who is the
-author of" remains stable.
-
-A bare temporal word is not a reliable signal on its own, because it attaches
-equally to an information need ("what shipped last month") and to a statement
-about the user's own life ("I graduated last month"); the difference is intent,
-not vocabulary, so no pattern can separate them. Rather than enumerate the
-unbounded ways a person phrases their life - a losing game - the policy detects
-the one thing here that is finite and stable, self-reference (`I/me/my/we/our`),
-and treats a weak temporal-or-year signal as authoritative only when the query
-is not about the user. When self-reference accompanies only a weak signal the
-patterns abstain (`ambiguous_self_reference`) and the cascade defers to the
-classifier, which judges intent holistically: "I moved to Seattle last month"
-and "what did I do last week" resolve to no search, while "what is the latest
-treatment for my psoriasis" still searches the public topic. A strong topic
-signal (weather, price, a role holder) still resolves deterministically even in
-a first-person sentence, and a temporal query with no self-reference still
-routes on its own, so the fast path is unchanged for the common case.
 
 Search-control wording such as "search online for" and "cite the source" is
 removed before provider submission so the selected provider receives the factual subject.
@@ -1007,7 +981,7 @@ The active collaborators are:
 | `AgentMemoryManager` | implemented typed store facade | Owns user-scoped semantic-cache, working, procedure, entity/relation, knowledge, and summary stores without exposing raw tables to the coordinator or model |
 | `MemoryCoordinatorAgent` | implemented deterministic policy boundary | Searches every embedded store on each turn so anything relevant can be recalled regardless of phrasing, embeds the query once and reuses that vector across all of them, relies on each store's cosine-distance threshold and one shared cross-store relevance budget (with dedup and item/character caps) to keep only close matches, selects the non-embedded episodic store by explicit keyword intent, writes expiring session state, and periodically rolls conversation digests |
 | `ToolMemoryService` | implemented safe metadata boundary | Stores and retrieves user-scoped safe tool descriptors, approved preferences, and sanitized outcomes; invocation and authorization remain owned by the separate orchestration and policy boundaries |
-| `MainActionSelector` | implemented unified action-selection boundary | Offers search, image generation/edit, diagram, specialist delegation, and the user's own registered MCP tools to the main model as one native tool-calling decision, resolving live schemas and refusing any name the round did not actually offer; `MainSupervisorAgent`'s deterministic LangGraph policy node remains in the tree but is no longer wired into the live path |
+| `MainActionSelector` | implemented unified action-selection boundary | Offers search, image generation/edit, diagram, specialist delegation, and the user's own registered MCP tools to the main model as one native tool-calling decision, resolving live schemas and refusing any name the round did not actually offer; it replaced `MainSupervisorAgent`'s deterministic LangGraph policy node, which has been deleted |
 | `MCPToolOrchestrationService` | implemented model-selection boundary | Gives the configured main model a bounded live-validated shortlist, accepts at most one native tool call, and produces an application-owned plan without execution authority |
 | `MCPInvocationService` | implemented execution-policy boundary | Re-resolves live contracts, enforces local risk policy, validates and privacy-screens arguments, invokes stdio/HTTP tools, and bounds results as untrusted |
 | `MCPWebSearchProvider` | implemented read-only search boundary | Invokes the fixed internet MCP tool after deterministic routing and privacy minimization, then validates and filters compact result JSON |
@@ -1051,7 +1025,7 @@ The save happens **before** the answer is generated, and the turn's real save st
 
 ### Agent orchestration
 
-AniOS routes every turn through one native tool-calling decision before the assistant graph runs. `MainActionSelector` offers the live `search_web` schema, `generate_image`, `edit_image` (only when a picture is in view), `create_diagram`, `delegate_to_presentation_agent`, and the user's own semantically shortlisted MCP tools to the main model in a single call; the model picks at most one, or none, from genuine understanding of the request rather than from a regex or a narrow bounded classifier judging the question alone. `process_request` dispatches on whatever it picked: `create_diagram` and `delegate_to_presentation_agent` short-circuit into their own artifact/job lifecycles exactly as before, `generate_image`/`edit_image` run the same ComfyUI FLUX pipeline the old direct REST endpoints did but now inside the chat stream (so the exchange is visible in conversation history, which it previously was not), and `search_web`/a toolbox tool/no action continue into the ordinary assistant graph with that decision already made. The browser receives `agent_started`/`agent_finished` for a delegated specialist and `artifact_started`/`artifact_ready`/`artifact_error` for a diagram, a new image, or an edit — the same event pair a diagram always used, now shared by pictures too. The ordinary assistant graph contains one streaming main-model node, `DiagramAgent` contains one asynchronous `generate_diagram` node, and `PresentationAgent` contains typed create, progressive-create, and revise operations around `PresentationProvider`. `MainSupervisorAgent`'s deterministic LangGraph policy node and the retired `CascadingSearchRouter` remain in the tree, tested standalone, but neither is reachable from a live turn.
+AniOS routes every turn through one native tool-calling decision before the assistant graph runs. `MainActionSelector` offers the live `search_web` schema, `generate_image`, `edit_image` (only when a picture is in view), `create_diagram`, `delegate_to_presentation_agent`, and the user's own semantically shortlisted MCP tools to the main model in a single call; the model picks at most one, or none, from genuine understanding of the request rather than from a regex or a narrow bounded classifier judging the question alone. `process_request` dispatches on whatever it picked: `create_diagram` and `delegate_to_presentation_agent` short-circuit into their own artifact/job lifecycles exactly as before, `generate_image`/`edit_image` run the same ComfyUI FLUX pipeline the old direct REST endpoints did but now inside the chat stream (so the exchange is visible in conversation history, which it previously was not), and `search_web`/a toolbox tool/no action continue into the ordinary assistant graph with that decision already made. The browser receives `agent_started`/`agent_finished` for a delegated specialist and `artifact_started`/`artifact_ready`/`artifact_error` for a diagram, a new image, or an edit — the same event pair a diagram always used, now shared by pictures too. The ordinary assistant graph contains one streaming main-model node, `DiagramAgent` contains one asynchronous `generate_diagram` node, and `PresentationAgent` contains typed create, progressive-create, and revise operations around `PresentationProvider`. `MainSupervisorAgent`'s deterministic LangGraph policy node, `DelegationRegistry`, `CascadingSearchRouter`, `SearchRoutingPolicy`, and the bounded `QueryFreshnessClassifier` behind them have all been deleted, along with the `SEARCH_CLASSIFIER_*` settings and the classifier LLM role that served them.
 
 This is deliberately narrower than a free-form LLM router. Deterministic registered intents provide a fast, testable first boundary; semantic MCP discovery plus native main-model tool selection handles eligible tools later in the ordinary path. The supervisor cannot invoke services, persist state, grant permissions, or invent capability IDs. The standalone presentation worker invokes the focused graph only after PostgreSQL claims a durable job. Application code owns authorization, scheduling, live contract revalidation, privacy, risk policy, invocation, persistence, and result attribution. Retrieved values and tool results are untrusted literal data and cannot grant permissions. A unified dynamic capability registry, ambiguity clarification/resume, researcher and reflection agents, A2A, and general agent-team scheduling remain `PLANNED`.
 

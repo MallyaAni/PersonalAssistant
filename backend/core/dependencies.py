@@ -1120,8 +1120,8 @@ def get_search_budget() -> SearchBudget:
 
 # One suggester shared across requests; it holds only the model client.
 #
-# On the routing role for the same reason as `get_classifier_llm` above: this
-# returns a strict-JSON shortlist against an owned schema, and on the chat
+# On the routing role because it returns a strict-JSON shortlist against an
+# owned schema, and on the chat
 # model it came back as an empty tuple every time - a locality lookup that
 # silently found nothing rather than failing loudly.
 @lru_cache(maxsize=1)
@@ -1421,33 +1421,6 @@ def get_memory_coordinator(
 MemoryCoordinatorDependency = Annotated[
     MemoryCoordinatorAgent, Depends(get_memory_coordinator)
 ]
-
-
-# Serve the routing classifier from a dedicated model when one is configured,
-# otherwise follow the routing role rather than the chat model.
-#
-# Every caller here makes a bounded routing judgement, so it belongs on the
-# routing role rather than whichever model happens to write prose. This remains
-# available to the search-routing evaluator; live artifact recall now uses the
-# structured routing client directly through `ArtifactContextRouter`.
-#
-# Deliberately not cached. A provider serializes its own calls on an internal
-# lock, so one shared instance would make every concurrent chat queue behind
-# another chat's classifier call. A fresh client per router keeps the routing
-# decisions independent, and the runtime already serves several sequences.
-def get_classifier_llm() -> LLMClient:
-    if not settings.SEARCH_CLASSIFIER_MODEL:
-        return get_routing_llm_client()
-    return _build_llm_client(
-        settings.ROUTING_INFERENCE_ADAPTER
-        or settings.MAIN_INFERENCE_ADAPTER
-        or settings.INFERENCE_ADAPTER,
-        base_url=settings.ROUTING_LLM_BASE_URL
-        or settings.MAIN_LLM_BASE_URL
-        or settings.LLM_BASE_URL,
-        model=settings.SEARCH_CLASSIFIER_MODEL,
-        reasoning_effort=settings.ROUTING_LLM_REASONING_EFFORT,
-    )
 
 
 # Compose the built-in actions (search, image generation/editing, diagrams,

@@ -59,15 +59,16 @@ def test_search_package_holds_only_web_search():
         # provider and returns results, so it is web search, not a fourth
         # meaning of the word.
         "budgeted",
-        "cascade",
-        "classifier",
         "google_adk",
         "hybrid",
-        "routing_cases",
         "mcp",
         "quota",
         "query",
-        "routing",
+        # Kept after the pattern cascade and the bounded classifier that were
+        # scored on it were deleted: the labelled set is the measurement, not
+        # the thing measured, and it now holds the turn's action selection to
+        # the same recall and specificity floor.
+        "routing_cases",
         "tavily",
         "types",
     }

@@ -37,7 +37,7 @@ const publishedDiagrams = [
     name: "chat-orchestration",
     title: "Chat orchestration",
     scope: "Routing, delegation, tools, and streaming",
-    change: "How the supervisor routes one chat request to a visible result.",
+    change: "How one chat request becomes a visible result: the turn's single action decision, delegation, tools, and streaming.",
   },
   {
     name: "search-research-subsystem",

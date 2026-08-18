@@ -86,9 +86,12 @@ asserted, because the numbers quoted in commit messages are otherwise
 unverifiable and cannot fail a build:
 
 ```bash
-python -m backend.cli.evaluate_search_routing --patterns-only   # deterministic, no model
-python -m backend.cli.evaluate_search_routing                   # full cascade
+python -m backend.cli.evaluate_tool_selection   # every routed tool, plus a confusion matrix
 ```
+
+Whether a turn needs the internet is one branch of that same decision, scored
+over `backend/search/routing_cases.py`; the deterministic `--patterns-only`
+mode went with the regex cascade it ran.
 
 Tests are layered by what they prove, not by what they touch:
 
@@ -782,12 +785,12 @@ for the measured bands. Re-measure both after the stored library grows
 substantially, using a labelled set of visually distinct images plus deliberate
 distractor queries that should return nothing.
 
-The routing classifier runs on the configured chat model by default
-(`SEARCH_CLASSIFIER_ENABLED`, `SEARCH_CLASSIFIER_MAX_TOKENS`). It is a
-`QueryFreshnessClassifier` behind a contract, so pointing it at a smaller,
-faster local model is a constructor change rather than a rewrite; a sub-billion
-parameter model is ample for a one-word judgement and frees the chat model.
-Set `SEARCH_CLASSIFIER_ENABLED=false` to fall back to patterns alone.
+Whether a turn needs the internet is decided by the same model that decides
+everything else about the turn, in one native tool call. The bounded
+`QueryFreshnessClassifier` that used to judge whatever the patterns missed has
+been deleted along with the patterns and its `SEARCH_CLASSIFIER_*` settings:
+a one-word verdict on the question alone could not see the conversation, which
+is what the decision actually depends on.
 
 MCP servers are configured as a JSON array in `MCP_SERVERS_JSON`. Each entry
 gives a `server_id`, an operator-assigned `risk_classification`, and a

@@ -227,13 +227,15 @@ async def test_active_image_state_is_included_in_the_model_decision():
 
 @pytest.mark.asyncio
 async def test_model_choosing_diagram():
-    selector, _llm = _selector(_tool_call("create_diagram", {}))
+    selector, _llm = _selector(
+        _tool_call("create_diagram", {"subject": "the deploy pipeline"})
+    )
 
     action = await selector.select(
         "ani.mallya", "draw a flowchart of the deploy pipeline", [], None
     )
 
-    assert action == CreateDiagramAction()
+    assert action == CreateDiagramAction(subject="the deploy pipeline")
 
 
 @pytest.mark.asyncio
@@ -247,13 +249,30 @@ async def test_diagram_not_offered_when_disabled():
 
 @pytest.mark.asyncio
 async def test_model_choosing_presentation_delegation():
-    selector, _llm = _selector(_tool_call("delegate_to_presentation_agent", {}))
-
-    action = await selector.select(
-        "ani.mallya", "put together a six-slide deck", [], None
+    selector, _llm = _selector(
+        _tool_call("delegate_to_presentation_agent", {"subject": "battery storage"})
     )
 
-    assert action == DelegateAction(capability_id="presentation_agent")
+    action = await selector.select(
+        "ani.mallya", "put together a six-slide deck on battery storage", [], None
+    )
+
+    assert action == DelegateAction(
+        capability_id="presentation_agent", subject="battery storage"
+    )
+
+
+# The misroute this guards: a tool chosen with nothing to make must not take
+# the turn, or the user gets a queued deck about nothing instead of the
+# question they asked answered.
+@pytest.mark.asyncio
+@pytest.mark.parametrize("tool", ["create_diagram", "delegate_to_presentation_agent"])
+async def test_a_subjectless_call_is_not_an_action(tool: str):
+    selector, _llm = _selector(_tool_call(tool, {"subject": "   "}))
+
+    action = await selector.select("ani.mallya", "make me one", [], None)
+
+    assert action is None
 
 
 @pytest.mark.asyncio

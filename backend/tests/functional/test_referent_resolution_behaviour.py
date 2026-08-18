@@ -13,7 +13,7 @@ guessed, and that a reference to something not owned matches nothing.
 
 import pytest
 
-from backend.core.dependencies import get_classifier_llm
+from backend.core.dependencies import get_structured_llm_client
 from backend.services.referent_resolution import Referent, ReferentResolver
 
 pytestmark = pytest.mark.asyncio
@@ -53,11 +53,13 @@ CONTRACT = Referent(
 
 # Resolve one real-model reference, skipping only when the local runtime is down.
 async def _resolve(reference: str, candidates: list[Referent]):
-    llm = get_classifier_llm()
+    # The same client the application wires this resolver with, so the test
+    # measures the model that actually answers rather than a nearby one.
+    llm = get_structured_llm_client()
     try:
         return await ReferentResolver(llm).resolve(reference, candidates)
     except Exception as exc:  # pragma: no cover - depends on the host runtime
-        pytest.skip(f"classifier model unreachable: {type(exc).__name__}")
+        pytest.skip(f"resolver model unreachable: {type(exc).__name__}")
 
 
 # A detail that only one candidate has must land on that candidate.

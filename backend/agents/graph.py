@@ -169,13 +169,21 @@ def _render_agent_context(agents: list[dict[str, Any]]) -> str:
             parts.append(f"right now: {status.replace('_', ' ')}")
         if detail:
             parts.append(detail.rstrip("."))
-        # Only while something is genuinely outstanding. Listed unconditionally
-        # this reads as a to-do list rather than as what the feature requires,
-        # and an account with seven interests, a locality and a subscriber was
-        # asked for all three again in the same breath as its own line
-        # reporting them.
-        if needs and status == "needs_setup":
-            parts.append(f"still needs {needs.rstrip('.')}")
+        # Suppressed only where the agent is known to be running already.
+        # Listed unconditionally this reads as a to-do list rather than as what
+        # the feature requires, and an account with seven interests, a locality
+        # and a subscriber was asked for all three again in the same breath as
+        # its own line reporting them. Suppressed on an unknown status instead,
+        # the assistant has nothing to answer "what does it need?" with and
+        # improvises requirements for a feature it already has - so absence of
+        # a status states the requirements rather than hiding them.
+        configured = status in {"idle", "working", "scheduled"}
+        if needs and not configured:
+            parts.append(
+                f"still needs {needs.rstrip('.')}"
+                if status == "needs_setup"
+                else f"needs {needs.rstrip('.')}"
+            )
         facts = agent.get("facts")
         if isinstance(facts, dict) and facts:
             readings = ", ".join(

@@ -2,7 +2,7 @@
 title: Deck - what the agent decides, and what it does not
 ---
 flowchart TB
-    Ask([Explicit presentation request]) --> Supervisor[Typed supervisor route]
+    Ask([Explicit presentation request]) --> Supervisor[Delegated by the turn's<br/>action selection]
     Supervisor --> Job[(Durable owned job)]
     Job --> Worker[Leased background worker]
 

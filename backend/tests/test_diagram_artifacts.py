@@ -387,7 +387,7 @@ async def test_conversation_service_streams_ready_diagram_artifact() -> None:
         repository=conversations,
         tracer=StubTracer(),
         main_action_selector=StubMainActionSelector(  # type: ignore[arg-type]
-            CreateDiagramAction()
+            CreateDiagramAction(subject="the deploy pipeline")
         ),
         diagram_artifacts=DiagramArtifactService(
             DiagramAgent(StaticDiagramProvider()),
@@ -432,7 +432,7 @@ async def test_conversation_service_streams_failed_diagram_artifact() -> None:
         repository=conversations,
         tracer=StubTracer(),
         main_action_selector=StubMainActionSelector(  # type: ignore[arg-type]
-            CreateDiagramAction()
+            CreateDiagramAction(subject="the deploy pipeline")
         ),
         diagram_artifacts=DiagramArtifactService(
             DiagramAgent(FailingDiagramProvider()),
@@ -474,7 +474,7 @@ async def test_cancelled_diagram_generation_marks_pending_artifact_failed() -> N
         repository=CapturingConversationRepository(),
         tracer=StubTracer(),
         main_action_selector=StubMainActionSelector(  # type: ignore[arg-type]
-            CreateDiagramAction()
+            CreateDiagramAction(subject="the deploy pipeline")
         ),
         diagram_artifacts=DiagramArtifactService(
             DiagramAgent(BlockingDiagramProvider()),

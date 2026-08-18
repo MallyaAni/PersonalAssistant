@@ -1,8 +1,16 @@
+from dataclasses import dataclass
+
 import pytest
 
-from backend.cli.evaluate_search_routing import main
 from backend.search.routing_cases import ROUTING_CASES, RoutingCase
 from backend.services.search_routing_evaluator import SearchRoutingEvaluator
+
+
+@dataclass(frozen=True, slots=True)
+class _Verdict:
+    """The one field the evaluator reads, so it needs no router type."""
+
+    should_search: bool
 
 
 class FixedRouter:
@@ -11,12 +19,8 @@ class FixedRouter:
     def __init__(self, decisions: dict[str, bool]) -> None:
         self.decisions = decisions
 
-    async def decide(self, query: str):
-        from backend.search.routing import SearchDecision
-
-        return SearchDecision(
-            should_search=self.decisions.get(query, False), reason="stub"
-        )
+    async def decide(self, query: str) -> _Verdict:
+        return _Verdict(should_search=self.decisions.get(query, False))
 
 
 CASES = (
@@ -82,13 +86,3 @@ def test_the_labelled_set_is_balanced_enough_to_measure_both_directions():
     # patterns alone cannot catch; they must stay well represented.
     implicit = [c for c in needs if c.category == "implicit_volatile"]
     assert len(implicit) >= 10
-
-
-def test_the_gate_fails_when_routing_regresses():
-    # Deterministic mode, held to an impossible floor: the command must exit
-    # non-zero, otherwise it cannot protect anything in a pipeline.
-    assert main(["--patterns-only", "--min-recall", "1.01"]) == 1
-
-
-def test_the_gate_passes_at_the_expected_floor():
-    assert main(["--patterns-only"]) == 0
