@@ -1693,6 +1693,45 @@ class ConversationService:
     # Failing here must not cost the user their reply, for the same reason the
     # agent roster above degrades quietly: this only enriches what the
     # assistant can say about itself.
+    # What this assistant is actually running on, read from the live
+    # configuration rather than written down.
+    #
+    # It knew what it could do and nothing about what it was. Asked what to
+    # host on a single DGX Spark for chat and image work, it recommended
+    # models from memory and never mentioned the ones already serving the
+    # conversation - it had no way to know. Derived from settings so it cannot
+    # describe a deployment that has been changed underneath it.
+    #
+    # Model names and roles only. The endpoints and hosts they sit on are not
+    # the assistant's to volunteer: this text reaches every account, including
+    # invited guests.
+    def _describe_runtime(self) -> list[dict[str, str]]:
+        def named(role: str, model: str, note: str = "") -> dict[str, str] | None:
+            model = str(model or "").strip()
+            if not model:
+                return None
+            return {"role": role, "model": model, "note": note}
+
+        entries = [
+            named(
+                "Writing this reply",
+                settings.MAIN_LLM_MODEL or settings.LLM_MODEL,
+                "the model the user is talking to right now",
+            ),
+            named(
+                "Choosing tools and writing searches",
+                settings.ROUTING_LLM_MODEL or settings.MAIN_LLM_MODEL,
+            ),
+            named("Reading images", settings.VISION_MODEL),
+            named("Text embeddings", settings.EMBEDDING_MODEL),
+            named("Creating pictures", settings.IMAGE_MODEL),
+            named(
+                "Editing pictures",
+                settings.IMAGE_EDIT_MODEL or settings.IMAGE_MODEL,
+            ),
+        ]
+        return [entry for entry in entries if entry]
+
     def _describe_capabilities(self) -> list[dict[str, str]]:
         if self.main_action_selector is None:
             return []
@@ -2083,6 +2122,7 @@ class ConversationService:
         # drift apart into one wording for conversation and another for
         # routing.
         context["capabilities"] = self._describe_capabilities()
+        context["runtime"] = self._describe_runtime()
         context["memory_save"] = {
             "saved": bool(proposals),
             "value": _proposal_summaries(proposals),

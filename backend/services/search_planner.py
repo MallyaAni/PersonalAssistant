@@ -28,7 +28,11 @@ _COMPOSE = (
     "used: names, model numbers, versions, units, and the year when the "
     "answer changes over time.\n"
     "A request with several requirements needs the one that decides the "
-    "answer, not all of them at once.\n"
+    "answer, not all of them at once. When the request is a choice under a "
+    "limit - what fits, what runs on this, what stays under that - the "
+    "deciding requirement is usually a number attached to each option rather "
+    "than the options themselves, so search for the thing that would let you "
+    "compare them.\n"
     "Today is {today}, and your own knowledge ends around {cutoff}. Everything "
     "between those two dates is precisely what you cannot know and what this "
     "search is for, so search for now rather than for the last state you "
@@ -39,14 +43,56 @@ _COMPOSE = (
 
 _REFINE = (
     "Here is a question and the search results gathered so far.\n"
-    "If the results contain what is needed to answer, reply with exactly: "
-    "ENOUGH\n"
-    "If they do not - they are about the subject but never state the answer, "
-    "or they are too general, or too old - reply with one better search "
-    "query and nothing else. Name what was missing in the query itself: be "
-    "more specific, use the vocabulary the missing source would use.\n"
+    "Judge them against what answering actually requires, not against whether "
+    "they are on topic.\n"
+    "A choice made under a limit - what fits in this much memory, runs on this "
+    "hardware, finishes in this long, costs under this much - is only "
+    "answerable when the results give you both halves: which options exist, "
+    "and the figure that decides between them. Naming the options is not "
+    "enough. If the options are named but their sizes, requirements or prices "
+    "are not, search for that figure directly, by option name and unit.\n"
+    "The same applies to any question whose answer turns on a specific fact "
+    "the results talk around rather than state.\n"
+    "If both halves are present, reply with exactly: ENOUGH\n"
+    "Otherwise reply with one better search query and nothing else - the one "
+    "that would find the missing half. Use the vocabulary that source would "
+    "use.\n"
     "Never repeat a query that has already been tried."
 )
+
+
+# Recover the query from a reply that would not stop explaining itself.
+#
+# Told to answer with the query alone, the model reasoned for a paragraph and
+# then wrote "Search: deepseek v4 pro api pricing". Its reasoning was right -
+# it had spotted that the options were named but the deciding figure was not -
+# and passing the paragraph to a search engine would have thrown that away and
+# returned nothing. Prose is what models do; taking the query out of it is
+# cheaper and steadier than insisting they stop.
+def _query_from(reply: str) -> str:
+    text = reply.strip()
+    if not text:
+        return ""
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    # A labelled query is the model saying which part it meant.
+    for line in reversed(lines):
+        lowered = line.lower()
+        for label in ("search:", "query:", "better query:"):
+            if lowered.startswith(label):
+                return _bare(line[len(label):])
+    # ENOUGH is a verdict, not a query, and may arrive with commentary.
+    if any(line.upper().startswith("ENOUGH") for line in lines):
+        return "ENOUGH"
+    # Otherwise the last line: a preamble comes first and the answer last.
+    return _bare(lines[-1])
+
+
+# Strip the quotes and list markers a model wraps a bare query in.
+def _bare(text: str) -> str:
+    cleaned = text.strip().strip("-*").strip()
+    for quote in ('"', "'", "`"):
+        cleaned = cleaned.strip(quote)
+    return cleaned.strip()[:_MAX_QUERY_CHARS]
 
 
 class SearchPlanner:
@@ -127,7 +173,4 @@ class SearchPlanner:
         except Exception:
             logger.warning("Could not %s", what, exc_info=True)
             return ""
-        text = str(reply.get("content") or "").strip()
-        # Models like to wrap a bare query in quotes despite being told not to.
-        text = text.strip().strip('"').strip("'").strip()
-        return text[:_MAX_QUERY_CHARS]
+        return _query_from(str(reply.get("content") or ""))

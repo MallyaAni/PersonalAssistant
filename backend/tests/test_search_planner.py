@@ -137,3 +137,41 @@ def test_an_unconfigured_cutoff_still_produces_a_usable_prompt():
     system = llm.system_prompts[0]
     assert "{cutoff}" not in system
     assert "unstated date" in system
+
+
+# The model reasoned for a paragraph and then wrote "Search: ..." despite being
+# told to answer with the query alone. Its reasoning was right - it had spotted
+# that the options were named but the deciding figure was not - and sending the
+# paragraph to a search engine would have thrown that away.
+def test_a_labelled_query_is_recovered_from_a_chatty_reply():
+    reply = (
+        "The results name V4 Pro and V4 Flash but never give the figure that "
+        "decides between them for this hardware. The missing half is memory.\n"
+        "Search: DeepSeek V4 Flash parameter count memory requirement"
+    )
+    planner = SearchPlanner(StubLLM(reply))
+
+    assert planner.refine("q", [{"title": "t"}], ["prev"]) == (
+        "DeepSeek V4 Flash parameter count memory requirement"
+    )
+
+
+def test_an_unlabelled_query_is_taken_from_the_last_line():
+    planner = SearchPlanner(StubLLM("Some reasoning first.\nFLUX.2 dev VRAM fp8"))
+
+    assert planner.refine("q", [{"title": "t"}], ["prev"]) == "FLUX.2 dev VRAM fp8"
+
+
+# A verdict wrapped in commentary is still a verdict, not a query to run.
+def test_enough_is_recognised_even_with_commentary_around_it():
+    planner = SearchPlanner(
+        StubLLM("ENOUGH - the results give both the options and the figures.")
+    )
+
+    assert planner.refine("q", [{"title": "t"}], ["prev"]) == ""
+
+
+def test_list_markers_and_quotes_are_stripped():
+    planner = SearchPlanner(StubLLM('- "DGX Spark 128GB unified memory"'))
+
+    assert planner.compose("q", []) == "DGX Spark 128GB unified memory"
