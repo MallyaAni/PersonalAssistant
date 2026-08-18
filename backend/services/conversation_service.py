@@ -637,6 +637,10 @@ class ConversationService:
         # selected. Streamed first and kept in the persisted turn, so history
         # records which picture was chosen and not merely that one was.
         lead_in: str = "",
+        # Carried from the routing decision rather than judged here: whether
+        # the edit needs the scene changed decides which preservation wording
+        # the image model is given, and the two are opposites.
+        restages_the_scene: bool = False,
     ) -> AsyncGenerator[ChatStreamEvent, None]:
         if self.image_refinement is None:
             raise RuntimeError("Image refinement is not configured")
@@ -657,6 +661,7 @@ class ConversationService:
                 conversation_id=conversation_id,
                 trace_id=trace_id,
                 on_pending=_on_pending,
+                restages_the_scene=restages_the_scene,
             )
         )
         async for event in self._stream_pending_started(
@@ -748,6 +753,7 @@ class ConversationService:
                 trace_id,
                 metadata,
                 history,
+                restages_the_scene=action.restages_the_scene,
             ):
                 yield event
             return
@@ -779,6 +785,7 @@ class ConversationService:
                 metadata,
                 history,
                 lead_in=_editing_announcement(target),
+                restages_the_scene=action.restages_the_scene,
             ):
                 yield event
             return

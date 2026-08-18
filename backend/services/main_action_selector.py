@@ -89,9 +89,28 @@ _EDIT_IMAGE_SCHEMA: dict[str, Any] = {
         "instruction": {
             "type": "string",
             "description": "The single change to make to the picture in view.",
-        }
+        },
+        # Asked of the model because only the request says which kind of edit
+        # this is, and the two need opposite instructions to the image model.
+        # Every edit used to be sent with "do not add, remove, or move
+        # anything", which is right for recolouring a hat and self-defeating
+        # for "make it look like it came in its original packaging" - that one
+        # cannot be done without adding something, so the picture came back
+        # unchanged.
+        "restages_the_scene": {
+            "type": "boolean",
+            "description": (
+                "True when carrying out the edit means changing the setting or "
+                "introducing things that are not in the picture yet - putting "
+                "the subject in packaging or another place, changing the "
+                "season, weather, or time of day, or restyling the whole "
+                "image. False for a change confined to something already "
+                "visible, such as recolouring, removing, or relabelling one "
+                "object, where everything else must stay exactly as it is."
+            ),
+        },
     },
-    "required": ["instruction"],
+    "required": ["instruction", "restages_the_scene"],
     "additionalProperties": False,
 }
 
@@ -106,6 +125,18 @@ def _required_text(arguments: dict[str, Any], field: str) -> str | None:
     if isinstance(value, str) and value.strip():
         return value.strip()
     return None
+
+
+# Lifted out of `_parse` to keep that function readable as the built-ins grew a
+# second argument each; it makes no decision the caller could not.
+def _edit_action(arguments: dict[str, Any]) -> "EditImageAction | None":
+    instruction = _required_text(arguments, "instruction")
+    if instruction is None:
+        return None
+    return EditImageAction(
+        instruction=instruction,
+        restages_the_scene=bool(arguments.get("restages_the_scene")),
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -314,6 +345,10 @@ class EditImageAction:
     """The model decided this turn wants the picture in view changed."""
 
     instruction: str
+    # Whether carrying out the edit requires changing the scene rather than
+    # adjusting something already in it. The preservation wording sent to the
+    # image model is the opposite in each case.
+    restages_the_scene: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -586,8 +621,7 @@ class MainActionSelector:
                 depicts_a_person=bool(arguments.get("depicts_a_person")),
             )
         if name == _EDIT_IMAGE_TOOL:
-            instruction = _required_text(arguments, "instruction")
-            return None if instruction is None else EditImageAction(instruction)
+            return _edit_action(arguments)
         # The two below used to take no arguments, so a turn routed to either
         # by mistake reached the caller looking exactly like a real request and
         # took the whole turn. Both now state their subject, and the same rule

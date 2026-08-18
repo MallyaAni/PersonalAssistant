@@ -177,3 +177,51 @@ async def test_refine_rejects_invalid_parent_or_feedback() -> None:
 
     with pytest.raises(RefinementError):
         await _service(_GENERATED).refine("u", "orig", "   ", "c", "t")
+
+
+# The reported failure. "Make the image look like it came in its original
+# packaging" came back as the same photograph, because every edit was sent with
+# "do not add, remove, or move anything" appended - and that edit cannot be
+# carried out without adding something. The model obeyed the more specific
+# prohibition, which was the correct reading of a self-contradicting request.
+@pytest.mark.asyncio
+async def test_a_restaging_edit_is_not_told_to_add_nothing():
+    images = StubImages(_GENERATED)
+    service = ImageRefinementService(images)  # type: ignore[arg-type]
+
+    await service.refine(
+        "ani.mallya",
+        "artifact-1",
+        "Make the image look like it came in its original packaging",
+        "conversation-1",
+        "trace-1",
+        restages_the_scene=True,
+    )
+
+    instruction = images.edit_calls[0]["instruction"]
+    assert "Do not add, remove, or move anything" not in instruction
+    assert "Apply only this edit" not in instruction
+    # What must survive is which things these are, not where they sit.
+    assert "identity of the subjects" in instruction
+    assert "may add whatever the instruction requires" in instruction
+
+
+# The other half must not regress: a local change still has to leave the rest
+# of the picture alone, or one recoloured hat rebuilds the whole scene.
+@pytest.mark.asyncio
+async def test_a_local_edit_still_protects_everything_it_did_not_mention():
+    images = StubImages(_GENERATED)
+    service = ImageRefinementService(images)  # type: ignore[arg-type]
+
+    await service.refine(
+        "ani.mallya",
+        "artifact-1",
+        "make the hat black",
+        "conversation-1",
+        "trace-1",
+        restages_the_scene=False,
+    )
+
+    instruction = images.edit_calls[0]["instruction"]
+    assert "Do not add, remove, or move anything" in instruction
+    assert "identity of the subjects" not in instruction
