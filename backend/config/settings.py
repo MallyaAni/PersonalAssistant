@@ -443,11 +443,11 @@ class Settings(BaseSettings):
     # accounts staying inside their own limits still drain the key. Defaults to
     # Tavily's free plan; raise it only to match a plan actually purchased.
     SEARCH_MONTHLY_CREDITS: int = Field(default=1_000, ge=0, le=1_000_000)
-    SEARCH_MAX_RESULTS: int = Field(default=5, ge=1, le=20)
+    SEARCH_MAX_RESULTS: int = Field(default=8, ge=1, le=20)
     SEARCH_TIMEOUT_SECONDS: float = Field(default=15.0, gt=0, le=120)
     # Per-result truncation so one verbose page cannot dominate the prompt budget.
-    SEARCH_MAX_CONTENT_CHARS: int = Field(default=2_000, ge=200, le=20_000)
-    SEARCH_DEPTH: Literal["basic", "advanced"] = "basic"
+    SEARCH_MAX_CONTENT_CHARS: int = Field(default=6_000, ge=200, le=20_000)
+    SEARCH_DEPTH: Literal["basic", "advanced"] = "advanced"
     # Minimum provider relevance for a result to reach the prompt. Measured
     # across 40 real results the distribution is bimodal: usable hits scored
     # 0.561-0.923 while dictionary-definition noise scored 0.046-0.346, leaving
@@ -455,6 +455,11 @@ class Settings(BaseSettings):
     # nothing, because the prompt tells the model to prefer web results over its
     # own knowledge for time-sensitive facts.
     SEARCH_MIN_SCORE: float = Field(default=0.4, ge=0, le=1)
+    # How many searches one turn may make. One was the ceiling on how good an
+    # answer could be: results that are about the subject but never state the
+    # answer look identical to results that do, and nothing could try again.
+    # Each extra round costs a search and a model call, so this is small.
+    SEARCH_MAX_ROUNDS: int = Field(default=3, ge=1, le=5)
     # Fixed read-only MCP boundary the turn's action selection calls into.
     SEARCH_MCP_SERVER_ID: str = "internet"
     SEARCH_MCP_TOOL_NAME: str = "search_web"

@@ -21,6 +21,7 @@ from backend.artifacts.image_prompt_match import prefer_prompt_matches
 from backend.artifacts.image_retrieval import ImageRetrievalPolicy
 from backend.artifacts.lineage import Lineage
 from backend.artifacts.types import ImageGenerationRequest
+from backend.config.settings import settings
 from backend.core.egress import OutboundPrivacyPolicy
 from backend.core.interfaces import (
     ArtifactEmbeddingStore,
@@ -68,6 +69,7 @@ from backend.services.referent_resolution import (
     ReferentResolver,
 )
 from backend.services.referent_sources import ImageReferentSource
+from backend.services.search_planner import SearchPlanner
 
 logger = logging.getLogger(__name__)
 
@@ -271,6 +273,10 @@ class ConversationService:
         image_search_limit: int = 5,
         image_retrieval: ImageRetrievalPolicy | None = None,
         search_privacy: OutboundPrivacyPolicy | None = None,
+        # Writes the search query and judges whether the results answered
+        # it. Optional: without one the router's own query is used once,
+        # which is exactly the behaviour this replaces.
+        search_planner: SearchPlanner | None = None,
         tool_orchestration: MCPToolOrchestrationService | None = None,
         main_action_selector: MainActionSelector | None = None,
         image_generation: ImageArtifactService | None = None,
@@ -302,6 +308,7 @@ class ConversationService:
         # Screening is not optional: a missing policy would mean raw queries
         # leaving the machine, so one is always constructed.
         self.search_privacy = search_privacy or OutboundPrivacyPolicy()
+        self.search_planner = search_planner
         self.image_retrieval = image_retrieval or ImageRetrievalPolicy(
             # Deliberately loose, and not comparable to discovery's 0.08
             # novelty or 0.16 familiarity: those measure text embeddings,
@@ -1302,6 +1309,21 @@ class ConversationService:
         if image_matches:
             yield {"event": "image_matches", "data": {"artifacts": image_matches}}
 
+        async for event in self._stream_web_search(
+            context, query, action, image_matches, trace_id
+        ):
+            yield event
+
+    # Run the turn's web search and report it, including when it found
+    # nothing: the interface has to retract its indicator either way.
+    async def _stream_web_search(
+        self,
+        context: dict[str, Any],
+        query: str,
+        action: MainAction,
+        image_matches: list[dict[str, Any]],
+        trace_id: str,
+    ) -> AsyncGenerator[ChatStreamEvent, None]:
         if (
             isinstance(action, SearchAction)
             and self.search is not None
@@ -1309,7 +1331,17 @@ class ConversationService:
         ):
             logger.info("Trace %s routing to web search (reason=tool_call)", trace_id)
             search_results: list[dict[str, Any]]
-            outbound_query = _image_aware_search_query(action.query, image_matches)
+            # The router decides *whether* to search; what to ask for is
+            # written by the model that has to use the answer. A 4B choosing
+            # the query as one field of its tool call, having never seen the
+            # results, is how a four-part question became one generic query
+            # and the reply fell back on training.
+            chosen_query = action.query
+            if self.search_planner is not None:
+                composed = self.search_planner.compose(query, [])
+                if composed:
+                    chosen_query = composed
+            outbound_query = _image_aware_search_query(chosen_query, image_matches)
             screened = self.search_privacy.sanitize(outbound_query)
             if not screened.allowed:
                 # Categories are logged, never the text that triggered them.
@@ -1346,8 +1378,8 @@ class ConversationService:
                             "tool_name": tool_identity[1],
                         },
                     }
-                search_results, search_succeeded = await self._load_search_context(
-                    screened.query, trace_id, action.max_results
+                search_results, search_succeeded = await self._research(
+                    query, screened.query, trace_id, action.max_results
                 )
                 if tool_identity:
                     yield {
@@ -1388,6 +1420,63 @@ class ConversationService:
                     ]
                 },
             }
+
+    # Search, look at what came back, and ask again when it did not answer.
+    #
+    # One search per turn was the ceiling on how good an answer could be: five
+    # results that are about the subject but never state the answer look
+    # exactly like five that do, and nothing in the turn could tell the
+    # difference or try again. Bounded because each extra round costs a search
+    # and a model call, and because a model asked to keep improving a query
+    # will always find something to change.
+    async def _research(
+        self,
+        question: str,
+        first_query: str,
+        trace_id: str,
+        max_results: int | None,
+    ) -> tuple[list[dict[str, Any]], bool]:
+        gathered: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        tried: list[str] = []
+        succeeded = False
+        current = first_query
+
+        for round_number in range(max(1, settings.SEARCH_MAX_ROUNDS)):
+            tried.append(current)
+            found, ok = await self._load_search_context(
+                current, trace_id, max_results
+            )
+            succeeded = succeeded or ok
+            for item in found:
+                url = str(item.get("url") or "")
+                if url and url not in seen:
+                    seen.add(url)
+                    gathered.append(item)
+            if self.search_planner is None:
+                break
+            if round_number + 1 >= max(1, settings.SEARCH_MAX_ROUNDS):
+                break
+            better = self.search_planner.refine(question, gathered, tried)
+            if not better:
+                break
+            # Every outbound query is screened, not just the first: a refined
+            # one is written by a model and can reintroduce what the original
+            # had minimized away.
+            screened = self.search_privacy.sanitize(better)
+            if not screened.allowed:
+                logger.info(
+                    "Trace %s blocked a refined search (categories=%s)",
+                    trace_id,
+                    ",".join(screened.categories),
+                )
+                break
+            logger.info(
+                "Trace %s searching again (round %d)", trace_id, round_number + 2
+            )
+            current = screened.query
+
+        return gathered, succeeded
 
     # Fetch live results for the query the model chose when it called search_web.
     async def _load_search_context(

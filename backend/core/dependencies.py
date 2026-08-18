@@ -109,6 +109,7 @@ from backend.services.presentation_repository import SQLAlchemyPresentationRepos
 from backend.services.presentation_service import PresentationService
 from backend.services.referent_resolution import ReferentResolver
 from backend.services.repository import SQLAlchemyConversationRepository
+from backend.services.search_planner import SearchPlanner
 from backend.services.tool_memory_service import ToolMemoryService
 from backend.services.tracing import (
     LoggingConversationTracer,
@@ -1547,6 +1548,12 @@ def get_conversation_service(
         # A bounded strict-JSON judgement, so it belongs on the routing role
         # with the rest of them rather than on whichever model writes prose.
         referent_resolver=ReferentResolver(get_structured_llm_client()),
+        # On the reasoning role deliberately, unlike the strict-JSON
+        # callers around it. Writing a search query and judging whether
+        # the results answered it are prose, not a schema, so neither is
+        # bound to the routing model - and the model that has to use the
+        # results is the one that should say what it needs.
+        search_planner=SearchPlanner(get_reasoning_llm_client()),
     )
 
 
