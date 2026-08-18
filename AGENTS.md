@@ -129,9 +129,20 @@ startup also backs up, but startup can be weeks apart.
 whatever migrations were baked into the last image build, so a migration added
 since appeared to pass without ever running.
 
-**Run the backend suite with `AUTH_REQUIRED=false`.** The live `.env` sets it
-`true`; auth tests enable the boundary explicitly. Without the override, several
-legacy anonymous API tests return 401 and look like regressions.
+**The test suite no longer reads `.env`, and that is deliberate.** The live
+file sets `AUTH_REQUIRED=true` and `AUTH_COOKIE_SECURE=true`, and settings are
+built once at import, so those governed every run on a real workstation while a
+clean checkout behaved differently. This entry used to say "run the suite with
+`AUTH_REQUIRED=false`" and the failures kept being investigated as regressions
+anyway. `conftest.py` now sets `ANIOS_TEST_MODE` before anything imports
+settings, which makes `Settings` skip the file; `test_environment_isolation.py`
+fails if any setting starts following it again. `ENCRYPTION_KEY` is the one
+exception, passed through narrowly, because several tests read rows in the
+shared development database that were sealed with the deployed key. Switching
+the file off immediately exposed a test that had been passing for the wrong
+reason: it reused one HTTP client across a registration, and only survived
+because `AUTH_COOKIE_SECURE=true` made httpx drop the cookie that would have
+re-identified it as the new guest.
 
 **Four test modules fail on a Windows host for missing optional dependencies** —
 `test_telemetry`, `test_google_adk_search`, `test_internet_mcp_server`, and
@@ -185,8 +196,8 @@ a plain `docker restart` or `up -d` alone reuses the old image and changes
 nothing. If the user reports a frontend fix as not taking effect after a
 hard refresh, suspect this before suspecting the browser.
 
-**Recreating `anios_backend` breaks `gateway` until `gateway` is also
-restarted.** `nginx.gateway.conf` proxies `/api/` to `http://backend:8000`
+**Recreating `anios_backend` used to break `gateway` until `gateway` was
+also restarted — fixed, and worth knowing why.** `nginx.gateway.conf` proxies `/api/` to `http://backend:8000`
 and resolves that hostname to an IP once, when its worker processes start —
 it does not re-resolve on a schedule. `docker compose up -d --no-deps
 backend` (needed for any `docker-compose.yml` environment change, per the
@@ -197,9 +208,19 @@ every request through `deep-matter.com` gets a `502` with `connect() failed
 exec anios_backend` and `curl localhost:8000` from the host both work fine
 — because both of those bypass the gateway's stale resolution entirely and
 so cannot reveal the break. Restart `gateway` (a plain `docker restart
-anios_gateway` — no rebuild needed, nothing about the served bundle
-changed) after recreating `backend` or any other service `gateway` proxies
-to, and verify through the actual gateway path, not a direct one:
+anios_gateway`) was the manual cure, and this entry said so for months. It
+still happened: two backend rebuilds in one day, no reload, and the site
+answered `502` to everyone for hours. A trap that requires remembering
+something is a trap that eventually fires, so the config was changed instead.
+`/api/` now reaches the backend through a variable against Docker's embedded
+DNS (`resolver 127.0.0.11`), which forces a fresh lookup per request; the
+request URI has to be appended explicitly, because nginx cannot work out which
+prefix to replace once the upstream is a variable. Two guards hold it:
+`test_gateway_config.py` asserts the shape, and
+`functional/test_gateway_follows_the_backend.py` proves the property by parking
+a placeholder on the backend's address so it cannot return to it, restarting
+it, and asserting the gateway still answers without ever being reloaded. Still
+verify through the gateway path rather than a direct one when in doubt:
 `curl -H "Host: deep-matter.com" http://localhost:8080/api/v1/auth/session`
 should read `401`, not `502`.
 

@@ -2,6 +2,46 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-18 — Outage and the guards that replace three written warnings
+
+- Fixed the site-wide `502`. `nginx.gateway.conf` proxied `/api/` to a literal
+  `http://backend:8000`, which nginx resolves once at startup and caches for
+  the life of the process. Two backend rebuilds moved the container to new
+  addresses and the gateway kept dialling the old one, so every API call failed
+  while a healthy backend ran behind it. The upstream is now a variable against
+  Docker's embedded DNS, which forces a lookup per request.
+- Fixed the reported chat `422`: messages longer than `ChatRequest`'s 10,000
+  character limit. Nothing checked the length before sending, and the server's
+  reason did not survive the trip back, because FastAPI reports validation
+  failures as a list and the client only read `detail` when it was a string —
+  so every one collapsed to "Server responded with 422". The composer now
+  refuses over-length input in the browser, states the length against the
+  limit, and offers the knowledge base instead; `describeApiError` names the
+  failing field for any future rejection.
+- Added the server-side half: a `RequestValidationError` handler that logs the
+  failing field and the validator's message, and deliberately not the submitted
+  values. It shipped with a bug the suite caught — a validator raising
+  `ValueError` puts the exception object in the error's `ctx`, which
+  `JSONResponse` cannot serialize — now encoded, with a test for that path.
+- `local-capabilities` was the only compose service with no restart policy, so
+  it alone stayed down after a host reboot while every sibling returned.
+- Stopped `.env` deciding test outcomes. Settings skip the file under test;
+  `ENCRYPTION_KEY` is inherited narrowly because several tests read rows sealed
+  with the deployed key. This exposed an admin test that had been passing only
+  because `AUTH_COOKIE_SECURE=true` made httpx drop a cookie it had not
+  accounted for.
+
+Three of these were already recorded as operational traps in `AGENTS.md` and
+happened anyway, which is why each is now a test rather than a warning: every
+always-on service must declare a surviving restart policy; the gateway must
+follow the backend to a new address without being reloaded, proven by moving
+it; and no setting may follow `.env` during a test run.
+
+Evidence: 1143 structural backend tests pass, up from 1109; the behavioural
+gateway test passes against the live stack; the non-live browser suite is 68
+passed with 5 failures all reproduced on unmodified `HEAD`; Ruff and `tsc`
+pass; deep-matter.com serves 200 and the session route answers 401.
+
 ## 2026-08-18
 
 - Deleted the retired routing tree: `SearchRoutingPolicy`, `CascadingSearchRouter`,
