@@ -21,6 +21,20 @@ type ComposerAction = 'chat' | 'analyze' | 'ingest';
 // Documents are read client-side and capped to the knowledge endpoint's limit.
 const MAX_DOCUMENT_CHARS = 200_000
 
+// What ChatRequest.query accepts. Pasting past it used to reach the server,
+// fail validation, and come back as an unexplained error, so the same message
+// was simply sent again. Checked here so the limit is visible while typing
+// rather than discovered by a round trip; the server still enforces it, this
+// only stops the pointless request.
+const MAX_QUERY_CHARS = 10_000
+
+// A long paste belongs in the knowledge base, where the cap is twenty times
+// higher and the text stays referenceable, so the message says so.
+const tooLongMessage = (length: number) =>
+  `That message is ${length.toLocaleString()} characters and the limit is `
+  + `${MAX_QUERY_CHARS.toLocaleString()}. Shorten it, or attach it as a `
+  + `text document and I will index it so we can talk about it.`
+
 const isImageFile = (file: File): boolean =>
   ['image/png', 'image/jpeg', 'image/webp'].includes(file.type)
   || /\.(png|jpe?g|webp)$/i.test(file.name)
@@ -207,6 +221,11 @@ const Composer: React.FC<ComposerProps> = ({
     const prompt = input.trim()
     const file = attachedFile
     if ((!prompt && !file) || isSending) return
+
+    if (prompt.length > MAX_QUERY_CHARS) {
+      setVisualError(tooLongMessage(prompt.length))
+      return
+    }
 
     const action = resolveAction(file, prompt)
     if (action === 'unsupported') {

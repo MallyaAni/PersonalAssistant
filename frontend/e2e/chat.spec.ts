@@ -4945,3 +4945,65 @@ test('@live renders future-safe Scout wording for the signed-in profile', async 
   await expect(rehearsal).not.toContainText('Worth a look — no date given')
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
+
+// A message over the length limit reached the server, failed validation, and
+// came back as "Server responded with 422" - so the same message was simply
+// sent again. Two things were wrong: nothing checked the limit before spending
+// a round trip, and the reason the server gave was discarded on the way back
+// because FastAPI reports it as a list rather than a string.
+test('an over-length message is refused in the browser with the reason', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  let chatRequests = 0
+  await page.route('http://localhost:8000/api/v1/chat', async route => {
+    chatRequests += 1
+    await route.fulfill({ status: 422, contentType: 'application/json', body: '{}' })
+  })
+
+  await page.goto('/')
+  const { textarea, sendButton } = chatControls(page)
+  await textarea.fill('x'.repeat(10_001))
+  await sendButton.click()
+
+  // The limit and the actual length are both stated, and the knowledge base is
+  // offered, because a paste this long usually belongs there.
+  await expect(page.getByText(/10,001 characters/)).toBeVisible()
+  await expect(page.getByText(/limit is 10,000/)).toBeVisible()
+  await expect(page.getByText(/text document/)).toBeVisible()
+  // Nothing was sent: the round trip was the thing worth avoiding.
+  expect(chatRequests).toBe(0)
+  expect(errors.pageErrors).toEqual([])
+})
+
+// The other half. When the server does reject something, its stated reason has
+// to survive the trip back rather than being flattened to the status code.
+test('a server validation reason is shown rather than the bare status', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.route('http://localhost:8000/api/v1/chat', async route => {
+    await route.fulfill({
+      status: 422,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        detail: [
+          {
+            type: 'string_too_long',
+            loc: ['body', 'query'],
+            msg: 'String should have at most 10000 characters',
+          },
+        ],
+      }),
+    })
+  })
+
+  await page.goto('/')
+  const { textarea, sendButton } = chatControls(page)
+  await textarea.fill('a message the server will refuse')
+  await sendButton.click()
+
+  await expect(page.getByText(/String should have at most 10000 characters/)).toBeVisible()
+  await expect(page.getByText(/Server responded with 422/)).toHaveCount(0)
+  expect(errors.pageErrors).toEqual([])
+  // A refused request logs its own 422 to the console; nothing else may.
+  expect(
+    errors.consoleErrors.every(message => message.includes('422')),
+  ).toBe(true)
+})

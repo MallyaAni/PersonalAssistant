@@ -1119,6 +1119,35 @@ export async function getConversationSnapshot(
   return parseConversationSnapshot(snapshot, conversationId)
 }
 
+// Turn one API error body into something worth showing a person.
+//
+// A rejected request answers with FastAPI's validation detail, which is a list
+// of per-field objects rather than a string - so a `typeof detail === 'string'`
+// check fell through to "Server responded with 422" and the reason was
+// discarded on the way past. A message over the length limit therefore failed
+// with nothing to act on, and the same message was simply sent again.
+export function describeApiError(body: unknown, status: number): string {
+  const detail = (body as { detail?: unknown } | null)?.detail
+  if (typeof detail === 'string' && detail.trim()) return detail
+  if (Array.isArray(detail)) {
+    const stated = detail
+      .map(item => {
+        const entry = item as { loc?: unknown[]; msg?: unknown }
+        const message = typeof entry?.msg === 'string' ? entry.msg : ''
+        // The leading "body" is an implementation detail of where the value
+        // travelled, not something the reader needs.
+        const field = Array.isArray(entry?.loc)
+          ? entry.loc.filter(part => part !== 'body').join('.')
+          : ''
+        if (!message) return ''
+        return field ? `${field}: ${message}` : message
+      })
+      .filter(Boolean)
+    if (stated.length) return stated.join('; ')
+  }
+  return `Server responded with ${status}`
+}
+
 // Submit a chat message and yield typed server-sent stream updates.
 export async function* streamChat(
   userId: string,
@@ -1144,11 +1173,7 @@ export async function* streamChat(
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(
-      typeof errorData.detail === 'string'
-        ? errorData.detail
-        : `Server responded with ${response.status}`,
-    );
+    throw new Error(describeApiError(errorData, response.status));
   }
 
   if (!response.headers.get('content-type')?.includes('text/event-stream')) {
