@@ -1,6 +1,8 @@
+import asyncio
 import json
 import logging
 from collections.abc import AsyncGenerator
+from contextlib import suppress
 from typing import Any
 
 from fastapi import APIRouter
@@ -65,21 +67,22 @@ async def chat(
 ) -> StreamingResponse:
     authorize_user(body.user_id, identity)
     authorize_scope(identity, SCOPE_CHAT)
-    return StreamingResponse(
-        _encode_sse(
-            service.process_request(
-                body.user_id,
-                body.query,
-                str(body.conversation_id) if body.conversation_id else None,
-                body.metadata,
-                **(
-                    {"active_image_artifact_id": str(body.active_image_artifact_id)}
-                    if body.active_image_artifact_id
-                    else {}
-                ),
+    frames = _encode_sse(
+        service.process_request(
+            body.user_id,
+            body.query,
+            str(body.conversation_id) if body.conversation_id else None,
+            body.metadata,
+            **(
+                {"active_image_artifact_id": str(body.active_image_artifact_id)}
+                if body.active_image_artifact_id
+                else {}
             ),
-            model_gate,
         ),
+        model_gate,
+    )
+    return StreamingResponse(
+        _with_heartbeat(frames),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -106,3 +109,46 @@ async def _encode_sse(
 
 def _sse_event(event: str, data: dict[str, Any]) -> str:
     return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+
+
+# How long the stream may stay silent before sending a comment to hold the
+# connection open. Generating or editing a picture takes one to two minutes
+# during which the turn legitimately has nothing to say, and public access is a
+# Cloudflare tunnel, which closes a proxied request that has sent nothing for
+# roughly a hundred seconds. A real edit that took 116 seconds reached the user
+# as "DeepMatter did not respond" while the backend went on to fetch the
+# finished image successfully: the work was fine, the connection was gone.
+_HEARTBEAT_SECONDS = 15.0
+
+
+# Keep the connection alive across a long silence.
+#
+# A line beginning with ":" is an SSE comment. It carries no event and no data,
+# so it cannot be mistaken for one; it exists only so that something crosses
+# the wire before an intermediary decides nothing ever will.
+async def _with_heartbeat(
+    frames: AsyncGenerator[str, None],
+    interval: float = _HEARTBEAT_SECONDS,
+) -> AsyncGenerator[str, None]:
+    iterator = frames.__aiter__()
+    upcoming = asyncio.ensure_future(anext(iterator))
+    try:
+        while True:
+            done, _still_waiting = await asyncio.wait({upcoming}, timeout=interval)
+            if not done:
+                yield ": keepalive\n\n"
+                continue
+            try:
+                frame = upcoming.result()
+            except StopAsyncIteration:
+                return
+            yield frame
+            upcoming = asyncio.ensure_future(anext(iterator))
+    finally:
+        # A caller can abandon this generator at any point - a closed browser
+        # tab does exactly that - and the outstanding pull has to be cancelled
+        # with it rather than left to resolve into nothing.
+        upcoming.cancel()
+        with suppress(BaseException):
+            await upcoming
+        await frames.aclose()

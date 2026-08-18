@@ -1198,6 +1198,11 @@ export async function* streamChat(
       if (!separator || separator.index === undefined) break
       const frame = buffer.slice(0, separator.index)
       buffer = buffer.slice(separator.index + separator[0].length)
+      // A frame of nothing but comments is the server holding the connection
+      // open through a long silence - generating a picture takes minutes, and
+      // an idle proxied request gets closed long before that. It carries no
+      // event, so there is nothing here to act on.
+      if (isCommentOnlyFrame(frame)) continue
       const event = parseChatEvent(frame)
 
       if (event.event === 'start') {
@@ -1529,6 +1534,15 @@ export async function* streamChat(
   if (!sawStart) throw new Error('Chat stream did not start')
   if (!sawDone) throw new Error('Chat stream ended before completion')
 }
+
+// True when every line in the frame is an SSE comment or blank, which is what
+// a keepalive looks like. Anything carrying a field is a real event and must
+// still be validated rather than skipped.
+function isCommentOnlyFrame(frame: string): boolean {
+  const lines = frame.split(/\r?\n/).filter(line => line.trim())
+  return lines.length > 0 && lines.every(line => line.startsWith(':'))
+}
+
 
 // Parse one server-sent event frame into a typed chat event.
 function parseChatEvent(frame: string): ChatEvent {
