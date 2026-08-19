@@ -120,6 +120,9 @@ def _sse_event(event: str, data: dict[str, Any]) -> str:
 # finished image successfully: the work was fine, the connection was gone.
 _HEARTBEAT_SECONDS = 15.0
 
+# The event after which the browser expects nothing further.
+_TERMINAL_EVENT = "done"
+
 
 # Keep the connection alive across a long silence.
 #
@@ -132,9 +135,21 @@ async def _with_heartbeat(
 ) -> AsyncGenerator[str, None]:
     iterator = frames.__aiter__()
     upcoming = asyncio.ensure_future(anext(iterator))
+    # Whether the turn has already said everything it is going to say.
+    #
+    # The generator keeps running after the terminal event while it persists
+    # the turn and updates memory, and heart-beating through that window sent
+    # comments *after* `done`. The browser had stopped expecting anything, so a
+    # stream closing mid-comment left a partial frame in its buffer and it
+    # reported "ended with an incomplete event" on top of a complete answer -
+    # visible as a stray error under a good reply, and worst on the long
+    # streams an image generates. Nothing needs holding open once the answer
+    # has been delivered.
+    finished = False
     try:
         while True:
-            done, _still_waiting = await asyncio.wait({upcoming}, timeout=interval)
+            timeout = None if finished else interval
+            done, _still_waiting = await asyncio.wait({upcoming}, timeout=timeout)
             if not done:
                 yield ": keepalive\n\n"
                 continue
@@ -143,6 +158,7 @@ async def _with_heartbeat(
             except StopAsyncIteration:
                 return
             yield frame
+            finished = finished or frame.startswith(f"event: {_TERMINAL_EVENT}")
             upcoming = asyncio.ensure_future(anext(iterator))
     finally:
         # A caller can abandon this generator at any point - a closed browser

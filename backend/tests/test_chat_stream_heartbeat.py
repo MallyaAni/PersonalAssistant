@@ -91,3 +91,37 @@ async def test_abandoning_the_stream_does_not_leave_a_pull_running():
         for task in asyncio.all_tasks()
         if task is not asyncio.current_task() and not task.done()
     ]
+
+
+# The turn keeps working after its last event - persisting, updating memory -
+# and heart-beating through that window put comments after `done`. The browser
+# had stopped expecting anything, so a stream closing mid-comment left a
+# partial frame in its buffer and it reported "ended with an incomplete event"
+# under a complete answer. Worst on image generation, where the tail is long.
+async def test_no_keepalive_is_sent_after_the_turn_has_finished():
+    async def with_work_after_done():
+        yield "event: start\ndata: {}\n\n"
+        yield "event: done\ndata: {}\n\n"
+        await asyncio.sleep(0.2)
+
+    produced = [
+        frame async for frame in _with_heartbeat(with_work_after_done(), interval=0.02)
+    ]
+
+    assert produced[-1] == "event: done\ndata: {}\n\n"
+    assert not [frame for frame in produced if frame.startswith(":")]
+
+
+# The silence before the answer still has to be held open, or a long image
+# generation loses its connection.
+async def test_a_silence_before_the_answer_is_still_held_open():
+    async def slow_answer():
+        await asyncio.sleep(0.15)
+        yield "event: done\ndata: {}\n\n"
+
+    produced = [
+        frame async for frame in _with_heartbeat(slow_answer(), interval=0.02)
+    ]
+
+    assert [frame for frame in produced if frame.startswith(":")]
+    assert produced[-1] == "event: done\ndata: {}\n\n"
