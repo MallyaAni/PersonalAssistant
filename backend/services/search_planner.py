@@ -17,91 +17,18 @@ import logging
 from datetime import UTC, datetime
 from typing import Any
 
+from backend.prompts import render
+
 logger = logging.getLogger(__name__)
 
 _MAX_QUERY_CHARS = 400
 
-_COMPOSE = (
-    "Write one web search query that would find what this person is asking "
-    "for.\n"
-    "Use the words a source that answers them would use, not the words they "
-    "used: names, model numbers, versions, units, and the year when the "
-    "answer changes over time.\n"
-    "A request with several requirements needs the one that decides the "
-    "answer, not all of them at once.\n"
-    "When the request is a choice - what to use, run, host, buy, or pick - "
-    "search first for which options exist right now, by category and year. "
-    "That is the half your memory is stale about and the half a search can "
-    "actually replace; the hardware, budget or limit they named is fixed and "
-    "can be looked up afterwards. Do not spend this query on the constraint "
-    "and then name the options from memory.\n"
-    "Today is {today}, and your own knowledge ends around {cutoff}. Everything "
-    "between those two dates is precisely what you cannot know and what this "
-    "search is for, so search for now rather than for the last state you "
-    "remember - a year taken from your own memory is the one thing guaranteed "
-    "to return what is already out of date.\n"
-    "Searching for the options means searching the category, not their "
-    "hardware: a query naming the box returns reviews of the box.\n"
-    "At most 12 words. Reply with the query alone, no quotes, no "
-    "explanation, and never a sentence describing what to search for."
-)
-
-_REFINE = (
-    "Here is a question and the search results gathered so far.\n"
-    "Judge them against what answering actually requires, not against whether "
-    "they are on topic.\n"
-    "A choice made under a limit - what fits in this much memory, runs on this "
-    "hardware, finishes in this long, costs under this much - is only "
-    "answerable when the results give you both halves: which options exist, "
-    "and the figure that decides between them. Naming the options is not "
-    "enough. If the options are named but their sizes, requirements or prices "
-    "are not, search for that figure directly, by option name and unit.\n"
-    "The same applies to any question whose answer turns on a specific fact "
-    "the results talk around rather than state.\n"
-    "Reply ENOUGH only if you could write the final answer, with its specific "
-    "names and numbers, using nothing but the text of these results. If you "
-    "would have to supply any figure, version, date or name from your own "
-    "memory to complete it, that is not enough - your memory is what is out of "
-    "date, and it is the reason this search is running. Feeling able to answer "
-    "is not the test; being able to point at where each specific came from "
-    "is.\n"
-    "Otherwise reply with one better search query and nothing else - the one "
-    "that would find the missing half. Use the vocabulary that source would "
-    "use.\n"
-    "Never repeat a query that has already been tried.\n"
-    "Today is {today} and your own knowledge ends around {cutoff}: search that "
-    "gap rather than the last state you remember.\n"
-    "\n"
-    "Worked example. Question: 'why not the latest model? I have one 128GB "
-    "box'. Results say only 'Vendor released Pro and Flash; both are strong.' "
-    "That is NOT enough: it names the options and gives no size for either, so "
-    "nothing in it says which one fits 128GB. The right reply is a query for "
-    "the missing figure, such as: Vendor Pro Flash parameter count memory "
-    "requirement GB\n"
-    "Now judge the results below the same way."
-)
-
-
-_ANOTHER = (
-    "Here is a question and the search results gathered so far.\n"
-    "Give one more search query, on a different angle from the ones already "
-    "tried, that would make the answer more specific.\n"
-    "Prefer the figures an answer has to cite and the results do not yet "
-    "contain: sizes, requirements, prices, versions, dates.\n"
-    "First check what is missing. If the results so far describe the "
-    "constraint - the hardware, the budget, the limit - but name no current "
-    "options to apply it to, the missing half is the options: search for what "
-    "exists now, by category and year. If the options are named but their "
-    "sizes or requirements are not, search for those figures by name and "
-    "unit. Naming options from your own memory instead of searching for them "
-    "is the failure this exists to prevent.\n"
-    "Search the category, not their hardware: a query naming the box returns "
-    "reviews of the box.\n"
-    "Today is {today} and your own knowledge ends around {cutoff}: search that "
-    "gap rather than the last state you remember.\n"
-    "At most 12 words. Reply with the query alone, never a sentence describing "
-    "what to search for."
-)
+# The wording lives in `prompts/search/` so it can be tuned without opening
+# this file. Each one carries a header there saying what it drives and what
+# breaks when it is wrong.
+_COMPOSE = "search/compose"
+_REFINE = "search/refine"
+_ANOTHER = "search/another_angle"
 
 
 # Recover the query from a reply that would not stop explaining itself.
@@ -187,8 +114,9 @@ class SearchPlanner:
     # Only the first query used to carry them, so a follow-up asked for "2025"
     # in August 2026 - the same staleness the dates exist to prevent, one
     # round later.
-    def _dated(self, prompt: str) -> str:
-        return prompt.format(
+    def _dated(self, name: str) -> str:
+        return render(
+            name,
             today=(self.now or datetime.now(UTC)).date(),
             cutoff=self.cutoff or "an unstated date in the past",
         )
