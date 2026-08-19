@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any
 
+from backend.config.settings import settings
 from backend.mcp.session import open_session
 from backend.mcp.types import MCPServerConfig, MCPTool
 
@@ -11,7 +12,10 @@ logger = logging.getLogger(__name__)
 # A tool result is untrusted third-party content, exactly like a web page. It is
 # bounded before it can reach the model so one verbose or hostile response
 # cannot dominate the context.
-_MAX_RESULT_CHARS = 4_000
+# Configurable rather than fixed: search needs more room than a snippet,
+# and this is the one place that decides how much of any tool's output
+# reaches a prompt.
+_MAX_RESULT_CHARS = settings.MCP_MAX_RESULT_CHARS
 
 
 class MCPInvocationError(RuntimeError):

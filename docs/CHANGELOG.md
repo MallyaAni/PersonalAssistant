@@ -2,6 +2,35 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-19 — Search results reach the model roughly four times over
+
+- The evidence a search delivered was capped four times smaller than the
+  settings said, by three fixed numbers in the internet MCP server: each result
+  clipped to 500 characters, the payload to 3,500, and the tool's own
+  `max_results` argument defaulting to 5 and passed straight through. So
+  `SEARCH_MAX_CONTENT_CHARS` and `SEARCH_MAX_RESULTS` were applied by the
+  provider and then discarded on the way out, and raising them earlier the same
+  day changed nothing at all.
+- 500 characters is about eighty words. A benchmark table, a specification or a
+  model comparison never reached the prompt, so answers were assembled from
+  titles - which is the real reason a question about which models to host kept
+  being answered from training. Time was spent on query wording while the
+  answers were being trimmed on the way back.
+- All three are settings now: `SEARCH_RESULT_CHARS`, `SEARCH_PAYLOAD_CHARS`,
+  and `MCP_MAX_RESULT_CHARS` for the generic bound on any tool's output, which
+  stays a deliberate ceiling because untrusted text reaches the prompt through
+  it. The payload bound still sits below the generic one, since a truncation
+  landing mid-JSON corrupts a result rather than shortening it. The tool
+  argument may now ask for fewer results than configured, never more.
+- Measured on the same two queries before and after: 4 results and 2,000
+  characters became 5-6 results and 7,500-8,200, with the model the user asked
+  about present in both.
+
+Evidence: 1237 structural tests pass, six covering the budgets - including that
+raising one actually raises the payload, that the JSON stays parseable at the
+bound, and that every variable the subprocess reads is listed in `inherit_env`,
+which is the way a setting silently does nothing here.
+
 ## 2026-08-19 — The artifact asked for decides, not the subject
 
 - "create an image that describes medallion architecture in databricks, using

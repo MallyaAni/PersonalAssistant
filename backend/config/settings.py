@@ -489,6 +489,23 @@ class Settings(BaseSettings):
     SEARCH_TIMEOUT_SECONDS: float = Field(default=15.0, gt=0, le=120)
     # Per-result truncation so one verbose page cannot dominate the prompt budget.
     SEARCH_MAX_CONTENT_CHARS: int = Field(default=6_000, ge=200, le=20_000)
+    # How much of each source survives into the prompt, and how much the whole
+    # search may carry.
+    #
+    # These were hardcoded in the internet MCP server - 500 characters per
+    # result, 3,500 for the payload - and they silently outranked
+    # SEARCH_MAX_CONTENT_CHARS above, which the provider applied and the
+    # serializer then discarded. 500 characters is about eighty words: enough
+    # for a snippet, not for a benchmark table or a specification, which is why
+    # answers kept being assembled from titles. The payload cap exists to stay
+    # under MCP_MAX_RESULT_CHARS, since a generic truncation mid-JSON would
+    # corrupt the result rather than shorten it.
+    SEARCH_RESULT_CHARS: int = Field(default=1_500, ge=200, le=8_000)
+    SEARCH_PAYLOAD_CHARS: int = Field(default=10_000, ge=1_000, le=40_000)
+    # The bound on any tool result, not only search. Untrusted output reaches
+    # the prompt through here, so it stays a deliberate ceiling rather than
+    # something a server can raise for itself.
+    MCP_MAX_RESULT_CHARS: int = Field(default=12_000, ge=1_000, le=60_000)
     SEARCH_DEPTH: Literal["basic", "advanced"] = "advanced"
     # Minimum provider relevance for a result to reach the prompt. Measured
     # across 40 real results the distribution is bimodal: usable hits scored

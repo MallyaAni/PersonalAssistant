@@ -12,7 +12,17 @@ from backend.search.tavily import TavilySearchProvider
 from backend.search.types import SearchResults
 
 mcp = FastMCP("AniOS Internet Search")
-_MAX_SERIALIZED_RESULT_CHARS = 3_500
+# How much of one source survives, and how much the whole payload may carry.
+#
+# Both were fixed numbers - 500 characters a result, 3,500 for the payload -
+# and they silently outranked SEARCH_MAX_CONTENT_CHARS, which the provider
+# applied and this then discarded. 500 characters is about eighty words, so a
+# benchmark table or a specification never reached the model and answers were
+# assembled from titles. The payload bound still exists to stay under the
+# generic MCP result cap, because a truncation mid-JSON corrupts the result
+# rather than shortening it.
+_RESULT_CHARS = int(os.getenv("SEARCH_RESULT_CHARS", "1500"))
+_MAX_SERIALIZED_RESULT_CHARS = int(os.getenv("SEARCH_PAYLOAD_CHARS", "10000"))
 
 
 # Compose the Google-first provider policy from operator-owned environment.
@@ -60,7 +70,7 @@ def _encode_results(found: SearchResults) -> str:
         candidate: dict[str, object] = {
             "title": item.title[:200],
             "url": item.url[:500],
-            "content": item.content[:500],
+            "content": item.content[:_RESULT_CHARS],
             "score": item.score,
             "provider": item.provider,
         }
@@ -79,10 +89,15 @@ def _encode_results(found: SearchResults) -> str:
 
 # Search with Google first, Tavily fallback, or both for explicit verification.
 @mcp.tool()
-async def search_web(query: str, max_results: int = 5) -> str:
+async def search_web(query: str, max_results: int = 0) -> str:
     """Research a minimized public query with bounded free-provider policy."""
     provider = _build_search_provider()
-    found = await provider.search(query, max_results=max_results)
+    # The caller may ask for fewer, never more: this argument defaulted to 5
+    # and was passed straight through, so it quietly outranked
+    # SEARCH_MAX_RESULTS and the configured count never applied.
+    configured = int(os.getenv("SEARCH_MAX_RESULTS", "5"))
+    wanted = min(max_results, configured) if max_results > 0 else configured
+    found = await provider.search(query, max_results=wanted)
     return _encode_results(found)
 
 
