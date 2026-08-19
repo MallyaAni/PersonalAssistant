@@ -198,11 +198,11 @@ _EDIT_IMAGE = BuiltinTool(
         "Even when the message says 'edit' and no other "
         "tool fits that request - answer those directly instead of calling "
         "any tool. Only for a direct instruction to change the picture, never "
-        "for a question, even one naming a specific alternative ('do you "
-        "recommend a straw hat instead?', 'which hat do you like better?', "
-        "'would this look better in blue?', 'should I go with the other "
-        "one?'): a question asks what you think, it does not tell you to "
-        "change anything, even when the same subject was just edited - answer "
+        "for a question, including one that names the alternative it is asking "
+        "about: asking whether something would look better, which of two is "
+        "preferable, or what you would recommend is asking what you think, not "
+        "telling you to change anything, even when the same subject was just "
+        "edited - answer "
         "it directly from what is already visible instead."
     ),
     schema=_EDIT_IMAGE_SCHEMA,

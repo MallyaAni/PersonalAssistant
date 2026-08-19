@@ -452,6 +452,43 @@ class MemoryRepository:
         result = await self.session.execute(stmt)
         return [(memory, float(score)) for memory, score in result.all()]
 
+    # Retrieve the user's own past turns nearest this question.
+    #
+    # Searching what they actually said, rather than only what a classifier
+    # promoted into semantic memory: an account with fourteen conversations had
+    # zero promoted rows, so recall could reach none of it. Turns written
+    # before turns were embedded have no vector and are skipped by the
+    # `is_not(None)` rather than matching everything.
+    #
+    # The current conversation is excluded because its recent turns are already
+    # supplied to the prompt as history, and recalling them again would spend
+    # the context budget repeating what is directly above.
+    async def get_recalled_turns(
+        self,
+        user_id: str,
+        query_embedding: list[float],
+        top_k: int,
+        max_cosine_distance: float,
+        exclude_conversation_id: uuid.UUID | None = None,
+    ) -> list[tuple[Conversation, float]]:
+        distance = Conversation.embedding.cosine_distance(query_embedding)
+        stmt = (
+            select(Conversation, distance.label("cosine_distance"))
+            .where(
+                Conversation.user_id == user_id,
+                Conversation.embedding.is_not(None),
+                distance <= max_cosine_distance,
+            )
+            .order_by(distance, Conversation.id)
+            .limit(top_k)
+        )
+        if exclude_conversation_id is not None:
+            stmt = stmt.where(
+                Conversation.conversation_id != exclude_conversation_id
+            )
+        result = await self.session.execute(stmt)
+        return [(turn, float(score)) for turn, score in result.all()]
+
     # Retrieve one user's derived visual descriptions with a wider candidate bound.
     async def get_visual_semantic_memories(
         self,

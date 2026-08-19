@@ -27,6 +27,9 @@ Read [Security](docs/SECURITY.md) when a task affects data, credentials, authent
 - A new agent is not finished until it has a folder under `backend/agents/<name>/`, a diagram pair in `docs/diagrams/agent-<name>.mmd` registered in the renderer and the catalog, a functional test, and a row in `docs/AGENT_CATALOG.md`. That file states the checklist; follow it rather than copying whichever agent was written last.
 - Every prompt is a feature and gets a functional test, in the same change that writes it. `backend/tests/` is layered by what a test proves: the existing modules cover structure and units, `functional/` covers what a model actually answers, and an integration test covers a path across several components. A new prompt with no functional test is an untested feature however many structural tests surround it.
 - A prompt belongs to the agent whose judgement it encodes, and lives in that agent's folder under `backend/agents/<name>/`. The *mechanism* for calling a model is shared and reusable — grammar-constrained, greedy, bounded, with a deterministic fallback — but the prompt, its schema, and the validation of its output never are. Filing a prompt under the domain package it happens to act on is how Scout's four prompts ended up in `backend/discovery/` while `backend/agents/scout/` held only a status card.
+- **Never write a specific case into a prompt.** A prompt states a principle that holds for anyone; the incident that prompted it belongs in the file's notes, a code comment, or the commit message, never in the text sent to a model. Wording like "a black hat edited to a straw hat", "my DGX Spark", or a particular user's phrasing teaches the model to match that case and stop reasoning about the general one, and every future failure then wants its own sentence until the prompt is a list of somebody's bad days. Prompts written this way get longer, more brittle and less intelligent — `search/compose.md` was halved and `_render_image_context` cut by a third after each had accumulated a sentence per incident. When a real failure needs fixing, ask what is true of every question of that shape, write that, and record the incident beside it rather than inside it.
+- **Decide meaning with a model, never with a pattern.** Whether a message wants a picture, an edit, a search, a diagram or nothing; which picture "that one" refers to; whether something is worth remembering — these are judgements, and every regex, keyword list or bounded classifier written to make them here has been deleted after failing on phrasing its author did not anticipate. `SearchRoutingPolicy`, `CascadingSearchRouter`, `image_subject.py` and `QueryFreshnessClassifier` are all gone for this reason. Ask the model that has the conversation in front of it, and give the answer a schema, a bound and a fallback. Patterns are legitimate for *shape* — is this reply prose or a query, is this file a PNG, does this string parse as a UUID — never for intent.
+- When a model will not follow an instruction, make it structural rather than repeating the instruction louder. Told four different ways not to name the user's hardware in a search query, it named it every time; the working fix was to build the query in code from a category the model supplied. A fifth wording would have been the wrong move, and the fourth already was.
 - Add a brief, plain-language comment immediately above every newly written function or method explaining what it accomplishes. This includes production code, local helpers, API handlers, frontend functions, tests, CLI entry points, and migration functions. Put the comment above any decorators, and update it whenever the function's purpose changes.
 - Do not hardcode production secrets or log credentials, tokens, or unnecessary personal data.
 - Explicit user instructions, including read-only requests, override routine documentation-update procedures.
@@ -165,6 +168,16 @@ headers={"Authorization": f"Bearer {issue_user_token(user_id)}"})` — rather th
 relying on the order. A cross-user request needs *that* user's token, or it
 returns 403 before reaching the code, and a scoping test then passes for the
 wrong reason.
+
+**Edit files with the file tools, not with a shell heredoc.** Four separate
+times in one session, a Python edit script piped through a heredoc turned `\n`
+inside a string literal into a real newline and produced a file that would not
+parse — in `search_planner.py`, in `graph.py` twice, and in `api.py`. Ruff
+caught each one, so the cost was time rather than a bad deploy, but the fix is
+not to be more careful: use Edit/Write for anything containing an escape, a
+regex, or a quote. The related failure is a `str.replace` that matches nothing
+and reports success — every scripted edit asserts the old text was found, or it
+silently does nothing and gets reported as done, which happened twice here.
 
 **Do not write regex escapes through a shell heredoc.** A `` written that way
 reached `listing_filter.py` as a literal backspace byte (0x08). Ruff, MyPy and

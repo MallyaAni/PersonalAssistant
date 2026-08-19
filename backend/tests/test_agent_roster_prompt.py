@@ -58,7 +58,7 @@ def test_the_agents_line_names_the_interests_it_follows():
 
     detail = _following(["Books", "Theater", "Horses"])
 
-    assert "Following: Books, Theater, Horses." == detail.strip()
+    assert detail.strip() == "Following: Books, Theater, Horses."
 
 
 # This reaches every reply's prompt, so it is bounded: enough to answer with,

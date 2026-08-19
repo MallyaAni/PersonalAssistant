@@ -2035,6 +2035,9 @@ class ConversationService:
             if need_personal_semantic
             else []
         )
+        recalled_turns = await self._recall_past_turns(
+            user_id, conversation_id, query_embedding
+        )
         history = await self.repository.get_history(
             conversation_id,
             user_id,
@@ -2048,6 +2051,7 @@ class ConversationService:
             "profile": profile,
             "episodic": episodic,
             "semantic": semantic,
+            "recalled_turns": recalled_turns,
         }
         # Scout's profile is deliberately not added here. It was, on the
         # reasoning that an ordinary turn may as well know what the user likes
@@ -2140,6 +2144,10 @@ class ConversationService:
             trace_id,
             history,
             metadata,
+            # Reused rather than recomputed: this turn already embedded the
+            # same sentence to retrieve against, and it is the ordinary path
+            # every conversational turn takes.
+            query_embedding=query_embedding,
         )
         # Emitted after the turn is saved, as before; each one was already
         # persisted before the answer was generated, so the reply could
@@ -2262,6 +2270,62 @@ class ConversationService:
         yield {"event": "done", "data": {}}
 
     # Persist a completed turn and update automatic memory lifecycle state.
+    # The turn's own words, embedded, so recall can find them later.
+    #
+    # What the user said is already stored; only what a classifier promoted out
+    # of it was searchable, and an account with fourteen conversations had zero
+    # searchable rows as a result. Embedding the turn moves the judgement to
+    # recall time, where the question is in hand.
+    #
+    # A failure here loses searchability for one turn and nothing else: the
+    # turn is still saved, still shown, and the backfill can embed it later.
+    async def _recall_vector(
+        self,
+        query: str,
+        query_embedding: list[float] | None,
+    ) -> dict[str, Any]:
+        if self.memory is None:
+            return {}
+        try:
+            vector = query_embedding or await self.memory.embed_query(query)
+        except Exception:
+            logger.warning("Could not embed a turn for recall", exc_info=True)
+            return {}
+        if not vector:
+            return {}
+        return {"embedding": vector, "embedding_model": settings.EMBEDDING_MODEL}
+
+    # Things this user said before, nearest to what they are asking now.
+    #
+    # Only what a classifier promoted into semantic memory was searchable, so
+    # an account with fourteen conversations had nothing to recall: it captures
+    # attributes and misses circumstances, and a category it was never taught
+    # is a thing that can never be remembered. Searching the turns themselves
+    # moves that judgement to recall time, where the question is in hand.
+    #
+    # Off unless enabled, and a failure costs the recall rather than the turn.
+    async def _recall_past_turns(
+        self,
+        user_id: str,
+        conversation_id: str,
+        query_embedding: list[float] | None,
+    ) -> list[dict[str, Any]]:
+        if not settings.MEMORY_RECALL_TURNS_ENABLED:
+            return []
+        if self.memory is None or not query_embedding:
+            return []
+        try:
+            return await self.memory.get_recalled_turns(
+                user_id,
+                query_embedding,
+                settings.MEMORY_RECALL_TURNS_MAX_RESULTS,
+                settings.MEMORY_RECALL_TURNS_MAX_COSINE_DISTANCE,
+                exclude_conversation_id=conversation_id,
+            )
+        except Exception:
+            logger.warning("Could not recall past turns", exc_info=True)
+            return []
+
     async def _persist_completed_turn(
         self,
         user_id: str,
@@ -2271,6 +2335,11 @@ class ConversationService:
         trace_id: str,
         history: list[dict[str, Any]],
         metadata: dict[str, Any],
+        # The vector the turn's retrieval already computed, when there was one.
+        # Recomputing it here would embed the same sentence twice for every
+        # turn; passing it costs nothing and absent simply means this turn is
+        # embedded on its own.
+        query_embedding: list[float] | None = None,
     ) -> None:
         await self.repository.save_turn(
             conversation_id,
@@ -2279,6 +2348,7 @@ class ConversationService:
                 "query": query,
                 "response": response_text,
                 "metadata": metadata,
+                **await self._recall_vector(query, query_embedding),
             },
         )
         if self.memory_coordinator is None:

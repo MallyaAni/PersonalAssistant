@@ -126,6 +126,21 @@ class Settings(BaseSettings):
     EMBEDDING_MAX_CONCURRENCY: int = Field(default=1, ge=1, le=32)
     MEMORY_SEMANTIC_MAX_COSINE_DISTANCE: float = Field(default=0.35, ge=0, le=2)
     MEMORY_SEMANTIC_MAX_RESULTS: int = Field(default=5, ge=1, le=20)
+    # Searching the user's own past turns, not only the facts a classifier
+    # promoted out of them. An account with fourteen conversations had zero
+    # promoted rows, so recall could reach none of what it had been told.
+    #
+    # Off by default until the distance below is measured on real turns: this
+    # is the switch that makes the change reversible without a redeploy.
+    MEMORY_RECALL_TURNS_ENABLED: bool = False
+    # A turn is a sentence someone spoke, not a curated fact, so it embeds
+    # differently and the 0.35 above does not transfer. Deliberately tighter
+    # than a guess would be: a wrong recall costs prompt budget and reads as
+    # the assistant misremembering, which is worse than recalling nothing.
+    MEMORY_RECALL_TURNS_MAX_COSINE_DISTANCE: float = Field(
+        default=0.30, ge=0, le=2
+    )
+    MEMORY_RECALL_TURNS_MAX_RESULTS: int = Field(default=3, ge=1, le=10)
     MEMORY_SEMANTIC_MAX_CONTENT_CHARS: int = Field(default=4_000, ge=100, le=50_000)
     CONVERSATION_HISTORY_TURNS: int = Field(default=10, ge=0, le=50)
     CONVERSATION_SUMMARY_INTERVAL: int = Field(default=10, ge=2, le=100)

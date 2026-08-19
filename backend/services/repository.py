@@ -106,6 +106,11 @@ class SQLAlchemyConversationRepository(ConversationRepository):
             query=turn["query"],
             response=turn["response"],
             extra_data=turn.get("metadata", {}),
+            # Optional, and absent is a normal state: a turn saved without one
+            # is simply not searchable until the backfill reaches it, which is
+            # better than failing the turn over a vector.
+            embedding=turn.get("embedding"),
+            embedding_model=turn.get("embedding_model"),
         )
         self.session.add(new_conv)
         await self.session.commit()

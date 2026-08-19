@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import String
 from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -27,6 +28,14 @@ class Conversation(Base):
     response: Mapped[str] = mapped_column(EncryptedText, nullable=False)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     extra_data: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    # What the user said, embedded, so recall can search it directly rather
+    # than only searching what a classifier chose to promote out of it.
+    # Nullable: turns written before this existed have no vector, and the
+    # search skips them rather than matching everything.
+    embedding: Mapped[list[float] | None] = mapped_column(
+        Vector(768), nullable=True
+    )
+    embedding_model: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
     def to_dict(self) -> dict[str, Any]:
         return {

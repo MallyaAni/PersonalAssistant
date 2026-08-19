@@ -273,6 +273,12 @@ async def test_conversation_service_streams_and_persists_required_turn_fields():
     assert len(repository.saved_turns) == 1
     conversation_id, turn = repository.saved_turns[0]
     assert conversation_id == "22222222-2222-4222-8222-222222222222"
+    # The turn now carries its own vector so recall can search what the user
+    # said, rather than only what a classifier promoted out of it. Asserted by
+    # shape rather than by value: the embedding is whatever the provider
+    # returns, and pinning it here would test the stub instead of the turn.
+    assert turn.pop("embedding_model")
+    assert turn.pop("embedding")
     assert turn == {
         "user_id": "validation_user",
         "query": "Reply with: validation ok",

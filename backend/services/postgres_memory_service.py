@@ -1,4 +1,5 @@
 import asyncio
+import uuid
 from datetime import datetime
 from typing import Any
 
@@ -210,6 +211,41 @@ class PostgresMemoryService(MemoryService, SemanticMemoryWriter):
             self.retrieval_policy.max_cosine_distance,
         )
         return self.retrieval_policy.select(memories, top_k)
+
+    # The user's own past turns nearest this question.
+    #
+    # Kept beside `get_semantic_memory` rather than folded into it: both search
+    # one vector, but a promoted fact is something the application asserts and
+    # a recalled turn is something the user said, and the prompt has to be able
+    # to tell the reader which is which.
+    async def get_recalled_turns(
+        self,
+        user_id: str,
+        query_embedding: list[float],
+        top_k: int,
+        max_cosine_distance: float,
+        exclude_conversation_id: str | None = None,
+    ) -> list[dict[str, Any]]:
+        rows = await self.repo.get_recalled_turns(
+            user_id,
+            query_embedding,
+            top_k,
+            max_cosine_distance,
+            uuid.UUID(exclude_conversation_id) if exclude_conversation_id else None,
+        )
+        recalled: list[dict[str, Any]] = []
+        for turn, distance in rows:
+            recalled.append(
+                {
+                    "said": turn.query,
+                    "when": turn.created_at.isoformat() if turn.created_at else None,
+                    "retrieval": {
+                        "cosine_distance": round(distance, 6),
+                        "relevance_score": round(max(0.0, 1.0 - distance), 6),
+                    },
+                }
+            )
+        return recalled
 
     # Return a broad owned visual shortlist for a model to judge semantically.
     async def get_visual_memory_candidates(
