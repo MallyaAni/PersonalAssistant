@@ -28,17 +28,22 @@ _COMPOSE = (
     "used: names, model numbers, versions, units, and the year when the "
     "answer changes over time.\n"
     "A request with several requirements needs the one that decides the "
-    "answer, not all of them at once. When the request is a choice under a "
-    "limit - what fits, what runs on this, what stays under that - the "
-    "deciding requirement is usually a number attached to each option rather "
-    "than the options themselves, so search for the thing that would let you "
-    "compare them.\n"
+    "answer, not all of them at once.\n"
+    "When the request is a choice - what to use, run, host, buy, or pick - "
+    "search first for which options exist right now, by category and year. "
+    "That is the half your memory is stale about and the half a search can "
+    "actually replace; the hardware, budget or limit they named is fixed and "
+    "can be looked up afterwards. Do not spend this query on the constraint "
+    "and then name the options from memory.\n"
     "Today is {today}, and your own knowledge ends around {cutoff}. Everything "
     "between those two dates is precisely what you cannot know and what this "
     "search is for, so search for now rather than for the last state you "
     "remember - a year taken from your own memory is the one thing guaranteed "
     "to return what is already out of date.\n"
-    "Reply with the query alone. No quotes, no explanation."
+    "Searching for the options means searching the category, not their "
+    "hardware: a query naming the box returns reviews of the box.\n"
+    "At most 12 words. Reply with the query alone, no quotes, no "
+    "explanation, and never a sentence describing what to search for."
 )
 
 _REFINE = (
@@ -80,9 +85,14 @@ _ANOTHER = (
     "Give one more search query, on a different angle from the ones already "
     "tried, that would make the answer more specific.\n"
     "Prefer the figures an answer has to cite and the results do not yet "
-    "contain: sizes, requirements, prices, versions, dates. If the question is "
-    "a choice under a limit, the useful angle is nearly always the number "
-    "attached to each option rather than the options again.\n"
+    "contain: sizes, requirements, prices, versions, dates.\n"
+    "First check what is missing. If the results so far describe the "
+    "constraint - the hardware, the budget, the limit - but name no current "
+    "options to apply it to, the missing half is the options: search for what "
+    "exists now, by category and year. If the options are named but their "
+    "sizes or requirements are not, search for those figures by name and "
+    "unit. Naming options from your own memory instead of searching for them "
+    "is the failure this exists to prevent.\n"
     "Reply with the query alone."
 )
 
@@ -126,12 +136,26 @@ def _looks_like_a_label(head: str) -> bool:
     return 0 < len(words) <= 4 and all(word.isalpha() for word in words)
 
 
+# A query is a handful of words. Told to reply with one, the model sometimes
+# restates the instruction instead - "Given the results so far mention the
+# hardware but don't name current options, search for what exists now" - and
+# that goes to the search engine verbatim and returns nothing. Length is the
+# one property that separates the two reliably, so an over-long reply is
+# treated as no proposal at all.
+_MAX_QUERY_WORDS = 16
+
+
+def _is_prose(text: str) -> bool:
+    return len(text.split()) > _MAX_QUERY_WORDS
+
+
 # Strip the quotes and list markers a model wraps a bare query in.
 def _bare(text: str) -> str:
     cleaned = text.strip().strip("-*").strip()
     for quote in ('"', "'", "`"):
         cleaned = cleaned.strip(quote)
-    return cleaned.strip()[:_MAX_QUERY_CHARS]
+    cleaned = cleaned.strip()[:_MAX_QUERY_CHARS]
+    return "" if _is_prose(cleaned) else cleaned
 
 
 class SearchPlanner:

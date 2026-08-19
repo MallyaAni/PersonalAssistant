@@ -1469,6 +1469,12 @@ class ConversationService:
                 better = self.search_planner.another_angle(
                     question, gathered, tried
                 )
+                # A round that is supposed to happen regardless must not be
+                # lost because one reply came back as prose rather than as a
+                # query. Asking the other way costs one model call and keeps
+                # the guarantee honest.
+                if not better:
+                    better = self.search_planner.refine(question, gathered, tried)
             else:
                 better = self.search_planner.refine(question, gathered, tried)
             if not better:

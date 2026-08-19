@@ -238,3 +238,24 @@ def test_another_angle_treats_a_verdict_as_no_proposal():
     planner = SearchPlanner(StubLLM("ENOUGH"))
 
     assert planner.another_angle("q", [{"title": "t"}], ["prev"]) == ""
+
+
+# Told to reply with a query, the model restated the instruction instead, and
+# the sentence went to the search engine verbatim and returned nothing. Length
+# separates a query from prose; an over-long reply is no proposal at all.
+def test_a_restated_instruction_is_not_treated_as_a_query():
+    prose = (
+        "Given the search results so far mention the DGX Spark hardware "
+        "constraints but don't name specific current model options that fit "
+        "within those constraints, search for what exists now by category."
+    )
+    planner = SearchPlanner(StubLLM(prose))
+
+    assert planner.compose("q", []) == ""
+    assert planner.another_angle("q", [{"title": "t"}], ["prev"]) == ""
+
+
+def test_a_real_query_of_ordinary_length_survives():
+    planner = SearchPlanner(StubLLM("best open source vision language models 2026"))
+
+    assert planner.compose("q", []) == "best open source vision language models 2026"
