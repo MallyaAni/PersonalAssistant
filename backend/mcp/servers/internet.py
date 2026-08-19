@@ -63,28 +63,126 @@ def _build_search_provider() -> HybridSearchProvider:
     )
 
 
-# Serialize compact results without letting the generic MCP cap corrupt JSON.
+# What the envelope costs before any excerpt is added to it.
+#
+# The dropped count is part of that envelope: added after the size was measured
+# it pushed the payload past its bound, which is the mid-JSON truncation the
+# bound exists to prevent.
+def _serialized_length(
+    provider: str, entries: list[dict[str, object]], dropped: int = 0
+) -> int:
+    payload: dict[str, object] = {"provider": provider, "results": entries}
+    if dropped:
+        payload["dropped_for_space"] = dropped
+    return len(json.dumps(payload, ensure_ascii=False))
+
+
+# Below this a source says nothing useful, so it is better dropped and counted
+# than kept as a fragment that looks like evidence.
+_MIN_RESULT_CHARS = 200
+
+
+# One payload with each excerpt cut to the given share.
+def _serialize(
+    provider: str,
+    skeleton: list[dict[str, object]],
+    items: list,
+    share: int,
+    dropped: int,
+) -> str:
+    results = [
+        {**entry, "content": item.content[:share]}
+        for entry, item in zip(skeleton, items, strict=True)
+    ]
+    payload: dict[str, object] = {"provider": provider, "results": results}
+    # Stated rather than left implicit: a model reading five sources should
+    # know whether five is all there were.
+    if dropped:
+        payload["dropped_for_space"] = dropped
+    return json.dumps(payload, ensure_ascii=False)
+
+
+# How many sources can carry their titles, URLs and a real excerpt.
+#
+# Derived from what one source costs, not from what is left after paying for
+# all of them: that remainder goes negative once enough come back, so eighty
+# sources kept exactly one. Degradation has to stay gradual at every size, not
+# only the sizes anyone happened to try.
+def _affordable_count(provider: str, skeleton: list[dict[str, object]]) -> int:
+    envelope = _serialized_length(provider, [])
+    each = (_serialized_length(provider, skeleton) - envelope) / len(skeleton)
+    estimate = int(
+        (_MAX_SERIALIZED_RESULT_CHARS - envelope) // (each + _MIN_RESULT_CHARS)
+    )
+    count = max(1, min(len(skeleton), estimate))
+    # That average is an estimate; step down until the real serialization fits.
+    while count > 1 and (
+        _serialized_length(provider, skeleton[:count], len(skeleton) - count)
+        + count * _MIN_RESULT_CHARS
+        > _MAX_SERIALIZED_RESULT_CHARS
+    ):
+        count -= 1
+    return count
+
+
+# Serialize results within the payload budget, sharing it across them.
+#
+# The budget used to be raced for rather than divided: each source took up to
+# its own cap and whichever came first spent the payload, so the rest were
+# dropped by a `break` that left no trace. Twelve sources became six, silently,
+# and the ones that vanished were simply the later ones - not the weaker ones.
+# Three settings that can disagree (`SEARCH_MAX_RESULTS` times
+# `SEARCH_RESULT_CHARS` against `SEARCH_PAYLOAD_CHARS`) resolved themselves by
+# throwing evidence away.
+#
+# Dividing what is left after the fixed fields means the count and the budget
+# can no longer contradict each other: more sources means a shorter excerpt
+# from each, which degrades instead of deleting. `SEARCH_RESULT_CHARS` stays as
+# a ceiling so a single result cannot swallow the payload when few come back.
 def _encode_results(found: SearchResults) -> str:
-    results: list[dict[str, object]] = []
-    for item in found.results:
-        candidate: dict[str, object] = {
+    items = list(found.results)
+    if not items:
+        return json.dumps({"provider": found.provider, "results": []})
+
+    # What the titles, URLs and scores cost, so only the remainder is shared.
+    skeleton = [
+        {
             "title": item.title[:200],
             "url": item.url[:500],
-            "content": item.content[:_RESULT_CHARS],
+            "content": "",
             "score": item.score,
             "provider": item.provider,
         }
-        proposed = json.dumps(
-            {"provider": found.provider, "results": [*results, candidate]},
-            ensure_ascii=False,
+        for item in items
+    ]
+    spare = _MAX_SERIALIZED_RESULT_CHARS - _serialized_length(found.provider, skeleton)
+    share = min(_RESULT_CHARS, max(0, spare) // len(items))
+
+    dropped = 0
+    if share < _MIN_RESULT_CHARS:
+        # Too many sources to say anything useful about each. Keep as many as
+        # can carry a real excerpt and report the rest as dropped, rather than
+        # returning a page of stubs.
+        keep = _affordable_count(found.provider, skeleton)
+        dropped = len(items) - keep
+        items = items[:keep]
+        skeleton = skeleton[:keep]
+        spare = _MAX_SERIALIZED_RESULT_CHARS - _serialized_length(
+            found.provider, skeleton, dropped
         )
-        if len(proposed) > _MAX_SERIALIZED_RESULT_CHARS:
-            break
-        results.append(candidate)
-    return json.dumps(
-        {"provider": found.provider, "results": results},
-        ensure_ascii=False,
-    )
+        share = min(_RESULT_CHARS, max(0, spare) // len(items))
+
+    # Escaping is invisible to the plan above, which measures empty excerpts: a
+    # newline or a quote costs two characters once serialized, and real pages
+    # are full of both. Measured on a live search the payload came out 148
+    # characters over its bound this way, which synthetic content never shows.
+    # Shrink the share until what actually serializes fits.
+    encoded = _serialize(found.provider, skeleton, items, share, dropped)
+    while share > 0 and len(encoded) > _MAX_SERIALIZED_RESULT_CHARS:
+        overflow = len(encoded) - _MAX_SERIALIZED_RESULT_CHARS
+        share = max(0, share - max(1, -(-overflow // len(items))))
+        encoded = _serialize(found.provider, skeleton, items, share, dropped)
+    return encoded
 
 
 # Search with Google first, Tavily fallback, or both for explicit verification.

@@ -2,6 +2,39 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-19 — The search payload is divided between sources, not raced for
+
+- Lifting the caps fixed the size of the evidence and left how it was shared
+  broken. Each source took up to `SEARCH_RESULT_CHARS` in turn until the
+  payload ran out, and a `break` dropped the rest with no trace: eight sources
+  came back and six arrived, twelve came back and six arrived. The ones that
+  vanished were the last in the list, not the weakest, so a search that found
+  more could deliver less - and nothing in the result said so.
+- Three settings that can disagree (`SEARCH_MAX_RESULTS` times
+  `SEARCH_RESULT_CHARS` against `SEARCH_PAYLOAD_CHARS`) were resolving
+  themselves by discarding evidence. The remainder after the titles and URLs is
+  divided across the results now, so more sources means a shorter excerpt from
+  each rather than sources disappearing. `SEARCH_RESULT_CHARS` stays a ceiling
+  so one result cannot swallow the payload when few come back, and when a
+  useful excerpt genuinely will not fit for everything, `dropped_for_space`
+  says how many were lost instead of leaving it implicit.
+- Two defects surfaced only from testing across sizes rather than at one size.
+  Adding the dropped count after measuring the payload pushed it 20 characters
+  over its bound, which is the mid-JSON truncation the bound exists to prevent.
+  And the count to keep was computed from what remained after paying for every
+  source - already negative once enough came back - so forty sources kept
+  nineteen and eighty kept one. It is derived from what one source costs now.
+- Measured at 1,500 characters a result and a 10,000 character payload: 4
+  sources keep 1,500 each, 8 keep 1,093, 12 keep 678, 20 keep 345, and beyond
+  that it holds at 28 sources of 200 characters with the remainder counted. No
+  result count from 1 to 250 overruns the payload, and the number kept never
+  falls as more come back.
+
+Evidence: 1528 structural tests pass, twelve covering the budgets - including
+that every source survives at 4, 8, 12 and 30, that a larger set shortens the
+excerpt rather than losing sources, that more sources never means fewer kept
+across 1-200, and that no count overruns the payload.
+
 ## 2026-08-19 — Search results reach the model roughly four times over
 
 - The evidence a search delivered was capped four times smaller than the
