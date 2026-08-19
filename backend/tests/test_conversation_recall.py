@@ -100,11 +100,17 @@ def _service(memory: Any):
     )
 
 
+# The switch is what makes this reversible without a redeploy, so it is pinned
+# here rather than left to whatever the default happens to be.
 @pytest.mark.asyncio
-async def test_recall_is_off_unless_enabled():
+async def test_the_switch_turns_recall_off():
+    original = settings.MEMORY_RECALL_TURNS_ENABLED
+    settings.MEMORY_RECALL_TURNS_ENABLED = False
     memory = StubRecallMemory([{"said": "something"}])
-
-    recalled = await _service(memory)._recall_past_turns("u", "c", [0.1] * 768)
+    try:
+        recalled = await _service(memory)._recall_past_turns("u", "c", [0.1] * 768)
+    finally:
+        settings.MEMORY_RECALL_TURNS_ENABLED = original
 
     assert recalled == []
     assert memory.calls == []
@@ -145,3 +151,45 @@ async def test_a_failed_recall_costs_the_recall_and_not_the_turn(recall_enabled)
     assert await _service(BrokenMemory())._recall_past_turns(
         "u", "c", [0.1] * 768
     ) == []
+
+
+# A question the user once asked says nothing about them, and it embeds close
+# to the question they are asking now - closer than the statement that would
+# answer it. Measured on real history: "what do I like to watch?" matched an
+# earlier "What are my interests?" at 0.361 and the true answer at 0.380.
+def test_a_past_question_is_not_recalled():
+    from backend.services.postgres_memory_service import _is_a_question
+
+    assert _is_a_question("What are my interests?")
+    assert _is_a_question("  do you have podcast recommendations?  ")
+    assert not _is_a_question("I cover phone lines for executives")
+    assert not _is_a_question("Please remember I am interested in horses")
+
+
+# People repeat themselves, and three slots spent on one interest stated three
+# times crowd out the other two things they said.
+@pytest.mark.asyncio
+async def test_repeats_do_not_consume_the_recall_budget():
+    from backend.services.postgres_memory_service import PostgresMemoryService
+
+    class Turn:
+        def __init__(self, said: str) -> None:
+            self.query = said
+            self.created_at = None
+
+    class Repo:
+        async def get_recalled_turns(self, *args: Any, **kwargs: Any):
+            return [
+                (Turn("I am interested in horses"), 0.30),
+                (Turn("i am interested in horses"), 0.31),
+                (Turn("What are my interests?"), 0.32),
+                (Turn("I cover phone lines for executives"), 0.38),
+            ]
+
+    service = PostgresMemoryService.__new__(PostgresMemoryService)
+    service.repo = Repo()
+
+    recalled = await service.get_recalled_turns("u", [0.1] * 768, 3, 0.45)
+
+    said = [item["said"] for item in recalled]
+    assert said == ["I am interested in horses", "I cover phone lines for executives"]

@@ -18,6 +18,24 @@ from backend.models.memory import UserProfile
 DERIVED_PURPOSES = frozenset({VISUAL_ANALYSIS_PURPOSE})
 
 
+# How many candidates to read for each one kept, since questions are dropped
+# after the database has already applied its limit.
+_RECALL_OVERFETCH = 4
+
+
+# A question the user once asked says nothing about them, and it embeds close
+# to the question they are asking now - closer than the statement that would
+# answer it. Measured on real history: "what do I like to watch?" matched an
+# earlier "What are my interests?" at 0.361 and the true answer, "I am
+# interested in true crime", at 0.380, so the useless turn outranked the useful
+# one, and an identical question matched itself at 0.000.
+#
+# A shape test, not a judgement about meaning: it excludes the interrogative
+# form whatever the turn happens to be about.
+def _is_a_question(text: str) -> bool:
+    return (text or "").strip().endswith("?")
+
+
 class PostgresMemoryService(MemoryService, SemanticMemoryWriter):
     def __init__(
         self,
@@ -226,15 +244,30 @@ class PostgresMemoryService(MemoryService, SemanticMemoryWriter):
         max_cosine_distance: float,
         exclude_conversation_id: str | None = None,
     ) -> list[dict[str, Any]]:
+        # Over-fetched because the useless ones are dropped below, after the
+        # text is readable: `query` is encrypted at rest, so the database
+        # cannot tell a question from a statement and a predicate against that
+        # column would match ciphertext and quietly return everything.
         rows = await self.repo.get_recalled_turns(
             user_id,
             query_embedding,
-            top_k,
+            top_k * _RECALL_OVERFETCH,
             max_cosine_distance,
             uuid.UUID(exclude_conversation_id) if exclude_conversation_id else None,
         )
         recalled: list[dict[str, Any]] = []
+        # People repeat themselves. Three slots spent on one interest stated
+        # three times crowds out the other two things they said.
+        seen: set[str] = set()
         for turn, distance in rows:
+            if len(recalled) >= top_k:
+                break
+            if _is_a_question(turn.query):
+                continue
+            spoken = (turn.query or "").strip()
+            if spoken.casefold() in seen:
+                continue
+            seen.add(spoken.casefold())
             recalled.append(
                 {
                     "said": turn.query,

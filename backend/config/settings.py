@@ -130,15 +130,18 @@ class Settings(BaseSettings):
     # promoted out of them. An account with fourteen conversations had zero
     # promoted rows, so recall could reach none of what it had been told.
     #
-    # Off by default until the distance below is measured on real turns: this
-    # is the switch that makes the change reversible without a redeploy.
-    MEMORY_RECALL_TURNS_ENABLED: bool = False
+    # Measured before being switched on, against real history: at 0.35 it
+    # answered 1 of 5 questions, at 0.40 four, at 0.45 all five, and at 0.50 it
+    # answered no more while returning twice the turns. The switch stays so it
+    # can be turned off without a redeploy.
+    MEMORY_RECALL_TURNS_ENABLED: bool = True
     # A turn is a sentence someone spoke, not a curated fact, so it embeds
-    # differently and the 0.35 above does not transfer. Deliberately tighter
-    # than a guess would be: a wrong recall costs prompt budget and reads as
-    # the assistant misremembering, which is worse than recalling nothing.
+    # differently and the 0.35 above does not transfer - measured, useful
+    # recalls sit between 0.25 and 0.44 and the curve flattens after 0.45.
+    # Re-measure this after any embedding model change; it is a property of
+    # that model, not of the feature.
     MEMORY_RECALL_TURNS_MAX_COSINE_DISTANCE: float = Field(
-        default=0.30, ge=0, le=2
+        default=0.45, ge=0, le=2
     )
     MEMORY_RECALL_TURNS_MAX_RESULTS: int = Field(default=3, ge=1, le=10)
     MEMORY_SEMANTIC_MAX_CONTENT_CHARS: int = Field(default=4_000, ge=100, le=50_000)
