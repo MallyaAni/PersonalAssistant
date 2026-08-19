@@ -7,62 +7,60 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 
 Last updated: 2026-08-18, America/New_York
 
-## NEXT: recall over conversations, not over what a classifier kept — SCOPED
+## Recall over conversations — SHIPPED AND ON
 
-One number states the problem:
+Turns carry their own embedding and recall searches them beside semantic
+memory, so being missed by the classifier no longer means being forgotten. The
+classifier is unchanged and still misses circumstances; it now costs less.
 
-    jenos1:  conversations 14   |   semantic_memory 0
+Live at `MEMORY_RECALL_TURNS_MAX_COSINE_DISTANCE=0.45`, chosen by sweeping the
+real account: 0.35 answered one question of five, 0.40 four, 0.45 all five,
+0.50 no more for twice the turns. Re-measure after any embedding model change -
+it is a property of that model. `MEMORY_RECALL_TURNS_ENABLED=false` turns it
+off without a redeploy.
 
-Her job, her desk constraint and her frustration are all stored, encrypted, in
-`conversations`. Nothing was lost. Only `semantic_memory` is searchable, and a
-4B classifier decides what gets promoted into it, so everything it declines is
-invisible for good. Measured over nine statements it scores 6/9: it captures
-attributes ("my dog is Biscuit", "allergic to shellfish") and misses
-circumstances ("I cover phone lines for executives", "I can't leave my desk
-without arranging coverage"). Across all 22 accounts, semantic_memory holds 0-1
-rows each against 85 stored turns.
+Two things a threshold alone could not fix, both found by measuring: a question
+the user once asked embeds closer to their new question than the statement that
+answers it, so questions are dropped; and identical repeats collapse rather
+than spending every slot on one interest stated three times.
 
-Teaching it more categories is the wrong fix and was rejected deliberately: the
-categories are unbounded, so it becomes a permanent whack-a-mole, and it is the
-overfitting this repository already avoids in routing. ChatGPT and Claude both
-converged the other way - keep the conversations, retrieve over them, and
-derive a small profile as a by-product rather than as the gate.
+**Watch this in real use before building on it.** It went live on five
+questions against one account's history. The failure mode is not silence, it is
+noise - an irrelevant turn eating prompt budget and reading as the assistant
+misremembering. A day of ordinary use is the test that matters.
 
-**The change.** Give conversation turns an embedding and search them beside
-`semantic_memory` at recall. Relevance is then judged at query time with the
-question in hand, which generalises for free; the classifier stays but is
-demoted from "what may ever be remembered" to "what belongs in the profile".
+## What is live that was not yesterday
 
-**Why it is small here.** The parts already exist: pgvector, an embedding
-provider, a cosine-distance policy with a relevance budget, and a per-turn query
-embedding that is computed once and reused. The corpus is 85 turns across 22
-users, 272 kB, so the backfill is a single pass and the ongoing cost is one
-extra embed per turn beside the query embedding already taken.
+- The image editor is **FLUX.1 Kontext at Q4_K_M** (`IMAGE_EDIT_MODEL`), not
+  FLUX.2 Klein. Enabled during testing and left on because it does real edits
+  Klein cannot: "change the wooden cutting board to a bright blue plastic one"
+  produced exactly that with everything else pixel-preserved, in ~103s against
+  Klein's ~90s. fp8 was unusable on the 16GB card - not one of twenty sampling
+  steps completed in twelve minutes - so quantization is what makes it run at
+  all. Empty the setting to revert.
+- Conversation recall, above.
+- `MAIN_LLM_TRAINING_CUTOFF=2024-07`, measured rather than looked up.
+- Search does 2-3 rounds per turn with queries written by the reply model.
 
-**Phases.**
-1. Additive migration: `conversation_embeddings` (or a column on
-   `conversations`) mirroring `semantic_memory`'s shape - content, vector(768),
-   user_id, created_at, embedding_model. Additive only; the development
-   database holds real data and has no backups.
-2. Write path: embed each completed turn alongside the existing persist.
-3. Backfill the 85 existing turns through the same path.
-4. Read path: search it in `_stream_retrieved_context` beside semantic memory,
-   under the same `MEMORY_CONTEXT_MAX_ITEMS`/`MAX_CHARS` budget so nothing new
-   reaches the prompt unbounded.
-5. Distinguish the two in the prompt: a recalled turn is something the user
-   said, not a fact the application asserts.
+## Prompts: five of about twenty are in `prompts/`
 
-**The real risk, and how it is settled.** Recall gets noisier when the corpus is
-raw conversation rather than curated facts:
-`MEMORY_SEMANTIC_MAX_COSINE_DISTANCE` is 0.35, tuned against short curated
-facts, and a conversational turn embeds differently. This is a threshold to
-measure, not to guess - the same labelled-set method used for tool selection,
-but scoring *recall precision at a distance* rather than teaching categories.
-Ship behind a setting so it can be turned off without a redeploy.
+`reply/system`, `routing/select_action`, and the three search prompts are
+editable files with notes above a separator. `prompts/README.md` lists the rest
+- vision, Scout's six, the deck's four, memory proposal, diagram, image intent,
+style, referent - and moving one is mechanical: create the file, replace the
+constant with its name, call `render()` or `load()`. Verify it as a move rather
+than an edit by comparing the built prompt byte for byte, as the routing one
+was, then re-run whichever suite covers it.
 
-**What this does not fix.** The 4B still writes the profile, and the extraction
-ceiling in the gate above is unchanged. This makes the ceiling matter less,
-because being missed by the classifier stops meaning being forgotten.
+## Still open, unanswered
+
+- **The DGX Spark schedule.** Asked for twice: downtime between 1am and 8am
+  EST, but also described as running only between those hours, which are
+  opposites. Nothing built pending which. The wake half needs testing on the
+  Spark's own firmware - a powered-off machine cannot schedule its own start,
+  so it needs an RTC alarm, Wake-on-LAN, or suspend instead of power-off.
+- **Extraction labelled set**, item 2 of the gate below. Less urgent than it
+  was this morning: a classifier miss no longer means the fact is unreachable.
 
 ## START HERE: finish the model-migration gate — IN PROGRESS
 

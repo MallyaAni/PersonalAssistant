@@ -2,6 +2,70 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-19 — Recall, research, and prompts that state principles
+
+- Made what the user said searchable. An account with fourteen stored
+  conversations had zero rows in semantic memory: her job, her constraints and
+  her frustration were never lost, but only what a 4B classifier promoted was
+  searchable, and that classifier captures attributes ("my dog is Biscuit") and
+  misses circumstances ("I cover phone lines for executives") - 6/9 on a
+  measured set. Turns now carry their own embedding and recall searches them
+  beside semantic memory, so relevance is judged at query time with the
+  question in hand rather than at write time against unbounded categories.
+  Additive nullable migration, no rewrite; 86/86 existing turns backfilled; the
+  write path reuses the vector the turn already computed for retrieval.
+- The recall distance was measured, not guessed: 0.35 answered one question of
+  five, 0.40 four, 0.45 all five, and 0.50 answered no more for twice the
+  turns. Two faults a threshold could not fix were found on the way. A question
+  the user once asked embeds closer to their new question than the statement
+  that answers it - "what do I like to watch?" matched an earlier "What are my
+  interests?" at 0.361 against a true answer at 0.380 - so questions are
+  dropped; and identical repeats collapse rather than spending all three slots
+  on one interest stated three times. End to end on the real account, "what do
+  I do for work?" now answers from her own sentence, attributed as something
+  she said.
+- Moved search query writing off the 4B router onto the reply model, which is
+  the model that has to use the results. Asked what to host on one DGX Spark
+  for chat, vision and three kinds of image work, the router compressed four
+  requirements into one generic query and every source was a hardware review
+  naming no model. A turn may now search up to three times, the second round
+  taken rather than negotiated - asked whether results were sufficient the
+  model said yes 8 times out of 8 on results naming two options and sizing
+  neither, while asked for the next search it produced a useful one 6 times out
+  of 6. Retrieval widened to 8 results at advanced depth and 6000 characters,
+  declared in compose because the internet MCP subprocess inherits SEARCH_*.
+- Corrected the model's training cutoff from a secondhand 2026-04 to a measured
+  2024-07. It names Qwen2.5 as the newest Qwen it knows, does not recognise a
+  model released this month, and believes the year is 2024. A wrong cutoff is
+  worse than none: it tells a model to trust two years of material it does not
+  have. Every search prompt now carries both dates, after a follow-up query
+  asked for 2025 in August 2026.
+- Prompts live in `prompts/` as editable files with notes above a separator,
+  starting with the reply prompt, the routing decision and the three search
+  prompts; `prompts/README.md` indexes the fifteen or so still held in Python.
+  The loader is the only copy - a missing prompt fails at startup rather than
+  falling back to wording nobody reads.
+- Prompts no longer name specific cases. "a black hat edited to a straw hat",
+  "do you recommend a straw hat instead?" and the rest taught the model those
+  cases rather than the rules behind them. The image block lost a third of its
+  words and the routing prompt its worked examples, and
+  `evaluate_tool_selection` still scores 108/108 with an empty confusion
+  matrix. `test_prompt_discipline.py` asserts this, and caught one in the
+  edit_image description that the rewrite had missed.
+- Scout names the interests it follows rather than counting them. Asked "what
+  are my interests?" the assistant answered that it had no list and, in the
+  same reply, that Scout tracks ten - it had the count and no labels.
+- Fixed a stray error under complete answers, worst on image generation: the
+  SSE heartbeat kept sending comments after the terminal event, while the turn
+  persisted and updated memory, and a stream closing mid-comment left the
+  browser reporting "ended with an incomplete event". Introduced by the
+  heartbeat added the day before; the silence before an answer is still held
+  open, only the silence after it is not.
+
+Evidence: 1231 structural tests pass; Ruff passes; the migration is applied and
+86/86 turns embedded; routing re-measured at 108/108 after the prompt rewrites;
+recall verified end to end against the real account and the real model.
+
 ## 2026-08-18 — FLUX.1 Kontext as the editor
 
 - Added `FluxKontextImageEditProvider` and switched editing to FLUX.1 Kontext.
