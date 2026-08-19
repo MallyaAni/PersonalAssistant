@@ -2,6 +2,30 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-19 — The artifact asked for decides, not the subject
+
+- "create an image that describes medallion architecture in databricks, using
+  a whiteboard" produced a Mermaid diagram, and the user had to say "I want a
+  picture of it" to get one. Not a routing failure: that exact sentence was a
+  labelled case asserting `create_diagram`, seeded on 2026-08-17 when the same
+  words had produced an unreadable generated picture. The identical request
+  cannot yield both, so this was a judgement to revisit rather than a bug to
+  fix, and the owner's call is that "image generally refers to picture. it
+  didnt say architecture diagram or diagram".
+- Routing now keys on the kind of artifact requested rather than on how
+  technical the subject is. Asking for an image or a picture of an
+  architecture, a pipeline or a system gets a picture; asking for a diagram,
+  chart or flowchart gets a diagram. Three labelled cases were relabelled and
+  two added for the opposite direction, with the reversal and its reason
+  recorded beside them - the costs are not symmetric, since a picture of an
+  architecture has labels a diffusion model can only imitate while a diagram
+  offered where a picture was wanted is recovered by asking again, and the
+  owner has chosen to pay the first.
+
+Evidence: `evaluate_tool_selection` scores 108/108 with an empty confusion
+matrix - 9/9 on pictures of technical subjects and 12/12 on explicit diagram
+requests - and 1231 structural tests pass.
+
 ## 2026-08-19 — Recall, research, and prompts that state principles
 
 - Made what the user said searchable. An account with fourteen stored

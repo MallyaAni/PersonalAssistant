@@ -101,26 +101,45 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
     SelectionCase(
         "generate an image of a cozy cabin in the snow", GENERATE_IMAGE, "picture"
     ),
-    # --- a diagram, however it is worded ----------------------------------
+    # --- the artifact asked for decides, not the subject -------------------
     #
-    # The reported failure. "image" and "whiteboard" are the words; an
-    # architecture is the subject, and it needs labels a diffusion model can
-    # only imitate.
+    # These three were labelled the other way on 2026-08-17, after an
+    # architecture request produced an unreadable picture. Relabelled on
+    # 2026-08-19 by the owner's judgement: "image generally refers to picture.
+    # it didnt say architecture diagram or diagram". A technical subject does
+    # not turn a request for a picture into a request for a chart, and the user
+    # who wants a diagram has a plain word for it.
+    #
+    # The cost of each mistake is not symmetric, which is why this is a
+    # judgement rather than an obvious call: a picture of an architecture has
+    # labels a diffusion model can only imitate, while a diagram offered where
+    # a picture was wanted is recovered by asking again. The owner has chosen
+    # to pay the first cost.
     SelectionCase(
         "create an image that describes medallion architecture in databricks, "
         "using a whiteboard",
-        CREATE_DIAGRAM,
-        "diagram_as_image",
+        GENERATE_IMAGE,
+        "picture_of_a_technical_subject",
     ),
     SelectionCase(
         "create an image of our data pipeline on a whiteboard",
-        CREATE_DIAGRAM,
-        "diagram_as_image",
+        GENERATE_IMAGE,
+        "picture_of_a_technical_subject",
     ),
     SelectionCase(
         "show me a picture of how our services connect",
+        GENERATE_IMAGE,
+        "picture_of_a_technical_subject",
+    ),
+    # The other direction still has to hold: naming the artifact is what
+    # chooses it, so these stay diagrams.
+    SelectionCase(
+        "draw a diagram of our data pipeline", CREATE_DIAGRAM, "diagram"
+    ),
+    SelectionCase(
+        "create an architecture diagram for the payments service",
         CREATE_DIAGRAM,
-        "diagram_as_image",
+        "diagram",
     ),
     SelectionCase("draw a flowchart of the deploy pipeline", CREATE_DIAGRAM, "diagram"),
     SelectionCase(

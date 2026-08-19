@@ -211,14 +211,15 @@ _CREATE_DIAGRAM = BuiltinTool(
     name=_CREATE_DIAGRAM_TOOL,
     label="Diagrams",
     description=(
-        "Draft a technical diagram (flowchart, architecture, sequence, state, "
-        "class, or entity-relationship). Choose this over drawing a picture "
-        "whenever the thing asked for is a diagram of how something works or "
-        "is structured - an architecture, a pipeline, a data flow, a process, "
-        'a system - however the request is worded, including "create an '
-        'image of", "draw", or a setting like a whiteboard or slide. Those '
-        "need readable labels, which a diagram renders as real text and a "
-        "generated picture can only imitate."
+        "Draft a technical diagram (flowchart, architecture diagram, sequence, "
+        "state, class, or entity-relationship). What decides this is the kind "
+        "of thing they asked for, not the subject they asked about: choose it "
+        "when they name a diagram, chart, flowchart or one of the forms above. "
+        "A technical subject does not by itself make the request a diagram - "
+        "someone asking for an image or a picture of an architecture wants a "
+        "picture of it, and generate_image is right even though the subject is "
+        "technical. When they do ask for a diagram, this renders real text "
+        "where a generated picture can only imitate writing."
     ),
     schema=_subject_schema("diagram"),
 )
