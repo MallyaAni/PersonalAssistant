@@ -7,6 +7,63 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 
 Last updated: 2026-08-18, America/New_York
 
+## NEXT: recall over conversations, not over what a classifier kept — SCOPED
+
+One number states the problem:
+
+    jenos1:  conversations 14   |   semantic_memory 0
+
+Her job, her desk constraint and her frustration are all stored, encrypted, in
+`conversations`. Nothing was lost. Only `semantic_memory` is searchable, and a
+4B classifier decides what gets promoted into it, so everything it declines is
+invisible for good. Measured over nine statements it scores 6/9: it captures
+attributes ("my dog is Biscuit", "allergic to shellfish") and misses
+circumstances ("I cover phone lines for executives", "I can't leave my desk
+without arranging coverage"). Across all 22 accounts, semantic_memory holds 0-1
+rows each against 85 stored turns.
+
+Teaching it more categories is the wrong fix and was rejected deliberately: the
+categories are unbounded, so it becomes a permanent whack-a-mole, and it is the
+overfitting this repository already avoids in routing. ChatGPT and Claude both
+converged the other way - keep the conversations, retrieve over them, and
+derive a small profile as a by-product rather than as the gate.
+
+**The change.** Give conversation turns an embedding and search them beside
+`semantic_memory` at recall. Relevance is then judged at query time with the
+question in hand, which generalises for free; the classifier stays but is
+demoted from "what may ever be remembered" to "what belongs in the profile".
+
+**Why it is small here.** The parts already exist: pgvector, an embedding
+provider, a cosine-distance policy with a relevance budget, and a per-turn query
+embedding that is computed once and reused. The corpus is 85 turns across 22
+users, 272 kB, so the backfill is a single pass and the ongoing cost is one
+extra embed per turn beside the query embedding already taken.
+
+**Phases.**
+1. Additive migration: `conversation_embeddings` (or a column on
+   `conversations`) mirroring `semantic_memory`'s shape - content, vector(768),
+   user_id, created_at, embedding_model. Additive only; the development
+   database holds real data and has no backups.
+2. Write path: embed each completed turn alongside the existing persist.
+3. Backfill the 85 existing turns through the same path.
+4. Read path: search it in `_stream_retrieved_context` beside semantic memory,
+   under the same `MEMORY_CONTEXT_MAX_ITEMS`/`MAX_CHARS` budget so nothing new
+   reaches the prompt unbounded.
+5. Distinguish the two in the prompt: a recalled turn is something the user
+   said, not a fact the application asserts.
+
+**The real risk, and how it is settled.** Recall gets noisier when the corpus is
+raw conversation rather than curated facts:
+`MEMORY_SEMANTIC_MAX_COSINE_DISTANCE` is 0.35, tuned against short curated
+facts, and a conversational turn embeds differently. This is a threshold to
+measure, not to guess - the same labelled-set method used for tool selection,
+but scoring *recall precision at a distance* rather than teaching categories.
+Ship behind a setting so it can be turned off without a redeploy.
+
+**What this does not fix.** The 4B still writes the profile, and the extraction
+ceiling in the gate above is unchanged. This makes the ceiling matter less,
+because being missed by the classifier stops meaning being forgotten.
+
 ## START HERE: finish the model-migration gate — IN PROGRESS
 
 A second DGX Spark arrives this week, and three separate capabilities are
