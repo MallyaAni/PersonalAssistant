@@ -195,37 +195,6 @@ def _render_agent_context(agents: list[dict[str, Any]]) -> str:
     return "".join(lines)
 
 
-# Say which models are actually serving this conversation.
-#
-# The assistant knew what it could do and nothing about what it was, so asked
-# what to host on one DGX Spark for chat and image work it recommended models
-# from memory and never mentioned the ones already answering. Knowing its own
-# deployment turns "what should I run" into a question it can answer from
-# fact - starting with what is running.
-def _render_runtime_context(runtime: list[dict[str, Any]]) -> str:
-    lines = []
-    for entry in runtime[:8]:
-        role = str(entry.get("role") or "").strip()
-        model = str(entry.get("model") or "").strip()
-        if not role or not model:
-            continue
-        note = str(entry.get("note") or "").strip()
-        detail = f" ({note})" if note else ""
-        lines.append(f"- {role}: {model}{detail}\n")
-    if not lines:
-        return ""
-    return (
-        "\nThe models running AniOS right now, which is what you are made of:\n"
-        + "".join(lines)
-        + "When the user asks what to run, what to host, or whether to "
-        "change models, start from this list: say what is already serving "
-        "them before recommending anything, and compare against it rather "
-        "than answering as though the question were hypothetical. These "
-        "names are current fact and outrank your own recollection of what "
-        "exists.\n"
-    )
-
-
 # Describe the actions the turn router can actually take, in the router's words.
 #
 # These lines were written out here as well, restating MainActionSelector's own
@@ -334,7 +303,6 @@ def _build_system_prompt(
         "say plainly that it is done rather than disowning it.\n"
         f"{_render_agent_context(context_data.get('agents') or [])}"
         f"{_render_capability_context(context_data.get('capabilities') or [])}"
-        f"{_render_runtime_context(context_data.get('runtime') or [])}"
         # Not derived with the rest: attaching a text file is read and indexed
         # by the composer directly, so it is never a tool the turn router is
         # offered and has no row there to read. It is still something the user
