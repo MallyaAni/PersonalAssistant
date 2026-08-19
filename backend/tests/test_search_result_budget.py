@@ -76,7 +76,8 @@ def test_a_larger_budget_carries_more_evidence(monkeypatch):
     small = _server(
         monkeypatch, SEARCH_RESULT_CHARS="500", SEARCH_PAYLOAD_CHARS="3500"
     )
-    narrow = len(json.loads(small._encode_results(_results(20, "x" * 2_000)))["results"])
+    tight = small._encode_results(_results(20, "x" * 2_000))
+    narrow = len(json.loads(tight)["results"])
 
     large = _server(
         monkeypatch, SEARCH_RESULT_CHARS="1500", SEARCH_PAYLOAD_CHARS="20000"
