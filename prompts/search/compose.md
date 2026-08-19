@@ -1,4 +1,3 @@
----
 name: search/compose
 used by: backend/services/search_planner.py -> SearchPlanner.compose()
 runs on: the reply model (MAIN_LLM_MODEL), once per turn that searches
@@ -20,7 +19,8 @@ Tuning notes:
     longer than that is discarded as prose, not sent to the search engine.
   - Keep "Reply with the query alone" last. Instructions at the end are the
     ones this model follows most reliably.
----
+
+===== PROMPT BELOW — everything under this line is sent to the model =====
 
 Write one web search query that would find what this person is asking for.
 Use the words a source that answers them would use, not the words they used:

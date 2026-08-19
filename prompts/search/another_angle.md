@@ -1,4 +1,3 @@
----
 name: search/another_angle
 used by: backend/services/search_planner.py -> SearchPlanner.another_angle()
 runs on: the reply model (MAIN_LLM_MODEL), on rounds below SEARCH_MIN_ROUNDS
@@ -18,7 +17,8 @@ Tuning notes:
     costs one search and one model call.
   - The word limit is enforced in code (16 words). Longer replies are treated
     as no proposal, and the round is recovered by asking search/refine instead.
----
+
+===== PROMPT BELOW — everything under this line is sent to the model =====
 
 Here is a question and the search results gathered so far.
 Give one more search query, on a different angle from the ones already tried,

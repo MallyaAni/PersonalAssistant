@@ -23,6 +23,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from backend.core.llm import LLMClient
+from backend.core.prompts import load
 from backend.mcp.invocation import MCPInvocationError
 from backend.mcp.types import MCPTool
 from backend.services.mcp_invocation_service import MCPInvocationService
@@ -243,77 +244,8 @@ _SEARCH_CAPABILITY: dict[str, str] = {
     ),
 }
 
-_SYSTEM = (
-    "You are choosing how to handle one user message before it is answered. "
-    "You may call at most one of the tools offered below. Calling none is "
-    "correct and common: it means the message is answered directly as an "
-    "ordinary reply. Interpret a short newest message as a continuation of "
-    "the recent conversation before assigning it a new subject. If it answers "
-    "a question the assistant just asked, supplies a date, time, quantity, or "
-    "deadline for material being drafted, or asks to revise the tone or wording "
-    "of an email, message, document, plan, or other text, call no tool and let "
-    "the assistant continue that task. Words such as 'Saturday', 'schedule', "
-    "'casual', 'formal', 'shorter', or 'friendlier' describe the current task; "
-    "they do not by themselves start web research or refer to a picture.\n\n"
-    "Call search_web whenever the correct answer could have changed since "
-    "training and is not already known for certain -- this includes current "
-    "events, prices, availability, schedules, scores, and *whoever currently "
-    "holds a role, title, office, or record* (a president, prime minister, "
-    "mayor, CEO, champion, or record holder can change at any time, so treat "
-    "a question about who holds one today as needing a live check even when "
-    "the fact feels stable). When genuinely unsure whether something could "
-    "have changed, prefer calling the tool over answering from memory: a "
-    "needless search costs a second, a stale confident answer costs trust. "
-    "Write a specific, self-contained query, since the tool has no memory of "
-    "this conversation. If the request depends on the user's location or "
-    "other personal context that is not already known from this "
-    "conversation, do not guess a placeholder and do not call the tool with "
-    "an assumption. Call no tool instead, so the reply can ask for what is "
-    "missing.\n\n"
-    "Call generate_image only when the user wants a brand-new picture made "
-    "for them, describing exactly what to draw.\n\n"
-    "Call edit_image only when the user wants a change made to the picture "
-    "currently in view or to a picture explicitly established as the subject "
-    "of the recent conversation, describing that one change. Never reinterpret "
-    "a tone or wording revision to text as clothing, appearance, or image style. "
-    "A labelled or annotated "
-    "version of the picture in view is an edit, not a brand-new image.\n\n"
-    # "explicitly" made the wording decide instead of the subject, so "create
-    # an image of our architecture on a whiteboard" went to generate_image and
-    # came back with a diffusion model's imitation of writing. What separates
-    # these two is whether the result needs readable labels, not which noun the
-    # user happened to use.
-    "Call create_diagram when what is wanted is a diagram of how something "
-    "works or is structured - an architecture, pipeline, data flow, process, "
-    "system, sequence, state, class, or entity-relationship. Judge that by the "
-    'subject, not the noun: "create an image of our data pipeline", "draw '
-    'the login flow" and "show me a picture of how the services connect" '
-    "are all diagrams, whatever setting they name. A diagram renders real "
-    "text; a generated picture can only imitate writing, so anything needing "
-    "readable labels belongs here.\n\n"
-    "Call delegate_to_presentation_agent only when the user explicitly asks "
-    "to create a slide deck or presentation.\n\n"
-    "None of these apply to a question about the user's own life, memory, "
-    "opinions, or anything already answerable directly -- call no tool for "
-    "those, and answer normally instead.\n\n"
-    # Measured: "can you have it scheduled everyday at 11pm EST?" reached
-    # search_web, "schedule it daily at 11pm" reached search_web and the
-    # presentation agent, and "can you set Scout to run every day at 11pm EST?"
-    # reached edit_image. Configuring an agent is not one of the tools offered
-    # here, so the model reached for whichever was nearest instead of calling
-    # none -- and the reply, which is what actually records a schedule, never
-    # ran.
-    "Setting up, scheduling, changing or asking about the user's own agents "
-    "and their settings is none of these either. A message about when "
-    "something should run, how often, where results go, or what an agent "
-    "currently has configured is answered directly -- call no tool for it, "
-    "however it is phrased and whichever agent it names. This holds when no "
-    "agent is named at all: changing the schedule to a stated time, making it "
-    "weekly instead, or running it an hour later are all the user adjusting "
-    "their own settings, not a topic to look up. A clock time, a day or a "
-    "frequency appearing in such a message is the setting being chosen, never "
-    "a fact about the world to check."
-)
+# The wording lives in `prompts/routing/select_action.md`.
+_SYSTEM = load("routing/select_action")
 
 # Recent turns given to the decision so it does not re-ask for something the
 # user already said earlier in this same conversation.

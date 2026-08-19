@@ -9,7 +9,13 @@ checks that used to be free.
 
 import pytest
 
-from backend.core.prompts import PROMPT_ROOT, PromptError, load, render
+from backend.core.prompts import (
+    PROMPT_ROOT,
+    SEPARATOR,
+    PromptError,
+    load,
+    render,
+)
 
 # README.md documents the folder rather than instructing a model, so it is not
 # a prompt and must not be checked as one.
@@ -63,3 +69,29 @@ def test_a_fully_supplied_prompt_renders():
 
     assert "2026-08-19" in text
     assert "{" not in text.replace("{}", "")
+
+
+# A `---` rule separated notes from prompt first, and it was too quiet to see:
+# both halves are prose, so there was no telling at a glance which half a
+# sentence belonged to. The separator is now unmissable, and required.
+@pytest.mark.parametrize("name", ALL_PROMPTS)
+def test_every_prompt_carries_the_separator(name: str):
+    raw = (PROMPT_ROOT / f"{name}.md").read_text(encoding="utf-8")
+
+    assert SEPARATOR in raw, name
+    assert raw.count(SEPARATOR) == 1, f"{name} has more than one separator"
+
+
+# Guessing where the notes end is how they get sent to a model, so a file
+# without a separator is refused rather than interpreted.
+def test_a_prompt_without_a_separator_is_refused(tmp_path, monkeypatch):
+    from backend.core import prompts as loader
+
+    (tmp_path / "stray.md").write_text("just some text", encoding="utf-8")
+    monkeypatch.setattr(loader, "PROMPT_ROOT", tmp_path)
+    loader.load.cache_clear()
+
+    with pytest.raises(PromptError, match="no '===== PROMPT BELOW"):
+        loader.load("stray")
+
+    loader.load.cache_clear()

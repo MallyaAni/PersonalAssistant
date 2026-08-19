@@ -1,4 +1,3 @@
----
 name: search/refine
 used by: backend/services/search_planner.py -> SearchPlanner.refine()
 runs on: the reply model (MAIN_LLM_MODEL), on rounds at or above SEARCH_MIN_ROUNDS
@@ -16,7 +15,8 @@ Reply contract:
   - "ENOUGH" (optionally with commentary) stops the research.
   - "NOT ENOUGH" with no query also stops it - there is nothing to run.
   - Anything else is treated as the next query.
----
+
+===== PROMPT BELOW — everything under this line is sent to the model =====
 
 Here is a question and the search results gathered so far.
 Judge them against what answering actually requires, not against whether they

@@ -39,7 +39,7 @@ def load(name: str) -> str:
         raw = path.read_text(encoding="utf-8")
     except OSError as exc:
         raise PromptError(f"prompt {name!r} is missing at {path}") from exc
-    body = _strip_front_matter(raw).strip()
+    body = _strip_notes(name, raw).strip()
     if not body:
         raise PromptError(f"prompt {name!r} is empty at {path}")
     return body
@@ -62,14 +62,25 @@ def render(name: str, **values: object) -> str:
     return text.format(**values)
 
 
-# Everything above the first `---` line is editorial: what this prompt is for,
-# where it is used, and what breaks when it is wrong. It is for the person
-# editing the file and must never reach a model.
-def _strip_front_matter(raw: str) -> str:
-    marker = "\n---\n"
-    if raw.startswith("---\n"):
-        _, _, rest = raw.partition("\n---\n")
-        return rest
-    if marker in raw:
-        return raw.split(marker, 1)[1]
-    return raw
+# The line that separates the notes from the prompt. Matched by its opening
+# run so the trailing words can be reworded without touching every file.
+SEPARATOR = "===== PROMPT BELOW"
+
+
+# Everything above the separator is editorial: what this prompt is for, where
+# it is used, and what breaks when it is wrong. It is for the person editing
+# the file and must never reach a model.
+#
+# A `---` rule was the separator first and it was far too quiet: notes are
+# prose and the prompt is prose, so with a faint line between them there was no
+# telling at a glance which half a sentence belonged to. A file with no
+# separator is rejected rather than guessed at, because guessing is how the
+# notes end up being sent to a model.
+def _strip_notes(name: str, raw: str) -> str:
+    for line in raw.splitlines():
+        if line.startswith(SEPARATOR):
+            return raw.split(line, 1)[1]
+    raise PromptError(
+        f"prompt {name!r} has no {SEPARATOR!r} line, so there is no way to "
+        f"tell its notes from the text meant for the model"
+    )

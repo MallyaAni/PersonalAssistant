@@ -10,10 +10,23 @@ quietly reverting to something nobody is reading.
 
 ## How a file is laid out
 
-Everything above the `---` line is for you, not for the model: what the prompt
+Every file is notes, then one loud separator, then the prompt:
+
+```
+...notes for whoever is editing...
+
+===== PROMPT BELOW — everything under this line is sent to the model =====
+
+You are AniOS, a helpful local personal assistant...
+```
+
+Everything above that line is for you, not for the model: what the prompt
 drives, which model runs it, what placeholders it must fill, and what has
 actually gone wrong when its wording was off. Everything below the line is sent
 verbatim.
+
+A file with no separator is refused rather than guessed at - guessing is how
+notes end up being sent to a model.
 
 Placeholders are `{name}`. A prompt that names one the caller does not supply
 raises rather than reaching a model as a literal brace, so adding a placeholder
@@ -40,6 +53,7 @@ python -m pytest backend/tests/functional -q     # real model, real MCP, real Co
 | `search/compose.md` | The first web search query of a turn |
 | `search/another_angle.md` | The unconditional follow-up search |
 | `search/refine.md` | Whether to keep searching, and for what |
+| `routing/select_action.md` | **What every turn does**: search, picture, edit, diagram, deck, an MCP tool, or nothing. Runs on the 4B routing model |
 | `reply/system.md` | **Every chat reply.** The assistant's whole instruction: what it may guess, when to ask, its training boundary, what AniOS can do, and what it may claim to have saved |
 
 ## Still in Python
@@ -50,7 +64,7 @@ each is a module-level constant, usually named `_SYSTEM` or `_PROMPT`.
 | Where | Drives |
 | --- | --- |
 | `backend/agents/graph.py` | The blocks rendered *into* `reply/system.md`: recalled images, search results, tool results, personal memory |
-| `backend/services/main_action_selector.py` | Which tool a turn uses, plus each built-in tool's description |
+| `backend/services/main_action_selector.py` | Each built-in tool's own description - kept beside the tool so one wording serves both routing and what the assistant says it can do |
 | `backend/services/image_refinement_service.py` | What the image editor is told to preserve or change |
 | `backend/agents/vision/reasoning.py` | How an uploaded image is reasoned about after the vision pass |
 | `backend/services/vision_analysis_service.py` | The one-shot inspection of a new upload |
