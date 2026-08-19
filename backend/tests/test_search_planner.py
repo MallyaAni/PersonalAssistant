@@ -286,3 +286,9 @@ def test_every_prompt_states_today_and_the_cutoff(ask: str):
     # An unformatted placeholder reaching the model is the other way this fails.
     assert "{today}" not in system, ask
     assert "{cutoff}" not in system, ask
+
+
+# The reported gap: two models released that month appeared in no result,
+# because every query the model wrote named the user's own hardware and every
+# source was therefore an article about that hardware - written well after any
+# model ships.

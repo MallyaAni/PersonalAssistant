@@ -15,8 +15,12 @@ What breaks when this is wrong:
     already out of date.
 
 Tuning notes:
-  - The last line's word limit is enforced in code as well (16 words); a reply
-    longer than that is discarded as prose, not sent to the search engine.
+  - Keep this short. Every failure here was tempting to answer with another
+    sentence, and a prompt that lists cases stops reasoning and starts
+    matching them. The rules that earn their place are the ones true of any
+    question, not of the one that just went wrong.
+  - The word limit is enforced in code as well (16 words); a longer reply is
+    discarded as prose rather than sent to the search engine.
   - Keep "Reply with the query alone" last. Instructions at the end are the
     ones this model follows most reliably.
 
@@ -28,17 +32,11 @@ names, model numbers, versions, units, and the year when the answer changes
 over time.
 A request with several requirements needs the one that decides the answer, not
 all of them at once.
-When the request is a choice - what to use, run, host, buy, or pick - search
-first for which options exist right now, by category and year. That is the half
-your memory is stale about and the half a search can actually replace; the
-hardware, budget or limit they named is fixed and can be looked up afterwards.
-Do not spend this query on the constraint and then name the options from memory.
-Today is {today}, and your own knowledge ends around {cutoff}. Everything
-between those two dates is precisely what you cannot know and what this search
-is for, so search for now rather than for the last state you remember - a year
-taken from your own memory is the one thing guaranteed to return what is
-already out of date.
-Searching for the options means searching the category, not their hardware: a
-query naming the box returns reviews of the box.
+When the request is a choice, search for what the options are before searching
+for the limit they have to satisfy: which things exist changes, and a limit
+someone states does not.
+Today is {today} and your own knowledge ends around {cutoff}. What changed in
+between is what you cannot know and what this search is for, so ask for now
+rather than for the last state you remember.
 At most 12 words. Reply with the query alone, no quotes, no explanation, and
 never a sentence describing what to search for.

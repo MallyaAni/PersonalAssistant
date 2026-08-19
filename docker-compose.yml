@@ -570,8 +570,9 @@ services:
       # which of that model's beliefs are already stale, and the gap
       # between it and today is what a web search is for. Change it when
       # the model changes. DeepSeek does not publish cutoffs; this is the
-      # reported figure for deepseek-v4-flash.
-      - MAIN_LLM_TRAINING_CUTOFF=${MAIN_LLM_TRAINING_CUTOFF:-2026-04}
+      # measured value: it names Qwen2.5 as the newest Qwen it knows and
+      # believes the year is 2024.
+      - MAIN_LLM_TRAINING_CUTOFF=${MAIN_LLM_TRAINING_CUTOFF:-2024-07}
       - MAIN_LLM_REASONING_EFFORT=${MAIN_LLM_REASONING_EFFORT:-none}
       # Where the main model's work goes when the Spark is powered off. Without
       # this the assistant is entirely down whenever that machine is, even

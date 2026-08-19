@@ -82,9 +82,20 @@ class Settings(BaseSettings):
     # months earlier - a release from 2026-08-11 was four months past the
     # configured cutoff and could not have been in training at all.
     #
-    # DeepSeek does not publish cutoffs; 2026-04 is the reported figure for
-    # deepseek-v4-flash. Change it with the model, and empty it to say nothing.
-    MAIN_LLM_TRAINING_CUTOFF: str = "2026-04"
+    # Measure it, do not look it up. 2026-04 was set here from a secondhand
+    # figure and was wrong by about two years, which is worse than leaving it
+    # empty: it told a model its knowledge was current when it was not, so it
+    # answered from memory where it should have deferred to a search.
+    #
+    # Asked directly, the model serving MAIN_LLM_* named Qwen2.5 as the newest
+    # Qwen family it knows, did not recognise a model released this month, and
+    # said it believed the year to be 2024. Behaviour agrees with its own
+    # report, so 2024-07 is what is configured.
+    #
+    # To re-measure after a model change, ask it three things: the newest
+    # release it knows of in a fast-moving family, whether it recognises
+    # something released recently, and what year it believes it is.
+    MAIN_LLM_TRAINING_CUTOFF: str = "2024-07"
     PRESENTATION_INFERENCE_ADAPTER: Literal["", "openai_compatible"] = ""
     PRESENTATION_LLM_BASE_URL: str = ""
     PRESENTATION_LLM_MODEL: str = ""
