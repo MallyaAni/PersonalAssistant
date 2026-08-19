@@ -69,6 +69,8 @@ _REFINE = (
     "that would find the missing half. Use the vocabulary that source would "
     "use.\n"
     "Never repeat a query that has already been tried.\n"
+    "Today is {today} and your own knowledge ends around {cutoff}: search that "
+    "gap rather than the last state you remember.\n"
     "\n"
     "Worked example. Question: 'why not the latest model? I have one 128GB "
     "box'. Results say only 'Vendor released Pro and Flash; both are strong.' "
@@ -93,7 +95,12 @@ _ANOTHER = (
     "sizes or requirements are not, search for those figures by name and "
     "unit. Naming options from your own memory instead of searching for them "
     "is the failure this exists to prevent.\n"
-    "Reply with the query alone."
+    "Search the category, not their hardware: a query naming the box returns "
+    "reviews of the box.\n"
+    "Today is {today} and your own knowledge ends around {cutoff}: search that "
+    "gap rather than the last state you remember.\n"
+    "At most 12 words. Reply with the query alone, never a sentence describing "
+    "what to search for."
 )
 
 
@@ -175,6 +182,17 @@ class SearchPlanner:
         self.now = now
         self.cutoff = cutoff.strip()
 
+    # Stamp a prompt with today and with where this model's knowledge stops.
+    #
+    # Only the first query used to carry them, so a follow-up asked for "2025"
+    # in August 2026 - the same staleness the dates exist to prevent, one
+    # round later.
+    def _dated(self, prompt: str) -> str:
+        return prompt.format(
+            today=(self.now or datetime.now(UTC)).date(),
+            cutoff=self.cutoff or "an unstated date in the past",
+        )
+
     # One query for this turn, or nothing when the model cannot improve on
     # what the router already chose.
     def compose(self, question: str, history: list[dict[str, Any]]) -> str:
@@ -185,10 +203,7 @@ class SearchPlanner:
         context = "\n".join(recent)
         asked = f"Conversation so far:\n{context}\n\n" if context else ""
         return self._ask(
-            _COMPOSE.format(
-                today=(self.now or datetime.now(UTC)).date(),
-                cutoff=self.cutoff or "an unstated date in the past",
-            ),
+            self._dated(_COMPOSE),
             f"{asked}Their message: {question}",
             "compose a search query",
         )
@@ -211,7 +226,7 @@ class SearchPlanner:
         )
         tried = ", ".join(already_tried)
         verdict = self._ask(
-            _REFINE,
+            self._dated(_REFINE),
             f"Question: {question}\n\nAlready tried: {tried}\n\nResults:\n{found}",
             "judge search results",
         )
@@ -242,7 +257,7 @@ class SearchPlanner:
         )
         tried = ", ".join(already_tried)
         proposed = self._ask(
-            _ANOTHER,
+            self._dated(_ANOTHER),
             f"Question: {question}\n\nAlready tried: {tried}\n\n"
             f"Found so far:\n{found}",
             "propose another search angle",

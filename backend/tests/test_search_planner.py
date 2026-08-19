@@ -10,6 +10,8 @@ the subject but never state the answer look exactly like results that do.
 
 from typing import Any
 
+import pytest
+
 from backend.services.search_planner import SearchPlanner
 
 
@@ -259,3 +261,28 @@ def test_a_real_query_of_ordinary_length_survives():
     planner = SearchPlanner(StubLLM("best open source vision language models 2026"))
 
     assert planner.compose("q", []) == "best open source vision language models 2026"
+
+
+# Only the first query carried the dates, so a follow-up asked for "2025" in
+# August 2026 - the staleness the dates exist to prevent, one round later. The
+# gap survived because nothing checked every prompt, only the one being edited.
+@pytest.mark.parametrize("ask", ["compose", "refine", "another_angle"])
+def test_every_prompt_states_today_and_the_cutoff(ask: str):
+    from datetime import UTC, datetime
+
+    llm = StubLLM("a short query")
+    planner = SearchPlanner(
+        llm, now=datetime(2026, 8, 19, tzinfo=UTC), cutoff="2026-04"
+    )
+
+    if ask == "compose":
+        planner.compose("q", [])
+    else:
+        getattr(planner, ask)("q", [{"title": "t"}], ["prev"])
+
+    system = llm.system_prompts[0]
+    assert "2026-08-19" in system, ask
+    assert "2026-04" in system, ask
+    # An unformatted placeholder reaching the model is the other way this fails.
+    assert "{today}" not in system, ask
+    assert "{cutoff}" not in system, ask
