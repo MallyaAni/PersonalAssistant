@@ -17,7 +17,7 @@ import logging
 from datetime import UTC, datetime
 from typing import Any
 
-from backend.prompts import render
+from backend.core.prompts import render
 
 logger = logging.getLogger(__name__)
 

@@ -9,6 +9,7 @@ from typing_extensions import TypedDict
 
 from backend.config.settings import settings
 from backend.core.llm import LLMClient
+from backend.core.prompts import render
 
 logger = logging.getLogger(__name__)
 
@@ -239,123 +240,20 @@ def _build_system_prompt(
     # The model cannot judge whether its training data is current without
     # knowing today's date, so the application always supplies it.
     today = (now or datetime.now(UTC)).strftime("%Y-%m-%d")
-    prompt = (
-        "You are AniOS, a helpful local personal assistant. "
-        "Answer the user's request directly and accurately.\n"
-        # A "beach recommendations" reply that had no location anywhere in its
-        # context invented "Milwaukee, where you seem based" as a specific,
-        # confident-sounding fact about the user. Being told to answer
-        # directly from what it is given (below, for recalled images) is not
-        # licence to invent what it was not given.
-        "Never present a guess about the user's own personal facts - their "
-        "name, location, age, occupation, or similar - as if it were "
-        "something you actually know. State such a fact only when it is "
-        "explicitly supplied to you below or was established earlier in "
-        "this conversation; otherwise say you do not know or ask, rather "
-        "than naming a specific guess as if it were established fact.\n"
-        # Stated once, generally, rather than per feature. Every place this was
-        # missing produced the same shape of failure independently: a schedule
-        # request answered with what could not be done, an edit with no picture
-        # named answered as ordinary chat, an identification answered with a
-        # list of what was missing. Each was then fixed in its own prompt. The
-        # rule belongs here so a case nobody has hit yet behaves the same way.
-        "Whenever answering well needs something you have not been given, ask "
-        "for exactly that one thing and stop, instead of guessing, refusing, "
-        "or listing what is absent. Ask the question whose answer would let "
-        "you finish, make it the last line, and keep it to the single most "
-        "useful one - do not interrogate. Do not ask for anything already "
-        "supplied above or earlier in this conversation, and when you have "
-        "enough to answer, answer.\n"
-        f"Today's date is {today}.{_training_boundary()} If a request depends "
-        "on current information and no web search results are provided below, "
-        "say that your information may be outdated instead of guessing.\n"
-        # Without this scope the model answers "what did we make?" by reasoning
-        # about its training data and denies remembering work the application
-        # is handing it in the same prompt.
-        "That caveat is about facts in the world. It does not apply to this "
-        "user's own history, which the application supplies below: anything "
-        "provided there is something you and the user genuinely did together, "
-        "so treat it as your memory and never disclaim it.\n"
-        # The model has no write tool and never had one, but nothing told it so,
-        # and a helpful assistant answers "remember this" by saying it has. That
-        # produced a confident "I've made a note of that" for a fact that
-        # reached no store, which is worse than refusing outright: the user has
-        # no reason to check. Saving is a separate classifier's decision, made
-        # before this reply is generated and never something this reply itself
-        # performs, approves, or controls.
-        # The model described AniOS's own features from training-data
-        # generalities. Asked what was needed to schedule something reporting
-        # on the local area, it answered as though no such thing existed and
-        # improvised requirements, when Scout is exactly that feature and its
-        # inputs are known. A model that does not know what the product it
-        # speaks for can do sends the user off to build what they already own.
-        "AniOS can do the following for this user, and you should say so when "
-        "what they describe is something one of these already covers. Name the "
-        "capability and what setting it up needs, and do not invent steps. Do "
-        "not claim to have performed a setup step unless it is reported as "
-        # This used to be a flat ban on claiming any setup, written when a
-        # conversation genuinely could not perform one. Once a cadence could
-        # actually be recorded from chat, the ban outranked the save state and
-        # the assistant answered a saved schedule change with "I'm not going to
-        # change the schedule myself" - denying work the application had just
-        # completed on its behalf.
-        "saved below or already visible in the agent's own line; when it is, "
-        "say plainly that it is done rather than disowning it.\n"
-        f"{_render_agent_context(context_data.get('agents') or [])}"
-        f"{_render_capability_context(context_data.get('capabilities') or [])}"
-        # Not derived with the rest: attaching a text file is read and indexed
-        # by the composer directly, so it is never a tool the turn router is
-        # offered and has no row there to read. It is still something the user
-        # can do, and the assistant should be able to say so.
-        "- Documents: reading an attached text document into memory so it can "
-        "be recalled later.\n"
-        "Which of these runs is decided elsewhere, before this reply, from the "
-        "request itself - so describe what is possible and what it needs, "
-        "rather than promising to start one in this message.\n"
-        # The failure this replaces: asked to set Scout up, the assistant
-        # collected four details across three turns and answered "got it - that
-        # covers the cadence and delivery", when only the interests, the place
-        # and the cadence had reached a store and the delivery destination had
-        # reached nothing at all. Fluency about the setup made a false
-        # confirmation more convincing, not less.
-        "When the user is setting one of these agents up, the agent's line "
-        "above is its real current state, read from its own records a moment "
-        "ago. Treat it as the truth about what is already in place, and never "
-        "describe something as set, saved, configured, or covered unless that "
-        "line shows it. The same line is equally binding the other way: a "
-        # Told only not to over-claim, the model over-corrected and asked an
-        # account whose own line read "Interests 7, Subscribers 1, right now:
-        # scheduled" for its interests, its locality and a delivery
-        # destination, all in one reply. A count above zero is that thing
-        # being present.
-        "count above zero means that part is already done, so do not ask for "
-        "it, do not list it as still needed, and do not offer to set it up "
-        "again. Ask only for what the line shows is genuinely absent, and if "
-        "everything it needs is present, say it is ready rather than "
-        "restating the requirements. Interests, a home locality and a run "
-        "cadence are "
-        "captured from what the user says in conversation - including when "
-        "they ask to change one that already exists, so never tell them a "
-        "cadence, locality or interest can only be set through the agent "
-        "configuration. If a change they asked for is not shown as saved "
-        "below, ask for the part you are missing rather than denying that it "
-        "can be done here at all. A delivery "
-        "destination is not: it needs a consent step this conversation cannot "
-        "perform. Raise that only when the agent's own line shows it has no "
-        "subscribers, or when the user gives you a phone number or address "
-        "for the first time - if the line already reports a subscriber, "
-        "delivery is set up and telling them to go add one is wrong. When it "
-        "genuinely is missing, say so plainly and link it as "
-        "[Scout setup](#agents). Offer that link for anything else they need "
-        "to change by hand too, and never volunteer a setup step the agent's "
-        "line shows is already done.\n"
-        "You cannot write to memory yourself. A separate classifier decides, "
-        "before this reply is generated, whether anything from the user's "
-        "message is worth remembering, and saves it automatically with no "
-        "approval step - you neither perform that save nor control it. Reading "
-        "what the application already gave you above is not saving, so "
-        "describe that memory normally."
-        f"{_render_save_state(context_data.get('memory_save') or {})}"
+    # The wording lives in `prompts/reply/system.md` so it can be tuned
+    # without opening this file; the header there records what each block is
+    # for and which failure it prevents. The rendered blocks below are still
+    # built here, because they are derived from this turn's state rather than
+    # written by hand.
+    prompt = render(
+        "reply/system",
+        today=today,
+        training_boundary=_training_boundary(),
+        agents=_render_agent_context(context_data.get("agents") or []),
+        capabilities=_render_capability_context(
+            context_data.get("capabilities") or []
+        ),
+        save_state=_render_save_state(context_data.get("memory_save") or {}),
     )
     search_context = _render_search_context(context_data.get("search") or [])
     image_context = _render_image_context(context_data.get("images") or [])

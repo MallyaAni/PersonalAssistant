@@ -40,6 +40,7 @@ python -m pytest backend/tests/functional -q     # real model, real MCP, real Co
 | `search/compose.md` | The first web search query of a turn |
 | `search/another_angle.md` | The unconditional follow-up search |
 | `search/refine.md` | Whether to keep searching, and for what |
+| `reply/system.md` | **Every chat reply.** The assistant's whole instruction: what it may guess, when to ask, its training boundary, what AniOS can do, and what it may claim to have saved |
 
 ## Still in Python
 
@@ -48,7 +49,7 @@ each is a module-level constant, usually named `_SYSTEM` or `_PROMPT`.
 
 | Where | Drives |
 | --- | --- |
-| `backend/agents/graph.py` | The assistant's reply prompt: date, training boundary, capabilities, agents, recalled images, search results, memory state |
+| `backend/agents/graph.py` | The blocks rendered *into* `reply/system.md`: recalled images, search results, tool results, personal memory |
 | `backend/services/main_action_selector.py` | Which tool a turn uses, plus each built-in tool's description |
 | `backend/services/image_refinement_service.py` | What the image editor is told to preserve or change |
 | `backend/agents/vision/reasoning.py` | How an uploaded image is reasoned about after the vision pass |

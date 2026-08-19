@@ -9,7 +9,7 @@ checks that used to be free.
 
 import pytest
 
-from backend.prompts import PROMPT_ROOT, PromptError, load, render
+from backend.core.prompts import PROMPT_ROOT, PromptError, load, render
 
 # README.md documents the folder rather than instructing a model, so it is not
 # a prompt and must not be checked as one.
