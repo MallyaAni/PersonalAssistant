@@ -25,11 +25,42 @@ from backend.models.discovery_run import DiscoveryRun, DiscoverySchedule
 from backend.models.discovery_source import DiscoverySource
 from backend.models.discovery_subscriber import DiscoverySubscriber
 
+# How many interest labels the agent's line will name before summarising.
+_NAMED_INTERESTS = 12
+
+
+# Name the interests in the agent's own line, bounded.
+#
+# Asked "what are my interests?" the assistant answered "I don't actually have
+# a list of your interests" and in the same reply reported that Scout tracks
+# ten - it had the count and no way to read the labels. Bounded because this
+# reaches every reply's prompt: enough to answer with, not the whole table.
+def _following(labels: list[str]) -> str:
+    if not labels:
+        return ""
+    shown = ", ".join(labels[:_NAMED_INTERESTS])
+    if len(labels) > _NAMED_INTERESTS:
+        shown += f", and {len(labels) - _NAMED_INTERESTS} more"
+    return f" Following: {shown}."
+
 
 # Report Scout's live state for one user, read from the tables it writes.
 async def describe(session: AsyncSession, user_id: str) -> AgentSummary:
     sources = await count_rows(session, DiscoverySource, user_id)
-    interests = await count_rows(session, DiscoveryInterest, user_id)
+    # The labels, not only how many. Asked "what are my interests?", the
+    # assistant answered "I don't actually have a list of your interests" and
+    # then, in the same reply, reported that Scout tracks ten of them - it had
+    # the count and no way to read the names. The agent that owns them is the
+    # one place they can come from.
+    followed = (
+        await session.execute(
+            select(DiscoveryInterest.label)
+            .where(DiscoveryInterest.user_id == user_id)
+            .order_by(DiscoveryInterest.created_at)
+        )
+    ).scalars().all()
+    labels = [str(label).strip() for label in followed if str(label or "").strip()]
+    interests = len(labels)
     subscribers = await count_rows(session, DiscoverySubscriber, user_id)
     schedule = await session.scalar(
         select(DiscoverySchedule).where(DiscoverySchedule.user_id == user_id)
@@ -70,6 +101,8 @@ async def describe(session: AsyncSession, user_id: str) -> AgentSummary:
     else:
         status = "scheduled"
         detail = f"Next sweep {_when(schedule.next_run_at)}."
+
+    detail += _following(labels)
 
     if not settings.DISCOVERY_EGRESS_ENABLED and subscribers:
         detail += " Delivery is off, so nothing is sent."
