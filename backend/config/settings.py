@@ -581,12 +581,12 @@ class Settings(BaseSettings):
     # answers kept being assembled from titles. The payload cap exists to stay
     # under MCP_MAX_RESULT_CHARS, since a generic truncation mid-JSON would
     # corrupt the result rather than shorten it.
-    SEARCH_RESULT_CHARS: int = Field(default=1_500, ge=200, le=8_000)
-    SEARCH_PAYLOAD_CHARS: int = Field(default=10_000, ge=1_000, le=40_000)
+    SEARCH_RESULT_CHARS: int = Field(default=2_500, ge=200, le=8_000)
+    SEARCH_PAYLOAD_CHARS: int = Field(default=24_000, ge=1_000, le=40_000)
     # The bound on any tool result, not only search. Untrusted output reaches
     # the prompt through here, so it stays a deliberate ceiling rather than
     # something a server can raise for itself.
-    MCP_MAX_RESULT_CHARS: int = Field(default=12_000, ge=1_000, le=60_000)
+    MCP_MAX_RESULT_CHARS: int = Field(default=32_000, ge=1_000, le=60_000)
     SEARCH_DEPTH: Literal["basic", "advanced"] = "advanced"
     # Minimum provider relevance for a result to reach the prompt. Measured
     # across 40 real results the distribution is bimodal: usable hits scored

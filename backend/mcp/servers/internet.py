@@ -21,8 +21,8 @@ mcp = FastMCP("AniOS Internet Search")
 # assembled from titles. The payload bound still exists to stay under the
 # generic MCP result cap, because a truncation mid-JSON corrupts the result
 # rather than shortening it.
-_RESULT_CHARS = int(os.getenv("SEARCH_RESULT_CHARS", "1500"))
-_MAX_SERIALIZED_RESULT_CHARS = int(os.getenv("SEARCH_PAYLOAD_CHARS", "10000"))
+_RESULT_CHARS = int(os.getenv("SEARCH_RESULT_CHARS", "2500"))
+_MAX_SERIALIZED_RESULT_CHARS = int(os.getenv("SEARCH_PAYLOAD_CHARS", "24000"))
 
 
 # Compose the Google-first provider policy from operator-owned environment.
