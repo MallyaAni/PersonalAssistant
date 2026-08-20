@@ -8,6 +8,7 @@ from langgraph.graph import END, StateGraph
 from typing_extensions import TypedDict
 
 from backend.config.settings import settings
+from backend.core.context_budget import BudgetReport, Section, plan
 from backend.core.llm import LLMClient
 from backend.core.prompts import render
 
@@ -332,6 +333,107 @@ def _build_system_prompt(
     )
 
 
+# Break a turn into the sources it was assembled from, so each can be counted.
+#
+# The blocks are rendered by the same functions the prompt uses, rather than
+# re-derived, so what is measured is what was sent. A separate estimate of the
+# same material would drift from it the first time either changed.
+#
+# Priorities are a first argument, not a settled answer. Evidence outranks
+# history because a turn that searched did so for a reason; history outranks
+# recall and memory because a follow-up that loses its antecedent is incoherent
+# rather than merely thinner. Floors exist so the enrichment sources are never
+# erased outright by a turn that happened to return a lot of evidence.
+def _turn_sections(
+    context_data: dict[str, Any],
+    history: list[dict[str, Any]],
+    query: str,
+    system_prompt: str,
+) -> tuple[Section, ...]:
+    turns = [
+        text
+        for turn in reversed(history)  # most recent first: recency is relevance
+        for text in (str(turn.get("query") or ""), str(turn.get("response") or ""))
+        if text.strip()
+    ]
+    return (
+        # Neither of these is ever trimmable; they are counted so the report
+        # accounts for the whole turn rather than only its negotiable parts.
+        Section("system", (system_prompt,), priority=0, floor_items=1),
+        Section("query", (query,), priority=0, floor_items=1),
+        Section(
+            "evidence",
+            tuple(
+                json.dumps(item, default=str, sort_keys=True)
+                for item in (context_data.get("search") or [])
+            ),
+            priority=1,
+            floor_items=1,
+        ),
+        Section(
+            "tools",
+            tuple(
+                json.dumps(item, default=str, sort_keys=True)
+                for item in (context_data.get("tool_results") or [])
+            ),
+            priority=2,
+            floor_items=1,
+        ),
+        Section("history", tuple(turns), priority=3, floor_items=2),
+        Section(
+            "images",
+            tuple(
+                json.dumps(item, default=str, sort_keys=True)
+                for item in (context_data.get("images") or [])
+            ),
+            priority=4,
+            floor_items=1,
+        ),
+        Section(
+            "recalled",
+            tuple(
+                str(turn.get("said") or "")
+                for turn in (context_data.get("recalled_turns") or [])
+            ),
+            priority=5,
+            floor_items=1,
+        ),
+        Section(
+            "memory",
+            tuple(
+                str(item.get("content") or "")
+                for kind in ("episodic", "semantic")
+                for item in (context_data.get(kind) or [])
+            ),
+            priority=6,
+            floor_items=1,
+        ),
+    )
+
+
+# Measure the turn and report it. Nothing is trimmed unless enforcement is on,
+# and enforcement is off until the priorities above have been argued against
+# real turn sizes rather than assumed.
+def measure_turn(
+    context_data: dict[str, Any],
+    history: list[dict[str, Any]],
+    query: str,
+    system_prompt: str,
+) -> BudgetReport | None:
+    if not settings.CONTEXT_BUDGET_ENABLED:
+        return None
+    try:
+        return plan(
+            _turn_sections(context_data, history, query, system_prompt),
+            budget_tokens=settings.CONTEXT_BUDGET_TOKENS,
+            reserved_tokens=settings.MAIN_LLM_MAX_TOKENS,
+        )
+    except (ValueError, TypeError):
+        # Accounting is an improvement to a turn, never a requirement of one.
+        logger.warning("Context budget measurement failed", exc_info=True)
+        return None
+
+
 def build_assistant_graph(llm: LLMClient) -> Any:
     """Construct the single-agent graph around an injected LLM provider."""
 
@@ -351,6 +453,26 @@ def build_assistant_graph(llm: LLMClient) -> Any:
             if turn.get("response"):
                 messages.append({"role": "assistant", "content": turn["response"]})
         messages.append({"role": "user", "content": state["current_query"]})
+
+        # Counted after assembly and before the request, so the report
+        # describes what was actually sent.
+        report = measure_turn(
+            state.get("context_data") or {},
+            state.get("history") or [],
+            state["current_query"],
+            messages[0]["content"],
+        )
+        if report is not None:
+            logger.info("trace=%s %s", state.get("trace_id"), report.summary())
+            if report.dropped_total and settings.CONTEXT_BUDGET_ENFORCE:
+                # Enforcement is not implemented yet on purpose. Saying so
+                # loudly is better than a flag that silently does nothing,
+                # which is the defect this whole area exists to stop.
+                logger.warning(
+                    "trace=%s CONTEXT_BUDGET_ENFORCE is set but trimming is "
+                    "not implemented; the turn was sent in full",
+                    state.get("trace_id"),
+                )
 
         # Explicit, because the signature default was 1,024 and nobody chose
         # it. A reasoning model spends part of this budget on thinking that is

@@ -589,6 +589,12 @@ services:
       # empty, because the model spends part of the budget on thinking that
       # is never rendered and the stream then carries no content at all.
       - MAIN_LLM_MAX_TOKENS=${MAIN_LLM_MAX_TOKENS:-4096}
+      # Measure what a turn costs; do not act on it yet. Enforcement stays
+      # off until the section priorities have been argued against real turn
+      # sizes rather than assumed.
+      - CONTEXT_BUDGET_ENABLED=${CONTEXT_BUDGET_ENABLED:-true}
+      - CONTEXT_BUDGET_ENFORCE=${CONTEXT_BUDGET_ENFORCE:-false}
+      - CONTEXT_BUDGET_TOKENS=${CONTEXT_BUDGET_TOKENS:-32768}
       - MAIN_LLM_REASONING_EFFORT=${MAIN_LLM_REASONING_EFFORT:-none}
       # Where the main model's work goes when the Spark is powered off. Without
       # this the assistant is entirely down whenever that machine is, even

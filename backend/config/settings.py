@@ -111,6 +111,32 @@ class Settings(BaseSettings):
     # needs to finish thinking and still answer, and it only ever binds on a
     # runaway - the longest genuine answer measured here spent about 1,600.
     MAIN_LLM_MAX_TOKENS: int = Field(default=4_096, ge=256, le=32_768)
+    # Counting what a turn actually costs, before anything acts on the count.
+    #
+    # Nothing counted until now. The prompt was assembled from whatever each
+    # source returned, bounded incidentally by numbers set once and never
+    # measured against the window they share. That was survivable only because
+    # a heavy turn is five to eight thousand tokens against a million-token
+    # context - an accident, not a design, and one that stops being true
+    # quietly.
+    #
+    # Enabled means measure and report. It does **not** mean trim: see
+    # CONTEXT_BUDGET_ENFORCE. Measuring first is the same discipline the
+    # search-payload fix needed - the numbers decide the floors, rather than
+    # floors being chosen and the numbers explaining them afterwards.
+    CONTEXT_BUDGET_ENABLED: bool = True
+    # Whether the plan is applied or only recorded.
+    #
+    # Left false deliberately. Trimming changes what the model sees, and no
+    # section priority here has been argued against real turn sizes yet.
+    # Turning this on without the measurements it is meant to be built from
+    # would repeat the mistake it exists to prevent.
+    CONTEXT_BUDGET_ENFORCE: bool = False
+    # The window the plan is made against. Well below what either served model
+    # offers, because the point is to notice growth long before it collides
+    # with a hard limit - a budget that only binds at the ceiling reports
+    # nothing useful until the day it reports a failure.
+    CONTEXT_BUDGET_TOKENS: int = Field(default=32_768, ge=2_048, le=1_000_000)
     PRESENTATION_INFERENCE_ADAPTER: Literal["", "openai_compatible"] = ""
     PRESENTATION_LLM_BASE_URL: str = ""
     PRESENTATION_LLM_MODEL: str = ""
