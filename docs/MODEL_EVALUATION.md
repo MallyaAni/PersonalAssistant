@@ -123,6 +123,44 @@ about 7× more tokens because thinking is on. The decode half was predicted from
 memory bandwidth before it was measured and landed almost exactly; the thinking
 multiplier was not predicted.
 
+### Qwen3.8-27B, BF16, stable configuration — no MTP
+
+The numbers to plan from. MTP is disabled because it kills the engine, so the
+9.9 tok/s above is unavailable and this is what the model actually does.
+
+| | |
+|---|---|
+| decode | **4.57 tok/s** — MTP was worth 2.2×, and 4.8× slower than DeepSeek |
+| ttft to first token | 0.32 s |
+| **ttft to first content** | **71.7 s** — thinking streams as `reasoning`, which the reply path does not render, so this is a blank screen |
+| prefill at 36k | **1,051 tok/s** — roughly 2× DeepSeek, the one speed Qwen wins |
+| prefix caching | **works: 16× on a repeated 39k prefix** (44.8 s cold, 2.8 s warm) |
+| **schema enforcement** | **yes** — the contract DeepSeek violated is honoured exactly |
+| vision | **yes** — named three colour bands in a generated image |
+| tool selection, 52-case set | **19/38, but confounded — not a capability result. See below.** |
+
+Two things run-to-run variance taught here: the same question spent 1,635
+tokens once and 405 another time, and thinking-off is **not** reliably faster —
+in one run it wrote a longer answer without the thinking budget and took longer.
+Any wall-clock claim from a single sample is noise.
+
+### The tool-selection result is not a verdict
+
+Qwen scored 19/38 with **zero** tool calls in every tool category, which looks
+damning and is not. Ruled out one at a time: the parser (forced calls come back
+perfectly formed), `tool_choice`, temperature, and the 300-token cap. Given the
+real routing prompt and all six tools at 300 tokens it picks correctly —
+`search_web` for an election result, `generate_image` for a picture request.
+
+The open hypothesis is that Qwen emits calls whose required argument is empty,
+and AniOS deliberately drops those, because an action with nothing to act on
+must not take a turn. That would show up as exactly this pattern. It is
+untested, and recording 19/38 as a capability score would have been wrong in a
+way that decided a migration.
+
+**The lesson generalises: a zero across every category of anything is a
+configuration fault until proven otherwise.**
+
 ## Serving configuration profile
 
 Throughput is not one number here. It is the decode rate multiplied by how many
@@ -270,3 +308,5 @@ with a model — answers, throughput, schema behaviour, tool selection — has t
 be captured while it is still up. The harness separates collection from judging
 for exactly this, and resumes from a saved file so growing the case set costs
 only the new cases.
+
+| bf16, no mtp, prefix cache | 4.57 | - | 71.7 | 405 / 758 | 89.2 / 166.3 | 363.9 / 1051.0 | ok |
