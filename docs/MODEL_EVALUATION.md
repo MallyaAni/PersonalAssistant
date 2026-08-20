@@ -119,6 +119,66 @@ about 7× more tokens because thinking is on. The decode half was predicted from
 memory bandwidth before it was measured and landed almost exactly; the thinking
 multiplier was not predicted.
 
+## Serving configuration profile
+
+Throughput is not one number here. It is the decode rate multiplied by how many
+tokens the model chooses to spend, and switching thinking on moved the second
+factor about seven times further than any serving flag moved the first. So a
+configuration is described by the whole row, never by one figure.
+
+Regenerate a row with:
+
+```
+python -m backend.cli.measure_inference_profile \
+    --base-url http://spark-b524.local:8899 --model qwen3.8-27b \
+    --label "bf16 mtp3" --append docs/MODEL_EVALUATION.md
+```
+
+It issues requests strictly serially. Two concurrent requests with MTP enabled
+killed the engine on this build, so a benchmark that parallelises would destroy
+what it is measuring.
+
+**Read `MTP accept` before tuning `num_speculative_tokens`.** Throughput alone
+cannot separate a drafter that is working from one being ignored; acceptance
+length can. Below about 1.5 the drafter is costing more than it returns.
+
+**`ttft to content` is the number a person feels**, not `ttft`. Thinking is
+streamed as `reasoning` and the reply path renders only `content`, so with
+thinking on the user sees nothing at all until the thinking block closes.
+
+| config | decode tok/s | MTP accept | ttft to content | answer tokens on/off | wall clock on/off | prefill tok/s | thinking reply |
+|---|---|---|---|---|---|---|---|
+
+### Configurations worth measuring
+
+Each server-level flag needs a restart, roughly six minutes, so the list is
+ordered by what is most likely to matter rather than by covering every
+combination. Request-level options — thinking on or off, token caps — are swept
+within one restart by the tool above.
+
+1. **`bf16 mtp3`** — what was first served here. The baseline every other row
+   is read against.
+2. **`bf16 mtp5 + prefix + chunked`** — `num_speculative_tokens: 5`,
+   `--enable-prefix-caching`, `--enable-chunked-prefill`. All three cost no
+   quality at all and were missing from the first configuration. A published
+   single-Spark run used exactly these.
+3. **`bf16 no mtp`** — establishes what speculative decoding is actually
+   worth, and is the fallback if the concurrency crash cannot be avoided.
+4. **`bf16 mtp5 + fp8 kv, 262k`** — quantises the cache and not the weights.
+   The only way to reach a large context at full weight quality.
+5. **`bf16 mtp5 + fp8 kv, 1M via YaRN`** — needs `mrope_section`,
+   `mrope_interleaved` and `partial_rotary_factor` overrides in `text_config`.
+   Matches the context DeepSeek was serving.
+6. **`tool-call-parser qwen3_xml`** — the first configuration used
+   `qwen3_coder`. A wrong parser makes tool calls fail to parse rather than
+   fail loudly, which is the same shape as the `reasoning_effort` defect.
+
+Deliberately not measured: NVFP4 and other weight quantisations. A published
+single-Spark run reports 24 tok/s against the 9.9 measured here at BF16, and
+essentially all of that gap is the quantisation. That is a real option, but it
+trades the thing this evaluation exists to protect, so it stays out until the
+quality comparison says what BF16 is worth.
+
 ## Things that cost time and are not visible in the code
 
 **`reasoning_effort="none"` fails every request on vLLM.** ds4-server accepts
