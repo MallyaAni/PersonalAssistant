@@ -43,6 +43,7 @@ import subprocess
 from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from backend.agents.graph import _build_system_prompt
@@ -95,11 +96,18 @@ def _context_of(case: ReplyCase) -> dict[str, Any]:
 
 
 # Answer one case with one candidate, through the real prompt assembly.
+#
+# Prior turns are replayed as real messages, the same way `assistant_node`
+# builds them, because a follow-up that depends on what came before is most of
+# real use and cannot be measured from a single message.
 def _answer(client: Any, case: ReplyCase, max_tokens: int) -> str:
-    messages = [
-        {"role": "system", "content": _build_system_prompt(_context_of(case))},
-        {"role": "user", "content": case.prompt},
+    messages: list[dict[str, str]] = [
+        {"role": "system", "content": _build_system_prompt(_context_of(case))}
     ]
+    for asked, answered in case.history:
+        messages.append({"role": "user", "content": asked})
+        messages.append({"role": "assistant", "content": answered})
+    messages.append({"role": "user", "content": case.prompt})
     return "".join(client.stream_chat(messages, max_tokens=max_tokens)).strip()
 
 
@@ -116,6 +124,14 @@ def _render_case(index: int, case: ReplyCase, first: str, second: str) -> str:
             f"  - {turn['said']} (said {turn['when']})" for turn in case.recalled_turns
         )
         evidence += f"\nEarlier remarks by this user, supplied to both:\n{remarks}\n"
+    if case.history:
+        # Without this the judge reads a follow-up with no antecedent and
+        # cannot tell a correct answer from a lucky one.
+        turns = "\n".join(
+            f"  user: {asked}\n  assistant: {answered}"
+            for asked, answered in case.history
+        )
+        evidence += f"\nEarlier in this same conversation:\n{turns}\n"
     return (
         f"\n=== CASE {index} ===\n"
         f"User asked: {case.prompt}\n"
@@ -189,13 +205,28 @@ def _parse_verdicts(text: str) -> list[dict]:
 # taking the incumbent down. Collect each side whenever its turn on the
 # hardware comes, judge the saved files afterwards.
 def collect(
-    args: argparse.Namespace, base_url: str, model: str, adapter: str, reasoning: str
+    args: argparse.Namespace,
+    base_url: str,
+    model: str,
+    adapter: str,
+    reasoning: str,
+    already: dict[str, str] | None = None,
+    destination: str = "",
 ) -> dict[str, str]:
     client = _client(base_url, model, adapter, reasoning)
-    answers: dict[str, str] = {}
-    for case in REPLY_CASES:
-        print(f"  answering: {case.prompt[:60]}...", flush=True)
+    # Answers already collected are kept rather than regenerated. The set grows
+    # as real turns go wrong, and a candidate costing minutes per answer should
+    # not re-answer thirty cases to add six. It also means an interrupted run
+    # resumes instead of restarting, which this one has needed twice.
+    answers: dict[str, str] = dict(already or {})
+    todo = [case for case in REPLY_CASES if case.prompt not in answers]
+    if answers:
+        print(f"  {len(answers)} already collected, {len(todo)} remaining")
+    for index, case in enumerate(todo, start=1):
+        print(f"  [{index}/{len(todo)}] {case.prompt[:56]}...", flush=True)
         answers[case.prompt] = _answer(client, case, args.max_tokens)
+        if destination:
+            _save(destination, model, answers, quiet=True)
     return answers
 
 
@@ -209,10 +240,11 @@ def _load(path: str) -> tuple[str, dict[str, str]]:
     return str(saved.get("model", path)), dict(saved.get("answers", {}))
 
 
-def _save(path: str, model: str, answers: dict[str, str]) -> None:
+def _save(path: str, model: str, answers: dict[str, str], quiet: bool = False) -> None:
     with open(path, "w", encoding="utf-8") as handle:
         json.dump({"model": model, "answers": answers}, handle, indent=2)
-    print(f"  saved {len(answers)} answers for {model} to {path}")
+    if not quiet:
+        print(f"  saved {len(answers)} answers for {model} to {path}")
 
 
 # Judge two collected sets against each other in both orderings.
@@ -371,6 +403,12 @@ def _side(args: argparse.Namespace, letter: str) -> tuple[str, dict[str, str]]:
             f"side {letter.upper()} needs --{letter}-base-url and --{letter}-model,"
             f" or --{letter}-answers pointing at a collected file"
         )
+    destination = getattr(args, f"save_{letter}")
+    # Resume from whatever that file already holds, so growing the case set
+    # costs only the new cases.
+    already: dict[str, str] = {}
+    if destination and Path(destination).exists():
+        _, already = _load(destination)
     print(f"Answering with {model}:")
     answers = collect(
         args,
@@ -378,8 +416,9 @@ def _side(args: argparse.Namespace, letter: str) -> tuple[str, dict[str, str]]:
         model,
         getattr(args, f"{letter}_adapter"),
         getattr(args, f"{letter}_reasoning"),
+        already=already,
+        destination=destination,
     )
-    destination = getattr(args, f"save_{letter}")
     if destination:
         _save(destination, model, answers)
     return model, answers
