@@ -1,5 +1,54 @@
 # Comparing candidate models for AniOS
 
+## Decision, 2026-08-20: DeepSeek stays
+
+Qwen3.8-27B answers better and cannot be served fast enough here to matter.
+
+**Quality: Qwen wins 18-9, with 19 ties**, judged blind and position-swapped
+over 46 cases. The wins are concentrated exactly where this application lives -
+**8-0 across the grounding categories** (evidence over training, synthesis,
+conflicting evidence, no invention, buried evidence). DeepSeek's losses were
+fabrications: an invented date asserted as today, an invented currency, and
+claiming to have no information about a fire it then quoted. For an assistant
+built on search, confident and wrong is the worst failure available.
+
+DeepSeek won on decisiveness - trade-off questions 2-0, where Qwen buried its
+recommendation under symmetrical lists, and twice refused a task outright.
+Reasoning was effectively a tie, so the fourteen-point HLE gap did not appear.
+
+**Speed: every Qwen quantisation that runs here is far slower.**
+
+| | decode | vs DeepSeek |
+|---|---|---|
+| Qwen BF16 | 4.57 tok/s | 4.8x slower |
+| Qwen FP8 | 5.35 tok/s | 4.1x slower |
+| Qwen NVFP4 | 6.20-8.15 tok/s | **2.7x slower** |
+| DeepSeek IQ2_XXS | **22.10 tok/s** | - |
+
+NVFP4 is about 4 bits - **less compressed than the 2.4-bit DeepSeek it was
+being compared against** - and still could not close the gap. A published
+single-Spark run reports 24 tok/s for this model; that used MTP speculative
+decoding, which is worth roughly 2x and crashes this build. Even granting it,
+NVFP4 would reach about 16 and still lose.
+
+Better answers do not survive 50 to 90 second replies against 11. So the
+quality result is real and does not change the decision.
+
+**Revisit when either becomes true:** the vLLM container ships a working MTP
+kernel for GB10, or the second Spark arrives and both models can be resident at
+once - which is the outcome that actually wants: DeepSeek keeps chat, Qwen
+takes the schema-bound callers off the 4B and fills the empty vision slot.
+
+**What is given up by staying:** schema enforcement, and therefore six callers
+still pinned to a 4B; and vision, which DeepSeek cannot do at all. Both are
+capability gaps, not quality regressions, and both resolve with the second box.
+
+Two builds failed outright and are recorded so they are not retried blindly:
+`unsloth/Qwen3.8-27B-NVFP4` is rejected by this vLLM with "Must use group
+quantization strategy in order to apply activation ordering";
+`Inferact/Qwen3.8-27B-NVFP4` serves correctly and is the one measured above.
+
+
 How a model swap is decided here, and what was measured the first time it was
 done properly. Every number below was observed on this hardware, not taken from
 a model card. Where a published figure is quoted it is labelled as one.
