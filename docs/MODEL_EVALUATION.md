@@ -223,6 +223,52 @@ essentially all of that gap is the quantisation. That is a real option, but it
 trades the thing this evaluation exists to protect, so it stays out until the
 quality comparison says what BF16 is worth.
 
+## A small token budget breaks a reasoning model in two different ways
+
+Both engines spend part of a reply budget on thinking that the caller never
+asked for and does not render. What happens when that thinking runs out of
+budget is where they differ, and neither behaviour is obvious.
+
+**ds4-server puts the truncated reasoning into `content`.** Asked to reply with
+one word, at 16 tokens:
+
+```
+max_tokens=16   finish=length   content='1. The user asked to "Reply with...'   reasoning_content=''
+max_tokens=64   finish=stop     content='alive'                                 reasoning_content=147 chars
+```
+
+The caller receives the model's internal monologue as though it were the
+answer. It parses, it reads like text, and it is wrong.
+
+**vLLM leaves `content` empty instead.** Same situation, different failure: the
+reply is missing rather than fabricated. That is strictly better — a loud
+failure beats plausible garbage — and it is an argument for vLLM that has
+nothing to do with schema enforcement.
+
+**This has already cost this project once, and was misdiagnosed.**
+`get_image_intent_classifier` records that DeepSeek "returned unparseable
+content on every upload", which silently disabled edit-intent detection because
+the classifier answers False on any failure. That was read as the main model
+being unsuited to constrained classification. It is not a model capability
+problem at all: `IMAGE_INTENT_MAX_TOKENS` is **16**, which guarantees
+truncation, and truncation is what corrupts the answer.
+
+**So it is a precondition of the structured-output migration.** Flipping
+`MAIN_LLM_STRUCTURED_OUTPUT=True` moves six callers off the 4B - which does not
+reason, and is therefore immune - onto a model that does. Three of them sit in
+the truncation zone:
+
+```
+IMAGE_INTENT_MAX_TOKENS           =  16
+MEMORY_PROPOSAL_MAX_TOKENS        = 256
+VISION_SEARCH_DECISION_MAX_TOKENS = 300
+routing tool decision             = 300 (hardcoded at the call site)
+```
+
+Raise these before moving them, or they fail on the first turn. The reply path
+had exactly this defect until it was measured: one reply in six came back
+empty at 1,024 tokens.
+
 ## Things that cost time and are not visible in the code
 
 **`reasoning_effort="none"` fails every request on vLLM.** ds4-server accepts
