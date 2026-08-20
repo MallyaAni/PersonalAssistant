@@ -176,8 +176,15 @@ class OpenAICompatibleInferenceProvider(InferenceProvider):
             "model": self.model,
             "messages": messages,
             "max_tokens": max_tokens,
-            "reasoning_effort": self.reasoning_effort,
         }
+        # Engines disagree about this parameter's domain. ds4-server accepts
+        # "none"; vLLM accepts only low, medium or high and rejects anything
+        # else with a 400, so sending the configured default at a vLLM backend
+        # failed every request rather than one. "none" means "do not ask for
+        # reasoning", which is what omitting the field already says, so the
+        # request stays valid whichever engine receives it.
+        if self.reasoning_effort and self.reasoning_effort.strip().lower() != "none":
+            payload["reasoning_effort"] = self.reasoning_effort
         # Omitted, the runtime samples at its own default. Callers that parse the
         # reply as a decision rather than prose pass 0 for a reproducible answer.
         if temperature is not None:
