@@ -38,7 +38,9 @@ def _candidate(title: str, starts_at: datetime | None, url: str | None = None):
 
 
 SELECTED = (
-    _candidate("First find", datetime(2026, 11, 14, 20, 0, tzinfo=UTC), "https://a.test"),
+    _candidate(
+        "First find", datetime(2026, 11, 14, 20, 0, tzinfo=UTC), "https://a.test"
+    ),
     _candidate("Second find", datetime(2026, 11, 15, 20, 0, tzinfo=UTC)),
 )
 

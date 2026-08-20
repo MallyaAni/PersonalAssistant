@@ -57,9 +57,7 @@ class DiscoverySentFind(Base):
     user_id: Mapped[str] = mapped_column(String(50), nullable=False)
     # The run this bubble belonged to, so feedback can be traced to the sweep
     # that produced it and to the aim that chose it.
-    run_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), nullable=True
-    )
+    run_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     subscriber_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), nullable=True
     )

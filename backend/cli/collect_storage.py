@@ -72,12 +72,18 @@ async def sweep(arguments: argparse.Namespace) -> int:
 
     plan = plan_collection(root, live, grace_seconds=arguments.grace_seconds)
     print(f"root           {root}")
-    print(f"referenced     {plan.referenced_files:5} files  "
-          f"{_megabytes(plan.referenced_bytes)}   ({len(live)} keys on record)")
-    print(f"unreferenced   {len(plan.orphans):5} files  "
-          f"{_megabytes(plan.reclaimable_bytes)}")
-    print(f"held back      {plan.kept_young:5} files  "
-          f"(written within {arguments.grace_seconds}s)")
+    print(
+        f"referenced     {plan.referenced_files:5} files  "
+        f"{_megabytes(plan.referenced_bytes)}   ({len(live)} keys on record)"
+    )
+    print(
+        f"unreferenced   {len(plan.orphans):5} files  "
+        f"{_megabytes(plan.reclaimable_bytes)}"
+    )
+    print(
+        f"held back      {plan.kept_young:5} files  "
+        f"(written within {arguments.grace_seconds}s)"
+    )
     for key, size in sorted(plan.orphans, key=lambda item: -item[1])[: arguments.show]:
         print(f"    {_megabytes(size):>10}  {key}")
 

@@ -66,9 +66,7 @@ class _SelectorAsRouter:
         self.selector = selector
 
     async def decide(self, query: str) -> _Verdict:
-        action = await self.selector.select(
-            "functional_test_user", query, [], None
-        )
+        action = await self.selector.select("functional_test_user", query, [], None)
         return _Verdict(should_search=isinstance(action, SearchAction))
 
 
@@ -104,8 +102,16 @@ async def test_a_location_dependent_request_does_not_search_an_assumed_place(
     if isinstance(action, SearchAction):
         lowered = action.query.casefold()
         invented_places = (
-            "new york", "los angeles", "san francisco", "chicago", "joliet",
-            "seattle", "boston", "austin", "raleigh", "arlington",
+            "new york",
+            "los angeles",
+            "san francisco",
+            "chicago",
+            "joliet",
+            "seattle",
+            "boston",
+            "austin",
+            "raleigh",
+            "arlington",
         )
         assert not any(place in lowered for place in invented_places), action.query
 
@@ -337,9 +343,7 @@ async def test_an_opinion_question_about_a_just_edited_picture_does_not_re_edit(
         "would the cowboy hat have suited me better?",
     ],
 )
-async def test_every_phrasing_of_an_opinion_question_avoids_re_editing(
-    selector, text
-):
+async def test_every_phrasing_of_an_opinion_question_avoids_re_editing(selector, text):
     history = [
         {
             "query": "do you like my style?",

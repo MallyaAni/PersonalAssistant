@@ -180,9 +180,7 @@ def _service(
         tracer=StubTracer(),
         search=search,  # type: ignore[arg-type]
         main_action_selector=StubMainActionSelector(action),  # type: ignore[arg-type]
-        artifact_context_router=(
-            AlwaysImageContextRouter() if image_search else None
-        ),
+        artifact_context_router=(AlwaysImageContextRouter() if image_search else None),
         image_search=image_search,  # type: ignore[arg-type]
     )
 

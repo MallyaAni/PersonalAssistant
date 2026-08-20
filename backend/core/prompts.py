@@ -49,15 +49,12 @@ def load(name: str) -> str:
 def render(name: str, **values: object) -> str:
     text = load(name)
     expected = {
-        field
-        for _literal, field, _spec, _conv in Formatter().parse(text)
-        if field
+        field for _literal, field, _spec, _conv in Formatter().parse(text) if field
     }
     missing = expected - set(values)
     if missing:
         raise PromptError(
-            f"prompt {name!r} needs {sorted(missing)}, which the caller did "
-            f"not supply"
+            f"prompt {name!r} needs {sorted(missing)}, which the caller did not supply"
         )
     return text.format(**values)
 

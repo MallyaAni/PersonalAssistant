@@ -39,11 +39,7 @@ async def test_a_deck_has_distinct_slides_that_advance(llm):
 async def test_every_slide_carries_content_not_just_a_heading(llm):
     deck = await _provider(llm).create("three slides on why bees matter")
 
-    thin = [
-        slide.title
-        for slide in deck.slides[1:]
-        if len(slide.elements) < 2
-    ]
+    thin = [slide.title for slide in deck.slides[1:] if len(slide.elements) < 2]
     # A slide with a title and nothing else is the reported symptom section
     # layouts once produced: a rule, a title, a purpose, nothing. The compiler
     # turns the model's fields into elements, so this counts what survived it.

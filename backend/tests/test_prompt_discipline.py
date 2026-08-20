@@ -29,9 +29,9 @@ PROMPT_FILES = sorted(
 # rule behind it; the incident belongs in the file's notes instead.
 _SPECIFIC_CASES = re.compile(
     r"\b("
-    r"dgx spark|deepseek|nemotron|qwen|flux|comfyui|"       # our stack
-    r"straw hat|black hat|cowboy hat|biscuit|milwaukee|"     # our incidents
-    r"raleigh|durham|boise|jenos1|ani\.mallya|alippe"        # our accounts
+    r"dgx spark|deepseek|nemotron|qwen|flux|comfyui|"  # our stack
+    r"straw hat|black hat|cowboy hat|biscuit|milwaukee|"  # our incidents
+    r"raleigh|durham|boise|jenos1|ani\.mallya|alippe"  # our accounts
     r")\b",
     re.IGNORECASE,
 )

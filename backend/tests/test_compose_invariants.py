@@ -30,9 +30,7 @@ def _services() -> dict[str, dict]:
 # reboot" is not a question about it.
 def _always_on() -> dict[str, dict]:
     return {
-        name: body
-        for name, body in _services().items()
-        if not body.get("profiles")
+        name: body for name, body in _services().items() if not body.get("profiles")
     }
 
 

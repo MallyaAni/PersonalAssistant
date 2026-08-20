@@ -111,9 +111,9 @@ def test_an_absolute_key_is_refused(tmp_path: Path) -> None:
     outside = tmp_path / "precious.png"
     outside.write_bytes(b"do not touch")
 
-    removed, _ = apply_collection(tmp_path / "artifacts", Plan(
-        orphans=((str(outside), 12),)
-    ))
+    removed, _ = apply_collection(
+        tmp_path / "artifacts", Plan(orphans=((str(outside), 12),))
+    )
 
     assert removed == 0
     assert outside.exists()

@@ -192,10 +192,14 @@ async def test_a_decision_survives_the_sealed_column() -> None:
             session.expunge_all()
 
             stored = (
-                await session.execute(
-                    select(DiscoveryRun).where(DiscoveryRun.id == run.id)
+                (
+                    await session.execute(
+                        select(DiscoveryRun).where(DiscoveryRun.id == run.id)
+                    )
                 )
-            ).scalars().one()
+                .scalars()
+                .one()
+            )
             assert json.loads(stored.decision_json) == decision
         finally:
             # Nothing is committed, so the database is left exactly as found.

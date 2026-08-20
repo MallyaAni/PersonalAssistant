@@ -48,9 +48,7 @@ async def backfill(batch_size: int, limit: int | None, dry_run: bool) -> int:
             if not text:
                 continue
             try:
-                turn.embedding = await asyncio.to_thread(
-                    embeddings.embed_query, text
-                )
+                turn.embedding = await asyncio.to_thread(embeddings.embed_query, text)
             except Exception:
                 # One unembeddable turn must not end the run; it stays NULL and
                 # the next run picks it up.

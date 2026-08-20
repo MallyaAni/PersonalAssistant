@@ -13,6 +13,7 @@ might ask, and a word list that read "draw me a picture of my car" as a person
 because it contained "me" and "my".
 """
 
+
 def test_human_detail_follows_the_models_own_answer():
     from backend.artifacts.image import ComfyUIImageProvider
 

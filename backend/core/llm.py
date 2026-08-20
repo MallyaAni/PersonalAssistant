@@ -126,6 +126,23 @@ class OpenAICompatibleInferenceProvider(InferenceProvider):
             raise ValueError("Inference provider did not contain a tool decision")
         return cast(dict[str, Any], message)
 
+    # One server-sent line, as (content, was_terminal).
+    #
+    # Only `delta.content` is rendered. A reasoning model also emits
+    # `reasoning_content`, which is its private working and not an answer, so a
+    # stream carrying nothing else legitimately produces no output.
+    def _stream_event(self, line: str) -> tuple[str | None, bool]:
+        if not line.startswith("data: "):
+            return None, False
+        data = line[6:]
+        if data == "[DONE]":
+            return None, True
+        event = cast(dict[str, Any], json.loads(data))
+        if event.get("error"):
+            raise RuntimeError(event["error"])
+        choices = event.get("choices", [])
+        return (choices[0].get("delta", {}).get("content") if choices else None), False
+
     def stream_chat(
         self,
         messages: list[dict[str, str]],
@@ -135,25 +152,29 @@ class OpenAICompatibleInferenceProvider(InferenceProvider):
         saw_message = False
         saw_done = False
 
+        # The same withdrawal the buffered path does, decided inside the one
+        # request rather than by probing first: a pre-flight would cost every
+        # caller a wasted round trip to catch a rejection that happens once.
+        retry = False
+
         with self._request_lock, self._stream(payload) as response:
-            response.raise_for_status()
-            for line in response.iter_lines():
-                if not line.startswith("data: "):
-                    continue
-                data = line[6:]
-                if data == "[DONE]":
-                    saw_done = True
-                    continue
-                event = cast(dict[str, Any], json.loads(data))
-                if event.get("error"):
-                    raise RuntimeError(event["error"])
-                choices = event.get("choices", [])
-                content = (
-                    choices[0].get("delta", {}).get("content") if choices else None
-                )
-                if content:
-                    saw_message = True
-                    yield content
+            if response.status_code == 400:
+                response.read()
+                retry = self._retry_without_reasoning(response, payload)
+            if not retry:
+                response.raise_for_status()
+                for line in response.iter_lines():
+                    content, done = self._stream_event(line)
+                    saw_done = saw_done or done
+                    if content:
+                        saw_message = True
+                        yield content
+
+        # The body was consumed to read the rejection, so this asks again with
+        # the parameter withdrawn rather than validating an empty stream.
+        if retry:
+            yield from self.stream_chat(messages, max_tokens)
+            return
 
         if not saw_message:
             raise ValueError(
@@ -177,13 +198,20 @@ class OpenAICompatibleInferenceProvider(InferenceProvider):
             "messages": messages,
             "max_tokens": max_tokens,
         }
-        # Engines disagree about this parameter's domain. ds4-server accepts
-        # "none"; vLLM accepts only low, medium or high and rejects anything
-        # else with a 400, so sending the configured default at a vLLM backend
-        # failed every request rather than one. "none" means "do not ask for
-        # reasoning", which is what omitting the field already says, so the
-        # request stays valid whichever engine receives it.
-        if self.reasoning_effort and self.reasoning_effort.strip().lower() != "none":
+        # Engines disagree about this parameter's domain, and "none" is not a
+        # synonym for omitting it.
+        #
+        # On ds4-server "none" genuinely suppresses reasoning: the same
+        # one-word reply costs 3 completion tokens with it and 60 without,
+        # because omitting it lets the model think first. On vLLM the value is
+        # rejected outright with a 400, so sending it there fails every request
+        # rather than one.
+        #
+        # So it is sent as configured, and `_without_reasoning_effort` drops it
+        # only for an engine that refuses it. Dropping it unconditionally was
+        # tried and silently turned reasoning back on for every caller,
+        # including the ones whose token budgets assume there is none.
+        if self.reasoning_effort:
             payload["reasoning_effort"] = self.reasoning_effort
         # Omitted, the runtime samples at its own default. Callers that parse the
         # reply as a decision rather than prose pass 0 for a reproducible answer.
@@ -207,7 +235,36 @@ class OpenAICompatibleInferenceProvider(InferenceProvider):
             headers["Authorization"] = f"Bearer {self.api_key}"
         return headers
 
+    # Drop a reasoning level this engine will not accept, once, and remember.
+    #
+    # The two engines used here disagree about the value "none": one treats it
+    # as "do not think", the other rejects it outright. Neither can be detected
+    # ahead of time, and choosing wrong fails every request. So the value is
+    # sent as configured and withdrawn only when the engine says no, after
+    # which this instance stops sending it at all.
+    def _retry_without_reasoning(
+        self, response: httpx.Response, payload: dict[str, Any]
+    ) -> bool:
+        if response.status_code != 400 or "reasoning_effort" not in payload:
+            return False
+        if "reasoning_effort" not in response.text:
+            return False
+        logger.warning(
+            "Inference engine rejected reasoning_effort=%r; retrying without it "
+            "and omitting it from now on",
+            payload["reasoning_effort"],
+        )
+        self.reasoning_effort = ""
+        payload.pop("reasoning_effort", None)
+        return True
+
     def _post(self, payload: dict[str, Any]) -> httpx.Response:
+        response = self._send(payload)
+        if self._retry_without_reasoning(response, payload):
+            response = self._send(payload)
+        return response
+
+    def _send(self, payload: dict[str, Any]) -> httpx.Response:
         if self.client is not None:
             return self.client.post(
                 f"{self.base_url}/v1/chat/completions",

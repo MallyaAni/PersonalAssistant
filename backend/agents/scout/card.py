@@ -53,12 +53,16 @@ async def describe(session: AsyncSession, user_id: str) -> AgentSummary:
     # the count and no way to read the names. The agent that owns them is the
     # one place they can come from.
     followed = (
-        await session.execute(
-            select(DiscoveryInterest.label)
-            .where(DiscoveryInterest.user_id == user_id)
-            .order_by(DiscoveryInterest.created_at)
+        (
+            await session.execute(
+                select(DiscoveryInterest.label)
+                .where(DiscoveryInterest.user_id == user_id)
+                .order_by(DiscoveryInterest.created_at)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     labels = [str(label).strip() for label in followed if str(label or "").strip()]
     interests = len(labels)
     subscribers = await count_rows(session, DiscoverySubscriber, user_id)

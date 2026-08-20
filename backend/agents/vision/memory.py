@@ -79,7 +79,5 @@ class VisualMemorySelector:
             logger.warning("Visual-memory selection failed", exc_info=True)
             return ()
         return tuple(
-            artifact_id
-            for artifact_id in parsed.artifact_ids
-            if artifact_id in offered
+            artifact_id for artifact_id in parsed.artifact_ids if artifact_id in offered
         )

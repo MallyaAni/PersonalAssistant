@@ -248,7 +248,11 @@ async def test_a_restaging_edit_falls_back_to_editing_when_nothing_describes_it(
     service = ImageRefinementService(images, llm=StubSceneWriter())  # type: ignore[arg-type]
 
     await service.refine(
-        "ani.mallya", "artifact-1", "put it in packaging", "c", "t",
+        "ani.mallya",
+        "artifact-1",
+        "put it in packaging",
+        "c",
+        "t",
         restages_the_scene=True,
     )
 
@@ -264,7 +268,11 @@ async def test_a_local_edit_still_protects_everything_it_did_not_mention():
     service = ImageRefinementService(images, llm=StubSceneWriter())  # type: ignore[arg-type]
 
     await service.refine(
-        "ani.mallya", "artifact-1", "make the hat black", "c", "t",
+        "ani.mallya",
+        "artifact-1",
+        "make the hat black",
+        "c",
+        "t",
         restages_the_scene=False,
     )
 

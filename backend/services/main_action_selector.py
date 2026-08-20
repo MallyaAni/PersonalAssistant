@@ -40,6 +40,7 @@ _EDIT_IMAGE_TOOL = "edit_image"
 _CREATE_DIAGRAM_TOOL = "create_diagram"
 _DELEGATE_PRESENTATION_TOOL = "delegate_to_presentation_agent"
 
+
 # Asked of the two tools that otherwise take no arguments. The point is not to
 # pass it on - both of them read the request itself - but to make the model
 # state what it believes it was asked to make. A tool chosen by mistake has no

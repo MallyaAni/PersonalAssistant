@@ -57,7 +57,6 @@ def test_no_declared_default_is_overridden_by_the_env_file():
         name
         for name in sorted(named - inherited_on_purpose)
         if name in Settings.model_fields
-        and getattr(as_the_app_builds_it, name)
-        != getattr(without_the_file, name)
+        and getattr(as_the_app_builds_it, name) != getattr(without_the_file, name)
     ]
     assert not leaked, f"these settings still follow .env during tests: {leaked}"

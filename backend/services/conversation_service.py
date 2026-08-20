@@ -1444,9 +1444,7 @@ class ConversationService:
 
         for round_number in range(max(1, settings.SEARCH_MAX_ROUNDS)):
             tried.append(current)
-            found, ok = await self._load_search_context(
-                current, trace_id, max_results
-            )
+            found, ok = await self._load_search_context(current, trace_id, max_results)
             succeeded = succeeded or ok
             for item in found:
                 url = str(item.get("url") or "")
@@ -1466,9 +1464,7 @@ class ConversationService:
             # the minimum its opinion is worth having, because by then the
             # question is whether to keep going rather than whether to start.
             if round_number + 1 < settings.SEARCH_MIN_ROUNDS:
-                better = self.search_planner.another_angle(
-                    question, gathered, tried
-                )
+                better = self.search_planner.another_angle(question, gathered, tried)
                 # A round that is supposed to happen regardless must not be
                 # lost because one reply came back as prose rather than as a
                 # query. Asking the other way costs one model call and keeps

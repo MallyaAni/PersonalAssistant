@@ -32,9 +32,7 @@ class Conversation(Base):
     # than only searching what a classifier chose to promote out of it.
     # Nullable: turns written before this existed have no vector, and the
     # search skips them rather than matching everything.
-    embedding: Mapped[list[float] | None] = mapped_column(
-        Vector(768), nullable=True
-    )
+    embedding: Mapped[list[float] | None] = mapped_column(Vector(768), nullable=True)
     embedding_model: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
     def to_dict(self) -> dict[str, Any]:

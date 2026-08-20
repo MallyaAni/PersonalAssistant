@@ -164,7 +164,6 @@ class DiscoveryProjection:
             resolved = None
         return resolved or DEFAULT_TIMEZONE
 
-
     # Upsert one interest only when its value matches the fact's stable key.
     async def _apply_interest(self, user_id: str, fact_key: str, value: str) -> None:
         label = value.strip()

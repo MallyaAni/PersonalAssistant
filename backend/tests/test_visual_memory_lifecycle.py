@@ -158,15 +158,18 @@ async def test_delete_all_owned_artifacts_removes_rows_bytes_and_visual_memory(
                 select(VisualArtifact).where(VisualArtifact.user_id == user_id)
             )
         ).all()
-        assert len(
-            (
-                await session.scalars(
-                    select(VisualArtifact).where(
-                        VisualArtifact.user_id == other_user
+        assert (
+            len(
+                (
+                    await session.scalars(
+                        select(VisualArtifact).where(
+                            VisualArtifact.user_id == other_user
+                        )
                     )
-                )
-            ).all()
-        ) == 1
+                ).all()
+            )
+            == 1
+        )
         assert not (
             await session.scalars(
                 select(SemanticMemory).where(SemanticMemory.user_id == user_id)

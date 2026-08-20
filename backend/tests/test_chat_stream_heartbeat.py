@@ -43,7 +43,7 @@ async def test_a_silent_stretch_sends_a_comment_rather_than_nothing():
 async def test_events_are_passed_through_unchanged_and_in_order():
     original = [
         "event: start\ndata: {}\n\n",
-        "event: delta\ndata: {\"content\": \"hi\"}\n\n",
+        'event: delta\ndata: {"content": "hi"}\n\n',
         "event: done\ndata: {}\n\n",
     ]
 
@@ -57,9 +57,7 @@ async def test_events_are_passed_through_unchanged_and_in_order():
 
 
 async def test_a_stream_with_nothing_to_say_still_ends():
-    produced = [
-        frame async for frame in _with_heartbeat(_frames(), interval=0.05)
-    ]
+    produced = [frame async for frame in _with_heartbeat(_frames(), interval=0.05)]
 
     assert produced == []
 
@@ -119,9 +117,7 @@ async def test_a_silence_before_the_answer_is_still_held_open():
         await asyncio.sleep(0.15)
         yield "event: done\ndata: {}\n\n"
 
-    produced = [
-        frame async for frame in _with_heartbeat(slow_answer(), interval=0.02)
-    ]
+    produced = [frame async for frame in _with_heartbeat(slow_answer(), interval=0.02)]
 
     assert [frame for frame in produced if frame.startswith(":")]
     assert produced[-1] == "event: done\ndata: {}\n\n"

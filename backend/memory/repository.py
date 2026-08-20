@@ -483,9 +483,7 @@ class MemoryRepository:
             .limit(top_k)
         )
         if exclude_conversation_id is not None:
-            stmt = stmt.where(
-                Conversation.conversation_id != exclude_conversation_id
-            )
+            stmt = stmt.where(Conversation.conversation_id != exclude_conversation_id)
         result = await self.session.execute(stmt)
         return [(turn, float(score)) for turn, score in result.all()]
 

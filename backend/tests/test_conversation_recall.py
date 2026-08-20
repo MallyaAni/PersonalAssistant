@@ -148,9 +148,9 @@ async def test_a_failed_recall_costs_the_recall_and_not_the_turn(recall_enabled)
         async def get_recalled_turns(self, *args: Any, **kwargs: Any):
             raise RuntimeError("database unavailable")
 
-    assert await _service(BrokenMemory())._recall_past_turns(
-        "u", "c", [0.1] * 768
-    ) == []
+    assert (
+        await _service(BrokenMemory())._recall_past_turns("u", "c", [0.1] * 768) == []
+    )
 
 
 # A question the user once asked says nothing about them, and it embeds close

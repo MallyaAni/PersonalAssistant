@@ -80,9 +80,7 @@ def build_decision(
     decided_at: datetime,
     policy: str = DETERMINISTIC_TOP_K,
 ) -> dict[str, Any]:
-    positions = {
-        item.candidate.digest: index for index, item in enumerate(selected)
-    }
+    positions = {item.candidate.digest: index for index, item in enumerate(selected)}
     considered: list[Considered] = []
     for rank, item in enumerate(shortlist):
         digest = item.candidate.digest

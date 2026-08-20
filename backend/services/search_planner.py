@@ -186,8 +186,7 @@ class SearchPlanner:
         tried = ", ".join(already_tried)
         proposed = self._ask(
             self._dated(_ANOTHER),
-            f"Question: {question}\n\nAlready tried: {tried}\n\n"
-            f"Found so far:\n{found}",
+            f"Question: {question}\n\nAlready tried: {tried}\n\nFound so far:\n{found}",
             "propose another search angle",
         )
         if not proposed or proposed.upper().startswith("ENOUGH"):

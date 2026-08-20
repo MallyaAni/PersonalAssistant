@@ -248,7 +248,8 @@ class SQLAlchemyArtifactRepository(
         except ValueError:
             return {}
 
-        result = await self.session.execute(text("""
+        result = await self.session.execute(
+            text("""
                 WITH RECURSIVE chain AS (
                     SELECT a.id AS origin_id, a.id, a.parent_artifact_id,
                            a.kind, a.title, a.extra_data, 0 AS depth
@@ -265,7 +266,8 @@ class SQLAlchemyArtifactRepository(
                 SELECT origin_id, id, kind, title, extra_data, depth
                   FROM chain
                  ORDER BY origin_id, depth DESC
-                """).bindparams(user_id=user_id, seeds=seeds, max_depth=max_depth))
+                """).bindparams(user_id=user_id, seeds=seeds, max_depth=max_depth)
+        )
 
         chains: dict[str, list[dict[str, Any]]] = {}
         for row in result.mappings():
@@ -362,9 +364,7 @@ class SQLAlchemyArtifactRepository(
             .returning(VisualArtifact.storage_key)
         )
         deleted_keys = result.scalars().all()
-        storage_keys = [
-            key for key in deleted_keys if isinstance(key, str) and key
-        ]
+        storage_keys = [key for key in deleted_keys if isinstance(key, str) and key]
         await self.session.commit()
         return len(deleted_keys), storage_keys
 

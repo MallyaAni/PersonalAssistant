@@ -38,16 +38,12 @@ def _running(name: str) -> bool:
 
 
 def _address() -> str:
-    raw = _docker(
-        "inspect", "-f", "{{json .NetworkSettings.Networks}}", BACKEND
-    )
+    raw = _docker("inspect", "-f", "{{json .NetworkSettings.Networks}}", BACKEND)
     return next(iter(json.loads(raw).values()))["IPAddress"]
 
 
 def _network() -> str:
-    raw = _docker(
-        "inspect", "-f", "{{json .NetworkSettings.Networks}}", BACKEND
-    )
+    raw = _docker("inspect", "-f", "{{json .NetworkSettings.Networks}}", BACKEND)
     return next(iter(json.loads(raw)))
 
 
@@ -91,8 +87,17 @@ def test_the_gateway_follows_the_backend_to_a_new_address():
     # given it back, which is what makes this a real move.
     _docker("stop", BACKEND)
     _docker(
-        "run", "-d", "--name", PLACEHOLDER, "--network", network,
-        "--ip", before, "alpine", "sleep", "300",
+        "run",
+        "-d",
+        "--name",
+        PLACEHOLDER,
+        "--network",
+        network,
+        "--ip",
+        before,
+        "alpine",
+        "sleep",
+        "300",
         check=False,
     )
     _docker("start", BACKEND)

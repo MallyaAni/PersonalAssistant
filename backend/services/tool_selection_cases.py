@@ -133,9 +133,7 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
     ),
     # The other direction still has to hold: naming the artifact is what
     # chooses it, so these stay diagrams.
-    SelectionCase(
-        "draw a diagram of our data pipeline", CREATE_DIAGRAM, "diagram"
-    ),
+    SelectionCase("draw a diagram of our data pipeline", CREATE_DIAGRAM, "diagram"),
     SelectionCase(
         "create an architecture diagram for the payments service",
         CREATE_DIAGRAM,
