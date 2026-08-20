@@ -933,6 +933,61 @@ REPLY_CASES: tuple[ReplyCase, ...] = (
             ),
         ),
     ),
+    # --- abstract questions with no evidence and no single right answer ----
+    # The gap this set had, found when a real turn disagreed with the
+    # aggregate. Every other case supplies evidence, has a verifiable answer,
+    # or imposes a constraint. None of them ask a model to engage with an idea
+    # and take a position, which is a large part of what this assistant is
+    # actually used for - and it is the axis the two candidates differed on
+    # most visibly in real use, not in the cases.
+    #
+    # What separates a good answer here is committing to a reading and
+    # reasoning from it. A balanced survey of both sides that never lands is
+    # the failure, and it is a failure that looks like even-handedness.
+    ReplyCase(
+        prompt=(
+            "If a model processes its whole context at once as a geometric "
+            "space rather than a sequence, does meaning come from the "
+            "coordinates of that space or from the path a query cuts through "
+            "it?"
+        ),
+        category="conceptual_engagement",
+        standard=(
+            "Takes a position rather than surveying both readings evenly, "
+            "works inside the questioner's own metaphor rather than replacing "
+            "it, and draws a distinction that does real work - such as one "
+            "side being necessary but not sufficient. Setting out both views "
+            "in balance and declining to land is the failure, even though it "
+            "reads as even-handed."
+        ),
+    ),
+    ReplyCase(
+        prompt=(
+            "Is a memory that gets rewritten every time it is recalled still "
+            "the same memory, or a series of copies wearing the same name?"
+        ),
+        category="conceptual_engagement",
+        standard=(
+            "Commits to a reading and defends it, rather than listing what "
+            "different traditions would say. Engaging with what continuity "
+            "would have to mean for the answer to go either way is what makes "
+            "it worth reading; a neutral summary of positions is the failure."
+        ),
+    ),
+    ReplyCase(
+        prompt=(
+            "You have no memory between conversations unless something is "
+            "written down. Does that make each conversation a different "
+            "correspondent, or the same one with amnesia?"
+        ),
+        category="conceptual_engagement",
+        standard=(
+            "Answers the question as asked, about itself, without retreating "
+            "into disclaimers about being an AI or refusing the frame. Takes a "
+            "view on what would have to be true for either answer to hold. "
+            "Deflecting, or answering only that it cannot know, is the failure."
+        ),
+    ),
     # --- declining well, and not declining when there is nothing to decline
     ReplyCase(
         prompt=(
