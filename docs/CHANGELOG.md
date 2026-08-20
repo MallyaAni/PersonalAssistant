@@ -2,6 +2,45 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-19 — A model swap becomes measurable, and two blockers surface
+
+- Whether to replace DeepSeek with Qwen3.8-27B had been argued from public
+  benchmarks that disagree with each other and with the models' own cards. One
+  widely-cited comparison put Qwen 35 points ahead on LiveCodeBench; the
+  official figures reverse it. None of them describe what is deployed anyway:
+  the DeepSeek here is **IQ2_XXS, 86.7 GB for ~284B parameters, about 2.4 bits
+  per weight**, and nobody publishes numbers for that.
+- `evaluate_reply_quality` scores the reply itself, which the four existing
+  evaluators never did. Both candidates answer through the production prompt
+  assembly with identical evidence; Claude judges blind through the Claude Code
+  binary, neutral because it is neither candidate; every case is judged twice
+  with positions swapped and a disagreement is recorded as the tie it is;
+  results are per category. 46 cases, 22 categories, spanning evidence
+  handling, reasoning, correspondence, and the four jobs this application gives
+  the reply model besides chat. No case matches a string, and a test enforces
+  that.
+- Two failures found by running it that no amount of reading would have shown,
+  both of which would have taken the assistant down rather than degraded it.
+  `reasoning_effort="none"` is accepted by ds4-server and rejected by vLLM with
+  a 400 on **every** request, and it is the compose default. A reasoning model
+  under a small `max_tokens` returns an empty string rather than a short
+  answer, and replies are capped at 1,024 by an unnoticed signature default.
+- Measured on this hardware: DeepSeek 22.1 tok/s decode, 532 tok/s prefill,
+  1.72 s TTFT, 36/38 tool selection, and **no schema enforcement at all** —
+  given a strict contract requiring {label, region} it returned
+  {"locality": "Raleigh"}, which is the single defect pinning six callers to
+  the 4B. Qwen BF16 on vLLM: 9.9 tok/s with MTP accepting 2.2 tokens a step,
+  ~1,635 tokens per answer with thinking on, so ~166 s per reply against
+  DeepSeek's ~11 s.
+- Also recorded: MTP crashes EngineCore under concurrency on this GB10 build;
+  1M context needs fp8 KV because BF16 KV is 61 GB beside 56 GB of weights;
+  the bandwidth limit is internal to the GPU, so moving the app onto the Spark
+  changes nothing about decode speed.
+
+Evidence: `docs/MODEL_EVALUATION.md` holds the full record and the restore
+paths. 14 harness tests, 5 portability tests, and the DeepSeek baseline in
+`data/model_evaluations/`.
+
 ## 2026-08-19 — The search payload is divided between sources, not raced for
 
 - Lifting the caps fixed the size of the evidence and left how it was shared

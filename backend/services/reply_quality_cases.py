@@ -46,6 +46,11 @@ does these badly is a regression the general cases cannot see.
 Categories exist so a regression traces to a shape rather than to an aggregate.
 A model that gains two points overall while losing every grounding case has got
 worse at the job, and a single number cannot show that.
+
+`docs/MODEL_EVALUATION.md` records what has been measured with this set, what
+the deployed models actually are as opposed to what their cards claim, and the
+runtime failures that only appear when a candidate is actually served. Read it
+before running a comparison, and add to it after.
 """
 
 from dataclasses import dataclass, field

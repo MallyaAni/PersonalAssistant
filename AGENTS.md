@@ -87,6 +87,24 @@ If functional validation cannot be performed, do not label the behavior verified
 Each of these has cost real time or real data here. They are recorded because
 they are not discoverable from the code alone.
 
+**Before touching a model, an inference server, or the Spark, read
+[docs/MODEL_EVALUATION.md](docs/MODEL_EVALUATION.md).** It holds what the
+running models actually are rather than what their cards say, the numbers
+measured on this hardware, the restore path for a service that has no systemd
+unit, and the failures that only appear at runtime. Two of them would have
+taken the whole assistant down: `reasoning_effort="none"` is accepted by
+ds4-server and 400s on every vLLM request, and a reasoning model under a small
+`max_tokens` returns an empty string rather than a short answer.
+
+**Never decide a model swap from published benchmarks.** They describe
+unquantised weights, and the DeepSeek deployed here is a **2-bit** quantisation
+— 86.7 GB for ~284B parameters. Aggregators also disagree with the models' own
+cards; one reported a 35-point LiveCodeBench lead that the official figures
+reverse. Measure it with `evaluate_reply_quality` against
+`backend/services/reply_quality_cases.py`, and capture everything from the
+incumbent *before* offloading it, because one 128 GB box holds one large model
+and a challenger can only be measured in the space the incumbent vacates.
+
 **`.env` beats the compose default, so raising a default may change nothing.**
 Compose writes `KEY=${KEY:-new_default}`, and a `KEY=old_value` still sitting in
 `.env` wins. Raising `VISION_MAX_TOKENS` in `settings.py` *and* in
@@ -435,6 +453,11 @@ can still be stale UI.
 - `docs/AGENT_CATALOG.md`: every specialized agent, what its model decides, where its
   prompt and card live, and what is deliberately decided for it. A new agent adds a
   row here and a diagram pair; the file states the whole checklist.
+- `docs/MODEL_EVALUATION.md`: how a candidate model is decided here, the numbers
+  measured on this hardware rather than quoted from a card, and the runtime
+  traps that no amount of reading the source would reveal. Update it whenever a
+  model, quantisation, or inference server changes, and whenever a new failure
+  is found by running something rather than by reading it.
 - `docs/adr/`: durable architectural decisions.
 
 After implementation or debugging, rewrite `NEXT_SESSION.md` when runtime evidence or the next task changed. Update other documents only when facts within their ownership changed. Never record code as complete in the changelog unless its intended behavior passed functional validation.
