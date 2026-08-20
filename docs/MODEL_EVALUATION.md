@@ -103,7 +103,11 @@ with a wrong label scores the correct model as failing.**
 
 Full record in `data/model_evaluations/BASELINE-deepseek.json`.
 
-### Qwen3.8-27B, BF16, on vLLM 0.17.1 with MTP
+### Qwen3.8-27B, BF16, on vLLM 0.17.1
+
+Measured with MTP enabled, before it had to be disabled for killing the engine.
+Treat the decode figure as the optimistic one: without speculative decoding it
+is lower, and re-measuring it is the first row the profile table needs.
 
 | | |
 |---|---|
@@ -134,13 +138,15 @@ python -m backend.cli.measure_inference_profile \
     --label "bf16 mtp3" --append docs/MODEL_EVALUATION.md
 ```
 
-It issues requests strictly serially. Two concurrent requests with MTP enabled
-killed the engine on this build, so a benchmark that parallelises would destroy
-what it is measuring.
+It issues requests strictly serially. That is how the engine is most stable
+here, and a benchmark that parallelised would risk destroying the thing it is
+measuring mid-run.
 
-**Read `MTP accept` before tuning `num_speculative_tokens`.** Throughput alone
-cannot separate a drafter that is working from one being ignored; acceptance
-length can. Below about 1.5 the drafter is costing more than it returns.
+**`MTP accept` stays in the table but reads as `-` on this build**, because
+speculative decoding is disabled — see the trap below. When it can be turned
+on again, read acceptance before tuning `num_speculative_tokens`: throughput
+alone cannot separate a drafter that is working from one being ignored, and
+below about 1.5 the drafter costs more than it returns.
 
 **`ttft to content` is the number a person feels**, not `ttft`. Thinking is
 streamed as `reasoning` and the reply path renders only `content`, so with
@@ -158,12 +164,12 @@ within one restart by the tool above.
 
 1. **`bf16 mtp3`** — what was first served here. The baseline every other row
    is read against.
-2. **`bf16 mtp5 + prefix + chunked`** — `num_speculative_tokens: 5`,
-   `--enable-prefix-caching`, `--enable-chunked-prefill`. All three cost no
-   quality at all and were missing from the first configuration. A published
-   single-Spark run used exactly these.
-3. **`bf16 no mtp`** — establishes what speculative decoding is actually
-   worth, and is the fallback if the concurrency crash cannot be avoided.
+2. **`bf16 no mtp + prefix + chunked`** — `--enable-prefix-caching` and
+   `--enable-chunked-prefill` cost no quality and were missing from the first
+   configuration. This is the working baseline, because MTP is unusable here.
+3. ~~`bf16 mtp5`~~ — **not measurable on this build.** Raising
+   `num_speculative_tokens` cannot be evaluated while the engine dies mid
+   request at any setting. Revisit when the container is updated.
 4. **`bf16 mtp5 + fp8 kv, 262k`** — quantises the cache and not the weights.
    The only way to reach a large context at full weight quality.
 5. **`bf16 mtp5 + fp8 kv, 1M via YaRN`** — needs `mrope_section`,
@@ -195,12 +201,25 @@ unclosed thinking block. AniOS caps replies at 1,024 by an unnoticed signature
 default in `stream_chat`, so on this model every reply would be blank. Thinking
 tokens count toward the cap and are not the answer.
 
-**MTP speculative decoding crashes the engine under concurrency.** Two
-simultaneous requests with `--speculative-config mtp` produced
-`cudaErrorIllegalAddress` and killed EngineCore on this GB10 build. Fine for a
-serial evaluation, not fine for production with concurrent users. It is worth
-having — acceptance length above 2 roughly doubles throughput — but not until
-the build is updated.
+**MTP speculative decoding crashes the engine on this build. Do not enable it.**
+`--speculative-config mtp` produces `cudaErrorIllegalAddress` and kills
+EngineCore, taking every in-flight request with it.
+
+It was first seen with two requests running and recorded here as a concurrency
+bug. That was wrong. It recurred with `num_running_reqs=1` — a single request,
+nothing else touching the box — so concurrency was a coincidence of the first
+occurrence, not the cause. Twice it destroyed a collection run that was midway
+through; the second time the harness had incremental saving and lost nothing,
+which is why that exists.
+
+The acceptance figures are real (2.16–2.31, roughly doubling decode) and it is
+worth revisiting when the container is updated. Until then the throughput it
+offers is not worth an engine that dies without warning.
+
+Answers produced before and after disabling it were compared on three cases
+with verifiable answers. Both configurations got all three right; the text
+differed only as two samples at non-zero temperature always do. So MTP was
+producing correct output right up until it stopped producing any.
 
 **1M context does not fit at BF16.** At 64 KiB/token, 1M tokens is 61 GB of KV
 beside 56 GB of weights against 121 GB total. 512k fits comfortably; 1M needs
