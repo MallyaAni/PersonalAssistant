@@ -196,7 +196,10 @@ async def test_recency_query_searches_and_reaches_the_system_prompt():
     )
 
     assert search.queries == ["what is the latest python release"]
-    system = llm.messages[0]["content"]
+    # Everything the model was sent. This turn's search results and image
+    # context ride in their own message after the history now, so reading
+    # messages[0] alone would test position rather than delivery.
+    system = "".join(message["content"] for message in llm.messages)
     assert "fresh fact" in system
     assert "https://example.test/a" in system
     assert "untrusted" in system
@@ -412,7 +415,10 @@ async def test_referenced_image_context_enriches_explicit_search():
         "that car to get its model. "
         "Referenced image description: A sleek cobalt sports car at sunset"
     ]
-    system = llm.messages[0]["content"]
+    # Everything the model was sent. This turn's search results and image
+    # context ride in their own message after the history now, so reading
+    # messages[0] alone would test position rather than delivery.
+    system = "".join(message["content"] for message in llm.messages)
     assert "A sleek cobalt sports car at sunset" in system
     assert "https://example.test/a" in system
 

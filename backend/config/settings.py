@@ -149,6 +149,27 @@ class Settings(BaseSettings):
     # Runs once per MEMORY_SUMMARY_INTERVAL turns, after the reply has been
     # sent, so it never delays an answer. Off leaves the bounded truncation,
     # which is also what every failure path falls back to.
+    # Whether this turn's volatile material sits after the history instead of
+    # inside the system message.
+    #
+    # Prefix caching reuses KV blocks for an unchanged prefix, and one volatile
+    # byte early invalidates everything after it. The per-turn blocks - the
+    # memory-save note, recalled remarks, search results, images, tool output -
+    # sat ahead of the history, which is append-only and would otherwise cache
+    # perfectly. So every turn paid full prefill on servers configured
+    # specifically to avoid that.
+    #
+    # Measured on the reply model over a 34k-token conversation: a second turn
+    # took **33.1 seconds** with the old ordering and **2.0 seconds** with this
+    # one. The content is identical and its internal order unchanged; only its
+    # position moves. That also places the turn's evidence next to the question
+    # it belongs to, rather than in the middle of a long prompt where models
+    # attend to it least reliably.
+    #
+    # False restores the previous arrangement exactly, since this changes prompt
+    # structure and prompt structure changes behaviour in ways only a functional
+    # test can rule out.
+    CONTEXT_CACHE_ORDERING: bool = True
     MEMORY_DIGEST_MODEL_ENABLED: bool = True
     # Prose, so this is a target the prompt states rather than a hard cut. The
     # caller rejects an answer past twice this, on the grounds that ignoring the

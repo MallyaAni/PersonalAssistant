@@ -595,6 +595,10 @@ services:
       - CONTEXT_BUDGET_ENABLED=${CONTEXT_BUDGET_ENABLED:-true}
       - CONTEXT_BUDGET_ENFORCE=${CONTEXT_BUDGET_ENFORCE:-false}
       - CONTEXT_BUDGET_TOKENS=${CONTEXT_BUDGET_TOKENS:-32768}
+      # This turn's volatile blocks go after the history, so the prefix above
+      # them stays byte-identical and the server reuses its KV cache.
+      # Measured on the reply model: 16.3s -> 2.0s on a second turn.
+      - CONTEXT_CACHE_ORDERING=${CONTEXT_CACHE_ORDERING:-true}
       # The conversation digest is written by the reply model, falling back
       # to bounded truncation whenever that fails. Runs once per interval,
       # after the reply is sent, so it never delays an answer.

@@ -13,7 +13,11 @@ from typing import Any
 
 import pytest
 
-from backend.agents.graph import _build_system_prompt, _render_recalled_turns
+from backend.agents.graph import (
+    _build_system_prompt,
+    _build_turn_context,
+    _render_recalled_turns,
+)
 from backend.config.settings import settings
 
 
@@ -44,7 +48,7 @@ def test_nothing_is_claimed_when_nothing_was_recalled():
 
 
 def test_the_prompt_carries_recalled_turns():
-    prompt = _build_system_prompt(
+    prompt = _full_prompt(
         {"recalled_turns": [{"said": "I have two kids", "when": "2026-08-01"}]},
         now=datetime(2026, 8, 19, tzinfo=UTC),
     )
@@ -54,7 +58,7 @@ def test_the_prompt_carries_recalled_turns():
 
 
 def test_no_recall_block_appears_without_recalled_turns():
-    prompt = _build_system_prompt({}, now=datetime(2026, 8, 19, tzinfo=UTC))
+    prompt = _full_prompt({}, now=datetime(2026, 8, 19, tzinfo=UTC))
 
     assert "Recalled from earlier:" not in prompt
 
@@ -150,6 +154,15 @@ async def test_a_failed_recall_costs_the_recall_and_not_the_turn(recall_enabled)
 
     assert (
         await _service(BrokenMemory())._recall_past_turns("u", "c", [0.1] * 768) == []
+    )
+
+
+# The whole prompt for a turn. Per-turn material moved out of the system
+# message into its own message after the history, so asserting against the
+# system prompt alone would test where it sits rather than that it arrived.
+def _full_prompt(context_data, **kwargs):
+    return _build_system_prompt(context_data, **kwargs) + _build_turn_context(
+        context_data
     )
 
 
