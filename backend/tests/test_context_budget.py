@@ -16,6 +16,7 @@ import pytest
 from backend.core.context_budget import (
     Section,
     calibrate_chars_per_token,
+    deduplicate,
     estimate_tokens,
     plan,
 )
@@ -184,3 +185,96 @@ def test_the_budget_is_never_exceeded():
     for budget in (0, 1, 17, 250, 4_000):
         report = plan(sections, budget_tokens=budget)
         assert report.used_tokens <= budget, f"overran at budget={budget}"
+
+
+# --- deduplication -----------------------------------------------------
+#
+# Most duplication in a prompt is not redundancy. The narrow case that is:
+# a remark recalled from the past that is already visible in the history.
+
+
+def test_a_recalled_remark_already_in_history_is_dropped():
+    sections = (
+        Section(
+            "history", ("I am interested in horses", "sure, tell me more"), priority=3
+        ),
+        Section(
+            "recalled", ("I am interested in horses", "I moved to Leeds"), priority=5
+        ),
+    )
+
+    result = {s.name: s for s in deduplicate(sections, (("history", "recalled"),))}
+
+    assert result["recalled"].items == ("I moved to Leeds",)
+    assert len(result["history"].items) == 2, "the surviving copy was disturbed"
+
+
+# Same sentence, different spacing and case, is the same sentence.
+def test_incidental_formatting_does_not_hide_a_repeat():
+    sections = (
+        Section("history", ("I am interested in horses",), priority=3),
+        Section("recalled", ("  i am   INTERESTED in horses ",), priority=5),
+    )
+
+    result = {s.name: s for s in deduplicate(sections, (("history", "recalled"),))}
+
+    assert result["recalled"].items == ()
+
+
+# The judgement this must not make. Two differently-worded sentences may mean
+# the same thing, and deciding that belongs to a model, not to string handling.
+def test_a_reworded_remark_is_kept():
+    sections = (
+        Section("history", ("I am interested in horses",), priority=3),
+        Section("recalled", ("I ride at weekends",), priority=5),
+    )
+
+    result = {s.name: s for s in deduplicate(sections, (("history", "recalled"),))}
+
+    assert result["recalled"].items == ("I ride at weekends",)
+
+
+# A promoted fact and a recalled remark can share words and differ in meaning:
+# one is asserted by the application, the other is what the user said and may
+# no longer mean. Collapsing them destroys a distinction the prompt relies on.
+def test_memory_and_recall_are_not_collapsed_into_each_other():
+    sections = (
+        Section("recalled", ("I am vegetarian",), priority=5),
+        Section("memory", ("I am vegetarian",), priority=6),
+    )
+
+    # Only the pair the caller names is collapsed, and this one is not named.
+    result = {s.name: s for s in deduplicate(sections, (("history", "recalled"),))}
+
+    assert result["memory"].items == ("I am vegetarian",)
+    assert result["recalled"].items == ("I am vegetarian",)
+
+
+def test_nothing_changes_when_there_are_no_repeats():
+    sections = (
+        Section("history", ("a",), priority=3),
+        Section("recalled", ("b",), priority=5),
+    )
+
+    assert deduplicate(sections, (("history", "recalled"),)) == sections
+
+
+def test_an_unknown_section_name_is_ignored():
+    sections = (Section("history", ("a",), priority=3),)
+
+    assert deduplicate(sections, (("history", "nothing"),)) == sections
+
+
+def test_section_settings_survive_deduplication():
+    sections = (
+        Section("history", ("dup",), priority=3),
+        Section(
+            "recalled", ("dup", "kept"), priority=5, floor_items=1, ceiling_items=4
+        ),
+    )
+
+    result = {s.name: s for s in deduplicate(sections, (("history", "recalled"),))}
+
+    assert result["recalled"].floor_items == 1
+    assert result["recalled"].ceiling_items == 4
+    assert result["recalled"].priority == 5

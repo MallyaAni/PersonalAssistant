@@ -138,3 +138,32 @@ def test_enforcement_is_off_by_default():
     # the exact defect this area exists to stop, so it stays false until the
     # behaviour behind it is real.
     assert settings.CONTEXT_BUDGET_ENFORCE is False
+
+
+# A remark recalled from the past that is already in the visible history is
+# repetition, and repetition reads as emphasis to a model.
+def test_a_recalled_remark_already_in_history_is_not_counted_twice(budget_enabled):
+    said = "I am interested in horses"
+    history = [{"query": said, "response": "tell me more"}]
+
+    with_repeat = measure_turn(
+        {"recalled_turns": [{"said": said}, {"said": "I moved to Leeds"}]},
+        history,
+        "what should I read?",
+        "SYSTEM",
+    )
+    assert with_repeat is not None
+    recalled = {i.name: i for i in with_repeat.allocations}["recalled"]
+    assert recalled.kept == ("I moved to Leeds",)
+
+
+def test_a_recalled_remark_absent_from_history_survives(budget_enabled):
+    report = measure_turn(
+        {"recalled_turns": [{"said": "I am interested in horses"}]},
+        [{"query": "something else entirely", "response": "quite"}],
+        "what should I read?",
+        "SYSTEM",
+    )
+    assert report is not None
+    recalled = {i.name: i for i in report.allocations}["recalled"]
+    assert recalled.kept == ("I am interested in horses",)

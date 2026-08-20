@@ -151,6 +151,69 @@ class BudgetReport:
         }
 
 
+# Text reduced to what would make two items the same thing said twice.
+#
+# Case and spacing only. This is identity, not meaning: it catches the same
+# sentence arriving twice through different routes, and deliberately does not
+# try to decide that two differently-worded sentences say the same thing. That
+# judgement belongs to a model or an embedding, never to string handling, and
+# guessing at it here would drop material a reader needed.
+def _same_thing(text: str) -> str:
+    return " ".join(text.split()).casefold()
+
+
+def deduplicate(
+    sections: tuple[Section, ...],
+    collapse: tuple[tuple[str, str], ...],
+) -> tuple[Section, ...]:
+    """Drop items from one section that already appear in another.
+
+    `collapse` names ordered pairs - (keep, drop) - so the caller states which
+    copy survives rather than it falling out of section order by accident.
+
+    **Most duplication here is not redundancy.** A promoted memory and a
+    recalled remark can carry the same words and mean different things: one is
+    something this application asserts, the other something the user said and
+    may since have stopped meaning. The reply prompt draws that distinction
+    explicitly, so collapsing the two would destroy it to save a few tokens.
+
+    The case worth collapsing is narrow and real: a remark recalled from the
+    past that is already sitting in the visible history. Recall exists to
+    surface what is *not* in the window, so a hit already in it is pure
+    repetition - and repetition reads as emphasis to a model, which makes it
+    worse than merely wasteful.
+    """
+    by_name = {section.name: section for section in sections}
+    dropped: dict[str, set[str]] = {}
+
+    for keep_name, drop_name in collapse:
+        keeper, loser = by_name.get(keep_name), by_name.get(drop_name)
+        if keeper is None or loser is None:
+            continue
+        seen = {_same_thing(item) for item in keeper.items if item.strip()}
+        dropped.setdefault(drop_name, set()).update(
+            item for item in loser.items if _same_thing(item) in seen
+        )
+
+    if not any(dropped.values()):
+        return sections
+
+    return tuple(
+        section
+        if not dropped.get(section.name)
+        else Section(
+            name=section.name,
+            items=tuple(
+                item for item in section.items if item not in dropped[section.name]
+            ),
+            priority=section.priority,
+            floor_items=section.floor_items,
+            ceiling_items=section.ceiling_items,
+        )
+        for section in sections
+    )
+
+
 def _ordered(sections: tuple[Section, ...]) -> list[Section]:
     # Stable, so equal priorities keep the caller's declaration order.
     return sorted(sections, key=lambda section: section.priority)

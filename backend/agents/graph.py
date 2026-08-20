@@ -8,7 +8,12 @@ from langgraph.graph import END, StateGraph
 from typing_extensions import TypedDict
 
 from backend.config.settings import settings
-from backend.core.context_budget import BudgetReport, Section, plan
+from backend.core.context_budget import (
+    BudgetReport,
+    Section,
+    deduplicate,
+    plan,
+)
 from backend.core.llm import LLMClient
 from backend.core.prompts import render
 
@@ -423,8 +428,18 @@ def measure_turn(
     if not settings.CONTEXT_BUDGET_ENABLED:
         return None
     try:
+        sections = _turn_sections(context_data, history, query, system_prompt)
+        # The one pair worth collapsing. Recall exists to surface what is not
+        # already in the window, so a recalled remark sitting in the visible
+        # history is pure repetition - and repetition reads as emphasis.
+        #
+        # Memory and recall are deliberately not collapsed into each other:
+        # one is a fact this application asserts, the other something the user
+        # said and may have stopped meaning, and the reply prompt depends on
+        # that difference.
+        sections = deduplicate(sections, (("history", "recalled"),))
         return plan(
-            _turn_sections(context_data, history, query, system_prompt),
+            sections,
             budget_tokens=settings.CONTEXT_BUDGET_TOKENS,
             reserved_tokens=settings.MAIN_LLM_MAX_TOKENS,
         )
