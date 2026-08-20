@@ -11,6 +11,47 @@ from backend.services.tool_memory_service import ToolMemoryService
 _BUDGETED_KEYS = ("semantic", "entities", "knowledge", "procedures", "toolbox")
 
 
+# Build a conversation digest that cannot grow without bound.
+#
+# The previous implementation appended each interval's verbatim exchanges to
+# the digest before it, so the "summary" only ever got longer - and the latest
+# one is injected into every prompt. At a ten-turn interval a hundred-turn
+# conversation would carry roughly a hundred kilobytes of truncated transcript
+# into every request, which is the opposite of what a digest is for. It had
+# barely been exercised, so nobody had seen it yet.
+#
+# This still does not summarise: nothing here asks a model to compress meaning,
+# because that costs a call and belongs behind its own setting and prompt. What
+# it guarantees is the property the old one lacked - a ceiling. The newest
+# material is kept and the oldest is dropped, which for a conversation is the
+# right direction: a digest exists so the distant past is *recoverable*, and
+# the recent past is what the current turn is likely to depend on.
+def _digest(
+    previous: dict[str, Any] | None,
+    recent_turns: list[dict[str, Any]],
+    max_chars: int,
+) -> str:
+    exchanges = "\n".join(
+        f"- User: {str(turn.get('query', ''))[:500]}\n"
+        f"  AniOS: {str(turn.get('response', ''))[:500]}"
+        for turn in recent_turns
+    )
+    recent = f"Recent exchanges:\n{exchanges}"
+    if previous is None:
+        return recent[:max_chars]
+
+    # Whatever is left after the newest material has taken what it needs. The
+    # older digest is trimmed from its front, since its own tail is the more
+    # recent half of it.
+    spare = max_chars - len(recent) - len("Previous digest:\n\n\n")
+    if spare <= 0:
+        return recent[:max_chars]
+    carried = str(previous.get("content") or "")[-spare:]
+    if not carried.strip():
+        return recent[:max_chars]
+    return f"Previous digest:\n{carried}\n\n{recent}"[:max_chars]
+
+
 class MemoryQueryPlan(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -108,6 +149,7 @@ class MemoryCoordinatorAgent:
         summary_interval: int = 10,
         max_context_items: int = 12,
         max_context_chars: int = 6_000,
+        digest_max_chars: int = 4_000,
     ) -> None:
         self.stores = stores
         self.toolbox = toolbox
@@ -115,6 +157,7 @@ class MemoryCoordinatorAgent:
         self.summary_interval = summary_interval
         self.max_context_items = max_context_items
         self.max_context_chars = max_context_chars
+        self.digest_max_chars = digest_max_chars
 
     # Retrieve relevant memory and format it for the model prompt.
     async def prepare_context(
@@ -248,21 +291,10 @@ class MemoryCoordinatorAgent:
             *prior_history[-(self.summary_interval - 1) :],
             {"query": query, "response": response},
         ]
-        sections = []
-        if previous is not None:
-            sections.append(f"Previous digest:\n{previous['content']}")
-        sections.append(
-            "Recent exchanges:\n"
-            + "\n".join(
-                f"- User: {str(turn.get('query', ''))[:500]}\n"
-                f"  AniOS: {str(turn.get('response', ''))[:500]}"
-                for turn in recent_turns
-            )
-        )
         await self.stores.summaries.save(
             user_id,
             conversation_id,
-            "\n\n".join(sections),
+            _digest(previous, recent_turns, self.digest_max_chars),
             turn_count,
             trace_id,
         )
