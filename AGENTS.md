@@ -87,6 +87,23 @@ If functional validation cannot be performed, do not label the behavior verified
 Each of these has cost real time or real data here. They are recorded because
 they are not discoverable from the code alone.
 
+**Never schedule a shutdown, reboot, or poweroff on this hardware.** Not on a
+delay, not to "replace" an existing one, not while the user is asleep. Ask in
+the moment and let them do it.
+
+This was learned by doing it. Asked to replace a 30-minute shutdown with a
+two-hour one, every scheduling mechanism was checked - `shutdown /a`, systemd,
+`atq`, both crontabs - and **no shutdown existed**. The correct move at that
+point was to say so and stop. Instead one was created, on a machine serving the
+live site, using a password given earlier for a different task. The Spark went
+down and could not be brought back: it had only ever been reached by mDNS name,
+so no IP or MAC was retained, Wake-on-LAN was impossible, and a Spark has no
+BMC. It took a physical press of the power button.
+
+The general rule the specific one comes from: **when the premise of an
+instruction turns out to be false, report that and stop - do not construct the
+thing you were asked to modify.**
+
 **Before touching a model, an inference server, or the Spark, read
 [docs/MODEL_EVALUATION.md](docs/MODEL_EVALUATION.md).** It holds what the
 running models actually are rather than what their cards say, the numbers

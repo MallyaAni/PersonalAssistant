@@ -379,6 +379,28 @@ diffusion on the 5080.
 
 SSH as `animallya96` with `~/.ssh/id_ed25519_spark`.
 
+```
+hostname   spark-b524.local     (mDNS - can resolve to an IPv6 link-local
+                                 address, which ssh then cannot use)
+address    172.16.8.3
+MAC        F8-3D-C6-F1-23-64
+```
+
+**Record the address, not just the name.** This box was reached only ever by
+mDNS name, so when it powered off there was no IP and no MAC retained anywhere,
+no Wake-on-LAN was possible, and a DGX Spark has no BMC or IPMI. It needed a
+physical press of the power button. Prefer the address when the name will not
+resolve; mDNS is also slow to come back after a boot.
+
+**Wake-on-LAN is not set up.** `ethtool` is not installed, so whether the NIC
+supports it is unverified. Until that is done, "off" means someone has to walk
+to it.
+
+**Powering it off is not recoverable from here, so do not schedule one.** See
+the rule in `AGENTS.md`. When it does come back, `@reboot` starts `ds4-server`
+by itself - verified: four minutes after a cold boot, port 8888 was listening
+and answering with no intervention.
+
 **`ds4-server` has no systemd unit.** It is a `@reboot` cron job, so the
 ordinary `systemctl` mental model leaves it stopped with no obvious way back.
 The restore command is:
