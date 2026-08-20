@@ -96,6 +96,21 @@ class Settings(BaseSettings):
     # release it knows of in a fast-moving family, whether it recognises
     # something released recently, and what year it believes it is.
     MAIN_LLM_TRAINING_CUTOFF: str = "2024-07"
+    # How long a reply may run before the sampler stops it.
+    #
+    # This was 1,024, and not as a decision - it was the default on
+    # `stream_chat`, and the reply path called it with no argument at all. The
+    # cost was not truncated answers, it was missing ones: the main model emits
+    # its thinking as `reasoning_content`, which the stream reader does not
+    # render, so when thinking consumed the budget the stream ended with no
+    # content and the turn raised. Measured on the live model at the time,
+    # **one reply in six came back empty** on open-ended questions, and none did
+    # at 4,096.
+    #
+    # So this is not a length preference. It is the headroom a reasoning model
+    # needs to finish thinking and still answer, and it only ever binds on a
+    # runaway - the longest genuine answer measured here spent about 1,600.
+    MAIN_LLM_MAX_TOKENS: int = Field(default=4_096, ge=256, le=32_768)
     PRESENTATION_INFERENCE_ADAPTER: Literal["", "openai_compatible"] = ""
     PRESENTATION_LLM_BASE_URL: str = ""
     PRESENTATION_LLM_MODEL: str = ""
@@ -140,9 +155,7 @@ class Settings(BaseSettings):
     # recalls sit between 0.25 and 0.44 and the curve flattens after 0.45.
     # Re-measure this after any embedding model change; it is a property of
     # that model, not of the feature.
-    MEMORY_RECALL_TURNS_MAX_COSINE_DISTANCE: float = Field(
-        default=0.45, ge=0, le=2
-    )
+    MEMORY_RECALL_TURNS_MAX_COSINE_DISTANCE: float = Field(default=0.45, ge=0, le=2)
     MEMORY_RECALL_TURNS_MAX_RESULTS: int = Field(default=3, ge=1, le=10)
     MEMORY_SEMANTIC_MAX_CONTENT_CHARS: int = Field(default=4_000, ge=100, le=50_000)
     CONVERSATION_HISTORY_TURNS: int = Field(default=10, ge=0, le=50)

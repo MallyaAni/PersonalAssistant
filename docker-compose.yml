@@ -585,6 +585,10 @@ services:
       # measured value: it names Qwen2.5 as the newest Qwen it knows and
       # believes the year is 2024.
       - MAIN_LLM_TRAINING_CUTOFF=${MAIN_LLM_TRAINING_CUTOFF:-2024-07}
+      # Sized from measurement: at the old 1,024 one reply in six came back
+      # empty, because the model spends part of the budget on thinking that
+      # is never rendered and the stream then carries no content at all.
+      - MAIN_LLM_MAX_TOKENS=${MAIN_LLM_MAX_TOKENS:-4096}
       - MAIN_LLM_REASONING_EFFORT=${MAIN_LLM_REASONING_EFFORT:-none}
       # Where the main model's work goes when the Spark is powered off. Without
       # this the assistant is entirely down whenever that machine is, even

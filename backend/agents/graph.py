@@ -271,9 +271,7 @@ def _build_system_prompt(
         today=today,
         training_boundary=_training_boundary(),
         agents=_render_agent_context(context_data.get("agents") or []),
-        capabilities=_render_capability_context(
-            context_data.get("capabilities") or []
-        ),
+        capabilities=_render_capability_context(context_data.get("capabilities") or []),
         save_state=_render_save_state(context_data.get("memory_save") or {}),
     )
     recalled = _render_recalled_turns(context_data.get("recalled_turns") or [])
@@ -354,7 +352,11 @@ def build_assistant_graph(llm: LLMClient) -> Any:
                 messages.append({"role": "assistant", "content": turn["response"]})
         messages.append({"role": "user", "content": state["current_query"]})
 
-        for chunk in llm.stream_chat(messages):
+        # Explicit, because the signature default was 1,024 and nobody chose
+        # it. A reasoning model spends part of this budget on thinking that is
+        # never rendered, so too small a value returns an empty reply rather
+        # than a short one.
+        for chunk in llm.stream_chat(messages, settings.MAIN_LLM_MAX_TOKENS):
             response_chunks.append(chunk)
             writer({"type": "message.delta", "content": chunk})
         return {
