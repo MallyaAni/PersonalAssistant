@@ -137,6 +137,27 @@ class Settings(BaseSettings):
     # with a hard limit - a budget that only binds at the ceiling reports
     # nothing useful until the day it reports a failure.
     CONTEXT_BUDGET_TOKENS: int = Field(default=32_768, ge=2_048, le=1_000_000)
+    # Whether the conversation digest is written by the reply model or by
+    # truncation.
+    #
+    # Truncation keeps the newest words and loses the oldest meaning, which is
+    # the wrong thing to lose from a long conversation. Compression is better,
+    # but only from a model good enough to compress without inventing: a bad
+    # summary enters every later prompt indistinguishable from something the
+    # user actually said, whereas truncation drops material honestly.
+    #
+    # Runs once per MEMORY_SUMMARY_INTERVAL turns, after the reply has been
+    # sent, so it never delays an answer. Off leaves the bounded truncation,
+    # which is also what every failure path falls back to.
+    MEMORY_DIGEST_MODEL_ENABLED: bool = True
+    # Prose, so this is a target the prompt states rather than a hard cut. The
+    # caller rejects an answer past twice this, on the grounds that ignoring the
+    # instruction this badly means the rest is not worth trusting either.
+    MEMORY_DIGEST_MAX_WORDS: int = Field(default=200, ge=50, le=1_000)
+    # Enough for the words above plus whatever the model spends thinking. Sized
+    # from the same measurement as the reply budget: too small a value on a
+    # reasoning model returns an empty string, not a short one.
+    MEMORY_DIGEST_MAX_TOKENS: int = Field(default=2_048, ge=256, le=8_192)
     PRESENTATION_INFERENCE_ADAPTER: Literal["", "openai_compatible"] = ""
     PRESENTATION_LLM_BASE_URL: str = ""
     PRESENTATION_LLM_MODEL: str = ""

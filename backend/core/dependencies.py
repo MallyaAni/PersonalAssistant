@@ -1441,6 +1441,16 @@ def get_memory_coordinator(
         summary_interval=settings.CONVERSATION_SUMMARY_INTERVAL,
         max_context_items=settings.MEMORY_CONTEXT_MAX_ITEMS,
         max_context_chars=settings.MEMORY_CONTEXT_MAX_CHARS,
+        # The reply model, not the routing one. Compressing a conversation is
+        # prose reasoning and is not schema-bound, so it avoids the engine
+        # defect that pins the bounded classifiers to the 4B - and a weak model
+        # here is worse than none, because a summary that invents a detail
+        # enters every later prompt as though the user had said it.
+        #
+        # It runs once per interval, after the reply is already sent, so its
+        # latency is never on a user's path. When it fails the coordinator
+        # keeps its bounded truncation.
+        summariser=get_reasoning_llm_client(),
     )
 
 

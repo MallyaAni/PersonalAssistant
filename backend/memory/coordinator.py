@@ -4,6 +4,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from backend.memory.digest import summarise
 from backend.services.agent_memory_manager import AgentMemoryManager
 from backend.services.tool_memory_service import ToolMemoryService
 
@@ -150,6 +151,10 @@ class MemoryCoordinatorAgent:
         max_context_items: int = 12,
         max_context_chars: int = 6_000,
         digest_max_chars: int = 4_000,
+        # Optional on purpose. Every existing caller and test constructs this
+        # without one and keeps the truncating behaviour, so compression is an
+        # addition rather than a new requirement.
+        summariser: Any | None = None,
     ) -> None:
         self.stores = stores
         self.toolbox = toolbox
@@ -158,6 +163,7 @@ class MemoryCoordinatorAgent:
         self.max_context_items = max_context_items
         self.max_context_chars = max_context_chars
         self.digest_max_chars = digest_max_chars
+        self.summariser = summariser
 
     # Retrieve relevant memory and format it for the model prompt.
     async def prepare_context(
@@ -291,10 +297,16 @@ class MemoryCoordinatorAgent:
             *prior_history[-(self.summary_interval - 1) :],
             {"query": query, "response": response},
         ]
+        # Compression first, truncation underneath. The bound is not a fallback
+        # bolted on after: it shipped on its own, so this call can fail - model
+        # down, timeout, empty answer - without the unbounded growth returning.
+        carried = str((previous or {}).get("content") or "")
+        written = summarise(self.summariser, carried, recent_turns)
+        content = written or _digest(previous, recent_turns, self.digest_max_chars)
         await self.stores.summaries.save(
             user_id,
             conversation_id,
-            _digest(previous, recent_turns, self.digest_max_chars),
+            content[: self.digest_max_chars],
             turn_count,
             trace_id,
         )

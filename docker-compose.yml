@@ -595,6 +595,12 @@ services:
       - CONTEXT_BUDGET_ENABLED=${CONTEXT_BUDGET_ENABLED:-true}
       - CONTEXT_BUDGET_ENFORCE=${CONTEXT_BUDGET_ENFORCE:-false}
       - CONTEXT_BUDGET_TOKENS=${CONTEXT_BUDGET_TOKENS:-32768}
+      # The conversation digest is written by the reply model, falling back
+      # to bounded truncation whenever that fails. Runs once per interval,
+      # after the reply is sent, so it never delays an answer.
+      - MEMORY_DIGEST_MODEL_ENABLED=${MEMORY_DIGEST_MODEL_ENABLED:-true}
+      - MEMORY_DIGEST_MAX_WORDS=${MEMORY_DIGEST_MAX_WORDS:-200}
+      - MEMORY_DIGEST_MAX_TOKENS=${MEMORY_DIGEST_MAX_TOKENS:-2048}
       - MAIN_LLM_REASONING_EFFORT=${MAIN_LLM_REASONING_EFFORT:-none}
       # Where the main model's work goes when the Spark is powered off. Without
       # this the assistant is entirely down whenever that machine is, even
