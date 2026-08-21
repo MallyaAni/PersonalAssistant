@@ -1,0 +1,50 @@
+{
+  "decision": "DeepSeek-V4-Flash stays as the reply model (2026-08-20). Qwen 3.8-27B won the aggregate 18-9 with 19 ties, and the aggregate misled: its wins were 8-0 in grounding, while DeepSeek took the comparison/trade-off and decisiveness shapes that match how this assistant is actually used - confirmed on a real conceptual question the user preferred DeepSeek's answer to. Speed sealed it: every Qwen quantisation that runs on this hardware decodes at 4.6-8.2 tok/s against DeepSeek's 22.1, and a live UI trial of the fastest was rejected as far too slow. Revisit when a container ships working MTP for GB10, or when a second DGX Spark lets both run at once - then Qwen takes the schema-bound callers and the empty vision-escalation slot with nothing traded away.",
+  "columns": [
+    "Model",
+    "Serving",
+    "Decode tok/s",
+    "Prefill tok/s (cold)",
+    "Prefix cache reuse",
+    "Schema enforcement",
+    "Vision"
+  ],
+  "rows": [
+    [
+      "DeepSeek-V4-Flash IQ2_XXS (~2.4 bit)",
+      "ds4-server, 1M ctx",
+      "22.1",
+      "982",
+      "15-24x",
+      "none (ignores schemas)",
+      "no"
+    ],
+    [
+      "Qwen 3.8-27B BF16",
+      "vLLM 0.17.1, no MTP",
+      "4.57",
+      "885-1051",
+      "11-16x",
+      "yes (grammar-enforced)",
+      "yes"
+    ],
+    [
+      "Qwen 3.8-27B FP8",
+      "vLLM, fp8 KV",
+      "5.35",
+      "564",
+      "17.8x",
+      "yes",
+      "yes"
+    ],
+    [
+      "Qwen 3.8-27B NVFP4",
+      "vLLM (Inferact build)",
+      "6.2-8.2",
+      "-",
+      "-",
+      "yes",
+      "yes"
+    ]
+  ]
+}

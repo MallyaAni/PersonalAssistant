@@ -52,6 +52,12 @@ const publishedDiagrams = [
     change: "How each memory category helps a turn and remains controllable.",
   },
   {
+    name: "context-management",
+    title: "Context management",
+    scope: "Token accounting, dedup, cache-aware ordering, and the bounded digest",
+    change: "How a turn's material becomes a bounded prompt, and what makes turn two fast.",
+  },
+  {
     name: "memory-subsystem",
     title: "Memory subsystem",
     scope: "Short- and long-term types, write policy, retrieval, and storage",
@@ -376,7 +382,9 @@ ${pageStyles}
 <h1>How AniOS routes work, assigns models, and preserves authority</h1>
 <p class="lede">A manager-facing map of the implemented local-first system. Start with the
 full-system view, then use each subsystem diagram to trace ownership, model calls, persistence,
-trust boundaries, and user-visible lifecycle from entry point to result.</p>
+trust boundaries, and user-visible lifecycle from entry point to result. Model choices here are
+decided by measurement, not model cards: the <a href="evals/index.html">evaluation record</a>
+holds the blind-judged comparisons, verbatim answers, and serving numbers behind each decision.</p>
 <p class="contract"><strong>Current orchestration contract:</strong>
 <code>MainActionSelector</code> offers live search, image generation/edit, diagrams, presentation
 delegation, and the user's own registered MCP tools to the main model as one native tool-calling

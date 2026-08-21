@@ -1,0 +1,42 @@
+---
+title: Context management — how a turn's material becomes a bounded prompt
+---
+flowchart TB
+  subgraph sources["Per-turn material"]
+    history["Conversation history<br/>(append-only)"]
+    evidence["Search evidence<br/>(2500/24000 budget: 100% of provider)"]
+    recall["Recalled turns + memory"]
+    images["Recalled images + tool results"]
+  end
+
+  dedup["deduplicate()<br/>recalled remark already in history<br/>counted once, identity match only"]
+  budget["context_budget.plan()<br/>floors before ceilings, priority before greed<br/>reply tokens reserved; drops reported, never silent"]
+  report["BudgetReport → trace log<br/>observe-only: CONTEXT_BUDGET_ENFORCE=false<br/>floors wait for real-traffic distribution"]
+
+  subgraph prompt["Prompt assembly (CONTEXT_CACHE_ORDERING)"]
+    stable["Stable prefix: system + history<br/>byte-identical across turns → KV cache reuse<br/>measured 8.2x on turn two"]
+    volatile["turn_context_messages()<br/>volatile blocks as trailing user message<br/>(system role would be hoisted: 1.05x)"]
+  end
+
+  reply["Reply model<br/>MAIN_LLM_MAX_TOKENS=4096<br/>(1024 returned 1-in-6 empty)"]
+
+  subgraph digest["Every summary_interval turns, after the reply"]
+    summarise["digest.summarise()<br/>reply model, asyncio.to_thread<br/>forbids invention; rejects over-length"]
+    ceiling["Bounded truncation fallback<br/>newest kept, ceiling always holds<br/>(was unbounded: ~100KB by turn 100)"]
+    store[("conversation_summaries")]
+  end
+
+  history --> dedup
+  recall --> dedup
+  evidence --> budget
+  images --> budget
+  dedup --> budget
+  budget --> report
+  budget -.->|"observe only"| prompt
+  stable --> reply
+  volatile --> reply
+  reply --> summarise
+  summarise -->|"model unavailable / empty / runaway"| ceiling
+  summarise --> store
+  ceiling --> store
+  store -->|"latest digest into later prompts"| recall

@@ -50,6 +50,11 @@ dev = [
 # `pip install -e ".[dev]"`.
 include = ["backend*"]
 
+[tool.ruff.lint.per-file-ignores]
+# An HTML/CSS template string cannot wrap at 88 characters without changing
+# the page it renders; the generator is line-length-exempt, nothing else is.
+"scripts/build_eval_page.py" = ["E501"]
+
 [tool.ruff]
 line-length = 88
 target-version = "py312"

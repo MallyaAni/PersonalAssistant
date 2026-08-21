@@ -24,6 +24,7 @@ const diagramNames = [
   "chat-orchestration",
   "search-research-subsystem",
   "memory-subsystem",
+  "context-management",
   "memory-overview",
   "discovery-subsystem",
   "agent-scout",
