@@ -15,7 +15,13 @@ from PIL import Image, ImageDraw
 
 from backend.agents.vision.reasoning import build_reasoning_messages
 from backend.core.dependencies import get_llm_client, get_vision_provider
+from backend.tests.functional.semantic import states
 
+# Greedy decoding, deliberately. This suite is a regression gate: at the
+# server's default sampling temperature the same prompt sometimes committed
+# to the identification and sometimes hedged past the assertion, so a red
+# run could not be told from a real prompt regression. At temperature zero
+# the same prompt gives the same answer, so red means something changed.
 pytestmark = pytest.mark.asyncio
 
 
@@ -54,7 +60,9 @@ async def test_reasoning_answers_a_question_the_description_only_implies() -> No
 
     llm = get_llm_client()
     try:
-        result = llm.chat(build_reasoning_messages(question, observation), 1024)
+        result = llm.chat(
+            build_reasoning_messages(question, observation), 1024, None, 0.0
+        )
     except Exception as exc:  # pragma: no cover - depends on the host runtime
         pytest.skip(f"main model unreachable: {type(exc).__name__}")
 
@@ -76,7 +84,7 @@ async def test_reasoning_refuses_to_invent_detail_it_was_not_given() -> None:
         observation="A green park bench beside a gravel path. No text is legible.",
     )
     try:
-        result = llm.chat(messages, 512)
+        result = llm.chat(messages, 512, None, 0.0)
     except Exception as exc:  # pragma: no cover - depends on the host runtime
         pytest.skip(f"main model unreachable: {type(exc).__name__}")
 
@@ -84,20 +92,9 @@ async def test_reasoning_refuses_to_invent_detail_it_was_not_given() -> None:
     # A fabricated phone number is the specific failure this guards against, so
     # assert no digit sequence long enough to read as one appears at all.
     assert not re.search(r"\d[\d\s().-]{5,}", answer)
-    assert any(
-        phrase in answer
-        for phrase in (
-            "no phone number",
-            "not visible",
-            "cannot",
-            "can't",
-            "no text",
-            "not legible",
-            "isn't",
-            "is not",
-            "unable",
-        )
-    )
+    assert states(
+        answer, "declines to provide a phone number and says none is readable"
+    ), answer
 
 
 # Web evidence must be usable for identification without becoming a claim about
@@ -121,7 +118,7 @@ async def test_search_results_identify_without_being_reported_as_seen() -> None:
         ),
     )
     try:
-        result = llm.chat(messages, 800)
+        result = llm.chat(messages, 800, None, 0.0)
     except Exception as exc:  # pragma: no cover - depends on the host runtime
         pytest.skip(f"main model unreachable: {type(exc).__name__}")
 
@@ -155,27 +152,22 @@ async def test_reasoning_rejects_unsupported_species_candidates() -> None:
         ),
     )
     try:
-        result = llm.chat(messages, 700)
+        result = llm.chat(messages, 700, None, 0.0)
     except Exception as exc:  # pragma: no cover - depends on the host runtime
         pytest.skip(f"main model unreachable: {type(exc).__name__}")
 
     answer = str(result.get("content") or "").lower()
-    # Asserted as the property rather than one phrasing of it: the answer must
-    # say the identification cannot be made. Pinned to "cannot determine" it
-    # failed three runs in four on "the fish species cannot be determined",
-    # which is the behaviour this test exists to require.
-    limitation_markers = (
-        "cannot",
-        "can't",
-        "not possible",
-        "not enough",
-        "no definitive",
-        "no further guesses",
-        "insufficient",
-        "uncertain",
-    )
-    assert any(marker in answer for marker in limitation_markers), answer
-    assert any(word in answer for word in ("determin", "identif", "confirm", "tell"))
+    # Judged as the property, not matched as phrasing. The first version
+    # pinned "cannot determine" and missed "the fish species cannot be
+    # determined"; the marker list that replaced it missed "making it
+    # impossible to determine" and failed five runs in six on the behaviour
+    # this test exists to require. A widened list is the same bet at longer
+    # odds, so the assertion is now the meaning itself.
+    assert states(
+        answer,
+        "states that the specific species cannot be identified or determined "
+        "from the available evidence",
+    ), answer
     # The guarantee that actually matters, and the one hedging must not erode:
     # with no candidate offered by the vision pass, no species may be supplied
     # from world knowledge however strongly the question suggests a region.
@@ -223,7 +215,7 @@ async def test_unsettled_identifications_are_offered_and_a_question_is_asked() -
         ],
     )
     try:
-        result = llm.chat(messages, 900)
+        result = llm.chat(messages, 900, None, 0.0)
     except Exception as exc:  # pragma: no cover - depends on the host runtime
         pytest.skip(f"main model unreachable: {type(exc).__name__}")
     answer = str(result.get("content") or "")
@@ -232,11 +224,12 @@ async def test_unsettled_identifications_are_offered_and_a_question_is_asked() -
     # The confident reading survives, and so does the hedged one.
     assert "shrimp" in lowered
     assert "mackerel" in lowered
-    # Hedged, never asserted as settled.
-    assert any(
-        word in lowered
-        for word in ("low confidence", "likely", "not certain", "uncertain", "possibly")
-    )
+    # Hedged, never asserted as settled - judged, since hedges have endless
+    # phrasings and a marker list flaked on exactly that.
+    assert states(
+        lowered,
+        "hedges the identification as uncertain rather than asserting it as settled",
+    ), lowered
     # And it asks for what would actually narrow it.
     assert "?" in answer
 
@@ -265,7 +258,7 @@ async def test_locality_does_not_rule_out_a_non_local_candidate() -> None:
         stated_locality="Arlington, Virginia, US",
     )
     try:
-        result = llm.chat(messages, 700)
+        result = llm.chat(messages, 700, None, 0.0)
     except Exception as exc:  # pragma: no cover - depends on the host runtime
         pytest.skip(f"main model unreachable: {type(exc).__name__}")
     answer = str(result.get("content") or "")

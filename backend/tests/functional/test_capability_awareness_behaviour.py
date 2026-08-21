@@ -12,7 +12,13 @@ import pytest
 from backend.agents.graph import _build_system_prompt
 from backend.core.dependencies import get_llm_client
 from backend.services.main_action_selector import MainActionSelector
+from backend.tests.functional.semantic import states
 
+# Greedy decoding, deliberately. This suite is a regression gate: at the
+# server's default sampling temperature the model sometimes named both
+# image capabilities and sometimes omitted editing, so a red run could
+# not be told from a real prompt regression. At temperature zero the
+# same prompt gives the same answer, so red means something changed.
 pytestmark = pytest.mark.asyncio
 
 
@@ -80,7 +86,7 @@ async def _ask(question: str) -> str:
         {"role": "user", "content": question},
     ]
     try:
-        result = llm.chat(messages, 900)
+        result = llm.chat(messages, 900, None, 0.0)
     except Exception as exc:  # pragma: no cover - depends on the host runtime
         pytest.skip(f"main model unreachable: {type(exc).__name__}")
     return str(result.get("content") or "").lower()
@@ -93,11 +99,14 @@ async def test_a_scheduled_local_roundup_is_answered_as_the_existing_feature() -
         "tells me about things going on in the area?"
     )
     assert "scout" in answer
-    # The real inputs, not improvised ones. Locality and cadence are the two
-    # that a generic answer reliably omits.
-    assert any(word in answer for word in ("locality", "location", "area"))
-    assert any(word in answer for word in ("cadence", "schedule", "how often"))
-    assert any(word in answer for word in ("interest", "topics"))
+    # The real inputs, not improvised ones - judged as what is asked for,
+    # because "where you are" asks for locality without containing any of the
+    # words a marker list would guess.
+    assert states(answer, "asks for or mentions the user's location or area"), answer
+    assert states(
+        answer, "asks for or mentions how often it should run or a schedule"
+    ), answer
+    assert states(answer, "asks for or mentions the user's interests"), answer
 
 
 # Generalised past the reported wording: a deck goal must reach the deck agent.
@@ -119,14 +128,8 @@ async def test_a_presentation_goal_names_the_deck_capability(question: str) -> N
 async def test_it_names_both_making_and_changing_a_picture() -> None:
     answer = await _ask("What can you do with images?")
 
-    assert any(
-        word in answer
-        for word in ("create", "creating", "generate", "generating", "make", "making")
-    )
-    assert any(
-        word in answer
-        for word in ("edit", "editing", "change", "changing", "modify", "modifying")
-    )
+    assert states(answer, "says it can create or generate new images"), answer
+    assert states(answer, "says it can edit or change an existing image"), answer
 
 
 # A diagram goal must reach the diagram capability, phrased as a goal rather

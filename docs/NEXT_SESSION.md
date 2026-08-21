@@ -53,10 +53,19 @@ Spark arrives (then Qwen takes the schema-bound callers and the empty
    model these return garbage-as-content (ds4) or empty (vLLM); the image
    intent one was already hit once and misdiagnosed as a model capability
    problem (`get_image_intent_classifier`'s comment records the wrong lesson).
-4. **Functional suite flakes at ~10%** (measured 1/2/2/0/1 over five runs,
-   six different tests). CLAUDE.md makes this suite the prompt-change gate;
-   at this rate it cannot tell a regression from noise. Needs
-   repetition-with-threshold or looser single-sample assertions.
+4. **Functional flakiness - FIXED 2026-08-20.** Two causes, neither of them
+   needing repetition. Positive marker lists over sampled prose failed
+   correct answers for their phrasing ("impossible to determine" missed a
+   list holding "cannot" and "not possible") - those assertions are now
+   semantic, judged by the routing model through an enforced
+   {"holds": bool} schema at temperature zero
+   (`backend/tests/functional/semantic.py`, calibrated 6/6 before use).
+   And the gate itself now decodes greedily, because at default sampling
+   the same prompt sometimes omitted a capability and sometimes did not.
+   Measured: one test failing 5/6 and suite flake ~10% before; 13/13 across
+   six consecutive runs after; full functional suite 283 passed. Exact
+   facts and identities ("90", an invented species name) stay as plain
+   `in` checks - those are identity, not meaning, and never flaked.
 
 ## Still open, lower
 
