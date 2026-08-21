@@ -62,6 +62,18 @@ python -m pytest backend/tests/functional -q     # real model, real MCP, real Co
 | `style/distill.md` | Distilling a durable per-user image style from feedback |
 | `memory/proposal.md` | What from one utterance is worth remembering |
 | `memory/digest.md` | Compressing a stretch of conversation into notes |
+| `deck/plan.md` | The outline request for a whole deck |
+| `deck/slide.md` | Writing one slide from the approved outline |
+| `deck/new_slide.md` | Adding a slide without disturbing the rest |
+| `deck/revision.md` | Revising one slide from feedback |
+| `diagram/system.md` | Turning a subject into Mermaid source |
+| `scout/aim.md` | Aiming the weekly search at one person's interests |
+| `scout/describe.md` | Typing the facts of one scraped happening |
+| `scout/digest_message.md` | The weekly Scout message itself |
+| `scout/place_suggest.md` | Completing a town or city name being typed |
+| `scout/rerank.md` | Ordering the shortlist for one person |
+| `scout/timezone.md` | Naming the IANA timezone of a place |
+| `refinement/keep_scene.md` | What an image edit must preserve |
 | `search/another_angle.md` | The unconditional follow-up search |
 | `search/refine.md` | Whether to keep searching, and for what |
 | `routing/select_action.md` | **What every turn does**: search, picture, edit, diagram, deck, an MCP tool, or nothing. Runs on the 4B routing model |
@@ -76,9 +88,6 @@ each is a module-level constant, usually named `_SYSTEM` or `_PROMPT`.
 | --- | --- |
 | `backend/agents/graph.py` | The blocks rendered *into* `reply/system.md`: recalled images, search results, tool results, personal memory |
 | `backend/services/main_action_selector.py` | Each built-in tool's own description - kept beside the tool so one wording serves both routing and what the assistant says it can do |
-| `backend/services/image_refinement_service.py` | What the image editor is told to preserve or change |
-| `backend/agents/deck/prompts.py` | Presentation outline and per-slide writing |
-| `backend/agents/scout/*.py` | Discovery: aiming, describing, digesting, place suggestion, reranking, timezones |
 
 Moving one here is mechanical: create the file with a header, replace the
 constant with its name, and call `render()` instead of `.format()`.

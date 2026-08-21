@@ -17,13 +17,12 @@ below repeat that every figure must come from a supplied source, and that a
 layout which needs no number is the right answer when none is supported.
 """
 
+from backend.core.prompts import load
+
 # The five preambles. Each names what Deck is doing in this one call, because
 # "plan a deck" and "revise one slide keeping everything the feedback does not
 # mention" are different jobs, and a shared opener would blur them.
-PLANNING_PREAMBLE = (
-    "You are AniOS PresentationAgent. Plan clear, technically "
-    "accurate, executive-ready presentation content. "
-)
+PLANNING_PREAMBLE = load("deck/plan")
 
 
 # Parameterised, because this is the only call that tells the model where in
@@ -38,28 +37,11 @@ def slide_content_preamble(index: int, total: int, deck_title: str) -> str:
     )
 
 
-SLIDE_CONTENT_PREAMBLE = (
-    "Keep the supplied title, purpose, and layout exactly; the deck's shape was "
-    "already decided. Supply whatever that layout needs. This slide advances the "
-    "deck rather than summarising it: write only what belongs to this beat, do "
-    "not repeat what an earlier slide covered, and carry the beat into "
-    "visual_prompt so any image matches this point in the arc rather than the "
-    "subject in general."
-)
+SLIDE_CONTENT_PREAMBLE = load("deck/slide")
 
-NEW_SLIDE_PREAMBLE = (
-    "You are AniOS PresentationAgent adding exactly one new slide to an existing "
-    "deck. Write only the new slide. Do not repeat a slide the deck already has, "
-    "and match the established tone and depth. "
-)
+NEW_SLIDE_PREAMBLE = load("deck/new_slide")
 
-REVISION_PREAMBLE = (
-    "You are AniOS PresentationAgent revising exactly one slide. Apply the "
-    "user's feedback to this slide's content, keeping everything the feedback "
-    "does not mention. Do not change other slides. The layout shown on the slide "
-    "is the one to produce; supply everything that layout needs, reusing the "
-    "chart or table data below unless the feedback changes it. "
-)
+REVISION_PREAMBLE = load("deck/revision")
 
 
 def _deck_plan_contract() -> str:

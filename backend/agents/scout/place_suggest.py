@@ -42,6 +42,7 @@ from dataclasses import dataclass
 from pydantic import BaseModel, ConfigDict, Field
 
 from backend.core.interfaces import TextWriter
+from backend.core.prompts import load
 from backend.discovery.types import MAX_LABEL_CHARS, MAX_REGION_CHARS, normalize_label
 
 # Below this there is nothing to go on and every name in the world matches.
@@ -80,20 +81,7 @@ class PlaceSuggestion:
     region: str
 
 
-_SYSTEM = """You complete the name of a real town or city someone is typing.
-
-List the places that are genuinely well known by that name, most populous first.
-Usually that is one to three. Include every one a person might plausibly mean, so
-someone typing "Arlingt" sees both Arlington, Virginia and Arlington, Texas —
-telling those apart is the whole reason this list exists.
-
-`region` is the state, province, or country that distinguishes them, written in
-full rather than abbreviated.
-
-Never add a place to make the list longer. If only one place is well known by
-that name, return exactly one. A guessed entry is the worst outcome, because
-someone will pick it and be sent somewhere that does not exist. Return an empty
-list when nothing real matches."""
+_SYSTEM = load("scout/place_suggest")
 
 
 class PlaceSuggester:

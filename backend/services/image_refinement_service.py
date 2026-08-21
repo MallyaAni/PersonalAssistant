@@ -4,6 +4,7 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from backend.artifacts.types import ImageGenerationRequest
+from backend.core.prompts import load
 from backend.services.image_artifact_service import ImageArtifactService
 from backend.services.vision_analysis_service import VisionAnalysisService
 
@@ -15,11 +16,7 @@ _MAX_FEEDBACK_CHARS = 2000
 # picture: recolour a hat, remove a sign, relabel a box. Everything else must
 # survive untouched, and without this the image model rebuilds the whole scene
 # around one small change.
-_KEEP_THE_SCENE = (
-    "Preserve every unmentioned subject attribute, object identity, geometry, "
-    "position, camera angle, background, lighting, reflections, and composition. "
-    "Do not add, remove, or move anything unless the instruction explicitly asks."
-)
+_KEEP_THE_SCENE = load("refinement/keep_scene")
 
 
 class RefinementError(RuntimeError):
