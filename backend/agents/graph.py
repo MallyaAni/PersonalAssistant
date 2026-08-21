@@ -11,7 +11,6 @@ from backend.config.settings import settings
 from backend.core.context_budget import (
     BudgetReport,
     Section,
-    deduplicate,
     plan,
 )
 from backend.core.llm import LLMClient
@@ -411,6 +410,31 @@ def turn_context_messages(context_data: dict[str, Any]) -> list[dict[str, str]]:
     return [{"role": "user", "content": turn_context}]
 
 
+# Recalled remarks minus the ones already visible in the history's messages.
+#
+# Recall exists to surface what is not in the window; a remark sitting in it
+# is pure repetition, and repetition reads as emphasis. Matching is identity -
+# case and spacing only - never meaning. One function serves both the section
+# builder and the enforcer, so the count and the trim cannot disagree about
+# which remarks are redundant. Memory and recall are deliberately not
+# collapsed into each other: one is a fact this application asserts, the
+# other something the user said and may have stopped meaning.
+def _deduped_recall(
+    context_data: dict[str, Any], history: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    said_in_history = {
+        " ".join(str(turn.get(key) or "").split()).casefold()
+        for turn in history
+        for key in ("query", "response")
+    }
+    return [
+        turn
+        for turn in (context_data.get("recalled_turns") or [])
+        if " ".join(str(turn.get("said") or "").split()).casefold()
+        not in said_in_history
+    ]
+
+
 # Break a turn into the sources it was assembled from, so each can be counted.
 #
 # The blocks are rendered by the same functions the prompt uses, rather than
@@ -428,11 +452,15 @@ def _turn_sections(
     query: str,
     system_prompt: str,
 ) -> tuple[Section, ...]:
+    # One item per exchange, not per message: trimming drops whole turns, and
+    # a response surviving without its question would be incoherent rather
+    # than merely shorter. Most recent first, because recency is relevance for
+    # a conversation and trimming takes from the tail.
     turns = [
-        text
-        for turn in reversed(history)  # most recent first: recency is relevance
-        for text in (str(turn.get("query") or ""), str(turn.get("response") or ""))
-        if text.strip()
+        f"user: {turn.get('query') or ''}\nassistant: {turn.get('response') or ''}"
+        for turn in reversed(history)
+        if str(turn.get("query") or "").strip()
+        or str(turn.get("response") or "").strip()
     ]
     return (
         # Neither of these is ever trimmable; they are counted so the report
@@ -471,7 +499,7 @@ def _turn_sections(
             "recalled",
             tuple(
                 str(turn.get("said") or "")
-                for turn in (context_data.get("recalled_turns") or [])
+                for turn in _deduped_recall(context_data, history)
             ),
             priority=5,
             floor_items=1,
@@ -489,6 +517,53 @@ def _turn_sections(
     )
 
 
+# Apply a plan to the turn's inputs, so what is assembled is what was planned.
+#
+# Trimming happens to `context_data` and `history` before any rendering, never
+# to rendered strings: the sections were built from these inputs in a known
+# order, each section's kept set is a prefix of that order, so keeping the
+# first `len(kept)` source entries reproduces the plan exactly. Editing
+# rendered text instead would mean parsing back what was just serialized, and
+# the report would describe a prompt other than the one sent.
+#
+# The recalled section is planned after deduplication, so its kept count is a
+# prefix of the deduplicated list - a remark dropped for already being visible
+# in the history stays dropped here, which is correct twice over: it is
+# redundant, and repetition reads as emphasis.
+def _apply_report(
+    context_data: dict[str, Any],
+    history: list[dict[str, Any]],
+    report: BudgetReport,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    kept = {item.name: len(item.kept) for item in report.allocations}
+    trimmed = dict(context_data)
+    trimmed["search"] = list(context_data.get("search") or [])[
+        : kept.get("evidence", 0)
+    ]
+    trimmed["tool_results"] = list(context_data.get("tool_results") or [])[
+        : kept.get("tools", 0)
+    ]
+    trimmed["images"] = list(context_data.get("images") or [])[: kept.get("images", 0)]
+
+    trimmed["recalled_turns"] = _deduped_recall(context_data, history)[
+        : kept.get("recalled", 0)
+    ]
+
+    # The memory section counts episodic then semantic as one ordered list, so
+    # its budget is spent across both in that order.
+    allowance = kept.get("memory", 0)
+    episodic = list(context_data.get("episodic") or [])
+    trimmed["episodic"] = episodic[:allowance]
+    trimmed["semantic"] = list(context_data.get("semantic") or [])[
+        : max(0, allowance - len(trimmed["episodic"]))
+    ]
+
+    # History was planned most-recent-first; the stored order is oldest-first,
+    # so keeping the last N keeps the same exchanges the plan kept.
+    kept_history = history[-kept.get("history", 0) :] if kept.get("history") else []
+    return trimmed, kept_history
+
+
 # Measure the turn and report it. Nothing is trimmed unless enforcement is on,
 # and enforcement is off until the priorities above have been argued against
 # real turn sizes rather than assumed.
@@ -501,16 +576,10 @@ def measure_turn(
     if not settings.CONTEXT_BUDGET_ENABLED:
         return None
     try:
+        # Recall is deduplicated against the raw messages inside
+        # _turn_sections via _deduped_recall; matching serialized whole-turn
+        # strings here broke the moment history became one item per exchange.
         sections = _turn_sections(context_data, history, query, system_prompt)
-        # The one pair worth collapsing. Recall exists to surface what is not
-        # already in the window, so a recalled remark sitting in the visible
-        # history is pure repetition - and repetition reads as emphasis.
-        #
-        # Memory and recall are deliberately not collapsed into each other:
-        # one is a fact this application asserts, the other something the user
-        # said and may have stopped meaning, and the reply prompt depends on
-        # that difference.
-        sections = deduplicate(sections, (("history", "recalled"),))
         return plan(
             sections,
             budget_tokens=settings.CONTEXT_BUDGET_TOKENS,
@@ -529,13 +598,41 @@ def build_assistant_graph(llm: LLMClient) -> Any:
         logger.debug("Processing conversation trace %s", state.get("trace_id"))
         writer = get_stream_writer()
         response_chunks = []
-        messages = [
-            {
-                "role": "system",
-                "content": _build_system_prompt(state.get("context_data") or {}),
-            }
-        ]
-        for turn in state.get("history") or []:
+        context_data = state.get("context_data") or {}
+        history = state.get("history") or []
+        query = state["current_query"]
+
+        # Measured before assembly, so enforcement can act on the inputs and
+        # the report describes the prompt that is actually sent - planned and
+        # sent are the same thing by construction, not by later comparison.
+        report = measure_turn(
+            context_data, history, query, _build_system_prompt(context_data)
+        )
+        if report is not None:
+            logger.info("trace=%s %s", state.get("trace_id"), report.summary())
+            record_context_report(report, str(state.get("trace_id") or ""))
+            if report.dropped_total and settings.CONTEXT_BUDGET_ENFORCE:
+                named = {item.name: item for item in report.allocations}
+                if named["system"].complete and named["query"].complete:
+                    context_data, history = _apply_report(context_data, history, report)
+                    logger.info(
+                        "trace=%s enforced: dropped %d item(s) to fit the window",
+                        state.get("trace_id"),
+                        report.dropped_total,
+                    )
+                else:
+                    # A window too small for the system prompt and the question
+                    # cannot be fixed by dropping enrichment; trimming would
+                    # send a turn missing its own question. Send in full and
+                    # say so, loudly.
+                    logger.warning(
+                        "trace=%s window smaller than the untrimmable parts; "
+                        "turn sent in full",
+                        state.get("trace_id"),
+                    )
+
+        messages = [{"role": "system", "content": _build_system_prompt(context_data)}]
+        for turn in history:
             if turn.get("query"):
                 messages.append({"role": "user", "content": turn["query"]})
             if turn.get("response"):
@@ -543,29 +640,8 @@ def build_assistant_graph(llm: LLMClient) -> Any:
         # This turn's volatile material goes after the history, so the prefix
         # above it stays byte-identical between turns and the server can reuse
         # its KV blocks. Measured at 16.5x on a 34k-token conversation.
-        messages.extend(turn_context_messages(state.get("context_data") or {}))
-        messages.append({"role": "user", "content": state["current_query"]})
-
-        # Counted after assembly and before the request, so the report
-        # describes what was actually sent.
-        report = measure_turn(
-            state.get("context_data") or {},
-            state.get("history") or [],
-            state["current_query"],
-            messages[0]["content"],
-        )
-        if report is not None:
-            logger.info("trace=%s %s", state.get("trace_id"), report.summary())
-            record_context_report(report, str(state.get("trace_id") or ""))
-            if report.dropped_total and settings.CONTEXT_BUDGET_ENFORCE:
-                # Enforcement is not implemented yet on purpose. Saying so
-                # loudly is better than a flag that silently does nothing,
-                # which is the defect this whole area exists to stop.
-                logger.warning(
-                    "trace=%s CONTEXT_BUDGET_ENFORCE is set but trimming is "
-                    "not implemented; the turn was sent in full",
-                    state.get("trace_id"),
-                )
+        messages.extend(turn_context_messages(context_data))
+        messages.append({"role": "user", "content": query})
 
         # Explicit, because the signature default was 1,024 and nobody chose
         # it. A reasoning model spends part of this budget on thinking that is

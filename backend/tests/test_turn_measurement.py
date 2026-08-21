@@ -64,11 +64,15 @@ def test_every_prompt_source_is_represented():
 
 
 # Recency is relevance for a conversation, and trimming takes from the tail.
-# Oldest-first would discard the turn the follow-up depends on.
-def test_history_is_ordered_most_recent_first():
+# Oldest-first would discard the turn the follow-up depends on. One item per
+# exchange, not per message, so a trim can never keep a response without the
+# question it answered.
+def test_history_is_ordered_most_recent_first_by_whole_exchanges():
     sections = {s.name: s for s in _turn_sections({}, _history(), "q", "SYSTEM")}
 
-    assert sections["history"].items[0] == "second question"
+    newest = sections["history"].items[0]
+    assert "second question" in newest
+    assert "second answer" in newest, "an exchange was split into messages"
 
 
 def test_both_memory_kinds_are_counted():

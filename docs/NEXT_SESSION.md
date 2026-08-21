@@ -40,11 +40,18 @@ Spark arrives (then Qwen takes the schema-bound callers and the empty
 
 ## START HERE: the highest-value open items
 
-1. **Set enforcement floors from real traffic.** Every turn logs a
-   `context ... tokens` line. After a day of ordinary use, read the
-   distribution, set section floors from it, implement trimming behind
-   `CONTEXT_BUDGET_ENFORCE`, and wire the `buried_evidence` cases as the
-   regression gate. Do not set floors from synthetic turns.
+1. **Flip enforcement once the data says so - the build is done.** Trimming
+   is implemented (2026-08-21): the plan applies to the turn's inputs before
+   assembly, drops from each section's relevance tail, trims history by whole
+   exchanges newest-kept, and never touches system or query - a window
+   smaller than those sends in full with a warning. The buried_evidence gate
+   (`test_context_enforcement.py`) fails any budget or floor that would lose
+   a findable fact. Measurements persist across rebuilds on the telemetry
+   volume. The flip procedure: run
+   `docker compose exec backend python -m backend.cli.report_context_usage`;
+   when it prints suggested floors (needs 25+ real turns), set them in
+   `_turn_sections`, set `CONTEXT_BUDGET_ENFORCE=true` in compose, redeploy,
+   and watch the report's dropped counts. Nothing else remains to build.
 2. **Collect the three conceptual-engagement answers.** The category that
    explains the user's real preference exists but neither model has answered
    its cases (DeepSeek: 2 minutes, up now; Qwen: needs a swap, defer).
