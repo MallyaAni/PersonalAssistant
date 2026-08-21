@@ -85,6 +85,23 @@ def test_a_config_without_recipients_refuses_to_start(monkeypatch):
         BridgeConfig.from_environment()
 
 
+def test_the_sending_account_can_be_pinned(monkeypatch):
+    # With two Apple IDs signed into Messages, "the first iMessage account" is
+    # a tie-break deciding which identity this Mac speaks as. The pin makes it
+    # an operator decision instead.
+    monkeypatch.setenv("IMESSAGE_BRIDGE_TOKEN", "secret")
+    monkeypatch.setenv("IMESSAGE_BRIDGE_RECIPIENTS", "+15550100")
+    monkeypatch.setenv("IMESSAGE_BRIDGE_ACCOUNT_ID", "  ABCD-1234  ")
+    assert BridgeConfig.from_environment().account_id == "ABCD-1234"
+
+
+def test_no_pin_means_the_first_account_still_sends(monkeypatch):
+    monkeypatch.setenv("IMESSAGE_BRIDGE_TOKEN", "secret")
+    monkeypatch.setenv("IMESSAGE_BRIDGE_RECIPIENTS", "+15550100")
+    monkeypatch.delenv("IMESSAGE_BRIDGE_ACCOUNT_ID", raising=False)
+    assert BridgeConfig.from_environment().account_id == ""
+
+
 def test_no_attachment_is_a_valid_send():
     assert decode_attachment(None, None, None) is None
 

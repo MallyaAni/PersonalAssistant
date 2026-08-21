@@ -69,6 +69,11 @@ export IMESSAGE_BRIDGE_GRANTS="$HOME/.anios-imessage-bridge/granted-recipients.j
 # Loopback by default. Set this only when AniOS is on another machine.
 export IMESSAGE_BRIDGE_HOST=0.0.0.0
 export IMESSAGE_BRIDGE_PORT=8010
+# Which Messages account sends, when more than one Apple ID is signed in.
+# Unset, the first enabled iMessage account sends — an enablement-order
+# tie-break, not a decision. List ids with:
+#   osascript -e 'tell application "Messages" to get {id, description} of every account'
+export IMESSAGE_BRIDGE_ACCOUNT_ID=""
 # Optional, and off unless you turn it on. See "Reading reactions" below.
 export IMESSAGE_BRIDGE_READ_REACTIONS=true
 

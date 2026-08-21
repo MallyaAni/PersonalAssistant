@@ -86,12 +86,23 @@ class BridgeError(RuntimeError):
 
 # Arguments reach AppleScript as argv, never as source. `on run argv` is what
 # makes a body containing a quote a string rather than a statement.
+#
+# The first argument is the sending account's id, or "" to take the first
+# enabled iMessage account. "First" is which identity this Mac speaks as, and
+# with two Apple IDs signed in it is decided by enablement order — so a Mac
+# holding both a personal and a dedicated identity pins the dedicated one by
+# id (IMESSAGE_BRIDGE_ACCOUNT_ID) rather than trusting the tie to break right.
 _SEND_TEXT = """
 on run argv
-    set targetId to item 1 of argv
-    set messageBody to item 2 of argv
+    set accountId to item 1 of argv
+    set targetId to item 2 of argv
+    set messageBody to item 3 of argv
     tell application "Messages"
-        set targetService to 1st account whose service type = iMessage
+        if accountId is "" then
+            set targetService to 1st account whose service type = iMessage
+        else
+            set targetService to account id accountId
+        end if
         set targetBuddy to participant targetId of targetService
         send messageBody to targetBuddy
     end tell
@@ -100,11 +111,16 @@ end run
 
 _SEND_WITH_ATTACHMENT = """
 on run argv
-    set targetId to item 1 of argv
-    set messageBody to item 2 of argv
-    set filePath to item 3 of argv
+    set accountId to item 1 of argv
+    set targetId to item 2 of argv
+    set messageBody to item 3 of argv
+    set filePath to item 4 of argv
     tell application "Messages"
-        set targetService to 1st account whose service type = iMessage
+        if accountId is "" then
+            set targetService to 1st account whose service type = iMessage
+        else
+            set targetService to account id accountId
+        end if
         set targetBuddy to participant targetId of targetService
         send messageBody to targetBuddy
         send (POSIX file filePath) to targetBuddy
@@ -138,6 +154,11 @@ class BridgeConfig:
     # leave those queries, no conversation is enumerated, and nothing about
     # anyone's other correspondence is reachable through them.
     messages_db: Path | None = None
+    # Which Messages account sends, by AppleScript account id, or "" for the
+    # first enabled iMessage account. Set this whenever more than one Apple ID
+    # is signed in: which identity a message comes *from* is an operator
+    # decision, not a tie-break.
+    account_id: str = ""
     # Whether this bridge may report incoming messages, and from where.
     #
     # A separate grant from reactions on purpose: reactions return no bodies,
@@ -172,6 +193,7 @@ class BridgeConfig:
             grants_path=_grants_path(),
             messages_db=_messages_db(),
             incoming_db=_incoming_db(),
+            account_id=os.environ.get("IMESSAGE_BRIDGE_ACCOUNT_ID", "").strip(),
         )
 
 
@@ -1083,7 +1105,7 @@ def send_message(
         attachment_name, attachment_media_type, attachment_base64
     )
     if attachment is None:
-        run_osascript(_SEND_TEXT, [recipient, text])
+        run_osascript(_SEND_TEXT, [config.account_id, recipient, text])
         # The identifier a tapback will point at, when this Mac allows it to be
         # read. "sent" otherwise, which is what every caller understood before
         # feedback existed and still handles.
@@ -1095,7 +1117,9 @@ def send_message(
     with tempfile.TemporaryDirectory(prefix="anios-imessage-") as directory:
         path = Path(directory) / safe_name
         path.write_bytes(content)
-        run_osascript(_SEND_WITH_ATTACHMENT, [recipient, text, str(path)])
+        run_osascript(
+            _SEND_WITH_ATTACHMENT, [config.account_id, recipient, text, str(path)]
+        )
     return "sent with attachment"
 
 
