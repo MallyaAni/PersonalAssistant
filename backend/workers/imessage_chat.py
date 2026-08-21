@@ -27,6 +27,7 @@ like one ongoing thread, exactly like the web sidebar).
 
 import asyncio
 import json
+import re
 
 import httpx
 from redis.asyncio import Redis
@@ -98,7 +99,10 @@ class IMessageChatWorker:
             try:
                 await self.invoke_tool(
                     settings.DISCOVERY_IMESSAGE_TOOL,
-                    {"to": reply_to, "body": reply},
+                    # Flattened at the send boundary: the model writes
+                    # markdown for the web UI, and an iMessage bubble
+                    # renders none of it.
+                    {"to": reply_to, "body": plain_text(reply)},
                 )
                 answered += 1
             except Exception:
@@ -234,6 +238,37 @@ class IMessageChatWorker:
     @staticmethod
     def _idle_seconds() -> int:
         return int(settings.IMESSAGE_CHAT_SESSION_IDLE_HOURS * 3600)
+
+
+# Markdown, flattened for a channel that renders none of it. The chat model
+# writes for the web UI, where asterisks are bold and hashes are headings;
+# in an iMessage bubble they are just noise the reader has to squint past.
+# This is presentation plumbing, not judgement - the words are untouched,
+# links keep their address, and bullets stay bullets in a form a text
+# message can carry.
+_FENCE = re.compile(r"^```[^\n]*$", re.MULTILINE)
+_INLINE_CODE = re.compile(r"`([^`]*)`")
+_IMAGE = re.compile(r"!\[[^\]]*\]\(([^)]+)\)")
+_LINK = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
+_EMPHASIS = re.compile(r"(\*\*\*|\*\*|\*|___|__|_)(?=\S)(.+?)(?<=\S)\1")
+_HEADING = re.compile(r"^#{1,6}\s+", re.MULTILINE)
+_BULLET = re.compile(r"^(\s*)[-*+]\s+", re.MULTILINE)
+_RULE = re.compile(r"^\s*([-*_]\s*){3,}$", re.MULTILINE)
+_BLANKS = re.compile(r"\n{3,}")
+
+
+def plain_text(reply: str) -> str:
+    text = _FENCE.sub("", reply)
+    text = _INLINE_CODE.sub(r"\1", text)
+    text = _IMAGE.sub(r"\1", text)
+    # The label and the address both survive; iMessage links the bare URL.
+    text = _LINK.sub(r"\1 (\2)", text)
+    for _ in range(3):
+        text = _EMPHASIS.sub(r"\2", text)
+    text = _HEADING.sub("", text)
+    text = _RULE.sub("", text)
+    text = _BULLET.sub(r"\1• ", text)
+    return _BLANKS.sub("\n\n", text).strip()
 
 
 def _loads(text: str) -> dict:

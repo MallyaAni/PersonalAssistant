@@ -184,3 +184,38 @@ async def test_the_thread_id_expires_with_the_idle_window(monkeypatch):
     redis.ttls[key] = 1  # nearly lapsed; a new use must renew it
     assert await worker._stored_conversation("ani.mallya") == "conv-1"
     assert redis.ttls[key] > 1, "reading the thread must renew the window"
+
+
+# The model writes markdown for the web UI; an iMessage bubble renders none
+# of it, so asterisks and hashes reached a real phone as noise. The
+# flattener keeps every word and every address and loses only the syntax.
+def test_markdown_is_flattened_for_the_bubble():
+    from backend.workers.imessage_chat import plain_text
+
+    reply = (
+        "## Tonight\n\n"
+        "There are **two** good options:\n\n"
+        "- *Line dancing* at [BOE Clarendon](https://example.org/boe) — 7pm\n"
+        "- Jazz at the `Bluebird`\n\n"
+        "---\n"
+        "```\ndetails here\n```\n"
+        "Have fun!"
+    )
+
+    flat = plain_text(reply)
+
+    for syntax in ("**", "##", "`"):
+        assert syntax not in flat, flat
+    assert "---" not in flat
+    assert "• Line dancing at BOE Clarendon (https://example.org/boe) — 7pm" in flat
+    assert "• Jazz at the Bluebird" in flat
+    assert "two good options" in flat
+    assert flat.endswith("Have fun!")
+
+
+def test_plain_words_pass_through_untouched():
+    from backend.workers.imessage_chat import plain_text
+
+    assert plain_text("See you at 7pm - it should be fun!") == (
+        "See you at 7pm - it should be fun!"
+    )
