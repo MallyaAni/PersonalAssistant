@@ -113,13 +113,16 @@ class IMessageChatWorker:
                 continue
             reply = await self._converse_with_ack(user_id, text, reply_to)
             try:
-                await self.invoke_tool(
-                    settings.DISCOVERY_IMESSAGE_TOOL,
-                    # Flattened at the send boundary: the model writes
-                    # markdown for the web UI, and an iMessage bubble
-                    # renders none of it.
-                    {"to": reply_to, "body": plain_text(reply)},
-                )
+                # Flattened at the send boundary, then delivered the way a
+                # person texts a long thought: a few separate bubbles at a
+                # typing pace, not one wall.
+                for position, piece in enumerate(bubbles(plain_text(reply))):
+                    if position:
+                        await asyncio.sleep(_BUBBLE_PACE_SECONDS)
+                    await self.invoke_tool(
+                        settings.DISCOVERY_IMESSAGE_TOOL,
+                        {"to": reply_to, "body": piece},
+                    )
                 answered += 1
             except Exception:
                 logger.warning("imessage_chat_reply_failed", extra={"user": user_id})
@@ -182,7 +185,14 @@ class IMessageChatWorker:
     # is remembered so the next text continues the same thread.
     async def _converse(self, user_id: str, text: str) -> str:
         token = issue_user_token(user_id, ttl_seconds=600, scopes=["chat"])
-        body: dict[str, object] = {"user_id": user_id, "query": text}
+        body: dict[str, object] = {
+            "user_id": user_id,
+            "query": text,
+            # Tells the reply model where its words land, so it writes like
+            # a text instead of a web page. The flattener downstream stays:
+            # writing for the medium and repairing for it are both wanted.
+            "metadata": {"channel": "imessage"},
+        }
         stored = await self._stored_conversation(user_id)
         if stored:
             body["conversation_id"] = stored
@@ -306,6 +316,34 @@ def plain_text(reply: str) -> str:
     text = _RULE.sub("", text)
     text = _BULLET.sub(r"\1• ", text)
     return _BLANKS.sub("\n\n", text).strip()
+
+
+# How a long reply is paced and portioned. A short answer stays one bubble;
+# past the threshold it splits at paragraph boundaries into a few messages,
+# because that is how a person texts a long thought - and each bubble is a
+# thing a thumb can react to.
+_BUBBLE_THRESHOLD_CHARS = 420
+_BUBBLE_TARGET_CHARS = 400
+_MAX_BUBBLES = 4
+_BUBBLE_PACE_SECONDS = 1.2
+
+
+def bubbles(reply: str) -> list[str]:
+    text = reply.strip()
+    if len(text) <= _BUBBLE_THRESHOLD_CHARS:
+        return [text] if text else []
+    paragraphs = [part.strip() for part in text.split("\n\n") if part.strip()]
+    pieces: list[str] = []
+    for paragraph in paragraphs:
+        if pieces and len(pieces[-1]) + len(paragraph) + 2 <= _BUBBLE_TARGET_CHARS:
+            pieces[-1] = f"{pieces[-1]}\n\n{paragraph}"
+        else:
+            pieces.append(paragraph)
+    # The cap is a floor on dignity, not a truncation: everything past it
+    # rides in the final bubble rather than being dropped.
+    if len(pieces) > _MAX_BUBBLES:
+        pieces[_MAX_BUBBLES - 1 :] = ["\n\n".join(pieces[_MAX_BUBBLES - 1 :])]
+    return pieces
 
 
 def _loads(text: str) -> dict:

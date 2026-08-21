@@ -2106,6 +2106,12 @@ class ConversationService:
             "saved": bool(proposals),
             "value": _proposal_summaries(proposals),
         }
+        # Which surface the reply lands on. The graph appends a style note
+        # for channels that render plain text; absent means the web UI and
+        # nothing changes.
+        channel = str((metadata or {}).get("channel") or "")
+        if channel:
+            context["channel"] = channel
 
         initial_state = AgentState(
             conversation_id=conversation_id,

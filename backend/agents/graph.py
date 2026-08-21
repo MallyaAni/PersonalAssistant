@@ -15,7 +15,7 @@ from backend.core.context_budget import (
 )
 from backend.core.llm import LLMClient
 from backend.core.observability import record_context_report
-from backend.core.prompts import render
+from backend.core.prompts import load, render
 
 logger = logging.getLogger(__name__)
 
@@ -260,6 +260,16 @@ def _training_boundary() -> str:
     )
 
 
+# The surface the reply lands on. A text-message thread renders no markdown
+# and reads at a phone's pace, so that channel appends its own style block;
+# the web UI appends nothing and is byte-identical to before. Per-channel
+# prefixes each stay stable, so prompt caching holds.
+def _channel_style(context_data: dict[str, Any]) -> str:
+    if context_data.get("channel") == "imessage":
+        return "\n\n" + load("reply/imessage_style")
+    return ""
+
+
 def _build_system_prompt(
     context_data: dict[str, Any],
     now: datetime | None = None,
@@ -286,6 +296,7 @@ def _build_system_prompt(
             "" if moved else _render_save_state(context_data.get("memory_save") or {})
         ),
     )
+    prompt += _channel_style(context_data)
     # Under cache-aware ordering these are emitted by `turn_context_messages`
     # into a message after the history instead, so nothing is lost - only moved.
     trailing = (

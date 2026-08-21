@@ -306,3 +306,37 @@ async def test_a_failed_ack_send_never_costs_the_answer(monkeypatch):
 
     assert answered == 1
     assert calls[-1] == "the answer"
+
+
+# A long reply arrives the way a person texts a long thought: a few bubbles
+# split at paragraph bounds, short answers stay one, and the cap merges the
+# tail rather than dropping it.
+def test_a_long_reply_splits_at_paragraphs():
+    from backend.workers.imessage_chat import bubbles
+
+    reply = "\n\n".join(
+        f"Paragraph {index} " + "words " * 40 for index in range(3)
+    )
+
+    pieces = bubbles(reply)
+
+    assert len(pieces) == 3
+    assert pieces[0].startswith("Paragraph 0")
+    assert pieces[2].startswith("Paragraph 2")
+
+
+def test_a_short_reply_stays_one_bubble():
+    from backend.workers.imessage_chat import bubbles
+
+    assert bubbles("See you at 7!") == ["See you at 7!"]
+
+
+def test_the_bubble_cap_merges_the_tail_rather_than_dropping_it():
+    from backend.workers.imessage_chat import _MAX_BUBBLES, bubbles
+
+    reply = "\n\n".join("Part " + "x" * 400 for _ in range(7))
+
+    pieces = bubbles(reply)
+
+    assert len(pieces) == _MAX_BUBBLES
+    assert "".join(pieces).count("Part") == 7, "nothing may be dropped"
