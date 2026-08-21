@@ -50,6 +50,10 @@ class Settings(BaseSettings):
     ROUTING_INFERENCE_ADAPTER: Literal["", "openai_compatible"] = ""
     ROUTING_LLM_BASE_URL: str = ""
     ROUTING_LLM_MODEL: str = ""
+    # The routing decision's token budget, previously a bare 300 at the call
+    # site - the same limit-nobody-chose class as the reply cap that returned
+    # one empty reply in six. Covers a tool call plus reasoning-model thinking.
+    ROUTING_DECISION_MAX_TOKENS: int = Field(default=1_024, ge=64, le=8_192)
     ROUTING_LLM_REASONING_EFFORT: Literal[
         "none", "minimal", "low", "medium", "high", "xhigh"
     ] = "none"
@@ -197,7 +201,12 @@ class Settings(BaseSettings):
     MEMORY_PROPOSAL_LLM_REASONING_EFFORT: Literal[
         "none", "minimal", "low", "medium", "high", "xhigh"
     ] = "none"
-    MEMORY_PROPOSAL_MAX_TOKENS: int = Field(default=256, ge=32, le=512)
+    # 256 was sized for the answer alone. A reasoning model spends part of any
+    # budget thinking before it answers, and on ds4-server a truncated
+    # generation puts the raw thinking into `content` - parseable-looking
+    # garbage - while vLLM returns an empty string. The 4B never reasons, so
+    # raising the ceiling costs it nothing: max_tokens is a cap, not a target.
+    MEMORY_PROPOSAL_MAX_TOKENS: int = Field(default=1_024, ge=32, le=4_096)
 
     VISION_INFERENCE_ADAPTER: Literal["", "openai_compatible"] = ""
     EMBEDDING_INFERENCE_ADAPTER: Literal["", "openai_compatible"] = ""
@@ -520,10 +529,15 @@ class Settings(BaseSettings):
         "none", "minimal", "low", "medium", "high", "xhigh"
     ] = "none"
     VISION_SEARCH_GROUNDING_ENABLED: bool = True
-    # Room for one search_web tool call and its query, nothing more.
-    VISION_SEARCH_DECISION_MAX_TOKENS: int = Field(default=300, ge=32, le=2048)
-    # Room for {"intent":"edit"} and nothing else; the schema is the grammar.
-    IMAGE_INTENT_MAX_TOKENS: int = Field(default=16, ge=8, le=64)
+    # Sized for one tool call plus the thinking a reasoning model spends
+    # before emitting it; the 4B stops early so the headroom is free.
+    VISION_SEARCH_DECISION_MAX_TOKENS: int = Field(default=1_024, ge=32, le=4_096)
+    # The answer is ~16 tokens of JSON; the budget is not the answer. At 16 a
+    # reasoning model is guaranteed to truncate mid-thought, which on
+    # ds4-server surfaced its monologue as `content` - "unparseable content on
+    # every upload" - and was misread as a model-capability problem. The
+    # schema is still the grammar; the headroom is for thinking.
+    IMAGE_INTENT_MAX_TOKENS: int = Field(default=1_024, ge=8, le=4_096)
 
     # Local image embeddings (nomic-embed-vision-v1.5, ONNX, CPU in-process).
     # Aligned to nomic-embed-text-v1.5, so images and text share one 768-dim

@@ -22,6 +22,7 @@ import logging
 from dataclasses import dataclass
 from typing import Any
 
+from backend.config.settings import settings
 from backend.core.llm import LLMClient
 from backend.core.prompts import load
 from backend.mcp.invocation import MCPInvocationError
@@ -480,7 +481,10 @@ class MainActionSelector:
         ]
         try:
             message = await asyncio.to_thread(
-                self.llm.chat_with_tools, messages, tools, 300
+                self.llm.chat_with_tools,
+                messages,
+                tools,
+                settings.ROUTING_DECISION_MAX_TOKENS,
             )
         except Exception:
             logger.warning("Main action selection failed", exc_info=True)

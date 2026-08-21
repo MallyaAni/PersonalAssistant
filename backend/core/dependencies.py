@@ -884,12 +884,19 @@ VisionProviderDependency = Annotated[
 # model — the same model that used to answer "I cannot edit images" when an edit
 # request reached it as chat.
 def get_image_intent_classifier(llm: RoutingLlmDependency) -> ImageIntentClassifier:
-    # The routing model, not the main one. This is a constrained classification
-    # into a 16-token JSON schema, which is the routing model's proven job and
-    # not what the main model was promoted for: pointed at DeepSeek it returned
-    # unparseable content on every upload, and because the classifier answers
-    # False on any failure, that silently disabled edit-intent detection - an
-    # "edit this photo" upload was quietly treated as a question about it.
+    # The routing model, not the main one - schema-bound work needs an engine
+    # that enforces schemas (MAIN_LLM_STRUCTURED_OUTPUT).
+    #
+    # The earlier note here recorded the wrong lesson. "Pointed at DeepSeek it
+    # returned unparseable content on every upload" was read as the main model
+    # being unsuited to constrained classification. It was not a capability
+    # problem: the budget was then 16 tokens, a reasoning model is guaranteed
+    # to truncate mid-thought at 16, and ds4-server responds to truncation by
+    # putting the raw thinking into `content`. The failure was the cap meeting
+    # a reasoning engine, and because the classifier answers False on any
+    # failure it silently disabled edit-intent detection. The budget now
+    # leaves thinking headroom, so the trap cannot re-arm when these callers
+    # move engines.
     return ImageIntentClassifier(llm, max_tokens=settings.IMAGE_INTENT_MAX_TOKENS)
 
 
