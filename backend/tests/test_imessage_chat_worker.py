@@ -219,3 +219,88 @@ def test_plain_words_pass_through_untouched():
     assert plain_text("See you at 7pm - it should be fun!") == (
         "See you at 7pm - it should be fun!"
     )
+
+
+# The slow-turn acknowledgment: a quick reply stays one bubble, a slow one
+# gets "on it" first and the answer second - and losing the ack send must
+# never lose the answer.
+@pytest.mark.asyncio
+async def test_a_slow_turn_gets_an_ack_then_the_answer(monkeypatch):
+    import asyncio
+
+    from backend.config.settings import settings
+    from backend.workers.imessage_chat import _ACK_REPLY
+
+    monkeypatch.setattr(settings, "IMESSAGE_CHAT_ACK_SECONDS", 0.05)
+    bridge = _Bridge(
+        {"messages": [_message("g5", "7372025933", "deep question")], "cursor": 30}
+    )
+    worker, _ = _worker(
+        bridge, monkeypatch, accounts={"7372025933": "ani.mallya"}, replies={}
+    )
+
+    async def slow(user_id, text):
+        await asyncio.sleep(0.2)
+        return "a considered answer"
+
+    monkeypatch.setattr(worker, "_converse", slow)
+
+    await worker.tick()
+
+    assert [b["body"] for b in bridge.sent] == [_ACK_REPLY, "a considered answer"]
+
+
+@pytest.mark.asyncio
+async def test_a_quick_turn_stays_one_bubble(monkeypatch):
+    from backend.config.settings import settings
+
+    monkeypatch.setattr(settings, "IMESSAGE_CHAT_ACK_SECONDS", 5.0)
+    bridge = _Bridge(
+        {"messages": [_message("g6", "7372025933", "hi")], "cursor": 31}
+    )
+    worker, _ = _worker(
+        bridge, monkeypatch, accounts={"7372025933": "ani.mallya"},
+        replies={"hi": "hello!"},
+    )
+
+    await worker.tick()
+
+    assert [b["body"] for b in bridge.sent] == ["hello!"]
+
+
+@pytest.mark.asyncio
+async def test_a_failed_ack_send_never_costs_the_answer(monkeypatch):
+    import asyncio
+
+    from backend.config.settings import settings
+    from backend.workers.imessage_chat import IMessageChatWorker
+
+    monkeypatch.setattr(settings, "IMESSAGE_CHAT_ACK_SECONDS", 0.05)
+    calls: list[str] = []
+
+    async def bridge(tool, arguments):
+        if tool == "read_messages":
+            return json.dumps(
+                {"messages": [_message("g7", "7372025933", "q")], "cursor": 32}
+            )
+        calls.append(arguments["body"])
+        if len(calls) == 1:
+            raise RuntimeError("ack refused")
+        return json.dumps({"result": "sent"})
+
+    worker = IMessageChatWorker(bridge, base_url="http://test", redis=_Redis())
+
+    async def account_for(sender):
+        return "ani.mallya"
+
+    async def slow(user_id, text):
+        await asyncio.sleep(0.2)
+        return "the answer"
+
+    monkeypatch.setattr(worker, "_account_for", account_for)
+    monkeypatch.setattr(worker, "_converse", slow)
+
+    answered = await worker.tick()
+
+    assert answered == 1
+    assert calls[-1] == "the answer"

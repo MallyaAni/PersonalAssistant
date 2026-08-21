@@ -390,6 +390,10 @@ class Settings(BaseSettings):
     # next text starts a fresh conversation id; memory and recall carry the
     # continuity, and each conversation stays a readable unit in the web UI.
     IMESSAGE_CHAT_SESSION_IDLE_HOURS: float = Field(default=24.0, gt=0, le=720)
+    # iMessage cannot stream and shows no typing indicator, so a turn that
+    # fans out into search is minutes of silence. After this long, one fixed
+    # bubble says the silence is work; the real answer still follows.
+    IMESSAGE_CHAT_ACK_SECONDS: float = Field(default=15.0, gt=0, le=120)
     # Which operator-trusted MCP server owns the Apple device that sends.
     DISCOVERY_IMESSAGE_SERVER_ID: str = "imessage"
     # The public base a subscriber's calendar link is built from. Local by

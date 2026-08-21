@@ -55,6 +55,11 @@ _CHAT_TIMEOUT_SECONDS = 300.0
 # no reason and could vary it into something wrong.
 _FAILURE_REPLY = "I hit a problem answering that. Give me a minute and try again."
 
+# Fixed wording for a slow turn. iMessage cannot stream and shows no typing
+# indicator, so a turn that fans out into search is minutes of silence; one
+# bubble makes the silence read as work rather than absence.
+_ACK_REPLY = "On it — looking that up."
+
 
 class IMessageChatWorker:
     """Poll inbound texts, converse through /chat, reply through the bridge."""
@@ -95,7 +100,7 @@ class IMessageChatWorker:
             user_id = await self._account_for(str(message.get("sender") or ""))
             if user_id is None:
                 continue
-            reply = await self._converse(user_id, text)
+            reply = await self._converse_with_ack(user_id, text, reply_to)
             try:
                 await self.invoke_tool(
                     settings.DISCOVERY_IMESSAGE_TOOL,
@@ -139,6 +144,27 @@ class IMessageChatWorker:
                 .all()
             )
         return str(rows[0].user_id) if rows else None
+
+    # The turn, with one acknowledgment when it runs long. The ack is
+    # best-effort - a failure to send it must not cost the real answer -
+    # and fires at most once per turn, only after the threshold, so a
+    # quick reply stays a single bubble.
+    async def _converse_with_ack(
+        self, user_id: str, text: str, reply_to: str
+    ) -> str:
+        turn = asyncio.create_task(self._converse(user_id, text))
+        done, _ = await asyncio.wait(
+            {turn}, timeout=settings.IMESSAGE_CHAT_ACK_SECONDS
+        )
+        if not done:
+            try:
+                await self.invoke_tool(
+                    settings.DISCOVERY_IMESSAGE_TOOL,
+                    {"to": reply_to, "body": _ACK_REPLY},
+                )
+            except Exception:
+                logger.warning("imessage_chat_ack_failed", extra={"user": user_id})
+        return await turn
 
     # One turn through the same endpoint the browser uses. The reply is the
     # concatenated deltas; the conversation id from the stream's start event
