@@ -33,6 +33,11 @@ class MCPServerConfig:
     forward_context: bool = False
     risk_classification: str = "untrusted"
     enabled: bool = True
+    # This server lives on a LAN device whose DHCP address can change, so when
+    # its configured host stops answering, scan the subnet for it rather than
+    # staying down until an operator edits the URL. Off by default: a server
+    # with a stable address should fail loudly at that address, not be hunted.
+    discover: bool = False
 
     # Reject a configuration that cannot be connected to, rather than failing
     # later with a confusing transport error.

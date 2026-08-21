@@ -58,9 +58,11 @@ async def open_session(
     if server.transport == "http":
         from mcp.client.streamable_http import streamablehttp_client
 
+        from backend.mcp.locate import resolve_http_url
+
         async with (
             streamablehttp_client(
-                server.url,
+                await resolve_http_url(server),
                 headers=dict(server.headers) or None,
                 timeout=timeout_seconds,
             ) as (read, write, _get_session_id),
