@@ -74,6 +74,28 @@ Spark arrives (then Qwen takes the schema-bound callers and the empty
    facts and identities ("90", an invented species name) stay as plain
    `in` checks - those are identity, not meaning, and never flaked.
 
+## Scout interest capture over-triggered on task talk - FIXED 2026-08-21
+
+Six Scout interests landed on a real account from one chat turn about
+infrastructure: the tools being set up became things a local-events agent
+would search for. Root cause found by reproducing the verbatim turn
+deterministically at temperature 0: aspiration phrasing ("I'd like to use it
+for X and get amazing X abilities") read as enjoyment, and once one interest
+fired, every tool named around it cascaded into labels of its own.
+
+The classifier prompt (prompts/memory/proposal.md) now distinguishes a
+standing pursuit enjoyed for its own sake from the work at hand, and caps a
+sentence's interests at the pursuit itself - tools and infrastructure named
+around it are how it is done, not further interests. One wording attempt:
+the verbatim turn yields zero, all thirty functional interest cases pass
+three runs straight (every positive phrasing survives, enjoyed technical
+pursuits still capture), and the six junk rows were deleted from the
+account. If over-capture recurs, reproduce the exact turn first - a
+synthetic paraphrase of this one passed while the real wording failed.
+
+Other accounts were not touched; discovery_b1b6fd414c93 carries 37 interests
+and may be the same bug or a test account - check before cleaning.
+
 ## Still open, lower
 
 - **Wake-on-LAN on the Spark** - `ethtool` not installed, so "off" still means

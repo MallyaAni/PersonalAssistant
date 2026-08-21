@@ -94,3 +94,75 @@ async def test_what_is_not_the_user_s_own_interest_is_not_captured(
     llm: object, said: str
 ) -> None:
     assert _interests(await MemoryProposalAgent(get_llm_client()).propose(said)) == []
+
+
+# The shape that actually polluted a real account: the subject matter of a
+# working conversation. A user spent a day discussing infrastructure - a
+# database engine, a caching layer, a coding project - and the classifier
+# stored the tools as Scout interests, which a local-events agent then aims
+# searches at. Discussing, building, asking about, or troubleshooting
+# something states no interest, however long the conversation dwells on it.
+@pytest.mark.parametrize(
+    "said",
+    [
+        "Can we use the new database engine for the migration project?",
+        "The caching layer is finally working properly now",
+        "Let's finish setting up the deployment pipeline tomorrow",
+        "I've been debugging the authentication service all day",
+        "Does the smaller model fit on one machine for this project?",
+        "Is the response time better with the rewrite we did?",
+    ],
+)
+async def test_working_conversation_subject_matter_is_not_an_interest(
+    llm: object, said: str
+) -> None:
+    assert _interests(await MemoryProposalAgent(get_llm_client()).propose(said)) == []
+
+
+# The shape that actually fired, taken from a real polluted turn and
+# generalised: first-person desire or action INSIDE the task at hand. "I'd
+# like to use it for X", "I set it up on Y with Z" - six tool names from one
+# such message became Scout interests. Wanting to do the work, or having done
+# it, is the work; it states no standing pursuit.
+@pytest.mark.parametrize(
+    "said",
+    [
+        "I'd like to use it for editing like the professional tools and get "
+        "great results. I set it up on a single workstation with the new "
+        "toolkit and fast storage",
+        "I want to get much better performance out of this configuration",
+        "I set up the pipeline on the staging server with the new runtime",
+        "I'd like to try the migration approach we discussed this weekend",
+        # The aspiration register that actually fired on a real account:
+        # wanting to use a setup for a task and get good at it reads as
+        # enjoyment to the classifier, and once one interest fires the tools
+        # named around it cascade into labels of their own.
+        "I would like to use it for video editing like the professional "
+        "studios and get amazing editing abilities. I set it up on a single "
+        "workstation with the new capture card and fast storage on the big "
+        "monitor",
+    ],
+)
+async def test_first_person_task_intent_is_not_an_interest(
+    llm: object, said: str
+) -> None:
+    assert _interests(await MemoryProposalAgent(get_llm_client()).propose(said)) == []
+
+
+# The boundary that keeps the fix honest in both directions: a technical
+# subject IS an interest when the user states it as an enjoyed pursuit. The
+# discrimination is the stating of enjoyment, never the topic's domain -
+# ruling out technology as such would be a topic blocklist, which is the
+# keyword thinking this project forbids.
+@pytest.mark.parametrize(
+    ("said", "expected"),
+    [
+        ("I genuinely enjoy tinkering with home servers on weekends", "server"),
+        ("I've gotten really into 3d printing lately", "3d printing"),
+    ],
+)
+async def test_an_enjoyed_technical_pursuit_still_captures(
+    llm: object, said: str, expected: str
+) -> None:
+    found = _interests(await MemoryProposalAgent(get_llm_client()).propose(said))
+    assert any(expected in label for label in found), found
