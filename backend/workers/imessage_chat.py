@@ -27,6 +27,7 @@ like one ongoing thread, exactly like the web sidebar).
 
 import asyncio
 import json
+import random
 import re
 
 import httpx
@@ -55,10 +56,20 @@ _CHAT_TIMEOUT_SECONDS = 300.0
 # no reason and could vary it into something wrong.
 _FAILURE_REPLY = "I hit a problem answering that. Give me a minute and try again."
 
-# Fixed wording for a slow turn. iMessage cannot stream and shows no typing
-# indicator, so a turn that fans out into search is minutes of silence; one
-# bubble makes the silence read as work rather than absence.
-_ACK_REPLY = "On it — looking that up."
+# A slow turn's one bubble, drawn from a small curated set - the same trick
+# terminals use with their whimsical status words. Curated rather than
+# model-written because the words carry no facts and a model call would add
+# latency to the exact moment the point is masking latency; varied rather
+# than fixed because the same canned line on every wait reads like a bot
+# and different ones read like somebody typing.
+_ACK_REPLIES = (
+    "On it — digging in 🔍",
+    "Good one, give me a sec 🤔",
+    "Looking into that for you 🕵️",
+    "One sec — pulling that together ✨",
+    "Checking the latest on that 📡",
+    "Hmm, let me find out 🧭",
+)
 
 
 class IMessageChatWorker:
@@ -160,7 +171,7 @@ class IMessageChatWorker:
             try:
                 await self.invoke_tool(
                     settings.DISCOVERY_IMESSAGE_TOOL,
-                    {"to": reply_to, "body": _ACK_REPLY},
+                    {"to": reply_to, "body": random.choice(_ACK_REPLIES)},
                 )
             except Exception:
                 logger.warning("imessage_chat_ack_failed", extra={"user": user_id})

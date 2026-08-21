@@ -36,6 +36,7 @@ from backend.services.mcp_tool_orchestration_service import (
 logger = logging.getLogger(__name__)
 
 _SEARCH_TOOL = "search_web"
+_WEATHER_TOOL = "get_weather"
 _GENERATE_IMAGE_TOOL = "generate_image"
 _EDIT_IMAGE_TOOL = "edit_image"
 _CREATE_DIAGRAM_TOOL = "create_diagram"
@@ -247,6 +248,15 @@ _SEARCH_CAPABILITY: dict[str, str] = {
     ),
 }
 
+_WEATHER_CAPABILITY: dict[str, str] = {
+    "label": "Weather",
+    "description": (
+        "Check the current conditions and forecast for a place from live "
+        "forecast data, for any question about weather now or in the coming "
+        "days."
+    ),
+}
+
 # The wording lives in `prompts/routing/select_action.md`.
 _SYSTEM = load("routing/select_action")
 
@@ -381,6 +391,33 @@ class MainActionSelector:
             },
         }
 
+    # A second core tool on the search server, offered under its own name and
+    # parsed through the alias path into an ordinary ToolboxAction. Weather
+    # exists because web search answered "today's weather" from SEO forecast
+    # pages and a monthly outlook reached a real phone as today; the model
+    # deciding *which* instrument fits stays a tool-calling decision.
+    async def _weather_tool_definition(
+        self,
+    ) -> tuple[dict[str, Any], MCPTool] | None:
+        if self.mcp_invocation is None or not self._search_is_available():
+            return None
+        try:
+            live = await self.mcp_invocation.resolve_tool(
+                self.search_server_id, _WEATHER_TOOL
+            )
+        except MCPInvocationError:
+            # A server without the tool simply does not offer it this turn.
+            return None
+        definition = {
+            "type": "function",
+            "function": {
+                "name": _WEATHER_TOOL,
+                "description": live.description[:1_000],
+                "parameters": live.input_schema,
+            },
+        }
+        return definition, live
+
     # The built-in tools this selector offers, in the order it presents them.
     #
     # One list read by both the routing call and the capability description, so
@@ -415,6 +452,9 @@ class MainActionSelector:
         capabilities: list[dict[str, str]] = []
         if self._search_is_available():
             capabilities.append(dict(_SEARCH_CAPABILITY))
+            # Weather lives on the same server under the same policy, so its
+            # availability is the same question already answered above.
+            capabilities.append(dict(_WEATHER_CAPABILITY))
         capabilities.extend(
             builtin.as_capability() for builtin in self._available_builtins()
         )
@@ -462,6 +502,18 @@ class MainActionSelector:
             )
         aliases = {f"mcp_tool_{index}": item for index, item in enumerate(candidates)}
         tools.extend(MCPToolOrchestrationService.tool_definitions(aliases))
+
+        # Weather rides the alias path under its own name: `_parse` builds a
+        # ToolboxAction from the alias entry, so the whole execution and
+        # evidence pipeline is the one every other MCP tool already uses.
+        weather = await self._weather_tool_definition()
+        if weather is not None:
+            definition, live = weather
+            tools.append(definition)
+            aliases[_WEATHER_TOOL] = (
+                {"schema_fingerprint": live.schema_fingerprint},
+                live,
+            )
 
         history_text = render_recent_history(history)
         visual_state = (

@@ -229,7 +229,7 @@ async def test_a_slow_turn_gets_an_ack_then_the_answer(monkeypatch):
     import asyncio
 
     from backend.config.settings import settings
-    from backend.workers.imessage_chat import _ACK_REPLY
+    from backend.workers.imessage_chat import _ACK_REPLIES
 
     monkeypatch.setattr(settings, "IMESSAGE_CHAT_ACK_SECONDS", 0.05)
     bridge = _Bridge(
@@ -247,7 +247,9 @@ async def test_a_slow_turn_gets_an_ack_then_the_answer(monkeypatch):
 
     await worker.tick()
 
-    assert [b["body"] for b in bridge.sent] == [_ACK_REPLY, "a considered answer"]
+    assert bridge.sent[0]["body"] in _ACK_REPLIES
+    assert bridge.sent[1]["body"] == "a considered answer"
+    assert len(bridge.sent) == 2
 
 
 @pytest.mark.asyncio

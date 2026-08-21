@@ -29,6 +29,7 @@ from backend.services.main_action_selector import (
     GenerateImageAction,
     MainActionSelector,
     SearchAction,
+    ToolboxAction,
 )
 from backend.services.search_routing_evaluator import SearchRoutingEvaluator
 
@@ -67,7 +68,14 @@ class _SelectorAsRouter:
 
     async def decide(self, query: str) -> _Verdict:
         action = await self.selector.select("functional_test_user", query, [], None)
-        return _Verdict(should_search=isinstance(action, SearchAction))
+        # The labels mean "this needs live data", not "this needs search_web
+        # specifically": a weather question routed to the forecast tool is the
+        # live-data decision made better, and must not read as a miss.
+        went_live = isinstance(action, SearchAction) or (
+            isinstance(action, ToolboxAction)
+            and action.plan.tool_name == "get_weather"
+        )
+        return _Verdict(should_search=went_live)
 
 
 # The floor a native tool-calling decision, made by the same model that
@@ -362,3 +370,21 @@ async def test_every_phrasing_of_an_opinion_question_avoids_re_editing(selector,
         "functional_test_user", text, history, "existing-outfit-artifact-id"
     )
     assert not isinstance(action, EditImageAction), action
+
+
+# The defect this tool exists for: "today's weather" went to web search, SEO
+# forecast pages came back, and a monthly outlook reached a real phone as
+# today. A weather question must route to the forecast tool with the place
+# carried through; the tool's own description does the steering, so this
+# gate holds whichever wording that description drifts to.
+async def test_a_weather_question_routes_to_the_forecast_tool(selector):
+    for query in (
+        "what's the weather today in Arlington VA?",
+        "will it rain this weekend in Arlington, Virginia?",
+    ):
+        action = await selector.select("functional_test_user", query, [], None)
+
+        assert isinstance(action, ToolboxAction), (query, action)
+        assert action.plan.tool_name == "get_weather", (query, action)
+        place = str(action.plan.arguments.get("place", "")).casefold()
+        assert "arlington" in place, (query, action.plan.arguments)

@@ -199,6 +199,144 @@ async def search_web(query: str, max_results: int = 0) -> str:
     return _encode_results(found)
 
 
+# What each WMO weather code means, in words a reply can use. Open-Meteo
+# returns the code; the words are the WMO's own categories, which is data,
+# not judgement.
+_WEATHER_CODES = {
+    0: "clear sky",
+    1: "mainly clear",
+    2: "partly cloudy",
+    3: "overcast",
+    45: "fog",
+    48: "depositing rime fog",
+    51: "light drizzle",
+    53: "drizzle",
+    55: "dense drizzle",
+    56: "freezing drizzle",
+    57: "dense freezing drizzle",
+    61: "light rain",
+    63: "rain",
+    65: "heavy rain",
+    66: "freezing rain",
+    67: "heavy freezing rain",
+    71: "light snow",
+    73: "snow",
+    75: "heavy snow",
+    77: "snow grains",
+    80: "light showers",
+    81: "showers",
+    82: "violent showers",
+    85: "light snow showers",
+    86: "snow showers",
+    95: "thunderstorm",
+    96: "thunderstorm with light hail",
+    99: "thunderstorm with heavy hail",
+}
+
+
+def _describe_code(code: object) -> str:
+    try:
+        return _WEATHER_CODES.get(int(code), "unknown conditions")  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return "unknown conditions"
+
+
+# Real forecast data for a real question. Web search answered "today's
+# weather" from SEO forecast pages and delivered a monthly outlook as
+# today; a forecast API returns the actual numbers for the actual day.
+# Open-Meteo is free, keyless, and non-commercial-friendly.
+@mcp.tool()
+async def get_weather(place: str, days: int = 1, units: str = "imperial") -> str:
+    """Live current conditions and forecast for a named place.
+
+    Use this, never web search, for any question about weather - right now,
+    today, tonight, or the coming days. `place` is a city or town name
+    ("Arlington, Virginia"); `days` is how many forecast days to include
+    (1 = today, up to 7); `units` is "imperial" or "metric".
+    """
+    import httpx
+
+    name = (place or "").strip()
+    if not name:
+        return json.dumps({"error": "no place given"})
+    wanted_days = max(1, min(int(days), 7))
+    imperial = units != "metric"
+
+    async with httpx.AsyncClient(timeout=15) as client:
+        geo = await client.get(
+            "https://geocoding-api.open-meteo.com/v1/search",
+            params={"name": name, "count": 1, "language": "en", "format": "json"},
+        )
+        matches = (geo.json() or {}).get("results") or []
+        if not matches:
+            return json.dumps({"error": f"no place found for {name!r}"})
+        spot = matches[0]
+        forecast = await client.get(
+            "https://api.open-meteo.com/v1/forecast",
+            params={
+                "latitude": spot["latitude"],
+                "longitude": spot["longitude"],
+                "current": (
+                    "temperature_2m,apparent_temperature,relative_humidity_2m,"
+                    "precipitation,weather_code,wind_speed_10m"
+                ),
+                "daily": (
+                    "weather_code,temperature_2m_max,temperature_2m_min,"
+                    "precipitation_probability_max,sunrise,sunset"
+                ),
+                "timezone": "auto",
+                "forecast_days": wanted_days,
+                **(
+                    {"temperature_unit": "fahrenheit", "wind_speed_unit": "mph"}
+                    if imperial
+                    else {}
+                ),
+            },
+        )
+        body = forecast.json() or {}
+
+    current = body.get("current") or {}
+    daily = body.get("daily") or {}
+    temp_unit = "°F" if imperial else "°C"
+    wind_unit = "mph" if imperial else "km/h"
+    resolved = ", ".join(
+        str(part)
+        for part in (spot.get("name"), spot.get("admin1"), spot.get("country"))
+        if part
+    )
+    forecast_days = [
+        {
+            "date": (daily.get("time") or [None] * wanted_days)[index],
+            "conditions": _describe_code(
+                (daily.get("weather_code") or [None] * wanted_days)[index]
+            ),
+            "high": (daily.get("temperature_2m_max") or [None] * wanted_days)[index],
+            "low": (daily.get("temperature_2m_min") or [None] * wanted_days)[index],
+            "precipitation_chance_percent": (
+                daily.get("precipitation_probability_max") or [None] * wanted_days
+            )[index],
+        }
+        for index in range(min(wanted_days, len(daily.get("time") or [])))
+    ]
+    return json.dumps(
+        {
+            "place": resolved,
+            "timezone": body.get("timezone"),
+            "as_of": current.get("time"),
+            "current": {
+                "conditions": _describe_code(current.get("weather_code")),
+                "temperature": current.get("temperature_2m"),
+                "feels_like": current.get("apparent_temperature"),
+                "humidity_percent": current.get("relative_humidity_2m"),
+                "wind": current.get("wind_speed_10m"),
+                "units": {"temperature": temp_unit, "wind": wind_unit},
+            },
+            "daily": forecast_days,
+            "source": "open-meteo.com",
+        }
+    )
+
+
 # Run the internet server over stdio for the configured AniOS MCP client.
 def main() -> None:
     mcp.run(transport="stdio")
