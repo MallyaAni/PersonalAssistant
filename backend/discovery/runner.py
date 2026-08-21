@@ -254,10 +254,15 @@ class DiscoveryRunner:
         # anything that must reach a calendar; this covers what publishes no
         # feed at all, which for a niche interest is most of it.
         self.search = search
-        # Only the selected finds are described, so the model runs a handful of
-        # times per sweep rather than once per candidate.
-        self.describer = EventDescriber(writer)
         structured = structured_writer or writer
+        # Only the selected finds are described, so the model runs a handful of
+        # times per sweep rather than once per candidate. The describer answers
+        # into a schema - name, description, already_happened, the stated dates
+        # - so it needs the engine that enforces one. On the prose writer the
+        # schema is a request, and the deployed harness ignored it: every
+        # describe call returned markdown, json.loads failed silently, and a
+        # whole sweep shipped raw scraped titles with no dates.
+        self.describer = EventDescriber(structured)
         # What memory knows about the person this sweep is for. Reading it is
         # the whole reason a query can be about someone rather than about a
         # topic; without it both stages below fall back to bare labels.

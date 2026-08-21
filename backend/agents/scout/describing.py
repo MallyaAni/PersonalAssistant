@@ -90,11 +90,11 @@ _SCHEMA: dict[str, Any] = {
         # malformed date cannot enter the pipeline.
         "starts_on": {
             "type": ["string", "null"],
-            "pattern": "^\d{4}-\d{2}-\d{2}$",
+            "pattern": r"^\d{4}-\d{2}-\d{2}$",
         },
         "ends_on": {
             "type": ["string", "null"],
-            "pattern": "^\d{4}-\d{2}-\d{2}$",
+            "pattern": r"^\d{4}-\d{2}-\d{2}$",
         },
     },
 }

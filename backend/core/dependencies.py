@@ -2,7 +2,7 @@ import logging
 from functools import lru_cache
 from typing import Annotated
 
-from fastapi import Depends
+from fastapi import Depends, Path
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.agents.deck.agent import PresentationAgent
@@ -1186,10 +1186,31 @@ def get_reaction_collector(session: AsyncSession) -> ReactionCollector:
     )
 
 
-def get_discovery_runner(
+# Whose search allowance a sweep spends. The runner charges its budget with a
+# flag fixed at construction, so a factory that never looks the account up
+# silently bills every sweep - including the operator's - against the guest
+# allowance, and the operator's sweeps stop searching the day guests run dry.
+async def resolve_search_account(
+    db: AsyncSession, user_id: str
+) -> tuple[bool, int | None]:
+    from sqlalchemy import select
+
+    from backend.models.auth import UserAccount
+
+    account = await db.scalar(
+        select(UserAccount).where(UserAccount.user_id == user_id)
+    )
+    if account is None:
+        return False, None
+    return bool(account.is_admin), account.search_monthly_limit
+
+
+async def get_discovery_runner(
     db: DbDependency,
     embeddings: EmbeddingDependency,
+    user_id: Annotated[str, Path(min_length=1, max_length=50)],
 ) -> DiscoveryRunner:
+    is_operator, search_limit = await resolve_search_account(db, user_id)
     return DiscoveryRunner(
         sources=DiscoverySourceRepository(db),
         seen=SeenItemRepository(db),
@@ -1199,6 +1220,8 @@ def get_discovery_runner(
         structured_writer=get_structured_llm_client(),
         search_budget=get_search_budget(),
         cross_encoder=get_cross_encoder(),
+        is_operator=is_operator,
+        search_limit=search_limit,
     )
 
 
@@ -1209,8 +1232,14 @@ DependencyDiscoveryRunner = Annotated[
 
 
 # The same runner, assembled for a background worker that owns its own session
-# rather than receiving one from a request.
-def get_discovery_runner_for_session(session: AsyncSession) -> DiscoveryRunner:
+# rather than receiving one from a request. The caller supplies the account's
+# budget standing (via resolve_search_account) because a worker has no request
+# to read it from.
+def get_discovery_runner_for_session(
+    session: AsyncSession,
+    is_operator: bool = False,
+    search_limit: int | None = None,
+) -> DiscoveryRunner:
     return DiscoveryRunner(
         sources=DiscoverySourceRepository(session),
         seen=SeenItemRepository(session),
@@ -1220,6 +1249,8 @@ def get_discovery_runner_for_session(session: AsyncSession) -> DiscoveryRunner:
         structured_writer=get_structured_llm_client(),
         search_budget=get_search_budget(),
         cross_encoder=get_cross_encoder(),
+        is_operator=is_operator,
+        search_limit=search_limit,
     )
 
 

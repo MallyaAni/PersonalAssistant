@@ -28,6 +28,7 @@ from backend.core.dependencies import (
     get_discovery_runner_for_session,
     get_reaction_collector,
     grant_recipient_on_bridge,
+    resolve_search_account,
 )
 from backend.core.logging_config import get_logger, setup_logging
 from backend.database.session import AsyncSessionLocal
@@ -165,7 +166,12 @@ class DiscoveryWorker:
                     raise DiscoveryRunCancelledError()
 
                 profile = await DiscoveryProfileRepository(session).get_profile(user_id)
-                runner = get_discovery_runner_for_session(session)
+                is_operator, search_limit = await resolve_search_account(
+                    session, user_id
+                )
+                runner = get_discovery_runner_for_session(
+                    session, is_operator=is_operator, search_limit=search_limit
+                )
                 result = await runner.sweep(user_id, profile, run_id=run_id)
 
                 # Persist before delivering. A crash after this point resumes

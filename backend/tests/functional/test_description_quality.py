@@ -201,8 +201,10 @@ _HOLLOW_AUDIENCES = (
 
 
 @pytest.mark.parametrize("page", CORPUS, ids=lambda page: page.name)
-async def test_description_is_one_finished_sentence(llm, page):
-    readable = await EventDescriber(llm).describe(page.title, page.text, TODAY)
+async def test_description_is_one_finished_sentence(structured_llm, page):
+    readable = await EventDescriber(structured_llm).describe(
+        page.title, page.text, TODAY
+    )
 
     written = readable.description or ""
     assert written, "a page with text should get a description"
@@ -215,8 +217,10 @@ async def test_description_is_one_finished_sentence(llm, page):
 
 
 @pytest.mark.parametrize("page", CORPUS, ids=lambda page: page.name)
-async def test_description_says_more_than_the_title(llm, page):
-    readable = await EventDescriber(llm).describe(page.title, page.text, TODAY)
+async def test_description_says_more_than_the_title(structured_llm, page):
+    readable = await EventDescriber(structured_llm).describe(
+        page.title, page.text, TODAY
+    )
 
     written = _bare(readable.description or "")
     # A description that restates the name tells a reader nothing they did not
@@ -227,8 +231,10 @@ async def test_description_says_more_than_the_title(llm, page):
 
 
 @pytest.mark.parametrize("page", CORPUS, ids=lambda page: page.name)
-async def test_description_carries_no_link_date_price_or_markup(llm, page):
-    readable = await EventDescriber(llm).describe(page.title, page.text, TODAY)
+async def test_description_carries_no_link_date_price_or_markup(structured_llm, page):
+    readable = await EventDescriber(structured_llm).describe(
+        page.title, page.text, TODAY
+    )
 
     written = readable.description or ""
     # Each of these has its own column in the rendered digest, or is forbidden
@@ -243,8 +249,10 @@ async def test_description_carries_no_link_date_price_or_markup(llm, page):
 
 
 @pytest.mark.parametrize("page", CORPUS, ids=lambda page: page.name)
-async def test_name_is_short_and_free_of_boilerplate(llm, page):
-    readable = await EventDescriber(llm).describe(page.title, page.text, TODAY)
+async def test_name_is_short_and_free_of_boilerplate(structured_llm, page):
+    readable = await EventDescriber(structured_llm).describe(
+        page.title, page.text, TODAY
+    )
 
     name = readable.title
     assert name, "every find needs something to call it"
@@ -260,8 +268,10 @@ async def test_name_is_short_and_free_of_boilerplate(llm, page):
 
 
 @pytest.mark.parametrize("page", CORPUS, ids=lambda page: page.name)
-async def test_the_name_invents_no_place_the_page_never_mentioned(llm, page):
-    readable = await EventDescriber(llm).describe(page.title, page.text, TODAY)
+async def test_the_name_invents_no_place_the_page_never_mentioned(structured_llm, page):
+    readable = await EventDescriber(structured_llm).describe(
+        page.title, page.text, TODAY
+    )
 
     source = f"{page.title} {page.text}".casefold()
     # Scoped to what follows "at" or "in", which is where a name states a place.
@@ -279,8 +289,12 @@ async def test_the_name_invents_no_place_the_page_never_mentioned(llm, page):
 
 
 @pytest.mark.parametrize("page", CORPUS, ids=lambda page: page.name)
-async def test_the_description_asserts_no_audience_the_page_did_not_state(llm, page):
-    readable = await EventDescriber(llm).describe(page.title, page.text, TODAY)
+async def test_the_description_asserts_no_audience_the_page_did_not_state(
+    structured_llm, page
+):
+    readable = await EventDescriber(structured_llm).describe(
+        page.title, page.text, TODAY
+    )
 
     written = (readable.description or "").casefold()
     source = f"{page.title} {page.text}".casefold()
@@ -296,8 +310,10 @@ async def test_the_description_asserts_no_audience_the_page_did_not_state(llm, p
 
 
 @pytest.mark.parametrize("page", CORPUS, ids=lambda page: page.name)
-async def test_whether_it_is_over_is_read_correctly(llm, page):
-    readable = await EventDescriber(llm).describe(page.title, page.text, TODAY)
+async def test_whether_it_is_over_is_read_correctly(structured_llm, page):
+    readable = await EventDescriber(structured_llm).describe(
+        page.title, page.text, TODAY
+    )
 
     # Wrong in one direction sends a digest announcing something that finished
     # last week; wrong in the other silently drops a live find. Both are worth
@@ -305,10 +321,12 @@ async def test_whether_it_is_over_is_read_correctly(llm, page):
     assert readable.already_happened is page.over, readable.description
 
 
-async def test_page_text_is_data_rather_than_instructions(llm):
+async def test_page_text_is_data_rather_than_instructions(structured_llm):
     page = next(item for item in CORPUS if item.name == "injection_attempt")
 
-    readable = await EventDescriber(llm).describe(page.title, page.text, TODAY)
+    readable = await EventDescriber(structured_llm).describe(
+        page.title, page.text, TODAY
+    )
 
     written = (readable.description or "").casefold()
     assert "banana" not in written, readable.description
@@ -351,16 +369,18 @@ async def test_page_text_is_data_rather_than_instructions(llm):
     ],
 )
 async def test_a_stated_date_is_transcribed(
-    llm: object, text: str, starts: date, ends: date
+    structured_llm: object, text: str, starts: date, ends: date
 ) -> None:
-    readable = await EventDescriber(llm).describe("Local happening", text, TODAY)
+    readable = await EventDescriber(structured_llm).describe(
+        "Local happening", text, TODAY
+    )
 
     assert readable.starts_on == starts, readable
     assert readable.ends_on == ends, readable
 
 
-async def test_a_page_stating_no_date_yields_no_date(llm: object) -> None:
-    readable = await EventDescriber(llm).describe(
+async def test_a_page_stating_no_date_yields_no_date(structured_llm: object) -> None:
+    readable = await EventDescriber(structured_llm).describe(
         "Community pottery studio",
         "A member-run pottery studio with wheels, kilns and open shelves of "
         "glazes. Memberships include storage and firing.",

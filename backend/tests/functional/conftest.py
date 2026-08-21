@@ -33,6 +33,22 @@ def llm():
     return client
 
 
+# The engine that enforces schemas, which is what every schema-answering
+# prompt runs against in production. Testing those prompts on `llm` proved
+# the wrong thing once: the describer passed here against an enforcing host
+# default while the deployed prose writer ignored the schema entirely.
+@pytest.fixture(scope="session")
+def structured_llm():
+    from backend.core.dependencies import get_structured_llm_client
+
+    client = get_structured_llm_client()
+    try:
+        client.chat([{"role": "user", "content": "ok"}], 8, None, 0.0)
+    except Exception as exc:  # pragma: no cover - depends on the host
+        pytest.skip(f"structured inference runtime unreachable: {type(exc).__name__}")
+    return client
+
+
 @pytest.fixture(scope="session")
 def cross_encoder():
     from backend.core.dependencies import get_cross_encoder
