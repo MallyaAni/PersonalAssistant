@@ -2374,3 +2374,26 @@ the container first.
   style suffix no longer names skin and hair — that wording put a person in
   every image, which is why a request for a car returned a woman leaning out of
   one.
+
+## Search-routing recall is below its own floor - pre-existing, now measured
+
+Found while gating the weather tool (2026-08-21): the selector's
+functional floor (test_main_action_selector_behaviour, recall >= 0.85 on
+ROUTING_CASES) fails at 0.827 on the unmodified selector - misses include
+"when did OpenAI release GPT-5", "what time does the game start", "did
+the merger go through". Adding get_weather to the offered set cost one
+more borderline case (0.793): more tools measurably distract the 4B's
+routing. Specificity is perfect (zero false alarms) both ways. Next
+quality task: tune prompts/routing/select_action.md with this gate as
+referee. Run it with MCP_SERVERS_JSON and SEARCH_API_KEY exported -
+ANIOS_TEST_MODE deliberately ignores .env, which is why the gate
+silently skips on a bare host run and this regression went unmeasured.
+
+## iMessage channel: remaining asks
+
+- Long replies as several short human-paced bubbles, and a friendlier
+  texting tone overall (user request). Splitting at paragraph bounds is
+  transport; the tone wants a channel hint reaching the reply prompt -
+  gated work, not yet started.
+- Weather routing, ack variety, markdown flattening, session-by-lull all
+  shipped and deployed 2026-08-21 (3abde89).
