@@ -13,6 +13,14 @@ os.environ["ANIOS_TEST_MODE"] = "1"
 os.environ.setdefault("DATABASE_USE_NULL_POOL", "true")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-only-for-testing")
 
+# Tests exercise the real reply graph with stub models, and the graph appends
+# a context measurement per turn. Left on the real path, every suite run
+# seeds the durable telemetry store with synthetic rows - which happened, got
+# baked into the image by COPY, and pre-populated a fresh named volume with
+# 33 fake turns. Tests write nowhere; a test of the recorder points the path
+# somewhere temporary itself.
+os.environ.setdefault("CONTEXT_REPORT_PATH", "")
+
 
 # The one thing still taken from `.env`, and only this one.
 #

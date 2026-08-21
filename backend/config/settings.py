@@ -140,6 +140,11 @@ class Settings(BaseSettings):
     # offers, because the point is to notice growth long before it collides
     # with a hard limit - a budget that only binds at the ceiling reports
     # nothing useful until the day it reports a failure.
+    # Where each turn's context measurement is appended, one JSON object per
+    # line. On a named volume because docker logs die with every rebuild and
+    # this distribution has to accumulate across days to set enforcement
+    # floors. Empty disables persistence.
+    CONTEXT_REPORT_PATH: str = "data/telemetry/context_reports.jsonl"
     CONTEXT_BUDGET_TOKENS: int = Field(default=32_768, ge=2_048, le=1_000_000)
     # Whether the conversation digest is written by the reply model or by
     # truncation.

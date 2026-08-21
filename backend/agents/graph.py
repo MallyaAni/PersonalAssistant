@@ -15,6 +15,7 @@ from backend.core.context_budget import (
     plan,
 )
 from backend.core.llm import LLMClient
+from backend.core.observability import record_context_report
 from backend.core.prompts import render
 
 logger = logging.getLogger(__name__)
@@ -555,6 +556,7 @@ def build_assistant_graph(llm: LLMClient) -> Any:
         )
         if report is not None:
             logger.info("trace=%s %s", state.get("trace_id"), report.summary())
+            record_context_report(report, str(state.get("trace_id") or ""))
             if report.dropped_total and settings.CONTEXT_BUDGET_ENFORCE:
                 # Enforcement is not implemented yet on purpose. Saying so
                 # loudly is better than a flag that silently does nothing,

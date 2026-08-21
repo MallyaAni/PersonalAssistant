@@ -16,3 +16,6 @@ frontend/test-results/
 frontend/playwright-report/
 presentation-renderer/node_modules/
 *.log
+# Host runtime data: baked into the image once, it seeds fresh named
+# volumes with stale or synthetic rows.
+data/

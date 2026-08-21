@@ -722,6 +722,9 @@ services:
     volumes:
       - artifactdata:/app/data/artifacts
       - searchdata:/app/data/search
+      # Context measurements accumulate across rebuilds here; docker logs do
+      # not survive them, and enforcement floors need days of distribution.
+      - telemetrydata:/app/data/telemetry
     depends_on:
       vllm-main:
         condition: service_healthy
@@ -905,3 +908,4 @@ volumes:
   pgdata:
   artifactdata:
   searchdata:
+  telemetrydata:
