@@ -414,7 +414,13 @@ services:
       # Egress stays off unless the operator turns it on deliberately.
       - DISCOVERY_EGRESS_ENABLED=${DISCOVERY_EGRESS_ENABLED:-false}
       - DISCOVERY_IMESSAGE_SERVER_ID=${DISCOVERY_IMESSAGE_SERVER_ID:-imessage}
-      - DISCOVERY_IMESSAGE_TOOL=${DISCOVERY_IMESSAGE_TOOL:-send_message}
+      - DISCOVERY_IMESSAGE_TOOL=${DISCOVERY_IMESSAGE_TOOL:-send_imessage}
+      # The conversation over iMessage: the worker polls the bridge for
+      # inbound texts and answers them through the backend's own /chat.
+      - IMESSAGE_CHAT_ENABLED=${IMESSAGE_CHAT_ENABLED:-false}
+      - IMESSAGE_CHAT_POLL_SECONDS=${IMESSAGE_CHAT_POLL_SECONDS:-5}
+      - IMESSAGE_CHAT_READ_TOOL=${IMESSAGE_CHAT_READ_TOOL:-read_messages}
+      - IMESSAGE_CHAT_BASE_URL=${IMESSAGE_CHAT_BASE_URL:-http://backend:8000}
       - DISCOVERY_CALENDAR_BASE_URL=${DISCOVERY_CALENDAR_BASE_URL:-http://localhost:8000/api/v1/discovery}
       - DISCOVERY_POLL_SECONDS=${DISCOVERY_POLL_SECONDS:-60}
       - DISCOVERY_RUN_LEASE_SECONDS=${DISCOVERY_RUN_LEASE_SECONDS:-300}
@@ -560,7 +566,7 @@ services:
       # bridge does not expose - and fail as a withdrawn tool, with nothing
       # pointing at the missing key.
       - DISCOVERY_IMESSAGE_SERVER_ID=${DISCOVERY_IMESSAGE_SERVER_ID:-imessage}
-      - DISCOVERY_IMESSAGE_TOOL=${DISCOVERY_IMESSAGE_TOOL:-send_message}
+      - DISCOVERY_IMESSAGE_TOOL=${DISCOVERY_IMESSAGE_TOOL:-send_imessage}
       - DISCOVERY_CALENDAR_BASE_URL=${DISCOVERY_CALENDAR_BASE_URL:-http://localhost:8000/api/v1/discovery}
       # vLLM runs as pinned sibling services with independent generation and
       # embedding endpoints.
