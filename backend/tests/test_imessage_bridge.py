@@ -604,6 +604,42 @@ def test_an_unreadable_blob_is_skipped_not_mangled(tmp_path):
     assert incoming_messages(config, since_ns=_ns_ago(60))["messages"] == []
 
 
+def test_a_row_still_being_written_is_not_skipped_forever(tmp_path, monkeypatch):
+    import server as bridge_server
+    from server import incoming_messages
+
+    # Messages inserts the row before attributedBody is finished. A poll that
+    # lands in the gap must leave the row for the next poll, not advance the
+    # cursor past it — that lost a real message once, provably: the poll's own
+    # cursor came back equal to a message it never returned.
+    config = _incoming_config(tmp_path)
+    old = _ns_ago(30)
+    young = _ns_ago(1)
+    _insert_incoming(config.incoming_db, "+15550100", "settled", old)
+    _insert_incoming(config.incoming_db, "+15550100", "mid-write", young)
+
+    first = incoming_messages(config, since_ns=_ns_ago(60))
+    assert [m["text"] for m in first["messages"]] == ["settled"]
+    assert first["cursor"] == old  # not advanced past the young row
+
+    # The next poll, once the row has settled, picks it up whole.
+    monkeypatch.setattr(bridge_server, "SETTLE_SECONDS", 0)
+    second = incoming_messages(config, since_ns=first["cursor"])
+    assert [m["text"] for m in second["messages"]] == ["mid-write"]
+
+
+def test_the_first_cursor_also_respects_the_settle_window(tmp_path):
+    from server import _apple_time, incoming_messages
+
+    config = _incoming_config(tmp_path)
+
+    # "Start from now" is really "start from the settle boundary": a message
+    # arriving in the window right before the first poll belongs to the next
+    # poll, not to nobody.
+    result = incoming_messages(config, since_ns=-1)
+    assert result["cursor"] <= _apple_time(datetime.now(UTC)) - 2 * _NS
+
+
 def test_incoming_coverage_is_reported_as_counts_only(tmp_path):
     import json
 

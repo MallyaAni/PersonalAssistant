@@ -672,6 +672,17 @@ def extract_body(text: object, blob: object) -> str | None:
 # a bridge that trusts its caller's limits has no limits.
 MAX_INCOMING_PER_POLL = 25
 
+# How old a row must be before a poll may scan it at all.
+#
+# Messages inserts a row before it finishes writing attributedBody, so a poll
+# arriving in that gap reads the body as undecodable — and a cursor that
+# advances past an undecodable row loses the message forever. That happened to
+# a real message: a resend's own date came back as the cursor of a poll that
+# never returned it, and the same row decoded fine seconds later. Rows younger
+# than this are left unscanned, so a mid-write row simply surfaces whole on the
+# next poll; genuinely undecodable *old* rows are still skipped and counted.
+SETTLE_SECONDS = 3
+
 
 # Incoming one-to-one messages from allowlisted senders, after a cursor.
 #
@@ -689,11 +700,15 @@ def incoming_messages(
     config: BridgeConfig, since_ns: int, limit: int = MAX_INCOMING_PER_POLL
 ) -> dict[str, object]:
     bounded = max(1, min(int(limit), MAX_INCOMING_PER_POLL))
+    # Nothing younger than the settle window is scanned, and therefore nothing
+    # younger can advance the cursor — including the "start from now" cursor,
+    # which would otherwise skip a message arriving in the window itself.
+    settled = (
+        _apple_time(datetime.now(timezone.utc))  # noqa: UP017
+        - SETTLE_SECONDS * 1_000_000_000
+    )
     if since_ns is None or int(since_ns) < 0:
-        return {
-            "messages": [],
-            "cursor": _apple_time(datetime.now(timezone.utc)),  # noqa: UP017
-        }
+        return {"messages": [], "cursor": settled}
     cursor = int(since_ns)
     connection, _ = _open_db_reporting(config.incoming_db)
     if connection is None:
@@ -713,11 +728,12 @@ def incoming_messages(
               AND m.associated_message_type = 0
               AND m.item_type = 0
               AND m.date > ?
+              AND m.date <= ?
               AND c.room_name IS NULL
             ORDER BY m.date ASC
             LIMIT ?
             """,
-            (cursor, bounded),
+            (cursor, settled, bounded),
         ).fetchall()
     except sqlite3.Error:
         return {"messages": [], "cursor": cursor}

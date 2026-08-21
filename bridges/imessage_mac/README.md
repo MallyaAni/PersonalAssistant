@@ -150,7 +150,9 @@ What the `read_messages` tool holds, worth checking against the code:
   than an Apple-epoch nanosecond cursor and the new cursor; `since_ns=-1` means
   "start from now", so a first connection never replays history. The cursor
   advances past filtered senders too, so a stranger texting constantly cannot
-  stall the poll;
+  stall the poll. Rows younger than a few seconds are not scanned at all —
+  Messages writes the body after inserting the row, and a poll landing in that
+  gap must leave the message for the next poll rather than skip it forever;
 - **exact bodies or nothing.** Most bodies live in the `attributedBody` blob,
   not the `text` column; the bridge parses the blob's typedstream framing
   exactly and skips a message it cannot decode rather than returning a mangled
