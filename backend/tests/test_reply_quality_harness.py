@@ -16,6 +16,7 @@ from typing import Any
 import pytest
 
 import backend.cli.evaluate_reply_quality as harness
+from backend.evals.judge import JudgeError, parse_verdicts
 from backend.services.reply_quality_cases import REPLY_CASES
 
 
@@ -126,12 +127,12 @@ def test_orderings_that_agree_keep_the_winner_and_the_reason():
     ],
 )
 def test_verdicts_are_recovered_from_the_shapes_a_judge_replies_in(reply: str):
-    assert harness._parse_verdicts(reply) == [{"case": 1, "winner": "A", "why": "x"}]
+    assert parse_verdicts(reply) == [{"case": 1, "winner": "A", "why": "x"}]
 
 
 def test_a_judge_reply_with_no_verdicts_fails_loudly():
-    with pytest.raises(SystemExit):
-        harness._parse_verdicts("I cannot judge these answers.")
+    with pytest.raises(JudgeError):
+        parse_verdicts("I cannot judge these answers.")
 
 
 # A verdict naming a case outside the batch would otherwise be attributed to

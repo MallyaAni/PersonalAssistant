@@ -96,6 +96,32 @@ synthetic paraphrase of this one passed while the real wording failed.
 Other accounts were not touched; discovery_b1b6fd414c93 carries 37 interests
 and may be the same bug or a test account - check before cleaning.
 
+## Scout: delivery down 9 days, and the content judge's first audit
+
+**The iMessage bridge has been down since 08-12** - the Mac answers ping but
+port 8010 is closed, so every sweep since then ranked finds into a dead
+channel. The bridge is a LaunchAgent needing a logged-in GUI session and an
+open lid (lid sleep overrides caffeinate). Recovery is physical: log into
+the Mac; the LaunchAgent binds 8010 by itself. Verify from here with a
+socket check against 172.16.8.4:8010.
+
+**LLM-as-judge is now shared infrastructure.** backend/evals/judge.py is the
+extracted core (headless Claude on the operator's subscription, batched,
+tool-less, fenced-reply tolerant); the reply harness now imports it, and any
+future agent eval should too. Calibrate before trusting - both existing
+judges did (6/6 pairwise, 3/3 Scout rubric on Fable).
+
+**backend/cli/evaluate_scout_content.py judged the account's real runs: 1 of
+5 selected finds worth sending.** The systematic cause is one thing, not
+five: **no selected find had an established date.** starts_at was null on
+every item, so the lead-time/past-event guard has nothing to act on - which
+is how a county fair was selected five days after it ended, matched to
+"farmers markets". Secondary: an audience mismatch (children's classes for
+an adult's interest) and stretch matches scoring 1-2/5. The next Scout
+quality fix is date extraction in describing/aiming, not the reranker - the
+reranker cannot reject a past event it was never told the date of. Re-run
+the judge after that fix; verdicts persist under data/model_evaluations/.
+
 ## Still open, lower
 
 - **Wake-on-LAN on the Spark** - `ethtool` not installed, so "off" still means

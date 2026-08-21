@@ -38,9 +38,6 @@ answer is not better for containing a word.
 
 import argparse
 import json
-import os
-import re
-import subprocess
 from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass
@@ -50,19 +47,8 @@ from typing import Any
 from backend.agents.graph import _build_system_prompt, turn_context_messages
 from backend.config.settings import settings
 from backend.core.llm import create_inference_provider
+from backend.evals.judge import run_judge
 from backend.services.reply_quality_cases import REPLY_CASES, ReplyCase
-
-_JUDGE_SYSTEM = (
-    "You are a strict, impartial evaluator of assistant answers. "
-    "You output only valid JSON, with no preamble and no code fence."
-)
-
-# Tools would let the judge look things up, which would score its own research
-# rather than the answers in front of it.
-_JUDGE_TOOLS_OFF = (
-    "Bash,Read,Write,Edit,Glob,Grep,WebSearch,WebFetch,Agent,"
-    "Artifact,Skill,ToolSearch,NotebookEdit,Monitor,Task"
-)
 
 
 @dataclass(frozen=True, slots=True)
@@ -163,46 +149,7 @@ def _judge(block: str, count: int, judge_model: str, timeout: int) -> list[dict]
         '[{"case": <int>, "winner": "A"|"B"|"tie", "why": "<one clause>"}]\n'
         f"{block}"
     )
-    executable = os.environ.get("CLAUDE_CODE_EXECPATH") or "claude"
-    completed = subprocess.run(
-        [
-            executable,
-            "-p",
-            instruction,
-            "--model",
-            judge_model,
-            "--system-prompt",
-            _JUDGE_SYSTEM,
-            "--disallowed-tools",
-            _JUDGE_TOOLS_OFF,
-            "--output-format",
-            "json",
-        ],
-        capture_output=True,
-        text=True,
-        timeout=timeout,
-    )
-    if completed.returncode != 0:
-        raise SystemExit(f"judge failed: {completed.stderr.strip()[:400]}")
-    payload = json.loads(completed.stdout)
-    if payload.get("is_error"):
-        raise SystemExit(f"judge errored: {str(payload.get('result'))[:400]}")
-    return _parse_verdicts(str(payload.get("result", "")))
-
-
-# Recover the JSON array from the judge's reply.
-#
-# It is instructed to emit bare JSON and does, but a fenced block costs one
-# line to tolerate and turns an occasional total loss of a run into nothing.
-def _parse_verdicts(text: str) -> list[dict]:
-    body = text.strip()
-    fenced = re.search(r"```(?:json)?\s*(.+?)\s*```", body, re.DOTALL)
-    if fenced:
-        body = fenced.group(1)
-    start, end = body.find("["), body.rfind("]")
-    if start == -1 or end == -1:
-        raise SystemExit(f"judge returned no JSON array: {text[:300]}")
-    return json.loads(body[start : end + 1])
+    return run_judge(instruction, model=judge_model, timeout=timeout)
 
 
 # Answer every case with one candidate and record what it said.
