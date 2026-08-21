@@ -3,22 +3,13 @@ import logging
 from typing import Any, Protocol
 
 from backend.core.llm import LLMClient
+from backend.core.prompts import load
 
 logger = logging.getLogger(__name__)
 
 # The model distills durable style from feedback; the application decides how it
 # is stored and applied, so a confused reply can at worst add a style word.
-_DISTILL_SYSTEM = (
-    "You maintain a user's durable visual style preference for AI-generated "
-    "images. You are given the current style (which may be empty) and new "
-    "feedback the user gave on one image. If the feedback expresses a general, "
-    "reusable visual preference - lighting, realism, colour mood, medium, or "
-    "overall look - that should apply to future images, reply with the updated "
-    "concise comma-separated style descriptor. If the feedback is specific to a "
-    "single image's content (adding or removing a particular object or subject) "
-    "and is not a reusable style, reply with exactly NONE. Reply with only the "
-    "descriptor or NONE and nothing else."
-)
+_DISTILL_SYSTEM = load("style/distill")
 
 _MAX_STYLE_CHARS = 300
 

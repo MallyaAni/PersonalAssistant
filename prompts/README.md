@@ -51,6 +51,17 @@ python -m pytest backend/tests/functional -q     # real model, real MCP, real Co
 | Prompt | Drives |
 | --- | --- |
 | `search/compose.md` | The first web search query of a turn |
+| `vision/observe.md` | The canonical description of an image; every later pass reads it instead of the pixels |
+| `vision/question.md` | Answering a direct question about an image |
+| `vision/reason.md` | Reasoning over what the vision pass saw, on the reply model |
+| `vision/upload_inspection.md` | The one-shot inspection of a fresh upload |
+| `vision/search_grounding.md` | Whether an image warrants a web search, and for what |
+| `image_intent/classify.md` | Edit request or question about the picture |
+| `image_intent/context.md` | Recent conversation appended when the message alone is ambiguous |
+| `referent/system.md` | Which owned thing "that one" points at, across modalities |
+| `style/distill.md` | Distilling a durable per-user image style from feedback |
+| `memory/proposal.md` | What from one utterance is worth remembering |
+| `memory/digest.md` | Compressing a stretch of conversation into notes |
 | `search/another_angle.md` | The unconditional follow-up search |
 | `search/refine.md` | Whether to keep searching, and for what |
 | `routing/select_action.md` | **What every turn does**: search, picture, edit, diagram, deck, an MCP tool, or nothing. Runs on the 4B routing model |
@@ -66,15 +77,8 @@ each is a module-level constant, usually named `_SYSTEM` or `_PROMPT`.
 | `backend/agents/graph.py` | The blocks rendered *into* `reply/system.md`: recalled images, search results, tool results, personal memory |
 | `backend/services/main_action_selector.py` | Each built-in tool's own description - kept beside the tool so one wording serves both routing and what the assistant says it can do |
 | `backend/services/image_refinement_service.py` | What the image editor is told to preserve or change |
-| `backend/agents/vision/reasoning.py` | How an uploaded image is reasoned about after the vision pass |
-| `backend/services/vision_analysis_service.py` | The one-shot inspection of a new upload |
-| `backend/services/referent_resolution.py` | Which picture "that one" means |
-| `backend/services/image_intent.py` | Whether an upload is a question about itself |
 | `backend/agents/deck/prompts.py` | Presentation outline and per-slide writing |
 | `backend/agents/scout/*.py` | Discovery: aiming, describing, digesting, place suggestion, reranking, timezones |
-| `backend/memory/proposal_agent.py` | What is worth remembering from a turn |
-| `backend/services/image_style_service.py` | The style suffix added to generated images |
-| `backend/services/visual_search_grounding.py` | Turning an image into an outbound search subject |
 
 Moving one here is mechanical: create the file with a header, replace the
 constant with its name, and call `render()` instead of `.format()`.
