@@ -8,8 +8,9 @@ The other evaluators score decisions with a known right answer. This scores
 prose, which has none, so it is built the only way that survives contact with
 a real comparison:
 
-- **Identical context.** Both candidates answer through
-  `_build_system_prompt`, the production assembly, with the same evidence. Any
+- **Identical context.** Both candidates answer through the production
+  assembly - `_build_system_prompt` plus the turn-context message that carries
+  the evidence under cache-aware ordering - with the same evidence. Any
   difference is the model, not the harness.
 - **Blind and swapped.** The judge never learns which candidate is which, and
   every case is judged twice with the positions exchanged. Order bias in a
@@ -42,11 +43,11 @@ import re
 import subprocess
 from collections import defaultdict
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
-from backend.agents.graph import _build_system_prompt
+from backend.agents.graph import _build_system_prompt, turn_context_messages
 from backend.config.settings import settings
 from backend.core.llm import create_inference_provider
 from backend.services.reply_quality_cases import REPLY_CASES, ReplyCase
@@ -101,12 +102,18 @@ def _context_of(case: ReplyCase) -> dict[str, Any]:
 # builds them, because a follow-up that depends on what came before is most of
 # real use and cannot be measured from a single message.
 def _answer(client: Any, case: ReplyCase, max_tokens: int) -> str:
+    context = _context_of(case)
     messages: list[dict[str, str]] = [
-        {"role": "system", "content": _build_system_prompt(_context_of(case))}
+        {"role": "system", "content": _build_system_prompt(context)}
     ]
     for asked, answered in case.history:
         messages.append({"role": "user", "content": asked})
         messages.append({"role": "assistant", "content": answered})
+    # Under cache-aware ordering the evidence blocks live in their own message
+    # after the history, not in the system prompt. Skipping this sent every
+    # candidate the question with no evidence at all, so the whole comparison
+    # measured recollection rather than grounding.
+    messages.extend(turn_context_messages(context))
     messages.append({"role": "user", "content": case.prompt})
     return "".join(client.stream_chat(messages, max_tokens=max_tokens)).strip()
 
@@ -318,8 +325,15 @@ def _resolve(verdicts: list[Verdict]) -> dict[int, Verdict]:
     resolved: dict[int, Verdict] = {}
     for number, pair in by_case.items():
         winners = {item.winner for item in pair}
-        agreed = pair[0].winner if len(winners) == 1 else "tie"
-        why = pair[0].why if len(winners) == 1 else "orderings disagreed"
+        # A winner needs both orderings saying the same thing. A case the
+        # judge skipped or misnumbered in one pass has only one verdict, and
+        # crediting it would bypass the swap that cancels order bias.
+        if len(pair) == 2 and len(winners) == 1:
+            agreed, why = pair[0].winner, pair[0].why
+        elif len(winners) > 1:
+            agreed, why = "tie", "orderings disagreed"
+        else:
+            agreed, why = "tie", "judged in only one ordering"
         resolved[number] = Verdict(number, pair[0].category, agreed, why)
     return resolved
 
@@ -444,7 +458,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.json:
         print(
             json.dumps(
-                [vars(verdict) for verdict in resolved.values()],
+                # asdict, not vars: Verdict has __slots__ and therefore no
+                # __dict__, so vars() raised and the flag that persists the
+                # judge's reasoning never worked. The verdicts existed only in
+                # terminal output, which is the one artefact worth keeping.
+                [asdict(verdict) for verdict in resolved.values()],
                 indent=2,
                 default=str,
             )

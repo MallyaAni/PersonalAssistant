@@ -15,7 +15,7 @@ as describing the edited picture rather than the original.
 
 import pytest
 
-from backend.agents.graph import _build_system_prompt
+from backend.agents.graph import _build_system_prompt, turn_context_messages
 
 pytestmark = pytest.mark.asyncio
 
@@ -69,9 +69,14 @@ _DENIALS = (
 
 
 def _answer(llm: object, query: str, context: dict | None = None) -> str:
+    chosen = context or _CONTEXT
     result = llm.chat(  # type: ignore[attr-defined]
         [
-            {"role": "system", "content": _build_system_prompt(context or _CONTEXT)},
+            {"role": "system", "content": _build_system_prompt(chosen)},
+            # Under cache-aware ordering the recalled-images block travels in
+            # its own message after the history; without it the model never
+            # sees the lineage these tests exist to exercise.
+            *turn_context_messages(chosen),
             {"role": "user", "content": query},
         ],
         400,

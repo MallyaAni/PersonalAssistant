@@ -13,7 +13,7 @@ approval" claim when the save already happened.
 
 import pytest
 
-from backend.agents.graph import _build_system_prompt
+from backend.agents.graph import _build_system_prompt, turn_context_messages
 
 pytestmark = pytest.mark.asyncio
 
@@ -41,12 +41,14 @@ _DID_NOT_SAVE_PHRASES = (
 
 
 def _answer(llm: object, query: str, memory_save: dict) -> str:
+    context = {"memory_save": memory_save}
     result = llm.chat(  # type: ignore[attr-defined]
         [
-            {
-                "role": "system",
-                "content": _build_system_prompt({"memory_save": memory_save}),
-            },
+            {"role": "system", "content": _build_system_prompt(context)},
+            # Under cache-aware ordering the save-state block travels in its
+            # own message after the history; without it the model is told
+            # nothing and the test measures an unprompted model.
+            *turn_context_messages(context),
             {"role": "user", "content": query},
         ],
         200,

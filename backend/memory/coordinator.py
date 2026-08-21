@@ -1,3 +1,4 @@
+import asyncio
 import json
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -301,7 +302,13 @@ class MemoryCoordinatorAgent:
         # bolted on after: it shipped on its own, so this call can fail - model
         # down, timeout, empty answer - without the unbounded growth returning.
         carried = str((previous or {}).get("content") or "")
-        written = summarise(self.summariser, carried, recent_turns)
+        # In a worker thread because `summarise` is a synchronous model call
+        # that can run for the length of a full generation. Awaited inline it
+        # held the event loop itself, so a digest turn stalled every other
+        # request on the server, not just this conversation's.
+        written = await asyncio.to_thread(
+            summarise, self.summariser, carried, recent_turns
+        )
         content = written or _digest(previous, recent_turns, self.digest_max_chars)
         await self.stores.summaries.save(
             user_id,

@@ -31,6 +31,15 @@ from backend.core.prompts import render
 
 logger = logging.getLogger(__name__)
 
+# The most of a previous digest that is carried into the compression prompt.
+#
+# A digest written after the ceiling shipped is a few thousand characters, but
+# rows saved by the unbounded implementation this replaced can be arbitrarily
+# large, and feeding one in whole would blow the prompt on exactly the
+# conversations that most need compressing. The tail is the newer half of an
+# append-only digest, so it is the part worth keeping.
+_MAX_PREVIOUS_CHARS = 8_000
+
 
 class _Summariser(Protocol):
     def generate_text(self, prompt: str, max_tokens: int = 1024) -> str: ...
@@ -60,7 +69,8 @@ def summarise(
     prompt = render(
         "memory/digest",
         previous=(
-            f"Notes so far, which your new notes replace:\n{previous}\n\n"
+            "Notes so far, which your new notes replace:\n"
+            f"{previous[-_MAX_PREVIOUS_CHARS:]}\n\n"
             if previous.strip()
             else ""
         ),

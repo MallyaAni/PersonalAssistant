@@ -576,8 +576,8 @@ services:
       # multi-step word problem. Cost: ~5x Qwen's total reply time
       # (~32s vs ~6s avg), accepted as the intelligence/speed tradeoff.
       - MAIN_INFERENCE_ADAPTER=${MAIN_INFERENCE_ADAPTER:-}
-      - MAIN_LLM_BASE_URL=http://spark-b524.local:8888
-      - MAIN_LLM_MODEL=deepseek-v4-flash
+      - MAIN_LLM_BASE_URL=${MAIN_LLM_BASE_URL:-http://spark-b524.local:8888}
+      - MAIN_LLM_MODEL=${MAIN_LLM_MODEL:-deepseek-v4-flash}
       # Belongs with the model above, not with the deployment: it states
       # which of that model's beliefs are already stale, and the gap
       # between it and today is what a web search is for. Change it when

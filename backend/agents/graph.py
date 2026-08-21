@@ -286,9 +286,11 @@ def _build_system_prompt(
             "" if moved else _render_save_state(context_data.get("memory_save") or {})
         ),
     )
-    # Under cache-aware ordering these are emitted by `_build_turn_context`
+    # Under cache-aware ordering these are emitted by `turn_context_messages`
     # into a message after the history instead, so nothing is lost - only moved.
-    trailing = "" if moved else _build_turn_context_legacy(context_data)
+    trailing = (
+        "" if moved else _build_turn_context(context_data, include_save_state=False)
+    )
     profile = context_data.get("profile") or {}
     memory_contents: list[str] = []
     for memory_type in ("episodic", "semantic"):
@@ -340,22 +342,6 @@ def _build_system_prompt(
     )
 
 
-# The per-turn blocks as they were emitted before cache-aware ordering: inside
-# the system message, after the personal-memory section. Kept intact so
-# CONTEXT_CACHE_ORDERING=False restores the previous prompt byte for byte
-# rather than approximately.
-def _build_turn_context_legacy(context_data: dict[str, Any]) -> str:
-    return (
-        _render_recalled_turns(context_data.get("recalled_turns") or [])
-        + _render_search_context(context_data.get("search") or [])
-        + _render_image_context(context_data.get("images") or [])
-        + _render_tool_context(
-            context_data.get("tool_results") or [],
-            context_data.get("tool_notices") or [],
-        )
-    )
-
-
 # Everything about this turn that changes from one turn to the next.
 #
 # Measured, not theorised: with these blocks inside the system message - where
@@ -374,9 +360,20 @@ def _build_turn_context_legacy(context_data: dict[str, Any]) -> str:
 # position moves, from before the history to after it - which also places this
 # turn's evidence nearer the question it belongs to, where a model attends to
 # it more reliably than in the middle of a long prompt.
-def _build_turn_context(context_data: dict[str, Any]) -> str:
+#
+# One renderer serves both orderings. Cache-aware ordering sends all five
+# blocks, save-state included, in the trailing user message. Legacy ordering
+# renders save-state through the template's own {save_state} placeholder, so
+# it takes only the other four and keeps them inside the system prompt -
+# byte for byte what it emitted before the ordering existed, which is what
+# makes the flag a true revert rather than an approximation.
+def _build_turn_context(
+    context_data: dict[str, Any], include_save_state: bool = True
+) -> str:
     blocks = (
-        _render_save_state(context_data.get("memory_save") or {}),
+        _render_save_state(context_data.get("memory_save") or {})
+        if include_save_state
+        else "",
         _render_recalled_turns(context_data.get("recalled_turns") or []),
         _render_search_context(context_data.get("search") or []),
         _render_image_context(context_data.get("images") or []),
@@ -385,7 +382,32 @@ def _build_turn_context(context_data: dict[str, Any]) -> str:
             context_data.get("tool_notices") or [],
         ),
     )
-    return "".join(block for block in blocks if block).strip()
+    return "".join(block for block in blocks if block)
+
+
+# This turn's volatile material as the message it is actually sent in: one
+# user message after the history, or nothing at all.
+#
+# One place rather than a settings check at every call site, because the
+# evaluator and two functional prompt tests assembled the prompt themselves
+# and quietly lost every evidence block the day cache-aware ordering moved
+# those blocks out of the system message. Whoever builds a reply prompt goes
+# through this, so the next change to the condition changes every caller.
+def turn_context_messages(context_data: dict[str, Any]) -> list[dict[str, str]]:
+    if not settings.CONTEXT_CACHE_ORDERING:
+        # Legacy ordering renders these blocks inside the system prompt, so a
+        # second copy here would say everything twice.
+        return []
+    turn_context = _build_turn_context(context_data).strip()
+    if not turn_context:
+        return []
+    # A user message, not a system one, and that is not cosmetic. Chat
+    # templates hoist system messages to the front of the prompt, so the
+    # first attempt at this - the same block with role "system" - was
+    # silently relocated back above the history and cached nothing:
+    # measured at 1.05x against 8.26x for the identical text sent as a user
+    # message. The role is what makes the position real.
+    return [{"role": "user", "content": turn_context}]
 
 
 # Break a turn into the sources it was assembled from, so each can be counted.
@@ -520,15 +542,7 @@ def build_assistant_graph(llm: LLMClient) -> Any:
         # This turn's volatile material goes after the history, so the prefix
         # above it stays byte-identical between turns and the server can reuse
         # its KV blocks. Measured at 16.5x on a 34k-token conversation.
-        # A user message, not a system one, and that is not cosmetic. Chat
-        # templates hoist system messages to the front of the prompt, so the
-        # first attempt at this - the same block with role "system" - was
-        # silently relocated back above the history and cached nothing:
-        # measured at 1.05x against 8.26x for the identical text sent as a user
-        # message. The role is what makes the position real.
-        turn_context = _build_turn_context(state.get("context_data") or {})
-        if turn_context and settings.CONTEXT_CACHE_ORDERING:
-            messages.append({"role": "user", "content": turn_context})
+        messages.extend(turn_context_messages(state.get("context_data") or {}))
         messages.append({"role": "user", "content": state["current_query"]})
 
         # Counted after assembly and before the request, so the report

@@ -476,7 +476,7 @@ REPLY_CASES: tuple[ReplyCase, ...] = (
         standard=(
             "Reaches about 10.04 pounds: 4.50 for the first kilogram, four "
             "additional units at 1.20 because part of a kilogram rounds up, "
-            "then 8 percent added. Missing the rounding gives 9.14 and "
+            "then 8 percent added. Missing the rounding gives about 9.01 and "
             "missing the surcharge gives 9.30; both are wrong."
         ),
         search=(

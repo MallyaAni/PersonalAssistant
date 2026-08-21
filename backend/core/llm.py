@@ -114,8 +114,14 @@ class OpenAICompatibleInferenceProvider(InferenceProvider):
             # no tool across repeated calls.
             "temperature": 0.0,
             "max_tokens": max_tokens,
-            "reasoning_effort": self.reasoning_effort,
         }
+        # The same guard `_build_payload` applies. Sent unconditionally, an
+        # instance that has withdrawn the parameter (reasoning_effort == "")
+        # would put an empty value back on every tool call and pay the 400 and
+        # retry each time - or fail outright on an engine whose rejection does
+        # not name the field.
+        if self.reasoning_effort:
+            payload["reasoning_effort"] = self.reasoning_effort
         with self._request_lock:
             response = self._post(payload)
             response.raise_for_status()
