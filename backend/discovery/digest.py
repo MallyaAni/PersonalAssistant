@@ -21,7 +21,7 @@ typed record on both paths and are never asked of the model.
 """
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from backend.agents.scout.digesting import DigestWriter, Find
@@ -257,7 +257,14 @@ def _greeting(moment: datetime, zone: ZoneInfo) -> str:
 # one.
 def _has_passed(item: RankedCandidate, moment: datetime) -> bool:
     starts_at = item.event.starts_at
-    return starts_at is not None and starts_at < moment
+    if starts_at is None:
+        return False
+    if _is_date_only(starts_at):
+        # An all-day happening has passed when its day has, not the moment
+        # the day began: a show happening tonight was dropped from a real
+        # digest at 4pm because midnight had.
+        return moment >= starts_at + timedelta(days=1)
+    return starts_at < moment
 
 
 def _render_dated(

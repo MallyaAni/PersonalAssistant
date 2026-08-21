@@ -469,3 +469,50 @@ async def test_no_configured_place_never_flags(structured_llm: object) -> None:
     )
 
     assert readable.located_elsewhere is False, readable
+
+
+# A delivered digest promised "Paint & Sip at Lveltú Social Club" and linked
+# a city-wide search listing where no such event was visible: the page was a
+# directory, and the describer picked one event off it. The model reading
+# the page now answers whether it is a listing at all; these pin both
+# directions and the silences. The directory text is synthetic and shaped
+# like the real specimen: many events, little said about any one.
+@pytest.mark.parametrize(
+    ("title", "text", "listing"),
+    [
+        (
+            "Discover Craft Events & Activities in Millbrook, OR",
+            "Crafts in Millbrook: Pottery Taster Night, Fri · The Wool Shed. "
+            "Beginner Bookbinding, Sat · Main St Library. Candle Making "
+            "Social, Sun · The Wick Bar. Stained Glass Intro, Tue · Glassworks. "
+            "Show more. Popular near Millbrook: markets, fairs, workshops.",
+            True,
+        ),
+        (
+            "Marla Quinn Trio at the Bluebird Tavern",
+            "The Marla Quinn Trio returns to the Bluebird Tavern for an "
+            "evening of standards and original material. Doors at seven, "
+            "music from eight. Seated show.",
+            False,
+        ),
+        # A recurring thing is one happening, not a listing of many.
+        (
+            "Beginners Pottery - Wednesdays",
+            "A weekly evening class on the wheel for people who have never "
+            "thrown before. Clay, tools and firing are included.",
+            False,
+        ),
+        # Too little text to tell: silence keeps the find.
+        (
+            "Riverside Night Market",
+            "Riverside Night Market. Food stalls. Live music.",
+            False,
+        ),
+    ],
+)
+async def test_a_listing_page_is_read_as_one(
+    structured_llm: object, title: str, text: str, listing: bool
+) -> None:
+    readable = await EventDescriber(structured_llm).describe(title, text, TODAY)
+
+    assert readable.lists_many is listing, readable

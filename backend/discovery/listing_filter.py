@@ -55,7 +55,11 @@ _SOCIAL_PROFILE = re.compile(
 # Faceted search, category browsing, and location landing pages.
 _DIRECTORY_PATH = re.compile(
     r"(/find/|/near/|/browse/|/search|/category/|/categories/|/things-to-do"
-    r"|/directory|/listings?/|/events/p/|/b/[a-z]{2}--"
+    # Eventbrite's directory grammars, old and current: /b/va--arlington was
+    # the browse path, /d/va--arlington is what replaced it. Three /d/ pages
+    # reached real digests - one delivered a "Paint & Sip" whose link opened
+    # a city-wide search listing where no such event was visible.
+    r"|/directory|/listings?/|/events/p/|/b/[a-z]{2}--|/d/[a-z]{2}--"
     # A standing programme rather than a date. Arlington County's own site put
     # a concert series at /Government/Programs/Arts/Programs/Lubber-Run, which
     # is a description of a thing the county runs every summer.

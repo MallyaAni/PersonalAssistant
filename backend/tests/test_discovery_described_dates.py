@@ -66,3 +66,44 @@ def test_a_real_start_is_never_overridden():
     )
     assert keep is True
     assert starts_at == published
+
+
+# The all-day convention's comparisons. Midnight UTC means "the source stated
+# a day", and a day is live until it ends: an event happening tonight was
+# dropped from a real digest at 4pm because midnight had passed. These pin
+# both comparison sites - ranking's lead-time window and delivery's pastness
+# check - against treating the day's start as the event's end.
+def test_a_date_only_event_is_schedulable_all_day():
+    from backend.discovery.relevance import within_lead_time
+
+    day = datetime(2026, 8, 21, 0, 0, tzinfo=UTC)
+    late_that_day = datetime(2026, 8, 21, 20, 15, tzinfo=UTC)
+    assert within_lead_time(day, late_that_day) is True
+    assert within_lead_time(day, datetime(2026, 8, 22, 0, 0, tzinfo=UTC)) is False
+
+
+def test_a_timed_event_still_needs_its_lead_time():
+    from backend.discovery.relevance import within_lead_time
+
+    soon = datetime(2026, 8, 21, 21, 30, tzinfo=UTC)
+    assert within_lead_time(soon, datetime(2026, 8, 21, 21, 0, tzinfo=UTC)) is False
+
+
+def test_delivery_keeps_a_date_only_event_until_its_day_ends():
+    from backend.discovery.digest import _has_passed
+    from backend.discovery.events import DiscoveredEvent
+    from backend.discovery.relevance import RankedCandidate, ScoredCandidate
+
+    def _item(starts_at):
+        event = DiscoveredEvent(
+            source_id="s", external_id="x", title="t", starts_at=starts_at,
+            ends_at=None, place=None, url=None, summary=None,
+        )
+        return RankedCandidate(ScoredCandidate(event, None), 1.0, None)
+
+    day = datetime(2026, 8, 21, 0, 0, tzinfo=UTC)
+    afternoon = datetime(2026, 8, 21, 20, 15, tzinfo=UTC)
+    assert _has_passed(_item(day), afternoon) is False
+    assert _has_passed(_item(day), datetime(2026, 8, 22, 0, 0, tzinfo=UTC)) is True
+    timed = datetime(2026, 8, 21, 19, 0, tzinfo=UTC)
+    assert _has_passed(_item(timed), afternoon) is True

@@ -488,6 +488,11 @@ class DiscoveryRunner:
             event = item.event
             source = event.summary or await self._page_text(event.url, budget)
             described = await self.describer.describe(event.title, source, today, place)
+            # The page is a directory of many happenings, not one. A find
+            # described off a listing names an event its link cannot honor -
+            # a delivered "Paint & Sip" linked a city-wide search instead.
+            if described.lists_many:
+                continue
             # The page says this happens somewhere else. Snippet-level region
             # checks miss whatever the snippet omits; the page is where the
             # real location lives, and this is the only stage that reads it.

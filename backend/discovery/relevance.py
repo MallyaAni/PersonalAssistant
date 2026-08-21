@@ -12,7 +12,7 @@ It just does not decide what qualifies.
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from backend.discovery.events import DiscoveredEvent
 from backend.discovery.novelty import ScoredCandidate
@@ -88,6 +88,17 @@ def cosine_similarity(left: list[float], right: list[float]) -> float:
     return float(dot / ((left_norm**0.5) * (right_norm**0.5)))
 
 
+# Whether a start carries only a date. Midnight UTC exactly is the pipeline's
+# one convention for "the source stated a day and no time" - search
+# extraction, ICS date values and described dates all produce it. Every
+# comparison against such a start has to treat it as the whole day, not the
+# instant the day began: treating it as an instant is how an event happening
+# tonight was dropped from a real digest as "already passed" at 4pm.
+def is_date_only(starts_at: datetime) -> bool:
+    stated = starts_at.astimezone(UTC)
+    return (stated.hour, stated.minute, stated.second) == (0, 0, 0)
+
+
 # Whether an event is far enough out to act on and near enough to care about.
 # An event with no start is not schedulable and is excluded here rather than
 # being carried to stage 5 where it could not become a VEVENT anyway.
@@ -100,6 +111,14 @@ def within_lead_time(
     moment = now or datetime.now(UTC)
     if starts_at.tzinfo is None:
         return False
+    if is_date_only(starts_at):
+        # An all-day happening is actionable for its whole day: the minimum
+        # lead is waived - "on today, still on" is precisely what a same-day
+        # digest should say - and it stops being schedulable when its day
+        # ends, not when it begins.
+        if moment >= starts_at + timedelta(days=1):
+            return False
+        return (starts_at - moment).days <= MAX_LEAD_DAYS
     lead = starts_at - moment
     if lead.total_seconds() < MIN_LEAD_HOURS * 3_600:
         return False

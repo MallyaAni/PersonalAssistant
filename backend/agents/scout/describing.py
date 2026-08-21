@@ -70,6 +70,11 @@ class Readable:
     # which is what a state-abbreviation table can never scale to. Defaults
     # to False so a failed call or an unlocated page never costs a find.
     located_elsewhere: bool = False
+    # True only when the model reads the page as a listing of many happenings
+    # - a search results page, a directory, a calendar - rather than one.
+    # Describing one anyway produced a delivered find whose link opened a
+    # city-wide search instead of the event it named. Defaults to False.
+    lists_many: bool = False
 
 
 _SCHEMA: dict[str, Any] = {
@@ -118,8 +123,20 @@ _LOCATE_SCHEMA: dict[str, Any] = {
     "properties": {"located_elsewhere": {"type": "boolean"}},
 }
 
+# Same shape, different question: is this page a listing rather than one
+# happening? Its own call for the same reason locate is - a focused boolean
+# stays reliable where a fact folded into the writing prompt drifted it.
+_LISTING_SCHEMA: dict[str, Any] = {
+    "title": "PageKind",
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["lists_many"],
+    "properties": {"lists_many": {"type": "boolean"}},
+}
+
 _PROMPT = load("scout/describe")
 _LOCATE_PROMPT = load("scout/locate")
+_LISTING_PROMPT = load("scout/listing")
 
 # Sent only to a writer whose engine enforces no grammar, where the shape has
 # to be asked for in words. Deliberately not in describe.md: folded into the
@@ -185,31 +202,51 @@ class EventDescriber:
         self.writer = writer
         self.structured = structured_writer
 
-    # One focused question: does the page place this happening away from the
-    # reader's area? Asked of a model because town names repeat across regions
-    # and a venue's whereabouts is world knowledge no lookup table scales to.
-    # Fail-open on every edge: no place configured, no source to read, or a
-    # failed call all keep the find - only a parsed true drops it.
-    async def _located_elsewhere(
-        self, title: str, source: str, place: str | None
+    # One focused boolean judgement about the page, answered by the model
+    # that reads it. Fail-open on every edge: nothing to read, no judge, or
+    # a failed call all keep the find - only a parsed true acts.
+    async def _page_verdict(
+        self, prompt: str, schema: dict[str, Any], field: str
     ) -> bool:
         judge = self.structured or self.writer
-        if judge is None or not place or not source:
+        if judge is None:
             return False
-        prompt = _LOCATE_PROMPT.format(
-            title=title, source=source[:MAX_SOURCE_CHARS], place=place
-        )
         try:
             result = await asyncio.to_thread(
                 judge.chat,
                 [{"role": "user", "content": prompt}],
                 16,
-                _LOCATE_SCHEMA,
+                schema,
                 0.0,
             )
-            return json.loads(result["content"]).get("located_elsewhere") is True
+            return json.loads(result["content"]).get(field) is True
         except Exception:
             return False
+
+    # Does the page place this happening away from the reader's area? Asked
+    # of a model because town names repeat across regions and a venue's
+    # whereabouts is world knowledge no lookup table scales to.
+    async def _located_elsewhere(
+        self, title: str, source: str, place: str | None
+    ) -> bool:
+        if not place or not source:
+            return False
+        prompt = _LOCATE_PROMPT.format(
+            title=title, source=source[:MAX_SOURCE_CHARS], place=place
+        )
+        return await self._page_verdict(prompt, _LOCATE_SCHEMA, "located_elsewhere")
+
+    # Is the page a listing of many happenings rather than one? Asked of the
+    # model for the same reason: the structural title-and-URL filter only
+    # knows the shapes it has already seen, and the page's own text says
+    # what it is to anything that reads it.
+    async def _lists_many(self, title: str, source: str) -> bool:
+        if not source:
+            return False
+        prompt = _LISTING_PROMPT.format(
+            title=title, source=source[:MAX_SOURCE_CHARS]
+        )
+        return await self._page_verdict(prompt, _LISTING_SCHEMA, "lists_many")
 
     # One writer's answer, parsed - or None when the call failed or returned
     # something other than JSON. Validation happens on the caller.
@@ -232,19 +269,19 @@ class EventDescriber:
         except Exception:
             return None
 
-    # Does a parsed answer meet the schema's own bounds? A grammar enforces
-    # these during decoding; the prose writer's answer is only held to them
-    # here. Overlength is rejected rather than truncated - cutting produced
-    # descriptions stopping mid-clause, and the fallback writer answering
-    # inside the grammar is strictly better than a trimmed sentence.
+    # Does a parsed answer carry a usable description? A grammar enforces
+    # the bounds during decoding; the prose writer's answer is only held to
+    # them here. Overlength is rejected rather than truncated - cutting
+    # produced descriptions stopping mid-clause, and the fallback writer
+    # answering inside the grammar is strictly better than a trimmed
+    # sentence. The description alone decides: a missing or unusable name
+    # falls back to the cleaned source title, exactly as it always has, and
+    # must not cost a good sentence.
     @staticmethod
     def _valid(payload: dict | None) -> bool:
         if payload is None:
             return False
-        named = payload.get("name")
         written = payload.get("description")
-        if not isinstance(named, str) or not 3 <= len(named) <= MAX_NAME_CHARS:
-            return False
         if not isinstance(written, str) or not written.strip():
             return False
         return len(written) <= MAX_DESCRIPTION_CHARS
@@ -263,6 +300,12 @@ class EventDescriber:
         cleaned = clean_title(title)
         if (self.writer is None and self.structured is None) or not source:
             return Readable(title=cleaned, description=None)
+
+        # Asked first because a listing invalidates everything after it: a
+        # description written off a directory names an event its link cannot
+        # honor, so nothing else about the page is worth a model call.
+        if await self._lists_many(cleaned, source):
+            return Readable(title=cleaned, description=None, lists_many=True)
 
         elsewhere = await self._located_elsewhere(cleaned, source, place)
         prompt = _PROMPT.format(
