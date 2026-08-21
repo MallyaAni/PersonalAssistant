@@ -182,10 +182,33 @@ Still open on content quality:
   single-word categories) - the ranking amplifies them (Social is
   strength 3). Their digest cannot get much better until the list is
   cleaned; needs the operator's or jenos1's say-so, rows untouched.
-- **Interest strengths are inert for ani.mallya** - all 7 sit at default 2,
-  so priority weighting does nothing for the operator. The natural driver
-  is tapback reactions on sent finds (infrastructure already records them);
-  nothing adjusts strengths from feedback yet.
+- **Tapback feedback loop - CLOSED (2ee5888).** discovery/feedback_loop.py
+  reads recorded reactions each sweep: net thumbs shade interest strengths
+  in-memory (1-3 band, stored values untouched), and the newest reactions
+  join the personal context so aim/rerank weigh them as facts. Education is
+  self-teaching and functional-gated: the first-ever digest invites a
+  thumbs-up/down in the writer's own words; later digests may show a liked
+  pick was remembered but never mention the machinery or anything disliked.
+  Digest writer now runs through JSONFallbackWriter (prose model primary,
+  grammar fallback) instead of degrading to the assembled form letter.
+
+## iMessage as the conversation surface - IN FLIGHT
+
+The user moved the Mac's Messages to a separate iCloud identity (sender
+profile confirmed working: bridge send + a real reply received), and a
+second session is coding the bridge side of inbound replies from
+allowlisted senders. Backend contract expected from that work: an MCP tool
+(suggest `read_messages`) returning `{guid, sender, text, sent_at}` for
+new inbound messages from allowlisted senders only, cursorable (since-guid
+or since-timestamp). Backend side to build once it lands: a worker loop
+polling via the same MCP boundary, sender -> account mapping through the
+existing subscriber allowlist, text routed into the same conversation
+service the web UI uses, replies via send_imessage. Vision beyond that:
+image generation/editing inline over iMessage (send_imessage already
+carries attachments), presentations answered as links to the
+deep-matter.com presentations tab. Bridge source of truth is
+bridges/imessage_mac/server.py IN THIS REPO - if it was edited directly on
+the Mac, mirror the change back before the next deploy clobbers it.
 
 ## Still open, lower
 
