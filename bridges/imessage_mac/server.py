@@ -1,9 +1,10 @@
-"""An MCP server that sends iMessages, run on a Mac.
+"""An MCP server that sends and receives iMessages, run on a Mac.
 
 Apple publishes no server-side API, so the only unpaid way to send an iMessage is
 a Mac signed into Messages, driven locally. This is that machine's side of the
 boundary: AniOS decides *whether* to send and what to say; this decides nothing
-and only sends.
+and only carries. Receiving works the same way: AniOS decides what a message
+means and whether to answer; this only reports what allowlisted senders said.
 
 It runs on the Mac, not with AniOS. Streamable HTTP rather than stdio precisely
 because the two are different machines — AniOS may be on Windows today and a DGX
@@ -20,6 +21,14 @@ Three properties this holds on its own, rather than trusting its caller:
   and read via `on run argv`, so a message body containing quotes or backslashes
   is data, never script. Building the script by string formatting is how this
   kind of bridge becomes a remote code execution hole.
+
+Reading is split into two separately granted permissions, both off by default.
+`IMESSAGE_BRIDGE_READ_REACTIONS` reads only tapbacks on messages AniOS itself
+composed — no bodies ever leave those queries. `IMESSAGE_BRIDGE_READ_INCOMING`
+is the larger grant: it returns the bodies of one-to-one messages from senders
+on the allowlist, so those people can converse with AniOS. Messages from anyone
+not on the allowlist are filtered here, inside this process, and never leave
+it; group chats are not read at all. Bodies are never logged.
 
 Setup lives in README.md next to this file.
 """
@@ -126,9 +135,17 @@ class BridgeConfig:
     # What it is used for is deliberately narrow. Two queries, both keyed on
     # messages this bridge itself sent: the identifier of the message just sent,
     # and the tapbacks attached to identifiers AniOS supplies. No message bodies
-    # are read, no conversation is enumerated, and nothing about anyone's other
-    # correspondence is reachable through it.
+    # leave those queries, no conversation is enumerated, and nothing about
+    # anyone's other correspondence is reachable through them.
     messages_db: Path | None = None
+    # Whether this bridge may report incoming messages, and from where.
+    #
+    # A separate grant from reactions on purpose: reactions return no bodies,
+    # this returns the bodies of allowlisted senders' one-to-one messages so
+    # they can converse with AniOS. Same database, different permission, each
+    # turned on by its own deliberate decision. Senders not on the allowlist
+    # are filtered inside this process and never leave it.
+    incoming_db: Path | None = None
 
     @classmethod
     def from_environment(cls) -> BridgeConfig:
@@ -154,6 +171,7 @@ class BridgeConfig:
             port=int(os.environ.get("IMESSAGE_BRIDGE_PORT", "8010")),
             grants_path=_grants_path(),
             messages_db=_messages_db(),
+            incoming_db=_incoming_db(),
         )
 
 
@@ -294,6 +312,23 @@ def _messages_db() -> Path | None:
     return path if path.exists() else None
 
 
+# Where incoming messages are read from, or None when that is switched off.
+#
+# Gated separately from reactions because it is a larger permission: reactions
+# disclose a thumb on a message AniOS wrote, this discloses what an allowlisted
+# person said. The operator turns each on by its own deliberate decision.
+def _incoming_db() -> Path | None:
+    if os.environ.get("IMESSAGE_BRIDGE_READ_INCOMING", "").strip().lower() not in {
+        "1",
+        "true",
+        "yes",
+    }:
+        return None
+    raw = os.environ.get("IMESSAGE_BRIDGE_MESSAGES_DB", "").strip()
+    path = Path(raw) if raw else Path.home() / "Library" / "Messages" / "chat.db"
+    return path if path.exists() else None
+
+
 # Read-only connection to the Messages database, or None when unavailable.
 #
 # Opened through an immutable URI so this cannot write, cannot create the file,
@@ -318,11 +353,20 @@ def _open_messages(config: BridgeConfig) -> sqlite3.Connection | None:
 def _open_messages_reporting(
     config: BridgeConfig,
 ) -> tuple[sqlite3.Connection | None, str]:
-    if config.messages_db is None:
+    return _open_db_reporting(config.messages_db)
+
+
+# Open one database path read-only with the WAL-aware two-mode logic above,
+# so the reactions grant and the incoming grant share the mechanics without
+# sharing the permission that points at them.
+def _open_db_reporting(
+    path: Path | None,
+) -> tuple[sqlite3.Connection | None, str]:
+    if path is None:
         return None, "reading is switched off"
     attempts = (
-        ("mode=ro", f"file:{config.messages_db}?mode=ro"),
-        ("immutable", f"file:{config.messages_db}?immutable=1"),
+        ("mode=ro", f"file:{path}?mode=ro"),
+        ("immutable", f"file:{path}?immutable=1"),
     )
     reasons = []
     for label, uri in attempts:
@@ -546,6 +590,198 @@ def _readable(blob: bytes) -> str:
     printable = "".join(ch if ch.isprintable() else "\n" for ch in text)
     parts = [part.strip() for part in printable.split("\n") if len(part.strip()) > 12]
     return max(parts, key=len) if parts else ""
+
+
+# The exact message body inside an attributed-body blob, or None.
+#
+# Incoming bodies mostly live in this blob rather than in `message.text` on
+# modern macOS (54 of 64 in one measured sample). `_readable` above is a lossy
+# fragment heuristic, good enough to *recognise* a message and nothing more —
+# it drops short bodies entirely and keeps only the longest line. A body that
+# will be answered has to be exact, so this parses the streamtyped framing
+# instead: the UTF-8 payload follows the NSString class marker and a one-byte
+# or escaped little-endian length. Anything unexpected returns None rather
+# than a mangled string; the caller skips such a message and counts it.
+def _typedstream_text(blob: bytes) -> str | None:
+    if not blob.startswith(b"\x04\x0bstreamtyped"):
+        return None
+    # The earliest string-class marker; a mutable string is the common case.
+    positions = [
+        (index, len(marker))
+        for marker in (b"NSMutableString", b"NSString")
+        if (index := blob.find(marker)) != -1
+    ]
+    if not positions:
+        return None
+    index, marker_length = min(positions)
+    after = index + marker_length
+    # The `\x01+` type code introduces the raw bytes. It sits past the rest of
+    # the class chain — NSString and NSObject follow a mutable string's own
+    # marker — so the window is generous but still bounded: a body cannot
+    # contain this sequence before the length, because the body starts after it.
+    plus = blob.find(b"\x01+", after, after + 64)
+    if plus == -1:
+        return None
+    at = plus + 2
+    parsed = _typedstream_length(blob, at)
+    if parsed is None:
+        return None
+    length, start = parsed
+    if length == 0 or start + length > len(blob):
+        return None
+    try:
+        return blob[start : start + length].decode("utf-8")
+    except UnicodeDecodeError:
+        return None
+
+
+# The payload length at this offset, and where the payload starts, or None.
+#
+# Lengths under 128 are one byte; 0x81 escapes to a two-byte little-endian
+# length and 0x82 to a four-byte one. The length counts bytes, not characters,
+# so an emoji body is longer than it looks.
+def _typedstream_length(blob: bytes, at: int) -> tuple[int, int] | None:
+    if at >= len(blob):
+        return None
+    first = blob[at]
+    if first == 0x81:
+        if at + 3 > len(blob):
+            return None
+        return int.from_bytes(blob[at + 1 : at + 3], "little"), at + 3
+    if first == 0x82:
+        if at + 5 > len(blob):
+            return None
+        return int.from_bytes(blob[at + 1 : at + 5], "little"), at + 5
+    return first, at + 1
+
+
+# The best available body for one message row: the plain text column when it
+# holds anything, the exactly parsed blob otherwise, None when neither reads.
+def extract_body(text: object, blob: object) -> str | None:
+    plain = str(text).strip() if text else ""
+    if plain:
+        return plain
+    if blob:
+        parsed = _typedstream_text(bytes(blob))
+        if parsed and parsed.strip():
+            return parsed.strip()
+    return None
+
+
+# The most messages one poll may return. Bounds mirror a caller's on purpose;
+# a bridge that trusts its caller's limits has no limits.
+MAX_INCOMING_PER_POLL = 25
+
+
+# Incoming one-to-one messages from allowlisted senders, after a cursor.
+#
+# The bridge stays stateless: the caller owns the cursor, which is the raw
+# Apple-epoch nanosecond `date` of the newest row scanned — scanned, not
+# returned, so a stranger's messages advance it too and cannot stall the poll.
+# A negative cursor means "start from now": a first-time caller gets no
+# replayed history, only a cursor to poll forward from.
+#
+# Senders are filtered against the allowlist plus grants *here*, and the
+# bodies of anyone else never leave this function. Group chats are excluded
+# entirely — a room is not a person who was allowlisted. Tapbacks and other
+# associated messages are not messages and are excluded in SQL.
+def incoming_messages(
+    config: BridgeConfig, since_ns: int, limit: int = MAX_INCOMING_PER_POLL
+) -> dict[str, object]:
+    bounded = max(1, min(int(limit), MAX_INCOMING_PER_POLL))
+    if since_ns is None or int(since_ns) < 0:
+        return {
+            "messages": [],
+            "cursor": _apple_time(datetime.now(timezone.utc)),  # noqa: UP017
+        }
+    cursor = int(since_ns)
+    connection, _ = _open_db_reporting(config.incoming_db)
+    if connection is None:
+        return {"messages": [], "cursor": cursor}
+    try:
+        # The handle join is correct here, unlike the outgoing queries above:
+        # an incoming row's handle_id is the sender, and Apple's canonical
+        # `handle.id` is exactly the address a reply should be sent to.
+        rows = connection.execute(
+            """
+            SELECT m.guid, m.date, m.text, m.attributedBody, h.id
+            FROM message m
+            JOIN handle h ON h.ROWID = m.handle_id
+            JOIN chat_message_join cmj ON cmj.message_id = m.ROWID
+            JOIN chat c ON c.ROWID = cmj.chat_id
+            WHERE m.is_from_me = 0
+              AND m.associated_message_type = 0
+              AND m.item_type = 0
+              AND m.date > ?
+              AND c.room_name IS NULL
+            ORDER BY m.date ASC
+            LIMIT ?
+            """,
+            (cursor, bounded),
+        ).fetchall()
+    except sqlite3.Error:
+        return {"messages": [], "cursor": cursor}
+    finally:
+        connection.close()
+
+    allowed = config.allowed_recipients | load_grants(config)
+    messages: list[dict[str, object]] = []
+    for guid, date, text, blob, handle in rows:
+        cursor = max(cursor, int(date))
+        sender = normalize_recipient(str(handle or ""))
+        if sender not in allowed:
+            continue
+        body = extract_body(text, blob)
+        if body is None:
+            continue
+        messages.append(
+            {
+                "guid": str(guid),
+                "sender": sender,
+                "reply_to": str(handle),
+                "text": body,
+                "sent_at": _apple_epoch(date),
+            }
+        )
+    return {"messages": messages, "cursor": cursor}
+
+
+# Whether incoming reading is configured and working, as counts only.
+#
+# Same posture as diagnose() below: shapes answer every setup question that
+# matters, and the decodable count is the one number that tells whether the
+# typedstream extractor is keeping up with real traffic — without it, poor
+# coverage would read as allowlisted people being ignored.
+def describe_incoming(config: BridgeConfig) -> dict[str, object]:
+    if config.incoming_db is None:
+        return {
+            "readable": False,
+            "why": "IMESSAGE_BRIDGE_READ_INCOMING is off, or the database path "
+            "does not exist.",
+        }
+    connection, how = _open_db_reporting(config.incoming_db)
+    if connection is None:
+        return {"readable": False, "why": how}
+    since = _apple_time(datetime.now(timezone.utc) - timedelta(days=1))  # noqa: UP017
+    try:
+        rows = connection.execute(
+            """
+            SELECT text, attributedBody FROM message
+            WHERE is_from_me = 0 AND associated_message_type = 0 AND date >= ?
+            """,
+            (since,),
+        ).fetchall()
+    except sqlite3.Error as error:
+        return {"readable": False, "why": f"Query failed: {type(error).__name__}"}
+    finally:
+        connection.close()
+    decodable = sum(1 for text, blob in rows if extract_body(text, blob) is not None)
+    return {
+        "readable": True,
+        "opened_with": how,
+        "incoming_last_day": len(rows),
+        "incoming_decodable_last_day": decodable,
+    }
 
 
 # Which of the given message bodies were thumbed up or down, by position.
@@ -897,8 +1133,19 @@ def create_bridge(config: BridgeConfig) -> FastMCP:
         # identifiers, and there were three equally plausible reasons. Counts
         # and shapes only — no message text, no addresses, nothing about any
         # conversation — so this answers "is it wired up" without becoming a way
-        # to read the Mac.
-        return json.dumps(diagnose(config))
+        # to read the Mac. The incoming block reports the same for the
+        # conversation grant, including extractor coverage on real traffic.
+        return json.dumps({**diagnose(config), "incoming": describe_incoming(config)})
+
+    @server.tool()
+    def read_messages(since_ns: int = -1, limit: int = 25) -> str:
+        """Report incoming messages from allowlisted senders, after a cursor."""
+        # The one tool that returns message bodies, and only under its own
+        # grant: IMESSAGE_BRIDGE_READ_INCOMING off means an empty answer, not
+        # an error. Who may be heard is decided here on the Mac — allowlist
+        # plus grants — never by the caller. The caller owns the cursor;
+        # since_ns=-1 starts from now so no history is ever replayed.
+        return json.dumps(incoming_messages(config, since_ns, limit))
 
     @server.tool()
     def read_reactions(bodies: list[str]) -> str:
@@ -980,6 +1227,9 @@ __all__: list[Any] = [
     "check_recipient",
     "create_bridge",
     "decode_attachment",
+    "describe_incoming",
+    "extract_body",
+    "incoming_messages",
     "load_grants",
     "normalize_recipient",
     "send_message",

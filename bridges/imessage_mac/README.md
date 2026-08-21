@@ -1,11 +1,13 @@
 # iMessage bridge
 
-Sends iMessages on behalf of AniOS. **Runs on a Mac**, not with AniOS.
+Sends iMessages on behalf of AniOS, and — behind a separate grant — reports what
+allowlisted senders text back, so they can converse with it. **Runs on a Mac**,
+not with AniOS.
 
 Apple publishes no server-side iMessage API. The only unpaid way to send one is a
 Mac signed into Messages, driven locally — so this is that machine's side of the
 boundary. AniOS decides *whether* to send and what to say; this decides nothing
-and only sends.
+and only carries.
 
 It speaks streamable HTTP rather than stdio precisely because the two are
 different machines: AniOS may run on Windows today and a DGX Spark tomorrow, and
@@ -102,9 +104,10 @@ than taking on trust:
   answers by position: "the third one you gave me was thumbed up". It cannot be
   asked about a message AniOS did not send, because it has nothing to match such
   a message against;
-- **no message text is ever returned.** Bodies are read to compare them and
-  discarded; only positions, a reaction type and a timestamp come back. There is
-  no tool here that can be asked what anyone has said;
+- **no message text is ever returned by the reaction tools.** Bodies are read to
+  compare them and discarded; only positions, a reaction type and a timestamp
+  come back. (`read_messages` below is the one tool that returns bodies, under
+  its own separate grant, and only for allowlisted senders);
 - only 👍 and 👎 are reported. The other four tapbacks are ambiguous about
   whether someone wants more of something.
 
@@ -122,6 +125,41 @@ themselves that cannot work, and that is exactly what testing tends to use.
 
 Leave it off and everything still works: digests send exactly as before, and
 AniOS records that it sent them with no identifier and collects no feedback.
+
+## Reading incoming messages (conversation)
+
+The larger of the two read grants, and a real boundary change: with it on, the
+people on the allowlist can text this Mac's iMessage account and AniOS will see
+what they said and answer. It is a separate deliberate decision from reactions —
+same database, same Full Disk Access, different permission:
+
+```bash
+export IMESSAGE_BRIDGE_READ_INCOMING=true
+```
+
+What the `read_messages` tool holds, worth checking against the code:
+
+- **only allowlisted senders are heard.** Who may converse is decided here on
+  the Mac — the recipients list plus any grants — never by the caller. The
+  bodies of anyone else's messages are filtered inside the bridge process and
+  never leave it, and the refusal is silent: a stranger cannot learn they were
+  filtered;
+- **one-to-one chats only.** A group chat is not a person you allowlisted, so
+  nothing in any group is read at all;
+- **the caller owns the cursor.** `read_messages(since_ns)` returns rows newer
+  than an Apple-epoch nanosecond cursor and the new cursor; `since_ns=-1` means
+  "start from now", so a first connection never replays history. The cursor
+  advances past filtered senders too, so a stranger texting constantly cannot
+  stall the poll;
+- **exact bodies or nothing.** Most bodies live in the `attributedBody` blob,
+  not the `text` column; the bridge parses the blob's typedstream framing
+  exactly and skips a message it cannot decode rather than returning a mangled
+  fragment. `describe_messages_access` reports decode coverage as counts;
+- **bodies are never logged**, here or anywhere in this file.
+
+Replies go out through the same `send_imessage` tool and the same allowlist that
+digests use. Each message carries `sender` (normalized, AniOS's identity key)
+and `reply_to` (Apple's canonical handle — the address to answer to).
 
 When the bridge runs as a LaunchAgent, put both grant variables in its
 `EnvironmentVariables` dictionary and reload the agent. Setting them only in an
