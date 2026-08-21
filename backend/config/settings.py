@@ -385,6 +385,11 @@ class Settings(BaseSettings):
     # Where this worker reaches its own backend. The compose network name by
     # default; a host-run worker overrides it.
     IMESSAGE_CHAT_BASE_URL: str = "http://backend:8000"
+    # iMessage has no "new chat" button, so the session boundary is drawn the
+    # way texting already works: a lull. After this many hours of silence the
+    # next text starts a fresh conversation id; memory and recall carry the
+    # continuity, and each conversation stays a readable unit in the web UI.
+    IMESSAGE_CHAT_SESSION_IDLE_HOURS: float = Field(default=24.0, gt=0, le=720)
     # Which operator-trusted MCP server owns the Apple device that sends.
     DISCOVERY_IMESSAGE_SERVER_ID: str = "imessage"
     # The public base a subscriber's calendar link is built from. Local by

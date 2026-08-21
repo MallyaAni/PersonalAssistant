@@ -149,3 +149,38 @@ async def test_an_unreachable_bridge_is_a_quiet_tick(monkeypatch):
     worker = IMessageChatWorker(refuse, base_url="http://test", redis=_Redis())
 
     assert await worker.tick() == 0
+
+
+# The session boundary is a lull. The stored thread id carries a TTL and
+# every use renews it, so an active exchange stays one conversation and the
+# first text after a quiet day starts a new one - iMessage has no "new
+# chat" button, so this is where that button lives.
+@pytest.mark.asyncio
+async def test_the_thread_id_expires_with_the_idle_window(monkeypatch):
+    class _TtlRedis(_Redis):
+        def __init__(self):
+            super().__init__()
+            self.ttls: dict[str, int] = {}
+
+        async def set(self, key, value, ex=None, nx=False):
+            if ex is not None:
+                self.ttls[key] = ex
+            return await super().set(key, value, nx=nx)
+
+        async def expire(self, key, ttl):
+            self.ttls[key] = ttl
+            return True
+
+    redis = _TtlRedis()
+
+    async def ok(tool, arguments):
+        return json.dumps({"result": "sent"})
+
+    worker = IMessageChatWorker(ok, base_url="http://test", redis=redis)
+    await worker._remember_conversation("ani.mallya", "conv-1")
+    key = "imessage:chat:conversation:ani.mallya"
+    assert redis.ttls[key] > 0, "a stored thread must expire after the lull"
+
+    redis.ttls[key] = 1  # nearly lapsed; a new use must renew it
+    assert await worker._stored_conversation("ani.mallya") == "conv-1"
+    assert redis.ttls[key] > 1, "reading the thread must renew the window"

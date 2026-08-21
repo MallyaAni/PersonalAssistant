@@ -206,19 +206,34 @@ class IMessageChatWorker:
         except Exception:
             return True
 
+    # The stored thread id expires after the idle window, and every use
+    # renews it. iMessage has no "new chat" button, so the session boundary
+    # is a lull - the way texting already works: keep replying and it stays
+    # one conversation, go quiet for a day and the next text opens a fresh
+    # one, with memory and recall carrying whatever mattered across.
     async def _stored_conversation(self, user_id: str) -> str | None:
+        key = _CONVERSATION_KEY.format(user_id=user_id)
         try:
-            return await self.redis.get(_CONVERSATION_KEY.format(user_id=user_id))
+            stored = await self.redis.get(key)
+            if stored:
+                await self.redis.expire(key, self._idle_seconds())
+            return stored
         except Exception:
             return None
 
     async def _remember_conversation(self, user_id: str, conversation_id: str) -> None:
         try:
             await self.redis.set(
-                _CONVERSATION_KEY.format(user_id=user_id), conversation_id
+                _CONVERSATION_KEY.format(user_id=user_id),
+                conversation_id,
+                ex=self._idle_seconds(),
             )
         except Exception:
             return
+
+    @staticmethod
+    def _idle_seconds() -> int:
+        return int(settings.IMESSAGE_CHAT_SESSION_IDLE_HOURS * 3600)
 
 
 def _loads(text: str) -> dict:
