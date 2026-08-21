@@ -158,16 +158,34 @@ judge scored the delivered digest 3 of 5 worth sending
 (scout-content-delivered-ani.mallya-20260821.json). Two content defects
 remain, both now visible only because dates and delivery work:
 
-- **Wrong Arlington.** Two of five finds were in Arlington, TX (Globe Life
-  Field, Arlington Music Hall) for a recipient in Arlington, VA - both
-  judged 1/5. Search queries carry locality label + region; either the
-  region is not reaching the query text or out-of-state results survive
-  ranking. Fix in WebEventSource query construction / rerank, with a
-  functional test asserting a same-name-city find is rejected.
-- **Date-only events render a fake time.** apply_described_dates stores
-  noon UTC for date-only finds, and the digest renders it as "8:00am" ET.
-  render_message should omit the clock when the time is a placeholder -
-  consider carrying a date-only flag rather than guessing from 12:00 UTC.
+- **Wrong Arlington - FIXED (a20441b).** A focused location call per find
+  (prompts/scout/locate.md, one schema-enforced boolean) drops a find whose
+  page places it away from the reader; scales to any same-named town and to
+  venues known only by world knowledge. Folding the question into
+  describe.md degraded the prose gates through three rewordings - separate
+  calls for separate judgements is the recorded lesson.
+- **Fake "8:00am" - FIXED (a20441b).** Date-only finds now stamp midnight
+  UTC, the pipeline's single date-only convention; _format_when renders a
+  bare date.
+- **4B out of the sweep - DONE (a20441b).** Describe asks DeepSeek first
+  (JSON by instruction, schema held by validation, grammar engine as
+  fallback); aiming/reranking inverted the same way via
+  core/structured_fallback.JSONFallbackWriter. Chat routing, memory
+  proposal, presentation stay on the enforcing engine deliberately
+  (schema-critical, latency-bound). Judged rehearsals after: ani 3 of 4
+  worth sending (two 5/5), jenos1 2 of 3, zero location/date defects
+  (scout-content-deepseek-rehearsals-20260821.json).
+
+Still open on content quality:
+
+- **jenos1's interests are junk** ('Social', 'Network', 'Shopping',
+  single-word categories) - the ranking amplifies them (Social is
+  strength 3). Their digest cannot get much better until the list is
+  cleaned; needs the operator's or jenos1's say-so, rows untouched.
+- **Interest strengths are inert for ani.mallya** - all 7 sit at default 2,
+  so priority weighting does nothing for the operator. The natural driver
+  is tapback reactions on sent finds (infrastructure already records them);
+  nothing adjusts strengths from feedback yet.
 
 ## Still open, lower
 
