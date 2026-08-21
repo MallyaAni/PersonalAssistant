@@ -143,8 +143,31 @@ is how a county fair was selected five days after it ended, matched to
    compare `settings.MAIN_LLM_BASE_URL` host vs container first.
 
 Rehearsal verdicts: data/model_evaluations/scout-content-rehearsal-ani.mallya-20260821.json
-(baseline audit in scout-content-ani.mallya-20260821.json). Still to judge
-once the bridge is physically back: the composed delivery message.
+(baseline audit in scout-content-ani.mallya-20260821.json).
+
+**Bridge back + first real delivery, judged 2026-08-21.** The Mac was never
+down the second time - DHCP moved it from 172.16.8.4 to .2 and the config
+pointed at the old address. Fixed durably: MCP servers marked
+`"discover":true` in MCP_SERVERS_JSON rescan their /24 when the configured
+host stops answering (backend/mcp/locate.py; token only sent to a host that
+first refuses unauthenticated requests like the real bridge; confirmed
+address cached in Redis). Verified live: stale config resolved the new
+address in 4s. A real queued run then swept, delivered over the bridge
+(delivery_count 0->1, last_error cleared, sent_finds recorded), and the
+judge scored the delivered digest 3 of 5 worth sending
+(scout-content-delivered-ani.mallya-20260821.json). Two content defects
+remain, both now visible only because dates and delivery work:
+
+- **Wrong Arlington.** Two of five finds were in Arlington, TX (Globe Life
+  Field, Arlington Music Hall) for a recipient in Arlington, VA - both
+  judged 1/5. Search queries carry locality label + region; either the
+  region is not reaching the query text or out-of-state results survive
+  ranking. Fix in WebEventSource query construction / rerank, with a
+  functional test asserting a same-name-city find is rejected.
+- **Date-only events render a fake time.** apply_described_dates stores
+  noon UTC for date-only finds, and the digest renders it as "8:00am" ET.
+  render_message should omit the clock when the time is a placeholder -
+  consider carrying a date-only flag rather than guessing from 12:00 UTC.
 
 ## Still open, lower
 
