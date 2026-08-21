@@ -1173,7 +1173,14 @@ DependencyPlaceSuggester = Annotated[
 # deployment with no model still delivers — `DigestWriter(None)` renders the
 # assembled shape instead of failing.
 def get_digest_writer() -> DigestWriter:
-    return DigestWriter(get_llm_client())
+    # The prose model writes the message a person reads; the grammar engine
+    # answers only when that JSON fails validation, instead of the digest
+    # silently degrading to the assembled form letter.
+    from backend.core.structured_fallback import JSONFallbackWriter
+
+    return DigestWriter(
+        JSONFallbackWriter(get_llm_client(), get_routing_llm_client())
+    )
 
 
 # Reads tapbacks off the bubbles already sent, through the same trusted MCP

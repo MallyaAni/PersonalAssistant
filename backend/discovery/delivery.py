@@ -32,6 +32,7 @@ from backend.agents.scout.digesting import DigestWriter
 from backend.discovery.channels import DeliveryResult, NotificationChannel
 from backend.discovery.digest import Bubble, write_bubbles
 from backend.discovery.feedback import SentFindRepository
+from backend.discovery.feedback_loop import reacted_finds
 from backend.discovery.relevance import RankedCandidate
 from backend.discovery.runs import DiscoveryRunRepository
 from backend.discovery.subscribers import Subscriber, SubscriberRepository
@@ -162,8 +163,30 @@ class DigestDelivery:
         # phone, and the message is read in a few seconds either way — so a
         # digest is now text plus the source's own link, which works from
         # anywhere without this machine being reachable at all.
+        #
+        # The writer is told two things about the person, both so the digest
+        # can teach its own feedback loop: whether this is the first digest
+        # they have ever received (the one moment a light invitation to react
+        # belongs), and what they reacted to before (so a pick that continues
+        # a thumbs-up can say so, which shows the thumbs did something).
+        subscribers = await self.subscribers.list_subscribers(
+            user_id, deliverable_only=True
+        )
+        first_digest = bool(subscribers) and all(
+            subscriber.delivery_count == 0 for subscriber in subscribers
+        )
+        reactions = (
+            await reacted_finds(self.sent_finds.session, user_id)
+            if self.sent_finds is not None
+            else ()
+        )
         bubbles = await write_bubbles(
-            selected, writer=self.digest_writer, timezone=timezone, now=now
+            selected,
+            writer=self.digest_writer,
+            timezone=timezone,
+            now=now,
+            first_digest=first_digest,
+            reactions=reactions,
         )
         # What a retry would resend, and what settles the run when nothing is
         # worth sending. A retry sends one message rather than the burst: the

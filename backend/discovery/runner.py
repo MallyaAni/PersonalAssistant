@@ -38,6 +38,11 @@ from backend.discovery.decision_log import build_decision
 from backend.discovery.errors import DiscoveryError
 from backend.discovery.events import DiscoveredEvent, EventSource, FeedError
 from backend.discovery.familiarity import FamiliarItemRepository, FamiliarityFilter
+from backend.discovery.feedback_loop import (
+    adjusted_strengths,
+    reacted_finds,
+    reaction_statements,
+)
 from backend.discovery.fetching import (
     DEFAULT_RUN_REQUEST_BUDGET,
     RequestBudget,
@@ -342,6 +347,14 @@ class DiscoveryRunner:
         # order the result. Deliberately the same context, so a sweep cannot
         # search for one person and rank for another.
         context = await self._personal_context(user_id, moment)
+        # What they reacted to is a fact about them like any approved
+        # statement, and the model stages weigh it as one: a thumbs-down on
+        # the winery evening is judgement no strength arithmetic reaches.
+        reacted = await reacted_finds(self.seen.session, user_id)
+        if reacted:
+            context = PersonalContext(
+                statements=context.statements + reaction_statements(reacted)
+            )
         aim = await self._aim(profile, context, primary)
 
         events = events + await self._search_events(user_id, profile, budget, aim)
@@ -368,9 +381,13 @@ class DiscoveryRunner:
 
         ranker = RelevanceRanker(
             interest_vectors=await self._interest_vectors(profile, aim),
-            interest_strengths={
-                interest.label: interest.strength for interest in profile.interests
-            },
+            # Stored strengths, shaded by the net thumbs each interest has
+            # earned. Recomputed from history every sweep rather than written
+            # back, so the stored value stays the person's own setting.
+            interest_strengths=adjusted_strengths(
+                {interest.label: interest.strength for interest in profile.interests},
+                reacted,
+            ),
         )
         # Ranked wider than the digest, then ordered against what memory knows.
         # Deterministic scoring still decides what is eligible; the model only

@@ -243,3 +243,43 @@ async def test_page_text_in_a_find_is_data_rather_than_instructions(llm):
     assert "banana" not in whole, whole
     assert "not-a-real-venue" not in whole, whole
     assert not _URL.search(whole), whole
+
+
+# The feedback loop teaches itself or it stays unknown: nobody reads a manual
+# for a text thread. Two moments carry the education, and both are gated on
+# the real writer. The first digest a person ever receives invites them - in
+# the model's own words - to react; every later digest keeps the machinery
+# invisible even when reactions were supplied to shape it.
+async def test_the_first_digest_invites_a_reaction(llm):
+    result = await DigestWriter(llm).write(FINDS, first_digest=True)
+
+    assert result is not None
+    assert "thumb" in result.greeting.casefold(), result.greeting
+
+
+async def test_a_later_digest_never_mentions_the_machinery(llm):
+    from backend.discovery.feedback_loop import ReactedFind
+
+    reactions = (
+        ReactedFind(
+            title="Seven Wonders at Tarara Winery",
+            reaction="disliked",
+            interest="live music",
+        ),
+        ReactedFind(
+            title="Garden of Tomorrow expansion",
+            reaction="liked",
+            interest="unique local events",
+        ),
+    )
+
+    result = await DigestWriter(llm).write(FINDS, reactions=reactions)
+
+    assert result is not None
+    everything = " ".join(
+        [result.greeting] + [line.text for line in result.lines]
+    ).casefold()
+    for word in ("thumb", "feedback", "reaction", "rating", "dislik"):
+        assert word not in everything, everything
+    # What was disliked stays gone: the winery evening must not be brought up.
+    assert "winery" not in everything, everything

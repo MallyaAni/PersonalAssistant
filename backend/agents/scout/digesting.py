@@ -154,15 +154,37 @@ class DigestWriter:
     # assembled shape. Every failure — an unreachable runtime, an unparseable
     # body, a schema violation — lands here, because a digest that does not
     # arrive is worse than one that reads like a form letter.
-    async def write(self, finds: tuple[Find, ...]) -> WrittenDigest | None:
+    #
+    # `first_digest` and `reactions` exist so the feedback loop can teach
+    # itself instead of being announced: the one digest that opens the
+    # relationship carries a light invitation to react, and a pick that
+    # continues an earlier thumbs-up gets to say so - adaptation the reader
+    # can see is the only education that does not read as a manual.
+    async def write(
+        self,
+        finds: tuple[Find, ...],
+        first_digest: bool = False,
+        reactions: tuple[object, ...] = (),
+    ) -> WrittenDigest | None:
         if self.writer is None or not finds:
             return None
+        content = _render_finds(finds)
+        if reactions:
+            content += "\n\n" + _render_reactions(reactions)
+        if first_digest:
+            content += (
+                "\n\nThis is the first digest this person has ever received. "
+                "Instead of describing the batch, have the greeting welcome "
+                "them in your own words and mention they can tap a thumbs-up "
+                "or thumbs-down on any find to shape what future digests look "
+                "for."
+            )
         try:
             result = await asyncio.to_thread(
                 self.writer.chat,
                 [
                     {"role": "system", "content": _SYSTEM},
-                    {"role": "user", "content": _render_finds(finds)},
+                    {"role": "user", "content": content},
                 ],
                 self.max_tokens,
                 _schema(max(find.index for find in finds)),
@@ -187,6 +209,26 @@ class DigestWriter:
         if not greeting or not lines:
             return None
         return WrittenDigest(greeting=greeting, lines=lines)
+
+
+# What they reacted to before, as facts plus one instruction scoped to the
+# likes alone. Dislikes already shaped what was selected; a message that
+# apologizes for or alludes to them would surface the machinery instead of
+# the finds.
+def _render_reactions(reactions: tuple[object, ...]) -> str:
+    lines = [
+        f"- {'thumbs-up' if getattr(r, 'reaction', '') == 'liked' else 'thumbs-down'}"
+        f' on "{getattr(r, "title", "")}"'
+        for r in reactions
+    ]
+    return (
+        "Their reactions to earlier digests:\n"
+        + "\n".join(lines)
+        + "\n\nWhere one of this batch clearly continues something they gave a "
+        "thumbs-up, let that find's line show you remembered - naturally, "
+        "without mentioning ratings, reactions, or feedback. Say nothing "
+        "about anything they gave a thumbs-down."
+    )
 
 
 # Lay the finds out for the prompt: numbered, typed, and nothing else. Page text

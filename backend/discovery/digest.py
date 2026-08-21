@@ -73,6 +73,8 @@ async def write_bubbles(
     timezone: str = "America/New_York",
     limit: int = MAX_EVENTS_IN_MESSAGE,
     now: datetime | None = None,
+    first_digest: bool = False,
+    reactions: tuple[object, ...] = (),
 ) -> tuple[Bubble, ...]:
     zone = _zone(timezone)
     moment = now or datetime.now(UTC)
@@ -90,7 +92,11 @@ async def write_bubbles(
         )
         for position, item in enumerate(kept)
     )
-    written = None if writer is None else await writer.write(finds)
+    written = (
+        None
+        if writer is None
+        else await writer.write(finds, first_digest=first_digest, reactions=reactions)
+    )
     if written is None:
         # No model. Each find still gets its own bubble, because the feedback
         # this exists for must not depend on the runtime being up.
