@@ -56,13 +56,20 @@ class Readable:
     # True only when the page itself says the thing is over. Defaults to False
     # so a find is never dropped because the model was not asked or failed.
     already_happened: bool = False
+    # The dates the page states, resolved to ISO by the model and validated
+    # here. None when the page states none - never guessed. These are what let
+    # deterministic code do the past-event arithmetic the model was wrongly
+    # trusted with: an audit found every selected web find undated, so a
+    # county fair was sent five days after it ended.
+    starts_on: date | None = None
+    ends_on: date | None = None
 
 
 _SCHEMA: dict[str, Any] = {
     "title": "EventDescription",
     "type": "object",
     "additionalProperties": False,
-    "required": ["name", "description", "already_happened"],
+    "required": ["name", "description", "already_happened", "starts_on", "ends_on"],
     "properties": {
         "name": {
             "type": "string",
@@ -78,10 +85,33 @@ _SCHEMA: dict[str, Any] = {
         # by any clock we hold — nobody published a start — so the only thing
         # that knows is the prose, which the model is already reading.
         "already_happened": {"type": "boolean"},
+        # The stated date(s) as ISO, or null. The grammar admits nothing but a
+        # date or null, and the parse below re-validates, so an invented or
+        # malformed date cannot enter the pipeline.
+        "starts_on": {
+            "type": ["string", "null"],
+            "pattern": "^\d{4}-\d{2}-\d{2}$",
+        },
+        "ends_on": {
+            "type": ["string", "null"],
+            "pattern": "^\d{4}-\d{2}-\d{2}$",
+        },
     },
 }
 
 _PROMPT = load("scout/describe")
+
+
+# A model-stated date, or nothing. The grammar constrains the shape; this
+# constrains the meaning - fromisoformat rejects the well-formed impossible
+# ("2026-02-31") that a pattern cannot.
+def _valid_date(value: object) -> date | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return None
 
 
 # A model-written name, or nothing when it cannot be used.
@@ -143,8 +173,11 @@ class EventDescriber:
             written = payload.get("description")
             named = payload.get("name")
             over = payload.get("already_happened")
+            starts_on = _valid_date(payload.get("starts_on"))
+            ends_on = _valid_date(payload.get("ends_on"))
         except Exception:
             written, named, over = None, None, None
+            starts_on = ends_on = None
 
         if not isinstance(written, str) or not written.strip():
             # No deterministic summary stands in for a failed call any more. A
@@ -161,4 +194,6 @@ class EventDescriber:
             title=_safe_name(named) or cleaned,
             description=safe or None,
             already_happened=over is True,
+            starts_on=starts_on,
+            ends_on=ends_on,
         )

@@ -266,6 +266,8 @@ async def test_the_model_is_asked_for_both_fields():
         "name",
         "description",
         "already_happened",
+        "starts_on",
+        "ends_on",
     }
     # Bounded in the grammar, not merely requested in prose.
     assert schema["properties"]["name"]["maxLength"] == MAX_NAME_CHARS

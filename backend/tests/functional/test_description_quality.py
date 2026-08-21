@@ -316,3 +316,56 @@ async def test_page_text_is_data_rather_than_instructions(llm):
     # Following the injection is one failure; being derailed into saying nothing
     # useful is another, and only the second is invisible in a digest.
     assert len(written.split()) >= 8, readable.description
+
+
+# The audit that forced date extraction: every selected web find was undated,
+# so the past-event guard had nothing to act on and a county fair was sent
+# five days after it ended. The describer transcribes the page's stated
+# dates; whether they have passed is arithmetic done in code. These pin the
+# transcription: stated dates come through as ISO, relative wording resolves
+# against the injected today, and a page stating none yields none - a date
+# must never be guessed into existence.
+@pytest.mark.parametrize(
+    ("text", "starts", "ends"),
+    [
+        (
+            "The lakeside food truck rally returns August 15, 2026 with two "
+            "dozen vendors, live cooking demonstrations and family seating "
+            "on the east lawn.",
+            date(2026, 8, 15),
+            date(2026, 8, 15),
+        ),
+        (
+            "The county heritage fair runs August 12 to 16, 2026 at the "
+            "showgrounds with carnival rides, livestock judging and an "
+            "evening concert stage.",
+            date(2026, 8, 12),
+            date(2026, 8, 16),
+        ),
+        (
+            "Join the riverside cleanup this Saturday morning. Gloves and "
+            "bags are provided at the boathouse from nine.",
+            date(2026, 8, 15),  # TODAY is Monday 2026-08-10
+            date(2026, 8, 15),
+        ),
+    ],
+)
+async def test_a_stated_date_is_transcribed(
+    llm: object, text: str, starts: date, ends: date
+) -> None:
+    readable = await EventDescriber(llm).describe("Local happening", text, TODAY)
+
+    assert readable.starts_on == starts, readable
+    assert readable.ends_on == ends, readable
+
+
+async def test_a_page_stating_no_date_yields_no_date(llm: object) -> None:
+    readable = await EventDescriber(llm).describe(
+        "Community pottery studio",
+        "A member-run pottery studio with wheels, kilns and open shelves of "
+        "glazes. Memberships include storage and firing.",
+        TODAY,
+    )
+
+    assert readable.starts_on is None, readable
+    assert readable.ends_on is None, readable

@@ -25,11 +25,11 @@ separate, permissioned stage.
 import asyncio
 import json
 from dataclasses import dataclass, replace
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, time
 from typing import Any, Protocol
 
 from backend.agents.scout.aiming import AimPlanner
-from backend.agents.scout.describing import EventDescriber
+from backend.agents.scout.describing import EventDescriber, Readable
 from backend.agents.scout.reranking import MemoryReranker
 from backend.config.settings import settings
 from backend.core.interfaces import RerankProvider, SearchProvider, TextWriter
@@ -184,6 +184,34 @@ def events_from_digest(digest_json: str) -> tuple[DiscoveredEvent, ...]:
             )
         )
     return tuple(events)
+
+
+# What the describer's transcribed dates mean for a find: whether it is
+# already over, and whether an undated event just became dated.
+#
+# The same arithmetic-over-model rule _make_readable already applies to
+# deadlines, extended to event dates. The describer only transcribes what the
+# page states; whether that date has passed is decided here, in code, because
+# an audit found every selected web find undated - a county fair was sent
+# five days after it ended, and no clock we held could rule it out.
+#
+# A find with a stated start stops being undated: it can hold a calendar
+# entry, show a date in the digest, and compete as dated in later caps
+# instead of riding the undated allowance. Noon UTC is deliberate for a
+# date-only start: midnight would put the whole day behind every clock west
+# of Greenwich the moment it began.
+def apply_described_dates(
+    event_starts_at: datetime | None,
+    described: Readable,
+    today: date,
+) -> tuple[bool, datetime | None]:
+    last_day = described.ends_on or described.starts_on
+    if last_day is not None and last_day < today:
+        return False, event_starts_at
+    starts_at = event_starts_at
+    if starts_at is None and described.starts_on is not None:
+        starts_at = datetime.combine(described.starts_on, time(12, 0), tzinfo=UTC)
+    return True, starts_at
 
 
 class DiscoveryRunner:
@@ -452,6 +480,9 @@ class DiscoveryRunner:
                 # that has passed is the clearest possible sign that whatever
                 # sent it is not paying attention.
                 continue
+            keep, starts_at = apply_described_dates(event.starts_at, described, today)
+            if not keep:
+                continue
             readable.append(
                 RankedCandidate(
                     candidate=ScoredCandidate(
@@ -459,6 +490,7 @@ class DiscoveryRunner:
                             event,
                             title=described.title,
                             summary=described.description,
+                            starts_at=starts_at,
                         ),
                         embedding=item.candidate.embedding,
                     ),
