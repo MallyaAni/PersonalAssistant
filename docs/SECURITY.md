@@ -63,6 +63,22 @@ This document separates current security facts from future requirements. A contr
   switching does not depend on recognizing a compact header icon.
 - Assistant text is treated as untrusted CommonMark. ReactMarkdown creates approved React elements without enabling raw HTML parsing; browser acceptance proves an injected image/event handler creates no element and executes no script. User messages remain literal text.
 - Every chat-classified memory proposal (preferred name, response style, discovery interests/locality, entities, procedures, knowledge, episodic and semantic facts) is persisted immediately by the application, with no user approval step; the reply-adjacent card reports what was already written, for visibility and debugging, not consent. Generic fact correction, export, and deletion are constrained to the token subject when auth is enabled; auth-disabled mode remains caller-user-ID scoped.
+- The iMessage bridge is the one inbound message-content ingress. Behind a
+  separate Mac-side grant (`IMESSAGE_BRIDGE_READ_INCOMING`, off by default), its
+  `read_messages` tool returns the bodies of incoming one-to-one iMessages from
+  senders on the Mac operator's allowlist — today, only the operator's own
+  addresses. Who may be heard is decided on the Mac, never by the caller;
+  strangers' bodies and everything in group chats are filtered inside the
+  bridge process and never leave it, and bodies are never logged on either
+  machine (no redaction layer exists). Inbound text runs through the same
+  conversation pipeline as the web UI, **including immediate memory
+  persistence — an explicit operator decision** (2026-08-21), accepted while
+  every allowlisted sender is the operator and to be revisited before any
+  third party is allowlisted, because a sender's words can become durable
+  facts with no approval step. Storage and deletion follow the existing
+  conversation/memory paths (sealed under `ENCRYPTION_KEY` like every other
+  turn); the backend's poll-cursor and dedup state hold addresses and opaque
+  identifiers, never bodies.
 - Semantic memory content is sent over the private Compose network to the `vllm-embedding` service. The configured embedding endpoint does not request provider-side storage, but vLLM process logging/configuration must still be reviewed for sensitive use.
 - Knowledge chunks, procedures, entities, summaries, tool descriptors, and semantic-cache queries are also sent to the configured local embedding process. Do not ingest secrets or private documents until vLLM logging, retention, host access, and backup policy are acceptable for that data.
 - Internet research is an explicit outbound boundary: deterministic routing and

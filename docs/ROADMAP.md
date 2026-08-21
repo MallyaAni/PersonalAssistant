@@ -497,9 +497,11 @@ Deliver as separately verified atomic stages, in this order:
   message has been delivered.
 
   A subscriber is a revocable permission to send one person one kind of message
-  — not an account, no memory, no ability to ask the assistant anything. Keeping
-  it that small is what lets outbound delivery exist before multi-user identity
-  does. Consent is a recorded column and never inferred, so an address enrolled
+  — not an account, no memory, and by itself no ability to ask the assistant
+  anything. (Conversing is stage 7's separate permission, granted on the Mac,
+  and today extends only to the operator's own addresses.) Keeping a
+  subscriber that small is what lets outbound delivery exist before multi-user
+  identity does. Consent is a recorded column and never inferred, so an address enrolled
   without it is stored inactive and the default outcome of a mistake is that
   nothing is sent. Revocation stops delivery and rotates the token in one
   operation, so a calendar link already shared stops resolving too.
@@ -530,13 +532,27 @@ Deliver as separately verified atomic stages, in this order:
   fails closed inside the machine, and this one does not. Verified when a real
   push arrives on-device with a working calendar link and revocation
   immediately stops delivery.
-- `PLANNED` stage 7 — optional two-way messaging, only if replying is wanted.
-  A gateway such as OpenClaw may serve as transport, calling AniOS over the
-  existing MCP/HTTP boundary. AniOS remains the only scheduler and the only
-  memory owner: a second assistant maintaining its own heartbeat and its own
-  Markdown memory would fork the source of truth that the typed,
-  provenance-tracked memory subsystem exists to protect. Adopt the gateway for
-  its messaging integrations, not for its agent loop.
+- `IN PROGRESS` stage 7 — two-way messaging, built on the bridge itself rather
+  than a gateway (decided 2026-08-21). The bridge gained `read_messages`
+  behind its own Mac-side grant: incoming one-to-one bodies from allowlisted
+  senders only, a caller-owned nanosecond cursor with a settle window, exact
+  typedstream body extraction, strangers filtered on the Mac. A dedicated
+  backend worker polls it over the existing MCP boundary, routes each text
+  through the full conversation pipeline, and replies through `send_imessage`.
+  This keeps what the gateway sketch below existed to protect — AniOS as the
+  only scheduler and the only memory owner — without adopting a second agent
+  loop, a second inbound HTTP surface, or a second memory store. Identity
+  mapping runs through the subscriber allowlist; resolving non-operator
+  senders to their own accounts is the recorded future path, gated on the
+  SECURITY.md decision about inbound text reaching memory. Remaining to
+  verify: replies originating from the dedicated Apple ID once it is signed
+  in and pinned (`IMESSAGE_BRIDGE_ACCOUNT_ID`).
+
+  The original sketch, kept for the record: a gateway such as OpenClaw as
+  transport, calling AniOS over MCP/HTTP. Rejected because it adds a second
+  assistant runtime for zero benefit when the Mac already holds the messages —
+  "adopt the gateway for its messaging integrations, not for its agent loop"
+  ended up meaning: adopt neither.
 
 Sequencing and gates:
 

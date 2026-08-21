@@ -27,6 +27,7 @@ const diagramNames = [
   "context-management",
   "memory-overview",
   "discovery-subsystem",
+  "imessage-bridge",
   "agent-scout",
   "agent-deck",
   "agent-diagram",

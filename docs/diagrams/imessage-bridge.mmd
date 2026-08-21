@@ -1,0 +1,38 @@
+---
+title: iMessage Bridge and Conversation Loop
+---
+flowchart LR
+    Sender([Allowlisted sender's phone]) <--> Messages
+
+    subgraph Mac[Mac — operator's trust zone]
+        Messages[Messages.app<br/>sends as the pinned account id]
+        ChatDB[(chat.db<br/>opened read-only, WAL-aware)]
+        Bridge[Bridge MCP server<br/>x-anios-bridge-token middleware<br/>allowlist plus grants decide who is heard]
+        Filter[Stranger and group-chat filter<br/>plus 3s settle window<br/>bodies never leave the process or logs]
+        Bridge -->|osascript argv only<br/>never interpolated| Messages
+        ChatDB --> Filter --> Bridge
+    end
+
+    subgraph AniOS[AniOS — backend trust zone]
+        Worker[imessage worker<br/>owns the nanosecond cursor<br/>guid dedup across restarts]
+        Conversation[ConversationService<br/>full pipeline including memory writes<br/>an explicit operator decision]
+        Channel[MessagesAppChannel<br/>arguments screened by<br/>OutboundPrivacyPolicy]
+    end
+
+    Worker -->|read_messages since_ns<br/>IMESSAGE_BRIDGE_READ_INCOMING gate| Bridge
+    Bridge -->|allowlisted 1:1 bodies only<br/>sender normalized, reply_to canonical| Worker
+    Worker --> Conversation
+    Conversation --> Channel
+    Channel -->|send_imessage to reply_to| Bridge
+
+    Identity[The sending identity is whatever Apple ID<br/>Messages is signed into — pin it with<br/>IMESSAGE_BRIDGE_ACCOUNT_ID or the tie breaks wrong]
+    Identity -.-> Messages
+
+    classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
+    classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
+    classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
+    classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
+    class Sender,Messages interface;
+    class Bridge,Filter,Worker,Conversation,Channel application;
+    class ChatDB data;
+    class Identity warning;
