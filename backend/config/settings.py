@@ -368,11 +368,23 @@ class Settings(BaseSettings):
     DISCOVERY_POLL_SECONDS: float = Field(default=60.0, gt=0, le=3_600)
     DISCOVERY_RUN_LEASE_SECONDS: float = Field(default=300.0, gt=0, le=3_600)
     DISCOVERY_RUN_HEARTBEAT_SECONDS: float = Field(default=60.0, gt=0, le=600)
-    DISCOVERY_IMESSAGE_TOOL: str = "send_message"
+    # The bridge's real tool name. This default was "send_message" for months
+    # while production only worked because .env overrode it - a wrong default
+    # is a landmine for every deployment that trusts defaults.
+    DISCOVERY_IMESSAGE_TOOL: str = "send_imessage"
     # Reads thumbs-up and thumbs-down tapbacks off the bubbles already sent.
     # A bridge without this tool simply answers nothing, and no feedback is
     # collected — delivery is unaffected either way.
     DISCOVERY_REACTIONS_TOOL: str = "read_reactions"
+    # The conversation over iMessage: inbound texts from allowlisted senders
+    # are answered through the same /chat path the browser uses. Off until
+    # the bridge's read tool is deployed and both ends are flipped together.
+    IMESSAGE_CHAT_ENABLED: bool = False
+    IMESSAGE_CHAT_POLL_SECONDS: float = Field(default=5.0, gt=0, le=300)
+    IMESSAGE_CHAT_READ_TOOL: str = "read_messages"
+    # Where this worker reaches its own backend. The compose network name by
+    # default; a host-run worker overrides it.
+    IMESSAGE_CHAT_BASE_URL: str = "http://backend:8000"
     # Which operator-trusted MCP server owns the Apple device that sends.
     DISCOVERY_IMESSAGE_SERVER_ID: str = "imessage"
     # The public base a subscriber's calendar link is built from. Local by

@@ -300,6 +300,13 @@ def _locality_for(profile: Any) -> str | None:
 async def run() -> None:
     worker = DiscoveryWorker()
     logger.info("discovery_worker_started", extra={"worker_id": worker.worker_id})
+    # The iMessage conversation loop shares this process rather than this
+    # loop: texting wants a seconds-scale poll and a sweep's cadence is
+    # weekly, so coupling their rhythms would starve one or spin the other.
+    if settings.IMESSAGE_CHAT_ENABLED:
+        from backend.workers.imessage_chat import run_chat_loop
+
+        asyncio.create_task(run_chat_loop())
     while True:
         await worker.enqueue_due()
         handled = await worker.run_once()
