@@ -5,101 +5,86 @@ Frequently rewrite this file from fresh evidence. Verified history belongs in
 [ROADMAP.md](ROADMAP.md), and stable architecture facts in
 [ARCHITECTURE.md](ARCHITECTURE.md).
 
-Last updated: 2026-08-18, America/New_York
+Last updated: 2026-08-20, America/New_York
 
-## Recall over conversations — SHIPPED AND ON
+## The model decision is made: DeepSeek stays — DECIDED, RECORDED
 
-Turns carry their own embedding and recall searches them beside semantic
-memory, so being missed by the classifier no longer means being forgotten. The
-classifier is unchanged and still misses circumstances; it now costs less.
+Judged blind over 46 cases (`evaluate_reply_quality`, verdicts on disk), Qwen
+3.8-27B won the aggregate and lost the decision: its wins were grounding, the
+real workload is comparison/trade-off and conceptual engagement where DeepSeek
+wins, and every Qwen quantisation that runs on this box decodes at 4.6-8.2
+tok/s against DeepSeek's 22.1. A live UI trial of the fastest Qwen was rejected
+by the user as far too slow. `docs/MODEL_EVALUATION.md` is the full record and
+the operating manual for the Spark - read it before touching a model or the
+machine. Revisit only if: a container ships working MTP for GB10, or the second
+Spark arrives (then Qwen takes the schema-bound callers and the empty
+`VISION_ESCALATION_MODEL` slot with no trade-off).
 
-Live at `MEMORY_RECALL_TURNS_MAX_COSINE_DISTANCE=0.45`, chosen by sweeping the
-real account: 0.35 answered one question of five, 0.40 four, 0.45 all five,
-0.50 no more for twice the turns. Re-measure after any embedding model change -
-it is a property of that model. `MEMORY_RECALL_TURNS_ENABLED=false` turns it
-off without a redeploy.
+## What went live on 2026-08-20
 
-Two things a threshold alone could not fix, both found by measuring: a question
-the user once asked embeds closer to their new question than the statement that
-answers it, so questions are dropped; and identical repeats collapse rather
-than spending every slot on one interest stated three times.
+- `MAIN_LLM_MAX_TOKENS=4096`: one reply in six was empty at the old hidden
+  1,024 cap (thinking ate the budget; reader renders only `content`).
+- `reasoning_effort` sent as configured, withdrawn once per client when an
+  engine 400s it. "none" is meaningful on ds4-server (suppresses thinking,
+  20x fewer tokens) - never drop it unconditionally.
+- Cache-aware prompt ordering (`CONTEXT_CACHE_ORDERING`): per-turn volatile
+  blocks ride in a trailing **user** message; 8.2x on the second turn of a
+  long conversation. All prompt assembly goes through
+  `turn_context_messages()` - never assemble a reply prompt from
+  `_build_system_prompt` alone; that is how the evaluator silently lost its
+  evidence.
+- Evidence budget 2500/24000 (was 1500/10000): 100% of what a search returns
+  now reaches the model, was 57%.
+- Context accounting on every turn (observe-only), recalled-vs-history dedup,
+  digest ceiling + model compression with truncation fallback.
 
-**Watch this in real use before building on it.** It went live on five
-questions against one account's history. The failure mode is not silence, it is
-noise - an irrelevant turn eating prompt budget and reading as the assistant
-misremembering. A day of ordinary use is the test that matters.
+## START HERE: the highest-value open items
 
-## What is live that was not yesterday
+1. **Set enforcement floors from real traffic.** Every turn logs a
+   `context ... tokens` line. After a day of ordinary use, read the
+   distribution, set section floors from it, implement trimming behind
+   `CONTEXT_BUDGET_ENFORCE`, and wire the `buried_evidence` cases as the
+   regression gate. Do not set floors from synthetic turns.
+2. **Collect the three conceptual-engagement answers.** The category that
+   explains the user's real preference exists but neither model has answered
+   its cases (DeepSeek: 2 minutes, up now; Qwen: needs a swap, defer).
+3. **Raise the truncation-zone token budgets** - `IMAGE_INTENT_MAX_TOKENS=16`,
+   memory proposal 256, vision decision 300, routing 300. On any reasoning
+   model these return garbage-as-content (ds4) or empty (vLLM); the image
+   intent one was already hit once and misdiagnosed as a model capability
+   problem (`get_image_intent_classifier`'s comment records the wrong lesson).
+4. **Functional suite flakes at ~10%** (measured 1/2/2/0/1 over five runs,
+   six different tests). CLAUDE.md makes this suite the prompt-change gate;
+   at this rate it cannot tell a regression from noise. Needs
+   repetition-with-threshold or looser single-sample assertions.
 
-- The image editor is **FLUX.1 Kontext at Q4_K_M** (`IMAGE_EDIT_MODEL`), not
-  FLUX.2 Klein. Enabled during testing and left on because it does real edits
-  Klein cannot: "change the wooden cutting board to a bright blue plastic one"
-  produced exactly that with everything else pixel-preserved, in ~103s against
-  Klein's ~90s. fp8 was unusable on the 16GB card - not one of twenty sampling
-  steps completed in twelve minutes - so quantization is what makes it run at
-  all. Empty the setting to revert.
-- Conversation recall, above.
-- `MAIN_LLM_TRAINING_CUTOFF=2024-07`, measured rather than looked up.
-- Search does 2-3 rounds per turn with queries written by the reply model.
+## Still open, lower
 
-## Prompts: five of about twenty are in `prompts/`
+- **Wake-on-LAN on the Spark** - `ethtool` not installed, so "off" still means
+  a physical button press. IP/MAC recorded in MODEL_EVALUATION.md. Installing
+  a package on that box is the user's call.
+- **Qwen tool-selection confound** - 19/38 with zero tool calls, ruled out
+  parser/tool_choice/temperature/token-cap; open hypothesis is empty required
+  arguments being dropped by design. Only matters if the swap is revisited.
+- **~15 prompts still inline** - `prompts/README.md` lists them; move is
+  mechanical, verify byte-for-byte.
+- **The DGX 1am-8am schedule** - direction still ambiguous (downtime vs
+  run-window), wake mechanism untested, and per AGENTS.md never schedule a
+  poweroff; build nothing until the user restates what they want.
+- Two review findings recorded as design calls, not fixed: the measurement
+  report models the post-dedup ideal rather than the as-sent prompt, and
+  `internet.py`'s fit guarantee weakens at count==1 on pathological inputs.
 
-`reply/system`, `routing/select_action`, and the three search prompts are
-editable files with notes above a separator. `prompts/README.md` lists the rest
-- vision, Scout's six, the deck's four, memory proposal, diagram, image intent,
-style, referent - and moving one is mechanical: create the file, replace the
-constant with its name, call `render()` or `load()`. Verify it as a move rather
-than an edit by comparing the built prompt byte for byte, as the routing one
-was, then re-run whichever suite covers it.
+## Traps that bit this session (all now in AGENTS.md or MODEL_EVALUATION.md)
 
-## Still open, unanswered
-
-- **The DGX Spark schedule.** Asked for twice: downtime between 1am and 8am
-  EST, but also described as running only between those hours, which are
-  opposites. Nothing built pending which. The wake half needs testing on the
-  Spark's own firmware - a powered-off machine cannot schedule its own start,
-  so it needs an RTC alarm, Wake-on-LAN, or suspend instead of power-off.
-- **Extraction labelled set**, item 2 of the gate below. Less urgent than it
-  was this morning: a classifier miss no longer means the fact is unreachable.
-
-## START HERE: finish the model-migration gate — IN PROGRESS
-
-A second DGX Spark arrives this week, and three separate capabilities are
-currently capped by the same thing: bounded work running on Qwen 3.5 **4B**
-because the better model's engine cannot be trusted. Before anything is
-migrated, there needs to be a measurement that says whether a candidate model
-is actually better at these jobs. Swapping and hoping is what produced four
-of the outages recorded below.
-
-Two labelled sets, in the shape `backend/vision/grounding_cases.py` and
-`python -m backend.cli.evaluate_visual_grounding` already established this
-session — cases in a production module, a CLI that scores them, floors set from
-measurement with real margin, and a fast functional gate that catches collapse
-rather than refereeing a close call:
-
-1. **Tool confusion matrix — IMPLEMENTED.**
-   `python -m backend.cli.evaluate_tool_selection` reports the built-in action
-   matrix and category breakdown. The functional gate preserves aggregate,
-   per-action, no-tool, stray-edit, and diagram-to-image bounds independently;
-   a strong common class cannot hide the collapse of a smaller capability.
-2. **Extraction set for `MemoryProposalAgent` — NOT STARTED.** Measured this session:
-   "I'm in Raleigh, NC and I'm into bachata, live music, and food festivals"
-   extracts 4/4; the identical sentence naming **Durham** extracts **0/4**;
-   "Boise, Idaho" 3/3. An imperative prefix ("Set up that scheduled roundup for
-   me. I'm in Durham…") also suppresses it. Deterministic at temperature 0 and
-   unchanged by the prompt, so this is model capacity, not wording.
-
-Both then become the acceptance test for `MAIN_LLM_STRUCTURED_OUTPUT` (below):
-flip it against a schema-enforcing engine and re-run, rather than promoting a
-model and waiting for a user to find the regression.
-
-### State this picks up from
-
-Everything below is verified and deployed unless labelled otherwise. Chat runs
-on DeepSeek (Spark); routing, vision, memory extraction and every strict-JSON
-caller run on Qwen (RTX 5080) for the reason in the capability entry. Image
-generation and editing are both FLUX.2 Klein. Scout's interests, locality and
-cadence are all collectable in conversation; delivery deliberately is not.
+Read the cells, not the total - an eval aggregate misled a model decision the
+per-category table had already called. Never schedule hardware shutdowns; when
+an instruction's premise is false, report and stop. A synthetic benchmark can
+pass while the shipped code path does nothing (cache ordering measured 16x
+synthetic, 1.0x shipped, because chat templates hoist system messages).
+`pkill -f` matches the ssh command line carrying it. Heredocs mangle `
+` -
+five separate times now; use the file tools.
 
 ## The retired routing tree is gone — VERIFIED
 

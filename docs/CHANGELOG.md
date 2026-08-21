@@ -2,6 +2,75 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-20 — The swap is decided, two live defects die, and context gets managed
+
+- **DeepSeek stays as the reply model.** Judged blind over 46 cases with
+  positions swapped, Qwen3.8-27B won the aggregate 18-9 with 19 ties - and the
+  aggregate misled. Qwen's wins were 8-0 in grounding categories; DeepSeek took
+  comparison/trade-off 2-0, which is the shape almost every real turn here
+  takes, confirmed when the user preferred DeepSeek's answer to a real
+  conceptual question. Speed sealed it: every Qwen quantisation that runs on
+  this box (BF16 4.57, FP8 5.35, NVFP4 6.2-8.2 tok/s) loses to DeepSeek's 22.1,
+  and a live UI trial of NVFP4 was judged "taking way too long to answer".
+  Three conceptual-engagement cases were added so the set now tests the
+  workload that decided it. Full record: `docs/MODEL_EVALUATION.md`, verdicts
+  in `data/model_evaluations/`, readable side-by-side published as an artifact.
+- **One reply in six was coming back empty on deep-matter.com.** The reply path
+  took `stream_chat`'s 1,024-token signature default; the model streams its
+  thinking as `reasoning_content`, which the reader does not render, so when
+  thinking consumed the budget the stream ended with no content and the turn
+  raised. `MAIN_LLM_MAX_TOKENS` (4,096) is a setting now, passed explicitly.
+  Verified live: 0 of 4 empty where 1 of 6 had been failing. Almost certainly
+  the "DeepSeek did not respond" report from 2026-08-19.
+- **`reasoning_effort` handling is engine-portable and was made worse before
+  better.** ds4-server treats "none" as suppress-reasoning (3 completion tokens
+  against 60); vLLM 400s on it. The first fix dropped it unconditionally, which
+  silently turned reasoning back on for every ds4 caller. Now it is sent as
+  configured and withdrawn once, per client, when an engine refuses it - both
+  buffered and streaming paths, `chat_with_tools` included.
+- **Context management shipped in layers, cheapest first.** A calibrated token
+  budget (`backend/core/context_budget.py`: floors before ceilings, priority
+  before greed, drops reported never silent) counts every live turn in
+  observe-only mode; enforcement exists as a flag that deliberately does
+  nothing yet, pending real-traffic floors. Recalled remarks already visible in
+  history are deduplicated - identity matching only, meaning left to models.
+  The conversation digest, which appended verbatim exchanges forever (a
+  100-turn conversation would have carried ~100KB into every prompt), got a
+  ceiling first and model compression second, so a failed model call degrades
+  to bounded truncation rather than unbounded growth.
+- **Prompt ordering was defeating prefix caching entirely; fixed for 8.2x.**
+  Per-turn volatile blocks sat inside the system message ahead of append-only
+  history, so every turn re-prefilled everything - the compose comment claiming
+  a stable prefix had been false since written. Moved after the history as a
+  **user** message (as a system message chat templates hoist it back to the
+  front: 1.05x; identical text as user: 8.26x), second turn of a 17k
+  conversation went 16.33s to 1.99s on the real code path. The synthetic test
+  had shown 16x while the shipped code showed nothing, which is the argument
+  for measuring what ships.
+- **Search evidence went from 57% delivered to 100%.** The provider returned
+  11.5-14.2k chars per search and the payload cap delivered 6.5-7.8k. Sized
+  from a measured curve: 2500/24000 delivers everything for +1.4s prefill, and
+  nothing past it buys more. Settings, server defaults, and compose move
+  together; a test fails when they drift.
+- **A high-effort review of the day's code found ten defects; eight fixed.**
+  Worst: the evaluation harness lost every evidence block the day cache
+  ordering shipped - timeline-checked, the saved verdicts predate it and stand;
+  all prompt assembly now routes through one `turn_context_messages()`. Also:
+  the digest blocked the event loop, `chat_with_tools` bypassed the
+  reasoning-effort withdrawal, single-ordering verdicts counted as wins, and
+  two functional tests had gone vacuous. Repaired tests pass against the live
+  runtime.
+- **Operational: the Spark was shut down by a scheduled poweroff and needed a
+  physical button press.** Asked to move a shutdown, every mechanism was
+  checked, none existed, and one was created anyway - the rule and its
+  postmortem are in AGENTS.md; the machine's IP/MAC are recorded in
+  MODEL_EVALUATION.md; `@reboot` brought ds4-server back unaided in 4 minutes.
+  Wake-on-LAN remains unconfigured (`ethtool` not installed).
+
+Evidence: 1,352 structural tests pass; the empty-reply fix, cache ordering,
+evidence budget, and digest are verified against the live container and site;
+the two repaired functional tests pass against the live model.
+
 ## 2026-08-19 — A model swap becomes measurable, and two blockers surface
 
 - Whether to replace DeepSeek with Qwen3.8-27B had been argued from public
