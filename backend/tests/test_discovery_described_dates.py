@@ -33,10 +33,14 @@ def test_a_single_stated_day_in_the_past_is_dropped():
     assert keep is False
 
 
-def test_an_upcoming_stated_date_dates_the_find():
+# Midnight UTC exactly, because that is the pipeline's one convention for a
+# date with no stated time - _format_when renders it as a bare date, and any
+# other clock gets shifted into the reader's zone and printed as a start
+# nobody published ("at 8:00am", in two real digests, from a noon stamp).
+def test_an_upcoming_stated_date_dates_the_find_as_date_only():
     keep, starts_at = apply_described_dates(None, _readable(date(2026, 8, 23)), TODAY)
     assert keep is True
-    assert starts_at == datetime(2026, 8, 23, 12, 0, tzinfo=UTC)
+    assert starts_at == datetime(2026, 8, 23, 0, 0, tzinfo=UTC)
 
 
 # Today's event is still on: an end date equal to today has not passed.

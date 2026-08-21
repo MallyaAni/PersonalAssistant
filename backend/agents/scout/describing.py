@@ -63,6 +63,13 @@ class Readable:
     # county fair was sent five days after it ended.
     starts_on: date | None = None
     ends_on: date | None = None
+    # True only when the page states or clearly implies the happening is
+    # somewhere other than the reader's place. Town names repeat across
+    # regions and search snippets rarely say which one they mean; the page
+    # does, and the model reading it also knows where named venues are -
+    # which is what a state-abbreviation table can never scale to. Defaults
+    # to False so a failed call or an unlocated page never costs a find.
+    located_elsewhere: bool = False
 
 
 _SCHEMA: dict[str, Any] = {
@@ -99,7 +106,31 @@ _SCHEMA: dict[str, Any] = {
     },
 }
 
+# The location question is its own call with its own prompt. Folded into the
+# describe schema it measurably degraded the descriptions - the writing
+# instructions and the location judgment compete in one small model - and a
+# one-field grammar makes the verdict as constrained as an answer can be.
+_LOCATE_SCHEMA: dict[str, Any] = {
+    "title": "EventLocation",
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["located_elsewhere"],
+    "properties": {"located_elsewhere": {"type": "boolean"}},
+}
+
 _PROMPT = load("scout/describe")
+_LOCATE_PROMPT = load("scout/locate")
+
+# Sent only to a writer whose engine enforces no grammar, where the shape has
+# to be asked for in words. Deliberately not in describe.md: folded into the
+# shared prompt it perturbed the grammar path's prose enough to fail two
+# description gates that have nothing to do with format.
+_JSON_TAIL = (
+    "\n\nAnswer with only a JSON object - no code fence, no text around it - "
+    'shaped exactly like this: {"name": "...", "description": "...", '
+    '"already_happened": false, "starts_on": "YYYY-MM-DD" or null, '
+    '"ends_on": "YYYY-MM-DD" or null}.'
+)
 
 
 # A model-stated date, or nothing. The grammar constrains the shape; this
@@ -133,58 +164,150 @@ def _safe_name(value: object) -> str | None:
 
 
 class EventDescriber:
-    """Write a find's name and description, or leave it undescribed."""
+    """Write a find's name and description, or leave it undescribed.
 
-    def __init__(self, writer: TextWriter | None) -> None:
+    Two writers, one contract. `writer` is the best prose model available and
+    is asked first, because this text is what a person actually reads and a
+    small model's descriptions read small - "features a Family Day with Jr.
+    Docents" reached a real phone. Its answer is JSON by instruction, held to
+    the schema by the validation below rather than by a grammar, since the
+    deployed harness enforces none. `structured_writer` is the grammar
+    engine, kept as the fallback: when the prose model's answer does not
+    survive validation, the enforced call still produces a usable answer
+    rather than a raw scraped title.
+    """
+
+    def __init__(
+        self,
+        writer: TextWriter | None,
+        structured_writer: TextWriter | None = None,
+    ) -> None:
         self.writer = writer
+        self.structured = structured_writer
+
+    # One focused question: does the page place this happening away from the
+    # reader's area? Asked of a model because town names repeat across regions
+    # and a venue's whereabouts is world knowledge no lookup table scales to.
+    # Fail-open on every edge: no place configured, no source to read, or a
+    # failed call all keep the find - only a parsed true drops it.
+    async def _located_elsewhere(
+        self, title: str, source: str, place: str | None
+    ) -> bool:
+        judge = self.structured or self.writer
+        if judge is None or not place or not source:
+            return False
+        prompt = _LOCATE_PROMPT.format(
+            title=title, source=source[:MAX_SOURCE_CHARS], place=place
+        )
+        try:
+            result = await asyncio.to_thread(
+                judge.chat,
+                [{"role": "user", "content": prompt}],
+                16,
+                _LOCATE_SCHEMA,
+                0.0,
+            )
+            return json.loads(result["content"]).get("located_elsewhere") is True
+        except Exception:
+            return False
+
+    # One writer's answer, parsed - or None when the call failed or returned
+    # something other than JSON. Validation happens on the caller.
+    async def _ask(self, writer: TextWriter, prompt: str) -> dict | None:
+        try:
+            result = await asyncio.to_thread(
+                writer.chat,
+                [{"role": "user", "content": prompt}],
+                # Room for the fields plus a written sentence. Greedy, because
+                # a description that changes between runs of the same page is
+                # a bug, not variety.
+                220,
+                # Sent to both writers: a grammar engine decodes inside it,
+                # and one that cannot still gets the instruction text below.
+                _SCHEMA,
+                0.0,
+            )
+            payload = json.loads(result["content"])
+            return payload if isinstance(payload, dict) else None
+        except Exception:
+            return None
+
+    # Does a parsed answer meet the schema's own bounds? A grammar enforces
+    # these during decoding; the prose writer's answer is only held to them
+    # here. Overlength is rejected rather than truncated - cutting produced
+    # descriptions stopping mid-clause, and the fallback writer answering
+    # inside the grammar is strictly better than a trimmed sentence.
+    @staticmethod
+    def _valid(payload: dict | None) -> bool:
+        if payload is None:
+            return False
+        named = payload.get("name")
+        written = payload.get("description")
+        if not isinstance(named, str) or not 3 <= len(named) <= MAX_NAME_CHARS:
+            return False
+        if not isinstance(written, str) or not written.strip():
+            return False
+        return len(written) <= MAX_DESCRIPTION_CHARS
 
     async def describe(
         self,
         title: str,
         source: str | None,
         today: date | None = None,
+        place: str | None = None,
     ) -> Readable:
         # The source's own title still prepares the prompt and still stands in
         # when there is no model answer at all. That is not a rewriting of what
         # the model said — it is what a find is called when nothing said
         # anything, and a find with no name cannot be rendered.
         cleaned = clean_title(title)
-        if self.writer is None or not source:
+        if (self.writer is None and self.structured is None) or not source:
             return Readable(title=cleaned, description=None)
 
+        elsewhere = await self._located_elsewhere(cleaned, source, place)
         prompt = _PROMPT.format(
             title=cleaned,
             source=source[:MAX_SOURCE_CHARS],
             description_limit=MAX_DESCRIPTION_CHARS,
             today=(today or datetime.now(UTC).date()).isoformat(),
         )
-        try:
-            result = await asyncio.to_thread(
-                self.writer.chat,
-                [{"role": "user", "content": prompt}],
-                # The schema is sent as a decoding grammar, so the runtime cannot
-                # emit anything outside it. Greedy, because a description that
-                # changes between runs of the same page is a bug, not variety.
-                160,
-                _SCHEMA,
-                0.0,
-            )
-            payload = json.loads(result["content"])
+        payload = None
+        if self.writer is not None:
+            # With a fallback configured, the primary is the prose model whose
+            # engine enforces nothing, so the shape is asked for in words.
+            # Alone, the writer is a grammar engine and gets the clean prompt.
+            asked = prompt + _JSON_TAIL if self.structured is not None else prompt
+            payload = await self._ask(self.writer, asked)
+        if not self._valid(payload) and self.structured is not None:
+            payload = await self._ask(self.structured, prompt)
+
+        if payload is not None and self._valid(payload):
             written = payload.get("description")
             named = payload.get("name")
             over = payload.get("already_happened")
             starts_on = _valid_date(payload.get("starts_on"))
             ends_on = _valid_date(payload.get("ends_on"))
-        except Exception:
-            written, named, over = None, None, None
-            starts_on = ends_on = None
+        else:
+            written = named = None
+            over = payload.get("already_happened") if payload else None
+            starts_on = _valid_date(payload.get("starts_on")) if payload else None
+            ends_on = _valid_date(payload.get("ends_on")) if payload else None
 
         if not isinstance(written, str) or not written.strip():
             # No deterministic summary stands in for a failed call any more. A
             # scraped first paragraph was never something a person could decide
             # on, and shipping one made a describing failure invisible; a find
-            # with no description now renders as its name, date and link.
-            return Readable(title=_safe_name(named) or cleaned, description=None)
+            # with no description now renders as its name, date and link. The
+            # verdicts still carry: a parsed answer that said "this is over"
+            # or "this is elsewhere" holds even when the sentence was unusable.
+            return Readable(
+                title=_safe_name(named) or cleaned,
+                description=None,
+                already_happened=over is True,
+                starts_on=starts_on,
+                ends_on=ends_on,
+                located_elsewhere=elsewhere,
+            )
 
         # The one rule left: a link must never originate from model output, and
         # links in a message come from the typed record. Anything URL-shaped is
@@ -196,4 +319,5 @@ class EventDescriber:
             already_happened=over is True,
             starts_on=starts_on,
             ends_on=ends_on,
+            located_elsewhere=elsewhere,
         )

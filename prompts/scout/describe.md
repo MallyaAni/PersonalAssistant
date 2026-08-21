@@ -11,6 +11,15 @@ act on, and a county fair was sent five days after it ended. The model only
 transcribes and resolves the page's stated date; whether it has passed is
 computed in _make_readable, because arithmetic belongs in code.
 
+2026-08-21, later the same day: the location question ("does this page place
+the happening away from the reader?") was first added here and then moved to
+its own prompt, scout/locate. Folded in, it perturbed this prompt's prose:
+two description-quality gates failed in ways unrelated to location, and
+three rewordings moved the failures around rather than fixing them - the
+writing instructions and the location judgment compete in one small model.
+It is asked as a separate focused call per find; see locate.md for the
+incident that forced it.
+
 ===== PROMPT BELOW — everything under this line is sent to the model =====
 
 Below is text scraped from a web page about a local happening.

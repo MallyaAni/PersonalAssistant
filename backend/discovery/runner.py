@@ -33,6 +33,7 @@ from backend.agents.scout.describing import EventDescriber, Readable
 from backend.agents.scout.reranking import MemoryReranker
 from backend.config.settings import settings
 from backend.core.interfaces import RerankProvider, SearchProvider, TextWriter
+from backend.core.structured_fallback import JSONFallbackWriter
 from backend.discovery.decision_log import build_decision
 from backend.discovery.errors import DiscoveryError
 from backend.discovery.events import DiscoveredEvent, EventSource, FeedError
@@ -197,9 +198,12 @@ def events_from_digest(digest_json: str) -> tuple[DiscoveredEvent, ...]:
 #
 # A find with a stated start stops being undated: it can hold a calendar
 # entry, show a date in the digest, and compete as dated in later caps
-# instead of riding the undated allowance. Noon UTC is deliberate for a
-# date-only start: midnight would put the whole day behind every clock west
-# of Greenwich the moment it began.
+# instead of riding the undated allowance. Midnight UTC exactly is the
+# pipeline's one convention for "a date with no stated time" - search
+# extraction and ICS date values already produce it, and _format_when
+# renders it as a bare date. This first used noon to keep the day ahead of
+# western clocks, which broke that convention: two real digests announced
+# an all-day happening "at 8:00am", a clock nobody published.
 def apply_described_dates(
     event_starts_at: datetime | None,
     described: Readable,
@@ -210,7 +214,7 @@ def apply_described_dates(
         return False, event_starts_at
     starts_at = event_starts_at
     if starts_at is None and described.starts_on is not None:
-        starts_at = datetime.combine(described.starts_on, time(12, 0), tzinfo=UTC)
+        starts_at = datetime.combine(described.starts_on, time(0, 0), tzinfo=UTC)
     return True, starts_at
 
 
@@ -256,23 +260,32 @@ class DiscoveryRunner:
         self.search = search
         structured = structured_writer or writer
         # Only the selected finds are described, so the model runs a handful of
-        # times per sweep rather than once per candidate. The describer answers
-        # into a schema - name, description, already_happened, the stated dates
-        # - so it needs the engine that enforces one. On the prose writer the
-        # schema is a request, and the deployed harness ignored it: every
-        # describe call returned markdown, json.loads failed silently, and a
-        # whole sweep shipped raw scraped titles with no dates.
-        self.describer = EventDescriber(structured)
+        # times per sweep rather than once per candidate. The best prose model
+        # writes first - this text reaches a person's phone, and a 4B's
+        # descriptions read small - with its answer held to the schema by
+        # validation in the describer; the grammar engine is the fallback for
+        # an answer that does not survive it, and the judge of the focused
+        # location question.
+        self.describer = EventDescriber(writer, structured)
         # What memory knows about the person this sweep is for. Reading it is
         # the whole reason a query can be about someone rather than about a
         # topic; without it both stages below fall back to bare labels.
         self.personal = PersonalContextReader(seen.session)
+        # The sweep's judgement calls go to the strongest model first, with
+        # the grammar engine answering whenever its JSON does not survive the
+        # wrapper's check. A sweep runs in the background, so the strong
+        # model's latency costs nothing anyone is waiting on - and aiming a
+        # query at a person is exactly the judgement a small model does
+        # smallest.
+        judgement = writer
+        if writer is not None and structured is not writer:
+            judgement = JSONFallbackWriter(writer, structured)
         # Turns each interest into a search subject and a ranking vector aimed
         # at that person. One model call per sweep.
-        self.aiming = AimPlanner(structured)
+        self.aiming = AimPlanner(judgement)
         # Orders the qualified shortlist against the same facts. One more call,
         # and it can only reorder what deterministic ranking already admitted.
-        self.reranker = MemoryReranker(structured)
+        self.reranker = MemoryReranker(judgement)
         # Between the two: a local cross-encoder that reads each interest and
         # candidate as one sequence. Embeddings decide what qualifies, this
         # decides the order among them, the model above applies what memory
@@ -405,8 +418,13 @@ class DiscoveryRunner:
 
         # Both sections get readable titles and descriptions; an unusual find is
         # no easier to judge from a scraped page title than a matching one.
-        selected = await self._make_readable(selected, budget, moment)
-        notable = await self._make_readable(notable, budget, moment)
+        place = None
+        if primary is not None:
+            place = primary.label
+            if primary.region:
+                place = f"{primary.label}, {primary.region}"
+        selected = await self._make_readable(selected, budget, moment, place)
+        notable = await self._make_readable(notable, budget, moment, place)
 
         # Everything considered is recorded, but only what was selected counts
         # as announced. An item ranked out stays eligible for a later sweep,
@@ -462,13 +480,19 @@ class DiscoveryRunner:
         selected: tuple[RankedCandidate, ...],
         budget: RequestBudget | None = None,
         now: datetime | None = None,
+        place: str | None = None,
     ) -> tuple[RankedCandidate, ...]:
         today = (now or datetime.now(UTC)).date()
         readable: list[RankedCandidate] = []
         for item in selected:
             event = item.event
             source = event.summary or await self._page_text(event.url, budget)
-            described = await self.describer.describe(event.title, source, today)
+            described = await self.describer.describe(event.title, source, today, place)
+            # The page says this happens somewhere else. Snippet-level region
+            # checks miss whatever the snippet omits; the page is where the
+            # real location lives, and this is the only stage that reads it.
+            if described.located_elsewhere:
+                continue
             # Read before the model is trusted with it. The describe call does
             # ask — "Today is {today}, set already_happened when a deadline has
             # gone by" — and a real digest still offered a vote that closed on

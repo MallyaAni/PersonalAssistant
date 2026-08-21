@@ -389,3 +389,83 @@ async def test_a_page_stating_no_date_yields_no_date(structured_llm: object) -> 
 
     assert readable.starts_on is None, readable
     assert readable.ends_on is None, readable
+
+
+# The first judged real delivery sent two concerts from a same-named town in
+# another state - the snippets never said which state, the page did, and the
+# only component reading the page was never asked. These pin the question now
+# asked of it: a page that states or venue-implies somewhere else is flagged,
+# the reader's own place and pages that never say where are not, and a page
+# naming a same-named town elsewhere is believed over the resemblance. All
+# places here are synthetic or far from the real incident on purpose.
+@pytest.mark.parametrize(
+    ("place", "text", "elsewhere"),
+    [
+        # States its own town: stays.
+        (
+            "Millbrook, Oregon",
+            "An evening of chamber music at the Millbrook, Oregon community "
+            "hall, with a reception afterwards in the lobby.",
+            False,
+        ),
+        # States a different town outright: flagged.
+        (
+            "Millbrook, Oregon",
+            "An evening of chamber music at the community hall in Duluth, "
+            "Minnesota, with a reception afterwards in the lobby.",
+            True,
+        ),
+        # A same-named town in another region, stated plainly: the page wins
+        # over the resemblance.
+        (
+            "Springfield, Oregon",
+            "The riverfront food festival returns to downtown Springfield, "
+            "Illinois with forty vendors along the water.",
+            True,
+        ),
+        # A venue whose location is world knowledge, no city stated: flagged.
+        (
+            "Boise, Idaho",
+            "The tribute band plays Madison Square Garden for one night, "
+            "with doors an hour before the show.",
+            True,
+        ),
+        # Names only an unlocatable venue: silence is safe, stays.
+        (
+            "Millbrook, Oregon",
+            "Trivia night returns to the Rusty Anchor with teams of up to "
+            "six and prizes for the top three.",
+            False,
+        ),
+        # Names no place at all: stays.
+        (
+            "Millbrook, Oregon",
+            "A weekly beginners knitting circle with materials provided and "
+            "patient company for first-timers.",
+            False,
+        ),
+    ],
+)
+async def test_a_page_placed_elsewhere_is_flagged_and_silence_is_safe(
+    structured_llm: object, place: str, text: str, elsewhere: bool
+) -> None:
+    readable = await EventDescriber(structured_llm).describe(
+        "Local happening", text, TODAY, place
+    )
+
+    assert readable.located_elsewhere is elsewhere, readable
+
+
+# With no place configured the question is not really asked, so even a page
+# loudly somewhere else must come back unflagged - the deterministic guard,
+# exercised through the real call path.
+async def test_no_configured_place_never_flags(structured_llm: object) -> None:
+    readable = await EventDescriber(structured_llm).describe(
+        "Local happening",
+        "The riverfront food festival returns to downtown Springfield, "
+        "Illinois with forty vendors along the water.",
+        TODAY,
+        None,
+    )
+
+    assert readable.located_elsewhere is False, readable
