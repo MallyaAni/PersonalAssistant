@@ -116,11 +116,35 @@ judges did (6/6 pairwise, 3/3 Scout rubric on Fable).
 five: **no selected find had an established date.** starts_at was null on
 every item, so the lead-time/past-event guard has nothing to act on - which
 is how a county fair was selected five days after it ended, matched to
-"farmers markets". Secondary: an audience mismatch (children's classes for
-an adult's interest) and stretch matches scoring 1-2/5. The next Scout
-quality fix is date extraction in describing/aiming, not the reranker - the
-reranker cannot reject a past event it was never told the date of. Re-run
-the judge after that fix; verdicts persist under data/model_evaluations/.
+"farmers markets".
+
+**FIXED 2026-08-21 (commits 47552b6, 2608534), verified by rehearsal + judge:
+4 of 5 worth sending, 5 of 5 timely.** Three stacked causes, found by running
+`runner.sweep(user, profile, persist=False)` in-container and instrumenting:
+
+1. **Dates were never transcribed.** prompts/scout/describe.md now asks for
+   starts_on/ends_on as stated by the page ({today} resolves relative
+   wording); deterministic `apply_described_dates` in runner.py drops
+   ended finds and fills starts_at (noon UTC) for dated ones.
+2. **Both runner factories charged sweeps to the guest budget.** Operator
+   sweeps burned the tiny guest allowance and then searched nothing
+   (requests_spent 0). `resolve_search_account(db, user_id)` in
+   dependencies.py now feeds is_operator + monthly override into both
+   factories; the worker resolves it per run.
+3. **The describer ran on the prose writer, whose harness (ds4.c, port
+   8888) ignores response_format entirely** - every describe call returned
+   markdown, `json.loads` failed inside a blanket except, and sweeps
+   shipped raw scraped titles with no summaries or dates. The describer
+   now uses the structured client (vLLM enforces the grammar), and
+   test_description_quality.py runs on a `structured_llm` fixture so the
+   gate exercises the deployed role. Lesson: the functional suite had been
+   passing against the *host's* fallback runtime while the container
+   pointed at ds4 - when a prompt behaves in tests and not in production,
+   compare `settings.MAIN_LLM_BASE_URL` host vs container first.
+
+Rehearsal verdicts: data/model_evaluations/scout-content-rehearsal-ani.mallya-20260821.json
+(baseline audit in scout-content-ani.mallya-20260821.json). Still to judge
+once the bridge is physically back: the composed delivery message.
 
 ## Still open, lower
 
