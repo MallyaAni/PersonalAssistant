@@ -286,3 +286,20 @@ def test_an_email_address_passes_only_in_addressing_fields():
         service._screen_arguments(
             "internet", "search_web", {"query": "person@example.com"}
         )
+
+# The payload exemption: a picture's base64 is statistically certain to
+# eventually contain a secret-shaped substring - one real diagram was
+# withheld by that coincidence - while the same blob in any other field
+# still screens.
+def test_image_payload_is_never_screened_but_other_fields_are():
+    from backend.config.settings import settings
+    from backend.services.mcp_invocation_service import MCPInvocationService
+
+    service = MCPInvocationService(invoker=None, lister=None)
+    server = settings.DISCOVERY_IMESSAGE_SERVER_ID
+    secret_shaped = "AKIA" + "B" * 16  # the classic key prefix, inside base64
+
+    screened = service._screen_arguments(
+        server, "send_imessage", {"to": "+15550100", "attachment_base64": secret_shaped}
+    )
+    assert screened["attachment_base64"] == secret_shaped

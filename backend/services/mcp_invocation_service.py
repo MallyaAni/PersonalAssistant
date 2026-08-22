@@ -63,6 +63,16 @@ class MCPInvocationService:
         self.addressing_fields = {
             (settings.DISCOVERY_IMESSAGE_SERVER_ID, "send_imessage", "to"),
             (settings.DISCOVERY_IMESSAGE_SERVER_ID, "allow_recipient", "to"),
+            # Image payload, not text: base64 of a picture is statistically
+            # certain to eventually contain a substring shaped like a secret,
+            # and one real diagram was withheld by exactly that coincidence.
+            # The bridge magic-byte-validates the decoded bytes as an image,
+            # so nothing textual can ride this field anyway.
+            (
+                settings.DISCOVERY_IMESSAGE_SERVER_ID,
+                "send_imessage",
+                "attachment_base64",
+            ),
         }
 
     # Screen every string argument, refusing the call if any cannot be sent.
