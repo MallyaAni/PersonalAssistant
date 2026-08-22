@@ -1353,14 +1353,13 @@ def send_message(
         return latest_sent_guid(config, recipient, text) or "sent"
 
     safe_name, content = attachment
-    # Spooled, not temp-filed. Messages' `send` returns once the message is
-    # queued and reads the file afterwards to upload it — deleting the file
-    # as soon as osascript returns therefore races the upload, and the
-    # recipient gets a bubble whose picture never loads. A real generated
-    # image lost that race live; a tiny calendar can win it, which is how
-    # this survived every digest. The spool is cleaned of old files on the
-    # next attachment send, once Messages has either uploaded them or never
-    # will.
+    # Spooled, not temp-filed, and spooled somewhere Messages may read (see
+    # _spool_directory). Messages' `send` returns once the message is queued
+    # and reads the file afterwards to upload it — deleting the file as soon
+    # as osascript returns races the upload, and a path outside Messages'
+    # sandbox never uploads at all while still reporting success. The spool
+    # is cleaned of old files on the next attachment send, once Messages has
+    # either uploaded them or never will.
     _clean_spool()
     directory = Path(tempfile.mkdtemp(prefix="send-", dir=_spool_directory()))
     path = directory / safe_name
@@ -1372,8 +1371,16 @@ def send_message(
 
 
 # Where outbound attachments wait for Messages to pick them up.
+#
+# Under ~/Pictures, and that location is load-bearing: Messages is sandboxed,
+# and a scripted send hands it a bare path it must be entitled to read. Its
+# sandbox reads ~/Pictures; it does not read hidden home folders or the
+# system temp tree — a transfer sourced from either queues as "waiting"
+# forever and renders as a bubble that does nothing when clicked, while the
+# send itself reports success. Proven live both ways: the same file stuck
+# from the old dot-folder and finished from here.
 def _spool_directory() -> Path:
-    spool = Path.home() / ".anios-imessage-bridge" / "outbox"
+    spool = Path.home() / "Pictures" / "anios-outbox"
     spool.mkdir(parents=True, exist_ok=True)
     return spool
 
