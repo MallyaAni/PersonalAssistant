@@ -142,11 +142,19 @@ on run argv
             set targetService to account id accountId
         end if
         set targetBuddy to participant targetId of targetService
-        send messageBody to targetBuddy
         send (POSIX file filePath) to targetBuddy
+        send messageBody to targetBuddy
     end tell
 end run
 """
+# The file goes before the body, and that order is load-bearing. Sending the
+# text first and the file second to the same participant in one script leaves
+# the file transfer queued in Messages' ledger as "waiting" forever — the
+# recipient sees a bubble whose picture never loads, while the send reports
+# success. Reproduced from a plain shell with this exact script, and resolved
+# by the swap alone (file-to-chat and two-script variants also work; this is
+# the smallest change). Every image the bridge ever "sent" before this order
+# was a dead bubble.
 
 
 @dataclass(frozen=True, slots=True)
