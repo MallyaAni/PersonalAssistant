@@ -57,7 +57,7 @@ def _worker(bridge: _Bridge, monkeypatch, accounts: dict, replies: dict):
 
     conversed: list[tuple[str, str]] = []
 
-    async def converse(user_id: str, text: str):
+    async def converse(user_id: str, text: str, active_image=None):
         conversed.append((user_id, text))
         return TurnResult(replies.get(text, _FAILURE_REPLY))
 
@@ -243,7 +243,7 @@ async def test_a_slow_turn_gets_an_ack_then_the_answer(monkeypatch):
         bridge, monkeypatch, accounts={"7372025933": "ani.mallya"}, replies={}
     )
 
-    async def slow(user_id, text):
+    async def slow(user_id, text, active_image=None):
         await asyncio.sleep(0.2)
         return TurnResult("a considered answer")
 
@@ -299,7 +299,7 @@ async def test_a_failed_ack_send_never_costs_the_answer(monkeypatch):
     async def account_for(sender):
         return "ani.mallya"
 
-    async def slow(user_id, text):
+    async def slow(user_id, text, active_image=None):
         await asyncio.sleep(0.2)
         return TurnResult("the answer")
 
@@ -359,7 +359,7 @@ async def test_a_generated_image_is_sent_as_an_attachment(monkeypatch):
         bridge, monkeypatch, accounts={"7372025933": "ani.mallya"}, replies={}
     )
 
-    async def converse(user_id, text):
+    async def converse(user_id, text, active_image=None):
         return TurnResult(
             "Here's the image you asked for.",
             (TurnImage("art-1", "image/png", data_base64="aWJyaWRnZQ=="),),
@@ -546,7 +546,7 @@ async def test_a_generated_image_becomes_the_threads_picture(monkeypatch):
         bridge, monkeypatch, accounts={"7372025933": "ani.mallya"}, replies={}
     )
 
-    async def converse(user_id, text):
+    async def converse(user_id, text, active_image=None):
         return TurnResult(
             "Here you go.",
             (TurnImage("art-7", "image/png", data_base64="Zm9v"),),
