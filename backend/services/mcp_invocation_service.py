@@ -52,12 +52,29 @@ class MCPInvocationService:
         # Screening is never optional: arguments leave the machine.
         self.egress = egress or OutboundPrivacyPolicy()
         self.retry = retry or MCPRetryPolicy()
+        # Addressing fields whose whole purpose is to carry a handle. The
+        # screen exists so a personal identifier cannot LEAK into an outbound
+        # query; a recipient address in a send tool's `to` is not a leak, it
+        # is routing - and screening it silently broke conversation for every
+        # sender whose iMessage handle is an email. Named per server and tool
+        # so nothing else inherits the exemption.
+        from backend.config.settings import settings
+
+        self.addressing_fields = {
+            (settings.DISCOVERY_IMESSAGE_SERVER_ID, "send_imessage", "to"),
+            (settings.DISCOVERY_IMESSAGE_SERVER_ID, "allow_recipient", "to"),
+        }
 
     # Screen every string argument, refusing the call if any cannot be sent.
-    def _screen_arguments(self, arguments: dict[str, Any]) -> dict[str, Any]:
+    def _screen_arguments(
+        self, server_id: str, tool_name: str, arguments: dict[str, Any]
+    ) -> dict[str, Any]:
         screened: dict[str, Any] = {}
         for name, value in arguments.items():
             if not isinstance(value, str):
+                screened[name] = value
+                continue
+            if (server_id, tool_name, name) in self.addressing_fields:
                 screened[name] = value
                 continue
             result = self.egress.sanitize(value)
@@ -122,7 +139,7 @@ class MCPInvocationService:
         live = await self.resolve_tool(server_id, tool_name, expected_fingerprint)
 
         validate_arguments(live.input_schema, arguments)
-        screened = self._screen_arguments(arguments)
+        screened = self._screen_arguments(server_id, tool_name, arguments)
 
         logger.info(
             "Calling %s/%s with %d argument(s)",

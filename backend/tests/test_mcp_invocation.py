@@ -253,3 +253,36 @@ def test_valid_arguments_pass_validation():
 def test_a_matching_fingerprint_is_accepted():
     tool = _tool()
     assert_descriptor_is_current(tool, tool.schema_fingerprint)
+
+
+# The addressing exemption is exactly three fields wide. A recipient email
+# in a send tool's `to` is routing, not a leak - screening it silently
+# broke conversation for every sender whose iMessage handle is an email -
+# while the same email anywhere else still cannot leave the machine.
+def test_an_email_address_passes_only_in_addressing_fields():
+    from backend.config.settings import settings
+    from backend.services.mcp_invocation_service import MCPInvocationService
+
+    service = MCPInvocationService(invoker=None, lister=None)
+    server = settings.DISCOVERY_IMESSAGE_SERVER_ID
+
+    screened = service._screen_arguments(
+        server, "send_imessage", {"to": "person@example.com", "body": "hi"}
+    )
+    assert screened["to"] == "person@example.com"
+
+    screened = service._screen_arguments(
+        server, "allow_recipient", {"to": "person@example.com"}
+    )
+    assert screened["to"] == "person@example.com"
+
+    from backend.mcp.invocation import MCPInvocationError
+
+    with pytest.raises(MCPInvocationError):
+        service._screen_arguments(
+            server, "send_imessage", {"body": "email person@example.com please"}
+        )
+    with pytest.raises(MCPInvocationError):
+        service._screen_arguments(
+            "internet", "search_web", {"query": "person@example.com"}
+        )
