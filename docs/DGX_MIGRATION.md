@@ -61,3 +61,91 @@ was written to be reached over the network rather than spawned locally.
 
 Host ComfyUI is the other host-bound piece, and its GPU sizing assumptions are
 tied to the same 16 GB card as vLLM's.
+
+## Two-Spark commissioning, verified 2026-08-22
+
+Hostnames and fabric, all measured rather than assumed:
+
+| | animallya-spark1 | animallya-spark2 |
+|---|---|---|
+| LAN (WiFi `wlP9s9`) | 172.16.8.3 | 172.16.8.5 |
+| RoCE rail 1 `enp1s0f1np1` / `rocep1s0f1` | 192.168.100.1/24 | 192.168.100.2/24 |
+| RoCE rail 2 `enP2p1s0f1np1` / `roceP2p1s0f1` | 192.168.101.1/24 | 192.168.101.2/24 |
+
+Both rails MTU 9000, verified with `ping -M do -s 8972`. `ib_write_bw -x 3`
+measures **108.91 Gb/s on rail 1 and 109.09 Gb/s on rail 2** - real RoCE v2,
+not an Ethernet fallback.
+
+**The GB10 QSFP port is two virtual NICs, not one.** Each twin gets x4 PCIe 5.0
+lanes and carries ~100G. Listing a single HCA silently runs NCCL at half the
+port (98 vs 161 Gb/s busbw, measured by others). So both twins are addressed,
+on **separate subnets** - sharing one subnet breaks NCCL autodiscovery - and
+NCCL must be given both with `NCCL_IB_MERGE_NICS=1`:
+
+```
+NCCL_IB_HCA=rocep1s0f1,roceP2p1s0f1
+NCCL_SOCKET_IFNAME=enp1s0f1np1,enP2p1s0f1np1
+NCCL_IB_GID_INDEX=3
+NCCL_IB_DISABLE=0
+GLOO_SOCKET_IFNAME=enp1s0f1np1   # must be set alongside, or rendezvous deadlocks
+```
+
+GID index 3 is the RoCE v2 IPv4 entry on both boxes here - confirmed by
+reading `/sys/class/infiniband/rocep1s0f1/ports/1/gids/3`. Do not assume it:
+others have found the IPv4 RoCEv2 entry at index 4 or 5 after re-cabling, with
+NCCL failing on an empty GID.
+
+The addresses above are set with `ip addr add` and do **not** survive a reboot;
+`nmcli dev set <iface> managed no` is applied first or NetworkManager wipes
+them. A netplan file under `/etc/netplan/` is the durable form and is still to
+be written.
+
+### Version state, which matters more than it looks
+
+Both boxes: kernel `6.17.0-1031-nvidia`, Ubuntu 24.04.4 LTS, driver
+`580.173.02`, Docker 29.2.1 with CDI. Those are the right pins - driver 590.x
+has CUDAGraph deadlocks on GB10 and Ubuntu 25.10 is unsupported and breaks
+cross-node MPI.
+
+**The pre-installed `nvcr.io/nvidia/vllm:26.03.post1-py3` cannot serve this
+model.** It ships vLLM 0.17.1, whose registry has DeepseekV2/V3/V32 and no V4,
+while the checkpoint declares `"model_type": "deepseek_v4"`. Newer is not
+automatically better either: a published head-to-head on this hardware found
+vLLM 0.21.1 + B12X beats 0.25.2 by 9.2% peak decode and 29.4% at concurrency
+6, because `torch.compile` works on the former and not the latter for this
+model.
+
+### Settings taken from other people's documented failures
+
+- `--gpu-memory-utilization 0.78`, not 0.85: speculative decode allocates on
+  the first real request, so 0.80 boots, passes a smoke test, then dies under
+  traffic.
+- `num_speculative_tokens: 5`. k=7 and k=10 boot and then crash on every
+  generation; the DSpark block size is 5.
+- `VLLM_USE_B12X_MOE=1`. Without it the MoE path silently falls back to
+  DEEPGEMM_MXFP4 and decode drops from 50-60 to ~29 tok/s with no error.
+- JIT/compile caches node-local, never shared: a shared cache produces a
+  torch.compile makedirs race, half-written DeepGEMM cubins, and an
+  ABI-mismatched FlashInfer `sampling.so` - and none of the errors name the
+  cache.
+- Start the worker (rank 1, `--headless`) before the head.
+- Open bug vLLM #40969: `cudagraph_mode=FULL_AND_PIECEWISE` with chunked
+  prefill silently hangs after 5-7 requests on exactly this hardware. Validate
+  before trusting it; `--enforce-eager` is the safe fallback at ~20-30% cost.
+
+### Download trap, hit and diagnosed here
+
+`hf download` collapsed to ~1 MB/s with no error and `du` appeared to advance,
+because HF Xet pre-allocates sparse shards and stalls silently on these boxes.
+`HF_HUB_DISABLE_XET=1` restored it. Anonymous downloads are also rate limited -
+WiFi negotiates 458 Mbit/s here while the throttled transfer ran at 15 MB/s.
+
+### LMCache is not viable yet
+
+Both documented attempts on Spark clusters failed: one hit an L1 allocation bug
+that made the L2 tier unreachable under real load *and* restored KV that
+diverged from computed KV at temperature 0; the other deadlocked permanently at
+"Wrapping 170 KV cache tensors for IPC" on a version mismatch. When it worked it
+was ~300x on a 32k restore, so it is worth revisiting - but the supported path
+today is vLLM's own `--enable-prefix-caching` plus native CPU/filesystem
+offload.
