@@ -87,6 +87,12 @@ async def analyze_image_upload(
     tracer: TracerDependency,
     identity: IdentityDependency,
     background: BackgroundTasks,
+    # Deferred by default for the browser, whose phone can lock mid-upload:
+    # it gets a fast answer and the reasoned one lands on the artifact behind
+    # it. A caller that delivers over a channel with no second look - the
+    # iMessage worker - asks for the reasoning inline instead, because the
+    # reply it sends is the only answer its reader will ever see.
+    defer_reasoning: Annotated[bool, Form()] = True,
 ) -> dict[str, Any]:
     normalized_user_id = user_id.strip()
     normalized_prompt = prompt.strip()
@@ -115,7 +121,7 @@ async def analyze_image_upload(
             prompt=normalized_prompt,
             content=content,
             declared_mime_type=image.content_type,
-            defer_reasoning=True,
+            defer_reasoning=defer_reasoning,
         )
         # Runs after this response is delivered, on its own session, because
         # the request's session closes with the reply. Holding the connection

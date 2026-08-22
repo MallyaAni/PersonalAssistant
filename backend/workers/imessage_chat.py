@@ -343,6 +343,12 @@ class IMessageChatWorker:
                         "user_id": user_id,
                         "conversation_id": conversation,
                         "prompt": prompt,
+                        # The bubble this turn sends is the only answer its
+                        # reader will ever see - there is no artifact panel
+                        # to look at again - so the reasoned answer must be
+                        # the one that comes back, not the quick pass the
+                        # browser shows while reasoning lands behind it.
+                        "defer_reasoning": "false",
                     },
                     files={"image": (name, base64.b64decode(data), media_type)},
                     headers={"Authorization": f"Bearer {token}"},
