@@ -262,3 +262,58 @@ async def test_a_firing_reminder_tells_them_it_is_time(llm):
             "the reply says it cannot turn off or control the stove, or offers "
             "to set up a reminder",
         ), (instruction, text)
+
+
+# The second live family, found by a battery of sixteen realistic
+# instructions: when the instruction leans on context the firing turn does
+# not have, the model answered "I don't have any record of that. Want to
+# tell me?" - which lands as a text at 7am with nobody there to answer.
+# A firing never reports its own missing context as the message.
+async def test_a_firing_never_makes_its_missing_context_the_message(llm):
+    system = _build_system_prompt({"channel": "imessage", "scheduled_task": True})
+    for instruction, says in (
+        (
+            "give me a two-line summary of what I should focus on today",
+            "the text talks about what to focus on today",
+        ),
+        (
+            "follow up on the emails I was supposed to send",
+            "the text tells the reader to deal with the emails",
+        ),
+        (
+            "remind me to review what we talked about yesterday",
+            "the text tells the reader to look back over yesterday",
+        ),
+    ):
+        result = llm.chat(
+            [
+                {"role": "system", "content": system},
+                {"role": "user", "content": instruction},
+            ],
+            220,
+            None,
+            0.0,
+        )
+        text = str(result["content"])
+        assert not states(
+            text,
+            "the reply says it has no record of the thing, cannot see it, or "
+            "asks the person to supply what it was missing",
+        ), (instruction, text)
+        assert states(text, says), (instruction, text)
+
+
+# An instruction that asks the assistant to ask something must still ask it.
+async def test_an_instruction_to_ask_still_asks(llm):
+    system = _build_system_prompt({"channel": "imessage", "scheduled_task": True})
+    result = llm.chat(
+        [
+            {"role": "system", "content": system},
+            {"role": "user", "content": "ask me how the gym went"},
+        ],
+        200,
+        None,
+        0.0,
+    )
+    text = str(result["content"])
+    assert states(text, "the text asks the reader how the gym went"), text
