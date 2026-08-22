@@ -62,11 +62,31 @@ MAX_BODY_CHARS = 4_000
 MAX_ATTACHMENT_BYTES = 256 * 1024
 SEND_TIMEOUT_SECONDS = 30.0
 
-# Only calendar files are attachable. A general file-sending endpoint on a
-# machine signed into someone's Apple ID is a much larger thing than this needs
-# to be.
-ALLOWED_MEDIA_TYPES = frozenset({"text/calendar"})
-ALLOWED_SUFFIXES = frozenset({".ics"})
+# Pictures may be larger than calendars, and nothing may be larger than this.
+MAX_IMAGE_ATTACHMENT_BYTES = 5 * 1024 * 1024
+
+# What may be attached to an outbound message: for each media type, the file
+# suffixes it may be named with, its size cap, and the leading bytes that prove
+# the content is what the type claims. Calendars and pictures, nothing else — a
+# general file-sending endpoint on a machine signed into someone's Apple ID is
+# a much larger thing than this needs to be.
+OUTBOUND_ATTACHMENT_RULES: dict[str, tuple[frozenset[str], int, tuple[bytes, ...]]] = {
+    "text/calendar": (
+        frozenset({".ics"}),
+        MAX_ATTACHMENT_BYTES,
+        (b"BEGIN:VCALENDAR",),
+    ),
+    "image/jpeg": (
+        frozenset({".jpg", ".jpeg"}),
+        MAX_IMAGE_ATTACHMENT_BYTES,
+        (b"\xff\xd8\xff",),
+    ),
+    "image/png": (
+        frozenset({".png"}),
+        MAX_IMAGE_ATTACHMENT_BYTES,
+        (b"\x89PNG\r\n\x1a\n",),
+    ),
+}
 
 # Phone numbers and Apple IDs, normalized for comparison against the allowlist.
 #
@@ -167,6 +187,13 @@ class BridgeConfig:
     # turned on by its own deliberate decision. Senders not on the allowlist
     # are filtered inside this process and never leave it.
     incoming_db: Path | None = None
+    # Whether attachment bytes may leave this Mac, and the only directory they
+    # may be read from. Its own grant on top of incoming, because a message
+    # body and a photograph are different sizes of disclosure — and the root
+    # containment means a database row cannot point this bridge at any file
+    # outside the Messages store.
+    attachments_enabled: bool = False
+    attachments_root: Path = Path.home() / "Library" / "Messages" / "Attachments"
 
     @classmethod
     def from_environment(cls) -> BridgeConfig:
@@ -194,6 +221,10 @@ class BridgeConfig:
             messages_db=_messages_db(),
             incoming_db=_incoming_db(),
             account_id=os.environ.get("IMESSAGE_BRIDGE_ACCOUNT_ID", "").strip(),
+            attachments_enabled=os.environ.get(
+                "IMESSAGE_BRIDGE_READ_ATTACHMENTS", ""
+            ).strip().lower()
+            in {"1", "true", "yes"},
         )
 
 
@@ -299,22 +330,34 @@ def decode_attachment(
 ) -> tuple[str, bytes] | None:
     if not encoded:
         return None
-    if media_type not in ALLOWED_MEDIA_TYPES:
+    rule = OUTBOUND_ATTACHMENT_RULES.get(media_type or "")
+    if rule is None:
         raise BridgeError(f"Unsupported attachment type: {media_type}")
+    suffixes, cap, magics = rule
 
-    safe_name = Path(name or "attachment.ics").name
-    if Path(safe_name).suffix.lower() not in ALLOWED_SUFFIXES:
-        raise BridgeError("Only .ics attachments are supported.")
+    default_suffix = sorted(suffixes)[0]
+    safe_name = Path(name or f"attachment{default_suffix}").name
+    if Path(safe_name).suffix.lower() not in suffixes:
+        if media_type == "text/calendar":
+            raise BridgeError("Only .ics attachments are supported.")
+        raise BridgeError(
+            f"A {media_type} attachment must be named "
+            f"{', '.join(sorted(suffixes))}."
+        )
     try:
         content = base64.b64decode(encoded, validate=True)
     except (binascii.Error, ValueError) as exc:
         raise BridgeError("Attachment was not valid base64.") from exc
-    if len(content) > MAX_ATTACHMENT_BYTES:
+    if len(content) > cap:
         raise BridgeError("Attachment is too large.")
-    if not content.lstrip().startswith(b"BEGIN:VCALENDAR"):
-        # Cheap proof the bytes are what the media type claims, so this cannot
-        # be used to drop an arbitrary file onto the Mac.
-        raise BridgeError("Attachment is not an iCalendar document.")
+    # Cheap proof the bytes are what the media type claims, so this cannot
+    # be used to drop an arbitrary file onto the Mac. A calendar may open
+    # with whitespace; an image signature is byte zero or it is nothing.
+    body = content.lstrip() if media_type == "text/calendar" else content
+    if not any(body.startswith(magic) for magic in magics):
+        if media_type == "text/calendar":
+            raise BridgeError("Attachment is not an iCalendar document.")
+        raise BridgeError(f"Attachment bytes are not {media_type}.")
     return safe_name, content
 
 
@@ -741,7 +784,7 @@ def incoming_messages(
         # `handle.id` is exactly the address a reply should be sent to.
         rows = connection.execute(
             """
-            SELECT m.guid, m.date, m.text, m.attributedBody, h.id
+            SELECT m.ROWID, m.guid, m.date, m.text, m.attributedBody, h.id
             FROM message m
             JOIN handle h ON h.ROWID = m.handle_id
             JOIN chat_message_join cmj ON cmj.message_id = m.ROWID
@@ -757,6 +800,11 @@ def incoming_messages(
             """,
             (cursor, settled, bounded),
         ).fetchall()
+        listings = (
+            _attachment_listings(connection, [int(row[0]) for row in rows])
+            if config.attachments_enabled and rows
+            else {}
+        )
     except sqlite3.Error:
         return {"messages": [], "cursor": cursor}
     finally:
@@ -764,24 +812,207 @@ def incoming_messages(
 
     allowed = config.allowed_recipients | load_grants(config)
     messages: list[dict[str, object]] = []
-    for guid, date, text, blob, handle in rows:
+    for rowid, guid, date, text, blob, handle in rows:
         cursor = max(cursor, int(date))
         sender = normalize_recipient(str(handle or ""))
         if sender not in allowed:
             continue
+        attached = listings.get(int(rowid), [])
+        # A photo with no caption has no body; it is still a message. Only a
+        # row with neither a readable body nor a listed attachment is skipped.
         body = extract_body(text, blob)
-        if body is None:
+        if body is None and not attached:
             continue
-        messages.append(
+        message: dict[str, object] = {
+            "guid": str(guid),
+            "sender": sender,
+            "reply_to": str(handle),
+            "text": body or "",
+            "sent_at": _apple_epoch(date),
+        }
+        if attached:
+            message["attachments"] = attached
+        messages.append(message)
+    return {"messages": messages, "cursor": cursor}
+
+
+# The attachments listed on each of these messages: metadata only, never
+# bytes. Bytes leave only through attachment_payload, which re-proves who
+# sent the file before reading it.
+def _attachment_listings(
+    connection: sqlite3.Connection, message_rowids: list[int]
+) -> dict[int, list[dict[str, object]]]:
+    if not message_rowids:
+        return {}
+    placeholders = ",".join("?" for _ in message_rowids)
+    try:
+        rows = connection.execute(
+            f"""
+            SELECT maj.message_id, a.ROWID, a.mime_type, a.transfer_name,
+                   a.total_bytes
+            FROM message_attachment_join maj
+            JOIN attachment a ON a.ROWID = maj.attachment_id
+            WHERE maj.message_id IN ({placeholders})
+            """,
+            message_rowids,
+        ).fetchall()
+    except sqlite3.Error:
+        return {}
+    listings: dict[int, list[dict[str, object]]] = {}
+    for message_id, attachment_id, mime, name, total in rows:
+        listings.setdefault(int(message_id), []).append(
             {
-                "guid": str(guid),
-                "sender": sender,
-                "reply_to": str(handle),
-                "text": body,
-                "sent_at": _apple_epoch(date),
+                "attachment_id": str(attachment_id),
+                "media_type": str(mime or ""),
+                "name": str(name or ""),
+                "bytes": int(total or 0),
             }
         )
-    return {"messages": messages, "cursor": cursor}
+    return listings
+
+
+# The most bytes one fetched attachment may be, after any conversion.
+MAX_INBOUND_ATTACHMENT_BYTES = 10 * 1024 * 1024
+
+# The only media types an inbound attachment may come back as. Images only:
+# a video is a much larger disclosure and nothing downstream can use one yet.
+INBOUND_IMAGE_TYPES = frozenset(
+    {"image/jpeg", "image/png", "image/gif", "image/webp", "image/heic", "image/heif"}
+)
+
+# The media type a file's suffix implies, when the database recorded none.
+def _suffix_media(path: Path) -> str:
+    return {
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".gif": "image/gif",
+        ".webp": "image/webp",
+        ".heic": "image/heic",
+        ".heif": "image/heif",
+    }.get(path.suffix.lower(), "")
+
+
+# One HEIC file as a JPEG, converted by the system's own tool, or None.
+#
+# `sips` ships with macOS, so the conversion adds no dependency, and it runs
+# on a copy path: the source in the Messages store is never written to.
+def _heic_to_jpeg(source: Path, directory: Path) -> Path | None:
+    target = directory / (source.stem + ".jpeg")
+    try:
+        result = subprocess.run(
+            ["sips", "-s", "format", "jpeg", str(source), "--out", str(target)],
+            capture_output=True,
+            timeout=30,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if result.returncode != 0 or not target.exists():
+        return None
+    return target
+
+
+# One attachment an allowlisted sender sent, as base64, or a refusal.
+#
+# The identifier alone is never a capability: the fetch re-proves, in one
+# query, that the file arrived on an incoming one-to-one message from a
+# sender on the allowlist — and every refusal reads "not_found", so an
+# identifier cannot be probed for whether it exists. The file path recorded
+# in the database is honored only inside the Messages attachment store, so a
+# hostile row cannot point this bridge at an arbitrary file on the Mac.
+def attachment_payload(config: BridgeConfig, attachment_id: str) -> dict[str, object]:
+    if not config.attachments_enabled or config.incoming_db is None:
+        return {"error": "not_found"}
+    try:
+        rowid = int(str(attachment_id).strip())
+    except (TypeError, ValueError):
+        return {"error": "not_found"}
+    owned = _owned_attachment(config, rowid)
+    if owned is None:
+        return {"error": "not_found"}
+    resolved, media, name = owned
+    if media not in INBOUND_IMAGE_TYPES:
+        return {"error": "unsupported_type", "media_type": media}
+    return _attachment_bytes(resolved, media, name)
+
+
+# The file, media type and name of one attachment — but only if it arrived on
+# an incoming one-to-one message from an allowlisted sender, and only if its
+# recorded path stays inside the Messages store. None otherwise, always.
+def _owned_attachment(
+    config: BridgeConfig, rowid: int
+) -> tuple[Path, str, str] | None:
+    connection, _ = _open_db_reporting(config.incoming_db)
+    if connection is None:
+        return None
+    try:
+        row = connection.execute(
+            """
+            SELECT a.filename, a.mime_type, a.transfer_name, h.id
+            FROM attachment a
+            JOIN message_attachment_join maj ON maj.attachment_id = a.ROWID
+            JOIN message m ON m.ROWID = maj.message_id
+            JOIN handle h ON h.ROWID = m.handle_id
+            JOIN chat_message_join cmj ON cmj.message_id = m.ROWID
+            JOIN chat c ON c.ROWID = cmj.chat_id
+            WHERE a.ROWID = ?
+              AND m.is_from_me = 0
+              AND c.room_name IS NULL
+            LIMIT 1
+            """,
+            (rowid,),
+        ).fetchone()
+    except sqlite3.Error:
+        return None
+    finally:
+        connection.close()
+    if row is None:
+        return None
+    filename, mime, transfer_name, handle = row
+    if normalize_recipient(str(handle or "")) not in (
+        config.allowed_recipients | load_grants(config)
+    ):
+        return None
+    if not filename:
+        return None
+    root = config.attachments_root.expanduser().resolve()
+    try:
+        resolved = Path(str(filename)).expanduser().resolve(strict=True)
+    except OSError:
+        return None
+    if not resolved.is_relative_to(root):
+        return None
+    media = str(mime or "") or _suffix_media(resolved)
+    return resolved, media, str(transfer_name or resolved.name)
+
+
+# The file's bytes as a payload, converting HEIC to JPEG on the way out.
+def _attachment_bytes(
+    resolved: Path, media: str, name: str
+) -> dict[str, object]:
+    if media in {"image/heic", "image/heif"}:
+        # Converted in a directory that is removed however this returns, so a
+        # failed fetch leaves nothing behind.
+        with tempfile.TemporaryDirectory(prefix="anios-attachment-") as directory:
+            converted = _heic_to_jpeg(resolved, Path(directory))
+            if converted is None:
+                return {"error": "unreadable"}
+            data = converted.read_bytes()
+        media = "image/jpeg"
+        name = str(Path(name).stem) + ".jpeg"
+    else:
+        try:
+            data = resolved.read_bytes()
+        except OSError:
+            return {"error": "unreadable"}
+    if len(data) > MAX_INBOUND_ATTACHMENT_BYTES:
+        return {"error": "too_large", "bytes": len(data)}
+    return {
+        "media_type": media,
+        "name": name,
+        "data_base64": base64.b64encode(data).decode("ascii"),
+    }
 
 
 # Whether incoming reading is configured and working, as counts only.
@@ -1141,7 +1372,7 @@ def create_bridge(config: BridgeConfig) -> FastMCP:
         attachment_media_type: str | None = None,
         attachment_base64: str | None = None,
     ) -> str:
-        """Send one iMessage, optionally with a calendar file attached."""
+        """Send one iMessage, optionally with a calendar file or picture."""
         # The token is checked at the transport, not here. It used to be a tool
         # argument, which cannot work against AniOS: every string argument is
         # screened by the outbound privacy gate before it leaves, and a
@@ -1186,6 +1417,15 @@ def create_bridge(config: BridgeConfig) -> FastMCP:
         # plus grants — never by the caller. The caller owns the cursor;
         # since_ns=-1 starts from now so no history is ever replayed.
         return json.dumps(incoming_messages(config, since_ns, limit))
+
+    @server.tool()
+    def read_attachment(attachment_id: str) -> str:
+        """Fetch one image an allowlisted sender attached, as base64."""
+        # Bytes leave the Mac only through here, only under the attachments
+        # grant, and only after the fetch re-proves the file arrived from an
+        # allowlisted sender. Every refusal reads "not_found" so identifiers
+        # cannot be probed.
+        return json.dumps(attachment_payload(config, attachment_id))
 
     @server.tool()
     def read_reactions(bodies: list[str]) -> str:
@@ -1262,6 +1502,7 @@ if __name__ == "__main__":
 __all__: list[Any] = [
     "BRIDGE_TOKEN_HEADER",
     "BridgeConfig",
+    "attachment_payload",
     "build_app",
     "BridgeError",
     "check_recipient",

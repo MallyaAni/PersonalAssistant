@@ -37,9 +37,11 @@ read with `on run argv`, so a message body containing quotes or backslashes is
 data, never script. Building the script by string formatting is how a bridge like
 this becomes a remote code execution hole.
 
-Attachments are restricted to `.ics` files whose bytes actually begin
-`BEGIN:VCALENDAR`. A general file-sending endpoint on a machine signed into your
-Apple ID is a much larger thing than this needs to be.
+Attachments are restricted to calendars (`.ics`, bytes beginning
+`BEGIN:VCALENDAR`, 256KB) and pictures (`.jpg`/`.jpeg`/`.png`, real JPEG/PNG
+signatures, 5MB) — each proven by its leading bytes, not its name. A general
+file-sending endpoint on a machine signed into your Apple ID is a much larger
+thing than this needs to be.
 
 ## Setup on the Mac
 
@@ -166,7 +168,32 @@ What the `read_messages` tool holds, worth checking against the code:
 
 Replies go out through the same `send_imessage` tool and the same allowlist that
 digests use. Each message carries `sender` (normalized, AniOS's identity key)
-and `reply_to` (Apple's canonical handle — the address to answer to).
+and `reply_to` (Apple's canonical handle — the address to answer to). A message
+that is only a picture has an empty `text`.
+
+## Reading attached pictures
+
+Its own grant on top of incoming, because a message body and a photograph are
+different sizes of disclosure:
+
+```bash
+export IMESSAGE_BRIDGE_READ_ATTACHMENTS=true
+```
+
+With it on, each incoming message lists its attachments (metadata only:
+`attachment_id`, `media_type`, `name`, `bytes`), and `read_attachment` fetches
+one as base64. What that fetch holds:
+
+- **the identifier alone is never a capability.** The fetch re-proves, in one
+  query, that the file arrived on an incoming one-to-one message from an
+  allowlisted sender — and every refusal reads `not_found`, so identifiers
+  cannot be probed for existence;
+- **paths are honored only inside the Messages attachment store**
+  (`~/Library/Messages/Attachments`), so a database row cannot point the
+  bridge at any other file on the Mac;
+- **images only**, capped at 10MB. HEIC — what iPhones actually send — is
+  converted to JPEG on the Mac with `sips` and reported as `image/jpeg`;
+  video and everything else answers `unsupported_type`.
 
 When the bridge runs as a LaunchAgent, put both grant variables in its
 `EnvironmentVariables` dictionary and reload the agent. Setting them only in an

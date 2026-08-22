@@ -334,6 +334,16 @@ def _chat_db(tmp_path: Path) -> Path:
         CREATE TABLE handle (ROWID INTEGER PRIMARY KEY, id TEXT);
         CREATE TABLE chat (ROWID INTEGER PRIMARY KEY, room_name TEXT, style INTEGER);
         CREATE TABLE chat_message_join (chat_id INTEGER, message_id INTEGER);
+        CREATE TABLE attachment (
+            ROWID INTEGER PRIMARY KEY,
+            filename TEXT,
+            mime_type TEXT,
+            transfer_name TEXT,
+            total_bytes INTEGER
+        );
+        CREATE TABLE message_attachment_join (
+            message_id INTEGER, attachment_id INTEGER
+        );
         """
     )
     db.commit()
@@ -394,11 +404,40 @@ def _insert_incoming(
     )
     db.commit()
     db.close()
+    return message_id
+
+
+# Attach one file to an already-inserted message, the way Messages stores it.
+def _attach_file(
+    path: Path, message_id: int, file_path: Path, mime: str, name: str
+) -> int:
+    db = sqlite3.connect(path)
+    attachment_id = db.execute(
+        "INSERT INTO attachment (filename, mime_type, transfer_name, total_bytes)"
+        " VALUES (?, ?, ?, ?)",
+        (
+            str(file_path),
+            mime,
+            name,
+            file_path.stat().st_size if file_path.exists() else 0,
+        ),
+    ).lastrowid
+    db.execute(
+        "INSERT INTO message_attachment_join (message_id, attachment_id) VALUES (?, ?)",
+        (message_id, attachment_id),
+    )
+    db.commit()
+    db.close()
+    return attachment_id
 
 
 def _incoming_config(
-    tmp_path: Path, recipients: tuple[str, ...] = ("+15550100",)
+    tmp_path: Path,
+    recipients: tuple[str, ...] = ("+15550100",),
+    *,
+    attachments: bool = False,
 ) -> BridgeConfig:
+    (tmp_path / "Attachments").mkdir(exist_ok=True)
     return BridgeConfig(
         token="secret",
         allowed_recipients=frozenset(normalize_recipient(r) for r in recipients),
@@ -406,6 +445,8 @@ def _incoming_config(
         port=8010,
         grants_path=tmp_path / "granted.json",
         incoming_db=_chat_db(tmp_path),
+        attachments_enabled=attachments,
+        attachments_root=tmp_path / "Attachments",
     )
 
 
@@ -655,6 +696,223 @@ def test_the_first_cursor_also_respects_the_settle_window(tmp_path):
     # poll, not to nobody.
     result = incoming_messages(config, since_ns=-1)
     assert result["cursor"] <= _apple_time(datetime.now(UTC)) - 2 * _NS
+
+
+# --- attachments: pictures in, pictures out --------------------------------
+#
+# Outbound pictures ride the existing attachment arguments with their own
+# magic-byte proofs. Inbound bytes leave only through attachment_payload,
+# which re-proves who sent the file — an identifier alone is never a
+# capability — and honors file paths only inside the Messages store.
+
+# A real 1x1 PNG, used wherever tests need bytes that pass the magic check.
+_PNG_1PX = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8"
+    "z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+)
+
+
+def test_an_outbound_png_attachment_decodes():
+    name, content = decode_attachment(
+        "generated.png", "image/png", base64.b64encode(_PNG_1PX).decode()
+    )
+    assert name == "generated.png"
+    assert content == _PNG_1PX
+
+
+def test_an_outbound_jpeg_attachment_decodes():
+    jpeg = b"\xff\xd8\xff\xe0" + b"x" * 32
+    name, _ = decode_attachment(
+        "photo.jpeg", "image/jpeg", base64.b64encode(jpeg).decode()
+    )
+    assert name == "photo.jpeg"
+
+
+def test_image_bytes_must_match_the_declared_type():
+    # A PNG declared as JPEG is refused: the magic check is what keeps this
+    # from becoming a general file-sending endpoint under image names.
+    with pytest.raises(BridgeError, match="not image/jpeg"):
+        decode_attachment(
+            "photo.jpg", "image/jpeg", base64.b64encode(_PNG_1PX).decode()
+        )
+
+
+def test_an_oversized_image_is_refused():
+    from server import MAX_IMAGE_ATTACHMENT_BYTES
+
+    huge = base64.b64encode(
+        b"\x89PNG\r\n\x1a\n" + b"x" * MAX_IMAGE_ATTACHMENT_BYTES
+    ).decode()
+    with pytest.raises(BridgeError, match="too large"):
+        decode_attachment("big.png", "image/png", huge)
+
+
+def test_attachments_are_not_listed_without_their_own_grant(tmp_path):
+    from server import incoming_messages
+
+    config = _incoming_config(tmp_path)  # attachments off
+    message_id = _insert_incoming(
+        config.incoming_db, "+15550100", "look at this", _ns_ago(5)
+    )
+    photo = config.attachments_root / "IMG_1.png"
+    photo.write_bytes(_PNG_1PX)
+    _attach_file(config.incoming_db, message_id, photo, "image/png", "IMG_1.png")
+
+    (message,) = incoming_messages(config, since_ns=_ns_ago(60))["messages"]
+    assert "attachments" not in message
+
+
+def test_an_allowlisted_senders_photo_is_listed(tmp_path):
+    from server import incoming_messages
+
+    config = _incoming_config(tmp_path, attachments=True)
+    message_id = _insert_incoming(
+        config.incoming_db, "+15550100", "look at this", _ns_ago(5)
+    )
+    photo = config.attachments_root / "IMG_1.png"
+    photo.write_bytes(_PNG_1PX)
+    _attach_file(config.incoming_db, message_id, photo, "image/png", "IMG_1.png")
+
+    (message,) = incoming_messages(config, since_ns=_ns_ago(60))["messages"]
+    (listed,) = message["attachments"]
+    assert listed["media_type"] == "image/png"
+    assert listed["name"] == "IMG_1.png"
+    assert listed["bytes"] == len(_PNG_1PX)
+    assert listed["attachment_id"]
+
+
+def test_a_photo_with_no_caption_is_still_a_message(tmp_path):
+    from server import incoming_messages
+
+    config = _incoming_config(tmp_path, attachments=True)
+    message_id = _insert_incoming(config.incoming_db, "+15550100", "", _ns_ago(5))
+    photo = config.attachments_root / "IMG_2.png"
+    photo.write_bytes(_PNG_1PX)
+    _attach_file(config.incoming_db, message_id, photo, "image/png", "IMG_2.png")
+
+    (message,) = incoming_messages(config, since_ns=_ns_ago(60))["messages"]
+    assert message["text"] == ""
+    assert message["attachments"]
+
+
+def test_a_fetched_attachment_round_trips(tmp_path):
+    from server import attachment_payload
+
+    config = _incoming_config(tmp_path, attachments=True)
+    message_id = _insert_incoming(config.incoming_db, "+15550100", "pic", _ns_ago(5))
+    photo = config.attachments_root / "IMG_3.png"
+    photo.write_bytes(_PNG_1PX)
+    attachment_id = _attach_file(
+        config.incoming_db, message_id, photo, "image/png", "IMG_3.png"
+    )
+
+    payload = attachment_payload(config, str(attachment_id))
+    assert payload["media_type"] == "image/png"
+    assert payload["name"] == "IMG_3.png"
+    assert base64.b64decode(payload["data_base64"]) == _PNG_1PX
+
+
+def test_a_strangers_attachment_cannot_be_fetched_by_id(tmp_path):
+    from server import attachment_payload
+
+    # Knowing an identifier is not permission to read the file it names.
+    config = _incoming_config(tmp_path, attachments=True)
+    message_id = _insert_incoming(
+        config.incoming_db, "+19998887777", "private", _ns_ago(5)
+    )
+    photo = config.attachments_root / "IMG_4.png"
+    photo.write_bytes(_PNG_1PX)
+    attachment_id = _attach_file(
+        config.incoming_db, message_id, photo, "image/png", "IMG_4.png"
+    )
+
+    assert attachment_payload(config, str(attachment_id)) == {"error": "not_found"}
+
+
+def test_an_attachment_outside_the_messages_store_is_refused(tmp_path):
+    from server import attachment_payload
+
+    # A hostile database row must not be able to point the bridge at an
+    # arbitrary file on the Mac.
+    config = _incoming_config(tmp_path, attachments=True)
+    message_id = _insert_incoming(config.incoming_db, "+15550100", "pic", _ns_ago(5))
+    outside = tmp_path / "secret.png"
+    outside.write_bytes(_PNG_1PX)
+    attachment_id = _attach_file(
+        config.incoming_db, message_id, outside, "image/png", "secret.png"
+    )
+
+    assert attachment_payload(config, str(attachment_id)) == {"error": "not_found"}
+
+
+def test_fetching_without_the_grant_is_not_found(tmp_path):
+    from server import attachment_payload
+
+    config = _incoming_config(tmp_path, attachments=False)
+    assert attachment_payload(config, "1") == {"error": "not_found"}
+
+
+def test_a_video_attachment_is_refused(tmp_path):
+    from server import attachment_payload
+
+    config = _incoming_config(tmp_path, attachments=True)
+    message_id = _insert_incoming(config.incoming_db, "+15550100", "vid", _ns_ago(5))
+    movie = config.attachments_root / "IMG_5.mov"
+    movie.write_bytes(b"\x00" * 64)
+    attachment_id = _attach_file(
+        config.incoming_db, message_id, movie, "video/quicktime", "IMG_5.mov"
+    )
+
+    payload = attachment_payload(config, str(attachment_id))
+    assert payload["error"] == "unsupported_type"
+    assert "data_base64" not in payload
+
+
+def test_an_oversized_fetch_reports_too_large(tmp_path, monkeypatch):
+    import server as bridge_server
+    from server import attachment_payload
+
+    config = _incoming_config(tmp_path, attachments=True)
+    message_id = _insert_incoming(config.incoming_db, "+15550100", "pic", _ns_ago(5))
+    photo = config.attachments_root / "IMG_6.png"
+    photo.write_bytes(_PNG_1PX)
+    attachment_id = _attach_file(
+        config.incoming_db, message_id, photo, "image/png", "IMG_6.png"
+    )
+
+    monkeypatch.setattr(bridge_server, "MAX_INBOUND_ATTACHMENT_BYTES", 8)
+    payload = attachment_payload(config, str(attachment_id))
+    assert payload["error"] == "too_large"
+    assert payload["bytes"] == len(_PNG_1PX)
+
+
+@pytest.mark.skipif(sys.platform != "darwin", reason="sips ships with macOS")
+def test_a_heic_photo_comes_back_as_jpeg(tmp_path):
+    import subprocess
+
+    from server import attachment_payload
+
+    config = _incoming_config(tmp_path, attachments=True)
+    source = config.attachments_root / "IMG_7.png"
+    source.write_bytes(_PNG_1PX)
+    heic = config.attachments_root / "IMG_7.heic"
+    made = subprocess.run(
+        ["sips", "-s", "format", "heic", str(source), "--out", str(heic)],
+        capture_output=True,
+        check=False,
+    )
+    if made.returncode != 0 or not heic.exists():
+        pytest.skip("sips on this Mac cannot write HEIC")
+
+    message_id = _insert_incoming(config.incoming_db, "+15550100", "pic", _ns_ago(5))
+    attachment_id = _attach_file(
+        config.incoming_db, message_id, heic, "image/heic", "IMG_7.heic"
+    )
+
+    payload = attachment_payload(config, str(attachment_id))
+    assert payload["media_type"] == "image/jpeg"
+    assert payload["name"] == "IMG_7.jpeg"
+    assert base64.b64decode(payload["data_base64"])[:3] == b"\xff\xd8\xff"
 
 
 def test_incoming_coverage_is_reported_as_counts_only(tmp_path):
