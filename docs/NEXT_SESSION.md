@@ -694,7 +694,7 @@ completely. The checkpoints and a purpose-built recipe already exist:
 **Measured in that recipe, and it inverts the caution recorded elsewhere in
 this file:** peak decode **84.3 tok/s** on structured output, ~22 tok/s
 per-stream at concurrency 4, ~197 tok/s aggregate at concurrency 6, prefill
-2,639 tok/s at 100K depth. Today's `ds4-server` does **5.7 tok/s**. So vLLM is
+2,639 tok/s at 100K depth. Today's `ds4-server` measures **10-19 tok/s** (mean ~14.5, 2026-08-22; the 5.7 figure previously recorded here was wrong - see MODEL_EVALUATION.md). So vLLM is
 roughly 4x faster here, not slower — the "`--enforce-eager` on sm_121 will cost
 you" worry is already priced into those numbers.
 

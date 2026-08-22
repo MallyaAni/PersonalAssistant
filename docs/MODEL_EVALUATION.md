@@ -427,3 +427,109 @@ for exactly this, and resumes from a saved file so growing the case set costs
 only the new cases.
 
 | bf16, no mtp, prefix cache | 4.57 | - | 71.7 | 405 / 758 | 89.2 / 166.3 | 363.9 / 1051.0 | ok |
+
+## The current reply engine, measured rather than assumed (2026-08-22)
+
+Prompted by "is ds4's prefill cache actually better than vLLM's", every number
+below was measured against the live server on `animallya-spark1`, not quoted.
+
+**What is actually deployed.** `ds4-server v0.5.6.3` (github.com/Entrpi/ds4,
+a fork of DwarfStar, GGML-based, purpose-built for this model family), started
+by a **user crontab `@reboot`** entry - not systemd:
+
+```
+@reboot sleep 30 && ~/.local/bin/ds4-serve --cuda \
+  -m ~/gguf/DeepSeek-V4-Flash-IQ2XXS-w2Q2K-AProjQ8-SExpQ8-OutQ8-chat-v2-imatrix-0731.gguf \
+  -c 1000000 --port 8888 --host 0.0.0.0 >> ~/ds4-server.log 2>&1
+```
+
+`ds4-serve` is a wrapper that prepends its own defaults (`-c 262144 --port
+8000`) and appends yours, so the process command line shows both and the later
+values win. Weights 86.7 GB, plus a 7.0 GB `DSpark-drafter` for speculative
+decode, both under `~/gguf`. Restoring this setup means that crontab line and
+those two files, nothing else.
+
+**Decode speed. The 5.7 tok/s recorded elsewhere in this repository is wrong.**
+Measured over three prompt shapes: 10.1, 14.5 and 19.0 tok/s, mean ~14.5, with
+the drafter working (`spec_accept_rate` 0.6-0.9, 2.7-4.5 tokens per step). That
+matches an independent 2x-Spark writeup's ds4 single-node figure of ~14 tok/s,
+so this deployment is normal rather than broken.
+
+**Prefill. ~1095 tok/s** on prompts large enough to measure (the 78-102 tok/s
+seen on 13-22 token prompts is startup overhead, not throughput).
+
+**The prefill cache is real, and its value depends entirely on prompt size.**
+TTFT, cold versus the same prefix repeated:
+
+| prefix | cold TTFT | cached TTFT | gain |
+|---|---|---|---|
+| 2.4k tok | 2,229 ms | 2,031 ms | 1.09x |
+| 4.4k tok (our median) | 3,236 ms | 1,375 ms | **2.35x** |
+| 11.7k tok (our p90) | 8,778 ms | 476 ms | **18.5x** |
+| 24k tok | 19,859 ms | 1,443 ms | 13.8x |
+
+At small context the disk KV read costs about what recompute costs; the payoff
+arrives around 4k and is enormous by 12k. Our own context accounting over 61
+real turns says median 4,356 tokens, p90 11,695, max 16,145 - squarely in the
+range where this feature earns its keep. Any engine change has to keep an
+equivalent, or TTFT regresses on exactly the turns people notice.
+
+**Capabilities, probed rather than believed.** `/v1/models` advertises
+`tools` and `tool_choice`, and the engine has first-class tool machinery
+(`--disable-exact-dsml-tool-replay`, `--tool-memory-max-ids`) - so the claim
+recorded elsewhere that ds4 "lacks tool calling" is out of date for v0.5.6.3.
+But `response_format` with a `json_schema` is still **ignored**: the probe
+asked for `{"capital": ...}` and got the bare word `Paris`. Structured output
+remains the real gap, and it is what `JSONFallbackWriter` and
+`MAIN_LLM_STRUCTURED_OUTPUT=False` exist for.
+
+**ds4 can span both Sparks.** `--role coordinator|worker` with an inclusive
+layer slice (`--layers 10:20`) is pipeline-parallel across nodes, so "ds4 is
+single-box only" is also untrue.
+
+**What the alternative measures at, on this exact hardware** (from a public
+2x-Spark writeup, not measured here): vLLM dual-node TP=2 on the official
+checkpoint - ~41 tok/s single-stream decode, ~1,785 tok/s prefill, ~350 tok/s
+aggregate at concurrency 32. The official FP8 and NVFP4 checkpoints are both
+~160 GB on disk, ~148.66 GiB loaded: too large for one Spark's 121 GB, and
+comfortable across two with ~93 GB left for KV.
+
+So the upgrade on offer is roughly **2.8x decode, 1.6x prefill, official
+quality instead of a 2-bit quantization, and working structured output** - at
+the cost of both boxes, and of ds4's disk KV cache unless vLLM's in-memory
+prefix caching covers the same ground. The quality half of that claim is the
+one still unmeasured; `evaluate_reply_quality` exists to settle it and needs
+both engines up at once.
+
+### MTP is carrying the speed, and it favours code
+
+The boot log shows the continuous MTP path running with the DSpark block
+drafter as its draft source, four draft tokens per step:
+
+```
+ds4: CONT_MTP_ACCEPT(DSpark) D=4 steps=23 emit=59 accept=64.3% tok/step=2.57
+ds4: CONT_MTP_ACCEPT(DSpark) D=4 steps=13 emit=53 accept=90.9% tok/step=4.08
+```
+
+`tok/step` is the multiplier over unspeculated decode, so the measured
+14.5-19 tok/s rests on a base of roughly **5.6 tok/s**. That is where the
+"5.7 tok/s" figure recorded elsewhere came from: it is the rate with
+speculation off, not a bad measurement.
+
+Acceptance is **90.9% on a code prompt against 64.3% on prose**, which
+matters for where this is going. Speculation pays most on structured,
+predictable output, so a coding workload is the case that benefits most -
+and the DSpark block drafter is a ds4 asset, not something a different
+engine inherits automatically. Any engine comparison has to be run on code
+and agentic prompts, not just chat, or it will understate what is being
+given up.
+
+### Longer contexts change the answer, in ds4's favour
+
+Coding pushes prompt sizes up, and the prefill-cache table above is steeply
+non-linear: 1.09x at 2.4k, 2.35x at 4.4k, 18.5x at 11.7k. A repository-aware
+assistant resending the same files across turns is the exact "stable prefix,
+long prompt" shape the disk KV cache is built for, and unlike an in-memory
+prefix cache it is bounded by disk rather than by the KV pool and survives a
+server restart. Before moving engines, measure the replacement's caching at
+30k-100k, not at chat sizes.
