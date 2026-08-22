@@ -2533,3 +2533,41 @@ was operational, and each source now has a bound:
 - Deliberately NOT auto-pruned: the artifact volume (user images are
   user data; retention is the operator's call) and the Mac's spool (the
   bridge cleans its own after an hour).
+
+## NEXT MAJOR: AniOS off the desktop, onto the Sparks (queued 2026-08-22)
+
+Operator decision: the assistant must not depend on the desktop. A second
+DGX Spark arrives 2026-08-22; the Spark-to-Spark ConnectX cable is NOT
+in hand yet, so the two boxes are independent LAN hosts (no pooled
+memory, no tensor-parallel) until it is.
+
+Phase 1 - the assistant survives the desktop going dark:
+- Build arm64 images (python:3.12-slim, graphviz, Pillow are arm64-ready;
+  verify resvg-py aarch64 wheel; any other native wheel in requirements).
+- Move backend, Postgres (pg_dump/restore - the dev DB holds real user
+  data and has no backups: back up FIRST, restore SECOND, verify row
+  counts BEFORE cutting over), Redis, gateway/frontend, discovery +
+  iMessage workers, presentation services, and the deep-matter.com
+  tunnel to Spark #2. Windows-specific bits become Linux: the Task
+  Scheduler maintenance job -> cron, E:/AI/ComfyUI -> a Linux path.
+- Spark #1 keeps DeepSeek (ds4.c, 87GB). Spark #2 hosts vLLM for the
+  Qwen 4B router/enforcer + embeddings + VLM (~12GB) and ComfyUI/FLUX
+  (~15-25GB) - all inside 128GB unified, so the vLLM-sleeps-for-ComfyUI
+  GPU handoff is no longer needed on that box.
+- Point MAIN_LLM_BASE_URL at Spark #1, ROUTING/DIAGRAM/embedding at
+  Spark #2, MCP_SERVERS_JSON's bridge entry stays (discovery handles the
+  Mac moving). Re-run the full functional gates on the new hosts - today's
+  lesson: gates pass against the wrong runtime look identical to gates
+  passing against the right one.
+- Expected regression: Spark decode bandwidth is a fraction of the
+  5080's. Measure 4B routing latency and FLUX seconds-per-image with the
+  judge harness before declaring the desktop retired; the ack bubble
+  covers texting, the web chat is where it will show.
+
+Phase 2 - when the ConnectX cable arrives: evaluate pooling (a larger
+DeepSeek quant or a bigger VLM for the VISION_ESCALATION_MODEL slot
+across 256GB), and whether the router can move up from 4B without losing
+grammar enforcement.
+
+Desktop afterwards: a GPU appliance at most, or off. Memory note:
+anios-dgx-spark-hardware.md records Spark #1's address/key; add #2's.
