@@ -456,3 +456,51 @@ async def test_a_final_refusal_is_never_retried(monkeypatch):
 
     assert await worker._fetch_inbound_attachment("att-10") is None
     assert calls == ["att-10"]
+
+
+# The bridge's 5MB cap bounds what a compromised backend could pump through
+# the Mac and is never negotiated with: an image that fits passes through
+# byte-identical, one that does not is flattened to JPEG under the cap.
+def test_an_oversized_image_is_reencoded_under_the_cap(monkeypatch):
+    import io
+
+    from PIL import Image
+
+    import backend.workers.imessage_chat as module
+
+    buffer = io.BytesIO()
+    Image.new("RGBA", (64, 64), (200, 30, 30, 255)).save(buffer, format="PNG")
+    png = buffer.getvalue()
+
+    kept, kept_type = module._shrink_for_send(png, "image/png")
+    assert (kept, kept_type) == (png, "image/png")
+
+    monkeypatch.setattr(module, "_MAX_OUTBOUND_IMAGE_BYTES", 10)
+    shrunk, shrunk_type = module._shrink_for_send(png, "image/png")
+    assert shrunk_type == "image/jpeg"
+    assert shrunk[:3] == b"\xff\xd8\xff", "must be a real JPEG"
+
+
+# A worker killed mid-turn replays the message on restart: seen is marked
+# after the delivery attempt, never at read time - a deploy landing during
+# a generation burned a real request twice in one day.
+@pytest.mark.asyncio
+async def test_a_message_is_not_burned_until_delivery_was_attempted(monkeypatch):
+    bridge = _Bridge(
+        {"messages": [_message("g11", "7372025933", "draw something")], "cursor": 60}
+    )
+    worker, _ = _worker(
+        bridge, monkeypatch, accounts={"7372025933": "ani.mallya"}, replies={}
+    )
+
+    async def killed(work, reply_to):
+        raise SystemExit("deploy landed mid-turn")
+
+    monkeypatch.setattr(worker, "_with_ack", killed)
+
+    with pytest.raises(SystemExit):
+        await worker.tick()
+
+    assert "imessage:chat:seen:g11" not in worker.redis.store, (
+        "an unanswered message must stay replayable"
+    )

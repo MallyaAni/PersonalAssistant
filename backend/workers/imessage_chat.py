@@ -51,6 +51,29 @@ _CONVERSATION_KEY = "imessage:chat:conversation:{user_id}"
 _IMAGE_KEY = "imessage:chat:image:{user_id}"
 _SEEN_TTL_SECONDS = 3 * 24 * 3600
 
+# Margin under the bridge's 5MB attachment cap, which bounds what a
+# compromised backend could pump through the Mac and is not negotiated
+# with - an oversized image is re-encoded to fit instead.
+_MAX_OUTBOUND_IMAGE_BYTES = 4_500_000
+
+
+# The bytes as they will be sent: unchanged when they fit, flattened to
+# JPEG when they do not. Quality 85 puts even a detailed generation well
+# under the cap.
+def _shrink_for_send(content: bytes, media_type: str) -> tuple[bytes, str]:
+    if len(content) <= _MAX_OUTBOUND_IMAGE_BYTES:
+        return content, media_type
+    from io import BytesIO
+
+    from PIL import Image
+
+    with Image.open(BytesIO(content)) as image:
+        flattened = image.convert("RGB")
+        out = BytesIO()
+        flattened.save(out, format="JPEG", quality=85)
+    return out.getvalue(), "image/jpeg"
+
+
 # How patiently an attachment fetch waits out iCloud's lazy download:
 # attempts x growing backoff covers the seconds a photo needs to land on
 # the Mac without stalling the turn for a picture that never will.
@@ -141,10 +164,12 @@ class IMessageChatWorker:
             # message - so emptiness only skips a row that carries neither.
             if not guid or not reply_to or (not text and not attachments):
                 continue
-            if not await self._first_sighting(guid):
+            if await self._already_seen(guid):
                 continue
             user_id = await self._account_for(str(message.get("sender") or ""))
             if user_id is None:
+                # A stranger's row must not replay forever; it is finished.
+                await self._mark_seen(guid)
                 continue
             if attachments:
                 turn = await self._with_ack(
@@ -159,6 +184,13 @@ class IMessageChatWorker:
                 answered += 1
             except Exception:
                 logger.warning("imessage_chat_reply_failed", extra={"user": user_id})
+            # Seen is marked after the delivery attempt, not at read time: a
+            # worker killed mid-turn - a deploy landed during a generation,
+            # twice in one day - then replays the message on restart instead
+            # of burning it. A delivery that failed in code is still marked,
+            # deliberately: its failure was logged, and replaying a turn the
+            # bridge refused would refuse forever.
+            await self._mark_seen(guid)
         new_cursor = payload.get("cursor")
         if isinstance(new_cursor, int):
             await self._remember_cursor(new_cursor)
@@ -291,9 +323,11 @@ class IMessageChatWorker:
             # Fetched inside the turn while the token is fresh, through the
             # same owned-artifact endpoint the browser uses.
             for image in images:
-                image.data_base64 = await self._fetch_artifact(
+                fetched = await self._fetch_artifact(
                     user_id, image.artifact_id, token
                 )
+                if fetched is not None:
+                    image.data_base64, image.media_type = fetched
         except Exception:
             logger.warning("imessage_chat_turn_failed", extra={"user": user_id})
             return TurnResult(_FAILURE_REPLY, ())
@@ -452,11 +486,16 @@ class IMessageChatWorker:
         except Exception:
             return None
 
-    # One owned artifact's bytes as base64, or None - a picture that cannot
-    # be fetched costs the attachment, never the reply around it.
+    # One owned artifact's bytes as base64 with its final media type, or
+    # None - a picture that cannot be fetched costs the attachment, never
+    # the reply around it. An image over the bridge's size cap is
+    # re-encoded as JPEG rather than refused: a detailed generated PNG can
+    # pass 5MB, a phone screen does not miss the alpha channel, and the
+    # cap itself stays where it is - it bounds what a compromised backend
+    # could pump through the Mac, which is not a limit to negotiate with.
     async def _fetch_artifact(
         self, user_id: str, artifact_id: str, token: str
-    ) -> str | None:
+    ) -> tuple[str, str] | None:
         if not artifact_id:
             return None
         try:
@@ -467,7 +506,13 @@ class IMessageChatWorker:
                     headers={"Authorization": f"Bearer {token}"},
                 )
                 response.raise_for_status()
-                return base64.b64encode(response.content).decode("ascii")
+                media_type = str(
+                    response.headers.get("content-type") or "image/png"
+                )
+                content, media_type = await asyncio.to_thread(
+                    _shrink_for_send, response.content, media_type
+                )
+                return base64.b64encode(content).decode("ascii"), media_type
         except Exception:
             logger.warning(
                 "imessage_chat_artifact_fetch_failed",
@@ -488,21 +533,24 @@ class IMessageChatWorker:
         except Exception:
             return
 
-    # True exactly once per guid. With Redis down this admits repeats, which
-    # the cursor's strict ordering already makes rare; answering a text twice
-    # beats never answering under a degraded cache.
-    async def _first_sighting(self, guid: str) -> bool:
+    # Dedup in two halves around the turn: checked before work begins,
+    # marked only after the delivery attempt, so a worker killed mid-turn
+    # replays the message on restart. With Redis down this admits repeats,
+    # which the cursor's strict ordering already makes rare; answering a
+    # text twice beats never answering under a degraded cache.
+    async def _already_seen(self, guid: str) -> bool:
         try:
-            return bool(
-                await self.redis.set(
-                    _SEEN_KEY.format(guid=guid),
-                    "1",
-                    ex=_SEEN_TTL_SECONDS,
-                    nx=True,
-                )
+            return bool(await self.redis.get(_SEEN_KEY.format(guid=guid)))
+        except Exception:
+            return False
+
+    async def _mark_seen(self, guid: str) -> None:
+        try:
+            await self.redis.set(
+                _SEEN_KEY.format(guid=guid), "1", ex=_SEEN_TTL_SECONDS
             )
         except Exception:
-            return True
+            return
 
     # The stored thread id expires after the idle window, and every use
     # renews it. iMessage has no "new chat" button, so the session boundary
