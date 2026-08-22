@@ -206,6 +206,16 @@ class IMessageChatWorker:
             try:
                 await self._deliver(reply_to, turn)
                 answered += 1
+                # A picture the turn generated becomes the thread's
+                # picture-in-view, exactly as the web UI marks it active
+                # after displaying it. Without this, a real "what is
+                # happening in the background?" about a generated image was
+                # answered with the agent roster - the only background the
+                # model could see.
+                if turn.images:
+                    await self._remember_image(
+                        user_id, turn.images[-1].artifact_id
+                    )
             except Exception as exc:
                 # The reason is the whole diagnosis: a refusal code names the
                 # bridge's objection, and a bare warning cost a live incident

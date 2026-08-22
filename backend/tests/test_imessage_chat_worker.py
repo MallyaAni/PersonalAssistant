@@ -530,3 +530,32 @@ def test_a_camera_original_is_fit_for_vision(monkeypatch):
     assert shrunk_type == "image/jpeg"
     with Image.open(io.BytesIO(shrunk)) as fitted:
         assert fitted.size[0] * fitted.size[1] <= 10_000
+
+
+# A generated picture becomes the thread's picture-in-view, exactly as the
+# web UI marks it active after display - without it, "what is happening in
+# the background?" about a fresh image was answered with the agent roster.
+@pytest.mark.asyncio
+async def test_a_generated_image_becomes_the_threads_picture(monkeypatch):
+    from backend.workers.imessage_chat import TurnImage
+
+    bridge = _Bridge(
+        {"messages": [_message("g12", "7372025933", "draw a bird")], "cursor": 70}
+    )
+    worker, _ = _worker(
+        bridge, monkeypatch, accounts={"7372025933": "ani.mallya"}, replies={}
+    )
+
+    async def converse(user_id, text):
+        return TurnResult(
+            "Here you go.",
+            (TurnImage("art-7", "image/png", data_base64="Zm9v"),),
+        )
+
+    monkeypatch.setattr(worker, "_converse", converse)
+
+    await worker.tick()
+
+    assert (
+        worker.redis.store["imessage:chat:image:ani.mallya"] == "art-7"
+    ), "the generated picture must be in view for the follow-up question"
