@@ -141,20 +141,23 @@ on run argv
         else
             set targetService to account id accountId
         end if
+        set attachmentFile to (POSIX file filePath) as alias
         set targetBuddy to participant targetId of targetService
-        send (POSIX file filePath) to targetBuddy
+        send attachmentFile to targetBuddy
         send messageBody to targetBuddy
     end tell
 end run
 """
-# The file goes before the body, and that order is load-bearing. Sending the
-# text first and the file second to the same participant in one script leaves
-# the file transfer queued in Messages' ledger as "waiting" forever — the
-# recipient sees a bubble whose picture never loads, while the send reports
-# success. Reproduced from a plain shell with this exact script, and resolved
-# by the swap alone (file-to-chat and two-script variants also work; this is
-# the smallest change). Every image the bridge ever "sent" before this order
-# was a dead bubble.
+# `as alias`, not a bare `POSIX file`, and that coercion is the whole fix.
+# A path arriving as an `on run argv` string and sent as `POSIX file filePath`
+# leaves the transfer queued in Messages' ledger as "waiting" forever — the
+# recipient gets a bubble whose picture never loads while the send reports
+# success — but the identical script with the path coerced to an `alias`
+# uploads. Isolated by experiment: the same argv script stalled and then
+# finished with this one change, self-targeted so no one was paged. Every
+# image the bridge ever "sent" before this was a dead bubble. (Message order
+# is irrelevant — a text-first direct-form send uploads fine; an earlier
+# commit that reordered the sends was chasing the wrong variable.)
 
 
 @dataclass(frozen=True, slots=True)
