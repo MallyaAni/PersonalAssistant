@@ -2581,11 +2581,15 @@ runtime-faithful run for any prompts/reply/* change:
 
     MAIN_LLM_BASE_URL=http://spark-b524.local:8888 \
     MAIN_LLM_MODEL=deepseek-v4-flash MAIN_LLM_REASONING_EFFORT=none \
-    pytest backend/tests/functional/test_evidence_honesty_behaviour.py \
+    ROUTING_LLM_BASE_URL=http://127.0.0.1:8003 ROUTING_LLM_MODEL=qwen/qwen3.5-4b \n    pytest backend/tests/functional/test_evidence_honesty_behaviour.py \
            backend/tests/functional/test_no_invented_search_behaviour.py \
            backend/tests/functional/test_imessage_reply_style.py
 
-Same class of lesson as MCP_SERVERS_JSON for the selector gates: a gate
+The ROUTING_LLM_* pin matters: without it the semantic judge (semantic.py,
+{holds} grammar) follows MAIN_LLM to the Spark, where ds4.c enforces no
+schema, and the judge skips or flakes - seen as 5/6 then 4/6 before the
+pin, 6/6 twice after. Same class of lesson as MCP_SERVERS_JSON for the
+selector gates: a gate
 passing against the wrong runtime looks identical to one passing against
 the right one.
 
