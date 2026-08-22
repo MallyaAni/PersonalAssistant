@@ -2467,3 +2467,20 @@ unattributed; verbose reply-failure logging (c14b989) stands watch.
 Identity: deep-matter@agentmail.to signed in, sole enabled iMessage
 account, pinned via IMESSAGE_BRIDGE_ACCOUNT_ID. The alias-flip and
 self-thread classes of confusion are closed.
+
+## Attachment saga, final chapter (2026-08-22 early AM)
+
+After the sandbox/spool fix, images still arrived as dead bubbles. Three
+operator-run experiments isolated it: PNG and JPEG through the tool path
+both dead; a GUI-dragged photo from the same sole-account Mac uploads
+fine; the one scripted send that ever displayed (rainbow) predated the
+b403046 account pin. The pinned-account AppleScript send queues the file
+transfer without initiating the upload. Workaround live: the pin is
+BLANKED in the LaunchAgent - safe while deep-matter@agentmail.to is the
+only enabled iMessage account, which the identity work guarantees today.
+Owed on the bridge side: a pinned send that actually uploads, then
+re-pin. Until then, adding any second iMessage account to that Mac
+reintroduces identity flip risk - don't.
+
+Visually confirmed end to end by the operator: format test pair, then
+the real hummingbird (jenos1) and whiteboard (operator) delivered.
