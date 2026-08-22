@@ -2484,3 +2484,16 @@ reintroduces identity flip risk - don't.
 
 Visually confirmed end to end by the operator: format test pair, then
 the real hummingbird (jenos1) and whiteboard (operator) delivered.
+
+## Attachment saga, ACTUAL root cause (supersedes both prior chapters)
+
+Fifteen ledger-driven experiments on the Mac (bridge fb8d449) isolated
+it: an AppleScript path arriving via `on run argv` and sent as bare
+`POSIX file filePath` queues the transfer "waiting" forever; coerced
+`as alias` it uploads. EVERY image the bridge ever sent was a dead
+bubble - size, spool location, account pin, and JPEG handling were all
+innocent (the pin unpinning "working" was coincidental timing with the
+Mac session's successful direct-form shell tests). The GUI drag worked
+because Finder hands Messages a resolved file. Follow-ups: the account
+pin can be RESTORED (it was exonerated); nine zombie "waiting" transfers
+sit in Messages' ledger and should be cleaned so they never late-deliver.
