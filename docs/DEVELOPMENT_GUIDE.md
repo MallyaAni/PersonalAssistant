@@ -444,7 +444,7 @@ As of 2026-08-14 it serves AniOS's `PRESENTATION_LLM_BASE_URL` (see below);
 RTX 5080 — see Milestone 9 in `ROADMAP.md` for what has and has not been
 attempted.
 
-- Hostname: `spark-b524.local` (mDNS). SSH as `animallya96`, key-based
+- Hostname: `animallya-spark1.local` (mDNS). SSH as `animallya96`, key-based
   (`~/.ssh/id_ed25519_spark` on the dev machine, no passphrase).
 - The device's own DGX Dashboard (`dashboard-service -port 11000 serve`)
   binds `127.0.0.1` only — it is not reachable directly over the LAN. A
@@ -458,7 +458,7 @@ attempted.
   are hardcoded inside that script — Task Scheduler's launch environment
   does not set `$HOME` or inherit `PATH` the way an interactive shell does,
   and both silently broke the tunnel on first setup.
-- `http://spark-b524.local/` (the setup-hotspot onboarding page) stops
+- `http://animallya-spark1.local/` (the setup-hotspot onboarding page) stops
   working once first-boot setup (`dgx-oobe.service`) completes and disables
   itself — that is expected, not a fault.
 - NVIDIA's own vLLM container for this hardware requires `--enforce-eager`:

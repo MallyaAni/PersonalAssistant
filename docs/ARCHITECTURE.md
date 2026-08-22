@@ -514,7 +514,7 @@ changing one role never silently moves another.
 
 | Role | Setting prefix | Model today | What calls it |
 | --- | --- | --- | --- |
-| Conversational | `MAIN_LLM_*` | DeepSeek-V4-Flash on the Spark (`spark-b524.local:8888`) | `build_assistant_graph` replies, `ConversationService`, visual reasoning, MCP tool orchestration, image style, Scout digests and place suggestions |
+| Conversational | `MAIN_LLM_*` | DeepSeek-V4-Flash on the Spark (`animallya-spark1.local:8888`) | `build_assistant_graph` replies, `ConversationService`, visual reasoning, MCP tool orchestration, image style, Scout digests and place suggestions |
 | Standby for the above | `MAIN_LLM_STANDBY_*` | Qwen (`vllm-main`) | Any main-role call, but only when the Spark is unreachable |
 | Routing / tool-calling | `ROUTING_LLM_*` | Qwen (`vllm-main`) | `MainActionSelector`, `ImageIntentClassifier`, the `VisualSearchGrounding` search decision |
 | Vision | `VISION_*` | Qwen (`vllm-main`, vision tower) | Canonical image observation and question-specific answers |

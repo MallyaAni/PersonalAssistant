@@ -726,7 +726,7 @@ Hardware inventory and access are documented in
   still runs entirely on the RTX 5080's Qwen model.
 - `DONE` (2026-08-14): tested this engine's native tool-calling directly —
   a standalone script built a real `MainActionSelector` pointed at
-  `http://spark-b524.local:8888`/`deepseek-v4-flash`, never touching the
+  `http://animallya-spark1.local:8888`/`deepseek-v4-flash`, never touching the
   running app's `MAIN_LLM_BASE_URL`. No regex, no hardcoded routing anywhere
   in this evaluation or in `MainActionSelector` itself — every decision is
   the model's own native tool call, exactly as for Qwen today.

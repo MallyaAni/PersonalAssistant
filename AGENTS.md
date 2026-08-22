@@ -89,7 +89,7 @@ they are not discoverable from the code alone.
 
 **A powered-off Spark needs a physical button press.** It has no BMC and no
 Wake-on-LAN, so nothing brings it back remotely - keep its IP recorded
-(b524 = 172.16.8.3, f183 = 172.16.8.5), and do not power one down unless
+(spark1 = 172.16.8.3, spark2 = 172.16.8.5), and do not power one down unless
 someone can reach it. Shutting one down on request is fine; scheduling one
 for later, when nobody is watching and the request may no longer hold, is
 not.

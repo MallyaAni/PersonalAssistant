@@ -1,7 +1,7 @@
 """Compare two candidate models on the replies they actually produce.
 
     python -m backend.cli.evaluate_reply_quality \
-        --a-base-url http://spark-b524.local:8888 --a-model deepseek-v4-flash \
+        --a-base-url http://animallya-spark1.local:8888 --a-model deepseek-v4-flash \
         --b-base-url http://vllm-qwen:8000    --b-model qwen/qwen3.8-27b
 
 The other evaluators score decisions with a known right answer. This scores

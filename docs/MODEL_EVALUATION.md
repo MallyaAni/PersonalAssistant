@@ -221,7 +221,7 @@ Regenerate a row with:
 
 ```
 python -m backend.cli.measure_inference_profile \
-    --base-url http://spark-b524.local:8899 --model qwen3.8-27b \
+    --base-url http://animallya-spark1.local:8899 --model qwen3.8-27b \
     --label "bf16 mtp3" --append docs/MODEL_EVALUATION.md
 ```
 
@@ -380,7 +380,7 @@ diffusion on the 5080.
 SSH as `animallya96` with `~/.ssh/id_ed25519_spark`.
 
 ```
-hostname   spark-b524.local     (mDNS - can resolve to an IPv6 link-local
+hostname   animallya-spark1.local     (mDNS - can resolve to an IPv6 link-local
                                  address, which ssh then cannot use)
 address    172.16.8.3
 MAC        F8-3D-C6-F1-23-64

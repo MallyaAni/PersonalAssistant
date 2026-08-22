@@ -946,7 +946,7 @@ originally failed, not a mock or a single lucky run.
 
 ## DeepSeek-V4-Flash now serves AniOS's presentation role, on the Spark — VERIFIED
 
-A DGX Spark joined the network (`spark-b524.local`, GB10, 128 GB unified
+A DGX Spark joined the network (`animallya-spark1.local`, GB10, 128 GB unified
 memory) alongside the RTX 5080 already serving `vllm-main`/`vllm-embedding` —
 addition, not replacement. Full access, the dashboard tunnel, and the
 DeepSeek-V4-Flash install/serving details (including two real bugs found and
@@ -957,7 +957,7 @@ Full story and evidence in
 
 **What actually changed in the repo:** `docker-compose.yml` —
 `PRESENTATION_LLM_BASE_URL`/`PRESENTATION_LLM_MODEL` now point at
-`http://spark-b524.local:8888` / `deepseek-v4-flash` for the `backend`,
+`http://animallya-spark1.local:8888` / `deepseek-v4-flash` for the `backend`,
 `presentation-worker`, and `local-capabilities` services. `MAIN_LLM_BASE_URL`
 and `MainActionSelector` were deliberately left untouched — the risk there is
 the routing regressions this session already spent significant effort
@@ -2625,7 +2625,7 @@ unset, and the 4B fails honesty behaviors DeepSeek passes (it could not
 produce "here's how to check Rockville yourself" - DeepSeek could). The
 runtime-faithful run for any prompts/reply/* change:
 
-    MAIN_LLM_BASE_URL=http://spark-b524.local:8888 \
+    MAIN_LLM_BASE_URL=http://animallya-spark1.local:8888 \
     MAIN_LLM_MODEL=deepseek-v4-flash MAIN_LLM_REASONING_EFFORT=none \
     ROUTING_LLM_BASE_URL=http://127.0.0.1:8003 ROUTING_LLM_MODEL=qwen/qwen3.5-4b \n    pytest backend/tests/functional/test_evidence_honesty_behaviour.py \
            backend/tests/functional/test_no_invented_search_behaviour.py \

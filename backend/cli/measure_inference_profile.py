@@ -1,7 +1,7 @@
 """Measure one serving configuration, so configurations can be compared.
 
     python -m backend.cli.measure_inference_profile \
-        --base-url http://spark-b524.local:8899 --model qwen3.8-27b \
+        --base-url http://animallya-spark1.local:8899 --model qwen3.8-27b \
         --label "bf16 mtp3" --append docs/MODEL_EVALUATION.md
 
 Throughput here is not one number. It is decode rate multiplied by how many
