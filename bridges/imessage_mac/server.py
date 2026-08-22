@@ -1353,15 +1353,56 @@ def send_message(
         return latest_sent_guid(config, recipient, text) or "sent"
 
     safe_name, content = attachment
-    # Written inside a directory that is removed however this returns, so a
-    # failed send does not leave someone's calendar on disk.
-    with tempfile.TemporaryDirectory(prefix="anios-imessage-") as directory:
-        path = Path(directory) / safe_name
-        path.write_bytes(content)
-        run_osascript(
-            _SEND_WITH_ATTACHMENT, [config.account_id, recipient, text, str(path)]
-        )
+    # Spooled, not temp-filed. Messages' `send` returns once the message is
+    # queued and reads the file afterwards to upload it — deleting the file
+    # as soon as osascript returns therefore races the upload, and the
+    # recipient gets a bubble whose picture never loads. A real generated
+    # image lost that race live; a tiny calendar can win it, which is how
+    # this survived every digest. The spool is cleaned of old files on the
+    # next attachment send, once Messages has either uploaded them or never
+    # will.
+    _clean_spool()
+    directory = Path(tempfile.mkdtemp(prefix="send-", dir=_spool_directory()))
+    path = directory / safe_name
+    path.write_bytes(content)
+    run_osascript(
+        _SEND_WITH_ATTACHMENT, [config.account_id, recipient, text, str(path)]
+    )
     return "sent with attachment"
+
+
+# Where outbound attachments wait for Messages to pick them up.
+def _spool_directory() -> Path:
+    spool = Path.home() / ".anios-imessage-bridge" / "outbox"
+    spool.mkdir(parents=True, exist_ok=True)
+    return spool
+
+
+# How long a spooled attachment may wait before it is presumed uploaded.
+SPOOL_MAX_AGE_SECONDS = 3600
+
+
+# Remove spooled attachments old enough that Messages is done with them.
+#
+# Cleaning happens on the next send rather than on a timer, so the bridge
+# stays free of background work — and a failed cleanup never fails a send,
+# because a stray old file costs disk, not correctness.
+def _clean_spool() -> None:
+    import shutil
+    import time
+
+    spool = _spool_directory()
+    cutoff = time.time() - SPOOL_MAX_AGE_SECONDS
+    try:
+        entries = list(spool.iterdir())
+    except OSError:
+        return
+    for entry in entries:
+        try:
+            if entry.stat().st_mtime < cutoff:
+                shutil.rmtree(entry, ignore_errors=True)
+        except OSError:
+            continue
 
 
 def create_bridge(config: BridgeConfig) -> FastMCP:
