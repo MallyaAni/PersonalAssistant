@@ -2497,3 +2497,16 @@ Mac session's successful direct-form shell tests). The GUI drag worked
 because Finder hands Messages a resolved file. Follow-ups: the account
 pin can be RESTORED (it was exonerated); nine zombie "waiting" transfers
 sit in Messages' ledger and should be cleaned so they never late-deliver.
+
+## Queued: reply-to as explicit image targeting (operator-designed)
+
+Shipped default: the latest image (sent or generated) is the thread's
+picture-in-view, on the session's idle clock - matches texting intuition,
+zero education needed. Known limits: recency can pick the wrong target
+when two images are in play, and the pointer expires with the lull.
+Enhancement agreed with the operator: an iMessage NATIVE reply to a
+specific image bubble overrides recency and pins that image as the
+ask/edit target. Needs: bridge exposes the replied-to guid in
+read_messages (thread originator in chat.db), send path records guid ->
+artifact so the worker can map bubble to image. Recency remains the
+default for everyone who just types.
