@@ -72,13 +72,16 @@ This document separates current security facts from future requirements. A contr
   bridge process and never leave it, and bodies are never logged on either
   machine (no redaction layer exists). Inbound text runs through the same
   conversation pipeline as the web UI, **including immediate memory
-  persistence — an explicit operator decision** (2026-08-21), accepted while
-  every allowlisted sender is the operator and to be revisited before any
-  third party is allowlisted, because a sender's words can become durable
-  facts with no approval step. Storage and deletion follow the existing
-  conversation/memory paths (sealed under `ENCRYPTION_KEY` like every other
-  turn); the backend's poll-cursor and dedup state hold addresses and opaque
-  identifiers, never bodies.
+  persistence — an explicit operator decision** (2026-08-21). What makes that
+  acceptable for senders beyond the operator is **per-sender account
+  scoping**, verified live 2026-08-22: each allowlisted address maps to that
+  person's own account, so their turns run in their context, their texts
+  persist into their memory only, and no sender's prompt carries another
+  account's memory. A sender's words can still become durable facts with no
+  approval step — but only their own. Storage and deletion follow the
+  existing conversation/memory paths (sealed under `ENCRYPTION_KEY` like
+  every other turn); the backend's poll-cursor and dedup state hold
+  addresses and opaque identifiers, never bodies.
 - Semantic memory content is sent over the private Compose network to the `vllm-embedding` service. The configured embedding endpoint does not request provider-side storage, but vLLM process logging/configuration must still be reviewed for sensitive use.
 - Knowledge chunks, procedures, entities, summaries, tool descriptors, and semantic-cache queries are also sent to the configured local embedding process. Do not ingest secrets or private documents until vLLM logging, retention, host access, and backup policy are acceptable for that data.
 - Internet research is an explicit outbound boundary: deterministic routing and
