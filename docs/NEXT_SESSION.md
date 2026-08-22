@@ -192,23 +192,53 @@ Still open on content quality:
   Digest writer now runs through JSONFallbackWriter (prose model primary,
   grammar fallback) instead of degrading to the assembled form letter.
 
-## iMessage as the conversation surface - IN FLIGHT
+## iMessage as the conversation surface - LIVE, two open items
 
-The user moved the Mac's Messages to a separate iCloud identity (sender
-profile confirmed working: bridge send + a real reply received), and a
-second session is coding the bridge side of inbound replies from
-allowlisted senders. Backend contract expected from that work: an MCP tool
-(suggest `read_messages`) returning `{guid, sender, text, sent_at}` for
-new inbound messages from allowlisted senders only, cursorable (since-guid
-or since-timestamp). Backend side to build once it lands: a worker loop
-polling via the same MCP boundary, sender -> account mapping through the
-existing subscriber allowlist, text routed into the same conversation
-service the web UI uses, replies via send_imessage. Vision beyond that:
-image generation/editing inline over iMessage (send_imessage already
-carries attachments), presentations answered as links to the
-deep-matter.com presentations tab. Bridge source of truth is
-bridges/imessage_mac/server.py IN THIS REPO - if it was edited directly on
-the Mac, mirror the change back before the next deploy clobbers it.
+Built 2026-08-21 by two sessions against one negotiated contract; verified
+on real traffic end to end. Bridge commits 5f380e3 (read_messages),
+d4debcd (settle window), b403046 (account pin), 1d2ea8d (attachments both
+ways), e562e6f (U+FFFC strip), 97f06e9 (0x82 length test); backend halves
+1368e80 (chat worker), 003e6de (photo->vision), e4bc994 (lazy-download
+retry); docs/diagram ddfc6ba + 1e10920. 67 bridge tests pass.
+
+**Verified live:** text conversation both ways (rapid double-text survived
+the mid-write cursor race the settle window now closes); the operator's own
+texts arrive as is_from_me=0 rows post-identity-split (the self-thread
+question is settled for *reading*); a real Live Photo listed as one HEIC
+row, fetched as a 1.78MB ffd8ff JPEG via sips; a real outbound PNG sent
+through the 4-arg AppleScript. Bodies are never logged; strangers and
+group chats never leave the bridge process; an attachment id is never a
+capability (ownership re-proved at fetch; all refusals read not_found).
+
+**Open item 1 — the sending identity (needs the operator at the keyboard).**
+Messages on the Mac holds ONE enabled iMessage account: the personal
+mallya.ani96@gmail.com Apple ID (deep-matter@agentmail.to is NOT signed
+in; mallya.a@icloud.com is signed in but disabled). Replies therefore go
+out under the personal identity, and Apple's per-send alias choice
+flip-flops between its email and phone-number aliases — which is why the
+operator's *second* reply keeps landing in their self-thread "from their
+own number". Alias choice is not scriptable. Mitigation available now:
+Messages -> Settings -> iMessage -> "Start new conversations from" = the
+email, on both Mac and iPhone. Real fix: sign deep-matter@agentmail.to
+into Messages on the Mac, then set IMESSAGE_BRIDGE_ACCOUNT_ID to its
+AppleScript account id in the LaunchAgent plist and reload — the Mac
+session checks the account list and pins on request.
+
+**Open item 2 — image answers are capped below web quality (deferred by
+the operator).** First real photo question misread a shirt bulge. Two
+suspected causes, unresolved: the backend's image turn replies with the
+vision analysis directly (skipping the reply model the text turns use —
+compare against the same photo in the web UI to confirm), and the
+documented 4B vision ceiling with VISION_ESCALATION_MODEL still empty.
+Transport is ruled out (full-resolution JPEG delivered).
+
+Untested behavior worth knowing before it surprises anyone: edited and
+retracted iMessages on the read path, and SMS-only senders (inbound reads
+fine; the iMessage-service reply may fail — latent, both allowlisted
+addresses are iMessage). Mac-side LaunchAgent env now carries
+IMESSAGE_BRIDGE_READ_REACTIONS, READ_INCOMING and READ_ATTACHMENTS, all
+true. Bridge source of truth remains bridges/imessage_mac/server.py in
+this repo; every Mac-side change above is committed and pushed.
 
 ## Still open, lower
 

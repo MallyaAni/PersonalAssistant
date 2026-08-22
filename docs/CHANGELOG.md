@@ -2,6 +2,40 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-21 — iMessage becomes a conversation surface, pictures included
+
+- **Allowlisted senders can now text AniOS and get answered.** The Mac bridge
+  gained `read_messages` behind a separate `IMESSAGE_BRIDGE_READ_INCOMING`
+  grant: incoming one-to-one bodies from allowlisted senders only, exact
+  typedstream extraction (the lossy fragment heuristic stays for reaction
+  matching only), a caller-owned nanosecond cursor, and a 3-second settle
+  window added after a real message was provably lost to a mid-write scan —
+  the poll's own returned cursor equalled the date of a message it never
+  returned. A dedicated backend worker polls, routes each text through the
+  full conversation pipeline (memory persistence included, by recorded
+  operator decision — see SECURITY.md), and replies through `send_imessage`.
+  Verified with real conversations, including a rapid double-text that
+  reproduced and then survived the cursor race.
+- **Pictures cross the bridge both ways.** Outbound attachments widened from
+  calendars-only to JPEG/PNG, each proven by leading bytes and capped at 5MB;
+  a real PNG send through the reworked 4-argument AppleScript verified the
+  path. Inbound, behind `IMESSAGE_BRIDGE_READ_ATTACHMENTS`: messages list
+  attachment metadata and `read_attachment` fetches one — ownership re-proved
+  at fetch so an id is never a capability, paths honored only inside the
+  Messages store, images only, HEIC converted to JPEG by `sips`. Verified on
+  the operator's real Live Photo (HEIC listed, 1.78MB JPEG fetched). The
+  U+FFFC attachment placeholder Apple embeds in captioned-photo bodies is
+  stripped — a real question arrived leading with it.
+- **Which identity sends is now an operator decision.** The send scripts took
+  "the first enabled iMessage account"; `IMESSAGE_BRIDGE_ACCOUNT_ID` pins the
+  account by id. The pin cannot conjure an identity that is not signed in —
+  the dedicated Apple ID still needs a keyboard sign-in, tracked in
+  NEXT_SESSION.md with the alias-flapping evidence.
+- 67 bridge tests pass, including a real sips HEIC round-trip and the first
+  chat.db fixture in the suite. New posture entry in SECURITY.md; ROADMAP
+  stage 7 moved to IN PROGRESS recording bridge-over-gateway; first bridge
+  diagram (imessage-bridge) registered and rendered, 21/21 synchronized.
+
 ## 2026-08-20 — The swap is decided, two live defects die, and context gets managed
 
 - **DeepSeek stays as the reply model.** Judged blind over 46 cases with
