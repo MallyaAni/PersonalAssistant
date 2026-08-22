@@ -57,7 +57,7 @@ def _worker(bridge: _Bridge, monkeypatch, accounts: dict, replies: dict):
 
     conversed: list[tuple[str, str]] = []
 
-    async def converse(user_id: str, text: str, active_image=None):
+    async def converse(user_id: str, text: str, active_image=None, **_):
         conversed.append((user_id, text))
         return TurnResult(replies.get(text, _FAILURE_REPLY))
 
@@ -243,7 +243,7 @@ async def test_a_slow_turn_gets_an_ack_then_the_answer(monkeypatch):
         bridge, monkeypatch, accounts={"7372025933": "ani.mallya"}, replies={}
     )
 
-    async def slow(user_id, text, active_image=None):
+    async def slow(user_id, text, active_image=None, **_):
         await asyncio.sleep(0.2)
         return TurnResult("a considered answer")
 
@@ -261,11 +261,11 @@ async def test_a_quick_turn_stays_one_bubble(monkeypatch):
     from backend.config.settings import settings
 
     monkeypatch.setattr(settings, "IMESSAGE_CHAT_ACK_SECONDS", 5.0)
-    bridge = _Bridge(
-        {"messages": [_message("g6", "7372025933", "hi")], "cursor": 31}
-    )
+    bridge = _Bridge({"messages": [_message("g6", "7372025933", "hi")], "cursor": 31})
     worker, _ = _worker(
-        bridge, monkeypatch, accounts={"7372025933": "ani.mallya"},
+        bridge,
+        monkeypatch,
+        accounts={"7372025933": "ani.mallya"},
         replies={"hi": "hello!"},
     )
 
@@ -299,7 +299,7 @@ async def test_a_failed_ack_send_never_costs_the_answer(monkeypatch):
     async def account_for(sender):
         return "ani.mallya"
 
-    async def slow(user_id, text, active_image=None):
+    async def slow(user_id, text, active_image=None, **_):
         await asyncio.sleep(0.2)
         return TurnResult("the answer")
 
@@ -318,9 +318,7 @@ async def test_a_failed_ack_send_never_costs_the_answer(monkeypatch):
 def test_a_long_reply_splits_at_paragraphs():
     from backend.workers.imessage_chat import bubbles
 
-    reply = "\n\n".join(
-        f"Paragraph {index} " + "words " * 110 for index in range(3)
-    )
+    reply = "\n\n".join(f"Paragraph {index} " + "words " * 110 for index in range(3))
 
     pieces = bubbles(reply)
 
@@ -359,7 +357,7 @@ async def test_a_generated_image_is_sent_as_an_attachment(monkeypatch):
         bridge, monkeypatch, accounts={"7372025933": "ani.mallya"}, replies={}
     )
 
-    async def converse(user_id, text, active_image=None):
+    async def converse(user_id, text, active_image=None, **_):
         return TurnResult(
             "Here's the image you asked for.",
             (TurnImage("art-1", "image/png", data_base64="aWJyaWRnZQ=="),),
@@ -426,9 +424,7 @@ async def test_a_lazy_download_is_waited_out(monkeypatch):
     import backend.workers.imessage_chat as module
 
     monkeypatch.setattr(module, "_FETCH_RETRY_SECONDS", 0.01)
-    worker = IMessageChatWorker(
-        lambda *a: None, base_url="http://test", redis=_Redis()
-    )
+    worker = IMessageChatWorker(lambda *a: None, base_url="http://test", redis=_Redis())
     outcomes = ["not_found", "not_found", ("image/jpeg", "a.jpeg", "Zm9v")]
 
     async def once(attachment_id):
@@ -443,9 +439,7 @@ async def test_a_lazy_download_is_waited_out(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_a_final_refusal_is_never_retried(monkeypatch):
-    worker = IMessageChatWorker(
-        lambda *a: None, base_url="http://test", redis=_Redis()
-    )
+    worker = IMessageChatWorker(lambda *a: None, base_url="http://test", redis=_Redis())
     calls: list[str] = []
 
     async def once(attachment_id):
@@ -493,7 +487,7 @@ async def test_a_message_is_not_burned_until_delivery_was_attempted(monkeypatch)
         bridge, monkeypatch, accounts={"7372025933": "ani.mallya"}, replies={}
     )
 
-    async def killed(work, reply_to):
+    async def killed(work, reply_to, *_):
         raise SystemExit("deploy landed mid-turn")
 
     monkeypatch.setattr(worker, "_with_ack", killed)
@@ -546,7 +540,7 @@ async def test_a_generated_image_becomes_the_threads_picture(monkeypatch):
         bridge, monkeypatch, accounts={"7372025933": "ani.mallya"}, replies={}
     )
 
-    async def converse(user_id, text, active_image=None):
+    async def converse(user_id, text, active_image=None, **_):
         return TurnResult(
             "Here you go.",
             (TurnImage("art-7", "image/png", data_base64="Zm9v"),),
@@ -556,9 +550,9 @@ async def test_a_generated_image_becomes_the_threads_picture(monkeypatch):
 
     await worker.tick()
 
-    assert (
-        worker.redis.store["imessage:chat:image:ani.mallya"] == "art-7"
-    ), "the generated picture must be in view for the follow-up question"
+    assert worker.redis.store["imessage:chat:image:ani.mallya"] == "art-7", (
+        "the generated picture must be in view for the follow-up question"
+    )
 
 
 # Reply-to targeting: a native reply to one of our image bubbles pins that
@@ -581,12 +575,10 @@ async def test_a_reply_to_an_image_bubble_pins_that_image(monkeypatch):
     worker, _ = _worker(
         bridge, monkeypatch, accounts={"7372025933": "ani.mallya"}, replies={}
     )
-    await worker._remember_bubble(
-        "ABCDEF01-2345-6789-ABCD-EF0123456789", "art-old"
-    )
+    await worker._remember_bubble("ABCDEF01-2345-6789-ABCD-EF0123456789", "art-old")
     pinned: list[str | None] = []
 
-    async def converse(user_id, text, active_image=None):
+    async def converse(user_id, text, active_image=None, **_):
         pinned.append(active_image)
         return TurnResult("It's a garden.")
 
@@ -609,7 +601,7 @@ async def test_a_plain_message_pins_nothing(monkeypatch):
     )
     pinned: list[str | None] = []
 
-    async def converse(user_id, text, active_image=None):
+    async def converse(user_id, text, active_image=None, **_):
         pinned.append(active_image)
         return TurnResult("hi!")
 
@@ -627,8 +619,7 @@ def test_the_bubble_ledger_only_stores_real_guids():
     assert (
         _message_guid("iMessage;-;ABCDEF01-2345-6789-ABCD-EF0123456789")
         == "iMessage;-;ABCDEF01-2345-6789-ABCD-EF0123456789"
-        or _message_guid("iMessage;-;ABCDEF01-2345-6789-ABCD-EF0123456789")
-        is not None
+        or _message_guid("iMessage;-;ABCDEF01-2345-6789-ABCD-EF0123456789") is not None
     )
 
 
@@ -644,9 +635,7 @@ def test_a_diagram_svg_is_rasterized_for_the_bubble():
         '<text x="10" y="35" font-size="20">Sprint</text></svg>'
     )
 
-    content, media_type = module._shrink_for_send(
-        svg.encode("utf-8"), "image/svg+xml"
-    )
+    content, media_type = module._shrink_for_send(svg.encode("utf-8"), "image/svg+xml")
 
     assert media_type == "image/png"
     assert content[:4] == b"\x89PNG"

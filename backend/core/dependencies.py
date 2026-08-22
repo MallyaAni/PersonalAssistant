@@ -117,6 +117,7 @@ from backend.services.tracing import (
 )
 from backend.services.vision_analysis_service import VisionAnalysisService
 from backend.services.visual_search_grounding import VisualSearchGrounding
+from backend.skills.repository import SkillRepository
 from backend.tasks.repository import ScheduledTaskRepository
 from backend.vision.lm_studio import create_vision_provider
 
@@ -1160,6 +1161,13 @@ DependencyScheduledTasks = Annotated[
 ]
 
 
+def get_skill_repository(db: DbDependency) -> SkillRepository:
+    return SkillRepository(db)
+
+
+DependencySkills = Annotated[SkillRepository, Depends(get_skill_repository)]
+
+
 # One budget shared by the API and the worker, so a sweep cannot dodge the
 # ceiling by running from the other process.
 @lru_cache(maxsize=1)
@@ -1570,6 +1578,7 @@ def get_conversation_service(
     discovery_profile: DependencyDiscoveryProfileService,
     discovery_runs: DependencyDiscoveryRuns,
     scheduled_tasks: DependencyScheduledTasks,
+    skills: DependencySkills,
     memory_proposals: MemoryProposalDependency,
     agent_memory: DependencyAgentMemoryManager,
     agent_registry: DependencyAgentRegistry,
@@ -1609,6 +1618,7 @@ def get_conversation_service(
         discovery_profile=discovery_profile,
         discovery_runs=discovery_runs,
         scheduled_tasks=scheduled_tasks,
+        skills=skills,
         memory_proposals=memory_proposals,
         visual_memory=VisualMemorySelector(get_structured_llm_client()),
         # The modality gate runs before any owner-scoped artifact vector index.

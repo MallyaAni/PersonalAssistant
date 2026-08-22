@@ -467,6 +467,16 @@ can still be stale UI.
 - `docs/CHANGELOG.md`: append-only history of meaningful verified changes.
 - `docs/SECURITY.md`: current security posture and planned controls.
 - `docs/diagrams/`: canonical architecture-as-code sources and their generated sharing formats.
+- `backend/tools/`: the built-in tools the router can choose, one module each (a
+  `BuiltinTool` row, a `parse` function, and the playful waiting lines the person
+  sees); `registry.py` is the only list. The router, the reply prompt's capability
+  list, the web status line, and the iMessage waiting bubble all read from it.
+  A new capability is a new module here, or an MCP server, which needs nothing here.
+- `backend/skills/` and `skills/`: skills are named routines the model invokes by
+  meaning - taught in conversation (`user_skills`) or shipped as markdown packs in
+  `skills/`. Each is offered to the router as its own tool; invoking one routes the
+  skill's instruction again with the ordinary tools. Design and status in
+  `docs/TASKS_ARCHITECTURE.md`.
 - `docs/AGENT_CATALOG.md`: every specialized agent, what its model decides, where its
   prompt and card live, and what is deliberately decided for it. A new agent adds a
   row here and a diagram pair; the file states the whole checklist.

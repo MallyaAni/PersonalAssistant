@@ -5,6 +5,7 @@ import Composer from '../Composer/Composer'
 import {
   getConversationSnapshot,
   readAnalysisThread,
+  type ActionActivity,
   type AgentActivity,
   type MemoryProposal,
   type ImageArtifact,
@@ -28,6 +29,7 @@ interface Message {
   searchBlocked?: string[];
   toolActivities?: ToolActivity[];
   agentActivities?: AgentActivity[];
+  actions?: ActionActivity[];
 }
 
 interface ChatWindowProps {
@@ -389,6 +391,23 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
     })
   }
 
+  // Show what the turn decided to do - search, a picture, a skill - on the
+  // assistant response that owns it. A skill turn announces the skill, then
+  // the tool its instruction needed, so several can stack.
+  const handleAction = (activity: ActionActivity) => {
+    setMessages(prev => {
+      const next = [...prev]
+      const index = latestAssistantIndex(next)
+      if (index >= 0) {
+        next[index] = {
+          ...next[index],
+          actions: [...(next[index].actions || []), activity],
+        }
+      }
+      return next
+    })
+  }
+
   // Show a running specialist agent on the assistant response that owns the turn.
   const handleAgentStarted = (activity: AgentActivity) => {
     setMessages(prev => {
@@ -653,6 +672,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             onToolFinished={handleToolFinished}
             onAgentStarted={handleAgentStarted}
             onAgentFinished={handleAgentFinished}
+            onAction={handleAction}
           />
           {hasMessages && (
             <p className="mt-2 text-center text-[11px] text-[#86868b]">DeepMatter can make mistakes. Check important information.</p>

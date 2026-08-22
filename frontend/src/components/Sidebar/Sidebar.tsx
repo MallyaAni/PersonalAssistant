@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { deleteConversation, listConversations, type ConversationSummary } from '../../services/api'
 import ThemeToggle from '../ThemeToggle/ThemeToggle'
-import { Bot, BrainCircuit, Image, LogOut, MessageCircle, Presentation, ShieldCheck, Trash2 } from 'lucide-react'
+import { Bot, BrainCircuit, Image, LogOut, MessageCircle, Presentation, ShieldCheck, Trash2, Zap } from 'lucide-react'
+
+type SidebarView = 'chat' | 'memory' | 'artifacts' | 'presentations' | 'agents' | 'automations' | 'admin'
 
 interface SidebarProps {
-  activeView: 'chat' | 'memory' | 'artifacts' | 'presentations' | 'agents' | 'admin'
-  onViewChange: (view: 'chat' | 'memory' | 'artifacts' | 'presentations' | 'agents' | 'admin') => void
+  activeView: SidebarView
+  onViewChange: (view: SidebarView) => void
   // The operator surface is hidden for a guest. The server refuses it anyway;
   // this keeps the workspace from advertising something they cannot use.
   isAdmin?: boolean
@@ -110,6 +112,14 @@ const Sidebar: React.FC<SidebarProps> = ({
         >
           <Bot size={19} className={activeView === 'agents' ? 'text-[#0071e3]' : ''} />
           <span className="inline">Agents</span>
+        </button>
+        <button
+          aria-label="Automations"
+          onClick={() => onViewChange('automations')}
+          className={`flex h-12 w-full items-center justify-center gap-3 rounded-2xl px-3 text-sm font-medium lg:justify-start ${activeView === 'automations' ? 'bg-[#f5f5f7] text-[#1d1d1f] shadow-sm' : 'text-[#6e6e73] hover:bg-[#f5f5f7] hover:text-[#1d1d1f]'}`}
+        >
+          <Zap size={19} className={activeView === 'automations' ? 'text-[#0071e3]' : ''} />
+          <span className="inline">Automations</span>
         </button>
         <button
           aria-label="Memory"

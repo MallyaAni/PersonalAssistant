@@ -280,6 +280,39 @@ def _turn_kind(context_data: dict[str, Any]) -> str:
         blocks += "\n\n" + load("reply/scheduled_task")
     if context_data.get("task_outcome"):
         blocks += "\n\n" + load("reply/task_outcome")
+    if context_data.get("skill"):
+        blocks += "\n\n" + load("reply/skill_invoked")
+    if context_data.get("skill_outcome"):
+        blocks += "\n\n" + load("reply/skill_outcome")
+    return blocks
+
+
+# The skill this turn invoked, with its full instruction, for the reply to
+# carry out; and the record of what this turn did with skills, for the
+# reply to report from.
+def _render_skill_context(context_data: dict[str, Any]) -> str:
+    blocks = ""
+    skill = context_data.get("skill") or {}
+    if isinstance(skill, dict) and skill.get("instruction"):
+        blocks += (
+            f"Skill invoked: {skill.get('name', '')}\n"
+            f"Instruction: {skill['instruction']}\n\n"
+        )
+    outcome = context_data.get("skill_outcome") or {}
+    if isinstance(outcome, dict) and outcome:
+        lines = [f"Skill outcome: {outcome.get('kind', '')}\n"]
+        one = outcome.get("skill")
+        if isinstance(one, dict):
+            lines.append(
+                f"- Skill: {one.get('name', '')} - {one.get('instruction', '')}\n"
+            )
+        for item in outcome.get("skills") or []:
+            if isinstance(item, dict):
+                summary = str(item.get("description") or item.get("instruction") or "")
+                lines.append(f"- {item.get('name', '')}: {summary[:200]}\n")
+        if outcome.get("requested"):
+            lines.append(f"- requested: {outcome['requested']}\n")
+        blocks += "".join(lines) + "\n"
     return blocks
 
 
@@ -431,6 +464,7 @@ def _build_turn_context(
             context_data.get("tool_notices") or [],
         ),
         _render_task_outcome(context_data.get("task_outcome") or {}),
+        _render_skill_context(context_data),
     )
     return "".join(block for block in blocks if block)
 

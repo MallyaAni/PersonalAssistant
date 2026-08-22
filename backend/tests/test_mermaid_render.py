@@ -49,7 +49,7 @@ def test_direction_and_round_nodes_survive():
     "source",
     [
         "sequenceDiagram\n  A->>B: hi",
-        "pie\n  \"a\": 1",
+        'pie\n  "a": 1',
         "",
     ],
 )

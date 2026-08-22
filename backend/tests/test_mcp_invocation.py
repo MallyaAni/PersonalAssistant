@@ -287,6 +287,7 @@ def test_an_email_address_passes_only_in_addressing_fields():
             "internet", "search_web", {"query": "person@example.com"}
         )
 
+
 # The payload exemption: a picture's base64 is statistically certain to
 # eventually contain a secret-shaped substring - one real diagram was
 # withheld by that coincidence - while the same blob in any other field

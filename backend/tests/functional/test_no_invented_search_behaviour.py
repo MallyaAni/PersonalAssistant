@@ -34,9 +34,7 @@ _LIVE_QUESTIONS = (
 
 
 @pytest.mark.parametrize("question", _LIVE_QUESTIONS)
-async def test_a_reply_with_no_evidence_never_claims_to_have_searched(
-    llm, question
-):
+async def test_a_reply_with_no_evidence_never_claims_to_have_searched(llm, question):
     system = _build_system_prompt(
         {"capabilities": [{"label": "Web search", "description": "Look things up."}]}
     )

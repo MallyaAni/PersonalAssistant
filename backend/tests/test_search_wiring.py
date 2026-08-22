@@ -164,6 +164,7 @@ class StubMainActionSelector:
         active_image_artifact_id: str | None,
         query_embedding: list[float] | None = None,
         local_now: str | None = None,
+        skills: list | None = None,
     ) -> MainAction:
         return self.action
 

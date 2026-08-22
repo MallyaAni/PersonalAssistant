@@ -243,9 +243,7 @@ class EventDescriber:
     async def _lists_many(self, title: str, source: str) -> bool:
         if not source:
             return False
-        prompt = _LISTING_PROMPT.format(
-            title=title, source=source[:MAX_SOURCE_CHARS]
-        )
+        prompt = _LISTING_PROMPT.format(title=title, source=source[:MAX_SOURCE_CHARS])
         return await self._page_verdict(prompt, _LISTING_SCHEMA, "lists_many")
 
     # One writer's answer, parsed - or None when the call failed or returned

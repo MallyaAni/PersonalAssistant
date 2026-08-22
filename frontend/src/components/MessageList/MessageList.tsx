@@ -1,6 +1,6 @@
 import React from 'react'
 import MessageBubble from '../MessageBubble/MessageBubble'
-import type { AgentActivity, ImageArtifact, SearchSource, ToolActivity, VisualArtifact } from '../../services/api'
+import type { ActionActivity, AgentActivity, ImageArtifact, SearchSource, ToolActivity, VisualArtifact } from '../../services/api'
 
 interface Message {
   role: 'user' | 'assistant';
@@ -16,6 +16,7 @@ interface Message {
   searchBlocked?: string[];
   toolActivities?: ToolActivity[];
   agentActivities?: AgentActivity[];
+  actions?: ActionActivity[];
 }
 
 interface MessageListProps {
@@ -51,6 +52,7 @@ const MessageList: React.FC<MessageListProps> = ({
           searchBlocked={msg.searchBlocked}
           toolActivities={msg.toolActivities}
           agentActivities={msg.agentActivities}
+          actions={msg.actions}
           artifact={msg.artifact}
           artifactStatus={msg.artifactStatus}
           artifactError={msg.artifactError}

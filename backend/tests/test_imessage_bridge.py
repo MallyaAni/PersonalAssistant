@@ -377,9 +377,7 @@ def _insert_incoming(
     reply_to_guid: str | None = None,
 ) -> None:
     db = sqlite3.connect(path)
-    handle_id = db.execute(
-        "INSERT INTO handle (id) VALUES (?)", (sender,)
-    ).lastrowid
+    handle_id = db.execute("INSERT INTO handle (id) VALUES (?)", (sender,)).lastrowid
     blob = raw_blob
     if blob is None and in_blob:
         blob = _typedstream(body)
@@ -492,9 +490,7 @@ def test_a_strangers_message_never_leaves_the_bridge(tmp_path):
     from server import incoming_messages
 
     config = _incoming_config(tmp_path)
-    _insert_incoming(
-        config.incoming_db, "+19998887777", "private words", _ns_ago(5)
-    )
+    _insert_incoming(config.incoming_db, "+19998887777", "private words", _ns_ago(5))
 
     # Serialize the whole answer: neither the body nor the address may appear
     # anywhere in what leaves this function, not merely outside "messages".
@@ -614,7 +610,10 @@ def test_outgoing_rows_are_not_incoming(tmp_path):
 
     config = _incoming_config(tmp_path)
     _insert_incoming(
-        config.incoming_db, "+15550100", "what the bridge sent", _ns_ago(5),
+        config.incoming_db,
+        "+15550100",
+        "what the bridge sent",
+        _ns_ago(5),
         from_me=True,
     )
 
@@ -673,7 +672,10 @@ def test_an_unreadable_blob_is_skipped_not_mangled(tmp_path):
 
     config = _incoming_config(tmp_path)
     _insert_incoming(
-        config.incoming_db, "+15550100", "", _ns_ago(5),
+        config.incoming_db,
+        "+15550100",
+        "",
+        _ns_ago(5),
         raw_blob=b"\x04\x0bstreamtyped then garbage with no class marker",
     )
 
@@ -965,7 +967,10 @@ def test_a_native_reply_carries_the_guid_it_answers(tmp_path):
     # caller can target it explicitly instead of the most recent one.
     config = _incoming_config(tmp_path)
     _insert_incoming(
-        config.incoming_db, "+15550100", "make this one warmer", _ns_ago(5),
+        config.incoming_db,
+        "+15550100",
+        "make this one warmer",
+        _ns_ago(5),
         reply_to_guid="the-hummingbird-bubble-guid",
     )
 
@@ -994,8 +999,14 @@ def test_a_sent_message_guid_can_be_read_back(tmp_path):
     db.execute(
         "INSERT INTO message (guid, text, handle_id, is_from_me, date,"
         " associated_message_type) VALUES (?, ?, ?, ?, ?, ?)",
-        ("sent-guid-42", "here is your picture", 0, 1,
-         _apple_time(datetime.now(UTC)), 0),
+        (
+            "sent-guid-42",
+            "here is your picture",
+            0,
+            1,
+            _apple_time(datetime.now(UTC)),
+            0,
+        ),
     )
     db.commit()
     db.close()
@@ -1012,7 +1023,10 @@ def test_incoming_coverage_is_reported_as_counts_only(tmp_path):
     config = _incoming_config(tmp_path)
     _insert_incoming(config.incoming_db, "+15550100", "readable", _ns_ago(5))
     _insert_incoming(
-        config.incoming_db, "+19998887777", "", _ns_ago(4),
+        config.incoming_db,
+        "+19998887777",
+        "",
+        _ns_ago(4),
         raw_blob=b"\x04\x0bstreamtyped junk",
     )
 

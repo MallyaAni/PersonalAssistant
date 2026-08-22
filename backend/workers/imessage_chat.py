@@ -235,13 +235,19 @@ class IMessageChatWorker:
         pinned = await self._artifact_for_bubble(
             str(message.get("reply_to_guid") or "")
         )
+        # What the turn is doing, as the backend announces it, so a long
+        # wait can be acknowledged with "🔎 Rummaging through the internet…"
+        # rather than a random pleasantry.
+        status: list[str] = []
         if attachments:
             turn = await self._with_ack(
-                self._photo_turn(user_id, text, attachments), reply_to
+                self._photo_turn(user_id, text, attachments), reply_to, status
             )
         else:
             turn = await self._with_ack(
-                self._converse(user_id, text, active_image=pinned), reply_to
+                self._converse(user_id, text, active_image=pinned, status=status),
+                reply_to,
+                status,
             )
         if pinned:
             # Replying to a picture brings it back into view for the turns
@@ -336,16 +342,19 @@ class IMessageChatWorker:
     # best-effort - a failure to send it must not cost the real answer -
     # and fires at most once per turn, only after the threshold, so a
     # quick reply stays a single bubble.
-    async def _with_ack(self, work, reply_to: str) -> "TurnResult":
+    async def _with_ack(
+        self, work, reply_to: str, status: list[str] | None = None
+    ) -> "TurnResult":
         turn = asyncio.create_task(work)
-        done, _ = await asyncio.wait(
-            {turn}, timeout=settings.IMESSAGE_CHAT_ACK_SECONDS
-        )
+        done, _ = await asyncio.wait({turn}, timeout=settings.IMESSAGE_CHAT_ACK_SECONDS)
         if not done:
+            # The tool's own waiting line when the backend named one, else
+            # the generic pleasantry.
+            body = status[-1] if status else random.choice(_ACK_REPLIES)
             try:
                 await self.invoke_tool(
                     settings.DISCOVERY_IMESSAGE_TOOL,
-                    {"to": reply_to, "body": random.choice(_ACK_REPLIES)},
+                    {"to": reply_to, "body": body},
                 )
             except Exception:
                 logger.warning("imessage_chat_ack_failed", extra={"to": reply_to})
@@ -356,7 +365,11 @@ class IMessageChatWorker:
     # conversation id from the stream's start event is remembered so the
     # next text continues the same thread.
     async def _converse(
-        self, user_id: str, text: str, active_image: str | None = None
+        self,
+        user_id: str,
+        text: str,
+        active_image: str | None = None,
+        status: list[str] | None = None,
     ) -> "TurnResult":
         token = issue_user_token(user_id, ttl_seconds=600, scopes=["chat", "vision"])
         body: dict[str, object] = {
@@ -387,7 +400,12 @@ class IMessageChatWorker:
                         event = line[7:].strip()
                     elif line.startswith("data: "):
                         await self._consume_event(
-                            user_id, event, _loads(line[6:]), collected, images
+                            user_id,
+                            event,
+                            _loads(line[6:]),
+                            collected,
+                            images,
+                            status,
                         )
             # Fetched inside the turn while the token is fresh, through the
             # same owned-artifact endpoint the browser uses. A diagram
@@ -396,9 +414,7 @@ class IMessageChatWorker:
             for image in images:
                 if image.data_base64 is not None:
                     continue
-                fetched = await self._fetch_artifact(
-                    user_id, image.artifact_id, token
-                )
+                fetched = await self._fetch_artifact(user_id, image.artifact_id, token)
                 if fetched is not None:
                     image.data_base64, image.media_type = fetched
         except Exception as exc:
@@ -414,7 +430,6 @@ class IMessageChatWorker:
         reply = "".join(collected).strip()
         carried = tuple(image for image in images if image.data_base64)
         return TurnResult(reply or _FAILURE_REPLY, carried)
-
 
     # What the thread already established: its conversation id and, when a
     # photo was sent recently, the picture-in-view a follow-up text edits.
@@ -539,9 +554,7 @@ class IMessageChatWorker:
                 result = await session.call_tool(
                     "read_attachment", {"attachment_id": attachment_id}
                 )
-            text = "".join(
-                getattr(item, "text", "") for item in (result.content or [])
-            )
+            text = "".join(getattr(item, "text", "") for item in (result.content or []))
             payload = json.loads(text)
             if payload.get("error") == "not_found":
                 return "not_found"
@@ -619,20 +632,23 @@ class IMessageChatWorker:
         data: dict,
         collected: list,
         images: list,
+        status: list | None = None,
     ) -> None:
         if event == "start" and data.get("conversation_id"):
-            await self._remember_conversation(
-                user_id, str(data["conversation_id"])
-            )
+            await self._remember_conversation(user_id, str(data["conversation_id"]))
+        elif event == "action" and status is not None:
+            waiting = str(data.get("waiting") or "").strip()
+            if waiting:
+                status.append(waiting)
         elif event == "delta" and isinstance(data.get("content"), str):
             collected.append(data["content"])
         elif event == "artifact_ready" and data.get("kind") == "diagram":
             rendered = await self._render_diagram(data)
             if rendered is not None:
                 images.append(rendered)
-        elif event == "artifact_ready" and str(
-            data.get("mime_type") or ""
-        ).startswith("image/"):
+        elif event == "artifact_ready" and str(data.get("mime_type") or "").startswith(
+            "image/"
+        ):
             images.append(
                 TurnImage(
                     artifact_id=str(data.get("id") or ""),
@@ -679,14 +695,11 @@ class IMessageChatWorker:
         try:
             async with httpx.AsyncClient(timeout=60) as client:
                 response = await client.get(
-                    f"{self.base_url}/api/v1/artifacts/{user_id}/"
-                    f"{artifact_id}/content",
+                    f"{self.base_url}/api/v1/artifacts/{user_id}/{artifact_id}/content",
                     headers={"Authorization": f"Bearer {token}"},
                 )
                 response.raise_for_status()
-                media_type = str(
-                    response.headers.get("content-type") or "image/png"
-                )
+                media_type = str(response.headers.get("content-type") or "image/png")
                 content, media_type = await asyncio.to_thread(
                     _shrink_for_send, response.content, media_type
                 )
@@ -724,9 +737,7 @@ class IMessageChatWorker:
 
     async def _mark_seen(self, guid: str) -> None:
         try:
-            await self.redis.set(
-                _SEEN_KEY.format(guid=guid), "1", ex=_SEEN_TTL_SECONDS
-            )
+            await self.redis.set(_SEEN_KEY.format(guid=guid), "1", ex=_SEEN_TTL_SECONDS)
         except Exception:
             return
 

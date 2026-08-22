@@ -22,8 +22,7 @@ _HEADING = re.compile(r"^#{1,6}\s+\S", re.MULTILINE)
 # A question that reliably tempts the default register into a bulleted
 # listicle, which is exactly what a text message must not be.
 _LISTY_QUESTION = (
-    "what are some good ways to keep a sourdough starter healthy? "
-    "I keep killing mine."
+    "what are some good ways to keep a sourdough starter healthy? I keep killing mine."
 )
 
 

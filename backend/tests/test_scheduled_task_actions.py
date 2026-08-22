@@ -8,17 +8,17 @@ import pytest
 os.environ["DEBUG"] = "false"
 os.environ.setdefault("SECRET_KEY", "test-secret-key-only-for-testing")
 
-from backend.services.main_action_selector import (
-    ManageTasksAction,
-    ScheduleTaskAction,
-    _builtin_action,
-)
 from backend.tasks.describe import describe_task, schedule_phrase
 from backend.tasks.picker import pick_task
+from backend.tools import (
+    ManageTasksAction,
+    ScheduleTaskAction,
+    parse_builtin,
+)
 
 
 def test_schedule_task_call_becomes_a_typed_action():
-    action = _builtin_action(
+    action = parse_builtin(
         "schedule_task",
         {
             "instruction": "text me the weather for Arlington",
@@ -39,9 +39,9 @@ def test_schedule_task_call_becomes_a_typed_action():
 
 
 def test_schedule_task_without_an_instruction_or_with_a_bad_cadence_is_no_call():
-    assert _builtin_action("schedule_task", {"cadence": "daily", "hour": 7}, "") is None
+    assert parse_builtin("schedule_task", {"cadence": "daily", "hour": 7}, "") is None
     assert (
-        _builtin_action(
+        parse_builtin(
             "schedule_task", {"instruction": "x", "cadence": "hourly", "hour": 7}, ""
         )
         is None
@@ -49,7 +49,7 @@ def test_schedule_task_without_an_instruction_or_with_a_bad_cadence_is_no_call()
 
 
 def test_once_carries_its_date():
-    action = _builtin_action(
+    action = parse_builtin(
         "schedule_task",
         {
             "instruction": "call mom",
@@ -91,13 +91,13 @@ def test_a_once_date_in_the_past_is_repaired_from_the_time():
 
 
 def test_manage_tasks_call_becomes_a_typed_action():
-    assert _builtin_action("manage_tasks", {"operation": "list"}, "") == (
+    assert parse_builtin("manage_tasks", {"operation": "list"}, "") == (
         ManageTasksAction(operation="list", which="")
     )
-    assert _builtin_action(
+    assert parse_builtin(
         "manage_tasks", {"operation": "cancel", "which": " the weather one "}, ""
     ) == ManageTasksAction(operation="cancel", which="the weather one")
-    assert _builtin_action("manage_tasks", {"operation": "delete"}, "") is None
+    assert parse_builtin("manage_tasks", {"operation": "delete"}, "") is None
 
 
 def test_schedule_phrases_read_as_a_person_would_say_them():
@@ -141,8 +141,8 @@ class _PickingLLM:
             "tool_calls": [
                 {
                     "function": {
-                        "name": "pick_task",
-                        "arguments": json.dumps({"task_id": self.task_id}),
+                        "name": "pick_item",
+                        "arguments": json.dumps({"item_id": self.task_id}),
                     }
                 }
             ]
@@ -178,7 +178,7 @@ async def test_single_task_is_picked_without_asking_the_model():
 async def test_model_picks_among_several_and_only_offered_ids_count():
     llm = _PickingLLM("t2")
     assert await pick_task(llm, "the stretching one", _TASKS) == "t2"
-    offered = llm.calls[0][1][0]["function"]["parameters"]["properties"]["task_id"]
+    offered = llm.calls[0][1][0]["function"]["parameters"]["properties"]["item_id"]
     assert offered["enum"] == ["t1", "t2"]
     assert await pick_task(_PickingLLM("t9"), "something", _TASKS) is None
     assert await pick_task(_PickingLLM(None), "something", _TASKS) is None

@@ -139,6 +139,6 @@ def reaction_statements(
     for find in reacted[:limit]:
         verb = "thumbs-up" if find.reaction == "liked" else "thumbs-down"
         statements.append(
-            f"They gave a {verb} to \"{find.title}\" from an earlier digest."
+            f'They gave a {verb} to "{find.title}" from an earlier digest.'
         )
     return tuple(statements)

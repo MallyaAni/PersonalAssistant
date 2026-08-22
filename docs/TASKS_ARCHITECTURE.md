@@ -140,3 +140,34 @@ handed the current date, time, and weekday in the primary locality zone
 once-date already in the past is discarded in favour of the time rule
 (`_once_date`). Both gated: `test_tomorrow_resolves_against_the_persons_clock`
 on the Spark reply model and the 4B router, and the structural repair test.
+
+## Tools, skills, and what the person sees (2026-08-22, second pass)
+
+**Folders.** Built-in tools now live one module each under `backend/tools/`
+(row + parser; `registry.py` is the only list) and the router, the reply
+prompt's capability list, the web status line, and the iMessage waiting
+bubble all read from there. Skills live under `backend/skills/` (packs on
+disk, the taught-skill store, skills-as-router-tools) with the shipped
+packs in the top-level `skills/` folder. Adding a Google Drive or Instagram
+tool is a module in `backend/tools/` (or an MCP server, which needs nothing
+here); adding a routine everyone gets is a markdown file in `skills/`.
+
+**Skills.** A skill is a named instruction the model invokes by meaning:
+each one is offered to the router as its own tool (`skill__<slug>`), so
+"brief me" reaches "morning brief" through its description. Invoking one
+routes the skill's instruction again with the ordinary tools (search,
+weather, images...) and appends `prompts/reply/skill_invoked.md` so the
+reply carries it out. Teaching one ("when I say X, do Y") is `save_skill`;
+listing and deleting is `manage_skills`; both report through
+`prompts/reply/skill_outcome.md`. A skill can be scheduled like anything
+else ("every weekday at 7, run my morning brief"). Tables: `user_skills`
+(migration `20260822_0006`, applied). Gates:
+`functional/test_skills_behaviour.py`.
+
+**Status.** The turn emits one `action` SSE event after routing: the
+capability label, the one detail worth showing, and a playful waiting line
+with an emoji from the tool's own pool. The web UI shows the waiting line
+while the answer streams and the plain record afterwards; the iMessage
+worker uses it as the "still working" bubble instead of a random
+pleasantry. Skills and tasks are visible and removable in the new
+Automations panel (`/api/v1/automations/{user_id}`).

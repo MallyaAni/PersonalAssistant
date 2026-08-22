@@ -72,8 +72,7 @@ class _SelectorAsRouter:
         # specifically": a weather question routed to the forecast tool is the
         # live-data decision made better, and must not read as a miss.
         went_live = isinstance(action, SearchAction) or (
-            isinstance(action, ToolboxAction)
-            and action.plan.tool_name == "get_weather"
+            isinstance(action, ToolboxAction) and action.plan.tool_name == "get_weather"
         )
         return _Verdict(should_search=went_live)
 

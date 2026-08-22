@@ -47,6 +47,7 @@ class StubMainActionSelector:
         active_image_artifact_id,
         query_embedding=None,
         local_now=None,
+        skills=None,
     ) -> MainAction:
         return self.action
 
@@ -409,6 +410,7 @@ async def test_conversation_service_streams_ready_diagram_artifact() -> None:
 
     assert [event["event"] for event in events] == [
         "start",
+        "action",
         "artifact_started",
         "delta",
         "artifact_ready",
@@ -454,6 +456,7 @@ async def test_conversation_service_streams_failed_diagram_artifact() -> None:
 
     assert [event["event"] for event in events] == [
         "start",
+        "action",
         "artifact_started",
         "delta",
         "artifact_error",
@@ -490,6 +493,7 @@ async def test_cancelled_diagram_generation_marks_pending_artifact_failed() -> N
         "99999999-9999-4999-8999-999999999999",
     )
     assert (await anext(stream))["event"] == "start"
+    assert (await anext(stream))["event"] == "action"
     assert (await anext(stream))["event"] == "artifact_started"
     pending_generation = asyncio.create_task(anext(stream))
     await asyncio.sleep(0)

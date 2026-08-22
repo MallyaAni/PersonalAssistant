@@ -14,8 +14,14 @@ from backend.discovery.schedule import Cadence, next_run_at
 
 
 def test_once_is_the_stated_instant_in_the_users_zone():
-    cadence = Cadence("once", hour=9, weekday=0, timezone="America/New_York",
-                      minute=30, on_date=date(2026, 8, 25))
+    cadence = Cadence(
+        "once",
+        hour=9,
+        weekday=0,
+        timezone="America/New_York",
+        minute=30,
+        on_date=date(2026, 8, 25),
+    )
 
     when = next_run_at(cadence, datetime(2026, 8, 22, 12, 0, tzinfo=UTC))
 

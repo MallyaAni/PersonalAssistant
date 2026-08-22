@@ -5,6 +5,7 @@ import { Logo } from './components/Logo/Logo'
 import AgentPanel from './components/AgentPanel/AgentPanel'
 import AdminPanel from './components/AdminPanel/AdminPanel'
 import ArtifactPanel from './components/ArtifactPanel/ArtifactPanel'
+import AutomationPanel from './components/AutomationPanel/AutomationPanel'
 import ChatWindow from './components/ChatWindow/ChatWindow'
 import LoginScreen from './components/LoginScreen/LoginScreen'
 import MemoryPanel from './components/MemoryPanel/MemoryPanel'
@@ -41,7 +42,7 @@ interface AuthenticatedAppProps {
   onSignedOut: () => void;
 }
 
-type WorkspaceView = 'chat' | 'memory' | 'artifacts' | 'presentations' | 'agents' | 'admin'
+type WorkspaceView = 'chat' | 'memory' | 'artifacts' | 'presentations' | 'agents' | 'automations' | 'admin'
 
 const WORKSPACE_VIEWS: readonly WorkspaceView[] = [
   'chat',
@@ -49,6 +50,7 @@ const WORKSPACE_VIEWS: readonly WorkspaceView[] = [
   'artifacts',
   'presentations',
   'agents',
+  'automations',
   'admin',
 ]
 
@@ -215,6 +217,7 @@ const AuthenticatedApp = ({ auth, onSignedOut }: AuthenticatedAppProps) => {
         {activeView === 'agents' && (
           <AgentPanel userId={userId} onOpenView={setActiveView} />
         )}
+        {activeView === 'automations' && <AutomationPanel userId={userId} />}
         {activeView === 'presentations' && (
           <PresentationPanel
             userId={userId}

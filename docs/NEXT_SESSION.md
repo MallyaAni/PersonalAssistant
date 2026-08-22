@@ -52,9 +52,21 @@ and `reply/task_outcome` (confirmation), picker `tasks/pick` (which task
 `functional/test_scheduled_task_behaviour.py` (8, all passing on the
 Spark reply model; routing cases also pass on the production 4B router).
 
+Same day, second pass: built-in tools moved to `backend/tools/` (one module
+each, registry-read), skills added under `backend/skills/` + shipped packs in
+`skills/` (taught in chat, invoked by meaning, schedulable), an `action` SSE
+event with playful emoji waiting lines (web status line + iMessage ack), and
+an Automations panel listing skills and tasks.
+
+Gates: `functional/test_skills_behaviour.py` - all 7 pass on the Spark reply
+model; the production 4B router passes 6 and misses one, choosing web search
+over the shipped `quick brief` pack for "give me a quick brief on the DGX
+Spark" (a miss by meaning, not a wrong answer). Taught skills invoked by name
+or meaning pass on both. One more item for the routing-model upgrade.
+
 Open from here, in order of value:
-- A web surface for tasks and their runs (web-channel output is stored on
-  `scheduled_task_runs.output`, nothing shows it yet).
+- Run history in the Automations panel (web-channel output is stored on
+  `scheduled_task_runs.output`; the panel shows tasks, not their runs yet).
 - Scout as a task kind (its schedule/subscribers/digest map one for one).
 - WhatsApp / OpenClaw as further `Channel`s: the runner only needs an
   address lookup and a deliver path per channel.

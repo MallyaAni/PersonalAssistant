@@ -5,6 +5,7 @@ import DiagramArtifact from '../DiagramArtifact/DiagramArtifact'
 import ImageArtifact from '../ImageArtifact/ImageArtifact'
 import type {
   ImageArtifact as ImageArtifactRecord,
+  ActionActivity,
   AgentActivity,
   SearchSource,
   ToolActivity,
@@ -26,6 +27,7 @@ interface MessageProps {
   searchBlocked?: string[];
   toolActivities?: ToolActivity[];
   agentActivities?: AgentActivity[];
+  actions?: ActionActivity[];
   onArtifactDeleted?: (artifactId: string) => void;
   activeImageId?: string;
   onImageSelect?: (artifact: ImageArtifactRecord) => void;
@@ -70,6 +72,7 @@ const MessageBubble: React.FC<MessageProps> = ({
   searchBlocked,
   toolActivities,
   agentActivities,
+  actions,
   onArtifactDeleted,
   activeImageId,
   onImageSelect,
@@ -148,6 +151,29 @@ const MessageBubble: React.FC<MessageProps> = ({
             must not be sent to a search provider. Answered from local knowledge.
           </span>
         </p>
+      )}
+      {!isUser && actions && actions.length > 0 && (
+        <section className="mb-3 space-y-1.5" aria-label="What this turn is doing">
+          {actions.map((action, index) => {
+            // While the answer is still coming, the playful waiting line;
+            // once it has landed, the plain record of what was used.
+            const stillWorking = isThinking || !visibleContent.trim()
+            const label = stillWorking && action.waiting
+              ? action.waiting
+              : `${action.label}${action.detail ? ` · ${action.detail}` : ''}`
+            return (
+              <p
+                key={`${action.label}-${index}`}
+                role="status"
+                aria-live="polite"
+                className={`flex items-center gap-1.5 text-sm text-[#6e6e73] ${stillWorking ? 'animate-pulse' : ''}`}
+              >
+                {!stillWorking && <Sparkles size={13} />}
+                {label}
+              </p>
+            )
+          })}
+        </section>
       )}
       {!isUser && toolActivities && toolActivities.length > 0 && (
         <section className="mb-3 space-y-1.5" aria-label="Tool activity">

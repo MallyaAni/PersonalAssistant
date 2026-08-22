@@ -1,11 +1,17 @@
 ---
-title: Scheduled Tasks Subsystem
+title: Tasks and Skills Subsystem
 ---
 flowchart LR
-    Person([Person<br/>iMessage or web]) --> Chat["/chat turn]
-    Chat --> Router[Routing model<br/>schedule_task · manage_tasks<br/>decided with every other tool]
-    Router -->|schedule_task| Save[ConversationService<br/>_apply_task_action]
-    Router -->|manage_tasks| Save
+    Person([Person<br/>iMessage or web]) --> Chat["/chat turn"]
+    Chat --> Router[Routing model<br/>one tool call over backend/tools rows<br/>+ one tool per skill]
+    Tools[(backend/tools<br/>registry · waiting lines)] --> Router
+    Packs[(skills/ packs<br/>+ user_skills)] --> Router
+    Router -->|schedule_task · manage_tasks| Save[ConversationService<br/>_apply_task_action]
+    Router -->|save_skill · manage_skills| Save
+    Router -->|skill__name| Again[Route the skill instruction again<br/>+ reply/skill_invoked block]
+    Again --> Router
+    Router --> Status[action event<br/>label · detail · waiting line]
+    Status --> Person
     Locality[(Primary locality<br/>timezone)] --> Save
     Save -->|which task they mean| Picker[Routing model<br/>pick_task]
     Save --> Tasks[(scheduled_tasks<br/>instruction encrypted · cadence · next_run_at)]
@@ -16,7 +22,7 @@ flowchart LR
     Loop[Discovery worker process<br/>task loop] -->|enqueue due slots| Tasks
     Tasks --> Runs[(scheduled_task_runs<br/>one per slot · leased claim)]
     Runs -->|claim| Runner[TaskRunner]
-    Runner -->|bearer as the person<br/>task conversation · scheduled_task mark| Fire["/chat turn<br/>+ reply/scheduled_task block]
+    Runner -->|bearer as the person<br/>task conversation · scheduled_task mark| Fire["/chat turn<br/>+ reply/scheduled_task block"]
     Fire --> Turn[TurnResult<br/>reply · images · rendered diagrams]
     Turn -->|channel imessage| Bridge[Mac iMessage bridge<br/>bubbles and attachments]
     Bridge --> Person
@@ -28,6 +34,6 @@ flowchart LR
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     class Person,Bridge interface;
-    class Chat,Save,Outcome,Loop,Runner,Fire,Turn application;
-    class Locality,Tasks,Runs data;
+    class Chat,Save,Outcome,Loop,Runner,Fire,Turn,Again,Status application;
+    class Locality,Tasks,Runs,Tools,Packs data;
     class Router,Picker,Reply model;

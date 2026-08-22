@@ -4,6 +4,7 @@ import re
 import secrets
 import uuid
 from collections.abc import AsyncGenerator, Awaitable, Callable
+from contextlib import suppress
 from datetime import date, datetime, timedelta
 from typing import Any
 
@@ -59,10 +60,13 @@ from backend.services.main_action_selector import (
     GenerateImageAction,
     MainAction,
     MainActionSelector,
+    ManageSkillsAction,
     ManageTasksAction,
+    SaveSkillAction,
     ScheduleTaskAction,
     SearchAction,
     ToolboxAction,
+    UseSkillAction,
 )
 from backend.services.mcp_tool_orchestration_service import MCPToolOrchestrationService
 from backend.services.presentation_job_service import PresentationJobService
@@ -73,7 +77,9 @@ from backend.services.referent_resolution import (
 )
 from backend.services.referent_sources import ImageReferentSource
 from backend.services.search_planner import SearchPlanner
+from backend.skills.repository import SkillRepository
 from backend.tasks.repository import ScheduledTaskRepository
+from backend.tools import describe_action, waiting_line
 
 logger = logging.getLogger(__name__)
 
@@ -292,6 +298,14 @@ def _mark_turn(
         context.update(extra_context)
 
 
+# The action the reply path can still execute itself, or None. Search and
+# the user's own tools survive to the assistant path; anything else that
+# reached it matched an action whose service is not wired, and is dropped
+# rather than carried into the reply as though it had run.
+def _runnable(action: MainAction) -> MainAction:
+    return action if isinstance(action, SearchAction | ToolboxAction) else None
+
+
 # The calendar date a one-time task fires on. The router states it when the
 # request named one; a bare "at 5" means today if that is still ahead in
 # the person's zone, otherwise tomorrow.
@@ -350,6 +364,7 @@ class ConversationService:
         discovery_profile: DiscoveryProfileService | None = None,
         discovery_runs: DiscoveryRunRepository | None = None,
         scheduled_tasks: ScheduledTaskRepository | None = None,
+        skills: SkillRepository | None = None,
         memory_proposals: MemoryProposalAgent | None = None,
         visual_memory: VisualMemorySelector | None = None,
         artifact_context_router: ArtifactContextRouter | None = None,
@@ -394,6 +409,7 @@ class ConversationService:
         self.discovery_profile = discovery_profile
         self.discovery_runs = discovery_runs
         self.scheduled_tasks = scheduled_tasks
+        self.skills = skills
         self.memory_proposals = memory_proposals
         self.visual_memory = visual_memory
         self.artifact_context_router = artifact_context_router
@@ -436,6 +452,7 @@ class ConversationService:
         query: str,
         history: list[dict[str, Any]],
         active_image_artifact_id: str | None,
+        skills: list[dict[str, Any]] | None = None,
     ) -> MainAction:
         if self.main_action_selector is None:
             return None
@@ -446,10 +463,92 @@ class ConversationService:
                 history,
                 active_image_artifact_id,
                 local_now=await self._local_now(user_id),
+                skills=(
+                    await self._offered_skills(user_id) if skills is None else skills
+                ),
             )
         except Exception:
             logger.warning("Main action selection failed", exc_info=True)
             return None
+
+    # The skills the router may choose for this person: the ones they taught
+    # plus the shipped packs, a taught one winning over a pack of the same
+    # name. Empty when no skill store is wired.
+    async def _offered_skills(self, user_id: str) -> list[dict[str, Any]]:
+        if self.skills is None:
+            return []
+        try:
+            taught = await self.skills.list_for_user(user_id)
+        except Exception:
+            logger.warning("Skills unavailable for routing", exc_info=True)
+            taught = []
+        from backend.skills.packs import load_packs
+
+        slugs = {skill["slug"] for skill in taught}
+        packs = [
+            pack.as_skill() for slug, pack in load_packs().items() if slug not in slugs
+        ]
+        return taught + packs
+
+    # A skill the router chose, resolved into what the turn actually does:
+    # the skill's own instruction is routed again - with no skills offered,
+    # so it cannot pick itself - and the instruction rides into the reply
+    # as context. Returns the action to run and the skill context, or the
+    # action unchanged and None when no skill was chosen.
+    async def _resolve_skill(
+        self,
+        user_id: str,
+        action: MainAction,
+        history: list[dict[str, Any]],
+        active_image_artifact_id: str | None,
+    ) -> tuple[MainAction, dict[str, Any] | None]:
+        if not isinstance(action, UseSkillAction):
+            return action, None
+        if self.skills is not None and action.source == "user":
+            with suppress(Exception):
+                await self.skills.touch_used(user_id, action.skill_id)
+        inner = await self._select_main_action(
+            user_id, action.instruction, history, active_image_artifact_id, skills=[]
+        )
+        context = {
+            "skill": {
+                "id": action.skill_id,
+                "name": action.name,
+                "instruction": action.instruction,
+                "source": action.source,
+            }
+        }
+        return inner, context
+
+    # What the person is shown while the turn runs: the capability chosen
+    # and a playful line for the wait. Nothing for a plain reply.
+    @staticmethod
+    def _action_event(
+        action: MainAction, skill: dict[str, Any] | None = None
+    ) -> ChatStreamEvent | None:
+        if skill:
+            return {
+                "event": "action",
+                "data": {
+                    "label": "Skill",
+                    "detail": str(skill.get("name") or ""),
+                    "waiting": waiting_line(
+                        UseSkillAction(
+                            skill_id=str(skill.get("id") or ""),
+                            name=str(skill.get("name") or ""),
+                            instruction="",
+                        )
+                    ),
+                },
+            }
+        described = describe_action(action)
+        if described is None:
+            return None
+        label, detail = described
+        return {
+            "event": "action",
+            "data": {"label": label, "detail": detail, "waiting": waiting_line(action)},
+        }
 
     # The person's current date, time, and weekday in their own zone, for
     # the router to resolve "tomorrow at 9" against - or None when no zone
@@ -1673,71 +1772,34 @@ class ConversationService:
         action = await self._select_main_action(
             user_id, query, history, active_image_artifact_id
         )
+        events, action, skill_context, asked = await self._decide(
+            user_id, query, action, history, active_image_artifact_id
+        )
+        for event in events:
+            yield event
 
-        if (
-            isinstance(action, CreateDiagramAction)
-            and self.diagram_artifacts is not None
-        ):
-            async for event in self._process_diagram_request(
-                user_id,
-                query,
-                resolved_conversation_id,
-                trace_id,
-                metadata or {},
-            ):
+        branch = self._generating_branch(
+            action,
+            user_id,
+            asked,
+            resolved_conversation_id,
+            trace_id,
+            metadata or {},
+            history,
+            active_image_artifact_id,
+        )
+        if branch is not None:
+            async for event in branch:
                 yield event
             return
 
-        if (
-            isinstance(action, DelegateAction)
-            and action.capability_id == "presentation_agent"
-            and self.presentation_jobs is not None
-        ):
-            async for event in self._process_presentation_delegation(
-                user_id,
-                query,
-                resolved_conversation_id,
-                trace_id,
-                metadata or {},
-            ):
-                yield event
-            return
-
-        if (
-            isinstance(action, GenerateImageAction)
-            and self.image_generation is not None
-        ):
-            async for event in self._process_image_generation(
-                user_id,
-                query,
-                action.prompt,
-                resolved_conversation_id,
-                trace_id,
-                metadata or {},
-                history,
-                action.depicts_a_person,
-            ):
-                yield event
-            return
-
-        if isinstance(action, EditImageAction) and self.image_refinement is not None:
-            async for event in self._dispatch_edit_image_action(
-                user_id,
-                query,
-                action,
-                active_image_artifact_id,
-                resolved_conversation_id,
-                trace_id,
-                metadata or {},
-                history,
-            ):
-                yield event
-            return
-
-        # Task bookkeeping happens before the reply, and the ordinary reply
-        # path then reports it: the model words the confirmation from a
-        # record of what was actually saved, in the channel's own register.
-        task_context = await self._task_turn_context(user_id, action, metadata or {})
+        # Task and skill bookkeeping happens before the reply, and the
+        # ordinary reply path then reports it: the model words the
+        # confirmation from a record of what was actually saved, in the
+        # channel's own register.
+        task_context = await self._task_turn_context(
+            user_id, action, metadata or {}, skill_context
+        )
 
         # Reached when a branch above matched the action but not the service
         # behind it - a diagram routed with no diagram service configured, a
@@ -1745,7 +1807,6 @@ class ConversationService:
         # dropped rather than carried into the reply as though it had: search
         # and the user's own tools are the two that survive to here, because
         # those are the ones the reply path can still execute.
-        runnable = isinstance(action, SearchAction | ToolboxAction)
         async for event in self._process_assistant_request(
             user_id,
             query,
@@ -1753,23 +1814,152 @@ class ConversationService:
             trace_id,
             metadata or {},
             active_image_artifact_id,
-            preselected_action=action if runnable else None,
+            preselected_action=_runnable(action),
             extra_context=task_context,
         ):
             yield event
 
+    # The branch that makes something - a diagram, a deck, a picture, an
+    # edit - when the action asks for one and its service is wired; None
+    # otherwise, so the turn falls through to the ordinary reply.
+    def _generating_branch(
+        self,
+        action: MainAction,
+        user_id: str,
+        asked: str,
+        conversation_id: str,
+        trace_id: str,
+        metadata: dict[str, Any],
+        history: list[dict[str, Any]],
+        active_image_artifact_id: str | None,
+    ) -> AsyncGenerator[ChatStreamEvent, None] | None:
+        if isinstance(action, CreateDiagramAction) and self.diagram_artifacts:
+            return self._process_diagram_request(
+                user_id, asked, conversation_id, trace_id, metadata
+            )
+        if (
+            isinstance(action, DelegateAction)
+            and action.capability_id == "presentation_agent"
+            and self.presentation_jobs is not None
+        ):
+            return self._process_presentation_delegation(
+                user_id, asked, conversation_id, trace_id, metadata
+            )
+        if isinstance(action, GenerateImageAction) and self.image_generation:
+            return self._process_image_generation(
+                user_id,
+                asked,
+                action.prompt,
+                conversation_id,
+                trace_id,
+                metadata,
+                history,
+                action.depicts_a_person,
+            )
+        if isinstance(action, EditImageAction) and self.image_refinement:
+            return self._dispatch_edit_image_action(
+                user_id,
+                asked,
+                action,
+                active_image_artifact_id,
+                conversation_id,
+                trace_id,
+                metadata,
+                history,
+            )
+        return None
+
     # The task outcome for the reply to report, or None for a turn that was
     # not about tasks (or when no task store is wired).
     async def _task_turn_context(
-        self, user_id: str, action: MainAction, metadata: dict[str, Any]
+        self,
+        user_id: str,
+        action: MainAction,
+        metadata: dict[str, Any],
+        skill_context: dict[str, Any] | None = None,
     ) -> dict[str, Any] | None:
+        context: dict[str, Any] = dict(skill_context or {})
         if (
-            not isinstance(action, ScheduleTaskAction | ManageTasksAction)
-            or self.scheduled_tasks is None
+            isinstance(action, SaveSkillAction | ManageSkillsAction)
+            and self.skills is not None
         ):
-            return None
-        outcome = await self._apply_task_action(user_id, action, metadata)
-        return {"task_outcome": outcome}
+            context["skill_outcome"] = await self._apply_skill_action(user_id, action)
+        elif (
+            isinstance(action, ScheduleTaskAction | ManageTasksAction)
+            and self.scheduled_tasks is not None
+        ):
+            context["task_outcome"] = await self._apply_task_action(
+                user_id, action, metadata
+            )
+        return context or None
+
+    # The routed action, announced. A skill is a stored instruction; what
+    # runs is that instruction, routed again with the ordinary tools, and
+    # the person sees the skill named, then whatever tool its instruction
+    # needs. Returns the events to emit, the action to run, the skill
+    # context (or None), and the words the generating branches work from -
+    # for a skill its instruction, not the two words that invoked it.
+    async def _decide(
+        self,
+        user_id: str,
+        query: str,
+        action: MainAction,
+        history: list[dict[str, Any]],
+        active_image_artifact_id: str | None,
+    ) -> tuple[list[ChatStreamEvent], MainAction, dict[str, Any] | None, str]:
+        events: list[ChatStreamEvent] = []
+        if isinstance(action, UseSkillAction):
+            skill_event = self._action_event(action)
+            if skill_event is not None:
+                events.append(skill_event)
+        action, skill_context = await self._resolve_skill(
+            user_id, action, history, active_image_artifact_id
+        )
+        status = self._action_event(action)
+        if status is not None:
+            events.append(status)
+        asked = str(skill_context["skill"]["instruction"]) if skill_context else query
+        return events, action, skill_context, asked
+
+    # Save, list, or delete a skill and say what happened, as a record the
+    # reply reports from. Teaching a skill again replaces it.
+    async def _apply_skill_action(
+        self, user_id: str, action: "SaveSkillAction | ManageSkillsAction"
+    ) -> dict[str, Any]:
+        if self.skills is None:
+            return {"kind": "unavailable"}
+        try:
+            if isinstance(action, SaveSkillAction):
+                skill = await self.skills.save(user_id, action.name, action.instruction)
+                return {"kind": "saved", "skill": skill}
+            skills = await self._offered_skills(user_id)
+            if action.operation == "list":
+                return {"kind": "listed", "skills": skills}
+            taught = [skill for skill in skills if skill.get("source") == "user"]
+            if not taught:
+                return {"kind": "none", "skills": skills}
+            from backend.tasks.picker import pick_skill
+
+            picker_llm = (
+                self.main_action_selector.llm
+                if self.main_action_selector is not None
+                else self.llm
+            )
+            chosen = await pick_skill(picker_llm, action.which, taught)
+            if chosen is None:
+                return {
+                    "kind": "not_found",
+                    "skills": taught,
+                    "requested": action.which,
+                }
+            before = next(item for item in taught if item["id"] == chosen)
+            await self.skills.delete_owned(user_id, chosen)
+            return {"kind": "deleted", "skill": before}
+        except Exception as exc:
+            logger.warning(
+                "skill_action_failed: %s: %s", type(exc).__name__, str(exc)[:200]
+            )
+            return {"kind": "failed"}
 
     # The interests this person already follows, or nothing when the profile
     # cannot be read. A missing catalogue costs deduplication, never the turn.

@@ -136,6 +136,7 @@ interface ChatEvent {
     | 'tool_finished'
     | 'agent_started'
     | 'agent_finished'
+    | 'action'
     | 'artifact_error'
     | 'done'
     | 'error';
@@ -316,6 +317,42 @@ export interface AgentActivity {
   message?: string;
 }
 
+// What the turn decided to do, announced before the reply starts: the
+// capability's name, the one detail worth showing, and a playful waiting
+// line to show while it runs.
+export interface ActionActivity {
+  label: string;
+  detail: string;
+  waiting: string;
+}
+
+export interface AutomationSkill {
+  id: string;
+  name: string;
+  instruction: string;
+  source: 'user' | 'pack';
+  use_count: number;
+  last_used_at: string | null;
+}
+
+export interface AutomationTask {
+  id: string;
+  instruction: string;
+  cadence: string;
+  schedule: string;
+  next_run: string;
+  timezone: string;
+  channel: string;
+  enabled: boolean;
+  last_run_at: string | null;
+  last_status: string | null;
+}
+
+export interface Automations {
+  skills: AutomationSkill[];
+  tasks: AutomationTask[];
+}
+
 export interface PresentationJob {
   id: string;
   presentation_id: string;
@@ -471,6 +508,7 @@ export type ChatStreamUpdate =
   | { type: 'tool_finished'; activity: ToolActivity }
   | { type: 'agent_started'; activity: AgentActivity }
   | { type: 'agent_finished'; activity: AgentActivity }
+  | { type: 'action'; activity: ActionActivity }
   | { type: 'artifact_error'; artifactId: string; message: string }
 
 // Send one authenticated JSON request and accept intentional empty responses.
@@ -1448,6 +1486,19 @@ export async function* streamChat(
             message,
           },
         } satisfies ChatStreamUpdate
+      } else if (event.event === 'action') {
+        const { label, detail, waiting } = event.data
+        if (typeof label !== 'string' || !label) {
+          throw new Error('Action event is invalid')
+        }
+        yield {
+          type: 'action',
+          activity: {
+            label,
+            detail: typeof detail === 'string' ? detail : '',
+            waiting: typeof waiting === 'string' ? waiting : '',
+          },
+        } satisfies ChatStreamUpdate
       } else if (event.event === 'agent_started') {
         const { agent_id, agent_name, model } = event.data
         if (
@@ -1569,6 +1620,7 @@ function parseChatEvent(frame: string): ChatEvent {
     'tool_finished',
     'agent_started',
     'agent_finished',
+    'action',
     'done',
     'error',
   ].includes(eventName)) {
@@ -2513,3 +2565,36 @@ export const cancelSubscription = async (userId: string): Promise<void> => {
     throw new Error('Could not unsubscribe.');
   }
 };
+
+// Everything automated for the active user: skills (taught and shipped) and
+// scheduled tasks, as the Automations panel shows them.
+export function getAutomations(userId: string, signal?: AbortSignal) {
+  return apiRequest<Automations>(
+    `/api/v1/automations/${encodeURIComponent(userId)}`,
+    { signal },
+  )
+}
+
+// Forget one skill the user taught. Shipped skills cannot be deleted.
+export function deleteSkill(userId: string, skillId: string) {
+  return apiRequest<{ status: 'deleted'; id: string }>(
+    `/api/v1/automations/${encodeURIComponent(userId)}/skills/${encodeURIComponent(skillId)}`,
+    { method: 'DELETE' },
+  )
+}
+
+// Cancel one scheduled task outright.
+export function deleteScheduledTask(userId: string, taskId: string) {
+  return apiRequest<{ status: 'deleted'; id: string }>(
+    `/api/v1/automations/${encodeURIComponent(userId)}/tasks/${encodeURIComponent(taskId)}`,
+    { method: 'DELETE' },
+  )
+}
+
+// Pause or resume one scheduled task; resuming re-arms its next slot.
+export function setScheduledTaskEnabled(userId: string, taskId: string, enabled: boolean) {
+  return apiRequest<AutomationTask>(
+    `/api/v1/automations/${encodeURIComponent(userId)}/tasks/${encodeURIComponent(taskId)}`,
+    { method: 'PATCH', body: JSON.stringify({ enabled }) },
+  )
+}

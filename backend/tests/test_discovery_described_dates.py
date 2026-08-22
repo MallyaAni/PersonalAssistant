@@ -96,8 +96,14 @@ def test_delivery_keeps_a_date_only_event_until_its_day_ends():
 
     def _item(starts_at):
         event = DiscoveredEvent(
-            source_id="s", external_id="x", title="t", starts_at=starts_at,
-            ends_at=None, place=None, url=None, summary=None,
+            source_id="s",
+            external_id="x",
+            title="t",
+            starts_at=starts_at,
+            ends_at=None,
+            place=None,
+            url=None,
+            summary=None,
         )
         return RankedCandidate(ScoredCandidate(event, None), 1.0, None)
 
