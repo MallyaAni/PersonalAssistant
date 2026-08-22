@@ -270,6 +270,43 @@ def _channel_style(context_data: dict[str, Any]) -> str:
     return ""
 
 
+# What kind of turn this is, when it is not a person typing a question: a
+# scheduled task firing on its own, or a message the application already
+# acted on as task bookkeeping. Each appends the block that tells the reply
+# model so; an ordinary turn appends nothing.
+def _turn_kind(context_data: dict[str, Any]) -> str:
+    blocks = ""
+    if context_data.get("scheduled_task"):
+        blocks += "\n\n" + load("reply/scheduled_task")
+    if context_data.get("task_outcome"):
+        blocks += "\n\n" + load("reply/task_outcome")
+    return blocks
+
+
+# The record of what this turn did with scheduled tasks, for the reply to
+# report from. Rendered as plain lines, since the reply block already says
+# how to treat them.
+def _render_task_outcome(outcome: dict[str, Any]) -> str:
+    if not outcome:
+        return ""
+    from backend.tasks.describe import describe_task, next_run_phrase
+
+    lines = [f"Scheduled-task outcome: {outcome.get('kind', '')}\n"]
+    task = outcome.get("task")
+    if isinstance(task, dict):
+        lines.append(f"- Task: {describe_task(task)}\n")
+        first = next_run_phrase(task)
+        if first:
+            lines.append(f"- Next run: {first}\n")
+    for item in outcome.get("tasks") or []:
+        if isinstance(item, dict):
+            lines.append(f"- {describe_task(item)}\n")
+    for key in ("reason", "requested"):
+        if outcome.get(key):
+            lines.append(f"- {key}: {outcome[key]}\n")
+    return "".join(lines) + "\n"
+
+
 def _build_system_prompt(
     context_data: dict[str, Any],
     now: datetime | None = None,
@@ -297,6 +334,7 @@ def _build_system_prompt(
         ),
     )
     prompt += _channel_style(context_data)
+    prompt += _turn_kind(context_data)
     # Under cache-aware ordering these are emitted by `turn_context_messages`
     # into a message after the history instead, so nothing is lost - only moved.
     trailing = (
@@ -392,6 +430,7 @@ def _build_turn_context(
             context_data.get("tool_results") or [],
             context_data.get("tool_notices") or [],
         ),
+        _render_task_outcome(context_data.get("task_outcome") or {}),
     )
     return "".join(block for block in blocks if block)
 

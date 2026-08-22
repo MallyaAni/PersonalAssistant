@@ -1,0 +1,208 @@
+"""Fire scheduled tasks: claim a due run, converse as the person, deliver.
+
+A task is the person's own instruction run later as an ordinary chat turn
+under their identity, on the task's own conversation so its history is the
+task's and not their live thread's. Delivery follows the channel the task
+was made from: an iMessage task lands in the subscriber's thread through
+the same bubble path a reply takes; a web task keeps its output on the run
+for the UI to show.
+"""
+
+import asyncio
+import uuid
+
+import httpx
+from sqlalchemy import select
+
+from backend.config.settings import settings
+from backend.core.auth import issue_user_token
+from backend.core.logging_config import get_logger
+from backend.database.session import AsyncSessionLocal
+from backend.tasks.repository import ScheduledTaskRepository
+from backend.workers.imessage_chat import (
+    _CHAT_TIMEOUT_SECONDS,
+    IMessageChatWorker,
+    TurnImage,
+    TurnResult,
+    _loads,
+)
+
+logger = get_logger(__name__)
+
+
+class TaskRunner:
+    """Produce due runs and work the oldest claimable one."""
+
+    def __init__(
+        self,
+        invoke_tool,
+        base_url: str | None = None,
+        worker_id: str | None = None,
+    ) -> None:
+        self.worker_id = worker_id or f"tasks-{uuid.uuid4().hex[:8]}"
+        self.chat = IMessageChatWorker(invoke_tool, base_url=base_url)
+
+    # Every task whose slot has arrived becomes a queued run.
+    async def enqueue_due(self) -> int:
+        async with AsyncSessionLocal() as db:
+            created = await ScheduledTaskRepository(db).enqueue_due_runs()
+        return len(created)
+
+    # One run, or False when nothing is claimable.
+    async def run_once(self) -> bool:
+        async with AsyncSessionLocal() as db:
+            run = await ScheduledTaskRepository(db).claim_next(
+                self.worker_id, settings.SCHEDULED_TASK_LEASE_SECONDS
+            )
+        if run is None:
+            return False
+        task = run.get("task")
+        if not task:
+            await self._finish(run["id"], "failed", error_code="task_missing")
+            return True
+        turn = await self._turn(task)
+        if turn is None:
+            await self._finish(run["id"], "failed", error_code="turn_failed")
+            return True
+        await self._deliver(run["id"], task, turn)
+        return True
+
+    # The finished turn to where the task was made from.
+    async def _deliver(self, run_id: str, task: dict, turn: TurnResult) -> None:
+        if task["channel"] != "imessage":
+            await self._finish(run_id, "completed", turn.reply)
+            return
+        address = await self._address_for(task["user_id"])
+        if address is None:
+            await self._finish(run_id, "undeliverable", turn.reply, "no_subscriber")
+            return
+        try:
+            await self.chat._deliver(address, turn)
+        except Exception as exc:
+            logger.warning(
+                "scheduled_task_delivery_failed: %s: %s",
+                type(exc).__name__,
+                str(exc)[:200],
+            )
+            await self._finish(run_id, "failed", turn.reply, "delivery_failed")
+            return
+        await self._finish(run_id, "delivered", turn.reply)
+
+    async def _finish(
+        self,
+        run_id: str,
+        status: str,
+        output: str | None = None,
+        error_code: str | None = None,
+    ) -> None:
+        async with AsyncSessionLocal() as db:
+            await ScheduledTaskRepository(db).finish(run_id, status, output, error_code)
+        logger.info(
+            "scheduled_task_run_finished",
+            extra={"run": run_id, "status": status, "error": error_code},
+        )
+
+    # The instruction as a chat turn on the task's own conversation. Marked
+    # so the reply model knows it is a firing, not a person typing.
+    async def _turn(self, task: dict) -> TurnResult | None:
+        user_id = str(task["user_id"])
+        token = issue_user_token(user_id, ttl_seconds=900, scopes=["chat", "vision"])
+        body = {
+            "user_id": user_id,
+            "query": task["instruction"],
+            "conversation_id": task["conversation_id"],
+            "metadata": {"channel": task["channel"], "scheduled_task": True},
+        }
+        collected: list[str] = []
+        images: list[TurnImage] = []
+        try:
+            async with (
+                httpx.AsyncClient(timeout=_CHAT_TIMEOUT_SECONDS) as client,
+                client.stream(
+                    "POST",
+                    f"{self.chat.base_url}/api/v1/chat",
+                    json=body,
+                    headers={"Authorization": f"Bearer {token}"},
+                ) as response,
+            ):
+                response.raise_for_status()
+                event = ""
+                async for line in response.aiter_lines():
+                    if line.startswith("event: "):
+                        event = line[7:].strip()
+                    elif line.startswith("data: "):
+                        await self._consume(event, _loads(line[6:]), collected, images)
+            for image in images:
+                if image.data_base64 is None:
+                    fetched = await self.chat._fetch_artifact(
+                        user_id, image.artifact_id, token
+                    )
+                    if fetched is not None:
+                        image.data_base64, image.media_type = fetched
+        except Exception as exc:
+            logger.warning(
+                "scheduled_task_turn_failed: %s: %s",
+                type(exc).__name__,
+                str(exc)[:200],
+                extra={"user": user_id},
+            )
+            return None
+        reply = "".join(collected).strip()
+        carried = tuple(image for image in images if image.data_base64)
+        if not reply and not carried:
+            return None
+        return TurnResult(reply, carried)
+
+    # The same events the chat worker reads, minus remembering the
+    # conversation: a task's thread must never become the person's live one.
+    async def _consume(
+        self, event: str, data: dict, collected: list, images: list
+    ) -> None:
+        if event == "delta" and isinstance(data.get("content"), str):
+            collected.append(data["content"])
+        elif event == "artifact_ready" and data.get("kind") == "diagram":
+            rendered = await self.chat._render_diagram(data)
+            if rendered is not None:
+                images.append(rendered)
+        elif event == "artifact_ready" and str(data.get("mime_type") or "").startswith(
+            "image/"
+        ):
+            images.append(
+                TurnImage(
+                    artifact_id=str(data.get("id") or ""),
+                    media_type=str(data["mime_type"]),
+                )
+            )
+
+    # The person's active, approved iMessage address, or None.
+    async def _address_for(self, user_id: str) -> str | None:
+        from backend.models.discovery_subscriber import DiscoverySubscriber
+
+        async with AsyncSessionLocal() as db:
+            row = await db.scalar(
+                select(DiscoverySubscriber)
+                .where(
+                    DiscoverySubscriber.user_id == user_id,
+                    DiscoverySubscriber.channel == "imessage",
+                    DiscoverySubscriber.active.is_(True),
+                    DiscoverySubscriber.approved_at.is_not(None),
+                )
+                .order_by(DiscoverySubscriber.created_at)
+            )
+        return str(row.address) if row else None
+
+
+# The loop the discovery worker process hosts alongside its own.
+async def run_task_loop() -> None:
+    from backend.core.dependencies import _invoke_discovery_tool
+
+    runner = TaskRunner(_invoke_discovery_tool)
+    logger.info("scheduled_tasks_started", extra={"worker_id": runner.worker_id})
+    while True:
+        try:
+            await runner.enqueue_due()
+            while await runner.run_once():
+                pass
+        except Exception:
+            logger.exception("scheduled_tasks_tick_failed")
+        await asyncio.sleep(settings.SCHEDULED_TASKS_POLL_SECONDS)

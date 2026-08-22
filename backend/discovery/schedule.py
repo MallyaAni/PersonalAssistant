@@ -10,10 +10,10 @@ same sweep twice.
 """
 
 from dataclasses import dataclass
-from datetime import datetime, time, timedelta
+from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-CADENCES = ("daily", "weekly")
+CADENCES = ("daily", "weekly", "weekdays", "once")
 MIN_HOUR = 0
 MAX_HOUR = 23
 # Monday is 0, matching datetime.weekday().
@@ -35,6 +35,9 @@ class Cadence:
     # the interface offers quarter hours, and a stricter domain would reject a
     # schedule someone had already set through the API.
     minute: int = 0
+    # The calendar day of a one-time run. Only `once` reads it; every other
+    # cadence repeats and has no single day.
+    on_date: date | None = None
 
     def __post_init__(self) -> None:
         if self.cadence not in CADENCES:
@@ -45,6 +48,8 @@ class Cadence:
             raise ValueError("Minute must be between 0 and 59.")
         if not MIN_WEEKDAY <= self.weekday <= MAX_WEEKDAY:
             raise ValueError("Weekday must be between 0 (Monday) and 6.")
+        if self.cadence == "once" and self.on_date is None:
+            raise ValueError("A one-time schedule needs its day.")
 
 
 # Resolve the next slot strictly after `after`. Strictly, so completing a run
@@ -54,8 +59,22 @@ def next_run_at(cadence: Cadence, after: datetime) -> datetime:
     local = after.astimezone(zone)
     candidate = _at_time(local, cadence, zone)
 
+    if cadence.cadence == "once":
+        # A single instant, stated by the person; it is what it is even when
+        # it has passed, and the caller decides what a past one means.
+        moment = datetime.combine(
+            cadence.on_date, time(hour=cadence.hour, minute=cadence.minute), tzinfo=zone
+        )
+        return moment.astimezone(after.tzinfo or zone)
+
     if cadence.cadence == "daily":
         while candidate <= local:
+            candidate = _at_time(candidate + timedelta(days=1), cadence, zone)
+        return candidate.astimezone(after.tzinfo or zone)
+
+    if cadence.cadence == "weekdays":
+        # Monday to Friday: the next weekday slot strictly after `after`.
+        while candidate <= local or candidate.weekday() > 4:
             candidate = _at_time(candidate + timedelta(days=1), cadence, zone)
         return candidate.astimezone(after.tzinfo or zone)
 

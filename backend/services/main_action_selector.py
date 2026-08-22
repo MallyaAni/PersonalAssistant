@@ -41,6 +41,8 @@ _GENERATE_IMAGE_TOOL = "generate_image"
 _EDIT_IMAGE_TOOL = "edit_image"
 _CREATE_DIAGRAM_TOOL = "create_diagram"
 _DELEGATE_PRESENTATION_TOOL = "delegate_to_presentation_agent"
+_SCHEDULE_TASK_TOOL = "schedule_task"
+_MANAGE_TASKS_TOOL = "manage_tasks"
 
 
 # Asked of the two tools that otherwise take no arguments. The point is not to
@@ -131,6 +133,59 @@ def _required_text(arguments: dict[str, Any], field: str) -> str | None:
     return None
 
 
+_NOT_BUILTIN = object()
+
+
+# The built-in tools' calls as actions. Returns the `_NOT_BUILTIN` sentinel
+# for a name that is not a built-in at all, so the caller can tell "not ours"
+# from "ours, but the model left out what it needed" (None).
+def _builtin_action(
+    name: str, arguments: dict[str, Any], fallback_query: str
+) -> "MainAction | object":
+    if name == _SEARCH_TOOL:
+        model_query = arguments.get("query")
+        chosen_query = (
+            model_query.strip()
+            if isinstance(model_query, str) and model_query.strip()
+            else fallback_query
+        )
+        max_results = arguments.get("max_results")
+        return SearchAction(
+            query=chosen_query,
+            max_results=max_results if isinstance(max_results, int) else None,
+        )
+    if name == _GENERATE_IMAGE_TOOL:
+        prompt = _required_text(arguments, "prompt")
+        if prompt is None:
+            return None
+        return GenerateImageAction(
+            prompt=prompt,
+            depicts_a_person=bool(arguments.get("depicts_a_person")),
+        )
+    if name == _EDIT_IMAGE_TOOL:
+        return _edit_action(arguments)
+    # The two below used to take no arguments, so a turn routed to either by
+    # mistake reached the caller looking exactly like a real request and took
+    # the whole turn. Both now state their subject, and the same rule the two
+    # above already applied covers all four: no subject means no decision, so
+    # the turn goes down the ordinary reply path where the assistant asks for
+    # the one thing it is missing, rather than queueing a subjectless deck or
+    # drawing a diagram of nothing.
+    if name == _CREATE_DIAGRAM_TOOL:
+        subject = _required_text(arguments, "subject")
+        return None if subject is None else CreateDiagramAction(subject)
+    if name == _DELEGATE_PRESENTATION_TOOL:
+        subject = _required_text(arguments, "subject")
+        return (
+            None if subject is None else DelegateAction("presentation_agent", subject)
+        )
+    if name == _SCHEDULE_TASK_TOOL:
+        return _schedule_task_action(arguments)
+    if name == _MANAGE_TASKS_TOOL:
+        return _manage_tasks_action(arguments)
+    return _NOT_BUILTIN
+
+
 # Lifted out of `_parse` to keep that function readable as the built-ins grew a
 # second argument each; it makes no decision the caller could not.
 def _edit_action(arguments: dict[str, Any]) -> "EditImageAction | None":
@@ -140,6 +195,41 @@ def _edit_action(arguments: dict[str, Any]) -> "EditImageAction | None":
     return EditImageAction(
         instruction=instruction,
         restages_the_scene=bool(arguments.get("restages_the_scene")),
+    )
+
+
+# A schedule_task call as an action, or nothing when the model left out what
+# the task is or picked a cadence the scheduler does not have.
+def _schedule_task_action(arguments: dict[str, Any]) -> "ScheduleTaskAction | None":
+    instruction = _required_text(arguments, "instruction")
+    cadence = arguments.get("cadence")
+    if instruction is None or cadence not in ("once", "daily", "weekdays", "weekly"):
+        return None
+    try:
+        hour = int(arguments.get("hour", 9))
+        minute = int(arguments.get("minute", 0))
+        weekday = int(arguments.get("weekday") or 0)
+    except (TypeError, ValueError):
+        return None
+    on_date = arguments.get("on_date")
+    return ScheduleTaskAction(
+        instruction=instruction,
+        cadence=str(cadence),
+        hour=hour,
+        minute=minute,
+        weekday=weekday,
+        on_date=str(on_date) if isinstance(on_date, str) and on_date else None,
+    )
+
+
+# A manage_tasks call as an action, or nothing for an unknown operation.
+def _manage_tasks_action(arguments: dict[str, Any]) -> "ManageTasksAction | None":
+    operation = arguments.get("operation")
+    if operation not in ("list", "cancel", "pause", "resume"):
+        return None
+    which = arguments.get("which")
+    return ManageTasksAction(
+        operation=str(operation), which=which.strip() if isinstance(which, str) else ""
     )
 
 
@@ -233,6 +323,98 @@ _DELEGATE_PRESENTATION = BuiltinTool(
     schema=_subject_schema("deck"),
 )
 
+_SCHEDULE_TASK_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "instruction": {
+            "type": "string",
+            "description": (
+                "What to do each time it runs, rewritten as a self-contained "
+                "instruction in the person's own terms - "
+                "'text me today's weather for Arlington', 'remind me to call "
+                "mom', 'check whether the stacking cable is in stock at "
+                "Rockville and tell me'. Never the words 'remind me' or "
+                "'every day' themselves; the schedule is carried separately."
+            ),
+        },
+        "cadence": {
+            "type": "string",
+            "enum": ["once", "daily", "weekdays", "weekly"],
+            "description": (
+                "once for a single time ('tomorrow at 9', 'Friday'), daily for "
+                "every day, weekdays for Monday to Friday, weekly for one day "
+                "each week."
+            ),
+        },
+        "hour": {"type": "integer", "minimum": 0, "maximum": 23},
+        "minute": {"type": "integer", "minimum": 0, "maximum": 59},
+        "weekday": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 6,
+            "description": "For weekly: 0 is Monday, 6 is Sunday.",
+        },
+        "on_date": {
+            "type": "string",
+            "description": (
+                "For once: the calendar date as YYYY-MM-DD, resolved from "
+                "today's date for words like tomorrow or Friday."
+            ),
+        },
+    },
+    "required": ["instruction", "cadence", "hour", "minute"],
+    "additionalProperties": False,
+}
+
+_MANAGE_TASKS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "operation": {
+            "type": "string",
+            "enum": ["list", "cancel", "pause", "resume"],
+        },
+        "which": {
+            "type": "string",
+            "description": (
+                "Which task, in the person's words, when cancelling, pausing "
+                "or resuming - 'the weather one', 'the Friday reminder'. "
+                "Empty for list."
+            ),
+        },
+    },
+    "required": ["operation"],
+    "additionalProperties": False,
+}
+
+_SCHEDULE_TASK = BuiltinTool(
+    name=_SCHEDULE_TASK_TOOL,
+    label="Scheduled tasks",
+    description=(
+        "Set something up to happen later or on a schedule: a reminder, a "
+        "daily or weekly message, a recurring check or lookup, anything they "
+        "want done at a stated time rather than now. Choose it when the "
+        "request names a future time or a repetition - tomorrow, every "
+        "morning, Fridays, at 7 - and the thing itself is something this "
+        "assistant can do in a turn (answer, look up, search, report, "
+        "remind). Resolve relative words against today's date and their "
+        "local time. A question asked for right now is not a task."
+    ),
+    schema=_SCHEDULE_TASK_SCHEMA,
+)
+_MANAGE_TASKS = BuiltinTool(
+    name=_MANAGE_TASKS_TOOL,
+    label="Manage scheduled tasks",
+    description=(
+        "List, cancel, pause, or resume the tasks they already scheduled. "
+        "Choose it when they ask what is scheduled, or to stop, pause, or "
+        "restart one - 'cancel the weather texts', 'what do I have "
+        "scheduled?'. Changing a time or what a task does is a cancel and a "
+        "new schedule_task."
+    ),
+    schema=_MANAGE_TASKS_SCHEMA,
+)
+
+
 # Search is the one action whose tool description is not AniOS's to write: the
 # schema and wording offered to the router come from the live MCP contract
 # ("Research a minimized public query with bounded free-provider policy"),
@@ -314,6 +496,26 @@ class DelegateAction:
 
 
 @dataclass(frozen=True, slots=True)
+class ScheduleTaskAction:
+    """The model decided this turn sets something up to happen later."""
+
+    instruction: str
+    cadence: str
+    hour: int
+    minute: int = 0
+    weekday: int = 0
+    on_date: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ManageTasksAction:
+    """The model decided this turn is about tasks already scheduled."""
+
+    operation: str
+    which: str = ""
+
+
+@dataclass(frozen=True, slots=True)
 class ToolboxAction:
     """The model decided this turn needs one of the user's own registered tools."""
 
@@ -326,6 +528,8 @@ MainAction = (
     | EditImageAction
     | CreateDiagramAction
     | DelegateAction
+    | ScheduleTaskAction
+    | ManageTasksAction
     | ToolboxAction
     | None
 )
@@ -429,6 +633,7 @@ class MainActionSelector:
             builtins.append(_CREATE_DIAGRAM)
         if self.presentation_enabled:
             builtins.append(_DELEGATE_PRESENTATION)
+        builtins.extend((_SCHEDULE_TASK, _MANAGE_TASKS))
         return builtins
 
     # Report whether local policy would let this turn search, without paying
@@ -481,6 +686,7 @@ class MainActionSelector:
         history: list[dict[str, Any]],
         active_image_artifact_id: str | None,
         query_embedding: list[float] | None = None,
+        local_now: str | None = None,
     ) -> MainAction:
         if not query.strip():
             return None
@@ -526,7 +732,14 @@ class MainActionSelector:
             if history_text
             else query
         )
-        user_content = f"Visual interface state: {visual_state}\n\n{message_text}"
+        # The model cannot resolve "tomorrow", "Friday", or "today at 5"
+        # without knowing when now is: left to itself it dated a task for
+        # "today" two years in the past, from its training era, and the task
+        # fired at once. The person's own clock, when their zone is known.
+        clock = f"Current date and time: {local_now}\n\n" if local_now else ""
+        user_content = (
+            f"{clock}Visual interface state: {visual_state}\n\n{message_text}"
+        )
         messages: list[dict[str, Any]] = [
             {"role": "system", "content": _SYSTEM},
             {"role": "user", "content": user_content},
@@ -590,43 +803,9 @@ class MainActionSelector:
             return None
         name, arguments = extracted
 
-        if name == _SEARCH_TOOL:
-            model_query = arguments.get("query")
-            chosen_query = (
-                model_query.strip()
-                if isinstance(model_query, str) and model_query.strip()
-                else fallback_query
-            )
-            max_results = arguments.get("max_results")
-            return SearchAction(
-                query=chosen_query,
-                max_results=max_results if isinstance(max_results, int) else None,
-            )
-        if name == _GENERATE_IMAGE_TOOL:
-            prompt = _required_text(arguments, "prompt")
-            if prompt is None:
-                return None
-            return GenerateImageAction(
-                prompt=prompt,
-                depicts_a_person=bool(arguments.get("depicts_a_person")),
-            )
-        if name == _EDIT_IMAGE_TOOL:
-            return _edit_action(arguments)
-        # The two below used to take no arguments, so a turn routed to either
-        # by mistake reached the caller looking exactly like a real request and
-        # took the whole turn. Both now state their subject, and the same rule
-        # the two above already applied covers all four: no subject means no
-        # decision, so the turn goes down the ordinary reply path where the
-        # assistant asks for the one thing it is missing, rather than queueing
-        # a subjectless deck or drawing a diagram of nothing.
-        if name == _CREATE_DIAGRAM_TOOL:
-            subject = _required_text(arguments, "subject")
-            return None if subject is None else CreateDiagramAction(subject)
-        if name == _DELEGATE_PRESENTATION_TOOL:
-            subject = _required_text(arguments, "subject")
-            if subject is None:
-                return None
-            return DelegateAction("presentation_agent", subject)
+        builtin = _builtin_action(name, arguments, fallback_query)
+        if builtin is not _NOT_BUILTIN:
+            return builtin
 
         selected = aliases.get(str(name))
         if selected is None:

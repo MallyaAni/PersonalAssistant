@@ -163,6 +163,7 @@ class StubMainActionSelector:
         history: list[dict],
         active_image_artifact_id: str | None,
         query_embedding: list[float] | None = None,
+        local_now: str | None = None,
     ) -> MainAction:
         return self.action
 

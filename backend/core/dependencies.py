@@ -117,6 +117,7 @@ from backend.services.tracing import (
 )
 from backend.services.vision_analysis_service import VisionAnalysisService
 from backend.services.visual_search_grounding import VisualSearchGrounding
+from backend.tasks.repository import ScheduledTaskRepository
 from backend.vision.lm_studio import create_vision_provider
 
 logger = logging.getLogger(__name__)
@@ -1149,6 +1150,16 @@ DependencyDiscoveryRuns = Annotated[
 ]
 
 
+def get_scheduled_task_repository(db: DbDependency) -> ScheduledTaskRepository:
+    return ScheduledTaskRepository(db)
+
+
+DependencyScheduledTasks = Annotated[
+    ScheduledTaskRepository,
+    Depends(get_scheduled_task_repository),
+]
+
+
 # One budget shared by the API and the worker, so a sweep cannot dodge the
 # ceiling by running from the other process.
 @lru_cache(maxsize=1)
@@ -1187,9 +1198,7 @@ def get_digest_writer() -> DigestWriter:
     # silently degrading to the assembled form letter.
     from backend.core.structured_fallback import JSONFallbackWriter
 
-    return DigestWriter(
-        JSONFallbackWriter(get_llm_client(), get_routing_llm_client())
-    )
+    return DigestWriter(JSONFallbackWriter(get_llm_client(), get_routing_llm_client()))
 
 
 # Reads tapbacks off the bubbles already sent, through the same trusted MCP
@@ -1213,9 +1222,7 @@ async def resolve_search_account(
 
     from backend.models.auth import UserAccount
 
-    account = await db.scalar(
-        select(UserAccount).where(UserAccount.user_id == user_id)
-    )
+    account = await db.scalar(select(UserAccount).where(UserAccount.user_id == user_id))
     if account is None:
         return False, None
     return bool(account.is_admin), account.search_monthly_limit
@@ -1562,6 +1569,7 @@ def get_conversation_service(
     presentation_jobs: PresentationJobDependency,
     discovery_profile: DependencyDiscoveryProfileService,
     discovery_runs: DependencyDiscoveryRuns,
+    scheduled_tasks: DependencyScheduledTasks,
     memory_proposals: MemoryProposalDependency,
     agent_memory: DependencyAgentMemoryManager,
     agent_registry: DependencyAgentRegistry,
@@ -1600,6 +1608,7 @@ def get_conversation_service(
         ),
         discovery_profile=discovery_profile,
         discovery_runs=discovery_runs,
+        scheduled_tasks=scheduled_tasks,
         memory_proposals=memory_proposals,
         visual_memory=VisualMemorySelector(get_structured_llm_client()),
         # The modality gate runs before any owner-scoped artifact vector index.

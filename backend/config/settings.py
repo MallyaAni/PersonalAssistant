@@ -400,6 +400,14 @@ class Settings(BaseSettings):
     # fans out into search is minutes of silence. After this long, one fixed
     # bubble says the silence is work; the real answer still follows.
     IMESSAGE_CHAT_ACK_SECONDS: float = Field(default=15.0, gt=0, le=120)
+    # Scheduled tasks: anything a person asked to have done later or on a
+    # schedule, run as a chat turn under their identity and delivered on the
+    # channel they asked from. The loop shares the discovery worker process.
+    SCHEDULED_TASKS_ENABLED: bool = True
+    SCHEDULED_TASKS_POLL_SECONDS: float = Field(default=30.0, gt=0, le=600)
+    # Longer than a chat turn's own timeout, so a live turn is never reclaimed
+    # by a second worker mid-flight.
+    SCHEDULED_TASK_LEASE_SECONDS: float = Field(default=900.0, gt=0, le=3_600)
     # Which operator-trusted MCP server owns the Apple device that sends.
     DISCOVERY_IMESSAGE_SERVER_ID: str = "imessage"
     # The public base a subscriber's calendar link is built from. Local by

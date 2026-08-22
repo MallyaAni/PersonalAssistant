@@ -307,6 +307,11 @@ async def run() -> None:
         from backend.workers.imessage_chat import run_chat_loop
 
         asyncio.create_task(run_chat_loop())
+    # Scheduled tasks fire on minute-scale slots; same reasoning, own loop.
+    if settings.SCHEDULED_TASKS_ENABLED:
+        from backend.workers.task_runner import run_task_loop
+
+        asyncio.create_task(run_task_loop())
     while True:
         await worker.enqueue_due()
         handled = await worker.run_once()

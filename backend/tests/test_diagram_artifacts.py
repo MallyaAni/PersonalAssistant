@@ -46,6 +46,7 @@ class StubMainActionSelector:
         history,
         active_image_artifact_id,
         query_embedding=None,
+        local_now=None,
     ) -> MainAction:
         return self.action
 

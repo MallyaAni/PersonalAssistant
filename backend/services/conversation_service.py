@@ -4,6 +4,7 @@ import re
 import secrets
 import uuid
 from collections.abc import AsyncGenerator, Awaitable, Callable
+from datetime import date, datetime, timedelta
 from typing import Any
 
 import httpx
@@ -58,6 +59,8 @@ from backend.services.main_action_selector import (
     GenerateImageAction,
     MainAction,
     MainActionSelector,
+    ManageTasksAction,
+    ScheduleTaskAction,
     SearchAction,
     ToolboxAction,
 )
@@ -70,6 +73,7 @@ from backend.services.referent_resolution import (
 )
 from backend.services.referent_sources import ImageReferentSource
 from backend.services.search_planner import SearchPlanner
+from backend.tasks.repository import ScheduledTaskRepository
 
 logger = logging.getLogger(__name__)
 
@@ -269,6 +273,50 @@ def _proposal_summaries(proposals: tuple[dict[str, Any], ...]) -> str:
     return "; ".join(summaries)[:400]
 
 
+# Which surface the reply lands on and what kind of turn it is. The graph
+# appends a style note for channels that render plain text (absent means the
+# web UI and nothing changes), and a block saying a scheduled task is firing
+# when one is - that is not a person typing. Anything the caller already did
+# this turn (task bookkeeping) rides in as context for the reply to report.
+def _mark_turn(
+    context: dict[str, Any],
+    metadata: dict[str, Any],
+    extra_context: dict[str, Any] | None,
+) -> None:
+    channel = str(metadata.get("channel") or "")
+    if channel:
+        context["channel"] = channel
+    if metadata.get("scheduled_task"):
+        context["scheduled_task"] = True
+    if extra_context:
+        context.update(extra_context)
+
+
+# The calendar date a one-time task fires on. The router states it when the
+# request named one; a bare "at 5" means today if that is still ahead in
+# the person's zone, otherwise tomorrow.
+def _once_date(action: ScheduleTaskAction, timezone: str) -> date | None:
+    from zoneinfo import ZoneInfo
+
+    if action.cadence != "once":
+        return None
+    local_now = datetime.now(ZoneInfo(timezone))
+    today = local_now.date()
+    # A date the router stated is used as long as it is not already gone: a
+    # past date is never what the person meant, and a task armed in the past
+    # fires the moment the worker looks.
+    if action.on_date:
+        try:
+            stated = date.fromisoformat(action.on_date)
+        except ValueError:
+            stated = None
+        if stated is not None and stated >= today:
+            return stated
+    if (action.hour, action.minute) > (local_now.hour, local_now.minute):
+        return today
+    return today + timedelta(days=1)
+
+
 class ConversationService:
     # Assemble the conversation workflow from replaceable application boundaries.
     def __init__(
@@ -301,6 +349,7 @@ class ConversationService:
         presentation_model: str | None = None,
         discovery_profile: DiscoveryProfileService | None = None,
         discovery_runs: DiscoveryRunRepository | None = None,
+        scheduled_tasks: ScheduledTaskRepository | None = None,
         memory_proposals: MemoryProposalAgent | None = None,
         visual_memory: VisualMemorySelector | None = None,
         artifact_context_router: ArtifactContextRouter | None = None,
@@ -344,6 +393,7 @@ class ConversationService:
         self.presentation_model = presentation_model
         self.discovery_profile = discovery_profile
         self.discovery_runs = discovery_runs
+        self.scheduled_tasks = scheduled_tasks
         self.memory_proposals = memory_proposals
         self.visual_memory = visual_memory
         self.artifact_context_router = artifact_context_router
@@ -395,10 +445,29 @@ class ConversationService:
                 query,
                 history,
                 active_image_artifact_id,
+                local_now=await self._local_now(user_id),
             )
         except Exception:
             logger.warning("Main action selection failed", exc_info=True)
             return None
+
+    # The person's current date, time, and weekday in their own zone, for
+    # the router to resolve "tomorrow at 9" against - or None when no zone
+    # is known, in which case the router is told nothing rather than UTC,
+    # which would be wrong by hours in a way it could not detect.
+    async def _local_now(self, user_id: str) -> str | None:
+        if self.discovery_profile is None:
+            return None
+        zone = await self._primary_timezone(user_id)
+        if not zone:
+            return None
+        from zoneinfo import ZoneInfo
+
+        try:
+            now = datetime.now(ZoneInfo(zone))
+        except Exception:
+            return None
+        return f"{now:%A %Y-%m-%d %H:%M} ({zone})"
 
     # Answer the turn as though no tool had been chosen.
     #
@@ -1362,9 +1431,7 @@ class ConversationService:
                 # follow-up like "yes please" gave it nothing but two words,
                 # and it invented a topic: a real user asked for mystery books
                 # and got search rounds about iPads and electric cars.
-                composed = self.search_planner.compose(
-                    query, _planner_history(history)
-                )
+                composed = self.search_planner.compose(query, _planner_history(history))
                 if composed:
                     chosen_query = composed
             outbound_query = _image_aware_search_query(chosen_query, image_matches)
@@ -1667,6 +1734,11 @@ class ConversationService:
                 yield event
             return
 
+        # Task bookkeeping happens before the reply, and the ordinary reply
+        # path then reports it: the model words the confirmation from a
+        # record of what was actually saved, in the channel's own register.
+        task_context = await self._task_turn_context(user_id, action, metadata or {})
+
         # Reached when a branch above matched the action but not the service
         # behind it - a diagram routed with no diagram service configured, a
         # deck with no job queue. The chosen action cannot run, so it is
@@ -1682,8 +1754,22 @@ class ConversationService:
             metadata or {},
             active_image_artifact_id,
             preselected_action=action if runnable else None,
+            extra_context=task_context,
         ):
             yield event
+
+    # The task outcome for the reply to report, or None for a turn that was
+    # not about tasks (or when no task store is wired).
+    async def _task_turn_context(
+        self, user_id: str, action: MainAction, metadata: dict[str, Any]
+    ) -> dict[str, Any] | None:
+        if (
+            not isinstance(action, ScheduleTaskAction | ManageTasksAction)
+            or self.scheduled_tasks is None
+        ):
+            return None
+        outcome = await self._apply_task_action(user_id, action, metadata)
+        return {"task_outcome": outcome}
 
     # The interests this person already follows, or nothing when the profile
     # cannot be read. A missing catalogue costs deduplication, never the turn.
@@ -1836,6 +1922,94 @@ class ConversationService:
             source_trace_id=trace_id,
         )
         return True
+
+    # Do what a task action asks and say what happened, as a record the
+    # reply reports from. Scheduling needs a timezone, read from the person's
+    # locality exactly as the sweep schedule does; with none the task is not
+    # saved and the outcome says to ask for the place. A failure here is an
+    # outcome too, so the reply can say so rather than the turn dying.
+    async def _apply_task_action(
+        self,
+        user_id: str,
+        action: "ScheduleTaskAction | ManageTasksAction",
+        metadata: dict[str, Any],
+    ) -> dict[str, Any]:
+        if self.scheduled_tasks is None:
+            return {"kind": "unavailable"}
+        try:
+            if isinstance(action, ScheduleTaskAction):
+                return await self._schedule_task(user_id, action, metadata)
+            return await self._manage_tasks(user_id, action)
+        except Exception as exc:
+            logger.warning(
+                "scheduled_task_action_failed: %s: %s",
+                type(exc).__name__,
+                str(exc)[:200],
+            )
+            return {"kind": "failed"}
+
+    # Save one task on the channel the request came from.
+    async def _schedule_task(
+        self, user_id: str, action: ScheduleTaskAction, metadata: dict[str, Any]
+    ) -> dict[str, Any]:
+        timezone = (
+            await self._primary_timezone(user_id)
+            if self.discovery_profile is not None
+            else None
+        )
+        requested = (
+            f"{action.instruction} ({action.cadence} at "
+            f"{action.hour:02d}:{action.minute:02d})"
+        )
+        if timezone is None:
+            return {"kind": "needs_place", "requested": requested}
+        try:
+            cadence = Cadence(
+                cadence=action.cadence,
+                hour=action.hour,
+                minute=action.minute,
+                weekday=action.weekday,
+                timezone=timezone,
+                on_date=_once_date(action, timezone),
+            )
+        except ValueError as exc:
+            return {"kind": "invalid", "reason": str(exc), "requested": requested}
+        channel = str(metadata.get("channel") or "web")
+        task = await self.scheduled_tasks.create(
+            user_id, action.instruction, cadence, channel
+        )
+        return {"kind": "scheduled", "task": task}
+
+    # List, or change one task the person named by meaning. Which task they
+    # mean is the model's call, through the picker; an unmatched description
+    # returns the list so the reply can ask.
+    async def _manage_tasks(
+        self, user_id: str, action: ManageTasksAction
+    ) -> dict[str, Any]:
+        tasks = await self.scheduled_tasks.list_for_user(user_id, enabled_only=False)
+        if action.operation == "list":
+            return {"kind": "listed", "tasks": tasks}
+        if not tasks:
+            return {"kind": "none"}
+        from backend.tasks.picker import pick_task
+
+        picker_llm = (
+            self.main_action_selector.llm
+            if self.main_action_selector is not None
+            else self.llm
+        )
+        chosen = await pick_task(picker_llm, action.which, tasks)
+        if chosen is None:
+            return {"kind": "not_found", "tasks": tasks, "requested": action.which}
+        before = next(item for item in tasks if item["id"] == chosen)
+        if action.operation == "cancel":
+            await self.scheduled_tasks.delete_owned(user_id, chosen)
+            return {"kind": "cancelled", "task": before}
+        await self.scheduled_tasks.set_enabled(
+            user_id, chosen, action.operation == "resume"
+        )
+        task = await self.scheduled_tasks.get_owned(user_id, chosen) or before
+        return {"kind": f"{action.operation}d", "task": task}
 
     # Save a classified sweep cadence, when the schedule store is wired.
     #
@@ -2028,6 +2202,7 @@ class ConversationService:
         metadata: dict[str, Any],
         active_image_artifact_id: str | None = None,
         preselected_action: MainAction = None,
+        extra_context: dict[str, Any] | None = None,
     ) -> AsyncGenerator[ChatStreamEvent, None]:
         # 1. Plan and load only the context components needed for this request.
         plan_result = None
@@ -2133,12 +2308,7 @@ class ConversationService:
             "saved": bool(proposals),
             "value": _proposal_summaries(proposals),
         }
-        # Which surface the reply lands on. The graph appends a style note
-        # for channels that render plain text; absent means the web UI and
-        # nothing changes.
-        channel = str((metadata or {}).get("channel") or "")
-        if channel:
-            context["channel"] = channel
+        _mark_turn(context, metadata or {}, extra_context)
 
         initial_state = AgentState(
             conversation_id=conversation_id,

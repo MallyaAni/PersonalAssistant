@@ -38,6 +38,31 @@ Spark arrives (then Qwen takes the schema-bound callers and the empty
 - Context accounting on every turn (observe-only), recalled-vs-history dedup,
   digest ceiling + model compression with truncation fallback.
 
+## Schedule anything from chat - LIVE 2026-08-22
+
+"Remind me every weekday at 7am to check the spark temps", texted or
+typed, is now a saved task that fires as a chat turn under the person's
+identity and lands back on the channel it came from. Design and status:
+[TASKS_ARCHITECTURE.md](TASKS_ARCHITECTURE.md). The pieces: router
+built-ins `schedule_task`/`manage_tasks`, `backend/tasks/`, migration
+`20260822_0005` (applied), `backend/workers/task_runner.py` in the
+discovery worker process, prompt blocks `reply/scheduled_task` (firing)
+and `reply/task_outcome` (confirmation), picker `tasks/pick` (which task
+"the weather one" means - the model decides). Gates:
+`functional/test_scheduled_task_behaviour.py` (8, all passing on the
+Spark reply model; routing cases also pass on the production 4B router).
+
+Open from here, in order of value:
+- A web surface for tasks and their runs (web-channel output is stored on
+  `scheduled_task_runs.output`, nothing shows it yet).
+- Scout as a task kind (its schedule/subscribers/digest map one for one).
+- WhatsApp / OpenClaw as further `Channel`s: the runner only needs an
+  address lookup and a deliver path per channel.
+- Edit-in-place ("make it 8 instead") is cancel + new task today; the
+  prompt says so.
+- Timezone needs a primary locality; with none the reply asks for the
+  city and saves nothing. Consider a profile-level timezone fallback.
+
 ## START HERE: the highest-value open items
 
 1. **Flip enforcement once the data says so - the build is done.** Trimming

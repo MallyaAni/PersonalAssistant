@@ -34,6 +34,7 @@ from backend.models.presentation import (
     PresentationJob,
     PresentationRevision,
 )
+from backend.models.scheduled_task import ScheduledTask, ScheduledTaskRun
 from backend.models.tool_memory import ToolDescriptor, ToolPreference, ToolUsageOutcome
 
 _MODELS = (
@@ -49,6 +50,8 @@ _MODELS = (
     DiscoverySeenItem,
     DiscoveryFamiliarItem,
     DiscoverySubscriber,
+    ScheduledTask,
+    ScheduledTaskRun,
     UserProfile,
     EpisodicMemory,
     SemanticMemory,
