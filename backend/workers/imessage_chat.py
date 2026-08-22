@@ -69,8 +69,18 @@ _MAX_OUTBOUND_IMAGE_BYTES = 4_500_000
 
 # The bytes as they will be sent: unchanged when they fit, flattened to
 # JPEG when they do not. Quality 85 puts even a detailed generation well
-# under the cap.
+# under the cap. A diagram arrives as SVG, which the bridge rightly
+# refuses (its attachment allowlist is jpeg/png/calendar), so it is
+# rasterized first - a diagram's whole point over a generated picture is
+# legible text, and it must not become the one artifact a phone cannot see.
 def _shrink_for_send(content: bytes, media_type: str) -> tuple[bytes, str]:
+    if "svg" in media_type:
+        import resvg_py
+
+        content = bytes(
+            resvg_py.svg_to_bytes(svg_string=content.decode("utf-8"), zoom=2.0)
+        )
+        media_type = "image/png"
     if len(content) <= _MAX_OUTBOUND_IMAGE_BYTES:
         return content, media_type
     from io import BytesIO

@@ -630,3 +630,23 @@ def test_the_bubble_ledger_only_stores_real_guids():
         or _message_guid("iMessage;-;ABCDEF01-2345-6789-ABCD-EF0123456789")
         is not None
     )
+
+
+# A diagram is SVG and the bridge's attachment allowlist rightly refuses
+# it; the send path rasterizes it to PNG so the one artifact whose whole
+# point is legible text is not the one a phone cannot see.
+def test_a_diagram_svg_is_rasterized_for_the_bubble():
+    import backend.workers.imessage_chat as module
+
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="60">'
+        '<rect width="120" height="60" fill="white"/>'
+        '<text x="10" y="35" font-size="20">Sprint</text></svg>'
+    )
+
+    content, media_type = module._shrink_for_send(
+        svg.encode("utf-8"), "image/svg+xml"
+    )
+
+    assert media_type == "image/png"
+    assert content[:4] == b"\x89PNG"

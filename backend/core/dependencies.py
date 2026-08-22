@@ -990,9 +990,18 @@ def build_deferred_vision_service(db: AsyncSession) -> VisionAnalysisService:
 
 
 # Build the replaceable diagram provider around its configured local model.
+#
+# The strong prose model writes the mermaid first - the 4B produced invalid
+# specifications twice at temperature zero for a real request ("a diagram
+# of the agile process"), and its own code comment records 0-of-8 scoring
+# streaks - with the enforcing engine as the parse fallback, the same
+# inversion the sweep's judgement calls use. The spec validator still gates
+# every answer regardless of which engine wrote it.
 def get_diagram_provider(llm: DiagramLlmDependency) -> LLMDiagramProvider:
+    from backend.core.structured_fallback import JSONFallbackWriter
+
     return LLMDiagramProvider(
-        llm,
+        JSONFallbackWriter(get_llm_client(), llm),
         settings.DIAGRAM_LLM_MODEL or settings.MAIN_LLM_MODEL or settings.LLM_MODEL,
     )
 
