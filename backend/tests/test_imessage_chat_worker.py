@@ -650,3 +650,38 @@ def test_a_diagram_svg_is_rasterized_for_the_bubble():
 
     assert media_type == "image/png"
     assert content[:4] == b"\x89PNG"
+
+
+# A picture in view expires on its own clock, and reading it does not
+# renew it: an eight-hour-old photo rode into a conversation about
+# something else and a bare "yes" was answered as if it confirmed that
+# photo's question. Only an image event restarts the window.
+@pytest.mark.asyncio
+async def test_reading_the_picture_in_view_does_not_renew_it(monkeypatch):
+    class _TtlRedis(_Redis):
+        def __init__(self):
+            super().__init__()
+            self.ttls: dict[str, int] = {}
+
+        async def set(self, key, value, ex=None, nx=False):
+            if ex is not None:
+                self.ttls[key] = ex
+            return await super().set(key, value, nx=nx)
+
+        async def expire(self, key, ttl):
+            self.ttls[key] = ttl
+            return True
+
+    redis = _TtlRedis()
+
+    async def ok(tool, arguments):
+        return json.dumps({"result": "sent"})
+
+    worker = IMessageChatWorker(ok, base_url="http://test", redis=redis)
+    await worker._remember_image("ani.mallya", "art-1")
+    key = "imessage:chat:image:ani.mallya"
+    assert 0 < redis.ttls[key] <= 24 * 3600
+
+    redis.ttls[key] = 1
+    assert await worker._stored_image("ani.mallya") == "art-1"
+    assert redis.ttls[key] == 1, "a read must not keep a stale picture alive"

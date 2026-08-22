@@ -588,11 +588,19 @@ class IMessageChatWorker:
             await self.redis.set(
                 _IMAGE_KEY.format(user_id=user_id),
                 artifact_id,
-                ex=self._idle_seconds(),
+                ex=self._image_idle_seconds(),
             )
         except Exception:
             return
 
+    @staticmethod
+    def _image_idle_seconds() -> int:
+        return int(settings.IMESSAGE_CHAT_IMAGE_IDLE_MINUTES * 60)
+
+    # Read without renewing: only an image EVENT (sent, uploaded, pinned)
+    # restarts the window. Renewing on read kept an eight-hour-old photo in
+    # view through a whole conversation about something else, and a bare
+    # "yes" was answered as if it confirmed that old picture's question.
     async def _stored_image(self, user_id: str) -> str | None:
         try:
             return await self.redis.get(_IMAGE_KEY.format(user_id=user_id))

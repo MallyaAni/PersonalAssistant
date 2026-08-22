@@ -28,6 +28,12 @@ class RoutingCase:
 
 ROUTING_CASES: tuple[RoutingCase, ...] = (
     # --- changing answers, stated with an explicit temporal marker ----------
+    # Real misses from the iMessage channel: a named event's tickets and a
+    # market's hours are availability questions however casually asked.
+    RoutingCase(
+        "do i need tickets to see the dc grand prix?", True, "implicit_volatile"
+    ),
+    RoutingCase("is the farmers market open this sunday", True, "implicit_volatile"),
     RoutingCase("what is the latest python version", True, "explicit_temporal"),
     RoutingCase("who won the 2026 super bowl", True, "explicit_temporal"),
     RoutingCase("current CEO of OpenAI", True, "explicit_temporal"),

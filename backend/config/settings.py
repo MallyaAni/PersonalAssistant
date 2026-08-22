@@ -390,6 +390,12 @@ class Settings(BaseSettings):
     # next text starts a fresh conversation id; memory and recall carry the
     # continuity, and each conversation stays a readable unit in the web UI.
     IMESSAGE_CHAT_SESSION_IDLE_HOURS: float = Field(default=24.0, gt=0, le=720)
+    # A picture stays "in view" for a shorter window than the conversation:
+    # hours after a diagram, an unrelated ticket question still carried it as
+    # the selected image and the router tilted on a picture nobody was
+    # discussing. Renewed on every use, so an active back-and-forth about a
+    # picture keeps it; a lull lets it go.
+    IMESSAGE_CHAT_IMAGE_IDLE_MINUTES: float = Field(default=60.0, gt=0, le=1440)
     # iMessage cannot stream and shows no typing indicator, so a turn that
     # fans out into search is minutes of silence. After this long, one fixed
     # bubble says the silence is work; the real answer still follows.
