@@ -16,7 +16,11 @@ import pytest
 
 os.environ.setdefault("SECRET_KEY", "test-secret-key-only-for-testing")
 
-from backend.workers.imessage_chat import _FAILURE_REPLY, IMessageChatWorker
+from backend.workers.imessage_chat import (
+    _FAILURE_REPLY,
+    IMessageChatWorker,
+    TurnResult,
+)
 
 
 class _Bridge:
@@ -55,7 +59,7 @@ def _worker(bridge: _Bridge, monkeypatch, accounts: dict, replies: dict):
 
     async def converse(user_id: str, text: str):
         conversed.append((user_id, text))
-        return replies.get(text, _FAILURE_REPLY)
+        return TurnResult(replies.get(text, _FAILURE_REPLY))
 
     monkeypatch.setattr(worker, "_account_for", account_for)
     monkeypatch.setattr(worker, "_converse", converse)
@@ -241,7 +245,7 @@ async def test_a_slow_turn_gets_an_ack_then_the_answer(monkeypatch):
 
     async def slow(user_id, text):
         await asyncio.sleep(0.2)
-        return "a considered answer"
+        return TurnResult("a considered answer")
 
     monkeypatch.setattr(worker, "_converse", slow)
 
@@ -297,7 +301,7 @@ async def test_a_failed_ack_send_never_costs_the_answer(monkeypatch):
 
     async def slow(user_id, text):
         await asyncio.sleep(0.2)
-        return "the answer"
+        return TurnResult("the answer")
 
     monkeypatch.setattr(worker, "_account_for", account_for)
     monkeypatch.setattr(worker, "_converse", slow)
@@ -340,3 +344,34 @@ def test_the_bubble_cap_merges_the_tail_rather_than_dropping_it():
 
     assert len(pieces) == _MAX_BUBBLES
     assert "".join(pieces).count("Part") == 7, "nothing may be dropped"
+
+
+# A picture the turn produced arrives as a photo bubble after the words,
+# through the send tool's attachment fields.
+@pytest.mark.asyncio
+async def test_a_generated_image_is_sent_as_an_attachment(monkeypatch):
+    from backend.workers.imessage_chat import TurnImage
+
+    bridge = _Bridge(
+        {"messages": [_message("g9", "7372025933", "draw me a fox")], "cursor": 40}
+    )
+    worker, _ = _worker(
+        bridge, monkeypatch, accounts={"7372025933": "ani.mallya"}, replies={}
+    )
+
+    async def converse(user_id, text, reply_to):
+        return TurnResult(
+            "Here's the image you asked for.",
+            (TurnImage("art-1", "image/png", data_base64="aWJyaWRnZQ=="),),
+        )
+
+    monkeypatch.setattr(worker, "_converse_with_ack", converse)
+
+    answered = await worker.tick()
+
+    assert answered == 1
+    assert bridge.sent[0]["body"] == "Here's the image you asked for."
+    photo = bridge.sent[1]
+    assert photo["attachment_base64"] == "aWJyaWRnZQ=="
+    assert photo["attachment_media_type"] == "image/png"
+    assert photo["attachment_name"].endswith(".png")

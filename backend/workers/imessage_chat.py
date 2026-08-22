@@ -26,9 +26,11 @@ like one ongoing thread, exactly like the web sidebar).
 """
 
 import asyncio
+import base64
 import json
 import random
 import re
+from dataclasses import dataclass, field
 
 import httpx
 from redis.asyncio import Redis
@@ -72,6 +74,23 @@ _ACK_REPLIES = (
 )
 
 
+@dataclass
+class TurnImage:
+    """One image artifact a turn produced, fetched for the thread."""
+
+    artifact_id: str
+    media_type: str
+    data_base64: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class TurnResult:
+    """What one conversational turn came back with."""
+
+    reply: str
+    images: tuple[TurnImage, ...] = field(default=())
+
+
 class IMessageChatWorker:
     """Poll inbound texts, converse through /chat, reply through the bridge."""
 
@@ -111,18 +130,9 @@ class IMessageChatWorker:
             user_id = await self._account_for(str(message.get("sender") or ""))
             if user_id is None:
                 continue
-            reply = await self._converse_with_ack(user_id, text, reply_to)
+            turn = await self._converse_with_ack(user_id, text, reply_to)
             try:
-                # Flattened at the send boundary, then delivered the way a
-                # person texts a long thought: a few separate bubbles at a
-                # typing pace, not one wall.
-                for position, piece in enumerate(bubbles(plain_text(reply))):
-                    if position:
-                        await asyncio.sleep(_BUBBLE_PACE_SECONDS)
-                    await self.invoke_tool(
-                        settings.DISCOVERY_IMESSAGE_TOOL,
-                        {"to": reply_to, "body": piece},
-                    )
+                await self._deliver(reply_to, turn)
                 answered += 1
             except Exception:
                 logger.warning("imessage_chat_reply_failed", extra={"user": user_id})
@@ -130,6 +140,32 @@ class IMessageChatWorker:
         if isinstance(new_cursor, int):
             await self._remember_cursor(new_cursor)
         return answered
+
+    # One turn's answer onto the thread: text flattened at the send boundary
+    # and delivered the way a person texts a long thought - a few separate
+    # bubbles at a typing pace - then any picture the turn made, as a photo
+    # after the words that introduce it.
+    async def _deliver(self, reply_to: str, turn: "TurnResult") -> None:
+        for position, piece in enumerate(bubbles(plain_text(turn.reply))):
+            if position:
+                await asyncio.sleep(_BUBBLE_PACE_SECONDS)
+            await self.invoke_tool(
+                settings.DISCOVERY_IMESSAGE_TOOL,
+                {"to": reply_to, "body": piece},
+            )
+        for image in turn.images:
+            await asyncio.sleep(_BUBBLE_PACE_SECONDS)
+            extension = "jpg" if "jpeg" in image.media_type else "png"
+            await self.invoke_tool(
+                settings.DISCOVERY_IMESSAGE_TOOL,
+                {
+                    "to": reply_to,
+                    "body": "",
+                    "attachment_name": f"{image.artifact_id}.{extension}",
+                    "attachment_media_type": image.media_type,
+                    "attachment_base64": image.data_base64,
+                },
+            )
 
     # The account that subscribed this address, or None. Looked up by the
     # address digest the subscriber table already indexes - no decryption -
@@ -165,7 +201,7 @@ class IMessageChatWorker:
     # quick reply stays a single bubble.
     async def _converse_with_ack(
         self, user_id: str, text: str, reply_to: str
-    ) -> str:
+    ) -> "TurnResult":
         turn = asyncio.create_task(self._converse(user_id, text))
         done, _ = await asyncio.wait(
             {turn}, timeout=settings.IMESSAGE_CHAT_ACK_SECONDS
@@ -181,10 +217,11 @@ class IMessageChatWorker:
         return await turn
 
     # One turn through the same endpoint the browser uses. The reply is the
-    # concatenated deltas; the conversation id from the stream's start event
-    # is remembered so the next text continues the same thread.
-    async def _converse(self, user_id: str, text: str) -> str:
-        token = issue_user_token(user_id, ttl_seconds=600, scopes=["chat"])
+    # concatenated deltas plus any image artifacts the turn produced; the
+    # conversation id from the stream's start event is remembered so the
+    # next text continues the same thread.
+    async def _converse(self, user_id: str, text: str) -> "TurnResult":
+        token = issue_user_token(user_id, ttl_seconds=600, scopes=["chat", "vision"])
         body: dict[str, object] = {
             "user_id": user_id,
             "query": text,
@@ -197,6 +234,7 @@ class IMessageChatWorker:
         if stored:
             body["conversation_id"] = stored
         collected: list[str] = []
+        images: list[TurnImage] = []
         try:
             async with (
                 httpx.AsyncClient(timeout=_CHAT_TIMEOUT_SECONDS) as client,
@@ -222,11 +260,50 @@ class IMessageChatWorker:
                             data.get("content"), str
                         ):
                             collected.append(data["content"])
+                        elif event == "artifact_ready" and str(
+                            data.get("mime_type") or ""
+                        ).startswith("image/"):
+                            images.append(
+                                TurnImage(
+                                    artifact_id=str(data.get("id") or ""),
+                                    media_type=str(data["mime_type"]),
+                                )
+                            )
+            # Fetched inside the turn while the token is fresh, through the
+            # same owned-artifact endpoint the browser uses.
+            for image in images:
+                image.data_base64 = await self._fetch_artifact(
+                    user_id, image.artifact_id, token
+                )
         except Exception:
             logger.warning("imessage_chat_turn_failed", extra={"user": user_id})
-            return _FAILURE_REPLY
+            return TurnResult(_FAILURE_REPLY, ())
         reply = "".join(collected).strip()
-        return reply or _FAILURE_REPLY
+        carried = tuple(image for image in images if image.data_base64)
+        return TurnResult(reply or _FAILURE_REPLY, carried)
+
+    # One owned artifact's bytes as base64, or None - a picture that cannot
+    # be fetched costs the attachment, never the reply around it.
+    async def _fetch_artifact(
+        self, user_id: str, artifact_id: str, token: str
+    ) -> str | None:
+        if not artifact_id:
+            return None
+        try:
+            async with httpx.AsyncClient(timeout=60) as client:
+                response = await client.get(
+                    f"{self.base_url}/api/v1/artifacts/{user_id}/"
+                    f"{artifact_id}/content",
+                    headers={"Authorization": f"Bearer {token}"},
+                )
+                response.raise_for_status()
+                return base64.b64encode(response.content).decode("ascii")
+        except Exception:
+            logger.warning(
+                "imessage_chat_artifact_fetch_failed",
+                extra={"artifact": artifact_id},
+            )
+            return None
 
     async def _cursor(self) -> int:
         try:
