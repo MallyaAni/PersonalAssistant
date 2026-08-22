@@ -504,3 +504,29 @@ async def test_a_message_is_not_burned_until_delivery_was_attempted(monkeypatch)
     assert "imessage:chat:seen:g11" not in worker.redis.store, (
         "an unanswered message must stay replayable"
     )
+
+
+# A camera original can be 48MP against the vision pipeline's 20MP limit,
+# and the pipeline rejects rather than resizes - a real photo question
+# bounced with "dimensions outside the accepted limit". The worker fits
+# the image first; one already inside the limit passes through untouched.
+def test_a_camera_original_is_fit_for_vision(monkeypatch):
+    import io
+
+    from PIL import Image
+
+    import backend.workers.imessage_chat as module
+    from backend.config.settings import settings
+
+    buffer = io.BytesIO()
+    Image.new("RGB", (300, 200), (10, 120, 200)).save(buffer, format="JPEG")
+    small = buffer.getvalue()
+
+    kept, kept_type = module._fit_for_vision(small)
+    assert kept == small
+
+    monkeypatch.setattr(settings, "IMAGE_MAX_PIXELS", 10_000)
+    shrunk, shrunk_type = module._fit_for_vision(small)
+    assert shrunk_type == "image/jpeg"
+    with Image.open(io.BytesIO(shrunk)) as fitted:
+        assert fitted.size[0] * fitted.size[1] <= 10_000

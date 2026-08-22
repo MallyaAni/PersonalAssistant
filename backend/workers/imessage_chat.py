@@ -74,6 +74,30 @@ def _shrink_for_send(content: bytes, media_type: str) -> tuple[bytes, str]:
     return out.getvalue(), "image/jpeg"
 
 
+# A phone's camera original can be 48 megapixels; the vision pipeline
+# accepts IMAGE_MAX_PIXELS (20MP default) and rejects bigger outright -
+# which it did to a real photo question. The browser never hits this
+# because its picker downscales; the bridge hands over the original, so
+# the worker fits it before upload. Margin under the limit, not at it.
+def _fit_for_vision(content: bytes) -> tuple[bytes, str]:
+    from io import BytesIO
+
+    from PIL import Image
+
+    ceiling = int(settings.IMAGE_MAX_PIXELS * 0.9)
+    with Image.open(BytesIO(content)) as image:
+        width, height = image.size
+        if width * height <= ceiling:
+            return content, "image/jpeg"
+        scale = (ceiling / (width * height)) ** 0.5
+        resized = image.convert("RGB").resize(
+            (max(1, int(width * scale)), max(1, int(height * scale)))
+        )
+        out = BytesIO()
+        resized.save(out, format="JPEG", quality=88)
+    return out.getvalue(), "image/jpeg"
+
+
 # How patiently an attachment fetch waits out iCloud's lazy download:
 # attempts x growing backoff covers the seconds a photo needs to land on
 # the Mac without stalling the turn for a picture that never will.
@@ -372,6 +396,15 @@ class IMessageChatWorker:
                 "I couldn't open that picture. Mind sending it again?", ()
             )
         media_type, name, data = fetched
+        try:
+            content, media_type = await asyncio.to_thread(
+                _fit_for_vision, base64.b64decode(data)
+            )
+        except Exception:
+            logger.warning("imessage_chat_photo_unreadable", extra={"user": user_id})
+            return TurnResult(
+                "I couldn't open that picture. Mind sending it again?", ()
+            )
         token = issue_user_token(user_id, ttl_seconds=600, scopes=["chat", "vision"])
         conversation = await self._stored_conversation(user_id) or str(uuid.uuid4())
         # A captionless photo still needs the vision call an instruction;
@@ -392,7 +425,7 @@ class IMessageChatWorker:
                         # browser shows while reasoning lands behind it.
                         "defer_reasoning": "false",
                     },
-                    files={"image": (name, base64.b64decode(data), media_type)},
+                    files={"image": (name, content, media_type)},
                     headers={"Authorization": f"Bearer {token}"},
                 )
                 response.raise_for_status()
