@@ -723,14 +723,24 @@ def _typedstream_length(blob: bytes, at: int) -> tuple[int, int] | None:
 # The best available body for one message row: the plain text column when it
 # holds anything, the exactly parsed blob otherwise, None when neither reads.
 def extract_body(text: object, blob: object) -> str | None:
-    plain = str(text).strip() if text else ""
+    plain = _clean_body(str(text)) if text else ""
     if plain:
         return plain
     if blob:
         parsed = _typedstream_text(bytes(blob))
-        if parsed and parsed.strip():
-            return parsed.strip()
+        if parsed:
+            cleaned = _clean_body(parsed)
+            if cleaned:
+                return cleaned
     return None
+
+
+# A body without Apple's attachment placeholders. A message carrying a photo
+# embeds U+FFFC where the picture sits in the text — a real question arrived
+# as "￼how do i fix this bulge?" — and that byte is framing, not something
+# the sender said.
+def _clean_body(value: str) -> str:
+    return value.replace("￼", "").strip()
 
 
 # The most messages one poll may return. Bounds mirror a caller's on purpose;

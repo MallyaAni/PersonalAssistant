@@ -781,6 +781,28 @@ def test_an_allowlisted_senders_photo_is_listed(tmp_path):
     assert listed["attachment_id"]
 
 
+def test_the_attachment_placeholder_is_not_part_of_the_question(tmp_path):
+    from server import incoming_messages
+
+    # A photo-with-caption body embeds U+FFFC where the picture sits. The
+    # placeholder is framing, not words — a real question arrived as
+    # "￼how do i fix this bulge?" and the model should never see it.
+    config = _incoming_config(tmp_path, attachments=True)
+    message_id = _insert_incoming(
+        config.incoming_db,
+        "+15550100",
+        "￼how do i fix this?",
+        _ns_ago(5),
+        in_blob=True,
+    )
+    photo = config.attachments_root / "IMG_9.png"
+    photo.write_bytes(_PNG_1PX)
+    _attach_file(config.incoming_db, message_id, photo, "image/png", "IMG_9.png")
+
+    (message,) = incoming_messages(config, since_ns=_ns_ago(60))["messages"]
+    assert message["text"] == "how do i fix this?"
+
+
 def test_a_photo_with_no_caption_is_still_a_message(tmp_path):
     from server import incoming_messages
 
