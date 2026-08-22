@@ -648,6 +648,22 @@ def test_an_emoji_body_survives_extraction(tmp_path):
     assert texts == [body, long_body]
 
 
+def test_a_very_long_body_uses_the_four_byte_length_and_survives(tmp_path):
+    from server import incoming_messages
+
+    # Bodies past 65,535 bytes use the 0x82 four-byte length form. Nothing
+    # sends one on purpose, which is exactly why only a test will ever
+    # exercise the branch before a real message needs it.
+    config = _incoming_config(tmp_path)
+    body = "long " * 15_000  # ~75KB, forces the 0x82 form
+    _insert_incoming(
+        config.incoming_db, "+15550100", body.strip(), _ns_ago(5), in_blob=True
+    )
+
+    (message,) = incoming_messages(config, since_ns=_ns_ago(60))["messages"]
+    assert message["text"] == body.strip()
+
+
 def test_an_unreadable_blob_is_skipped_not_mangled(tmp_path):
     from server import incoming_messages
 
