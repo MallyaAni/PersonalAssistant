@@ -9,6 +9,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 RUN apt-get update && apt-get install -y \
     build-essential \
     libpq-dev \
+    # Renders diagram flowcharts to PNG for channels with no browser to run
+    # mermaid in - an iMessage bubble cannot execute JavaScript, and a
+    # diagram's whole point is legible text a phone can see.
+    graphviz \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .

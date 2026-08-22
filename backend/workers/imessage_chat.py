@@ -386,27 +386,16 @@ class IMessageChatWorker:
                     if line.startswith("event: "):
                         event = line[7:].strip()
                     elif line.startswith("data: "):
-                        data = _loads(line[6:])
-                        if event == "start" and data.get("conversation_id"):
-                            await self._remember_conversation(
-                                user_id, str(data["conversation_id"])
-                            )
-                        elif event == "delta" and isinstance(
-                            data.get("content"), str
-                        ):
-                            collected.append(data["content"])
-                        elif event == "artifact_ready" and str(
-                            data.get("mime_type") or ""
-                        ).startswith("image/"):
-                            images.append(
-                                TurnImage(
-                                    artifact_id=str(data.get("id") or ""),
-                                    media_type=str(data["mime_type"]),
-                                )
-                            )
+                        await self._consume_event(
+                            user_id, event, _loads(line[6:]), collected, images
+                        )
             # Fetched inside the turn while the token is fresh, through the
-            # same owned-artifact endpoint the browser uses.
+            # same owned-artifact endpoint the browser uses. A diagram
+            # arrives already rendered and is not re-fetched - it has no
+            # stored content to fetch.
             for image in images:
+                if image.data_base64 is not None:
+                    continue
                 fetched = await self._fetch_artifact(
                     user_id, image.artifact_id, token
                 )
@@ -609,6 +598,63 @@ class IMessageChatWorker:
             return await self.redis.get(_IMAGE_KEY.format(user_id=user_id))
         except Exception:
             return None
+
+    # One SSE event into the turn's accumulators. A diagram stores mermaid
+    # source and no rendered bytes anywhere - the browser renders it
+    # client-side, and a bubble has no browser - so it is rendered here; a
+    # source outside the renderer's subset costs the picture, never the
+    # reply.
+    async def _consume_event(
+        self,
+        user_id: str,
+        event: str,
+        data: dict,
+        collected: list,
+        images: list,
+    ) -> None:
+        if event == "start" and data.get("conversation_id"):
+            await self._remember_conversation(
+                user_id, str(data["conversation_id"])
+            )
+        elif event == "delta" and isinstance(data.get("content"), str):
+            collected.append(data["content"])
+        elif event == "artifact_ready" and data.get("kind") == "diagram":
+            rendered = await self._render_diagram(data)
+            if rendered is not None:
+                images.append(rendered)
+        elif event == "artifact_ready" and str(
+            data.get("mime_type") or ""
+        ).startswith("image/"):
+            images.append(
+                TurnImage(
+                    artifact_id=str(data.get("id") or ""),
+                    media_type=str(data["mime_type"]),
+                )
+            )
+
+    # A diagram artifact rendered to a PNG the thread can carry, or None
+    # when the source is outside the renderer's flowchart subset - in which
+    # case the words still arrive and the diagram stays viewable on the web.
+    async def _render_diagram(self, data: dict) -> "TurnImage | None":
+        from backend.workers.mermaid_render import render_flowchart_png
+
+        source = str(data.get("source") or "")
+        if not source:
+            return None
+        try:
+            png = await asyncio.to_thread(render_flowchart_png, source)
+        except Exception as exc:
+            logger.warning(
+                "imessage_chat_diagram_render_failed: %s: %s",
+                type(exc).__name__,
+                str(exc)[:150],
+            )
+            return None
+        return TurnImage(
+            artifact_id=str(data.get("id") or "diagram"),
+            media_type="image/png",
+            data_base64=base64.b64encode(png).decode("ascii"),
+        )
 
     # One owned artifact's bytes as base64 with its final media type, or
     # None - a picture that cannot be fetched costs the attachment, never
