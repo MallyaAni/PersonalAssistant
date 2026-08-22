@@ -30,6 +30,7 @@ import base64
 import json
 import random
 import re
+import uuid
 from dataclasses import dataclass, field
 
 import httpx
@@ -47,6 +48,7 @@ logger = get_logger(__name__)
 _CURSOR_KEY = "imessage:chat:cursor"
 _SEEN_KEY = "imessage:chat:seen:{guid}"
 _CONVERSATION_KEY = "imessage:chat:conversation:{user_id}"
+_IMAGE_KEY = "imessage:chat:image:{user_id}"
 _SEEN_TTL_SECONDS = 3 * 24 * 3600
 
 # One reply can take a while on the local model; the read timeout has to
@@ -123,14 +125,29 @@ class IMessageChatWorker:
             guid = str(message.get("guid") or "")
             text = str(message.get("text") or "").strip()
             reply_to = str(message.get("reply_to") or "")
-            if not guid or not text or not reply_to:
+            attachments = [
+                item
+                for item in (message.get("attachments") or [])
+                if isinstance(item, dict)
+                and str(item.get("media_type") or "").startswith("image/")
+            ]
+            # A photo with no caption is a valid message - the picture is the
+            # message - so emptiness only skips a row that carries neither.
+            if not guid or not reply_to or (not text and not attachments):
                 continue
             if not await self._first_sighting(guid):
                 continue
             user_id = await self._account_for(str(message.get("sender") or ""))
             if user_id is None:
                 continue
-            turn = await self._converse_with_ack(user_id, text, reply_to)
+            if attachments:
+                turn = await self._with_ack(
+                    self._photo_turn(user_id, text, attachments), reply_to
+                )
+            else:
+                turn = await self._with_ack(
+                    self._converse(user_id, text), reply_to
+                )
             try:
                 await self._deliver(reply_to, turn)
                 answered += 1
@@ -195,14 +212,12 @@ class IMessageChatWorker:
             )
         return str(rows[0].user_id) if rows else None
 
-    # The turn, with one acknowledgment when it runs long. The ack is
+    # Any turn, with one acknowledgment when it runs long. The ack is
     # best-effort - a failure to send it must not cost the real answer -
     # and fires at most once per turn, only after the threshold, so a
     # quick reply stays a single bubble.
-    async def _converse_with_ack(
-        self, user_id: str, text: str, reply_to: str
-    ) -> "TurnResult":
-        turn = asyncio.create_task(self._converse(user_id, text))
+    async def _with_ack(self, work, reply_to: str) -> "TurnResult":
+        turn = asyncio.create_task(work)
         done, _ = await asyncio.wait(
             {turn}, timeout=settings.IMESSAGE_CHAT_ACK_SECONDS
         )
@@ -213,7 +228,7 @@ class IMessageChatWorker:
                     {"to": reply_to, "body": random.choice(_ACK_REPLIES)},
                 )
             except Exception:
-                logger.warning("imessage_chat_ack_failed", extra={"user": user_id})
+                logger.warning("imessage_chat_ack_failed", extra={"to": reply_to})
         return await turn
 
     # One turn through the same endpoint the browser uses. The reply is the
@@ -230,9 +245,7 @@ class IMessageChatWorker:
             # writing for the medium and repairing for it are both wanted.
             "metadata": {"channel": "imessage"},
         }
-        stored = await self._stored_conversation(user_id)
-        if stored:
-            body["conversation_id"] = stored
+        body.update(await self._thread_state(user_id))
         collected: list[str] = []
         images: list[TurnImage] = []
         try:
@@ -281,6 +294,130 @@ class IMessageChatWorker:
         reply = "".join(collected).strip()
         carried = tuple(image for image in images if image.data_base64)
         return TurnResult(reply or _FAILURE_REPLY, carried)
+
+
+    # What the thread already established: its conversation id and, when a
+    # photo was sent recently, the picture-in-view a follow-up text edits.
+    async def _thread_state(self, user_id: str) -> dict[str, str]:
+        state: dict[str, str] = {}
+        stored = await self._stored_conversation(user_id)
+        if stored:
+            state["conversation_id"] = stored
+        active_image = await self._stored_image(user_id)
+        if active_image:
+            state["active_image_artifact_id"] = active_image
+        return state
+
+    # A photo from the phone becomes a vision turn: the attachment is
+    # fetched from the bridge, run through the same /vision/analyze path a
+    # browser upload takes, and the analysis is the reply. The resulting
+    # artifact is remembered as the thread's picture-in-view, so "make it
+    # brighter" in the next text edits it exactly as it would in the web UI.
+    async def _photo_turn(
+        self, user_id: str, caption: str, attachments: list[dict]
+    ) -> "TurnResult":
+        fetched = await self._fetch_inbound_attachment(
+            str(attachments[0].get("attachment_id") or "")
+        )
+        if fetched is None:
+            return TurnResult(
+                "I couldn't open that picture. Mind sending it again?", ()
+            )
+        media_type, name, data = fetched
+        token = issue_user_token(user_id, ttl_seconds=600, scopes=["chat", "vision"])
+        conversation = await self._stored_conversation(user_id) or str(uuid.uuid4())
+        # A captionless photo still needs the vision call an instruction;
+        # fixed wording, like every functional sentence the app writes.
+        prompt = caption or "Describe what you see in this picture, briefly."
+        try:
+            async with httpx.AsyncClient(timeout=_CHAT_TIMEOUT_SECONDS) as client:
+                response = await client.post(
+                    f"{self.base_url}/api/v1/vision/analyze",
+                    data={
+                        "user_id": user_id,
+                        "conversation_id": conversation,
+                        "prompt": prompt,
+                    },
+                    files={"image": (name, base64.b64decode(data), media_type)},
+                    headers={"Authorization": f"Bearer {token}"},
+                )
+                response.raise_for_status()
+                result = response.json()
+        except Exception:
+            logger.warning("imessage_chat_photo_turn_failed", extra={"user": user_id})
+            return TurnResult(_FAILURE_REPLY, ())
+        await self._remember_conversation(user_id, conversation)
+        artifact_id = str((result.get("artifact") or {}).get("id") or "")
+        if artifact_id:
+            await self._remember_image(user_id, artifact_id)
+        reply = str(result.get("analysis") or "").strip()
+        return TurnResult(reply or _FAILURE_REPLY, ())
+
+    # One inbound attachment's bytes, over a direct MCP session rather than
+    # the invocation service: MCP_MAX_RESULT_CHARS ceilings at 60K by design
+    # to protect model contexts, and attachment payloads are plumbing for
+    # this worker, not text for a model. The session still comes from the
+    # same server config - token headers, moved-bridge rediscovery and all.
+    async def _fetch_inbound_attachment(
+        self, attachment_id: str
+    ) -> tuple[str, str, str] | None:
+        if not attachment_id:
+            return None
+        from backend.mcp.config import parse_server_configs
+        from backend.mcp.session import open_session
+
+        server = next(
+            (
+                config
+                for config in parse_server_configs(settings.MCP_SERVERS_JSON)
+                if config.server_id == settings.DISCOVERY_IMESSAGE_SERVER_ID
+            ),
+            None,
+        )
+        if server is None:
+            return None
+        try:
+            async with open_session(server, timeout_seconds=60) as session:
+                result = await session.call_tool(
+                    "read_attachment", {"attachment_id": attachment_id}
+                )
+            text = "".join(
+                getattr(item, "text", "") for item in (result.content or [])
+            )
+            payload = json.loads(text)
+            if payload.get("error"):
+                logger.warning(
+                    "imessage_chat_attachment_refused",
+                    extra={"reason": str(payload["error"])},
+                )
+                return None
+            return (
+                str(payload["media_type"]),
+                str(payload.get("name") or "photo.jpeg"),
+                str(payload["data_base64"]),
+            )
+        except Exception:
+            logger.warning("imessage_chat_attachment_fetch_failed")
+            return None
+
+    # The thread's picture-in-view, remembered on the same clock as the
+    # conversation itself: a follow-up text edits the photo they just sent,
+    # and after the lull both start fresh together.
+    async def _remember_image(self, user_id: str, artifact_id: str) -> None:
+        try:
+            await self.redis.set(
+                _IMAGE_KEY.format(user_id=user_id),
+                artifact_id,
+                ex=self._idle_seconds(),
+            )
+        except Exception:
+            return
+
+    async def _stored_image(self, user_id: str) -> str | None:
+        try:
+            return await self.redis.get(_IMAGE_KEY.format(user_id=user_id))
+        except Exception:
+            return None
 
     # One owned artifact's bytes as base64, or None - a picture that cannot
     # be fetched costs the attachment, never the reply around it.

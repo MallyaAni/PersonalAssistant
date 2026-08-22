@@ -359,13 +359,13 @@ async def test_a_generated_image_is_sent_as_an_attachment(monkeypatch):
         bridge, monkeypatch, accounts={"7372025933": "ani.mallya"}, replies={}
     )
 
-    async def converse(user_id, text, reply_to):
+    async def converse(user_id, text):
         return TurnResult(
             "Here's the image you asked for.",
             (TurnImage("art-1", "image/png", data_base64="aWJyaWRnZQ=="),),
         )
 
-    monkeypatch.setattr(worker, "_converse_with_ack", converse)
+    monkeypatch.setattr(worker, "_converse", converse)
 
     answered = await worker.tick()
 
@@ -375,3 +375,44 @@ async def test_a_generated_image_is_sent_as_an_attachment(monkeypatch):
     assert photo["attachment_base64"] == "aWJyaWRnZQ=="
     assert photo["attachment_media_type"] == "image/png"
     assert photo["attachment_name"].endswith(".png")
+
+
+# The picture is the message: a captionless photo row is a valid turn that
+# goes down the photo path, and a row with neither text nor attachments is
+# the only emptiness that skips.
+@pytest.mark.asyncio
+async def test_a_captionless_photo_is_a_valid_message(monkeypatch):
+    message = {
+        "guid": "g10",
+        "sender": "7372025933",
+        "reply_to": "+17372025933",
+        "text": "",
+        "sent_at": "2026-08-22T00:30:00Z",
+        "attachments": [
+            {
+                "attachment_id": "att-1",
+                "media_type": "image/jpeg",
+                "name": "IMG_1.heic",
+                "bytes": 120000,
+            }
+        ],
+    }
+    bridge = _Bridge({"messages": [message], "cursor": 50})
+    worker, _ = _worker(
+        bridge, monkeypatch, accounts={"7372025933": "ani.mallya"}, replies={}
+    )
+    photo_turns: list[tuple[str, str]] = []
+
+    async def photo_turn(user_id, caption, attachments):
+        photo_turns.append((user_id, caption))
+        return TurnResult("A sunny trail through the woods.")
+
+    monkeypatch.setattr(worker, "_photo_turn", photo_turn)
+
+    answered = await worker.tick()
+
+    assert answered == 1
+    assert photo_turns == [("ani.mallya", "")]
+    assert bridge.sent == [
+        {"to": "+17372025933", "body": "A sunny trail through the woods."}
+    ]
