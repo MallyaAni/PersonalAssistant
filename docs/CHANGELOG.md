@@ -2,6 +2,33 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-22 — Every bridge-sent image was a dead bubble; one coercion fixed it
+
+- **Correction to the entry below.** The 2026-08-21 note called outbound
+  pictures verified on the strength of a "sent with attachment" result and a
+  small test image that displayed. Both lied: `send` reports success once the
+  message is queued, and small hand-tests used a code path the bug never hit.
+  In fact **no image the bridge ever sent had displayed** — each arrived as a
+  bubble whose picture never loads.
+- **Root cause.** The bridge passes the attachment path to AppleScript as an
+  `on run argv` string and sent it as a bare `POSIX file filePath`. That form
+  leaves the transfer queued `waiting` forever in Messages' own file-transfer
+  ledger; coerced `(POSIX file filePath) as alias`, it uploads. Fixed in the
+  send scripts (both text and attachment variants), verified through the full
+  generate→fetch→shrink→send path with two real ComfyUI images that the
+  operator confirmed display on the phone.
+- **Method worth keeping.** Four plausible causes were proposed and each
+  shipped or nearly shipped as a fix — spool location, message order, the
+  account pin, the sending process — and each was wrong. What settled it was
+  reading Messages' transfer ledger directly (via Full Disk Access) and
+  running fifteen controlled, mostly self-targeted sends that varied one
+  factor at a time. `expN` (bare `POSIX file`) stalled and `expO` (`as alias`)
+  finished, identical otherwise — the isolation no amount of theorizing had
+  reached. The spool-location and message-order commits are superseded; their
+  corrected records are in NEXT_SESSION.md. Lesson: when a send reports success
+  but the artifact never appears, read the subsystem's own ledger before
+  theorizing about the payload.
+
 ## 2026-08-21 — iMessage becomes a conversation surface, pictures included
 
 - **Allowlisted senders can now text AniOS and get answered.** The Mac bridge
