@@ -216,3 +216,49 @@ async def test_a_needed_place_is_asked_for_not_guessed(llm):
     text = str(result["content"])
     assert states(text, "the reply asks where the person is or for their city"), text
     assert not states(text, "the reply says the schedule is already set up"), text
+
+
+# The live defect: "remind me in five minutes to turn off the stove" was
+# saved as "turn off the stove", and the firing answered that the assistant
+# cannot control a stove. The reminding is the task and must be kept.
+async def test_a_reminder_keeps_the_reminding_as_the_instruction(selector):
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    now = datetime.now(ZoneInfo("America/New_York"))
+    action = await selector.select(
+        "functional_test_user",
+        "remind me in 5 minutes to turn off the stove",
+        [],
+        None,
+        local_now=f"{now:%A %Y-%m-%d %H:%M} (America/New_York)",
+    )
+    assert isinstance(action, ScheduleTaskAction), action
+    assert "remind" in action.instruction.lower(), action
+    assert "stove" in action.instruction.lower(), action
+
+
+# And however the instruction was worded, a firing that names something
+# the person must do is delivered as a reminder, not refused as an action.
+async def test_a_firing_reminder_tells_them_it_is_time(llm):
+    system = _build_system_prompt({"channel": "imessage", "scheduled_task": True})
+    for instruction in ("remind me to turn off the stove", "turn off the stove"):
+        result = llm.chat(
+            [
+                {"role": "system", "content": system},
+                {"role": "user", "content": instruction},
+            ],
+            200,
+            None,
+            0.0,
+        )
+        text = str(result["content"])
+        assert states(text, "the reply tells the person to turn off the stove now"), (
+            instruction,
+            text,
+        )
+        assert not states(
+            text,
+            "the reply says it cannot turn off or control the stove, or offers "
+            "to set up a reminder",
+        ), (instruction, text)

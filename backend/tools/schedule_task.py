@@ -15,12 +15,14 @@ _SCHEMA: dict[str, Any] = {
         "instruction": {
             "type": "string",
             "description": (
-                "What to do each time it runs, rewritten as a self-contained "
-                "instruction in the person's own terms - "
-                "'text me today's weather for Arlington', 'remind me to call "
-                "mom', 'check whether the stacking cable is in stock at "
-                "Rockville and tell me'. Never the words 'remind me' or "
-                "'every day' themselves; the schedule is carried separately."
+                "What the assistant does each time it runs, as a complete "
+                "instruction to the assistant. For a reminder the reminding "
+                "is the task, so keep it: 'remind me to turn off the stove', "
+                "'remind me to call mom'. For a lookup or a message, say what "
+                "to send: 'text me today's weather for Arlington', 'check "
+                "whether the stacking cable is in stock at Rockville and tell "
+                "me'. Leave out only the schedule words (tomorrow, every day, "
+                "at 5) - those are carried separately."
             ),
         },
         "cadence": {
