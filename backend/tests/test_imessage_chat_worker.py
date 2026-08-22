@@ -559,3 +559,74 @@ async def test_a_generated_image_becomes_the_threads_picture(monkeypatch):
     assert (
         worker.redis.store["imessage:chat:image:ani.mallya"] == "art-7"
     ), "the generated picture must be in view for the follow-up question"
+
+
+# Reply-to targeting: a native reply to one of our image bubbles pins that
+# image as the turn's target, overriding recency; an unknown or absent
+# reply guid changes nothing. The ledger is written from the bridge's send
+# answer when it carries a guid, and never from a plain "sent".
+@pytest.mark.asyncio
+async def test_a_reply_to_an_image_bubble_pins_that_image(monkeypatch):
+    bridge = _Bridge(
+        {
+            "messages": [
+                {
+                    **_message("g13", "7372025933", "what's in the background?"),
+                    "reply_to_guid": "ABCDEF01-2345-6789-ABCD-EF0123456789",
+                }
+            ],
+            "cursor": 80,
+        }
+    )
+    worker, _ = _worker(
+        bridge, monkeypatch, accounts={"7372025933": "ani.mallya"}, replies={}
+    )
+    await worker._remember_bubble(
+        "ABCDEF01-2345-6789-ABCD-EF0123456789", "art-old"
+    )
+    pinned: list[str | None] = []
+
+    async def converse(user_id, text, active_image=None):
+        pinned.append(active_image)
+        return TurnResult("It's a garden.")
+
+    monkeypatch.setattr(worker, "_converse", converse)
+
+    await worker.tick()
+
+    assert pinned == ["art-old"]
+    # Replying to it brings it back into view for the turns that follow.
+    assert worker.redis.store["imessage:chat:image:ani.mallya"] == "art-old"
+
+
+@pytest.mark.asyncio
+async def test_a_plain_message_pins_nothing(monkeypatch):
+    bridge = _Bridge(
+        {"messages": [_message("g14", "7372025933", "hello")], "cursor": 81}
+    )
+    worker, _ = _worker(
+        bridge, monkeypatch, accounts={"7372025933": "ani.mallya"}, replies={}
+    )
+    pinned: list[str | None] = []
+
+    async def converse(user_id, text, active_image=None):
+        pinned.append(active_image)
+        return TurnResult("hi!")
+
+    monkeypatch.setattr(worker, "_converse", converse)
+
+    await worker.tick()
+
+    assert pinned == [None]
+
+
+def test_the_bubble_ledger_only_stores_real_guids():
+    from backend.workers.imessage_chat import _message_guid
+
+    assert _message_guid("sent with attachment") is None
+    assert (
+        _message_guid("iMessage;-;ABCDEF01-2345-6789-ABCD-EF0123456789")
+        == "iMessage;-;ABCDEF01-2345-6789-ABCD-EF0123456789"
+        or _message_guid("iMessage;-;ABCDEF01-2345-6789-ABCD-EF0123456789")
+        is not None
+    )

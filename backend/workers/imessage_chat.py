@@ -43,13 +43,23 @@ from backend.core.logging_config import get_logger
 from backend.database.session import AsyncSessionLocal
 from backend.discovery.addressing import normalize_address
 
+# The digest channel's guid reader, reused rather than re-derived: it already
+# tells an Apple message identifier apart from "sent with attachment", and
+# two parsers for one bridge answer would drift.
+from backend.discovery.channels import _guid as _message_guid
+
 logger = get_logger(__name__)
 
 _CURSOR_KEY = "imessage:chat:cursor"
 _SEEN_KEY = "imessage:chat:seen:{guid}"
 _CONVERSATION_KEY = "imessage:chat:conversation:{user_id}"
 _IMAGE_KEY = "imessage:chat:image:{user_id}"
+# Which artifact a sent image bubble carried, keyed by the bridge's message
+# guid. This is what lets a native reply to that bubble pin that image as
+# the ask/edit target, overriding recency.
+_BUBBLE_KEY = "imessage:chat:bubble:{guid}"
 _SEEN_TTL_SECONDS = 3 * 24 * 3600
+_BUBBLE_TTL_SECONDS = 7 * 24 * 3600
 
 # Margin under the bridge's 5MB attachment cap, which bounds what a
 # compromised backend could pump through the Mac and is not negotiated
@@ -175,67 +185,80 @@ class IMessageChatWorker:
         payload = _payload(answer)
         answered = 0
         for message in payload.get("messages", []):
-            guid = str(message.get("guid") or "")
-            text = str(message.get("text") or "").strip()
-            reply_to = str(message.get("reply_to") or "")
-            attachments = [
-                item
-                for item in (message.get("attachments") or [])
-                if isinstance(item, dict)
-                and str(item.get("media_type") or "").startswith("image/")
-            ]
-            # A photo with no caption is a valid message - the picture is the
-            # message - so emptiness only skips a row that carries neither.
-            if not guid or not reply_to or (not text and not attachments):
-                continue
-            if await self._already_seen(guid):
-                continue
-            user_id = await self._account_for(str(message.get("sender") or ""))
-            if user_id is None:
-                # A stranger's row must not replay forever; it is finished.
-                await self._mark_seen(guid)
-                continue
-            if attachments:
-                turn = await self._with_ack(
-                    self._photo_turn(user_id, text, attachments), reply_to
-                )
-            else:
-                turn = await self._with_ack(
-                    self._converse(user_id, text), reply_to
-                )
-            try:
-                await self._deliver(reply_to, turn)
-                answered += 1
-                # A picture the turn generated becomes the thread's
-                # picture-in-view, exactly as the web UI marks it active
-                # after displaying it. Without this, a real "what is
-                # happening in the background?" about a generated image was
-                # answered with the agent roster - the only background the
-                # model could see.
-                if turn.images:
-                    await self._remember_image(
-                        user_id, turn.images[-1].artifact_id
-                    )
-            except Exception as exc:
-                # The reason is the whole diagnosis: a refusal code names the
-                # bridge's objection, and a bare warning cost a live incident
-                # a round-trip that one line would have answered.
-                logger.warning(
-                    "imessage_chat_reply_failed: %s: %s",
-                    type(exc).__name__,
-                    str(exc)[:200],
-                    extra={"user": user_id},
-                )
-            # Seen is marked after the delivery attempt, not at read time: a
-            # worker killed mid-turn - a deploy landed during a generation,
-            # twice in one day - then replays the message on restart instead
-            # of burning it. A delivery that failed in code is still marked,
-            # deliberately: its failure was logged, and replaying a turn the
-            # bridge refused would refuse forever.
-            await self._mark_seen(guid)
+            answered += await self._handle_message(message)
         new_cursor = payload.get("cursor")
         if isinstance(new_cursor, int):
             await self._remember_cursor(new_cursor)
+        return answered
+
+    # One inbound message, answered or skipped; returns 1 when a reply was
+    # delivered. Seen is marked after the delivery attempt, not at read
+    # time: a worker killed mid-turn - a deploy landed during a generation,
+    # twice in one day - then replays the message on restart instead of
+    # burning it. A delivery that failed in code is still marked,
+    # deliberately: its failure was logged, and replaying a turn the bridge
+    # refused would refuse forever.
+    async def _handle_message(self, message: dict) -> int:
+        guid = str(message.get("guid") or "")
+        text = str(message.get("text") or "").strip()
+        reply_to = str(message.get("reply_to") or "")
+        attachments = [
+            item
+            for item in (message.get("attachments") or [])
+            if isinstance(item, dict)
+            and str(item.get("media_type") or "").startswith("image/")
+        ]
+        # A photo with no caption is a valid message - the picture is the
+        # message - so emptiness only skips a row that carries neither.
+        if not guid or not reply_to or (not text and not attachments):
+            return 0
+        if await self._already_seen(guid):
+            return 0
+        user_id = await self._account_for(str(message.get("sender") or ""))
+        if user_id is None:
+            # A stranger's row must not replay forever; it is finished.
+            await self._mark_seen(guid)
+            return 0
+        # A native reply to one of our image bubbles pins that image as the
+        # target, overriding recency - "this one" beats "the latest one"
+        # whenever the person says it.
+        pinned = await self._artifact_for_bubble(
+            str(message.get("reply_to_guid") or "")
+        )
+        if attachments:
+            turn = await self._with_ack(
+                self._photo_turn(user_id, text, attachments), reply_to
+            )
+        else:
+            turn = await self._with_ack(
+                self._converse(user_id, text, active_image=pinned), reply_to
+            )
+        if pinned:
+            # Replying to a picture brings it back into view for the turns
+            # that follow, exactly as focusing it would.
+            await self._remember_image(user_id, pinned)
+        answered = 0
+        try:
+            await self._deliver(reply_to, turn)
+            answered = 1
+            # A picture the turn generated becomes the thread's
+            # picture-in-view, exactly as the web UI marks it active after
+            # displaying it. Without this, a real "what is happening in the
+            # background?" about a generated image was answered with the
+            # agent roster - the only background the model could see.
+            if turn.images:
+                await self._remember_image(user_id, turn.images[-1].artifact_id)
+        except Exception as exc:
+            # The reason is the whole diagnosis: a refusal code names the
+            # bridge's objection, and a bare warning cost a live incident a
+            # round-trip that one line would have answered.
+            logger.warning(
+                "imessage_chat_reply_failed: %s: %s",
+                type(exc).__name__,
+                str(exc)[:200],
+                extra={"user": user_id},
+            )
+        await self._mark_seen(guid)
         return answered
 
     # One turn's answer onto the thread: text flattened at the send boundary
@@ -253,7 +276,7 @@ class IMessageChatWorker:
         for image in turn.images:
             await asyncio.sleep(_BUBBLE_PACE_SECONDS)
             extension = "jpg" if "jpeg" in image.media_type else "png"
-            await self.invoke_tool(
+            answer = await self.invoke_tool(
                 settings.DISCOVERY_IMESSAGE_TOOL,
                 {
                     "to": reply_to,
@@ -263,6 +286,13 @@ class IMessageChatWorker:
                     "attachment_base64": image.data_base64,
                 },
             )
+            # Remember which bubble carried which picture, so a native reply
+            # to that bubble can pin it later. The bridge answers a message
+            # guid on the paths that know it; a plain "sent" stores nothing
+            # and the reply-to override simply has nothing to resolve.
+            guid = _message_guid(answer)
+            if guid:
+                await self._remember_bubble(guid, image.artifact_id)
 
     # The account that subscribed this address, or None. Looked up by the
     # address digest the subscriber table already indexes - no decryption -
@@ -315,7 +345,9 @@ class IMessageChatWorker:
     # concatenated deltas plus any image artifacts the turn produced; the
     # conversation id from the stream's start event is remembered so the
     # next text continues the same thread.
-    async def _converse(self, user_id: str, text: str) -> "TurnResult":
+    async def _converse(
+        self, user_id: str, text: str, active_image: str | None = None
+    ) -> "TurnResult":
         token = issue_user_token(user_id, ttl_seconds=600, scopes=["chat", "vision"])
         body: dict[str, object] = {
             "user_id": user_id,
@@ -325,7 +357,7 @@ class IMessageChatWorker:
             # writing for the medium and repairing for it are both wanted.
             "metadata": {"channel": "imessage"},
         }
-        body.update(await self._thread_state(user_id))
+        body.update(await self._thread_state(user_id, pinned=active_image))
         collected: list[str] = []
         images: list[TurnImage] = []
         try:
@@ -380,12 +412,16 @@ class IMessageChatWorker:
 
     # What the thread already established: its conversation id and, when a
     # photo was sent recently, the picture-in-view a follow-up text edits.
-    async def _thread_state(self, user_id: str) -> dict[str, str]:
+    async def _thread_state(
+        self, user_id: str, pinned: str | None = None
+    ) -> dict[str, str]:
         state: dict[str, str] = {}
         stored = await self._stored_conversation(user_id)
         if stored:
             state["conversation_id"] = stored
-        active_image = await self._stored_image(user_id)
+        # An explicit pin - a native reply to a specific image bubble - beats
+        # whatever recency had in view.
+        active_image = pinned or await self._stored_image(user_id)
         if active_image:
             state["active_image_artifact_id"] = active_image
         return state
@@ -516,6 +552,26 @@ class IMessageChatWorker:
             )
         except Exception:
             logger.warning("imessage_chat_attachment_fetch_failed")
+            return None
+
+    # The bubble ledger: which artifact a sent image bubble carried, and the
+    # lookup a native reply resolves through. Both fail soft - no guid, no
+    # entry, or Redis down all mean the reply-to override quietly does not
+    # apply and recency stands.
+    async def _remember_bubble(self, guid: str, artifact_id: str) -> None:
+        try:
+            await self.redis.set(
+                _BUBBLE_KEY.format(guid=guid), artifact_id, ex=_BUBBLE_TTL_SECONDS
+            )
+        except Exception:
+            return
+
+    async def _artifact_for_bubble(self, guid: str) -> str | None:
+        if not guid:
+            return None
+        try:
+            return await self.redis.get(_BUBBLE_KEY.format(guid=guid))
+        except Exception:
             return None
 
     # The thread's picture-in-view, remembered on the same clock as the
