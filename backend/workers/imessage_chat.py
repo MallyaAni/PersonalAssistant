@@ -182,8 +182,16 @@ class IMessageChatWorker:
             try:
                 await self._deliver(reply_to, turn)
                 answered += 1
-            except Exception:
-                logger.warning("imessage_chat_reply_failed", extra={"user": user_id})
+            except Exception as exc:
+                # The reason is the whole diagnosis: a refusal code names the
+                # bridge's objection, and a bare warning cost a live incident
+                # a round-trip that one line would have answered.
+                logger.warning(
+                    "imessage_chat_reply_failed: %s: %s",
+                    type(exc).__name__,
+                    str(exc)[:200],
+                    extra={"user": user_id},
+                )
             # Seen is marked after the delivery attempt, not at read time: a
             # worker killed mid-turn - a deploy landed during a generation,
             # twice in one day - then replays the message on restart instead
