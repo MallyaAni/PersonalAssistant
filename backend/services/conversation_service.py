@@ -121,6 +121,21 @@ def _image_description(match: dict[str, Any]) -> str:
 # matter to a reader — an uploaded original is the user's own picture, and the
 # edits are listed oldest first so "the hat was replaced" is legible as history
 # rather than as what the picture always showed.
+# Stored history, in the role/content turns the search planner reads. The
+# planner composes a self-contained query, which is only possible when it
+# can see what "yes please" was agreeing to.
+def _planner_history(
+    history: list[dict[str, Any]] | None,
+) -> list[dict[str, Any]]:
+    turns: list[dict[str, Any]] = []
+    for exchange in (history or [])[-2:]:
+        if exchange.get("query"):
+            turns.append({"role": "user", "content": str(exchange["query"])})
+        if exchange.get("response"):
+            turns.append({"role": "assistant", "content": str(exchange["response"])})
+    return turns
+
+
 def _image_lineage(lineage: Lineage | None) -> dict[str, Any]:
     if lineage is None:
         return {}
@@ -1040,6 +1055,7 @@ class ConversationService:
         query_embedding: list[float] | None,
         action: MainAction,
         active_image_artifact_id: str | None = None,
+        history: list[dict[str, Any]] | None = None,
     ) -> AsyncGenerator[ChatStreamEvent, None]:
         async for event in self._stream_retrieved_context(
             context,
@@ -1049,6 +1065,7 @@ class ConversationService:
             query_embedding,
             action,
             active_image_artifact_id,
+            history=history,
         ):
             yield event
         async for event in self._stream_tool_context(
@@ -1268,6 +1285,7 @@ class ConversationService:
         query_embedding: list[float] | None,
         action: MainAction,
         active_image_artifact_id: str | None = None,
+        history: list[dict[str, Any]] | None = None,
     ) -> AsyncGenerator[ChatStreamEvent, None]:
         active_image = await self._load_active_image(
             user_id,
@@ -1310,7 +1328,7 @@ class ConversationService:
             yield {"event": "image_matches", "data": {"artifacts": image_matches}}
 
         async for event in self._stream_web_search(
-            context, query, action, image_matches, trace_id
+            context, query, action, image_matches, trace_id, history=history
         ):
             yield event
 
@@ -1323,6 +1341,7 @@ class ConversationService:
         action: MainAction,
         image_matches: list[dict[str, Any]],
         trace_id: str,
+        history: list[dict[str, Any]] | None = None,
     ) -> AsyncGenerator[ChatStreamEvent, None]:
         if (
             isinstance(action, SearchAction)
@@ -1338,7 +1357,14 @@ class ConversationService:
             # and the reply fell back on training.
             chosen_query = action.query
             if self.search_planner is not None:
-                composed = self.search_planner.compose(query, [])
+                # The planner writes a self-contained query, so it has to see
+                # the turns the question leans on. Handed an empty history, a
+                # follow-up like "yes please" gave it nothing but two words,
+                # and it invented a topic: a real user asked for mystery books
+                # and got search rounds about iPads and electric cars.
+                composed = self.search_planner.compose(
+                    query, _planner_history(history)
+                )
                 if composed:
                     chosen_query = composed
             outbound_query = _image_aware_search_query(chosen_query, image_matches)
@@ -2067,6 +2093,7 @@ class ConversationService:
             query_embedding,
             preselected_action,
             active_image_artifact_id,
+            history=history,
         ):
             yield retrieval_event
 
