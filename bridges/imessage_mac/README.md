@@ -169,7 +169,15 @@ What the `read_messages` tool holds, worth checking against the code:
 Replies go out through the same `send_imessage` tool and the same allowlist that
 digests use. Each message carries `sender` (normalized, AniOS's identity key)
 and `reply_to` (Apple's canonical handle — the address to answer to). A message
-that is only a picture has an empty `text`.
+that is only a picture has an empty `text`. When the sender long-press-replies
+to an earlier bubble, the message also carries `reply_to_guid` — the guid of the
+bubble being answered — so the caller can target that specific past message
+(for instance, "edit *this* picture") instead of the most recent one.
+
+`send_imessage` returns the sent message's guid on success, for text and
+attachment sends alike (read back from the newest outgoing row, since AppleScript
+hands nothing back), so a caller can remember which bubble it sent. It falls
+back to `"sent"` / `"sent with attachment"` only when the guid cannot be read.
 
 ## Reading attached pictures
 

@@ -329,7 +329,8 @@ def _chat_db(tmp_path: Path) -> Path:
             date INTEGER,
             associated_message_type INTEGER DEFAULT 0,
             associated_message_guid TEXT,
-            item_type INTEGER DEFAULT 0
+            item_type INTEGER DEFAULT 0,
+            thread_originator_guid TEXT
         );
         CREATE TABLE handle (ROWID INTEGER PRIMARY KEY, id TEXT);
         CREATE TABLE chat (ROWID INTEGER PRIMARY KEY, room_name TEXT, style INTEGER);
@@ -373,6 +374,7 @@ def _insert_incoming(
     from_me: bool = False,
     reaction: int = 0,
     raw_blob: bytes | None = None,
+    reply_to_guid: str | None = None,
 ) -> None:
     db = sqlite3.connect(path)
     handle_id = db.execute(
@@ -383,7 +385,8 @@ def _insert_incoming(
         blob = _typedstream(body)
     message_id = db.execute(
         "INSERT INTO message (guid, text, attributedBody, handle_id, is_from_me,"
-        " date, associated_message_type) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        " date, associated_message_type, thread_originator_guid)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         (
             f"guid-{handle_id}-{at_ns}",
             None if (in_blob or raw_blob is not None) else body,
@@ -392,6 +395,7 @@ def _insert_incoming(
             1 if from_me else 0,
             at_ns,
             reaction,
+            reply_to_guid,
         ),
     ).lastrowid
     chat_id = db.execute(
@@ -951,6 +955,53 @@ def test_a_heic_photo_comes_back_as_jpeg(tmp_path):
     assert payload["media_type"] == "image/jpeg"
     assert payload["name"] == "IMG_7.jpeg"
     assert base64.b64decode(payload["data_base64"])[:3] == b"\xff\xd8\xff"
+
+
+def test_a_native_reply_carries_the_guid_it_answers(tmp_path):
+    from server import incoming_messages
+
+    # A long-press reply to an earlier bubble lets the sender point at a
+    # specific past picture — the thread originator's guid rides along so the
+    # caller can target it explicitly instead of the most recent one.
+    config = _incoming_config(tmp_path)
+    _insert_incoming(
+        config.incoming_db, "+15550100", "make this one warmer", _ns_ago(5),
+        reply_to_guid="the-hummingbird-bubble-guid",
+    )
+
+    (message,) = incoming_messages(config, since_ns=_ns_ago(60))["messages"]
+    assert message["reply_to_guid"] == "the-hummingbird-bubble-guid"
+
+
+def test_an_ordinary_message_has_no_reply_to_guid(tmp_path):
+    from server import incoming_messages
+
+    config = _incoming_config(tmp_path)
+    _insert_incoming(config.incoming_db, "+15550100", "just a message", _ns_ago(5))
+
+    (message,) = incoming_messages(config, since_ns=_ns_ago(60))["messages"]
+    assert "reply_to_guid" not in message
+
+
+def test_a_sent_message_guid_can_be_read_back(tmp_path):
+    from server import _apple_time, latest_sent_guid
+
+    # The guid readback matches the newest outgoing row by body, and now works
+    # under the incoming grant alone (messages_db unset) so an attachment send
+    # can report its guid without the reactions grant.
+    config = _incoming_config(tmp_path)  # incoming_db set, messages_db None
+    db = sqlite3.connect(config.incoming_db)
+    db.execute(
+        "INSERT INTO message (guid, text, handle_id, is_from_me, date,"
+        " associated_message_type) VALUES (?, ?, ?, ?, ?, ?)",
+        ("sent-guid-42", "here is your picture", 0, 1,
+         _apple_time(datetime.now(UTC)), 0),
+    )
+    db.commit()
+    db.close()
+
+    guid = latest_sent_guid(config, "+15550100", "here is your picture")
+    assert guid == "sent-guid-42"
 
 
 def test_incoming_coverage_is_reported_as_counts_only(tmp_path):

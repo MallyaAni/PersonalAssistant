@@ -466,7 +466,11 @@ def _open_db_reporting(
 def latest_sent_guid(
     config: BridgeConfig, recipient: str, body: str
 ) -> str | None:
-    connection = _open_messages(config)
+    # Either read grant makes the database available, and reading back the
+    # guid of a message this bridge itself just sent is the same disclosure
+    # under both — so the readback works whenever incoming reading is on, not
+    # only under the reactions grant.
+    connection, _ = _open_db_reporting(config.messages_db or config.incoming_db)
     if connection is None:
         return None
     # Deliberately not joined to `handle`, and deliberately not matched on the
@@ -805,7 +809,8 @@ def incoming_messages(
         # `handle.id` is exactly the address a reply should be sent to.
         rows = connection.execute(
             """
-            SELECT m.ROWID, m.guid, m.date, m.text, m.attributedBody, h.id
+            SELECT m.ROWID, m.guid, m.date, m.text, m.attributedBody, h.id,
+                   m.thread_originator_guid
             FROM message m
             JOIN handle h ON h.ROWID = m.handle_id
             JOIN chat_message_join cmj ON cmj.message_id = m.ROWID
@@ -833,7 +838,7 @@ def incoming_messages(
 
     allowed = config.allowed_recipients | load_grants(config)
     messages: list[dict[str, object]] = []
-    for rowid, guid, date, text, blob, handle in rows:
+    for rowid, guid, date, text, blob, handle, originator in rows:
         cursor = max(cursor, int(date))
         sender = normalize_recipient(str(handle or ""))
         if sender not in allowed:
@@ -853,6 +858,11 @@ def incoming_messages(
         }
         if attached:
             message["attachments"] = attached
+        # A native long-press reply carries the guid of the bubble it answers.
+        # It lets the caller target a specific earlier picture explicitly,
+        # rather than always the most recent one. Absent on ordinary messages.
+        if originator:
+            message["reply_to_guid"] = str(originator)
         messages.append(message)
     return {"messages": messages, "cursor": cursor}
 
@@ -1378,7 +1388,10 @@ def send_message(
     run_osascript(
         _SEND_WITH_ATTACHMENT, [config.account_id, recipient, text, str(path)]
     )
-    return "sent with attachment"
+    # The same guid readback as a text send, so a caller can remember which
+    # bubble carried which picture. "sent with attachment" only when the guid
+    # cannot be read — which is what every caller understood before.
+    return latest_sent_guid(config, recipient, text) or "sent with attachment"
 
 
 # Where outbound attachments wait for Messages to pick them up.
