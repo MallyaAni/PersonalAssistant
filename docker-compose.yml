@@ -1,7 +1,19 @@
+# Bounded container logs. Without this Docker's json-file driver keeps every
+# line forever, and a backend that logs each HTTP request grows gigabytes of
+# log over months - the classic quiet disk-eater. 20MB x 3 files per service
+# keeps ~60MB of recent history each, which is plenty for any diagnosis that
+# happens while the incident is still warm.
+x-bounded-logs: &bounded-logs
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "3"
+
 services:
   vllm-main:
     image: vllm/vllm-openai@sha256:6d8429e38e3747723ca07ee1b17972e09bb9c51c4032b266f24fb1cc3b22ed8f
     container_name: anios_vllm_main
+    logging: *bounded-logs
     ipc: host
     environment:
       # Exposes /sleep, /wake_up, and /is_sleeping, which the GPU handoff uses
@@ -81,6 +93,7 @@ services:
   vllm-embedding:
     image: vllm/vllm-openai@sha256:6d8429e38e3747723ca07ee1b17972e09bb9c51c4032b266f24fb1cc3b22ed8f
     container_name: anios_vllm_embedding
+    logging: *bounded-logs
     ipc: host
     command:
       - nomic-ai/nomic-embed-text-v1.5
@@ -140,6 +153,7 @@ services:
     restart: unless-stopped
     image: pgvector/pgvector:pg16
     container_name: anios_db
+    logging: *bounded-logs
     ports:
       - "5432:5432"
     environment:
@@ -162,6 +176,7 @@ services:
     restart: unless-stopped
     image: redis:7-alpine
     container_name: anios_redis
+    logging: *bounded-logs
     ports:
       - "6379:6379"
 
@@ -172,6 +187,7 @@ services:
     restart: unless-stopped
     build: .
     container_name: anios_local_capabilities
+    logging: *bounded-logs
     command:
       - python
       - -m
@@ -262,6 +278,7 @@ services:
     build:
       context: ./presentation-renderer
     container_name: anios_presentation_renderer
+    logging: *bounded-logs
     environment:
       - PORT=8002
       - MAX_REQUEST_BYTES=62914560
@@ -284,6 +301,7 @@ services:
     restart: unless-stopped
     build: .
     container_name: anios_presentation_worker
+    logging: *bounded-logs
     command:
       - python
       - -m
@@ -387,6 +405,7 @@ services:
     restart: unless-stopped
     build: .
     container_name: anios_discovery_worker
+    logging: *bounded-logs
     command:
       - python
       - -m
@@ -515,6 +534,7 @@ services:
     restart: unless-stopped
     build: .
     container_name: anios_backend
+    logging: *bounded-logs
     ports:
       - "8000:8000"
     environment:
@@ -755,6 +775,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.dev
     container_name: anios_frontend
+    logging: *bounded-logs
     ports:
       - "5173:5173"
     environment:
@@ -775,6 +796,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.gateway
     container_name: anios_gateway
+    logging: *bounded-logs
     # The tunnel targets one loopback-only port; no LAN or public socket is
     # opened, so ingress cannot reach anything the gateway does not serve.
     #
@@ -806,6 +828,7 @@ services:
     build:
       context: ./docker/comfyui
     container_name: anios_comfyui
+    logging: *bounded-logs
     # Comes back when Docker does, like every other service here. This was the
     # one that never got the line, which is exactly how it behaved: the whole
     # stack returned after a reboot and image generation alone did not, with
