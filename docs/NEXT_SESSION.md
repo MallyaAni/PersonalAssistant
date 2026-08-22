@@ -2448,3 +2448,22 @@ which is how the regression went unmeasured.
 - An SMS-only sender's inbound reads fine but the iMessage-service reply
   may fail (latent; both current allowlisted addresses are iMessage).
 - Outbound attachment path live-verified with a real PNG through Messages.
+
+## The attachment saga, closed (2026-08-22, bridge 962f335)
+
+Root cause of invisible outbound attachments: Messages.app is SANDBOXED
+and a scripted send hands it a bare file path it must be entitled to
+read. It reads ~/Pictures; it does not read hidden home folders or temp
+trees - so every scripted attachment send in this bridge's history
+queued a transfer stuck status=waiting forever while AppleScript
+reported "sent with attachment". Spool now lives at
+~/Pictures/anios-outbox. Implication: historical digest .ics
+attachments likely never delivered either (moot for current digests,
+which stopped attaching calendars, but explains any old reports of
+missing invites). One ghost remains: the 00:45:53Z send failure - an
+actual error, which the sandbox failure mode never produces - is
+unattributed; verbose reply-failure logging (c14b989) stands watch.
+
+Identity: deep-matter@agentmail.to signed in, sole enabled iMessage
+account, pinned via IMESSAGE_BRIDGE_ACCOUNT_ID. The alias-flip and
+self-thread classes of confusion are closed.
