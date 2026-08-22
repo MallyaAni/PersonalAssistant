@@ -319,7 +319,7 @@ def test_a_long_reply_splits_at_paragraphs():
     from backend.workers.imessage_chat import bubbles
 
     reply = "\n\n".join(
-        f"Paragraph {index} " + "words " * 40 for index in range(3)
+        f"Paragraph {index} " + "words " * 110 for index in range(3)
     )
 
     pieces = bubbles(reply)
@@ -685,3 +685,18 @@ async def test_reading_the_picture_in_view_does_not_renew_it(monkeypatch):
     redis.ttls[key] = 1
     assert await worker._stored_image("ani.mallya") == "art-1"
     assert redis.ttls[key] == 1, "a read must not keep a stale picture alive"
+
+
+# A medium reply is one bubble: 546 characters arrived as two near-equal
+# halves that each read like a complete answer, and the person asked why
+# it answered twice. Only a genuinely long reply is portioned.
+def test_a_medium_reply_stays_one_bubble():
+    from backend.workers.imessage_chat import bubbles
+
+    reply = (
+        ("Nice, that is the right cable. " * 9)
+        + "\n\n"
+        + ("And one more thing to check. " * 9)
+    )
+    assert 400 < len(reply) < 800
+    assert len(bubbles(reply)) == 1

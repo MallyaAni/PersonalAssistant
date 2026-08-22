@@ -794,9 +794,12 @@ def plain_text(reply: str) -> str:
 # How a long reply is paced and portioned. A short answer stays one bubble;
 # past the threshold it splits at paragraph boundaries into a few messages,
 # because that is how a person texts a long thought - and each bubble is a
-# thing a thumb can react to.
-_BUBBLE_THRESHOLD_CHARS = 420
-_BUBBLE_TARGET_CHARS = 400
+# thing a thumb can react to. The threshold was 420 and a 546-character
+# reply arrived as two near-equal halves that each read like a complete
+# answer - "it answered twice". A phone bubble carries 600-800 characters
+# comfortably, so only a genuinely long reply is portioned now.
+_BUBBLE_THRESHOLD_CHARS = 800
+_BUBBLE_TARGET_CHARS = 600
 _MAX_BUBBLES = 4
 _BUBBLE_PACE_SECONDS = 1.2
 
