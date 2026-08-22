@@ -412,8 +412,15 @@ class IMessageChatWorker:
                 )
                 if fetched is not None:
                     image.data_base64, image.media_type = fetched
-        except Exception:
-            logger.warning("imessage_chat_turn_failed", extra={"user": user_id})
+        except Exception as exc:
+            # The reason rides the warning; a bare line cost a live incident
+            # a diagnosis round-trip once already.
+            logger.warning(
+                "imessage_chat_turn_failed: %s: %s",
+                type(exc).__name__,
+                str(exc)[:200],
+                extra={"user": user_id},
+            )
             return TurnResult(_FAILURE_REPLY, ())
         reply = "".join(collected).strip()
         carried = tuple(image for image in images if image.data_base64)
