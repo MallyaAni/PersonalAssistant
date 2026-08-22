@@ -2571,3 +2571,30 @@ grammar enforcement.
 
 Desktop afterwards: a GPU appliance at most, or off. Memory note:
 anios-dgx-spark-hardware.md records Spark #1's address/key; add #2's.
+
+## Reply-prompt gates: run them against the real reply model
+
+The host's `llm` fixture falls back to the local 4B when MAIN_LLM_* is
+unset, and the 4B fails honesty behaviors DeepSeek passes (it could not
+produce "here's how to check Rockville yourself" - DeepSeek could). The
+runtime-faithful run for any prompts/reply/* change:
+
+    MAIN_LLM_BASE_URL=http://spark-b524.local:8888 \
+    MAIN_LLM_MODEL=deepseek-v4-flash MAIN_LLM_REASONING_EFFORT=none \
+    pytest backend/tests/functional/test_evidence_honesty_behaviour.py \
+           backend/tests/functional/test_no_invented_search_behaviour.py \
+           backend/tests/functional/test_imessage_reply_style.py
+
+Same class of lesson as MCP_SERVERS_JSON for the selector gates: a gate
+passing against the wrong runtime looks identical to one passing against
+the right one.
+
+## Deploy discipline, restated after the fourth in-flight casualty
+
+14:40:34Z: a texting user got "I hit a problem answering that" -
+ConnectError, no address for `backend` - because the backend container
+was being recreated mid-turn. Four times in one day a rebuild during a
+live conversation cost a visible turn. Until graceful drain exists, treat
+`docker compose up --build backend` as a user-visible event: check worker
+logs for activity in the last minutes first, batch prompt/code changes,
+and rebuild once.

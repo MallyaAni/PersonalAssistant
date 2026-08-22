@@ -76,6 +76,14 @@ async def test_stock_is_never_asserted_for_a_store_the_results_never_mention(llm
         "The reply says it could not confirm or has no information about "
         "Rockville specifically.",
     ), text
+    # Honesty that ends at "can't confirm" sent a real person off to do
+    # their own research. The reply must hand over the one-step check.
+    assert states(
+        text,
+        "The reply tells the person a concrete way to check Rockville's stock "
+        "themselves, such as opening the listing and selecting that store, "
+        "or calling the store.",
+    ), text
 
 
 async def test_a_request_for_links_over_imessage_carries_a_url(llm):
