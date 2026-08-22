@@ -65,6 +65,16 @@ _GATED = {
 
 _BY_NAME: dict[str, ModuleType] = {module.NAME: module for module in _MODULES}
 
+# The tools that change what is scheduled or taught, rather than answering
+# the turn. A firing must not be offered these: the instruction it carries
+# reads exactly like a request to schedule ("remind me every morning to
+# take my meds"), so the router calls schedule_task again and the person
+# receives a confirmation instead of their reminder - plus a second task,
+# then four. The cancel side is worse: it hard-deletes without asking.
+AUTOMATION_TOOLS: frozenset[str] = frozenset(
+    (schedule_task.NAME, manage_tasks.NAME, save_skill.NAME, manage_skills.NAME)
+)
+
 # Returned by `parse_builtin` for a name that is not a built-in at all, so the
 # caller can tell "not ours" from "ours, but the model left out what it
 # needed" (None).
@@ -76,12 +86,16 @@ NOT_BUILTIN = object()
 # capability description, so a disabled diagram or presentation agent
 # disappears from what the assistant says it can do at the same moment it
 # stops being callable.
-def builtin_tools(enabled: Iterable[str] = ()) -> list[BuiltinTool]:
+def builtin_tools(
+    enabled: Iterable[str] = (), withhold: Iterable[str] = ()
+) -> list[BuiltinTool]:
     on = set(enabled)
+    held = set(withhold)
     return [
         module.TOOL
         for module in _MODULES
-        if _GATED.get(module.NAME) is None or _GATED[module.NAME] in on
+        if module.NAME not in held
+        and (_GATED.get(module.NAME) is None or _GATED[module.NAME] in on)
     ]
 
 

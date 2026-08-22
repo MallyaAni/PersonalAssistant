@@ -37,6 +37,7 @@ from backend.services.mcp_tool_orchestration_service import (
 )
 from backend.skills.tools import parse_skill_call, skill_tool_definitions
 from backend.tools import (
+    AUTOMATION_TOOLS,
     NOT_BUILTIN,
     SEARCH_CAPABILITY,
     SEARCH_TOOL,
@@ -177,13 +178,16 @@ class MainActionSelector:
 
     # The built-in tools this selector offers, in the order it presents them,
     # from the registry minus the rows whose service is switched off.
-    def _available_builtins(self) -> list[BuiltinTool]:
+    def _available_builtins(self, unattended: bool = False) -> list[BuiltinTool]:
         enabled = []
         if self.diagram_enabled:
             enabled.append("diagram")
         if self.presentation_enabled:
             enabled.append("presentation")
-        return builtin_tools(enabled)
+        # A scheduled task firing carries the person's own instruction, which
+        # reads like a request to schedule; offering the automation tools to
+        # it lets a reminder reschedule or cancel itself unattended.
+        return builtin_tools(enabled, AUTOMATION_TOOLS if unattended else ())
 
     # Report whether local policy would let this turn search, without paying
     # for a session against the search server.
@@ -242,6 +246,7 @@ class MainActionSelector:
         query_embedding: list[float] | None = None,
         local_now: str | None = None,
         skills: list[dict[str, Any]] | None = None,
+        unattended: bool = False,
     ) -> MainAction:
         if not query.strip():
             return None
@@ -253,7 +258,7 @@ class MainActionSelector:
 
         tools.extend(
             self._builtin_definition(builtin.name, builtin.description, builtin.schema)
-            for builtin in self._available_builtins()
+            for builtin in self._available_builtins(unattended)
         )
         offered_skills = list(skills or [])
         tools.extend(skill_tool_definitions(offered_skills))

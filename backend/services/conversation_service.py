@@ -324,7 +324,17 @@ def _once_date(action: ScheduleTaskAction, timezone: str) -> date | None:
             stated = date.fromisoformat(action.on_date)
         except ValueError:
             stated = None
-        if stated is not None and stated >= today:
+        # The whole instant has to be ahead, not just the date. At 6:05pm
+        # "remind me at 5" means tomorrow, and the router - handed today's
+        # date - states today; taking it at face value armed a slot an hour
+        # in the past, which the worker fires within thirty seconds.
+        if stated is not None and (
+            stated > today
+            or (
+                stated == today
+                and (action.hour, action.minute) > (local_now.hour, local_now.minute)
+            )
+        ):
             return stated
     if (action.hour, action.minute) > (local_now.hour, local_now.minute):
         return today
@@ -453,6 +463,7 @@ class ConversationService:
         history: list[dict[str, Any]],
         active_image_artifact_id: str | None,
         skills: list[dict[str, Any]] | None = None,
+        unattended: bool = False,
     ) -> MainAction:
         if self.main_action_selector is None:
             return None
@@ -463,6 +474,7 @@ class ConversationService:
                 history,
                 active_image_artifact_id,
                 local_now=await self._local_now(user_id),
+                unattended=unattended,
                 skills=(
                     await self._offered_skills(user_id) if skills is None else skills
                 ),
@@ -501,6 +513,7 @@ class ConversationService:
         action: MainAction,
         history: list[dict[str, Any]],
         active_image_artifact_id: str | None,
+        unattended: bool = False,
     ) -> tuple[MainAction, dict[str, Any] | None]:
         if not isinstance(action, UseSkillAction):
             return action, None
@@ -508,7 +521,12 @@ class ConversationService:
             with suppress(Exception):
                 await self.skills.touch_used(user_id, action.skill_id)
         inner = await self._select_main_action(
-            user_id, action.instruction, history, active_image_artifact_id, skills=[]
+            user_id,
+            action.instruction,
+            history,
+            active_image_artifact_id,
+            skills=[],
+            unattended=unattended,
         )
         context = {
             "skill": {
@@ -1769,11 +1787,14 @@ class ConversationService:
             user_id,
             self.history_turn_limit,
         )
+        # A scheduled task fires with nobody watching, so the tools that
+        # change what is scheduled or taught are withheld from it.
+        unattended = bool((metadata or {}).get("scheduled_task"))
         action = await self._select_main_action(
-            user_id, query, history, active_image_artifact_id
+            user_id, query, history, active_image_artifact_id, unattended=unattended
         )
         events, action, skill_context, asked = await self._decide(
-            user_id, query, action, history, active_image_artifact_id
+            user_id, query, action, history, active_image_artifact_id, unattended
         )
         for event in events:
             yield event
@@ -1841,6 +1862,10 @@ class ConversationService:
             isinstance(action, DelegateAction)
             and action.capability_id == "presentation_agent"
             and self.presentation_jobs is not None
+            # A deck queued by a firing answers the person with "follow job
+            # <uuid> in Presentations while we keep chatting", which is not a
+            # message anyone wants at 7am and is the whole of what they get.
+            and not metadata.get("scheduled_task")
         ):
             return self._process_presentation_delegation(
                 user_id, asked, conversation_id, trace_id, metadata
@@ -1879,6 +1904,10 @@ class ConversationService:
         skill_context: dict[str, Any] | None = None,
     ) -> dict[str, Any] | None:
         context: dict[str, Any] = dict(skill_context or {})
+        # The tools are withheld at selection; this is the second wall, so a
+        # malformed provider response naming one cannot delete a task.
+        if metadata.get("scheduled_task"):
+            return context or None
         if (
             isinstance(action, SaveSkillAction | ManageSkillsAction)
             and self.skills is not None
@@ -1906,6 +1935,7 @@ class ConversationService:
         action: MainAction,
         history: list[dict[str, Any]],
         active_image_artifact_id: str | None,
+        unattended: bool = False,
     ) -> tuple[list[ChatStreamEvent], MainAction, dict[str, Any] | None, str]:
         events: list[ChatStreamEvent] = []
         if isinstance(action, UseSkillAction):
@@ -1913,7 +1943,7 @@ class ConversationService:
             if skill_event is not None:
                 events.append(skill_event)
         action, skill_context = await self._resolve_skill(
-            user_id, action, history, active_image_artifact_id
+            user_id, action, history, active_image_artifact_id, unattended
         )
         status = self._action_event(action)
         if status is not None:
@@ -2479,10 +2509,20 @@ class ConversationService:
         # true-sounding, passive, and wrong. This app auto-saves every
         # candidate the classifier selects, with no approval round-trip, so
         # the honest state to hand the model is "saved", not "offered".
-        candidates = await self._classify_memory_proposals(query, trace_id, user_id)
-        proposals = await self._persist_memory_proposals(
-            user_id, conversation_id, trace_id, candidates
-        )
+        #
+        # A scheduled task is exempt: its instruction is the same sentence
+        # every firing, so classifying it daily would write the same fact 365
+        # times a year, unattended and unseen. The person already said it once,
+        # when they set the task up, and that turn was classified normally.
+        if metadata.get("scheduled_task"):
+            candidates, proposals = [], []
+        else:
+            candidates = await self._classify_memory_proposals(
+                query, trace_id, user_id
+            )
+            proposals = await self._persist_memory_proposals(
+                user_id, conversation_id, trace_id, candidates
+            )
         # What specialized agents exist, read from the registry rather than
         # listed in the prompt: each agent describes itself from its own
         # tables, so this cannot advertise a capability an agent stopped

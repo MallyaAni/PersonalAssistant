@@ -408,6 +408,10 @@ class Settings(BaseSettings):
     # Longer than a chat turn's own timeout, so a live turn is never reclaimed
     # by a second worker mid-flight.
     SCHEDULED_TASK_LEASE_SECONDS: float = Field(default=900.0, gt=0, le=3_600)
+    # How late a slot may be and still be worth firing. A briefing the
+    # worker slept through arrives wrong, not late, so a missed slot is
+    # skipped rather than delivered at the wrong hour.
+    SCHEDULED_TASK_STALE_SECONDS: float = Field(default=3_600.0, gt=0, le=86_400)
     # Which operator-trusted MCP server owns the Apple device that sends.
     DISCOVERY_IMESSAGE_SERVER_ID: str = "imessage"
     # The public base a subscriber's calendar link is built from. Local by

@@ -317,3 +317,47 @@ async def test_an_instruction_to_ask_still_asks(llm):
     )
     text = str(result["content"])
     assert states(text, "the text asks the reader how the gym went"), text
+
+
+# The audit's headline finding, against the live router: a stored
+# instruction reads exactly like a request to schedule, so an ungated
+# firing called schedule_task again - the person received a confirmation
+# instead of their reminder, and a second task appeared, then four. The
+# cancel side hard-deleted the task that was firing.
+async def test_a_firing_can_neither_reschedule_nor_cancel_itself(selector):
+    from backend.services.main_action_selector import (
+        ManageSkillsAction,
+        SaveSkillAction,
+    )
+
+    forbidden = (
+        ScheduleTaskAction,
+        ManageTasksAction,
+        SaveSkillAction,
+        ManageSkillsAction,
+    )
+    # Every one of these is a plausible stored instruction, and each reads
+    # like a request to schedule, teach, or cancel something.
+    for instruction in (
+        "remind me every morning at 7 to take my meds",
+        "text me the weather for Arlington every day at 8",
+        "check whether the order shipped and stop reminding me once it has",
+        "each morning: the weather, then my calendar, then one headline",
+        "cancel this reminder if the rent is already paid",
+    ):
+        action = await selector.select(
+            "functional_test_user", instruction, [], None, unattended=True
+        )
+        assert not isinstance(action, forbidden), (instruction, action)
+
+
+# And the same instruction, typed by a person, still schedules.
+async def test_the_same_words_typed_by_a_person_still_schedule(selector):
+    action = await selector.select(
+        "functional_test_user",
+        "remind me every morning at 7 to take my meds",
+        [],
+        None,
+    )
+    assert isinstance(action, ScheduleTaskAction), action
+    assert action.hour == 7, action

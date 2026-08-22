@@ -171,3 +171,58 @@ while the answer streams and the plain record afterwards; the iMessage
 worker uses it as the "still working" bubble instead of a random
 pleasantry. Skills and tasks are visible and removable in the new
 Automations panel (`/api/v1/automations/{user_id}`).
+
+## What a firing is not allowed to do (2026-08-22, audit pass)
+
+An audit of the firing path, prompted by a reminder that answered "I can't
+control a stove", found the defects below. All are fixed and gated; the
+numbers are the audit's own ranking.
+
+**A firing could reschedule or cancel itself (worst).** `metadata
+["scheduled_task"]` was read in exactly one place - to append a prompt
+block. Nothing was gated. A stored instruction reads exactly like a
+request to schedule ("remind me every morning to take my meds"), so the
+router called `schedule_task` again: the person got a confirmation instead
+of their reminder and a second task appeared, then four. `manage_tasks`
+was worse - the picker returns the single candidate without asking the
+model, so a hard delete followed. Fixed at two walls: `AUTOMATION_TOOLS`
+(`backend/tools/registry.py`) are withheld from the router when the turn
+is unattended, and `_task_turn_context` refuses to write on a fired turn
+whatever the router said. Gated live on the 4B router with five plausible
+instructions, plus the converse - the same words typed by a person still
+schedule.
+
+**Silence was the default failure.** Any exception or empty reply closed
+the run `failed` and sent nothing; `attempt_count` was incremented and
+never read; a `once` task was already disabled, so a model timeout meant
+the reminder simply never arrived and nothing said so. Now: a failure with
+attempts left is requeued (`finish` returns `requeued`/`failed`/`not_mine`),
+and a run finally given up on sends one short line on its own channel.
+
+**A stale slot fired at the wrong hour.** A worker down from 3am to 11pm
+delivered the 7am briefing at 11pm. Slots more than `SCHEDULED_TASK_STALE_
+SECONDS` (1h) late are skipped, the task having already advanced.
+
+**The lease was never renewed.** `renew_lease` existed and no one called
+it, so a slow generation could lapse its own lease and be re-claimed and
+re-delivered by a second worker. `TaskRunner` now renews while the turn
+runs, and `finish` refuses a run another worker holds.
+
+**Memory was written on every firing.** The instruction was classified and
+persisted once per firing - the same fact 365 times a year, unattended.
+Scheduled turns are exempt; the person's original setup turn was
+classified normally.
+
+**A deck scheduled weekly delivered "follow job <uuid> in Presentations
+while we keep chatting"** to a phone, forever, with no deck. Delegation is
+not offered to a firing.
+
+**A once-date could be armed in the past.** `_once_date` compared dates but
+not times, so at 6:05pm "remind me at 5" armed today's 5pm slot and fired
+within thirty seconds. It now requires the whole instant to be ahead.
+
+Known and accepted: a firing's first turn has no thread history, so an
+instruction naming an earlier conversation has nothing to resolve against -
+the reply block handles it by writing the useful version rather than
+reporting the gap. Carrying the creating conversation's history into the
+firing is the next improvement.

@@ -48,7 +48,9 @@ class TaskRunner:
             created = await ScheduledTaskRepository(db).enqueue_due_runs()
         return len(created)
 
-    # One run, or False when nothing is claimable.
+    # One run, or False when nothing is claimable. The lease is renewed
+    # while the turn runs, so a slow generation is never mistaken for a dead
+    # worker and handed to a second one that would deliver it twice.
     async def run_once(self) -> bool:
         async with AsyncSessionLocal() as db:
             run = await ScheduledTaskRepository(db).claim_next(
@@ -60,21 +62,43 @@ class TaskRunner:
         if not task:
             await self._finish(run["id"], "failed", error_code="task_missing")
             return True
-        turn = await self._turn(task)
+        stop = asyncio.Event()
+        heartbeat = asyncio.create_task(self._renew(run["id"], stop))
+        try:
+            turn = await self._turn(task)
+        finally:
+            stop.set()
+            await asyncio.gather(heartbeat, return_exceptions=True)
         if turn is None:
-            await self._finish(run["id"], "failed", error_code="turn_failed")
+            await self._finish(run["id"], "failed", task, error_code="turn_failed")
             return True
         await self._deliver(run["id"], task, turn)
         return True
 
+    # Hold the claim while the turn runs.
+    async def _renew(self, run_id: str, stop: asyncio.Event) -> None:
+        interval = max(30.0, settings.SCHEDULED_TASK_LEASE_SECONDS / 3)
+        while not stop.is_set():
+            try:
+                await asyncio.wait_for(stop.wait(), timeout=interval)
+                return
+            except TimeoutError:
+                pass
+            async with AsyncSessionLocal() as db:
+                await ScheduledTaskRepository(db).renew_lease(
+                    run_id, self.worker_id, settings.SCHEDULED_TASK_LEASE_SECONDS
+                )
+
     # The finished turn to where the task was made from.
     async def _deliver(self, run_id: str, task: dict, turn: TurnResult) -> None:
         if task["channel"] != "imessage":
-            await self._finish(run_id, "completed", turn.reply)
+            await self._finish(run_id, "completed", task, turn.reply)
             return
         address = await self._address_for(task["user_id"])
         if address is None:
-            await self._finish(run_id, "undeliverable", turn.reply, "no_subscriber")
+            await self._finish(
+                run_id, "undeliverable", task, turn.reply, "no_subscriber"
+            )
             return
         try:
             await self.chat._deliver(address, turn)
@@ -84,23 +108,55 @@ class TaskRunner:
                 type(exc).__name__,
                 str(exc)[:200],
             )
-            await self._finish(run_id, "failed", turn.reply, "delivery_failed")
+            await self._finish(run_id, "failed", task, turn.reply, "delivery_failed")
             return
-        await self._finish(run_id, "delivered", turn.reply)
+        await self._finish(run_id, "delivered", task, turn.reply)
 
+    # Close a run, or put it back on the queue when it still has attempts.
+    # A run that has finally given up is told to the person rather than
+    # dying in the table: a one-time reminder that never arrives is worse
+    # than one that arrives saying it could not be done.
     async def _finish(
         self,
         run_id: str,
         status: str,
+        task: dict | None = None,
         output: str | None = None,
         error_code: str | None = None,
     ) -> None:
         async with AsyncSessionLocal() as db:
-            await ScheduledTaskRepository(db).finish(run_id, status, output, error_code)
+            outcome = await ScheduledTaskRepository(db).finish(
+                run_id, status, output, error_code, worker_id=self.worker_id
+            )
         logger.info(
             "scheduled_task_run_finished",
-            extra={"run": run_id, "status": status, "error": error_code},
+            extra={"run": run_id, "status": outcome, "error": error_code},
         )
+        if outcome == "failed" and task is not None:
+            await self._apologize(task)
+
+    # One short line on the task's own channel when a firing is given up on.
+    async def _apologize(self, task: dict) -> None:
+        if task.get("channel") != "imessage":
+            return
+        address = await self._address_for(str(task["user_id"]))
+        if address is None:
+            return
+        instruction = str(task.get("instruction") or "your scheduled task")
+        try:
+            await self.chat.invoke_tool(
+                settings.DISCOVERY_IMESSAGE_TOOL,
+                {
+                    "to": address,
+                    "body": (
+                        "Heads up - I couldn't run your scheduled task "
+                        f'("{instruction[:80]}") just now. It stays on your '
+                        "schedule; tell me if you want it changed."
+                    ),
+                },
+            )
+        except Exception:
+            logger.warning("scheduled_task_apology_failed", extra={"task": task["id"]})
 
     # The instruction as a chat turn on the task's own conversation. Marked
     # so the reply model knows it is a firing, not a person typing.

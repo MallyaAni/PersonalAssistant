@@ -24,6 +24,7 @@ from .actions import (
 )
 from .base import BuiltinTool
 from .registry import (
+    AUTOMATION_TOOLS,
     NOT_BUILTIN,
     SEARCH_CAPABILITY,
     SEARCH_TOOL,
@@ -36,6 +37,7 @@ from .registry import (
 )
 
 __all__ = [
+    "AUTOMATION_TOOLS",
     "NOT_BUILTIN",
     "SEARCH_CAPABILITY",
     "SEARCH_TOOL",

@@ -64,7 +64,16 @@ over the shipped `quick brief` pack for "give me a quick brief on the DGX
 Spark" (a miss by meaning, not a wrong answer). Taught skills invoked by name
 or meaning pass on both. One more item for the routing-model upgrade.
 
+An audit of the firing path (prompted by a reminder that answered "I can't
+control a stove") found seven more defects, all now fixed and gated - the
+worst being that a firing could reschedule or cancel itself, and that any
+failure was silent. See the audit section in TASKS_ARCHITECTURE.md.
+
 Open from here, in order of value:
+- Carry the creating conversation's history into a firing, so an instruction
+  naming an earlier discussion has something to resolve against. Today the
+  reply block covers it by writing the useful version instead of reporting
+  the gap, which is a patch over a missing input.
 - Run history in the Automations panel (web-channel output is stored on
   `scheduled_task_runs.output`; the panel shows tasks, not their runs yet).
 - Scout as a task kind (its schedule/subscribers/digest map one for one).

@@ -165,6 +165,7 @@ class StubMainActionSelector:
         query_embedding: list[float] | None = None,
         local_now: str | None = None,
         skills: list | None = None,
+        unattended: bool = False,
     ) -> MainAction:
         return self.action
 

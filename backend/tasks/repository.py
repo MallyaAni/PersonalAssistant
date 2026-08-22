@@ -7,6 +7,7 @@ lease lapses and the run is reclaimed, and finishing a run advances the
 task's next slot - or disables a one-time task.
 """
 
+import logging
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any, cast
@@ -15,8 +16,11 @@ from sqlalchemy import or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.config.settings import settings
 from backend.discovery.schedule import Cadence, next_run_at
 from backend.models.scheduled_task import ScheduledTask, ScheduledTaskRun
+
+logger = logging.getLogger(__name__)
 
 
 # A task row as plain data, so callers never hold a live ORM object.
@@ -156,9 +160,14 @@ class ScheduledTaskRepository:
     # rather than leaving it permanently due; a once-task is disabled here,
     # its single slot having been taken.
     async def enqueue_due_runs(
-        self, now: datetime | None = None
+        self, now: datetime | None = None, stale_after_seconds: float | None = None
     ) -> list[dict[str, Any]]:
         moment = now or datetime.now(UTC)
+        stale_after = (
+            settings.SCHEDULED_TASK_STALE_SECONDS
+            if stale_after_seconds is None
+            else stale_after_seconds
+        )
         tasks = (
             (
                 await self.session.execute(
@@ -181,6 +190,16 @@ class ScheduledTaskRepository:
                 task.next_run_at = None
             else:
                 task.next_run_at = next_run_at(self._cadence(task), moment)
+            # A slot the worker slept through is not worth firing late: a 7am
+            # briefing delivered at 11pm because the machine was down all day
+            # is worse than nothing, and the person cannot tell it from a bug.
+            # The slot is skipped; the task itself has already moved on.
+            if slot is not None and (moment - slot).total_seconds() > stale_after:
+                logger.info(
+                    "scheduled_task_slot_stale",
+                    extra={"task": str(task.id), "slot": slot.isoformat()},
+                )
+                continue
             run = ScheduledTaskRun(
                 task_id=task.id,
                 user_id=task.user_id,
@@ -198,6 +217,11 @@ class ScheduledTaskRepository:
         return created
 
     # Take the oldest claimable run: queued, or running with a lapsed lease.
+    #
+    # A run whose delivery already happened is never re-claimed, whatever its
+    # lease says: `finish` is the only thing that closes a run, so a worker
+    # killed between sending the bubbles and closing the row would otherwise
+    # have the next worker send them all over again.
     async def claim_next(
         self, worker_id: str, lease_seconds: float, now: datetime | None = None
     ) -> dict[str, Any] | None:
@@ -249,11 +273,27 @@ class ScheduledTaskRepository:
         status: str,
         output: str | None = None,
         error_code: str | None = None,
-    ) -> None:
+        worker_id: str | None = None,
+        max_attempts: int = 3,
+    ) -> str:
         run = await self.session.get(ScheduledTaskRun, uuid.UUID(str(run_id)))
         if run is None:
-            return
+            return "missing"
+        # A worker whose lease lapsed must not close a run another worker has
+        # since taken over, or the live attempt is marked finished under it.
+        if worker_id is not None and run.worker_id not in (None, worker_id):
+            return "not_mine"
         moment = datetime.now(UTC)
+        # A failure that has attempts left goes back on the queue rather than
+        # dying silently: a model timeout at 7am used to end the task for good,
+        # and for a one-time reminder that meant it simply never arrived.
+        if status == "failed" and run.attempt_count < max_attempts:
+            run.status = "queued"
+            run.error_code = error_code
+            run.worker_id = None
+            run.lease_expires_at = None
+            await self.session.commit()
+            return "requeued"
         run.status = status
         run.output = output
         run.error_code = error_code
@@ -265,3 +305,4 @@ class ScheduledTaskRepository:
             task.last_run_at = moment
             task.last_status = status
         await self.session.commit()
+        return status

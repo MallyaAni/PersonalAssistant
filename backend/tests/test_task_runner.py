@@ -39,7 +39,7 @@ class _Harness:
             self.turn_bodies.append(task)
             return turn
 
-        async def fake_finish(run_id, status, output=None, error_code=None):
+        async def fake_finish(run_id, status, task=None, output=None, error_code=None):
             self.finished.append((run_id, status, output, error_code))
 
         async def fake_address(user_id):
@@ -138,6 +138,9 @@ async def test_run_once_closes_a_run_whose_turn_failed(monkeypatch):
 
         async def claim_next(self, worker_id, lease):
             return {"id": "run-5", "user_id": "user-1", "task": _task()}
+
+        async def renew_lease(self, run_id, worker_id, lease):
+            return True
 
     class _Session:
         async def __aenter__(self):

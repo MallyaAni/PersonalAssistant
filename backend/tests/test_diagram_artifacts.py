@@ -48,6 +48,7 @@ class StubMainActionSelector:
         query_embedding=None,
         local_now=None,
         skills=None,
+        unattended=False,
     ) -> MainAction:
         return self.action
 
