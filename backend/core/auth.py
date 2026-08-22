@@ -130,7 +130,13 @@ async def get_authenticated_identity(
     if not settings.AUTH_REQUIRED:
         return None
     if authorization and authorization.startswith("Bearer "):
-        return verify_user_token(authorization[7:])
+        identity = verify_user_token(authorization[7:])
+        # Bearer callers spend the same metered search as browser sessions.
+        # This early return skipped the binding, so every bearer-driven turn
+        # - which is every iMessage turn - searched unmetered: limits never
+        # counted, never tripped, and never got communicated there.
+        await _bind_search_identity(db, identity.user_id)
+        return identity
     session_token = request.cookies.get(settings.AUTH_COOKIE_NAME)
     if not session_token:
         raise HTTPException(
