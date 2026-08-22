@@ -2510,3 +2510,26 @@ ask/edit target. Needs: bridge exposes the replied-to guid in
 read_messages (thread originator in chat.db), send path records guid ->
 artifact so the worker can map bubble to image. Recency remains the
 default for everyone who just types.
+
+## Retention: the processes in play (2026-08-22, operator directive)
+
+What users do cannot clog this machine: chat is text (whole DB 22MB),
+per-turn context is bounded (last 10 exchanges + budgeted recall), Redis
+state expires, vector recall is per-user over indexed sets. The growth
+was operational, and each source now has a bound:
+
+- Container logs: capped in compose (json-file 20m x 3 per service).
+- Docker build cache + dangling images: weekly Task Scheduler job "AniOS
+  Maintenance" (scripts/maintenance.ps1, Sundays 03:30) prunes cache
+  beyond 5GB and dangling images. First run reclaimed 21.5GB (manual) +
+  cache bounded thereafter.
+- ComfyUI outputs (E:/AI/ComfyUI/output): every generation kept forever,
+  redundant with the artifact store. The weekly job prunes anios_* files
+  older than 7 days; first run freed 711MB/230 files. Non-anios files
+  are never touched.
+- The job writes data/maintenance-report.txt (overwritten each run) with
+  docker sizes, DB size, and ComfyUI dir size - the quarterly-glance
+  numbers in one place.
+- Deliberately NOT auto-pruned: the artifact volume (user images are
+  user data; retention is the operator's call) and the Mac's spool (the
+  bridge cleans its own after an hour).
