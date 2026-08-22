@@ -51,6 +51,12 @@ _CONVERSATION_KEY = "imessage:chat:conversation:{user_id}"
 _IMAGE_KEY = "imessage:chat:image:{user_id}"
 _SEEN_TTL_SECONDS = 3 * 24 * 3600
 
+# How patiently an attachment fetch waits out iCloud's lazy download:
+# attempts x growing backoff covers the seconds a photo needs to land on
+# the Mac without stalling the turn for a picture that never will.
+_FETCH_ATTEMPTS = 3
+_FETCH_RETRY_SECONDS = 3.0
+
 # One reply can take a while on the local model; the read timeout has to
 # outlive a long generation, not a network hiccup.
 _CHAT_TIMEOUT_SECONDS = 300.0
@@ -353,16 +359,35 @@ class IMessageChatWorker:
         reply = str(result.get("analysis") or "").strip()
         return TurnResult(reply or _FAILURE_REPLY, ())
 
-    # One inbound attachment's bytes, over a direct MCP session rather than
-    # the invocation service: MCP_MAX_RESULT_CHARS ceilings at 60K by design
-    # to protect model contexts, and attachment payloads are plumbing for
-    # this worker, not text for a model. The session still comes from the
-    # same server config - token headers, moved-bridge rediscovery and all.
+    # One inbound attachment's bytes. Messages lazy-downloads attachments
+    # from iCloud, so a fetch racing the download answers not_found for a
+    # file that will exist seconds later - and the bridge deliberately makes
+    # that indistinguishable from never-existed as a probe defense. An id
+    # from a listing we just read is trustworthy, so not_found alone earns a
+    # short backoff and retry; every other refusal is final.
     async def _fetch_inbound_attachment(
         self, attachment_id: str
     ) -> tuple[str, str, str] | None:
         if not attachment_id:
             return None
+        for attempt in range(_FETCH_ATTEMPTS):
+            outcome = await self._read_attachment_once(attachment_id)
+            if outcome != "not_found":
+                return outcome if isinstance(outcome, tuple) else None
+            if attempt + 1 < _FETCH_ATTEMPTS:
+                await asyncio.sleep(_FETCH_RETRY_SECONDS * (attempt + 1))
+        logger.warning("imessage_chat_attachment_never_arrived")
+        return None
+
+    # One call over a direct MCP session rather than the invocation service:
+    # MCP_MAX_RESULT_CHARS ceilings at 60K by design to protect model
+    # contexts, and attachment payloads are plumbing for this worker, not
+    # text for a model. The session still comes from the same server config
+    # - token headers, moved-bridge rediscovery and all. Returns the fetched
+    # tuple, the literal string "not_found" (retryable), or None (final).
+    async def _read_attachment_once(
+        self, attachment_id: str
+    ) -> "tuple[str, str, str] | str | None":
         from backend.mcp.config import parse_server_configs
         from backend.mcp.session import open_session
 
@@ -385,6 +410,8 @@ class IMessageChatWorker:
                 getattr(item, "text", "") for item in (result.content or [])
             )
             payload = json.loads(text)
+            if payload.get("error") == "not_found":
+                return "not_found"
             if payload.get("error"):
                 logger.warning(
                     "imessage_chat_attachment_refused",

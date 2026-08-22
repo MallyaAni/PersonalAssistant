@@ -2406,3 +2406,15 @@ which is how the regression went unmeasured.
   from the phone) need bridge v2: read_messages returns text only by
   contract, so attachments require the Mac session's counterpart work
   plus an ingestion path to active_image_artifact_id.
+
+## iMessage channel: audit notes from the bridge session (2026-08-22)
+
+- Attachment fetches retry not_found (3 attempts, growing backoff): iCloud
+  lazy-downloads attachments, and the bridge's probe defense deliberately
+  makes "not yet downloaded" indistinguishable from "never existed". An id
+  from a listing we just read is trustworthy; other refusals are final.
+- Edited/retracted iMessages are UNTESTED on the read path. If a weird
+  duplicate or empty turn appears in the chat worker, suspect that first.
+- An SMS-only sender's inbound reads fine but the iMessage-service reply
+  may fail (latent; both current allowlisted addresses are iMessage).
+- Outbound attachment path live-verified with a real PNG through Messages.

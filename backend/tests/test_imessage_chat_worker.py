@@ -416,3 +416,43 @@ async def test_a_captionless_photo_is_a_valid_message(monkeypatch):
     assert bridge.sent == [
         {"to": "+17372025933", "body": "A sunny trail through the woods."}
     ]
+
+
+# iCloud lazy-downloads attachments, so not_found for an id we just read
+# from a listing is retryable; any other refusal is final and retries would
+# only hammer a bridge that already said no.
+@pytest.mark.asyncio
+async def test_a_lazy_download_is_waited_out(monkeypatch):
+    import backend.workers.imessage_chat as module
+
+    monkeypatch.setattr(module, "_FETCH_RETRY_SECONDS", 0.01)
+    worker = IMessageChatWorker(
+        lambda *a: None, base_url="http://test", redis=_Redis()
+    )
+    outcomes = ["not_found", "not_found", ("image/jpeg", "a.jpeg", "Zm9v")]
+
+    async def once(attachment_id):
+        return outcomes.pop(0)
+
+    monkeypatch.setattr(worker, "_read_attachment_once", once)
+
+    fetched = await worker._fetch_inbound_attachment("att-9")
+
+    assert fetched == ("image/jpeg", "a.jpeg", "Zm9v")
+
+
+@pytest.mark.asyncio
+async def test_a_final_refusal_is_never_retried(monkeypatch):
+    worker = IMessageChatWorker(
+        lambda *a: None, base_url="http://test", redis=_Redis()
+    )
+    calls: list[str] = []
+
+    async def once(attachment_id):
+        calls.append(attachment_id)
+        return None
+
+    monkeypatch.setattr(worker, "_read_attachment_once", once)
+
+    assert await worker._fetch_inbound_attachment("att-10") is None
+    assert calls == ["att-10"]
