@@ -2377,23 +2377,32 @@ the container first.
 
 ## Search-routing recall is below its own floor - pre-existing, now measured
 
-Found while gating the weather tool (2026-08-21): the selector's
-functional floor (test_main_action_selector_behaviour, recall >= 0.85 on
-ROUTING_CASES) fails at 0.827 on the unmodified selector - misses include
-"when did OpenAI release GPT-5", "what time does the game start", "did
-the merger go through". Adding get_weather to the offered set cost one
-more borderline case (0.793): more tools measurably distract the 4B's
-routing. Specificity is perfect (zero false alarms) both ways. Next
-quality task: tune prompts/routing/select_action.md with this gate as
-referee. Run it with MCP_SERVERS_JSON and SEARCH_API_KEY exported -
-ANIOS_TEST_MODE deliberately ignores .env, which is why the gate
-silently skips on a bare host run and this regression went unmeasured.
+Found while gating the weather tool (2026-08-21), FIXED the same day
+(8ba3f8e): recall was 0.793-0.827 against the 0.85 floor. Two principles
+in select_action.md closed it, measured across three iterations: recency
+phrasing (newest/latest, releases, outcomes, today/as-of-now) is live
+even when an answer feels memorized - with the distant past explicitly
+carved back out after "what happened in 1999" became a false alarm - and
+the hold-back-to-ask rule applies only to gaps in the user's own context,
+never to an unnamed thing in the world. After: recall 0.897, specificity
+1.0, all 34 selector + matrix gates green. Lesson kept: run these gates
+with MCP_SERVERS_JSON and SEARCH_API_KEY exported - ANIOS_TEST_MODE
+deliberately ignores .env, so the gate silently skips on a bare host run,
+which is how the regression went unmeasured.
 
 ## iMessage channel: remaining asks
 
-- Long replies as several short human-paced bubbles, and a friendlier
-  texting tone overall (user request). Splitting at paragraph bounds is
-  transport; the tone wants a channel hint reaching the reply prompt -
-  gated work, not yet started.
+- Bubbles + texting tone SHIPPED (a9e57df): the worker declares
+  channel=imessage in /chat metadata, the graph appends
+  prompts/reply/imessage_style for that channel only (web prompt pinned
+  byte-identical by a gate), verified against the deployed DeepSeek
+  runtime; long replies split at paragraph bounds into up to four paced
+  bubbles, tail merged never dropped.
 - Weather routing, ack variety, markdown flattening, session-by-lull all
   shipped and deployed 2026-08-21 (3abde89).
+- Images over iMessage: outbound (generate-and-send as attachment) is
+  backend-only work - the worker ignores artifact_ready events today and
+  send_imessage already carries attachments. Inbound photos (upload/edit
+  from the phone) need bridge v2: read_messages returns text only by
+  contract, so attachments require the Mac session's counterpart work
+  plus an ingestion path to active_image_artifact_id.
