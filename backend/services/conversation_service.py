@@ -404,6 +404,14 @@ class ConversationService:
         # skill picker fall back to it when no action selector is wired, and
         # that read would otherwise raise AttributeError rather than degrade.
         self.llm = llm
+        # Traces already written, so a second call for the same turn is a
+        # logged no-op rather than a duplicate row. `save_turn` is a bare
+        # session.add plus commit with no idempotency key, and eleven call
+        # sites reach it - today every pair is a mutually exclusive
+        # error/success branch, but nothing enforces that, and the database
+        # this writes to has no backups. The service is built per request,
+        # so this set spans exactly one turn and cannot grow unbounded.
+        self._persisted_traces: set[str] = set()
         self.assistant_graph = build_assistant_graph(llm)
         self.repository = repository
         self.tracer = tracer
@@ -2908,6 +2916,14 @@ class ConversationService:
         # embedded on its own.
         query_embedding: list[float] | None = None,
     ) -> None:
+        if trace_id and trace_id in self._persisted_traces:
+            logger.warning(
+                "Turn %s was already persisted; refusing to write it twice",
+                trace_id,
+            )
+            return
+        if trace_id:
+            self._persisted_traces.add(trace_id)
         await self.repository.save_turn(
             conversation_id,
             {
