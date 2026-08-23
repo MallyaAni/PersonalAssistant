@@ -1,0 +1,20 @@
+[Unit]
+# The vision model. Independent of the main LLM: it is a single-box server on
+# spark2 and has no rank to coordinate, so nothing orders it against ds4.
+Description=AniOS vision model (Qwen3-VL-8B AWQ)
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=animallya96
+ExecStart=/home/animallya96/vlm-serve.sh
+ExecStop=/usr/bin/docker stop -t 30 anios-vlm
+Restart=always
+RestartSec=30
+TimeoutStartSec=900
+TimeoutStopSec=60
+
+[Install]
+WantedBy=multi-user.target

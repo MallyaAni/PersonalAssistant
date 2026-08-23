@@ -1,0 +1,26 @@
+[Unit]
+# The main LLM's rank-1 process.
+#
+# Without this the Sparks come back from a power cycle with Docker up, the
+# whole application stack restarted by its restart policy - and no model
+# behind it, because ~/ds4-tp2.sh was only ever run by hand.
+Description=AniOS main LLM (DeepSeek V4 Flash, TP=2 worker)
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=animallya96
+# The launch script runs docker in the foreground with --rm, so systemd
+# supervises the container's lifetime directly.
+ExecStart=/home/animallya96/ds4-tp2.sh worker
+ExecStop=/usr/bin/docker stop -t 60 ds4-worker
+Restart=always
+RestartSec=30
+# The worker is started first and waits for the head to connect.
+TimeoutStartSec=3900
+TimeoutStopSec=120
+
+[Install]
+WantedBy=multi-user.target

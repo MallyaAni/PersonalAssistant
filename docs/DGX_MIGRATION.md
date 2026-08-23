@@ -246,3 +246,55 @@ connection per request, so it recovers on its own once :8000 answers.
 
 **A powered-off Spark still needs a physical button press** - no BMC, no
 Wake-on-LAN. Auto-start covers reboots, not power-on.
+
+## The first real power cycle, 2026-08-23
+
+Everything auto-started: `ds4-head`, `ds4-worker`, `anios-vlm` and all nine
+containers came up without a keystroke. Then the head died, and the reason was
+not the one the ordering comments predicted.
+
+```
+ValueError: To serve at least one request with the model's max seq len
+(1048576), 7.54 GiB KV cache is needed, which is larger than the available
+KV cache memory (5.09 GiB).
+```
+
+**Moving the application stack onto spark1 changed the model's boot budget.**
+`--gpu-memory-utilization` is a fraction of the whole pool and the profiler
+sizes KV from what it observes *free*, so the model that had 10.68 GiB of KV on
+an empty box found 5.09 GiB once the containers and the embedding server were
+starting alongside it. `--max-model-len` is 524288 now; it needs ~3.77 GiB and
+boots either way. Measured context use is median 4.4k / p90 11.7k / max 16.1k
+tokens, so the ceiling is still ~30x the worst real turn.
+
+The second failure was worse, because nothing detected it. systemd restarted the
+head 30 seconds later, but the worker on spark2 was still attached to the dead
+head's TCPStore:
+
+```
+[rank1] Failed to check the "should dump" flag on TCPStore,
+(maybe TCPStore server has shut down too early), with error: Broken pipe
+```
+
+It logged that and kept running. systemd saw `ActiveState=active
+SubState=running` and `NRestarts=0`, so `Restart=on-failure` never fired, and
+the new head waited at `parallel_state` init for a rank that was never going to
+arrive. Recovery was a manual restart in the documented order - worker, then
+head - and six minutes of loading.
+
+`Restart=always` is set on all three units now. It would not have caught this
+one: nothing in systemd catches a process that stops working without stopping.
+The recognisable symptom is recorded in `deploy/spark/README.md` instead - **a
+head sitting at `parallel_state` init for more than a few minutes means the
+worker is wedged, not slow.**
+
+Total user-visible outage: about twenty minutes, during which iMessage turns
+failed. The application containers came up before Postgres was accepting
+connections too (`Connect call failed ('172.16.8.3', 5432)`) and recovered on
+their own once it was.
+
+### The serving configuration was not in the repository
+
+`ds4-tp2.sh`, `vlm-serve.sh` and the three unit files existed only on the
+Sparks' disks - unreviewed, unversioned, and gone with the box if either drive
+failed. They are in `deploy/spark/` now, with the deploy and restart order.
