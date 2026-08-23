@@ -1582,7 +1582,14 @@ class ConversationService:
                 # follow-up like "yes please" gave it nothing but two words,
                 # and it invented a topic: a real user asked for mystery books
                 # and got search rounds about iPads and electric cars.
-                composed = self.search_planner.compose(query, _planner_history(history))
+                # Synchronous, and it makes a model call. Awaited bare from
+                # inside an async generator it holds the event loop for the
+                # whole round trip - which on this host stalls every other
+                # turn and the iMessage worker, because that worker answers
+                # serially behind the same loop.
+                composed = await asyncio.to_thread(
+                    self.search_planner.compose, query, _planner_history(history)
+                )
                 if composed:
                     chosen_query = composed
             outbound_query = _image_aware_search_query(chosen_query, image_matches)
@@ -1708,15 +1715,21 @@ class ConversationService:
             # the minimum its opinion is worth having, because by then the
             # question is whether to keep going rather than whether to start.
             if round_number + 1 < settings.SEARCH_MIN_ROUNDS:
-                better = self.search_planner.another_angle(question, gathered, tried)
+                better = await asyncio.to_thread(
+                    self.search_planner.another_angle, question, gathered, tried
+                )
                 # A round that is supposed to happen regardless must not be
                 # lost because one reply came back as prose rather than as a
                 # query. Asking the other way costs one model call and keeps
                 # the guarantee honest.
                 if not better:
-                    better = self.search_planner.refine(question, gathered, tried)
+                    better = await asyncio.to_thread(
+                        self.search_planner.refine, question, gathered, tried
+                    )
             else:
-                better = self.search_planner.refine(question, gathered, tried)
+                better = await asyncio.to_thread(
+                    self.search_planner.refine, question, gathered, tried
+                )
             if not better:
                 break
             # Every outbound query is screened, not just the first: a refined

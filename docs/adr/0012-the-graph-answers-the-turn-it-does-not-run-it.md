@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted 2026-08-23. `PLANNED`, with commit 1 of 10 landed (`73848a6e`).
+Accepted 2026-08-23 and **implemented**. Commits 1-6 landed and deployed;
+commits 7-9 were reconsidered and dropped, for the reason under
+*Amendment* below.
 
 ## Context
 
@@ -112,3 +114,42 @@ flag. Every commit before it reverts with an environment variable and a
 restart. Commit 9 is safe only because commits 1-8 never touch persistence
 ordering, never add a checkpointer, and never reorder retrieval - so what is
 deleted is a duplicate of code already proven in production.
+
+
+## Amendment, 2026-08-23: commits 7-9 dropped
+
+The plan's remaining commits moved `plan_context`, `recall`, `retrieve`,
+`memory_write` and `compose_context` into nodes behind a flag (C7), flipped the
+flag (C8), and deleted the legacy branch (C9). They are not being done, and
+this is a judgement rather than a pause.
+
+Those five phases are ~130 lines of orchestration that call about ten
+collaborators on `ConversationService`. As nodes they cannot reach those
+collaborators without either the service itself in `TurnDeps` - which a judge
+identified as a fatal flaw, and which is a circular coupling wearing a
+dataclass - or ten bound callables, which is the same coupling itemised. Either
+way the nodes are thin wrappers whose only new property is that they appear in
+a diagram. That is ceremony, not architecture, and it is precisely why every
+"the turn IS the graph" design scored between 3.2 and 4.5.
+
+The answering half is already a graph: `measure -> (enforce)? -> assemble ->
+generate`, with a real conditional edge, per-node retry semantics, one clock
+and one prompt render. What C7 would add is *context gathering*, which is the
+preparing half - the half this ADR's own title says the graph does not run.
+
+What C7 would have cost is concrete: a second implementation of the reply path
+living behind `REPLY_GRAPH_FULL` until C9 deleted it, in a method that appears
+in exactly one test file and only against stubs. Two paths, one of them
+unmeasured, is the shape of the drift this codebase has been bitten by all
+week.
+
+The one genuinely valuable item in C7-C10 was three lines, and it is done:
+`SearchPlanner.compose`, `.refine` and `.another_angle` are synchronous
+blocking model calls that were invoked bare from inside async generators,
+holding the event loop for two or three round trips per search turn - on a host
+where the iMessage worker answers serially behind that same loop. They run in
+`asyncio.to_thread` now.
+
+If context gathering ever needs to branch - skip recall for a scheduled task,
+retrieve differently per channel - that is the moment to revisit this, with a
+reason a diagram cannot supply.
