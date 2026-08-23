@@ -66,6 +66,17 @@ class ManageTasksAction:
 
     operation: str
     which: str = ""
+    # Reschedule only, and named exactly as ScheduleTaskAction names them so
+    # the one date resolver reads either without knowing which it has.
+    instruction: str | None = None
+    # None means "leave this as the task already has it". Defaulting cadence to
+    # "once" would turn "move the stretch reminder to 7pm" - a weekdays task -
+    # into a single firing, and nothing in the reply would say so.
+    cadence: str | None = None
+    hour: int = 0
+    minute: int = 0
+    weekday: int | None = None
+    on_date: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

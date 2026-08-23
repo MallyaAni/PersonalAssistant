@@ -123,6 +123,43 @@ class ScheduledTaskRepository:
         await self.session.commit()
         return True
 
+    # Move an existing task to a new schedule, and optionally change what it
+    # says. Re-arming from `now` is the whole point: the row's old slot may
+    # already be in the past, and leaving it there would either fire
+    # immediately or never.
+    #
+    # This exists because "change the tesla reminder to 5 minutes from now" had
+    # no write path at all. The advice was to cancel and re-create, which is two
+    # tool calls, and the selector makes one decision per turn - so the request
+    # was not expressible and the model answered as though it had done it.
+    async def reschedule_owned(
+        self,
+        user_id: str,
+        task_id: str,
+        cadence: Cadence,
+        instruction: str | None = None,
+        now: datetime | None = None,
+    ) -> dict[str, Any] | None:
+        task = await self._owned(user_id, task_id)
+        if task is None:
+            return None
+        task.cadence = cadence.cadence
+        task.hour = cadence.hour
+        task.minute = cadence.minute
+        task.weekday = cadence.weekday
+        task.on_date = cadence.on_date
+        task.timezone = cadence.timezone
+        if instruction and instruction.strip():
+            task.instruction = instruction.strip()
+        # A rescheduled task is armed by definition. Rescheduling a paused one
+        # is how someone resumes it at a different time, and leaving it
+        # disabled would silently discard the request.
+        task.enabled = True
+        task.next_run_at = next_run_at(cadence, now or datetime.now(UTC))
+        await self.session.commit()
+        await self.session.refresh(task)
+        return _task_dict(task)
+
     # Remove a task outright; its runs go with it by the foreign key.
     async def delete_owned(self, user_id: str, task_id: str) -> bool:
         task = await self._owned(user_id, task_id)

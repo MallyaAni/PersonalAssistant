@@ -35,6 +35,10 @@ from backend.services.main_action_selector import (
     EditImageAction,
     GenerateImageAction,
     MainActionSelector,
+    ManageSkillsAction,
+    ManageTasksAction,
+    SaveSkillAction,
+    ScheduleTaskAction,
     SearchAction,
     ToolboxAction,
 )
@@ -52,6 +56,14 @@ _ACTION_TOOL = {
     CreateDiagramAction: "create_diagram",
     DelegateAction: "delegate_to_presentation_agent",
     ToolboxAction: "mcp_tool",
+    # Absent until 2026-08-23, so every task and skill decision - correct or
+    # not - was scored as "no tool". The four newest capabilities were
+    # unmeasurable, and the aggregate looked fine because their failures were
+    # being counted as successes for `none`.
+    ScheduleTaskAction: "schedule_task",
+    ManageTasksAction: "manage_tasks",
+    SaveSkillAction: "save_skill",
+    ManageSkillsAction: "manage_skills",
 }
 
 
@@ -76,6 +88,7 @@ async def collect(
                 case.query,
                 history,
                 "active-image-id" if case.active_image else None,
+                local_now=case.local_now,
             )
             observations.append((case.expected, tool_of(action), case.category))
     return observations

@@ -1,4 +1,4 @@
-"""manage_tasks: list, cancel, pause, or resume scheduled tasks."""
+"""manage_tasks: list, cancel, pause, resume, or reschedule scheduled tasks."""
 
 from typing import Any
 
@@ -7,7 +7,24 @@ from .base import BuiltinTool
 
 NAME = "manage_tasks"
 
-OPERATIONS = ("list", "cancel", "pause", "resume")
+OPERATIONS = ("list", "cancel", "pause", "resume", "reschedule")
+
+# KNOWN, MEASURED: the "not for Scout" sentence in the description below does
+# not work. Adding `reschedule` took the four `agent_config` cases in
+# tool_selection_cases.py from 4/4 to 0/4 - "change the schedule to 9:25pm"
+# after talk of Scout now routes here instead of to no tool. Two wordings were
+# tried, leading and trailing, and neither moved it, because the reading is
+# defensible: the person did ask to change a schedule.
+#
+# The fix is structural, not prompt text. Either agent configuration gets its
+# own tool so the model chooses between two named things, or Scout's sweep
+# becomes an ordinary scheduled task and there is only one concept. Until then
+# this trade is deliberate: reminders that can actually be moved, against agent
+# reschedules that fall through to a conversational path.
+
+# The cadences reschedule accepts, kept identical to schedule_task's so moving
+# a task between shapes - a one-off becoming a daily - needs no second call.
+CADENCES = ("once", "daily", "weekdays", "weekly")
 
 _SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -16,9 +33,56 @@ _SCHEMA: dict[str, Any] = {
         "which": {
             "type": "string",
             "description": (
-                "Which task, in the person's words, when cancelling, pausing "
-                "or resuming - 'the weather one', 'the Friday reminder'. "
-                "Empty for list."
+                "Which task, in the person's words, when cancelling, pausing, "
+                "resuming or rescheduling - 'the weather one', 'the Friday "
+                "reminder', 'the tesla one'. Empty for list."
+            ),
+        },
+        # Reschedule carries the new timing itself. It used to be advertised as
+        # "cancel it and schedule a new one", which is two calls where only one
+        # is available per turn - so the request could not be carried out, and
+        # was answered as though it had been.
+        "cadence": {
+            "type": "string",
+            "enum": list(CADENCES),
+            "description": (
+                "Reschedule only: the new cadence. once for a single time, "
+                "daily for every day, weekdays for Monday to Friday, weekly "
+                "for one day each week. Keep the task's existing cadence when "
+                "only the time is changing."
+            ),
+        },
+        "hour": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 23,
+            "description": "Reschedule only: the new hour, 24-hour clock.",
+        },
+        "minute": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 59,
+            "description": "Reschedule only: the new minute.",
+        },
+        "weekday": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 6,
+            "description": "Reschedule only, for weekly: 0 is Monday, 6 is Sunday.",
+        },
+        "on_date": {
+            "type": "string",
+            "description": (
+                "Reschedule only, for once: the new calendar date as "
+                "YYYY-MM-DD, resolved from today's date for words like "
+                "tomorrow or Friday. For a time later today, today's date."
+            ),
+        },
+        "instruction": {
+            "type": "string",
+            "description": (
+                "Reschedule only, and only when what the task says should "
+                "change too. Leave it out to keep the existing wording."
             ),
         },
     },
@@ -30,11 +94,17 @@ TOOL = BuiltinTool(
     name=NAME,
     label="Manage scheduled tasks",
     description=(
-        "List, cancel, pause, or resume the tasks they already scheduled. "
-        "Choose it when they ask what is scheduled, or to stop, pause, or "
-        "restart one - 'cancel the weather texts', 'what do I have "
-        "scheduled?'. Changing a time or what a task does is a cancel and a "
-        "new schedule_task."
+        "List, cancel, pause, resume, or reschedule the reminders and "
+        "scheduled messages this person set up. Choose it when they ask what "
+        "is scheduled, or to stop, pause, or restart one - 'cancel the "
+        "weather texts', 'what do I have scheduled?'. Choose reschedule, with "
+        "the new time, when they want an existing one moved - 'change the "
+        "tesla reminder to 5 minutes from now', 'make the stretch reminder "
+        "7pm instead', 'push tomorrow's reminder to Friday'. Rescheduling is "
+        "one call: never answer as though a reminder moved without making it. "
+        "Not for Scout or any discovery agent: when the conversation is about "
+        "an agent's sweep, a follow-up about its schedule is about that "
+        "agent, and needs no tool."
     ),
     schema=_SCHEMA,
     waiting=(
@@ -44,12 +114,40 @@ TOOL = BuiltinTool(
 )
 
 
-# The call as an action, or nothing for an unknown operation.
+# The call as an action, or nothing for an unknown operation. Reschedule
+# without an hour is rejected rather than defaulted: a silent midnight is
+# indistinguishable from a working answer until the reminder does not arrive.
 def parse(arguments: dict[str, Any]) -> ManageTasksAction | None:
     operation = arguments.get("operation")
     if operation not in OPERATIONS:
         return None
     which = arguments.get("which")
+    which = which.strip() if isinstance(which, str) else ""
+    if operation != "reschedule":
+        return ManageTasksAction(operation=str(operation), which=which)
+
+    hour = arguments.get("hour")
+    if not isinstance(hour, int) or not 0 <= hour <= 23:
+        return None
+    minute = arguments.get("minute")
+    minute = minute if isinstance(minute, int) and 0 <= minute <= 59 else 0
+    weekday = arguments.get("weekday")
+    weekday = weekday if isinstance(weekday, int) and 0 <= weekday <= 6 else None
+    cadence = arguments.get("cadence")
+    cadence = cadence if cadence in CADENCES else None
+    on_date = arguments.get("on_date")
+    instruction = arguments.get("instruction")
     return ManageTasksAction(
-        operation=str(operation), which=which.strip() if isinstance(which, str) else ""
+        operation="reschedule",
+        which=which,
+        cadence=cadence,
+        hour=hour,
+        minute=minute,
+        weekday=weekday,
+        on_date=on_date.strip() if isinstance(on_date, str) and on_date.strip() else None,
+        instruction=(
+            instruction.strip()
+            if isinstance(instruction, str) and instruction.strip()
+            else None
+        ),
     )

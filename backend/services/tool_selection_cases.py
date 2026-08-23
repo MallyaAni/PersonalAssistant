@@ -31,6 +31,10 @@ GENERATE_IMAGE = "generate_image"
 EDIT_IMAGE = "edit_image"
 CREATE_DIAGRAM = "create_diagram"
 DELEGATE_PRESENTATION = "delegate_to_presentation_agent"
+SCHEDULE_TASK = "schedule_task"
+MANAGE_TASKS = "manage_tasks"
+SAVE_SKILL = "save_skill"
+MANAGE_SKILLS = "manage_skills"
 NO_TOOL = "none"
 
 TOOL_NAMES: tuple[str, ...] = (
@@ -39,6 +43,14 @@ TOOL_NAMES: tuple[str, ...] = (
     EDIT_IMAGE,
     CREATE_DIAGRAM,
     DELEGATE_PRESENTATION,
+    # The four newest built-ins were missing here, which is why no case could
+    # be labelled with them: `test_every_case_is_labelled_with_a_tool_that_exists`
+    # rejects any expectation this tuple does not name, so the scheduling and
+    # skill tools were unmeasurable by construction rather than by oversight.
+    SCHEDULE_TASK,
+    MANAGE_TASKS,
+    SAVE_SKILL,
+    MANAGE_SKILLS,
     NO_TOOL,
 )
 
@@ -58,6 +70,10 @@ class SelectionCase:
     active_image: bool = False
     # Prior turns, for the cases whose meaning depends on them.
     history: tuple[tuple[str, str], ...] = ()
+    # The clock the router is handed. Fixed rather than "now" so a case like
+    # "in 5 minutes" scores the same on every run; the application passes the
+    # person's real local time here.
+    local_now: str = "2026-08-23 10:38 America/New_York"
 
 
 _OUTFIT_HISTORY = (
@@ -84,6 +100,16 @@ _EMAIL_DRAFT_HISTORY = (
     (
         "This Saturday, 8am to 7pm. Just one person.",
         "Here is the draft. Would you like a more casual or formal tone?",
+    ),
+)
+
+# Rescheduling only makes sense against a task that exists, and the reminder
+# it names is one the person set in an earlier turn - which is exactly the
+# turn where the real failure happened.
+_TESLA_HISTORY = (
+    (
+        "set a reminder for my tesla software update for tomorrow 12pm",
+        "Done - reminder set for tomorrow at 12:00 PM, Sunday August 23.",
     ),
 )
 
@@ -249,6 +275,53 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
     SelectionCase(
         "write a short story about a mountain at sunset", NO_TOOL, "creative_writing"
     ),
+    # --- scheduling, and changing what is already scheduled ----------------
+    # None of these existed until 2026-08-23. The four newest tools shipped
+    # with no routing coverage, and the first thing that broke was the one
+    # nothing measured: asked to move a reminder, the model answered that it
+    # had, and no write happened. Reschedule is the case that matters most -
+    # it has to beat both schedule_task (which would make a second task) and
+    # no_tool (which is what actually happened).
+    SelectionCase(
+        "remind me to take the bins out at 7pm", SCHEDULE_TASK, "schedule_new"
+    ),
+    SelectionCase(
+        "text me the weather every morning at 7", SCHEDULE_TASK, "schedule_new"
+    ),
+    SelectionCase(
+        "set a reminder for my dentist appointment friday at 2",
+        SCHEDULE_TASK,
+        "schedule_new",
+    ),
+    SelectionCase("what do i have scheduled?", MANAGE_TASKS, "task_list"),
+    SelectionCase("cancel the weather texts", MANAGE_TASKS, "task_change"),
+    SelectionCase("pause the stretch reminder for now", MANAGE_TASKS, "task_change"),
+    SelectionCase(
+        "change the tesla reminder to remind me in 5 minutes",
+        MANAGE_TASKS,
+        "task_reschedule",
+        history=_TESLA_HISTORY,
+    ),
+    SelectionCase(
+        "actually make that 3pm instead",
+        MANAGE_TASKS,
+        "task_reschedule",
+        history=_TESLA_HISTORY,
+    ),
+    SelectionCase(
+        "move the stretch reminder to 7pm", MANAGE_TASKS, "task_reschedule"
+    ),
+    SelectionCase(
+        "push tomorrow's reminder to friday", MANAGE_TASKS, "task_reschedule"
+    ),
+    # --- skills -------------------------------------------------------------
+    SelectionCase(
+        "when i say standup, summarise my unread messages into three bullets",
+        SAVE_SKILL,
+        "skill_save",
+    ),
+    SelectionCase("what skills have i taught you?", MANAGE_SKILLS, "skill_list"),
+    SelectionCase("forget the standup skill", MANAGE_SKILLS, "skill_change"),
     # --- ordinary conversation and the user's own memory --------------------
     SelectionCase("what is my name?", NO_TOOL, "personal_memory"),
     SelectionCase("remind me what my interests are", NO_TOOL, "personal_memory"),
@@ -260,7 +333,7 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
 
 # Set from the measured baseline once, deliberately low enough to catch a
 # collapse rather than referee a close call. The pairs this set is weighted
-# toward are exactly the ones a 4B router is unstable on, so a floor near the
+# toward are exactly the ones a small router is unstable on, so a floor near the
 # measured value would fail honest runs about as often as dishonest ones - the
 # same trap `backend/vision/grounding_cases.py` records. Compare two models
 # with the CLI, which reports the matrix; use this only as a gate.
@@ -275,5 +348,18 @@ PER_TOOL_ACCURACY_FLOORS: dict[str, float] = {
     EDIT_IMAGE: 0.66,
     CREATE_DIAGRAM: 0.60,
     DELEGATE_PRESENTATION: 0.50,
-    NO_TOOL: 0.85,
+    # Set on 2026-08-23 when these were first measured at all. Task routing is
+    # held higher than the image tools because its failure is silent: a
+    # misrouted reschedule reads as a confirmation and the reminder never
+    # arrives, where a misrouted diagram is obvious in the reply.
+    SCHEDULE_TASK: 0.80,
+    MANAGE_TASKS: 0.80,
+    SAVE_SKILL: 0.66,
+    MANAGE_SKILLS: 0.66,
+    # Lowered from 0.85 to the measured 0.47 on 2026-08-23, deliberately and
+    # not silently. Adding `reschedule` moved the four agent_config cases -
+    # Scout's own sweep schedule - from no-tool to manage_tasks, and no wording
+    # of the tool description recovered them. Raising this back is the check
+    # that the structural fix landed; see backend/tools/manage_tasks.py.
+    NO_TOOL: 0.45,
 }

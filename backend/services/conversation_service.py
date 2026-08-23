@@ -5,6 +5,7 @@ import secrets
 import uuid
 from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import suppress
+from dataclasses import replace
 from datetime import date, datetime, timedelta
 from typing import Any
 
@@ -309,7 +310,11 @@ def _runnable(action: MainAction) -> MainAction:
 # The calendar date a one-time task fires on. The router states it when the
 # request named one; a bare "at 5" means today if that is still ahead in
 # the person's zone, otherwise tomorrow.
-def _once_date(action: ScheduleTaskAction, timezone: str) -> date | None:
+# Both actions carry the same timing field names, so one resolver reads
+# either: a reschedule needs exactly the date arithmetic a new schedule does.
+def _once_date(
+    action: "ScheduleTaskAction | ManageTasksAction", timezone: str
+) -> date | None:
     from zoneinfo import ZoneInfo
 
     if action.cadence != "once":
@@ -2225,11 +2230,64 @@ class ConversationService:
         if action.operation == "cancel":
             await self.scheduled_tasks.delete_owned(user_id, chosen)
             return {"kind": "cancelled", "task": before}
+        if action.operation == "reschedule":
+            return await self._reschedule_task(user_id, chosen, action, before)
         await self.scheduled_tasks.set_enabled(
             user_id, chosen, action.operation == "resume"
         )
         task = await self.scheduled_tasks.get_owned(user_id, chosen) or before
         return {"kind": f"{action.operation}d", "task": task}
+
+    # Move one task to a new time, keeping its timezone. The task's own
+    # timezone is used rather than the person's current one, so rescheduling
+    # from a different place does not silently shift every future firing.
+    #
+    # `outcome` distinguishes a refused reschedule from a completed one,
+    # because the reply is written from this record: "invalid" has to read as
+    # a failure, never as a move that happened.
+    async def _reschedule_task(
+        self,
+        user_id: str,
+        task_id: str,
+        action: ManageTasksAction,
+        before: dict[str, Any],
+    ) -> dict[str, Any]:
+        timezone = str(before.get("timezone") or "") or await self._primary_timezone(
+            user_id
+        )
+        if not timezone:
+            return {"kind": "needs_place", "task": before}
+        # Anything the model left out is carried over from the task as it
+        # stands. "Move the stretch reminder to 7pm" says nothing about
+        # cadence, and reading that as "once" would quietly end a recurring
+        # reminder - the reply would confirm a time and never mention that it
+        # now fires exactly one more time.
+        shape = replace(
+            action,
+            cadence=action.cadence or str(before.get("cadence") or "once"),
+            weekday=(
+                action.weekday
+                if action.weekday is not None
+                else int(before.get("weekday") or 0)
+            ),
+        )
+        try:
+            cadence = Cadence(
+                cadence=shape.cadence,
+                hour=shape.hour,
+                minute=shape.minute,
+                weekday=shape.weekday,
+                timezone=timezone,
+                on_date=_once_date(shape, timezone),
+            )
+        except ValueError as exc:
+            return {"kind": "invalid", "reason": str(exc), "task": before}
+        task = await self.scheduled_tasks.reschedule_owned(
+            user_id, task_id, cadence, instruction=action.instruction
+        )
+        if task is None:
+            return {"kind": "not_found", "requested": action.which}
+        return {"kind": "rescheduled", "task": task, "before": before}
 
     # Save a classified sweep cadence, when the schedule store is wired.
     #
