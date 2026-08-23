@@ -258,6 +258,12 @@ services:
       - PRESENTATION_REQUIRE_OFFICE_VALIDATION=true
     extra_hosts: *spark-hosts
     volumes:
+      # The image embedder's weights, 374 MB of ONNX. data/ is in
+      # .dockerignore so they are not in the image, and NomicVisionEmbedding
+      # Provider disables itself when the file is absent rather than raising -
+      # so a missing mount reads as "image search is off" with nothing logged.
+      # Read-only: nothing should ever write here.
+      - ./data/models:/app/data/models:ro
       - artifactdata:/app/data/artifacts
     depends_on:
       vllm-embedding:
@@ -518,6 +524,12 @@ services:
       - REDIS_URL=redis://animallya-spark1.local:6379/0
     extra_hosts: *spark-hosts
     volumes:
+      # The image embedder's weights, 374 MB of ONNX. data/ is in
+      # .dockerignore so they are not in the image, and NomicVisionEmbedding
+      # Provider disables itself when the file is absent rather than raising -
+      # so a missing mount reads as "image search is off" with nothing logged.
+      # Read-only: nothing should ever write here.
+      - ./data/models:/app/data/models:ro
       # The Google quota counter is shared with the API so both reserve against
       # one count rather than two.
       - searchdata:/app/data/search
@@ -744,6 +756,12 @@ services:
       - MODEL_GATE_POLL_SECONDS=${MODEL_GATE_POLL_SECONDS:-0.1}
     extra_hosts: *spark-hosts
     volumes:
+      # The image embedder's weights, 374 MB of ONNX. data/ is in
+      # .dockerignore so they are not in the image, and NomicVisionEmbedding
+      # Provider disables itself when the file is absent rather than raising -
+      # so a missing mount reads as "image search is off" with nothing logged.
+      # Read-only: nothing should ever write here.
+      - ./data/models:/app/data/models:ro
       - artifactdata:/app/data/artifacts
       - searchdata:/app/data/search
       # Context measurements accumulate across rebuilds here; docker logs do
