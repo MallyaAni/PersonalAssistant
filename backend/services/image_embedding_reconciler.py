@@ -59,8 +59,21 @@ async def reconcile_missing_embeddings(
                     settings.VISION_EMBEDDING_MODEL,
                 )
                 embedded += 1
+            except FileNotFoundError:
+                # The row says ready and the bytes are gone. Retrying cannot
+                # help, and this pass runs on a timer forever, so a traceback
+                # here is one stack trace per artifact per interval for the
+                # life of the process - noise that buries the failures worth
+                # reading. One line, no trace, and the id so it can be found.
+                logger.warning(
+                    "Image %s is marked ready but its file is missing (%s); "
+                    "it cannot be embedded",
+                    artifact.id,
+                    artifact.storage_key,
+                )
             except Exception:
-                # One bad image must not stop the rest; it is retried next pass.
+                # Anything else may be transient - a busy disk, a provider
+                # hiccup - so it keeps the trace and is retried next pass.
                 logger.warning(
                     "Reconciler could not embed image %s", artifact.id, exc_info=True
                 )
