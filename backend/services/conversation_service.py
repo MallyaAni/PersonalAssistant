@@ -2517,9 +2517,7 @@ class ConversationService:
         if metadata.get("scheduled_task"):
             candidates, proposals = [], []
         else:
-            candidates = await self._classify_memory_proposals(
-                query, trace_id, user_id
-            )
+            candidates = await self._classify_memory_proposals(query, trace_id, user_id)
             proposals = await self._persist_memory_proposals(
                 user_id, conversation_id, trace_id, candidates
             )

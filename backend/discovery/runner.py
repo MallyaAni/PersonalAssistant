@@ -33,7 +33,6 @@ from backend.agents.scout.describing import EventDescriber, Readable
 from backend.agents.scout.reranking import MemoryReranker
 from backend.config.settings import settings
 from backend.core.interfaces import RerankProvider, SearchProvider, TextWriter
-from backend.core.structured_fallback import JSONFallbackWriter
 from backend.discovery.decision_log import build_decision
 from backend.discovery.errors import DiscoveryError
 from backend.discovery.events import DiscoveredEvent, EventSource, FeedError
@@ -283,8 +282,6 @@ class DiscoveryRunner:
         # query at a person is exactly the judgement a small model does
         # smallest.
         judgement = writer
-        if writer is not None and structured is not writer:
-            judgement = JSONFallbackWriter(writer, structured)
         # Turns each interest into a search subject and a ranking vector aimed
         # at that person. One model call per sweep.
         self.aiming = AimPlanner(judgement)

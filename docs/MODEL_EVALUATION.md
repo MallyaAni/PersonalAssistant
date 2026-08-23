@@ -533,3 +533,31 @@ long prompt" shape the disk KV cache is built for, and unlike an in-memory
 prefix cache it is bounded by disk rather than by the KV pool and survives a
 server restart. Before moving engines, measure the replacement's caching at
 30k-100k, not at chat sizes.
+
+## The 4B is out of every role but vision (2026-08-23)
+
+Once the reply engine began enforcing JSON schemas, every reason to keep a
+second, smaller model disappeared at once. Six roles moved to the main
+model - reply, routing, memory proposals, diagram specs, presentations, and
+the sweep's judgement calls - and three pieces of machinery that existed
+only to work around the old engine were deleted:
+
+- `JSONFallbackWriter` (`backend/core/structured_fallback.py`, 94 lines, plus
+  its 107-line test). It asked the strong model first and fell back to the
+  grammar-enforcing 4B whenever the JSON did not parse, which meant a
+  malformed answer was quietly *replaced* by a weaker model's answer.
+- `FallbackInferenceProvider` (86 lines in `backend/core/llm.py`) and the
+  `MAIN_LLM_STANDBY_*` settings. The standby existed because the main model
+  ran on a host that was not always on. It pointed at a model a third as
+  capable, so an outage did not fail - it silently answered worse, with
+  nothing in the reply saying which model wrote it. Both Sparks are always
+  on now, and a reachability problem should read as one.
+
+`VISION_MODEL` stays on `qwen/qwen3.5-4b`: it is the only vision-language
+model available here, and replacing it is a separate decision with its own
+memory budget (~27 GB free per Spark after the TP=2 weights).
+
+Verified end to end after the change: a real chat turn routed on the new
+model chose `Scheduled tasks | weekdays at 18:00` for "remind me every
+weekday at 6pm to stretch", saved it, and confirmed the correct first run.
+1,628 structural tests pass.

@@ -205,19 +205,19 @@ services:
       - INFERENCE_ADAPTER=${INFERENCE_ADAPTER:-openai_compatible}
       - INFERENCE_PROVIDER_NAME=vllm
       - MAIN_INFERENCE_ADAPTER=${MAIN_INFERENCE_ADAPTER:-}
-      - MAIN_LLM_BASE_URL=http://vllm-main:8000
-      - MAIN_LLM_MODEL=qwen/qwen3.5-4b
+      - MAIN_LLM_BASE_URL=http://animallya-spark1.local:8000
+      - MAIN_LLM_MODEL=deepseek-v4-flash
       # Empty rather than DeepSeek's date: a wrong cutoff is worse than
       # none, because the model would trust everything before it.
       - MAIN_LLM_TRAINING_CUTOFF=${QWEN_TRAINING_CUTOFF:-}
       - MAIN_LLM_REASONING_EFFORT=${MAIN_LLM_REASONING_EFFORT:-none}
       - PRESENTATION_INFERENCE_ADAPTER=${PRESENTATION_INFERENCE_ADAPTER:-}
-      - PRESENTATION_LLM_BASE_URL=http://vllm-main:8000
-      - PRESENTATION_LLM_MODEL=qwen/qwen3.5-4b
+      - PRESENTATION_LLM_BASE_URL=http://animallya-spark1.local:8000
+      - PRESENTATION_LLM_MODEL=deepseek-v4-flash
       - PRESENTATION_LLM_REASONING_EFFORT=${PRESENTATION_LLM_REASONING_EFFORT:-none}
       - DIAGRAM_INFERENCE_ADAPTER=${DIAGRAM_INFERENCE_ADAPTER:-}
-      - DIAGRAM_LLM_BASE_URL=http://vllm-main:8000
-      - DIAGRAM_LLM_MODEL=qwen/qwen3.5-4b
+      - DIAGRAM_LLM_BASE_URL=http://animallya-spark1.local:8000
+      - DIAGRAM_LLM_MODEL=deepseek-v4-flash
       - DIAGRAM_LLM_REASONING_EFFORT=${DIAGRAM_LLM_REASONING_EFFORT:-none}
       - VISION_INFERENCE_ADAPTER=${VISION_INFERENCE_ADAPTER:-}
       - VISION_LLM_BASE_URL=http://vllm-main:8000
@@ -321,8 +321,8 @@ services:
       - INFERENCE_ADAPTER=${INFERENCE_ADAPTER:-openai_compatible}
       - INFERENCE_PROVIDER_NAME=vllm
       - PRESENTATION_INFERENCE_ADAPTER=${PRESENTATION_INFERENCE_ADAPTER:-}
-      - PRESENTATION_LLM_BASE_URL=http://vllm-main:8000
-      - PRESENTATION_LLM_MODEL=qwen/qwen3.5-4b
+      - PRESENTATION_LLM_BASE_URL=http://animallya-spark1.local:8000
+      - PRESENTATION_LLM_MODEL=deepseek-v4-flash
       - PRESENTATION_LLM_REASONING_EFFORT=${PRESENTATION_LLM_REASONING_EFFORT:-none}
       - IMAGE_PROVIDER_BASE_URL=http://host.docker.internal:8188
       # This worker creates slide imagery through the same provider the chat
@@ -507,8 +507,8 @@ services:
       # falling back is the correct behaviour when the model is genuinely down.
       - LLM_BASE_URL=http://vllm-main:8000
       - LLM_MODEL=qwen/qwen3.5-4b
-      - MAIN_LLM_BASE_URL=http://vllm-main:8000
-      - MAIN_LLM_MODEL=qwen/qwen3.5-4b
+      - MAIN_LLM_BASE_URL=http://animallya-spark1.local:8000
+      - MAIN_LLM_MODEL=deepseek-v4-flash
       # Empty rather than DeepSeek's date: a wrong cutoff is worse than
       # none, because the model would trust everything before it.
       - MAIN_LLM_TRAINING_CUTOFF=${QWEN_TRAINING_CUTOFF:-}
@@ -602,7 +602,7 @@ services:
       # multi-step word problem. Cost: ~5x Qwen's total reply time
       # (~32s vs ~6s avg), accepted as the intelligence/speed tradeoff.
       - MAIN_INFERENCE_ADAPTER=${MAIN_INFERENCE_ADAPTER:-}
-      - MAIN_LLM_BASE_URL=${MAIN_LLM_BASE_URL:-http://animallya-spark1.local:8888}
+      - MAIN_LLM_BASE_URL=${MAIN_LLM_BASE_URL:-http://animallya-spark1.local:8000}
       - MAIN_LLM_MODEL=${MAIN_LLM_MODEL:-deepseek-v4-flash}
       # Belongs with the model above, not with the deployment: it states
       # which of that model's beliefs are already stale, and the gap
@@ -636,9 +636,6 @@ services:
       # this the assistant is entirely down whenever that machine is, even
       # though vllm-main is running healthily right here. Degraded replies beat
       # no replies.
-      - MAIN_LLM_STANDBY_BASE_URL=http://vllm-main:8000
-      - MAIN_LLM_STANDBY_MODEL=qwen/qwen3.5-4b
-      - MAIN_LLM_STANDBY_REASONING_EFFORT=${MAIN_LLM_STANDBY_REASONING_EFFORT:-none}
       # MainActionSelector's tool-calling/routing stays on Qwen deliberately -
       # pinned here rather than left to fall back to MAIN_LLM_*, since without
       # this MainActionSelector's native tool calls would silently move to
@@ -646,20 +643,20 @@ services:
       # session; DeepSeek's own routing eval passed only barely (recall right
       # at the 0.85 floor), so there was no evidence to justify moving it.
       - ROUTING_INFERENCE_ADAPTER=${ROUTING_INFERENCE_ADAPTER:-}
-      - ROUTING_LLM_BASE_URL=http://vllm-main:8000
-      - ROUTING_LLM_MODEL=qwen/qwen3.5-4b
+      - ROUTING_LLM_BASE_URL=http://animallya-spark1.local:8000
+      - ROUTING_LLM_MODEL=deepseek-v4-flash
       - ROUTING_LLM_REASONING_EFFORT=${ROUTING_LLM_REASONING_EFFORT:-none}
       - PRESENTATION_INFERENCE_ADAPTER=${PRESENTATION_INFERENCE_ADAPTER:-}
-      - PRESENTATION_LLM_BASE_URL=http://vllm-main:8000
-      - PRESENTATION_LLM_MODEL=qwen/qwen3.5-4b
+      - PRESENTATION_LLM_BASE_URL=http://animallya-spark1.local:8000
+      - PRESENTATION_LLM_MODEL=deepseek-v4-flash
       - PRESENTATION_LLM_REASONING_EFFORT=${PRESENTATION_LLM_REASONING_EFFORT:-none}
       - DIAGRAM_INFERENCE_ADAPTER=${DIAGRAM_INFERENCE_ADAPTER:-}
-      - DIAGRAM_LLM_BASE_URL=http://vllm-main:8000
-      - DIAGRAM_LLM_MODEL=qwen/qwen3.5-4b
+      - DIAGRAM_LLM_BASE_URL=http://animallya-spark1.local:8000
+      - DIAGRAM_LLM_MODEL=deepseek-v4-flash
       - DIAGRAM_LLM_REASONING_EFFORT=${DIAGRAM_LLM_REASONING_EFFORT:-none}
       - MEMORY_PROPOSAL_INFERENCE_ADAPTER=${MEMORY_PROPOSAL_INFERENCE_ADAPTER:-openai_compatible}
-      - MEMORY_PROPOSAL_LLM_BASE_URL=http://vllm-main:8000
-      - MEMORY_PROPOSAL_LLM_MODEL=qwen/qwen3.5-4b
+      - MEMORY_PROPOSAL_LLM_BASE_URL=http://animallya-spark1.local:8000
+      - MEMORY_PROPOSAL_LLM_MODEL=deepseek-v4-flash
       - MEMORY_PROPOSAL_LLM_REASONING_EFFORT=${MEMORY_PROPOSAL_LLM_REASONING_EFFORT:-none}
       - MEMORY_PROPOSAL_MAX_TOKENS=${MEMORY_PROPOSAL_MAX_TOKENS:-1024}
       - VISION_INFERENCE_ADAPTER=${VISION_INFERENCE_ADAPTER:-}

@@ -75,7 +75,7 @@ class Settings(BaseSettings):
     # to Qwen, which is why the fix kept having to be repeated. Set this true
     # when the main model is served by an engine that honours schemas, and every
     # structured caller follows the main model at once.
-    MAIN_LLM_STRUCTURED_OUTPUT: bool = False
+    MAIN_LLM_STRUCTURED_OUTPUT: bool = True
     # When the reply model's training data ends, as YYYY-MM.
     #
     # Knowing today's date tells a model when "now" is. Knowing this tells it
@@ -567,11 +567,6 @@ class Settings(BaseSettings):
     # unset, every reply and routing decision simply raises while it is off,
     # which takes the whole assistant down rather than degrading it. Empty
     # disables the standby and restores the previous all-or-nothing behaviour.
-    MAIN_LLM_STANDBY_BASE_URL: str = ""
-    MAIN_LLM_STANDBY_MODEL: str = ""
-    MAIN_LLM_STANDBY_REASONING_EFFORT: Literal[
-        "none", "minimal", "low", "medium", "high", "xhigh"
-    ] = "none"
     VISION_SEARCH_GROUNDING_ENABLED: bool = True
     # Sized for one tool call plus the thinking a reasoning model spends
     # before emitting it; the 4B stops early so the headroom is free.

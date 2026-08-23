@@ -36,7 +36,6 @@ from backend.core.interfaces import (
     VisionProvider,
 )
 from backend.core.llm import (
-    FallbackInferenceProvider,
     LLMClient,
     create_inference_provider,
 )
@@ -237,28 +236,20 @@ def _build_llm_client(
 
 # Build the primary conversation and supervisor model with legacy fallbacks.
 #
-# Wrapped in a standby when one is configured, because the main model now runs
-# on a separate machine that is not always powered on. Without this the whole
-# assistant is down whenever that host is - every reply, route and
-# classification raising a connection error - while a perfectly healthy smaller
-# model sits unused on this box.
+# The one conversational model. There is deliberately no standby behind it.
+#
+# A standby was wired here while the main model ran on a host that was not
+# always powered on, and it pointed at a model a third as capable - so an
+# outage did not fail, it silently answered worse, and nothing in the reply
+# said which model had written it. Both Sparks are always on now, and a
+# reachability problem should read as one rather than as the assistant
+# quietly getting dimmer.
 def get_llm_client() -> LLMClient:
-    primary = _build_llm_client(
+    return _build_llm_client(
         settings.MAIN_INFERENCE_ADAPTER or settings.INFERENCE_ADAPTER,
         settings.MAIN_LLM_BASE_URL or settings.LLM_BASE_URL,
         settings.MAIN_LLM_MODEL or settings.LLM_MODEL,
         settings.MAIN_LLM_REASONING_EFFORT,
-    )
-    if not settings.MAIN_LLM_STANDBY_BASE_URL:
-        return primary
-    return FallbackInferenceProvider(
-        primary,
-        _build_llm_client(
-            settings.MAIN_INFERENCE_ADAPTER or settings.INFERENCE_ADAPTER,
-            settings.MAIN_LLM_STANDBY_BASE_URL,
-            settings.MAIN_LLM_STANDBY_MODEL or settings.LLM_MODEL,
-            settings.MAIN_LLM_STANDBY_REASONING_EFFORT,
-        ),
     )
 
 
@@ -993,17 +984,14 @@ def build_deferred_vision_service(db: AsyncSession) -> VisionAnalysisService:
 
 # Build the replaceable diagram provider around its configured local model.
 #
-# The strong prose model writes the mermaid first - the 4B produced invalid
-# specifications twice at temperature zero for a real request ("a diagram
-# of the agile process"), and its own code comment records 0-of-8 scoring
-# streaks - with the enforcing engine as the parse fallback, the same
-# inversion the sweep's judgement calls use. The spec validator still gates
-# every answer regardless of which engine wrote it.
+# The spec validator still gates every answer, but the model writing them is
+# now the main one: since the reply engine began enforcing JSON schemas there
+# is nothing for a second, weaker model to catch. It used to be the parse
+# fallback, which meant a malformed spec was silently answered by a 4B whose
+# own code comment records 0-of-8 scoring streaks.
 def get_diagram_provider(llm: DiagramLlmDependency) -> LLMDiagramProvider:
-    from backend.core.structured_fallback import JSONFallbackWriter
-
     return LLMDiagramProvider(
-        JSONFallbackWriter(get_llm_client(), llm),
+        llm,
         settings.DIAGRAM_LLM_MODEL or settings.MAIN_LLM_MODEL or settings.LLM_MODEL,
     )
 
@@ -1201,12 +1189,10 @@ DependencyPlaceSuggester = Annotated[
 # deployment with no model still delivers — `DigestWriter(None)` renders the
 # assembled shape instead of failing.
 def get_digest_writer() -> DigestWriter:
-    # The prose model writes the message a person reads; the grammar engine
-    # answers only when that JSON fails validation, instead of the digest
-    # silently degrading to the assembled form letter.
-    from backend.core.structured_fallback import JSONFallbackWriter
-
-    return DigestWriter(JSONFallbackWriter(get_llm_client(), get_routing_llm_client()))
+    # The model that writes the message a person reads also enforces the
+    # schema now, so there is no second engine behind it and no path where a
+    # digest silently degrades to the assembled form letter.
+    return DigestWriter(get_llm_client())
 
 
 # Reads tapbacks off the bubbles already sent, through the same trusted MCP
