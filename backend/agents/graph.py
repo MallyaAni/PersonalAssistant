@@ -7,6 +7,7 @@ from langgraph.config import get_stream_writer
 from langgraph.graph import END, StateGraph
 from typing_extensions import TypedDict
 
+from backend.agents.reply.emit import emit
 from backend.config.settings import settings
 from backend.core.context_budget import (
     BudgetReport,
@@ -751,7 +752,10 @@ def build_assistant_graph(llm: LLMClient) -> Any:
         # than a short one.
         for chunk in llm.stream_chat(messages, settings.MAIN_LLM_MAX_TOKENS):
             response_chunks.append(chunk)
-            writer({"type": "message.delta", "content": chunk})
+            # The wire shape, not a private one. `emit` validates the name
+            # against ChatStreamEvent, so a kind the consumer would drop
+            # raises here instead of vanishing.
+            emit("delta", content=chunk)
         return {
             "messages": [{"role": "assistant", "content": "".join(response_chunks)}]
         }

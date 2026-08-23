@@ -2675,10 +2675,25 @@ class ConversationService:
         # 3. Execute AssistantGraph
         self.tracer.log_step(trace_id, "graph_execution", {"status": "started"})
         response_chunks = []
-        async for event in self.assistant_graph.astream(
+        # `subgraphs=True` lands before any subgraph exists, deliberately.
+        # Without it a subgraph's custom events are dropped silently - probed
+        # on langgraph 1.2.9: one event arrives instead of two, no warning
+        # anywhere. Adding the flag later, at the moment the first subgraph is
+        # written, is how that becomes an afternoon of confusion.
+        async for _namespace, event in self.assistant_graph.astream(
             initial_state.model_dump(),
             stream_mode="custom",
+            subgraphs=True,
         ):
+            # The wire shape. Everything a node emits is already a
+            # ChatStreamEvent, so this relays rather than translates.
+            if "event" in event:
+                if event["event"] == "delta":
+                    response_chunks.append(event["data"]["content"])
+                yield event
+                continue
+            # The shape the single node used before C3. Kept for one commit so
+            # a revert of either side alone still streams.
             if event.get("type") == "message.delta":
                 chunk = event["content"]
                 response_chunks.append(chunk)
