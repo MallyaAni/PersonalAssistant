@@ -215,3 +215,34 @@ each dependency from inside the container, not by curling `/health`.
 The desktop-RTX generation service was dead code once the Sparks took over -
 80 lines of service definition plus three stale comments and a startup-script
 line that brought up a service nothing depended on.
+
+### The models now start themselves
+
+The application containers carry `restart: unless-stopped`, so Docker brings
+them back after a power cycle. The *models* did not: `~/ds4-tp2.sh` and
+`~/vlm-serve.sh` were only ever run by hand, so a reboot produced a fully
+running stack with nothing behind it.
+
+Three systemd units fix that, all `enabled`:
+
+| host | unit | runs |
+|---|---|---|
+| spark1 | `ds4-head.service` | `ds4-tp2.sh head` - serves :8000 |
+| spark2 | `ds4-worker.service` | `ds4-tp2.sh worker` - rank 1 |
+| spark2 | `anios-vlm.service` | `vlm-serve.sh` - vision on :8001 |
+
+The launch scripts run `docker` in the foreground with `--rm`, so systemd
+supervises the container directly and `ExecStop` names the container.
+
+Cross-host ordering cannot be expressed in systemd, and does not need to be:
+the head blocks until rank 1 joins, and `VLLM_ENGINE_READY_TIMEOUT_S=3600`
+gives spark2 room to finish booting. `TimeoutStartSec` is 3900 on both so
+systemd does not kill a startup that is merely slow - loading ~167 GB across
+two boxes is not fast.
+
+The application containers will come up before the model is ready and log
+connection failures for a few minutes. That is harmless: the backend opens a
+connection per request, so it recovers on its own once :8000 answers.
+
+**A powered-off Spark still needs a physical button press** - no BMC, no
+Wake-on-LAN. Auto-start covers reboots, not power-on.
