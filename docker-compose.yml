@@ -163,6 +163,12 @@ services:
     restart: unless-stopped
     image: redis:7-alpine
     container_name: anios_redis
+    # Named, because this is not a cache. Redis holds the iMessage read cursor,
+    # and without a named volume the data sat in an anonymous one that any
+    # recreate would abandon - the container would come back empty and the
+    # bridge would silently replay or skip messages with nothing logged.
+    volumes:
+      - redisdata:/data
     logging: *bounded-logs
     ports:
       - "6379:6379"
@@ -944,6 +950,7 @@ services:
         condition: service_healthy
 
 volumes:
+  redisdata:
   pgdata:
   artifactdata:
   searchdata:
