@@ -87,6 +87,53 @@ services:
       start_period: 3m
     restart: unless-stopped
 
+  functional-tests:
+    # The deploy gate. Never started by `docker compose up`: the profile keeps
+    # it out of every ordinary command, and it only ever runs via
+    # `docker compose run` from scripts/gate.sh.
+    #
+    # `target: test` is the one place that stage is asked for. Every serving
+    # service leaves `target` unset and gets `runtime`, which is the last stage.
+    profiles:
+      - test
+    build:
+      context: .
+      target: test
+    image: anios-functional-tests
+    extra_hosts: *spark-hosts
+    environment:
+      # backend/tests/conftest.py sets ANIOS_TEST_MODE=1, which makes settings
+      # ignore .env entirely (env_file=None). Every value the gate needs must
+      # therefore arrive as real process environment - inheriting it from the
+      # file the rest of the stack uses is exactly what does not happen here.
+      - ANIOS_TEST_MODE=1
+      # Turns every skip in backend/tests/functional into a failure. Without it
+      # a gate passes when the Sparks are simply unreachable.
+      - ANIOS_REQUIRE_FUNCTIONAL=1
+      - DEBUG=false
+      - SECRET_KEY=${SECRET_KEY:?the gate needs the real key to build settings}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-}
+      - MCP_SERVERS_JSON=${MCP_SERVERS_JSON:?the gate needs the internet server}
+      - SEARCH_API_KEY=${SEARCH_API_KEY:-}
+      - SEARCH_BASE_URL=${SEARCH_BASE_URL:-}
+      - SEARCH_MCP_SERVER_ID=${SEARCH_MCP_SERVER_ID:-internet}
+      - MAIN_LLM_BASE_URL=${MAIN_LLM_BASE_URL:-http://animallya-spark1.local:8000}
+      - MAIN_LLM_MODEL=${MAIN_LLM_MODEL:-deepseek-v4-flash}
+      - ROUTING_LLM_BASE_URL=${ROUTING_LLM_BASE_URL:-http://animallya-spark1.local:8000}
+      - ROUTING_LLM_MODEL=${ROUTING_LLM_MODEL:-deepseek-v4-flash}
+      - VISION_BASE_URL=${VISION_BASE_URL:-http://animallya-spark2.local:8001}
+      - VISION_MODEL=${VISION_MODEL:-qwen3-vl-8b}
+      - EMBEDDING_BASE_URL=${EMBEDDING_BASE_URL:-http://vllm-embedding:8000}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-text-embedding-nomic-embed-text-v1.5}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_DB=${POSTGRES_DB:-anios_db}
+      - POSTGRES_HOST=${POSTGRES_HOST:-animallya-spark1.local}
+      - DATABASE_USE_NULL_POOL=true
+    # Nothing to serve; gate.sh supplies the command.
+    command: ["python", "-m", "pytest", "--version"]
+
+
   db:
     # Comes back when Docker does, so a reboot does not
     # need someone to remember to start it.

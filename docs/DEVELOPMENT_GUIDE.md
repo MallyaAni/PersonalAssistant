@@ -93,6 +93,72 @@ Whether a turn needs the internet is one branch of that same decision, scored
 over `backend/search/routing_cases.py`; the deterministic `--patterns-only`
 mode went with the regex cascade it ran.
 
+### The deploy gate
+
+Measuring routing is not the same as *enforcing* it. `scripts/gate.sh` runs the
+matrix against the real router and refuses a deploy that regressed:
+
+```bash
+bash scripts/gate.sh          # the routing matrix - what deploy.sh calls
+bash scripts/gate.sh --all    # every functional test, on demand
+bash scripts/gate.sh <path>   # one file
+```
+
+It runs in the `functional-tests` compose service, which builds the
+`test` stage of the root `Dockerfile` - the one place pytest exists. Serving
+images build the last stage, `runtime`, and `import pytest` fails in them; that
+ordering is what keeps six `build: .` services from needing a `target:` key
+each, where missing one would silently ship test tooling into production.
+
+Two properties matter more than the assertions:
+
+**A skip is a failure.** The service sets `ANIOS_REQUIRE_FUNCTIONAL=1`, and a
+hook in `backend/tests/functional/conftest.py` turns every skip in that
+directory into a failure. Those tests skip when a model is unreachable, which
+is right for a laptop and exactly wrong for a gate: without this, "the Sparks
+were down" and "the prompts still work" produce the same green, at the moment a
+gate most needs to say no. Anything genuinely unrunnable in a container is
+deselected by path in `gate.sh`, where the omission is visible.
+
+**Being allowed to search is not search working.** `MainActionSelector` catches
+`MCPInvocationError` and quietly omits `search_web` from the offer, so a stdio
+server that fails to spawn makes the accuracy floors fail in a way that reads
+exactly like a prompt regression. The `resolved_search_tool` fixture resolves
+the tool up front and fails with the real reason instead.
+
+The gate needs no database. The functional tests that do touch Postgres follow
+the convention in `backend/tests/test_scheduled_task_repository.py` - rows
+tagged with a throwaway user id, deleted in the same test. That is INSERT and
+DELETE against tagged rows, never DDL, so `anios_db` is not in the blast radius.
+
+Cost: about three minutes for the matrix, which is why that is the default
+target and `--all` is opt-in.
+
+`deploy.sh --skip-gate` exists deliberately. A model gate can flake, the public
+URL has real users, and a hotfix that cannot ship is a worse outage than the
+regression the gate guards against.
+
+### What the gate found on its first run
+
+Worth recording, because it is the argument for having one. The first real run
+came back red on assertions that had **nothing to do with the change being
+tested**:
+
+- `test_writing_followups_do_not_invoke_unrelated_tools` requires all four
+  drafting follow-ups to route to no tool. It was at 2/4 - and had been,
+  before any of that day's work.
+- `test_turns_needing_no_tool_do_not_reach_for_one` requires 0.85 of no-tool
+  cases to stay there. It was at 0.63.
+
+Both had been failing for an unknown length of time. Nobody knew, because
+these tests could not run: pytest was absent from every image, and the six
+cases in that file skipped on a config gate outside the container. A gate that
+cannot run is indistinguishable from a gate that passes.
+
+The lesson is the general one: **a test suite nothing executes is not
+coverage.** Before trusting any floor in this repository, check when it last
+actually ran.
+
 Tests are layered by what they prove, not by what they touch:
 
 | Folder | Proves |

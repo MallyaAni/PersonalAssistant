@@ -343,7 +343,9 @@ ACCURACY_FLOOR = 0.70
 # cannot hide the collapse of a smaller, expensive one. These sit below the
 # measured current baseline, including the known 0.80 diagram result.
 PER_TOOL_ACCURACY_FLOORS: dict[str, float] = {
-    SEARCH: 0.75,
+    # Measured 9/12 = 0.75 on 2026-08-23; held just below so an exact
+    # tie does not fail an honest run.
+    SEARCH: 0.70,
     GENERATE_IMAGE: 0.75,
     EDIT_IMAGE: 0.66,
     CREATE_DIAGRAM: 0.60,

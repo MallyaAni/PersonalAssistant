@@ -94,17 +94,18 @@ TOOL = BuiltinTool(
     name=NAME,
     label="Manage scheduled tasks",
     description=(
-        "List, cancel, pause, resume, or reschedule the reminders and "
-        "scheduled messages this person set up. Choose it when they ask what "
-        "is scheduled, or to stop, pause, or restart one - 'cancel the "
-        "weather texts', 'what do I have scheduled?'. Choose reschedule, with "
-        "the new time, when they want an existing one moved - 'change the "
-        "tesla reminder to 5 minutes from now', 'make the stretch reminder "
-        "7pm instead', 'push tomorrow's reminder to Friday'. Rescheduling is "
-        "one call: never answer as though a reminder moved without making it. "
+        "Acts on a reminder or scheduled message this person already set up. "
+        "It requires that such a task exists and that this message refers to "
+        "it - a time or a date appearing in a message is not enough, and is "
+        "usually part of whatever else is being discussed. "
+        "list: what they have scheduled. cancel, pause, resume: stop or "
+        "restart one they name. reschedule: move one to a new time, carrying "
+        "that time - 'change the tesla reminder to 5 minutes from now'. "
+        "Rescheduling is a single call; never answer as though a reminder "
+        "moved without making it. "
         "Not for Scout or any discovery agent: when the conversation is about "
-        "an agent's sweep, a follow-up about its schedule is about that "
-        "agent, and needs no tool."
+        "an agent's sweep, a follow-up about its schedule is about that agent "
+        "and needs no tool."
     ),
     schema=_SCHEMA,
     waiting=(

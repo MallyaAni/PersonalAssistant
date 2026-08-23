@@ -1,5 +1,18 @@
 name: CI
 
+# Static checks only. There is deliberately no test step here.
+#
+# It used to run `pytest tests/` - a directory that has never existed in this
+# repository (tests are under backend/tests/) - and it never installed
+# pytest-asyncio, so it had been silently proving nothing since the initial
+# commit. Repairing it is not possible in the way that matters: the tests worth
+# gating on send real prompts to the models, and a GitHub runner cannot reach
+# animallya-spark1.local. Leaving a broken test step beside a real gate is how
+# someone later trusts the wrong green check.
+#
+# The real gate is `bash scripts/gate.sh`, run from scripts/deploy.sh on the
+# machine that can actually reach the models.
+
 on:
   push:
     branches: [ main ]
@@ -56,5 +69,3 @@ jobs:
       - name: Run MyPy (Type Checking)
         run: mypy backend
 
-      - name: Run Tests
-        run: pytest tests/

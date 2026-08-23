@@ -3,6 +3,7 @@
 #
 #   bash scripts/deploy.sh              # pull, then rebuild what changed
 #   bash scripts/deploy.sh --no-pull    # deploy the working tree as it stands
+#   bash scripts/deploy.sh --skip-gate  # ship without the routing gate
 #
 # Written to be run over any remote shell:
 #
@@ -23,7 +24,13 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 compose=(docker compose -f "$root/docker-compose.yml")
 pull=true
-[[ "${1:-}" == "--no-pull" ]] && pull=false
+gate=true
+for arg in "$@"; do
+    case "$arg" in
+        --no-pull)   pull=false ;;
+        --skip-gate) gate=false ;;
+    esac
+done
 
 step() { printf '\n\033[1m==> %s\033[0m\n' "$1"; }
 
@@ -53,7 +60,14 @@ step "Deciding what to rebuild"
 changed="$(git -C "$root" diff --name-only "$before" "$after" 2>/dev/null || true)"
 services=()
 if [[ -z "$changed" ]] || grep -qE '^(backend/|requirements|pyproject|Dockerfile)' <<<"$changed"; then
-    services+=(backend discovery-worker presentation-worker)
+    # All six services that build from the root Dockerfile. Three of them -
+    # local-capabilities, memory-maintenance, storage-collection - were missing
+    # here, so a backend change deployed cleanly and left those containers
+    # running last week's code with nothing reporting a difference.
+    services+=(
+        backend discovery-worker presentation-worker
+        local-capabilities memory-maintenance storage-collection
+    )
 fi
 if [[ -z "$changed" ]] || grep -qE '^frontend/' <<<"$changed"; then
     services+=(frontend gateway)
@@ -64,6 +78,22 @@ else
     echo "rebuilding: ${services[*]}"
     step "Building"
     "${compose[@]}" build "${services[@]}"
+fi
+
+step "Gating"
+# Before the backup and the migration on purpose: a failing gate at this point
+# has changed nothing, and the running system is still on the previous images.
+# --skip-gate exists because a model gate can flake and the public URL has real
+# users; a hotfix that cannot ship is a worse outage than the regression this
+# guards against.
+if $gate; then
+    if ! bash "$root/scripts/gate.sh"; then
+        echo "Routing gate failed; the running system was left on the previous code." >&2
+        echo "Re-run with --skip-gate only if you have read the failure and accept it." >&2
+        exit 1
+    fi
+else
+    echo "WARNING: routing gate skipped by request"
 fi
 
 step "Backing up before touching the schema"

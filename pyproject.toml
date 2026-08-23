@@ -44,6 +44,17 @@ dev = [
     "ruff>=0.4.0",
 ]
 
+[tool.pytest.ini_options]
+# `functional` was used without being registered, so every functional run
+# printed PytestUnknownMarkWarning and the marker could not be selected on.
+markers = [
+    "functional: exercises a real prompt against the real runtime, not a stub",
+]
+# strict, not auto. 114 test files already carry an explicit pytest.mark.asyncio;
+# "auto" would change collection semantics for all of them at once, and this
+# block exists to register a marker, not to alter 2019 tests.
+asyncio_mode = "strict"
+
 [tool.setuptools.packages.find]
 # The repo root is a flat layout holding data/, docker/, frontend/, and
 # migrations/ alongside the package. Without this, setuptools auto-discovery
