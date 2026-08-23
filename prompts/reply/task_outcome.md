@@ -11,6 +11,7 @@ after one was already cancelled, or invents a schedule different from the
 one saved. This says: it is done, here is exactly what was saved, tell them.
 
 2026-08-22: added with the scheduled-tasks feature (docs/TASKS_ARCHITECTURE.md).
+2026-08-23: a turn may now take more than one step, so the record is a list.
 2026-08-23: reschedule added. There was no write path for changing a task's
 time - the advice was cancel-then-schedule, which is two calls when the
 selector makes one decision per turn. Asked to move a reminder, the model
@@ -22,7 +23,9 @@ never claiming an unrecorded change is below because of that turn.
 This turn's message was a request about scheduled tasks, and the
 application has already acted on it: the outcome is recorded in the turn
 context under "Scheduled-task outcome". Reply from that record and nothing
-else. When a task was scheduled, confirm it in one or two sentences that
+else. A turn may record more than one outcome - cancelling one reminder and
+setting another is two. Report each of them, in the order given, and never
+merge two into a single claim. When a task was scheduled, confirm it in one or two sentences that
 state what will happen and when, using the saved local time and the first
 run exactly as recorded - not a paraphrase of what they asked, since what
 was saved is what will run. When tasks were listed, give them briefly, one

@@ -247,42 +247,59 @@ class MainActionSelector:
         local_now: str | None = None,
         skills: list[dict[str, Any]] | None = None,
         unattended: bool = False,
+        only: frozenset[str] | None = None,
+        steps_taken: list[str] | None = None,
     ) -> MainAction:
         if not query.strip():
             return None
 
         tools: list[dict[str, Any]] = []
-        search_tool = await self._search_tool_definition()
-        if search_tool is not None:
-            tools.append(search_tool)
-
-        tools.extend(
-            self._builtin_definition(builtin.name, builtin.description, builtin.schema)
-            for builtin in self._available_builtins(unattended)
-        )
-        offered_skills = list(skills or [])
-        tools.extend(skill_tool_definitions(offered_skills))
-
-        candidates: list[tuple[dict[str, Any], MCPTool]] = []
-        if self.tool_orchestration is not None:
-            candidates = await self.tool_orchestration.list_candidates(
-                user_id, query, query_embedding=query_embedding
+        aliases: dict[str, Any] = {}
+        offered_skills: list[dict[str, Any]] = []
+        # A later step in the same turn is restricted to a named set, in code
+        # rather than by asking the prompt nicely. Same mechanism the unattended
+        # withholding already uses, and it means a second decision cannot start
+        # a ninety-second image generation or spend a search credit however the
+        # model happens to be prompted.
+        if only is not None:
+            tools.extend(
+                self._builtin_definition(
+                    builtin.name, builtin.description, builtin.schema
+                )
+                for builtin in self._available_builtins(unattended)
+                if builtin.name in only
             )
-        aliases = {f"mcp_tool_{index}": item for index, item in enumerate(candidates)}
-        tools.extend(MCPToolOrchestrationService.tool_definitions(aliases))
+        else:
+            search_tool = await self._search_tool_definition()
+            if search_tool is not None:
+                tools.append(search_tool)
 
-        # Weather rides the alias path under its own name: `_parse` builds a
-        # ToolboxAction from the alias entry, so the whole execution and
-        # evidence pipeline is the one every other MCP tool already uses.
-        weather = await self._weather_tool_definition()
-        if weather is not None:
-            definition, live = weather
-            tools.append(definition)
-            aliases[WEATHER_TOOL] = (
-                {"schema_fingerprint": live.schema_fingerprint},
-                live,
+            tools.extend(
+                self._builtin_definition(builtin.name, builtin.description, builtin.schema)
+                for builtin in self._available_builtins(unattended)
             )
+            offered_skills.extend(skills or [])
+            tools.extend(skill_tool_definitions(offered_skills))
 
+            candidates: list[tuple[dict[str, Any], MCPTool]] = []
+            if self.tool_orchestration is not None:
+                candidates = await self.tool_orchestration.list_candidates(
+                    user_id, query, query_embedding=query_embedding
+                )
+            aliases = {f"mcp_tool_{index}": item for index, item in enumerate(candidates)}
+            tools.extend(MCPToolOrchestrationService.tool_definitions(aliases))
+
+            # Weather rides the alias path under its own name: `_parse` builds a
+            # ToolboxAction from the alias entry, so the whole execution and
+            # evidence pipeline is the one every other MCP tool already uses.
+            weather = await self._weather_tool_definition()
+            if weather is not None:
+                definition, live = weather
+                tools.append(definition)
+                aliases[WEATHER_TOOL] = (
+                    {"schema_fingerprint": live.schema_fingerprint},
+                    live,
+                )
         history_text = render_recent_history(history)
         visual_state = (
             "A picture is currently selected and visible to the user."
@@ -302,6 +319,18 @@ class MainActionSelector:
         user_content = (
             f"{clock}Visual interface state: {visual_state}\n\n{message_text}"
         )
+        # Only ever appended, and omitted entirely when empty, so a first
+        # decision is byte-for-byte the request it was before the loop
+        # existed: the prompt-cache prefix and the recorded routing matrix
+        # both stay valid, and step one is not a new measurement.
+        if steps_taken:
+            done = "\n".join(f"- {line}" for line in steps_taken)
+            user_content += (
+                f"\n\nAlready done this turn:\n{done}\n\n"
+                "Call the next tool this message still needs, or no tool if "
+                "everything it asked for has been done. Never repeat something "
+                "already listed above."
+            )
         messages: list[dict[str, Any]] = [
             {"role": "system", "content": _SYSTEM},
             {"role": "user", "content": user_content},

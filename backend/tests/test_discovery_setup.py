@@ -11,7 +11,6 @@ import pytest
 
 os.environ["DEBUG"] = "false"
 os.environ.setdefault("SECRET_KEY", "test-secret-key-only-for-testing")
-os.environ["POSTGRES_HOST"] = "localhost"
 
 from backend.discovery.feed_finder import FeedFinder
 from backend.discovery.interest_finder import propose_interests

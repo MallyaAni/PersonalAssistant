@@ -194,6 +194,12 @@ services:
       - MAIN_INFERENCE_ADAPTER=${MAIN_INFERENCE_ADAPTER:-}
       - MAIN_LLM_BASE_URL=http://animallya-spark1.local:8000
       - MAIN_LLM_MODEL=deepseek-v4-flash
+      # A turn may take more than one bookkeeping step. Ships at 1, so the
+      # loop is unreachable until this is raised. iMessage turns run in
+      # discovery-worker, so leaving it out here would flip the setting for
+      # the web and not for the channel most people actually use.
+      - TURN_MAX_STEPS=${TURN_MAX_STEPS:-1}
+      - TURN_STEP_BUDGET_SECONDS=${TURN_STEP_BUDGET_SECONDS:-45}
       # Empty rather than DeepSeek's date: a wrong cutoff is worse than
       # none, because the model would trust everything before it.
       - MAIN_LLM_TRAINING_CUTOFF=${QWEN_TRAINING_CUTOFF:-}
@@ -491,6 +497,12 @@ services:
       - LLM_MODEL=deepseek-v4-flash
       - MAIN_LLM_BASE_URL=http://animallya-spark1.local:8000
       - MAIN_LLM_MODEL=deepseek-v4-flash
+      # A turn may take more than one bookkeeping step. Ships at 1, so the
+      # loop is unreachable until this is raised. iMessage turns run in
+      # discovery-worker, so leaving it out here would flip the setting for
+      # the web and not for the channel most people actually use.
+      - TURN_MAX_STEPS=${TURN_MAX_STEPS:-1}
+      - TURN_STEP_BUDGET_SECONDS=${TURN_STEP_BUDGET_SECONDS:-45}
       # Empty rather than DeepSeek's date: a wrong cutoff is worse than
       # none, because the model would trust everything before it.
       - MAIN_LLM_TRAINING_CUTOFF=${QWEN_TRAINING_CUTOFF:-}
@@ -621,6 +633,11 @@ services:
       # them; vLLM enforces schemas, so the pin lost its reason and the 4B is
       # gone. These stay spelled out rather than inheriting MAIN_LLM_* so that
       # moving one role to a different box stays a one-line change.
+      # One decision per turn was a ceiling on what a request could express,
+      # not a design. Ships at 1 so the loop is unreachable; raising it is an
+      # env change and a restart, never a rebuild.
+      - TURN_MAX_STEPS=${TURN_MAX_STEPS:-1}
+      - TURN_STEP_BUDGET_SECONDS=${TURN_STEP_BUDGET_SECONDS:-45}
       - ROUTING_INFERENCE_ADAPTER=${ROUTING_INFERENCE_ADAPTER:-}
       - ROUTING_LLM_BASE_URL=http://animallya-spark1.local:8000
       - ROUTING_LLM_MODEL=deepseek-v4-flash

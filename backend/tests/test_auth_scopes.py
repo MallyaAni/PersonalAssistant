@@ -2,7 +2,6 @@ import os
 
 os.environ["DEBUG"] = "false"
 os.environ.setdefault("SECRET_KEY", "test-secret-key-only-for-testing")
-os.environ["POSTGRES_HOST"] = "localhost"
 
 import pytest
 from fastapi.testclient import TestClient

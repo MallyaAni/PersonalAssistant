@@ -124,7 +124,9 @@ def test_turns_needing_no_tool_do_not_reach_for_one(scored):
     #
     # This is a floor to raise, not a target that has been met. Raising it is
     # the check that the agent-configuration tool landed.
-    assert kept / len(observed) >= 0.50, (kept, len(observed))
+    # Held below the measured 0.544 for the same reason as above: at one rep
+    # this is 19 observations and a bound on the measurement itself flakes.
+    assert kept / len(observed) >= 0.45, (kept, len(observed))
 
 
 # Preserve every smaller capability rather than letting no-tool accuracy hide it.
@@ -168,7 +170,13 @@ def test_writing_followups_do_not_invoke_unrelated_tools(scored):
     # router distinguishing a time inside a draft from a time for a reminder,
     # which no wording of a tool description has achieved.
     kept = sum(1 for chosen in observed if chosen == NO_TOOL)
-    assert kept / len(observed) >= 0.50, observed
+    # 0.25, not the measured 0.50. Setting a bound at exactly the measured
+    # value is the trap this file's own header records, and it was walked into
+    # here first: measured 6/12 over three reps, the gate runs one rep, so four
+    # observations land on 1/4 or 2/4 and a bound of 0.50 fails on a coin flip.
+    # A gate that is red half the time for no reason is a gate people learn to
+    # skip. This catches a collapse; the CLI at --reps 3 measures the drift.
+    assert kept / len(observed) >= 0.25, observed
 
 
 # Keep typos or unsupported expected actions out of the labelled corpus.

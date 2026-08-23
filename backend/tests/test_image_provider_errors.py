@@ -1,7 +1,6 @@
 import os
 
 os.environ.setdefault("SECRET_KEY", "test-secret-key-only-for-testing")
-os.environ["POSTGRES_HOST"] = "localhost"
 
 from typing import Any
 

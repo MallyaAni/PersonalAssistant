@@ -6,7 +6,6 @@ from sqlalchemy import delete, select
 
 os.environ["DEBUG"] = "false"
 os.environ.setdefault("SECRET_KEY", "test-secret-key-only-for-testing")
-os.environ["POSTGRES_HOST"] = "localhost"
 
 from backend.database.session import SessionLocal
 from backend.main import app

@@ -80,7 +80,8 @@ from backend.services.referent_sources import ImageReferentSource
 from backend.services.search_planner import SearchPlanner
 from backend.skills.repository import SkillRepository
 from backend.tasks.repository import ScheduledTaskRepository
-from backend.tools import describe_action, waiting_line
+from backend.services.turn_steps import run_steps
+from backend.tools import AUTOMATION_TOOLS, describe_action, waiting_line
 
 logger = logging.getLogger(__name__)
 
@@ -135,6 +136,18 @@ def _image_description(match: dict[str, Any]) -> str:
 # Stored history, in the role/content turns the search planner reads. The
 # planner composes a self-contained query, which is only possible when it
 # can see what "yes please" was agreeing to.
+# One line describing what a step did, for the next decision to read.
+# `describe_action` returns a (label, detail) pair meant for a status chip;
+# joined here rather than passed through, because a Python tuple rendered into
+# a prompt is noise the model has to decode before it can use it.
+def _step_line(action: MainAction, kind: str) -> str:
+    described = describe_action(action)
+    if described is None:
+        return kind
+    label, detail = described
+    return f"{label}: {detail}" if detail else label
+
+
 def _planner_history(
     history: list[dict[str, Any]] | None,
 ) -> list[dict[str, Any]]:
@@ -1824,7 +1837,13 @@ class ConversationService:
         # confirmation from a record of what was actually saved, in the
         # channel's own register.
         task_context = await self._task_turn_context(
-            user_id, action, metadata or {}, skill_context
+            user_id,
+            action,
+            metadata or {},
+            skill_context,
+            query=query,
+            history=history,
+            unattended=bool((metadata or {}).get("scheduled_task")),
         )
 
         # Reached when a branch above matched the action but not the service
@@ -1907,25 +1926,69 @@ class ConversationService:
         action: MainAction,
         metadata: dict[str, Any],
         skill_context: dict[str, Any] | None = None,
+        query: str = "",
+        history: list[dict[str, Any]] | None = None,
+        unattended: bool = False,
     ) -> dict[str, Any] | None:
         context: dict[str, Any] = dict(skill_context or {})
         # The tools are withheld at selection; this is the second wall, so a
         # malformed provider response naming one cannot delete a task.
         if metadata.get("scheduled_task"):
             return context or None
+
+        # A fired task never loops. The automation tools are already withheld
+        # at selection and `metadata["scheduled_task"]` already returned above;
+        # this is the third wall, so a reminder cannot reschedule itself no
+        # matter how the routing goes.
+        steppable = not unattended and self.main_action_selector is not None
+
+        async def decide(lines: list[str]) -> MainAction:
+            return await self.main_action_selector.select(
+                user_id,
+                query,
+                history or [],
+                None,
+                local_now=self._local_now(user_id) if query else None,
+                unattended=unattended,
+                only=AUTOMATION_TOOLS,
+                steps_taken=lines,
+            )
+
+        steps = await run_steps(
+            action,
+            apply=lambda item: self._apply_step(user_id, item, metadata),
+            decide=decide,
+            describe=_step_line,
+            creates=lambda item: isinstance(item, ScheduleTaskAction),
+            max_steps=settings.TURN_MAX_STEPS if steppable else 1,
+            budget_seconds=settings.TURN_STEP_BUDGET_SECONDS,
+        )
+
+        task_outcomes = [s.outcome for s in steps if s.kind == "task"]
+        skill_outcomes = [s.outcome for s in steps if s.kind == "skill"]
+        if task_outcomes:
+            context["task_outcomes"] = task_outcomes
+        if skill_outcomes:
+            context["skill_outcomes"] = skill_outcomes
+        return context or None
+
+    # Carry out one bookkeeping action, or nothing when this action is not one
+    # of them. Returns which record it belongs in, so the caller can keep the
+    # two kinds apart without repeating the isinstance checks.
+    async def _apply_step(
+        self, user_id: str, action: MainAction, metadata: dict[str, Any]
+    ) -> tuple[str, dict[str, Any]] | None:
         if (
             isinstance(action, SaveSkillAction | ManageSkillsAction)
             and self.skills is not None
         ):
-            context["skill_outcome"] = await self._apply_skill_action(user_id, action)
-        elif (
+            return "skill", await self._apply_skill_action(user_id, action)
+        if (
             isinstance(action, ScheduleTaskAction | ManageTasksAction)
             and self.scheduled_tasks is not None
         ):
-            context["task_outcome"] = await self._apply_task_action(
-                user_id, action, metadata
-            )
-        return context or None
+            return "task", await self._apply_task_action(user_id, action, metadata)
+        return None
 
     # The routed action, announced. A skill is a stored instruction; what
     # runs is that instruction, routed again with the ordinary tools, and

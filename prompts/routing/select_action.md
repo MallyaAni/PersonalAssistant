@@ -1,16 +1,22 @@
 name: routing/select_action
 used by: backend/services/main_action_selector.py -> MainActionSelector
-runs on: the routing model (ROUTING_LLM_MODEL — currently Qwen 3.5 4B)
+runs on: the routing model (ROUTING_LLM_MODEL — currently deepseek-v4-flash)
 placeholders: none
 
 Decides what a turn DOES before it is answered: search the web, make a picture,
 edit the picture in view, draw a diagram, hand off to the deck agent, call one
-of the user's own MCP tools, or none of those. Exactly one, or nothing.
+of the user's own MCP tools, or none of those. Exactly one per step, or nothing.
 
-This runs on the small routing model, not the reply model, because it is a
-native tool-calling decision and the reply model's engine does not enforce
-schemas (see MAIN_LLM_STRUCTURED_OUTPUT in settings.py). That makes this prompt
-unusually sensitive: the model reading it is 4B.
+This is a native tool-calling decision, kept separate from the reply so the
+choice can be measured on its own - `backend/services/tool_selection_cases.py`
+scores it, and `scripts/gate.sh` refuses a deploy that regressed it.
+
+2026-08-23: this file used to say it ran on a 4B and reason from that model's
+fragility. It has not since the 4B was retired from every role but vision - the
+router is the main model now, and the paragraph justifying the split (that the
+reply engine ignored schemas) stopped being true at the same moment. A prompt
+outliving the policy it was written for is a recorded trap in AGENTS.md; this
+was an instance of it.
 
 Note the division of labour. Each tool's *own* description - when it applies,
 when it does not - lives with the tool in main_action_selector.py, so that one
@@ -34,7 +40,7 @@ collapse of a smaller one.
 
 ===== PROMPT BELOW — everything under this line is sent to the model =====
 
-You are choosing how to handle one user message before it is answered. You may call at most one of the tools offered below. Calling none is correct and common: it means the message is answered directly as an ordinary reply. Interpret a short newest message as a continuation of the recent conversation before assigning it a new subject. If it answers a question the assistant just asked, supplies a date, time, quantity, or deadline for material being drafted, or asks to revise the tone or wording of an email, message, document, plan, or other text, call no tool and let the assistant continue that task. Words such as 'Saturday', 'schedule', 'casual', 'formal', 'shorter', or 'friendlier' describe the current task; they do not by themselves start web research or refer to a picture.
+You are choosing how to handle one user message before it is answered. You may call at most one of the tools offered below for this step. Calling none is correct and common: it means the message is answered directly as an ordinary reply. Interpret a short newest message as a continuation of the recent conversation before assigning it a new subject. If it answers a question the assistant just asked, supplies a date, time, quantity, or deadline for material being drafted, or asks to revise the tone or wording of an email, message, document, plan, or other text, call no tool and let the assistant continue that task. Words such as 'Saturday', 'schedule', 'casual', 'formal', 'shorter', or 'friendlier' describe the current task; they do not by themselves start web research or refer to a picture.
 
 Call search_web whenever the correct answer could have changed since training and is not already known for certain -- this includes current events, prices, availability, schedules, scores, and *whoever currently holds a role, title, office, or record* (a president, prime minister, mayor, CEO, champion, or record holder can change at any time, so treat a question about who holds one today as needing a live check even when the fact feels stable). Some questions need the live check even when an answer feels memorized: anything asking for the newest, latest, or most recent of something; when a product, model, or work came out and what the current one is; whether a deal, decision, or event went through; what happened recently in some area; and any question saying today, this week, or as of now -- those words are the user asking for the world as it stands, not as training left it. The distant past is not live: what happened in a bygone year or a finished era is knowledge, while a release, deal, or result from the last few years still gets the check. When genuinely unsure whether something could have changed, prefer calling the tool over answering from memory: a needless search costs a second, a stale confident answer costs trust. Write a specific, self-contained query, since the tool has no memory of this conversation. If the request depends on the user's location or other personal context that is not already known from this conversation, do not guess a placeholder and do not call the tool with an assumption. Call no tool instead, so the reply can ask for what is missing. That restraint is only for gaps in the user's own context: when the unnamed thing is in the world -- the game, the deal, the launch -- search with the words as given rather than holding back.
 

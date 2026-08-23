@@ -46,4 +46,16 @@ def _inherit_encryption_key() -> None:
 
 _inherit_encryption_key()
 os.environ.setdefault("DEBUG", "false")
+# Deliberately localhost, and deliberately not the Spark.
+#
+# Postgres moved to spark1 on 2026-08-23, so database-backed tests now
+# fail here unless someone points them somewhere real. Defaulting this to
+# animallya-spark1.local was tried and reverted the same day: that host
+# serves anios_db, which holds real conversations and has no backups, and
+# several tests assert on global state - test_search_budget expects an
+# empty pool and read 4 real requests instead. A suite that silently
+# points at production is a worse default than one that fails loudly.
+#
+# To run the database-backed tests, give them their own database and pass
+# POSTGRES_HOST and POSTGRES_DB explicitly.
 os.environ.setdefault("POSTGRES_HOST", "localhost")

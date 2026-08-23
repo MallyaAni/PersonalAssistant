@@ -8,7 +8,6 @@ import pytest
 
 os.environ["DEBUG"] = "false"
 os.environ.setdefault("SECRET_KEY", "test-secret-key-only-for-testing")
-os.environ["POSTGRES_HOST"] = "localhost"
 
 from backend.skills.packs import load_packs
 from backend.skills.repository import SkillRepository, slugify

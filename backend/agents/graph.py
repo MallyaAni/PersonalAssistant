@@ -278,11 +278,11 @@ def _turn_kind(context_data: dict[str, Any]) -> str:
     blocks = ""
     if context_data.get("scheduled_task"):
         blocks += "\n\n" + load("reply/scheduled_task")
-    if context_data.get("task_outcome"):
+    if _outcome_list(context_data, "task_outcome"):
         blocks += "\n\n" + load("reply/task_outcome")
     if context_data.get("skill"):
         blocks += "\n\n" + load("reply/skill_invoked")
-    if context_data.get("skill_outcome"):
+    if _outcome_list(context_data, "skill_outcome"):
         blocks += "\n\n" + load("reply/skill_outcome")
     return blocks
 
@@ -298,8 +298,7 @@ def _render_skill_context(context_data: dict[str, Any]) -> str:
             f"Skill invoked: {skill.get('name', '')}\n"
             f"Instruction: {skill['instruction']}\n\n"
         )
-    outcome = context_data.get("skill_outcome") or {}
-    if isinstance(outcome, dict) and outcome:
+    for outcome in _outcome_list(context_data, "skill_outcome"):
         lines = [f"Skill outcome: {outcome.get('kind', '')}\n"]
         one = outcome.get("skill")
         if isinstance(one, dict):
@@ -319,6 +318,18 @@ def _render_skill_context(context_data: dict[str, Any]) -> str:
 # The record of what this turn did with scheduled tasks, for the reply to
 # report from. Rendered as plain lines, since the reply block already says
 # how to treat them.
+# The outcomes a turn recorded under `key`, as a list however they were set.
+# A turn may now take more than one bookkeeping action - cancelling one
+# reminder and setting another is two - so the context carries a list; the
+# singular key is still read so nothing that sets one has to change.
+def _outcome_list(context_data: dict[str, Any], key: str) -> list[dict[str, Any]]:
+    many = context_data.get(f"{key}s")
+    if isinstance(many, list):
+        return [item for item in many if isinstance(item, dict) and item]
+    one = context_data.get(key)
+    return [one] if isinstance(one, dict) and one else []
+
+
 def _render_task_outcome(outcome: dict[str, Any]) -> str:
     if not outcome:
         return ""
@@ -338,6 +349,13 @@ def _render_task_outcome(outcome: dict[str, Any]) -> str:
         if outcome.get(key):
             lines.append(f"- {key}: {outcome[key]}\n")
     return "".join(lines) + "\n"
+
+
+# Every outcome this turn recorded, in order. Two are rendered as two
+# blocks rather than merged, so a reply cannot report a cancel and a
+# create as though they were one change.
+def _render_task_outcomes(outcomes: list[dict[str, Any]]) -> str:
+    return "".join(_render_task_outcome(outcome) for outcome in outcomes)
 
 
 def _build_system_prompt(
@@ -463,7 +481,7 @@ def _build_turn_context(
             context_data.get("tool_results") or [],
             context_data.get("tool_notices") or [],
         ),
-        _render_task_outcome(context_data.get("task_outcome") or {}),
+        _render_task_outcomes(_outcome_list(context_data, "task_outcome")),
         _render_skill_context(context_data),
     )
     return "".join(block for block in blocks if block)

@@ -7,7 +7,6 @@ from sqlalchemy import delete, select, update
 
 os.environ["DEBUG"] = "false"
 os.environ.setdefault("SECRET_KEY", "test-secret-key-only-for-testing")
-os.environ["POSTGRES_HOST"] = "localhost"
 
 from backend.core.dependencies import get_embedding_provider
 from backend.database.session import SessionLocal

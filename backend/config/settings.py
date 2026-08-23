@@ -54,6 +54,22 @@ class Settings(BaseSettings):
     # site - the same limit-nobody-chose class as the reply cap that returned
     # one empty reply in six. Covers a tool call plus reasoning-model thinking.
     ROUTING_DECISION_MAX_TOKENS: int = Field(default=1_024, ge=64, le=8_192)
+    # How many tool decisions one turn may make.
+    #
+    # One was the ceiling on what a request could express, not a design: a
+    # message asking to cancel one reminder and set another needs two calls,
+    # and a turn that could make only one answered as though it had made both.
+    # Ships at 1 - the loop is unreachable until this is raised, so the code
+    # deploys before the behaviour changes and reverting is an env var rather
+    # than a rebuild.
+    #
+    # Each extra step is one more routing call. Measured on deepseek-v4-flash
+    # across both Sparks: 1.78s median, 2.27s worst of three.
+    TURN_MAX_STEPS: int = Field(default=1, ge=1, le=5)
+    # Wall clock the extra steps may spend. A bound on time, not on calls,
+    # because time is what starves the next sender: imessage_chat answers
+    # serially and sends one acknowledgement bubble, then goes quiet.
+    TURN_STEP_BUDGET_SECONDS: float = Field(default=45.0, ge=5.0, le=180.0)
     ROUTING_LLM_REASONING_EFFORT: Literal[
         "none", "minimal", "low", "medium", "high", "xhigh"
     ] = "none"

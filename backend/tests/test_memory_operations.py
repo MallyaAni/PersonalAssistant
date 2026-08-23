@@ -9,7 +9,6 @@ from sqlalchemy import delete, update
 
 os.environ["DEBUG"] = "false"
 os.environ.setdefault("SECRET_KEY", "test-secret-key-only-for-testing")
-os.environ["POSTGRES_HOST"] = "localhost"
 
 from backend.cli.check_memory_operations import main as check_memory_main
 from backend.core.dependencies import get_embedding_provider
