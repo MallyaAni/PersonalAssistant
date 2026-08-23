@@ -142,9 +142,6 @@ services:
       timeout: 6s
       retries: 30
       start_period: 3m
-    depends_on:
-      vllm-main:
-        condition: service_healthy
     restart: unless-stopped
 
   db:
@@ -200,8 +197,8 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-anios_db}
       - POSTGRES_HOST=db
       - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (see .env.example)}
-      - LLM_BASE_URL=http://vllm-main:8000
-      - LLM_MODEL=qwen/qwen3.5-4b
+      - LLM_BASE_URL=http://animallya-spark1.local:8000
+      - LLM_MODEL=deepseek-v4-flash
       - INFERENCE_ADAPTER=${INFERENCE_ADAPTER:-openai_compatible}
       - INFERENCE_PROVIDER_NAME=vllm
       - MAIN_INFERENCE_ADAPTER=${MAIN_INFERENCE_ADAPTER:-}
@@ -220,8 +217,8 @@ services:
       - DIAGRAM_LLM_MODEL=deepseek-v4-flash
       - DIAGRAM_LLM_REASONING_EFFORT=${DIAGRAM_LLM_REASONING_EFFORT:-none}
       - VISION_INFERENCE_ADAPTER=${VISION_INFERENCE_ADAPTER:-}
-      - VISION_LLM_BASE_URL=http://vllm-main:8000
-      - VISION_MODEL=qwen/qwen3.5-4b
+      - VISION_LLM_BASE_URL=http://animallya-spark2.local:8001
+      - VISION_MODEL=qwen3-vl-8b
       - VISION_LLM_REASONING_EFFORT=${VISION_LLM_REASONING_EFFORT:-none}
       # Not previously passed at all, so the one number that decides whether
       # an upload's structured inspection fits could not be changed without
@@ -262,8 +259,6 @@ services:
     volumes:
       - artifactdata:/app/data/artifacts
     depends_on:
-      vllm-main:
-        condition: service_healthy
       vllm-embedding:
         condition: service_healthy
       db:
@@ -316,8 +311,8 @@ services:
       # that writes a sealed column needs the same key, or one of them
       # stores plaintext into a column another reads as sealed.
       - ENCRYPTION_KEY=${ENCRYPTION_KEY:-}
-      - LLM_BASE_URL=http://vllm-main:8000
-      - LLM_MODEL=qwen/qwen3.5-4b
+      - LLM_BASE_URL=http://animallya-spark1.local:8000
+      - LLM_MODEL=deepseek-v4-flash
       - INFERENCE_ADAPTER=${INFERENCE_ADAPTER:-openai_compatible}
       - INFERENCE_PROVIDER_NAME=vllm
       - PRESENTATION_INFERENCE_ADAPTER=${PRESENTATION_INFERENCE_ADAPTER:-}
@@ -386,8 +381,6 @@ services:
       # processes reserve against one count rather than two.
       - searchdata:/app/data/search
     depends_on:
-      vllm-main:
-        condition: service_healthy
       db:
         condition: service_healthy
       presentation-renderer:
@@ -505,8 +498,8 @@ services:
       # container is nothing — so the call always failed and every digest
       # silently used the fallback. The failure is invisible by design, because
       # falling back is the correct behaviour when the model is genuinely down.
-      - LLM_BASE_URL=http://vllm-main:8000
-      - LLM_MODEL=qwen/qwen3.5-4b
+      - LLM_BASE_URL=http://animallya-spark1.local:8000
+      - LLM_MODEL=deepseek-v4-flash
       - MAIN_LLM_BASE_URL=http://animallya-spark1.local:8000
       - MAIN_LLM_MODEL=deepseek-v4-flash
       # Empty rather than DeepSeek's date: a wrong cutoff is worse than
@@ -590,8 +583,8 @@ services:
       - DISCOVERY_CALENDAR_BASE_URL=${DISCOVERY_CALENDAR_BASE_URL:-http://localhost:8000/api/v1/discovery}
       # vLLM runs as pinned sibling services with independent generation and
       # embedding endpoints.
-      - LLM_BASE_URL=http://vllm-main:8000
-      - LLM_MODEL=qwen/qwen3.5-4b
+      - LLM_BASE_URL=http://animallya-spark1.local:8000
+      - LLM_MODEL=deepseek-v4-flash
       - INFERENCE_ADAPTER=${INFERENCE_ADAPTER:-openai_compatible}
       - INFERENCE_PROVIDER_NAME=vllm
       # Conversational replies only (build_assistant_graph / stream_chat).
@@ -660,8 +653,8 @@ services:
       - MEMORY_PROPOSAL_LLM_REASONING_EFFORT=${MEMORY_PROPOSAL_LLM_REASONING_EFFORT:-none}
       - MEMORY_PROPOSAL_MAX_TOKENS=${MEMORY_PROPOSAL_MAX_TOKENS:-1024}
       - VISION_INFERENCE_ADAPTER=${VISION_INFERENCE_ADAPTER:-}
-      - VISION_LLM_BASE_URL=http://vllm-main:8000
-      - VISION_MODEL=qwen/qwen3.5-4b
+      - VISION_LLM_BASE_URL=http://animallya-spark2.local:8001
+      - VISION_MODEL=qwen3-vl-8b
       - VISION_LLM_REASONING_EFFORT=${VISION_LLM_REASONING_EFFORT:-none}
       # Not previously passed at all, so the one number that decides whether
       # an upload's structured inspection fits could not be changed without
@@ -749,8 +742,6 @@ services:
       # not survive them, and enforcement floors need days of distribution.
       - telemetrydata:/app/data/telemetry
     depends_on:
-      vllm-main:
-        condition: service_healthy
       vllm-embedding:
         condition: service_healthy
       db:

@@ -561,3 +561,290 @@ Verified end to end after the change: a real chat turn routed on the new
 model chose `Scheduled tasks | weekdays at 18:00` for "remind me every
 weekday at 6pm to stretch", saved it, and confirmed the correct first run.
 1,628 structural tests pass.
+
+---
+
+# Choosing the main LLM: the whole decision, 2026-08-22/23
+
+This is the long form of one decision - which model answers AniOS, on what
+engine, with which settings - written so the reasoning survives and not just
+the result. Every number is measured on this hardware unless it says
+otherwise.
+
+## 1. The constraint that decides everything
+
+A DGX Spark has 128 GB of unified memory and **273 GB/s** of bandwidth.
+Decode is bandwidth-bound, so that number, not the GPU, sets the ceiling.
+Two consequences follow, and they explain every benchmark anyone publishes
+for this box:
+
+- **Dense models die here.** Gemma 4 31B at NVFP4 reaches 7 tok/s.
+- **Small-active-parameter MoE flies**, because decode only reads the
+  experts it activates. DeepSeek V4 Flash is 284B total but activates 13B
+  per token.
+
+A corollary that surprises people: quantizing harder does not always help.
+4-bit FLUX.2-dev is the *slowest* image model on a Spark (397 s/image),
+because the bottleneck is memory traffic rather than arithmetic.
+
+## 2. What we were already running, measured
+
+The starting point was DeepSeek V4 Flash as an `IQ2_XXS` GGUF (~2-bit,
+86.7 GB) on one Spark under `ds4-server v0.5.6.3`, a DwarfStar fork built
+for this model family.
+
+| | measured |
+|---|---|
+| decode | 10.1 / 14.5 / 19.0 tok/s by prompt (mean ~14.5) |
+| base without speculation | ~5.6 tok/s |
+| MTP + DSpark drafter, D=4 | 2.57-4.08 tokens per step |
+| prefill | ~1,095 tok/s |
+| spec acceptance | **90.9% on code, 64.3% on prose** |
+| `json_schema` | **ignored** - asked for JSON, got bare prose |
+
+**Three things this repository believed turned out to be wrong**, and
+finding that out changed the decision:
+
+1. "ds4 does 5.7 tok/s" - that is the *unspeculated* rate. Real is 10-19.
+2. "ds4 lacks tool calling" - out of date. v0.5.6.3 advertises `tools` and
+   has first-class tool machinery.
+3. "ds4 is single-box only" - it has `--role coordinator|worker` with
+   inclusive layer slices, i.e. cross-node pipeline parallelism.
+
+Only the structured-output gap was real, and it was the one that mattered.
+
+## 3. The prefill cache, and why prompt size decides its worth
+
+ds4 has a disk KV cache whose value is steeply non-linear in prompt size:
+
+| prefix | cold TTFT | cached TTFT | gain |
+|---|---|---|---|
+| 2.4k | 2,229 ms | 2,031 ms | 1.09x |
+| 4.4k (our median) | 3,236 ms | 1,375 ms | **2.35x** |
+| 11.7k (our p90) | 8,778 ms | 476 ms | **18.5x** |
+| 24k | 19,859 ms | 1,443 ms | 13.8x |
+
+Our own context accounting over 61 real turns reads median 4,356, p90
+11,695, max 16,145 tokens - so this was a feature in daily use, and any
+replacement had to keep it. It does: vLLM's prefix caching warms after two
+calls and then serves the p90 prefix in ~512 ms against ds4's 476 ms, while
+being *faster* cold (5.9 s vs 8.8 s).
+
+Measuring this took two attempts. A two-sample test showed the cached call
+*slower* than cold and looked like a regression; five consecutive calls
+showed the real shape - 5,909 / 6,383 / 496 / 539 / 516 ms. The cache
+commits after the second call.
+
+## 4. Candidates, and why the obvious answer was wrong
+
+The tempting choice was Qwen3.6-35B-A3B-NVFP4: ~25 GB, 218-436 tok/s on a
+GB10, 100/100 on Tool-Eval-Bench, and it fits on **one** Spark - leaving the
+other free for a VLM and diffusion. It is the better *engineering* answer.
+
+It was the wrong answer here because it scores **32** on the Artificial
+Analysis intelligence index against DeepSeek V4 Flash's **52**, and 73.4 on
+SWE-bench against 79. The requirement was maximum intelligence, and a
+20-point index gap is not something throughput compensates for.
+
+That choice has a cost worth stating plainly: DeepSeek's weights are
+~167 GB, which consumes both Sparks, so **image generation has no home on
+this hardware**, and vision keeps whatever is left (~27 GB per box).
+
+Precision was not really a choice either. FP8 *is* the release format;
+NVFP4 is NVIDIA re-quantizing it. Measured elsewhere at 41.4 vs 41.5 tok/s -
+noise - and on disk 166.9 GB against 168.3 GB, so the 4-bit build is
+**larger** and buys neither speed nor memory. FP8 wins on all three axes.
+
+## 5. The engine mattered as much as the model
+
+They are built for different things:
+
+- **ds4** is a single-user latency engine: aggressive speculation (D=4), a
+  disk KV cache, one stream at a time.
+- **vLLM** is a serving engine: continuous batching, paged KV, cross-node
+  tensor parallelism.
+
+Speculation's advantage *shrinks* with batch size - measured elsewhere at
+1.96x at batch 1 falling to 1.21x at batch 128 - because a busy GPU has no
+idle capacity to spend on drafts. So ds4 wins the demo and vLLM wins the
+product, and the gap widens with users and with context.
+
+## 6. What deployment actually cost
+
+Nine problems, each of which would have read as something else:
+
+1. **The pre-installed vLLM cannot serve this model.**
+   `nvcr.io/nvidia/vllm:26.03` ships 0.17.1, whose registry has DeepSeek
+   V2/V3/V3.2 and no V4, while the checkpoint declares `deepseek_v4`.
+2. **Newer is slower.** A published head-to-head found 0.21.1 + B12X beats
+   0.25.2 by 9.2% peak decode, because `torch.compile` works on the former
+   for this model and not the latter.
+3. **The QSFP port is two virtual NICs.** Listing one HCA silently halves
+   NCCL bandwidth (98 vs 161 Gb/s busbw). Both twins must be addressed, on
+   *separate* subnets, and merged with `NCCL_IB_MERGE_NICS=1`.
+4. **HF Xet downloads stall silently** at ~1 MB/s while `du` appears to
+   advance, because shards are pre-allocated sparse. `HF_HUB_DISABLE_XET=1`.
+5. **Anonymous HF downloads are throttled** - 15 MB/s against a 458 Mbit/s
+   link until a token was added, then 24 MB/s.
+6. `gpu-memory-utilization 0.78`, not 0.85: speculative decode allocates on
+   the *first real request*, so higher values boot, pass a smoke test, and
+   then die under traffic.
+7. `num_speculative_tokens 5` - the DSpark block size. 7 and 10 boot and
+   then crash on every generation.
+8. JIT caches must be node-local. Sharing them fails three ways and none of
+   the errors name the cache.
+9. **The old server holds the memory.** vLLM refused to start with "Free
+   memory 1.13/121.69 GiB" until ds4 was stopped - a clean, informative
+   failure, and the moment the cutover became irreversible.
+
+## 7. The single biggest win, and it was free
+
+The boot log said:
+
+```
+Using 'DEEPGEMM_MXFP4' Mxfp4 MoE backend.
+```
+
+That is a fallback. `VLLM_USE_B12X_MOE=1` was set and *is* a real env var,
+but it does not drive the choice - a `KernelConfig.moe_backend` field does,
+exposed as `--moe-backend`, whose help names this hardware exactly:
+
+> `"flashinfer_b12x"`: Use FlashInfer CuteDSL fused MoE for **SM12x
+> (RTX Pro 6000 / DGX Spark)**
+
+Adding `--moe-backend flashinfer_b12x` changed nothing about the model -
+same official FP8 weights, `quantization=deepseek_v4_fp8` in both logs -
+and produced:
+
+| prompt | DEEPGEMM | B12X | gain |
+|---|---|---|---|
+| math | 35.7 | 40.0 | 1.12x |
+| prose | 25.9 | 29.8 | 1.15x |
+| **code** | 26.2 | **63.5** | **2.42x** |
+| counting | - | **79.5** | - |
+
+The lesson worth keeping: **a silent kernel fallback costs more than any
+model choice on this list, and it never appears as an error.** Grep the boot
+log for the backend line after every image or driver change.
+
+## 8. Where it landed
+
+| | ds4, 1 Spark, 2-bit | vLLM TP=2, FP8, B12X |
+|---|---|---|
+| decode, math | 10.1 | **40.0** |
+| decode, prose | 14.5 | **29.8** |
+| decode, code | 19.0 | **63.5** |
+| decode, counting | - | **79.5** |
+| aggregate @ c=6 | n/a (single-stream) | **383.5 tok/s** |
+| cold TTFT @ 11.7k | 8,778 ms | 5,909 ms |
+| warm TTFT @ 11.7k | 476 ms | ~512 ms |
+| `json_schema` | ignored | **enforced** |
+| tool calling | partial | **native, correct** |
+| weights | 2-bit | **official FP8** |
+
+Concurrency, ours against the best published numbers for 2x Spark:
+
+| c | ours | published |
+|---|---|---|
+| 1 | **85.7** | 61.0 |
+| 2 | **135.7** | 91.7 |
+| 4 | **282.6** | 151.1 |
+| 6 | **383.5** | 197.3 |
+
+KV pool: `Available KV cache memory: 10.68 GiB` -> **1,374,118 tokens**.
+Small in bytes and enormous in tokens, because DeepSeek V4 uses MLA with a
+single KV head and `nvfp4_ds_mla` stores it at 4 bits. This is why "the KV
+cache looks much bigger than the 1-Spark version" is misleading: in bytes it
+is smaller.
+
+## 9. What this unlocked in the application
+
+Schema enforcement was the point, not the speed. Six roles were pinned to a
+4B *purely because it enforced grammars*; all of them moved to the main
+model, and 287 lines of workaround were deleted: `JSONFallbackWriter` (which
+let the weaker model answer whenever the stronger one's JSON failed to
+parse) and `FallbackInferenceProvider` (a standby that answered *worse*
+instead of failing, with nothing in the reply saying so).
+
+`VISION_MODEL` remains on Qwen 3.5 4B: it is the only VLM available here.
+
+## 10. Open
+
+- **Vision is the last 4B holdout.** ~27 GB free per Spark; a Qwen3-VL-8B at
+  NVFP4 (~6 GB) would replace it comfortably.
+- **The 0.21.1 + B12X image** is reportedly faster still than the 0.25.2 we
+  run. Untested here.
+- **`nvfp4_ds_mla` KV** carries a documented accuracy caveat. `fp8_ds_mla`
+  halves the pool to ~700k tokens and removes it - the first knob to turn if
+  long-context quality ever wobbles.
+- **The stack itself has not moved.** backend, Postgres, Redis, gateway and
+  the workers are still amd64 on the desktop; the Sparks are aarch64, so
+  each image needs an ARM rebuild before "desktop off" is possible.
+- **A blind quality A/B was not run.** Both models cannot be resident at
+  once, so it needs a sequential collect-then-judge pass;
+  `evaluate_reply_quality` supports exactly that via `--save-a` /
+  `--a-answers`.
+
+## The vision model: Qwen3-VL-8B on the Sparks (2026-08-23)
+
+Vision was the last role still on Qwen 3.5 4B, and the only one that could
+not simply follow the reply model - it needs a model that actually sees.
+
+**Chosen: `cyankiwi/Qwen3-VL-8B-Instruct-AWQ-4bit`, 7.55 GB.** It wins every
+published benchmark that matches what AniOS does with images, and is the
+smallest of the serious candidates:
+
+| | Qwen3-VL-8B | Step3-VL-10B | GLM-4.6V-Flash |
+|---|---|---|---|
+| DocVQA | **96.1** | - | - |
+| ScreenSpot | **94.4** | 92.6 | - |
+| OCRBench | **89.6** | 86.8 | - |
+| MMMU | **78.7** | 78.1 | 71.2 |
+| weights | **7.55 GB** | 8.47 GB | 8.86 GB |
+
+Step3-VL-10B is the real alternative and beats it on hard GUI grounding
+(ScreenSpot-Pro 51.6); it would be the pick if AniOS drove an interface.
+It does not - it reads photos and screenshots.
+
+**Newer is not better here.** Qwen retired the separate `-VL` line; the
+modern dense models are natively multimodal. But Qwen3.6 and 3.8 start at
+27B (~15 GB at NVFP4, on the ceiling where over-allocation hangs the box),
+so the only newer model that fits is Qwen3.5-9B - which is marginally behind
+on both comparable benchmarks, 1.5 GB larger, publishes no DocVQA, and
+carries four open sm_121 defects including a Gated-DeltaNet kernel gap that
+halves throughput. Qwen3.6-27B is the upgrade path if ~4 GB is ever freed.
+
+**AWQ, not NVFP4.** CUTLASS FP4 kernels target sm_120 and silently emit
+wrong output on sm_121 (vLLM #50925). On a vision model the failure would
+look like bad OCR rather than an error.
+
+### The sizing mistake, and the fix
+
+First launch used `--gpu-memory-utilization 0.10`, expecting ~12 GB of the
+121 GB pool. vLLM allocated **7.46 GiB of KV on top of 7.1 GB of weights**
+and left the box with **538 MB free**. The fraction is not a cap: the
+profiler sizes KV from what it observes free at startup, so on a nearly-full
+machine it takes almost everything. That box also runs the reply model's
+tensor-parallel worker, and PyTorch does not OOM cleanly on GB10 - it
+freezes the machine - so this would have taken the whole assistant down.
+
+The fix is `--kv-cache-memory-bytes`, set explicitly to 3 GiB. It behaves
+the way a limit should: asked for 16k context against a 2 GiB cache, it
+refused to start and named the number it needed, rather than silently
+consuming the host.
+
+Final resident cost ~10 GB of a 17 GB box, KV 21,840 tokens, ~2.4 GB free
+and stable under load.
+
+### Measured
+
+Through `/api/v1/vision/analyze`, the same path a phone photo takes:
+first request 9.5 s cold, then **0.5-1.1 s warm**. On a test card it read
+every line of text verbatim - including a serial number - and correctly
+described both shapes and their positions.
+
+`VISION_MODEL` and `VISION_LLM_BASE_URL` now point at spark2:8001, and a
+systemd unit starts it at boot. Retiring `vllm-main` also meant removing
+four `depends_on` clauses that would otherwise have blocked the whole stack
+from starting, and repointing the generic `LLM_BASE_URL` fallback, which
+still aimed at the stopped service.

@@ -1,5 +1,5 @@
 {
-  "decision": "DeepSeek-V4-Flash stays as the reply model (2026-08-20). Qwen 3.8-27B won the aggregate 18-9 with 19 ties, and the aggregate misled: its wins were 8-0 in grounding, while DeepSeek took the comparison/trade-off and decisiveness shapes that match how this assistant is actually used - confirmed on a real conceptual question the user preferred DeepSeek's answer to. Speed sealed it: every Qwen quantisation that runs on this hardware decodes at 4.6-8.2 tok/s against DeepSeek's 22.1, and a live UI trial of the fastest was rejected as far too slow. Revisit when a container ships working MTP for GB10, or when a second DGX Spark lets both run at once - then Qwen takes the schema-bound callers and the empty vision-escalation slot with nothing traded away.",
+  "decision": "DeepSeek-V4-Flash official FP8 across both DGX Sparks, vLLM tensor-parallel, B12X MoE kernel (2026-08-23). The second Spark arrived and settled the question the previous entry deferred: the official checkpoint is ~167 GB and does not fit on one box, so TP=2 is a requirement rather than a preference. Same model as before, but at release precision instead of a ~2-bit GGUF, and the thing that actually mattered was not speed - the new engine enforces JSON schemas, which the old one ignored. That removed the only reason six roles were pinned to a 4B, and 287 lines of workaround (JSONFallbackWriter, FallbackInferenceProvider) were deleted with it. Qwen3.6-35B-A3B was the better engineering fit - 25 GB, one box, 218-436 tok/s, perfect tool-calling - and was rejected on intelligence: 32 on the Artificial Analysis index against DeepSeek's 52, SWE-bench 73.4 against 79. The cost of that choice is stated plainly: both boxes are consumed, so image generation has no home on this hardware and vision keeps the ~27 GB left per box. Biggest single win was free: the boot log showed 'Using DEEPGEMM_MXFP4' - a silent fallback - and adding --moe-backend flashinfer_b12x, with no change to the model, took code decode from 26.2 to 63.5 tok/s. Full reasoning in docs/MODEL_EVALUATION.md.",
   "columns": [
     "Model",
     "Serving",
@@ -11,13 +11,40 @@
   ],
   "rows": [
     [
+      "DeepSeek-V4-Flash FP8 (official) — CURRENT",
+      "vLLM 0.25.2 TP=2 across 2 Sparks, B12X MoE, DSpark k=5, 1M ctx",
+      "40 math / 30 prose / 63 code / 80 counting; 383 agg @ c=6",
+      "1785-2639",
+      "11.5x (warm ~512 ms @ 11.7k)",
+      "yes (enforced)",
+      "no"
+    ],
+    [
+      "DeepSeek-V4-Flash FP8 (official)",
+      "same, but DEEPGEMM_MXFP4 fallback kernel",
+      "35.7 math / 25.9 prose / 26.2 code",
+      "1785",
+      "11.5x",
+      "yes",
+      "no"
+    ],
+    [
       "DeepSeek-V4-Flash IQ2_XXS (~2.4 bit)",
-      "ds4-server, 1M ctx",
-      "22.1",
-      "982",
-      "15-24x",
+      "ds4-server, 1 Spark, 1M ctx, MTP+DSpark D=4",
+      "10.1-19.0 (mean 14.5; 5.6 unspeculated)",
+      "1095",
+      "2.35x @ 4.4k, 18.5x @ 11.7k",
       "none (ignores schemas)",
       "no"
+    ],
+    [
+      "Qwen3.6-35B-A3B NVFP4 (considered, not deployed)",
+      "vLLM, 1 Spark, ~25 GB",
+      "218-436 (published)",
+      "-",
+      "-",
+      "yes (100/100 Tool-Eval-Bench)",
+      "yes"
     ],
     [
       "Qwen 3.8-27B BF16",
