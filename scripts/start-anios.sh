@@ -95,10 +95,12 @@ warm_vllm() {
         >/dev/null
 }
 
-# 1) Initialize vLLM in the measured VRAM-safe order. The embedding service
-# waits for the main generation/VLM service to become healthy in Compose.
-echo 'Starting vLLM services ...'
-"${compose[@]}" up -d --wait --wait-timeout 900 vllm-main vllm-embedding
+# 1) Start the embedding service. The generation and vision models no longer
+# live in this Compose project - they run on the DGX Sparks, started by
+# ~/ds4-tp2.sh and ~/vlm-serve.sh there - so there is no ordering constraint
+# left to respect here.
+echo 'Starting vLLM embedding service ...'
+"${compose[@]}" up -d --wait --wait-timeout 900 vllm-embedding
 
 # 2) Pay one-time JIT costs before the first user request.
 echo 'Warming vLLM generation and embedding paths ...'

@@ -389,9 +389,12 @@ holds the blind-judged comparisons, verbatim answers, and serving numbers behind
 <code>MainActionSelector</code> offers live search, image generation/edit, diagrams, presentation
 delegation, and the user's own registered MCP tools to the main model as one native tool-calling
 decision per turn, made from genuine understanding rather than a regex or a narrow bounded
-classifier judging the question alone. Ordinary responses, presentation plans, diagram
-specifications, vision, and the routing decision itself use Qwen through vLLM. Nomic supplies text
-embeddings through a separate vLLM service. Application code &mdash; never the models &mdash; owns
+classifier judging the question alone. Ordinary responses, the routing decision itself, presentation
+plans, diagram specifications, memory proposals and Scout's judgement calls all run on
+DeepSeek-V4-Flash at official FP8, served tensor-parallel across two DGX Sparks; the engine enforces
+JSON schemas, which is what allowed those callers to stop being pinned to a smaller grammar model.
+Vision is the one remaining Qwen role. Nomic supplies text embeddings through a separate vLLM
+service. Application code &mdash; never the models &mdash; owns
 authorization, persistence, provider policy, and execution.</p>
 
 <dl class="strip">

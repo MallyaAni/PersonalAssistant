@@ -3,6 +3,25 @@
 # log over months - the classic quiet disk-eater. 20MB x 3 files per service
 # keeps ~60MB of recent history each, which is plenty for any diagnosis that
 # happens while the incident is still warm.
+x-spark-hosts: &spark-hosts
+  # The two DGX Sparks, by address rather than by name.
+  #
+  # Every service below reaches Postgres, Redis and the models over
+  # `animallya-sparkN.local`, which is mDNS. mDNS does not work inside a Docker
+  # container: Docker's embedded resolver forwards to the host's *upstream*
+  # nameservers, and the .local responder is not one of them. On the Sparks the
+  # failure is worse than a clean NXDOMAIN - spark1 resolves to a list of
+  # link-local IPv6 addresses (fe80::/10) that cannot be routed without a scope
+  # id, so connections hang or fail with "Temporary failure in name
+  # resolution", while /health keeps answering 200 because it touches nothing.
+  #
+  # Pinning both to their LAN addresses makes resolution identical on every
+  # host and independent of whether an mDNS responder is running at all.
+  - "animallya-spark1.local:${SPARK1_IP:-172.16.8.3}"
+  - "animallya-spark2.local:${SPARK2_IP:-172.16.8.5}"
+  # Reaching back to whatever host the container happens to run on.
+  - "host.docker.internal:host-gateway"
+
 x-bounded-logs: &bounded-logs
   driver: json-file
   options:
@@ -10,88 +29,12 @@ x-bounded-logs: &bounded-logs
     max-file: "3"
 
 services:
-  vllm-main:
-    image: vllm/vllm-openai@sha256:6d8429e38e3747723ca07ee1b17972e09bb9c51c4032b266f24fb1cc3b22ed8f
-    container_name: anios_vllm_main
-    logging: *bounded-logs
-    ipc: host
-    environment:
-      # Exposes /sleep, /wake_up, and /is_sleeping, which the GPU handoff uses
-      # to lend the card to ComfyUI for the length of one image job.
-      - VLLM_SERVER_DEV_MODE=1
-    command:
-      # Pre-quantized FP8 (compressed-tensors), not `--quantization fp8`. Both
-      # produce FP8 weights on Blackwell's native tensor cores, but the
-      # on-the-fly quantizer cannot be woken from sleep. This checkpoint keeps
-      # the vision tower, so it still serves the vision role.
-      - RedHatAI/Qwen3.5-4B-FP8-dynamic
-      - --revision
-      - 397b7ba47a99b3221ebfc0cfc5a279118cb733ad
-      - --served-model-name
-      - qwen/qwen3.5-4b
-      - --host
-      - 0.0.0.0
-      - --port
-      - "8000"
-      - --max-model-len
-      - ${VLLM_MAIN_MAX_MODEL_LEN:-16384}
-      - --max-num-seqs
-      - ${VLLM_MAIN_MAX_NUM_SEQS:-4}
-      - --max-num-batched-tokens
-      - ${VLLM_MAIN_MAX_BATCHED_TOKENS:-4096}
-      # Claim the card generously: sleep mode gives all of this back to ComfyUI
-      # for the duration of an image job, so a large resident share costs
-      # nothing. This is a fraction of total VRAM, so vLLM must start before
-      # ComfyUI or it cannot reach its share; scripts/start-anios.sh does that.
-      - --gpu-memory-utilization
-      - ${VLLM_MAIN_GPU_MEMORY_UTILIZATION:-0.70}
-      # KV cache dtype stays at the default. An FP8 KV cache holds more tokens
-      # per GiB, but it is the one setting that breaks waking from sleep on
-      # vLLM 0.23.0 (`'list' object has no attribute 'zero_'`), which strands the
-      # engine asleep. FP8 *weights* wake correctly; the FP8 KV cache does not.
-      # Trading it back still leaves 93,992 cached tokens.
-      - --kv-cache-dtype
-      - ${VLLM_MAIN_KV_CACHE_DTYPE:-auto}
-      # Let AniOS hand the GPU to ComfyUI instead of both runtimes thrashing.
-      - --enable-sleep-mode
-      # Preserve the qualified latency-first V1 scheduler behavior explicitly
-      # instead of relying on version-dependent defaults.
-      - --enable-chunked-prefill
-      - --async-scheduling
-      # AniOS repeats a stable system/tool prefix across turns. Reusing those
-      # KV blocks reduces repeated prefill without changing model output.
-      - --enable-prefix-caching
-      - --enable-auto-tool-choice
-      - --tool-call-parser
-      - qwen3_coder
-      - --reasoning-parser
-      - qwen3
-    ports:
-      - "8003:8000"
-    volumes:
-      - ${VLLM_MODEL_CACHE_PATH:-E:/AI/huggingface-cache-vllm}:/root/.cache/huggingface
-      - ${VLLM_COMPILE_CACHE_PATH:-E:/AI/vllm-compile-cache}:/root/.cache/vllm
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-    healthcheck:
-      test:
-        - CMD
-        - python3
-        - -c
-        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)
-      interval: 10s
-      timeout: 6s
-      retries: 60
-      start_period: 10m
-    restart: unless-stopped
-
   vllm-embedding:
-    image: vllm/vllm-openai@sha256:6d8429e38e3747723ca07ee1b17972e09bb9c51c4032b266f24fb1cc3b22ed8f
+    extra_hosts: *spark-hosts
+    # Pinned by digest, which pins the architecture too - this one is amd64.
+    # The DGX Sparks are aarch64 and override it with an ARM vLLM build, so
+    # one service definition serves both hosts.
+    image: ${VLLM_EMBEDDING_IMAGE:-vllm/vllm-openai@sha256:6d8429e38e3747723ca07ee1b17972e09bb9c51c4032b266f24fb1cc3b22ed8f}
     container_name: anios_vllm_embedding
     logging: *bounded-logs
     ipc: host
@@ -254,8 +197,7 @@ services:
       - ARTIFACT_STORAGE_ROOT=/app/data/artifacts
       - PRESENTATION_RENDERER_BASE_URL=http://presentation-renderer:8002
       - PRESENTATION_REQUIRE_OFFICE_VALIDATION=true
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    extra_hosts: *spark-hosts
     volumes:
       - artifactdata:/app/data/artifacts
     depends_on:
@@ -267,6 +209,7 @@ services:
         condition: service_healthy
 
   presentation-renderer:
+    extra_hosts: *spark-hosts
     # Comes back when Docker does, so a reboot does not
     # need someone to remember to start it.
     restart: unless-stopped
@@ -373,8 +316,7 @@ services:
       - MODEL_GATE_ENABLED=true
       - MODEL_GATE_LEASE_SECONDS=${MODEL_GATE_LEASE_SECONDS:-300}
       - MODEL_GATE_POLL_SECONDS=${MODEL_GATE_POLL_SECONDS:-0.1}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    extra_hosts: *spark-hosts
     volumes:
       - artifactdata:/app/data/artifacts
       # The Google research quota counter is shared with the API, so both
@@ -391,7 +333,7 @@ services:
   # The ambient discovery loop. Separate from the presentation worker because
   # the two have nothing in common but the leasing pattern: this one reads
   # feeds and embeddings, never the generation model, so it must not wait on
-  # vllm-main to be healthy before it can run.
+  # the generation service to be healthy before it can run.
   discovery-worker:
     # Comes back when Docker does, so a reboot does not
     # need someone to remember to start it.
@@ -509,8 +451,7 @@ services:
       # Same shape of mistake: the default is a loopback address that resolves
       # to this container rather than to the shared Redis.
       - REDIS_URL=redis://animallya-spark1.local:6379/0
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    extra_hosts: *spark-hosts
     volumes:
       # The Google quota counter is shared with the API so both reserve against
       # one count rather than two.
@@ -529,7 +470,10 @@ services:
     container_name: anios_backend
     logging: *bounded-logs
     ports:
-      - "8000:8000"
+      # The host port is a variable because on a DGX Spark port 8000 is the
+      # vLLM head. Inside the compose network this is always :8000, so the
+      # gateway and every sibling are unaffected by whatever the host maps.
+      - "${BACKEND_HOST_PORT:-8000}:8000"
     environment:
       # Credentials come from .env; the container-only values below stay literal
       # because .env holds host-oriented ones (POSTGRES_HOST=localhost).
@@ -625,16 +569,11 @@ services:
       - MEMORY_DIGEST_MAX_WORDS=${MEMORY_DIGEST_MAX_WORDS:-200}
       - MEMORY_DIGEST_MAX_TOKENS=${MEMORY_DIGEST_MAX_TOKENS:-2048}
       - MAIN_LLM_REASONING_EFFORT=${MAIN_LLM_REASONING_EFFORT:-none}
-      # Where the main model's work goes when the Spark is powered off. Without
-      # this the assistant is entirely down whenever that machine is, even
-      # though vllm-main is running healthily right here. Degraded replies beat
-      # no replies.
-      # MainActionSelector's tool-calling/routing stays on Qwen deliberately -
-      # pinned here rather than left to fall back to MAIN_LLM_*, since without
-      # this MainActionSelector's native tool calls would silently move to
-      # DeepSeek too. Qwen's routing/tool-calling was the proven baseline all
-      # session; DeepSeek's own routing eval passed only barely (recall right
-      # at the 0.85 floor), so there was no evidence to justify moving it.
+      # Routing runs on the main model. It used to be pinned to a 4B purely
+      # because that model enforced JSON grammars and the old engine ignored
+      # them; vLLM enforces schemas, so the pin lost its reason and the 4B is
+      # gone. These stay spelled out rather than inheriting MAIN_LLM_* so that
+      # moving one role to a different box stays a one-line change.
       - ROUTING_INFERENCE_ADAPTER=${ROUTING_INFERENCE_ADAPTER:-}
       - ROUTING_LLM_BASE_URL=http://animallya-spark1.local:8000
       - ROUTING_LLM_MODEL=deepseek-v4-flash
@@ -733,8 +672,7 @@ services:
       - MODEL_GATE_ENABLED=true
       - MODEL_GATE_LEASE_SECONDS=${MODEL_GATE_LEASE_SECONDS:-300}
       - MODEL_GATE_POLL_SECONDS=${MODEL_GATE_POLL_SECONDS:-0.1}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    extra_hosts: *spark-hosts
     volumes:
       - artifactdata:/app/data/artifacts
       - searchdata:/app/data/search
@@ -775,6 +713,26 @@ services:
       - /app/node_modules
     depends_on:
       - backend
+
+  cloudflared:
+    # The public origin for deep-matter.com. This used to be a hand-started
+    # cloudflared.exe on the Windows desktop, which meant the site was only up
+    # while that machine was awake and someone had run it. Running it beside
+    # the gateway ties the tunnel's life to the stack's.
+    #
+    # It joins the compose network and targets `gateway:8080` directly, so the
+    # gateway no longer has to publish a host port at all for ingress to work.
+    restart: unless-stopped
+    image: cloudflare/cloudflared:latest
+    container_name: anios_cloudflared
+    logging: *bounded-logs
+    command: tunnel --no-autoupdate --config /etc/cloudflared/config.yml run
+    volumes:
+      - ./secrets/cloudflared:/etc/cloudflared:ro
+    depends_on:
+      - gateway
+    profiles:
+      - tunnel
 
   gateway:
     # Comes back when Docker does, so a reboot does not

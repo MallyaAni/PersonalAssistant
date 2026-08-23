@@ -149,3 +149,69 @@ diverged from computed KV at temperature 0; the other deadlocked permanently at
 was ~300x on a 32k restore, so it is worth revisiting - but the supported path
 today is vLLM's own `--enable-prefix-caching` plus native CPU/filesystem
 offload.
+
+## Moving the application stack, 2026-08-23
+
+The last step: everything that was still amd64 on the Windows desktop now runs
+on spark1, and the desktop is no longer part of the system.
+
+| moved | to | how |
+|---|---|---|
+| Postgres (37 tables) | spark1 | writers stopped, `pg_dump`, byte-compared |
+| Redis (7,131 keys) | spark1 | RDB copy; the iMessage cursor survived |
+| backend, 2 workers, local-capabilities | spark1 | `anios-backend:arm64`, rebuilt from source |
+| presentation-renderer, frontend, gateway | spark1 | ARM builds of the same Dockerfiles |
+| nomic embeddings | spark1 | the last model on the desktop RTX |
+| the Cloudflare tunnel | spark1 | see below |
+
+Verified after cutover, from inside the backend container: 175 conversations,
+7,131 Redis keys, 768-dim embeddings, and live replies from both the main model
+and the VLM. `deep-matter.com` serves with the desktop powered off.
+
+### The tunnel was a hand-started process
+
+`cloudflared.exe` was not a Windows service or a scheduled task - it was a
+console process someone had run. The site was therefore up only while that
+machine was awake *and* nobody had closed the window. It is now a compose
+service (`--profile tunnel`) targeting `gateway:8080` over the compose network,
+so the public origin comes up and goes down with the stack.
+
+The credentials live in `secrets/`, which is gitignored: the tunnel JSON is a
+bearer credential for the hostname.
+
+### mDNS does not work inside a container, and fails deceptively
+
+Every service reaches Postgres, Redis and the models through
+`animallya-sparkN.local`. That resolves on the Windows and Ubuntu *hosts* and
+does not resolve inside a container - Docker's embedded resolver forwards to
+the host's upstream nameservers, and the mDNS responder is not one of them.
+
+The failure is worse than a clean `NXDOMAIN`:
+
+```
+$ getent hosts animallya-spark1.local     # inside the container
+fe80::68b8:42ff:fef0:8a6f   animallya-spark1.local
+...eight link-local IPv6 addresses...
+$ getent hosts animallya-spark2.local
+(nothing)
+```
+
+`fe80::/10` is link-local and unroutable without a scope id, so connections
+hang or die with "Temporary failure in name resolution" - while `/health` keeps
+answering `200 OK`, because it touches no dependency. The stack looked healthy
+and could not have served a single real request.
+
+Fixed with one `x-spark-hosts` anchor in `docker-compose.yml` pinning both
+Sparks to their LAN addresses, shared by all six services that need it. It also
+absorbed the four separate `host.docker.internal` entries that were previously
+copied per service.
+
+**The lesson worth keeping: a health endpoint that touches no dependency will
+report a completely broken stack as healthy.** Verify a migration by exercising
+each dependency from inside the container, not by curling `/health`.
+
+### `vllm-main` is gone
+
+The desktop-RTX generation service was dead code once the Sparks took over -
+80 lines of service definition plus three stale comments and a startup-script
+line that brought up a service nothing depended on.

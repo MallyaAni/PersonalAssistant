@@ -770,16 +770,26 @@ instead of failing, with nothing in the reply saying so).
 
 ## 10. Open
 
-- **Vision is the last 4B holdout.** ~27 GB free per Spark; a Qwen3-VL-8B at
-  NVFP4 (~6 GB) would replace it comfortably.
+- ~~**Vision is the last 4B holdout.**~~ Done: Qwen3-VL-8B AWQ serves vision
+  on spark2. AWQ rather than NVFP4 - CUTLASS FP4 kernels target sm_120 and
+  silently emit wrong output on the Spark's sm_121 (vLLM #50925).
+- **Memory is now the binding constraint, and it is measured.** spark2 is
+  full (~1.4 GB free; the VLM took ~15.7 GB, not the ~10 budgeted, once
+  runtime overhead is counted). spark1 holds the model plus the whole
+  application stack and has **~9.9 GB** free. That is what remains for image
+  generation: FLUX.2-klein-4B (6.5 GB) fits load-on-demand, klein-9B
+  (12 GB) does not - and over-allocating on a GB10 hangs the box rather than
+  OOM-killing, so the margin is not negotiable.
 - **The 0.21.1 + B12X image** is reportedly faster still than the 0.25.2 we
   run. Untested here.
 - **`nvfp4_ds_mla` KV** carries a documented accuracy caveat. `fp8_ds_mla`
   halves the pool to ~700k tokens and removes it - the first knob to turn if
   long-context quality ever wobbles.
-- **The stack itself has not moved.** backend, Postgres, Redis, gateway and
-  the workers are still amd64 on the desktop; the Sparks are aarch64, so
-  each image needs an ARM rebuild before "desktop off" is possible.
+- ~~**The stack itself has not moved.**~~ Done 2026-08-23: Postgres, Redis,
+  the backend, both workers, local-capabilities, the renderer, the frontend,
+  the gateway, the embedding model and the Cloudflare tunnel all run on
+  spark1 now, and `deep-matter.com` serves with the desktop powered off. See
+  docs/DGX_MIGRATION.md.
 - **A blind quality A/B was not run.** Both models cannot be resident at
   once, so it needs a sequential collect-then-judge pass;
   `evaluate_reply_quality` supports exactly that via `--save-a` /

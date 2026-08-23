@@ -38,3 +38,4 @@ data/
 
 # Playwright run output, including diagram review screenshots.
 test-results/
+secrets/

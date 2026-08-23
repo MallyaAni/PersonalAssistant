@@ -87,6 +87,15 @@ If functional validation cannot be performed, do not label the behavior verified
 Each of these has cost real time or real data here. They are recorded because
 they are not discoverable from the code alone.
 
+**`.local` names do not resolve inside a container, and fail deceptively.**
+Services reach Postgres, Redis and the models as `animallya-sparkN.local`.
+That is mDNS: it works on the hosts and not inside Docker, where spark1
+resolves to unroutable link-local IPv6 and spark2 to nothing at all. Meanwhile
+`/health` still answers 200, because it touches no dependency - so a totally
+broken stack looks healthy. `docker-compose.yml` pins both Sparks by IP in the
+`x-spark-hosts` anchor. Verify any migration by exercising each dependency from
+inside the container, never by curling `/health`.
+
 **A powered-off Spark needs a physical button press.** It has no BMC and no
 Wake-on-LAN, so nothing brings it back remotely - keep its IP recorded
 (spark1 = 172.16.8.3, spark2 = 172.16.8.5), and do not power one down unless
