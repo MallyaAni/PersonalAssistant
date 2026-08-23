@@ -15,7 +15,29 @@ off, and everything below was checked by running it, not by reading it.
 | deploy gate | `bash scripts/gate.sh` - 7 passed, 0 skipped, ~3 min; exits 1 with the router down |
 | turn loop | shipped inert, `TURN_MAX_STEPS=1` in backend and discovery-worker |
 
-## Two decisions waiting
+## Both decisions taken, 2026-08-23
+
+**The multi-step loop is on.** `TURN_MAX_STEPS=3` in backend, discovery-worker
+and local-capabilities. Revert is the env var and a restart, never a rebuild.
+
+**`db` and `redis` are Compose-managed.** Adopted with writers stopped so the
+cursor could not move mid-swap: 7,074 keys and cursor
+`809188673966836992` byte-identical across the move, 37 tables, 177
+conversations. `db` kept `anios_pgdata`; `redis` moved from an anonymous volume
+to the named `anios_redisdata`, restored from an RDB written into it *before*
+the container was ever started - starting first would have let an empty redis
+write its own empty dump over the volume. The pre-swap snapshot is kept at
+`/tmp/redis-final.rdb` on spark1.
+
+**A bare `docker compose up -d` on spark1 is safe again** now that both are
+Compose-managed on named volumes. The warning that stood here is withdrawn.
+
+**And `anios_db` has a backup for the first time.** `scripts/backup-db.sh` was
+failing at `service "db" is not running`; it works now - 2.1 MB, 37 tables. The
+"no backups" constraint that has shaped every decision this week is no longer
+strictly true, though one dump is not a backup policy.
+
+## Superseded: two decisions that were waiting
 
 **1. Turn the multi-step loop on.** The code is deployed and its functional
 tests pass at `steps_max=3`, but production runs at 1, so the loop body is
