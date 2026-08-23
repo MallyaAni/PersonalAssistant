@@ -1004,6 +1004,67 @@ test('renders a completed deterministic chat stream and clears loading state', a
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
+// A newer backend may name an event this build has never heard of, and the
+// answer must still arrive.
+//
+// The parser used to throw on any name outside a seventeen-item allowlist,
+// which killed the whole stream: one unfamiliar frame and the reply stopped
+// mid-sentence with a generic failure. The backend and this bundle are
+// separate deploys - the gateway is a one-shot static build - so a new name is
+// always live on one side before the other. Skipping the unknown is what makes
+// that survivable, and this test is the reason the skip cannot be reverted by
+// accident.
+test('an unknown event mid-stream does not kill the answer', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  let requestPayload: { conversation_id: string } | undefined
+
+  await page.route('http://localhost:8000/api/v1/chat', async route => {
+    requestPayload = route.request().postDataJSON()
+    const conversationId = requestPayload!.conversation_id
+    // An unfamiliar frame deliberately placed BETWEEN two deltas, so a parser
+    // that aborts on it truncates the answer rather than merely dropping a
+    // trailing decoration - the visible half would otherwise pass.
+    const body = [
+      'event: start',
+      `data: ${JSON.stringify({ trace_id: 'skew-trace', conversation_id: conversationId })}`,
+      '',
+      'event: delta',
+      `data: ${JSON.stringify({ content: 'first half ' })}`,
+      '',
+      'event: reasoning_step',
+      `data: ${JSON.stringify({ step: 3, note: 'a name this build does not know' })}`,
+      '',
+      'event: delta',
+      `data: ${JSON.stringify({ content: 'and second half' })}`,
+      '',
+      'event: done',
+      'data: {}',
+      '',
+      '',
+    ].join('
+')
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body,
+    })
+  })
+
+  await page.goto('/')
+  const { textarea, sendButton } = chatControls(page)
+  await textarea.fill('does an unknown event break the stream?')
+  await sendButton.click()
+
+  // Both halves, which is the assertion: the text after the unknown frame is
+  // what a throwing parser loses.
+  const answer = latestAssistantAnswer(page)
+  await expect(answer.getByText('first half and second half', { exact: true })).toBeVisible()
+  await expect(page.getByText('Thinking...', { exact: true })).not.toBeVisible()
+  await expect(textarea).toBeEnabled()
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+
 // Verify successful MCP use remains visible after the answer finishes.
 test('shows the MCP tool used for a completed chat answer', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)

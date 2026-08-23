@@ -1242,6 +1242,9 @@ export async function* streamChat(
       // event, so there is nothing here to act on.
       if (isCommentOnlyFrame(frame)) continue
       const event = parseChatEvent(frame)
+      // An event name this build does not know. A newer backend is allowed
+      // to say more than an older browser understands.
+      if (event === null) continue
 
       if (event.event === 'start') {
         const traceId = event.data.trace_id
@@ -1595,8 +1598,20 @@ function isCommentOnlyFrame(frame: string): boolean {
 }
 
 
-// Parse one server-sent event frame into a typed chat event.
-function parseChatEvent(frame: string): ChatEvent {
+// Parse one server-sent event frame into a typed chat event, or null for an
+// event name this build does not know.
+//
+// Skipping rather than throwing is the whole point. This used to throw, which
+// killed the entire stream mid-reply: one frame the browser had never heard of
+// and the answer stopped, with a generic error where the text should be. The
+// backend and the frontend are separate deploys - the gateway is a one-shot
+// static build - so a new event name is always live on one side before the
+// other, and a stream that dies on the unfamiliar cannot survive that.
+//
+// Everything past the name is still validated. An event that IS known and
+// malformed still throws, because that is a real defect rather than a version
+// skew.
+function parseChatEvent(frame: string): ChatEvent | null {
   let eventName = ''
   const dataLines: string[] = []
 
@@ -1624,7 +1639,7 @@ function parseChatEvent(frame: string): ChatEvent {
     'done',
     'error',
   ].includes(eventName)) {
-    throw new Error('Chat stream contained an unknown event')
+    return null
   }
 
   let data: unknown
