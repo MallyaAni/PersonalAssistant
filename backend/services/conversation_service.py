@@ -6,15 +6,15 @@ import uuid
 from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import suppress
 from dataclasses import replace
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 import httpx
 from anyio import CancelScope
 
-from backend.agents.graph import build_assistant_graph
+from backend.agents.reply.graph import build_reply_graph
 from backend.agents.memory.artifact_context import ArtifactContextRouter
-from backend.agents.state import AgentState
+from backend.agents.reply.state import ReplyState, TurnDeps
 from backend.agents.vision.memory import VisualMemorySelector
 from backend.artifacts.image_lineage import (
     collapse_duplicate_content,
@@ -412,7 +412,11 @@ class ConversationService:
         # this writes to has no backups. The service is built per request,
         # so this set spans exactly one turn and cannot grow unbounded.
         self._persisted_traces: set[str] = set()
-        self.assistant_graph = build_assistant_graph(llm)
+        # Compiled once per process and shared. Collaborators ride beside
+        # the state in `context_schema`, so the graph is not a function of
+        # this client and the cache holds one entry rather than one per
+        # request.
+        self.assistant_graph = build_reply_graph()
         self.repository = repository
         self.tracer = tracer
         self.history_turn_limit = history_turn_limit
@@ -2671,14 +2675,18 @@ class ConversationService:
         }
         _mark_turn(context, metadata or {}, extra_context)
 
-        initial_state = AgentState(
-            conversation_id=conversation_id,
-            user_id=user_id,
-            current_query=query,
-            history=history,
-            context_data=context,
-            trace_id=trace_id,
-        )
+        # `now` is frozen here and never re-read from the clock. Two separate
+        # renders of the system prompt each called datetime.now(), so a turn
+        # crossing midnight measured one date and answered with another.
+        seed: ReplyState = {
+            "user_id": user_id,
+            "conversation_id": conversation_id,
+            "trace_id": trace_id,
+            "query": query,
+            "history": history,
+            "context": context,
+            "now": datetime.now(UTC).isoformat(),
+        }
 
         # 3. Execute AssistantGraph
         self.tracer.log_step(trace_id, "graph_execution", {"status": "started"})
@@ -2689,9 +2697,10 @@ class ConversationService:
         # anywhere. Adding the flag later, at the moment the first subgraph is
         # written, is how that becomes an afternoon of confusion.
         async for _namespace, event in self.assistant_graph.astream(
-            initial_state.model_dump(),
+            seed,
             stream_mode="custom",
             subgraphs=True,
+            context=TurnDeps(llm=self.llm),
         ):
             # The wire shape. Everything a node emits is already a
             # ChatStreamEvent, so this relays rather than translates.
@@ -2713,7 +2722,7 @@ class ConversationService:
         # 4. Persist conversation
         await self._persist_completed_turn(
             user_id,
-            initial_state.conversation_id,
+            seed["conversation_id"],
             query,
             response_text,
             trace_id,

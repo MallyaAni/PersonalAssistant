@@ -22,15 +22,6 @@ logger = logging.getLogger(__name__)
 
 
 # Define the state for LangGraph
-class AssistantState(TypedDict):
-    messages: NotRequired[
-        Annotated[list[dict[str, str]], lambda existing, new: existing + new]
-    ]
-    current_query: str
-    history: list[dict[str, Any]]
-    context_data: dict[str, Any]
-    trace_id: str
-
 
 # Render bounded, clearly attributed web results the application chose to fetch.
 def _render_search_context(results: list[dict[str, Any]]) -> str:
@@ -692,76 +683,3 @@ def measure_turn(
         # Accounting is an improvement to a turn, never a requirement of one.
         logger.warning("Context budget measurement failed", exc_info=True)
         return None
-
-
-def build_assistant_graph(llm: LLMClient) -> Any:
-    """Construct the single-agent graph around an injected LLM provider."""
-
-    def assistant_node(state: AssistantState) -> dict[str, Any]:
-        logger.debug("Processing conversation trace %s", state.get("trace_id"))
-        writer = get_stream_writer()
-        response_chunks = []
-        context_data = state.get("context_data") or {}
-        history = state.get("history") or []
-        query = state["current_query"]
-
-        # Measured before assembly, so enforcement can act on the inputs and
-        # the report describes the prompt that is actually sent - planned and
-        # sent are the same thing by construction, not by later comparison.
-        report = measure_turn(
-            context_data, history, query, _build_system_prompt(context_data)
-        )
-        if report is not None:
-            logger.info("trace=%s %s", state.get("trace_id"), report.summary())
-            record_context_report(report, str(state.get("trace_id") or ""))
-            if report.dropped_total and settings.CONTEXT_BUDGET_ENFORCE:
-                named = {item.name: item for item in report.allocations}
-                if named["system"].complete and named["query"].complete:
-                    context_data, history = _apply_report(context_data, history, report)
-                    logger.info(
-                        "trace=%s enforced: dropped %d item(s) to fit the window",
-                        state.get("trace_id"),
-                        report.dropped_total,
-                    )
-                else:
-                    # A window too small for the system prompt and the question
-                    # cannot be fixed by dropping enrichment; trimming would
-                    # send a turn missing its own question. Send in full and
-                    # say so, loudly.
-                    logger.warning(
-                        "trace=%s window smaller than the untrimmable parts; "
-                        "turn sent in full",
-                        state.get("trace_id"),
-                    )
-
-        messages = [{"role": "system", "content": _build_system_prompt(context_data)}]
-        for turn in history:
-            if turn.get("query"):
-                messages.append({"role": "user", "content": turn["query"]})
-            if turn.get("response"):
-                messages.append({"role": "assistant", "content": turn["response"]})
-        # This turn's volatile material goes after the history, so the prefix
-        # above it stays byte-identical between turns and the server can reuse
-        # its KV blocks. Measured at 16.5x on a 34k-token conversation.
-        messages.extend(turn_context_messages(context_data))
-        messages.append({"role": "user", "content": query})
-
-        # Explicit, because the signature default was 1,024 and nobody chose
-        # it. A reasoning model spends part of this budget on thinking that is
-        # never rendered, so too small a value returns an empty reply rather
-        # than a short one.
-        for chunk in llm.stream_chat(messages, settings.MAIN_LLM_MAX_TOKENS):
-            response_chunks.append(chunk)
-            # The wire shape, not a private one. `emit` validates the name
-            # against ChatStreamEvent, so a kind the consumer would drop
-            # raises here instead of vanishing.
-            emit("delta", content=chunk)
-        return {
-            "messages": [{"role": "assistant", "content": "".join(response_chunks)}]
-        }
-
-    workflow = StateGraph(AssistantState)
-    workflow.add_node("assistant", assistant_node)
-    workflow.set_entry_point("assistant")
-    workflow.add_edge("assistant", END)
-    return workflow.compile()

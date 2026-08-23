@@ -25,14 +25,25 @@ from backend.config.settings import settings
 def test_the_reply_path_passes_the_configured_budget():
     from pathlib import Path
 
-    source = (Path(__file__).resolve().parents[1] / "agents" / "graph.py").read_text(
-        encoding="utf-8"
-    )
+    # Every call site, found rather than named. This used to point at
+    # agents/graph.py, and the reply path moved into agents/reply/nodes.py -
+    # a guard that names one file stops guarding the moment the code moves,
+    # and says nothing while it does.
+    agents = Path(__file__).resolve().parents[1] / "agents"
+    calls = [
+        (path, line.strip())
+        for path in agents.rglob("*.py")
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if "stream_chat(" in line and "def stream_chat" not in line
+    ]
 
-    assert "stream_chat(messages, settings.MAIN_LLM_MAX_TOKENS)" in source, (
-        "the reply path must pass the budget explicitly; calling stream_chat "
-        "with only messages silently takes the 1,024 signature default"
-    )
+    assert calls, "no stream_chat call found under backend/agents"
+    for path, line in calls:
+        assert "settings.MAIN_LLM_MAX_TOKENS" in line, (
+            f"{path.name} calls stream_chat without the budget: {line!r}. "
+            "Calling it with only messages silently takes the 1,024 signature "
+            "default, which returned an empty reply on one open question in six."
+        )
 
 
 # Sized from the measurement, so a well-meaning reduction has to argue with it.

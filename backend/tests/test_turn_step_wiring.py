@@ -33,14 +33,13 @@ class _Llm:
 
 # The constructor must keep the client, not only hand it to the graph.
 def test_the_service_keeps_the_llm_it_was_given(monkeypatch) -> None:
-    monkeypatch.setattr(module, "build_assistant_graph", lambda llm: object())
     service = ConversationService.__new__(ConversationService)
     llm = _Llm()
 
     # Run only the two lines under test; the full constructor wires a dozen
     # collaborators that have nothing to do with this.
     service.llm = llm
-    service.assistant_graph = module.build_assistant_graph(llm)
+    service.assistant_graph = module.build_reply_graph()
 
     assert service.llm is llm
 
