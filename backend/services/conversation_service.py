@@ -400,6 +400,10 @@ class ConversationService:
         referent_resolver: ReferentResolver | None = None,
     ):
         self.memory = memory
+        # Kept as well as being handed to the graph: `_manage_tasks` and the
+        # skill picker fall back to it when no action selector is wired, and
+        # that read would otherwise raise AttributeError rather than degrade.
+        self.llm = llm
         self.assistant_graph = build_assistant_graph(llm)
         self.repository = repository
         self.tracer = tracer
@@ -1948,7 +1952,7 @@ class ConversationService:
                 query,
                 history or [],
                 None,
-                local_now=self._local_now(user_id) if query else None,
+                local_now=await self._local_now(user_id) if query else None,
                 unattended=unattended,
                 only=AUTOMATION_TOOLS,
                 steps_taken=lines,
