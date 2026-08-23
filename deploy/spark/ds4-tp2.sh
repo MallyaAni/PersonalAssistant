@@ -8,6 +8,14 @@
 # the reasoning is in docs/DGX_MIGRATION.md. The short version:
 #   - both RoCE twins are given to NCCL and merged, or collectives run at half
 #     the port (98 vs 161 Gb/s busbw)
+#   - kv-cache-memory-bytes is set EXPLICITLY. The utilization fraction is
+#     not a cap: vLLM sizes KV from whatever it observes free at startup, so
+#     0.78 handed it 10.71 GiB for 1.53M tokens - measured at 0-1.7% used
+#     with a 94% prefix-cache hit rate. 5 GiB still holds ~715k tokens,
+#     comfortably more than the 512k ceiling needs (~3.77 GiB), and returns
+#     the rest to a box where it is the difference between hosting an image
+#     model and not. Lowering --max-model-len alone frees nothing: the
+#     fraction claims the remainder as KV regardless of context length.
 #   - gpu-memory-utilization 0.78, not 0.85: speculative decode allocates on
 #     the first real request, so higher values boot and then die under traffic
 #   - num_speculative_tokens 5: the DSpark block size. 7 and 10 boot, then
@@ -90,6 +98,7 @@ exec docker run --rm --name "ds4-$ROLE" \
   --max-num-seqs 6 \
   --max-num-batched-tokens 8192 \
   --gpu-memory-utilization 0.78 \
+  --kv-cache-memory-bytes 5368709120 \
   --enable-prefix-caching \
   --speculative-config '{"method":"dspark","num_speculative_tokens":5,"draft_sample_method":"probabilistic"}' \
   --tokenizer-mode deepseek_v4 \
