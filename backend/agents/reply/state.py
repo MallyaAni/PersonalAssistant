@@ -51,6 +51,12 @@ class ReplyState(TypedDict):
     # and `turn_context_messages` both take it whole.
     context: dict[str, Any]
 
+    # Rendered once by `measure`, re-rendered by `enforce` only when the
+    # context it was built from actually changed. It used to be built twice
+    # from two separate clock reads, so the report described one prompt and the
+    # model received another.
+    system_prompt: NotRequired[str]
+
     # Set by `assemble`, consumed by `generate`. Split out so a test can assert
     # on the exact messages sent without reaching into a model call.
     prompt_messages: NotRequired[list[dict[str, str]]]

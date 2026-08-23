@@ -20,6 +20,7 @@ from backend.agents.reply.state import ReplyState, TurnDeps
 # `generate` never retries under any circumstances - half a reply is already on
 # the wire, and a second attempt would append a second answer to the first.
 AT_MOST_ONCE = RetryPolicy(max_attempts=1)
+READ_ONLY = RetryPolicy(max_attempts=2, backoff_factor=2.0)
 
 
 # Build the answering graph, compiled once per process.
@@ -36,9 +37,26 @@ AT_MOST_ONCE = RetryPolicy(max_attempts=1)
 @lru_cache(maxsize=1)
 def build_reply_graph() -> Any:
     graph = StateGraph(ReplyState, context_schema=TurnDeps)
-    graph.add_node("answer", nodes.answer, retry_policy=AT_MOST_ONCE)
-    graph.add_edge(START, "answer")
-    graph.add_edge("answer", END)
+
+    # measure and assemble are pure given their inputs and write nothing
+    # outside the process, so a retry is free. enforce and generate are not:
+    # enforce mutates the context the rest of the turn reads, and generate has
+    # already put half a reply on the wire.
+    graph.add_node("measure", nodes.measure, retry_policy=READ_ONLY)
+    graph.add_node("enforce", nodes.enforce, retry_policy=AT_MOST_ONCE)
+    graph.add_node("assemble", nodes.assemble, retry_policy=READ_ONLY)
+    graph.add_node("generate", nodes.generate, retry_policy=AT_MOST_ONCE)
+
+    graph.add_edge(START, "measure")
+    # The only branch in the graph. Trimming is off by default and skipped
+    # outright when the untrimmable parts already overflow the window.
+    graph.add_conditional_edges(
+        "measure", nodes.after_measure, {"enforce": "enforce", "assemble": "assemble"}
+    )
+    graph.add_edge("enforce", "assemble")
+    graph.add_edge("assemble", "generate")
+    graph.add_edge("generate", END)
+
     return graph.compile(name="reply")
 
 

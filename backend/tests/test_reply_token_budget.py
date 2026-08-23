@@ -25,25 +25,44 @@ from backend.config.settings import settings
 def test_the_reply_path_passes_the_configured_budget():
     from pathlib import Path
 
-    # Every call site, found rather than named. This used to point at
-    # agents/graph.py, and the reply path moved into agents/reply/nodes.py -
-    # a guard that names one file stops guarding the moment the code moves,
-    # and says nothing while it does.
-    agents = Path(__file__).resolve().parents[1] / "agents"
-    calls = [
-        (path, line.strip())
-        for path in agents.rglob("*.py")
-        for line in path.read_text(encoding="utf-8").splitlines()
-        if "stream_chat(" in line and "def stream_chat" not in line
-    ]
+    # Every call site, found by parsing rather than by reading lines.
+    #
+    # This guard has now gone stale twice: once when the reply path moved from
+    # agents/graph.py into agents/reply/nodes.py, and once when the call wrapped
+    # across two lines. Both times it stopped guarding and said nothing. An AST
+    # walk cannot be fooled by either.
+    import ast
 
-    assert calls, "no stream_chat call found under backend/agents"
-    for path, line in calls:
-        assert "settings.MAIN_LLM_MAX_TOKENS" in line, (
-            f"{path.name} calls stream_chat without the budget: {line!r}. "
-            "Calling it with only messages silently takes the 1,024 signature "
-            "default, which returned an empty reply on one open question in six."
-        )
+    agents = Path(__file__).resolve().parents[1] / "agents"
+    offenders: list[str] = []
+    checked = 0
+    for path in agents.rglob("*.py"):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            func = node.func
+            if not (isinstance(func, ast.Attribute) and func.attr == "stream_chat"):
+                continue
+            checked += 1
+            passed = any(
+                isinstance(arg, ast.Attribute)
+                and arg.attr == "MAIN_LLM_MAX_TOKENS"
+                for arg in node.args
+            ) or any(
+                isinstance(kw.value, ast.Attribute)
+                and kw.value.attr == "MAIN_LLM_MAX_TOKENS"
+                for kw in node.keywords
+            )
+            if not passed:
+                offenders.append(f"{path.name}:{node.lineno}")
+
+    assert checked, "no stream_chat call found under backend/agents"
+    assert not offenders, (
+        f"stream_chat called without the budget at {offenders}. With only "
+        "messages it silently takes the 1,024 signature default, which "
+        "returned an empty reply on one open question in six."
+    )
 
 
 # Sized from the measurement, so a well-meaning reduction has to argue with it.

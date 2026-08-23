@@ -1,12 +1,20 @@
 """The nodes of the answering graph.
 
-One node for now. C6 splits it along the seams the body already has - measure,
-enforce, assemble, generate - and each of those is a separate commit so a
-regression traces to one of them rather than to "the graph landed".
+Four, along the seams the single node already had: measure what the turn costs,
+trim it when policy allows, assemble the prompt, stream the answer.
 
-The prompt-rendering helpers stay in `backend/agents/graph.py` where every
-existing test imports them from. Moving 690 lines of rendering in the same
-commit that changes how the graph is compiled would make both unreviewable.
+Splitting them buys two things that could not be had while they were one body.
+The system prompt is rendered **once** and carried in state, where it used to
+be rendered twice - once to measure and once to assemble - from two separate
+`datetime.now()` reads, so a turn crossing midnight measured one date and
+answered with another, and the report described a prompt that was never sent.
+And `enforce` becomes a node the graph reaches or skips by a predicate, rather
+than a branch buried in a function, so "was this turn trimmed" is visible in
+the graph rather than only in a log line.
+
+The prompt-rendering helpers stay in `backend/agents/graph.py`, where the
+existing tests import them from. Moving 690 lines of rendering in the same
+commit that changes the graph's shape would make both unreviewable.
 """
 
 import logging
@@ -28,48 +36,78 @@ from backend.core.observability import record_context_report
 logger = logging.getLogger(__name__)
 
 
-# Measure the turn, trim it when policy allows, assemble the prompt, and stream
-# the answer. Split in C6; kept whole here so this commit changes only how the
-# graph is built and not what it does.
-def answer(state: ReplyState) -> dict[str, Any]:
-    deps = get_runtime(TurnDeps).context
+# Render the system prompt once and measure what this turn will cost.
+#
+# The render is kept in state rather than repeated later. Measuring one string
+# and sending another is the drift this removes: the two renders were separate
+# calls, so any per-render nondeterminism - the clock, most of all - made the
+# report a description of a prompt that never existed.
+def measure(state: ReplyState) -> dict[str, Any]:
     trace_id = state.get("trace_id", "")
-    logger.debug("Processing conversation trace %s", trace_id)
-
-    context_data = state.get("context") or {}
+    context = state.get("context") or {}
     history = state.get("history") or []
-    query = state["query"]
+    system_prompt = _build_system_prompt(context)
 
-    # Measured before assembly, so enforcement can act on the inputs and the
-    # report describes the prompt that is actually sent - planned and sent are
-    # the same thing by construction, not by later comparison.
-    report = measure_turn(
-        context_data, history, query, _build_system_prompt(context_data)
-    )
+    report = measure_turn(context, history, state["query"], system_prompt)
     if report is not None:
         logger.info("trace=%s %s", trace_id, report.summary())
         record_context_report(report, str(trace_id or ""))
-        if report.dropped_total and settings.CONTEXT_BUDGET_ENFORCE:
-            named = {item.name: item for item in report.allocations}
-            if named["system"].complete and named["query"].complete:
-                context_data, history = _apply_report(context_data, history, report)
-                logger.info(
-                    "trace=%s enforced: dropped %d item(s) to fit the window",
-                    trace_id,
-                    report.dropped_total,
-                )
-            else:
-                # A window too small for the system prompt and the question
-                # cannot be fixed by dropping enrichment; trimming would send a
-                # turn missing its own question. Send in full and say so.
-                logger.warning(
-                    "trace=%s window smaller than the untrimmable parts; "
-                    "turn sent in full",
-                    trace_id,
-                )
 
-    messages = [{"role": "system", "content": _build_system_prompt(context_data)}]
-    for turn in history:
+    return {"system_prompt": system_prompt, "budget_report": report}
+
+
+# Whether the measured plan is applied.
+#
+# Off by default (`CONTEXT_BUDGET_ENFORCE`): trimming changes what the model
+# sees, and no section priority here has been argued against real turn sizes.
+# A window too small for the system prompt and the question cannot be fixed by
+# dropping enrichment - trimming would send a turn missing its own question -
+# so that case skips enforcement and is logged loudly by `enforce`'s absence.
+def after_measure(state: ReplyState) -> str:
+    report = state.get("budget_report")
+    if report is None or not report.dropped_total:
+        return "assemble"
+    if not settings.CONTEXT_BUDGET_ENFORCE:
+        return "assemble"
+    named = {item.name: item for item in report.allocations}
+    if not (named["system"].complete and named["query"].complete):
+        logger.warning(
+            "trace=%s window smaller than the untrimmable parts; turn sent in full",
+            state.get("trace_id", ""),
+        )
+        return "assemble"
+    return "enforce"
+
+
+# Drop what the plan said to drop, and re-render the system prompt against the
+# trimmed context so the prompt and the report still describe the same turn.
+def enforce(state: ReplyState) -> dict[str, Any]:
+    report = state["budget_report"]
+    context, history = _apply_report(
+        state.get("context") or {}, state.get("history") or [], report
+    )
+    logger.info(
+        "trace=%s enforced: dropped %d item(s) to fit the window",
+        state.get("trace_id", ""),
+        report.dropped_total,
+    )
+    # Re-rendered, not reused: the whole point of trimming is that the context
+    # changed, so the prompt built from it must change with it.
+    return {
+        "context": context,
+        "history": history,
+        "system_prompt": _build_system_prompt(context),
+    }
+
+
+# Build the exact message list the model is sent.
+#
+# Separate from `generate` so a test can assert on the prompt without reaching
+# into a model call, which is what makes it safe to keep moving this code.
+def assemble(state: ReplyState) -> dict[str, Any]:
+    context = state.get("context") or {}
+    messages = [{"role": "system", "content": state["system_prompt"]}]
+    for turn in state.get("history") or []:
         if turn.get("query"):
             messages.append({"role": "user", "content": turn["query"]})
         if turn.get("response"):
@@ -77,23 +115,31 @@ def answer(state: ReplyState) -> dict[str, Any]:
     # This turn's volatile material goes after the history, so the prefix above
     # it stays byte-identical between turns and the server can reuse its KV
     # blocks. Measured at 16.5x on a 34k-token conversation.
-    messages.extend(turn_context_messages(context_data))
-    messages.append({"role": "user", "content": query})
+    messages.extend(turn_context_messages(context))
+    messages.append({"role": "user", "content": state["query"]})
+    return {"prompt_messages": messages}
 
+
+# Stream the answer.
+#
+# Synchronous on purpose. `llm.stream_chat` is a blocking generator behind a
+# threading.Lock, and LangGraph runs a sync node on a worker thread, so the
+# event loop stays free. Written `async def`, this would hold the loop for the
+# whole generation and stall every concurrent turn - and the iMessage bridge,
+# which answers serially, with it.
+def generate(state: ReplyState) -> dict[str, Any]:
+    deps = get_runtime(TurnDeps).context
     chunks: list[str] = []
     # Explicit, because the signature default was 1,024 and nobody chose it. A
     # reasoning model spends part of this budget on thinking that is never
     # rendered, so too small a value returns an empty reply rather than a short
     # one.
-    for chunk in deps.llm.stream_chat(messages, settings.MAIN_LLM_MAX_TOKENS):
+    for chunk in deps.llm.stream_chat(
+        state["prompt_messages"], settings.MAIN_LLM_MAX_TOKENS
+    ):
         chunks.append(chunk)
         # The wire shape, not a private one. `emit` validates the name against
         # ChatStreamEvent, so a kind the consumer would drop raises here
         # instead of vanishing.
         emit("delta", content=chunk)
-
-    return {
-        "prompt_messages": messages,
-        "reply": "".join(chunks),
-        "budget_report": report,
-    }
+    return {"reply": "".join(chunks)}
