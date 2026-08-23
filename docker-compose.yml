@@ -383,6 +383,12 @@ services:
       - MODEL_GATE_POLL_SECONDS=${MODEL_GATE_POLL_SECONDS:-0.1}
     extra_hosts: *spark-hosts
     volumes:
+      # The ONNX weights: the image embedder and the discovery cross-encoder.
+      # data/ is in .dockerignore so they are not in the image, and both
+      # providers disable themselves when their file is absent rather than
+      # raising - so a missing mount reads as "that feature is off" with
+      # nothing logged. Read-only; nothing should ever write here.
+      - ./data/models:/app/data/models:ro
       - artifactdata:/app/data/artifacts
       # The Google research quota counter is shared with the API, so both
       # processes reserve against one count rather than two.
@@ -910,6 +916,13 @@ services:
               capabilities: [gpu]
 
   memory-maintenance:
+    volumes:
+      # The ONNX weights: the image embedder and the discovery cross-encoder.
+      # data/ is in .dockerignore so they are not in the image, and both
+      # providers disable themselves when their file is absent rather than
+      # raising - so a missing mount reads as "that feature is off" with
+      # nothing logged. Read-only; nothing should ever write here.
+      - ./data/models:/app/data/models:ro
     # Comes back when Docker does, so a reboot does not
     # need someone to remember to start it.
     restart: unless-stopped
@@ -962,6 +975,12 @@ services:
       - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (see .env.example)}
       - ARTIFACT_STORAGE_ROOT=/app/data/artifacts
     volumes:
+      # The ONNX weights: the image embedder and the discovery cross-encoder.
+      # data/ is in .dockerignore so they are not in the image, and both
+      # providers disable themselves when their file is absent rather than
+      # raising - so a missing mount reads as "that feature is off" with
+      # nothing logged. Read-only; nothing should ever write here.
+      - ./data/models:/app/data/models:ro
       - artifactdata:/app/data/artifacts
     depends_on:
       db:
