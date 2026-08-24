@@ -1,0 +1,22 @@
+# Pages the operator when the nightly backup fails.
+#
+# Wired in as `OnFailure=anios-backup-failed.service` on anios-backup.service,
+# so a dump that errors - a full disk, a down database, a broken mirror that
+# exits non-zero - reaches the phone instead of a journal line nobody reads.
+# The backup was the weakest thing here; a backup that fails silently is no
+# better than no backup.
+#
+# INSTALL on spark1 (needs ALERT_BRIDGE_URL/ALERT_BRIDGE_TOKEN/
+# OPERATOR_ALERT_PHONE set in ~/anios/.env - see .env.example):
+#   sudo cp deploy/spark/systemd/anios-backup-failed.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+# Test the path without breaking a backup:
+#   bash ~/anios/scripts/notify-operator.sh "test alert from spark1"
+[Unit]
+Description=Alert the operator that the AniOS backup failed
+
+[Service]
+Type=oneshot
+User=animallya96
+WorkingDirectory=/home/animallya96/anios
+ExecStart=/bin/bash scripts/notify-operator.sh "AniOS: the nightly database backup FAILED on spark1. Check: journalctl -u anios-backup -n 50"

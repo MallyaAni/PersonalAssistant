@@ -397,8 +397,10 @@ class Settings(BaseSettings):
     # the bridge's read tool is deployed and both ends are flipped together.
     IMESSAGE_CHAT_ENABLED: bool = False
     # The idle cadence: how often to check for new texts when nothing is
-    # happening. A lone message waits on average half this to be noticed.
-    IMESSAGE_CHAT_POLL_SECONDS: float = Field(default=5.0, gt=0, le=300)
+    # happening. A lone message waits on average half this to be noticed. A LAN
+    # read that returns nothing is nearly free, so this is kept low; the active
+    # cadence below takes over the moment a conversation starts.
+    IMESSAGE_CHAT_POLL_SECONDS: float = Field(default=3.0, gt=0, le=300)
     # The active cadence, and how long it lasts after the last answered message.
     # During a back-and-forth the person's next text arrives within seconds of
     # our reply, so for a short window after answering we poll fast and pick it

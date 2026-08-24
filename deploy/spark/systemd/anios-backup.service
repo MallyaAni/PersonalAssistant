@@ -8,6 +8,9 @@ Description=Dump anios_db and mirror it off this machine
 # start here should not mark the unit broken.
 Wants=docker.service
 After=docker.service network-online.target
+# A failed dump pages the operator over the iMessage bridge rather than dying
+# in the journal. Requires anios-backup-failed.service installed alongside.
+OnFailure=anios-backup-failed.service
 
 [Service]
 Type=oneshot

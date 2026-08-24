@@ -1,0 +1,29 @@
+# RoCE fabric addresses for spark1, made to survive a reboot.
+#
+# These two interfaces carry the TP=2 NCCL traffic between the Sparks. They were
+# set by hand with `ip addr add`, which does not persist, so a power cycle left
+# them unconfigured and both ds4 units retry-looping forever against an address
+# that was gone. Captured from the live box 2026-08-24: enp1s0f1np1 = .100.1,
+# enP2p1s0f1np1 = .101.1, both MTU 9000 (jumbo frames, required for the fabric).
+#
+# renderer NetworkManager to match how these boxes are already managed (the
+# existing 90-NM-*.yaml). spark2's file is identical but for the host part (.2).
+#
+# INSTALL — during a maintenance window, never blind:
+#   sudo cp deploy/spark/netplan/60-roce-spark1.yaml /etc/netplan/
+#   sudo chmod 600 /etc/netplan/60-roce-spark1.yaml
+#   sudo netplan try     # applies, then AUTO-REVERTS in 120s unless you press
+#                        # Enter — so a wrong file undoes itself rather than
+#                        # stranding a headless box you cannot reach.
+# Confirm only after `ip -4 addr show enp1s0f1np1` shows 192.168.100.1 and the
+# ds4 units come up clean.
+network:
+  version: 2
+  renderer: NetworkManager
+  ethernets:
+    enp1s0f1np1:
+      addresses: [192.168.100.1/24]
+      mtu: 9000
+    enP2p1s0f1np1:
+      addresses: [192.168.101.1/24]
+      mtu: 9000

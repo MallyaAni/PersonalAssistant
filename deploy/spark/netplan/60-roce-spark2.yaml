@@ -1,0 +1,14 @@
+# RoCE fabric addresses for spark2, made to survive a reboot. See
+# 60-roce-spark1.yaml for the full rationale and the `netplan try` install
+# procedure — this file is identical but for spark2's host part of the address
+# (.2 rather than .1). Captured from the live box 2026-08-24, both MTU 9000.
+network:
+  version: 2
+  renderer: NetworkManager
+  ethernets:
+    enp1s0f1np1:
+      addresses: [192.168.100.2/24]
+      mtu: 9000
+    enP2p1s0f1np1:
+      addresses: [192.168.101.2/24]
+      mtu: 9000
