@@ -37,6 +37,15 @@ def pytest_runtest_makereport(item, call):
     if not os.getenv("ANIOS_REQUIRE_FUNCTIONAL"):
         return
     report = outcome.get_result()
+    # An xfail also arrives here as `skipped`, and it is not the thing this
+    # guard exists to catch. A skip is the environment saying "could not run";
+    # an xfail is a person saying "measured, understood, not fixed yet", with
+    # the reason in the source next to the assertion. Treating them alike made
+    # `xfail` unusable in this suite: a deliberately documented limitation
+    # reported as a hard failure, which is how a real regression gets lost
+    # among expected ones.
+    if getattr(report, "wasxfail", None) is not None:
+        return
     if report.skipped:
         report.outcome = "failed"
         report.longrepr = (
