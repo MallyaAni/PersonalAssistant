@@ -336,6 +336,19 @@ class IMessageChatWorker:
                 .scalars()
                 .all()
             )
+        # A number resolving to more than one account is an identity the bridge
+        # cannot honour: whose conversation this belongs to would be decided by
+        # Postgres row order, which is no decision at all. Drop the message and
+        # say so, rather than guessing and routing a stranger's words into
+        # whichever account happened to sort first.
+        owners = {str(row.user_id) for row in rows}
+        if len(owners) > 1:
+            logger.warning(
+                "iMessage sender resolves to %d accounts; dropping the message "
+                "rather than guessing which it belongs to",
+                len(owners),
+            )
+            return None
         return str(rows[0].user_id) if rows else None
 
     # Any turn, with one acknowledgment when it runs long. The ack is

@@ -24,6 +24,12 @@ from backend.models.auth import AccessRequest, RegistrationInvite
 from backend.services.auth_service import AuthService
 
 
+# A unique, valid E.164 number per call. Sign-up now requires a phone and
+# refuses one already claimed, so every request in this file needs its own.
+def _phone() -> str:
+    return "+1" + str(int(uuid.uuid4().int % 10_000_000_000)).zfill(10)
+
+
 # Enable the boundary for this module only, restoring it afterwards, so this
 # file cannot change how unrelated tests behave.
 @pytest.fixture(autouse=True)
@@ -143,6 +149,7 @@ async def test_anyone_can_ask_and_asking_grants_nothing():
                 "/api/v1/auth/request-access",
                 json={
                     "display_name": name,
+                    "phone": _phone(),
                     "contact": "+15550100",
                     "username": f"u{uuid.uuid4().hex[:8]}",
                     "password": "Str0ng-Passw0rd-Here",
@@ -175,6 +182,7 @@ async def test_only_the_operator_sees_requests():
                 "/api/v1/auth/request-access",
                 json={
                     "display_name": name,
+                    "phone": _phone(),
                     "username": f"u{uuid.uuid4().hex[:8]}",
                     "password": "Str0ng-Passw0rd-Here",
                 },
@@ -198,6 +206,7 @@ async def test_approval_makes_the_askers_own_token_work():
                     "/api/v1/auth/request-access",
                     json={
                         "display_name": name,
+                        "phone": _phone(),
                         "reason": "a friend",
                         "username": guest,
                         "password": "Str0ng-Passw0rd-Here",
@@ -222,15 +231,61 @@ async def test_approval_makes_the_askers_own_token_work():
                 json={"username": guest, "password": "Str0ng-Passw0rd-Here"},
             )
 
-        # The details are the point of asking first.
-        assert listed.json()["requests"][0]["display_name"] == name
-        assert listed.json()["requests"][0]["reason"] == "a friend"
+        # The details are the point of asking first — including the number the
+        # operator is admitting, which they must be able to see before deciding.
+        listed_request = listed.json()["requests"][0]
+        assert listed_request["display_name"] == name
+        assert listed_request["reason"] == "a friend"
+        assert listed_request["phone"]
         assert approved.status_code == 200
         assert approved.json()["account_created"] is True
+        # The approval reports what actually happened at the bridge, distinctly
+        # enough that a hand-enrol case is visible rather than hidden.
+        assert approved.json()["bridge"] in {
+            "granted",
+            "unreachable",
+            "not_enrolled",
+            "not_applicable",
+            "conflict",
+        }
         assert checked.json()["status"] == "approved"
         assert signed_in.status_code == 200
     finally:
         await _cleanup(operator, guest, names=(name,))
+
+
+@pytest.mark.asyncio
+async def test_a_number_already_registered_is_refused():
+    # A phone number is how the bridge decides identity, so it must belong to
+    # one account only: the public form must not let anyone claim a number that
+    # is already spoken for, or approval would route its owner's texts to the
+    # claimant.
+    name = f"Asker {uuid.uuid4().hex[:8]}"
+    shared = _phone()
+    try:
+        async with _client() as client:
+            first = await client.post(
+                "/api/v1/auth/request-access",
+                json={
+                    "display_name": name,
+                    "phone": shared,
+                    "username": f"u{uuid.uuid4().hex[:8]}",
+                    "password": "Str0ng-Passw0rd-Here",
+                },
+            )
+            second = await client.post(
+                "/api/v1/auth/request-access",
+                json={
+                    "display_name": name,
+                    "phone": shared,
+                    "username": f"u{uuid.uuid4().hex[:8]}",
+                    "password": "Str0ng-Passw0rd-Here",
+                },
+            )
+        assert first.status_code == 201
+        assert second.status_code == 409
+    finally:
+        await _cleanup(names=(name,))
 
 
 @pytest.mark.asyncio
@@ -244,6 +299,7 @@ async def test_a_denied_request_never_becomes_usable():
                     "/api/v1/auth/request-access",
                     json={
                         "display_name": name,
+                        "phone": _phone(),
                         "username": f"u{uuid.uuid4().hex[:8]}",
                         "password": "Str0ng-Passw0rd-Here",
                     },
@@ -375,6 +431,7 @@ async def test_a_username_already_claimed_is_refused_when_asking():
                 "/api/v1/auth/request-access",
                 json={
                     "display_name": name,
+                    "phone": _phone(),
                     "username": wanted,
                     "password": "Str0ng-Passw0rd-Here",
                 },
@@ -383,6 +440,9 @@ async def test_a_username_already_claimed_is_refused_when_asking():
                 "/api/v1/auth/request-access",
                 json={
                     "display_name": name,
+                    # A different number, so the refusal is provably about the
+                    # username and not the phone-uniqueness guard.
+                    "phone": _phone(),
                     "username": wanted,
                     "password": "Str0ng-Passw0rd-Here",
                 },
@@ -482,6 +542,7 @@ async def test_expired_invitations_are_out_of_the_way_and_codes_name_their_asker
                 "/api/v1/auth/request-access",
                 json={
                     "display_name": name,
+                    "phone": _phone(),
                     "reason": "a friend from the trail",
                     "contact": "+15550100",
                     "username": wanted,

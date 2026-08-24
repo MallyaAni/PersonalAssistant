@@ -184,6 +184,11 @@ class AccessRequest(Base):
             # approving something they can actually recognise afterwards. The
             # password hash is never serialised.
             "username": self.desired_username,
+            # The number that approval will allowlist on the Mac. Approving is a
+            # decision about who this machine will exchange messages with, and
+            # that cannot be made blind - the same reason /admin/subscriptions
+            # shows an address. Admin-only route, same disclosure posture.
+            "phone": self.phone,
             "contact": self.contact,
             "reason": self.reason,
             "status": self.status,

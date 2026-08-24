@@ -27,11 +27,23 @@ import re
 
 # E.164: a plus, a country code that cannot start with zero, then up to
 # fourteen more digits. Fifteen digits total is the standard's ceiling.
-_E164 = re.compile(r"^\+[1-9]\d{7,14}$")
+#
+# `re.ASCII` is load-bearing, not cosmetic. Without it `\d` matches Unicode
+# digits, so a number typed in Arabic-Indic numerals ("+1٢٠٢...") passes here
+# and then collapses to a useless key downstream, where `normalize_address`
+# and the bridge both strip on ASCII `[^0-9]` only. Two different such numbers
+# both reduce to their country code alone and collide. Match only ASCII 0-9.
+_E164 = re.compile(r"^\+[1-9][0-9]{7,14}$", re.ASCII)
+
+# The ASCII digits, named once so the country-code check below cannot drift
+# back to `str.isdigit()`, which is Unicode-aware and accepts the same numerals
+# the regex above exists to reject.
+_ASCII_DIGITS = frozenset("0123456789")
 
 # What people actually type: spaces, hyphens, dots, and brackets around an area
-# code. All of it is decoration around the digits.
-_DECORATION = re.compile(r"[\s\-().]")
+# code, plus the Unicode dashes a number pasted from a web page carries. All of
+# it is decoration around the digits.
+_DECORATION = re.compile(r"[\s\-().‐-―]")
 
 # A leading 00 is how much of the world dials internationally; it means the
 # same thing as a plus and arrives often enough to be worth accepting.
@@ -63,7 +75,7 @@ def to_e164(value: str) -> str:
             "+1 202 555 0100 or +44 20 7946 0958. Without it the same digits "
             "are a different person in a different country."
         )
-    if not cleaned[1:].isdigit():
+    if not cleaned[1:] or set(cleaned[1:]) - _ASCII_DIGITS:
         raise InvalidPhoneNumber(
             "A phone number can only contain digits after the country code."
         )

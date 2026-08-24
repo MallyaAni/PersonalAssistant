@@ -255,6 +255,28 @@ def test_the_bridge_and_anios_agree_on_every_way_a_number_is_written(written):
     assert normalize_recipient(written) == normalize_address(written)
 
 
+# The sign-up path is a third normalizer that must land in the same place: a
+# number typed at sign-up (to_e164 -> matching_key) has to match what the bridge
+# computes for the same person's incoming texts. Only the format was tested
+# internationally before; this tests the agreement that actually failed in
+# production, across countries.
+@pytest.mark.parametrize(
+    "e164",
+    [
+        "+17032613382",
+        "+12025550100",
+        "+442079460958",
+        "+919876543210",
+        "+81312345678",
+        "+61293744000",
+    ],
+)
+def test_signup_matching_key_agrees_with_the_bridge(e164):
+    from backend.core.phone import matching_key
+
+    assert matching_key(e164) == normalize_recipient(e164)
+
+
 def test_the_apple_epoch_survives_a_round_trip():
     from datetime import UTC, datetime
 

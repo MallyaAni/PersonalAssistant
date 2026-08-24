@@ -13,6 +13,7 @@ from backend.core.dependencies import DbDependency
 from backend.core.phone import matching_key
 from backend.discovery.types import label_digest
 from backend.models.auth import AccessRequest, UserAccount
+from backend.models.discovery_subscriber import DiscoverySubscriber
 from backend.services.auth_service import (
     AuthService,
     CreatedSession,
@@ -284,6 +285,22 @@ class AccessRequestBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     display_name: str = Field(min_length=1, max_length=80)
+
+    # Cleaned at the door, not trusted deeper in. This name is placed into the
+    # welcome message's prompt, and the fix for "a name might carry an
+    # instruction" is structural per AGENTS.md: collapse whitespace to single
+    # spaces, drop control characters and newlines, and cap the length, so no
+    # amount of crafted input arrives as anything but a short line of text.
+    @field_validator("display_name")
+    @classmethod
+    def clean_display_name(cls, value: str) -> str:
+        collapsed = " ".join(
+            "".join(ch for ch in value if ch == " " or ch.isprintable()).split()
+        )
+        cleaned = collapsed[:60].strip()
+        if not cleaned:
+            raise ValueError("A name is required.")
+        return cleaned
     # Required, and not for contactability. The iMessage bridge decides who
     # is talking by matching a sender against the subscriber allowlist, so
     # this number is what makes an approved person reachable at all.
@@ -360,6 +377,31 @@ async def request_access(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="That username is already taken. Pick another.",
+        )
+
+    # A phone number decides identity to the bridge, so it must belong to one
+    # account only. Without this check the public form lets anyone submit
+    # someone else's number: on approval that number would be allowlisted and
+    # its owner's inbound texts routed into the claimant's account. Refuse a
+    # number already spoken for by a pending/approved request or an existing
+    # subscriber. Re-checked at approval, where the race between the two lands.
+    phone_key = label_digest(matching_key(body.phone))
+    phone_claimed = await db.scalar(
+        select(AccessRequest.id).where(
+            AccessRequest.phone_digest == phone_key,
+            AccessRequest.status.in_(("pending", "approved")),
+        )
+    )
+    subscriber_claimed = await db.scalar(
+        select(DiscoverySubscriber.id).where(
+            DiscoverySubscriber.channel == "imessage",
+            DiscoverySubscriber.address_digest == phone_key,
+        )
+    )
+    if phone_claimed is not None or subscriber_claimed is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="That phone number is already registered.",
         )
 
     token = secrets.token_urlsafe(32)

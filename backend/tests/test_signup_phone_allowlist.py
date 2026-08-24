@@ -56,6 +56,19 @@ def test_unusable_numbers_are_refused_with_a_reason(bad: str):
     assert len(str(raised.value)) > 20
 
 
+# Unicode digits must be refused, not accepted-then-collapsed. Arabic-Indic
+# numerals satisfy a Unicode-aware \d and str.isdigit(), then vanish under the
+# ASCII-only normalizer downstream, where two different such numbers both
+# reduce to their country code alone and collide.
+@pytest.mark.parametrize(
+    "sneaky",
+    ["+1٢٠٢٥٥٥٠١٠٠", "+１２３４５６７８"],
+)
+def test_unicode_digits_are_refused(sneaky: str):
+    with pytest.raises(InvalidPhoneNumber):
+        to_e164(sneaky)
+
+
 # The allowlist match must be computed the way the iMessage worker computes it.
 # If these two ever disagree, someone who signed up correctly silently cannot
 # text and nothing anywhere reports it.

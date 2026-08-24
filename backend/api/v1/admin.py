@@ -1,4 +1,3 @@
-import logging
 """Operator-only administration of invitations and accounts.
 
 Every route here is guarded by `require_admin` rather than by ownership. The
@@ -12,6 +11,7 @@ database stores only a digest, so a code cannot be recovered later even by the
 operator; the listing shows status and never a token.
 """
 
+import logging
 from datetime import UTC, datetime, timedelta
 from typing import Annotated, Literal
 from uuid import UUID
@@ -477,6 +477,16 @@ async def approve_access_request(
         # copy on a decided request.
         row.password_hash = None
 
+        # Make the account durable before any side effect. `enroll` below
+        # commits the session, and reaching the bridge or the model can fail;
+        # committing here means existing is settled first, and a later failure
+        # rolls back only the side effect, never the account. Capture what the
+        # side effects need into locals, because commit expires the ORM rows.
+        user_id = account.user_id
+        phone = row.phone
+        display_name = row.display_name or account.user_id
+        await db.commit()
+
         # Approving is also the moment they become reachable. The iMessage
         # bridge identifies a sender by matching against the subscriber
         # allowlist, so without this an approved person can sign in on the web
@@ -488,39 +498,66 @@ async def approve_access_request(
         # approving. A failure here must not undo the account: being reachable
         # is a smaller thing than existing, and the operator can enrol the
         # number by hand.
+        #
+        # The words are distinct on purpose: "not_applicable" means no number
+        # was given, "conflict" means the number already belongs to someone
+        # else (the sign-up guard should have caught it, but the window between
+        # sign-up and approval is real), "not_enrolled" means the enrol itself
+        # failed. Collapsing these into one hid the case a hand-enrol is needed.
         bridge = "not_applicable"
-        if row.phone:
+        if phone:
+            from backend.core.phone import matching_key
             from backend.discovery.subscribers import SubscriberRepository
+            from backend.discovery.types import label_digest
+            from backend.models.discovery_subscriber import DiscoverySubscriber
 
-            try:
-                await SubscriberRepository(db).enroll(
-                    user_id=account.user_id,
-                    channel="imessage",
-                    address=row.phone,
-                    label="Given at sign-up",
-                    consented=True,
+            phone_key = label_digest(matching_key(phone))
+            conflict = await db.scalar(
+                select(DiscoverySubscriber.id).where(
+                    DiscoverySubscriber.channel == "imessage",
+                    DiscoverySubscriber.address_digest == phone_key,
+                    DiscoverySubscriber.user_id != user_id,
                 )
-            except Exception:
+            )
+            if conflict is not None:
+                bridge = "conflict"
                 logger.warning(
-                    "Approved %s but could not enrol their number for iMessage; "
-                    "they will need enrolling by hand",
-                    account.user_id,
-                    exc_info=True,
+                    "Approved %s but their number already belongs to another "
+                    "account; not enrolling or granting it",
+                    user_id,
                 )
             else:
-                # Two allowlists, one decision. Enrolling above only teaches
-                # AniOS whose account a sender belongs to; the Mac keeps its
-                # own list and is the last hop before a message reaches a real
-                # person. Approving here and listing the number there were kept
-                # by hand once and drifted - a subscriber approved, her digest
-                # built on time, and the bridge refusing it at the last hop
-                # with nothing in the run to say why.
-                #
-                # Returned rather than raised: the account exists and the
-                # person can use the web either way, and "granted" vs
-                # "unreachable" is something the operator should see rather
-                # than something that should undo an approval.
-                bridge = await grant_recipient_on_bridge("imessage", row.phone)
+                bridge = "not_enrolled"
+                try:
+                    await SubscriberRepository(db).enroll(
+                        user_id=user_id,
+                        channel="imessage",
+                        address=phone,
+                        label="Given at sign-up",
+                        consented=True,
+                    )
+                except Exception:
+                    await db.rollback()
+                    logger.warning(
+                        "Approved %s but could not enrol their number for "
+                        "iMessage; they will need enrolling by hand",
+                        user_id,
+                        exc_info=True,
+                    )
+                else:
+                    # Two allowlists, one decision. Enrolling above only teaches
+                    # AniOS whose account a sender belongs to; the Mac keeps its
+                    # own list and is the last hop before a message reaches a
+                    # real person. Approving here and listing the number there
+                    # were kept by hand once and drifted - a subscriber
+                    # approved, her digest built on time, and the bridge
+                    # refusing it at the last hop with nothing to say why.
+                    #
+                    # Returned rather than raised: the account exists and the
+                    # person can use the web either way, and "granted" vs
+                    # "unreachable" is something the operator should see rather
+                    # than something that should undo an approval.
+                    bridge = await grant_recipient_on_bridge("imessage", phone)
 
         # Being reachable and knowing it are different things. Until now an
         # approved person got an account and silence: nothing said anything was
@@ -534,8 +571,8 @@ async def approve_access_request(
         # back in the response so the operator can see which happened.
         welcome = await send_welcome_if_new(
             db,
-            user_id=account.user_id,
-            display_name=row.display_name or account.user_id,
+            user_id=user_id,
+            display_name=display_name,
             selector=selector,
         )
 
@@ -543,7 +580,7 @@ async def approve_access_request(
         return {
             "id": str(request_id),
             "status": "approved",
-            "user_id": account.user_id,
+            "user_id": user_id,
             "account_created": True,
             # So the operator can see whether they are actually reachable, not
             # only that the account exists.
@@ -591,6 +628,14 @@ async def deny_access_request(
     row.status = "denied"
     row.decided_at = datetime.now(UTC)
     row.decided_by = _operator_id(identity)
+    # A denied applicant is not a user, so nothing here should keep their
+    # credentials or contact details. Clear the phone (and its digest) and the
+    # password hash they chose, the same way approval nulls the hash once it
+    # moves onto the account. The row survives as an audit record of the
+    # decision, carrying no secret.
+    row.phone = None
+    row.phone_digest = None
+    row.password_hash = None
     await db.commit()
     return {"id": str(request_id), "status": "denied"}
 
@@ -752,6 +797,16 @@ async def delete_account(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Could not clear: {', '.join(sorted(pending))}.",
             )
+    # `access_requests` has no user_id column, so the schema sweep above never
+    # reaches it - and it holds the person's phone number and the Argon2 hash of
+    # the password they chose. It links to the account by desired_username, which
+    # equals user_id at approval, so clear it here explicitly. Deleted outright:
+    # the account it produced is being erased, so its origin record has nothing
+    # left to audit and no reason to keep the PII.
+    access = await db.execute(
+        delete(AccessRequest).where(AccessRequest.desired_username == user_id)
+    )
+    removed["access_requests"] = int(getattr(access, "rowcount", 0) or 0)
     await db.commit()
     return {
         "user_id": user_id,

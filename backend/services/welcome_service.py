@@ -30,6 +30,7 @@ operator, and left recoverable.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import UTC, datetime
 from typing import Any
@@ -82,7 +83,12 @@ async def build_welcome(
         capabilities=_render_capability_context(capabilities),
     )
 
-    answer = llm.chat(
+    # `llm.chat` is a blocking `requests` call under a lock; this runs on the
+    # approval request's event loop, so calling it directly would stall every
+    # in-flight chat stream and the health check for the length of a local
+    # generation. Off to a thread, the same fix the search planner already got.
+    answer = await asyncio.to_thread(
+        llm.chat,
         [
             {"role": "system", "content": prompt},
             # The model is given the task as a turn rather than only as a system
@@ -134,13 +140,32 @@ async def send_welcome_if_new(
 ) -> str:
     from backend.models.auth import UserAccount
 
-    account = await db.get(UserAccount, user_id)
+    # Inside the try from the first statement: a caller whose session is in a
+    # bad state must get a word back, not an exception that escapes the service
+    # and turns a completed approval into a 500.
+    try:
+        account = await db.get(UserAccount, user_id)
+    except Exception:
+        logger.warning("welcome_account_unreadable for %s", user_id, exc_info=True)
+        return "no_account"
     if account is None:
         return "no_account"
     # The single guard against a second introduction. Checked before any work,
     # so a retry after a partial failure is cheap and safe.
     if account.welcomed_at is not None:
         return "already_welcomed"
+
+    # No capabilities means the selector could not be read. An introduction
+    # built from an empty list would fall back to whatever the prompt hardcodes
+    # and promise things that may not exist - the exact failure this service
+    # is meant to prevent. A missing welcome is recoverable; a wrong first
+    # impression is not, so refuse rather than send a guess.
+    capabilities = describe_capabilities(selector)
+    if not capabilities:
+        logger.warning(
+            "welcome_not_generated for %s: no capability list available", user_id
+        )
+        return "not_generated"
 
     try:
         from backend.core.dependencies import get_llm_client
@@ -150,7 +175,7 @@ async def send_welcome_if_new(
             user_id=user_id,
             display_name=display_name,
             llm=get_llm_client(),
-            capabilities=describe_capabilities(selector),
+            capabilities=capabilities,
         )
     except Exception:
         logger.warning(
@@ -170,8 +195,13 @@ async def send_welcome_if_new(
         return "not_delivered"
 
     # Only after the bridge confirmed. Marking on generation would burn the one
-    # chance to introduce someone whose Mac happened to be asleep.
+    # chance to introduce someone whose Mac happened to be asleep. Committed
+    # here, at the point of no return, rather than left to the caller: the
+    # message has already landed, and a failure between here and the caller's
+    # commit would lose the exactly-once record while the send stands - a later
+    # approval would then introduce the same person twice.
     account.welcomed_at = datetime.now(UTC)
+    await db.commit()
     return "sent"
 
 
@@ -209,9 +239,11 @@ def _text_of(answer: object) -> str:
 
 
 # Strip a wrapping pair of quotes, which a model adds when it reads "return
-# only the message" as "return the message as a quoted string".
+# only the message" as "return the message as a quoted string". Only a matched
+# pair, and only when there is something between them, so a message that merely
+# ends in a quotation is left alone.
 def _unwrap(text: str) -> str:
-    for quote in ('"', "'", "“"):
-        if text.startswith(quote) and text[-1] in '"\'”':
-            return text[1:-1].strip()
+    pairs = {'"': '"', "'": "'", "“": "”"}
+    if len(text) >= 2 and pairs.get(text[0]) == text[-1]:
+        return text[1:-1].strip()
     return text
