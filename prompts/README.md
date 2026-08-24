@@ -77,6 +77,7 @@ python -m pytest backend/tests/functional -q     # real model, real MCP, real Co
 | `search/another_angle.md` | The unconditional follow-up search |
 | `search/refine.md` | Whether to keep searching, and for what |
 | `routing/select_action.md` | **What every turn does**: search, picture, edit, diagram, deck, an MCP tool, or nothing. Runs on the 4B routing model |
+| `welcome/system.md` | The unprompted introduction a newly approved person receives. Written from the live capability list rather than stored, so it cannot promise a tool that stopped being offered |
 | `reply/system.md` | **Every chat reply.** The assistant's whole instruction: what it may guess, when to ask, its training boundary, what AniOS can do, and what it may claim to have saved |
 
 ## Still in Python

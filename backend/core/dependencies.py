@@ -1560,6 +1560,7 @@ def get_conversation_service(
     image_generation: ImageArtifactDependency,
     image_style: ImageStyleDependency,
     image_refinement: ImageRefinementDependency,
+    image_intent: ImageIntentDependency,
     presentation_jobs: PresentationJobDependency,
     discovery_profile: DependencyDiscoveryProfileService,
     discovery_runs: DependencyDiscoveryRuns,
@@ -1595,6 +1596,7 @@ def get_conversation_service(
         image_generation=image_generation,
         image_style=image_style,
         image_refinement=image_refinement,
+        image_intent=image_intent,
         presentation_jobs=presentation_jobs,
         presentation_model=(
             settings.PRESENTATION_LLM_MODEL

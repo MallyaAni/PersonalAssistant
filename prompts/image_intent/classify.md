@@ -39,7 +39,11 @@ of these registers needs an action verb to be an edit.
 
 Answer "ask" when words would satisfy them — what is in the picture, what it
 says, what it means, whether something is there, or any request to describe,
-read, identify, count, compare or explain it.
+read, identify, count, compare or explain it. A request for an opinion,
+preference, recommendation, comparison, or counterfactual about how a visible
+or proposed alternative would look is also answered in words. Mentioning a
+possible replacement does not ask to apply it. Only a later message that asks
+to carry out or accepts that proposed change is an edit.
 
 Judge what they want, not how they phrased it. A question mark does not turn an
 edit into a question, and an imperative does not turn a question into an edit.

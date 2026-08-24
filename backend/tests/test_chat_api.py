@@ -730,6 +730,56 @@ class RefusingImageRefinement:
         raise AssertionError("refine() must not run with no active image")
 
 
+class FixedImageIntent:
+    """Return one semantic edit decision and record what was checked."""
+
+    def __init__(self, edits: bool) -> None:
+        self.edits = edits
+        self.calls: list[tuple[str, str]] = []
+
+    # Decide whether the newest message really requests changed pixels.
+    async def edits_the_image(self, text: str, recent_context: str = "") -> bool:
+        self.calls.append((text, recent_context))
+        return self.edits
+
+
+# A broad-router edit decision cannot mutate a selected image unless the
+# narrow semantic guard independently confirms that changed pixels are wanted.
+@pytest.mark.asyncio
+async def test_an_image_opinion_misrouted_to_edit_is_answered_without_mutation():
+    repository = CapturingConversationRepository()
+    intent = FixedImageIntent(False)
+    service = ConversationService(
+        memory=StubMemoryService(),
+        llm=StubLLM(),
+        repository=repository,
+        tracer=StubTracer(),
+        main_action_selector=StubMainActionSelector(  # type: ignore[arg-type]
+            EditImageAction(instruction="change the visible item")
+        ),
+        image_refinement=RefusingImageRefinement(),  # type: ignore[arg-type]
+        image_intent=intent,  # type: ignore[arg-type]
+    )
+
+    events = [
+        event
+        async for event in service.process_request(
+            "proposal_user",
+            "Which option would look better?",
+            active_image_artifact_id="selected-image",
+        )
+    ]
+
+    streamed = "".join(
+        event["data"].get("content", "")
+        for event in events
+        if event["event"] == "delta"
+    )
+    assert "deterministic response" in streamed
+    assert intent.calls == [("Which option would look better?", "")]
+    assert repository.saved_turns
+
+
 # `edit_image` is offered every turn, so a turn with no visual context at all
 # can still be routed to it - and on a small routing model regularly is. Asked
 # to make a drafted email "more casual", the router chose edit_image and the

@@ -49,6 +49,7 @@ from backend.search.query import normalize_search_query
 from backend.services.agent_memory_manager import AgentMemoryManager
 from backend.services.diagram_artifact_service import DiagramArtifactService
 from backend.services.image_artifact_service import ImageArtifactService
+from backend.services.image_intent import ImageIntentClassifier
 from backend.services.image_refinement_service import (
     ImageRefinementService,
     RefinementError,
@@ -68,6 +69,7 @@ from backend.services.main_action_selector import (
     SearchAction,
     ToolboxAction,
     UseSkillAction,
+    render_recent_history,
 )
 from backend.services.mcp_tool_orchestration_service import MCPToolOrchestrationService
 from backend.services.presentation_job_service import PresentationJobService
@@ -387,6 +389,7 @@ class ConversationService:
         image_generation: ImageArtifactService | None = None,
         image_style: ImageStyleService | None = None,
         image_refinement: ImageRefinementService | None = None,
+        image_intent: ImageIntentClassifier | None = None,
         presentation_jobs: PresentationJobService | None = None,
         presentation_model: str | None = None,
         discovery_profile: DiscoveryProfileService | None = None,
@@ -448,6 +451,7 @@ class ConversationService:
         self.image_generation = image_generation
         self.image_style = image_style
         self.image_refinement = image_refinement
+        self.image_intent = image_intent
         self.presentation_jobs = presentation_jobs
         self.presentation_model = presentation_model
         self.discovery_profile = discovery_profile
@@ -1011,6 +1015,20 @@ class ConversationService:
         metadata: dict[str, Any],
         history: list[dict[str, Any]],
     ) -> AsyncGenerator[ChatStreamEvent, None]:
+        # Tool selection chooses the whole turn; this narrower semantic guard
+        # protects the irreversible boundary. A question about the visible
+        # picture must be answered in words even when the broad router called
+        # edit_image, while a genuine request for changed pixels proceeds.
+        if self.image_intent is not None and not await self.image_intent.edits_the_image(
+            query,
+            render_recent_history(history),
+        ):
+            async for event in self._answer_without_the_tool(
+                user_id, query, conversation_id, trace_id, metadata
+            ):
+                yield event
+            return
+
         if active_image_artifact_id is not None:
             async for event in self._process_image_edit(
                 user_id,
