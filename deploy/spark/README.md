@@ -16,6 +16,17 @@ of it.
 | `ds4-head.service` | spark1 | `/etc/systemd/system/` |
 | `ds4-worker.service` | spark2 | `/etc/systemd/system/` |
 | `anios-vlm.service` | spark2 | `/etc/systemd/system/` |
+| `systemd/anios-backup.service` | spark1 | `/etc/systemd/system/` |
+| `systemd/anios-backup.timer` | spark1 | `/etc/systemd/system/` |
+
+Installing a `.service`/`.timer` change needs `sudo systemctl daemon-reload`
+on that box, then `systemctl restart`/`enable` as appropriate — a repo edit
+alone changes nothing running. Two changes here are **committed but not yet
+applied** and need this on their next maintenance window: the `anios-vlm.service`
+ordering (`After=ds4-worker.service`, so a cold boot cannot hang spark2 on
+concurrent GPU profiling — see the KV section below), which needs a
+`daemon-reload` on spark2; and the backup units, whose install path was never
+written down.
 
 `ds4-tp2.sh` is byte-identical on both Sparks - the role comes from its
 argument (`head` on spark1, `worker` on spark2), not from a different file. Keep
@@ -63,27 +74,24 @@ person recognises the shape: **a head that sits at `parallel_state` init for
 more than a few minutes means the worker is wedged, not slow.** Restart the
 worker, then the head.
 
-## Why `--max-model-len` is 512k and not 1M
+## How `--max-model-len` and `--gpu-memory-utilization` were settled
+
+The script runs **1M context (`--max-model-len 1048576`) at
+`--gpu-memory-utilization 0.81`** — read the flags in `ds4-tp2.sh`, not this
+prose, if the two ever disagree again. This section explains how those numbers
+were reached, because they are not obvious and one earlier draft settled on 512k
+before the memory budget was understood.
 
 `--gpu-memory-utilization` is a fraction of the *whole* 121.7 GiB pool, not of
-what is free, and it is not a cap - the profiler sizes the KV cache from the
-memory it observes free when it starts.
+what is free, and it is not a cap — the profiler sizes the KV cache from the
+memory it observes free when it starts. It is also bounded by **spark2**, which
+also hosts the VLM: 0.81 asks 98.6 GiB against spark2's ~100.5 GiB free, and
+raising it is refused there and hangs the head waiting for a rank that died.
 
-When the model was first deployed it had the box to itself and got 10.68 GiB of
-KV. Once the application stack moved onto spark1 it started in parallel with the
-model on every boot, and the model profiled against a busy machine instead:
-
-```
-ValueError: To serve at least one request with the model's max seq len
-(1048576), 7.54 GiB KV cache is needed, which is larger than the available
-KV cache memory (5.09 GiB).
-```
-
-512k needs ~3.77 GiB, which fits on either a quiet or a busy boot. Measured
-context use is median 4.4k, p90 11.7k, max 16.1k tokens, so the ceiling is still
-about thirty times the worst real turn.
-
-The alternative - ordering the whole Compose stack behind the model so it
-profiles against an empty box - is the more correct fix and is not done here,
-because it means the site is down for the six minutes the model takes to load
-rather than serving a holding page.
+At 0.81 the KV pool is ~8.7 GiB, above the 7.54 GiB that 1M context needs, so
+1M fits — but only because the VLM now starts *after* the ds4 worker (see
+`anios-vlm.service`), leaving that headroom free when the router profiles.
+Widen the margin by trimming the VLM's KV on spark2, never by raising the ds4
+number. Measured context use is median 4.4k, p90 11.7k, max 16.1k tokens, so
+even 512k would be ~30x the worst real turn; 1M is kept because it fits, not
+because it is needed.

@@ -1,8 +1,15 @@
 [Unit]
-# The vision model. Independent of the main LLM: it is a single-box server on
-# spark2 and has no rank to coordinate, so nothing orders it against ds4.
+# The vision model. A single-box server on spark2 with no rank to coordinate,
+# so it does not join ds4's TP group - but it shares spark2's unified memory
+# pool with the ds4 worker, and `--gpu-memory-utilization` is measured against
+# whatever is free at profile time. On a cold boot the two would profile
+# concurrently and whichever ran first would see a nearly empty pool and claim
+# too much, hanging a box with no BMC and no wake-on-LAN. `After` lets the ds4
+# worker profile its 0.81 first; the VLM then claims its small 0.09 from what
+# remains. Ordering only - it does not require the worker, so the VLM still
+# starts on a box where ds4 is not running.
 Description=AniOS vision model (Qwen3-VL-8B AWQ)
-After=docker.service network-online.target
+After=docker.service network-online.target ds4-worker.service
 Requires=docker.service
 Wants=network-online.target
 
