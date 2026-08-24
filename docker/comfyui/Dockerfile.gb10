@@ -1,0 +1,34 @@
+# Runtime image that drives a bind-mounted ComfyUI install on a DGX Spark.
+#
+# Same design as ./Dockerfile — code, custom nodes, and models are bind-mounted
+# at /comfyui, the image only supplies Python and a GPU-capable torch — but for
+# GB10 (Blackwell sm_121, aarch64). CUDA 12.8 can compile sm_120 and not
+# sm_121, so the RTX-50-series image cannot serve here; NVIDIA's PyTorch
+# container ships torch built for CUDA 13 with native sm_121 support and is
+# the one base that needs no wheel gymnastics on this architecture.
+#
+# Select it per host with COMFYUI_DOCKERFILE=Dockerfile.gb10 in .env; the
+# default stays ./Dockerfile so nothing changes anywhere else.
+FROM nvcr.io/nvidia/pytorch:25.10-py3
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    # Unified memory: do not let torch cache CUDA allocations it will not
+    # return, and prefer managed allocation — the settled flags for GB10.
+    CUDA_MANAGED_FORCE_DEVICE_ALLOC=1 \
+    TORCH_CUDA_ARCH_LIST=12.1a
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /comfyui
+
+COPY entrypoint.sh /usr/local/bin/comfyui-entrypoint.sh
+# Normalize potential Windows CRLF so the shebang works, then make executable.
+RUN sed -i 's/\r$//' /usr/local/bin/comfyui-entrypoint.sh \
+    && chmod +x /usr/local/bin/comfyui-entrypoint.sh
+
+EXPOSE 8188
+ENTRYPOINT ["/usr/local/bin/comfyui-entrypoint.sh"]

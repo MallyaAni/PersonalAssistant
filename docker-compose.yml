@@ -242,7 +242,7 @@ services:
       - EMBEDDING_INFERENCE_ADAPTER=${EMBEDDING_INFERENCE_ADAPTER:-}
       - EMBEDDING_BASE_URL=http://vllm-embedding:8000
       - EMBEDDING_MODEL=text-embedding-nomic-embed-text-v1.5
-      - IMAGE_PROVIDER_BASE_URL=http://host.docker.internal:8188
+      - IMAGE_PROVIDER_BASE_URL=${IMAGE_PROVIDER_BASE_URL:-http://host.docker.internal:8188}
       # One FLUX.2 Klein checkpoint serves generation and editing alike, so
       # the model, text encoder and VAE are shared rather than per-role.
       - IMAGE_MODEL=${IMAGE_MODEL:-flux-2-klein-4b-fp8.safetensors}
@@ -337,7 +337,7 @@ services:
       - PRESENTATION_LLM_BASE_URL=http://animallya-spark1.local:8000
       - PRESENTATION_LLM_MODEL=deepseek-v4-flash
       - PRESENTATION_LLM_REASONING_EFFORT=${PRESENTATION_LLM_REASONING_EFFORT:-none}
-      - IMAGE_PROVIDER_BASE_URL=http://host.docker.internal:8188
+      - IMAGE_PROVIDER_BASE_URL=${IMAGE_PROVIDER_BASE_URL:-http://host.docker.internal:8188}
       # This worker creates slide imagery through the same provider the chat
       # path uses, so it needs the same checkpoint. Without these it silently
       # fell back to the built-in defaults, and changing IMAGE_MODEL would have
@@ -707,7 +707,7 @@ services:
       # --listen 0.0.0.0 so the container can reach it. To use the sibling
       # `comfyui` service instead, run `--profile comfyui` and set this to
       # http://comfyui:8188 (that GPU image build needs ~10-20 GB free on C:).
-      - IMAGE_PROVIDER_BASE_URL=http://host.docker.internal:8188
+      - IMAGE_PROVIDER_BASE_URL=${IMAGE_PROVIDER_BASE_URL:-http://host.docker.internal:8188}
       # One FLUX.2 Klein checkpoint serves generation and editing alike, so
       # the model, text encoder and VAE are shared rather than per-role.
       - IMAGE_MODEL=${IMAGE_MODEL:-flux-2-klein-4b-fp8.safetensors}
@@ -877,6 +877,9 @@ services:
   comfyui:
     build:
       context: ./docker/comfyui
+      # Dockerfile is the RTX-50-series (sm_120, x86) image; Dockerfile.gb10 is
+      # the DGX Spark one (sm_121, aarch64, CUDA 13). Select per host in .env.
+      dockerfile: ${COMFYUI_DOCKERFILE:-Dockerfile}
     container_name: anios_comfyui
     logging: *bounded-logs
     # Comes back when Docker does, like every other service here. This was the

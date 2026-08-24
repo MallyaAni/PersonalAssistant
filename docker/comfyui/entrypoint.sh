@@ -13,10 +13,15 @@ if [ ! -f main.py ]; then
 fi
 
 if [ -f requirements.txt ]; then
-  # Do not let ComfyUI's requirements pin over the CUDA 12.8 torch build.
+  # Do not let ComfyUI's requirements pin over the image's own torch build.
+  # `|| true`, never a fallback copy: if every line is a torch pin, the right
+  # install list is empty — copying the unfiltered file would pip a generic
+  # torch wheel over the CUDA build this image exists to provide.
   grep -viE '^(torch|torchvision|torchaudio)([<>=!~ ].*)?$' requirements.txt \
-    > /tmp/comfy-reqs.txt || cp requirements.txt /tmp/comfy-reqs.txt
-  python3 -m pip install -r /tmp/comfy-reqs.txt
+    > /tmp/comfy-reqs.txt || true
+  if [ -s /tmp/comfy-reqs.txt ]; then
+    python3 -m pip install -r /tmp/comfy-reqs.txt
+  fi
 fi
 
 exec python3 main.py --listen 0.0.0.0 --port 8188 "$@"
