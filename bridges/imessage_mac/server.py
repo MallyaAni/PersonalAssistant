@@ -796,15 +796,22 @@ def _clean_body(value: str) -> str:
 # a bridge that trusts its caller's limits has no limits.
 MAX_INCOMING_PER_POLL = 25
 
-# How old a row must be before a poll may scan it at all.
+# How long a row is presumed still-being-written if its body will not decode.
 #
 # Messages inserts a row before it finishes writing attributedBody, so a poll
 # arriving in that gap reads the body as undecodable — and a cursor that
 # advances past an undecodable row loses the message forever. That happened to
 # a real message: a resend's own date came back as the cursor of a poll that
-# never returned it, and the same row decoded fine seconds later. Rows younger
-# than this are left unscanned, so a mid-write row simply surfaces whole on the
-# next poll; genuinely undecodable *old* rows are still skipped and counted.
+# never returned it, and the same row decoded fine seconds later.
+#
+# The rule is by decodability, not a blanket age gate, so a message whose body
+# is readable is returned at once rather than waiting out this window: a row
+# that decodes is delivered immediately; a row younger than this that does NOT
+# decode is left for the next poll with the cursor held before it (a mid-write
+# in progress); a row older than this that still does not decode is presumed
+# genuinely unreadable and skipped past, so one bad row cannot stall the poll
+# forever. This removes the settle delay from every ordinary message while
+# keeping the mid-write race fixed.
 SETTLE_SECONDS = 3
 
 
@@ -824,15 +831,12 @@ def incoming_messages(
     config: BridgeConfig, since_ns: int, limit: int = MAX_INCOMING_PER_POLL
 ) -> dict[str, object]:
     bounded = max(1, min(int(limit), MAX_INCOMING_PER_POLL))
-    # Nothing younger than the settle window is scanned, and therefore nothing
-    # younger can advance the cursor — including the "start from now" cursor,
-    # which would otherwise skip a message arriving in the window itself.
-    settled = (
-        _apple_time(datetime.now(timezone.utc))  # noqa: UP017
-        - SETTLE_SECONDS * 1_000_000_000
-    )
+    now_ns = _apple_time(datetime.now(timezone.utc))  # noqa: UP017
+    young_after = now_ns - SETTLE_SECONDS * 1_000_000_000
     if since_ns is None or int(since_ns) < 0:
-        return {"messages": [], "cursor": settled}
+        # Start from just before now, not now: a message landing during this
+        # first connect should be caught by the next poll, not stepped over.
+        return {"messages": [], "cursor": young_after}
     cursor = int(since_ns)
     connection, _ = _open_db_reporting(config.incoming_db)
     if connection is None:
@@ -840,7 +844,9 @@ def incoming_messages(
     try:
         # The handle join is correct here, unlike the outgoing queries above:
         # an incoming row's handle_id is the sender, and Apple's canonical
-        # `handle.id` is exactly the address a reply should be sent to.
+        # `handle.id` is exactly the address a reply should be sent to. No age
+        # ceiling in SQL: decodability, checked per row below, decides what is
+        # ready — an age gate would delay every message, not just mid-write ones.
         rows = connection.execute(
             """
             SELECT m.ROWID, m.guid, m.date, m.text, m.attributedBody, h.id,
@@ -853,12 +859,11 @@ def incoming_messages(
               AND m.associated_message_type = 0
               AND m.item_type = 0
               AND m.date > ?
-              AND m.date <= ?
               AND c.room_name IS NULL
             ORDER BY m.date ASC
             LIMIT ?
             """,
-            (cursor, settled, bounded),
+            (cursor, bounded),
         ).fetchall()
         listings = (
             _attachment_listings(connection, [int(row[0]) for row in rows])
@@ -873,15 +878,23 @@ def incoming_messages(
     allowed = config.allowed_recipients | load_grants(config)
     messages: list[dict[str, object]] = []
     for rowid, guid, date, text, blob, handle, originator in rows:
+        attached = listings.get(int(rowid), [])
+        body = extract_body(text, blob)
+        # A photo with no caption has no body but is still a message; a row is
+        # "ready" when it has either a readable body or a listed attachment.
+        ready = body is not None or bool(attached)
+        if not ready and int(date) > young_after:
+            # Young and not yet readable: a write in progress. Stop here without
+            # advancing the cursor past it — rows are ascending, so everything
+            # after is younger still — and let the next poll pick it up whole.
+            break
         cursor = max(cursor, int(date))
         sender = normalize_recipient(str(handle or ""))
         if sender not in allowed:
             continue
-        attached = listings.get(int(rowid), [])
-        # A photo with no caption has no body; it is still a message. Only a
-        # row with neither a readable body nor a listed attachment is skipped.
-        body = extract_body(text, blob)
-        if body is None and not attached:
+        if not ready:
+            # Old and still unreadable: presumed genuinely unreadable, skipped
+            # with the cursor already advanced so it cannot stall the poll.
             continue
         message: dict[str, object] = {
             "guid": str(guid),

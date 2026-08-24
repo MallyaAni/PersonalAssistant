@@ -707,40 +707,75 @@ def test_an_unreadable_blob_is_skipped_not_mangled(tmp_path):
     assert incoming_messages(config, since_ns=_ns_ago(60))["messages"] == []
 
 
-def test_a_row_still_being_written_is_not_skipped_forever(tmp_path, monkeypatch):
-    import server as bridge_server
+def test_a_readable_message_is_delivered_without_waiting_out_the_window(tmp_path):
     from server import incoming_messages
 
-    # Messages inserts the row before attributedBody is finished. A poll that
-    # lands in the gap must leave the row for the next poll, not advance the
-    # cursor past it — that lost a real message once, provably: the poll's own
-    # cursor came back equal to a message it never returned.
+    # The settle window must not delay an ordinary message: a row whose body is
+    # readable is returned at once, even one that arrived a moment ago. This is
+    # the latency win over the old blanket age gate.
     config = _incoming_config(tmp_path)
-    old = _ns_ago(30)
-    young = _ns_ago(1)
-    _insert_incoming(config.incoming_db, "+15550100", "settled", old)
-    _insert_incoming(config.incoming_db, "+15550100", "mid-write", young)
+    _insert_incoming(config.incoming_db, "+15550100", "just now", _ns_ago(0.5))
 
-    first = incoming_messages(config, since_ns=_ns_ago(60))
-    assert [m["text"] for m in first["messages"]] == ["settled"]
-    assert first["cursor"] == old  # not advanced past the young row
+    (message,) = incoming_messages(config, since_ns=_ns_ago(60))["messages"]
+    assert message["text"] == "just now"
 
-    # The next poll, once the row has settled, picks it up whole.
-    monkeypatch.setattr(bridge_server, "SETTLE_SECONDS", 0)
+
+def test_a_row_still_being_written_is_held_then_delivered(tmp_path):
+    from server import incoming_messages
+
+    # Messages inserts the row before attributedBody is finished. A poll landing
+    # in that gap sees an unreadable young row: it must hold it (return nothing,
+    # cursor not advanced past it), not skip past it - that lost a real message
+    # once. When the write completes, the next poll delivers it whole.
+    config = _incoming_config(tmp_path)
+    at = _ns_ago(1)  # young, and not yet readable
+    _insert_incoming(
+        config.incoming_db, "+15550100", "", at,
+        raw_blob=b"\x04\x0bstreamtyped still being written",
+    )
+    since = _ns_ago(60)
+
+    first = incoming_messages(config, since_ns=since)
+    assert first["messages"] == []
+    assert first["cursor"] == since  # held: cursor not advanced past the row
+
+    # The write completes and the body becomes readable.
+    db = sqlite3.connect(config.incoming_db)
+    db.execute("UPDATE message SET text = ? WHERE date = ?", ("finished writing", at))
+    db.commit()
+    db.close()
+
     second = incoming_messages(config, since_ns=first["cursor"])
-    assert [m["text"] for m in second["messages"]] == ["mid-write"]
+    assert [m["text"] for m in second["messages"]] == ["finished writing"]
 
 
-def test_the_first_cursor_also_respects_the_settle_window(tmp_path):
+def test_an_old_unreadable_row_does_not_stall_the_poll(tmp_path):
+    from server import incoming_messages
+
+    # A row past the window that still will not decode is presumed genuinely
+    # unreadable: skipped with the cursor advanced past it, so one bad row
+    # cannot freeze the poll forever.
+    config = _incoming_config(tmp_path)
+    bad = _ns_ago(30)
+    _insert_incoming(
+        config.incoming_db, "+15550100", "", bad, raw_blob=b"\x04\x0bstreamtyped junk"
+    )
+    _insert_incoming(config.incoming_db, "+15550100", "after the bad row", _ns_ago(20))
+
+    result = incoming_messages(config, since_ns=_ns_ago(60))
+    assert [m["text"] for m in result["messages"]] == ["after the bad row"]
+
+
+def test_the_first_cursor_starts_just_before_now(tmp_path):
     from server import _apple_time, incoming_messages
 
     config = _incoming_config(tmp_path)
 
-    # "Start from now" is really "start from the settle boundary": a message
-    # arriving in the window right before the first poll belongs to the next
-    # poll, not to nobody.
+    # "Start from now" starts a hair before now, so a message arriving during
+    # the first connect is caught by the next poll rather than stepped over.
     result = incoming_messages(config, since_ns=-1)
-    assert result["cursor"] <= _apple_time(datetime.now(UTC)) - 2 * _NS
+    now = _apple_time(datetime.now(UTC))
+    assert now - 5 * _NS <= result["cursor"] <= now
 
 
 # --- attachments: pictures in, pictures out --------------------------------
