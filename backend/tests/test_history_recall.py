@@ -122,7 +122,9 @@ async def test_search_keeps_questions_and_pairs_answers():
     # Passive recall drops questions because a question is not a fact about
     # the person. Active search must keep them - "what did I ask you about X"
     # is a real request - and return the answer beside what was said.
-    service = _service_with([(_Turn("what wine goes with duck?", "A pinot noir."), 0.2)])
+    service = _service_with(
+        [(_Turn("what wine goes with duck?", "A pinot noir."), 0.2)]
+    )
     (found,) = await service.search_turns("u", [0.1], 5, 0.6)
     assert found["you_said"] == "what wine goes with duck?"
     assert found["assistant_said"] == "A pinot noir."
@@ -140,5 +142,61 @@ async def test_search_dedupes_repeated_exchanges_and_bounds_excerpts():
     service = _service_with(rows)
     found = await service.search_turns("u", [0.1], 5, 0.6)
     assert [item["you_said"] for item in found] == ["same thing", "other thing"]
-    # A 4k-token answer quoted whole would spend the evidence budget on one hit.
-    assert len(found[0]["assistant_said"]) == 1_500
+    # A 4k-token answer quoted whole would spend the evidence budget on one
+    # hit - and a cut must say so, or the model quotes it as complete.
+    assert found[0]["assistant_said"].endswith("…")
+    assert len(found[0]["assistant_said"]) == 1_501
+    assert found[1]["assistant_said"] == "short"
+
+
+@pytest.mark.asyncio
+async def test_search_passes_the_stated_window_to_the_store():
+    # "Last week's restaurant" narrows the candidate set in SQL; the bounds
+    # must reach the repository, not be filtered after retrieval where the
+    # nearest-ever twelve may already have crowded out the recent target.
+    captured = {}
+
+    class _Repo:
+        async def get_recalled_turns(self, *args, **kwargs):
+            captured.update(kwargs)
+            return []
+
+    from backend.services.postgres_memory_service import PostgresMemoryService
+
+    service = PostgresMemoryService.__new__(PostgresMemoryService)
+    service.repo = _Repo()
+    marker = datetime(2026, 8, 17, tzinfo=UTC)
+    await service.search_turns(
+        "u", [0.1], 5, 0.6, created_after=marker, created_before=None
+    )
+    assert captured["created_after"] == marker
+    assert captured["created_before"] is None
+
+
+def test_the_stated_window_parses_dates_and_shrugs_at_junk():
+    from backend.services.conversation_service import _stated_window
+
+    start, end = _stated_window("2026-08-17", "2026-08-20")
+    assert start == datetime(2026, 8, 17, tzinfo=UTC)
+    # A bare date as the upper bound means the whole of that day.
+    assert end == datetime(2026, 8, 21, tzinfo=UTC)
+    # Junk degrades to an unbounded search, never to no search.
+    assert _stated_window("last week", "whenever") == (None, None)
+    assert _stated_window(None, None) == (None, None)
+
+
+def test_the_turn_vector_covers_both_voices():
+    # The original hole: query-only embeddings made everything the assistant
+    # alone said unfindable. The composed text must carry both sides, bounded.
+    from backend.memory.turn_embedding import (
+        turn_embedding_signature,
+        turn_embedding_text,
+    )
+
+    text = turn_embedding_text("what wine goes with duck?", "A pinot noir.")
+    assert "what wine goes with duck?" in text
+    assert "A pinot noir." in text
+    assert len(turn_embedding_text("q" * 10_000, "r" * 10_000)) < 7_000
+    # The signature names model AND scheme, so either kind of space change
+    # makes old rows invisible-until-rebuilt rather than quietly wrong.
+    assert "#" in turn_embedding_signature()

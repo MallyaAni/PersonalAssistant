@@ -1,5 +1,6 @@
 import asyncio
 import uuid
+import logging
 from datetime import datetime
 from typing import Any
 
@@ -21,6 +22,14 @@ DERIVED_PURPOSES = frozenset({VISUAL_ANALYSIS_PURPOSE})
 # How many candidates to read for each one kept, since questions are dropped
 # after the database has already applied its limit.
 _RECALL_OVERFETCH = 4
+
+logger = logging.getLogger(__name__)
+
+
+# A bounded excerpt that says so: the marker is what stops a model from
+# quoting a cut answer as though it were the whole of one.
+def _excerpt(text: str, limit: int) -> str:
+    return text if len(text) <= limit else text[:limit] + "…"
 
 
 # A question the user once asked says nothing about them, and it embeds close
@@ -294,6 +303,8 @@ class PostgresMemoryService(MemoryService, SemanticMemoryWriter):
         top_k: int,
         max_cosine_distance: float,
         exclude_conversation_id: str | None = None,
+        created_after: Any = None,
+        created_before: Any = None,
     ) -> list[dict[str, Any]]:
         rows = await self.repo.get_recalled_turns(
             user_id,
@@ -301,6 +312,8 @@ class PostgresMemoryService(MemoryService, SemanticMemoryWriter):
             top_k * _RECALL_OVERFETCH,
             max_cosine_distance,
             uuid.UUID(exclude_conversation_id) if exclude_conversation_id else None,
+            created_after=created_after,
+            created_before=created_before,
         )
         found: list[dict[str, Any]] = []
         seen: set[str] = set()
@@ -316,15 +329,54 @@ class PostgresMemoryService(MemoryService, SemanticMemoryWriter):
             found.append(
                 {
                     "when": turn.created_at.isoformat() if turn.created_at else None,
-                    "you_said": said[:1_000],
-                    "assistant_said": answered[:1_500],
+                    "you_said": _excerpt(said, 1_000),
+                    "assistant_said": _excerpt(answered, 1_500),
                     "retrieval": {
                         "cosine_distance": round(distance, 6),
                         "relevance_score": round(max(0.0, 1.0 - distance), 6),
                     },
                 }
             )
+        if not found:
+            # The near-miss, recorded. The threshold was reasoned, not
+            # measured, and an honest "I could not find it" at 0.6 with the
+            # target sitting at 0.65 would otherwise be indistinguishable
+            # from the row not existing. One tiny query on misses only, and
+            # the number that tunes the constant lands in the log.
+            await self._log_search_miss(
+                user_id, query_embedding, max_cosine_distance,
+                created_after, created_before,
+            )
         return found
+
+    # Log how near the nearest rejected turn was, so misses tune the threshold.
+    async def _log_search_miss(
+        self,
+        user_id: str,
+        query_embedding: list[float],
+        threshold: float,
+        created_after: Any,
+        created_before: Any,
+    ) -> None:
+        try:
+            nearest = await self.repo.get_recalled_turns(
+                user_id,
+                query_embedding,
+                1,
+                2.0,
+                created_after=created_after,
+                created_before=created_before,
+            )
+        except Exception:
+            return
+        if nearest:
+            logger.info(
+                "history_search_miss nearest=%.4f threshold=%.4f",
+                nearest[0][1],
+                threshold,
+            )
+        else:
+            logger.info("history_search_miss no candidate rows in window")
 
     # Return a broad owned visual shortlist for a model to judge semantically.
     async def get_visual_memory_candidates(

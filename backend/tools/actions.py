@@ -21,9 +21,15 @@ class RecallHistoryAction:
     answer; this is the active form, chosen when the person points at
     something that is not in view - "that restaurant I mentioned", "when did
     we talk about X" - and the transcript store has to be searched for it.
+
+    Time bounds are the model's to state, never parsed from prose in code:
+    "last week" reaches the search as ISO dates the model resolved against
+    its clock, and absent bounds mean all of history.
     """
 
     query: str
+    since: str | None = None
+    until: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

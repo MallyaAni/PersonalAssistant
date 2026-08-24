@@ -327,6 +327,40 @@ def _runnable(action: MainAction) -> MainAction:
     )
 
 
+# The time window the model stated in its tool call, as timezone-aware
+# datetimes, or None where nothing usable was said. A malformed date degrades
+# to an unbounded search rather than to no search - the person still gets
+# their answer, just from all of history.
+def _stated_window(
+    since: str | None, until: str | None
+) -> tuple[datetime | None, datetime | None]:
+    def _parse(value: str | None) -> datetime | None:
+        if not value:
+            return None
+        try:
+            moment = datetime.fromisoformat(value.strip())
+        except ValueError:
+            return None
+        return moment if moment.tzinfo else moment.replace(tzinfo=UTC)
+
+    start = _parse(since)
+    end = _parse(until)
+    # A bare date as the upper bound means the whole of that day, not its
+    # first microsecond.
+    if end is not None and until is not None and len(until.strip()) == 10:
+        end = end + timedelta(days=1)
+    return start, end
+
+
+# The retrieval distance an excerpt carries, for merging and ordering; an
+# excerpt without one sorts last rather than first.
+def _distance_of(item: dict[str, Any]) -> float:
+    try:
+        return float((item.get("retrieval") or {}).get("cosine_distance", 1.0))
+    except (TypeError, ValueError):
+        return 1.0
+
+
 # The calendar date a one-time task fires on. The router states it when the
 # request named one; a bare "at 5" means today if that is still ahead in
 # the person's zone, otherwise tomorrow.
@@ -1143,7 +1177,7 @@ class ConversationService:
             artifact_ids = [item.handle for item in matched]
             shown = await self._load_referent_artifacts(user_id, artifact_ids)
             if shown:
-                yield {"event": "image_matches", "data": {"matches": shown}}
+                yield {"event": "image_matches", "data": {"artifacts": shown}}
         else:
             response_text = (
                 "I don't have a picture of yours that matches what you're "
@@ -1585,7 +1619,7 @@ class ConversationService:
         # failure cost the turn it was meant to help.
         if isinstance(action, RecallHistoryAction):
             await self._recall_history_evidence(
-                context, user_id, action.query, history
+                context, user_id, action, history, query_embedding
             )
 
         async for event in self._stream_web_search(
@@ -1596,6 +1630,10 @@ class ConversationService:
     # Search the transcript store for what the model asked to find, and put
     # the excerpts where the prompt renders them as the user's own record.
     #
+    # Two vectors, one search: the router's reformulation AND the user's own
+    # words (whose embedding the turn already computed). The model's query is
+    # a paraphrase of a paraphrase, and when its drift misses, the raw
+    # phrasing often lands - two ANN probes cost nothing against one miss.
     # The current conversation is searched too - "what did I say earlier" in
     # a long conversation is a real question - but anything visible in the
     # history window is dropped: repeating what is directly above spends the
@@ -1604,21 +1642,32 @@ class ConversationService:
         self,
         context: dict[str, Any],
         user_id: str,
-        wanted: str,
+        action: RecallHistoryAction,
         history: list[dict[str, Any]] | None,
+        query_embedding: list[float] | None = None,
     ) -> None:
         if self.memory is None:
             return
+        since, until = _stated_window(action.since, action.until)
         try:
-            embedding = await self.memory.embed_query(wanted)
-            if not embedding:
-                return
-            found = await self.memory.search_turns(
-                user_id,
-                embedding,
-                settings.HISTORY_SEARCH_MAX_RESULTS,
-                settings.HISTORY_SEARCH_MAX_COSINE_DISTANCE,
-            )
+            embedding = await self.memory.embed_query(action.query)
+            merged: dict[str, dict[str, Any]] = {}
+            for vector in (embedding, query_embedding):
+                if not vector:
+                    continue
+                found = await self.memory.search_turns(
+                    user_id,
+                    vector,
+                    settings.HISTORY_SEARCH_MAX_RESULTS,
+                    settings.HISTORY_SEARCH_MAX_COSINE_DISTANCE,
+                    created_after=since,
+                    created_before=until,
+                )
+                for item in found:
+                    key = f"{item.get('when')}\n{item.get('you_said')}"
+                    kept = merged.get(key)
+                    if kept is None or _distance_of(item) < _distance_of(kept):
+                        merged[key] = item
         except Exception:
             logger.warning("History search failed", exc_info=True)
             return
@@ -1627,12 +1676,15 @@ class ConversationService:
             for turn in (history or [])
             for key in ("query", "response")
         }
-        excerpts = [
-            item
-            for item in found
-            if " ".join(str(item.get("you_said") or "").split()).casefold()
-            not in visible
-        ]
+        excerpts = sorted(
+            (
+                item
+                for item in merged.values()
+                if " ".join(str(item.get("you_said") or "").split()).casefold()
+                not in visible
+            ),
+            key=_distance_of,
+        )[: settings.HISTORY_SEARCH_MAX_RESULTS]
         if excerpts:
             context["history_search"] = excerpts
 
@@ -2992,18 +3044,30 @@ class ConversationService:
     async def _recall_vector(
         self,
         query: str,
-        query_embedding: list[float] | None,
+        response: str,
     ) -> dict[str, Any]:
         if self.memory is None:
             return {}
+        from backend.memory.turn_embedding import (
+            turn_embedding_signature,
+            turn_embedding_text,
+        )
+
+        # Both voices, embedded fresh. The turn's query-only embedding cannot
+        # be reused here: a vector that ignores the response makes everything
+        # the assistant alone said unfindable, which was exactly the hole -
+        # "what did YOU tell me about X" searched the user's phrasings for the
+        # assistant's content and missed.
         try:
-            vector = query_embedding or await self.memory.embed_query(query)
+            vector = await self.memory.embed_query(
+                turn_embedding_text(query, response)
+            )
         except Exception:
             logger.warning("Could not embed a turn for recall", exc_info=True)
             return {}
         if not vector:
             return {}
-        return {"embedding": vector, "embedding_model": settings.EMBEDDING_MODEL}
+        return {"embedding": vector, "embedding_model": turn_embedding_signature()}
 
     # Things this user said before, nearest to what they are asking now.
     #
@@ -3066,7 +3130,7 @@ class ConversationService:
                 "query": query,
                 "response": response_text,
                 "metadata": metadata,
-                **await self._recall_vector(query, query_embedding),
+                **await self._recall_vector(query, response_text),
             },
         )
         if self.memory_coordinator is None:

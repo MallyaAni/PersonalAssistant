@@ -32,7 +32,22 @@ TOOL = BuiltinTool(
                     "taken from the request. Leave empty if the request does "
                     "not say."
                 ),
-            }
+            },
+            "since": {
+                "type": "string",
+                "description": (
+                    "Earliest date to search, as YYYY-MM-DD, only when the "
+                    "request names a time period ('last week', 'in March') - "
+                    "resolve it against the current date. Omit otherwise."
+                ),
+            },
+            "until": {
+                "type": "string",
+                "description": (
+                    "Latest date to search, as YYYY-MM-DD, only when the "
+                    "request bounds one. Omit otherwise."
+                ),
+            },
         },
         "required": ["query"],
         "additionalProperties": False,
@@ -47,6 +62,15 @@ TOOL = BuiltinTool(
 
 # No query means no decision: the turn goes down the ordinary reply path,
 # where the assistant asks what to look for rather than searching for nothing.
+# The dates are optional and passed through as stated; whether they parse is
+# judged where they are used, so a malformed date degrades to an unbounded
+# search rather than to no search at all.
 def parse(arguments: dict[str, Any]) -> RecallHistoryAction | None:
     query = required_text(arguments, "query")
-    return None if query is None else RecallHistoryAction(query)
+    if query is None:
+        return None
+    return RecallHistoryAction(
+        query,
+        since=required_text(arguments, "since"),
+        until=required_text(arguments, "until"),
+    )

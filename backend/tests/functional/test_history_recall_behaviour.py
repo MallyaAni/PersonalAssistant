@@ -72,6 +72,25 @@ async def test_an_ordinary_question_stays_out_of_the_archive(selector, asked):
     )
 
 
+async def test_a_time_bounded_reference_still_searches(selector):
+    # The window fields are optional and the model may omit them - selection
+    # is what this asserts. When it does state a bound, it must be a date the
+    # search can use, resolved against the clock it was given.
+    action = await selector.select(
+        "functional_test_user",
+        "what was that restaurant I mentioned last week?",
+        [],
+        None,
+        local_now="2026-08-24 21:00 (America/New_York)",
+    )
+    assert isinstance(action, RecallHistoryAction)
+    from datetime import datetime
+
+    for bound in (action.since, action.until):
+        if bound:
+            datetime.fromisoformat(bound)
+
+
 async def test_a_followup_to_the_visible_conversation_does_not_dig(selector):
     # "It" here is on screen. The rule the action contract already states -
     # short replies continue the recent subject - must outrank the new tool.

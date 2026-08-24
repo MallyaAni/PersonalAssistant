@@ -470,13 +470,24 @@ class MemoryRepository:
         top_k: int,
         max_cosine_distance: float,
         exclude_conversation_id: uuid.UUID | None = None,
+        created_after: datetime | None = None,
+        created_before: datetime | None = None,
     ) -> list[tuple[Conversation, float]]:
+        from backend.memory.turn_embedding import turn_embedding_signature
+
         distance = Conversation.embedding.cosine_distance(query_embedding)
         stmt = (
             select(Conversation, distance.label("cosine_distance"))
             .where(
                 Conversation.user_id == user_id,
                 Conversation.embedding.is_not(None),
+                # Only vectors from the current model AND content scheme. The
+                # column existed to make a space change visible, but nothing
+                # ever read it, so a model swap would have silently compared
+                # incompatible vectors until someone noticed recall rotting.
+                # Excluded-until-rebuilt is the correct failure; the backfill
+                # is the rebuild.
+                Conversation.embedding_model == turn_embedding_signature(),
                 distance <= max_cosine_distance,
             )
             .order_by(distance, Conversation.id)
@@ -484,6 +495,13 @@ class MemoryRepository:
         )
         if exclude_conversation_id is not None:
             stmt = stmt.where(Conversation.conversation_id != exclude_conversation_id)
+        # Time bounds stated by the model in its tool call, never parsed from
+        # prose here: "last week's restaurant" narrows the candidate set in
+        # SQL instead of hoping the nearest-ever twelve happen to be recent.
+        if created_after is not None:
+            stmt = stmt.where(Conversation.created_at >= created_after)
+        if created_before is not None:
+            stmt = stmt.where(Conversation.created_at <= created_before)
         result = await self.session.execute(stmt)
         return [(turn, float(score)) for turn, score in result.all()]
 
