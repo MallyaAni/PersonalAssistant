@@ -396,7 +396,17 @@ class Settings(BaseSettings):
     # are answered through the same /chat path the browser uses. Off until
     # the bridge's read tool is deployed and both ends are flipped together.
     IMESSAGE_CHAT_ENABLED: bool = False
+    # The idle cadence: how often to check for new texts when nothing is
+    # happening. A lone message waits on average half this to be noticed.
     IMESSAGE_CHAT_POLL_SECONDS: float = Field(default=5.0, gt=0, le=300)
+    # The active cadence, and how long it lasts after the last answered message.
+    # During a back-and-forth the person's next text arrives within seconds of
+    # our reply, so for a short window after answering we poll fast and pick it
+    # up almost at once, then fall back to the idle cadence so a quiet bridge is
+    # not hammered. Fast polling is a tiny read returning nothing, so the cost
+    # of the active window is negligible.
+    IMESSAGE_CHAT_ACTIVE_POLL_SECONDS: float = Field(default=1.5, gt=0, le=60)
+    IMESSAGE_CHAT_ACTIVE_WINDOW_SECONDS: float = Field(default=45.0, ge=0, le=600)
     IMESSAGE_CHAT_READ_TOOL: str = "read_messages"
     # Where this worker reaches its own backend. The compose network name by
     # default; a host-run worker overrides it.

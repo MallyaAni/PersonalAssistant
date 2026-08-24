@@ -612,6 +612,18 @@ async def test_a_plain_message_pins_nothing(monkeypatch):
     assert pinned == [None]
 
 
+def test_the_poll_cadence_is_fast_only_just_after_activity():
+    from backend.workers.imessage_chat import _poll_delay
+
+    # Just answered → fast; well past the window → idle. This is what turns a
+    # 5s average pickup into ~1.5s during a live back-and-forth without polling
+    # the bridge hard when nobody is talking.
+    assert _poll_delay(0.0, fast=1.5, slow=5.0, window=45.0) == 1.5
+    assert _poll_delay(44.0, fast=1.5, slow=5.0, window=45.0) == 1.5
+    assert _poll_delay(45.0, fast=1.5, slow=5.0, window=45.0) == 5.0
+    assert _poll_delay(float("inf"), fast=1.5, slow=5.0, window=45.0) == 5.0
+
+
 def test_the_bubble_ledger_only_stores_real_guids():
     from backend.workers.imessage_chat import _message_guid
 

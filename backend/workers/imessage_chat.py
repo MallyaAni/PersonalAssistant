@@ -896,15 +896,36 @@ def _payload(answer: object) -> dict:
 
 # The polling loop, spawned alongside the discovery loop when the flag is on.
 async def run_chat_loop() -> None:
+    import time
+
     from backend.core.dependencies import _invoke_discovery_tool
 
     worker = IMessageChatWorker(_invoke_discovery_tool)
     logger.info("imessage_chat_started")
+    # -inf, not 0: at start-up nothing has been answered, so the first idle_for
+    # is enormous and the loop begins on the idle cadence rather than treating
+    # boot as recent activity.
+    last_active = float("-inf")
     while True:
         try:
             answered = await worker.tick()
             if answered:
+                last_active = time.monotonic()
                 logger.info("imessage_chat_answered", extra={"count": answered})
         except Exception:
             logger.exception("imessage_chat_tick_failed")
-        await asyncio.sleep(settings.IMESSAGE_CHAT_POLL_SECONDS)
+        await asyncio.sleep(
+            _poll_delay(
+                time.monotonic() - last_active,
+                fast=settings.IMESSAGE_CHAT_ACTIVE_POLL_SECONDS,
+                slow=settings.IMESSAGE_CHAT_POLL_SECONDS,
+                window=settings.IMESSAGE_CHAT_ACTIVE_WINDOW_SECONDS,
+            )
+        )
+
+
+# How long to wait before the next poll: the fast cadence for `window` seconds
+# after the last answered message, the idle cadence otherwise. A back-and-forth
+# stays responsive; a quiet bridge is left alone.
+def _poll_delay(idle_for: float, *, fast: float, slow: float, window: float) -> float:
+    return fast if idle_for < window else slow
