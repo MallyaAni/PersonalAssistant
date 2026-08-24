@@ -181,6 +181,50 @@ Latency cost: one embedding call + one pgvector query on selected turns only.
 Diagram impact to assess at build time: chat-orchestration view if action
 flows are drawn there.
 
+## Recall scalability wave — BUILT AND VERIFIED 2026-08-24 (cad31224)
+
+The five recorded limitations of the first search_history cut are closed, and
+each fix ran on spark1 the same night: turn vectors now embed BOTH voices
+(backfill re-embedded 188/188 rows into the `#qr1` space via the test
+container with `-e EMBEDDING_BASE_URL=http://vllm-embedding:8000` — spark1's
+host-style .env value otherwise leaks into the container and refuses);
+retrieval matches only the current model+scheme signature so a space change
+degrades to invisible-until-rebuilt, with the signature-driven backfill as the
+one-command rebuild; `ix_conversations_embedding_hnsw` is live (applied via
+the tree-mounted test container, verified in pg_indexes); the model states
+time bounds as ISO dates in its tool call (never regex over prose) and they
+narrow the search in SQL; misses log the nearest rejected distance so the 0.6
+threshold becomes measured; excerpts carry truncation markers; the active
+search probes both the router's query and the user's raw phrasing. Gates:
+structural 13/13, functional 8/8, tool-selection matrix green. Multi-round
+history search stays deliberately deferred until miss telemetry argues for it.
+
+## Live incident 2026-08-24 23:52 — a debate point became a stored preference
+
+In the operator's iMessage thread, "but conversation history will be
+summarized and important facts stored in memory" — a rebuttal in a technical
+discussion about context sizing — was answered as if it were an instruction
+("Got it — noted and saved"), and the memory pipeline persisted it as a
+user_explicit semantic fact describing how the system already works. No
+context was lost (same conversation, 49 turns, prior exchange 78 minutes
+earlier and inside the window): this is the documented over-capture class
+(Scout interests from task talk, 2026-08-21) surfacing in the semantic
+pipeline. The junk row (c6f33d16) was deleted. The real fix is prompt work on
+the memory classifier — distinguishing a statement about the system in a
+design discussion from a standing preference — done the recorded way:
+reproduce the verbatim turn at temperature 0 first, one wording attempt,
+functional-gated against the existing interest-capture cases.
+
+## Direction from the operator, 2026-08-24
+
+More MCP integrations are coming (Instagram, Google Drive, and more), and
+**quality is as important as speed in scaling**. The toolbox path already
+generalizes (shortlisted candidates, alias parsing, guarded invocation, the
+per-server risk classification) — what each new integration needs is its own
+quality gate in the house pattern: a labelled routing floor so the new tools
+do not dilute selection precision, and functional coverage of the real
+provider contract before it is advertised as a capability.
+
 ## Code review pass — 2026-08-24, and what it deferred
 
 A full review of the 63 commits since the iMessage work closed a chain of
