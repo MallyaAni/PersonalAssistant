@@ -23,6 +23,13 @@ gets, rather than stored as a fixed paragraph, and that is the whole design.
     survive that on. Everything true is already in the list; anything not in
     the list is not a modest omission, it is an invention.
 
+  Why the ownership sentence is laboured
+    The first real generation told a guest her conversations stay on "your own
+    machines". They do not - they stay on the owner's, and she is a guest on
+    them. The model had been told "the owner's own machines" and collapsed the
+    two, because in almost every other product the reader and the owner are
+    the same person.
+
   Why the length is stated in the prompt rather than trimmed after
     It is a text message. A model asked for "a welcome" writes onboarding copy
     with headers and bullet lists, which is wrong for the medium and reads as
@@ -48,7 +55,7 @@ Never mention a capability that is not in the list above, and never soften an ab
 
 Give one concrete example of something they could send you, written exactly as they would type it.
 
-Say that their conversations stay on the owner's own machines rather than going to a cloud service.
+Say that their conversations stay on hardware the owner runs himself rather than going to a cloud service. Be careful whose machines these are: they belong to the owner, not to the person you are writing to, who is a guest on them. Saying their conversations stay on "your own machines" tells a guest something false about where their data lives.
 
 Close by inviting them to ask what you can do.
 

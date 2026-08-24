@@ -166,3 +166,25 @@ async def test_the_welcome_is_addressed_to_the_person_not_about_them(llm) -> Non
     assert "welcome message" not in text.lower(), (
         "described itself as a welcome message: " + text
     )
+
+
+async def test_the_welcome_does_not_tell_a_guest_the_machines_are_hers(llm) -> None:
+    """Whose hardware it is, which the first real generation got wrong.
+
+    It told a new guest her conversations stay on "your own machines". They
+    stay on the owner's, and she is a guest on them - a false statement about
+    where someone's data lives, made in the first sentence they ever read.
+    The model collapsed "the owner's machines" into "yours" because in almost
+    every other product the reader and the owner are the same person.
+    """
+    text = _welcome(llm, "Saps", REAL_AGENTS, REAL_CAPABILITIES)
+    lowered = text.lower()
+
+    for wrong in ("your own machine", "your own hardware", "your machine", "your device"):
+        assert wrong not in lowered, f"told a guest the hardware is hers: {text}"
+
+    # It should still make the privacy point - the fix is accuracy, not silence.
+    assert any(
+        word in lowered
+        for word in ("cloud", "owner", "his ", "locally", "local", "here on")
+    ), "dropped the privacy point entirely: " + text
