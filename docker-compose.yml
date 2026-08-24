@@ -142,7 +142,11 @@ services:
     container_name: anios_db
     logging: *bounded-logs
     ports:
-      - "5432:5432"
+      # Loopback only. Other containers reach the database over the compose
+      # network by name, and host tooling (backup, psql) uses `compose exec`,
+      # so nothing needs this on 0.0.0.0 - where it sat with a default password,
+      # reachable by anything on the LAN. Bind to the host's loopback instead.
+      - "127.0.0.1:5432:5432"
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
@@ -181,7 +185,10 @@ services:
       --save 3600 1 300 100 60 10000
     logging: *bounded-logs
     ports:
-      - "6379:6379"
+      # Loopback only, same reasoning as the database: reached by name over the
+      # compose network, never needed on the LAN, and it holds the iMessage
+      # cursor with no password set. Do not widen without a requirepass.
+      - "127.0.0.1:6379:6379"
 
   local-capabilities:
     # The one service that was missing this. After a host reboot every sibling

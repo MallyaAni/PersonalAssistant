@@ -19,8 +19,10 @@ compose=(docker compose -f "$root/docker-compose.yml")
 user="postgres"
 database="anios_db"
 if [[ -f "$root/.env" ]]; then
-    user="$(grep -m1 -E '^\s*POSTGRES_USER\s*=' "$root/.env" | cut -d= -f2- | tr -d ' ' || echo postgres)"
-    database="$(grep -m1 -E '^\s*POSTGRES_DB\s*=' "$root/.env" | cut -d= -f2- | tr -d ' ' || echo anios_db)"
+    # Strip CR as well as spaces: this stack came off a Windows box, and a
+    # single CRLF line ending would make `pg_dump -U postgres\r` fail.
+    user="$(grep -m1 -E '^\s*POSTGRES_USER\s*=' "$root/.env" | cut -d= -f2- | tr -d ' \r' || echo postgres)"
+    database="$(grep -m1 -E '^\s*POSTGRES_DB\s*=' "$root/.env" | cut -d= -f2- | tr -d ' \r' || echo anios_db)"
 fi
 user="${user:-postgres}"
 database="${database:-anios_db}"
@@ -29,10 +31,22 @@ directory="$root/data/backups"
 mkdir -p "$directory"
 target="$directory/${database}-$(date +%Y%m%d-%H%M%S).sql.gz"
 
-"${compose[@]}" exec -T db pg_dump -U "$user" -d "$database" --clean --if-exists \
-    | gzip >"$target"
+# Written to a .partial and promoted only once it is proven a real dump, so a
+# failed pg_dump cannot leave a stub file that becomes the newest "backup".
+# With pipefail a dump failure aborts the script; the trap clears the partial
+# on any exit so nothing half-written survives.
+partial="$target.partial"
+trap 'rm -f "$partial" 2>/dev/null || true' EXIT
 
-tables="$(gunzip -c "$target" | grep -c '^CREATE TABLE' || true)"
+"${compose[@]}" exec -T db pg_dump -U "$user" -d "$database" --clean --if-exists \
+    | gzip >"$partial"
+
+tables="$(gunzip -c "$partial" | grep -c '^CREATE TABLE' || true)"
+if [[ "${tables:-0}" -lt 1 ]]; then
+    echo "ERROR: dump produced no tables; not writing a backup" >&2
+    exit 1
+fi
+mv "$partial" "$target"
 echo "Backed up $tables tables to data/backups/$(basename "$target")"
 
 # A dump that never leaves the machine is not a backup.
@@ -47,25 +61,36 @@ echo "Backed up $tables tables to data/backups/$(basename "$target")"
 # Read the mirror target from .env like the database settings above, not only
 # from the environment. Setting it in .env and finding the script had ignored it
 # is the shape of mistake this whole section exists to prevent.
+# `\r` as well as space and newline: a CRLF in .env would otherwise leave a
+# trailing carriage return on the hostname and every ssh silently fail.
 if [[ -z "${BACKUP_MIRROR_HOST:-}" && -f "$root/.env" ]]; then
-    BACKUP_MIRROR_HOST="$(grep -m1 -E '^\s*BACKUP_MIRROR_HOST\s*=' "$root/.env" | cut -d= -f2- | tr -d ' 
-' || true)"
-    BACKUP_MIRROR_PATH="${BACKUP_MIRROR_PATH:-$(grep -m1 -E '^\s*BACKUP_MIRROR_PATH\s*=' "$root/.env" | cut -d= -f2- | tr -d ' 
-' || true)}"
+    BACKUP_MIRROR_HOST="$(grep -m1 -E '^\s*BACKUP_MIRROR_HOST\s*=' "$root/.env" | cut -d= -f2- | tr -d ' \r\n' || true)"
+fi
+if [[ -z "${BACKUP_MIRROR_PATH:-}" && -f "$root/.env" ]]; then
+    BACKUP_MIRROR_PATH="$(grep -m1 -E '^\s*BACKUP_MIRROR_PATH\s*=' "$root/.env" | cut -d= -f2- | tr -d ' \r\n' || true)"
 fi
 
+# BACKUP_MIRROR_HOST is a whitespace-separated LIST, so a third copy (the Mac)
+# joins spark2 rather than replacing it. One shared path applies to all; keep
+# it off any iCloud-synced directory on a Mac target. A per-host failure is
+# named and never fatal - a backup that could not be copied is still a backup.
 if [[ -n "${BACKUP_MIRROR_HOST:-}" ]]; then
     mirror_dir="${BACKUP_MIRROR_PATH:-~/anios-backups}"
-    if ssh -o BatchMode=yes -o ConnectTimeout=10 "$BACKUP_MIRROR_HOST"         "mkdir -p $mirror_dir" 2>/dev/null        && scp -o BatchMode=yes -o ConnectTimeout=10 -q         "$target" "$BACKUP_MIRROR_HOST:$mirror_dir/" 2>/dev/null; then
-        echo "Mirrored to $BACKUP_MIRROR_HOST:$mirror_dir"
-        # Prune the mirror on the same terms as the local copy. The find below
-        # only ever sees this machine, so without this the remote side keeps
-        # every dump forever - slowly, invisibly, and only noticed once the
-        # disk it shares with something else fills up.
-        ssh -o BatchMode=yes -o ConnectTimeout=10 "$BACKUP_MIRROR_HOST"             "find $mirror_dir -name '${database}-*.sql.gz' -type f -mtime +30 -delete 2>/dev/null;              find $mirror_dir -name '${database}-*.sql.gz' -type f -size -1k -delete 2>/dev/null"             2>/dev/null || echo "WARNING: mirrored, but could not prune old dumps on $BACKUP_MIRROR_HOST" >&2
-    else
-        echo "WARNING: could not mirror to $BACKUP_MIRROR_HOST - this copy is on one disk only" >&2
-    fi
+    for host in $BACKUP_MIRROR_HOST; do
+        if ssh -o BatchMode=yes -o ConnectTimeout=10 "$host" "mkdir -p $mirror_dir" \
+            && scp -o BatchMode=yes -o ConnectTimeout=10 -q "$target" "$host:$mirror_dir/"; then
+            echo "Mirrored to $host:$mirror_dir"
+            # Prune the mirror on the same terms as the local copy; without this
+            # the remote keeps every dump forever, noticed only when its disk
+            # fills. Bodies of the two finds kept on one line each so no
+            # backslash-continuation can swallow a later argument.
+            ssh -o BatchMode=yes -o ConnectTimeout=10 "$host" \
+                "find $mirror_dir -name '${database}-*.sql.gz' -type f -mtime +30 -delete; find $mirror_dir -name '${database}-*.sql.gz' -type f -size -1k -delete" \
+                || echo "WARNING: mirrored to $host, but could not prune old dumps there" >&2
+        else
+            echo "WARNING: could not mirror to $host - check its reachability and key" >&2
+        fi
+    done
 else
     echo "WARNING: BACKUP_MIRROR_HOST is unset, so this backup is on the same disk as the database" >&2
 fi
