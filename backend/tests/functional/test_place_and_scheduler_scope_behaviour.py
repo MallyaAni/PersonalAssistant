@@ -1,4 +1,4 @@
-"""Two things the assistant got wrong about its own situation.
+"""Three things the assistant got wrong about its own situation.
 
 **Where the person is.** The only geographic string in the router's prompt was
 the IANA timezone, and IANA names a representative city rather than the user's.
@@ -15,8 +15,15 @@ and a question about scheduling answered through Scout's frame comes back
 wrongly narrow: "you need interests" is Scout's requirement, not the
 scheduler's. Scout's card now says what Scout is not.
 
-Both are prompt changes, so both get a test that reads the answer rather than
-checking a call was made.
+**Which events are still ahead.** Scout's scheduled digest filters past finds
+and labels undated ones honestly ("I found a few possibilities, but couldn't
+confirm their dates"). That guard lives in the digest path, so a conversational
+"what's coming up?" - answered from raw search results - never reached it, and
+offered events that had already happened. The reply prompt now has the rule,
+and it has the date at the top of the same prompt to check against.
+
+All three are prompt changes, so all three get a test that reads the answer
+rather than checking a call was made.
 """
 
 import pytest
@@ -126,3 +133,56 @@ async def test_scheduling_anything_is_not_gated_on_interests(llm) -> None:
     )
     refusals = ("i can't", "i cannot", "unable to", "not able to")
     assert not any(r in text for r in refusals), text
+
+
+async def test_a_past_event_is_not_offered_as_upcoming(llm) -> None:
+    """The date is in the prompt; a listing before it is not an option.
+
+    Two results, one clearly past and one clearly ahead, with today stated.
+    The past one must not be presented as something they could still attend.
+    """
+    results = (
+        "Application-provided web search results follow.\n"
+        "1. Rosslyn Jazz Festival - https://example.invalid/jazz - the "
+        "festival took place on Saturday 8 August 2026 in Gateway Park, "
+        "Arlington.\n"
+        "2. Clarendon Night Market - https://example.invalid/market - runs "
+        "on Saturday 12 September 2026 from 5pm in Clarendon, Arlington.\n"
+    )
+    answer = llm.chat(
+        [
+            {
+                "role": "system",
+                "content": (
+                    "You are a personal assistant. Use only the search "
+                    "results given. Compare every date against today "
+                    "before offering anything, and do not present "
+                    "something that has already happened as something "
+                    "they could still attend."
+                ),
+            },
+            {
+                "role": "user",
+                "content": (
+                    f"Current date and time: {_clock()}\n\n"
+                    f"{results}\n"
+                    "What events could I go to around here? Only ones I "
+                    "can still attend."
+                ),
+            },
+        ],
+        320,
+        None,
+        0.0,
+    )
+    text = str(answer.get("content") or answer).lower()
+
+    # The September one is the answer.
+    assert "night market" in text or "clarendon" in text, text
+    # The August one already happened. If it is named at all it must be
+    # marked as past, never offered.
+    if "jazz" in text:
+        past = ("already", "passed", "was on", "took place", "over", "past")
+        assert any(w in text for w in past), (
+            "named a past event without saying it had passed: " + text
+        )
