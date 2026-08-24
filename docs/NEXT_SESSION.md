@@ -59,6 +59,13 @@ restore proven end to end — 37 tables and 2,506 rows identical to live, then 6
 encrypted values decrypted out of the restored copy with the escrowed key. That
 last check is the one that matters; see [docs/RESTORE.md](RESTORE.md).
 
+**The architecture page now publishes every canonical view.** The iMessage
+bridge and Tasks & skills diagrams existed but were absent from the page's
+publication list, which left its own completeness metric at 20/22. Both are now
+included, and the freshness check fails whenever that list and the canonical
+Mermaid source count diverge. The generated page reports 22/22; its structure,
+unique embedded SVGs, source links, and zoom controls were checked locally.
+
 ## What is still open
 
 **A third backup copy on the Mac.** Both current copies are in one room on one
@@ -79,10 +86,12 @@ sm_121 for GB10; it needs an aarch64 CUDA-13 image. Note that
 `generate_image` and `edit_image` are *registered builtins already*, so the
 assistant describes them as capabilities — including in the welcome message.
 
-**The architecture study guide is extracted but unpublished.** 100,501
-characters, 65 design decisions, at `scratchpad/study_guide.md`. Intended as
-`architecture.html`, answering every design choice from an ML-system-design
-interview angle.
+**The architecture study-guide source is missing.** The prior handoff said a
+100,501-character, 65-decision draft existed at `scratchpad/study_guide.md`,
+but that path is absent and was never tracked by Git. Recover the draft from
+the session or machine that produced it before attempting publication. The
+existing `docs/architecture.html` is the generated canonical-diagram page and
+must not be overwritten based on the stale premise.
 
 **Point-in-time recovery does not exist.** `archive_mode=off`,
 `wal_level=replica`, nightly dumps — so a failure at 03:29 loses the day. WAL

@@ -76,6 +76,18 @@ const publishedDiagrams = [
     change: "How approved preferences become local findings without losing user control.",
   },
   {
+    name: "imessage-bridge",
+    title: "iMessage bridge",
+    scope: "Allowlisting, message ingress, turn execution, and delivery",
+    change: "How an allowed text becomes a full AniOS turn and returns through the Mac.",
+  },
+  {
+    name: "scheduled-tasks-subsystem",
+    title: "Tasks & skills",
+    scope: "Scheduling, learned workflows, unattended turns, and delivery",
+    change: "How a request becomes a durable task or reusable skill and later runs safely.",
+  },
+  {
     name: "agent-scout",
     title: "Scout — what the model decides",
     scope: "Aiming, ranking, and description against deterministic qualification",
@@ -462,9 +474,14 @@ export function buildArchitecturePage() {
   console.log("Rendered docs\\architecture.html");
 }
 
-// Fail when the published page no longer matches the rendered diagrams. Without
-// this a diagram change deploys silently with the previous images embedded.
+// Fail when the published page omits a canonical view or trails current renders.
 export function checkArchitecturePage() {
+  const canonicalSourceCount = countCanonicalSources();
+  if (publishedDiagrams.length !== canonicalSourceCount) {
+    throw new Error(
+      `docs/architecture.html publishes ${publishedDiagrams.length} of ${canonicalSourceCount} canonical diagrams.`,
+    );
+  }
   if (!existsSync(pagePath)) {
     throw new Error(
       "docs/architecture.html is missing. Run npm.cmd run docs:diagram from frontend/.",
