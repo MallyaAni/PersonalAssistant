@@ -109,13 +109,25 @@ images 5, recalled 6, memory 7), which was safe because enforcement is off
 and no floors were ever recorded. `_runnable` now passes three action kinds.
 The chat-orchestration diagram gained the flow (SVG re-rendered on spark1).
 
-**Verification state: structural + functional tests are written but could not
-run on the Mac (no backend deps there). `bash scripts/gate.sh` on spark1 is
-what proves this feature** — `test_history_recall.py` (pure logic) and
-`functional/test_history_recall_behaviour.py` (does the real router choose it
-for backward references and leave ordinary questions alone — the known 4B
-routing-precision risk). If the functional cases flake, tune the tool
-description by subject shape, never by adding the failing phrasings to it.
+**Verification: GREEN, run on spark1 the same day through the gate's test
+container** (working tree mounted, skips-count-as-failures):
+`test_history_recall.py` 10/10; `functional/test_history_recall_behaviour.py`
+7/7 against the real router — every backward-reference phrasing chose the
+tool, ordinary questions and a visible-context follow-up stayed out, so the
+routing-precision risk did not materialize; and the full tool-selection
+matrix (`bash scripts/gate.sh`, 294s) stayed green with the new tool offered,
+which is the no-regression proof for widening the router's option set. If a
+future run flakes, tune the description by subject shape, never by adding the
+failing phrasings to it.
+
+**One loose end: chat-orchestration.svg is stale.** The .mmd (canonical)
+carries the new flow; the SVG could not be regenerated — spark1's host has no
+node, and a throwaway node:22 container gets as far as mermaid-cli's
+puppeteer failing to launch its browser ("Failed to launch the browser
+process", a container sandbox/provisioning issue; playwright's own install
+succeeds and is not what mermaid-cli uses). Render it from whatever
+environment produced the 2026-08-24 22/22 suite; the freshness check will
+flag the pair until then.
 
 ## The spec as approved (kept for the record)
 
