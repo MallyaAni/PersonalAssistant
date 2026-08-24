@@ -94,6 +94,58 @@ capability with no backend). The 9B is additionally gated + FLUX
 Non-Commercial; the 4B is Apache/ungated. Checkpoints are on the powered-off
 desktop and must be re-fetched from HuggingFace (reachable from spark1).
 
+## NEXT FEATURE — active recall: `search_history` (specced 2026-08-24, operator-approved)
+
+**The gap it closes.** Recall today is passive: top-3 similar past remarks are
+injected before the model answers. A detail that was never fact-shaped, got
+compressed out of the digest, and does not resemble the current wording sits in
+Postgres but never reaches the model — recorded, not recallable. The operator's
+stated bar is "recall anything at any point in time"; the fix is letting the
+model *search its own transcript store* on demand, the way it can already
+search the web.
+
+**What exists to build on (all verified in source).**
+`Conversation` rows are one per exchange with a pgvector `embedding` per turn
+(`memory/repository.py::get_recalled_turns` is the passive query — user-scoped,
+`embedding IS NOT NULL`, excludes the current conversation). Builtins are one
+`BuiltinTool` row each (`tools/base.py`; label + router description in one
+place), actions are frozen dataclasses in `tools/actions.py`, and search
+evidence is injected at `conversation_service.py:1678` (`context["search"]`)
+where it rides the "evidence" prompt section and the context budget.
+
+**The build.**
+1. `RecallHistoryAction(query: str)` in `tools/actions.py`. It must join
+   `SearchAction`/`ToolboxAction` as the *third* action kind that survives to
+   the reply path (that list is currently hardcoded to two — see the
+   2026-08-20 handoff entry on dropped actions).
+2. A `BuiltinTool` row: name `search_history`, schema `{query}` required
+   (`required_text` house rule: empty query = no call). Description states the
+   principle, not cases: it fires when the user refers to something from a
+   past conversation that is not in view; a question answerable from what is
+   already visible selects no tool.
+3. Execution: embed the query with the existing provider, then a wider
+   variant of `get_recalled_turns` — top ~12, cosine ≤ 0.6 (passive recall's
+   0.45/top-3 stays untouched), exclude the current conversation, return
+   `{when, said, answered}` snippets with timestamps. **No SQL text search is
+   possible** — `query`/`response` are `EncryptedText` — so any keyword
+   refinement happens Python-side over a bounded candidate set (e.g. the top
+   200 by embedding), never a full-table decrypt scan.
+4. Inject results into `context["search"]`-shaped evidence (untrusted-literal
+   framing like everything retrieved), so budgeting, enforcement, and the
+   buried-evidence gate apply unchanged. The iMessage worker gets the feature
+   for free — same `process_request`.
+5. Tests: structural (scoping, exclusion, empty-query-no-call) plus
+   functional per the completion rule — a seeded old remark is found and used
+   in the answer; the existing 52-case routing floor still passes so ordinary
+   turns don't start misfiring into recall; assert properties, not wording.
+   Routing on a 4B model is the known risk (see "The 4B ceiling") — measure
+   the tool's trigger precision before trusting it, and keep the description
+   subject-shaped, not phrase-shaped.
+
+Latency cost: one embedding call + one pgvector query on selected turns only.
+Diagram impact to assess at build time: chat-orchestration view if action
+flows are drawn there.
+
 ## Code review pass — 2026-08-24, and what it deferred
 
 A full review of the 63 commits since the iMessage work closed a chain of
