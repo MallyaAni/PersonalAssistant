@@ -2313,6 +2313,7 @@ export const requestAccess = async (
   displayName: string,
   username: string,
   password: string,
+  phone: string,
   reason: string,
 ): Promise<{ request_token: string; status: string }> =>
   readJson(
@@ -2324,6 +2325,11 @@ export const requestAccess = async (
         display_name: displayName,
         username,
         password,
+        // Required. The number is what the iMessage bridge recognises an
+        // approved person by, so it is sent as typed and validated server-side
+        // - the server owns the rule, and a second copy of it here would be
+        // one more thing to keep in step.
+        phone,
         reason: reason || null,
       }),
     }),

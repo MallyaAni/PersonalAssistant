@@ -103,9 +103,10 @@ TOOL = BuiltinTool(
         "that time - 'change the tesla reminder to 5 minutes from now'. "
         "Rescheduling is a single call; never answer as though a reminder "
         "moved without making it. "
-        "Not for Scout or any discovery agent: when the conversation is about "
-        "an agent's sweep, a follow-up about its schedule is about that agent "
-        "and needs no tool."
+        "One exception: the events sweep's OWN cadence - how often Scout "
+        "looks for things near them - is agent configuration and needs no "
+        "tool. Everything else the person has scheduled, including any "
+        "recurring search or report, is a task and belongs here."
     ),
     schema=_SCHEMA,
     waiting=(

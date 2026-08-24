@@ -14,10 +14,24 @@ never is.** A prompt is the agent's judgement written out, and it differs per
 agent even when the calling code is identical. The domain package holds the
 machinery the agent drives.
 
-## Scout — ambient discovery
+## Scout — standing work
 
-Finds things happening near you that match what you like, on a schedule, and
-turns each one into something you can act on.
+Scout is the scheduling agent: anything the person wants to happen on a
+schedule rather than right now. Two shapes of the same job.
+
+The first is the ambient sweep it started as - a recurring search for things
+happening near you that match your interests, each turned into something you
+can act on. The second is anything else asked for on a schedule: a recurring
+search, lookup, report or reminder, on any subject, needing no interests and no
+locality.
+
+The mechanisms differ and that is an implementation detail, not a product
+boundary. The sweep runs from `backend/discovery/` on a cadence; an arbitrary
+scheduled request is carried by the `schedule_task` tool and the task runner in
+`backend/workers/task_runner.py`, and fires as an ordinary turn delivered to
+the person's channel. To the person asking, both are Scout, and every surface -
+the agent card, this catalog, the diagrams and the assistant's own answers -
+says so.
 
 | | |
 | --- | --- |

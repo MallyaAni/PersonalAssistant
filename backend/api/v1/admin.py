@@ -1,3 +1,4 @@
+import logging
 """Operator-only administration of invitations and accounts.
 
 Every route here is guarded by `require_admin` rather than by ownership. The
@@ -40,6 +41,8 @@ from backend.models.auth import (
     UserSession,
 )
 from backend.search.tavily import TavilyUsageClient
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -468,12 +471,61 @@ async def approve_access_request(
         # The hash now lives on the account; there is no reason to keep a second
         # copy on a decided request.
         row.password_hash = None
+
+        # Approving is also the moment they become reachable. The iMessage
+        # bridge identifies a sender by matching against the subscriber
+        # allowlist, so without this an approved person can sign in on the web
+        # and still be a stranger to the bridge - their texts ignored, with
+        # nothing anywhere saying why.
+        #
+        # Enrolled as consented because the number was given for exactly this
+        # purpose, by the person themselves, in the request the operator is
+        # approving. A failure here must not undo the account: being reachable
+        # is a smaller thing than existing, and the operator can enrol the
+        # number by hand.
+        bridge = "not_applicable"
+        if row.phone:
+            from backend.discovery.subscribers import SubscriberRepository
+
+            try:
+                await SubscriberRepository(db).enroll(
+                    user_id=account.user_id,
+                    channel="imessage",
+                    address=row.phone,
+                    label="Given at sign-up",
+                    consented=True,
+                )
+            except Exception:
+                logger.warning(
+                    "Approved %s but could not enrol their number for iMessage; "
+                    "they will need enrolling by hand",
+                    account.user_id,
+                    exc_info=True,
+                )
+            else:
+                # Two allowlists, one decision. Enrolling above only teaches
+                # AniOS whose account a sender belongs to; the Mac keeps its
+                # own list and is the last hop before a message reaches a real
+                # person. Approving here and listing the number there were kept
+                # by hand once and drifted - a subscriber approved, her digest
+                # built on time, and the bridge refusing it at the last hop
+                # with nothing in the run to say why.
+                #
+                # Returned rather than raised: the account exists and the
+                # person can use the web either way, and "granted" vs
+                # "unreachable" is something the operator should see rather
+                # than something that should undo an approval.
+                bridge = await grant_recipient_on_bridge("imessage", row.phone)
+
         await db.commit()
         return {
             "id": str(request_id),
             "status": "approved",
             "user_id": account.user_id,
             "account_created": True,
+            # So the operator can see whether they are actually reachable, not
+            # only that the account exists.
+            "bridge": bridge,
         }
 
     # Older requests carry no credentials, so they keep the token path they were

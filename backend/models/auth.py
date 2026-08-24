@@ -16,6 +16,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
 from backend.database.session import Base
+from backend.database.types import EncryptedText
 
 
 class UserAccount(Base):
@@ -134,6 +135,16 @@ class AccessRequest(Base):
     token_digest: Mapped[str] = mapped_column(String(64), nullable=False)
     display_name: Mapped[str] = mapped_column(Text, nullable=False)
     contact: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # The number the iMessage bridge will recognise them by. Sealed, like every
+    # other contact detail here, with the digest carrying lookup - the bridge
+    # matches a sender by normalized digest, so the plaintext is never needed
+    # to answer "is this person allowed to text".
+    #
+    # Nullable in the column and required by the API: requests made before this
+    # field existed cannot be back-filled from anything, and inventing a number
+    # for a real person is worse than a null.
+    phone: Mapped[str | None] = mapped_column(EncryptedText, nullable=True)
+    phone_digest: Mapped[str | None] = mapped_column(String(64), nullable=True)
     reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     # The credentials they chose when asking, so approving creates the account
     # in one step rather than handing back a token they must redeem later.

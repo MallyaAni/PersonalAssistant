@@ -10,6 +10,8 @@ from backend.config.settings import settings
 from backend.core.auth import IdentityDependency, validate_browser_origin
 from backend.core.auth_dependencies import LoginRateLimiterDependency
 from backend.core.dependencies import DbDependency
+from backend.core.phone import matching_key
+from backend.discovery.types import label_digest
 from backend.models.auth import AccessRequest, UserAccount
 from backend.services.auth_service import (
     AuthService,
@@ -282,6 +284,12 @@ class AccessRequestBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     display_name: str = Field(min_length=1, max_length=80)
+    # Required, and not for contactability. The iMessage bridge decides who
+    # is talking by matching a sender against the subscriber allowlist, so
+    # this number is what makes an approved person reachable at all.
+    # Collected here so approval is one decision rather than two, and the
+    # operator can see the number they are admitting.
+    phone: str = Field(min_length=1, max_length=32)
     contact: str | None = Field(default=None, max_length=120)
     reason: str | None = Field(default=None, max_length=500)
     # Chosen here so approval creates the account outright. Same rules as
@@ -289,6 +297,20 @@ class AccessRequestBody(BaseModel):
     # being told the username is taken should not wait on a human.
     username: str = Field(min_length=1, max_length=50)
     password: str = Field(min_length=12, max_length=1_024)
+
+    # E.164 or nothing. A bare ten-digit number is a valid local number in
+    # several countries at once and nothing in the string says which, so
+    # the country code is what lets one allowlist serve people in
+    # different places.
+    @field_validator("phone")
+    @classmethod
+    def check_phone(cls, value: str) -> str:
+        from backend.core.phone import InvalidPhoneNumber, to_e164
+
+        try:
+            return to_e164(value)
+        except InvalidPhoneNumber as bad:
+            raise ValueError(str(bad)) from bad
 
 
 # Ask the operator for an account.
@@ -346,6 +368,8 @@ async def request_access(
             token_digest=digest_registration_invite(token),
             display_name=body.display_name.strip(),
             contact=(body.contact or "").strip() or None,
+            phone=body.phone,
+            phone_digest=label_digest(matching_key(body.phone)),
             reason=(body.reason or "").strip() or None,
             desired_username=desired,
             # Hashed on arrival; the plaintext is never stored and never needed

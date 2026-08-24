@@ -127,21 +127,22 @@ async def describe(session: AsyncSession, user_id: str) -> AgentSummary:
         id="discovery",
         name="Scout",
         role=(
-            "Finds things happening near you that match what you like, "
-            "and turns each one into a calendar entry. Scout is the "
-            "interests-and-events sweep specifically - it is not the general "
-            "scheduler. Anything else the person wants done on a schedule, "
-            "including a recurring search, lookup, or report on any subject, "
-            "is a scheduled task and does not need Scout or an interest."
+            "Scout is the standing-work agent: anything that should happen on "
+            "a schedule rather than right now. That covers a recurring sweep "
+            "for things happening near you that match your interests, each "
+            "turned into a calendar entry, and equally a recurring search, "
+            "lookup, or report on any subject at all. Interests are what the "
+            "events sweep needs; they are not a requirement for scheduling "
+            "something, and no subject is out of scope."
         ),
         status=status,
         detail=detail,
         trigger="Weekly schedule" if schedule else "On request",
         setup_needs=(
-            "interests to follow, a home locality, a cadence with an hour "
-            "and timezone, and somewhere to deliver to - these are Scout's "
-            "requirements, not requirements for scheduling something in "
-            "general"
+            "for the events sweep: interests to follow, a home locality, a "
+            "cadence with an hour and timezone, and somewhere to deliver to. "
+            "Scheduling anything else needs none of those - only a time and "
+            "what to do"
         ),
         last_active_at=latest.completed_at if latest else None,
         facts=tuple(facts),

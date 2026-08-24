@@ -1,5 +1,5 @@
 ---
-title: Scout Agent Responsibilities
+title: Scout - Standing Work (the sweep, and anything else on a schedule)
 ---
 flowchart TB
     Statement([User states profile facts]) --> Extract[DeepSeek V4 Flash<br/>returns typed memory proposals]
@@ -9,6 +9,11 @@ flowchart TB
     Review -->|approved| Facts[(Approved memory facts)]
 
     Trigger([Schedule or Look now]) --> Sweep[Scout sweep]
+
+    AnyAsk([Schedule anything else:<br/>a search, lookup, report or reminder]) --> Task[schedule_task<br/>no interests or locality needed]
+    Task --> Runner[Task runner<br/>fires as an ordinary turn]
+    Runner --> Sent([Delivered to their channel])
+
     Profile --> Sweep
     Facts --> Aim[DeepSeek V4 Flash<br/>aims subjects and vectors]
     Aim --> Sweep

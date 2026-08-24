@@ -8,12 +8,13 @@ confident answer about a city 200 miles away, with nothing wrong-looking about
 it. Their locality was stored correctly the whole time; it was simply never
 shown to the model. The clock line now carries the place.
 
-**What Scout is.** Scout is the interests-and-events sweep. A separate
-capability, `schedule_task`, will schedule anything - including a recurring
-search or lookup on any subject. The two sit next to each other in the prompt,
-and a question about scheduling answered through Scout's frame comes back
-wrongly narrow: "you need interests" is Scout's requirement, not the
-scheduler's. Scout's card now says what Scout is not.
+**What Scout is.** Scout is the scheduling agent for anything the person wants
+to happen on a schedule - the ambient events sweep it started as, and equally a
+recurring search, lookup or report on any subject. Those run on different
+mechanisms underneath, and that is an implementation detail rather than a
+product boundary. The failure this pins is the old narrow framing leaking:
+answering "schedule this weekly search" with the events sweep's requirements,
+as though interests and a locality were needed. They are not.
 
 **Which events are still ahead.** Scout's scheduled digest filters past finds
 and labels undated ones honestly ("I found a few possibilities, but couldn't
@@ -90,12 +91,13 @@ async def test_scheduling_anything_is_not_gated_on_interests(llm) -> None:
     locality - as though those were needed. They are not.
     """
     roster = (
-        "Scout: Finds things happening near you that match what you like, and "
-        "turns each one into a calendar entry. Scout is the "
-        "interests-and-events sweep specifically - it is not the general "
-        "scheduler. Anything else the person wants done on a schedule, "
-        "including a recurring search, lookup, or report on any subject, is a "
-        "scheduled task and does not need Scout or an interest."
+        "Scout: Scout is the standing-work agent: anything that should happen "
+        "on a schedule rather than right now. That covers a recurring sweep "
+        "for things happening near you that match your interests, each turned "
+        "into a calendar entry, and equally a recurring search, lookup, or "
+        "report on any subject at all. Interests are what the events sweep "
+        "needs; they are not a requirement for scheduling something, and no "
+        "subject is out of scope."
     )
     capability = (
         "Scheduled tasks: Set something up to happen later or on a schedule: a "

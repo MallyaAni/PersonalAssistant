@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { ArrowLeft, ArrowRight, LockKeyhole, UserRound } from 'lucide-react'
+import { ArrowLeft, ArrowRight, LockKeyhole, Phone, UserRound } from 'lucide-react'
 import { login, requestAccess, type AuthSession } from '../../services/api'
 import { Logo } from '../Logo/Logo'
 
@@ -15,6 +15,7 @@ const LoginScreen = ({ onAuthenticated }: LoginScreenProps) => {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [reason, setReason] = useState('')
+  const [phone, setPhone] = useState('')
   const [isSubmitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   // Set once the request is in. Signing up no longer signs anyone in, so the
@@ -37,7 +38,13 @@ const LoginScreen = ({ onAuthenticated }: LoginScreenProps) => {
       } else {
         // Creating a profile records a request; it does not create an account.
         // The credentials entered here become the account's own when approved.
-        await requestAccess(displayName.trim() || username, username, password, reason)
+        await requestAccess(
+          displayName.trim() || username,
+          username,
+          password,
+          phone.trim(),
+          reason,
+        )
         setAwaitingApproval(true)
       }
     } catch (reason) {
@@ -54,6 +61,7 @@ const LoginScreen = ({ onAuthenticated }: LoginScreenProps) => {
     setConfirmPassword('')
     setDisplayName('')
     setReason('')
+    setPhone('')
     setError('')
     setAwaitingApproval(false)
   }
@@ -63,6 +71,10 @@ const LoginScreen = ({ onAuthenticated }: LoginScreenProps) => {
     || !username.trim()
     || !password
     || (isRegistration && !confirmPassword)
+    // The number is required, but only its presence is checked here. The
+    // server owns the format rule and returns a message worth reading; a
+    // second copy of E.164 in the browser is one more thing to keep in step.
+    || (isRegistration && !phone.trim())
 
   if (awaitingApproval) {
     return (
@@ -169,6 +181,26 @@ const LoginScreen = ({ onAuthenticated }: LoginScreenProps) => {
                     placeholder="So the owner knows who is asking"
                   />
                 </div>
+              </label>
+              <label className="block space-y-1.5">
+                <span className="text-sm font-medium">Phone number</span>
+                <div className="relative">
+                  <Phone className="pointer-events-none absolute left-3.5 top-3.5 text-[#86868b]" size={18} />
+                  <input
+                    aria-label="Phone number"
+                    autoComplete="tel"
+                    inputMode="tel"
+                    value={phone}
+                    onChange={event => setPhone(event.target.value)}
+                    className="h-12 w-full rounded-xl border border-black/[0.14] bg-white pl-11 pr-3.5 text-base outline-none transition focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/15"
+                    maxLength={32}
+                    placeholder="+1 202 555 0100"
+                  />
+                </div>
+                <span className="block text-xs leading-5 text-[#6e6e73]">
+                  Include your country code. This is the number the assistant will
+                  recognise you by over iMessage once you are approved.
+                </span>
               </label>
               <label className="block space-y-1.5">
                 <span className="text-sm font-medium">Anything to add <span className="font-normal text-[#86868b]">(optional)</span></span>
