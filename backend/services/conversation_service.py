@@ -618,6 +618,16 @@ class ConversationService:
             now = datetime.now(ZoneInfo(zone))
         except Exception:
             return None
+        # The place, not only the zone. The zone was the single geographic
+        # string in the prompt, and IANA names a representative city rather
+        # than the person's: someone in Arlington, Virginia carries
+        # America/New_York, so asked for the weather the model filled the
+        # location argument with "New York" - a real answer about the wrong
+        # city, 200 miles away, with nothing wrong-looking about it.
+        place = await self._primary_place(user_id)
+        where = place[0] if place else ""
+        if where:
+            return f"{now:%A %Y-%m-%d %H:%M} - they are in {where} ({zone})"
         return f"{now:%A %Y-%m-%d %H:%M} ({zone})"
 
     # Answer the turn as though no tool had been chosen.
@@ -2413,6 +2423,35 @@ class ConversationService:
         return True
 
     # The timezone of the user's primary locality, or None when they have none.
+    async def _primary_place(self, user_id: str) -> tuple[str, str] | None:
+        """Where the person is, as (label, timezone), or None if unknown.
+
+        Travel wins over home when a trip is active, because the answer to
+        "what's the weather" is about where they are standing.
+        """
+        try:
+            profile = await self.discovery_profile.get_profile(user_id)
+        except Exception:
+            logger.warning("Discovery profile unavailable", exc_info=True)
+            return None
+        localities = getattr(profile, "localities", ()) or ()
+        ordered = sorted(
+            localities,
+            key=lambda item: (
+                not getattr(item, "is_travel_active", False),
+                not getattr(item, "is_primary", False),
+            ),
+        )
+        for locality in ordered:
+            zone = str(getattr(locality, "timezone", "") or "")
+            label = str(getattr(locality, "label", "") or "")
+            region = str(getattr(locality, "region", "") or "")
+            if not zone:
+                continue
+            where = ", ".join(part for part in (label, region) if part)
+            return where, zone
+        return None
+
     async def _primary_timezone(self, user_id: str) -> str | None:
         try:
             profile = await self.discovery_profile.get_profile(user_id)
