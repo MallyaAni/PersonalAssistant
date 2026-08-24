@@ -1,0 +1,16 @@
+# Nightly at 03:30, which is the quietest hour on this box: the ambient sweep
+# has finished and the maintenance sweepers run earlier.
+[Unit]
+Description=Nightly anios_db backup
+
+[Timer]
+OnCalendar=*-*-* 03:30:00
+# Spread the start over five minutes. Nothing else competes for this window
+# today, but a fixed second is the kind of thing that collides later.
+RandomizedDelaySec=300
+# The Sparks are not always up. Without this a backup missed to a reboot is
+# simply skipped, and the gap is invisible until you need the dump.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -169,6 +169,16 @@ services:
     # bridge would silently replay or skip messages with nothing logged.
     volumes:
       - redisdata:/data
+    # Append-only, because the snapshot default loses the cursor. `save 3600 1`
+    # means an idle-ish hour can pass between snapshots, so a crash rolls the
+    # read cursor back to whatever it was at the last one - and the seen-guid
+    # markers that would have caught the replay roll back in the same snapshot,
+    # so they cannot. The user gets answered twice for messages already handled.
+    # everysec bounds that to about a second of writes; this is 6k small keys,
+    # so the fsync cost is not measurable against the failure it removes.
+    command: >-
+      redis-server --appendonly yes --appendfsync everysec
+      --save 3600 1 300 100 60 10000
     logging: *bounded-logs
     ports:
       - "6379:6379"

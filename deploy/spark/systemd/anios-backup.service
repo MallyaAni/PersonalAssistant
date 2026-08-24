@@ -1,0 +1,24 @@
+# A backup that only runs when someone deploys is not a backup schedule, it is
+# a coincidence. Before this timer existed the database had two dumps to its
+# name, days apart, because that is when a deploy happened to call the script.
+[Unit]
+Description=Dump anios_db and mirror it off this machine
+# The dump talks to the db container, so Docker has to be up. Wants rather
+# than Requires: if Docker is late the timer's next run gets it, and a failed
+# start here should not mark the unit broken.
+Wants=docker.service
+After=docker.service network-online.target
+
+[Service]
+Type=oneshot
+User=animallya96
+WorkingDirectory=/home/animallya96/anios
+# sg docker, not a plain call: the user is in the docker group but a systemd
+# service does not pick up group membership from a login shell.
+ExecStart=/usr/bin/sg docker -c "/bin/bash scripts/backup-db.sh"
+# The dump is single-threaded and small; this is a ceiling against a hung
+# container holding the timer open until the next firing.
+TimeoutStartSec=1800
+
+[Install]
+WantedBy=multi-user.target
