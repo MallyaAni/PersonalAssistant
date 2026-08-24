@@ -44,6 +44,14 @@ echo "Backed up $tables tables to data/backups/$(basename "$target")"
 #
 # Never fatal. A backup that succeeded locally and could not be copied is still
 # a backup, and exiting non-zero here would abort the deploy that called it.
+# Read the mirror target from .env like the database settings above, not only
+# from the environment. Setting it in .env and finding the script had ignored it
+# is the shape of mistake this whole section exists to prevent.
+if [[ -z "${BACKUP_MIRROR_HOST:-}" && -f "$root/.env" ]]; then
+    BACKUP_MIRROR_HOST="$(grep -m1 -E '^\s*BACKUP_MIRROR_HOST\s*=' "$root/.env" | cut -d= -f2- | tr -d ' ' || true)"
+    BACKUP_MIRROR_PATH="${BACKUP_MIRROR_PATH:-$(grep -m1 -E '^\s*BACKUP_MIRROR_PATH\s*=' "$root/.env" | cut -d= -f2- | tr -d ' ' || true)}"
+fi
+
 if [[ -n "${BACKUP_MIRROR_HOST:-}" ]]; then
     mirror_dir="${BACKUP_MIRROR_PATH:-~/anios-backups}"
     if ssh -o BatchMode=yes -o ConnectTimeout=10 "$BACKUP_MIRROR_HOST"         "mkdir -p $mirror_dir" 2>/dev/null        && scp -o BatchMode=yes -o ConnectTimeout=10 -q         "$target" "$BACKUP_MIRROR_HOST:$mirror_dir/" 2>/dev/null; then
