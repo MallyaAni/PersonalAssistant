@@ -615,12 +615,25 @@ async def test_a_plain_message_pins_nothing(monkeypatch):
 def test_the_bubble_ledger_only_stores_real_guids():
     from backend.workers.imessage_chat import _message_guid
 
+    # A sentinel answer is not a guid and must not become a ledger key.
     assert _message_guid("sent with attachment") is None
-    assert (
-        _message_guid("iMessage;-;ABCDEF01-2345-6789-ABCD-EF0123456789")
-        == "iMessage;-;ABCDEF01-2345-6789-ABCD-EF0123456789"
-        or _message_guid("iMessage;-;ABCDEF01-2345-6789-ABCD-EF0123456789") is not None
-    )
+    assert _message_guid("sent") is None
+    # A real answer comes back as the identifier the ledger keys on.
+    handle = "iMessage;-;ABCDEF01-2345-6789-ABCD-EF0123456789"
+    assert _message_guid(handle) == handle
+
+
+def test_a_reply_resolves_the_bubble_it_was_written_under():
+    # The write form (send-answer, service-prefixed) and the read form (a
+    # native reply's originator, association-prefixed) must reduce to one key,
+    # or a reply silently never finds the picture it answers.
+    from backend.workers.imessage_chat import _bare_guid
+
+    guid = "ABCDEF01-2345-6789-ABCD-EF0123456789"
+    assert _bare_guid(f"iMessage;-;{guid}") == guid
+    assert _bare_guid(f"p:0/{guid}") == guid
+    assert _bare_guid(guid) == guid
+    assert _bare_guid("") == ""
 
 
 # A diagram is SVG and the bridge's attachment allowlist rightly refuses

@@ -352,7 +352,8 @@ def _chat_db(tmp_path: Path) -> Path:
             associated_message_type INTEGER DEFAULT 0,
             associated_message_guid TEXT,
             item_type INTEGER DEFAULT 0,
-            thread_originator_guid TEXT
+            thread_originator_guid TEXT,
+            cache_has_attachments INTEGER DEFAULT 0
         );
         CREATE TABLE handle (ROWID INTEGER PRIMARY KEY, id TEXT);
         CREATE TABLE chat (ROWID INTEGER PRIMARY KEY, room_name TEXT, style INTEGER);
@@ -1008,6 +1009,51 @@ def test_an_ordinary_message_has_no_reply_to_guid(tmp_path):
 
     (message,) = incoming_messages(config, since_ns=_ns_ago(60))["messages"]
     assert "reply_to_guid" not in message
+
+
+def test_a_captionless_attachment_guid_is_read_back_by_recency(tmp_path):
+    from server import _apple_time, latest_sent_attachment_guid
+
+    # A picture with no caption has no body to match on, so its guid is read
+    # from the newest outgoing row carrying an attachment. This is the path the
+    # worker's image sends take, and the bubble->artifact ledger depends on it.
+    config = _incoming_config(tmp_path)
+    db = sqlite3.connect(config.incoming_db)
+    # An older captioned send and a newer attachment send; the attachment one
+    # must win despite being an empty-body row.
+    db.execute(
+        "INSERT INTO message (guid, text, handle_id, is_from_me, date,"
+        " associated_message_type, cache_has_attachments) VALUES (?,?,?,?,?,?,?)",
+        ("older-text", "hello", 0, 1, _apple_time(datetime.now(UTC)) - 5 * _NS, 0, 0),
+    )
+    db.execute(
+        "INSERT INTO message (guid, text, handle_id, is_from_me, date,"
+        " associated_message_type, cache_has_attachments) VALUES (?,?,?,?,?,?,?)",
+        ("the-photo", None, 0, 1, _apple_time(datetime.now(UTC)), 0, 1),
+    )
+    db.commit()
+    db.close()
+
+    assert latest_sent_attachment_guid(config) == "the-photo"
+
+
+def test_an_empty_body_never_matches_a_text_guid(tmp_path):
+    from server import _apple_time, latest_sent_guid
+
+    # An empty body must not match the first NULL-text row it finds - the bug
+    # that let a captionless send pin an unrelated bubble.
+    config = _incoming_config(tmp_path)
+    db = sqlite3.connect(config.incoming_db)
+    db.execute(
+        "INSERT INTO message (guid, text, handle_id, is_from_me, date,"
+        " associated_message_type) VALUES (?,?,?,?,?,?)",
+        ("some-null-row", None, 0, 1, _apple_time(datetime.now(UTC)), 0),
+    )
+    db.commit()
+    db.close()
+
+    assert latest_sent_guid(config, "+15550100", "") is None
+    assert latest_sent_guid(config, "+15550100", "   ") is None
 
 
 def test_a_sent_message_guid_can_be_read_back(tmp_path):

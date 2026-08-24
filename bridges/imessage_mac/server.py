@@ -144,7 +144,9 @@ on run argv
         set attachmentFile to (POSIX file filePath) as alias
         set targetBuddy to participant targetId of targetService
         send attachmentFile to targetBuddy
-        send messageBody to targetBuddy
+        if messageBody is not "" then
+            send messageBody to targetBuddy
+        end if
     end tell
 end run
 """
@@ -466,6 +468,12 @@ def _open_db_reporting(
 def latest_sent_guid(
     config: BridgeConfig, recipient: str, body: str
 ) -> str | None:
+    # An empty body cannot be matched: it equals every NULL-text outgoing row,
+    # of which recent macOS has many, so it would return whichever came first.
+    # An attachment-only send reads its guid through latest_sent_attachment_guid
+    # instead.
+    if not body.strip():
+        return None
     # Either read grant makes the database available, and reading back the
     # guid of a message this bridge itself just sent is the same disclosure
     # under both — so the readback works whenever incoming reading is on, not
@@ -516,6 +524,32 @@ def latest_sent_guid(
     # is almost certainly the one just sent, but "almost" would attach someone
     # else's reaction to a find, so this stops here and reports no identifier.
     return None
+
+
+# The guid of the newest attachment this Mac sent, for an attachment with no
+# caption to match on. Here, unlike a reaction lookup, the newest outgoing row
+# in the window really is the one just sent - the send returned a breath ago -
+# so matching by recency is safe, and it is the only handle a captionless
+# picture has.
+def latest_sent_attachment_guid(config: BridgeConfig) -> str | None:
+    connection, _ = _open_db_reporting(config.messages_db or config.incoming_db)
+    if connection is None:
+        return None
+    since = _apple_time(datetime.now(timezone.utc) - timedelta(seconds=SEND_WINDOW))  # noqa: UP017
+    try:
+        row = connection.execute(
+            """
+            SELECT guid FROM message
+            WHERE is_from_me = 1 AND cache_has_attachments = 1 AND date >= ?
+            ORDER BY date DESC LIMIT 1
+            """,
+            (since,),
+        ).fetchone()
+    except sqlite3.Error:
+        return None
+    finally:
+        connection.close()
+    return str(row[0]) if row else None
 
 
 # How many seconds around a send count as "the message just sent".
@@ -1358,8 +1392,6 @@ def send_message(
 ) -> str:
     recipient = check_recipient(config, to)
     text = body.strip()
-    if not text:
-        raise BridgeError("A message body is required.")
     if len(text) > MAX_BODY_CHARS:
         raise BridgeError("Message body is too long.")
 
@@ -1367,6 +1399,13 @@ def send_message(
         attachment_name, attachment_media_type, attachment_base64
     )
     if attachment is None:
+        # A body is required only for a plain text send. A picture with no
+        # caption is a message too, and the worker sends exactly that - so
+        # requiring a body here rejected every attachment-only send before it
+        # reached the attachment branch, and no image the bridge sent that way
+        # ever left the Mac.
+        if not text:
+            raise BridgeError("A message body is required.")
         run_osascript(_SEND_TEXT, [config.account_id, recipient, text])
         # The identifier a tapback will point at, when this Mac allows it to be
         # read. "sent" otherwise, which is what every caller understood before
@@ -1388,10 +1427,17 @@ def send_message(
     run_osascript(
         _SEND_WITH_ATTACHMENT, [config.account_id, recipient, text, str(path)]
     )
-    # The same guid readback as a text send, so a caller can remember which
-    # bubble carried which picture. "sent with attachment" only when the guid
-    # cannot be read — which is what every caller understood before.
-    return latest_sent_guid(config, recipient, text) or "sent with attachment"
+    # The guid readback, so a caller can remember which bubble carried which
+    # picture. A captioned send matches on its body like a text send; an
+    # attachment with no caption has no body to match, so it reads back the
+    # newest outgoing row that carries an attachment instead. "sent with
+    # attachment" only when the guid cannot be read - what callers saw before.
+    guid = (
+        latest_sent_guid(config, recipient, text)
+        if text
+        else latest_sent_attachment_guid(config)
+    )
+    return guid or "sent with attachment"
 
 
 # Where outbound attachments wait for Messages to pick them up.
@@ -1593,6 +1639,7 @@ __all__: list[Any] = [
     "describe_incoming",
     "extract_body",
     "incoming_messages",
+    "latest_sent_attachment_guid",
     "load_grants",
     "normalize_recipient",
     "send_message",

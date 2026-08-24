@@ -183,6 +183,13 @@ class IMessageChatWorker:
     # the cursor. Returns how many messages were answered, for the log line.
     async def tick(self) -> int:
         cursor = await self._cursor()
+        # Redis unreadable is not "start from now". Polling with -1 would tell
+        # the bridge to skip everything that arrived during the outage and lose
+        # it for good, silently. Skip this tick instead and re-read the cursor
+        # next time; a missed poll costs latency, a reset cursor costs messages.
+        if cursor is None:
+            logger.warning("imessage_chat_cursor_unavailable; skipping this poll")
+            return 0
         try:
             answer = await self.invoke_tool(
                 settings.IMESSAGE_CHAT_READ_TOOL,
@@ -591,18 +598,22 @@ class IMessageChatWorker:
     # entry, or Redis down all mean the reply-to override quietly does not
     # apply and recency stands.
     async def _remember_bubble(self, guid: str, artifact_id: str) -> None:
+        key = _bare_guid(guid)
+        if not key:
+            return
         try:
             await self.redis.set(
-                _BUBBLE_KEY.format(guid=guid), artifact_id, ex=_BUBBLE_TTL_SECONDS
+                _BUBBLE_KEY.format(guid=key), artifact_id, ex=_BUBBLE_TTL_SECONDS
             )
         except Exception:
             return
 
     async def _artifact_for_bubble(self, guid: str) -> str | None:
-        if not guid:
+        key = _bare_guid(guid)
+        if not key:
             return None
         try:
-            return await self.redis.get(_BUBBLE_KEY.format(guid=guid))
+            return await self.redis.get(_BUBBLE_KEY.format(guid=key))
         except Exception:
             return None
 
@@ -724,12 +735,15 @@ class IMessageChatWorker:
             )
             return None
 
-    async def _cursor(self) -> int:
+    # The stored cursor, -1 when there is none (a first run legitimately starts
+    # from now), or None when Redis itself could not be read - which the caller
+    # must treat as "do not poll", not as "start from now".
+    async def _cursor(self) -> int | None:
         try:
             raw = await self.redis.get(_CURSOR_KEY)
-            return int(raw) if raw is not None else -1
         except Exception:
-            return -1
+            return None
+        return int(raw) if raw is not None else -1
 
     async def _remember_cursor(self, cursor: int) -> None:
         try:
@@ -852,6 +866,17 @@ def _loads(text: str) -> dict:
         return parsed if isinstance(parsed, dict) else {}
     except ValueError:
         return {}
+
+
+# The bare message guid, stripped of the two prefixes iMessage wraps it in.
+#
+# The same message reaches the ledger written two ways: the send-answer carries
+# a service prefix ("iMessage;-;<guid>") and a native reply's originator can
+# carry an association prefix ("p:0/<guid>"). Keying on either verbatim means a
+# reply silently never resolves to the bubble it answers. Reduce both to the
+# guid the bridge itself matches on everywhere else.
+def _bare_guid(guid: str) -> str:
+    return (guid or "").split(";")[-1].split("/")[-1].strip()
 
 
 # The bridge answers a JSON string inside the MCP result, in the same shapes
