@@ -35,6 +35,33 @@ target="$directory/${database}-$(date +%Y%m%d-%H%M%S).sql.gz"
 tables="$(gunzip -c "$target" | grep -c '^CREATE TABLE' || true)"
 echo "Backed up $tables tables to data/backups/$(basename "$target")"
 
+# A dump that never leaves the machine is not a backup.
+#
+# Both the database volume and this directory live on the same NVMe device, so
+# one drive failure took the data and every copy of it together. Pushing to the
+# other Spark is not offsite - a fire takes both - but it survives the failure
+# that actually happens, which is one disk.
+#
+# Never fatal. A backup that succeeded locally and could not be copied is still
+# a backup, and exiting non-zero here would abort the deploy that called it.
+if [[ -n "${BACKUP_MIRROR_HOST:-}" ]]; then
+    mirror_dir="${BACKUP_MIRROR_PATH:-~/anios-backups}"
+    if ssh -o BatchMode=yes -o ConnectTimeout=10 "$BACKUP_MIRROR_HOST"         "mkdir -p $mirror_dir" 2>/dev/null        && scp -o BatchMode=yes -o ConnectTimeout=10 -q         "$target" "$BACKUP_MIRROR_HOST:$mirror_dir/" 2>/dev/null; then
+        echo "Mirrored to $BACKUP_MIRROR_HOST:$mirror_dir"
+    else
+        echo "WARNING: could not mirror to $BACKUP_MIRROR_HOST - this copy is on one disk only" >&2
+    fi
+else
+    echo "WARNING: BACKUP_MIRROR_HOST is unset, so this backup is on the same disk as the database" >&2
+fi
+
+# Keep a month of daily dumps rather than every dump ever. Old enough to cover
+# a problem noticed late, bounded enough that nobody has to think about it.
+find "$directory" -name "${database}-*.sql.gz" -type f -mtime +30 -delete 2>/dev/null || true
+# A zero-length or near-empty dump is a failed run wearing a filename. Remove
+# them so the newest file is always a real backup.
+find "$directory" -name "${database}-*.sql.gz" -type f -size -1k -delete 2>/dev/null || true
+
 # Sealed columns are unreadable without the key, so a backup taken with
 # encryption on is only as recoverable as the key is.
 if grep -q '^ENCRYPTION_KEY=.' "$root/.env" 2>/dev/null; then
