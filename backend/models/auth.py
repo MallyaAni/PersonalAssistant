@@ -42,6 +42,13 @@ class UserAccount(Base):
     last_seen_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    # When the unprompted welcome went out, and the only thing preventing a
+    # second one. Null means not yet, including for every account that predates
+    # the welcome - they must not be introduced to an assistant they have been
+    # using for weeks.
+    welcomed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     # Null means the deployment default. An override lets the operator give one
     # person more, or throttle a runaway, without moving the ceiling for all.
     search_monthly_limit: Mapped[int | None] = mapped_column(Integer, nullable=True)

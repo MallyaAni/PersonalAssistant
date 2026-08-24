@@ -25,6 +25,7 @@ from backend.core.auth import AdminDependency, IdentityDependency
 from backend.core.dependencies import (
     DbDependency,
     DependencyDiscoverySubscribers,
+    MainActionSelectorDependency,
     get_search_budget,
     grant_recipient_on_bridge,
 )
@@ -40,6 +41,7 @@ from backend.models.auth import (
     UserAccount,
     UserSession,
 )
+from backend.services.welcome_service import send_welcome_if_new
 from backend.search.tavily import TavilyUsageClient
 
 logger = logging.getLogger(__name__)
@@ -427,6 +429,9 @@ async def approve_access_request(
     identity: IdentityDependency,
     db: DbDependency,
     request_id: UUID,
+    # Injected only so the welcome can be written from the same capability list
+    # the turn router offers, rather than from a paragraph that goes stale.
+    selector: MainActionSelectorDependency,
     ttl_hours: Annotated[int, Query(ge=1, le=MAX_INVITE_HOURS)] = DEFAULT_INVITE_HOURS,
 ) -> dict[str, object]:
     row = await db.get(AccessRequest, request_id)
@@ -517,6 +522,23 @@ async def approve_access_request(
                 # than something that should undo an approval.
                 bridge = await grant_recipient_on_bridge("imessage", row.phone)
 
+        # Being reachable and knowing it are different things. Until now an
+        # approved person got an account and silence: nothing said anything was
+        # listening, what it could do, or that they could simply write to it.
+        #
+        # After the grant, deliberately - the Mac refuses a number it has not
+        # been told about, so introducing someone before that is introducing
+        # them to a message that bounces. Never fatal, and never retried here:
+        # an approval undone because an introduction failed would be a far
+        # worse outcome than an approval with no introduction. The word comes
+        # back in the response so the operator can see which happened.
+        welcome = await send_welcome_if_new(
+            db,
+            user_id=account.user_id,
+            display_name=row.display_name or account.user_id,
+            selector=selector,
+        )
+
         await db.commit()
         return {
             "id": str(request_id),
@@ -526,6 +548,10 @@ async def approve_access_request(
             # So the operator can see whether they are actually reachable, not
             # only that the account exists.
             "bridge": bridge,
+            # And whether they were actually introduced: "sent", or a word
+            # saying why not, so a silent approval is visible rather than
+            # assumed.
+            "welcome": welcome,
         }
 
     # Older requests carry no credentials, so they keep the token path they were
