@@ -48,14 +48,21 @@ echo "Backed up $tables tables to data/backups/$(basename "$target")"
 # from the environment. Setting it in .env and finding the script had ignored it
 # is the shape of mistake this whole section exists to prevent.
 if [[ -z "${BACKUP_MIRROR_HOST:-}" && -f "$root/.env" ]]; then
-    BACKUP_MIRROR_HOST="$(grep -m1 -E '^\s*BACKUP_MIRROR_HOST\s*=' "$root/.env" | cut -d= -f2- | tr -d ' ' || true)"
-    BACKUP_MIRROR_PATH="${BACKUP_MIRROR_PATH:-$(grep -m1 -E '^\s*BACKUP_MIRROR_PATH\s*=' "$root/.env" | cut -d= -f2- | tr -d ' ' || true)}"
+    BACKUP_MIRROR_HOST="$(grep -m1 -E '^\s*BACKUP_MIRROR_HOST\s*=' "$root/.env" | cut -d= -f2- | tr -d ' 
+' || true)"
+    BACKUP_MIRROR_PATH="${BACKUP_MIRROR_PATH:-$(grep -m1 -E '^\s*BACKUP_MIRROR_PATH\s*=' "$root/.env" | cut -d= -f2- | tr -d ' 
+' || true)}"
 fi
 
 if [[ -n "${BACKUP_MIRROR_HOST:-}" ]]; then
     mirror_dir="${BACKUP_MIRROR_PATH:-~/anios-backups}"
     if ssh -o BatchMode=yes -o ConnectTimeout=10 "$BACKUP_MIRROR_HOST"         "mkdir -p $mirror_dir" 2>/dev/null        && scp -o BatchMode=yes -o ConnectTimeout=10 -q         "$target" "$BACKUP_MIRROR_HOST:$mirror_dir/" 2>/dev/null; then
         echo "Mirrored to $BACKUP_MIRROR_HOST:$mirror_dir"
+        # Prune the mirror on the same terms as the local copy. The find below
+        # only ever sees this machine, so without this the remote side keeps
+        # every dump forever - slowly, invisibly, and only noticed once the
+        # disk it shares with something else fills up.
+        ssh -o BatchMode=yes -o ConnectTimeout=10 "$BACKUP_MIRROR_HOST"             "find $mirror_dir -name '${database}-*.sql.gz' -type f -mtime +30 -delete 2>/dev/null;              find $mirror_dir -name '${database}-*.sql.gz' -type f -size -1k -delete 2>/dev/null"             2>/dev/null || echo "WARNING: mirrored, but could not prune old dumps on $BACKUP_MIRROR_HOST" >&2
     else
         echo "WARNING: could not mirror to $BACKUP_MIRROR_HOST - this copy is on one disk only" >&2
     fi
