@@ -4,10 +4,10 @@ title: Multimodal Artifact Reference and Image Editing
 flowchart LR
     User([User message]) --> Choice{Artifact selected?}
     Choice -->|yes| Selected[Explicit image ID]
-    Choice -->|no| Gate{Qwen 3.5 4B<br/>artifact modality gate}
+    Choice -->|no| Gate{DeepSeek V4 Flash<br/>artifact modality gate}
     Gate -->|image required| Candidates[Owner-scoped pixel vectors<br/>then description vectors]
     Gate -->|none required| Ordinary[Continue without<br/>private artifact retrieval]
-    Candidates --> Policy[Qwen 3.5 4B<br/>referent resolution]
+    Candidates --> Policy[DeepSeek V4 Flash<br/>referent resolution]
     Selected --> Guard[Ownership, readiness<br/>and lineage]
     Policy -->|one match| Guard
     Policy -->|ambiguous or absent| Clarify[Show matching images<br/>or ask for detail]

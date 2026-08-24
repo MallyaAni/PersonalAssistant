@@ -14,7 +14,7 @@ flowchart TB
     Store --> Shortlist
     Preferences[(Approved preferences<br/>and sanitized outcomes)] --> Shortlist
     Shortlist --> Inference
-    Inference -->|main role| Select[Qwen 3.5 4B via vLLM<br/>native tool selection]
+    Inference -->|main role| Select[DeepSeek V4 Flash via vLLM<br/>native tool selection]
 
     Explicit([Explicit tool call]) --> Gates
     Select --> Gates[Application invocation gates<br/>trust, confirmation, live schema,<br/>arguments and privacy]
@@ -22,7 +22,7 @@ flowchart TB
     Gates -->|refused| Status[Visible tool status]
     Server --> Result[Bounded result<br/>as untrusted data]
     Result --> Inference
-    Inference -->|main role| Answer[Qwen 3.5 4B via vLLM<br/>final answer]
+    Inference -->|main role| Answer[DeepSeek V4 Flash via vLLM<br/>final answer]
     Result --> Status
 
     MemoryAPI([Tool-memory API]) --> Validate[Ownership and safe fields]

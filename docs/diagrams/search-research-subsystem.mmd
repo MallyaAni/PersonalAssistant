@@ -17,7 +17,7 @@ flowchart TB
     Tavily --> Sources
     Sources --> Context[Quoted untrusted<br/>research context]
     Context --> Inference[Provider-neutral<br/>inference adapter]
-    Inference --> Main[Qwen 3.5 4B via vLLM<br/>cited answer]
+    Inference --> Main[DeepSeek V4 Flash via vLLM<br/>cited answer]
     Main --> UI[Answer, sources,<br/>and visible search status]
 
     Quota[(Local daily Google quota)] -.-> Policy

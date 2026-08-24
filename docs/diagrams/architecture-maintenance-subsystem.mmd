@@ -6,7 +6,7 @@ flowchart TB
     Request --> Guards{Local model, safe paths,<br/>bounded context?}
     Guards -->|no| Reject[Reject request]
     Guards -->|yes| Agent[DiagramAgent]
-    Agent --> Qwen[Qwen 3.5 4B via vLLM<br/>candidate call]
+    Agent --> Qwen[DeepSeek V4 Flash via vLLM<br/>candidate call]
     Qwen --> Validate{Valid passive Mermaid<br/>with required labels?}
     Validate -->|one correction| Agent
     Validate -->|no| Reject

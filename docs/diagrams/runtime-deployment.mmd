@@ -12,7 +12,7 @@ flowchart TB
         MCP[Local capability MCP<br/>:8001]
         Renderer[PPTX renderer<br/>:8002]
         Adapters[In-process provider-neutral<br/>inference adapters]
-        VLLMMain[vLLM main :8003<br/>Qwen 3.5 4B FP8<br/>generation and vision]
+        VLLMMain[vLLM :8000 DeepSeek V4 Flash FP8, TP=2<br/>vLLM :8001 Qwen3-VL-8B AWQ on spark2<br/>generation and vision are separate models now]
         VLLMEmbed[vLLM embedding :8004<br/>Nomic text embeddings]
         Stores[(PostgreSQL and pgvector<br/>accounts and sessions<br/>Redis lease and artifact volume)]
         VLLMMain -.->|healthy before start| VLLMEmbed

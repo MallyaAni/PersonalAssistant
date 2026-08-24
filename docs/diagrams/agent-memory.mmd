@@ -2,7 +2,7 @@
 title: Memory Capture Agent Responsibilities
 ---
 flowchart TB
-    Turn([Every ordinary chat turn]) --> Model[Qwen 3.5 4B<br/>reads only this message]
+    Turn([Every ordinary chat turn]) --> Model[DeepSeek V4 Flash<br/>reads only this message]
     Model --> Typed[Typed candidates<br/>name · interests · locality · facts]
     Typed -->|nothing worth saving| NoWrite[Nothing saved]
     Typed -->|classified| Facts[(Auto-saved memory facts<br/>no approval step)]

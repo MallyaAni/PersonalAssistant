@@ -15,7 +15,7 @@ flowchart TB
     Research -->|disabled, blocked or failed| Gate
     Agent --> Gate[Redis foreground-priority gate]
     Gate --> Inference[Provider-neutral<br/>inference adapter]
-    Inference --> Qwen[Qwen 3.5 4B via vLLM<br/>outline, slide, or edit]
+    Inference --> Qwen[DeepSeek V4 Flash via vLLM<br/>outline, slide, or edit]
     Qwen --> Compiler[Deterministic editable<br/>DeckSpec compiler<br/>seven measured layouts]
     API -->|delete or reorder: no model| Permute[Deterministic deck permutation]
     Permute --> Render

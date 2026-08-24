@@ -6,9 +6,9 @@ flowchart TB
     Forget([Delete all personal memory]) --> Repository
     Guard --> Route{Capability}
 
-    Route -->|diagram| Diagram[Qwen 3.5 4B<br/>validated Mermaid]
+    Route -->|diagram| Diagram[DeepSeek V4 Flash<br/>validated Mermaid]
     Route -->|new or edit| Image[FLUX.2 Klein<br/>generation or source edit]
-    Route -->|analyze| Vision[Qwen 3.5 4B inspection<br/>plus optional specialist retry]
+    Route -->|analyze| Vision[Qwen3-VL-8B inspection<br/>plus optional specialist retry]
     Route -->|recall| Recall[One Qwen modality gate<br/>then ranked owned retrieval]
 
     Vision --> Confidence[Evidence-aware answer<br/>only high-confidence identity is indexed]

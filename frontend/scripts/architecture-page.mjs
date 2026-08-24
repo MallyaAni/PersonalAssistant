@@ -161,15 +161,27 @@ const metrics = [
     good: false,
   },
   {
-    label: "Generation & vision",
-    value: "Qwen 3.5 4B",
-    note: "chat, tools, diagrams, decks, image understanding",
+    label: "Generation",
+    value: "DeepSeek V4 Flash",
+    note: "official FP8 &middot; tensor-parallel across both Sparks &middot; 1M context",
     good: false,
   },
   {
-    label: "Text embeddings",
-    value: "Nomic v1.5",
-    note: "768-dimensional retrieval through vLLM",
+    label: "Vision",
+    value: "Qwen3-VL-8B",
+    note: "AWQ on spark2 &middot; NVFP4 emits wrong output on sm_121",
+    good: false,
+  },
+  {
+    label: "Embeddings",
+    value: "Nomic v1.5, aligned",
+    note: "768-dim text and image in one space, one index",
+    good: false,
+  },
+  {
+    label: "Image generation",
+    value: "Not deployed",
+    note: "ComfyUI left with the desktop &middot; fails loudly, not silently",
     good: false,
   },
   {
@@ -180,8 +192,14 @@ const metrics = [
   },
   {
     label: "Backend suite",
-    value: "1166 pass",
-    note: "current full backend suite",
+    value: "2052 collected",
+    note: "collected, not asserted passing &mdash; DB-backed tests need a host",
+    good: true,
+  },
+  {
+    label: "Deploy gate",
+    value: "7 pass, 0 skip",
+    note: "routing matrix against the real router &middot; a skip counts as a failure",
     good: true,
   },
 ];

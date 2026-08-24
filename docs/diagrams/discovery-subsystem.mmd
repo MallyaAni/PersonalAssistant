@@ -3,7 +3,7 @@ title: Scout Discovery Subsystem
 ---
 flowchart LR
     User([User]) --> Chat[Chat or Scout setup]
-    Chat --> Understand[Qwen 3.5 4B<br/>semantic interest proposal]
+    Chat --> Understand[DeepSeek V4 Flash<br/>semantic interest proposal]
     Understand --> Approval{User approves?}
     Approval -->|yes| Memory[Approved memory facts]
     Approval -->|no| Stop[No write]
@@ -13,15 +13,15 @@ flowchart LR
     Profile --> Sweep
     Feeds[Configured feeds] --> Sweep
     Memory --> Context[Screened personal context<br/>approved · bounded]
-    Context --> Aim[Qwen 3.5 4B<br/>query subject and ranking vector]
+    Context --> Aim[DeepSeek V4 Flash<br/>query subject and ranking vector]
     Aim --> Sweep
     Sweep --> Search[MCP web search<br/>Tavily fallback]
     Search --> Candidates[Typed candidate events]
     Candidates --> Rank[Nomic embeddings<br/>deterministic novelty and ranking]
     Rank --> Precision[MiniLM cross-encoder<br/>CPU: orders and attributes]
-    Precision --> Reorder[Qwen 3.5 4B<br/>orders the qualified shortlist]
+    Precision --> Reorder[DeepSeek V4 Flash<br/>orders the qualified shortlist]
     Context --> Reorder
-    Reorder --> Describe[Qwen 3.5 4B<br/>bounded descriptions]
+    Reorder --> Describe[DeepSeek V4 Flash<br/>bounded descriptions]
     Describe --> Result[Digest and calendar]
 
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;

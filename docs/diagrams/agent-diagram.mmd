@@ -4,7 +4,7 @@ title: Diagram Agent Responsibilities
 flowchart TB
     Ask([User asks for a diagram]) --> Route[Deterministic request check]
     Route -->|not a diagram request| Chat[Ordinary chat answer]
-    Route -->|is one| Model[Qwen 3.5 4B<br/>writes title, type, Mermaid]
+    Route -->|is one| Model[DeepSeek V4 Flash<br/>writes title, type, Mermaid]
     Model --> Validate{Validator}
     Validate -->|rejected| Retry[One retry, same prompt]
     Retry --> Model
