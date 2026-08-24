@@ -23,16 +23,18 @@ flowchart TB
     Referent -->|one match| ImageArtifact
     Referent -->|ambiguous or absent| Stream
 
-    Selector -->|search_web, a toolbox<br/>tool, or neither| Memory[MemoryCoordinatorAgent<br/>personal memory retrieval]
+    Selector -->|search_web, search_history,<br/>a toolbox tool, or neither| Memory[MemoryCoordinatorAgent<br/>personal memory retrieval]
     Memory --> ArtifactGate{DeepSeek V4 Flash<br/>artifact modality gate}
     ArtifactGate -->|image required| Visual[Owner-scoped pixel-vector lookup<br/>then description-vector fallback]
     ArtifactGate -->|no artifact needed| Context[Curated context]
     Visual --> VisualPolicy[DeepSeek V4 Flash<br/>visual-memory selection]
     VisualPolicy --> Context
     Selector -->|search_web query,<br/>model-authored| Search[Privacy-screened<br/>internet search]
+    Selector -->|search_history query| History[Transcript-store semantic search<br/>owner-scoped, excerpts as own record]
     Selector -->|toolbox tool| MCP[Guarded MCP<br/>invocation]
     MCP --> Context
     Search --> Context
+    History --> Context
 
     Context --> Inference
     Inference -->|main role| Main[DeepSeek-V4-Flash<br/>streaming call via DGX Spark]
@@ -52,6 +54,6 @@ flowchart TB
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef failure fill:#fff3cd,stroke:#b78b20,color:#4d3900;
     class User,UI interface;
-    class API,Selector,Search_Tool,Toolbox,Presentation,Progress,Diagram,Artifact,ImageAction,ImageArtifact,Memory,Visual,MCP,Search,Context,Inference,Persist,Stream,Proposal application;
+    class API,Selector,Search_Tool,Toolbox,Presentation,Progress,Diagram,Artifact,ImageAction,ImageArtifact,Memory,Visual,MCP,Search,History,Context,Inference,Persist,Stream,Proposal application;
     class Main,DiagramModel,Interest,ArtifactGate,VisualPolicy,Referent model;
     class Failure failure;

@@ -255,6 +255,11 @@ class Settings(BaseSettings):
     # that model, not of the feature.
     MEMORY_RECALL_TURNS_MAX_COSINE_DISTANCE: float = Field(default=0.45, ge=0, le=2)
     MEMORY_RECALL_TURNS_MAX_RESULTS: int = Field(default=3, ge=1, le=10)
+    # The active form: when the model chooses search_history, it digs wider and
+    # deeper than the passive injection above - looser distance, more results -
+    # because the person explicitly pointed at something that is not in view.
+    HISTORY_SEARCH_MAX_RESULTS: int = Field(default=12, ge=1, le=50)
+    HISTORY_SEARCH_MAX_COSINE_DISTANCE: float = Field(default=0.6, ge=0, le=2)
     MEMORY_SEMANTIC_MAX_CONTENT_CHARS: int = Field(default=4_000, ge=100, le=50_000)
     CONVERSATION_HISTORY_TURNS: int = Field(default=10, ge=0, le=50)
     CONVERSATION_SUMMARY_INTERVAL: int = Field(default=10, ge=2, le=100)

@@ -280,6 +280,52 @@ class PostgresMemoryService(MemoryService, SemanticMemoryWriter):
             )
         return recalled
 
+    # Search the transcript store for what the model asked to find.
+    #
+    # The active counterpart to `get_recalled_turns` above, and deliberately
+    # less opinionated: questions are kept (the person may be looking for one
+    # they asked), answers come back beside what was said, and the dedup is
+    # on the exchange rather than the remark. Bounded excerpts, because a
+    # 4k-token answer quoted whole would spend the evidence budget on one hit.
+    async def search_turns(
+        self,
+        user_id: str,
+        query_embedding: list[float],
+        top_k: int,
+        max_cosine_distance: float,
+        exclude_conversation_id: str | None = None,
+    ) -> list[dict[str, Any]]:
+        rows = await self.repo.get_recalled_turns(
+            user_id,
+            query_embedding,
+            top_k * _RECALL_OVERFETCH,
+            max_cosine_distance,
+            uuid.UUID(exclude_conversation_id) if exclude_conversation_id else None,
+        )
+        found: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        for turn, distance in rows:
+            if len(found) >= top_k:
+                break
+            said = (turn.query or "").strip()
+            answered = (turn.response or "").strip()
+            key = f"{said.casefold()}\n{answered.casefold()}"
+            if not (said or answered) or key in seen:
+                continue
+            seen.add(key)
+            found.append(
+                {
+                    "when": turn.created_at.isoformat() if turn.created_at else None,
+                    "you_said": said[:1_000],
+                    "assistant_said": answered[:1_500],
+                    "retrieval": {
+                        "cosine_distance": round(distance, 6),
+                        "relevance_score": round(max(0.0, 1.0 - distance), 6),
+                    },
+                }
+            )
+        return found
+
     # Return a broad owned visual shortlist for a model to judge semantically.
     async def get_visual_memory_candidates(
         self,

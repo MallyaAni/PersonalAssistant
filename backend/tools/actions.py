@@ -14,6 +14,19 @@ class SearchAction:
 
 
 @dataclass(frozen=True, slots=True)
+class RecallHistoryAction:
+    """The model decided this turn refers to something said in the past.
+
+    Passive recall injects the top few similar past remarks before every
+    answer; this is the active form, chosen when the person points at
+    something that is not in view - "that restaurant I mentioned", "when did
+    we talk about X" - and the transcript store has to be searched for it.
+    """
+
+    query: str
+
+
+@dataclass(frozen=True, slots=True)
 class GenerateImageAction:
     """The model decided this turn wants a brand-new picture made."""
 

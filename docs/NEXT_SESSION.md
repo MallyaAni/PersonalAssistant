@@ -94,7 +94,30 @@ capability with no backend). The 9B is additionally gated + FLUX
 Non-Commercial; the 4B is Apache/ungated. Checkpoints are on the powered-off
 desktop and must be re-fetched from HuggingFace (reachable from spark1).
 
-## NEXT FEATURE — active recall: `search_history` (specced 2026-08-24, operator-approved)
+## BUILT — active recall: `search_history` (2026-08-24; gate-verification pending)
+
+The spec below was implemented the same day, from the Mac. Everything landed
+as designed: `RecallHistoryAction` + `backend/tools/search_history.py` in the
+registry; `search_turns` on the memory service (questions kept, exchange-level
+dedup, excerpts bounded at 1,000/1,500 chars); `_recall_history_evidence` in
+the conversation service (embeds the model's query, filters out what the
+visible window already shows, never costs the turn); its own prompt section
+(`_render_history_recall_context`, own-record framing, injection-resistant
+wording) riding a new `past_conversations` budget section at priority 2 —
+**the section priorities below it were renumbered** (tools 3, history 4,
+images 5, recalled 6, memory 7), which was safe because enforcement is off
+and no floors were ever recorded. `_runnable` now passes three action kinds.
+The chat-orchestration diagram gained the flow (SVG re-rendered on spark1).
+
+**Verification state: structural + functional tests are written but could not
+run on the Mac (no backend deps there). `bash scripts/gate.sh` on spark1 is
+what proves this feature** — `test_history_recall.py` (pure logic) and
+`functional/test_history_recall_behaviour.py` (does the real router choose it
+for backward references and leave ordinary questions alone — the known 4B
+routing-precision risk). If the functional cases flake, tune the tool
+description by subject shape, never by adding the failing phrasings to it.
+
+## The spec as approved (kept for the record)
 
 **The gap it closes.** Recall today is passive: top-3 similar past remarks are
 injected before the model answers. A detail that was never fact-shaped, got

@@ -64,6 +64,7 @@ from backend.services.main_action_selector import (
     MainActionSelector,
     ManageSkillsAction,
     ManageTasksAction,
+    RecallHistoryAction,
     SaveSkillAction,
     ScheduleTaskAction,
     SearchAction,
@@ -319,7 +320,11 @@ def _mark_turn(
 # reached it matched an action whose service is not wired, and is dropped
 # rather than carried into the reply as though it had run.
 def _runnable(action: MainAction) -> MainAction:
-    return action if isinstance(action, SearchAction | ToolboxAction) else None
+    return (
+        action
+        if isinstance(action, SearchAction | ToolboxAction | RecallHistoryAction)
+        else None
+    )
 
 
 # The calendar date a one-time task fires on. The router states it when the
@@ -1575,10 +1580,61 @@ class ConversationService:
         if image_matches:
             yield {"event": "image_matches", "data": {"artifacts": image_matches}}
 
+        # The model asked to look back before answering. Enrich silently -
+        # no interface event exists for this yet - and never let a recall
+        # failure cost the turn it was meant to help.
+        if isinstance(action, RecallHistoryAction):
+            await self._recall_history_evidence(
+                context, user_id, action.query, history
+            )
+
         async for event in self._stream_web_search(
             context, query, action, image_matches, trace_id, history=history
         ):
             yield event
+
+    # Search the transcript store for what the model asked to find, and put
+    # the excerpts where the prompt renders them as the user's own record.
+    #
+    # The current conversation is searched too - "what did I say earlier" in
+    # a long conversation is a real question - but anything visible in the
+    # history window is dropped: repeating what is directly above spends the
+    # budget saying it twice, and repetition reads as emphasis.
+    async def _recall_history_evidence(
+        self,
+        context: dict[str, Any],
+        user_id: str,
+        wanted: str,
+        history: list[dict[str, Any]] | None,
+    ) -> None:
+        if self.memory is None:
+            return
+        try:
+            embedding = await self.memory.embed_query(wanted)
+            if not embedding:
+                return
+            found = await self.memory.search_turns(
+                user_id,
+                embedding,
+                settings.HISTORY_SEARCH_MAX_RESULTS,
+                settings.HISTORY_SEARCH_MAX_COSINE_DISTANCE,
+            )
+        except Exception:
+            logger.warning("History search failed", exc_info=True)
+            return
+        visible = {
+            " ".join(str(turn.get(key) or "").split()).casefold()
+            for turn in (history or [])
+            for key in ("query", "response")
+        }
+        excerpts = [
+            item
+            for item in found
+            if " ".join(str(item.get("you_said") or "").split()).casefold()
+            not in visible
+        ]
+        if excerpts:
+            context["history_search"] = excerpts
 
     # Run the turn's web search and report it, including when it found
     # nothing: the interface has to retract its indicator either way.
@@ -1906,9 +1962,9 @@ class ConversationService:
         # Reached when a branch above matched the action but not the service
         # behind it - a diagram routed with no diagram service configured, a
         # deck with no job queue. The chosen action cannot run, so it is
-        # dropped rather than carried into the reply as though it had: search
-        # and the user's own tools are the two that survive to here, because
-        # those are the ones the reply path can still execute.
+        # dropped rather than carried into the reply as though it had: search,
+        # history recall, and the user's own tools are the three that survive
+        # to here, because those are the ones the reply path can still execute.
         async for event in self._process_assistant_request(
             user_id,
             query,
