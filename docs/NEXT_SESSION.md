@@ -69,22 +69,65 @@ unique embedded SVGs, source links, and zoom controls were checked locally.
 ## What is still open
 
 **A third backup copy on the Mac.** Both current copies are in one room on one
-power feed, so this survives a disk and not a fire. The Mac was chosen over the
-desktop because it is already up around the clock for the bridge. What is
-needed: a destination directory, the Mac's LAN IP and SSH username, Remote
-Login enabled, and spark1's public key in `~/.ssh/authorized_keys`. spark1 then
-pushes to it exactly as it pushes to spark2 — set `BACKUP_MIRROR_HOST` /
-`BACKUP_MIRROR_PATH` in spark1's `.env`. **The Mac must hold ciphertext only:
-do not copy `ENCRYPTION_KEY` onto it.** The key is escrowed at
+power feed, so this survives a disk and not a fire. `backup-db.sh` now takes a
+whitespace-separated `BACKUP_MIRROR_HOST` list, so the Mac joins spark2 rather
+than replacing it — set both mirror keys in spark1's `.env` (`.env.example`
+documents them). Still needed: Remote Login on the Mac and spark1's public key
+in its `~/.ssh/authorized_keys`. **The Mac must hold ciphertext only: do not
+copy `ENCRYPTION_KEY` onto it.** The key is escrowed at
 `C:\Users\Ani Mallya\anios-recovery\anios-keys.env` on the Windows box.
 
-**FLUX.2 klein-4B is not deployed.** All three checkpoints are confirmed on the
-desktop: `flux-2-klein-4b-fp8.safetensors` (4,070,624,520 bytes),
-`qwen_3_4b.safetensors` (8,044,982,048), `flux2-vae.safetensors` (336,213,556).
-The blocker is that `docker/comfyui` is CUDA 12.8 / sm_120 and cannot emit
-sm_121 for GB10; it needs an aarch64 CUDA-13 image. Note that
-`generate_image` and `edit_image` are *registered builtins already*, so the
-assistant describes them as capabilities — including in the welcome message.
+**FLUX is not deployed, and does not fit as the box stands.** The sm_121
+blocker is solved — `docker/comfyui/Dockerfile.gb10` (NVIDIA CUDA-13 PyTorch
+base, aarch64), selected by `COMFYUI_DOCKERFILE` in `.env`, and
+`IMAGE_PROVIDER_BASE_URL` is now env-overridable so placement is an `.env`
+decision. The real blocker is **headroom**: measured 2026-08-24, spark1 has
+~9 GiB available and spark2 ~2 GiB, because DeepSeek TP=2 holds ~97 GiB on each
+node (weights+overhead are a ~90 GiB/node floor, so trimming KV frees only
+~3 GiB). 4B needs ~14 GiB, 9B ~18 GiB — neither fits while DeepSeek holds both
+nodes, and over-allocation hangs a box with no BMC. The desktop 5080 is retired
+by decision, so it is not the fallback. Options recorded for the operator: run
+DeepSeek TP=1 on one node to free the other; a GGUF-quantized 4B (~8 GiB, still
+tight); or accept no local image gen and un-advertise `generate_image`/
+`edit_image` (both are registered builtins, so the welcome currently promises a
+capability with no backend). The 9B is additionally gated + FLUX
+Non-Commercial; the 4B is Apache/ungated. Checkpoints are on the powered-off
+desktop and must be re-fetched from HuggingFace (reachable from spark1).
+
+## Code review pass — 2026-08-24, and what it deferred
+
+A full review of the 63 commits since the iMessage work closed a chain of
+defects (commits d251338b, 26c7c303, 15c8d53b, 4b4864a3, ffc18fe0). Fixed: the
+sign-up phone takeover chain (unverified/non-unique number → account takeover)
+and its blast radius; the welcome service blocking the event loop and its
+partial-failure handling; the image-reply path that never delivered (bridge
+rejected the worker's empty-body attachment sends) and never pinned (guid
+format mismatch); the Redis cursor discarding messages on a blip; the red
+approval test suite; backup partial-file/CRLF/multi-host; and Postgres/Redis
+bound off the LAN. Backend fixes are gate-verified only — the suite cannot run
+on the Mac; **run `bash scripts/gate.sh` on spark1 before trusting them.**
+
+Deferred, needing a box or a window, in priority order:
+1. **Apply the committed deploy changes on the boxes.** `anios-vlm.service`
+   gained `After=ds4-worker.service` (cold-boot GPU-profile race) — needs
+   `sudo systemctl daemon-reload` on spark2. The compose port-binding change
+   takes effect on spark1's next `up -d`.
+2. **Netplan for the RoCE fabric (#1, not written).** The `192.168.100/101.x`
+   addresses are set by hand and do not survive a reboot, so a power cycle
+   leaves both ds4 units retry-looping forever. Capture the live addresses
+   (`ip -4 addr show enp1s0f1np1` on each node) into a netplan file and apply
+   during a window — applying netplan can drop the network, so not done blind.
+3. **Backup failure alerting (#3, not written).** Nothing signals a failed or
+   silently-stalled backup. Wants an `OnFailure=` unit that notifies through
+   the iMessage bridge plus a weekly "is there a dump newer than 36h on the
+   mirror" check — not shipped blind because it needs the bridge token/recipient
+   wired and tested on the box.
+4. **Keyed phone/address digest (C12).** The lookup digest is unkeyed SHA-256
+   over a small keyspace; a dump leaks every number. Closing it is a
+   coordinated keyed-HMAC migration that re-digests subscriber rows. Recorded
+   in SECURITY.md.
+5. Lower: the memory export omits the phone (own-number, low severity); the
+   `.env.example` vLLM cache paths are still the retired desktop's `E:/AI`.
 
 **The architecture study-guide source is missing.** The prior handoff said a
 100,501-character, 65-decision draft existed at `scratchpad/study_guide.md`,
