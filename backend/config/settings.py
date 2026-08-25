@@ -719,6 +719,18 @@ class Settings(BaseSettings):
     # something a server can raise for itself.
     MCP_MAX_RESULT_CHARS: int = Field(default=32_000, ge=1_000, le=60_000)
     SEARCH_DEPTH: Literal["basic", "advanced"] = "advanced"
+    # Brave Search, the first rung of the chain since 2026-08-25: a broad,
+    # fresh index on a plan metered in dollars ($5 per 1,000 requests, $5 of
+    # credit a month) whose headers promise no stop at the credit's edge -
+    # the monthly limit below is the stop, held under the credit so the card
+    # is never charged. Google's Custom Search JSON API, the first choice,
+    # is closed to new customers. Empty disables the rung.
+    BRAVE_SEARCH_API_KEY: str | None = Field(None, alias="BRAVE_SEARCH_API_KEY")
+    BRAVE_SEARCH_MONTHLY_LIMIT: int = Field(default=900, ge=0, le=100_000)
+    BRAVE_SEARCH_QUOTA_DB_PATH: str = "data/search/brave_search_quota.sqlite3"
+    # The chain is order, not mixing: the first rung answers until its period
+    # is spent, then the next. Names not configured are skipped.
+    SEARCH_PROVIDER_ORDER: str = "brave,google,tavily"
     # Minimum provider relevance for a result to reach the prompt. Measured
     # across 40 real results the distribution is bimodal: usable hits scored
     # 0.561-0.923 while dictionary-definition noise scored 0.046-0.346, leaving

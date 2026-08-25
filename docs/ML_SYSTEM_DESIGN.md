@@ -274,6 +274,29 @@ compresses where pgvector does not), GPU-batched retrieval over many queries
 at once (FAISS-GPU's case; nothing here issues batches), or a measured
 recall problem at `ef_search` that raising it does not fix.
 
+**Web search providers: Brave first, Tavily second (decided 2026-08-25).**
+The chain is order, not mixing: one rung answers until its period is spent,
+then the next, and only when every rung is spent does the reply say so. The
+choice was forced and then measured. Google's Custom Search JSON API - the
+obvious free rung at 100 queries a day - is closed to new customers and ends
+in January 2027; Gemini grounding, wired as the primary, needs a paid tier
+(429 on the search tool while the same key answers normally) and stays off.
+Brave's Search plan meters in dollars ($5 per 1,000 requests, $5 of credit a
+month) and its headers report the monthly window as `0;w=2678400` - nothing
+on the wire stops at the credit's edge - so the stop is local: 900 requests
+a month in SQLite beside the Google counter, with the same count kept in
+Redis for the pre-flight. What each rung returns, measured on the same
+Canggu-events query: Brave gives real event pages (Eventbrite, Meetup) with
+198-346-character descriptions; Tavily at `advanced` depth gives extracted
+page text up to the 2,500-character cap but at two credits a query, ~500
+searches from its free 1,000. Brave leads because the index is broader and
+fresher for the questions people here ask and its free volume is twice
+Tavily's; Tavily follows because its richer text is worth more once Brave is
+out than spent first. Together ~1,400 free searches a month against ~500
+before. *What would change it:* a query class where snippets are not enough
+(then fetch the top pages rather than reorder), or Brave's free credit
+changing - the order is one setting, `SEARCH_PROVIDER_ORDER`.
+
 **Should the embedder be replaced?** No, measured twice (2026-08-23 and
 08-25). At ~500 vectors a nearest-neighbour search is dominated by threshold
 calibration, not encoder rank; the live 100%-failure cases (NULL vectors)
@@ -510,6 +533,8 @@ Scout's ranking has its own labelled harness with floors
 | Image generation on a Spark | 397 s/image class, bandwidth-bound | The desktop's RTX 5080 |
 | A newer vLLM (0.25.2 vs 0.21.1+B12X) | Newer is 9-29% slower here (`torch.compile` regression) | Recorded; untested swap |
 | Enforcing the context budget | No measured floors yet | Observe first |
+| Google Custom Search JSON API as a free rung | Closed to new customers, ends January 2027 | Brave, then Tavily |
+| DuckDuckGo as a rung | No official web-results API; the HTML endpoint is scraping that breaks without notice | Not built on |
 | FAISS as the vector store | 439 vectors in 22 MB; top-10 in 0.5 ms without the index, 0.2 ms at 20k with it; FAISS would duplicate the store without the owner filter or the transaction | pgvector HNSW in the same database (section 5) |
 
 ## 12. Traps specific to serving

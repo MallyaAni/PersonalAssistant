@@ -180,6 +180,10 @@ services:
       - SEARCH_API_KEY=${SEARCH_API_KEY:-}
       - SEARCH_BASE_URL=${SEARCH_BASE_URL:-}
       - SEARCH_MCP_SERVER_ID=${SEARCH_MCP_SERVER_ID:-internet}
+      - BRAVE_SEARCH_API_KEY=${BRAVE_SEARCH_API_KEY:-}
+      - BRAVE_SEARCH_MONTHLY_LIMIT=${BRAVE_SEARCH_MONTHLY_LIMIT:-900}
+      - BRAVE_SEARCH_QUOTA_DB_PATH=${BRAVE_SEARCH_QUOTA_DB_PATH:-/app/data/search/brave_search_quota.sqlite3}
+      - SEARCH_PROVIDER_ORDER=${SEARCH_PROVIDER_ORDER:-brave,google,tavily}
       - MAIN_LLM_BASE_URL=${MAIN_LLM_BASE_URL:-http://animallya-spark1.local:8000}
       - MAIN_LLM_MODEL=${MAIN_LLM_MODEL:-deepseek-v4-flash}
       - ROUTING_LLM_BASE_URL=${ROUTING_LLM_BASE_URL:-http://animallya-spark1.local:8000}
@@ -463,6 +467,10 @@ services:
       - SEARCH_MONTHLY_CREDITS=${SEARCH_MONTHLY_CREDITS:-1000}
       - SEARCH_PROVIDER_NAME=${SEARCH_PROVIDER_NAME:-tavily}
       - SEARCH_MCP_SERVER_ID=${SEARCH_MCP_SERVER_ID:-internet}
+      - BRAVE_SEARCH_API_KEY=${BRAVE_SEARCH_API_KEY:-}
+      - BRAVE_SEARCH_MONTHLY_LIMIT=${BRAVE_SEARCH_MONTHLY_LIMIT:-900}
+      - BRAVE_SEARCH_QUOTA_DB_PATH=${BRAVE_SEARCH_QUOTA_DB_PATH:-/app/data/search/brave_search_quota.sqlite3}
+      - SEARCH_PROVIDER_ORDER=${SEARCH_PROVIDER_ORDER:-brave,google,tavily}
       - SEARCH_MCP_TOOL_NAME=${SEARCH_MCP_TOOL_NAME:-search_web}
       # Declared so they reach the internet MCP subprocess too, which
       # inherits SEARCH_* from this environment and does the actual
@@ -579,6 +587,10 @@ services:
       - SEARCH_PROVIDER_NAME=${SEARCH_PROVIDER_NAME:-tavily}
       - SEARCH_API_KEY=${SEARCH_API_KEY:-}
       - SEARCH_MCP_SERVER_ID=${SEARCH_MCP_SERVER_ID:-internet}
+      - BRAVE_SEARCH_API_KEY=${BRAVE_SEARCH_API_KEY:-}
+      - BRAVE_SEARCH_MONTHLY_LIMIT=${BRAVE_SEARCH_MONTHLY_LIMIT:-900}
+      - BRAVE_SEARCH_QUOTA_DB_PATH=${BRAVE_SEARCH_QUOTA_DB_PATH:-/app/data/search/brave_search_quota.sqlite3}
+      - SEARCH_PROVIDER_ORDER=${SEARCH_PROVIDER_ORDER:-brave,google,tavily}
       - SEARCH_MCP_TOOL_NAME=${SEARCH_MCP_TOOL_NAME:-search_web}
       # Declared so they reach the internet MCP subprocess too, which
       # inherits SEARCH_* from this environment and does the actual
@@ -852,6 +864,10 @@ services:
       - SEARCH_MONTHLY_CREDITS=${SEARCH_MONTHLY_CREDITS:-1000}
       - SEARCH_PROVIDER_NAME=${SEARCH_PROVIDER_NAME:-tavily}
       - SEARCH_MCP_SERVER_ID=${SEARCH_MCP_SERVER_ID:-internet}
+      - BRAVE_SEARCH_API_KEY=${BRAVE_SEARCH_API_KEY:-}
+      - BRAVE_SEARCH_MONTHLY_LIMIT=${BRAVE_SEARCH_MONTHLY_LIMIT:-900}
+      - BRAVE_SEARCH_QUOTA_DB_PATH=${BRAVE_SEARCH_QUOTA_DB_PATH:-/app/data/search/brave_search_quota.sqlite3}
+      - SEARCH_PROVIDER_ORDER=${SEARCH_PROVIDER_ORDER:-brave,google,tavily}
       - SEARCH_MCP_TOOL_NAME=${SEARCH_MCP_TOOL_NAME:-search_web}
       # Declared so they reach the internet MCP subprocess too, which
       # inherits SEARCH_* from this environment and does the actual

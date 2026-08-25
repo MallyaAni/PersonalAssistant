@@ -4,6 +4,16 @@ This file is append-only history for meaningful, verified changes. It must not c
 
 ## 2026-08-25 — Recall anything, a reranker, keyed digests, a third backup copy, and the architecture told for newcomers
 
+- **Brave Search is the first rung, and the search chain is order, not
+  mixing.** With the Tavily key spent and Google's Custom Search JSON API
+  closed to new customers, Brave (a broad, fresh index; $5 of free credit a
+  month, metered in dollars with no stop of its own) leads the chain, held
+  under the credit by a local monthly counter of 900; Tavily follows when
+  Brave's month is spent; the friendly "allowance used up" line appears only
+  when every rung is. The Tavily pool is charged only for searches Tavily
+  served, the pre-flight limit knows Brave's room, and `search_credits`
+  reports both meters. Live search is back today: a Canggu events query
+  returns real event pages through Brave.
 - **A "what's on" question searches for the place and the dates.** From a
   guest in Canggu, "what's going on Weds-Sunday?" in a conversation naming
   Canggu venues was first answered with an offer to search and then searched

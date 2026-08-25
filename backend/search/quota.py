@@ -23,10 +23,27 @@ class SQLiteDailySearchQuota:
         self.provider = provider
         self.daily_limit = daily_limit
 
+    # The period a moment falls in - a calendar day in the provider's zone.
+    def _period(self, now: datetime | None) -> str:
+        return (now or datetime.now(UTC)).astimezone(_GOOGLE_RESET_ZONE).date().isoformat()
+
     # Reserve one call atomically, failing before provider work at the limit.
     async def consume(self, now: datetime | None = None) -> None:
-        quota_day = (now or datetime.now(UTC)).astimezone(_GOOGLE_RESET_ZONE).date()
-        await asyncio.to_thread(self._consume_sync, quota_day.isoformat())
+        await asyncio.to_thread(self._consume_sync, self._period(now))
+
+    # Calls counted in the current period, for the meter.
+    async def used(self, now: datetime | None = None) -> int:
+        return await asyncio.to_thread(self._used_sync, self._period(now))
+
+    def _used_sync(self, quota_day: str) -> int:
+        if not self.path.exists():
+            return 0
+        with closing(sqlite3.connect(self.path, timeout=10)) as connection:
+            row = connection.execute(
+                "SELECT request_count FROM daily_search_quota WHERE provider = ? AND quota_day = ?",
+                (self.provider, quota_day),
+            ).fetchone()
+        return int(row[0]) if row else 0
 
     # Return a reservation whose call never produced a usable result.
     #
@@ -35,8 +52,7 @@ class SQLiteDailySearchQuota:
     # rejecting every request still exhausts the local budget, and the limiter
     # keeps blocking after the provider itself recovers.
     async def release(self, now: datetime | None = None) -> None:
-        quota_day = (now or datetime.now(UTC)).astimezone(_GOOGLE_RESET_ZONE).date()
-        await asyncio.to_thread(self._release_sync, quota_day.isoformat())
+        await asyncio.to_thread(self._release_sync, self._period(now))
 
     # Decrement today's counter without letting it fall below zero.
     def _release_sync(self, quota_day: str) -> None:
@@ -91,3 +107,19 @@ class SQLiteDailySearchQuota:
                 (self.provider, quota_day),
             )
             connection.commit()
+
+
+class SQLiteMonthlySearchQuota(SQLiteDailySearchQuota):
+    """The same counter over a calendar month, in UTC.
+
+    Brave meters its free credit per month in dollars, and its headers promise
+    no stop at the credit's edge; this is the stop. Rows share the daily
+    table, keyed by `YYYY-MM`, so one file holds every provider's budget.
+    """
+
+    def __init__(self, path: str, provider: str, monthly_limit: int) -> None:
+        super().__init__(path, provider, monthly_limit)
+        self.monthly_limit = monthly_limit
+
+    def _period(self, now: datetime | None) -> str:
+        return (now or datetime.now(UTC)).astimezone(UTC).strftime("%Y-%m")

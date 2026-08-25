@@ -7,9 +7,14 @@ import httpx
 
 from mcp.server.fastmcp import FastMCP
 
+from backend.search.brave import BraveSearchProvider
 from backend.search.google_adk import GoogleADKSearchProvider
-from backend.search.hybrid import HybridSearchProvider
-from backend.search.quota import SQLiteDailySearchQuota
+from backend.search.hybrid import EveryProviderExhausted, HybridSearchProvider
+from backend.search.quota import (
+    SearchQuotaExceededError,
+    SQLiteDailySearchQuota,
+    SQLiteMonthlySearchQuota,
+)
 from backend.search.tavily import TavilySearchProvider, TavilyUsageClient
 from backend.search.types import SearchResults
 
@@ -61,10 +66,36 @@ def _build_search_provider() -> HybridSearchProvider:
         min_score=float(os.getenv("SEARCH_MIN_SCORE", "0.4")),
         search_depth=os.getenv("SEARCH_DEPTH", "basic"),
     )
-    return HybridSearchProvider(
-        primary=google,
-        fallback=tavily,
+    brave = BraveSearchProvider(
+        api_key=os.getenv("BRAVE_SEARCH_API_KEY") or None,
         max_results=max_results,
+        timeout_seconds=float(os.getenv("SEARCH_TIMEOUT_SECONDS") or "15"),
+        max_content_chars=max_content_chars,
+        quota=SQLiteMonthlySearchQuota(
+            path=os.getenv("BRAVE_SEARCH_QUOTA_DB_PATH") or "data/search/brave_search_quota.sqlite3",
+            provider="brave",
+            monthly_limit=int(os.getenv("BRAVE_SEARCH_MONTHLY_LIMIT") or "900"),
+        ),
+    )
+    # The chain is order, not mixing: the operator names it, the better one
+    # first, the next when the first has spent its period. Brave leads by
+    # default since 2026-08-25 - a broad, fresh index at ~1,000 free requests
+    # a month; Tavily's richer extracted text follows when Brave is out.
+    order = [
+        name.strip().lower()
+        for name in (os.getenv("SEARCH_PROVIDER_ORDER") or "brave,google,tavily").split(",")
+        if name.strip()
+    ]
+    by_name = {"brave": brave, "google": google, "tavily": tavily}
+    chain = [by_name[name] for name in order if name in by_name]
+    for provider in (brave, google, tavily):
+        if provider not in chain:
+            chain.append(provider)
+    return HybridSearchProvider(
+        primary=chain[-2] if len(chain) > 1 else chain[0],
+        fallback=chain[-1],
+        max_results=max_results,
+        ahead=tuple(chain[:-2]),
     )
 
 
@@ -202,6 +233,12 @@ async def search_web(query: str, max_results: int = 0) -> str:
     wanted = min(max_results, configured) if max_results > 0 else configured
     try:
         found = await provider.search(query, max_results=wanted)
+    except (EveryProviderExhausted, SearchQuotaExceededError):
+        # Every rung has spent its period: a fact the caller acts on - mark
+        # the pool spent, tell the person which allowance - not a retry.
+        return json.dumps(
+            {"provider": "all", "error": "quota_exhausted", "status": 402, "results": []}
+        )
     except httpx.HTTPStatusError as exc:
         # The provider saying the plan is spent (Tavily: 432; 402 and 429
         # from others) is a fact the caller must act on - mark the pool
@@ -383,6 +420,7 @@ async def search_credits() -> str:
                 "error": "usage_unavailable",
                 "detail": "The provider's usage endpoint could not be read, so the "
                 "balance is unknown - not zero.",
+                "brave": await _brave_meter(),
             }
         )
     limit = report.get("limit")
@@ -405,8 +443,30 @@ async def search_credits() -> str:
             .lower()
             in {"1", "true", "yes", "on"},
             "period": "the provider's current billing period",
+            "brave": await _brave_meter(),
+            "order": os.getenv("SEARCH_PROVIDER_ORDER") or "brave,google,tavily",
         }
     )
+
+
+# Brave's meter is local: the provider bills in dollars and reports no
+# monthly request count, so the count that stops us is the one kept here.
+async def _brave_meter() -> dict[str, object] | None:
+    if not (os.getenv("BRAVE_SEARCH_API_KEY") or "").strip():
+        return None
+    limit = int(os.getenv("BRAVE_SEARCH_MONTHLY_LIMIT") or "900")
+    quota = SQLiteMonthlySearchQuota(
+        path=os.getenv("BRAVE_SEARCH_QUOTA_DB_PATH") or "data/search/brave_search_quota.sqlite3",
+        provider="brave",
+        monthly_limit=limit,
+    )
+    used = await quota.used()
+    return {
+        "used": used,
+        "limit": limit,
+        "remaining": max(0, limit - used),
+        "period": "this calendar month, counted locally under the free credit",
+    }
 
 
 # Run the internet server over stdio for the configured AniOS MCP client.

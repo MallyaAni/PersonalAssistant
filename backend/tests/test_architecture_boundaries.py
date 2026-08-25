@@ -59,6 +59,9 @@ def test_search_package_holds_only_web_search():
         # provider and returns results, so it is web search, not a fourth
         # meaning of the word.
         "budgeted",
+        # Admitted 2026-08-25: Brave Search as the first rung of the provider
+        # chain, a web-search provider like tavily and google_adk beside it.
+        "brave",
         "google_adk",
         "hybrid",
         "mcp",

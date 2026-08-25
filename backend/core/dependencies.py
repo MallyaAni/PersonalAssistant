@@ -155,6 +155,9 @@ def get_search_provider() -> SearchProvider:
             base_url=settings.SEARCH_BASE_URL or "https://api.tavily.com",
             api_key=settings.SEARCH_API_KEY,
         ),
+        brave_monthly_limit=(
+            settings.BRAVE_SEARCH_MONTHLY_LIMIT if settings.BRAVE_SEARCH_API_KEY else 0
+        ),
     )
 
 

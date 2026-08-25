@@ -273,3 +273,52 @@ async def test_the_limit_is_known_when_the_router_chooses() -> None:
         pass
     assert selector.seen and selector.seen[0] == limit, "the router chose without knowing the limit"
     assert current_search_limit.get() is None or True  # context is per task; nothing leaks across tests
+
+
+class _ProviderBudget(_Budget):
+    # A pool with a Brave counter beside it.
+    def __init__(self, pool: int = 0, brave_used: int = 0) -> None:
+        super().__init__(pool=pool)
+        self.brave_used = brave_used
+        self.refunded: list[int] = []
+        self.charged: list[tuple[str, int]] = []
+
+    async def refund_pool(self, credits, now=None):
+        self.refunded.append(credits)
+
+    async def charge_provider(self, provider, wanted, now=None):
+        self.charged.append((provider, wanted))
+
+    async def provider_used(self, provider, now=None):
+        return self.brave_used
+
+
+class _BraveInner(_Inner):
+    async def search(self, query, max_results=None):
+        return SearchResults(query=query, results=(), provider="brave")
+
+
+@pytest.mark.asyncio
+async def test_a_search_brave_served_refunds_the_tavily_pool_and_counts_for_brave() -> None:
+    budget = _ProviderBudget(pool=100)
+    provider = BudgetedSearchProvider(_BraveInner(), budget, credits_per_search=2, brave_monthly_limit=900)  # type: ignore[arg-type]
+    token = current_search_identity.set(GUEST)
+    try:
+        found = await provider.search("anything")
+    finally:
+        current_search_identity.reset(token)
+    assert found.provider == "brave"
+    assert budget.refunded == [2] and budget.charged == [("brave", 1)]
+
+
+@pytest.mark.asyncio
+async def test_a_spent_tavily_pool_limits_nothing_while_brave_has_room() -> None:
+    provider = BudgetedSearchProvider(_Inner(), _ProviderBudget(pool=0, brave_used=10), 2, brave_monthly_limit=900)  # type: ignore[arg-type]
+    assert await provider.limit_state(GUEST, NOW) is None
+
+
+@pytest.mark.asyncio
+async def test_both_rungs_spent_is_the_shared_month() -> None:
+    provider = BudgetedSearchProvider(_Inner(), _ProviderBudget(pool=0, brave_used=900), 2, brave_monthly_limit=900)  # type: ignore[arg-type]
+    limit = await provider.limit_state(GUEST, NOW)
+    assert limit == SearchLimit("this month", datetime(2026, 9, 1, tzinfo=UTC), shared=True)

@@ -142,6 +142,42 @@ class SearchBudget:
         except Exception:
             return
 
+    # Hand credits back to the pool: a search another provider served spent
+    # none of Tavily's. Never below zero.
+    async def refund_pool(self, credits: int, now: datetime | None = None) -> None:
+        if not self.enabled or credits <= 0:
+            return
+        key = self._pool_key(now or datetime.now(UTC))
+        try:
+            left = int(await self.redis.decrby(key, credits))
+            if left < 0:
+                await self.redis.set(key, 0)
+        except Exception:
+            return
+
+    # Per-provider request counts this month, for rungs whose meter is local.
+    @staticmethod
+    def _provider_key(provider: str, now: datetime) -> str:
+        return f"anios:search:_provider:{provider}:{now.strftime('%Y-%m')}"
+
+    async def charge_provider(self, provider: str, wanted: int, now: datetime | None = None) -> None:
+        if not self.enabled or wanted <= 0:
+            return
+        key = self._provider_key(provider, now or datetime.now(UTC))
+        try:
+            await self.redis.incrby(key, wanted)
+            await self.redis.expire(key, _TTL_SECONDS)
+        except Exception:
+            return
+
+    async def provider_used(self, provider: str, now: datetime | None = None) -> int:
+        if not self.enabled:
+            return 0
+        try:
+            return int(await self.redis.get(self._provider_key(provider, now or datetime.now(UTC))) or 0)
+        except Exception:
+            return 0
+
     async def pool_status(self, now: datetime | None = None) -> dict[str, int]:
         remaining = await self.pool_remaining(now)
         return {

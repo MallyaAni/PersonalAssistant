@@ -113,7 +113,11 @@ class BudgetedSearchProvider(SearchProvider):
         credits_per_search: int = 1,
         usage: Any = None,
         reconcile_every_seconds: float = 600.0,
+        brave_monthly_limit: int = 0,
     ) -> None:
+        # Brave's monthly request ceiling as the backend knows it (0 = no
+        # Brave rung); the internet server enforces the same number itself.
+        self.brave_monthly_limit = max(0, int(brave_monthly_limit))
         # The provider's own meter, asked at most every `reconcile_every_seconds`
         # before a search so the local pool is never further from the truth
         # than that - the key is shared with whatever else the operator points
@@ -144,7 +148,7 @@ class BudgetedSearchProvider(SearchProvider):
             # shared pool is the key's own ceiling: once it is spent nobody
             # searches, attributed or not - the provider would refuse anyway.
             now = datetime.now(UTC)
-            if await self.budget.pool_remaining(now) < self.credits_per_search:
+            if await self.limit_state(None, now) is not None:
                 raise SearchBudgetExceededError("this month", _next_month(now))
             return await self._search_inner(query, max_results)
 
@@ -176,7 +180,7 @@ class BudgetedSearchProvider(SearchProvider):
         self, query: str, max_results: int | None
     ) -> SearchResults:
         try:
-            return await self.inner.search(query, max_results=max_results)
+            found = await self.inner.search(query, max_results=max_results)
         except SearchProviderQuotaError:
             now = datetime.now(UTC)
             try:
@@ -184,6 +188,21 @@ class BudgetedSearchProvider(SearchProvider):
             except Exception:
                 pass
             raise SearchBudgetExceededError("this month", _next_month(now)) from None
+        # The pool counts Tavily's credits. A search another rung served
+        # spent none of them, so the reservation goes back; and Brave's own
+        # count goes up, which is what the pre-flight reads.
+        served_by = str(found.provider or "").lower()
+        if "tavily" not in served_by:
+            try:
+                await self.budget.refund_pool(self.credits_per_search)
+            except Exception:
+                pass
+        if "brave" in served_by:
+            try:
+                await self.budget.charge_provider("brave", 1)
+            except Exception:
+                pass
+        return found
 
     # Align the local pool with the provider's meter when the last alignment
     # is older than the interval. Best effort: a failed read leaves the local
@@ -206,7 +225,16 @@ class BudgetedSearchProvider(SearchProvider):
         moment = now or datetime.now(UTC)
         await self._reconcile_if_stale()
         try:
-            if await self.budget.pool_remaining(moment) < self.credits_per_search:
+            # The shared pool is Tavily's; with another rung ahead of it that
+            # still has room this month, a spent pool limits nothing yet.
+            brave_room = (
+                self.brave_monthly_limit > 0
+                and await self.budget.provider_used("brave", moment) < self.brave_monthly_limit
+            )
+            if (
+                await self.budget.pool_remaining(moment) < self.credits_per_search
+                and not brave_room
+            ):
                 return SearchLimit("this month", _next_month(moment), shared=True)
             if identity is None:
                 return None

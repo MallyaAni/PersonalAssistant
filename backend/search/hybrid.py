@@ -5,8 +5,19 @@ import logging
 import re
 from urllib.parse import urlsplit, urlunsplit
 
+import httpx
+
 from backend.core.interfaces import SearchProvider
+from backend.search.quota import SearchQuotaExceededError
 from backend.search.types import SearchResult, SearchResults
+
+
+class EveryProviderExhausted(RuntimeError):
+    """Each configured provider has spent its budget for the period."""
+
+
+# A provider answering with its plan spent (Tavily 432; 402 generally).
+_PLAN_STATUSES = frozenset({402, 432})
 
 logger = logging.getLogger(__name__)
 _CROSS_CHECK = re.compile(
@@ -66,14 +77,24 @@ class HybridSearchProvider(SearchProvider):
         primary: SearchProvider,
         fallback: SearchProvider,
         max_results: int,
+        ahead: tuple[SearchProvider, ...] = (),
     ) -> None:
         self.primary = primary
         self.fallback = fallback
         self.max_results = max_results
+        # Providers tried before the primary, in order - Brave since
+        # 2026-08-25. Each falls through on failure, on an exhausted budget,
+        # or on an empty answer; the operator's chain is order, not mixing.
+        self.ahead = tuple(ahead)
+
+    # Every provider in the order it is tried.
+    @property
+    def chain(self) -> tuple[SearchProvider, ...]:
+        return (*self.ahead, self.primary, self.fallback)
 
     # Enable search whenever at least one free provider is configured.
     def is_enabled(self) -> bool:
-        return self.primary.is_enabled() or self.fallback.is_enabled()
+        return any(provider.is_enabled() for provider in self.chain)
 
     # Apply deterministic normal, fallback, or dual-provider search policy.
     async def search(
@@ -84,27 +105,40 @@ class HybridSearchProvider(SearchProvider):
         bounded = max(1, min(max_results or self.max_results, self.max_results))
         if requires_cross_check(query):
             return await self._cross_check(query, bounded)
-        if self.primary.is_enabled():
+        exhausted: list[Exception] = []
+        enabled = [provider for provider in self.chain if provider.is_enabled()]
+        for position, provider in enumerate(enabled):
+            last = position == len(enabled) - 1
             try:
-                found = await self.primary.search(query, bounded)
-                if found.results:
-                    return found
+                found = await provider.search(query, bounded)
+            except SearchQuotaExceededError as exc:
+                # This one's budget for the period is spent; the next may not be.
+                exhausted.append(exc)
+                continue
+            except httpx.HTTPStatusError as exc:
+                if exc.response.status_code in _PLAN_STATUSES:
+                    exhausted.append(exc)
+                    continue
+                if last:
+                    raise
+                logger.warning("Web-search provider failed; trying the next", exc_info=True)
+                continue
             except Exception:
-                logger.warning(
-                    "Primary web-search provider failed; trying fallback",
-                    exc_info=True,
-                )
-        if self.fallback.is_enabled():
-            return await self.fallback.search(query, bounded)
+                if last:
+                    raise
+                logger.warning("Web-search provider failed; trying the next", exc_info=True)
+                continue
+            if found.results or last:
+                return found
+        if exhausted and len(exhausted) == len(enabled):
+            raise EveryProviderExhausted("every web-search provider has spent its budget")
+        if exhausted:
+            raise exhausted[-1]
         raise RuntimeError("No web-search provider is available.")
 
     # Query every configured provider once and merge whatever succeeds.
     async def _cross_check(self, query: str, limit: int) -> SearchResults:
-        providers = [
-            provider
-            for provider in (self.primary, self.fallback)
-            if provider.is_enabled()
-        ]
+        providers = [provider for provider in self.chain if provider.is_enabled()]
         if not providers:
             raise RuntimeError("No web-search provider is available.")
         outcomes = await asyncio.gather(
