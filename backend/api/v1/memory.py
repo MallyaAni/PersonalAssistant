@@ -9,6 +9,7 @@ from backend.config.settings import settings
 from backend.core.auth import authorize_path_user
 from backend.core.dependencies import (
     ArtifactDeletionDependency,
+    DbDependency,
     DependencyAgentMemoryManager,
     DependencyMemoryService,
 )
@@ -219,12 +220,36 @@ async def export_memory(
     user_id: UserId,
     service: DependencyMemoryService,
     agent_memory: DependencyAgentMemoryManager,
+    db: DbDependency,
 ) -> dict[str, Any]:
+    from sqlalchemy import select
+
+    from backend.models.auth import AccessRequest
+
     exported = await service.get_user_export(user_id)
+    # The number given at sign-up outlives approval on the access-request row
+    # (the subscriber copy can be revoked and deleted independently of it), so
+    # an export without this section would claim the system holds less about
+    # the person than it does. Null when the account predates phone sign-up.
+    request = await db.scalar(
+        select(AccessRequest).where(
+            AccessRequest.desired_username == user_id,
+            AccessRequest.status == "approved",
+        )
+    )
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "exported_at": datetime.now(UTC).isoformat(),
         "user_id": user_id,
+        "sign_up": (
+            {
+                "display_name": request.display_name,
+                "phone": request.phone,
+                "contact": request.contact,
+            }
+            if request is not None
+            else None
+        ),
         "agent_memory": await agent_memory.export(user_id),
         **exported,
     }

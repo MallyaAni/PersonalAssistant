@@ -13,6 +13,7 @@ from backend.database.session import SessionLocal
 from backend.embeddings.base import EmbeddingProvider
 from backend.main import app
 from backend.models.artifact import VisualArtifact
+from backend.models.auth import AccessRequest
 from backend.models.conversation import Conversation
 from backend.models.memory import (
     EpisodicMemory,
@@ -134,7 +135,10 @@ def test_memory_api_persists_searches_scopes_and_deletes_personal_memory():
 
             export = client.get(f"/api/v1/memory/{user_id}/export")
             assert export.status_code == 200
-            assert export.json()["schema_version"] == 2
+            assert export.json()["schema_version"] == 3
+            # No access request was ever filed for this user, and the export
+            # must say so rather than omit the key.
+            assert export.json()["sign_up"] is None
             assert export.json()["agent_memory"] == {
                 "semantic_cache": [],
                 "working": [],
@@ -584,3 +588,38 @@ def test_delete_all_propagates_to_conversations_and_tool_memory():
     finally:
         app.dependency_overrides.pop(get_embedding_provider, None)
         _remove_test_user(user_id)
+
+
+# The number given at sign-up lives on the approved access request, not on the
+# account row, so this is the case a "does the export cover every table"
+# sweep cannot catch: the row is keyed by desired_username, not user_id.
+def test_export_includes_the_number_given_at_sign_up():
+    user_id = f"memory_api_{uuid.uuid4()}"
+    with SessionLocal() as session:
+        session.add(
+            AccessRequest(
+                token_digest=uuid.uuid4().hex,
+                display_name="Export Test",
+                phone="+15551234567",
+                phone_digest="0" * 64,
+                desired_username=user_id,
+                status="approved",
+            )
+        )
+        session.commit()
+    try:
+        with TestClient(app) as client:
+            exported = client.get(f"/api/v1/memory/{user_id}/export").json()
+            assert exported["sign_up"] == {
+                "display_name": "Export Test",
+                "phone": "+15551234567",
+                "contact": None,
+            }
+    finally:
+        with SessionLocal() as session:
+            session.execute(
+                delete(AccessRequest).where(
+                    AccessRequest.desired_username == user_id
+                )
+            )
+            session.commit()
