@@ -20,7 +20,10 @@ TOOL = BuiltinTool(
         "the request. Do not choose it for a question the visible "
         "conversation or your general knowledge already answers, and never "
         "for facts about the world - it searches only this user's own "
-        "history with you."
+        "history with you. A short follow-up that continues work already in "
+        "view - revising, adjusting, or extending what was just written - is "
+        "part of that work, not a reference to the past: answer it directly "
+        "instead of searching for it."
     ),
     schema={
         "type": "object",
