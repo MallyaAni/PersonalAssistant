@@ -206,19 +206,34 @@ ComfyUI serialises them anyway. Do not "fix" that by assuming it causes OOMs.
 no token can self-approve. Set `IMAGE_MODEL=flux-2-klein-9b-Q6_K.gguf` unless
 that gate is cleared.
 
-**OPEN — security, needs admin.** The firewall step turned out moot for the
-wrong reason: `Docker Desktop Backend` already allows **Any port from Any
-remote address**, so publishing 8188 exposed an **unauthenticated** ComfyUI to
-everything that can route to this box, not only 172.16.8.0/24. It answers
-spark1 because it answers everyone. ComfyUI's API queues arbitrary workflows
-and reads and writes files, so this is worth scoping:
+**CLOSED 2026-08-25 — 8188 scoped to the LAN, with one honest caveat.**
+Publishing 8188 had exposed an unauthenticated ComfyUI to every source that
+could route here, because `Docker Desktop Backend` allows **Any port from Any
+remote** and an extra *Allow* rule cannot narrow that — Windows Firewall
+permits if any Allow matches. The fix is a **Block** rule, since Block takes
+precedence, written as the complement of the LAN because "block except X" is
+not directly expressible:
 
 ```powershell
-# in an elevated PowerShell
-New-NetFirewallRule -DisplayName "Block ComfyUI 8188 except LAN" -Direction Inbound `
-  -Protocol TCP -LocalPort 8188 -RemoteAddress 172.16.8.0/24 -Action Allow
-# and constrain the broad Docker rule, or stop anios_comfyui when unused
+New-NetFirewallRule -DisplayName "Block ComfyUI 8188 outside LAN" -Direction Inbound `
+  -Protocol TCP -LocalPort 8188 -Action Block -RemoteAddress @(
+    "0.0.0.0-126.255.255.255","128.0.0.0-172.16.7.255","172.16.9.0-255.255.255.255")
 ```
+
+The `127.x` gap keeps loopback working. Verified after applying: loopback 200,
+spark1 200, spark2 200 — nothing that must work broke.
+
+**The caveat, stated because it would be easy to imply otherwise: the block
+itself was not empirically proven.** Every traffic source available on this
+network NATs into `172.16.8.0/24` — a container's probe arrived as
+`172.16.8.6 → 172.16.8.6:8188`, i.e. from inside the allowed range, so it
+proved nothing. Testing it properly needs a host genuinely outside the `/24`.
+What is established is that the rule is correctly formed, that Block precedence
+is documented behaviour, and that the permitted paths still work.
+
+Scale of the original risk, also worth stating plainly: NAT meant this was
+reachable by devices on the home network, not from the internet, unless
+someone had port-forwarded 8188.
 
 **Awaiting the operator, and only the operator.** A peer session asking is not
 authorisation for any of these:
