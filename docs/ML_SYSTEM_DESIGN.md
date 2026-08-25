@@ -318,6 +318,25 @@ them to 12, fail-soft to cosine order on any error; live, the answer scored
 `/rerank` reset the connection and `/v2/rerank` answers - the wire is
 measured, not assumed.
 
+**Web results are ordered by the main model, not the 0.6B reranker
+(2026-08-25).** They arrived in the providers' order - Brave's index order,
+which carries no score at all, or Tavily's own - and neither reads the
+question: an Arlington weekend query put a festival at Snowshoe, West
+Virginia among the listings. The deployed cross-encoder was tried first and
+measured: asked to order four results for that question with "(asked from
+Arlington, Virginia)" appended, it ranked the West Virginia festival
+**second**, above an Arlington concert, with scores of 0.10-0.25 across the
+board - a bi-encoder-sized model reading titles, not a judgement about place
+and date. So the model that answers the person orders the results in one
+grammar-constrained call (`prompts/search/rank.md`, ~1 s), given the
+question, where they asked from, and today's date; the top
+`SEARCH_MAX_RESULTS` are kept, the position is recorded on each result for
+the trace, and every failure keeps the providers' order. What the ranking
+knows about the person is the **place** only - a bias toward the local,
+never a filter; interests stay out of ordinary answers on purpose (section
+7). Held on the real model by `test_search_rerank_behaviour.py`: the West
+Virginia and the September results sink below every Arlington, on-date one.
+
 **Why Scout keeps its CPU cross-encoder.** The same service was routed into
 Scout's shortlist ranking (probabilities converted back to log-odds so the
 attribution margin kept its meaning) and measured by the labelled harness:

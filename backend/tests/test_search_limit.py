@@ -54,8 +54,14 @@ class _Budget:
     async def reconcile(self, reported, now=None):
         self.reconciled.append(reported)
 
-    async def reserve(self, user_id, is_operator, wanted, now=None, override=None, daily_override=None):
+    async def reserve(self, user_id, is_operator, wanted, now=None, override=None, daily_override=None, include_pool=True):
         return wanted
+
+    async def charge_pool(self, credits, now=None):
+        return None
+
+    async def provider_used(self, provider, now=None):
+        return 0
 
 
 class _Inner:
@@ -319,7 +325,10 @@ async def test_a_search_brave_served_refunds_the_tavily_pool_and_counts_for_brav
     finally:
         current_search_identity.reset(token)
     assert found.provider == "brave"
-    assert budget.refunded == [2] and budget.charged == [("brave", 1)]
+    # Brave had room, so the pool was never reserved: nothing to refund, and
+    # the Brave count goes up.
+    assert budget.reservations == [False]
+    assert budget.refunded == [] and budget.charged == [("brave", 1)]
 
 
 @pytest.mark.asyncio

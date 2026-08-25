@@ -47,6 +47,20 @@ _SKILLS = [
         "instruction": "Give a three-line brief on the named topic.",
         "source": "pack",
     },
+    {
+        "id": "pack:what-s-on",
+        "slug": "what-s-on",
+        "name": "What's on",
+        "description": (
+            "Events, nightlife and what's happening somewhere - tonight, this "
+            "weekend, a date range - found live and presented as a list people "
+            "can act on, with venue, map link, day and time, price, a line on "
+            "the music or what it is, and links to hear the artist and see "
+            "the event posting."
+        ),
+        "instruction": "Find what is on, live, and present each event in the agreed format.",
+        "source": "pack",
+    },
 ]
 
 
@@ -204,3 +218,17 @@ async def test_a_saved_skill_is_confirmed_not_run(llm):
     assert not states(
         text, "the reply reports actual weather conditions or a temperature"
     ), text
+
+
+# Arsalon's format, shipped for everyone (2026-08-25): a what's-on question
+# is the pack's, from a newcomer as much as from him.
+async def test_a_whats_on_question_is_the_shipped_pack(selector):
+    action = await selector.select(
+        "functional_test_user",
+        "what's on in Canggu this weekend?",
+        [],
+        None,
+        skills=_SKILLS,
+    )
+    assert isinstance(action, UseSkillAction), action
+    assert action.name == "What's on", action

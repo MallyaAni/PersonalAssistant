@@ -337,6 +337,50 @@ SEARCH_UNAVAILABLE_EVIDENCE: dict[str, str] = {
 }
 
 
+# Web results in the reranker's order when it answers, in the providers'
+# order when it does not. The providers' order is Brave's index order (no
+# score at all) or Tavily's own score; neither reads the question. The
+# reranker reads question and result together, and the question carries the
+# person's place when one is known, so an Arlington weekend is not answered
+# with a festival in West Virginia (2026-08-25). Scores are recorded on each
+# result so a wrong order is diagnosable from the trace; every failure keeps
+# the providers' order.
+async def _rerank_web_results(
+    rerank_call: Any,
+    question: str,
+    results: list[dict[str, Any]],
+    keep: int,
+) -> list[dict[str, Any]]:
+    if len(results) < 2:
+        return results[:keep]
+    documents = [
+        "{title}\n{url}\n{content}".format(
+            title=str(item.get("title") or "")[:200],
+            url=str(item.get("url") or "")[:200],
+            content=str(item.get("content") or "")[:1200],
+        )
+        for item in results
+    ]
+    try:
+        scores = await rerank_call(question, documents)
+    except Exception:
+        logger.warning("Web-result reranking failed; keeping provider order", exc_info=True)
+        return results[:keep]
+    if scores is None or len(scores) != len(results):
+        return results[:keep]
+    for item, score in zip(results, scores, strict=False):
+        item["rerank_score"] = round(float(score), 6)
+    ordered = sorted(results, key=lambda item: item.get("rerank_score", 0.0), reverse=True)
+    return ordered[:keep]
+
+
+# The question the reranker judges results against: what was asked, and
+# where from when the person's place is known - a bias toward the local,
+# never a filter, so a genuinely better far-away result can still surface.
+def _rerank_question(question: str, place: str) -> str:
+    return f"{question} (asked from {place})" if place else question
+
+
 # The most recently made of several referents, by the provenance each carries
 # (an ISO timestamp from the artifact store, so text order is time order);
 # the first offered when none says when.
@@ -2019,7 +2063,11 @@ class ConversationService:
                         },
                     }
                 search_results, search_succeeded = await self._research(
-                    query, screened.query, trace_id, action.max_results
+                    query,
+                    screened.query,
+                    trace_id,
+                    action.max_results,
+                    user_id=str(context.get("user_id") or "") or None,
                 )
                 if not search_succeeded:
                     # Rendered as turn state so the reply leads with it; the
@@ -2088,6 +2136,7 @@ class ConversationService:
         first_query: str,
         trace_id: str,
         max_results: int | None,
+        user_id: str | None = None,
     ) -> tuple[list[dict[str, Any]], bool]:
         gathered: list[dict[str, Any]] = []
         seen: set[str] = set()
@@ -2154,6 +2203,34 @@ class ConversationService:
             )
             current = screened.query
 
+        if len(gathered) > 1 and self.llm is not None:
+            # Ordered by the main model, not the 0.6B cross-encoder, which
+            # ranked a West Virginia festival above an Arlington concert for
+            # an Arlington question (prompts/search/rank.md). The person's
+            # place is a hint in the question; every failure keeps the
+            # providers' order.
+            from backend.core.result_ranking import order_by_usefulness
+
+            place = ""
+            try:
+                found_place = await self._primary_place(user_id) if user_id else None
+                place = found_place[0] if found_place else ""
+            except Exception:
+                place = ""
+            candidates = list(gathered)
+
+            async def rank_call(_question: str, _documents: list[str]) -> list[float] | None:
+                return await order_by_usefulness(self.llm, question, place, candidates)
+
+            gathered = await _rerank_web_results(
+                rank_call,
+                _rerank_question(question, place),
+                candidates,
+                max(1, max_results or settings.SEARCH_MAX_RESULTS),
+            )
+            logger.info(
+                "Trace %s ordered %d web results by usefulness", trace_id, len(gathered)
+            )
         return gathered, succeeded
 
     # Which allowance would refuse this request's next search, or None. Asked

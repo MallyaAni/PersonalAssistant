@@ -4,6 +4,21 @@ This file is append-only history for meaningful, verified changes. It must not c
 
 ## 2026-08-25 — Recall anything, a reranker, keyed digests, a third backup copy, and the architecture told for newcomers
 
+- **Web results are ordered by the main model, with the person's place and
+  the date in hand.** They arrived in the providers' order, which does not
+  read the question (an Arlington weekend query listed a festival in West
+  Virginia). The 0.6B reranker was measured first and ranked that festival
+  second; the main model now orders the results in one constrained call,
+  keeps the top eight, records the position on each, and falls back to the
+  providers' order on any failure; the place is a bias, never a filter, and
+  interests stay out of ordinary answers.
+- **Arsalon's event format ships for everyone as the "What's on" skill
+  pack:** venue, map link, day and time, price, a line on the music, a
+  YouTube link to hear the act and an Instagram link for the posting where
+  a source gives one; grouped by day, nothing already past, local first. Also: the Tavily pool is charged only when Tavily
+  serves (attributed callers were being refused a search Brave would have
+  answered), the "allowance used up" line appears only on a turn where a
+  search was chosen, and the meter states in one sentence who serves.
 - **Brave Search is the first rung, and the search chain is order, not
   mixing.** With the Tavily key spent and Google's Custom Search JSON API
   closed to new customers, Brave (a broad, fresh index; $5 of free credit a
