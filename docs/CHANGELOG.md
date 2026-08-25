@@ -120,9 +120,15 @@ This file is append-only history for meaningful, verified changes. It must not c
   picture is indexed by its prompt and an edit by its origin plus the
   instruction (fail-soft, removed with the artifact); a `_render_edit_state`
   block tells the reply when nothing was changed. Structural 238/238,
-  functional 4/4 across three registers of the request. Verified on the
-  same run: generation, upload + ask, editing the newest upload with the
-  correct lineage, and a question about a picture answered in words.
+  functional 5/5 across three registers of the request plus a plain
+  question. A third pass after the fixes proved them on the real path: the
+  unselected edit right after a generation edits that picture, the explicit
+  selection edits the chosen one, and "the bicycle picture" resolves by
+  description - 6 of 7, with generation, upload + ask, and the question
+  also passing. The seventh showed the other shape of the same lie (the
+  router chose no tool; the reply imitated its own "Editing ..." history),
+  so the no-change block now renders whenever a picture is in view on the
+  plain path, and that routing shape joined the tool-selection floor set.
 - **Image edits run at 1 MP, because the desktop's ceiling is VM RAM, not
   VRAM.** ComfyUI exited cleanly mid-job with a Klein generation and a
   Kontext edit queued together: the WSL2 VM sees 15.6 GB of RAM, and encoder
