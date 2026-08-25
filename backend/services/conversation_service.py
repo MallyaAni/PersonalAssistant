@@ -199,10 +199,13 @@ def _effective_image_description(
 # ordinary refusal instead, a downed ComfyUI process looked like a declined
 # request rather than an outage nobody had started.
 def _image_provider_failure_message(exc: BaseException, action: str) -> str:
+    # Image work runs on a machine that is deliberately not always on. The
+    # person asking - often over iMessage - cannot start it, so the honest
+    # answer names the state and the remedy they actually have: later.
     if isinstance(exc, httpx.ConnectError | httpx.ConnectTimeout):
         return (
-            "The image generation backend (ComfyUI) isn't running. "
-            "Start it and try again."
+            f"I can't {action} images right now - the machine that runs image "
+            "generation is off. Try again later."
         )
     # A connection accepted and then dropped is a different fault from one
     # refused: the image service was up, took the job, and went away during it.

@@ -281,8 +281,8 @@ class Settings(BaseSettings):
     # Local visual generation and binary artifact storage
     IMAGE_PROVIDER_BASE_URL: str = "http://127.0.0.1:8188"
     IMAGE_PROVIDER_NAME: str = "comfyui"
-    IMAGE_MODEL: str = "flux-2-klein-4b-fp8.safetensors"
-    IMAGE_TEXT_ENCODER: str = "qwen_3_4b.safetensors"
+    IMAGE_MODEL: str = "flux-2-klein-9b-fp8.safetensors"
+    IMAGE_TEXT_ENCODER: str = "qwen_3_8b_fp8mixed.safetensors"
     IMAGE_VAE: str = "flux2-vae.safetensors"
     IMAGE_GENERATION_STEPS: int = Field(default=4, ge=1, le=100)
     IMAGE_EDIT_STEPS: int = Field(default=4, ge=1, le=100)

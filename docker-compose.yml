@@ -319,9 +319,12 @@ services:
       - EMBEDDING_MODEL=text-embedding-nomic-embed-text-v1.5
       - IMAGE_PROVIDER_BASE_URL=${IMAGE_PROVIDER_BASE_URL:-http://host.docker.internal:8188}
       # One FLUX.2 Klein checkpoint serves generation and editing alike, so
-      # the model, text encoder and VAE are shared rather than per-role.
-      - IMAGE_MODEL=${IMAGE_MODEL:-flux-2-klein-4b-fp8.safetensors}
-      - IMAGE_TEXT_ENCODER=${IMAGE_TEXT_ENCODER:-qwen_3_4b.safetensors}
+      # the model, text encoder and VAE are shared rather than per-role. The
+      # 9B pair is the deployment's choice since 2026-08-25 (hosted on the
+      # desktop's 16 GB card, which fits it at fp8); the encoder must be the
+      # 8B one - the 4B encoder loads and produces garbage silently.
+      - IMAGE_MODEL=${IMAGE_MODEL:-flux-2-klein-9b-fp8.safetensors}
+      - IMAGE_TEXT_ENCODER=${IMAGE_TEXT_ENCODER:-qwen_3_8b_fp8mixed.safetensors}
       - IMAGE_VAE=${IMAGE_VAE:-flux2-vae.safetensors}
       # The distilled model is a four-step sampler in both directions.
       - IMAGE_GENERATION_STEPS=${IMAGE_GENERATION_STEPS:-4}
@@ -786,9 +789,12 @@ services:
       # http://comfyui:8188 (that GPU image build needs ~10-20 GB free on C:).
       - IMAGE_PROVIDER_BASE_URL=${IMAGE_PROVIDER_BASE_URL:-http://host.docker.internal:8188}
       # One FLUX.2 Klein checkpoint serves generation and editing alike, so
-      # the model, text encoder and VAE are shared rather than per-role.
-      - IMAGE_MODEL=${IMAGE_MODEL:-flux-2-klein-4b-fp8.safetensors}
-      - IMAGE_TEXT_ENCODER=${IMAGE_TEXT_ENCODER:-qwen_3_4b.safetensors}
+      # the model, text encoder and VAE are shared rather than per-role. The
+      # 9B pair is the deployment's choice since 2026-08-25 (hosted on the
+      # desktop's 16 GB card, which fits it at fp8); the encoder must be the
+      # 8B one - the 4B encoder loads and produces garbage silently.
+      - IMAGE_MODEL=${IMAGE_MODEL:-flux-2-klein-9b-fp8.safetensors}
+      - IMAGE_TEXT_ENCODER=${IMAGE_TEXT_ENCODER:-qwen_3_8b_fp8mixed.safetensors}
       - IMAGE_VAE=${IMAGE_VAE:-flux2-vae.safetensors}
       # The distilled model is a four-step sampler in both directions.
       - IMAGE_GENERATION_STEPS=${IMAGE_GENERATION_STEPS:-4}

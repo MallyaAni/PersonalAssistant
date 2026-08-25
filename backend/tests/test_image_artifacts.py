@@ -855,8 +855,8 @@ def test_an_edit_comes_back_at_exactly_the_size_it_was_given():
 @pytest.mark.parametrize(
     ("exc", "expected"),
     [
-        (httpx.ConnectError("refused"), "isn't running"),
-        (httpx.ConnectTimeout("timed out"), "isn't running"),
+        (httpx.ConnectError("refused"), "Try again later"),
+        (httpx.ConnectTimeout("timed out"), "Try again later"),
         (httpx.RemoteProtocolError("Server disconnected"), "stopped partway"),
         (httpx.ReadTimeout("read timed out"), "stopped partway"),
         (ValueError("something else"), "Please try again"),
