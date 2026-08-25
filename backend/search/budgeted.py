@@ -79,7 +79,17 @@ def _next_month(now: datetime) -> datetime:
 class BudgetedSearchProvider(SearchProvider):
     """Charge one query to the calling account before delegating downstream."""
 
-    def __init__(self, inner: SearchProvider, budget: SearchBudget) -> None:
+    def __init__(
+        self,
+        inner: SearchProvider,
+        budget: SearchBudget,
+        credits_per_search: int = 1,
+    ) -> None:
+        # What one call costs the key. Tavily bills an `advanced` search at
+        # two credits and the ceiling is in credits, so counting calls let
+        # the key run out (432 from the provider) with the local counter
+        # showing room to spare - 2026-08-25, at 993 of 1,000.
+        self.credits_per_search = max(1, int(credits_per_search))
         self.inner = inner
         self.budget = budget
 
@@ -98,11 +108,11 @@ class BudgetedSearchProvider(SearchProvider):
         granted = await self.budget.reserve(
             identity.user_id,
             identity.is_operator,
-            wanted=1,
+            wanted=self.credits_per_search,
             override=identity.monthly_limit,
             daily_override=identity.daily_limit,
         )
-        if granted < 1:
+        if granted < self.credits_per_search:
             now = datetime.now(UTC)
             # Report the window that actually ran out. Saying "monthly" to
             # somebody who only needs to wait until midnight would send them

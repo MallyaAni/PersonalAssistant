@@ -4,6 +4,36 @@ This file is append-only history for meaningful, verified changes. It must not c
 
 ## 2026-08-25 — Recall anything, a reranker, keyed digests, a third backup copy, and the architecture told for newcomers
 
+- **A picture the user already has can be shown again, and a reply can no
+  longer promise a picture nobody is making.** A newcomer's "can you show me
+  that image?" over iMessage was answered "I can't display it here" with the
+  picture in the model's context, and "a general one" - answering the
+  assistant's own question about a picture to regenerate - got "I'll create
+  a fresh one. Give me a sec." with nothing running. `show_image` is a new
+  router tool: the referent resolver picks the picture and the existing
+  artifact is re-streamed through the lifecycle every client renders (web
+  card, iMessage attachment); several matches show the newest and offer the
+  rest. The router prompt treats a short answer to a picture question as the
+  request completed; the honesty guard renders whenever the conversation has
+  carried a picture and forbids promising one. Verified by the routing matrix
+  (7/7 with the new cases), the edit-state functional suite (8/8, three new
+  no-promise cases), and the image scenario harness (ten scenarios, the show
+  case passing after the newest-match change).
+- **Writing inside generated pictures is English.** `IMAGE_TEXT_SUFFIX` rides
+  on every generation prompt; the tenth harness scenario generates a shop
+  sign and the vision model reads it back as "OPEN".
+- **A burst of iMessage photos is answered photo by photo.** The worker waits
+  about a minute for iCloud to finish downloading (nine seconds lost three of
+  four photos), answers up to four numbered pictures per message, and says
+  "still downloading" rather than "couldn't open".
+- **Approval seeds the profile name**, so a newcomer's "who am I?" is not
+  answered "I don't have your name"; the two hand-enrolled accounts were
+  seeded.
+- **A failed web search is admitted, not promised.** Tavily refused every
+  search (432, plan limit) and replies said "let me look that up". The
+  failure is now rendered to the reply as evidence saying no live results
+  exist; the local credit ceiling counts an `advanced` search as the two
+  credits the provider bills, so it trips before the key does.
 - **Every DeepSeek serving flag now carries its origin, and one claim about
   the engine was wrong.** `docs/ML_SYSTEM_DESIGN.md` gained a per-flag table
   (value, origin - measured here / inherited from the DSpark reference / vLLM

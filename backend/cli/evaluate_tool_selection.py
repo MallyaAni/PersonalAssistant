@@ -39,7 +39,9 @@ from backend.services.main_action_selector import (
     ManageTasksAction,
     SaveSkillAction,
     ScheduleTaskAction,
+    RecallHistoryAction,
     SearchAction,
+    ShowImageAction,
     ToolboxAction,
 )
 from backend.services.tool_selection_cases import (
@@ -53,6 +55,7 @@ _ACTION_TOOL = {
     SearchAction: "search_web",
     GenerateImageAction: "generate_image",
     EditImageAction: "edit_image",
+    ShowImageAction: "show_image",
     CreateDiagramAction: "create_diagram",
     DelegateAction: "delegate_to_presentation_agent",
     ToolboxAction: "mcp_tool",
@@ -64,6 +67,9 @@ _ACTION_TOOL = {
     ManageTasksAction: "manage_tasks",
     SaveSkillAction: "save_skill",
     ManageSkillsAction: "manage_skills",
+    # Absent again for search_history (2026-08-25): the tool shipped and
+    # the gap-catcher caught it.
+    RecallHistoryAction: "search_history",
 }
 
 

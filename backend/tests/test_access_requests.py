@@ -110,6 +110,7 @@ def _client(token: str | None = None) -> AsyncClient:
 # Remove accounts, sessions, and any request or invitation they created.
 async def _cleanup(*user_ids: str, names: tuple[str, ...] = ()) -> None:
     from backend.models.auth import UserAccount, UserSession
+    from backend.models.memory import UserProfile
 
     async with AsyncSessionLocal() as session:
         for name in names:
@@ -136,6 +137,10 @@ async def _cleanup(*user_ids: str, names: tuple[str, ...] = ()) -> None:
             )
             await session.execute(
                 delete(UserAccount).where(UserAccount.user_id == user_id)
+            )
+            # Approval seeds a profile name; a test account leaves none behind.
+            await session.execute(
+                delete(UserProfile).where(UserProfile.user_id == user_id)
             )
         await session.commit()
 
@@ -250,6 +255,13 @@ async def test_approval_makes_the_askers_own_token_work():
         }
         assert checked.json()["status"] == "approved"
         assert signed_in.status_code == 200
+        # The name given at sign-up is what the assistant knows them by from
+        # the first message: approval seeds the profile with it.
+        from backend.memory.repository import MemoryRepository
+
+        async with AsyncSessionLocal() as session:
+            profile = await MemoryRepository(session).get_user_profile(guest)
+        assert profile is not None and profile.name == name
     finally:
         await _cleanup(operator, guest, names=(name,))
 

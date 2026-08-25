@@ -29,6 +29,8 @@ from dataclasses import dataclass
 SEARCH = "search_web"
 GENERATE_IMAGE = "generate_image"
 EDIT_IMAGE = "edit_image"
+SHOW_IMAGE = "show_image"
+SEARCH_HISTORY = "search_history"
 CREATE_DIAGRAM = "create_diagram"
 DELEGATE_PRESENTATION = "delegate_to_presentation_agent"
 SCHEDULE_TASK = "schedule_task"
@@ -41,6 +43,8 @@ TOOL_NAMES: tuple[str, ...] = (
     SEARCH,
     GENERATE_IMAGE,
     EDIT_IMAGE,
+    SHOW_IMAGE,
+    SEARCH_HISTORY,
     CREATE_DIAGRAM,
     DELEGATE_PRESENTATION,
     # The four newest built-ins were missing here, which is why no case could
@@ -126,6 +130,30 @@ _TESLA_HISTORY = (
     (
         "set a reminder for my tesla software update for tomorrow 12pm",
         "Done - reminder set for tomorrow at 12:00 PM, Sunday August 23.",
+    ),
+)
+
+# A picture the assistant made earlier in this conversation.
+_MADE_PICTURE_HISTORY = (
+    ("make me a picture of a cat sleeping in a sunbeam", "Here's the image you asked for."),
+)
+# The exchange that failed on 2026-08-25: the picture was recalled from
+# history, then "can you show me that image?" was answered with words, and
+# "a general one" - the answer to the assistant's own question about what to
+# make - was answered with a promise to generate and no generation.
+_RECALLED_PICTURE_HISTORY = (
+    (
+        "what was the last conversation we had about",
+        "The most recent thing we talked about was on August 17th - you asked "
+        "me to create a stakeholder value image, and I made it for you.",
+    ),
+)
+_REGENERATE_CLARIFIED_HISTORY = _RECALLED_PICTURE_HISTORY + (
+    (
+        "can you regenerate it?",
+        "Sure - I can recreate that stakeholder value image for you. Do you "
+        "remember roughly what you wanted on it - the audience, the values, "
+        "or the general look?",
     ),
 )
 
@@ -357,6 +385,65 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
     SelectionCase(
         "explain the difference between TCP and UDP", NO_TOOL, "stable_knowledge"
     ),
+    # Showing an existing picture again is its own action: it is neither a new
+    # picture nor a change, and the confusable neighbour is a question about
+    # the picture, which is answered in words.
+    SelectionCase(
+        "can you show me that image?",
+        SHOW_IMAGE,
+        "show",
+        history=_RECALLED_PICTURE_HISTORY,
+    ),
+    SelectionCase(
+        "send me the cat picture again",
+        SHOW_IMAGE,
+        "show",
+        history=_MADE_PICTURE_HISTORY,
+    ),
+    SelectionCase("pull up the photo I uploaded yesterday", SHOW_IMAGE, "show"),
+    SelectionCase(
+        "show me that again",
+        SHOW_IMAGE,
+        "show",
+        active_image=True,
+        history=_MADE_PICTURE_HISTORY,
+    ),
+    SelectionCase(
+        "what's in the picture you made?",
+        NO_TOOL,
+        "show",
+        history=_MADE_PICTURE_HISTORY,
+    ),
+    # Regenerating is generate_image with the earlier description, and a short
+    # answer to the assistant's own question about the picture completes that
+    # request rather than starting a new subject.
+    SelectionCase(
+        "can you regenerate it?",
+        GENERATE_IMAGE,
+        "regenerate",
+        history=_RECALLED_PICTURE_HISTORY,
+    ),
+    SelectionCase(
+        "a general one",
+        GENERATE_IMAGE,
+        "regenerate",
+        history=_REGENERATE_CLARIFIED_HISTORY,
+    ),
+    # Searching what was said earlier is its own tool; the confusable
+    # neighbour is a question the recent history already answers.
+    SelectionCase("what did we talk about last week?", SEARCH_HISTORY, "history"),
+    SelectionCase(
+        "when did I first mention my dentist appointment?", SEARCH_HISTORY, "history"
+    ),
+    SelectionCase(
+        "did I ever tell you about my trip to Lisbon?", SEARCH_HISTORY, "history"
+    ),
+    SelectionCase(
+        "what did you just say?",
+        NO_TOOL,
+        "history",
+        history=_MADE_PICTURE_HISTORY,
+    ),
 )
 
 # Set from the measured baseline once, deliberately low enough to catch a
@@ -376,6 +463,13 @@ PER_TOOL_ACCURACY_FLOORS: dict[str, float] = {
     SEARCH: 0.70,
     GENERATE_IMAGE: 0.75,
     EDIT_IMAGE: 0.66,
+    # Added 2026-08-25 with the tool itself, after "can you show me that
+    # image?" over iMessage was answered with "I can't display it here".
+    SHOW_IMAGE: 0.66,
+    # search_history shipped 2026-08-25 with no routing coverage at all - the
+    # exact gap test_tool_coverage_completeness.py exists to catch, and it did.
+    # Floored at first measurement the same day.
+    SEARCH_HISTORY: 0.60,
     CREATE_DIAGRAM: 0.60,
     DELEGATE_PRESENTATION: 0.50,
     # Set on 2026-08-23 when these were first measured at all. Task routing is

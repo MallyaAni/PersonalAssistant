@@ -121,8 +121,16 @@ def _fit_for_vision(content: bytes) -> tuple[bytes, str]:
 # How patiently an attachment fetch waits out iCloud's lazy download:
 # attempts x growing backoff covers the seconds a photo needs to land on
 # the Mac without stalling the turn for a picture that never will.
-_FETCH_ATTEMPTS = 3
+# iCloud finishes downloading a photo on the Mac some time after the message
+# row appears - a few seconds for one small photo, most of a minute for a
+# burst of several large ones. Three tries over nine seconds (the original
+# budget) lost three of four photos in one real burst on 2026-08-25; the
+# backoff below waits a little over a minute in total before giving up.
+_FETCH_ATTEMPTS = 7
 _FETCH_RETRY_SECONDS = 3.0
+# How many photos one message is answered for. Messages carries every photo
+# of a burst on one row; each becomes its own vision turn, in order.
+_MAX_PHOTOS_PER_MESSAGE = 4
 
 # One reply can take a while on the local model; the read timeout has to
 # outlive a long generation, not a network hiccup.
@@ -467,20 +475,55 @@ class IMessageChatWorker:
             state["active_image_artifact_id"] = active_image
         return state
 
-    # A photo from the phone becomes a vision turn: the attachment is
-    # fetched from the bridge, run through the same /vision/analyze path a
-    # browser upload takes, and the analysis is the reply. The resulting
-    # artifact is remembered as the thread's picture-in-view, so "make it
-    # brighter" in the next text edits it exactly as it would in the web UI.
+    # Photos from the phone become vision turns: each attachment is fetched
+    # from the bridge, run through the same /vision/analyze path a browser
+    # upload takes, and the analyses are the reply - one bubble per photo when
+    # several came at once, numbered so the reader can tell which is which.
+    # The last artifact is remembered as the thread's picture-in-view, so
+    # "make it brighter" in the next text edits it exactly as it would in the
+    # web UI. A burst of photos used to be answered for its first photo only,
+    # silently: Messages puts every photo of a burst on one row.
     async def _photo_turn(
         self, user_id: str, caption: str, attachments: list[dict]
     ) -> "TurnResult":
+        conversation = await self._stored_conversation(user_id) or str(uuid.uuid4())
+        photos = attachments[:_MAX_PHOTOS_PER_MESSAGE]
+        replies: list[str] = []
+        remembered = ""
+        for position, attachment in enumerate(photos, start=1):
+            reply, artifact_id = await self._analyze_photo(
+                user_id, caption, attachment, conversation
+            )
+            if artifact_id:
+                remembered = artifact_id
+            replies.append(f"Picture {position}: {reply}" if len(photos) > 1 else reply)
+        if len(attachments) > len(photos):
+            replies.append(
+                f"I looked at the first {len(photos)} - send the rest separately "
+                "if you want those described too."
+            )
+        if remembered:
+            await self._remember_conversation(user_id, conversation)
+            await self._remember_image(user_id, remembered)
+        return TurnResult("\n\n".join(replies) or _FAILURE_REPLY, ())
+
+    # One photo's answer and the artifact it became, or a sentence saying why
+    # not. Returned as words rather than raised so a burst with one bad photo
+    # still answers the others.
+    async def _analyze_photo(
+        self, user_id: str, caption: str, attachment: dict, conversation: str
+    ) -> tuple[str, str]:
         fetched = await self._fetch_inbound_attachment(
-            str(attachments[0].get("attachment_id") or "")
+            str(attachment.get("attachment_id") or "")
         )
         if fetched is None:
-            return TurnResult(
-                "I couldn't open that picture. Mind sending it again?", ()
+            # Most often the photo is still on its way down from iCloud - the
+            # bridge cannot yet see the file - and the honest reply says so
+            # rather than blaming the picture.
+            return (
+                "That photo hasn't finished downloading on my end yet - "
+                "send it again in a minute?",
+                "",
             )
         media_type, name, data = fetched
         try:
@@ -489,11 +532,8 @@ class IMessageChatWorker:
             )
         except Exception:
             logger.warning("imessage_chat_photo_unreadable", extra={"user": user_id})
-            return TurnResult(
-                "I couldn't open that picture. Mind sending it again?", ()
-            )
+            return "I couldn't open that picture. Mind sending it again?", ""
         token = issue_user_token(user_id, ttl_seconds=600, scopes=["chat", "vision"])
-        conversation = await self._stored_conversation(user_id) or str(uuid.uuid4())
         # A captionless photo still needs the vision call an instruction;
         # fixed wording, like every functional sentence the app writes.
         prompt = caption or "Describe what you see in this picture, briefly."
@@ -517,15 +557,19 @@ class IMessageChatWorker:
                 )
                 response.raise_for_status()
                 result = response.json()
-        except Exception:
-            logger.warning("imessage_chat_photo_turn_failed", extra={"user": user_id})
-            return TurnResult(_FAILURE_REPLY, ())
-        await self._remember_conversation(user_id, conversation)
+        except Exception as exc:
+            # The reason rides the warning: a bare line once hid that the
+            # backend was simply restarting under a deploy.
+            logger.warning(
+                "imessage_chat_photo_turn_failed: %s: %s",
+                type(exc).__name__,
+                str(exc)[:200],
+                extra={"user": user_id},
+            )
+            return _FAILURE_REPLY, ""
         artifact_id = str((result.get("artifact") or {}).get("id") or "")
-        if artifact_id:
-            await self._remember_image(user_id, artifact_id)
         reply = str(result.get("analysis") or "").strip()
-        return TurnResult(reply or _FAILURE_REPLY, ())
+        return reply or _FAILURE_REPLY, artifact_id
 
     # One inbound attachment's bytes. Messages lazy-downloads attachments
     # from iCloud, so a fetch racing the download answers not_found for a

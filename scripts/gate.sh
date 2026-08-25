@@ -48,7 +48,13 @@ esac
 # test_gateway_follows_the_backend.py shells out to the docker CLI to inspect
 # the running gateway and backend containers. That is a different execution
 # context from every other file here and it cannot work from inside one of them.
-ignores=(--ignore="$root/backend/tests/functional/test_gateway_follows_the_backend.py")
+# test_image_text_language_behaviour.py generates a picture on the desktop
+# that hosts ComfyUI, which is off at times; a required-functional skip would
+# fail every deploy for a machine being asleep. It is run by hand (see the file).
+ignores=(
+    --ignore="$root/backend/tests/functional/test_gateway_follows_the_backend.py"
+    --ignore="$root/backend/tests/functional/test_image_text_language_behaviour.py"
+)
 
 echo "==> Gating on $target"
 echo "    (a skipped test counts as a failure here)"

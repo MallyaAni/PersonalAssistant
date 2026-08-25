@@ -20,6 +20,7 @@ from .actions import (
     SaveSkillAction,
     ScheduleTaskAction,
     SearchAction,
+    ShowImageAction,
     ToolboxAction,
     UseSkillAction,
 )
@@ -56,6 +57,7 @@ __all__ = [
     "SaveSkillAction",
     "ScheduleTaskAction",
     "SearchAction",
+    "ShowImageAction",
     "ToolboxAction",
     "UseSkillAction",
     "builtin_tools",

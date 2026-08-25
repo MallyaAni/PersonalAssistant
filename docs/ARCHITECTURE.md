@@ -1181,7 +1181,7 @@ changing one role never silently moves another.
 | Memory proposal | `MEMORY_PROPOSAL_LLM_*` | DeepSeek, grammar-constrained, temperature 0 | Classifying what a turn is worth remembering |
 | Text embedding | `EMBEDDING_*` | Nomic (`vllm-embedding`, spark1) | Semantic memory and retrieval vectors, both voices of every exchange |
 | Reranking | `RERANKER_*` | Qwen3-Reranker-0.6B (`vllm-reranker`, spark1, `/v2/rerank`) | History recall's second pass; empty `RERANKER_BASE_URL` switches the stage off |
-| Image generation / editing | `IMAGE_*` / `IMAGE_EDIT_*` | FLUX.2 Klein 9B / FLUX.1 Kontext via ComfyUI on the desktop | `generate_image`, `edit_image`, deck image enrichment |
+| Image generation / editing | `IMAGE_*` / `IMAGE_EDIT_*` | FLUX.2 Klein 9B / FLUX.1 Kontext via ComfyUI on the desktop | `generate_image`, `edit_image`, `show_image`, deck image enrichment |
 
 Each role falls back through the next-broader scope when unset
 (`ROUTING_LLM_* -> MAIN_LLM_* -> LLM_*`), so an unset role inherits rather than
@@ -1875,7 +1875,7 @@ The current scaffold expresses this intended flow:
 ```text
 Frontend -> POST /api/v1/chat -> FastAPI dependency assembly
          -> ConversationService -> MainActionSelector
-         -> (search_web | generate_image | edit_image | create_diagram
+         -> (search_web | generate_image | edit_image | show_image | create_diagram
              | delegate_to_presentation_agent | search_history
              | schedule_task / manage_tasks | a taught skill
              | a toolbox tool | none),
@@ -1897,6 +1897,11 @@ create_diagram -> ConversationService -> DiagramArtifactService
 generate_image / edit_image -> ImageArtifactService / ImageRefinementService
                          -> pending artifact (artifact_started) -> ComfyUI FLUX
                          -> ready/failed artifact (artifact_ready/artifact_error) SSE
+show_image               -> referent resolution over the user's own pictures
+                         -> the existing artifact re-streamed as artifact_started
+                            + artifact_ready (the web fills the card it opened, the
+                            iMessage worker attaches the photo); an ambiguous
+                            match asks which, with image_matches to choose from
                          -> conversation turn persisted, unlike the direct REST
                             endpoints these replace for chat-initiated requests
 

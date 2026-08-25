@@ -498,7 +498,7 @@ export type ChatStreamUpdate =
   | { type: 'start'; content: string }
   | { type: 'content'; content: string }
   | { type: 'memory_proposal'; proposal: MemoryProposal }
-  | { type: 'artifact_started'; artifactId: string; kind: 'diagram' | 'generated_image' }
+  | { type: 'artifact_started'; artifactId: string; kind: string }
   | { type: 'artifact_ready'; artifact: VisualArtifact }
   | { type: 'image_matches'; artifacts: ImageArtifact[] }
   | { type: 'search_started'; minimized: boolean }
@@ -1406,11 +1406,9 @@ export async function* streamChat(
         } satisfies ChatStreamUpdate
       } else if (event.event === 'artifact_started') {
         const { id, kind, status } = event.data
-        if (
-          typeof id !== 'string' ||
-          (kind !== 'diagram' && kind !== 'generated_image') ||
-          status !== 'pending'
-        ) {
+        // Any artifact kind may open a card: a picture shown again arrives
+        // with its own kind (uploaded, edited) and is ready a moment later.
+        if (typeof id !== 'string' || typeof kind !== 'string' || !kind || status !== 'pending') {
           throw new Error('Artifact start event is invalid')
         }
         yield {

@@ -365,6 +365,17 @@ class Settings(BaseSettings):
     IMAGE_PORTRAIT_SUFFIX: str = (
         "natural unretouched skin with pores and fine lines, flyaway hair"
     )
+    # Klein's Qwen3 text encoder letters a picture in whatever script it
+    # drifts to when the prompt says nothing about language: a stakeholder
+    # value image asked for in English came back lettered in something else
+    # (2026-08-25). Worded conditionally - "any writing" - so it names the
+    # language of writing that is there without inviting writing into a
+    # picture that had none. Checked by the tenth image scenario and by
+    # backend/tests/functional/test_image_text_language_behaviour.py, both of
+    # which read the sign back through the vision model.
+    IMAGE_TEXT_SUFFIX: str = (
+        "any writing in the picture is in clear, correctly spelled English"
+    )
     # A single GPU cannot hold the generation model and the diffusion model at
     # once. When enabled, AniOS sleeps local inference for the duration of one
     # image job so the diffusion runtime stops streaming weights from host RAM.

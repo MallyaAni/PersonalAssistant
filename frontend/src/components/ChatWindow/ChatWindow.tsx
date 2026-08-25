@@ -233,7 +233,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
 
   // Mark the latest assistant response as actively generating its artifact --
   // a diagram, or a picture the model chose to create or edit mid-chat.
-  const handleArtifactStarted = (artifactId: string, kind: 'diagram' | 'generated_image') => {
+  const handleArtifactStarted = (artifactId: string, kind: string) => {
     setMessages(prev => {
       const next = [...prev]
       const index = latestAssistantIndex(next)

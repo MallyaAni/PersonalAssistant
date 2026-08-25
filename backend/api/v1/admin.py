@@ -486,6 +486,17 @@ async def approve_access_request(
         phone = row.phone
         display_name = row.display_name or account.user_id
         await db.commit()
+        # The name they gave at sign-up is the name the assistant should know
+        # them by. Without it a newcomer's "who am I?" was answered "I don't
+        # have your name or any details about you on file" (2026-08-25, his
+        # second message ever), because nothing wrote a profile until memory
+        # capture happened to learn a name. Seeded only when no profile
+        # exists, so a name they later corrected is never overwritten.
+        from backend.memory.repository import MemoryRepository
+
+        profiles = MemoryRepository(db)
+        if await profiles.get_user_profile(user_id) is None:
+            await profiles.upsert_user_profile(user_id, display_name, {})
 
         # Approving is also the moment they become reachable. The iMessage
         # bridge identifies a sender by matching against the subscriber

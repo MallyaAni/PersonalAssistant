@@ -68,6 +68,7 @@ from backend.services.main_action_selector import (
     SaveSkillAction,
     ScheduleTaskAction,
     SearchAction,
+    ShowImageAction,
     ToolboxAction,
     UseSkillAction,
     render_recent_history,
@@ -258,13 +259,57 @@ def _editing_announcement(referent: Referent) -> str:
 
 
 # Ask which of several equally plausible pictures was meant.
-def _which_one_question(matched: tuple[Referent, ...]) -> str:
+def _which_one_question(matched: tuple[Referent, ...], verb: str = "change") -> str:
     options = "\n".join(f"- {_referent_label(item)}" for item in matched)
     return (
         "I found more than one picture that could be the one you mean:\n\n"
         f"{options}\n\n"
-        "Which of these should I change?"
+        f"Which of these should I {verb}?"
     )
+
+
+# Whether any earlier turn of this conversation carried a picture, which is
+# when a reply with no image action this turn is most tempted to promise one.
+def _history_carried_pictures(history: list[dict[str, Any]]) -> bool:
+    for turn in history:
+        metadata = turn.get("metadata") if isinstance(turn, dict) else None
+        if isinstance(metadata, dict) and metadata.get("artifact_ids"):
+            return True
+    return False
+
+
+# What the reply is handed when the search provider refused or did not
+# answer. Worded as the first thing to say: left to choose, the model asked a
+# clarifying question first and never mentioned it could not look.
+SEARCH_UNAVAILABLE_EVIDENCE: dict[str, str] = {
+    "title": "Live web search unavailable",
+    "url": "",
+    "content": (
+        "The web search for this turn failed: the search provider refused or "
+        "did not answer, so no live results exist. Begin the reply by saying "
+        "plainly that you could not check live sources right now. Then answer "
+        "from what you already know, and do not offer, promise, or announce a "
+        "search - none can run this turn."
+    ),
+}
+
+
+# The most recently made of several referents, by the provenance each carries
+# (an ISO timestamp from the artifact store, so text order is time order);
+# the first offered when none says when.
+def _newest_referent(matched: tuple[Referent, ...]) -> Referent | None:
+    if not matched:
+        return None
+    dated = [item for item in matched if item.when]
+    if not dated:
+        return matched[0]
+    return max(dated, key=lambda item: item.when)
+
+
+# The artifact as clients may see it: the repository's private storage key
+# rides on the record for service use and must not leave the process.
+def _public_artifact(artifact: dict[str, Any]) -> dict[str, Any]:
+    return {key: value for key, value in artifact.items() if not str(key).startswith("_")}
 
 
 # Describe the pending save in one short line for the prompt. Only the value the
@@ -1176,6 +1221,102 @@ class ConversationService:
         ):
             yield event
 
+    # Put a picture the person already has back in front of them.
+    #
+    # Recalled pictures reached the reply model as descriptions and never the
+    # person: "can you show me that image?" over iMessage on 2026-08-25 was
+    # answered "I can't display it here" with the picture in the model's
+    # context. Showing is the artifact lifecycle every client already handles
+    # - the web fills the placeholder `artifact_started` opens, the iMessage
+    # worker attaches what `artifact_ready` names - so an existing picture is
+    # streamed the way a new one is, and becomes the picture in view for the
+    # turns that follow. Which picture is decided the way an edit target is:
+    # the newest ones and any that match the description are offered, and an
+    # ambiguous match asks rather than guesses.
+    async def _process_show_image(
+        self,
+        user_id: str,
+        query: str,
+        action: ShowImageAction,
+        conversation_id: str,
+        trace_id: str,
+        metadata: dict[str, Any],
+        history: list[dict[str, Any]],
+    ) -> AsyncGenerator[ChatStreamEvent, None]:
+        resolution, offered = await self._resolve_edit_target(user_id, action.which)
+        if not offered:
+            async for event in self._answer_without_the_tool(
+                user_id,
+                query,
+                conversation_id,
+                trace_id,
+                metadata,
+                extra_context={
+                    "image_edit": {
+                        "performed": False,
+                        "reason": "this user has no pictures here yet, so none "
+                        "could be shown",
+                    }
+                },
+            ):
+                yield event
+            return
+        # Several matches ask before an edit, because a wrong edit costs a
+        # generation; a show costs nothing and is undone by asking for
+        # another, so the newest match is shown and the rest are offered.
+        # The harness proved the alternative: "the bicycle picture" in a
+        # conversation with four bicycle revisions was answered with a list.
+        target = resolution.only or _newest_referent(resolution.matched)
+        others = tuple(item for item in resolution.matched if item is not target)
+        shown = (
+            await self._load_referent_artifacts(user_id, [target.handle])
+            if target is not None
+            else []
+        )
+        if not shown:
+            async for event in self._process_missing_edit_target(
+                user_id,
+                query,
+                conversation_id,
+                trace_id,
+                metadata,
+                history,
+                resolution,
+                verb="show",
+            ):
+                yield event
+            return
+        artifact = shown[0]
+        artifact_id = str(artifact.get("id") or "")
+        response_text = f"Here's {_referent_label(target)} again."
+        if others:
+            response_text = (
+                f"Here's the newest one that matches - {_referent_label(target)}. "
+                f"I found {len(others)} other picture{'s' if len(others) > 1 else ''} "
+                "like it; say which if you meant another."
+            )
+            offered = await self._load_referent_artifacts(
+                user_id, [item.handle for item in resolution.matched]
+            )
+            if offered:
+                yield {"event": "image_matches", "data": {"artifacts": offered}}
+        await self._persist_completed_turn(
+            user_id,
+            conversation_id,
+            query,
+            response_text,
+            trace_id,
+            history,
+            {**metadata, "artifact_ids": [artifact_id]},
+        )
+        yield {
+            "event": "artifact_started",
+            "data": {"id": artifact_id, "kind": artifact.get("kind"), "status": "pending"},
+        }
+        yield {"event": "delta", "data": {"content": response_text}}
+        yield {"event": "artifact_ready", "data": artifact}
+        yield {"event": "done", "data": {}}
+
     # Work out which owned picture an edit instruction is pointing at.
     #
     # Costs nothing on the ordinary path: it runs only when an edit arrived
@@ -1219,11 +1360,12 @@ class ConversationService:
         metadata: dict[str, Any],
         history: list[dict[str, Any]],
         resolution: ReferentResolution | None = None,
+        verb: str = "change",
     ) -> AsyncGenerator[ChatStreamEvent, None]:
         matched = resolution.matched if resolution is not None else ()
         artifact_ids: list[str] = []
         if matched:
-            response_text = _which_one_question(matched)
+            response_text = _which_one_question(matched, verb)
             artifact_ids = [item.handle for item in matched]
             shown = await self._load_referent_artifacts(user_id, artifact_ids)
             if shown:
@@ -1262,7 +1404,7 @@ class ConversationService:
                 logger.warning("Referent artifact unavailable", exc_info=True)
                 continue
             if artifact is not None and artifact.get("status") == "ready":
-                found.append(artifact)
+                found.append(_public_artifact(artifact))
         return found
 
     # Select and execute at most one safe MCP tool while streaming its lifecycle.
@@ -1830,6 +1972,10 @@ class ConversationService:
                 search_results, search_succeeded = await self._research(
                     query, screened.query, trace_id, action.max_results
                 )
+                if not search_succeeded:
+                    # Rendered as turn state so the reply leads with it; the
+                    # synthetic result row alone was weighed like any source.
+                    context["search_state"] = {"failed": True}
                 if tool_identity:
                     yield {
                         "event": "tool_finished",
@@ -1988,8 +2134,12 @@ class ConversationService:
             )
         except Exception:
             # A search outage degrades the answer; it must not fail the turn.
+            # It is told to the model the way a quota is: handed nothing at
+            # all, the reply answered "let me look that up for you" on a turn
+            # whose search had just failed (Tavily 432, 2026-08-25) - a
+            # promise nothing was going to keep.
             logger.warning("Trace %s web search failed", trace_id, exc_info=True)
-            return [], False
+            return [dict(SEARCH_UNAVAILABLE_EVIDENCE)], False
         return (
             [
                 {
@@ -2138,6 +2288,16 @@ class ConversationService:
                 asked,
                 action,
                 active_image_artifact_id,
+                conversation_id,
+                trace_id,
+                metadata,
+                history,
+            )
+        if isinstance(action, ShowImageAction) and self.image_artifacts is not None:
+            return self._process_show_image(
+                user_id,
+                asked,
+                action,
                 conversation_id,
                 trace_id,
                 metadata,
@@ -2909,10 +3069,12 @@ class ConversationService:
         # the router chose no tool and the history was full of edit turns to
         # imitate (2026-08-25, both on the real path). So whenever a picture is
         # in view, the reply is told that nothing changed this turn.
-        if context.get("images") and "image_edit" not in context:
+        if (
+            context.get("images") or _history_carried_pictures(history)
+        ) and "image_edit" not in context:
             context["image_edit"] = {
                 "performed": False,
-                "reason": "no edit action ran on this turn",
+                "reason": "no image action ran on this turn",
             }
         # What the turn router can actually do, read from the router itself
         # rather than listed again in the prompt: the same rows it offers as

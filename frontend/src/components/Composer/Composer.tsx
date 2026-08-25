@@ -75,7 +75,7 @@ interface ComposerProps {
   onStreamUpdate: (content: string) => void;
   onThinkingChange: (isThinking: boolean) => void;
   onMemoryProposal: (proposal: MemoryProposal) => void;
-  onArtifactStarted: (artifactId: string, kind: 'diagram' | 'generated_image') => void;
+  onArtifactStarted: (artifactId: string, kind: string) => void;
   onArtifactReady: (artifact: VisualArtifact) => void;
   onArtifactError: (artifactId: string, message: string) => void;
   onVisualStarted: (mode: 'analyze') => void;

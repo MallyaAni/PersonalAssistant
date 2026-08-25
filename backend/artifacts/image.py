@@ -153,6 +153,7 @@ class ComfyUIImageProvider(ImageProvider):
         portrait_suffix: str = "",
         restart_wait_seconds: float = 90.0,
         transport: httpx.AsyncBaseTransport | None = None,
+        text_suffix: str = "",
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.model = model
@@ -162,6 +163,8 @@ class ComfyUIImageProvider(ImageProvider):
         self._transport = transport
         self.style_suffix = style_suffix.strip().strip(",").strip()
         self.portrait_suffix = portrait_suffix.strip().strip(",").strip()
+        # The language of any writing; see IMAGE_TEXT_SUFFIX for why.
+        self.text_suffix = text_suffix.strip().strip(",").strip()
         # No negative prompt: FLUX.2 Klein runs distilled at cfg 1.0, where the
         # negative conditioning is inert, so the workflow zeroes it out rather
         # than carrying text nothing reads. Realism is steered by the positive
@@ -341,6 +344,10 @@ class ComfyUIImageProvider(ImageProvider):
             and self.portrait_suffix.lower() not in text.lower()
         ):
             parts.append(self.portrait_suffix)
+        # The writing clause goes last, so it reads as a condition on the
+        # whole picture rather than as part of the subject.
+        if self.text_suffix and self.text_suffix.lower() not in text.lower():
+            parts.append(self.text_suffix)
         return ", ".join(parts)
 
     # The diffusion-model loader node, chosen by the file the model name ends

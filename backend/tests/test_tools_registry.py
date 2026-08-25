@@ -29,11 +29,16 @@ from backend.tools import (
 def test_every_builtin_row_is_complete():
     rows = builtin_tools(("diagram", "presentation"))
     names = [row.name for row in rows]
+    # The order the router is offered them in. `search_history` and
+    # `show_image` were added after this list was first written; a row the
+    # list omits is a row this test never checked.
     assert names == [
         "generate_image",
         "edit_image",
+        "show_image",
         "create_diagram",
         "delegate_to_presentation_agent",
+        "search_history",
         "schedule_task",
         "manage_tasks",
         "save_skill",

@@ -53,6 +53,14 @@ class EditImageAction:
 
 
 @dataclass(frozen=True, slots=True)
+class ShowImageAction:
+    """The model decided this turn wants a picture they already have shown again."""
+
+    # Which picture, in the user's words; resolved against what they own.
+    which: str
+
+
+@dataclass(frozen=True, slots=True)
 class CreateDiagramAction:
     """The model decided this turn wants a diagram drafted."""
 
@@ -137,6 +145,7 @@ MainAction = (
     SearchAction
     | GenerateImageAction
     | EditImageAction
+    | ShowImageAction
     | CreateDiagramAction
     | DelegateAction
     | ScheduleTaskAction

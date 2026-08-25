@@ -21,6 +21,7 @@ from . import (
     save_skill,
     schedule_task,
     search_history,
+    show_image,
 )
 from .actions import (
     CreateDiagramAction,
@@ -34,6 +35,7 @@ from .actions import (
     SaveSkillAction,
     ScheduleTaskAction,
     SearchAction,
+    ShowImageAction,
     ToolboxAction,
     UseSkillAction,
 )
@@ -51,6 +53,7 @@ from .search import (
 _MODULES: tuple[ModuleType, ...] = (
     generate_image,
     edit_image,
+    show_image,
     create_diagram,
     presentation,
     search_history,
@@ -168,6 +171,7 @@ SKILL_WAITING: tuple[str, ...] = (
 _ROW_FOR_ACTION: dict[type, BuiltinTool] = {
     GenerateImageAction: generate_image.TOOL,
     EditImageAction: edit_image.TOOL,
+    ShowImageAction: show_image.TOOL,
     CreateDiagramAction: create_diagram.TOOL,
     DelegateAction: presentation.TOOL,
     RecallHistoryAction: search_history.TOOL,
@@ -184,6 +188,8 @@ def _detail(action: MainAction) -> str:
         return action.prompt
     if isinstance(action, EditImageAction):
         return action.instruction
+    if isinstance(action, ShowImageAction):
+        return action.which
     if isinstance(action, RecallHistoryAction):
         return action.query
     if isinstance(action, CreateDiagramAction | DelegateAction):

@@ -714,3 +714,89 @@ def test_a_medium_reply_stays_one_bubble():
     )
     assert 400 < len(reply) < 800
     assert len(bubbles(reply)) == 1
+
+
+# Messages carries every photo of a burst on one row. Each is answered in
+# order and numbered, the last becomes the picture in view, and one photo
+# that has not finished downloading does not cost the others their answer.
+@pytest.mark.asyncio
+async def test_a_burst_of_photos_is_answered_photo_by_photo(monkeypatch):
+    worker = IMessageChatWorker(lambda *a: None, base_url="http://test", redis=_Redis())
+    remembered: list[str] = []
+
+    async def stored_conversation(user_id):
+        return "conv-1"
+
+    async def remember_image(user_id, artifact_id):
+        remembered.append(artifact_id)
+
+    async def remember_conversation(user_id, conversation):
+        return None
+
+    async def analyze(user_id, caption, attachment, conversation):
+        if attachment["attachment_id"] == "att-2":
+            return "That photo hasn't finished downloading on my end yet - send it again in a minute?", ""
+        return f"seen {attachment['attachment_id']}", f"art-{attachment['attachment_id']}"
+
+    monkeypatch.setattr(worker, "_stored_conversation", stored_conversation)
+    monkeypatch.setattr(worker, "_remember_image", remember_image)
+    monkeypatch.setattr(worker, "_remember_conversation", remember_conversation)
+    monkeypatch.setattr(worker, "_analyze_photo", analyze)
+
+    turn = await worker._photo_turn(
+        "ani.mallya",
+        "",
+        [{"attachment_id": "att-1"}, {"attachment_id": "att-2"}, {"attachment_id": "att-3"}],
+    )
+
+    assert turn.reply.split("\n\n") == [
+        "Picture 1: seen att-1",
+        "Picture 2: That photo hasn't finished downloading on my end yet - send it again in a minute?",
+        "Picture 3: seen att-3",
+    ]
+    assert remembered == ["art-att-3"], "the last photo that arrived is the picture in view"
+
+
+@pytest.mark.asyncio
+async def test_a_single_photo_is_answered_without_numbering(monkeypatch):
+    worker = IMessageChatWorker(lambda *a: None, base_url="http://test", redis=_Redis())
+
+    async def stored_conversation(user_id):
+        return "conv-1"
+
+    async def analyze(user_id, caption, attachment, conversation):
+        return "a sunny trail", ""
+
+    monkeypatch.setattr(worker, "_stored_conversation", stored_conversation)
+    monkeypatch.setattr(worker, "_analyze_photo", analyze)
+
+    turn = await worker._photo_turn("ani.mallya", "what is this?", [{"attachment_id": "att-1"}])
+
+    assert turn.reply == "a sunny trail"
+
+
+# Only so many photos per message are looked at; the rest are named rather
+# than silently dropped.
+@pytest.mark.asyncio
+async def test_photos_past_the_cap_are_named_not_dropped(monkeypatch):
+    import backend.workers.imessage_chat as module
+
+    monkeypatch.setattr(module, "_MAX_PHOTOS_PER_MESSAGE", 2)
+    worker = IMessageChatWorker(lambda *a: None, base_url="http://test", redis=_Redis())
+
+    async def stored_conversation(user_id):
+        return "conv-1"
+
+    async def analyze(user_id, caption, attachment, conversation):
+        return f"seen {attachment['attachment_id']}", ""
+
+    monkeypatch.setattr(worker, "_stored_conversation", stored_conversation)
+    monkeypatch.setattr(worker, "_analyze_photo", analyze)
+
+    turn = await worker._photo_turn(
+        "ani.mallya", "", [{"attachment_id": f"att-{n}"} for n in range(1, 4)]
+    )
+
+    assert turn.reply.endswith(
+        "I looked at the first 2 - send the rest separately if you want those described too."
+    )

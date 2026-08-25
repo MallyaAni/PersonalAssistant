@@ -190,6 +190,53 @@ class Scenarios:
                 self.trail(r),
             )
 
+            r = await self.chat(client, "can you show me the bicycle picture again?")
+            shown = _id(r["artifact"])
+            self.verdict(
+                "8 show an existing picture again",
+                bool(shown) and shown in lineage | {sixth} and not r["error"],
+                f"artifact={shown} expected_in={sorted(lineage | {sixth})} {self.trail(r)}",
+            )
+
+            r = await self.chat(client, "can you regenerate the bicycle picture?")
+            regenerated = _id(r["artifact"])
+            meta = await self.artifact(client, regenerated)
+            self.verdict(
+                "9 regenerate makes a new picture",
+                bool(regenerated) and regenerated not in lineage | {sixth, uploaded, fourth}
+                and meta.get("kind") == "generated_image" and not r["error"],
+                f"artifact={regenerated} kind={meta.get('kind')} {self.trail(r)}",
+            )
+
+            r = await self.chat(client, "make me a picture of a wooden shop sign that says OPEN in big letters")
+            signed = _id(r["artifact"])
+            read_back = ""
+            if signed:
+                content = await client.get(
+                    f"{self.base}/artifacts/{self.user}/{signed}/content", headers=self.headers
+                )
+                if content.status_code == 200:
+                    look = await client.post(
+                        f"{self.base}/vision/analyze",
+                        data={
+                            "user_id": self.user,
+                            "conversation_id": str(uuid.uuid4()),
+                            "prompt": "What text is written in this image? Reply with the exact letters only.",
+                            "defer_reasoning": "false",
+                        },
+                        files={"image": ("sign.png", content.content, "image/png")},
+                        headers=self.headers,
+                    )
+                    look_json = look.json() if look.status_code in (200, 201) else {}
+                    read_back = str(
+                        look_json.get("answer") or look_json.get("content") or look_json.get("analysis") or ""
+                    )
+            self.verdict(
+                "10 writing in a generated picture is English",
+                bool(signed) and "open" in read_back.lower(),
+                f"artifact={signed} vlm_read={read_back[:80]!r} {self.trail(r)}",
+            )
+
             if keep:
                 print(f"kept: user {self.user} and its artifacts remain for inspection", flush=True)
             else:

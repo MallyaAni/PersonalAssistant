@@ -177,7 +177,30 @@ def _render_edit_state(edit: dict[str, Any]) -> str:
         "to change. Otherwise answer normally. Either way, do not describe an "
         "updated, edited, or new image, do not say a change has been made, and "
         "do not present any picture as the result - even if earlier turns in "
-        "this conversation did."
+        "this conversation did. Do not promise or announce that a picture is "
+        "being made or will be made either - nothing is being made this turn. "
+        "If they want a picture made, tell them to describe what to draw in "
+        "one message and it will be made then."
+    )
+
+
+# Tell the model when a web search it would have relied on did not run.
+# Rendered as turn state rather than only as a result row: handed the same
+# fact as a result, the model asked "which weekend do you mean?" first and
+# never said it could not look (2026-08-25, Tavily refusing every search).
+# The save and edit states above are followed reliably in this position;
+# this one is worded the same way.
+def _render_search_state(search: dict[str, Any]) -> str:
+    if not search or not search.get("failed"):
+        return ""
+    reason = str(search.get("reason") or "the search provider refused or did not answer")
+    return (
+        "\nThis turn: a live web search was attempted and did not run - "
+        f"{reason} - so there are no live results. Say so plainly at the "
+        "start of your reply, that you could not check live sources right "
+        "now, before anything else, including any clarifying question. Then "
+        "answer from what you already know. Do not offer, promise, or "
+        "announce a search, a lookup, or a check - none can run this turn."
     )
 
 
@@ -417,6 +440,7 @@ def _build_system_prompt(
         save_state=(
             "" if moved else _render_save_state(context_data.get("memory_save") or {})
         + _render_edit_state(context_data.get("image_edit") or {})
+        + _render_search_state(context_data.get("search_state") or {})
         ),
     )
     prompt += _channel_style(context_data)
@@ -508,6 +532,7 @@ def _build_turn_context(
     blocks = (
         _render_save_state(context_data.get("memory_save") or {})
         + _render_edit_state(context_data.get("image_edit") or {})
+        + _render_search_state(context_data.get("search_state") or {})
         if include_save_state
         else "",
         _render_recalled_turns(context_data.get("recalled_turns") or []),

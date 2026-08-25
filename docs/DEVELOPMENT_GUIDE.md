@@ -662,10 +662,11 @@ From spark1, with the image provider reachable:
 docker compose exec backend python -m backend.cli.exercise_image_scenarios
 ```
 
-It drives seven scenarios through the real chat API for a throwaway user -
+It drives ten scenarios through the real chat API for a throwaway user -
 generate; edit with nothing selected; upload and ask; edit the upload; edit an
-explicitly selected earlier picture; refer back by description; ask a question
-- asserts on lineage (`parent_artifact_id`) and on event trails, deletes the
+explicitly selected earlier picture; refer back by description; ask a question;
+show an earlier picture again; regenerate one; read the writing on a generated
+sign back through the vision model - asserts on lineage (`parent_artifact_id`) and on event trails, deletes the
 user afterwards, and exits non-zero on any failure. `--keep` leaves the
 pictures in place for inspection. On 2026-08-25 it found four defects every
 suite had passed over; run it after any change to routing, referent

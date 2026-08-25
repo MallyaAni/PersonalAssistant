@@ -144,7 +144,13 @@ def get_embedding_provider() -> EmbeddingProvider:
 # place all of them resolve through, including the ones built outside a request.
 @lru_cache(maxsize=1)
 def get_search_provider() -> SearchProvider:
-    return BudgetedSearchProvider(_build_search_provider(), get_search_budget())
+    return BudgetedSearchProvider(
+        _build_search_provider(),
+        get_search_budget(),
+        # Tavily bills an advanced search at two credits; the ceiling is in
+        # credits, so the local counter must spend what the key spends.
+        credits_per_search=2 if settings.SEARCH_DEPTH == "advanced" else 1,
+    )
 
 
 def _build_search_provider() -> SearchProvider:
@@ -662,6 +668,7 @@ def _build_comfyui_image_provider() -> ComfyUIImageProvider:
         steps=settings.IMAGE_GENERATION_STEPS,
         style_suffix=settings.IMAGE_STYLE_SUFFIX,
         portrait_suffix=settings.IMAGE_PORTRAIT_SUFFIX,
+        text_suffix=settings.IMAGE_TEXT_SUFFIX,
     )
 
 

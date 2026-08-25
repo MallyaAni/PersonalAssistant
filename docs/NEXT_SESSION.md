@@ -592,6 +592,54 @@ clean. That is the image subsystem verified end to end through the chat
 API. Still not driven by me: the browser's own clicks and an inbound
 iMessage text-then-edit (the send half is proven), both recorded above.
 
+## A newcomer's first evening: four defects and one exhausted key — 2026-08-25
+
+Zakarya's first iMessage conversation (six turns) surfaced, in order:
+
+- **"Can you show me that image?"** was answered "I can't display it here" with
+  the picture already recalled into the model's context. No action existed
+  that put an existing picture back in front of a person. `show_image` is now
+  a router tool: the referent resolver picks the picture, the existing
+  artifact is re-streamed as `artifact_started` + `artifact_ready` (the web
+  fills the card, the iMessage worker attaches the photo), several matches
+  show the newest and offer the rest. The web client's `artifact_started`
+  validation accepted only fresh generations and would have thrown; widened.
+- **"Can you regenerate it?" / "A general one"** was answered "I'll create a
+  fresh one. Give me a sec." with nothing running. The router prompt now says
+  a short answer to the assistant's own question about a picture completes
+  the request; the honesty guard renders whenever the conversation has
+  carried a picture, not only when one is in view, and forbids promising one.
+- **"Who am I?"** got "I don't have your name": nothing seeded a profile at
+  approval. Approval now writes the sign-up name; alippe and zakarya were
+  seeded by hand.
+- **A burst of photos** over iMessage: the worker waited nine seconds for
+  iCloud to finish downloading and answered one photo per message. It now
+  waits about a minute with backoff, answers every photo (up to four,
+  numbered), and says "still downloading" rather than "couldn't open". The
+  fourth photo that evening failed for a different reason: the backend was
+  restarting under a deploy at that moment.
+- **Writing inside generated pictures was not English.** `IMAGE_TEXT_SUFFIX`
+  now rides on every generation prompt; the tenth image scenario reads a
+  generated sign back through the vision model ("OPEN").
+- **"Events that have passed"** is not the date - the reply and router get
+  the real clock - it is that **every web search was failing**: Tavily
+  answers 432 (plan limit). The key is at 993 of the Researcher plan's 1,000
+  credits for the cycle, and the local ceiling had been counting calls while
+  an `advanced` search bills two credits, so it never tripped first. Counting
+  is fixed; a failed search is now rendered to the reply as evidence saying
+  so, so it admits it could not check instead of promising to. **Operator
+  decision:** wait for the cycle to reset, raise the plan or pay-go, or enable
+  Google grounding (`GOOGLE_SEARCH_ENABLED`, off because the key's tier
+  returned 429). Until then every live question is answered from training.
+
+Pre-existing red in the unit suite, untouched here and worth a session of
+their own: `test_search_budget.py` (8), `test_access_requests.py` (5,
+`KeyError: 'request_token'`), `test_turn_measurement.py`,
+`test_unattended_turn.py`, and a handful more - 21 after this work, down
+from 31. The desktop `.wslconfig` restart is still parked on a Remote Control
+permission prompt the phone cannot render (claude-code #35637); it needs the
+PC's keyboard.
+
 ## alippe welcomed by hand, and two pieces of test residue found — 2026-08-25
 
 `alippe` (Alec) was approved on 2026-08-17, before sign-up collected a number,

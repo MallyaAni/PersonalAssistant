@@ -15,6 +15,8 @@ import re
 import pytest
 
 from backend.agents.graph import _build_system_prompt
+from backend.services.conversation_service import SEARCH_UNAVAILABLE_EVIDENCE
+from backend.tests.functional.semantic import states
 
 pytestmark = pytest.mark.asyncio
 
@@ -52,3 +54,45 @@ async def test_a_reply_with_no_evidence_never_claims_to_have_searched(llm, quest
 
     assert text.strip(), "the rule must not suppress the answer"
     assert not _INVENTED.search(text), text
+
+
+# The other lie, seen live on 2026-08-25 when the provider refused every
+# search: handed no results at all, the reply said "let me look that up for
+# you" - a search it could not run. The failed search is now rendered as
+# evidence saying so; the reply must relay it, not promise.
+_PROMISED = re.compile(
+    r"let me (search|look|check|find)|i'?ll (search|look|check|find|pull)|"
+    r"i will (search|look|check)|(would|do) you (like|want) me to (search|look|check)|"
+    r"want me to (search|look|check)|searching now|looking that up",
+    re.IGNORECASE,
+)
+_UNAVAILABLE = {
+    "capabilities": [{"label": "Web search", "description": "Look things up."}],
+    "search": [dict(SEARCH_UNAVAILABLE_EVIDENCE)],
+    "search_state": {"failed": True},
+}
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "search for events happening in Arlington Virginia this weekend",
+        "what's the latest on the metro silver line extension?",
+    ],
+)
+async def test_a_failed_search_is_admitted_not_promised(llm, question):
+    from backend.agents.graph import turn_context_messages
+
+    messages = [{"role": "system", "content": _build_system_prompt(_UNAVAILABLE)}]
+    messages.extend(turn_context_messages(_UNAVAILABLE))
+    messages.append({"role": "user", "content": question})
+    text = str(llm.chat(messages, 300, None, 0.0)["content"])
+    assert text.strip(), "the rule must not suppress the answer"
+    assert not _PROMISED.search(text), text
+    # Judged rather than matched: "I haven't checked current sources" and
+    # "I couldn't look this up" both admit it, in different words.
+    assert states(
+        text,
+        "The reply tells the reader that it could not check, has not checked, "
+        "or has no access to live or current sources for this question.",
+    ), text
