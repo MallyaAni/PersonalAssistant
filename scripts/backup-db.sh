@@ -61,13 +61,15 @@ echo "Backed up $tables tables to data/backups/$(basename "$target")"
 # Read the mirror target from .env like the database settings above, not only
 # from the environment. Setting it in .env and finding the script had ignored it
 # is the shape of mistake this whole section exists to prevent.
-# `\r` as well as space and newline: a CRLF in .env would otherwise leave a
-# trailing carriage return on the hostname and every ssh silently fail.
+# Strip line endings only - a CRLF in .env would otherwise leave a
+# trailing carriage return on the hostname and every ssh silently fail - and
+# trim the edges. Interior spaces stay: they separate the mirror hosts, and
+# stripping them fused two targets into one unreachable name on 2026-08-24.
 if [[ -z "${BACKUP_MIRROR_HOST:-}" && -f "$root/.env" ]]; then
-    BACKUP_MIRROR_HOST="$(grep -m1 -E '^\s*BACKUP_MIRROR_HOST\s*=' "$root/.env" | cut -d= -f2- | tr -d ' \r\n' || true)"
+    BACKUP_MIRROR_HOST="$(grep -m1 -E '^\s*BACKUP_MIRROR_HOST\s*=' "$root/.env" | cut -d= -f2- | tr -d '\r\n' | sed -E 's/^ +| +$//g' || true)"
 fi
 if [[ -z "${BACKUP_MIRROR_PATH:-}" && -f "$root/.env" ]]; then
-    BACKUP_MIRROR_PATH="$(grep -m1 -E '^\s*BACKUP_MIRROR_PATH\s*=' "$root/.env" | cut -d= -f2- | tr -d ' \r\n' || true)"
+    BACKUP_MIRROR_PATH="$(grep -m1 -E '^\s*BACKUP_MIRROR_PATH\s*=' "$root/.env" | cut -d= -f2- | tr -d '\r\n' | sed -E 's/^ +| +$//g' || true)"
 fi
 
 # BACKUP_MIRROR_HOST is a whitespace-separated LIST, so a third copy (the Mac)
