@@ -43,8 +43,12 @@ async def rerank(query: str, documents: list[str]) -> list[float] | None:
         async with httpx.AsyncClient(
             timeout=settings.RERANKER_TIMEOUT_SECONDS
         ) as client:
+            # /v2/rerank, measured on the deployed build: /v1/rerank and
+            # /rerank are registered but reset the connection there, while
+            # /v2 answers - and it is the JinaAI-conformant shape the server
+            # itself points clients at.
             answer = await client.post(
-                f"{settings.RERANKER_BASE_URL.rstrip('/')}/v1/rerank", json=payload
+                f"{settings.RERANKER_BASE_URL.rstrip('/')}/v2/rerank", json=payload
             )
             answer.raise_for_status()
             body = answer.json()

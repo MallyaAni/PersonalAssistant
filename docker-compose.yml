@@ -113,10 +113,14 @@ services:
       - pooling
       - --hf-overrides
       - '{"architectures": ["Qwen3ForSequenceClassification"], "classifier_from_token": ["no", "yes"], "is_original_qwen3_reranker": true}'
+      # 2048 covers a query plus the bounded excerpt pair with room; the
+      # attention mask allocation scales O(len^2) and steady-state memory on
+      # spark1 measured 3 GiB free at 4096, which is thinner than a box with
+      # no BMC should idle at.
       - --max-model-len
-      - ${VLLM_RERANKER_MAX_MODEL_LEN:-4096}
+      - ${VLLM_RERANKER_MAX_MODEL_LEN:-2048}
       - --max-num-seqs
-      - ${VLLM_RERANKER_MAX_NUM_SEQS:-8}
+      - ${VLLM_RERANKER_MAX_NUM_SEQS:-4}
       # 0.6B fp16 weights are ~1.2 GiB; sized to footprint plus headroom the
       # way the embedding service is. On a box that hangs on over-allocation,
       # small and measured beats generous.
