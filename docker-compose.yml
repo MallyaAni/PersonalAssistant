@@ -581,6 +581,7 @@ services:
       # either service needs; both must agree, or a rehearsal orders finds
       # differently from the scheduled sweep that follows it.
       - DISCOVERY_CROSS_ENCODER_ENABLED=${DISCOVERY_CROSS_ENCODER_ENABLED:-true}
+      - DISCOVERY_RERANKER_SOURCE=${DISCOVERY_RERANKER_SOURCE:-local}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - GOOGLE_SEARCH_ENABLED=${GOOGLE_SEARCH_ENABLED:-false}
@@ -682,6 +683,7 @@ services:
       # either service needs; both must agree, or a rehearsal orders finds
       # differently from the scheduled sweep that follows it.
       - DISCOVERY_CROSS_ENCODER_ENABLED=${DISCOVERY_CROSS_ENCODER_ENABLED:-true}
+      - DISCOVERY_RERANKER_SOURCE=${DISCOVERY_RERANKER_SOURCE:-local}
       # Which server owns the Apple device, and what its send tool is called.
       # The worker had these and this did not, so a send from the API would
       # resolve the tool name to its code default - `send_message`, which the

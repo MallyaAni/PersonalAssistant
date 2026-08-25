@@ -505,6 +505,12 @@ class Settings(BaseSettings):
         "data/models/ms-marco-minilm-l6-v2/tokenizer.json"
     )
     DISCOVERY_CROSS_ENCODER_THREADS: int = Field(default=2, ge=1, le=16)
+    # Which cross-encoder scores the shortlist: "local" is the in-process ONNX
+    # MiniLM above; "service" is the vLLM reranker the history-recall stage
+    # already runs, adapted back to log-odds so the attribution margin keeps
+    # its meaning. A swap is judged by evaluate_discovery_ranking, never by
+    # eyeballing, which is why both stay selectable.
+    DISCOVERY_RERANKER_SOURCE: Literal["local", "service"] = "local"
     DISCOVERY_PLACE_RESOLVER: Literal["", "nominatim"] = ""
     DISCOVERY_PLACE_RESOLVER_URL: str = "https://nominatim.openstreetmap.org/reverse"
     DISCOVERY_PLACE_RESOLVER_USER_AGENT: str = "AniOS/1.0 (local personal assistant)"
