@@ -155,6 +155,42 @@ model file name, so a `.gguf` routes to `UnetLoaderGGUF` and anything else to
   `clip_l.safetensors`, `vae/ae.safetensors`, and the `ComfyUI-GGUF` custom
   node.
 
+**DONE 2026-08-24 23:40 — image generation runs on the desktop, on Plan B.**
+Measured, not inferred:
+
+| | |
+|---|---|
+| model | `flux-2-klein-9b-Q6_K.gguf` (7,865,424,160 B), `unsloth/FLUX.2-klein-9B-GGUF` |
+| encoder | `qwen_3_8b_fp8mixed.safetensors` (8,664,848,742 B), Comfy-Org, ungated |
+| loader | `UnetLoaderGGUF`, chosen by `_model_loader()` from the `.gguf` suffix |
+| cold / **warm** | 114.5 s / **6.0 s** at 1024x1024, 4 steps |
+| **peak VRAM** | **13,755 MiB of 16,303**, sampled every 2 s during the run |
+| LAN | `system_stats` from spark1 → HTTP 200 in 0.015 s |
+
+Run through `ComfyUIImageProvider._workflow()` rather than a hand-written
+graph, so the proven path is the one the backend takes. Output verified as real
+1024x1024 PNGs. **Peak never approached the ~17 GB predicted** — the eviction
+model is correct and the earlier VRAM worry is settled empirically.
+
+**Plan A remains unavailable.** `black-forest-labs/FLUX.2-klein-9b-fp8` returns
+**403 GatedRepo** for `deepmatter77`; access needs a click on the model page and
+no token can self-approve. Set `IMAGE_MODEL=flux-2-klein-9b-Q6_K.gguf` unless
+that gate is cleared.
+
+**OPEN — security, needs admin.** The firewall step turned out moot for the
+wrong reason: `Docker Desktop Backend` already allows **Any port from Any
+remote address**, so publishing 8188 exposed an **unauthenticated** ComfyUI to
+everything that can route to this box, not only 172.16.8.0/24. It answers
+spark1 because it answers everyone. ComfyUI's API queues arbitrary workflows
+and reads and writes files, so this is worth scoping:
+
+```powershell
+# in an elevated PowerShell
+New-NetFirewallRule -DisplayName "Block ComfyUI 8188 except LAN" -Direction Inbound `
+  -Protocol TCP -LocalPort 8188 -RemoteAddress 172.16.8.0/24 -Action Allow
+# and constrain the broad Docker rule, or stop anios_comfyui when unused
+```
+
 **Awaiting the operator, and only the operator.** A peer session asking is not
 authorisation for any of these:
 
