@@ -387,3 +387,37 @@ async def test_a_weather_question_routes_to_the_forecast_tool(selector):
         assert action.plan.tool_name == "get_weather", (query, action)
         place = str(action.plan.arguments.get("place", "")).casefold()
         assert "arlington" in place, (query, action.plan.arguments)
+
+
+# A live "what's on" question whose place is only in the conversation: the
+# router searches, and the query it writes names the place and the dates -
+# 2026-08-25, Canggu: it first offered to search, then searched without the
+# place and got mini PC reviews.
+async def test_a_whats_on_question_searches_for_the_place_and_the_dates(selector):
+    history = [
+        {
+            "query": "what's on in canggu this week?",
+            "response": (
+                "From memory: Luigi's Hot Pizza and Miss Fish in Canggu both run "
+                "weekly nights, but I can't verify this week's lineup."
+            ),
+        },
+        {
+            "query": (
+                "This is too generic. Luigi's had a big party Monday, Miss Fish "
+                "had a fashion thing Tuesday"
+            ),
+            "response": "Understood - those are the venues you mean.",
+        },
+    ]
+    action = await selector.select(
+        "functional_test_user",
+        "what's going on Weds-Sunday?",
+        history,
+        None,
+        local_now="Tuesday 2026-08-25 23:30 - they are in Canggu, Bali, Indonesia (Asia/Makassar)",
+    )
+    assert isinstance(action, SearchAction), action
+    lowered = action.query.casefold()
+    assert "canggu" in lowered, action.query
+    assert any(mark in lowered for mark in ("aug", "27", "28", "29", "30", "31", "weekend", "2026")), action.query

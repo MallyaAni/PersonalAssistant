@@ -4,6 +4,13 @@ This file is append-only history for meaningful, verified changes. It must not c
 
 ## 2026-08-25 — Recall anything, a reranker, keyed digests, a third backup copy, and the architecture told for newcomers
 
+- **A "what's on" question searches for the place and the dates.** From a
+  guest in Canggu, "what's going on Weds-Sunday?" in a conversation naming
+  Canggu venues was first answered with an offer to search and then searched
+  without the place (the results were mini PC reviews). The router and the
+  query planner now name the place - from the message, the conversation, or
+  where the person is - and turn relative days into calendar dates; both are
+  held to it on the real model, and the routing matrix carries the case.
 - **Edits are back at 2 MP, and the welcome is a hello.** The desktop
   rebooted with `.wslconfig memory=24GB` in place (the VM reports 23.47 GiB),
   and a generate-then-2 MP-edit measured clean on it with 7.1 GiB to spare,

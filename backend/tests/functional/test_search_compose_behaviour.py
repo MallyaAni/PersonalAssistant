@@ -41,3 +41,34 @@ async def test_a_bare_affirmation_searches_the_conversations_subject(llm):
     # the recorded shape of it.
     for invented in ("ipad", "iphone", "electric car", "laptop"):
         assert invented not in lowered, composed
+
+
+# A live "what's on" question whose place lives only in the conversation
+# (2026-08-25: searched without the place, got mini PC reviews). The query
+# must carry the place, the kind of thing, and the dates the days mean.
+_CANGGU = [
+    {"role": "user", "content": "what's on in canggu this week?"},
+    {
+        "role": "assistant",
+        "content": (
+            "From memory: Luigi's Hot Pizza and Miss Fish in Canggu both run "
+            "weekly nights, but I can't verify this week's lineup."
+        ),
+    },
+    {
+        "role": "user",
+        "content": (
+            "This is too generic. Luigi's had a big party Monday, Miss Fish "
+            "had a fashion thing Tuesday"
+        ),
+    },
+    {"role": "assistant", "content": "Understood - those are the venues you mean."},
+]
+
+
+async def test_a_whats_on_question_searches_for_the_place_and_the_dates(llm):
+    composed = SearchPlanner(llm).compose("what's going on Weds-Sunday?", _CANGGU)
+    lowered = composed.casefold()
+    assert "canggu" in lowered, composed
+    assert any(word in lowered for word in ("event", "lineup", "party", "parties", "what's on", "nightlife", "club")), composed
+    assert any(mark in lowered for mark in ("aug", "27", "28", "29", "30", "31", "weekend", "2026")), composed

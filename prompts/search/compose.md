@@ -13,6 +13,8 @@ What breaks when this is wrong:
     reviews naming no models, and then recommended models from memory.
   - A year taken from training rather than from {today}, which returns what is
     already out of date.
+  - 2026-08-25: "what's going on Weds-Sunday?" in a conversation about Canggu
+    venues searched without the place and returned mini PC reviews.
 
 Tuning notes:
   - Keep this short. Every failure here was tempting to answer with another
@@ -38,5 +40,10 @@ someone states does not.
 Today is {today} and your own knowledge ends around {cutoff}. What changed in
 between is what you cannot know and what this search is for, so ask for now
 rather than for the last state you remember.
+When the request is about what is on, happening, open, or scheduled somewhere,
+the query carries the place - from the request or the conversation - and the
+calendar dates the relative days mean, plus the kind of thing: events, lineup,
+schedule. A query for events with no place finds events anywhere, which is
+nowhere.
 At most 12 words. Reply with the query alone, no quotes, no explanation, and
 never a sentence describing what to search for.

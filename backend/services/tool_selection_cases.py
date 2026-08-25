@@ -163,6 +163,21 @@ _REGENERATE_CLARIFIED_HISTORY = _RECALLED_PICTURE_HISTORY + (
     ),
 )
 
+# A live "what's on" question whose place is only in the conversation: the
+# router must search, and search for that place (2026-08-25, Canggu).
+_CANGGU_HISTORY = (
+    (
+        "what's on in canggu this week?",
+        "From memory: Luigi's Hot Pizza and Miss Fish in Canggu both run "
+        "weekly nights, but I can't verify this week's lineup.",
+    ),
+    (
+        "This is too generic. Luigi's had a big party Monday, Miss Fish had a "
+        "fashion thing Tuesday",
+        "Understood - those are the venues you mean.",
+    ),
+)
+
 SELECTION_CASES: tuple[SelectionCase, ...] = (
     # --- genuinely needs the web ------------------------------------------
     SelectionCase("who is the prime minister of Canada", SEARCH, "role_holder"),
@@ -463,6 +478,12 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
         operator=True,
     ),
     SelectionCase("how many search credits do we have left?", NO_TOOL, "credits"),
+    SelectionCase(
+        "what's going on Weds-Sunday?",
+        SEARCH,
+        "live_data",
+        history=_CANGGU_HISTORY,
+    ),
 )
 
 # Set from the measured baseline once, deliberately low enough to catch a
