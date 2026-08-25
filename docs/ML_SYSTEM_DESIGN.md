@@ -443,7 +443,12 @@ encoder evicted to RAM while Klein loads is the moment a generation alone
 crosses the line, so the megapixel knob cannot fix it and only the VM's
 memory can. Until that restart, the provider waits for ComfyUI to answer
 again and resubmits a dropped job once (never a rejected or timed-out one),
-turning the common case into a slower success.
+turning the common case into a slower success. **Closed the same evening:**
+the desktop rebooted with the `.wslconfig` in place and the VM reports
+**23.47 GiB**; measured on it, a generation (54 s) followed by a 2 MP edit
+(68 s) left 7.1 GiB free with both models resident and nothing
+disconnected, so `IMAGE_EDIT_MEGAPIXELS` is 2.0 again. The resubmit-once
+retry stays: it costs nothing when nothing drops.
 
 **Editing choices, measured.** Klein 4B as an editor left a picture
 unchanged when asked to *add* anything, at 4 and 20 steps, at CFG 3.0, and

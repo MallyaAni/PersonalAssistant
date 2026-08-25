@@ -92,6 +92,7 @@ async def test_the_welcome_describes_what_the_system_can_actually_do(llm) -> Non
         any(word in lowered for word in words)
         for words in (
             ("search", "look up", "looking up", "find out"),
+            ("weather", "forecast"),
             ("remind", "schedule", "recurring", "every monday", "later"),
             ("image", "picture", "photo"),
             ("slide", "deck", "presentation"),
@@ -148,7 +149,7 @@ async def test_the_welcome_is_a_text_message_not_a_brochure(llm) -> None:
     words = len(text.split())
     # Generous either side of the prompt's 120-200. The failure being caught is
     # a wall of text or a one-liner, not a message that ran twenty words over.
-    assert 60 <= words <= 320, f"{words} words is wrong for a text message: {text}"
+    assert 40 <= words <= 150, f"{words} words is wrong for a hello by text: {text}"
 
 
 async def test_the_welcome_is_addressed_to_the_person_not_about_them(llm) -> None:
@@ -188,3 +189,38 @@ async def test_the_welcome_does_not_tell_a_guest_the_machines_are_hers(llm) -> N
         word in lowered
         for word in ("cloud", "owner", "his ", "locally", "local", "here on")
     ), "dropped the privacy point entirely: " + text
+
+
+# The operator's verdict on the first version, 2026-08-25: "so wordy... it
+# needs to be positive, light-hearted and welcoming rather than cautionary".
+# A hello that reads like terms of service is the wrong first impression.
+_CAUTIONARY = (
+    "note that",
+    "keep in mind",
+    "be aware",
+    "please note",
+    "however",
+    "unfortunately",
+    "can't",
+    "cannot",
+    "unable",
+    "not able",
+    "limit",
+    "just so you know",
+    "warning",
+    "caution",
+)
+
+
+async def test_the_welcome_is_a_warm_hello_not_a_cautionary_briefing(llm) -> None:
+    from backend.tests.functional.semantic import states
+
+    text = _welcome(llm, "Saps", REAL_AGENTS, REAL_CAPABILITIES)
+    lowered = text.lower()
+    cautionary = [phrase for phrase in _CAUTIONARY if phrase in lowered]
+    assert not cautionary, f"cautionary wording {cautionary}: {text}"
+    assert states(
+        text,
+        "The message is warm, upbeat and welcoming in tone, like a friendly "
+        "hello, and contains no warnings, caveats or cautions.",
+    ), text

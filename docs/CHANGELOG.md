@@ -4,6 +4,15 @@ This file is append-only history for meaningful, verified changes. It must not c
 
 ## 2026-08-25 — Recall anything, a reranker, keyed digests, a third backup copy, and the architecture told for newcomers
 
+- **Edits are back at 2 MP, and the welcome is a hello.** The desktop
+  rebooted with `.wslconfig memory=24GB` in place (the VM reports 23.47 GiB),
+  and a generate-then-2 MP-edit measured clean on it with 7.1 GiB to spare,
+  so `IMAGE_EDIT_MEGAPIXELS` is 2.0 again. The welcome a newly approved
+  person receives is now 60-110 words, warm and light, with no caveats -
+  the operator's verdict on the first version was "so wordy... cautionary";
+  the honesty rules (nothing invented, the owner's machines not "yours")
+  stay, and a new functional case fails on cautionary wording or a
+  humourless tone.
 - **A used-up search allowance is known before a search is chosen, named,
   and said kindly.** The budgeted provider answers "which allowance would
   refuse the next search" - this account's day, its month, or the shared

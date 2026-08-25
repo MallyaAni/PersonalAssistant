@@ -329,13 +329,15 @@ class Settings(BaseSettings):
     # and did not run out of memory. The cost is bounded by this number rather
     # than by the source, because the scale node normalises to it either way.
     #
-    # 1.0 since 2026-08-25, when the same card hosts ComfyUI inside Docker
-    # Desktop's WSL2 VM: the ceiling there is the VM's 15.6 GB of RAM, where an
-    # evicted model goes, and a 2 MP Kontext edit queued behind a Klein
-    # generation made ComfyUI exit cleanly mid-job. A 1 MP edit of a 1024x1024
-    # source is not a visible downgrade; `.wslconfig memory=24GB` on the
-    # desktop is the change that would earn 2.0 back.
-    IMAGE_EDIT_MEGAPIXELS: float = Field(default=1.0, ge=0.25, le=4.0)
+    # Briefly 1.0 on 2026-08-25, when the same card hosted ComfyUI inside a
+    # Docker Desktop WSL2 VM capped at the default 15.6 GB of RAM, where an
+    # evicted model goes: a 2 MP edit queued behind a Klein generation made
+    # ComfyUI exit cleanly mid-job. `.wslconfig memory=24GB` took effect with
+    # the desktop's next reboot the same evening (the VM reports 23.47 GiB),
+    # and 2.0 was measured again there: generate 54 s then a 2 MP edit in 68 s,
+    # both models resident, 7.1 GiB still free, no disconnect. The 1.0 fallback
+    # remains the right answer on any host whose VM is back at the default.
+    IMAGE_EDIT_MEGAPIXELS: float = Field(default=2.0, ge=0.25, le=4.0)
     IMAGE_EDIT_SCALE_METHOD: str = "lanczos"
     # Realism steering is driven by appending this to the positive prompt. It is
     # added only when not already present; set it empty to send prompts verbatim.

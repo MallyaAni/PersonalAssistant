@@ -640,9 +640,11 @@ Pre-existing red in the unit suite, untouched here and worth a session of
 their own: `test_search_budget.py` (8), `test_access_requests.py` (5,
 `KeyError: 'request_token'`), `test_turn_measurement.py`,
 `test_unattended_turn.py`, and a handful more - 21 after this work, down
-from 31. The desktop `.wslconfig` restart is still parked on a Remote Control
-permission prompt the phone cannot render (claude-code #35637); it needs the
-PC's keyboard.
+from 31. The desktop `.wslconfig` item closed itself later that evening: the
+PC rebooted (cause unknown to this side) with the file in place, the VM now
+reports 23.47 GiB, and `IMAGE_EDIT_MEGAPIXELS` is 2.0 again on spark1 with a
+measured generate (54 s) then 2 MP edit (68 s) and 7.1 GiB to spare. The
+parked Remote Control session on the desktop is gone with the reboot.
 
 ## alippe welcomed by hand, and two pieces of test residue found — 2026-08-25
 
