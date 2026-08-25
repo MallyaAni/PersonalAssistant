@@ -513,7 +513,10 @@ can still be stale UI.
   change as any serving flag, quantisation, model, cache, context, threshold,
   or token-budget change, and record what was tried and rejected with its
   numbers; a decision whose evidence lives only in a commit message is not
-  documented.
+  documented. Every serving flag in it carries its origin - measured here (with
+  the number), inherited from a named reference configuration, or the runtime
+  default - and the measurement that would change it; a flag with no origin is
+  a flag nobody can defend or safely change.
 - `docs/adr/`: durable architectural decisions.
 
 After implementation or debugging, rewrite `NEXT_SESSION.md` when runtime evidence or the next task changed. Update other documents only when facts within their ownership changed. Never record code as complete in the changelog unless its intended behavior passed functional validation.

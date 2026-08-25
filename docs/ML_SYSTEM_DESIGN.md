@@ -22,9 +22,10 @@ budget updates it in the same change, with what was tried and rejected.
 vLLM 0.25.2) tensor-parallel across spark1 and spark2 (`--tensor-parallel-size
 2`, pipeline 1, NCCL over the RoCE fabric), with `--kv-cache-dtype
 nvfp4_ds_mla`, `--max-model-len 1048576`, `--gpu-memory-utilization 0.81`,
-`--max-num-seqs 6`, `--max-num-batched-tokens 8192`, prefix caching on,
-chunked prefill off, speculative decoding off, and the `flashinfer_b12x` MoE
-backend with DeepGEMM disabled. Every text role runs here.
+`--max-num-seqs 6`, `--max-num-batched-tokens 8192`, prefix caching and
+chunked prefill on (both vLLM defaults), speculative decoding off, and the
+`flashinfer_b12x` MoE backend with DeepGEMM disabled. Every text role runs
+here. Where each flag came from is the table at the end of this section.
 
 **Options considered.**
 
@@ -63,10 +64,39 @@ better one in 90.
 caveat; `fp8_ds_mla` halves the pool to ~700k tokens and removes it - the
 first knob if long-context quality ever wobbles. The vLLM 0.21.1 + B12X image
 is reportedly 9.2% faster at peak and 29.4% at concurrency 6 because
-`torch.compile` works there and not on 0.25.2 - untested here. Chunked
-prefill waits on vLLM #40969 (a silent hang after 5-7 requests with
-`FULL_AND_PIECEWISE` cudagraphs on exactly this hardware). Speculative
-decoding needs its own load test (section 3).
+`torch.compile` works there and not on 0.25.2 - untested here. vLLM #40969
+(a silent hang after 5-7 requests with `FULL_AND_PIECEWISE` cudagraphs and
+chunked prefill, on exactly this hardware) describes the combination this
+engine runs; it has not reproduced in 1,511 requests since the 2026-08-24
+boot, and `--enforce-eager` is the fallback at a 20-30% cost if it ever
+does. Speculative decoding needs its own load test (section 3).
+
+**Every serving flag, and where it came from.** Three origins are possible:
+*measured here* (a number in this repository chose it), *inherited* (taken
+from the DSpark reference command for this image, or from someone else's
+documented failure, and not re-measured here), or *vLLM default* (not set;
+listed because it matters). Inherited is not a criticism - it is a flag
+nobody here can yet defend with a number, and the last column says what
+number would.
+
+| Flag | Value | Origin | Why, and what it trades | What would change it |
+| --- | --- | --- | --- | --- |
+| `--tensor-parallel-size 2`, `--nnodes 2` | 2 nodes, TP | Measured here | ~149 GiB loaded does not fit one 121.7 GiB node; TP splits every layer so both GB10s stream weights at once. Pipeline parallel would idle one node per stage. | A single node with the memory, or a smaller reply model. |
+| `--moe-backend flashinfer_b12x` + `VLLM_MOE_USE_DEEP_GEMM=0` | kernel | Measured here | The FlashInfer CuteDSL fused MoE written for SM12x - the only MoE path that targets this architecture. vLLM's priority order puts the generic DeepGEMM JIT path first, so it must be disabled by env; `VLLM_USE_B12X_MOE=1` alone selects nothing and stays only because it is harmless. 1.12x math, 1.15x prose, 2.42x code over the `DEEPGEMM_MXFP4` fallback. The check is one boot-log line: `Using 'B12X_MXFP4' Mxfp4 MoE backend`. | A newer kernel beating 63.5 tok/s on the code probe, measured in the same harness. |
+| `--kv-cache-dtype nvfp4_ds_mla` | 4-bit KV | Inherited, then measured | Stores the MLA latent at 4 bits: 2,291,294 tokens of KV at 0.81. `fp8_ds_mla` halves the pool and removes a documented accuracy caveat. The attention kernel it selects is `FLASHMLA_SPARSE`. | Any long-context quality wobble - `fp8_ds_mla` is the first knob. |
+| `--block-size 256` | tokens per KV block | Inherited, not measured | vLLM sets no default (the backend picks); the sparse-MLA kernel works in 64-token blocks and 256 is a multiple of it. A 1M sequence is 4,096 blocks instead of 16,384 (smaller block tables, cheaper scheduling) against coarser prefix-cache hits (a hit needs a whole 256-token block) and at most 255 wasted tokens per sequence - ~20 MB across six. With 87.9% of prompt tokens hitting the cache since boot, granularity is not costing much. | TTFT and decode at 64 versus 256 on the 11.7k-prefix probe. |
+| `--max-model-len 1048576` | context | Measured here | Fits: the engine reports 2.19 concurrent 1M requests. Demand is median 4.4k, p90 11.7k, max 16.1k over 61 real turns, so it is kept because it fits. Needs `VLLM_ALLOW_LONG_MAX_MODEL_LEN=1`. | A second GPU tenant on spark2 that needs the KV memory. |
+| `--max-num-seqs 6` | sequences per step | Inherited, not measured | vLLM's default is 128. Six is admission control for a household: the KV pool holds ~190 p90-sized conversations and has preempted nothing in 1,511 requests, so memory is not the limit - the foreground chat's latency is. On a bandwidth-bound decoder every extra sequence rides the same weight stream almost free, which is the 85.7 to 383.5 tok/s aggregate at 1 to 6. | Per-stream latency at 8 and 12 concurrent, with a deck running. |
+| `--max-num-batched-tokens 8192` | tokens per step | Inherited, not measured | vLLM's default is 2,048. This is the per-step token budget; with chunked prefill on, an 11.7k prompt is prefilled in two chunks between decode steps (5.9 s cold). A larger budget speeds that prefill and lengthens the decode stall for whoever is mid-reply; a smaller one does the reverse. | The foreground stall during a deck's prefill at 4,096 versus 8,192. |
+| `--gpu-memory-utilization 0.81` | fraction of 121.69 GiB | Measured here | 0.90 is refused on spark2 (it also hosts the vision model) and the head hangs; 0.78 fit 406,016 tokens; 0.81 fits 1M with ~1.9 GiB of margin on spark2. Section 2. | Trimming the VLM's KV widens the margin; a Spark without the VLM could go higher. |
+| `--enable-prefix-caching` | on | vLLM default, measured | 87.9% of prompt tokens served from cache since boot; 512 ms warm against 5,909 ms cold at 11.7k. The prompt is laid out for it (section 3). | Nothing; the layout work is what keeps it earning. |
+| chunked prefill | on | vLLM default | Not a flag in the script. Recorded as *off* in this document until 2026-08-25 while the engine ran it on - the boot line `Chunked prefill is enabled with max_num_batched_tokens=8192` is the fact. | vLLM #40969 reproducing here: the engine going quiet after a few requests with nothing in the log. Then `--enforce-eager`. |
+| speculative decoding | off | Measured here | Boots, passes a smoke test, dies on the first real request at this utilisation; MTP crashed the Qwen engine outright. Section 3. | Its own load test at 0.81 with the current image. |
+| `--generation-config vllm` | sampling source | Inherited | Do *not* load the checkpoint's `generation_config.json`; every request's sampling comes from the caller (temperature 0 for decisions, section 8). With `auto`, DeepSeek's recommended sampling would silently apply to any request that omitted it, and grammar-constrained decisions would drift. | Nothing - the decoding policy depends on it. |
+| `--tokenizer-mode`, `--tool-call-parser`, `--reasoning-parser` = `deepseek_v4`, `--enable-auto-tool-choice` | parsers | Required by the model class | Without the reasoning parser the model's thinking streams as content - the Qwen lesson of 71.7 s to first *content*. Native tool calls are how routing decisions come back as JSON. | A model change. |
+| `--distributed-executor-backend mp` | executor | Inherited | Multiprocessing workers with `--nnodes`/`--node-rank`; Ray would add a scheduler with nothing to schedule. | More than two nodes. |
+| compile and CUDA graphs | `VLLM_COMPILE`, `FULL_AND_PIECEWISE` | vLLM default | Not set; listed because #40969 names this mode and because the 0.21.1 image is reportedly 9-29% faster on `torch.compile` alone. `VLLM_USE_BREAKABLE_CUDAGRAPH=0` is inherited with the image. | The 0.21.1 comparison, run here. |
+| node-local JIT caches, `VLLM_ENGINE_READY_TIMEOUT_S=3600`, `TORCH_CUDA_ARCH_LIST=12.1a`, worker before head | boot | Inherited from documented failures | A shared cache races `torch.compile` and half-writes cubins; the first boot JIT-compiles for longer than the default ready timeout; a head started first waits forever at `parallel_state`. Section 12. | Nothing. |
 
 ## 2. Memory arithmetic: context, KV cache, and the utilisation ceiling
 
@@ -82,6 +112,36 @@ DeepSeek uses multi-head latent attention with a single KV head and
 1,374,118 tokens. Demand is nowhere near it - over 61 real turns the prompt
 was median 4.4k, p90 11.7k, max 16.1k tokens. **1M is kept because it fits,
 not because it is needed.**
+
+**What the engine reports (boot of 2026-08-24), and why it wins.** Available
+KV cache memory 14.85 GiB per rank; GPU KV cache size 2,291,294 tokens;
+maximum concurrency for 1,048,576 tokens per request 2.19x. That is 6.8 KiB
+per token per rank, so a full 1M context costs ~6.6 GiB and two fit with
+room, which is exactly the 2.19x it prints. The hand arithmetic above found
+8.7 GiB where the engine found 14.85: the 89.9 GiB for weights plus overhead
+was taken from an earlier boot, and the ~6 GiB it did not know about is the
+margin that keeps 0.81 safe on spark2 - do not spend it. When the estimate
+and the boot log disagree, the boot log is the number. It also explains a
+gauge that looks broken: `vllm:kv_cache_usage_perc` reads 0.0 while an
+11.7k-token conversation is being answered, because 11.7k of 2.29M is 0.5%.
+
+**Utilisation: what 95% means (measured 2026-08-24).** Idle, the GB10 reads
+0% and 12.5 W; one stream generating reads 94-95% utilisation, ~35 W, KV
+0.0%, 28.6 tok/s. None of that is spare capacity waiting for a flag.
+`nvidia-smi` utilisation is the share of the sample window in which *any*
+kernel was resident, not how busy the SMs were; a decode step is a chain of
+small kernels each waiting on memory, so the counter saturates while the
+arithmetic units idle - which is what 35 W says. The bound is the 273 GB/s
+LPDDR5x bus: every token streams the 13B active parameters once, ~13 GB at
+FP8, half per rank, ~24 ms at full bandwidth, a ceiling near 42 tok/s for a
+single stream. Prose and math (29.8, 40.0) sit at 70-95% of it. Code and
+counting (63.5, 79.5) exceed it, which the naive roofline cannot explain;
+the plausible reason - repetitive text routing to a stable subset of experts
+whose weights stay cache-resident - is unmeasured, and a DRAM-throughput
+trace would settle it. The only ways to draw more from the box are more
+sequences per step, because the weight stream is shared (383.5 tok/s at
+six), and speculative decoding, which returns several tokens per stream per
+step (off, section 3). For a single conversation there is no knob.
 
 **Why spark2 bounds it.** Utilisation is a fraction of the whole 121.69 GiB
 pool and *both* ranks must satisfy it. spark1 has ~116 GiB free; spark2 also
@@ -118,9 +178,13 @@ and 10 boot, then crash on every generation), acceptance 90.9% on code
 against 64.3% on prose, and below about 1.5 tokens per step the drafter costs
 more than it returns.
 
-**Batching.** `--max-num-seqs 6` and `--max-num-batched-tokens 8192` for a
-household, not a fleet; aggregate throughput at concurrency 6 is 383.5 tok/s.
-Redis prioritises a foreground chat over background deck microtasks; nothing
+**Batching.** `--max-num-seqs 6` and `--max-num-batched-tokens 8192` are
+inherited from the DSpark reference command, not measured here, against vLLM
+defaults of 128 and 2,048 - the flag table in section 1 says why they hold
+up (admission control for a household on a decoder where each extra
+sequence is nearly free: 85.7 to 383.5 tok/s aggregate at 1 to 6, zero
+preemptions in 1,511 requests) and which measurement would move them. Redis
+prioritises a foreground chat over background deck microtasks; nothing
 moves a model between hosts at request time.
 
 **Prefix caching: on, and the prompt is laid out for it.** At an 11.7k-token
@@ -406,7 +470,8 @@ Scout's ranking has its own labelled harness with floors
 | NVFP4 DeepSeek weights | Same speed, larger on disk | FP8 release checkpoint |
 | MTP / speculative decoding | Engine crash on Qwen; boots-then-dies at high utilisation on DeepSeek | Off, pending a load test |
 | LMCache | L1 bug + KV divergence at temperature 0; IPC deadlock | vLLM prefix caching + prompt layout |
-| Chunked prefill | vLLM #40969 silent hang on this hardware | Off |
+| Disabling chunked prefill for vLLM #40969 | Never applied: the engine ran vLLM's default (on) throughout, and this document said off until 2026-08-25; the hang has not reproduced in 1,511 requests | On, with `--enforce-eager` as the fallback |
+| Explaining utilisation from `nvidia-smi` | 95% with 35 W and 28.6 tok/s: the counter measures kernel residency, not work | The bandwidth roofline in section 2; batching and speculation are the only levers |
 | 0.90 utilisation | Refused on spark2, head hangs | 0.81, bounded by spark2 |
 | `--kv-cache-memory-bytes` on the reply model | Hard cap that ignores utilisation; four failed restarts | Banned there; kept on the VLM |
 | NVFP4 vision model | Wrong output on sm_121 (vLLM #50925) | AWQ |
@@ -444,3 +509,7 @@ Each cost real time; the full operational list is in
   worker is wedged, not slow.
 - The serving script must be byte-identical on both nodes; a divergence
   shows up only as a hang during NCCL init.
+- This document drifted from the engine: it said chunked prefill was off
+  while the engine ran it on. The boot log's `non-default args` line is the
+  effective configuration; diff it against the flag table in section 1, in
+  both directions, after every change to the serving script.

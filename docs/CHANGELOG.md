@@ -4,6 +4,22 @@ This file is append-only history for meaningful, verified changes. It must not c
 
 ## 2026-08-25 — Recall anything, a reranker, keyed digests, a third backup copy, and the architecture told for newcomers
 
+- **Every DeepSeek serving flag now carries its origin, and one claim about
+  the engine was wrong.** `docs/ML_SYSTEM_DESIGN.md` gained a per-flag table
+  (value, origin - measured here / inherited from the DSpark reference / vLLM
+  default - what it trades, and the measurement that would change it),
+  including why `flashinfer_b12x` is the kernel and that `--block-size 256`,
+  `--max-num-seqs 6` and `--max-num-batched-tokens 8192` were inherited, not
+  measured. Reconciling the doc against the boot log found it had said chunked
+  prefill was off while the engine ran vLLM's default (on) with
+  `FULL_AND_PIECEWISE` cudagraphs - the exact vLLM #40969 combination - through
+  1,511 requests without the hang; the doc, its diagram and the ledger now say
+  so. The engine's own KV figures (14.85 GiB per rank, 2,291,294 tokens, 2.19x
+  at 1M) supersede the hand estimate, and a dated utilisation entry explains
+  the 2026-08-24 reading (95% util, 35 W, 28.6 tok/s) as bandwidth-bound decode
+  with batching and speculation as the only levers. A new test fails when a
+  flag in `deploy/spark/ds4-tp2.sh` is missing from the table, and AGENTS.md
+  now requires an origin on every serving flag.
 - **The assistant can search everything either side has ever said.** A new
   builtin, `search_history`, lets the router choose a semantic search over the
   whole transcript store the way it chooses a web search: every exchange is

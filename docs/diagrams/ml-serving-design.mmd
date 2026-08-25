@@ -32,7 +32,7 @@ flowchart TB
     end
 
     subgraph Rejected[Measured and rejected]
-        No[Qwen3.8-27B: 4.6 tok/s, 72 s to first content<br/>ds4-server 2.4-bit: no structured output<br/>MTP: engine crash · LMCache: KV divergence<br/>chunked prefill: silent hang · NVFP4 weights: larger, same speed]
+        No[Qwen3.8-27B: 4.6 tok/s, 72 s to first content<br/>ds4-server 2.4-bit: no structured output<br/>MTP: engine crash · LMCache: KV divergence<br/>0.90 utilisation: refused on spark2 · NVFP4 weights: larger, same speed]
     end
 
     Turn --> Route --> Prompt --> Reply
