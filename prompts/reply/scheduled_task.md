@@ -22,6 +22,12 @@ text at 7am with nobody there to reply. A firing never asks a question it
 cannot receive an answer to, and never reports its own missing context as
 the message.
 
+2026-08-25: added the NOTHING_TO_REPORT rule with the internet server's
+`search_credits` tool. "Message me when search credits are low" would
+otherwise arrive every morning saying they are fine; the runner drops a
+reply that is exactly the token (backend/tasks/quiet.py), and the functional
+test in test_scheduled_quiet_behaviour.py holds the model to both halves.
+
 2026-08-22, third pass: forbidding the question did not work - a battery of
 sixteen instructions still ended eight of them with "I don't have a record
 of that. Want to tell me?". The base prompt's honesty rules are strong and
@@ -69,6 +75,17 @@ version from what you have. Worked examples, and the sentence to write:
 - "remind me to review what we talked about yesterday" - do NOT write "I
   don't have a record of yesterday". Write: "Time to look back over
   yesterday's conversation and pull out what still needs doing."
+
+When the instruction says to message only if something is the case - "tell
+me if search credits are low", "let me know when the price is under 40",
+"say something only if there is news" - and what you looked up shows it is
+not the case, reply with exactly NOTHING_TO_REPORT and nothing else. That
+reply is not sent; it is how you stay quiet. When it is the case, write the
+message with the number or fact that makes it so. Worked example: the
+instruction is "message me each morning if search credits are below 100",
+the tool reports 993 spent of 1,000 with 7 remaining - write "Search credits
+are nearly gone: 7 of 1,000 left this period (993 used)."; the tool reports
+200 spent of 1,000 - write NOTHING_TO_REPORT.
 
 Never write "I don't have a record", "I can't see", or "nothing was set up"
 as the message. Never end by asking them to supply what you were missing,

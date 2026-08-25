@@ -36,12 +36,15 @@ from backend.services.mcp_tool_orchestration_service import (
     MCPToolPlan,
 )
 from backend.skills.tools import parse_skill_call, skill_tool_definitions
+from backend.search.budgeted import current_search_identity
 from backend.tools import (
     AUTOMATION_TOOLS,
     NOT_BUILTIN,
     SEARCH_CAPABILITY,
     SEARCH_TOOL,
     WEATHER_CAPABILITY,
+    SEARCH_CREDITS_CAPABILITY,
+    SEARCH_CREDITS_TOOL,
     WEATHER_TOOL,
     BuiltinTool,
     CreateDiagramAction,
@@ -95,6 +98,13 @@ _MAX_HISTORY_CHARS = 1_500
 
 # Render a short, bounded window of prior turns so routing can see what the
 # user already said, without paying for or trusting the full transcript.
+# Whether the request being routed belongs to an operator, from the search
+# identity the auth layer binds to the request. Unknown counts as not.
+def _caller_is_operator() -> bool:
+    identity = current_search_identity.get()
+    return bool(identity is not None and identity.is_operator)
+
+
 def render_recent_history(history: list[dict[str, Any]]) -> str:
     recent = history[-_MAX_HISTORY_TURNS:]
     lines: list[str] = []
@@ -161,19 +171,35 @@ class MainActionSelector:
     async def _weather_tool_definition(
         self,
     ) -> tuple[dict[str, Any], MCPTool] | None:
+        return await self._core_tool_definition(WEATHER_TOOL)
+
+    # One more core tool on the internet server, for the operator only: the
+    # search key's remaining credits. The number is about the shared key, so
+    # a guest is never offered it - and "not offered" is enforced here, in
+    # code, not by asking the prompt to withhold it.
+    async def _credits_tool_definition(
+        self,
+    ) -> tuple[dict[str, Any], MCPTool] | None:
+        if not _caller_is_operator():
+            return None
+        return await self._core_tool_definition(SEARCH_CREDITS_TOOL)
+
+    # A tool that lives on the search server, offered under its own name with
+    # the server's live schema, or None when the server does not have it.
+    async def _core_tool_definition(
+        self, name: str
+    ) -> tuple[dict[str, Any], MCPTool] | None:
         if self.mcp_invocation is None or not self._search_is_available():
             return None
         try:
-            live = await self.mcp_invocation.resolve_tool(
-                self.search_server_id, WEATHER_TOOL
-            )
+            live = await self.mcp_invocation.resolve_tool(self.search_server_id, name)
         except MCPInvocationError:
             # A server without the tool simply does not offer it this turn.
             return None
         definition = {
             "type": "function",
             "function": {
-                "name": WEATHER_TOOL,
+                "name": name,
                 "description": live.description[:1_000],
                 "parameters": live.input_schema,
             },
@@ -217,6 +243,9 @@ class MainActionSelector:
             # Weather lives on the same server under the same policy, so its
             # availability is the same question already answered above.
             capabilities.append(dict(WEATHER_CAPABILITY))
+            # The meter is the operator's; a guest is not told it exists.
+            if _caller_is_operator():
+                capabilities.append(dict(SEARCH_CREDITS_CAPABILITY))
         capabilities.extend(
             builtin.as_capability() for builtin in self._available_builtins()
         )
@@ -301,6 +330,14 @@ class MainActionSelector:
                 definition, live = weather
                 tools.append(definition)
                 aliases[WEATHER_TOOL] = (
+                    {"schema_fingerprint": live.schema_fingerprint},
+                    live,
+                )
+            credits = await self._credits_tool_definition()
+            if credits is not None:
+                definition, live = credits
+                tools.append(definition)
+                aliases[SEARCH_CREDITS_TOOL] = (
                     {"schema_fingerprint": live.schema_fingerprint},
                     live,
                 )

@@ -19,6 +19,7 @@ from backend.core.auth import issue_user_token
 from backend.core.logging_config import get_logger
 from backend.database.session import AsyncSessionLocal
 from backend.tasks.repository import ScheduledTaskRepository
+from backend.tasks.quiet import is_nothing_to_report
 from backend.workers.imessage_chat import (
     _CHAT_TIMEOUT_SECONDS,
     IMessageChatWorker,
@@ -91,6 +92,15 @@ class TaskRunner:
 
     # The finished turn to where the task was made from.
     async def _deliver(self, run_id: str, task: dict, turn: TurnResult) -> None:
+        # A check that found nothing worth saying stays silent. The reply
+        # model is told (reply/scheduled_task) to answer with exactly this
+        # token when the instruction says to speak only under a condition
+        # that does not hold - "message me if search credits are low" fires
+        # every morning, and a daily "still fine" is the noise that gets an
+        # alert muted.
+        if is_nothing_to_report(turn.reply):
+            await self._finish(run_id, "quiet", task, turn.reply)
+            return
         if task["channel"] != "imessage":
             await self._finish(run_id, "completed", task, turn.reply)
             return

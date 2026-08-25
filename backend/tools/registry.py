@@ -42,6 +42,9 @@ from .actions import (
 from .base import BuiltinTool
 from .search import (
     SEARCH_CAPABILITY,
+    SEARCH_CREDITS_CAPABILITY,
+    SEARCH_CREDITS_TOOL,
+    SEARCH_CREDITS_WAITING,
     SEARCH_TOOL,
     SEARCH_WAITING,
     TOOLBOX_WAITING,
@@ -137,6 +140,8 @@ def describe_action(action: MainAction) -> tuple[str, str] | None:
     if isinstance(action, ToolboxAction):
         if action.plan.tool_name == WEATHER_TOOL:
             return WEATHER_CAPABILITY["label"], ""
+        if action.plan.tool_name == SEARCH_CREDITS_TOOL:
+            return SEARCH_CREDITS_CAPABILITY["label"], ""
         return action.plan.tool_name, action.plan.server_id
     if isinstance(action, UseSkillAction):
         return "Skill", action.name
@@ -153,6 +158,8 @@ def waiting_line(action: MainAction) -> str:
     if isinstance(action, ToolboxAction):
         if action.plan.tool_name == WEATHER_TOOL:
             return random.choice(WEATHER_WAITING)
+        if action.plan.tool_name == SEARCH_CREDITS_TOOL:
+            return random.choice(SEARCH_CREDITS_WAITING)
         return random.choice(TOOLBOX_WAITING).format(tool=action.plan.tool_name)
     if isinstance(action, UseSkillAction):
         return random.choice(SKILL_WAITING).format(name=action.name)

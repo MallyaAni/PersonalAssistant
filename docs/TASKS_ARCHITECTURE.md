@@ -226,3 +226,21 @@ instruction naming an earlier conversation has nothing to resolve against -
 the reply block handles it by writing the useful version rather than
 reporting the gap. Carrying the creating conversation's history into the
 firing is the next improvement.
+
+
+## Quiet firings — 2026-08-25
+
+A conditional task ("message me if search credits are low", "tell me when
+the price is under 40") fires on its schedule whether or not the condition
+holds. The reply prompt for scheduled turns (`prompts/reply/scheduled_task.md`)
+tells the model to answer with exactly `NOTHING_TO_REPORT` when it does not,
+and `TaskRunner._deliver` finishes such a run as `quiet` without sending
+(`backend/tasks/quiet.py`). The token is a single fixed word rather than a
+judgement about the prose, so a real message can never be mistaken for
+silence. `test_scheduled_quiet_behaviour.py` holds the model to both halves
+against the real reply model: silence at 200 of 1,000 credits, the number at
+993.
+
+The first such task: the operator's "message me each morning if search
+credits are below 100", which reads the internet server's `search_credits`
+tool - the key's own usage from the provider, offered to operators only.

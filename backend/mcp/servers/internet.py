@@ -8,7 +8,7 @@ from mcp.server.fastmcp import FastMCP
 from backend.search.google_adk import GoogleADKSearchProvider
 from backend.search.hybrid import HybridSearchProvider
 from backend.search.quota import SQLiteDailySearchQuota
-from backend.search.tavily import TavilySearchProvider
+from backend.search.tavily import TavilySearchProvider, TavilyUsageClient
 from backend.search.types import SearchResults
 
 mcp = FastMCP("AniOS Internet Search")
@@ -48,8 +48,8 @@ def _build_search_provider() -> HybridSearchProvider:
         ),
     )
     tavily = TavilySearchProvider(
-        base_url=os.getenv("SEARCH_BASE_URL", "https://api.tavily.com"),
-        api_key=os.getenv("SEARCH_API_KEY"),
+        base_url=os.getenv("SEARCH_BASE_URL") or "https://api.tavily.com",
+        api_key=os.getenv("SEARCH_API_KEY") or None,
         max_results=max_results,
         timeout_seconds=float(os.getenv("SEARCH_TIMEOUT_SECONDS", "15")),
         max_content_chars=max_content_chars,
@@ -333,6 +333,61 @@ async def get_weather(place: str, days: int = 1, units: str = "imperial") -> str
             },
             "daily": forecast_days,
             "source": "open-meteo.com",
+        }
+    )
+
+
+# What the shared search key has left, from the provider itself.
+#
+# Anything about the internet lives on this server, and that includes the
+# meter: the credits behind `search_web` are the one fact about it the
+# operator keeps asking, and the model had no way to read them - so a
+# scheduled "tell me when search credits are low" fired with nothing to say.
+# The provider's numbers, not this system's own count: the key is shared with
+# whatever else the operator points at it.
+async def _usage_report() -> dict[str, object] | None:
+    # `or`, not a getenv default: compose passes the variable through as an
+    # empty string where it is unset, and an empty base URL reads nothing.
+    client = TavilyUsageClient(
+        base_url=os.getenv("SEARCH_BASE_URL") or "https://api.tavily.com",
+        api_key=os.getenv("SEARCH_API_KEY") or None,
+    )
+    return await client.report() if client.is_enabled() else None
+
+
+@mcp.tool()
+async def search_credits() -> str:
+    """Report the web-search credits left on the shared search key this billing period: plan, spent, limit, remaining, and the share used. Read-only; no credit is spent by asking."""
+    report = await _usage_report()
+    if report is None:
+        return json.dumps(
+            {
+                "provider": "tavily",
+                "error": "usage_unavailable",
+                "detail": "The provider's usage endpoint could not be read, so the "
+                "balance is unknown - not zero.",
+            }
+        )
+    limit = report.get("limit")
+    spent = report.get("spent")
+    percent = (
+        round(100.0 * float(spent) / float(limit), 1)
+        if isinstance(limit, int) and limit > 0 and isinstance(spent, int)
+        else None
+    )
+    return json.dumps(
+        {
+            "provider": "tavily",
+            "plan": report.get("plan"),
+            "spent": spent,
+            "limit": limit,
+            "remaining": report.get("remaining"),
+            "percent_used": percent,
+            "google_grounding_enabled": os.getenv("GOOGLE_SEARCH_ENABLED", "false")
+            .strip()
+            .lower()
+            in {"1", "true", "yes", "on"},
+            "period": "the provider's current billing period",
         }
     )
 

@@ -629,7 +629,9 @@ Zakarya's first iMessage conversation (six turns) surfaced, in order:
   is fixed; a failed search is now rendered to the reply as evidence saying
   so, so it admits it could not check instead of promising to. **Operator
   decision:** wait for the cycle to reset, raise the plan or pay-go, or enable
-  Google grounding (`GOOGLE_SEARCH_ENABLED`, off because the key's tier
+  Google grounding. Since then: `search_credits` on the internet server lets
+  the operator ask the meter in chat and schedule "message me if credits are
+  below N" - the firing stays quiet until it is true. Google grounding (`GOOGLE_SEARCH_ENABLED`, off because the key's tier
   returned 429). Until then every live question is answered from training.
 
 Pre-existing red in the unit suite, untouched here and worth a session of

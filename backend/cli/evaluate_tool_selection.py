@@ -44,7 +44,10 @@ from backend.services.main_action_selector import (
     ShowImageAction,
     ToolboxAction,
 )
+from backend.search.budgeted import SearchIdentity, current_search_identity
+from backend.tools.search import SEARCH_CREDITS_TOOL
 from backend.services.tool_selection_cases import (
+    SEARCH_CREDITS,
     ACCURACY_FLOOR,
     NO_TOOL,
     SELECTION_CASES,
@@ -75,6 +78,10 @@ _ACTION_TOOL = {
 
 # Name the tool one decision resolved to, including the decision to use none.
 def tool_of(action: object) -> str:
+    # The search meter is a toolbox action by mechanism (it lives on the
+    # internet MCP server) and its own tool by measurement.
+    if isinstance(action, ToolboxAction) and action.plan.tool_name == SEARCH_CREDITS_TOOL:
+        return SEARCH_CREDITS
     return _ACTION_TOOL.get(type(action), NO_TOOL)
 
 
@@ -88,14 +95,22 @@ async def collect(
         history = [
             {"query": query, "response": response} for query, response in case.history
         ]
+        # Routed as the operator when the case says so: some tools are offered
+        # only to them, and a case for such a tool routed as a guest measures
+        # the withholding, not the choice.
+        identity = SearchIdentity(user_id="tool_selection_eval", is_operator=case.operator)
         for _ in range(reps):
-            action = await selector.select(
-                "tool_selection_eval",
-                case.query,
-                history,
-                "active-image-id" if case.active_image else None,
-                local_now=case.local_now,
-            )
+            token = current_search_identity.set(identity)
+            try:
+                action = await selector.select(
+                    "tool_selection_eval",
+                    case.query,
+                    history,
+                    "active-image-id" if case.active_image else None,
+                    local_now=case.local_now,
+                )
+            finally:
+                current_search_identity.reset(token)
             observations.append((case.expected, tool_of(action), case.category))
     return observations
 

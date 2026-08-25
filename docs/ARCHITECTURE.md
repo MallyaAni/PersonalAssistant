@@ -1144,7 +1144,7 @@ fingerprint, a withdrawn tool and an unconfirmed consequential server are each
 refused before any request reaches it.
 
 The built-in `local_utility/current_time` server is the live acceptance fixture
-for main-model-selected MCP use. The built-in `internet/search_web` server receives
+for main-model-selected MCP use. The built-in `internet` server (`search_web`, `get_weather`, and `search_credits` - the shared search key's remaining credits, offered to operators only) receives
 only an already normalized and privacy-screened query and inherits only
 operator-allowlisted search environment names. It emits compact valid JSON
 below the generic MCP result cap. Internet eligibility remains deterministic

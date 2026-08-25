@@ -188,6 +188,37 @@ class TavilyUsageClient:
     # caller treating unknown as zero would reset the pool to full on any
     # outage, turning a monitoring problem into an overspend.
     async def spent(self) -> int | None:
+        payload = await self._payload()
+        if payload is None:
+            return None
+        return _spent_in(payload)
+
+    # The plan's position this billing period - spent, limit, remaining -
+    # for whoever needs to know whether the key is about to run out: the
+    # admin page and the internet server's `search_credits` tool. None when
+    # the provider could not be asked; a limit of None when the provider
+    # reports no ceiling.
+    async def report(self) -> dict[str, Any] | None:
+        payload = await self._payload()
+        if payload is None:
+            return None
+        spent = _spent_in(payload)
+        if spent is None:
+            return None
+        account = payload.get("account")
+        account = account if isinstance(account, dict) else {}
+        limit = _dig(payload, ("account", "plan_limit"))
+        remaining = (limit - spent) if isinstance(limit, int) and limit >= 0 else None
+        return {
+            "plan": str(account.get("current_plan") or "") or None,
+            "spent": spent,
+            "limit": limit if isinstance(limit, int) else None,
+            "remaining": max(0, remaining) if remaining is not None else None,
+        }
+
+    # The usage body as the provider returned it, or None when it cannot be
+    # fetched or is not an object.
+    async def _payload(self) -> dict[str, Any] | None:
         if not self.api_key:
             return None
         headers = {"Authorization": f"Bearer {self.api_key}"}
@@ -202,9 +233,13 @@ class TavilyUsageClient:
             payload = response.json()
         except Exception:
             return None
+        return payload if isinstance(payload, dict) else None
 
-        for path in _USAGE_PATHS:
-            found = _dig(payload, path)
-            if found is not None and found >= 0:
-                return found
-        return None
+
+# Credits spent, read from whichever of the known shapes the body carries.
+def _spent_in(payload: dict[str, Any]) -> int | None:
+    for path in _USAGE_PATHS:
+        found = _dig(payload, path)
+        if found is not None and found >= 0:
+            return found
+    return None

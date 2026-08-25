@@ -31,6 +31,8 @@ GENERATE_IMAGE = "generate_image"
 EDIT_IMAGE = "edit_image"
 SHOW_IMAGE = "show_image"
 SEARCH_HISTORY = "search_history"
+# Lives on the internet MCP server, not the registry; scored by its tool name.
+SEARCH_CREDITS = "search_credits"
 CREATE_DIAGRAM = "create_diagram"
 DELEGATE_PRESENTATION = "delegate_to_presentation_agent"
 SCHEDULE_TASK = "schedule_task"
@@ -45,6 +47,7 @@ TOOL_NAMES: tuple[str, ...] = (
     EDIT_IMAGE,
     SHOW_IMAGE,
     SEARCH_HISTORY,
+    SEARCH_CREDITS,
     CREATE_DIAGRAM,
     DELEGATE_PRESENTATION,
     # The four newest built-ins were missing here, which is why no case could
@@ -78,6 +81,9 @@ class SelectionCase:
     # "in 5 minutes" scores the same on every run; the application passes the
     # person's real local time here.
     local_now: str = "2026-08-23 10:38 America/New_York"
+    # Whether the asker is the operator. Some tools are offered only to them
+    # (the search meter), so their cases must be routed as them.
+    operator: bool = False
 
 
 _OUTFIT_HISTORY = (
@@ -444,6 +450,19 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
         "history",
         history=_MADE_PICTURE_HISTORY,
     ),
+    # The search meter: an operator asking about credits gets the tool; the
+    # same words from a guest, who is never offered it, are answered directly;
+    # a question about the weather is still the weather.
+    SelectionCase(
+        "how many search credits do we have left?", SEARCH_CREDITS, "credits", operator=True
+    ),
+    SelectionCase(
+        "are we close to running out of tavily credits this month?",
+        SEARCH_CREDITS,
+        "credits",
+        operator=True,
+    ),
+    SelectionCase("how many search credits do we have left?", NO_TOOL, "credits"),
 )
 
 # Set from the measured baseline once, deliberately low enough to catch a
@@ -470,6 +489,8 @@ PER_TOOL_ACCURACY_FLOORS: dict[str, float] = {
     # exact gap test_tool_coverage_completeness.py exists to catch, and it did.
     # Floored at first measurement the same day.
     SEARCH_HISTORY: 0.60,
+    # First measured 2026-08-25 with the tool.
+    SEARCH_CREDITS: 0.66,
     CREATE_DIAGRAM: 0.60,
     DELEGATE_PRESENTATION: 0.50,
     # Set on 2026-08-23 when these were first measured at all. Task routing is

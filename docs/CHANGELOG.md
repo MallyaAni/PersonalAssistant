@@ -4,6 +4,18 @@ This file is append-only history for meaningful, verified changes. It must not c
 
 ## 2026-08-25 — Recall anything, a reranker, keyed digests, a third backup copy, and the architecture told for newcomers
 
+- **The search meter lives on our own internet MCP server, and a scheduled
+  check can stay quiet.** `search_credits` reports the shared key's plan,
+  spent, limit and remaining straight from Tavily's usage endpoint (a GET
+  that spends nothing); the router offers it to operators only, enforced in
+  code from the request's search identity, and the reply's capability list
+  says so only to them. A conditional scheduled task now answers
+  `NOTHING_TO_REPORT` when its condition does not hold and the runner
+  finishes the run as `quiet` without sending - so "message me each morning
+  if search credits are below 100" arrives only on the morning it matters.
+  Verified against the real provider (the meter reads 993 of 1,000), the
+  real router (operator cases route to the meter, a guest is not offered
+  it), and the real reply model (silence at 200 credits, the number at 993).
 - **A picture the user already has can be shown again, and a reply can no
   longer promise a picture nobody is making.** A newcomer's "can you show me
   that image?" over iMessage was answered "I can't display it here" with the

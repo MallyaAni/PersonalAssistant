@@ -10,6 +10,7 @@ it costs a session against that server.
 
 SEARCH_TOOL = "search_web"
 WEATHER_TOOL = "get_weather"
+SEARCH_CREDITS_TOOL = "search_credits"
 
 SEARCH_CAPABILITY: dict[str, str] = {
     "label": "Web search",
@@ -29,6 +30,23 @@ WEATHER_CAPABILITY: dict[str, str] = {
     ),
 }
 
+# Offered to operators only: the number is about the shared key, and the
+# question "are we about to run out?" is the operator's to ask, in chat or
+# from a scheduled check that messages them when it is low.
+SEARCH_CREDITS_CAPABILITY: dict[str, str] = {
+    "label": "Search credits",
+    "description": (
+        "Report how many web-search credits the shared search key has left "
+        "this billing period - spent, limit, remaining - straight from the "
+        "provider. For the operator asking about search usage, credits, or "
+        "quota, or a scheduled check that should say something only when "
+        "credits are low."
+    ),
+}
+SEARCH_CREDITS_WAITING: tuple[str, ...] = (
+    "🧾 Checking the search meter…",
+    "💳 Counting the credits…",
+)
 SEARCH_WAITING: tuple[str, ...] = (
     "🔎 Rummaging through the internet…",
     "🌐 Asking the web nicely…",
