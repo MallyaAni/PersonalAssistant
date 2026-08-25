@@ -133,7 +133,12 @@ This file is append-only history for meaningful, verified changes. It must not c
   picture" edited an older picture because referent candidates came only
   from a similarity search and a bare "this" matches nothing - the newest
   picture was never offered. The three newest ready pictures are now
-  always candidates; structural 44/44, referent behaviour 7/7.
+  always candidates; structural 44/44, referent behaviour 7/7. A fifth pass
+  showed the resolver still reading "background" as a detail matching an
+  older picture's wall; the resolver prompt now states that a part any
+  picture has is not a distinguishing detail, gated at 11/11 with a
+  separating-detail control. The sixth pass through the real chat API then
+  passed all seven scenarios, every edit on the picture it was meant for.
 - **Image edits run at 1 MP, because the desktop's ceiling is VM RAM, not
   VRAM.** ComfyUI exited cleanly mid-job with a Klein generation and a
   Kontext edit queued together: the WSL2 VM sees 15.6 GB of RAM, and encoder

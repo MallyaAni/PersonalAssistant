@@ -558,6 +558,25 @@ similarity retrieved (`ImageReferentSource`, `RECENT_CANDIDATES`);
 structural 44/44, referent-resolution behaviour 7/7, redeployed. Real
 clients send the active picture explicitly (browser chip, iMessage
 reply-pin) and never hit this; an API client without image tracking did.
+**Fifth pass (13:08 UTC): 6 of 7 still** - the upload was now offered and
+the resolver still chose the bicycle, reading "background" in "make the
+background of this picture purple" as a detail matching its brick wall.
+Fixed in the resolver prompt as a principle: "this" points at the most
+recent candidate, and naming a part any picture has (background, sky,
+colours, something to add) is not a distinguishing detail; only a detail
+that fits some candidates and not others chooses an older one. Reproduced
+first as three registers plus a separating-detail control in
+`functional/test_referent_resolution_behaviour.py`; one of my own cases
+("the sky in this one") was wrong rather than the model - among a flag, a
+sunset portrait, a bicycle, and a kitchen a sky *is* separating - and was
+replaced. 11/11, rebuilt and redeployed. **Sixth pass (13:22 UTC): 7 of
+7.** Generate; unselected edit of the generated picture; upload + ask;
+unselected edit of the upload landing on the upload; explicit selection;
+"the bicycle picture" by description; a question answered in words - every
+child's `parent_artifact_id` as expected, no ComfyUI restart, delete-all
+clean. That is the image subsystem verified end to end through the chat
+API. Still not driven by me: the browser's own clicks and an inbound
+iMessage text-then-edit (the send half is proven), both recorded above.
 
 ## iMessage pictures — defect found and fixed, 2026-08-25
 
