@@ -172,6 +172,22 @@ graph, so the proven path is the one the backend takes. Output verified as real
 1024x1024 PNGs. **Peak never approached the ~17 GB predicted** — the eviction
 model is correct and the earlier VRAM worry is settled empirically.
 
+**A slow first edit is a cold load, not a fault.** Generation holds Klein 9B
+Q6_K (7.33 GB); the Kontext edit holds `flux1-kontext-dev-Q4_K_M.gguf`
+(6.46 GB) with a different encoder. Both together do not fit 16 GB, so
+alternating generate → edit → generate makes ComfyUI evict and reload each
+time. Measured: **114.5 s cold against 6.0 s warm.** So "make me a picture"
+followed by "now change it" costs about two minutes on the second request, and
+it will be reported as a hang. It is not.
+
+Related, and recorded because I got it wrong first: **ComfyUI executes prompts
+serially** (`queue_running` / `queue_pending`), so overlapping requests queue
+rather than running together. There is no concurrent-workflow OOM to defend
+against, and `IMAGE_MAX_CONCURRENCY=1` (settings.py:522) already holds. The
+semaphore in `ComfyUIImageProvider` is per instance and `dependencies.py`
+builds three, so two requests can be in flight in the app — harmless, because
+ComfyUI serialises them anyway. Do not "fix" that by assuming it causes OOMs.
+
 **Plan A remains unavailable.** `black-forest-labs/FLUX.2-klein-9b-fp8` returns
 **403 GatedRepo** for `deepmatter77`; access needs a click on the model page and
 no token can self-approve. Set `IMAGE_MODEL=flux-2-klein-9b-Q6_K.gguf` unless
