@@ -115,7 +115,7 @@ Model behavior is considered verified only when a functional test sends the real
 - [Next session handoff](docs/NEXT_SESSION.md)
 - [Changelog](docs/CHANGELOG.md)
 - [Security](docs/SECURITY.md)
-- [Architecture decisions](docs/adr/0001-clean-architecture-and-modular-structure.md), including [local visual artifacts and resource-aware orchestration](docs/adr/0003-local-visual-artifacts-and-resource-aware-orchestration.md), [hybrid free-tier web research](docs/adr/0004-hybrid-free-tier-web-research.md), [typed editable presentation generation](docs/adr/0005-typed-editable-presentation-generation.md), [versioned visual semantics, memory references, and editing](docs/adr/0007-versioned-visual-semantics-memory-and-editing.md), and the [default vLLM runtime](docs/adr/0009-vllm-default-local-inference-runtime.md)
+- [Architecture decisions](docs/adr/0001-clean-architecture-and-modular-structure.md), including [local visual artifacts and resource-aware orchestration](docs/adr/0003-local-visual-artifacts-and-resource-aware-orchestration.md), [hybrid free-tier web research](docs/adr/0004-hybrid-free-tier-web-research.md), [typed editable presentation generation](docs/adr/0005-typed-editable-presentation-generation.md), [versioned visual semantics, memory references, and editing](docs/adr/0007-versioned-visual-semantics-memory-and-editing.md), the [default vLLM runtime](docs/adr/0009-vllm-default-local-inference-runtime.md), and [DeepSeek on two DGX Sparks](docs/adr/0015-deepseek-on-two-sparks-text-roles-consolidated.md); every record is catalogued with its reasoning in the architecture document's Part II
 
 ## Status language
 

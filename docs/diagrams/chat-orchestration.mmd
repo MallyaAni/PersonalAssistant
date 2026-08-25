@@ -30,7 +30,7 @@ flowchart TB
     Visual --> VisualPolicy[DeepSeek V4 Flash<br/>visual-memory selection]
     VisualPolicy --> Context
     Selector -->|search_web query,<br/>model-authored| Search[Privacy-screened<br/>internet search]
-    Selector -->|search_history query| History[Transcript-store semantic search<br/>owner-scoped, excerpts as own record]
+    Selector -->|search_history query| History[Transcript-store semantic search<br/>top 40 by vector, both voices, HNSW<br/>Qwen3 reranker cuts to 12, fail-soft]
     Selector -->|toolbox tool| MCP[Guarded MCP<br/>invocation]
     MCP --> Context
     Search --> Context

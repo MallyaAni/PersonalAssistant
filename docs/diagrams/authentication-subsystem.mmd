@@ -1,17 +1,27 @@
 ---
-title: Invited Registration, Authentication, and Ownership
+title: Sign-up, Approval, Authentication, and Ownership
 ---
 flowchart LR
-    Operator([Operator]) --> CLI[Account CLI]
-    CLI -->|create one-time code| Invites[(Registration invites<br/>digest and expiry only)]
-
-    Visitor([Browser user]) --> Entry[Sign in or create profile]
-    Entry -->|new profile| Register[Registration API]
+    Visitor([Browser user]) --> Entry[Sign in, ask for access,<br/>or redeem an invite]
+    Entry -->|ask for access: name, username,<br/>password, phone in E.164| Request[Access request API<br/>number claimed once]
+    Request --> Requests[(Access requests<br/>phone sealed, keyed digest,<br/>password already hashed)]
+    Entry -->|invite code| Register[Registration API]
     Entry -->|existing profile| Login[Login API]
+
+    Operator([Operator]) --> Approve[Approve in admin]
+    Operator --> CLI[Account CLI]
+    CLI -->|create one-time code| Invites[(Registration invites<br/>digest and expiry only)]
     Invites -->|lock and consume once| Register
-    Limits[(Redis attempt limits)] --> Register
+    Requests --> Approve
+    Approve -->|account from the stored hash| Accounts[(Accounts<br/>stable owner)]
+    Approve -->|enrol the number| Subscribers[(Subscribers<br/>one number, one account)]
+    Approve -->|allow_recipient| BridgeList[[iMessage bridge allowlist<br/>on the Mac]]
+    Approve -->|introduction from the<br/>capability list, exactly once| Welcome[Welcome message]
+
+    Limits[(Redis attempt limits)] --> Request
+    Limits --> Register
     Limits --> Login
-    Register --> Accounts[(Accounts<br/>stable owner)]
+    Register --> Accounts
     Login -->|Argon2id verification| Accounts
     Register --> Sessions[(Revocable sessions<br/>token digests only)]
     Login --> Sessions
@@ -19,8 +29,9 @@ flowchart LR
 
     Visitor -->|private request and cookie| Gate[Session and origin gate]
     Gate --> Sessions
-    Gate -->|server-derived owner| Ownership[Owned API checks]
+    Gate -->|server-derived owner| Ownership[Owned API checks<br/>ownership answers who, scopes answer what]
     Ownership --> Data[(Chats, memory,<br/>artifacts and jobs)]
+    Subscribers -.->|sender identity by digest| Bridge[iMessage chat worker]
 
     CLI -.->|disable or reset| Accounts
     CLI -.->|revoke| Sessions
@@ -29,6 +40,8 @@ flowchart LR
     classDef actor fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
     classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
+    classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
     class Operator,Visitor actor;
-    class CLI,Entry,Register,Login,Cookie,Gate,Ownership application;
-    class Invites,Accounts,Limits,Sessions,Data data;
+    class CLI,Entry,Request,Approve,Register,Login,Cookie,Gate,Ownership,Welcome,Bridge application;
+    class Invites,Requests,Accounts,Subscribers,Limits,Sessions,Data data;
+    class BridgeList external;

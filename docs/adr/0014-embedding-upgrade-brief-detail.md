@@ -1,9 +1,18 @@
 # ADR 0014 - supporting detail: should the embedding models be replaced?
 
 Researched 2026-08-23 after the operator asked whether nomic is outdated.
-Not an accepted decision - this is the brief a decision would be made from.
-The image embedder was found disabled in production on the same day and
-restored separately; that is a deployment fix, not a model change.
+**Accepted as a decision on 2026-08-25**, after a second research pass
+(current MTEB/MMEB leaders, licences, vLLM support) reached the same
+recommendation: keep the pair now, and name the coordinated migration target
+for the next hardware step - Qwen3-VL-Embedding with Qwen3-VL-Reranker, one
+family with one unified text/image/video space and Matryoshka output that
+keeps the 768-wide columns. The signature-per-vector scheme and the
+one-command backfill that make such a swap safe were built on 2026-08-24;
+the reranker half of that family's contract is already the deployed
+`/v2/rerank` client. Evidence and the rejected candidates are in
+`docs/NEXT_SESSION.md` ("Embedding research verdict"). The image embedder
+was found disabled in production on 2026-08-23 and restored separately; that
+was a deployment fix, not a model change.
 
 ---
 

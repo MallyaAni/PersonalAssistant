@@ -2,6 +2,91 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-25 — Recall anything, a reranker, keyed digests, a third backup copy, and the architecture told for newcomers
+
+- **The assistant can search everything either side has ever said.** A new
+  builtin, `search_history`, lets the router choose a semantic search over the
+  whole transcript store the way it chooses a web search: every exchange is
+  embedded with both voices (188/188 rows re-embedded into the `#qr1` space by
+  the signature-driven backfill), an HNSW index is live on
+  `conversations.embedding`, retrieval matches only the current model+scheme
+  signature so a future embedding change degrades to "not yet rebuilt" rather
+  than wrong answers, the model states time bounds as ISO dates in its tool
+  call, excerpts carry truncation markers, and a miss logs the nearest rejected
+  distance so the 0.6 threshold becomes measured. Structural 13/13, functional
+  8/8 against the real router, tool-selection matrix green. Adding the
+  optional date fields to the schema measurably moved the router's decision
+  boundary ("make it more casual" began searching history); fixed with a
+  principle in the description, not the phrasing, first attempt, 8/8 again.
+- **A cross-encoder second pass, fail-soft.** Qwen3-Reranker-0.6B serves on
+  spark1 (`vllm-reranker`, ARM image, 0.03 utilisation, context trimmed to
+  2,048 after 4,096 left the box at 3 GiB free). History recall fetches the
+  top 40 by vector and lets the reranker cut them to 12; any failure keeps
+  the cosine order. `/v2/rerank` is the working route on this build - `/v1`
+  and `/rerank` reset the connection. Structural 5/5, functional 2/2, live
+  ranking 0.987 for the answer against 0.293 for the lexical decoy. The stage
+  was then found wired into the test container only - fail-soft had hidden
+  that the live backend never had it - and is now carried by `backend` and
+  `local-capabilities`, verified enabled in the running container. The same
+  swap was measured for Scout's shortlist and rejected: attribution 0.25
+  against the local cross-encoder's 0.50 (both below the harness's 0.60
+  floor), so Scout keeps MiniLM and the choice is a setting.
+- **The memory classifier no longer stores the discussion as the user.** A
+  rebuttal in a design conversation ("but conversation history will be
+  summarized and important facts stored in memory") had been persisted as a
+  user fact. Reproduced at temperature 0 with two more system-statement
+  shapes, fixed in the prompt with principles - a statement about how the
+  assistant or any system under discussion works is the work at hand; a fact
+  is what the user states about themself; another person's fact stays theirs
+  (the first wording let a daughter's ballet through) - and pinned by
+  `functional/test_memory_capture_discipline.py`. Memory-capture batch 38/38.
+- **Phone and address digests are keyed (SECURITY.md's C12 closed).**
+  `address_digest` is HMAC-SHA256 from `ENCRYPTION_KEY`, in sign-up,
+  approval, subscriber enrolment, and iMessage sender matching at once; the
+  rekey CLI moved 1 access request and 14 subscribers and reports zero on
+  re-run; a source-inspection test forbids the unkeyed path returning.
+- **The memory export carries the sign-up phone** (`sign_up`, schema v3), the
+  one number a per-table coverage sweep could not see because the approved
+  request is keyed by username. `.env.example` no longer points at the
+  retired desktop's drive.
+- **A third backup copy, on the Mac, proven with a real run.** Remote Login,
+  spark1's key, and both mirrors in `.env`; the same dump landed on spark1,
+  spark2, and the Mac with 534 sealed values and zero key material. The
+  first three-way run mirrored to nobody: the `.env` parser stripped the
+  spaces between hosts along with carriage returns - fixed the same night.
+- **Applying the loopback port bindings caused an hour-long outage, and the
+  fix is structural.** Services dialled the host's LAN address; every new
+  database and Redis connection was refused while health answered 200.
+  Containers now address `db` and `redis` by compose-network name, the gate's
+  Postgres host is literal so spark1's host-oriented `.env` cannot leak in,
+  and two services that a plain `up -d` left running with stale env were
+  force-recreated. Recorded as an operational trap.
+- **spark2's VLM unit now orders after `ds4-worker`** (the cold-boot GPU-profile
+  race), patched in the installed unit and reloaded with the service left
+  running.
+- **The diagram suite renders from the Mac.** Playwright refuses macOS 13, and
+  the browser was never part of the render fingerprint, so
+  `ARCHITECTURE_DIAGRAM_BROWSER` points the pinned mermaid-cli at an
+  installed Chrome. 22 diagrams and the published page check synchronized,
+  including the chat-orchestration view that had been stale since the recall
+  work.
+- **Image work is declared to live on a machine that is sometimes off.** The
+  unreachable-provider message now says so and tells the person to try later
+  instead of to "start it" (29/29 gated); defaults moved to the FLUX.2 Klein
+  9B pair with the mandatory 8B encoder; both Klein workflows follow the model
+  file name to a GGUF loader (30/30), so a quantised fallback is an env
+  change. Hosting the 9B on the desktop itself is not yet verified and is not
+  claimed here.
+- **`docs/ARCHITECTURE.md` rewritten in three parts** - a newcomer's Part I in
+  the memory overview's numbered shape for every subsystem, a Part II
+  cataloguing every ADR and every decision made while running the system
+  with its reason, and the prior reference as Part III with its
+  single-RTX-5080 topology replaced by the Spark deployment. The full-system,
+  runtime, chat-orchestration, and authentication diagrams updated to match;
+  `AGENT_CATALOG.md`'s cost table and Roadmap Milestone 9 brought current;
+  ADR 0015 records the Spark consolidation and ADR 0014 is promoted to a
+  decision.
+
 ## 2026-08-24 — Sign-up collects a number, approval introduces the person, and a backup can now be restored
 
 - **Sign-up requires a phone number, and approval allowlists it on both

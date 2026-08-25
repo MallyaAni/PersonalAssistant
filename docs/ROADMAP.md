@@ -671,14 +671,32 @@ The security and privacy gates in [SECURITY.md](SECURITY.md) apply throughout;
 enabling `AUTH_REQUIRED` and protecting the signing and encryption keys are
 prerequisites for any non-local, multi-person deployment.
 
-## Milestone 9: local inference on the DGX Spark — IN PROGRESS
+## Milestone 9: local inference on the DGX Spark — VERIFIED
 
-Goal: use the DGX Spark's 128 GB unified memory for a substantially larger
-model than the RTX 5080's VRAM can hold, without disturbing the working
-RTX 5080 stack (`vllm-main`, `vllm-embedding`) it would sit alongside.
+Goal as first written: use the DGX Spark's 128 GB unified memory for a
+substantially larger model than the RTX 5080's VRAM can hold, without
+disturbing the working RTX 5080 stack (`vllm-main`, `vllm-embedding`) it would
+sit alongside. The outcome went further than the goal: the RTX 5080 stack was
+retired and the whole application moved to the Sparks.
+
+- `VERIFIED` (2026-08-22 to 2026-08-25): DeepSeek-V4-Flash serves every text
+  role - conversation, routing, structured output, diagrams, decks, memory
+  classification - from vLLM tensor-parallel across spark1 and spark2 (1M-token
+  context, NVFP4 KV cache, ~97 GiB per node); Qwen3-VL-8B serves vision on
+  spark2; every application container, PostgreSQL, Redis, the embedding and
+  reranker services, and the Cloudflare tunnel run on spark1. The deploy gate
+  (tool-selection matrix, 7 cases) and the functional suites run against this
+  deployment and are green; the single-GPU Qwen 4B profile is retired. The
+  decision and its reasons are ADR 0015; the measurements are in
+  `MODEL_EVALUATION.md` ("DeepSeek stays", 2026-08-20) and the commissioning
+  record in `DGX_MIGRATION.md`. What remains is operational, not a milestone:
+  netplan for the RoCE fabric (a power cycle strands the pair until addresses
+  are re-set by hand) and backup failure alerting, both tracked in
+  `NEXT_SESSION.md`.
 
 Hardware inventory and access are documented in
 [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md#available-hardware-nvidia-dgx-spark).
+The history below is kept as the evidence trail that led here.
 
 - `DONE, THEN REVERTED` (2026-08-14): DeepSeek-V4-Flash-0731 (284B total /
   13B active MoE) installed on the Spark via

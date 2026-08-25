@@ -5,9 +5,11 @@ flowchart TB
     User([User])
 
     subgraph Experience[User experience]
-        Frontend[React frontend]
+        Frontend[React frontend<br/>deep-matter.com via Cloudflare tunnel]
+        Bridge[iMessage bridge on the Mac<br/>allowlisted senders, texts and pictures]
         API[FastAPI API]
         Frontend --> API
+        Bridge --> API
     end
 
     subgraph Orchestration[Application-owned orchestration]
@@ -24,8 +26,8 @@ flowchart TB
     subgraph LocalAI[Replaceable local AI and rendering]
         ModelGate[Redis model-priority gate]
         Inference[Provider-neutral<br/>inference adapters]
-        VLLM[vLLM services<br/>Qwen: routing and primary vision<br/>optional specialist VLM<br/>Nomic: text embeddings]
-        Media[ComfyUI: FLUX.2 Klein<br/>PptxGenJS and LibreOffice]
+        VLLM[vLLM on two DGX Sparks<br/>DeepSeek V4 Flash: every text role<br/>Qwen3-VL-8B: vision<br/>Nomic embeddings, Qwen3 reranker]
+        Media[ComfyUI on the desktop: FLUX.2 Klein<br/>only while that machine is on<br/>PptxGenJS and LibreOffice]
         VisionEmbed[Nomic vision embedding<br/>ONNX on CPU]
     end
 
@@ -42,6 +44,7 @@ flowchart TB
     end
 
     User --> Frontend
+    User --> Bridge
     API --> Identity --> Supervisor
     Supervisor -->|chat or diagram| Conversation
     Supervisor -->|presentation| Presentation
@@ -76,7 +79,7 @@ flowchart TB
     classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43,stroke-width:1.5px;
     classDef infrastructure fill:#eef7ee,stroke:#5f9562,color:#183b1b,stroke-width:1.5px;
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450,stroke-width:1.5px;
-    class User,Frontend,API interface;
+    class User,Frontend,Bridge,API interface;
     class Identity,Supervisor,Conversation,Presentation,Memory,Discovery,Visual,Tools application;
     class ModelGate,Inference,VLLM,Media,VisionEmbed,Repositories,Database,Files infrastructure;
     class Integrations external;

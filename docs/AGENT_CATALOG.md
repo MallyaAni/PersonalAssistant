@@ -4,9 +4,11 @@ Every specialized agent in AniOS, what it decides, and where its parts live.
 
 An agent here is something that **produces work a person asked for**, using a
 model, and reports itself to the Agents tab. A model call that only routes — the
-search-freshness classifier, the image-recall classifier — is a policy, not an
-agent, and is listed at the bottom so the distinction stays deliberate rather
-than accidental.
+visual-memory selector, the upload inspector — is a policy, not an agent, and
+is listed at the bottom so the distinction stays deliberate rather than
+accidental. (Two earlier routing classifiers, for search freshness and image
+recall, were deleted once the main routing call could make those judgements
+with the conversation in front of it.)
 
 Each agent owns a folder under `backend/agents/<name>/`. The rule that puts it
 there: **the mechanism for calling a model is shared and reusable; the prompt
@@ -164,23 +166,26 @@ Listed so the distinction is a decision rather than an oversight.
 
 | Policy | Decides | Lives in |
 | --- | --- | --- |
-| Search freshness | whether a turn needs the web | `backend/search/classifier.py` |
-| Image recall | whether a query names a stored image | `backend/artifacts/image_recall_classifier.py` |
 | Visual-memory selection | which offered owned image descriptions materially help answer the current message | `backend/agents/vision/memory.py` |
 | Upload inspection | edit versus question, per-item visual confidence/evidence, durable observation, immediate answer, evidence sufficiency, grounding value, and stronger-reasoning need | `backend/agents/vision/upload.py` |
 
 ## Every model call, and what it costs
 
-One model serves all of it: `LLM_MODEL=qwen/qwen3.5-4b` on vLLM. The
-role-specific settings — `MAIN_LLM_MODEL`, `PRESENTATION_LLM_MODEL`,
-`DIAGRAM_LLM_MODEL`, `MEMORY_PROPOSAL_LLM_MODEL` — all resolve to that same
-model today, so the routing exists but selects nothing. Scout has no role
-setting at all.
+One text model serves all of it: DeepSeek-V4-Flash, served by vLLM
+tensor-parallel across the two DGX Sparks. The role-specific settings —
+`MAIN_LLM_MODEL`, `ROUTING_LLM_MODEL`, `PRESENTATION_LLM_MODEL`,
+`DIAGRAM_LLM_MODEL`, `MEMORY_PROPOSAL_LLM_MODEL` — are pinned to it
+explicitly in compose so that changing one never silently moves another;
+Scout has no role setting and follows the main role. Vision is the one
+separate model (Qwen3-VL-8B on spark2), because DeepSeek cannot read pixels.
 
-The constraint that decides this is the card: an RTX 5080 has 16 GB and the
-serving stack already holds about 13 GB. There is no room for a second resident
-model, so "a better model for this call" means replacing the one model for
-every call, not adding one.
+The constraint that decides this is memory: DeepSeek holds about 97 GiB on
+*each* Spark, so "a better model for this call" still means replacing the one
+model for every text call, not adding one - and nothing moves a model at
+request time, because over-allocating a Spark hangs it (ADR 0015). Every
+decision call below decodes at temperature 0 inside a grammar; the memory
+classifier's budget was raised from 256 to 1,024 tokens after real turns
+were truncated mid-JSON.
 
 | Agent | Call | Tokens | Temp | Grammar |
 | --- | --- | --- | --- | --- |
@@ -192,9 +197,7 @@ every call, not adding one.
 | Scout | `timezones.py` — place to IANA zone | 32 | 0.0 | yes |
 | Deck | `provider.py` — plan, outline, slide, new slide, revision | caller | **default** | yes |
 | Diagram | `diagram.py` — Mermaid source | 2048 | 0.0 | yes |
-| Memory capture | `proposal_agent.py` — what to offer saving | 256 | 0.0 | yes |
-| *(not an agent)* | `search/classifier.py` — does this need fresh search | 4 | 0.0 | yes |
-| *(not an agent)* | `image_recall_classifier.py` — is this about an old image | 4 | 0.0 | yes |
+| Memory capture | `proposal_agent.py` — what to save | 1024 | 0.0 | yes |
 | *(not an agent)* | `agents/vision/memory.py` — select relevant offered visual memories | 128 | 0.0 | yes |
 | *(not an agent)* | `agents/vision/upload.py` — one structured primary image inspection | 512 | 0.0 | yes |
 | *(not an agent)* | optional specialist retry after `model_uncertain` | 512 | 0.0 | yes |
