@@ -83,6 +83,22 @@ _OUTFIT_HISTORY = (
     ),
     ("can you edit this to a straw hat?", "Here's the edited image."),
 )
+# A conversation that has generated, edited, and then uploaded a picture, so
+# "this picture" is the newest one and no picture is explicitly selected.
+_PICTURE_SESSION_HISTORY = (
+    (
+        "make me a picture of a red bicycle leaning against a brick wall",
+        "Here's the image you asked for.",
+    ),
+    (
+        "add a yellow umbrella leaning next to the bicycle",
+        "Editing a red bicycle leaning against a brick wall -",
+    ),
+    (
+        "what is in this picture?",
+        "The image shows a flag: a blue field with a green band and a yellow circle.",
+    ),
+)
 _SCOUT_HISTORY = (
     (
         "what agents do i have scheduled?",
@@ -176,6 +192,18 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
         "edit",
         active_image=True,
         history=_OUTFIT_HISTORY,
+    ),
+    # An imperative edit with no picture selected, after the conversation has
+    # generated, edited, and uploaded pictures. Measured 2026-08-25 on the
+    # real path: routed to no tool once, and the plain reply then described
+    # an edit it never made. The edit path resolves which picture; the router
+    # only has to see that a change was asked for.
+    SelectionCase(
+        "make the background of this picture purple",
+        EDIT_IMAGE,
+        "edit",
+        active_image=False,
+        history=_PICTURE_SESSION_HISTORY,
     ),
     SelectionCase(
         "remove the hat from this picture",

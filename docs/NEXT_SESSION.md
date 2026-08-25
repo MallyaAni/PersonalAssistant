@@ -531,10 +531,22 @@ RAM ceiling with Klein, the 8B encoder, and Kontext swapping. Edits now run
 at `IMAGE_EDIT_MEGAPIXELS=1.0` (spark1 `.env`, verified generate 114 s cold +
 edit 115 s cold after the restart); the structural fix is a `.wslconfig`
 with `memory=24GB` on the desktop, an operator host change for its next
-boot. Explicit selection via `active_image_artifact_id` - what the browser
-chip and the iMessage reply-pin send - is therefore still unverified on the
-real path; the generate-then-edit provider probe covers the same ComfyUI
-work, not the chat wiring.
+boot. **Third pass, after the fixes and at 1 MP (04:44 UTC): 6 of 7.** The
+unselected edit right after a generation now edits that picture (child's
+parent = the generated one), the explicit selection edits the chosen
+picture with no ComfyUI restart, "edit the bicycle picture" resolves by
+description into the bicycle lineage, generation, upload + ask, and the
+question all pass. The one failure was new and different: for "make the
+background of this picture purple" (no selection, right after the upload)
+the router chose *no tool* this time, and the plain reply - its history now
+full of "Editing ..." turns - wrote "Editing a red bicycle with a wooden
+basket" for an edit it never made and a basket that did not yet exist. The
+no-change block is therefore rendered whenever a picture is in view on the
+plain path (`_render_edit_state`, neutral wording, 5/5 including a plain
+question), rebuilt and redeployed. Still open: that routing shape - an
+imperative edit with no selection after an upload turn - is being added to
+the tool-selection floor set so a regression is caught rather than
+rediscovered.
 
 ## iMessage pictures — defect found and fixed, 2026-08-25
 
