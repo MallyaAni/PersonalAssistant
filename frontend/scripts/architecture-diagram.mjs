@@ -20,6 +20,7 @@ const diagramNames = [
   "anios-system",
   "runtime-deployment",
   "inference-scaling-target",
+  "ml-serving-design",
   "authentication-subsystem",
   "chat-orchestration",
   "search-research-subsystem",

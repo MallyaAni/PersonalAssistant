@@ -503,6 +503,17 @@ can still be stale UI.
   traps that no amount of reading the source would reveal. Update it whenever a
   model, quantisation, or inference server changes, and whenever a new failure
   is found by running something rather than by reading it.
+- `docs/ML_SYSTEM_DESIGN.md` and `docs/diagrams/ml-serving-design.mmd`: the ML
+  systems decisions of the serving stack - which model at which quantisation,
+  the KV-cache dtype and pool, tensor parallelism, context length against
+  memory, utilisation ceilings, speculative decoding, the embedding/reranker
+  sizing, every retrieval threshold and how it was derived, the context
+  budget, and the decoding policy - each as the options considered, what was
+  measured, the choice, and what would change it. Update it in the same
+  change as any serving flag, quantisation, model, cache, context, threshold,
+  or token-budget change, and record what was tried and rejected with its
+  numbers; a decision whose evidence lives only in a commit message is not
+  documented.
 - `docs/adr/`: durable architectural decisions.
 
 After implementation or debugging, rewrite `NEXT_SESSION.md` when runtime evidence or the next task changed. Update other documents only when facts within their ownership changed. Never record code as complete in the changelog unless its intended behavior passed functional validation.

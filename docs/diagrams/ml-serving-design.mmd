@@ -1,0 +1,55 @@
+---
+title: ML Serving Design - models, memory, and the knobs that were measured
+---
+flowchart TB
+    Turn([One chat turn])
+
+    subgraph Decode[Decoding policy]
+        Route[Router: one native tool call<br/>temperature 0, grammar-constrained<br/>1.8 s median]
+        Prompt[Prompt laid out for the prefix cache<br/>append-only history first, volatile blocks after<br/>34k-token turn 2: 33.1 s to 2.0 s]
+        Reply[Reply: DeepSeek streams<br/>30-80 tok/s by content type<br/>TTFT 5.9 s cold, 0.5 s warm at 11.7k]
+    end
+
+    subgraph Sparks[Two DGX Sparks - 121.7 GiB unified memory each, 273 GB/s]
+        Head[spark1: DeepSeek-V4-Flash rank 0<br/>official FP8, 284B MoE, 13B active<br/>weights+overhead ~90 GiB per node]
+        Rank1[spark2: DeepSeek rank 1<br/>bounds utilisation at 0.81<br/>0.90 refused here, head hangs]
+        KV[KV cache: nvfp4_ds_mla, MLA single head<br/>~8.7 GiB pool at 0.81, 1M context needs 7.54<br/>demand p90 11.7k tokens]
+        Fabric[RoCE fabric: two virtual NICs merged<br/>109 Gb/s per rail, MTU 9000<br/>addresses set by hand until netplan]
+        VLM[spark2: Qwen3-VL-8B AWQ 4-bit<br/>utilisation 0.09, KV capped at 3 GiB<br/>NVFP4 rejected: wrong output on sm_121]
+        Embed[spark1: nomic-embed-text 768-d<br/>utilisation 0.06 for 0.26 GiB of weights]
+        Rerank[spark1: Qwen3-Reranker-0.6B<br/>2048 context - quadratic mask, 4096 left 3 GiB free<br/>utilisation 0.03]
+        Head <-->|tensor-parallel 2| Rank1
+        Head --- Fabric --- Rank1
+    end
+
+    subgraph Retrieval[Retrieval, every gate measured]
+        Gates[Cosine gates by store<br/>memory 0.35 · recall 0.45 · history 0.6<br/>images 0.96 + 0.006 cluster · tools 0.45]
+        Second[Second pass: top 40 by vector<br/>cross-encoder cuts to 12, fail-soft<br/>Scout keeps CPU MiniLM: 0.50 vs 0.25 served]
+    end
+
+    subgraph Desktop[Windows desktop, RTX 5080 16 GB - only while on]
+        Flux[ComfyUI: FLUX.2 Klein 9B Q6_K<br/>6.0 s warm, 114.5 s cold, 13.7 GB peak<br/>Kontext for edits: cold swap ~2 min]
+    end
+
+    subgraph Rejected[Measured and rejected]
+        No[Qwen3.8-27B: 4.6 tok/s, 72 s to first content<br/>ds4-server 2.4-bit: no structured output<br/>MTP: engine crash · LMCache: KV divergence<br/>chunked prefill: silent hang · NVFP4 weights: larger, same speed]
+    end
+
+    Turn --> Route --> Prompt --> Reply
+    Route --> Head
+    Reply --> Head
+    Head --> KV
+    Prompt --> Embed --> Gates --> Second --> Prompt
+    Second --> Rerank
+    Turn -.->|picture in view| VLM --> Reply
+    Turn -.->|generate or edit| Flux
+    Rejected -.-> Head
+
+    classDef step fill:#e8f1fb,stroke:#5e8fc4,color:#102a43,stroke-width:1.5px;
+    classDef infra fill:#eef7ee,stroke:#5f9562,color:#183b1b,stroke-width:1.5px;
+    classDef note fill:#f1edff,stroke:#8872c6,color:#2e2450,stroke-width:1.5px;
+    classDef warn fill:#fff4e5,stroke:#c98a2b,color:#4a3208,stroke-width:1.5px;
+    class Turn,Route,Prompt,Reply step;
+    class Head,Rank1,KV,Fabric,VLM,Embed,Rerank,Flux infra;
+    class Gates,Second note;
+    class No warn;

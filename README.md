@@ -105,6 +105,7 @@ Model behavior is considered verified only when a functional test sends the real
 
 - [Agent instructions](AGENTS.md)
 - [Architecture](docs/ARCHITECTURE.md): start with Part I if you are new (what it is, the machines, a message's path, every subsystem step by step), Part II for every engineering decision and why, Part III for the implementation reference.
+- [ML system design](docs/ML_SYSTEM_DESIGN.md): the serving decisions - quantisation, KV cache, parallelism, context against memory, retrieval thresholds, decoding - each with what was measured, why, and what was tried and rejected.
 - [Agent catalog](docs/AGENT_CATALOG.md): every specialized agent, what its model decides, and where its prompt, card and diagram live.
 - [Canonical system diagram](docs/diagrams/anios-system.svg)
 - [Scalable inference target](docs/diagrams/inference-scaling-target.svg)

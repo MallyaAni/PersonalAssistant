@@ -11,6 +11,132 @@ const pagePath = path.join(repositoryDirectory, "docs", "architecture.html");
 const pageHashPrefix = "<!-- Page-Inputs-SHA256: ";
 // Matches the stamp architecture-diagram.mjs writes into each rendered SVG.
 const renderStampPrefix = "<!-- Render-Inputs-SHA256: ";
+// The ML systems design document is published on the page as a section, so
+// the serving decisions and their measurements live beside the diagrams they
+// explain. It is an input to the page hash: editing it makes the page stale.
+const mlDesignPath = path.join(repositoryDirectory, "docs", "ML_SYSTEM_DESIGN.md");
+
+// Read the design document with normalized line endings.
+function readMlDesign() {
+  return readFileSync(mlDesignPath, "utf8").replace(/\r\n/g, "\n");
+}
+
+// Render the Markdown subset the design document uses - headings, paragraphs,
+// bullet lists, pipe tables, fenced code, bold, italics, code spans, links -
+// into HTML with everything escaped first. Deliberately small and
+// dependency-free: no HTML pass-through, so a stray angle bracket in a table
+// cell cannot become markup on the published page.
+function renderMarkdown(markdown) {
+  const inline = (text) =>
+    escapeHtml(text)
+      .replace(/`([^`]+)`/g, "<code>$1</code>")
+      .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+      .replace(/(^|[\s(])\*([^*\s][^*]*)\*/g, "$1<em>$2</em>")
+      .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2">$1</a>');
+  const out = [];
+  let paragraph = [];
+  let list = null;
+  let table = null;
+  let code = null;
+  const flushParagraph = () => {
+    if (paragraph.length) {
+      out.push(`<p>${inline(paragraph.join(" "))}</p>`);
+      paragraph = [];
+    }
+  };
+  const flushList = () => {
+    if (list) {
+      out.push(`<ul>${list.map((item) => `<li>${inline(item)}</li>`).join("")}</ul>`);
+      list = null;
+    }
+  };
+  const flushTable = () => {
+    if (table) {
+      const [head, ...rows] = table;
+      out.push(
+        `<div class="scroll"><table><thead><tr>${head
+          .map((cell) => `<th>${inline(cell)}</th>`)
+          .join("")}</tr></thead><tbody>${rows
+          .map((row) => `<tr>${row.map((cell) => `<td>${inline(cell)}</td>`).join("")}</tr>`)
+          .join("")}</tbody></table></div>`,
+      );
+      table = null;
+    }
+  };
+  const flushAll = () => {
+    flushParagraph();
+    flushList();
+    flushTable();
+  };
+  for (const raw of markdown.split("\n")) {
+    const line = raw.trimEnd();
+    if (code !== null) {
+      if (line.startsWith("```")) {
+        out.push(`<pre><code>${escapeHtml(code.join("\n"))}</code></pre>`);
+        code = null;
+      } else {
+        code.push(line);
+      }
+      continue;
+    }
+    if (line.startsWith("```")) {
+      flushAll();
+      code = [];
+      continue;
+    }
+    const heading = /^(#{1,6})\s+(.*)$/.exec(line);
+    if (heading) {
+      flushAll();
+      // The document's own title is the section header on the page.
+      if (heading[1].length === 1) continue;
+      const level = Math.min(heading[1].length + 1, 6);
+      out.push(`<h${level}>${inline(heading[2])}</h${level}>`);
+      continue;
+    }
+    if (line.startsWith("|")) {
+      flushParagraph();
+      flushList();
+      const cells = line.replace(/^\||\|$/g, "").split("|").map((cell) => cell.trim());
+      if (cells.every((cell) => /^:?-{3,}:?$/.test(cell))) continue;
+      (table ??= []).push(cells);
+      continue;
+    }
+    if (/^- /.test(line)) {
+      flushParagraph();
+      flushTable();
+      (list ??= []).push(line.slice(2));
+      continue;
+    }
+    if (list && /^\s+\S/.test(raw)) {
+      list[list.length - 1] += ` ${line.trim()}`;
+      continue;
+    }
+    if (line === "" || line === "---") {
+      flushAll();
+      continue;
+    }
+    flushList();
+    flushTable();
+    paragraph.push(line);
+  }
+  flushAll();
+  return out.join("\n");
+}
+
+const proseStyles = `
+.prose .prose-body{padding:.6rem 1.25rem 1.4rem}
+.prose-body h3{margin:1.7rem 0 .45rem;font-size:1.18rem;line-height:1.3}
+.prose-body h4{margin:1.2rem 0 .3rem;font-size:1rem}
+.prose-body p,.prose-body li{max-width:78ch}
+.prose-body ul{padding-left:1.2rem}
+.prose-body table{border-collapse:collapse;width:100%;font-size:.88rem;margin:.6rem 0 1rem}
+.prose-body th,.prose-body td{border:1px solid var(--rule);padding:.42rem .6rem;vertical-align:top;text-align:left}
+.prose-body th{background:var(--accent-soft)}
+.prose-body .scroll{overflow-x:auto}
+.prose-body code{font-family:var(--mono);font-size:.85em;background:var(--accent-soft);padding:.05em .3em;border-radius:3px}
+.prose-body pre{overflow-x:auto;background:var(--panel);border:1px solid var(--rule);padding:.8rem;font-size:.85rem}
+.prose-body a{color:var(--accent)}
+`;
 
 // Diagrams published on the page, in reading order, each with the scope it owns
 // and the single engineering question it answers.
@@ -32,6 +158,12 @@ const publishedDiagrams = [
     title: "Inference scaling target",
     scope: "Role routing, serving pools, placement, and operations",
     change: "How the local profile can scale without changing agent authority.",
+  },
+  {
+    name: "ml-serving-design",
+    title: "ML serving design",
+    scope: "Models, quantisation, KV cache, memory, retrieval gates, decoding",
+    change: "Which model runs where at what precision, and every serving knob that was measured.",
   },
   {
     name: "chat-orchestration",
@@ -350,6 +482,10 @@ function calculatePageInputsHash() {
   // reporting neither.
   digest.update(String(countCanonicalSources()));
   digest.update("\0");
+  // The published ML design section is rendered from the document, so an
+  // edited document must read as a stale page until it is rebuilt.
+  digest.update(readMlDesign());
+  digest.update("\0");
   const moduleSource = readFileSync(fileURLToPath(import.meta.url), "utf8")
     .replace(/\r\n/g, "\n");
   digest.update(moduleSource);
@@ -358,9 +494,21 @@ function calculatePageInputsHash() {
 
 // Compose the complete self-contained page.
 function renderPageMarkup() {
-  const navigation = publishedDiagrams
-    .map((d) => `<a href="#${d.name}">${escapeHtml(d.title)}</a>`)
-    .join("\n");
+  const navigation = [
+    `<a href="#ml-system-design">ML system design</a>`,
+    ...publishedDiagrams.map((d) => `<a href="#${d.name}">${escapeHtml(d.title)}</a>`),
+  ].join("\n");
+
+  const mlDesignSection = [
+    `<section class="d prose" id="ml-system-design">`,
+    `<header class="dh">`,
+    `<p class="eyebrow">ML systems engineering</p>`,
+    `<h2>ML system design: what was measured, chosen, and rejected</h2>`,
+    `<p class="change"><span class="tag">source</span>docs/ML_SYSTEM_DESIGN.md - quantisation, KV cache, parallelism, context against memory, retrieval thresholds, and decoding, each with the options considered, the measurements, the choice, and what would change it. Maintained in the same change as any serving flag, model, cache, threshold, or budget change.</p>`,
+    `</header>`,
+    `<div class="prose-body">${renderMarkdown(readMlDesign())}</div>`,
+    `</section>`,
+  ].join("\n");
 
   const sections = publishedDiagrams
     .map((diagram, index) =>
@@ -404,6 +552,7 @@ function renderPageMarkup() {
 ${pageHashPrefix}${calculatePageInputsHash()} -->
 <style>
 ${pageStyles}
+${proseStyles}
 </style>
 </head>
 <body>
@@ -432,6 +581,8 @@ ${cells}
 </dl>
 
 <nav class="jump">${navigation}</nav>
+
+${mlDesignSection}
 
 ${sections}
 

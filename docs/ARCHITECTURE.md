@@ -156,6 +156,10 @@ independently (`MAIN_LLM_*`, `ROUTING_LLM_*`, `VISION_*`, `EMBEDDING_*`,
   diagram answers which question. Mermaid sources are authoritative; SVGs are
   generated and fingerprint-checked.
 - Part II below explains *why* things are the way they are.
+- [ML_SYSTEM_DESIGN.md](ML_SYSTEM_DESIGN.md) is the ML systems engineering:
+  quantisation, KV cache, parallelism, context against memory, thresholds,
+  decoding - each as the options considered, what was measured, the choice,
+  and what would change it, with a ledger of what was tried and rejected.
 - Part III is the implementation reference, section by section.
 - Sibling documents: [AGENT_CATALOG.md](AGENT_CATALOG.md) (every agent and
   what its model decides), [TASKS_ARCHITECTURE.md](TASKS_ARCHITECTURE.md)
@@ -472,6 +476,11 @@ There is no `adr/README.md`; this table is the index. The two files numbered
 Dated, newest first within each theme. Each one cost something real.
 
 ### Inference and hardware
+
+The serving-level decisions - quantisation, KV cache dtype and pool,
+utilisation, speculative decoding, caches, thresholds, decoding policy - are
+catalogued with their measurements in [ML_SYSTEM_DESIGN.md](ML_SYSTEM_DESIGN.md);
+the bullets here are the architectural consequences.
 
 - **DeepSeek-V4-Flash answers everything textual, on two Sparks (2026-08-14 to
   08-23).** It won a blind six-prompt read-off against Qwen and Nemotron and
