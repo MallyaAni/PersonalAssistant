@@ -503,6 +503,72 @@ uptime, silently failing every job), and only an explicit
 change, check `docker ps` uptimes against the deploy time rather than
 trusting up -d's own output.
 
+## Image scenarios on the real chat path — measured, two defects fixed, 2026-08-25
+
+Seven scenarios driven through `POST /api/v1/chat` (SSE) and
+`/vision/analyze` inside the backend container - the browser's and the
+iMessage worker's exact path - with the desktop generating. **Verified:**
+generate (artifact_ready), upload + ask (the VLM described the picture),
+edit the newest uploaded picture with no selection (child's
+`parent_artifact_id` = the upload), and a question about a picture answered
+in words with no artifact ("The bicycle in the first picture is red"). **Two
+defects found, both fixed and gated, both awaiting an end-to-end re-run
+when the desktop is next on:** (1) a generated picture was never indexed
+into the visual-memory description store - only uploads were - so with no
+explicit selection "add a yellow umbrella" right after a generation had no
+edit candidate at all, and "edit the bicycle picture" found nothing; a
+generated picture is now indexed by its prompt and an edit by its origin
+plus the instruction (`ImageArtifactService._index_description`, fail-soft,
+deleted with the artifact). (2) When that fall-through reached the plain
+reply, the model answered "Here's the updated image with the yellow umbrella
+added" for pixels never touched; `_render_edit_state` now tells the reply
+that nothing was changed, and `functional/test_image_edit_state_behaviour.py`
+holds three registers of the request at 4/4. **One infrastructure finding:**
+the explicit-selection Kontext edit died with "server disconnected" at
+04:30:16 UTC together with a generation that was not mine - ComfyUI had
+exited cleanly (`ExitCode 0`, no CUDA error) under the WSL2 VM's 15.6 GB
+RAM ceiling with Klein, the 8B encoder, and Kontext swapping. Edits now run
+at `IMAGE_EDIT_MEGAPIXELS=1.0` (spark1 `.env`, verified generate 114 s cold +
+edit 115 s cold after the restart); the structural fix is a `.wslconfig`
+with `memory=24GB` on the desktop, an operator host change for its next
+boot. Explicit selection via `active_image_artifact_id` - what the browser
+chip and the iMessage reply-pin send - is therefore still unverified on the
+real path; the generate-then-edit provider probe covers the same ComfyUI
+work, not the chat wiring.
+
+## iMessage pictures — defect found and fixed, 2026-08-25
+
+The operator asked for a picture over iMessage and received "here's the
+image you asked for" with no image. The log trail: text bubble sent
+04:09:16, the attachment send at 04:13:26 failed with
+`MCPInvocationError: argument_withheld`. Reproduced in the worker container
+by screening the exact argument shapes: `attachment_name`, media type, and
+base64 all pass; `body: ""` returns `allowed=False, categories=['empty']`.
+The egress policy's "empty means nothing to search" verdict was being
+applied to a tool argument where empty is legitimate - every
+attachment-only send. Fixed in `_screen_arguments` (an empty string
+discloses nothing), pinned by `test_an_empty_string_argument_is_not_withheld`,
+images rebuilt and redeployed, and proven by sending a labelled test picture
+through `_invoke_discovery_tool` - the worker's own path - to the operator's
+phone (message GUID returned, `is_error=False`). The text-before-image
+ordering means a failed attachment still leaves a misleading sentence; the
+bubble pacing and the reply pinning are unchanged.
+
+## ML system design — the document that must move with every serving change
+
+`docs/ML_SYSTEM_DESIGN.md` (and `docs/diagrams/ml-serving-design.mmd`) now
+carries the serving decisions with their measurements and the tried-and-
+rejected ledger, and the published architecture page renders it as its own
+section. AGENTS.md's ownership rule: update it in the same change as any
+serving flag, quantisation, model, cache, context, threshold, or token
+budget; a decision whose evidence lives only in a commit message is not
+documented. Three documentation drifts it surfaced, still to reconcile in
+their owners: `ds4-tp2.sh`'s header asserts 0.83, 0.90, and 0.78 in three
+places while the exec block runs 0.81 (the README already says to trust the
+flags); `vlm-serve.sh`'s header says "2 GiB" for a 3 GiB KV cap; and
+`docker-compose.yml`'s reranker comment says `/v1/rerank` where the code
+speaks `/v2`.
+
 ## Backup alerting — LIVE 2026-08-25
 
 `ALERT_BRIDGE_URL`, `ALERT_BRIDGE_TOKEN` (taken from spark1's own

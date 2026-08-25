@@ -102,6 +102,46 @@ This file is append-only history for meaningful, verified changes. It must not c
   weekly freshness timer pages when any of the three copies lacks a dump
   newer than 36 hours - passed against all three, and run once under systemd
   with `Result=success`.
+- **A picture asked for over iMessage arrived as a sentence and no image;
+  found and fixed.** The worker sent "here's the image", then the attachment
+  call died with `argument_withheld`: the egress policy reports an empty
+  string as `empty` (for a search query, nothing to search), and every
+  attachment-only send carries `body: ""`. Empty strings now pass the screen
+  unchanged, a regression test pins the exact send shape (19/19), and a
+  labelled test picture went through the worker's real path to the
+  operator's phone with a message GUID back.
+- **Generated and edited pictures are now findable by description, and the
+  reply never claims an edit it did not make.** Driving seven image
+  scenarios through the real chat API showed that only uploads were indexed
+  into the visual-memory description store: with no explicit selection, an
+  edit right after a generation had no candidate and "edit the bicycle
+  picture" found nothing - and the plain reply that caught the fall-through
+  answered "here's the updated image" for untouched pixels. A generated
+  picture is indexed by its prompt and an edit by its origin plus the
+  instruction (fail-soft, removed with the artifact); a `_render_edit_state`
+  block tells the reply when nothing was changed. Structural 238/238,
+  functional 4/4 across three registers of the request. Verified on the
+  same run: generation, upload + ask, editing the newest upload with the
+  correct lineage, and a question about a picture answered in words.
+- **Image edits run at 1 MP, because the desktop's ceiling is VM RAM, not
+  VRAM.** ComfyUI exited cleanly mid-job with a Klein generation and a
+  Kontext edit queued together: the WSL2 VM sees 15.6 GB of RAM, and encoder
+  + Klein (15.40 GB) or encoder + Kontext (14.53 GB) sit at that line before
+  a 2 MP latent. `IMAGE_EDIT_MEGAPIXELS=1.0` on spark1, generate and edit
+  re-proven cold after the restart; `.wslconfig memory=24GB` recorded as the
+  host fix.
+- **`docs/ML_SYSTEM_DESIGN.md` and its diagram publish the ML systems
+  engineering.** Every serving decision - model and quantisation, the 4-bit
+  MLA KV cache at 1M context, why utilisation is 0.81 and spark2 decides it,
+  speculative decoding, caches, vision, embedding and reranker sizing, every
+  retrieval gate with its derivation, the context budget, the decoding
+  policy, image generation - as options considered, what was measured, the
+  choice, and what would change it, plus a ledger of what was tried and
+  rejected. The published architecture page renders the document as its own
+  section (a dependency-free Markdown subset, hashed into the freshness
+  check) beside the new `ml-serving-design` diagram; suite 23/23.
+  `AGENTS.md` makes the document an owned artifact that moves with every
+  serving change.
 - **`docs/ARCHITECTURE.md` rewritten in three parts** - a newcomer's Part I in
   the memory overview's numbered shape for every subsystem, a Part II
   cataloguing every ADR and every decision made while running the system
