@@ -301,6 +301,12 @@ connections coasted, health stayed 200 while 50 refusals accumulated.
 Containers now address `db` and `redis` over the compose network (the
 binding never touched it) and the gate's `POSTGRES_HOST` is literal `db` so
 spark1's host-oriented .env value cannot leak in. See the new trap below.
+One aftershock surfaced on the post-deploy health sweep: `up -d` had left
+memory-maintenance and storage-collection running with the old env (28h
+uptime, silently failing every job), and only an explicit
+`up -d --force-recreate` of the pair moved them. After any compose env
+change, check `docker ps` uptimes against the deploy time rather than
+trusting up -d's own output.
 
 ## Direction from the operator, 2026-08-24
 
