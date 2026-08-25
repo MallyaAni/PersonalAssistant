@@ -24,4 +24,26 @@ if [ -f requirements.txt ]; then
   fi
 fi
 
+# Each custom node's own dependencies, which nothing else installs.
+#
+# ComfyUI's requirements.txt does not cover custom_nodes, so a node with a
+# dependency imports, raises ModuleNotFoundError, and is skipped with a warning
+# buried in the boot log - the node simply is not registered, and the failure
+# only surfaces later as "that loader does not exist" in an unrelated workflow.
+# ComfyUI-GGUF needs `gguf` and is the editor's model loader, so without this
+# every image edit fails while ComfyUI itself reports perfectly healthy.
+#
+# Never fatal: one unsatisfiable custom node must not stop the server, because
+# the alternative is losing image generation over a node nothing here uses.
+for req in /comfyui/custom_nodes/*/requirements.txt; do
+  [ -f "$req" ] || continue
+  # Same torch guard as above - a custom node pinning torch would pull a
+  # generic wheel over the CUDA build this image exists to provide.
+  grep -viE '^(torch|torchvision|torchaudio)([<>=!~ ].*)?$' "$req"     > /tmp/node-reqs.txt || true
+  if [ -s /tmp/node-reqs.txt ]; then
+    echo "installing dependencies for $(dirname "$req")"
+    python3 -m pip install -r /tmp/node-reqs.txt ||       echo "WARNING: could not install $req; that node will not load" >&2
+  fi
+done
+
 exec python3 main.py --listen 0.0.0.0 --port 8188 "$@"
