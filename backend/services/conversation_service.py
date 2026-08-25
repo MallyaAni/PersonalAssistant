@@ -2104,6 +2104,10 @@ class ConversationService:
             # reliably, so the turn stops asking and simply looks again. Past
             # the minimum its opinion is worth having, because by then the
             # question is whether to keep going rather than whether to start.
+            # An allowance that ran out during this round will not be back
+            # for the next: two refusals in one turn taught nothing new.
+            if current_search_limit.get() is not None:
+                break
             if round_number + 1 < settings.SEARCH_MIN_ROUNDS:
                 better = await asyncio.to_thread(
                     self.search_planner.another_angle, question, gathered, tried
@@ -2227,6 +2231,15 @@ class ConversationService:
             user_id,
             self.history_turn_limit,
         )
+        # Known before the router chooses: with an allowance used up, search
+        # is not on its menu this turn, and the reply is told which allowance
+        # and when it comes back - instead of a search chosen, refused, and
+        # explained after the fact. Reset per request; a refusal that arrives
+        # mid-turn anyway sets it again.
+        current_search_limit.set(None)
+        limit = await self._search_limit()
+        if limit is not None:
+            current_search_limit.set(limit)
         # A scheduled task fires with nobody watching, so the tools that
         # change what is scheduled or taught are withheld from it.
         unattended = bool((metadata or {}).get("scheduled_task"))
@@ -3042,15 +3055,12 @@ class ConversationService:
             user_id,
             self.history_turn_limit,
         )
-        # Known before anything is chosen: with an allowance used up, search
-        # is not offered to the router and the reply is told which allowance
-        # and when it comes back - instead of choosing a search, being
-        # refused, and finding out. Reset per request; the mid-turn paths
-        # below set it when a refusal arrives anyway.
-        current_search_limit.set(None)
-        limit = await self._search_limit()
-        if limit is not None:
-            current_search_limit.set(limit)
+        # Decided in process_request before routing; a caller that enters
+        # here directly (a fallback path, a test) gets the same check.
+        if current_search_limit.get() is None:
+            limit = await self._search_limit()
+            if limit is not None:
+                current_search_limit.set(limit)
 
         # 2. Build Context and State
         context: dict[str, Any] = {

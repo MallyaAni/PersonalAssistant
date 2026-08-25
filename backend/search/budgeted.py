@@ -140,6 +140,12 @@ class BudgetedSearchProvider(SearchProvider):
         identity = current_search_identity.get()
         await self._reconcile_if_stale()
         if identity is None:
+            # Unattributed callers are unmetered per account by design, but the
+            # shared pool is the key's own ceiling: once it is spent nobody
+            # searches, attributed or not - the provider would refuse anyway.
+            now = datetime.now(UTC)
+            if await self.budget.pool_remaining(now) < self.credits_per_search:
+                raise SearchBudgetExceededError("this month", _next_month(now))
             return await self._search_inner(query, max_results)
 
         granted = await self.budget.reserve(

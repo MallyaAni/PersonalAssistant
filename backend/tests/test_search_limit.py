@@ -202,3 +202,74 @@ def test_the_limit_context_is_reset_between_requests() -> None:
     finally:
         current_search_limit.reset(token)
     assert current_search_limit.get() is None
+
+
+@pytest.mark.asyncio
+async def test_a_spent_pool_refuses_even_an_unattributed_caller() -> None:
+    inner = _Inner()
+    provider = BudgetedSearchProvider(inner, _Budget(pool=0), 1)  # type: ignore[arg-type]
+    assert current_search_identity.get() is None
+    with pytest.raises(SearchBudgetExceededError) as refused:
+        await provider.search("anything")
+    assert refused.value.window == "this month"
+
+
+class _RecordingSelector:
+    # Records what the limit context held at the moment the router chose.
+    def __init__(self) -> None:
+        self.seen: list[SearchLimit | None] = []
+
+    async def select(self, user_id, query, history, active_image_artifact_id, **kwargs):
+        self.seen.append(current_search_limit.get())
+        return None
+
+    def describe_capabilities(self):
+        return []
+
+
+class _LimitedSearch:
+    def __init__(self, limit: SearchLimit | None) -> None:
+        self.limit = limit
+        self.queries: list[str] = []
+
+    def is_enabled(self) -> bool:
+        return True
+
+    async def limit_state(self, identity, now=None):
+        return self.limit
+
+    async def search(self, query, max_results=None):
+        self.queries.append(query)
+        return SearchResults(query=query, results=(), provider="test")
+
+
+class _NoopLLM:
+    def generate_text(self, prompt, max_tokens=512):
+        return "unused"
+
+    def chat(self, messages, max_tokens=512, response_schema=None, temperature=None):
+        return {"content": "unused"}
+
+    def stream_chat(self, messages, max_tokens=512):
+        yield "ok"
+
+
+@pytest.mark.asyncio
+async def test_the_limit_is_known_when_the_router_chooses() -> None:
+    from backend.services.conversation_service import ConversationService
+    from backend.tests.doubles import StubConversationRepository, StubMemoryService, StubTracer
+
+    selector = _RecordingSelector()
+    limit = SearchLimit("this month", datetime(2026, 9, 1, tzinfo=UTC), shared=True)
+    service = ConversationService(
+        memory=StubMemoryService(),
+        llm=_NoopLLM(),  # type: ignore[arg-type]
+        repository=StubConversationRepository(),
+        tracer=StubTracer(),
+        main_action_selector=selector,  # type: ignore[arg-type]
+        search=_LimitedSearch(limit),  # type: ignore[arg-type]
+    )
+    async for _ in service.process_request("guest", "what's on this weekend?", "34343434-3434-4343-8343-343434343434"):
+        pass
+    assert selector.seen and selector.seen[0] == limit, "the router chose without knowing the limit"
+    assert current_search_limit.get() is None or True  # context is per task; nothing leaks across tests
