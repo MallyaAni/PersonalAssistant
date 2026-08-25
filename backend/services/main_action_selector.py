@@ -36,7 +36,7 @@ from backend.services.mcp_tool_orchestration_service import (
     MCPToolPlan,
 )
 from backend.skills.tools import parse_skill_call, skill_tool_definitions
-from backend.search.budgeted import current_search_identity, current_search_limit
+from backend.search.budgeted import current_search_identity
 from backend.tools import (
     AUTOMATION_TOOLS,
     NOT_BUILTIN,
@@ -303,14 +303,13 @@ class MainActionSelector:
                 if builtin.name in only
             )
         else:
-            # Known before the choice, not discovered after it: with an
-            # allowance used up, search_web is simply not on the menu, and the
-            # reply is told why by the same limit.
-            search_tool = (
-                await self._search_tool_definition()
-                if current_search_limit.get() is None
-                else None
-            )
+            # Offered even while an allowance is used up: the router's choice
+            # is what tells a turn apart from one that never wanted a search.
+            # Withheld, a spent pool put "I've used up the search allowance"
+            # on top of a 6pm stretch reminder (2026-08-25). A chosen search is
+            # refused locally by the budget - no provider call - and the reply
+            # is told which allowance and when it resets, on that turn only.
+            search_tool = await self._search_tool_definition()
             if search_tool is not None:
                 tools.append(search_tool)
 

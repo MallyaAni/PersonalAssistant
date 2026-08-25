@@ -276,12 +276,23 @@ async def test_the_limit_is_known_when_the_router_chooses() -> None:
 
 
 class _ProviderBudget(_Budget):
-    # A pool with a Brave counter beside it.
+    # A pool with a Brave counter beside it; records every reservation.
     def __init__(self, pool: int = 0, brave_used: int = 0) -> None:
         super().__init__(pool=pool)
         self.brave_used = brave_used
         self.refunded: list[int] = []
         self.charged: list[tuple[str, int]] = []
+        self.pool_charges: list[int] = []
+        self.reservations: list[bool] = []
+
+    async def reserve(self, user_id, is_operator, wanted, now=None, override=None, daily_override=None, include_pool=True):
+        self.reservations.append(include_pool)
+        if include_pool and self.pool < wanted:
+            return 0
+        return wanted
+
+    async def charge_pool(self, credits, now=None):
+        self.pool_charges.append(credits)
 
     async def refund_pool(self, credits, now=None):
         self.refunded.append(credits)
@@ -322,3 +333,47 @@ async def test_both_rungs_spent_is_the_shared_month() -> None:
     provider = BudgetedSearchProvider(_Inner(), _ProviderBudget(pool=0, brave_used=900), 2, brave_monthly_limit=900)  # type: ignore[arg-type]
     limit = await provider.limit_state(GUEST, NOW)
     assert limit == SearchLimit("this month", datetime(2026, 9, 1, tzinfo=UTC), shared=True)
+
+
+class _TavilyInner(_Inner):
+    async def search(self, query, max_results=None):
+        return SearchResults(query=query, results=(), provider="tavily")
+
+
+@pytest.mark.asyncio
+async def test_an_attributed_caller_with_a_spent_pool_still_searches_while_brave_has_room() -> None:
+    budget = _ProviderBudget(pool=0, brave_used=4)
+    provider = BudgetedSearchProvider(_BraveInner(), budget, credits_per_search=2, brave_monthly_limit=900)  # type: ignore[arg-type]
+    token = current_search_identity.set(GUEST)
+    try:
+        found = await provider.search("what's on this weekend")
+    finally:
+        current_search_identity.reset(token)
+    assert found.provider == "brave"
+    assert budget.reservations == [False], "the pool was left out of the reservation"
+    assert budget.pool_charges == [] and budget.refunded == []
+
+
+@pytest.mark.asyncio
+async def test_a_tavily_served_search_with_brave_room_charges_the_pool_afterwards() -> None:
+    budget = _ProviderBudget(pool=100, brave_used=4)
+    provider = BudgetedSearchProvider(_TavilyInner(), budget, credits_per_search=2, brave_monthly_limit=900)  # type: ignore[arg-type]
+    token = current_search_identity.set(GUEST)
+    try:
+        await provider.search("anything")
+    finally:
+        current_search_identity.reset(token)
+    assert budget.reservations == [False] and budget.pool_charges == [2]
+
+
+@pytest.mark.asyncio
+async def test_with_brave_spent_the_pool_is_reserved_up_front_as_before() -> None:
+    budget = _ProviderBudget(pool=0, brave_used=900)
+    provider = BudgetedSearchProvider(_TavilyInner(), budget, credits_per_search=2, brave_monthly_limit=900)  # type: ignore[arg-type]
+    token = current_search_identity.set(GUEST)
+    try:
+        with pytest.raises(SearchBudgetExceededError):
+            await provider.search("anything")
+    finally:
+        current_search_identity.reset(token)
+    assert budget.reservations == [True]

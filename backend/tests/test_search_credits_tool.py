@@ -122,3 +122,15 @@ async def test_a_quiet_firing_is_finished_without_a_message(monkeypatch) -> None
     )
     assert sent == [("+17039290948", "Search credits are nearly gone: 7 of 1,000 left.")]
     assert finished[-1][:2] == ("run-2", "delivered")
+
+
+def test_the_meter_summary_names_who_serves() -> None:
+    from backend.mcp.servers.internet import _meter_summary
+
+    tavily = {"plan": "Researcher", "spent": 1000, "limit": 1000, "remaining": 0}
+    brave = {"used": 4, "limit": 900, "remaining": 896, "period": "this calendar month"}
+    text = _meter_summary(tavily, brave)
+    assert text.startswith("Searches are served by brave right now")
+    assert "Brave has 896 of 900" in text and "Tavily has 0 of 1000" in text
+    spent = _meter_summary(tavily, {"used": 900, "limit": 900, "remaining": 0, "period": "m"})
+    assert spent.startswith("Every search rung is spent")

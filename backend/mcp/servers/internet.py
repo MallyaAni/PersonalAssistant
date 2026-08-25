@@ -445,8 +445,35 @@ async def search_credits() -> str:
             "period": "the provider's current billing period",
             "brave": await _brave_meter(),
             "order": os.getenv("SEARCH_PROVIDER_ORDER") or "brave,google,tavily",
+            "summary": _meter_summary(report, await _brave_meter()),
         }
     )
+
+
+# One sentence a reply can relay without misreading the numbers: which rung
+# serves now, and what each has left. Read back wrongly once ("Brave is set to
+# run after Tavily") from the raw fields.
+def _meter_summary(tavily: dict[str, object], brave: dict[str, object] | None) -> str:
+    order = [
+        name.strip().lower()
+        for name in (os.getenv("SEARCH_PROVIDER_ORDER") or "brave,google,tavily").split(",")
+        if name.strip()
+    ]
+    remaining = {}
+    if brave is not None:
+        remaining["brave"] = int(brave.get("remaining") or 0)
+    tavily_left = tavily.get("remaining")
+    remaining["tavily"] = int(tavily_left) if isinstance(tavily_left, int) else 0
+    serving = next((name for name in order if remaining.get(name, 0) > 0), None)
+    parts = []
+    if brave is not None:
+        parts.append(f"Brave has {remaining['brave']} of {brave.get('limit')} requests left this month")
+    parts.append(
+        f"Tavily has {remaining['tavily']} of {tavily.get('limit')} credits left this billing period"
+    )
+    if serving:
+        return f"Searches are served by {serving} right now; " + "; ".join(parts) + "."
+    return "Every search rung is spent: " + "; ".join(parts) + "."
 
 
 # Brave's meter is local: the provider bills in dollars and reports no

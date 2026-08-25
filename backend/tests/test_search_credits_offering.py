@@ -72,7 +72,9 @@ async def test_a_guest_is_neither_offered_nor_told_about_the_meter() -> None:
 
 
 @pytest.mark.asyncio
-async def test_search_is_not_on_the_menu_while_an_allowance_is_used_up() -> None:
+async def test_search_stays_on_the_menu_while_an_allowance_is_used_up() -> None:
+    # The router's choice is what tells a turn that wanted a search apart from
+    # one that did not; the budget refuses the chosen search, locally.
     from datetime import UTC, datetime
 
     from backend.search.budgeted import SearchLimit, current_search_limit
@@ -83,5 +85,5 @@ async def test_search_is_not_on_the_menu_while_an_allowance_is_used_up() -> None
         action = await selector.select("guest", "what's on in Arlington this weekend?", [], None)
     finally:
         current_search_limit.reset(token)
-    assert "search_web" not in {tool["function"]["name"] for tool in llm.tools}
-    assert action is None, "a name never offered is refused"
+    assert "search_web" in {tool["function"]["name"] for tool in llm.tools}
+    assert action is not None

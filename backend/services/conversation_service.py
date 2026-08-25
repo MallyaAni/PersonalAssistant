@@ -2243,11 +2243,11 @@ class ConversationService:
             user_id,
             self.history_turn_limit,
         )
-        # Known before the router chooses: with an allowance used up, search
-        # is not on its menu this turn, and the reply is told which allowance
-        # and when it comes back - instead of a search chosen, refused, and
-        # explained after the fact. Reset per request; a refusal that arrives
-        # mid-turn anyway sets it again.
+        # Known before the router chooses, so the pool is fresh (this is where
+        # it is reconciled with the provider's meter) and a chosen search is
+        # refused locally rather than by the provider. The reply hears about
+        # a limit only on a turn where a search was chosen and refused - not
+        # on a stretch reminder. Reset per request.
         current_search_limit.set(None)
         limit = await self._search_limit()
         if limit is not None:
@@ -3158,10 +3158,6 @@ class ConversationService:
         # drift apart into one wording for conversation and another for
         # routing.
         context["capabilities"] = self._describe_capabilities()
-        limit = current_search_limit.get()
-        if limit is not None and "search_state" not in context:
-            context["search_state"] = _search_state_for(limit)
-            context.setdefault("search", []).append(_search_limit_evidence(limit))
         context["memory_save"] = {
             "saved": bool(proposals),
             "value": _proposal_summaries(proposals),

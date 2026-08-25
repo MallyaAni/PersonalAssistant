@@ -152,12 +152,20 @@ class BudgetedSearchProvider(SearchProvider):
                 raise SearchBudgetExceededError("this month", _next_month(now))
             return await self._search_inner(query, max_results)
 
+        # The pool meters Tavily's credits. With a rung ahead of Tavily that
+        # still has room this month, the pool is left out of the reservation
+        # and charged only if Tavily ends up serving - otherwise a spent pool
+        # refused attributed callers a search Brave would have answered
+        # (the operator, over iMessage, 2026-08-25), while unattributed ones
+        # sailed through.
+        brave_room = await self._brave_has_room()
         granted = await self.budget.reserve(
             identity.user_id,
             identity.is_operator,
             wanted=self.credits_per_search,
             override=identity.monthly_limit,
             daily_override=identity.daily_limit,
+            include_pool=not brave_room,
         )
         if granted < self.credits_per_search:
             now = datetime.now(UTC)
@@ -171,13 +179,24 @@ class BudgetedSearchProvider(SearchProvider):
                 raise SearchBudgetExceededError("today", _next_day(now))
             raise SearchBudgetExceededError("this month", _next_month(now))
 
-        return await self._search_inner(query, max_results)
+        return await self._search_inner(query, max_results, pool_reserved=not brave_room)
+
+    # Whether the Brave rung still has requests left this month, as the
+    # backend counts them (the internet server keeps the count that stops).
+    async def _brave_has_room(self, now: datetime | None = None) -> bool:
+        if self.brave_monthly_limit <= 0:
+            return False
+        try:
+            used = await self.budget.provider_used("brave", now or datetime.now(UTC))
+        except Exception:
+            return False
+        return used < self.brave_monthly_limit
 
     # The provider's refusal becomes the same exhaustion the local pool
     # raises, and the pool is marked spent so the next turn knows before it
     # asks: a 432 is the provider saying the month is gone.
     async def _search_inner(
-        self, query: str, max_results: int | None
+        self, query: str, max_results: int | None, pool_reserved: bool = True
     ) -> SearchResults:
         try:
             found = await self.inner.search(query, max_results=max_results)
@@ -192,7 +211,12 @@ class BudgetedSearchProvider(SearchProvider):
         # spent none of them, so the reservation goes back; and Brave's own
         # count goes up, which is what the pre-flight reads.
         served_by = str(found.provider or "").lower()
-        if "tavily" not in served_by:
+        if "tavily" in served_by and not pool_reserved:
+            try:
+                await self.budget.charge_pool(self.credits_per_search)
+            except Exception:
+                pass
+        if "tavily" not in served_by and pool_reserved:
             try:
                 await self.budget.refund_pool(self.credits_per_search)
             except Exception:
@@ -227,10 +251,7 @@ class BudgetedSearchProvider(SearchProvider):
         try:
             # The shared pool is Tavily's; with another rung ahead of it that
             # still has room this month, a spent pool limits nothing yet.
-            brave_room = (
-                self.brave_monthly_limit > 0
-                and await self.budget.provider_used("brave", moment) < self.brave_monthly_limit
-            )
+            brave_room = await self._brave_has_room(moment)
             if (
                 await self.budget.pool_remaining(moment) < self.credits_per_search
                 and not brave_room

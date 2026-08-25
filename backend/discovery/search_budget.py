@@ -142,6 +142,17 @@ class SearchBudget:
         except Exception:
             return
 
+    # Charge the pool after the fact, for a search that turned out to be
+    # served by the provider the pool meters. Used when the pool was left out
+    # of the reservation because another rung had room; over-granting by a
+    # search or two at the ceiling is the price of not refusing a search the
+    # other rung would have served.
+    async def charge_pool(self, credits: int, now: datetime | None = None) -> None:
+        if not self.enabled or credits <= 0:
+            return
+        moment = now or datetime.now(UTC)
+        await self._take(self._pool_key(moment), credits, self.monthly_credits, _TTL_SECONDS)
+
     # Hand credits back to the pool: a search another provider served spent
     # none of Tavily's. Never below zero.
     async def refund_pool(self, credits: int, now: datetime | None = None) -> None:
@@ -250,6 +261,7 @@ class SearchBudget:
         now: datetime | None = None,
         override: int | None = None,
         daily_override: int | None = None,
+        include_pool: bool = True,
     ) -> int:
         if not self.enabled or wanted <= 0:
             return max(wanted, 0)
@@ -271,7 +283,11 @@ class SearchBudget:
                 self.allowance(is_operator, override),
                 _TTL_SECONDS,
             ),
-            (self._pool_key(moment), self.monthly_credits, _TTL_SECONDS),
+            *(
+                ((self._pool_key(moment), self.monthly_credits, _TTL_SECONDS),)
+                if include_pool
+                else ()
+            ),
         )
 
         granted = wanted
