@@ -2903,6 +2903,17 @@ class ConversationService:
         # tables, so this cannot advertise a capability an agent stopped
         # having, and adding an agent needs no prompt edit.
         context["agents"] = await self._describe_agents(user_id)
+        # A picture is changed only by an edit action, and none runs on this
+        # path. Told nothing, the reply has described an edited picture it
+        # never made - once when an edit fell through to here, and once when
+        # the router chose no tool and the history was full of edit turns to
+        # imitate (2026-08-25, both on the real path). So whenever a picture is
+        # in view, the reply is told that nothing changed this turn.
+        if context.get("images") and "image_edit" not in context:
+            context["image_edit"] = {
+                "performed": False,
+                "reason": "no edit action ran on this turn",
+            }
         # What the turn router can actually do, read from the router itself
         # rather than listed again in the prompt: the same rows it offers as
         # tools are what the assistant is told it can do, so the two cannot

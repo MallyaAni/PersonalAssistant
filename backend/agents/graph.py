@@ -168,14 +168,16 @@ def _render_tool_context(
 def _render_edit_state(edit: dict[str, Any]) -> str:
     if not edit or edit.get("performed", True):
         return ""
-    reason = str(edit.get("reason") or "no picture could be identified").strip()
+    reason = str(edit.get("reason") or "no edit ran this turn").strip()
     return (
-        "\nThis turn: no picture was changed or created. The user asked for an "
-        f"edit, but {reason}, so nothing was generated or edited. Say that "
-        "plainly. Do not describe an updated, edited, or new image, do not say "
-        "the change has been made, and do not present any picture as the "
-        "result. Ask which picture they mean, or invite them to select or "
-        "upload the one to change."
+        "\nThis turn: no picture was changed or created - a picture is only "
+        f"changed by an edit action, and {reason}. If they asked for a change "
+        "to a picture, say plainly that it was not made this turn and ask "
+        "which picture they mean, or invite them to select or upload the one "
+        "to change. Otherwise answer normally. Either way, do not describe an "
+        "updated, edited, or new image, do not say a change has been made, and "
+        "do not present any picture as the result - even if earlier turns in "
+        "this conversation did."
     )
 
 

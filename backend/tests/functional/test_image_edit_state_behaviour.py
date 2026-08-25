@@ -86,3 +86,15 @@ def test_no_edit_state_renders_nothing() -> None:
     assert _render_edit_state({}) == ""
     assert _render_edit_state({"performed": True}) == ""
     assert "no picture was changed" in _render_edit_state({"performed": False})
+
+
+# The block must not cost an ordinary question its answer: told that nothing
+# was changed, the model still answers what is asked about the picture.
+async def test_a_question_is_still_answered_under_the_block(llm: object) -> None:
+    answer = _answer(llm, "what colour is the bicycle in this picture?", _NOT_PERFORMED)
+    claimed = [phrase for phrase in _CLAIMED_EDIT_PHRASES if phrase in answer]
+    assert not claimed, f"claimed an edit on a plain question via {claimed}: {answer!r}"
+    assert answer.strip(), "an empty reply is not an answer"
+    assert "not changed" not in answer or "colour" in answer or "color" in answer, (
+        f"the block displaced the answer: {answer!r}"
+    )
