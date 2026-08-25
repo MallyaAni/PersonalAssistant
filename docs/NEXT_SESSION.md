@@ -592,6 +592,26 @@ clean. That is the image subsystem verified end to end through the chat
 API. Still not driven by me: the browser's own clicks and an inbound
 iMessage text-then-edit (the send half is proven), both recorded above.
 
+## alippe welcomed by hand, and two pieces of test residue found — 2026-08-25
+
+`alippe` (Alec) was approved on 2026-08-17, before sign-up collected a number,
+so the account had no phone anywhere - not on the request, not as a
+subscriber, not on the Mac - and the welcome had nowhere to go. The operator
+supplied the number; the same three steps approval performs were run by
+hand from the backend container (enrol as a consented iMessage subscriber,
+`allow_recipient` on the Mac, `send_welcome_if_new`): `granted`, `sent`,
+`welcomed_at` set. He can now text the assistant as well as use the web.
+
+Found while looking, **not cleaned up - the operator's call, since both are
+deletions in production**: eight orphan `discovery_subscribers` rows for
+`del_*` / `api_del_*` users on a fake `...0100` number (2026-08-08 and
+08-12) - structural tests that ran against the live database through the
+gate and did not clean up; and two fake numbers (`...0000`, `...0143`, the
+README's examples) granted on the Mac's allowlist by test approvals. Neither
+harms anything today; both are sloppy, and the first says the gate's test
+container should be pointed at a scratch database before any test that
+writes is run through it again.
+
 ## The desktop's memory ceiling, measured for the second time — 14:02 UTC
 
 The operator received "the image generation backend stopped partway through
