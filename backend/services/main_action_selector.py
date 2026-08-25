@@ -36,7 +36,7 @@ from backend.services.mcp_tool_orchestration_service import (
     MCPToolPlan,
 )
 from backend.skills.tools import parse_skill_call, skill_tool_definitions
-from backend.search.budgeted import current_search_identity
+from backend.search.budgeted import current_search_identity, current_search_limit
 from backend.tools import (
     AUTOMATION_TOOLS,
     NOT_BUILTIN,
@@ -303,7 +303,14 @@ class MainActionSelector:
                 if builtin.name in only
             )
         else:
-            search_tool = await self._search_tool_definition()
+            # Known before the choice, not discovered after it: with an
+            # allowance used up, search_web is simply not on the menu, and the
+            # reply is told why by the same limit.
+            search_tool = (
+                await self._search_tool_definition()
+                if current_search_limit.get() is None
+                else None
+            )
             if search_tool is not None:
                 tools.append(search_tool)
 

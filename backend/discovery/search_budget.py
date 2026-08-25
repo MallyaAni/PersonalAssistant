@@ -20,6 +20,7 @@ Two deliberate choices:
 """
 
 from contextlib import suppress
+from typing import Any
 from datetime import UTC, datetime
 
 from redis.asyncio import Redis
@@ -120,6 +121,27 @@ class SearchBudget:
         return max(self.monthly_credits - max(local, reported_spent), 0)
 
     # Spend against the shared pool, and what it has already cost this month.
+    # Reconcile against the provider's meter unless it was done within
+    # `max_age_seconds`. The marker is a Redis key with that TTL, so every
+    # process sharing the pool shares the cadence too.
+    async def reconcile_if_stale(self, usage: Any, max_age_seconds: float) -> None:
+        if not self.enabled:
+            return
+        marker = "anios:search:_pool:reconciled"
+        try:
+            if await self.redis.get(marker):
+                return
+        except Exception:
+            return
+        reported = await usage.spent()
+        if reported is None:
+            return
+        await self.reconcile(int(reported))
+        try:
+            await self.redis.set(marker, "1", ex=max(1, int(max_age_seconds)))
+        except Exception:
+            return
+
     async def pool_status(self, now: datetime | None = None) -> dict[str, int]:
         remaining = await self.pool_remaining(now)
         return {

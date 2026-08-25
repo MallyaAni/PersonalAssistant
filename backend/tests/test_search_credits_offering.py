@@ -69,3 +69,19 @@ async def test_a_guest_is_neither_offered_nor_told_about_the_meter() -> None:
     # The model "chose" it anyway in this fixture; a name never offered is refused.
     assert not isinstance(action, ToolboxAction)
     assert not any(item["label"] == "Search credits" for item in capabilities)
+
+
+@pytest.mark.asyncio
+async def test_search_is_not_on_the_menu_while_an_allowance_is_used_up() -> None:
+    from datetime import UTC, datetime
+
+    from backend.search.budgeted import SearchLimit, current_search_limit
+
+    selector, llm = _selector(_tool_call("search_web", {"query": "events this weekend"}))
+    token = current_search_limit.set(SearchLimit("today", datetime(2026, 8, 26, tzinfo=UTC)))
+    try:
+        action = await selector.select("guest", "what's on in Arlington this weekend?", [], None)
+    finally:
+        current_search_limit.reset(token)
+    assert "search_web" not in {tool["function"]["name"] for tool in llm.tools}
+    assert action is None, "a name never offered is refused"

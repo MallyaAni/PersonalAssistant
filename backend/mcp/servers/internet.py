@@ -3,6 +3,8 @@
 import json
 import os
 
+import httpx
+
 from mcp.server.fastmcp import FastMCP
 
 from backend.search.google_adk import GoogleADKSearchProvider
@@ -12,6 +14,9 @@ from backend.search.tavily import TavilySearchProvider, TavilyUsageClient
 from backend.search.types import SearchResults
 
 mcp = FastMCP("AniOS Internet Search")
+
+# Status codes that mean "the key's plan is spent", not "try again".
+_QUOTA_STATUSES = frozenset({402, 429, 432})
 # How much of one source survives, and how much the whole payload may carry.
 #
 # Both were fixed numbers - 500 characters a result, 3,500 for the payload -
@@ -195,7 +200,19 @@ async def search_web(query: str, max_results: int = 0) -> str:
     # SEARCH_MAX_RESULTS and the configured count never applied.
     configured = int(os.getenv("SEARCH_MAX_RESULTS", "5"))
     wanted = min(max_results, configured) if max_results > 0 else configured
-    found = await provider.search(query, max_results=wanted)
+    try:
+        found = await provider.search(query, max_results=wanted)
+    except httpx.HTTPStatusError as exc:
+        # The provider saying the plan is spent (Tavily: 432; 402 and 429
+        # from others) is a fact the caller must act on - mark the pool
+        # spent, tell the person - not an outage to retry. Returned as a
+        # payload so the reason survives the MCP boundary.
+        status = exc.response.status_code
+        if status in _QUOTA_STATUSES:
+            return json.dumps(
+                {"provider": "tavily", "error": "quota_exhausted", "status": status, "results": []}
+            )
+        raise
     return _encode_results(found)
 
 

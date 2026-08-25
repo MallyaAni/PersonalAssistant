@@ -44,7 +44,12 @@ from backend.mcp.invocation import MCPInvocationError
 from backend.memory.coordinator import MemoryCoordinatorAgent
 from backend.memory.proposal_agent import MemoryProposalAgent
 from backend.models.schemas import ChatStreamEvent
-from backend.search.budgeted import SearchBudgetExceededError
+from backend.search.budgeted import (
+    SearchBudgetExceededError,
+    SearchLimit,
+    current_search_identity,
+    current_search_limit,
+)
 from backend.search.query import normalize_search_query
 from backend.services.agent_memory_manager import AgentMemoryManager
 from backend.services.diagram_artifact_service import DiagramArtifactService
@@ -276,6 +281,44 @@ def _history_carried_pictures(history: list[dict[str, Any]]) -> bool:
         if isinstance(metadata, dict) and metadata.get("artifact_ids"):
             return True
     return False
+
+
+# What the reply is handed when an allowance is used up: whose it is, when it
+# comes back, and what to do meanwhile - stale knowledge is allowed, a past
+# event recommended as upcoming is not.
+def _search_limit_evidence(limit: SearchLimit) -> dict[str, str]:
+    whose = (
+        "the shared monthly search allowance everyone here spends from"
+        if limit.shared
+        else f"this account's search allowance for {limit.window}"
+    )
+    return {
+        "title": "Internet search limit reached",
+        "url": "",
+        "content": (
+            f"No web search can run this turn: {whose} is used up. It resets "
+            f"{_resets_phrase(limit)}. Answer from what you already know, "
+            "marked as possibly out of date. Anything time-bound - events, "
+            "sales, schedules, deadlines - is offered only if it is still "
+            "ahead of today's date; drop what has passed."
+        ),
+    }
+
+
+# "at midnight UTC tonight" / "on 2026-09-01" - words a person would use.
+def _resets_phrase(limit: SearchLimit) -> str:
+    when = limit.resets_at.strftime("%Y-%m-%d %H:%M UTC")
+    return f"tomorrow ({when})" if limit.window == "today" else f"next month ({when})"
+
+
+# The turn state the reply leads with; quota and outage are worded apart.
+def _search_state_for(limit: SearchLimit) -> dict[str, Any]:
+    return {
+        "failed": True,
+        "quota": limit.window,
+        "shared": limit.shared,
+        "resets": _resets_phrase(limit),
+    }
 
 
 # What the reply is handed when the search provider refused or did not
@@ -1975,7 +2018,10 @@ class ConversationService:
                 if not search_succeeded:
                     # Rendered as turn state so the reply leads with it; the
                     # synthetic result row alone was weighed like any source.
-                    context["search_state"] = {"failed": True}
+                    limit = current_search_limit.get()
+                    context["search_state"] = (
+                        _search_state_for(limit) if limit is not None else {"failed": True}
+                    )
                 if tool_identity:
                     yield {
                         "event": "tool_finished",
@@ -2094,6 +2140,19 @@ class ConversationService:
 
         return gathered, succeeded
 
+    # Which allowance would refuse this request's next search, or None. Asked
+    # of the budgeted provider before routing; a provider without a budget
+    # (tests, a disabled search) reports nothing and searching stays offered.
+    async def _search_limit(self) -> SearchLimit | None:
+        probe = getattr(self.search, "limit_state", None)
+        if probe is None:
+            return None
+        try:
+            return await probe(current_search_identity.get())
+        except Exception:
+            logger.warning("Search limit check failed", exc_info=True)
+            return None
+
     # Fetch live results for the query the model chose when it called search_web.
     async def _load_search_context(
         self,
@@ -2115,23 +2174,9 @@ class ConversationService:
                 trace_id,
                 exhausted.window,
             )
-            return (
-                [
-                    {
-                        "title": "Internet search limit reached",
-                        "url": "",
-                        "content": (
-                            f"This account has used its internet search "
-                            f"allowance for {exhausted.window}. Searching "
-                            f"resumes at "
-                            f"{exhausted.resets_at.strftime('%Y-%m-%d %H:%M UTC')}. "
-                            "Answer from what you already know and say plainly "
-                            "that you could not search."
-                        ),
-                    }
-                ],
-                False,
-            )
+            limit = SearchLimit(exhausted.window, exhausted.resets_at, shared=False)
+            current_search_limit.set(limit)
+            return [_search_limit_evidence(limit)], False
         except Exception:
             # A search outage degrades the answer; it must not fail the turn.
             # It is told to the model the way a quota is: handed nothing at
@@ -2997,6 +3042,15 @@ class ConversationService:
             user_id,
             self.history_turn_limit,
         )
+        # Known before anything is chosen: with an allowance used up, search
+        # is not offered to the router and the reply is told which allowance
+        # and when it comes back - instead of choosing a search, being
+        # refused, and finding out. Reset per request; the mid-turn paths
+        # below set it when a refusal arrives anyway.
+        current_search_limit.set(None)
+        limit = await self._search_limit()
+        if limit is not None:
+            current_search_limit.set(limit)
 
         # 2. Build Context and State
         context: dict[str, Any] = {
@@ -3082,6 +3136,10 @@ class ConversationService:
         # drift apart into one wording for conversation and another for
         # routing.
         context["capabilities"] = self._describe_capabilities()
+        limit = current_search_limit.get()
+        if limit is not None and "search_state" not in context:
+            context["search_state"] = _search_state_for(limit)
+            context.setdefault("search", []).append(_search_limit_evidence(limit))
         context["memory_save"] = {
             "saved": bool(proposals),
             "value": _proposal_summaries(proposals),

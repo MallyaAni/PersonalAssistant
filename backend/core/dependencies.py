@@ -80,6 +80,7 @@ from backend.memory.retrieval import SemanticRetrievalPolicy
 from backend.presentations.provider import LLMPresentationProvider
 from backend.presentations.renderer import PptxGenJSRenderer
 from backend.presentations.research import DeckResearch
+from backend.search.tavily import TavilyUsageClient
 from backend.search.budgeted import BudgetedSearchProvider
 from backend.search.mcp import MCPWebSearchProvider
 from backend.search.tavily import TavilySearchProvider
@@ -150,6 +151,10 @@ def get_search_provider() -> SearchProvider:
         # Tavily bills an advanced search at two credits; the ceiling is in
         # credits, so the local counter must spend what the key spends.
         credits_per_search=2 if settings.SEARCH_DEPTH == "advanced" else 1,
+        usage=TavilyUsageClient(
+            base_url=settings.SEARCH_BASE_URL or "https://api.tavily.com",
+            api_key=settings.SEARCH_API_KEY,
+        ),
     )
 
 

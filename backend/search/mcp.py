@@ -4,6 +4,7 @@ import json
 from typing import Any
 
 from backend.core.interfaces import SearchProvider
+from backend.search.budgeted import SearchProviderQuotaError
 from backend.search.types import SearchResult, SearchResults
 from backend.services.mcp_invocation_service import MCPInvocationService
 
@@ -78,6 +79,11 @@ class MCPWebSearchProvider(SearchProvider):
             payload = json.loads(result.content)
         except ValueError as exc:
             raise RuntimeError("The MCP internet-search result was invalid.") from exc
+        if isinstance(payload, dict) and payload.get("error") == "quota_exhausted":
+            raise SearchProviderQuotaError(
+                f"The search provider refused: plan limit reached "
+                f"(HTTP {payload.get('status', '?')})."
+            )
         raw_results = payload.get("results") if isinstance(payload, dict) else None
         raw_provider = payload.get("provider") if isinstance(payload, dict) else None
         parsed = []

@@ -96,3 +96,60 @@ async def test_a_failed_search_is_admitted_not_promised(llm, question):
         "The reply tells the reader that it could not check, has not checked, "
         "or has no access to live or current sources for this question.",
     ), text
+
+
+# An allowance used up is not an outage: the reply opens with a friendly
+# sentence naming which allowance and when it returns, still helps from what
+# it knows, and never recommends something already past as upcoming (asked
+# on 2026-08-25, with the shared key at 1,000 of 1,000 and the replies
+# recommending events long gone).
+from datetime import UTC, datetime
+
+from backend.search.budgeted import SearchLimit
+from backend.services.conversation_service import (
+    _search_limit_evidence,
+    _search_state_for,
+)
+
+_DAILY = SearchLimit("today", datetime(2026, 8, 26, tzinfo=UTC), shared=False)
+_MONTHLY = SearchLimit("this month", datetime(2026, 9, 1, tzinfo=UTC), shared=True)
+
+
+def _limited(limit: SearchLimit) -> dict:
+    return {
+        "capabilities": [{"label": "Web search", "description": "Look things up."}],
+        "search": [_search_limit_evidence(limit)],
+        "search_state": _search_state_for(limit),
+    }
+
+
+@pytest.mark.parametrize(
+    ("limit", "names"),
+    [(_DAILY, "daily|today"), (_MONTHLY, "month")],
+)
+async def test_a_used_up_allowance_is_said_kindly_and_nothing_past_is_recommended(llm, limit, names):
+    from backend.agents.graph import turn_context_messages
+
+    context = _limited(limit)
+    messages = [{"role": "system", "content": _build_system_prompt(context)}]
+    messages.extend(turn_context_messages(context))
+    messages.append({"role": "user", "content": "what events are happening in Arlington Virginia this weekend?"})
+    text = str(llm.chat(messages, 400, None, 0.0)["content"])
+    assert text.strip()
+    assert not _PROMISED.search(text), text
+    assert re.search(names, text, re.IGNORECASE), f"which allowance ran out is not named: {text!r}"
+    assert states(
+        text,
+        "The reply says, in a friendly way, that a search allowance or limit has "
+        "been reached and that the answer is from memory or may be out of date.",
+    ), text
+    assert not states(
+        text,
+        "The reply presents a specific event with a date before 2026-08-25 as "
+        "something the reader could still attend.",
+    ), text
+    assert states(
+        text,
+        "The reply still offers some useful help, such as places, venues, or "
+        "sources to check.",
+    ), text

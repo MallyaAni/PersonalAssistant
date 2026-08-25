@@ -4,6 +4,17 @@ This file is append-only history for meaningful, verified changes. It must not c
 
 ## 2026-08-25 — Recall anything, a reranker, keyed digests, a third backup copy, and the architecture told for newcomers
 
+- **A used-up search allowance is known before a search is chosen, named,
+  and said kindly.** The budgeted provider answers "which allowance would
+  refuse the next search" - this account's day, its month, or the shared
+  monthly pool - from a local count reconciled with the provider's meter
+  every ten minutes and on any refusal (a 432 marks the pool spent, so the
+  next turn already knows). With a limit in force the router is not offered
+  `search_web` at all, and the reply is told which allowance and when it
+  resets: it opens with one friendly sentence, still helps from what it
+  knows marked as possibly out of date, and never recommends something
+  time-bound that has already passed. Verified against the real reply model
+  for both the daily and the shared monthly case.
 - **The architecture page reflects the evening's changes, and the vector
   store decision is written down.** The chat, scheduled-task and iMessage
   diagrams show `show_image`, the internet server's three tools, quiet

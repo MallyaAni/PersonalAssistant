@@ -25,6 +25,7 @@ Two deliberate choices carried over from `SearchBudget`:
 from contextvars import ContextVar
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from backend.core.interfaces import SearchProvider
 from backend.discovery.search_budget import SearchBudget
@@ -45,6 +46,32 @@ class SearchIdentity:
 # so it is left unmetered rather than charged to a guessed account.
 current_search_identity: ContextVar[SearchIdentity | None] = ContextVar(
     "current_search_identity", default=None
+)
+
+
+class SearchProviderQuotaError(Exception):
+    """The provider itself refused: the key has spent its plan for the period."""
+
+
+@dataclass(frozen=True, slots=True)
+class SearchLimit:
+    """Which allowance is used up, and when it comes back.
+
+    `window` is "today" or "this month"; `shared` says whether it is the
+    pool every account spends from (the key's own ceiling) rather than this
+    account's own allowance - the reply words the two differently.
+    """
+
+    window: str
+    resets_at: datetime
+    shared: bool = False
+
+
+# The limit in force for the request being handled, decided before any search
+# is chosen. The router reads it to withhold search_web; the reply reads it
+# to say so. None means searching is possible.
+current_search_limit: ContextVar[SearchLimit | None] = ContextVar(
+    "current_search_limit", default=None
 )
 
 
@@ -84,7 +111,16 @@ class BudgetedSearchProvider(SearchProvider):
         inner: SearchProvider,
         budget: SearchBudget,
         credits_per_search: int = 1,
+        usage: Any = None,
+        reconcile_every_seconds: float = 600.0,
     ) -> None:
+        # The provider's own meter, asked at most every `reconcile_every_seconds`
+        # before a search so the local pool is never further from the truth
+        # than that - the key is shared with whatever else the operator points
+        # at it, and a pool that only counts its own reservations found out it
+        # was empty by being refused (432, 2026-08-25).
+        self.usage = usage
+        self.reconcile_every_seconds = reconcile_every_seconds
         # What one call costs the key. Tavily bills an `advanced` search at
         # two credits and the ceiling is in credits, so counting calls let
         # the key run out (432 from the provider) with the local counter
@@ -102,8 +138,9 @@ class BudgetedSearchProvider(SearchProvider):
         max_results: int | None = None,
     ) -> SearchResults:
         identity = current_search_identity.get()
+        await self._reconcile_if_stale()
         if identity is None:
-            return await self.inner.search(query, max_results=max_results)
+            return await self._search_inner(query, max_results)
 
         granted = await self.budget.reserve(
             identity.user_id,
@@ -124,4 +161,59 @@ class BudgetedSearchProvider(SearchProvider):
                 raise SearchBudgetExceededError("today", _next_day(now))
             raise SearchBudgetExceededError("this month", _next_month(now))
 
-        return await self.inner.search(query, max_results=max_results)
+        return await self._search_inner(query, max_results)
+
+    # The provider's refusal becomes the same exhaustion the local pool
+    # raises, and the pool is marked spent so the next turn knows before it
+    # asks: a 432 is the provider saying the month is gone.
+    async def _search_inner(
+        self, query: str, max_results: int | None
+    ) -> SearchResults:
+        try:
+            return await self.inner.search(query, max_results=max_results)
+        except SearchProviderQuotaError:
+            now = datetime.now(UTC)
+            try:
+                await self.budget.reconcile(self.budget.monthly_credits, now)
+            except Exception:
+                pass
+            raise SearchBudgetExceededError("this month", _next_month(now)) from None
+
+    # Align the local pool with the provider's meter when the last alignment
+    # is older than the interval. Best effort: a failed read leaves the local
+    # count in charge, which is what it was anyway.
+    async def _reconcile_if_stale(self) -> None:
+        if self.usage is None or not getattr(self.usage, "is_enabled", lambda: False)():
+            return
+        try:
+            await self.budget.reconcile_if_stale(self.usage, self.reconcile_every_seconds)
+        except Exception:
+            return
+
+    # Which allowance, if any, would refuse this identity's next search -
+    # asked before a search is chosen, so a turn can say so instead of
+    # choosing one and being refused. Order: the shared pool (what actually
+    # runs out), then the account's month, then its day.
+    async def limit_state(
+        self, identity: SearchIdentity | None, now: datetime | None = None
+    ) -> SearchLimit | None:
+        moment = now or datetime.now(UTC)
+        await self._reconcile_if_stale()
+        try:
+            if await self.budget.pool_remaining(moment) < self.credits_per_search:
+                return SearchLimit("this month", _next_month(moment), shared=True)
+            if identity is None:
+                return None
+            monthly = await self.budget.remaining(
+                identity.user_id, identity.is_operator, moment, override=identity.monthly_limit
+            )
+            if monthly < self.credits_per_search:
+                return SearchLimit("this month", _next_month(moment), shared=False)
+            daily = await self.budget.remaining_today(
+                identity.user_id, identity.is_operator, moment, override=identity.daily_limit
+            )
+            if daily < self.credits_per_search:
+                return SearchLimit("today", _next_day(moment), shared=False)
+        except Exception:
+            return None
+        return None

@@ -193,6 +193,27 @@ def _render_edit_state(edit: dict[str, Any]) -> str:
 def _render_search_state(search: dict[str, Any]) -> str:
     if not search or not search.get("failed"):
         return ""
+    if search.get("quota"):
+        whose = (
+            "the shared monthly search allowance everyone here spends from"
+            if search.get("shared")
+            else f"your search allowance for {search['quota']}"
+        )
+        resets = str(search.get("resets") or "soon")
+        return (
+            f"\nThis turn: no web search can run - {whose} is used up; it "
+            f"resets {resets}. Open with that, in one friendly plain sentence "
+            "- for example: \"Heads up: I've used up the search allowance "
+            f"for {search['quota']}, so this is from memory rather than a live "
+            f"check; it comes back {resets.split(' (')[0]}.\" Then still help "
+            "from what you already know, marked as possibly out of date. "
+            "Anything time-bound - events, sales, schedules, deadlines - is "
+            "offered only if it is still ahead of today's date; never "
+            "present something already past as upcoming, and prefer places "
+            "and sources they can check over specific dates you cannot "
+            "verify. Do not offer, promise, or announce a search - none can "
+            "run until the allowance resets."
+        )
     reason = str(search.get("reason") or "the search provider refused or did not answer")
     return (
         "\nThis turn: a live web search was attempted and did not run - "
