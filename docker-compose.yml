@@ -317,6 +317,11 @@ services:
       - EMBEDDING_INFERENCE_ADAPTER=${EMBEDDING_INFERENCE_ADAPTER:-}
       - EMBEDDING_BASE_URL=http://vllm-embedding:8000
       - EMBEDDING_MODEL=text-embedding-nomic-embed-text-v1.5
+      # The reranker rides beside the embedder: it re-scores what the vector
+      # search retrieved. It was wired into the test container only for a
+      # day (2026-08-25) and fail-soft hid that the live stage was off.
+      - RERANKER_BASE_URL=${RERANKER_BASE_URL:-http://vllm-reranker:8000}
+      - RERANKER_MODEL=${RERANKER_MODEL:-qwen3-reranker-0.6b}
       - IMAGE_PROVIDER_BASE_URL=${IMAGE_PROVIDER_BASE_URL:-http://host.docker.internal:8188}
       # One FLUX.2 Klein checkpoint serves generation and editing alike, so
       # the model, text encoder and VAE are shared rather than per-role. The
@@ -783,6 +788,11 @@ services:
       - EMBEDDING_INFERENCE_ADAPTER=${EMBEDDING_INFERENCE_ADAPTER:-}
       - EMBEDDING_BASE_URL=http://vllm-embedding:8000
       - EMBEDDING_MODEL=text-embedding-nomic-embed-text-v1.5
+      # The reranker rides beside the embedder: it re-scores what the vector
+      # search retrieved. It was wired into the test container only for a
+      # day (2026-08-25) and fail-soft hid that the live stage was off.
+      - RERANKER_BASE_URL=${RERANKER_BASE_URL:-http://vllm-reranker:8000}
+      - RERANKER_MODEL=${RERANKER_MODEL:-qwen3-reranker-0.6b}
       # Points at the host ComfyUI install (E:/AI/ComfyUI), started with
       # --listen 0.0.0.0 so the container can reach it. To use the sibling
       # `comfyui` service instead, run `--profile comfyui` and set this to
