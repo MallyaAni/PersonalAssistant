@@ -157,7 +157,7 @@ FLAG = Referent(
     "reference",
     [
         "make the background of this picture purple",
-        "change the sky in this one to orange",
+        "make this one a little brighter",
         "add a small bird to it",
     ],
 )
