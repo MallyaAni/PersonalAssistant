@@ -1,0 +1,25 @@
+# Weekly: is there a dump newer than 36 hours on every backup copy?
+#
+# The failure unit catches a backup that errors. This catches one that never
+# ran - a stopped timer, a rotated key, a full disk between runs - which
+# exits nothing anywhere on the night it matters. The check pages the
+# operator itself when a copy is stale, so this unit needs no OnFailure.
+#
+# INSTALL on spark1:
+#   sudo cp deploy/spark/systemd/anios-backup-freshness.{service,timer} /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now anios-backup-freshness.timer
+# Run it once by hand to see it pass:
+#   systemctl start anios-backup-freshness.service && journalctl -u anios-backup-freshness -n 3
+[Unit]
+Description=Check that every AniOS backup copy is fresh
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=animallya96
+WorkingDirectory=/home/animallya96/anios
+ExecStart=/bin/bash scripts/check-backup-freshness.sh
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target

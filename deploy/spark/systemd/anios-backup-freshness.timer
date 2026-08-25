@@ -1,0 +1,11 @@
+# Monday morning, after the weekend's backups have had every chance to land.
+[Unit]
+Description=Weekly AniOS backup freshness check
+
+[Timer]
+OnCalendar=Mon *-*-* 09:00:00
+RandomizedDelaySec=600
+Persistent=true
+
+[Install]
+WantedBy=timers.target
