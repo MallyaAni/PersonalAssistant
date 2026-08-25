@@ -260,6 +260,15 @@ class Settings(BaseSettings):
     # because the person explicitly pointed at something that is not in view.
     HISTORY_SEARCH_MAX_RESULTS: int = Field(default=12, ge=1, le=50)
     HISTORY_SEARCH_MAX_COSINE_DISTANCE: float = Field(default=0.6, ge=0, le=2)
+    # The cross-encoder second pass. Empty base URL switches the stage off and
+    # every consumer keeps its first-pass cosine ordering - reranking improves
+    # an ordering that already exists, so its absence is degradation, never
+    # failure. Candidates are fetched wider than the final cut so the reranker
+    # has something to disagree with.
+    RERANKER_BASE_URL: str = ""
+    RERANKER_MODEL: str = "qwen3-reranker-0.6b"
+    RERANKER_TIMEOUT_SECONDS: float = Field(default=8.0, gt=0, le=60)
+    HISTORY_RERANK_CANDIDATES: int = Field(default=40, ge=1, le=200)
     MEMORY_SEMANTIC_MAX_CONTENT_CHARS: int = Field(default=4_000, ge=100, le=50_000)
     CONVERSATION_HISTORY_TURNS: int = Field(default=10, ge=0, le=50)
     CONVERSATION_SUMMARY_INTERVAL: int = Field(default=10, ge=2, le=100)

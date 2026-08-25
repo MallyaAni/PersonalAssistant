@@ -361,6 +361,38 @@ def _distance_of(item: dict[str, Any]) -> float:
         return 1.0
 
 
+# Candidates in the reranker's order when it answers, in the cosine order
+# when it does not. The reranker reads query and candidate together - where
+# retrieval precision actually comes from - but it is a second opinion on an
+# ordering that already exists, so every failure keeps the first-pass order.
+async def _reranked(
+    rerank_call: Any, query: str, candidates: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    if len(candidates) < 2:
+        return candidates
+    documents = [
+        "user: {said}\nassistant: {answered}".format(
+            said=item.get("you_said") or "",
+            answered=item.get("assistant_said") or "",
+        )
+        for item in candidates
+    ]
+    try:
+        scores = await rerank_call(query, documents)
+    except Exception:
+        logger.warning("Reranking failed; keeping cosine order", exc_info=True)
+        return candidates
+    if scores is None:
+        return candidates
+    for item, score in zip(candidates, scores, strict=False):
+        item.setdefault("retrieval", {})["rerank_score"] = round(float(score), 6)
+    return sorted(
+        candidates,
+        key=lambda item: (item.get("retrieval") or {}).get("rerank_score", 0.0),
+        reverse=True,
+    )
+
+
 # The calendar date a one-time task fires on. The router states it when the
 # request named one; a bare "at 5" means today if that is still ahead in
 # the person's zone, otherwise tomorrow.
@@ -1648,6 +1680,16 @@ class ConversationService:
     ) -> None:
         if self.memory is None:
             return
+        from backend.core.reranker import rerank, reranker_enabled
+
+        # Fetch wide when a reranker will make the final cut, narrow when the
+        # cosine order is the final cut - a second pass has to have something
+        # to disagree with, and without one extra candidates are just noise.
+        fetch_k = (
+            settings.HISTORY_RERANK_CANDIDATES
+            if reranker_enabled()
+            else settings.HISTORY_SEARCH_MAX_RESULTS
+        )
         since, until = _stated_window(action.since, action.until)
         try:
             embedding = await self.memory.embed_query(action.query)
@@ -1658,7 +1700,7 @@ class ConversationService:
                 found = await self.memory.search_turns(
                     user_id,
                     vector,
-                    settings.HISTORY_SEARCH_MAX_RESULTS,
+                    fetch_k,
                     settings.HISTORY_SEARCH_MAX_COSINE_DISTANCE,
                     created_after=since,
                     created_before=until,
@@ -1676,7 +1718,7 @@ class ConversationService:
             for turn in (history or [])
             for key in ("query", "response")
         }
-        excerpts = sorted(
+        candidates = sorted(
             (
                 item
                 for item in merged.values()
@@ -1684,7 +1726,9 @@ class ConversationService:
                 not in visible
             ),
             key=_distance_of,
-        )[: settings.HISTORY_SEARCH_MAX_RESULTS]
+        )
+        excerpts = await _reranked(rerank, action.query, candidates)
+        excerpts = excerpts[: settings.HISTORY_SEARCH_MAX_RESULTS]
         if excerpts:
             context["history_search"] = excerpts
 

@@ -87,6 +87,65 @@ services:
       start_period: 3m
     restart: unless-stopped
 
+  vllm-reranker:
+    extra_hosts: *spark-hosts
+    # Same engine and same architecture story as vllm-embedding above: the
+    # amd64 digest is the default and the Sparks override with an ARM build.
+    # Qwen3-Reranker needs the hf_overrides below to serve as a classifier -
+    # they are the documented mandatory flags, not tuning. The client fails
+    # soft, so a host that never starts this simply keeps cosine ordering.
+    # The upgrade path is deliberate: Qwen3-VL-Reranker (2B/8B) speaks the
+    # same /v1/rerank contract, so going multimodal at the hardware ramp is a
+    # model-name and image change here, zero code.
+    image: ${VLLM_RERANKER_IMAGE:-vllm/vllm-openai@sha256:6d8429e38e3747723ca07ee1b17972e09bb9c51c4032b266f24fb1cc3b22ed8f}
+    container_name: anios_vllm_reranker
+    logging: *bounded-logs
+    ipc: host
+    command:
+      - Qwen/Qwen3-Reranker-0.6B
+      - --served-model-name
+      - qwen3-reranker-0.6b
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --runner
+      - pooling
+      - --hf-overrides
+      - '{"architectures": ["Qwen3ForSequenceClassification"], "classifier_from_token": ["no", "yes"], "is_original_qwen3_reranker": true}'
+      - --max-model-len
+      - ${VLLM_RERANKER_MAX_MODEL_LEN:-4096}
+      - --max-num-seqs
+      - ${VLLM_RERANKER_MAX_NUM_SEQS:-8}
+      # 0.6B fp16 weights are ~1.2 GiB; sized to footprint plus headroom the
+      # way the embedding service is. On a box that hangs on over-allocation,
+      # small and measured beats generous.
+      - --gpu-memory-utilization
+      - ${VLLM_RERANKER_GPU_MEMORY_UTILIZATION:-0.03}
+    ports:
+      - "8006:8000"
+    volumes:
+      - ${VLLM_MODEL_CACHE_PATH:-E:/AI/huggingface-cache-vllm}:/root/.cache/huggingface
+      - ${VLLM_COMPILE_CACHE_PATH:-E:/AI/vllm-compile-cache}:/root/.cache/vllm
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)
+      interval: 10s
+      timeout: 6s
+      retries: 30
+      start_period: 3m
+    restart: unless-stopped
+
   functional-tests:
     # The deploy gate. Never started by `docker compose up`: the profile keeps
     # it out of every ordinary command, and it only ever runs via
@@ -124,6 +183,8 @@ services:
       - VISION_BASE_URL=${VISION_BASE_URL:-http://animallya-spark2.local:8001}
       - VISION_MODEL=${VISION_MODEL:-qwen3-vl-8b}
       - EMBEDDING_BASE_URL=${EMBEDDING_BASE_URL:-http://vllm-embedding:8000}
+      - RERANKER_BASE_URL=${RERANKER_BASE_URL:-http://vllm-reranker:8000}
+      - RERANKER_MODEL=${RERANKER_MODEL:-qwen3-reranker-0.6b}
       - EMBEDDING_MODEL=${EMBEDDING_MODEL:-text-embedding-nomic-embed-text-v1.5}
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
