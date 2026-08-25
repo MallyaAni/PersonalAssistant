@@ -9,7 +9,7 @@
 #     the ~16 GB actually available with headroom.
 #   - mm_processor_cache_gb defaults to 4 GiB, a third of our budget, and
 #     nothing warns you. Set to 0.
-#   - kv-cache-memory-bytes is set EXPLICITLY (2 GiB). Trusting the
+#   - kv-cache-memory-bytes is set EXPLICITLY (3 GiB). Trusting the
 #     utilization fraction alone produced 7.46 GiB of KV on top of 7.1 GB of
 #     weights - about 16 GB total - and left the box with 538 MB free. The
 #     profiler sizes KV from what it observes free at startup, so on a

@@ -653,6 +653,24 @@ probes, not sustained-load or long-context measurements.
 Benchmark success is comparative operational evidence, not subsystem/browser
 acceptance and not authorization to promote a candidate runtime.
 
+### Exercise the image scenarios end to end
+
+The structural and functional suites prove the pieces; this proves the path.
+From spark1, with the image provider reachable:
+
+```bash
+docker compose exec backend python -m backend.cli.exercise_image_scenarios
+```
+
+It drives seven scenarios through the real chat API for a throwaway user -
+generate; edit with nothing selected; upload and ask; edit the upload; edit an
+explicitly selected earlier picture; refer back by description; ask a question
+- asserts on lineage (`parent_artifact_id`) and on event trails, deletes the
+user afterwards, and exits non-zero on any failure. `--keep` leaves the
+pictures in place for inspection. On 2026-08-25 it found four defects every
+suite had passed over; run it after any change to routing, referent
+resolution, the image services, or the provider.
+
 ### Install and run the free local image provider
 
 `scripts/start-anios.sh` brings the whole stack up with one command: it waits for `vllm-main`, then `vllm-embedding`, starts host ComfyUI if needed, applies migrations, starts the remaining Compose services, and waits for the backend and for ComfyUI when it launched it. It runs under any Bash, including Git Bash on Windows. Image generation needs ComfyUI running; when it is down, `POST /api/v1/images/generate` returns a `503` with `reason: image_provider_unreachable` and a message naming ComfyUI, which the composer surfaces verbatim.

@@ -320,11 +320,18 @@ class Settings(BaseSettings):
     # large the source was, which is why editing a phone photo produced something
     # visibly worse than the original.
     #
-    # 2.0 was measured on this card rather than assumed: with vLLM resident and
-    # 5,863 MiB free, an edit produced 1440x1440 in 39 seconds and did not run
-    # out of memory. The cost is bounded by this number rather than by the source,
-    # because the scale node normalises to it either way.
-    IMAGE_EDIT_MEGAPIXELS: float = Field(default=2.0, ge=0.25, le=4.0)
+    # 2.0 was measured on the RTX 5080 when it ran the whole stack: with vLLM
+    # resident and 5,863 MiB free, an edit produced 1440x1440 in 39 seconds
+    # and did not run out of memory. The cost is bounded by this number rather
+    # than by the source, because the scale node normalises to it either way.
+    #
+    # 1.0 since 2026-08-25, when the same card hosts ComfyUI inside Docker
+    # Desktop's WSL2 VM: the ceiling there is the VM's 15.6 GB of RAM, where an
+    # evicted model goes, and a 2 MP Kontext edit queued behind a Klein
+    # generation made ComfyUI exit cleanly mid-job. A 1 MP edit of a 1024x1024
+    # source is not a visible downgrade; `.wslconfig memory=24GB` on the
+    # desktop is the change that would earn 2.0 back.
+    IMAGE_EDIT_MEGAPIXELS: float = Field(default=1.0, ge=0.25, le=4.0)
     IMAGE_EDIT_SCALE_METHOD: str = "lanczos"
     # Realism steering is driven by appending this to the positive prompt. It is
     # added only when not already present; set it empty to send prompts verbatim.

@@ -95,7 +95,7 @@ services:
     # they are the documented mandatory flags, not tuning. The client fails
     # soft, so a host that never starts this simply keeps cosine ordering.
     # The upgrade path is deliberate: Qwen3-VL-Reranker (2B/8B) speaks the
-    # same /v1/rerank contract, so going multimodal at the hardware ramp is a
+    # same /v2/rerank contract, so going multimodal at the hardware ramp is a
     # model-name and image change here, zero code.
     image: ${VLLM_RERANKER_IMAGE:-vllm/vllm-openai@sha256:6d8429e38e3747723ca07ee1b17972e09bb9c51c4032b266f24fb1cc3b22ed8f}
     container_name: anios_vllm_reranker
@@ -359,7 +359,7 @@ services:
       # resampled. Both were ComfyUI template defaults; `nearest-exact`
       # stipples any photograph, and the megapixel budget is the ceiling
       # on what comes back, because the output is generated at that size.
-      - IMAGE_EDIT_MEGAPIXELS=${IMAGE_EDIT_MEGAPIXELS:-2.0}
+      - IMAGE_EDIT_MEGAPIXELS=${IMAGE_EDIT_MEGAPIXELS:-1.0}
       - IMAGE_EDIT_SCALE_METHOD=${IMAGE_EDIT_SCALE_METHOD:-lanczos}
       - IMAGE_EDIT_MODEL=${IMAGE_EDIT_MODEL:-}
       - IMAGE_EDIT_CLIP=${IMAGE_EDIT_CLIP:-clip_l.safetensors}
@@ -834,7 +834,7 @@ services:
       # resampled. Both were ComfyUI template defaults; `nearest-exact`
       # stipples any photograph, and the megapixel budget is the ceiling
       # on what comes back, because the output is generated at that size.
-      - IMAGE_EDIT_MEGAPIXELS=${IMAGE_EDIT_MEGAPIXELS:-2.0}
+      - IMAGE_EDIT_MEGAPIXELS=${IMAGE_EDIT_MEGAPIXELS:-1.0}
       - IMAGE_EDIT_SCALE_METHOD=${IMAGE_EDIT_SCALE_METHOD:-lanczos}
       - IMAGE_EDIT_MODEL=${IMAGE_EDIT_MODEL:-}
       - IMAGE_EDIT_CLIP=${IMAGE_EDIT_CLIP:-clip_l.safetensors}

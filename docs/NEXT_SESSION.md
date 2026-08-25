@@ -1,8 +1,11 @@
 # Next session
 
-Verified state as of 2026-08-24. `deep-matter.com` serves from spark1. The
-Windows desktop is powered on again and holds the GPU for image work. Everything below was checked by running it, not by
-reading it.
+Verified state as of 2026-08-25. `deep-matter.com` serves from spark1. The
+Windows desktop is powered on again and holds the GPU for image work; when
+it is off, image requests get an honest "try again later". Everything below
+was checked by running it, not by reading it. The seven image scenarios can
+be re-run any time with `python -m backend.cli.exercise_image_scenarios`
+inside the backend container.
 
 **If you are picking this up on the Mac**, read [Where things run](#where-things-run)
 and [Operational traps](#operational-traps-that-cost-real-time) first. The Mac is
