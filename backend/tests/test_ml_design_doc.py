@@ -43,7 +43,7 @@ def test_every_serving_flag_has_a_documented_origin():
 def test_the_moe_kernel_selection_is_documented_with_its_guard():
     doc = DOC.read_text()
     assert "flashinfer_b12x" in doc
-    assert "VLLM_MOE_USE_DEEP_GEMM=0" in doc, "the DeepGEMM priority guard must be explained"
+    assert "VLLM_MOE_USE_DEEP_GEMM=0" in doc, "explain the DeepGEMM priority guard"
 
 
 def test_the_document_does_not_claim_chunked_prefill_is_off():

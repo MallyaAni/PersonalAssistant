@@ -57,9 +57,13 @@ echo "    (a skipped test counts as a failure here)"
 # verify-migrations.sh does it: without this the gate measures whatever was
 # baked in at the last build, so a case added since would appear to pass while
 # never having run.
+# docs/ and deploy/ are mounted too: tests that hold the design documents to
+# the serving script must see the working tree, not the last image build.
 if "${compose[@]}" run --rm --no-deps \
     -v "$root/backend:/app/backend:ro" \
     -v "$root/prompts:/app/prompts:ro" \
+    -v "$root/docs:/app/docs:ro" \
+    -v "$root/deploy:/app/deploy:ro" \
     functional-tests \
     python -m pytest "$target" "${ignores[@]}" \
         -q -p no:cacheprovider --no-header; then
