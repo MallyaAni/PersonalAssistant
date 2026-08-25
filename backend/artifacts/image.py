@@ -1,6 +1,7 @@
 import asyncio
 import hashlib
 import io
+import logging
 import time
 import warnings
 from contextlib import suppress
@@ -17,6 +18,14 @@ from backend.artifacts.types import (
     ValidatedImage,
 )
 from backend.core.interfaces import ImageEditProvider, ImageProvider
+
+logger = logging.getLogger(__name__)
+
+# The transport failures that mean ComfyUI went away in the middle of a job it
+# had accepted - a dropped connection, a reset, a refusal while it restarts.
+# Distinct from a timeout (the job may still be running) and from a rejected
+# workflow (resubmitting would fail the same way).
+_GONE_MID_JOB = (httpx.RemoteProtocolError, httpx.ReadError, httpx.ConnectError)
 
 _FORMAT_DETAILS = {
     "JPEG": ("image/jpeg", "jpg"),
@@ -142,9 +151,15 @@ class ComfyUIImageProvider(ImageProvider):
         steps: int,
         style_suffix: str = "",
         portrait_suffix: str = "",
+        restart_wait_seconds: float = 90.0,
+        transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.model = model
+        # How long to wait for ComfyUI to come back after it goes away mid-job
+        # before giving the job up; the transport hook exists for tests.
+        self.restart_wait_seconds = restart_wait_seconds
+        self._transport = transport
         self.style_suffix = style_suffix.strip().strip(",").strip()
         self.portrait_suffix = portrait_suffix.strip().strip(",").strip()
         # No negative prompt: FLUX.2 Klein runs distilled at cfg 1.0, where the
@@ -166,33 +181,24 @@ class ComfyUIImageProvider(ImageProvider):
             started_at = time.monotonic()
             prompt_id: str | None = None
             timeout = httpx.Timeout(self.timeout_seconds)
-            async with httpx.AsyncClient(timeout=timeout) as client:
+            inflight: list[str] = []
+            async with httpx.AsyncClient(
+                timeout=timeout, transport=self._transport
+            ) as client:
                 try:
-                    response = await client.post(
-                        f"{self.base_url}/prompt",
-                        json={"prompt": self._workflow(request)},
+                    content, content_type = await self._run_with_one_retry(
+                        client, self._workflow(request), "image", inflight
                     )
-                    response.raise_for_status()
-                    submitted = cast(dict[str, Any], response.json())
-                    prompt_id = str(submitted.get("prompt_id") or "")
-                    if not prompt_id or submitted.get("node_errors"):
-                        raise RuntimeError("ComfyUI rejected the image workflow")
-                    output = await self._wait_for_output(client, prompt_id)
-                    image_response = await client.get(
-                        f"{self.base_url}/view",
-                        params=output,
-                    )
-                    image_response.raise_for_status()
-                    content = image_response.content
+                    prompt_id = inflight[-1] if inflight else None
                     validated = validate_image_bytes(
                         content,
-                        image_response.headers.get("content-type", "").split(";")[0],
+                        content_type,
                         self.max_output_bytes,
                         self.max_pixels,
                     )
                 except asyncio.CancelledError:
-                    if prompt_id:
-                        await self._interrupt(client, prompt_id)
+                    if inflight:
+                        await self._interrupt(client, inflight[-1])
                     raise
             return GeneratedImage(
                 content=content,
@@ -206,6 +212,73 @@ class ComfyUIImageProvider(ImageProvider):
                     "elapsed_seconds": round(time.monotonic() - started_at, 3),
                 },
             )
+
+    # Submit one workflow, wait for it, and fetch its image. The prompt id is
+    # appended to `inflight` the moment ComfyUI accepts the job, so a
+    # cancellation can interrupt the right one even across a resubmission.
+    async def _run_workflow(
+        self,
+        client: httpx.AsyncClient,
+        workflow: dict[str, Any],
+        label: str,
+        inflight: list[str],
+    ) -> tuple[bytes, str]:
+        response = await client.post(f"{self.base_url}/prompt", json={"prompt": workflow})
+        response.raise_for_status()
+        submitted = cast(dict[str, Any], response.json())
+        prompt_id = str(submitted.get("prompt_id") or "")
+        if not prompt_id or submitted.get("node_errors"):
+            raise RuntimeError(f"ComfyUI rejected the {label} workflow")
+        inflight.append(prompt_id)
+        output = await self._wait_for_output(client, prompt_id)
+        image_response = await client.get(f"{self.base_url}/view", params=output)
+        image_response.raise_for_status()
+        content_type = image_response.headers.get("content-type", "").split(";")[0]
+        return image_response.content, content_type
+
+    # Run a workflow, and if ComfyUI goes away in the middle of it, wait for it
+    # to come back and resubmit exactly once.
+    #
+    # On the desktop, ComfyUI runs at the WSL2 VM's memory ceiling: the encoder
+    # and the model together sit within a few hundred MB of it, and a run of
+    # back-to-back generations makes the process exit cleanly mid-job. Docker
+    # restarts it within seconds and the next job succeeds - measured on
+    # 2026-08-25, when six generations in six minutes ended with the sixth
+    # reaching the operator as "the backend stopped partway". A single
+    # resubmission after the restart turns that into a slower success. Anything
+    # that fails twice is reported as before; nothing here retries a job
+    # ComfyUI rejected or timed out, only one it dropped.
+    async def _run_with_one_retry(
+        self,
+        client: httpx.AsyncClient,
+        workflow: dict[str, Any],
+        label: str,
+        inflight: list[str],
+    ) -> tuple[bytes, str]:
+        try:
+            return await self._run_workflow(client, workflow, label, inflight)
+        except _GONE_MID_JOB:
+            if not await self._wait_until_back(client):
+                raise
+            logger.warning(
+                "ComfyUI went away during a %s job and is back; resubmitting once",
+                label,
+            )
+            return await self._run_workflow(client, workflow, label, inflight)
+
+    # Whether ComfyUI answers again within the restart budget.
+    async def _wait_until_back(self, client: httpx.AsyncClient) -> bool:
+        deadline = time.monotonic() + self.restart_wait_seconds
+        pause = min(3.0, max(0.05, self.restart_wait_seconds / 30))
+        while time.monotonic() < deadline:
+            try:
+                probe = await client.get(f"{self.base_url}/system_stats", timeout=5.0)
+                if probe.status_code == 200:
+                    return True
+            except httpx.HTTPError:
+                pass
+            await asyncio.sleep(pause)
+        return False
 
     # Poll one ComfyUI job until it exposes a successful output or terminal error.
     async def _wait_for_output(
@@ -390,6 +463,8 @@ class ComfyUIImageEditProvider(ComfyUIImageProvider, ImageEditProvider):
         steps: int,
         megapixels: float = 1.0,
         scale_method: str = "lanczos",
+        restart_wait_seconds: float = 90.0,
+        transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
         super().__init__(
             base_url=base_url,
@@ -402,6 +477,8 @@ class ComfyUIImageEditProvider(ComfyUIImageProvider, ImageEditProvider):
             text_encoder=text_encoder,
             vae=vae,
             steps=steps,
+            restart_wait_seconds=restart_wait_seconds,
+            transport=transport,
         )
         self.text_encoder = text_encoder
         self.vae = vae
@@ -415,35 +492,31 @@ class ComfyUIImageEditProvider(ComfyUIImageProvider, ImageEditProvider):
             started_at = time.monotonic()
             prompt_id: str | None = None
             timeout = httpx.Timeout(self.timeout_seconds)
-            async with httpx.AsyncClient(timeout=timeout) as client:
+            inflight: list[str] = []
+            async with httpx.AsyncClient(
+                timeout=timeout, transport=self._transport
+            ) as client:
                 try:
+                    # The upload lands on ComfyUI's disk, so it survives a
+                    # restart and a resubmission can name the same source.
                     source_name = await self._upload_source(client, request)
-                    response = await client.post(
-                        f"{self.base_url}/prompt",
-                        json={"prompt": self._edit_workflow(request, source_name)},
+                    content, content_type = await self._run_with_one_retry(
+                        client,
+                        self._edit_workflow(request, source_name),
+                        "image-edit",
+                        inflight,
                     )
-                    response.raise_for_status()
-                    submitted = cast(dict[str, Any], response.json())
-                    prompt_id = str(submitted.get("prompt_id") or "")
-                    if not prompt_id or submitted.get("node_errors"):
-                        raise RuntimeError("ComfyUI rejected the image-edit workflow")
-                    output = await self._wait_for_output(client, prompt_id)
-                    image_response = await client.get(
-                        f"{self.base_url}/view",
-                        params=output,
-                    )
-                    image_response.raise_for_status()
-                    content = image_response.content
+                    prompt_id = inflight[-1] if inflight else None
                     content = _match_source_size(content, request.source_content)
                     validated = validate_image_bytes(
                         content,
-                        image_response.headers.get("content-type", "").split(";")[0],
+                        content_type,
                         self.max_output_bytes,
                         self.max_pixels,
                     )
                 except asyncio.CancelledError:
-                    if prompt_id:
-                        await self._interrupt(client, prompt_id)
+                    if inflight:
+                        await self._interrupt(client, inflight[-1])
                     raise
             return GeneratedImage(
                 content=content,
@@ -680,6 +753,8 @@ class FluxKontextImageEditProvider(ComfyUIImageEditProvider):
         guidance: float = 2.5,
         megapixels: float = 1.0,
         scale_method: str = "lanczos",
+        restart_wait_seconds: float = 90.0,
+        transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
         super().__init__(
             base_url=base_url,
@@ -694,6 +769,8 @@ class FluxKontextImageEditProvider(ComfyUIImageEditProvider):
             steps=steps,
             megapixels=megapixels,
             scale_method=scale_method,
+            restart_wait_seconds=restart_wait_seconds,
+            transport=transport,
         )
         self.clip_name = clip_name
         self.t5_name = t5_name

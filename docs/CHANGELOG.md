@@ -139,6 +139,15 @@ This file is append-only history for meaningful, verified changes. It must not c
   picture has is not a distinguishing detail, gated at 11/11 with a
   separating-detail control. The sixth pass through the real chat API then
   passed all seven scenarios, every edit on the picture it was meant for.
+- **A job ComfyUI drops mid-run is resubmitted once when it comes back.**
+  A plain generation reached the operator as "the backend stopped partway":
+  on the desktop, encoder + Klein alone sit at 15.40 GB against the WSL2
+  VM's 15.57 GB, so a run of back-to-back generations makes ComfyUI exit
+  cleanly and Docker restarts it within seconds. The provider now waits for
+  it to answer again (up to 90 s) and resubmits exactly once; rejected and
+  timed-out jobs are never retried, and a second failure reports honestly.
+  The structural fix - `.wslconfig memory=24GB swap=8GB` - is written on the
+  desktop and waits for the operator's restart.
 - **The Klein 9B now edits as well as generates.** Measured with the vision
   model judging the pixels: asked to add a yellow umbrella it did, asked to
   make the wall white it did, in 20.0 s and 18.3 s with the model resident

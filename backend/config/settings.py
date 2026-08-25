@@ -529,6 +529,12 @@ class Settings(BaseSettings):
     GPU_HANDOFF_SLEEP_LEVEL: int = Field(default=1, ge=1, le=2)
     GPU_HANDOFF_TIMEOUT_SECONDS: float = Field(default=120.0, gt=0, le=600)
     IMAGE_PROVIDER_TIMEOUT_SECONDS: float = Field(default=600.0, gt=0, le=3600)
+    # How long a job waits for ComfyUI to come back after it went away mid-run
+    # before the job is given up - then it is resubmitted exactly once. On the
+    # desktop the process exits cleanly at the VM's memory ceiling and Docker
+    # restarts it within seconds; a cold model load after that is ~2 minutes,
+    # so the budget covers the restart, not the reload.
+    IMAGE_PROVIDER_RESTART_WAIT_SECONDS: float = Field(default=90.0, ge=0.0, le=600.0)
     IMAGE_PROVIDER_POLL_SECONDS: float = Field(default=0.5, ge=0.1, le=10)
     IMAGE_MAX_CONCURRENCY: int = Field(default=1, ge=1, le=4)
     ARTIFACT_STORAGE_ROOT: str = "data/artifacts"

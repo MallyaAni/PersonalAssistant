@@ -350,7 +350,13 @@ with a Kontext edit at 2 MP made ComfyUI exit cleanly mid-job (`ExitCode 0`,
 spark1 saw both jobs disconnect. `IMAGE_EDIT_MEGAPIXELS` is now 1.0 (a 1 MP
 edit of a 1024x1024 source is not a visible downgrade), and the structural
 fix is a `.wslconfig` with `memory=24GB` on the desktop - a host change,
-recorded for its next boot.
+recorded for its next boot. Measured again the same day with no Kontext in
+play: six back-to-back generations, the sixth exiting the same way - the
+encoder evicted to RAM while Klein loads is the moment a generation alone
+crosses the line, so the megapixel knob cannot fix it and only the VM's
+memory can. Until that restart, the provider waits for ComfyUI to answer
+again and resubmits a dropped job once (never a rejected or timed-out one),
+turning the common case into a slower success.
 
 **Editing choices, measured.** Klein 4B as an editor left a picture
 unchanged when asked to *add* anything, at 4 and 20 steps, at CFG 3.0, and

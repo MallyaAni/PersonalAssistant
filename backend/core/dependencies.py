@@ -650,6 +650,7 @@ def get_image_provider() -> ImageProvider:
 def _build_comfyui_image_provider() -> ComfyUIImageProvider:
     return ComfyUIImageProvider(
         base_url=settings.IMAGE_PROVIDER_BASE_URL,
+        restart_wait_seconds=settings.IMAGE_PROVIDER_RESTART_WAIT_SECONDS,
         model=settings.IMAGE_MODEL,
         timeout_seconds=settings.IMAGE_PROVIDER_TIMEOUT_SECONDS,
         poll_seconds=settings.IMAGE_PROVIDER_POLL_SECONDS,
@@ -685,6 +686,7 @@ def _build_comfyui_image_edit_provider() -> ComfyUIImageEditProvider:
     if settings.IMAGE_EDIT_MODEL:
         return FluxKontextImageEditProvider(
             base_url=settings.IMAGE_PROVIDER_BASE_URL,
+        restart_wait_seconds=settings.IMAGE_PROVIDER_RESTART_WAIT_SECONDS,
             model=settings.IMAGE_EDIT_MODEL,
             clip_name=settings.IMAGE_EDIT_CLIP,
             t5_name=settings.IMAGE_EDIT_T5,
@@ -701,6 +703,7 @@ def _build_comfyui_image_edit_provider() -> ComfyUIImageEditProvider:
         )
     return ComfyUIImageEditProvider(
         base_url=settings.IMAGE_PROVIDER_BASE_URL,
+        restart_wait_seconds=settings.IMAGE_PROVIDER_RESTART_WAIT_SECONDS,
         model=settings.IMAGE_MODEL,
         text_encoder=settings.IMAGE_TEXT_ENCODER,
         vae=settings.IMAGE_VAE,

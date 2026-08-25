@@ -982,3 +982,76 @@ async def test_a_failing_description_index_never_fails_the_picture(tmp_path: Pat
         ImageGenerationRequest("blue square", 512, 512, 1),
     )
     assert ready["status"] == "ready"
+
+
+# ComfyUI on the desktop exits cleanly at the VM's memory ceiling and Docker
+# brings it back within seconds. A job it dropped is resubmitted exactly once
+# after it answers again; a job it rejected or one that times out is not.
+def _comfy_handler(posts: list[int], comes_back: bool):
+    def handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        if path == "/prompt":
+            posts.append(1)
+            if len(posts) == 1:
+                raise httpx.RemoteProtocolError("Server disconnected", request=request)
+            return httpx.Response(200, json={"prompt_id": "second"})
+        if path == "/system_stats":
+            if not comes_back:
+                raise httpx.ConnectError("refused", request=request)
+            return httpx.Response(200, json={"system": {}})
+        if path.startswith("/history/"):
+            return httpx.Response(
+                200,
+                json={
+                    "second": {
+                        "status": {"completed": True, "status_str": "success"},
+                        "outputs": {"13": {"images": [{"filename": "a.png", "subfolder": "", "type": "output"}]}},
+                    }
+                },
+            )
+        if path == "/view":
+            return httpx.Response(200, content=_png_bytes(), headers={"content-type": "image/png"})
+        return httpx.Response(404)
+
+    return handler
+
+
+def _comfy_provider(handler, restart_wait_seconds: float):
+    from backend.artifacts.image import ComfyUIImageProvider
+
+    return ComfyUIImageProvider(
+        base_url="http://comfy",
+        model="m.safetensors",
+        timeout_seconds=5,
+        poll_seconds=0.01,
+        max_concurrency=1,
+        max_output_bytes=10_000_000,
+        max_pixels=20_000_000,
+        text_encoder="t.safetensors",
+        vae="v.safetensors",
+        steps=4,
+        restart_wait_seconds=restart_wait_seconds,
+        transport=httpx.MockTransport(handler),
+    )
+
+
+@pytest.mark.asyncio
+async def test_a_job_comfyui_dropped_is_resubmitted_once_when_it_returns():
+    posts: list[int] = []
+    provider = _comfy_provider(_comfy_handler(posts, comes_back=True), restart_wait_seconds=1.0)
+
+    image = await provider.generate(ImageGenerationRequest("a lamp", 1024, 1024, 1))
+
+    assert image.content == _png_bytes()
+    assert image.provider_job_id == "second"
+    assert len(posts) == 2, "exactly one resubmission"
+
+
+@pytest.mark.asyncio
+async def test_a_job_comfyui_dropped_still_fails_when_it_stays_away():
+    posts: list[int] = []
+    provider = _comfy_provider(_comfy_handler(posts, comes_back=False), restart_wait_seconds=0.2)
+
+    with pytest.raises(httpx.RemoteProtocolError):
+        await provider.generate(ImageGenerationRequest("a lamp", 1024, 1024, 1))
+    assert len(posts) == 1, "no blind resubmission"

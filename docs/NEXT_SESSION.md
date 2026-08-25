@@ -592,6 +592,29 @@ clean. That is the image subsystem verified end to end through the chat
 API. Still not driven by me: the browser's own clicks and an inbound
 iMessage text-then-edit (the send half is proven), both recorded above.
 
+## The desktop's memory ceiling, measured for the second time — 14:02 UTC
+
+The operator received "the image generation backend stopped partway through
+this request" over iMessage for a plain *generation*. spark1's log: six
+generations submitted between 13:56 and 14:02 (the operator testing after
+the seventh scenario pass), the sixth failing at 14:02:38 with "Server
+disconnected"; the desktop: `RestartCount 1` at 14:02:39, `ExitCode 0`,
+`OOMKilled false`, no error in the log, and a fresh process with nothing
+resident afterwards. Encoder 8.07 GB + Klein 7.33 GB = 15.40 GB against the
+WSL2 VM's 15.57 GB, with 14.35 GB already pinned - **a generation alone
+crosses the line** when the encoder is evicted while Klein loads. Moving
+edits to Klein removed the second model but not the pair already at the
+limit, and `IMAGE_EDIT_MEGAPIXELS=1.0` was the right answer to the wrong
+question. **The fix is on the desktop and is written but not yet in
+effect:** `C:\Users\Ani Mallya\.wslconfig` with `memory=24GB` and
+`swap=8GB` needs `wsl --shutdown` and a Docker Desktop restart - the
+operator's call. **Until then generations die intermittently**, and the
+provider now covers the common case: when ComfyUI drops a job it had
+accepted, the provider waits for `/system_stats` to answer again (up to
+`IMAGE_PROVIDER_RESTART_WAIT_SECONDS`, 90) and resubmits exactly once - a
+job it rejected or one that timed out is never retried, and a second
+failure reports as before. Structural tests pin both directions.
+
 ## iMessage pictures — defect found and fixed, 2026-08-25
 
 The operator asked for a picture over iMessage and received "here's the
