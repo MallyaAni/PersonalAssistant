@@ -122,7 +122,10 @@ empty on spark1: one resident model, no Klein-Kontext swap, no swap-induced
 VM-memory crash, and an edit after a generation in seconds. Kontext stays
 one env var away (`IMAGE_EDIT_MODEL=flux1-kontext-dev-Q4_K_M.gguf`) if a
 class of edit needs it; the judgement was two instructions on one picture,
-not a fidelity benchmark. **Correction, measured on the desktop itself 2026-08-24 22:50:** the
+not a fidelity benchmark. **Seventh scenario pass with edits on Klein: 7 of
+7** (`python -m backend.cli.exercise_image_scenarios` inside the backend
+container) - every edit on the picture it was meant for, lineage intact,
+no ComfyUI restart, delete-all clean. **Correction, measured on the desktop itself 2026-08-24 22:50:** the
 desktop *is* on the LAN, at `172.16.8.6` on its Wi-Fi adapter, same /24 as
 the Sparks and the Mac. The earlier scan missed it. Its wired `Ethernet`
 adapter is on a 169.254 link-local address, which is probably what the scan

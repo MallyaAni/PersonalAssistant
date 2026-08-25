@@ -146,7 +146,8 @@ This file is append-only history for meaningful, verified changes. It must not c
   4B's "preserves its reference, adds nothing" failure does not hold for the
   9B, so `IMAGE_EDIT_MODEL` is empty on spark1: one resident model, no swap,
   no swap-induced VM memory crash, edits after a generation in seconds.
-  Kontext is one env var away.
+  Kontext is one env var away. The seven scenarios then passed 7 of 7 on
+  that configuration through the real chat API.
 - **Image edits run at 1 MP, because the desktop's ceiling is VM RAM, not
   VRAM.** ComfyUI exited cleanly mid-job with a Klein generation and a
   Kontext edit queued together: the WSL2 VM sees 15.6 GB of RAM, and encoder
