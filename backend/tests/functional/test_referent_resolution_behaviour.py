@@ -137,3 +137,42 @@ async def test_a_document_reference_resolves_past_the_pictures():
     assert resolution.only is not None
     assert resolution.only.handle == "contract"
     assert resolution.only.kind == "document"
+
+
+FLAG = Referent(
+    handle="flag",
+    kind="image",
+    description="A flag: a blue field, a green band along the bottom, a yellow circle.",
+    when="2026-08-15T09:00:00+00:00",
+    title="Uploaded image",
+)
+
+
+# "This picture" plus a part every picture has - its background, its sky, a
+# colour - is still a pointer at the most recent candidate. Measured on the
+# real path 2026-08-25: with the bicycle older and a flag just uploaded,
+# "make the background of this picture purple" edited the bicycle because
+# "background" was read as a detail matching its brick wall.
+@pytest.mark.parametrize(
+    "reference",
+    [
+        "make the background of this picture purple",
+        "change the sky in this one to orange",
+        "add a small bird to it",
+    ],
+)
+async def test_a_generic_part_does_not_override_this(reference):
+    resolution = await _resolve(reference, [FLAG, PORTRAIT, BICYCLE, KITCHEN])
+    assert resolution.is_confident, resolution.matched
+    assert resolution.only is not None
+    assert resolution.only.handle == "flag", resolution.matched
+
+
+# The control: a detail that separates candidates still wins over recency.
+async def test_a_separating_detail_still_beats_recency():
+    resolution = await _resolve(
+        "make the wall behind the bicycle white", [FLAG, PORTRAIT, BICYCLE, KITCHEN]
+    )
+    assert resolution.is_confident, resolution.matched
+    assert resolution.only is not None
+    assert resolution.only.handle == "bicycle", resolution.matched
