@@ -889,7 +889,11 @@ MCP servers are configured as a JSON array in `MCP_SERVERS_JSON`. Each entry
 gives a `server_id`, an operator-assigned `risk_classification`, and a
 transport. A `stdio` server gives `command` and `args` and is launched as a
 subprocess, so its runtime (for example Node, for `npx` servers) must be
-available wherever the backend runs. `inherit_env` may name only the process
+available wherever the backend runs. Every variable the internet server reads
+must be named there: Brave's four settings reached the backend container on
+2026-08-25 and not the subprocess, so the new rung silently did not exist until
+they were added to `inherit_env` (`test_internet_env_reaches_the_subprocess.py`
+now fails on the next such miss). `inherit_env` may name only the process
 variables that child needs; values stay outside JSON and are not indexed or
 shown to the main model. An `http` server gives a `url` and optional
 `headers` and connects to an already-running service, which is the transport to
@@ -919,7 +923,7 @@ GOOGLE_API_KEY=
 GEMINI_API_KEY=
 GOOGLE_SEARCH_MODEL=gemini-3.6-flash
 GOOGLE_SEARCH_DAILY_LIMIT=450
-MCP_SERVERS_JSON=[{"server_id":"local_utility","command":"python","args":["-m","backend.mcp.servers.local_utility"],"risk_classification":"read_only"},{"server_id":"internet","command":"python","args":["-m","backend.mcp.servers.internet"],"inherit_env":["SEARCH_API_KEY","SEARCH_BASE_URL","SEARCH_MAX_RESULTS","SEARCH_TIMEOUT_SECONDS","SEARCH_MAX_CONTENT_CHARS","SEARCH_MIN_SCORE","SEARCH_DEPTH","GOOGLE_API_KEY","GEMINI_API_KEY","GOOGLE_SEARCH_MODEL","GOOGLE_SEARCH_TIMEOUT_SECONDS","GOOGLE_SEARCH_MAX_OUTPUT_TOKENS","GOOGLE_SEARCH_DAILY_LIMIT","GOOGLE_SEARCH_QUOTA_DB_PATH"],"risk_classification":"read_only"}]
+MCP_SERVERS_JSON=[{"server_id":"local_utility","command":"python","args":["-m","backend.mcp.servers.local_utility"],"risk_classification":"read_only"},{"server_id":"internet","command":"python","args":["-m","backend.mcp.servers.internet"],"inherit_env":["SEARCH_API_KEY","SEARCH_BASE_URL","SEARCH_MAX_RESULTS","SEARCH_TIMEOUT_SECONDS","SEARCH_MAX_CONTENT_CHARS","SEARCH_MIN_SCORE","SEARCH_DEPTH","SEARCH_RESULT_CHARS","SEARCH_PAYLOAD_CHARS","GOOGLE_API_KEY","GEMINI_API_KEY","GOOGLE_SEARCH_MODEL","GOOGLE_SEARCH_TIMEOUT_SECONDS","GOOGLE_SEARCH_MAX_OUTPUT_TOKENS","GOOGLE_SEARCH_DAILY_LIMIT","GOOGLE_SEARCH_QUOTA_DB_PATH","BRAVE_SEARCH_API_KEY","BRAVE_SEARCH_MONTHLY_LIMIT","BRAVE_SEARCH_QUOTA_DB_PATH","SEARCH_PROVIDER_ORDER"],"risk_classification":"read_only"}]
 ```
 
 The default example also registers the Compose `local-capabilities` sidecar:

@@ -776,9 +776,15 @@ class ConversationService:
         if self.discovery_profile is None:
             return None
         zone = await self._primary_timezone(user_id)
-        if not zone:
-            return None
         from zoneinfo import ZoneInfo
+
+        if not zone:
+            # No zone known: a UTC clock marked as such beats no clock. Told
+            # nothing, the router dated "this weekend" a week late (2026-08-25)
+            # and a task "today" two years back; told UTC and that the zone is
+            # unknown, it can do date arithmetic and still not guess an hour.
+            now = datetime.now(UTC)
+            return f"{now:%A %Y-%m-%d %H:%M} UTC (their time zone is not known)"
 
         try:
             now = datetime.now(ZoneInfo(zone))
@@ -2022,6 +2028,12 @@ class ConversationService:
                     context["search_state"] = (
                         _search_state_for(limit) if limit is not None else {"failed": True}
                     )
+                elif search_results:
+                    # The mirror image: results that arrived this turn are
+                    # live, and the reply must not call them memory or say it
+                    # has not checked (it did, on 2026-08-25, with fresh
+                    # Brave results in hand).
+                    context["search_state"] = {"ran": True}
                 if tool_identity:
                     yield {
                         "event": "tool_finished",

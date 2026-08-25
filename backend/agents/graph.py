@@ -191,7 +191,17 @@ def _render_edit_state(edit: dict[str, Any]) -> str:
 # The save and edit states above are followed reliably in this position;
 # this one is worded the same way.
 def _render_search_state(search: dict[str, Any]) -> str:
-    if not search or not search.get("failed"):
+    if not search:
+        return ""
+    if search.get("ran") and not search.get("failed"):
+        return (
+            "\nThis turn: a live web search ran just now, and the search results "
+            "above came from it. Treat them as current information you have "
+            "checked: do not call them memory, do not say you have not checked "
+            "live, and do not add a caveat that they may be out of date beyond "
+            "what the results themselves say."
+        )
+    if not search.get("failed"):
         return ""
     if search.get("quota"):
         whose = (

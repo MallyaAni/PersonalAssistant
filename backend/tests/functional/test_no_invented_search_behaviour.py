@@ -153,3 +153,39 @@ async def test_a_used_up_allowance_is_said_kindly_and_nothing_past_is_recommende
         "The reply still offers some useful help, such as places, venues, or "
         "sources to check.",
     ), text
+
+
+# The mirror image: with fresh results in hand, the reply must not call them
+# memory. Seen live on 2026-08-25 with two Brave results in the prompt: "I'm
+# working from the search results I already have, and I haven't checked live
+# just now."
+_RAN = {
+    "capabilities": [{"label": "Web search", "description": "Look things up."}],
+    "search": [
+        {
+            "title": "Things to Do in Arlington, VA This Weekend | Eventbrite",
+            "url": "https://www.eventbrite.com/d/va--arlington/events--this-weekend/",
+            "content": "Sat Aug 29, 2026: Arlington Farmers Market, Courthouse Plaza, 8 AM. "
+            "Sun Aug 30, 2026: Jazz on the lawn at Lubber Run Amphitheater, 7 PM.",
+            "provider": "brave",
+        }
+    ],
+    "search_state": {"ran": True},
+}
+_DENIED = re.compile(
+    r"haven'?t checked live|have not checked live|not checked live|from memory|"
+    r"can'?t check live|cannot check live|without a live check",
+    re.IGNORECASE,
+)
+
+
+async def test_fresh_results_are_not_called_memory(llm):
+    from backend.agents.graph import turn_context_messages
+
+    messages = [{"role": "system", "content": _build_system_prompt(_RAN)}]
+    messages.extend(turn_context_messages(_RAN))
+    messages.append({"role": "user", "content": "what events are happening in Arlington Virginia this weekend?"})
+    text = str(llm.chat(messages, 400, None, 0.0)["content"])
+    assert text.strip()
+    assert not _DENIED.search(text), text
+    assert "farmers market" in text.lower() or "jazz" in text.lower(), text
