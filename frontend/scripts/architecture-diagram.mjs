@@ -92,12 +92,18 @@ function calculateRenderInputsHash(sourcePath) {
     .digest("hex");
 }
 
-// Render one canonical Mermaid source with the installed browser.
+// Render one canonical Mermaid source with the installed browser. The browser
+// is deliberately not part of the render fingerprint (source, config, and CLI
+// version are), so a host Playwright refuses to provision - it dropped macOS
+// 13 - can point ARCHITECTURE_DIAGRAM_BROWSER at an installed Chrome and
+// produce the same checked suite.
 function renderDiagram(sourcePath, destinationPath) {
-  const browserPath = chromium.executablePath();
+  const browserPath =
+    process.env.ARCHITECTURE_DIAGRAM_BROWSER || chromium.executablePath();
   if (!existsSync(browserPath)) {
     throw new Error(
-      `Playwright Chromium is required to render diagrams: ${browserPath}`,
+      "Playwright Chromium is required to render diagrams (or set " +
+        `ARCHITECTURE_DIAGRAM_BROWSER to an installed Chrome): ${browserPath}`,
     );
   }
 

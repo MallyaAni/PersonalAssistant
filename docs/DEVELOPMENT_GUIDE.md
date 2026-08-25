@@ -34,6 +34,14 @@ The commands use the pinned Mermaid CLI and the Chromium installed for Playwrigh
 npx.cmd playwright install chromium
 ```
 
+Where Playwright refuses to provision a browser (it dropped macOS 13 in
+1.6x), point the renderer at an installed Chrome instead; the browser is not
+part of the freshness fingerprint, so the checked suite is identical:
+
+```bash
+ARCHITECTURE_DIAGRAM_BROWSER="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" npm run docs:diagram
+```
+
 The renderer maintains the full-system, runtime/deployment, chat, search, memory, tool-memory, current visual-artifact, planned visual-memory/editing target, presentation, architecture-maintenance, and frontend diagrams in one pass. The check compares a cross-platform fingerprint of each normalized source, the shared render configuration, and pinned Mermaid CLI version stored in its SVG, then performs a fresh syntax render for every source. It intentionally does not compare generated SVG bytes because renderer-generated identifiers and metadata may vary without changing the diagram.
 
 Treat diagrams as orientation maps, not exhaustive dependency graphs. Each view should answer one engineering question, use one main reading direction, and normally stay within 15 conceptual nodes and 18 primary edges. Prefer a named shared boundary over repeated component-to-provider or component-to-store lines. Move endpoint inventories, schemas, configuration, retries, and uncommon failure branches to prose; show model names only at actual model-call points. Split a view when it needs two independent stories.
