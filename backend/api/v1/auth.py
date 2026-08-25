@@ -11,7 +11,7 @@ from backend.core.auth import IdentityDependency, validate_browser_origin
 from backend.core.auth_dependencies import LoginRateLimiterDependency
 from backend.core.dependencies import DbDependency
 from backend.core.phone import matching_key
-from backend.discovery.types import label_digest
+from backend.discovery.addressing import address_digest
 from backend.models.auth import AccessRequest, UserAccount
 from backend.models.discovery_subscriber import DiscoverySubscriber
 from backend.services.auth_service import (
@@ -385,7 +385,7 @@ async def request_access(
     # its owner's inbound texts routed into the claimant's account. Refuse a
     # number already spoken for by a pending/approved request or an existing
     # subscriber. Re-checked at approval, where the race between the two lands.
-    phone_key = label_digest(matching_key(body.phone))
+    phone_key = address_digest(matching_key(body.phone))
     phone_claimed = await db.scalar(
         select(AccessRequest.id).where(
             AccessRequest.phone_digest == phone_key,
@@ -411,7 +411,7 @@ async def request_access(
             display_name=body.display_name.strip(),
             contact=(body.contact or "").strip() or None,
             phone=body.phone,
-            phone_digest=label_digest(matching_key(body.phone)),
+            phone_digest=address_digest(matching_key(body.phone)),
             reason=(body.reason or "").strip() or None,
             desired_username=desired,
             # Hashed on arrival; the plaintext is never stored and never needed

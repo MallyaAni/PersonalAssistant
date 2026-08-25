@@ -508,10 +508,10 @@ async def approve_access_request(
         if phone:
             from backend.core.phone import matching_key
             from backend.discovery.subscribers import SubscriberRepository
-            from backend.discovery.types import label_digest
+            from backend.discovery.addressing import address_digest
             from backend.models.discovery_subscriber import DiscoverySubscriber
 
-            phone_key = label_digest(matching_key(phone))
+            phone_key = address_digest(matching_key(phone))
             conflict = await db.scalar(
                 select(DiscoverySubscriber.id).where(
                     DiscoverySubscriber.channel == "imessage",

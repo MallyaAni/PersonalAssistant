@@ -86,17 +86,18 @@ This document separates current security facts from future requirements. A contr
   deletes the access request that created it (which the schema-driven purge
   cannot reach, as it has no `user_id` column), so a number does not outlive
   the person.
-- **Known gap — the phone/address digest is unkeyed.** The lookup digest on
-  both the access request and the subscriber row is a plain SHA-256 of the
-  normalized number (`discovery.types.label_digest`). The phone-number
-  keyspace is small enough (~10^10 for NANP) that an unsalted hash over it is
-  exhaustible offline, so anyone who obtains a database dump recovers every
-  number regardless of the sealed column beside it. The two digests must
-  match for the allowlist to work, so closing this means moving both to a
-  keyed HMAC (from `SECRET_KEY`/`ENCRYPTION_KEY`) in one coordinated
-  migration that re-digests existing subscriber rows — deferred, and recorded
-  here rather than half-done, because a mismatched digest silently stops an
-  approved person from being recognised.
+- **The phone/address lookup digest is a keyed HMAC** (closed 2026-08-25;
+  was the recorded unkeyed-digest gap). `discovery.addressing.address_digest`
+  is HMAC-SHA256 keyed from `ENCRYPTION_KEY` (falling back to `SECRET_KEY`
+  where no sealing key is configured), used by sign-up, approval, subscriber
+  enrolment, and iMessage sender matching alike, so a database dump alone no
+  longer lets the ~10^10 phone keyspace be enumerated offline. Existing rows
+  were re-digested with `backend/cli/rekey_address_digests.py` — idempotent,
+  and the digest dies with its key: rotating `ENCRYPTION_KEY`, or restoring
+  a dump from before the rekey, requires running it again or approved people
+  silently stop being recognised. The Mac bridge keeps normalized plaintext
+  allowlists and is unaffected. A source-inspection test pins all four call
+  sites to the keyed function.
 - Semantic memory content is sent over the private Compose network to the `vllm-embedding` service. The configured embedding endpoint does not request provider-side storage, but vLLM process logging/configuration must still be reviewed for sensitive use.
 - Knowledge chunks, procedures, entities, summaries, tool descriptors, and semantic-cache queries are also sent to the configured local embedding process. Do not ingest secrets or private documents until vLLM logging, retention, host access, and backup policy are acceptable for that data.
 - Internet research is an explicit outbound boundary: deterministic routing and

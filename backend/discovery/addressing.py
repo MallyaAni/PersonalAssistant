@@ -51,3 +51,25 @@ def normalize_address(value: str) -> str:
 # Whether two addresses are the same destination once written the same way.
 def same_address(left: str, right: str) -> bool:
     return normalize_address(left) == normalize_address(right)
+
+
+# Identify a contact address without storing a searchable copy of it - keyed,
+# unlike `label_digest`, because the phone-number keyspace is small enough
+# (~10^10 for NANP) that an unkeyed hash over it is exhaustible offline from a
+# database dump alone. The key rides the secret that already seals the column
+# beside the digest; environments with no sealing key configured fall back to
+# the session secret, which every deployment requires. Either way the digest
+# dies with its key: rotating it means re-running
+# `backend/cli/rekey_address_digests.py`, or approved people silently stop
+# being recognised.
+def address_digest(value: str) -> str:
+    import hashlib
+    import hmac
+
+    from backend.config.settings import settings
+    from backend.discovery.types import normalize_label
+
+    key = (settings.ENCRYPTION_KEY or settings.SECRET_KEY).encode("utf-8")
+    return hmac.new(
+        key, normalize_label(value).encode("utf-8"), hashlib.sha256
+    ).hexdigest()

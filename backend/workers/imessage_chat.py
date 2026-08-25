@@ -325,7 +325,7 @@ class IMessageChatWorker:
         normalized = normalize_address(sender)
         if not normalized:
             return None
-        from backend.discovery.types import label_digest
+        from backend.discovery.addressing import address_digest
         from backend.models.discovery_subscriber import DiscoverySubscriber
 
         async with AsyncSessionLocal() as db:
@@ -334,7 +334,7 @@ class IMessageChatWorker:
                     await db.execute(
                         select(DiscoverySubscriber).where(
                             DiscoverySubscriber.address_digest
-                            == label_digest(normalized),
+                            == address_digest(normalized),
                             DiscoverySubscriber.active.is_(True),
                             DiscoverySubscriber.approved_at.is_not(None),
                         )

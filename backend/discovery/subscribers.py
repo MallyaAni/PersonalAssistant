@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.discovery.addressing import normalize_address
 from backend.discovery.errors import DiscoveryProfileLimitError
-from backend.discovery.types import label_digest
+from backend.discovery.addressing import address_digest
 from backend.models.discovery_subscriber import DiscoverySubscriber
 
 # "imessage" delivers through an Apple device the operator controls.
@@ -77,7 +77,7 @@ class SubscriberRepository:
         if not cleaned:
             raise ValueError("A subscriber address must not be blank.")
 
-        digest = label_digest(normalize_address(cleaned))
+        digest = address_digest(normalize_address(cleaned))
         row = await self._by_digest(user_id, channel, digest)
         now = datetime.now(UTC)
         if row is None:
@@ -136,12 +136,12 @@ class SubscriberRepository:
             raise ValueError(f"Unsupported subscriber channel: {channel}")
         existing = await self.list_subscribers(user_id)
         cleaned = address.strip()
-        digest = label_digest(normalize_address(cleaned)) if cleaned else ""
+        digest = address_digest(normalize_address(cleaned)) if cleaned else ""
         # Comparison is on the normalized form, so re-subscribing with the same
         # number written differently updates one subscription instead of
         # colliding with the one-per-account rule for no visible reason.
         already = any(
-            label_digest(normalize_address(item.address)) == digest
+            address_digest(normalize_address(item.address)) == digest
             and item.channel == channel
             for item in existing
         )
