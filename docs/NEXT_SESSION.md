@@ -135,11 +135,29 @@ model file name, so a `.gguf` routes to `UnetLoaderGGUF` and anything else to
   ComfyUI loads**: it encodes with the Qwen encoder, then evicts it to system
   RAM to make room for the diffusion model, which is why Comfy's own Klein
   guide lists 16 GB for the 9B fp8 pair. The figure that actually matters is
-  the eviction target — **system RAM: 31.9 GB total, 15.9 GB free**, which is
-  ample for an ~8.5 GB encoder. Caveat worth keeping: that 15.9 GB is measured
-  with the whole anios stack down, and Docker Desktop plus WSL coming back
-  would eat into exactly the space the encoder evicts into. ComfyUI being the
-  only tenant is doing real work here.
+  the eviction target — and **I first reported that wrong.** The host has
+  31.9 GB, but the container does not get it: with no `.wslconfig`, Docker
+  Desktop's WSL2 VM takes the default 50%, so ComfyUI's own boot line reads
+  **`Total VRAM 16303 MB, total RAM 15947 MB`** and `free -m` inside the
+  container agrees. **The eviction ceiling is 15.57 GB, not 31.9 GB**, and
+  14.35 GB of it is reserved as pinned memory.
+
+  That ceiling is the real constraint, because the model pairs sit right
+  against it: encoder 8.07 + Kontext 6.46 = **14.53 GB**; encoder 8.07 +
+  Klein 7.33 = **15.40 GB** — before activations or a 2 MP latent. On
+  2026-08-25 04:30:19 UTC the container exited mid-request during a Kontext
+  edit at `IMAGE_EDIT_MEGAPIXELS=2.0` on a 1024x1024 source, and
+  `restart: unless-stopped` brought it back: `RestartCount 1`,
+  **`OOMKilled: false`, `ExitCode: 0`**, no CUDA error and no OOM anywhere in
+  the log. A clean exit with no torch exception is VM memory pressure, not a
+  GPU OOM.
+
+  **The real fix is `.wslconfig` with `memory=24GB`** (then `wsl --shutdown`
+  and restart Docker Desktop) — on a 32 GB host that gives the eviction target
+  genuine headroom. The interim lever, and what was set when the box had to
+  power down, is **`IMAGE_EDIT_MEGAPIXELS=1.0`**: it shrinks the latent and
+  activations on the heaviest path, and a 1 MP edit of a 1024x1024 source is
+  not a visible downgrade.
 - **Neither 9B file is on the box.** `diffusion_models/` has
   `flux-2-klein-4b-fp8.safetensors` (3.79 GB) and
   `flux1-dev-kontext_fp8_scaled.safetensors` (11.09 GB);
