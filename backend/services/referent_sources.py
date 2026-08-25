@@ -17,6 +17,11 @@ from backend.services.referent_resolution import MAX_CANDIDATES, Referent
 logger = logging.getLogger(__name__)
 
 _IMAGE_KINDS = {"generated_image", "uploaded_image"}
+# How many of the newest owned pictures are always offered as candidates,
+# regardless of what similarity retrieved: enough for "this one", "the
+# previous one", and "the first one" in a short session, few enough that a
+# descriptive reference is not drowned by recency.
+RECENT_CANDIDATES = 3
 
 
 # Best available text for one stored image, preferring what the vision model
@@ -86,6 +91,45 @@ class ImageReferentSource:
                     title=str(artifact.get("title") or ""),
                 )
             )
+
+        # The newest pictures are always offered, whatever similarity found.
+        # A reference with no distinguishing detail - "this picture", "it" -
+        # retrieves nothing by meaning, so the picture the person is looking
+        # at was missing from the list and the resolver's own rule ("no detail
+        # means the most recent") had nothing to apply to: measured 2026-08-25,
+        # "make the background of this picture purple" right after an upload
+        # edited an older picture instead. Recency is a fact the source knows;
+        # the resolver still decides.
+        lister = getattr(self.artifacts, "list_for_user", None)
+        if lister is not None:
+            try:
+                recent = await lister(user_id, limit=RECENT_CANDIDATES * 2)
+            except Exception:
+                logger.warning("Recent image candidates unavailable", exc_info=True)
+                recent = []
+            added = 0
+            for artifact in recent:
+                handle = str(artifact.get("id") or "")
+                if not handle or handle in seen:
+                    continue
+                if artifact.get("status") != "ready":
+                    continue
+                if artifact.get("kind") not in _IMAGE_KINDS:
+                    continue
+                seen.add(handle)
+                found.append(
+                    Referent(
+                        handle=handle,
+                        kind=self.kind,
+                        description=_image_description(artifact),
+                        when=str(artifact.get("created_at") or ""),
+                        title=str(artifact.get("title") or ""),
+                    )
+                )
+                added += 1
+                if added >= RECENT_CANDIDATES:
+                    break
+
         found.sort(key=lambda item: item.when, reverse=True)
         return found[:MAX_CANDIDATES]
 

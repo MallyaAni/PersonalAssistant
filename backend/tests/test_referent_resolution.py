@@ -284,3 +284,55 @@ def test_an_empty_resolution_is_neither_confident_nor_ambiguous():
     assert not empty.is_confident
     assert not empty.is_ambiguous
     assert empty.only is None
+
+
+class StubArtifactsWithListing(StubArtifacts):
+    """Owned rows plus the newest-first listing the repository offers."""
+
+    async def list_for_user(self, user_id, limit=100):
+        rows = sorted(self.rows.values(), key=lambda r: r.get("created_at", ""), reverse=True)
+        return rows[:limit]
+
+
+# "This picture" carries nothing similarity can match, so the newest owned
+# pictures must be offered even when the semantic index returns nothing -
+# otherwise the resolver's "no detail means the most recent" rule has no
+# candidate to apply to. Measured 2026-08-25: an edit right after an upload
+# landed on an older picture because the upload was never offered.
+@pytest.mark.asyncio
+async def test_the_newest_pictures_are_offered_even_when_similarity_finds_nothing():
+    memory = StubMemory([])
+    artifacts = StubArtifactsWithListing(
+        {
+            "older": {
+                "id": "older",
+                "status": "ready",
+                "kind": "generated_image",
+                "title": "New image",
+                "created_at": "2026-08-25T04:20:00+00:00",
+                "metadata": {"generation_prompt": "a red bicycle against a brick wall"},
+            },
+            "newest": {
+                "id": "newest",
+                "status": "ready",
+                "kind": "uploaded_image",
+                "title": "Uploaded image",
+                "created_at": "2026-08-25T04:27:00+00:00",
+                "metadata": {"analysis": "A flag with a yellow circle."},
+            },
+            "pending": {
+                "id": "pending",
+                "status": "generating",
+                "kind": "generated_image",
+                "created_at": "2026-08-25T04:30:00+00:00",
+                "metadata": {},
+            },
+        }
+    )
+
+    found = await ImageReferentSource(memory, artifacts).candidates(
+        "user", "make the background of this picture purple", None
+    )
+
+    assert [item.handle for item in found] == ["newest", "older"], found
+    assert found[0].when > found[1].when
