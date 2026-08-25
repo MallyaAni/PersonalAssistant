@@ -225,6 +225,10 @@ services:
     # forced closed at least every five minutes so the archive lags the live
     # database by no more than that, and backup-db.sh takes a base backup
     # beside it and ships both to the mirrors. Restore procedure: RESTORE.md.
+    # The volume must be owned by postgres: Docker creates a new named volume
+    # root-owned, archive_command runs as postgres, and every segment then
+    # fails to archive while pg_wal quietly grows. backup-db.sh corrects the
+    # ownership before each base backup; do the same by hand on a fresh host.
     command:
       - postgres
       - -c

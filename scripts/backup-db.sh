@@ -56,6 +56,12 @@ echo "Backed up $tables tables to data/backups/$(basename "$target")"
 # backup beside them, keeps a week of both, and copies the volume out to the
 # host so the mirror loop below can ship it. Never fatal: the dump above is
 # still a backup, and a PITR gap is reported, not silently swallowed.
+#
+# A freshly created named volume is root-owned, and archive_command runs as
+# postgres: on the first night that meant 21 archive failures and a
+# pg_basebackup that waited forever for a segment that could never land.
+# Correcting ownership here is idempotent and costs nothing when it is right.
+"${compose[@]}" exec -T -u root db chown -R postgres:postgres /wal-archive 2>/dev/null || true
 if "${compose[@]}" exec -T db sh -c 'd="/wal-archive/base-$(date +%Y%m%d-%H%M%S)" && mkdir -p "$d" && pg_basebackup -U "'"$user"'" -D "$d" -Ft -z -X none -c fast && find /wal-archive -maxdepth 1 -name "base-*" -type d -mtime +7 -exec rm -rf {} + ; find /wal-archive -maxdepth 1 -type f -mtime +7 -delete' \
     && mkdir -p "$root/data/wal-archive" \
     && "${compose[@]}" cp db:/wal-archive/. "$root/data/wal-archive/" >/dev/null; then
