@@ -23,12 +23,13 @@ gets, rather than stored as a fixed paragraph, and that is the whole design.
     survive that on. Everything true is already in the list; anything not in
     the list is not a modest omission, it is an invention.
 
-  Why the ownership sentence is laboured
+  Why nothing about storage, privacy, or hardware (2026-08-25)
     The first real generation told a guest her conversations stay on "your own
-    machines". They do not - they stay on the owner's, and she is a guest on
-    them. The model had been told "the owner's own machines" and collapsed the
-    two, because in almost every other product the reader and the owner are
-    the same person.
+    machines" - false; they stay on the owner's. A corrected sentence ("stays
+    on hardware the owner runs, nice and private") survived one more day, then
+    the operator asked for it to go: a hello is not the place to talk about
+    where data lives. The rule is now that the welcome says nothing about it,
+    which also removes the one sentence the model kept getting wrong.
 
   Why it is short and light (2026-08-25)
     The first version was 120-200 words of careful prose: capabilities, a
@@ -65,7 +66,7 @@ Pick the two or three things from the list above a newcomer would most enjoy and
 
 Give one concrete example of a message they could send, written exactly as they would type it.
 
-If you mention where their conversations live, keep it to one short, cheerful clause: they stay on hardware the owner runs, not with a cloud company. The machines are the owner's, and the person you are writing to is a guest on them - never "your own machines".
+Do not mention where their conversations are stored, or privacy, hardware, servers, machines, or the cloud at all - none of it belongs in a hello.
 
 Close with a cheerful invitation to try something.
 

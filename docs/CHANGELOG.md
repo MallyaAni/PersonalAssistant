@@ -17,9 +17,10 @@ This file is append-only history for meaningful, verified changes. It must not c
   so `IMAGE_EDIT_MEGAPIXELS` is 2.0 again. The welcome a newly approved
   person receives is now 60-110 words, warm and light, with no caveats -
   the operator's verdict on the first version was "so wordy... cautionary";
-  the honesty rules (nothing invented, the owner's machines not "yours")
-  stay, and a new functional case fails on cautionary wording or a
-  humourless tone.
+  nothing is invented, and the welcome no longer talks about where
+  conversations are stored at all (the operator asked for that sentence to
+  go). Functional cases fail on cautionary wording, a humourless tone, or
+  any mention of storage, hardware, or the cloud.
 - **A used-up search allowance is known before a search is chosen, named,
   and said kindly.** The budgeted provider answers "which allowance would
   refuse the next search" - this account's day, its month, or the shared

@@ -169,26 +169,22 @@ async def test_the_welcome_is_addressed_to_the_person_not_about_them(llm) -> Non
     )
 
 
-async def test_the_welcome_does_not_tell_a_guest_the_machines_are_hers(llm) -> None:
-    """Whose hardware it is, which the first real generation got wrong.
+async def test_the_welcome_says_nothing_about_where_conversations_live(llm) -> None:
+    """A hello is not the place to talk about data.
 
-    It told a new guest her conversations stay on "your own machines". They
-    stay on the owner's, and she is a guest on them - a false statement about
-    where someone's data lives, made in the first sentence they ever read.
-    The model collapsed "the owner's machines" into "yours" because in almost
-    every other product the reader and the owner are the same person.
+    The first real generation told a guest her conversations stay on "your
+    own machines" (false - the owner's). A corrected sentence lasted a day;
+    then the operator asked for the subject to go entirely. So: no storage,
+    privacy, hardware, servers, or cloud in the welcome at all.
     """
     text = _welcome(llm, "Saps", REAL_AGENTS, REAL_CAPABILITIES)
     lowered = text.lower()
-
-    for wrong in ("your own machine", "your own hardware", "your machine", "your device"):
-        assert wrong not in lowered, f"told a guest the hardware is hers: {text}"
-
-    # It should still make the privacy point - the fix is accuracy, not silence.
-    assert any(
-        word in lowered
-        for word in ("cloud", "owner", "his ", "locally", "local", "here on")
-    ), "dropped the privacy point entirely: " + text
+    mentioned = [
+        word
+        for word in ("machine", "hardware", "server", "cloud", "privacy", "private", "stored", "stays on", "stay on")
+        if word in lowered
+    ]
+    assert not mentioned, f"talked about where data lives {mentioned}: {text}"
 
 
 # The operator's verdict on the first version, 2026-08-25: "so wordy... it
