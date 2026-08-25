@@ -68,14 +68,18 @@ unique embedded SVGs, source links, and zoom controls were checked locally.
 
 ## What is still open
 
-**A third backup copy on the Mac.** Both current copies are in one room on one
-power feed, so this survives a disk and not a fire. `backup-db.sh` now takes a
-whitespace-separated `BACKUP_MIRROR_HOST` list, so the Mac joins spark2 rather
-than replacing it — set both mirror keys in spark1's `.env` (`.env.example`
-documents them). Still needed: Remote Login on the Mac and spark1's public key
-in its `~/.ssh/authorized_keys`. **The Mac must hold ciphertext only: do not
-copy `ENCRYPTION_KEY` onto it.** The key is escrowed at
+**A third backup copy on the Mac — LIVE 2026-08-25.** Remote Login is on,
+spark1's `spark1-backup-mirror` key is authorized for `animallya@172.16.8.2`,
+and spark1's `.env` lists both mirrors. Proven with a real run: the same
+dump (`anios_db-20260824-222902.sql.gz`, 37 tables) landed on spark1, spark2,
+and `/Users/animallya/anios-backups`, 534 sealed values inside and zero key
+material. The first three-copy run mirrored to nobody: the `.env` parser
+stripped spaces along with carriage returns and fused the two hosts into one
+name — fixed in `backup-db.sh` the same night. **The Mac still holds
+ciphertext only: never copy `ENCRYPTION_KEY` onto it.** The key is escrowed at
 `C:\Users\Ani Mallya\anios-recovery\anios-keys.env` on the Windows box.
+(Cosmetic: the Mac's `~/.bashrc` line 2 prints `$: command not found` on
+every non-interactive ssh; harmless, not fixed, the operator's file.)
 
 **FLUX is not deployed, and does not fit as the box stands.** The sm_121
 blocker is solved — `docker/comfyui/Dockerfile.gb10` (NVIDIA CUDA-13 PyTorch
@@ -332,10 +336,11 @@ bound off the LAN. Backend fixes are gate-verified only — the suite cannot run
 on the Mac; **run `bash scripts/gate.sh` on spark1 before trusting them.**
 
 Deferred, needing a box or a window, in priority order:
-1. **Apply the committed deploy changes on the boxes.** `anios-vlm.service`
-   gained `After=ds4-worker.service` (cold-boot GPU-profile race) — needs
-   `sudo systemctl daemon-reload` on spark2. The compose port-binding change
-   takes effect on spark1's next `up -d`.
+1. ~~Apply the committed deploy changes on the boxes~~ — done 2026-08-25.
+   spark2's installed `/etc/systemd/system/anios-vlm.service` now carries
+   `After=ds4-worker.service` (spark2 has no repo checkout; the unit was
+   patched in place and reloaded, VLM left running). The port-binding change
+   is applied on spark1 — with the compose-network fix it forced, above.
 2. **Netplan for the RoCE fabric (#1, not written).** The `192.168.100/101.x`
    addresses are set by hand and do not survive a reboot, so a power cycle
    leaves both ds4 units retry-looping forever. Capture the live addresses
