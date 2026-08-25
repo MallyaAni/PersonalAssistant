@@ -602,6 +602,14 @@ hand from the backend container (enrol as a consented iMessage subscriber,
 `allow_recipient` on the Mac, `send_welcome_if_new`): `granted`, `sent`,
 `welcomed_at` set. He can now text the assistant as well as use the web.
 
+`zakarya` (Zakarya) was in the same position - approved 2026-08-17 with
+`phone: null` on the request, active on the web, never welcomed. The
+operator supplied his number the same day and the same three steps were
+run from the backend container: enrolled (active, deliverable), `granted`
+on the Mac, `sent`, `welcomed_at` set at 17:34 UTC. Two accounts predating
+phone sign-up are now reachable; any others will show as `welcomed_at`
+null with no subscriber row.
+
 Found while looking, **not cleaned up - the operator's call, since both are
 deletions in production**: eight orphan `discovery_subscribers` rows for
 `del_*` / `api_del_*` users on a fake `...0100` number (2026-08-08 and
