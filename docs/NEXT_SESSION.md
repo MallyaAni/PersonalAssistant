@@ -107,23 +107,30 @@ found.
 **Blockers measured on the desktop 2026-08-24 22:50, before anyone downloads
 17 GB.** All read-only; nothing on that box was changed.
 
-- **The 9B does not fit the 5080 either.** The card is **16,303 MiB total**
-  (13,727 free, the rest ordinary Windows desktop processes — no compute
-  tenant). The sizing below puts the 9B at ~18 GiB. 9B fp8 (~9 GB) plus the
-  mandatory `qwen_3_8b_fp8mixed` encoder (~8 GB) is ~17 GB against a 16 GB
-  card. It needs sequential CPU offload of the text encoder, or it does not
-  run. The 4B stack measures 11.6 GB (3.79 + 7.49 + 0.31) and fits with little
-  room. **This contradicts the plan of record and should be settled first.**
+- **VRAM: 16,303 MiB total, 13,727 free** (the rest ordinary Windows desktop
+  processes — no compute tenant). I first read this as fatal, summing the 9B
+  and its 8B encoder as ~17 GB co-resident. **That was the wrong model of how
+  ComfyUI loads**: it encodes with the Qwen encoder, then evicts it to system
+  RAM to make room for the diffusion model, which is why Comfy's own Klein
+  guide lists 16 GB for the 9B fp8 pair. The figure that actually matters is
+  the eviction target — **system RAM: 31.9 GB total, 15.9 GB free**, which is
+  ample for an ~8.5 GB encoder. Caveat worth keeping: that 15.9 GB is measured
+  with the whole anios stack down, and Docker Desktop plus WSL coming back
+  would eat into exactly the space the encoder evicts into. ComfyUI being the
+  only tenant is doing real work here.
 - **Neither 9B file is on the box.** `diffusion_models/` has
   `flux-2-klein-4b-fp8.safetensors` (3.79 GB) and
   `flux1-dev-kontext_fp8_scaled.safetensors` (11.09 GB);
   `text_encoders/` has `qwen_3_4b.safetensors` (7.49 GB), not the 8B. So
   spark1's defaults currently name files that do not exist — a missing
   checkpoint at request time, not a fallback.
-- **ComfyUI is 0.28.0 and `comfy_extras/nodes_flux2.py` is absent** (only
-  `nodes_flux.py`). `Flux2Scheduler` / `EmptyFlux2LatentImage` are likely
-  unregistered, which would affect the 4B path too. Confirm against the
-  workflow JSON before blaming anything else.
+- ~~ComfyUI is 0.28.0 and `nodes_flux2.py` is absent~~ — **retracted, this was
+  a bad inference.** Upstream puts the FLUX.2 nodes in `nodes_flux.py`
+  alongside the FLUX.1 ones; there is no `nodes_flux2.py` to be missing. All 13
+  nodes the workflow needs are present, `CLIPLoader` offers `type="flux2"`
+  (`nodes.py:995`), and `UnetLoaderGGUF` exists for the GGUF fallback. The
+  checkout is `c9602625`, **18 July 2026**, `master` — the "0.28.0" is the
+  generated version string, not the checkout age. No `git pull` needed.
 - **`anios_comfyui` exited 137** (SIGKILL) 47 hours ago; cause not established.
   Its image is right for this card — `nvidia/cuda:12.8.0-runtime-ubuntu22.04`
   with cu128 wheels, i.e. Blackwell/sm_120. The "cannot emit sm_121" caveat in
