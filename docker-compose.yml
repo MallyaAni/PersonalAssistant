@@ -193,7 +193,10 @@ services:
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
       - POSTGRES_DB=${POSTGRES_DB:-anios_db}
-      - POSTGRES_HOST=${POSTGRES_HOST:-animallya-spark1.local}
+      # Literal, not interpolated: spark1's .env carries a host-oriented value
+      # that would otherwise leak in and point the gate at the published port,
+      # which since 2026-08-25 answers only on the host's loopback.
+      - POSTGRES_HOST=db
       - DATABASE_USE_NULL_POOL=true
     # Nothing to serve; gate.sh supplies the command.
     command: ["python", "-m", "pytest", "--version"]
@@ -273,7 +276,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
       - POSTGRES_DB=${POSTGRES_DB:-anios_db}
-      - POSTGRES_HOST=animallya-spark1.local
+      - POSTGRES_HOST=db
       - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (see .env.example)}
       - LLM_BASE_URL=http://animallya-spark1.local:8000
       - LLM_MODEL=deepseek-v4-flash
@@ -395,7 +398,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
       - POSTGRES_DB=${POSTGRES_DB:-anios_db}
-      - POSTGRES_HOST=animallya-spark1.local
+      - POSTGRES_HOST=db
       - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (see .env.example)}
       # Seals free-text columns at rest. Empty disables it; every service
       # that writes a sealed column needs the same key, or one of them
@@ -459,7 +462,7 @@ services:
       - PRESENTATION_JOB_POLL_SECONDS=${PRESENTATION_JOB_POLL_SECONDS:-0.5}
       - PRESENTATION_JOB_LEASE_SECONDS=${PRESENTATION_JOB_LEASE_SECONDS:-300}
       - PRESENTATION_JOB_HEARTBEAT_SECONDS=${PRESENTATION_JOB_HEARTBEAT_SECONDS:-30}
-      - REDIS_URL=redis://animallya-spark1.local:6379/0
+      - REDIS_URL=redis://redis:6379/0
       - MODEL_GATE_ENABLED=true
       - MODEL_GATE_LEASE_SECONDS=${MODEL_GATE_LEASE_SECONDS:-300}
       - MODEL_GATE_POLL_SECONDS=${MODEL_GATE_POLL_SECONDS:-0.1}
@@ -508,7 +511,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
       - POSTGRES_DB=${POSTGRES_DB:-anios_db}
-      - POSTGRES_HOST=animallya-spark1.local
+      - POSTGRES_HOST=db
       - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (see .env.example)}
       # The worker writes sealed columns (a seen item's title), so it needs
       # the same key as the API — otherwise it stores plaintext into a column
@@ -610,7 +613,7 @@ services:
       - INFERENCE_ADAPTER=${INFERENCE_ADAPTER:-openai_compatible}
       # Same shape of mistake: the default is a loopback address that resolves
       # to this container rather than to the shared Redis.
-      - REDIS_URL=redis://animallya-spark1.local:6379/0
+      - REDIS_URL=redis://redis:6379/0
     extra_hosts: *spark-hosts
     volumes:
       # The image embedder's weights, 374 MB of ONNX. data/ is in
@@ -646,7 +649,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
       - POSTGRES_DB=${POSTGRES_DB:-anios_db}
-      - POSTGRES_HOST=animallya-spark1.local
+      - POSTGRES_HOST=db
       # No default: a missing secret must fail the run, never fall back to a
       # committed placeholder that would sign real auth tokens.
       - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (see .env.example)}
@@ -840,7 +843,7 @@ services:
       - OTEL_ENABLED=${OTEL_ENABLED:-false}
       - OTEL_EXPORTER=${OTEL_EXPORTER:-console}
       - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
-      - REDIS_URL=redis://animallya-spark1.local:6379/0
+      - REDIS_URL=redis://redis:6379/0
       - MODEL_GATE_ENABLED=true
       - MODEL_GATE_LEASE_SECONDS=${MODEL_GATE_LEASE_SECONDS:-300}
       - MODEL_GATE_POLL_SECONDS=${MODEL_GATE_POLL_SECONDS:-0.1}
@@ -1027,7 +1030,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
       - POSTGRES_DB=${POSTGRES_DB:-anios_db}
-      - POSTGRES_HOST=animallya-spark1.local
+      - POSTGRES_HOST=db
       - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (see .env.example)}
     depends_on:
       db:
@@ -1058,7 +1061,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
       - POSTGRES_DB=${POSTGRES_DB:-anios_db}
-      - POSTGRES_HOST=animallya-spark1.local
+      - POSTGRES_HOST=db
       - SECRET_KEY=${SECRET_KEY:?set SECRET_KEY in .env (see .env.example)}
       - ARTIFACT_STORAGE_ROOT=/app/data/artifacts
     volumes:
