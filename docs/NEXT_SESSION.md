@@ -405,6 +405,23 @@ uptime, silently failing every job), and only an explicit
 change, check `docker ps` uptimes against the deploy time rather than
 trusting up -d's own output.
 
+## Architecture document rewritten for newcomers, 2026-08-25
+
+`docs/ARCHITECTURE.md` is now three parts: a newcomer's Part I (what it is,
+the machines, a message's path, the models and why each is where it is,
+memory in plain words, safety on one screen, and every subsystem in the
+memory overview's numbered shape), Part II cataloguing every ADR and every
+decision made while running the system with its reason and date, and Part
+III, the prior engineering reference with its stale single-RTX-5080 topology
+and role tables replaced by the Spark deployment and marked historical where
+kept for measurements. Found while writing it, not yet fixed:
+`docs/diagrams/authentication-subsystem.mmd` predates the phone sign-up,
+approval, bridge grant, and welcome flow (2026-08-24) and still shows only the
+operator-CLI invite path - a real diagram gap under the maintenance rule.
+Also found and fixed the same hour: `RERANKER_BASE_URL` had reached only the
+test container, so the live backend's reranker stage was off (fail-soft hid
+it); it is wired into backend and local-capabilities and verified enabled.
+
 ## Direction from the operator, 2026-08-24
 
 More MCP integrations are coming (Instagram, Google Drive, and more), and

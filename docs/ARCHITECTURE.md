@@ -1,6 +1,623 @@
 # AniOS Architecture
 
-This document describes the repository as implemented. Runtime results and active blockers belong in [NEXT_SESSION.md](NEXT_SESSION.md); future delivery sequencing belongs in [ROADMAP.md](ROADMAP.md).
+This document has three parts. **Part I** is for someone who has never seen
+this project: what AniOS is, what runs where, and what happens when you send
+it a message. **Part II** is the catalogue of engineering decisions and the
+reasons behind them - the formal decision records plus the decisions that were
+made while running the system, which are the ones a newcomer would otherwise
+have to rediscover the hard way. **Part III** is the implementation reference
+that engineers working in the code use day to day.
+
+Runtime results and active blockers belong in [NEXT_SESSION.md](NEXT_SESSION.md);
+future sequencing belongs in [ROADMAP.md](ROADMAP.md); the rules for working
+in this repository are in [AGENTS.md](../AGENTS.md). This document records what
+is built and why. Where something is not built, it is labelled `PLANNED`.
+
+---
+
+# Part I - Start here
+
+## What AniOS is
+
+AniOS is a private personal assistant that runs entirely on hardware its owner
+controls. You talk to it in a browser (`deep-matter.com`, through a Cloudflare
+tunnel) or by texting it over iMessage. It remembers what you tell it, can find
+anything either of you has ever said, searches the web when a question needs
+it, makes pictures and edits them, draws diagrams, builds slide decks, runs
+scheduled tasks ("remind me every weekday at 7"), and - through an agent called
+Scout - looks for things happening near you that match what you care about.
+
+Nothing about a conversation leaves the owner's machines except a deliberately
+minimised web-search query, and only when the assistant decides a search is
+needed. Every model that reads your words runs locally. That constraint shapes
+most of the architecture below.
+
+## The machines
+
+| Machine | Address | What it holds | When it is on |
+| --- | --- | --- | --- |
+| **spark1** (NVIDIA DGX Spark) | `172.16.8.3` | Every application container, PostgreSQL (+pgvector), Redis, the Cloudflare tunnel, the text-embedding service, the reranker service, and half of the main language model | Always |
+| **spark2** (NVIDIA DGX Spark) | `172.16.8.5` | The other half of the main language model, the vision model, and the first backup mirror | Always |
+| **Mac** (MacBook Pro) | `172.16.8.2` | The iMessage bridge - the only thing that can send or read texts - and the second backup mirror (ciphertext only) | Always |
+| **Desktop** (Windows, RTX 5080, 16 GB) | `172.16.8.6` | ComfyUI running FLUX.2 Klein for image generation and editing | Sometimes; when it is off, image requests get an honest "try again later" |
+
+Each Spark is a GB10 with 121.7 GiB of unified memory. The main model needs
+roughly 97 GiB on *each* of them, which is why it is split across the two
+(tensor-parallel 2) and why the vision model lives on spark2 rather than
+alongside it. The Sparks have no remote management controller and no
+wake-on-LAN: a Spark that is powered off needs a person to press its button.
+Over-allocating GPU memory hangs a Spark outright, so memory headroom is
+treated as a hard safety margin rather than an optimisation.
+
+## What happens when you send a message
+
+1. **A channel receives it.** The browser posts to the backend API; a text
+   arrives on the Mac, where the bridge only accepts senders who have been
+   allowlisted, and a worker on spark1 polls for it (every 3 s, tightening to
+   1.5 s while a conversation is active). Images travel both ways.
+2. **One model call decides what kind of turn it is.** The router
+   (`MainActionSelector`) shows the main model a menu of tools - search the
+   web, generate or edit an image, draw a diagram, make a deck, search past
+   conversations, schedule a task, a taught skill, or one of the user's
+   connected MCP tools - and the model picks at most one with a native tool
+   call. There is no regex and no keyword list anywhere on this path; a rule of
+   this repository is that *intent is decided by a model, never by pattern
+   matching*.
+3. **Context is assembled.** The recent conversation window, a rolling digest
+   of older turns, the typed long-term memories that match, images in view,
+   and - if the router chose it - evidence found by searching every past
+   conversation. Each piece has a token budget and a priority, so the prompt
+   is bounded and cache-friendly rather than "everything we have".
+4. **The reply model answers.** DeepSeek-V4-Flash streams the answer; a
+   selected action (a search, a recall, a tool result) runs first and its
+   result is placed in the prompt as *untrusted evidence* - it can inform the
+   answer but can never grant permissions or issue instructions.
+5. **The turn is remembered.** The exchange is stored encrypted, embedded
+   (both what you said and what it answered) so it can be found later, and a
+   classifier decides whether the message stated a fact worth keeping as
+   long-term memory - a name, an interest, where you live, an allergy. That
+   save happens automatically; the classifier is deliberately conservative
+   about what counts.
+6. **The reply is delivered** - streamed to the browser, or sent back through
+   the Mac as a text pinned to the message it answers.
+
+A plain message costs about three model calls (routing, one embedding, the
+reply). The whole path is drawn in
+[chat-orchestration.svg](diagrams/chat-orchestration.svg).
+
+## The models, and why each is where it is
+
+| Role | Model | Where | Why this one, here |
+| --- | --- | --- | --- |
+| Conversation, routing, structured output, diagrams, decks, memory classification | **DeepSeek-V4-Flash** (vLLM, tensor-parallel across spark1+spark2, 1M-token context with an NVFP4 KV cache) | Sparks | Chosen by a blind read-off against Qwen and Nemotron, then kept after a measured comparison (see `MODEL_EVALUATION.md`). Routing and classification decode at temperature 0 so the same question always routes the same way. |
+| Vision (looking at photos) | **Qwen3-VL-8B** | spark2 `:8001` | DeepSeek is text-only, so a second model must stay resident to read pixels. It sits on spark2 because that node has the headroom. |
+| Text embeddings | **nomic-embed-text-v1.5** (768-d) | spark1 `vllm-embedding` | Shares one vector space with the image embedder below, so a sentence can find a picture. That alignment is why the text embedder cannot be swapped alone. |
+| Image embeddings | **nomic-embed-vision-v1.5** (ONNX, CPU) | spark1, in-process | Aligned to the text model above; small enough to run without a GPU. |
+| Reranking (second opinion on retrieved candidates) | **Qwen3-Reranker-0.6B** | spark1 `vllm-reranker` | A cross-encoder reads query and candidate *together*, which is where retrieval precision comes from. Fail-soft: if it is down, the first-pass order stands. |
+| Image generation and editing | **FLUX.2 Klein 9B** via ComfyUI (FLUX.1 Kontext for instruction edits) | Desktop | The only machine with a discrete GPU that is not full. Image work is available while the desktop is on, and honestly unavailable when it is not. |
+| Web search | Gemini grounding or Tavily | External | The one outbound boundary; queries are minimised and screened before they leave. |
+
+Everything is served through an OpenAI-compatible boundary, so the application
+never knows which runtime is behind a role; roles are configured
+independently (`MAIN_LLM_*`, `ROUTING_LLM_*`, `VISION_*`, `EMBEDDING_*`,
+`RERANKER_*`) and an unset role inherits the next broader one.
+
+## How memory works, in plain words
+
+- **Short term** is the recent window of the conversation plus a rolling
+  digest of what came before it, so a long chat stays coherent without
+  re-sending everything.
+- **Long term** is a set of typed stores in PostgreSQL: your profile,
+  episodic events, semantic facts, entities and relationships, procedures,
+  knowledge documents, and Scout's interests and home locality. Facts get in
+  by being stated plainly in conversation and passing the memory classifier,
+  or by being saved explicitly. You can see, correct, export, and delete all
+  of it.
+- **Total recall.** Every exchange is embedded and indexed (pgvector, HNSW),
+  so the assistant can search everything either of you has ever said - by
+  meaning, not keywords, because the text itself is encrypted and cannot be
+  grepped. The router chooses this when you refer to something not in view
+  ("what was that restaurant you mentioned in March?"); the search fetches
+  the top 40 by vector distance, the reranker cuts them to the 12 that
+  actually answer, and the model reads those as evidence. A separate,
+  quieter path also injects the three most similar past remarks on every
+  turn.
+- **Space migrations are one command.** Each stored vector records which
+  model and scheme produced it; retrieval matches only the current signature,
+  and a backfill command re-embeds whatever does not match. Changing the
+  embedding model therefore degrades to "not yet rebuilt", never to wrong
+  answers.
+
+## Safety and privacy in one screen
+
+- Free-text columns are **encrypted at rest**; the key is escrowed off the
+  machine that holds the data. Phone numbers and addresses are looked up by a
+  **keyed HMAC digest**, so a database dump alone cannot enumerate them.
+- **Everything retrieved is untrusted data**: search results, tool output,
+  recalled turns, and memories are placed in the prompt as evidence and
+  cannot grant permissions or act as instructions.
+- **Egress is screened once, centrally**: any text about to leave the machine
+  - a search query, an MCP tool argument - passes one screening policy.
+- **Who may talk to it is explicit**: web accounts are invite-only with
+  Argon2id passwords and revocable sessions; sign-up collects a phone number
+  that approval turns into both an AniOS identity and a Mac allowlist entry
+  in one decision. A number belongs to one account only.
+- **Databases are not on the network**: PostgreSQL and Redis listen on the
+  host's loopback; containers reach them by compose-network name.
+- **Backups exist in three places** - spark1, spark2, and the Mac - nightly,
+  with a proven restore. The Mac copy is ciphertext only.
+
+## How to read the rest
+
+- The [published architecture page](architecture.html) shows all 22 canonical
+  diagrams with zoom; [diagrams/README.md](diagrams/README.md) says which
+  diagram answers which question. Mermaid sources are authoritative; SVGs are
+  generated and fingerprint-checked.
+- Part II below explains *why* things are the way they are.
+- Part III is the implementation reference, section by section.
+- Sibling documents: [AGENT_CATALOG.md](AGENT_CATALOG.md) (every agent and
+  what its model decides), [TASKS_ARCHITECTURE.md](TASKS_ARCHITECTURE.md)
+  (scheduled tasks and skills), [MODEL_EVALUATION.md](MODEL_EVALUATION.md)
+  (how models are chosen here, with measurements), [SECURITY.md](SECURITY.md),
+  [RESTORE.md](RESTORE.md), [DGX_MIGRATION.md](DGX_MIGRATION.md), and the
+  decision records in [adr/](adr/).
+## Each subsystem, step by step
+
+The memory overview above is the shape every subsystem is described in here:
+what happens in order, what gets stored, which decisions a model makes and
+which are code, and what you can see and control. Reference detail for each
+lives in Part III; the diagrams are linked from each heading.
+
+### Searching the web ([diagram](diagrams/search-research-subsystem.svg))
+
+1. The same routing call that decides everything else about the turn decides
+   whether to search, and writes the query itself.
+2. Search-control wording ("search online for", "cite the source") is stripped
+   so the provider receives the factual subject.
+3. The query is screened before it leaves: a secret or account identifier
+   blocks the search outright; a sensitive topic is minimised to the topic.
+   The screen is deterministic code, "since a model asked to redact its own
+   prompt can be argued out of it".
+4. A provider is chosen by policy: an isolated Google worker (which receives
+   only the minimised query under an anonymous ID - no history, memory, or
+   identity) when a key exists, Tavily as the fallback, both only when you ask
+   to cross-check. A daily quota protects the free tier.
+5. A Google answer without grounding metadata is a failure, not a licence to
+   answer; Tavily results below a measured score floor are dropped.
+6. Survivors enter the prompt as quoted, untrusted evidence, and the answer
+   shows provider-attributed source cards.
+
+*Stored:* only a per-day call count, never a query or result. *The model
+decides:* whether to search, and the query. *Code decides:* screening,
+provider, quota, score floor. *You control:* keys, provider, the floor; blocked
+or rewritten searches are reported, not silent.
+
+### Pictures ([diagram](diagrams/visual-artifact-subsystem.svg))
+
+1. The router decides whether you want a new picture, an edit of the one in
+   view, or an answer about it - by meaning, not by the first verb.
+2. Generation sends a bounded prompt and an allowlisted size to ComfyUI on the
+   desktop (FLUX.2 Klein); an upload is validated as a real PNG/JPEG/WebP
+   before any record exists.
+3. An edit re-reads the owned original's bytes (integrity-checked) and sends
+   *pixels plus your instruction* to the editor; a new revision is written
+   beside the original, never over it, with parent, seed, steps, and the exact
+   feedback recorded.
+4. A question about a picture goes to the vision model on spark2, with the
+   bounded prior thread replayed; the answer is stored as a thread on that
+   image.
+5. Every image gets an aligned embedding, so a sentence can find it later; the
+   first analysis of an upload is also indexed as memory, so an ordinary turn
+   can recall what the picture showed.
+6. Recall by meaning uses a ceiling *and* a margin over the runner-up, because
+   with the ceiling alone "every distractor produced a false positive".
+
+*Stored:* artifact records with lineage, the bytes under an opaque root, one
+vector column of their own, and the derived description as memory (deleted in
+the same commit as the image). *The model decides:* intent, which offered
+image "that one" means, the description, prompt merges. *Code decides:*
+validation, ownership, retrieval bounds, lineage. *You control:* which image is
+the reference, download, delete, cancel mid-generation. When the desktop is
+off, you are told so.
+
+### Scout - things happening near you ([diagram](diagrams/discovery-subsystem.svg))
+
+1. Approved facts - where you live, what you are into and how strongly - are
+   the whole input; a stated interest is proposed by the classifier and
+   written only on approval.
+2. A sweep fires on your own cadence, using your current place if you are
+   travelling, else home.
+3. One model call turns each interest into a search subject and a scoring
+   vector; feeds and one bounded web query per interest supply candidates.
+4. Novelty is two cheap-first passes: exact identity, then near-duplicate by
+   vector; only something already *announced* suppresses a candidate.
+5. What qualifies is deterministic - best interest, strength weighting, score
+   floor, lead-time window, geography; a cross-encoder re-orders the
+   shortlist; at most two "notable" interest-free finds are admitted.
+6. The model names and describes each selected find, greedily, inside a
+   grammar - no URL from the model survives - and the digest goes to each
+   consented subscriber as one message per find with a calendar file attached,
+   so a recipient anywhere can act on it without reaching this machine.
+
+*Stored:* interests, localities, sources, seen items, familiarity, schedules,
+runs, sent finds, subscribers. *The model decides:* the search subject, the
+scoring vector, the order of a qualified shortlist, how a find reads. *Code
+decides:* what qualifies. *You control:* interests and strength, home versus
+current place, sources, subscribers, thumbs-up/down (recorded, deliberately
+not yet fed back into ranking), "already known" dismissals, export and
+delete-all.
+
+### Scheduled tasks and skills ([design](TASKS_ARCHITECTURE.md), [diagram](diagrams/scheduled-tasks-subsystem.svg))
+
+1. You say it - "remind me every weekday at 7 to check the Spark temps" - and
+   the router understands it as a `schedule_task` call with instruction,
+   cadence, and time as fields. No syntax, no keyword.
+2. The task is saved in your time zone (taken from your home locality; with
+   none known, the reply asks for the city and saves nothing).
+3. A runner in the discovery worker enqueues each due slot exactly once,
+   claims it with a lease, and renews the lease while the turn runs.
+4. The firing posts the instruction through the ordinary chat path on the
+   task's own conversation, so it can search, draw, or recall like any turn.
+5. The result is delivered on the task's channel - an iMessage bubble, or the
+   run record for the web.
+6. A fired turn is walled off from changing automation ("a reminder once
+   spawned four copies of itself") and exempt from memory capture ("the same
+   fact 365 times a year, unattended").
+
+*Stored:* tasks, runs, taught skills. *The model decides:* that this is a
+scheduling request, the self-contained instruction, cadence fields, which
+existing task "the weather one" means. *Code decides:* cadence math and DST,
+exactly-once slots, leases, the walls above. *You control:* create, list,
+pause, resume, cancel in plain language; the Automations panel shows every
+task and skill.
+
+### Texting it - the iMessage bridge ([diagram](diagrams/imessage-bridge.svg))
+
+1. Someone on the allowlist texts the Mac. The bridge reads the Messages
+   database read-only, keeps only allowlisted one-to-one senders, and never
+   logs a body.
+2. A worker on spark1 polls the bridge with a cursor it owns; nothing is
+   processed twice.
+3. The sender is matched to an account by the keyed digest of their number;
+   an address that is not an active, approved subscriber of some account is
+   ignored outright - "the second of two walls".
+4. The text runs through exactly the endpoint the browser uses, with a
+   short-lived token carrying one scope - the full pipeline, nothing special.
+5. A picture in becomes a vision turn; a picture out goes as an attachment
+   under the size margin the bridge enforces (diagrams are rasterised because
+   the bridge allows only JPEG, PNG, and calendar files).
+6. The reply is pinned to the message it answers, and a long-press reply from
+   you pins the assistant to *that* image rather than the newest one.
+
+*Stored:* durable state only through the normal chat path; the bridge and
+worker keep a cursor, seen IDs, and bubble-to-artifact maps in Redis.
+*The model decides:* only the answer - the recipient is always the bridge's
+`reply_to` handle, "never anything the model wrote". *Never leaves the Mac:*
+bodies from anyone not on the allowlist, anything in a group chat, and the
+text the reaction tools compare. *You control:* four independent grants on
+the Mac (send, read reactions, read incoming, read attachments), which Apple
+ID sends, and the allowlist itself - which approval on the web can extend.
+
+### Slide decks and diagrams ([deck diagram](diagrams/presentation-subsystem.svg), [Deck agent](diagrams/agent-deck.svg), [Diagram agent](diagrams/agent-diagram.svg))
+
+1. A deck request returns a durable job immediately; a worker claims it by
+   lease, so the work outlives your browser tab.
+2. One privacy-screened web search grounds the outline - at outline time,
+   "where a slide is told to carry a statistic; by the slide pass the only way
+   to satisfy that instruction is to make one up".
+3. The model plans the outline, then writes one slide at a time behind a gate
+   that lets your chat go first; it chooses each slide's shape from seven
+   layouts as a grammar choice, with that layout's fields required.
+4. Deterministic code owns geometry - measured from text length and point size
+   - renders with PptxGenJS, and validates the file by inspecting its native
+   objects, without PowerPoint.
+5. A validated draft becomes an append-only revision; feedback on one slide
+   changes only that slide, and edits against a stale base fail rather than
+   overwrite newer work.
+6. A diagram is one model call for title, type, and Mermaid within strict
+   bounds; the validator refuses rather than ships something that will not
+   draw, and the browser renders it with HTML labels disabled and lets you
+   edit the source.
+
+*Stored:* decks, revisions, jobs, the PPTX bytes, diagram artifacts. *The
+model decides:* plan, content, slide shape, revisions, Mermaid. *Code decides:*
+geometry, storage, validation, promotion, delete and reorder. *You control:*
+the brief, per-slide feedback with its own thread, add/delete/reorder,
+revision history, download, cancel; editable Mermaid and SVG download.
+
+### Connected tools - MCP ([diagram](diagrams/tool-memory-subsystem.svg))
+
+1. Each configured server's live catalogue is inspected and embedded; a tool
+   description that reads like an instruction is quarantined, not indexed.
+2. On a turn, the user-scoped index is searched by meaning and at most five
+   schemas are offered - retrieval first, because exposing a hundred tools
+   "drops selection accuracy to roughly 13%".
+3. The model may pick one and fill its arguments; it never receives an
+   invocation handle. Discovery is not authorisation.
+4. Seven gates run in order: resolve the server from local config; confirm
+   unless the server is `trusted` or `read_only`; re-read the live catalogue;
+   compare its fingerprint (which covers the description - "the rug-pull
+   window"); re-inspect; validate arguments; screen every string argument
+   through the same egress policy as a search query.
+5. Retries happen only for safe servers and only on transport failure; a
+   refusal is never retried.
+6. Results are bounded and inspected; instruction-shaped output is shown to
+   the model as quoted data with a note not to follow it.
+
+*Stored:* tool descriptors, approved preferences, sanitised outcomes. *The
+model decides:* which shortlisted tool and its arguments. *Code decides:*
+everything else. *You control:* server configuration and its risk class,
+explicit confirmation for anything consequential; the UI shows each call as
+running, succeeded, refused, or failed without exposing arguments or results.
+More integrations (Instagram, Google Drive) each arrive with their own
+routing floor and provider-contract tests before they are advertised.
+
+### Accounts, sign-up, and approval ([diagram](diagrams/authentication-subsystem.svg))
+
+1. Asking for access takes a display name, a username, a password (hashed on
+   arrival), and a phone number in E.164 - "not a contact detail, a
+   credential", because the bridge identifies you by it.
+2. Uniqueness is checked for the username and the number, against requests
+   *and* existing subscribers, and checked again at approval where the race
+   lands.
+3. The operator approves, and that one decision creates the account, enrols
+   the number as a subscriber, and allowlists it on the Mac - "two
+   allowlists, one decision", because keeping them by hand drifted.
+4. A newly approved person gets an introduction generated from the same
+   capability list the router offers as tools, "because a fixed welcome is
+   accurate the day it ships and then quietly starts lying".
+5. Logging in verifies the password and sets a host-only cookie whose token is
+   stored only as a digest; every owned request resolves that session to a
+   stable owner ID that never changes, even if the login name does.
+6. Sharing between accounts will copy on accept rather than grant access
+   into another store (decided, not yet built), because single ownership is
+   load-bearing in 133 query sites.
+
+*Stored:* accounts, sessions (digests only), invitations (digests only),
+access requests, subscribers, and the Mac's separate grant file. *The model
+decides:* only the welcome text. *Code decides:* everything else - parsing,
+digests, Argon2id, sessions, rate limits, origin allowlist, scopes ("ownership
+answers *who*; scopes answer *what*"). *You control:* asking, polling your
+request; the operator sees on approval whether the bridge grant and the
+welcome actually happened.
+
+---
+
+# Part II - The engineering decisions, and why
+
+Two kinds of decision shaped this system. The first kind is written down as a
+decision record in [adr/](adr/) before or as it was built. The second kind was
+made while running the thing - after an outage, a measurement, or a real
+failure - and lives in commit messages, `NEXT_SESSION.md`, and
+`MODEL_EVALUATION.md`. A newcomer needs both, because the second kind is what
+you would otherwise rediscover the hard way. Everything here is dated or
+linked so it can be checked.
+
+## The rules that shape everything
+
+These come from [AGENTS.md](../AGENTS.md), which every agent and person working
+in the repository follows. They explain more of the code than any diagram.
+
+1. **Running behaviour is the source of truth.** Documentation records intent
+   and verified knowledge; a decision record records a decision, not proof it
+   was implemented. Evidence counts only when the source revision that
+   produced it is known.
+2. **Meaning is decided by a model, never by a pattern.** Whether a message
+   wants a picture, a search, a diagram, or nothing; which picture "that one"
+   means; whether something is worth remembering - every regex, keyword list,
+   and bounded classifier written to make these judgements was deleted after
+   failing on phrasing its author did not anticipate. Patterns are legitimate
+   for *shape* (is this a PNG, does this parse as a UUID), never for intent.
+3. **Every prompt is a feature and gets a functional test in the same
+   change.** A test that a model was called, or that its reply parsed, does
+   not show that it answered well. Tests assert on properties, not wording,
+   so a reworded prompt survives and a changed behaviour fails.
+4. **A prompt states a principle, never a case.** The incident that prompted
+   a change goes in the file's notes or the commit, not in the text sent to
+   the model - otherwise prompts become "a list of somebody's bad days" and
+   the model learns to match the case instead of reasoning about the shape.
+5. **Restrict in code, not in the prompt.** When a model will not follow an
+   instruction, make the restriction structural (a schema, a bound, a
+   deterministic step) rather than repeating the instruction louder.
+6. **Every boundary that parses model output as data sends a JSON Schema**
+   the runtime decodes as a grammar, and every decision decodes at
+   temperature 0. A malformed reply becomes unrepresentable; the same
+   question routes the same way twice.
+7. **Everything retrieved is untrusted data.** Search results, tool output,
+   recalled turns, and memories are literal evidence in the prompt and can
+   never grant a permission or carry an instruction.
+8. **Mermaid source is authoritative; SVG is generated.** Every modifying
+   change declares its diagram impact, and a fingerprint check fails when a
+   diagram and its source diverge.
+9. **Measure on this hardware, not from a model card.** Model choices,
+   quantisations, and serving flags are decided by numbers produced here
+   (`MODEL_EVALUATION.md`), and a repeatable harness is a promotion gate, never
+   sufficient proof by itself.
+10. **Every new function carries a comment saying why it exists**, commits go
+    to `main`, and a commit is a verified checkpoint only when its exact tree
+    passed the acceptance path.
+
+## The formal decision records
+
+| ADR | Decision | Why this and not the alternative | Status |
+| --- | --- | --- | --- |
+| [0001](adr/0001-clean-architecture-and-modular-structure.md) Clean architecture | Routes delegate to services; memory, retrieval, models, tools, and repositories sit behind focused interfaces; LangGraph may orchestrate but "must not own AniOS memory, retrieval, user profiles, or domain policy". | Framework-centric layering couples behaviour to FastAPI/SQLAlchemy; microservices are premature before in-process boundaries are stable. No speculative interfaces: each must map to a real boundary or test need. | Accepted direction; partially conformed |
+| [0002](adr/0002-typed-agent-memory-manager-and-pgvector-indexes.md) Typed memory manager, pgvector HNSW | Typed stores behind `AgentMemoryManager`; a coordinator may plan and retrieve but "cannot execute arbitrary SQL or authorize durable writes"; 768-d cosine vectors with HNSW indexes owned by Alembic. | A generic key-value vector store "would erase lifecycle and approval distinctions"; model SQL bypasses least privilege; IVFFlat needs representative data first. | Accepted, implemented |
+| [0003](adr/0003-local-visual-artifacts-and-resource-aware-orchestration.md) Local visual artifacts | Mermaid is the diagram source of truth; a deterministic coordinator owns routing, job state, GPU leases, and cancellation - a model "cannot unload models, allocate hardware, authorize storage, or declare a job successful"; free local providers only, no cloud fallback. | Pixel models cannot be reviewed edge by edge; model-resource control is application policy; a paid fallback would quietly change the privacy posture. | Accepted, partially implemented |
+| [0004](adr/0004-hybrid-free-tier-web-research.md) Hybrid free-tier research | The local model answers; deterministic policy decides eligibility and screens the query; an isolated Google worker sees "only the minimized public query under a constant anonymous worker ID"; missing grounding is a failure, not a licence to answer; Tavily is the fallback; a local daily quota protects the free tier. | Full context to Google is rejected because unpaid terms allow training on it; letting the model choose providers is rejected because freshness, privacy, quota, and fallback are application policy. | Accepted; Google branch unverified without a key |
+| [0005](adr/0005-typed-editable-presentation-generation.md) Typed editable presentations | A focused agent produces a compact outline then one slide at a time; deterministic code expands it into a strict `DeckSpec`; the model has "no database, filesystem, authorization, job, promotion, or renderer-control authority"; stale-base edits fail rather than overwrite; PptxGenJS render, OOXML inspection, and LibreOffice open-check gate promotion. | Model-generated JavaScript would execute untrusted code; whole-slide images lose object-level editability; a cloud API breaks local-first. | Accepted, verified |
+| [0006](adr/0006-hybrid-supervisor-and-qualified-model-roles.md) Supervisor and qualified roles | Execution authority stays outside the supervisor; roles are configured independently; "never promote a model from the harness alone". | One model for every role tied chat to the largest model; the smallest model failed a strict typed contract in production. | Superseded in part by 0009 (evidence kept) |
+| [0007](adr/0007-versioned-visual-semantics-memory-and-editing.md) Versioned visual semantics | "Pixels remain artifacts, not memories" - memory holds a re-checked handle; image identity and revision identity are distinct (a lineage DAG; a failed candidate never replaces its parent); the editor receives the source pixels; "understanding does not authorize editing". | Prompt-only editing describes intent, not rendered pixels; bytes in memory duplicate sensitive data; in-place overwrite destroys provenance. | Accepted, partially implemented |
+| [0008](adr/0008-provider-neutral-inference-boundary.md) Provider-neutral inference | Services depend on neutral text/vision/embedding contracts; an adapter is chosen per role; model loading, residency, and KV placement are deliberately outside the adapter. | "Sending a request should not grant code authority to unload models or alter GPU residency"; OpenAI-compatible syntax does not prove semantic compatibility, so promotion needs real acceptance. | Accepted, verified |
+| [0009](adr/0009-vllm-default-local-inference-runtime.md) vLLM as the runtime | Pinned vLLM services by image digest and model revision; GPU-safe startup order; "send a JSON Schema on every request whose reply is parsed as data". | Reproducible by pinned artifacts rather than a GUI profile; FP8 accepted on measured behaviour, "not a free win". | Accepted; its single-RTX-5080 role profile is historical since the Spark move (below) |
+| [0010](adr/0010-invite-identity-and-revocable-sessions.md) Invite identity | An immutable `user_id` owns data; the login name is separate and changeable; Argon2id passwords; opaque session tokens stored only as digests; no public sign-up, no destructive delete command. | The browser must never select the owner; a renamed login must not orphan data. | Accepted, implemented |
+| [0011](adr/0011-sharing-by-copy-on-accept.md) Sharing by copy | Sharing "copies on accept. It never grants access into someone else's store"; the copy is a snapshot with provenance. | The single-owner invariant is load-bearing in 133 query sites, 33 of them in deletion and export; a grant table means each site missed is a disclosure or an invisible omission. | Accepted, not yet implemented |
+| [0012](adr/0012-the-graph-answers-the-turn-it-does-not-run-it.md) The graph answers the turn | The reply is a nine-node LangGraph (`plan_context -> recall -> retrieve -> memory_write -> compose_context -> measure -> enforce? -> assemble -> generate`); the turn itself stays an async generator; persistence stays at its call sites. | Three executed probes: a downstream node does not run once the streaming consumer disconnects, subgraph events vanish, and double writes raise. "The turn IS the graph" designs scored 3.2-4.5/10. | Accepted 2026-08-23, implemented |
+| [0013](adr/0013-multimodal-brief-detail.md) Capability registry (brief) | Proposes nodes declaring capabilities and a registry resolving the model; "fall back on reachability, never on quality". | The real failure mode is capability mismatch, never price; per-node model binding meant six edits to move six roles. | Not yet decided |
+| [0014](adr/0014-embedding-upgrade-brief-detail.md) Embedding upgrade (brief) | Keep the nomic text+vision pair; fix the 100% failures first; build a labelled retrieval eval; four mandatory acceptance criteria before any swap. | At ~500 vectors, threshold calibration dominates encoder quality; the alignment trap: "replace the text model alone and nothing raises" - image search becomes noise presented as an answer. | Not yet decided; reaffirmed 2026-08-25 below |
+
+There is no `adr/README.md`; this table is the index. The two files numbered
+0012 are one decision and its evidence appendix (`0012-plan-detail.md`).
+
+## Decisions made while running it
+
+Dated, newest first within each theme. Each one cost something real.
+
+### Inference and hardware
+
+- **DeepSeek-V4-Flash answers everything textual, on two Sparks (2026-08-14 to
+  08-23).** It won a blind six-prompt read-off against Qwen and Nemotron and
+  then a measured comparison (`MODEL_EVALUATION.md`, "DeepSeek stays"). It is
+  served by vLLM tensor-parallel across spark1 and spark2 with a 1M-token
+  context and an NVFP4 KV cache. With the Sparks in place every text role -
+  routing, conversation, structured output, diagrams, decks, memory
+  classification - moved onto it, and the single-RTX-5080 Qwen 4B profile was
+  retired. Vision stays a separate model (Qwen3-VL-8B on spark2) because the
+  DeepSeek build cannot read pixels.
+- **Memory headroom is a safety margin, not an optimisation.** Over-allocating
+  GPU memory hangs a Spark, and a Spark has no remote console - recovery is a
+  physical button. Utilisation is pinned at the measured safe value on spark2
+  (0.81), `--kv-cache-memory-bytes` is banned after it silently capped the KV
+  cache through four restarts, and every new GPU tenant (the reranker, for
+  example) is sized against the free number rather than the total.
+- **Image work lives on the desktop, and is honestly unavailable when the
+  desktop is off (2026-08-25).** FLUX.2 Klein needs 14-18 GB neither Spark has
+  spare while DeepSeek holds both. The desktop's 16 GB card runs ComfyUI as
+  its only tenant; the assistant's answer when it is unreachable is "the
+  machine that runs image generation is off - try again later", never "start
+  it". The 9B was chosen over the 4B knowingly (gated, non-commercial
+  licence); the FLUX.1 Kontext editor stays selected for edits because the 4B
+  measured unable to add anything to a picture; a GGUF quantisation is a
+  file-name change, not a code change.
+- **Embedding models stay; the migration target is named (2026-08-25).** Text
+  and image vectors share one aligned 768-d space, so the text encoder cannot
+  move alone (ADR 0014's trap). Every stored vector carries a model+scheme
+  signature, retrieval filters on it, and one idempotent backfill rebuilds a
+  space - so a future swap degrades to "not yet rebuilt", never to wrong
+  answers. The designated target at the next hardware step is the
+  Qwen3-VL-Embedding + Qwen3-VL-Reranker pair (one family, one unified
+  text/image/video space, Matryoshka output that keeps the 768-wide columns).
+- **A reranker, fail-soft, as the second opinion (2026-08-25).** A bi-encoder
+  compares two vectors that never met; a cross-encoder reads query and
+  candidate together. Qwen3-Reranker-0.6B serves on spark1; history recall
+  fetches the top 40 by vector and lets the reranker cut them to 12; any
+  failure keeps the cosine order. The same swap was *measured* for Scout's
+  shortlist and rejected (attribution 0.25 against the local cross-encoder's
+  0.50), so Scout keeps its in-process MiniLM. The stage was also found wired
+  into the test container only, for a day - fail-soft had hidden that the live
+  backend never had it; the lesson is recorded beside the fix.
+
+### Memory and recall
+
+- **Recall anything, at any time (2026-08-24).** Passive recall (the three most
+  similar past remarks) could not reach a detail that was never fact-shaped
+  and did not resemble the current wording; the operator's bar was "I should
+  be able to recall anything at any point in time". So the model can *search
+  its own transcript store* on demand (`search_history`), the way it can
+  search the web: every exchange is embedded with both voices, indexed by
+  HNSW, gated by cosine distance, time-bounded by dates the model states in
+  its tool call (never parsed from prose), excerpted with truncation markers,
+  and reranked. Misses log the nearest rejected distance so the thresholds
+  become measured rather than assumed. Multi-round search is deliberately
+  deferred until that telemetry argues for it.
+- **Hard caps are documented by what they affect, and enforcement stays off
+  until there is traffic to measure (2026-08-24).** The context budget
+  (32,768 tokens across prioritised sections, cache-aware ordering) is
+  observed rather than enforced, because with almost no real traffic yet the
+  measurements would be about the tests, not the users.
+- **Memory saves automatically, and the classifier is the whole defence
+  (documented; tightened 2026-08-21 and 08-24).** There is no approval step.
+  The classifier sees one message with no history, so its prompt carries the
+  principles that keep it honest: an interest is a pursuit enjoyed for its
+  own sake, not the work at hand; a statement about how the assistant or any
+  system under discussion works is the work at hand; a fact is what the user
+  states about themself, and another person's fact stays theirs. Each of
+  those sentences was earned by a real over-capture, reproduced at
+  temperature 0, fixed once, and pinned by a functional test.
+- **A tool's description is written by subject shape, never by adding the
+  failing phrasing (2026-08-24/25).** Adding optional fields to a tool schema
+  measurably moved the router's decision boundary; the fix was a principle
+  ("a short follow-up that continues work in view is part of that work, not a
+  reference to the past"), and every schema touch re-runs the behaviour suite.
+
+### Identity, data, and safety
+
+- **A phone number is an identity to the bridge, so it belongs to one account
+  (2026-08-24).** Sign-up collects it in E.164, refuses a number already
+  claimed, and approval does two things that used to be done by hand and
+  drifted: enrol the number as a subscriber in AniOS and allowlist it on the
+  Mac, in one decision. A subscriber is not a user - it is "a revocable
+  permission to send one person one kind of message". Approved people get an
+  introduction generated from the same capability list the router offers.
+- **Digests are keyed (2026-08-25).** The lookup digest for numbers and
+  addresses was a plain SHA-256 over a ~10^10 keyspace, exhaustible offline
+  from a dump; it is now an HMAC keyed from the sealing key, moved in all four
+  consumers at once with an idempotent rekey, and a source-inspection test
+  forbids the unkeyed path returning.
+- **Three backup copies and a restore that has actually been run
+  (2026-08-23/25).** Nightly dumps, mirrored to spark2 and to the Mac
+  (ciphertext only; the key is escrowed elsewhere), thirty-day retention,
+  Redis append-only, and a restore proven end to end including decrypting
+  values out of the restored copy. The first three-way run mirrored to nobody
+  because the `.env` parser stripped the spaces between hosts - fixed the
+  same night. Point-in-time recovery is a recorded gap.
+- **Databases listen on loopback; containers use compose-network names
+  (2026-08-25).** Applying the loopback binding broke every new container
+  connection for an hour while health stayed green, because services dialled
+  the host's LAN address; the fix was addressing by service name, and the
+  trap is recorded so nobody regresses to host addressing.
+- **One egress screen, applied centrally.** A tool argument sent to a
+  third-party MCP server carries the same disclosure risk as a search query,
+  and "a second implementation is how the first gets bypassed" - so the
+  screening policy lives in `core/egress` and a boundary test fails on a
+  duplicate.
+
+### Channels, agents, and tools
+
+- **The iMessage bridge became conversational (2026-08-24).** The Mac reads
+  incoming texts only from allowlisted senders (the send allowlist is reused
+  as the conversation allowlist, by the operator's choice), matches a sender
+  to an account by keyed digest, runs the full pipeline, and replies pinned
+  to the message it answers. Images travel both ways through a spool. Polling
+  is adaptive (3 s idle, 1.5 s while a conversation is active), which took a
+  reply from ~6 s to ~1.5 s. What is said to the assistant leaves the Mac;
+  what anyone else has said never does.
+- **Scheduled tasks reuse the queue that already survived production.**
+  Scout's run queue (leases, exactly-once slots, heartbeats, retry with a
+  deadline) and cadence math are generic; tasks got a sibling queue rather
+  than a second invention, and channels are adapters so WhatsApp or a future
+  channel needs nothing new from the scheduler (`TASKS_ARCHITECTURE.md`).
+- **Scout qualifies deterministically and lets the model order.** What
+  qualifies as a find is code; which qualified find comes first, and how it
+  reads, is the model's. Every Scout model call is greedy because "an
+  unattended weekly job that sampled differently each run could not be
+  compared against itself"; its ranking is judged by a labelled harness with
+  floors, never by eye.
+- **More integrations are coming, and quality is as important as speed
+  (operator direction, 2026-08-24).** Each new MCP integration gets its own
+  labelled routing floor so new tools do not dilute selection precision, and
+  functional coverage of the real provider contract before it is advertised.
+- **Diagrams render on any machine (2026-08-25).** The browser is deliberately
+  not part of the render fingerprint, so a host Playwright refuses to
+  provision can point the pinned renderer at an installed Chrome and produce
+  the identical checked suite.
+
+## Where the decisions still open are recorded
+
+- `NEXT_SESSION.md` carries the current handoff: what is verified, what is
+  deferred, and the operational traps (each one cost real time or data).
+- `ROADMAP.md` carries milestone status; `SECURITY.md` separates current
+  controls from `PLANNED` ones; `MODEL_EVALUATION.md` carries the numbers
+  behind every model choice.
+
+---
+
+# Part III - Implementation reference
+
+Everything from here down is the engineering reference, section by section:
+exact boundaries, settings, thresholds, and the measurements behind them. It
+assumes Parts I and II. Sections that describe the single-RTX-5080 profile
+the system ran on until 2026-08-23 are marked historical where they appear.
 
 ## Status labels
 
@@ -39,46 +656,70 @@ AniOS currently has a modular FastAPI backend rather than independently deployed
 
 ## Runtime topology
 
-`docker-compose.yml` defines these services:
+Everything below runs on spark1 under `docker-compose.yml` unless a row says
+otherwise. Container-to-container traffic uses compose-network service names;
+the two data stores are published on the host's loopback only.
 
-| Service | Implementation | Host port | Current architectural role |
+| Service | Implementation | Reachable at | Role |
 | --- | --- | --- | --- |
-| `backend` | FastAPI/Uvicorn image built from the root `Dockerfile` | `8000` | HTTP API |
-| `presentation-worker` | Same backend image with a dedicated worker command | n/a | Claims durable presentation jobs and executes the focused presentation LangGraph independently of request lifetimes |
-| `frontend` | React/Vite dev-server container built from `frontend/Dockerfile.dev` | `5173` | Developer console with bind-mounted source and hot reload |
-| `db` | `pgvector/pgvector:pg16` | `5432` | PostgreSQL conversation/personal-memory persistence and pgvector semantic search |
-| `redis` | `redis:7-alpine` | `6379` | Shared expiring model-execution lease and foreground-wait counter; no prompt or response content is stored |
-| `vllm-main` | Pinned `vllm/vllm-openai` image with pinned Qwen revision | `8003` | OpenAI-compatible generation, native tool-call, structured-output, diagram, and vision service |
-| `vllm-embedding` | Pinned `vllm/vllm-openai` image with pinned Nomic model and remote-code revisions | `8004` | OpenAI-compatible 768-dimensional text embedding service; starts only after `vllm-main` is healthy |
-| `comfyui` | CUDA/PyTorch image (`docker/comfyui/`) that bind-mounts the host ComfyUI install | `8188` | Opt-in (`comfyui` profile) GPU image generation |
-| image embeddings | `nomic-embed-vision-v1.5` ONNX, in-process on CPU | n/a | Aligned 768-dim image vectors for multimodal retrieval |
-| web research | Built-in stdio MCP server; isolated Gemini 3.6 Flash/Google Search worker with Tavily fallback | n/a | Opt-in; Tavily is active with `SEARCH_API_KEY`, while Google primary requires `GOOGLE_API_KEY` or `GEMINI_API_KEY` |
+| `backend` | FastAPI/Uvicorn image from the root `Dockerfile` | behind `gateway` | HTTP API, SSE streaming, the iMessage chat worker's pipeline |
+| `gateway` | Nginx | host `8080`; public via `cloudflared` | Serves the compiled React app and proxies `/api` on one origin (the only public surface) |
+| `cloudflared` | Cloudflare tunnel | - | `deep-matter.com` -> `gateway`; no inbound port is opened on the LAN |
+| `frontend` | Vite dev server | host `5173` | Development console only |
+| `discovery-worker` | Backend image, worker command | - | Scout sweeps, scheduled tasks, the iMessage polling loop |
+| `presentation-worker` / `presentation-renderer` | Backend image / Node PptxGenJS + LibreOffice | `8002` (renderer) | Durable deck jobs and their validated rendering |
+| `local-capabilities` | Backend image, FastMCP | `8001` | The local visual/presentation tool facade offered to the model |
+| `memory-maintenance` / `storage-collection` | Backend image, timers | - | Retention, stale-vector refresh, unreferenced-byte collection |
+| `db` | `pgvector/pgvector:pg16` | `127.0.0.1:5432` | PostgreSQL: every conversation, memory, artifact record, job, and account; pgvector HNSW indexes |
+| `redis` | `redis:7-alpine`, append-only | `127.0.0.1:6379` | Model-execution lease, login attempt windows, the iMessage cursor; never prompt or response text |
+| `vllm-embedding` | Pinned vLLM, `nomic-embed-text-v1.5` | host `8004` | 768-d text embeddings |
+| `vllm-reranker` | Pinned vLLM, `Qwen3-Reranker-0.6B` | host `8006` | `/v2/rerank` cross-encoder scoring for history recall |
+| `ds4-head` (systemd, not compose) | vLLM, DeepSeek-V4-Flash, tensor-parallel rank 0 | host `8000` | Every text role; rank 1 is `ds4-worker` on spark2 |
+| `anios-vlm` (systemd on **spark2**) | vLLM, Qwen3-VL-8B | spark2 `8001` | Vision |
+| ComfyUI (Docker on the **desktop**) | `docker/comfyui/`, host ComfyUI bind-mounted | desktop `8188` | FLUX.2 Klein generation and editing; only while the desktop is on |
+| iMessage bridge (**Mac**) | `bridges/imessage_mac`, MCP over HTTP | Mac | `allow_recipient`, `send_imessage`, `read_messages`; the only process that touches Messages |
+| image embeddings | `nomic-embed-vision-v1.5` ONNX | in-process, CPU | Aligned 768-d image vectors |
+| web research | Built-in stdio MCP server; isolated Gemini/Google worker, Tavily fallback | external | Opt-in; the one outbound boundary |
+| `comfyui` / `functional-tests` | Compose profiles | - | Opt-in: a Spark-hosted ComfyUI (not used today), and the deploy gate's test container |
 
-The `frontend` container bind-mounts `./frontend` and runs Vite with polling so hot reload works across the Docker mount; its browser page still calls the backend at `localhost:8000`. The backend image has no source bind mount and does not use reload mode, so backend source changes require an image rebuild for container validation; a host-source Uvicorn run remains supported for backend development and must not share port `8000` with the Compose backend.
+The backend image bakes its source and its migrations, so a code change needs
+an image rebuild and `up -d`, and a new migration needs a rebuild before
+`alembic upgrade head` can see it; the gate's test container bind-mounts the
+working tree instead, which is why it can run unmerged code. After any compose
+environment change, compare `docker ps` uptimes against the deploy time - a
+plain `up -d` has been seen to leave services running with stale env.
 
-vLLM is part of the default Compose runtime. The pinned `vllm-main` service exposes `Qwen/Qwen3.5-4B` as `qwen/qwen3.5-4b` at host port `8003`; the pinned `vllm-embedding` service exposes `nomic-ai/nomic-embed-text-v1.5` as `text-embedding-nomic-embed-text-v1.5` at port `8004`. Roles no longer share one model: the conversational role runs on DeepSeek-V4-Flash on the DGX Spark while every other role stays on Qwen, as mapped in [Which model answers what](#which-model-answers-what) below. Role settings remain independent and the legacy `LLM_MODEL` remains a fallback. The qualified single-RTX-5080 profile quantizes Qwen to FP8 on load with an FP8 KV cache, and explicitly selects a 16,384-token context, four generation sequences, a 4,096-token scheduler budget, V1 chunked prefill, asynchronous scheduling, and prefix caching; Nomic uses a 2,048-token context and sixteen sequences. FP8 halves resident weights from 8.61 GiB to 5.09 GiB, which is what allows the doubled context to fit alongside host ComfyUI: measured free GPU memory with both services resident rose from 1,860 MiB to 6,588 MiB, and cached tokens rose from 45,428 to 64,046. Prefix caching produced real hits and passed the role suite, but vLLM 0.23 labels its Qwen hybrid-GDN/Mamba `align` support experimental, so it is a bounded local-profile choice rather than an inherited multi-tenant default. Compose starts Qwen to health before Nomic because concurrent cold GPU initialization left no KV-cache blocks during acceptance. The one-command startup preserves that order, warms one constant non-sensitive generation and embedding request to pay deferred JIT costs, and starts host ComfyUI afterward. ComfyUI remains available as the opt-in Compose profile or the lighter host install at `COMFYUI_HOST_PATH` (default `E:/AI/ComfyUI`); the container backend reaches the host process at `http://host.docker.internal:8188`. Generated and uploaded bytes live below the configurable opaque local artifact root; Compose mounts `/app/data/artifacts` from the `artifactdata` volume.
+**Historical profile, kept for the measurements.** Until 2026-08-23 the whole
+stack ran on one Windows desktop with an RTX 5080: `vllm-main` served
+`Qwen/Qwen3.5-4B` in FP8 at `8003` for every model role, with a 16,384-token
+context, four sequences, chunked prefill, and prefix caching, beside
+`vllm-embedding` at `8004` and host ComfyUI. FP8 halved resident weights
+(8.61 -> 5.09 GiB) and lifted free GPU memory with both services resident
+from 1,860 to 6,588 MiB; Compose started Qwen to health before Nomic because
+concurrent cold initialisation left no KV-cache blocks. That profile is
+retired; its serving lessons live on in `MODEL_EVALUATION.md` and
+`DGX_MIGRATION.md`. Generated and uploaded bytes still live below the opaque
+local artifact root, mounted from the `artifactdata` volume.
 
 ### Model calls per stage
 
-A request is not one model call. Several models run at different stages, and on
-this machine they share **one GPU**, so calls serialize - a turn's latency is
-dominated by how many model calls it makes, not by any single one. Memory
-retrieval planning remains deterministic. Explicit Scout-interest recognition
-is a focused structured Qwen call; other memory proposal types remain
-deterministic.
+A request is not one model call. Several models run at different stages, and
+the text roles all share the one DeepSeek deployment, so calls serialize - a
+turn's latency is dominated by how many model calls it makes, not by any single
+one. Memory retrieval planning remains deterministic.
 
 A chat turn, in order:
 
 | Stage | Model | Runs on | When |
 | --- | --- | --- | --- |
-| Main supervisor route | `qwen/qwen3.5-4b` (`ROUTING_LLM_MODEL`) with deterministic native tool calling | GPU (`vllm-main`) | every chat turn before retrieval; selects one built-in/MCP action or an ordinary reply |
-| Query embedding | `text-embedding-nomic-embed-text-v1.5` (`EMBEDDING_MODEL`) | GPU (`vllm-embedding`) | when personal semantic or agent-vector retrieval is selected; one vector is reused across stores and image recall |
-| Memory retrieval planning | none (deterministic patterns) | CPU | every turn |
-| Artifact modality gate | `qwen/qwen3.5-4b` (structured routing role) | GPU (`vllm-main`) | before an unselected turn may query a private artifact index; returns image now and can admit document, audio, or video sources later |
-| Artifact-recall routing | `qwen/qwen3.5-4b` structured modality decision | GPU (`vllm-main`) | once on an unselected turn, before any private pixel-vector or description-vector candidate lookup |
-| Tool selection | the main supervisor's same deterministic native tool decision | GPU (`vllm-main`) | every turn, with live MCP candidates included only when semantically shortlisted |
-| Response generation | `deepseek-v4-flash` (`MAIN_LLM_MODEL`) through the DGX Spark | GPU (DGX Spark) | ordinary non-delegated turns; the streamed answer, with Qwen standby on transport failure |
-| Typed memory proposal | `qwen/qwen3.5-4b` (`MEMORY_PROPOSAL_LLM_MODEL`) with grammar-constrained JSON and reasoning disabled | GPU (`vllm-main`) | every ordinary chat turn; fail-closed with no write authority |
+| Main supervisor route | `deepseek-v4-flash` (`ROUTING_LLM_MODEL`), native tool calling at temperature 0 | Sparks (`ds4-head`) | every chat turn before retrieval; selects one built-in/MCP action or an ordinary reply |
+| Query embedding | `text-embedding-nomic-embed-text-v1.5` (`EMBEDDING_MODEL`) | spark1 (`vllm-embedding`) | when personal semantic or agent-vector retrieval is selected; one vector is reused across stores and image recall |
+| Memory retrieval planning | none (deterministic) | CPU | every turn |
+| History search (`search_history`) | the embedder, then `qwen3-reranker-0.6b` (`RERANKER_MODEL`) | spark1 (`vllm-embedding`, `vllm-reranker`) | only when the router chose it: top 40 exchanges by vector, reranked to 12, filtered against the visible window; fail-soft to cosine order |
+| Artifact modality gate / artifact-recall routing | `deepseek-v4-flash` structured decision | Sparks | once on an unselected turn, before any private pixel-vector or description-vector lookup |
+| Tool selection | the same native tool decision as the route | Sparks | every turn, with live MCP candidates included only when semantically shortlisted |
+| Response generation | `deepseek-v4-flash` (`MAIN_LLM_MODEL`), streamed | Sparks | ordinary non-delegated turns |
+| Typed memory proposal | `deepseek-v4-flash` (`MEMORY_PROPOSAL_LLM_MODEL`), grammar-constrained JSON, temperature 0 | Sparks | every ordinary chat turn; auto-saves what it classifies, with no write authority beyond the typed fields |
 
 A plain message ("my name is Ani") therefore makes about three model calls: one
 text embedding plus two main-role calls (the turn's action selection and the
@@ -89,41 +730,41 @@ every stage degrades to the one before it rather than failing the sweep:
 
 | Stage | Model | Runs on | When |
 | --- | --- | --- | --- |
-| Query and vector aiming | `qwen/qwen3.5-4b` (`MAIN_LLM_MODEL`), grammar-constrained, greedy | GPU (`vllm-main`) | once per sweep; describes each interest so it is more than a two-word string |
-| Candidate and interest embedding | `text-embedding-nomic-embed-text-v1.5` (`EMBEDDING_MODEL`) | GPU (`vllm-embedding`) | one batch per sweep, feeding novelty, familiarity, and recall ranking |
-| Precision ranking and attribution | `ms-marco-MiniLM-L6-v2` cross-encoder, ONNX | CPU, in-process | one forward pass per (interest, candidate) pair over the shortlist; absent weights disable it |
-| Shortlist ordering against memory | `qwen/qwen3.5-4b` (`MAIN_LLM_MODEL`), grammar-constrained, greedy | GPU (`vllm-main`) | once per sweep, and only when approved facts exist |
-| Find naming and description | `qwen/qwen3.5-4b` (`MAIN_LLM_MODEL`), grammar-constrained, greedy | GPU (`vllm-main`) | once per selected find, after selection rather than per candidate |
+| Query and vector aiming | `deepseek-v4-flash` (`MAIN_LLM_MODEL`), grammar-constrained, greedy | Sparks | once per sweep; describes each interest so it is more than a two-word string |
+| Candidate and interest embedding | `text-embedding-nomic-embed-text-v1.5` (`EMBEDDING_MODEL`) | spark1 (`vllm-embedding`) | one batch per sweep, feeding novelty, familiarity, and recall ranking |
+| Precision ranking and attribution | `ms-marco-MiniLM-L6-v2` cross-encoder, ONNX (`DISCOVERY_RERANKER_SOURCE=local`; the served Qwen3 reranker is selectable and measured worse) | CPU, in-process | one forward pass per (interest, candidate) pair over the shortlist; absent weights disable it |
+| Shortlist ordering against memory | `deepseek-v4-flash` (`MAIN_LLM_MODEL`), grammar-constrained, greedy | Sparks | once per sweep, and only when approved facts exist |
+| Find naming and description | `deepseek-v4-flash` (`MAIN_LLM_MODEL`), grammar-constrained, greedy | Sparks | once per selected find, after selection rather than per candidate |
 
 So a sweep costs about two main-role calls plus one per delivered find, one
 embedding batch, and a few hundred CPU cross-encoder passes. Everything is
 greedy: an unattended weekly job that sampled differently each run could not be
 compared against itself.
 
-Scout also completes a place name while it is being typed —
-`qwen/qwen3.5-4b`, grammar-constrained, debounced at 350 ms rather than per
-keystroke — which is interactive rather than part of a sweep.
+Scout also completes a place name while it is being typed - the main model,
+grammar-constrained, debounced at 350 ms rather than per keystroke - which is
+interactive rather than part of a sweep.
 
 Image and presentation paths:
 
 | Stage | Model | Runs on |
 | --- | --- | --- |
-| Image generation / slide image | `flux-2-klein-4b-fp8.safetensors` (`IMAGE_MODEL`) via ComfyUI | GPU (shared with vLLM) |
-| Refinement prompt merge | `qwen/qwen3.5-4b` (`MAIN_LLM_MODEL`) | GPU |
-| Learned-style distillation | `qwen/qwen3.5-4b` (`MAIN_LLM_MODEL`) | GPU |
-| Image vision analysis (ask) | `qwen/qwen3.5-4b` (`VISION_MODEL`) | GPU |
+| Image generation / slide image | `flux-2-klein-9b-fp8.safetensors` (`IMAGE_MODEL`) via ComfyUI | desktop RTX 5080, only while it is on |
+| Image editing by instruction | FLUX.1 Kontext (`IMAGE_EDIT_MODEL`, GGUF) via ComfyUI; Klein when that is unset | desktop |
+| Refinement prompt merge, learned-style distillation | `deepseek-v4-flash` (`MAIN_LLM_MODEL`) | Sparks |
+| Image vision analysis (ask) | `qwen3-vl-8b` (`VISION_MODEL`) | spark2 (`anios-vlm`) |
 | Image vision escalation | optional `VISION_ESCALATION_MODEL`, currently unset | configured OpenAI-compatible endpoint |
-| Image embedding (index and reconciler) | `nomic-embed-vision-v1.5` ONNX | CPU |
-| Deck outline, one slide-content microtask per slide, or slide revision | `qwen/qwen3.5-4b` (`PRESENTATION_LLM_MODEL`) | GPU |
-| Diagram generation | `qwen/qwen3.5-4b` (`DIAGRAM_LLM_MODEL`) | GPU |
-| Architecture candidates | legacy `LLM_MODEL` unless its CLI environment is overridden | GPU |
+| Image embedding (index and reconciler) | `nomic-embed-vision-v1.5` ONNX | spark1, CPU |
+| Deck outline, one slide-content microtask per slide, or slide revision | `deepseek-v4-flash` (`PRESENTATION_LLM_MODEL`) | Sparks |
+| Diagram generation | `deepseek-v4-flash` (`DIAGRAM_LLM_MODEL`) | Sparks |
+| Architecture candidates | legacy `LLM_MODEL` (DeepSeek) unless its CLI environment is overridden | Sparks |
 | Google-grounded research, when enabled | `gemini-3.6-flash` (`GOOGLE_SEARCH_MODEL`) | external Google API |
 
 Web research, only when routing decides to search, calls Google Gemini grounding
-or Tavily - external/cloud, not the local GPU. Main, presentation, diagram, and
-vision role names are independently configurable, but the current RTX 5080 is
-still one physical GPU. Redis prioritizes chat over presentation microtasks; it
-does not provide multi-model capacity accounting.
+or Tavily - external/cloud, never local hardware. Role names are independently
+configurable. Redis prioritizes chat over presentation microtasks; it does not
+provide multi-model capacity accounting, and nothing here moves a model between
+hosts at request time - over-allocating a Spark hangs it.
 
 ### Aligned image embeddings and web search
 
@@ -514,36 +1155,33 @@ changing one role never silently moves another.
 
 | Role | Setting prefix | Model today | What calls it |
 | --- | --- | --- | --- |
-| Conversational | `MAIN_LLM_*` | DeepSeek-V4-Flash on the Spark (`animallya-spark1.local:8888`) | `build_assistant_graph` replies, `ConversationService`, visual reasoning, MCP tool orchestration, image style, Scout digests and place suggestions |
-| Standby for the above | `MAIN_LLM_STANDBY_*` | Qwen (`vllm-main`) | Any main-role call, but only when the Spark is unreachable |
-| Routing / tool-calling | `ROUTING_LLM_*` | Qwen (`vllm-main`) | `MainActionSelector`, `ImageIntentClassifier`, the `VisualSearchGrounding` search decision |
-| Vision | `VISION_*` | Qwen (`vllm-main`, vision tower) | Canonical image observation and question-specific answers |
+| Conversational | `MAIN_LLM_*` | DeepSeek-V4-Flash, vLLM tensor-parallel across spark1+spark2 (`animallya-spark1.local:8000`) | `build_assistant_graph` replies, `ConversationService`, visual reasoning, MCP tool orchestration, image style, Scout digests and place suggestions |
+| Routing / tool-calling | `ROUTING_LLM_*` | DeepSeek (same deployment), temperature 0 | `MainActionSelector`, `ImageIntentClassifier`, the `VisualSearchGrounding` search decision |
+| Vision | `VISION_*` | Qwen3-VL-8B (`anios-vlm` on spark2, `:8001`) | Canonical image observation and question-specific answers |
 | Vision escalation | `VISION_ESCALATION_*` | Unconfigured | One specialist retry only when the primary reports visible diagnostic evidence it cannot interpret |
-| Presentation | `PRESENTATION_LLM_*` | Qwen (`vllm-main`) | Deck outline planning |
-| Diagram | `DIAGRAM_LLM_*` | Qwen (`vllm-main`) | Diagram source generation |
-| Memory proposal | `MEMORY_PROPOSAL_LLM_*` | Qwen (`vllm-main`) | Classifying what a turn is worth remembering |
-| Text embedding | `EMBEDDING_*` | Nomic (`vllm-embedding`) | Semantic memory and retrieval vectors |
+| Presentation | `PRESENTATION_LLM_*` | DeepSeek | Deck outline planning and slide microtasks |
+| Diagram | `DIAGRAM_LLM_*` | DeepSeek | Diagram source generation |
+| Memory proposal | `MEMORY_PROPOSAL_LLM_*` | DeepSeek, grammar-constrained, temperature 0 | Classifying what a turn is worth remembering |
+| Text embedding | `EMBEDDING_*` | Nomic (`vllm-embedding`, spark1) | Semantic memory and retrieval vectors, both voices of every exchange |
+| Reranking | `RERANKER_*` | Qwen3-Reranker-0.6B (`vllm-reranker`, spark1, `/v2/rerank`) | History recall's second pass; empty `RERANKER_BASE_URL` switches the stage off |
+| Image generation / editing | `IMAGE_*` / `IMAGE_EDIT_*` | FLUX.2 Klein 9B / FLUX.1 Kontext via ComfyUI on the desktop | `generate_image`, `edit_image`, deck image enrichment |
 
 Each role falls back through the next-broader scope when unset
 (`ROUTING_LLM_* -> MAIN_LLM_* -> LLM_*`), so an unset role inherits rather than
-failing. That inheritance is why `ROUTING_LLM_*` is pinned explicitly rather
-than left blank: unset, tool-calling would have followed the conversational
-role onto DeepSeek.
+failing; the roles are still pinned explicitly in compose so that changing one
+never silently moves another.
 
 **Why the split is shaped this way.** DeepSeek answers conversationally because
 a blind six-prompt read put it ahead of both Qwen and Nemotron with no failures
-(2026-08-14; full evidence in `ROADMAP.md` Milestone 9). Everything else stayed
-on Qwen for reasons measured rather than assumed:
-
-- **Vision cannot move.** The DeepSeek build is text-only and cannot read pixels
-  at all. This alone keeps a second model resident.
-- **Strict JSON breaks on DeepSeek.** It returned unparseable output for every
-  16-token intent classification, and `extra_forbidden` field names for deck
-  schemas. Both were live defects, not hypotheticals.
-- **Routing stays on Qwen for latency, not accuracy.** DeepSeek actually scored
-  better on the routing benchmark (0.8519 against Qwen's 0.8276 on 2026-08-14).
-  But the routing call gates every turn, and Qwen returns in about a second
-  where DeepSeek adds five to ten before anything begins.
+(2026-08-14; full evidence in `ROADMAP.md` Milestone 9 and
+`MODEL_EVALUATION.md`, "DeepSeek stays", 2026-08-20). The DeepSeek build is
+text-only and cannot read pixels, which alone keeps a second, vision model
+resident. On the single-GPU profile that preceded the Sparks, routing and the
+structured roles stayed on Qwen 4B - routing for latency (Qwen returned in
+about a second where DeepSeek added five to ten) and structured output because
+DeepSeek then returned unparseable JSON for short classifications; with the
+Sparks serving DeepSeek under grammar-constrained decoding, every text role
+consolidated onto it and the 4B was retired.
 
 An image question therefore touches three roles in order: vision describes the
 pixels, routing decides whether the question needs a web search, and the
@@ -1064,7 +1702,7 @@ stores only coordination keys and opaque lease tokens. This is bounded priority
 scheduling for one local model host, not GPU-capacity accounting or a general
 distributed-agent scheduler.
 
-The current local qualification consolidates main response, native tool selection, diagram, presentation, architecture-candidate, and vision roles on `qwen/qwen3.5-4b`, served in FP8 by `vllm-main`; `vllm-embedding` serves Nomic text embeddings. Provider-level checks passed streaming termination, native tools, structured output, vision, and embedding dimensions. Real AniOS acceptance then passed direct chat, live Chromium chat/restoration, uploaded-image analysis, real ComfyUI generation while both vLLM services remained resident, and three consecutive presentation jobs after the typed presentation boundary normalized optional-field variants. The repeatable harness remains a promotion gate, not sufficient proof by itself.
+The qualification that established this boundary (historical, single-GPU profile) consolidated main response, native tool selection, diagram, presentation, architecture-candidate, and vision roles on `qwen/qwen3.5-4b`, served in FP8 by `vllm-main`, with `vllm-embedding` serving Nomic text embeddings. Provider-level checks passed streaming termination, native tools, structured output, vision, and embedding dimensions; real acceptance then passed direct chat, live Chromium chat/restoration, uploaded-image analysis, real ComfyUI generation while both vLLM services remained resident, and three consecutive presentation jobs. The same promotion rule carried the text roles onto DeepSeek on the Sparks in 2026-08 (`MODEL_EVALUATION.md`, `DGX_MIGRATION.md`): the repeatable harness remains a promotion gate, not sufficient proof by itself.
 
 ### Schema-constrained model boundaries
 
@@ -1221,7 +1859,9 @@ The current scaffold expresses this intended flow:
 Frontend -> POST /api/v1/chat -> FastAPI dependency assembly
          -> ConversationService -> MainActionSelector
          -> (search_web | generate_image | edit_image | create_diagram
-             | delegate_to_presentation_agent | a toolbox tool | none),
+             | delegate_to_presentation_agent | search_history
+             | schedule_task / manage_tasks | a taught skill
+             | a toolbox tool | none),
             the main model's own native tool-calling decision
 
 no action / search_web / toolbox tool -> MemoryCoordinatorAgent -> typed stores
@@ -1288,4 +1928,9 @@ Current runtime validation completes this flow through the qualified main and sp
 
 ## Architectural decision
 
-The project has adopted clean-architecture and dependency-inversion principles as a design direction. [ADR 0001](adr/0001-clean-architecture-and-modular-structure.md) records that direction. [ADR 0002](adr/0002-typed-agent-memory-manager-and-pgvector-indexes.md) records the typed store-manager/coordinator boundary and the pgvector HNSW indexing choice. [ADR 0003](adr/0003-local-visual-artifacts-and-resource-aware-orchestration.md) records the local-only visual-artifact, GPU-resource, and scalable orchestration direction; editable diagrams, raster generation and source editing, binary storage, upload validation, VLM analysis, aligned image retrieval, browser integration, and the local visual FastMCP facade are implemented while deterministic resource orchestration remains `PLANNED`. [ADR 0004](adr/0004-hybrid-free-tier-web-research.md) records the isolated Google research worker, Tavily fallback/cross-check, free-tier quota, and data-minimization boundary. [ADR 0005](adr/0005-typed-editable-presentation-generation.md) records the typed editable-presentation, focused-agent, durable-job worker, foreground-priority model gate, renderer, and validated-promotion boundaries. [ADR 0006](adr/0006-hybrid-supervisor-and-qualified-model-roles.md) records the typed hybrid-supervisor boundary, visible delegation provenance, role-specific local-model configuration, and acceptance-path-driven model promotion rule. [ADR 0007](adr/0007-versioned-visual-semantics-memory-and-editing.md) records implemented source-aware immutable editing plus planned generated-image observation, handle-based visual memory, semantic verification, and derived-data lifecycle boundaries. [ADR 0008](adr/0008-provider-neutral-inference-boundary.md) records the provider-neutral inference adapters, role-level configuration, and deliberate separation from runtime lifecycle control. [ADR 0009](adr/0009-vllm-default-local-inference-runtime.md) records the pinned two-service vLLM deployment, consolidated Qwen/Nomic role profile, GPU-safe startup order, and remaining resource-management boundary. [ADR 0010](adr/0010-invite-identity-and-revocable-sessions.md) records the stable-owner/login-name split and revocable server-side browser-session boundary. [ADR 0011](adr/0011-sharing-by-copy-on-accept.md) records the decision that sharing between accounts copies on accept rather than granting access into another owner's store, keeping the single-owner invariant that deletion, export, and every scoped query already depend on.
+Every decision record, its reasoning, and its status is catalogued in
+[Part II](#part-ii---the-engineering-decisions-and-why) above, including the
+reply graph ([ADR 0012](adr/0012-the-graph-answers-the-turn-it-does-not-run-it.md))
+and the two open briefs on a capability registry (0013) and the embedding
+models (0014). The summary that follows is the original index, kept for its
+links. The project has adopted clean-architecture and dependency-inversion principles as a design direction. [ADR 0001](adr/0001-clean-architecture-and-modular-structure.md) records that direction. [ADR 0002](adr/0002-typed-agent-memory-manager-and-pgvector-indexes.md) records the typed store-manager/coordinator boundary and the pgvector HNSW indexing choice. [ADR 0003](adr/0003-local-visual-artifacts-and-resource-aware-orchestration.md) records the local-only visual-artifact, GPU-resource, and scalable orchestration direction; editable diagrams, raster generation and source editing, binary storage, upload validation, VLM analysis, aligned image retrieval, browser integration, and the local visual FastMCP facade are implemented while deterministic resource orchestration remains `PLANNED`. [ADR 0004](adr/0004-hybrid-free-tier-web-research.md) records the isolated Google research worker, Tavily fallback/cross-check, free-tier quota, and data-minimization boundary. [ADR 0005](adr/0005-typed-editable-presentation-generation.md) records the typed editable-presentation, focused-agent, durable-job worker, foreground-priority model gate, renderer, and validated-promotion boundaries. [ADR 0006](adr/0006-hybrid-supervisor-and-qualified-model-roles.md) records the typed hybrid-supervisor boundary, visible delegation provenance, role-specific local-model configuration, and acceptance-path-driven model promotion rule. [ADR 0007](adr/0007-versioned-visual-semantics-memory-and-editing.md) records implemented source-aware immutable editing plus planned generated-image observation, handle-based visual memory, semantic verification, and derived-data lifecycle boundaries. [ADR 0008](adr/0008-provider-neutral-inference-boundary.md) records the provider-neutral inference adapters, role-level configuration, and deliberate separation from runtime lifecycle control. [ADR 0009](adr/0009-vllm-default-local-inference-runtime.md) records the pinned two-service vLLM deployment, consolidated Qwen/Nomic role profile, GPU-safe startup order, and remaining resource-management boundary. [ADR 0010](adr/0010-invite-identity-and-revocable-sessions.md) records the stable-owner/login-name split and revocable server-side browser-session boundary. [ADR 0011](adr/0011-sharing-by-copy-on-accept.md) records the decision that sharing between accounts copies on accept rather than granting access into another owner's store, keeping the single-owner invariant that deletion, export, and every scoped query already depend on.
