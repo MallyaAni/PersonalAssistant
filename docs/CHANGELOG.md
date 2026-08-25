@@ -95,13 +95,13 @@ This file is append-only history for meaningful, verified changes. It must not c
   it; `pg_stat_archiver.failed_count` is the number to watch), and a time
   target past the last committed transaction makes Postgres refuse to
   promote. Procedure in `RESTORE.md`.
-- **Backup failure paging is wired end to end**, except for the root step.
-  Alert config on spark1 (bridge URL, token from spark1's own MCP config,
-  the admin account's own approved number); a labelled test page reached the
-  operator's phone; a new weekly freshness check pages when any of the three
-  copies lacks a dump newer than 36 hours and passed against all three.
-  Installing the `OnFailure` and timer units needs root on spark1 and is
-  recorded in `NEXT_SESSION.md` as the operator's three commands.
+- **Backup failure paging is wired end to end.** Alert config on spark1
+  (bridge URL, token from spark1's own MCP config, the admin account's own
+  approved number); a labelled test page reached the operator's phone; the
+  nightly unit carries `OnFailure=anios-backup-failed.service`; and a new
+  weekly freshness timer pages when any of the three copies lacks a dump
+  newer than 36 hours - passed against all three, and run once under systemd
+  with `Result=success`.
 - **`docs/ARCHITECTURE.md` rewritten in three parts** - a newcomer's Part I in
   the memory overview's numbered shape for every subsystem, a Part II
   cataloguing every ADR and every decision made while running the system

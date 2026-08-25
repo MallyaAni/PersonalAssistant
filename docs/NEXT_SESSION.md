@@ -468,22 +468,22 @@ uptime, silently failing every job), and only an explicit
 change, check `docker ps` uptimes against the deploy time rather than
 trusting up -d's own output.
 
-## Backup alerting — three-quarters live, 2026-08-25
+## Backup alerting — LIVE 2026-08-25
 
 `ALERT_BRIDGE_URL`, `ALERT_BRIDGE_TOKEN` (taken from spark1's own
 `MCP_SERVERS_JSON`, never moved off the box), and `OPERATOR_ALERT_PHONE` (the
 admin account's own approved subscription) are set in spark1's `.env`. A
 labelled test page went through `scripts/notify-operator.sh` to the
-operator's phone ("alert sent"). The new weekly freshness check
-(`scripts/check-backup-freshness.sh`: every copy must hold a dump newer than
-36 h, an unreachable mirror counts as stale, pages on its own) ran clean on
-spark1. **Still needed, root on spark1, three commands** - the session that
-wired this could not run sudo there:
-`sudo cp deploy/spark/systemd/anios-backup-failed.service deploy/spark/systemd/anios-backup.service deploy/spark/systemd/anios-backup-freshness.{service,timer} /etc/systemd/system/`
-then `sudo systemctl daemon-reload` and
-`sudo systemctl enable --now anios-backup-freshness.timer`. Until then
-`OnFailure=` on the installed backup unit is empty and the weekly check has no
-timer; the paging path itself is proven.
+operator's phone ("alert sent"). The four units are installed in
+`/etc/systemd/system`: the nightly backup now carries
+`OnFailure=anios-backup-failed.service`, and `anios-backup-freshness.timer`
+(Mondays 09:00, `Persistent=true`) runs `scripts/check-backup-freshness.sh` -
+every copy must hold a dump newer than 36 h, an unreachable mirror counts as
+stale, and it pages on its own. The freshness service was run once under
+systemd and finished `Result=success`; the failure unit lints clean. The
+failure path was deliberately not fired end to end, because its only output
+is a "backup FAILED" text to the operator - the notify script it calls is the
+one already proven.
 
 ## Architecture document rewritten for newcomers, 2026-08-25
 
