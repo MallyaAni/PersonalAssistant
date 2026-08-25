@@ -104,8 +104,17 @@ the Sparks and the Mac. The earlier scan missed it. Its wired `Ethernet`
 adapter is on a 169.254 link-local address, which is probably what the scan
 found.
 
-**Blockers measured on the desktop 2026-08-24 22:50, before anyone downloads
-17 GB.** All read-only; nothing on that box was changed.
+**Desktop readiness, measured on the box 2026-08-24 22:50.** All read-only;
+nothing on that box was changed. Two of these started as blockers and are
+resolved — both are kept, with the reasoning, because the corrections are more
+useful than a tidy list would be.
+
+**Verdict: Plan A is sound on paper and nothing technical is in the way.** What
+remains is three things only the operator can authorise, listed at the end.
+Plan B needs no code: commit `1bc2c2df` makes both Klein workflows follow the
+model file name, so a `.gguf` routes to `UnetLoaderGGUF` and anything else to
+`UNETLoader`. Dropping `flux-2-klein-9b-Q6_K.gguf` (~7.5 GB) into
+`diffusion_models/` and pointing `IMAGE_MODEL` at it is the entire fallback.
 
 - **VRAM: 16,303 MiB total, 13,727 free** (the rest ordinary Windows desktop
   processes — no compute tenant). I first read this as fatal, summing the 9B
@@ -145,6 +154,24 @@ found.
   `text_encoders/t5-v1_1-xxl-encoder-Q5_K_M.gguf` (3.15 GB),
   `clip_l.safetensors`, `vae/ae.safetensors`, and the `ComfyUI-GGUF` custom
   node.
+
+**Awaiting the operator, and only the operator.** A peer session asking is not
+authorisation for any of these:
+
+1. **Hugging Face login** — the 9B is gated under FLUX Non-Commercial.
+2. **~18 GB of downloads** — `flux-2-klein-9b-fp8.safetensors` (~9.5 GB) into
+   `diffusion_models/`, `qwen_3_8b_fp8mixed.safetensors` (~8.5 GB) into
+   `text_encoders/`. The `vae/flux2-vae.safetensors` already present is right.
+3. **An inbound Windows firewall rule for TCP 8188, scoped to 172.16.8.0/24**
+   — needs admin on the desktop.
+
+Then, in order: `docker compose --profile comfyui up -d comfyui` with
+`COMFYUI_DOCKERFILE=Dockerfile`, confirm via `nvidia-smi` that ComfyUI is the
+only compute process and no other anios container started, and prove it with
+`curl http://172.16.8.6:8188/system_stats` from a Spark plus one real 4-step
+1024x1024 generation. Report wall time and peak VRAM during the run; on OOM,
+switch to Plan B and report the same numbers. Only then does spark1's `.env`
+get `IMAGE_PROVIDER_BASE_URL=http://172.16.8.6:8188` and the 9B names.
 
 The earlier headroom analysis, kept for the record:
 **FLUX did not fit on the Sparks as they stand.** The sm_121
