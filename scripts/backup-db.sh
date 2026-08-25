@@ -49,6 +49,26 @@ fi
 mv "$partial" "$target"
 echo "Backed up $tables tables to data/backups/$(basename "$target")"
 
+# Point-in-time recovery needs two things the dump is not: a base backup of
+# the data directory, and every WAL segment written since it. The db container
+# archives segments into the walarchive volume on its own (compose sets
+# archive_mode=on with a five-minute archive_timeout); this takes the base
+# backup beside them, keeps a week of both, and copies the volume out to the
+# host so the mirror loop below can ship it. Never fatal: the dump above is
+# still a backup, and a PITR gap is reported, not silently swallowed.
+if "${compose[@]}" exec -T db sh -c 'd="/wal-archive/base-$(date +%Y%m%d-%H%M%S)" && mkdir -p "$d" && pg_basebackup -U "'"$user"'" -D "$d" -Ft -z -X none -c fast && find /wal-archive -maxdepth 1 -name "base-*" -type d -mtime +7 -exec rm -rf {} + ; find /wal-archive -maxdepth 1 -type f -mtime +7 -delete' \
+    && mkdir -p "$root/data/wal-archive" \
+    && "${compose[@]}" cp db:/wal-archive/. "$root/data/wal-archive/" >/dev/null; then
+    # The staging copy is pruned on the volume's own terms, because `cp` adds
+    # and never removes; the mirrors then follow the staging copy exactly.
+    find "$root/data/wal-archive" -maxdepth 1 -name 'base-*' -type d -mtime +7 -exec rm -rf {} + 2>/dev/null || true
+    find "$root/data/wal-archive" -maxdepth 1 -type f -mtime +7 -delete 2>/dev/null || true
+    segments="$(find "$root/data/wal-archive" -maxdepth 1 -type f | wc -l | tr -d ' ')"
+    echo "Base backup taken; $segments archived WAL files staged in data/wal-archive"
+else
+    echo "WARNING: base backup or WAL archive copy failed - the dump is fine, point-in-time recovery is not current" >&2
+fi
+
 # A dump that never leaves the machine is not a backup.
 #
 # Both the database volume and this directory live on the same NVMe device, so
@@ -82,6 +102,16 @@ if [[ -n "${BACKUP_MIRROR_HOST:-}" ]]; then
         if ssh -o BatchMode=yes -o ConnectTimeout=10 "$host" "mkdir -p $mirror_dir" \
             && scp -o BatchMode=yes -o ConnectTimeout=10 -q "$target" "$host:$mirror_dir/"; then
             echo "Mirrored to $host:$mirror_dir"
+            # The WAL archive rides along, incrementally: rsync sends only new
+            # segments and removes what the archive has pruned, so the mirror
+            # holds what the volume holds, a week deep. Without this the
+            # archive would survive exactly the failure the dump already
+            # survives - one disk - and not the one PITR is for.
+            if [[ -d "$root/data/wal-archive" ]] && command -v rsync >/dev/null 2>&1; then
+                rsync -a -e "ssh -o BatchMode=yes -o ConnectTimeout=10" --delete "$root/data/wal-archive/" "$host:$mirror_dir/wal-archive/" \
+                    && echo "WAL archive mirrored to $host:$mirror_dir/wal-archive" \
+                    || echo "WARNING: could not mirror the WAL archive to $host" >&2
+            fi
             # Prune the mirror on the same terms as the local copy; without this
             # the remote keeps every dump forever, noticed only when its disk
             # fills. Bodies of the two finds kept on one line each so no

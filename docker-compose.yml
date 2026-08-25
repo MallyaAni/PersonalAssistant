@@ -219,8 +219,25 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
       POSTGRES_DB: ${POSTGRES_DB:-anios_db}
+    # Point-in-time recovery. The nightly dump alone meant a failure at 03:29
+    # lost the day. With WAL archiving every completed segment is copied into
+    # the walarchive volume (never overwriting one already there), a segment is
+    # forced closed at least every five minutes so the archive lags the live
+    # database by no more than that, and backup-db.sh takes a base backup
+    # beside it and ships both to the mirrors. Restore procedure: RESTORE.md.
+    command:
+      - postgres
+      - -c
+      - wal_level=replica
+      - -c
+      - archive_mode=on
+      - -c
+      - archive_command=test ! -f /wal-archive/%f && cp %p /wal-archive/%f
+      - -c
+      - archive_timeout=300
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - walarchive:/wal-archive
     healthcheck:
       test:
         - CMD-SHELL
@@ -1095,6 +1112,9 @@ services:
 volumes:
   redisdata:
   pgdata:
+  # WAL segments and base backups for point-in-time recovery; the db
+  # container archives into it and backup-db.sh copies it out and mirrors it.
+  walarchive:
   artifactdata:
   searchdata:
   telemetrydata:
