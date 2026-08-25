@@ -304,3 +304,27 @@ def test_image_payload_is_never_screened_but_other_fields_are():
         server, "send_imessage", {"to": "+15550100", "attachment_base64": secret_shaped}
     )
     assert screened["attachment_base64"] == secret_shaped
+
+
+# Every attachment-only iMessage carries `body: ""`, and the egress policy
+# reports an empty query as `empty` - for a search that means nothing to
+# search; for a tool argument it meant the picture was withheld after the
+# "here's the image" bubble had already gone. Empty discloses nothing.
+def test_an_empty_string_argument_is_not_withheld():
+    from backend.config.settings import settings
+    from backend.services.mcp_invocation_service import MCPInvocationService
+
+    service = MCPInvocationService(invoker=None, lister=None)
+    screened = service._screen_arguments(
+        settings.DISCOVERY_IMESSAGE_SERVER_ID,
+        "send_imessage",
+        {
+            "to": "+12025550143",
+            "body": "",
+            "attachment_name": "1da2bcda-53f1-4878-ae66-7782458e4a43.png",
+            "attachment_media_type": "image/png",
+            "attachment_base64": "iVBORw0KGgo=",
+        },
+    )
+    assert screened["body"] == ""
+    assert screened["attachment_name"].endswith(".png")

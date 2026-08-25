@@ -87,6 +87,15 @@ class MCPInvocationService:
             if (server_id, tool_name, name) in self.addressing_fields:
                 screened[name] = value
                 continue
+            # An empty string discloses nothing, so it passes as it is. The
+            # egress policy reports "" as `empty` because for a search query
+            # that means there is nothing to search - but a tool argument is
+            # legitimately empty all the time: every attachment-only iMessage
+            # carries `body: ""`, and screening it withheld the picture while
+            # the "here's the image" bubble before it had already been sent.
+            if value == "":
+                screened[name] = value
+                continue
             result = self.egress.sanitize(value)
             if not result.allowed:
                 raise MCPInvocationError(
