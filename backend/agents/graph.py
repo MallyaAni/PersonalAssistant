@@ -159,6 +159,26 @@ def _render_tool_context(
 # personal memory has been updated": passive, true-sounding, and false. Naming
 # the real state and showing the sentence to write leaves nothing to route
 # around, and a small model follows a worked example far better than a ban.
+# Tell the model when an edit it was asked for did not happen. Without this a
+# helpful assistant, handed "add X to the picture" with a picture in view and
+# no edit performed, answers "here's the updated image" for pixels that were
+# never changed - observed on the real path on 2026-08-25. Rendered only when
+# an edit was requested and not performed; a completed edit needs no note,
+# the artifact event carries it.
+def _render_edit_state(edit: dict[str, Any]) -> str:
+    if not edit or edit.get("performed", True):
+        return ""
+    reason = str(edit.get("reason") or "no picture could be identified").strip()
+    return (
+        "\nThis turn: no picture was changed or created. The user asked for an "
+        f"edit, but {reason}, so nothing was generated or edited. Say that "
+        "plainly. Do not describe an updated, edited, or new image, do not say "
+        "the change has been made, and do not present any picture as the "
+        "result. Ask which picture they mean, or invite them to select or "
+        "upload the one to change."
+    )
+
+
 def _render_save_state(save: dict[str, Any]) -> str:
     if not save:
         return ""
@@ -394,6 +414,7 @@ def _build_system_prompt(
         capabilities=_render_capability_context(context_data.get("capabilities") or []),
         save_state=(
             "" if moved else _render_save_state(context_data.get("memory_save") or {})
+        + _render_edit_state(context_data.get("image_edit") or {})
         ),
     )
     prompt += _channel_style(context_data)
@@ -484,6 +505,7 @@ def _build_turn_context(
 ) -> str:
     blocks = (
         _render_save_state(context_data.get("memory_save") or {})
+        + _render_edit_state(context_data.get("image_edit") or {})
         if include_save_state
         else "",
         _render_recalled_turns(context_data.get("recalled_turns") or []),

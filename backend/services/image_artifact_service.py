@@ -38,6 +38,7 @@ class ImageArtifactService:
         edit_provider: ImageEditProvider | None = None,
         edit_provider_name: str = "",
         edit_model_name: str = "",
+        descriptions: Any | None = None,
     ) -> None:
         self.provider = provider
         self.repository = repository
@@ -52,6 +53,38 @@ class ImageArtifactService:
         self.edit_provider = edit_provider
         self.edit_provider_name = edit_provider_name
         self.edit_model_name = edit_model_name
+        self.descriptions = descriptions
+
+    # Index what a generated or edited picture shows, so the referent resolver
+    # and description recall can find it later. An upload gets this from the
+    # vision model's observation; a generated picture's own prompt is the
+    # description it was made from, and an edit is what it was made from plus
+    # the instruction applied. Without this only uploads could be found by
+    # description - measured 2026-08-25: "edit the bicycle picture" found
+    # nothing, and an unselected edit right after a generation had no
+    # candidate at all. An enhancement, never a failure of the artifact.
+    async def _index_description(
+        self,
+        user_id: str,
+        artifact_id: str,
+        content: str,
+        metadata: dict[str, Any],
+    ) -> None:
+        if self.descriptions is None or not content.strip():
+            return
+        try:
+            await self.descriptions.replace_visual_semantic_memory(
+                user_id,
+                artifact_id,
+                " ".join(content.split())[:2_000],
+                {"artifact_id": artifact_id, **metadata},
+            )
+        except Exception:
+            logger.warning(
+                "Could not index the description of image %s",
+                artifact_id,
+                exc_info=True,
+            )
 
     # Embed one stored image so it is retrievable by meaning, not just caption.
     # Runs for generated and uploaded images alike; the pixels are what change,
@@ -191,6 +224,12 @@ class ImageArtifactService:
                 },
             )
             await self._index_embedding(user_id, artifact_id, generated.content)
+            await self._index_description(
+                user_id,
+                artifact_id,
+                request.prompt,
+                {"kind": "generated_image", "source": "generation_prompt"},
+            )
             return ready_generated
         except asyncio.CancelledError:
             if storage_key:
@@ -276,6 +315,21 @@ class ImageArtifactService:
                 },
             )
             await self._index_embedding(user_id, artifact_id, edited.content)
+            origin = str(
+                parent_metadata.get("generation_prompt")
+                or parent.get("title")
+                or "a picture"
+            )
+            await self._index_description(
+                user_id,
+                artifact_id,
+                f"{origin}. Edited: {instruction}",
+                {
+                    "kind": "edited_image",
+                    "source": "edit_instruction",
+                    "parent_artifact_id": str(parent.get("id") or ""),
+                },
+            )
             return ready
         except asyncio.CancelledError:
             if storage_key:

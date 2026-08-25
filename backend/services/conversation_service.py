@@ -729,6 +729,7 @@ class ConversationService:
         trace_id: str,
         metadata: dict[str, Any],
         active_image_artifact_id: str | None = None,
+        extra_context: dict[str, Any] | None = None,
     ) -> AsyncGenerator[ChatStreamEvent, None]:
         return self._process_assistant_request(
             user_id,
@@ -738,6 +739,7 @@ class ConversationService:
             metadata,
             active_image_artifact_id,
             preselected_action=None,
+            extra_context=extra_context,
         )
 
     # Queue a specialist presentation job and persist the delegated chat turn.
@@ -1123,9 +1125,22 @@ class ConversationService:
         )
         if not offered:
             # Nothing this user owns was even a candidate, so this turn has no
-            # visual context at all and the edit decision was a misroute.
+            # visual context at all and the edit decision was a misroute. The
+            # reply is told so: left to itself it described an edited picture
+            # that did not exist.
             async for event in self._answer_without_the_tool(
-                user_id, query, conversation_id, trace_id, metadata
+                user_id,
+                query,
+                conversation_id,
+                trace_id,
+                metadata,
+                extra_context={
+                    "image_edit": {
+                        "performed": False,
+                        "reason": "none of the pictures this user owns matched "
+                        "what they described",
+                    }
+                },
             ):
                 yield event
             return

@@ -910,3 +910,75 @@ def test_the_klein_loader_follows_the_model_file_type():
         megapixels=2.0,
     )
     assert editor._model_loader()["class_type"] == "UnetLoaderGGUF"
+
+
+class RecordingDescriptions:
+    # Capture what the image service indexes as a picture's description.
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, str, str, dict[str, Any]]] = []
+
+    async def replace_visual_semantic_memory(
+        self, user_id: str, artifact_id: str, content: str, metadata: dict[str, Any]
+    ) -> dict[str, Any]:
+        self.calls.append((user_id, artifact_id, content, metadata))
+        return {"id": "memory-1"}
+
+
+# A generated picture must be findable by what it shows, exactly as an upload
+# is after the vision model describes it. The prompt is that description.
+@pytest.mark.asyncio
+async def test_a_generated_picture_is_indexed_by_its_prompt(tmp_path: Path):
+    repository = CapturingBinaryRepository()
+    descriptions = RecordingDescriptions()
+    service = ImageArtifactService(
+        StaticImageProvider(),
+        repository,  # type: ignore[arg-type]
+        LocalBinaryArtifactStore(tmp_path),
+        "test-provider",
+        "test-model",
+        1024 * 1024,
+        1000,
+        descriptions=descriptions,
+    )
+    ready = await service.generate(
+        "image-user",
+        "11111111-1111-4111-8111-111111111111",
+        "22222222-2222-4222-8222-222222222222",
+        ImageGenerationRequest("a red bicycle leaning against a brick wall", 1024, 1024, 7),
+    )
+    assert ready["status"] == "ready"
+    assert len(descriptions.calls) == 1
+    user_id, artifact_id, content, metadata = descriptions.calls[0]
+    assert user_id == "image-user"
+    assert artifact_id == ready["id"]
+    assert content == "a red bicycle leaning against a brick wall"
+    assert metadata["artifact_id"] == ready["id"]
+    assert metadata["source"] == "generation_prompt"
+
+
+# Indexing is an enhancement: a description store that fails must not fail
+# the picture that was just generated.
+@pytest.mark.asyncio
+async def test_a_failing_description_index_never_fails_the_picture(tmp_path: Path):
+    class Broken:
+        async def replace_visual_semantic_memory(self, *args: Any, **kwargs: Any):
+            raise RuntimeError("index unavailable")
+
+    repository = CapturingBinaryRepository()
+    service = ImageArtifactService(
+        StaticImageProvider(),
+        repository,  # type: ignore[arg-type]
+        LocalBinaryArtifactStore(tmp_path),
+        "test-provider",
+        "test-model",
+        1024 * 1024,
+        1000,
+        descriptions=Broken(),
+    )
+    ready = await service.generate(
+        "image-user",
+        "11111111-1111-4111-8111-111111111111",
+        "22222222-2222-4222-8222-222222222222",
+        ImageGenerationRequest("blue square", 512, 512, 1),
+    )
+    assert ready["status"] == "ready"

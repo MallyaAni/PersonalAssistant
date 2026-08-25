@@ -332,11 +332,25 @@ holds ~97 GiB on each.
 **Measured.** 6.0 s warm and 114.5 s cold at 1024x1024 and 4 steps, 13,755
 MiB peak of 16,303; from spark1 through the backend's own provider classes,
 generate 16.9 s and a Kontext edit 118.6 s. That last number is the model
-swap: Klein (7.3 GB) and Kontext (6.5 GB) plus their encoders cannot both
-stay resident, so a generate followed by an edit pays a cold load; ComfyUI
-runs prompts serially, so concurrent requests queue rather than collide. The
-fp8 9B was the first choice and is HF-gated; the GGUF is a file-name change,
-because both Klein workflows follow the model file name to the loader.
+swap: Klein (7.33 GB) and Kontext (6.46 GB) plus the 8.07 GB encoder cannot
+all stay resident, so a generate followed by an edit pays a cold load;
+ComfyUI runs prompts serially, so concurrent requests queue rather than
+collide. The fp8 9B was the first choice and is HF-gated; the GGUF is a
+file-name change, because both Klein workflows follow the model file name to
+the loader.
+
+**The ceiling is the VM's RAM, not the card's VRAM.** ComfyUI runs in Docker
+Desktop's WSL2 VM, which takes the default half of host memory: the
+container sees **15.6 GB of RAM** on a 32 GB host, and that RAM is where an
+evicted model goes. Encoder + Klein is 15.40 GB; encoder + Kontext is 14.53
+GB; both sit within a few hundred MB of the ceiling before pinned memory and
+a 2 MP latent. Measured 2026-08-25: a Klein generation queued back to back
+with a Kontext edit at 2 MP made ComfyUI exit cleanly mid-job (`ExitCode 0`,
+`OOMKilled false`, no CUDA error - VM memory pressure, not GPU OOM), and
+spark1 saw both jobs disconnect. `IMAGE_EDIT_MEGAPIXELS` is now 1.0 (a 1 MP
+edit of a 1024x1024 source is not a visible downgrade), and the structural
+fix is a `.wslconfig` with `memory=24GB` on the desktop - a host change,
+recorded for its next boot.
 
 **Editing choices, measured.** Klein 4B as an editor left a picture
 unchanged when asked to *add* anything, at 4 and 20 steps, at CFG 3.0, and

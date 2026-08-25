@@ -728,8 +728,13 @@ def get_image_artifact_service(
     repository: ArtifactRepositoryDependency,
     store: BinaryArtifactStoreDependency,
     vision_embeddings: VisionEmbeddingDependency,
+    # Optional so the manual callers (the visual MCP facade, the chat service
+    # assembly) keep working; under FastAPI it is injected, and a generated or
+    # edited picture is then indexed by its description like an upload is.
+    memory: Annotated[PostgresMemoryService | None, Depends(get_memory_service)] = None,
 ) -> ImageArtifactService:
     return ImageArtifactService(
+        descriptions=memory,
         provider=provider,
         repository=repository,
         store=store,
