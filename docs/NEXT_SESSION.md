@@ -613,7 +613,10 @@ provider now covers the common case: when ComfyUI drops a job it had
 accepted, the provider waits for `/system_stats` to answer again (up to
 `IMAGE_PROVIDER_RESTART_WAIT_SECONDS`, 90) and resubmits exactly once - a
 job it rejected or one that timed out is never retried, and a second
-failure reports as before. Structural tests pin both directions.
+failure reports as before. Structural tests pin both directions; the seven
+scenarios then passed 7 of 7 on the deployed build with no resubmission
+needed (ComfyUI stayed up for that run - the retry is insurance until the
+VM restart, not a substitute for it).
 
 ## iMessage pictures — defect found and fixed, 2026-08-25
 
