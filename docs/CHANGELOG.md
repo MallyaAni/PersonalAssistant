@@ -139,6 +139,14 @@ This file is append-only history for meaningful, verified changes. It must not c
   picture has is not a distinguishing detail, gated at 11/11 with a
   separating-detail control. The sixth pass through the real chat API then
   passed all seven scenarios, every edit on the picture it was meant for.
+- **The Klein 9B now edits as well as generates.** Measured with the vision
+  model judging the pixels: asked to add a yellow umbrella it did, asked to
+  make the wall white it did, in 20.0 s and 18.3 s with the model resident
+  - against Kontext's 109.6 s cold and 43.7 s warm for the same edits. The
+  4B's "preserves its reference, adds nothing" failure does not hold for the
+  9B, so `IMAGE_EDIT_MODEL` is empty on spark1: one resident model, no swap,
+  no swap-induced VM memory crash, edits after a generation in seconds.
+  Kontext is one env var away.
 - **Image edits run at 1 MP, because the desktop's ceiling is VM RAM, not
   VRAM.** ComfyUI exited cleanly mid-job with a Klein generation and a
   Kontext edit queued together: the WSL2 VM sees 15.6 GB of RAM, and encoder

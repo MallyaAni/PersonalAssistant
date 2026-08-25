@@ -288,13 +288,17 @@ class Settings(BaseSettings):
     IMAGE_EDIT_STEPS: int = Field(default=4, ge=1, le=100)
     # The FLUX.1 Kontext editing stack. Naming a model here replaces the
     # FLUX.2 Klein editor for edits only; generation is untouched, and leaving
-    # it empty restores the previous behaviour exactly.
+    # it empty routes edits through the same Klein model that generates.
     #
-    # Klein is a distilled generation model with the source attached as a
-    # reference, and it is trained to preserve that reference: an instruction
-    # requiring anything to be added left the picture unchanged at 4 steps and
-    # at 20, at CFG 3.0, and under true img2img at denoise 0.70. Kontext is
-    # trained to follow an editing instruction instead.
+    # Klein 4B was measured unable to *add* anything: trained to preserve its
+    # reference, it left the picture unchanged at 4 steps and at 20, at CFG
+    # 3.0, and under true img2img at denoise 0.70, which is why Kontext was
+    # selected on the single-card profile. The 9B does not share that failure
+    # (2026-08-25, judged by the vision model on the pixels: an umbrella was
+    # added, a wall turned white), and editing with the resident generation
+    # model costs ~20 s where a Kontext swap cost ~110 s cold on a 16 GB
+    # card - so the deployment leaves this empty, and Kontext is the one-env
+    # fallback if a class of edit turns out to need it.
     IMAGE_EDIT_MODEL: str = ""
     IMAGE_EDIT_CLIP: str = "clip_l.safetensors"
     IMAGE_EDIT_T5: str = "t5xxl_fp8_e4m3fn_scaled.safetensors"

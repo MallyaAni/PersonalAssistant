@@ -112,9 +112,17 @@ remote (an unauthenticated ComfyUI answering everything that could route to
 `172.16.8.6`) was scoped to 172.16.8.0/24 by the operator on 2026-08-25;
 spark1 and the Mac still get HTTP 200 from `:8188`, which is the allow side
 proven. The deny side cannot be tested from inside the subnet - a probe from
-outside the /24 is the only thing that would prove it. The Kontext editor (`IMAGE_EDIT_MODEL=flux1-kontext-dev-Q4_K_M.gguf`)
-stays selected for edits until the 9B is measured to follow an editing
-instruction - the 4B did not. **Correction, measured on the desktop itself 2026-08-24 22:50:** the
+outside the /24 is the only thing that would prove it. **Edits moved to the Klein 9B (13:4x UTC), measured first:** with the vision
+model judging the pixels, the 9B added a yellow umbrella on request and
+turned the wall white, in 20.0 s / 18.3 s while resident, against Kontext's
+109.6 s cold / 43.7 s warm for the same edits (both editors passed both
+judgements; the source had no umbrella). The 4B's "preserves its reference,
+adds nothing" failure does not hold for the 9B, so `IMAGE_EDIT_MODEL` is
+empty on spark1: one resident model, no Klein-Kontext swap, no swap-induced
+VM-memory crash, and an edit after a generation in seconds. Kontext stays
+one env var away (`IMAGE_EDIT_MODEL=flux1-kontext-dev-Q4_K_M.gguf`) if a
+class of edit needs it; the judgement was two instructions on one picture,
+not a fidelity benchmark. **Correction, measured on the desktop itself 2026-08-24 22:50:** the
 desktop *is* on the LAN, at `172.16.8.6` on its Wi-Fi adapter, same /24 as
 the Sparks and the Mac. The earlier scan missed it. Its wired `Ethernet`
 adapter is on a 169.254 link-local address, which is probably what the scan

@@ -355,7 +355,18 @@ recorded for its next boot.
 **Editing choices, measured.** Klein 4B as an editor left a picture
 unchanged when asked to *add* anything, at 4 and 20 steps, at CFG 3.0, and
 under img2img at denoise 0.70 - it is trained to preserve its reference -
-so Kontext, trained to follow an instruction, edits. `IMAGE_EDIT_MEGAPIXELS`
+so Kontext, trained to follow an instruction, edited. **The 9B does not
+share that failure (measured 2026-08-25, judged by the vision model on the
+pixels):** asked to add a yellow umbrella next to the bicycle it did
+("Yes, a yellow umbrella is leaning against the brick wall next to the
+bicycle"), asked to make the wall white it did - in 20.0 s and 18.3 s with
+the model already resident, against Kontext's 109.6 s cold and 43.7 s
+warm for the same two edits, which also passed. So the 9B now edits as
+well as generates (`IMAGE_EDIT_MODEL` empty): one resident model, no
+Klein-Kontext swap, no VM-RAM crash from the swap, and an edit after a
+generation in seconds rather than two minutes. Kontext remains one env
+var away if a class of edit turns out to need it; the judgement was two
+instructions on one picture, not a fidelity benchmark. `IMAGE_EDIT_MEGAPIXELS`
 is 2.0 because the output is generated at the scaled size: at 1.0 an edit
 returned 1024x1024 however large the source, visibly worse than a phone
 photo; 2.0 produced 1440x1440 in 39 s without running out of memory.
