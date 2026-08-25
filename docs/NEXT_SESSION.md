@@ -104,10 +104,12 @@ generated a 1024x1024 image in 16.9 s and Kontext-edited it in 118.6 s. That
 second number is the model swap: Klein and Kontext cannot both stay resident
 on 16 GB, so a generate followed by an edit pays a cold load of roughly two
 minutes; ComfyUI runs prompts serially, so concurrent requests queue rather
-than OOM. **Open, needs admin on the desktop:** Docker Desktop's firewall
-rule allows any port from any remote, so the unauthenticated ComfyUI answers
-everything that can route to `172.16.8.6`, not the Sparks alone - scope it to
-172.16.8.0/24. The Kontext editor (`IMAGE_EDIT_MODEL=flux1-kontext-dev-Q4_K_M.gguf`)
+than OOM. The Docker Desktop firewall rule that allowed any port from any
+remote (an unauthenticated ComfyUI answering everything that could route to
+`172.16.8.6`) was scoped to 172.16.8.0/24 by the operator on 2026-08-25;
+spark1 and the Mac still get HTTP 200 from `:8188`, which is the allow side
+proven. The deny side cannot be tested from inside the subnet - a probe from
+outside the /24 is the only thing that would prove it. The Kontext editor (`IMAGE_EDIT_MODEL=flux1-kontext-dev-Q4_K_M.gguf`)
 stays selected for edits until the 9B is measured to follow an editing
 instruction - the 4B did not. **Correction, measured on the desktop itself 2026-08-24 22:50:** the
 desktop *is* on the LAN, at `172.16.8.6` on its Wi-Fi adapter, same /24 as
