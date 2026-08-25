@@ -543,10 +543,21 @@ full of "Editing ..." turns - wrote "Editing a red bicycle with a wooden
 basket" for an edit it never made and a basket that did not yet exist. The
 no-change block is therefore rendered whenever a picture is in view on the
 plain path (`_render_edit_state`, neutral wording, 5/5 including a plain
-question), rebuilt and redeployed. Still open: that routing shape - an
-imperative edit with no selection after an upload turn - is being added to
-the tool-selection floor set so a regression is caught rather than
-rediscovered.
+question), rebuilt and redeployed. That routing shape - an
+imperative edit with no selection after an upload turn - is now in the
+tool-selection floor set (matrix 7/7 with it). **Fourth pass (04:55 UTC):
+6 of 7 again, and the seventh changed shape** - the router chose edit this
+time, but with no selection "this picture" edited the bicycle, not the
+newest upload. Cause: referent candidates came only from a similarity
+search over descriptions, and a bare "this" matches nothing, so the
+picture the person was looking at was never offered and the resolver's
+recency rule had nothing to apply to (in the second pass the same step was
+right only because generated pictures had no descriptions yet). Fix: the
+three newest ready pictures are always offered alongside whatever
+similarity retrieved (`ImageReferentSource`, `RECENT_CANDIDATES`);
+structural 44/44, referent-resolution behaviour 7/7, redeployed. Real
+clients send the active picture explicitly (browser chip, iMessage
+reply-pin) and never hit this; an API client without image tracking did.
 
 ## iMessage pictures — defect found and fixed, 2026-08-25
 

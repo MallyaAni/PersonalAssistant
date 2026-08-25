@@ -129,6 +129,11 @@ This file is append-only history for meaningful, verified changes. It must not c
   router chose no tool; the reply imitated its own "Editing ..." history),
   so the no-change block now renders whenever a picture is in view on the
   plain path, and that routing shape joined the tool-selection floor set.
+  A fourth pass then showed the last gap: with no selection, "this
+  picture" edited an older picture because referent candidates came only
+  from a similarity search and a bare "this" matches nothing - the newest
+  picture was never offered. The three newest ready pictures are now
+  always candidates; structural 44/44, referent behaviour 7/7.
 - **Image edits run at 1 MP, because the desktop's ceiling is VM RAM, not
   VRAM.** ComfyUI exited cleanly mid-job with a Klein generation and a
   Kontext edit queued together: the WSL2 VM sees 15.6 GB of RAM, and encoder
