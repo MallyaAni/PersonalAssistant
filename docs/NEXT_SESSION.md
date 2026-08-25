@@ -215,6 +215,49 @@ design discussion from a standing preference — done the recorded way:
 reproduce the verbatim turn at temperature 0 first, one wording attempt,
 functional-gated against the existing interest-capture cases.
 
+## Reranker stage — DEPLOYED AND VERIFIED 2026-08-25 (d8887d30..92d62c83)
+
+Qwen3-Reranker-0.6B serves on spark1 as `vllm-reranker` (same ARM image as
+the embedding service, documented classifier hf_overrides, 0.03 utilization,
+max-model-len 2048 after 4096 measured spark1 idling at 3 GiB free - the
+trim bought back 2). `backend/core/reranker.py` speaks `/v2/rerank` - on this
+build /v1 and /rerank reset the connection while /v2 answers in the JinaAI
+shape - and history recall now fetches a top-40 and lets the cross-encoder
+cut it to twelve, fail-soft to cosine order on any failure (an empty
+RERANKER_BASE_URL switches the stage off entirely). Verified: live ranking
+correct (0.987 answer vs 0.293 decoy), structural 5/5, functional 2/2,
+history-recall 8/8, tool-selection matrix green.
+
+One instructive regression, caught by the gate and worth remembering:
+**adding optional fields to a tool schema moves the 4B router's decision
+boundary.** The since/until additions made "make it more casual" (a revision
+of the draft on screen) route to history search. Fixed on the first wording
+attempt with a principle, not a phrasing: a short follow-up continuing work
+in view is part of that work, never a reference to the past. Any future
+schema touch on any builtin should expect to re-run its behaviour suite.
+
+Follow-up recorded, not done: Scout's MiniLM cross-encoder could move to the
+same reranker service, but that path is measured - judge it with
+`python -m backend.cli.evaluate_discovery_ranking`, never by eyeballing.
+
+## Embedding research verdict, 2026-08-25 (for the coordinated space migration)
+
+Current text leaders: the Qwen3-Embedding family tops open MTEB; Tencent's
+KaLM-Embedding-Gemma3-12B scores higher but is weeks old with no production
+record. For THIS system the decisive fact is unchanged: text and vision are
+one aligned nomic 768 space, so the text embedder cannot move alone.
+
+**The designated migration target at hardware ramp: Qwen3-VL-Embedding
+(2B/8B) + Qwen3-VL-Reranker (2B/8B).** One family, one unified space across
+text, images, screenshots and video; Matryoshka output (can emit 768, so the
+Vector(768) columns need no schema surgery); quantization-aware training;
+vLLM-servable; and the reranker speaks the same /v2/rerank contract the
+deployed 0.6B already uses - the multimodal step becomes a compose model-name
+change plus one signature-driven backfill per store and a re-measure of the
+two distance thresholds. jina-embeddings-v4/reranker-v3 rejected: stronger
+per-parameter but CC BY-NC and no vLLM support. The cutover is sized for the
+ramp, not before: the 2B pair wants ~10+ GiB that today's boxes do not have.
+
 ## Direction from the operator, 2026-08-24
 
 More MCP integrations are coming (Instagram, Google Drive, and more), and
