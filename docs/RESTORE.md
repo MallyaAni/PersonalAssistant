@@ -70,6 +70,53 @@ dump, and no amount of re-restoring will fix it.
 
 Drop the scratch database when finished. Only then consider promoting it.
 
+## Point-in-time recovery
+
+Since 2026-08-25 the database archives WAL (`archive_mode=on`, a segment
+forced closed at least every five minutes) into the `walarchive` volume, and
+every nightly run of `backup-db.sh` takes a base backup beside it, keeps a
+week of both, stages the volume at `data/wal-archive/` on spark1, and rsyncs
+that directory to each mirror under `wal-archive/`. So the dump answers "give
+me last night", and this answers "give me 09:14 this morning".
+
+Rehearsed end to end on 2026-08-25 into a scratch container (never the live
+volumes): the newest base backup plus archived WAL promoted with 37 tables,
+188 conversations, and the same newest turn as live. The steps, from any copy
+of the archive:
+
+1. Copy the archive somewhere writable: `cp -r data/wal-archive/. /tmp/pitr/archive/`
+   (on a mirror, `~/anios-backups/wal-archive/`).
+2. Unpack the newest base backup into an empty data directory:
+   `tar -xzf /tmp/pitr/archive/base-<newest>/base.tar.gz -C /tmp/pitr/pgdata && mkdir -p /tmp/pitr/pgdata/pg_wal && touch /tmp/pitr/pgdata/recovery.signal && chmod 700 /tmp/pitr/pgdata`
+3. Tell it where the WAL is, and optionally when to stop, by appending to
+   `/tmp/pitr/pgdata/postgresql.auto.conf`:
+   ```
+   restore_command = 'cp /archive/%f %p'
+   archive_mode = off
+   # Optional. Omit both lines to replay everything archived (the latest
+   # recoverable point). A time target must be at or before the last
+   # committed transaction in the archive, or Postgres refuses to promote
+   # with "recovery ended before configured recovery target was reached".
+   recovery_target_time = '2026-08-25 09:14:00+00'
+   recovery_target_action = 'promote'
+   ```
+4. Start a scratch Postgres on it, as your own user so the files stay yours:
+   `docker run -d --name pitr --user "$(id -u):$(id -g)" -e POSTGRES_PASSWORD=x -v /tmp/pitr/pgdata:/var/lib/postgresql/data -v /tmp/pitr/archive:/archive:ro pgvector/pgvector:pg16`
+5. Watch `docker logs pitr` for "restored log file", "consistent recovery
+   state reached", and "database system is ready to accept connections";
+   then `docker exec pitr psql -U postgres -d anios_db -c 'select count(*) from conversations'`
+   and prove the sealed columns decrypt exactly as in the dump procedure above.
+6. Only then decide what to do with it: dump it and restore that dump into
+   the live cluster's scratch database, exactly as above. Never point the
+   live container at a recovered data directory.
+
+Two things the rehearsal taught: a freshly created `walarchive` volume is
+root-owned, so `archive_command` fails silently until it is chowned to
+postgres (`backup-db.sh` now does this before every base backup, and
+`pg_stat_archiver.failed_count` is the number to watch); and `pg_basebackup
+-X none` waits for archiving to catch up, so with a broken archive it hangs
+rather than failing.
+
 ## What this still does not cover
 
 Honest limits, so nobody reads the section above as more than it is.
@@ -77,9 +124,12 @@ Honest limits, so nobody reads the section above as more than it is.
 - **Both copies are in one room.** spark1 and spark2 share power and network.
   This survives a disk, not a fire or a theft. A third copy on the Mac is the
   next step, chosen because it is already on around the clock for the bridge.
-- **Up to 24 hours of loss.** Nightly dumps with `archive_mode=off` and
-  `wal_level=replica` means point-in-time recovery is not available; a failure
-  at 03:29 loses the day. WAL archiving is the fix if that window is too wide.
+- **Up to five minutes of loss, not twenty-four hours** - since 2026-08-25,
+  see the point-in-time section above. The archive lags the live database by
+  at most `archive_timeout` (five minutes), and only what has been rsynced to
+  a mirror survives the loss of spark1's disk, which happens nightly with the
+  dump. A failure between two nightly runs can therefore lose up to a day of
+  *archive* on the mirrors, though not on spark1 itself.
 - **The dump file itself is not encrypted.** Sealed columns are ciphertext
   inside it, but anything unsealed — table structure, timestamps, non-sensitive
   columns — is readable by whoever holds the file.

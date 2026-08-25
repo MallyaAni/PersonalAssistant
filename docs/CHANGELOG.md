@@ -75,8 +75,33 @@ This file is append-only history for meaningful, verified changes. It must not c
   instead of to "start it" (29/29 gated); defaults moved to the FLUX.2 Klein
   9B pair with the mandatory 8B encoder; both Klein workflows follow the model
   file name to a GGUF loader (30/30), so a quantised fallback is an env
-  change. Hosting the 9B on the desktop itself is not yet verified and is not
-  claimed here.
+  change. **Hosting verified the same night**: the desktop session ran
+  FLUX.2 Klein 9B as a Q6_K GGUF (the fp8 is HF-gated) with the official 8B
+  encoder - 6.0 s warm, 13.7 GB peak - and fixed a latent entrypoint defect
+  that had left every custom node's loader absent (`09c9b5e3`); spark1 then
+  generated a 1024x1024 image through the backend's own provider classes in
+  16.9 s and Kontext-edited it in 118.6 s (a cold model swap, since both
+  cannot stay resident on 16 GB). The first probe hit a 400 because the
+  running backend image predated the loader commit - the baked-image trap;
+  rebuilt and recreated.
+- **Point-in-time recovery exists and has been rehearsed.** `archive_mode=on`
+  with a five-minute `archive_timeout` into a `walarchive` volume; the nightly
+  script takes a base backup beside it, keeps a week of both, stages the
+  archive on the host, and rsyncs it to every mirror. Rehearsed into a
+  scratch container from the staged archive: the newest base backup plus
+  archived WAL promoted with 37 tables, 188 conversations, and the same
+  newest turn as live. Two traps found by running it: a fresh named volume is
+  root-owned so archiving fails silently until chowned (the script now does
+  it; `pg_stat_archiver.failed_count` is the number to watch), and a time
+  target past the last committed transaction makes Postgres refuse to
+  promote. Procedure in `RESTORE.md`.
+- **Backup failure paging is wired end to end**, except for the root step.
+  Alert config on spark1 (bridge URL, token from spark1's own MCP config,
+  the admin account's own approved number); a labelled test page reached the
+  operator's phone; a new weekly freshness check pages when any of the three
+  copies lacks a dump newer than 36 hours and passed against all three.
+  Installing the `OnFailure` and timer units needs root on spark1 and is
+  recorded in `NEXT_SESSION.md` as the operator's three commands.
 - **`docs/ARCHITECTURE.md` rewritten in three parts** - a newcomer's Part I in
   the memory overview's numbered shape for every subsystem, a Part II
   cataloguing every ADR and every decision made while running the system

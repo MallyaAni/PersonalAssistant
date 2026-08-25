@@ -16,9 +16,9 @@ task below is deliberately assigned to it.
 | site | `deep-matter.com` 200, tunnel is a compose service on spark1 |
 | database | 37 tables, 2,506 rows, on spark1, migration head `20260824_0008` |
 | redis | 6,655 keys, append-only on, cursor `imessage:chat:cursor` present |
-| models | DeepSeek-V4-Flash TP=2 (spark1+spark2), Qwen3-VL-8B (spark2), nomic 768-dim (spark1) |
+| models | DeepSeek-V4-Flash TP=2 (spark1+spark2), Qwen3-VL-8B (spark2), nomic 768-dim + Qwen3-Reranker-0.6B (spark1), FLUX.2 Klein 9B Q6_K + Kontext via ComfyUI on the desktop (only while it is on) |
 | deploy gate | `bash scripts/gate.sh` — 7 passed, 0 skipped, ~5 min; exits 1 with the router down |
-| backups | nightly 03:30 timer, mirrored to spark2, restore proven end to end |
+| backups | nightly 03:30 timer, three copies (spark1, spark2, Mac), restore proven end to end; WAL archived every 5 min with weekly-pruned base backups, point-in-time recovery rehearsed 2026-08-25 |
 
 ## Where things run
 
@@ -89,15 +89,26 @@ image generation is off - try again later"; `_image_provider_failure_message`,
 29/29 gated). spark1's side is ready: defaults moved to the 9B pair
 (`flux-2-klein-9b-fp8.safetensors` + `qwen_3_8b_fp8mixed.safetensors` -
 the 8B encoder is mandatory, the 4B one produces garbage silently), the
-Klein workflow nodes are unchanged from the 4B. Still needed, in order:
-the desktop session installs the two files into `E:/AI/ComfyUI/models`
-(`diffusion_models/`, `text_encoders/`; `vae/flux2-vae.safetensors` should
-already exist), publishes 8188 with the Windows firewall open to the
-Sparks, and proves one 4-step generation; then spark1's `.env` gets
-`IMAGE_PROVIDER_BASE_URL=http://<desktop>:8188` plus the two model names,
-the backend is recreated, and `functional/test_image*` runs against it.
-The Kontext editor (`IMAGE_EDIT_MODEL=flux1-kontext-dev-Q4_K_M.gguf`) stays
-selected for edits until the 9B is measured to follow an editing
+Klein workflow nodes are unchanged from the 4B. **VERIFIED from spark1, 2026-08-25 03:50 UTC.** The desktop session
+installed Plan B (`flux-2-klein-9b-Q6_K.gguf`, ungated, plus the official
+`qwen_3_8b_fp8mixed.safetensors` encoder; the fp8 9B is HF-gated and the
+operator's account is not on its list), started `anios_comfyui` as the only
+GPU tenant, and measured 6.0 s warm / 114.5 s cold at 1024x1024, 13,755 MiB
+peak. spark1's `.env` now points `IMAGE_PROVIDER_BASE_URL` at
+`http://172.16.8.6:8188` with the Q6_K model names; backend,
+presentation-worker, and local-capabilities were rebuilt (the running image
+had predated the GGUF-loader commit - the baked-image trap, again - so the
+first probe reached ComfyUI with a plain `UNETLoader` and a 400) and
+recreated. A provider-level probe through the backend's own classes then
+generated a 1024x1024 image in 16.9 s and Kontext-edited it in 118.6 s. That
+second number is the model swap: Klein and Kontext cannot both stay resident
+on 16 GB, so a generate followed by an edit pays a cold load of roughly two
+minutes; ComfyUI runs prompts serially, so concurrent requests queue rather
+than OOM. **Open, needs admin on the desktop:** Docker Desktop's firewall
+rule allows any port from any remote, so the unauthenticated ComfyUI answers
+everything that can route to `172.16.8.6`, not the Sparks alone - scope it to
+172.16.8.0/24. The Kontext editor (`IMAGE_EDIT_MODEL=flux1-kontext-dev-Q4_K_M.gguf`)
+stays selected for edits until the 9B is measured to follow an editing
 instruction - the 4B did not. **Correction, measured on the desktop itself 2026-08-24 22:50:** the
 desktop *is* on the LAN, at `172.16.8.6` on its Wi-Fi adapter, same /24 as
 the Sparks and the Mac. The earlier scan missed it. Its wired `Ethernet`
@@ -456,6 +467,23 @@ uptime, silently failing every job), and only an explicit
 `up -d --force-recreate` of the pair moved them. After any compose env
 change, check `docker ps` uptimes against the deploy time rather than
 trusting up -d's own output.
+
+## Backup alerting — three-quarters live, 2026-08-25
+
+`ALERT_BRIDGE_URL`, `ALERT_BRIDGE_TOKEN` (taken from spark1's own
+`MCP_SERVERS_JSON`, never moved off the box), and `OPERATOR_ALERT_PHONE` (the
+admin account's own approved subscription) are set in spark1's `.env`. A
+labelled test page went through `scripts/notify-operator.sh` to the
+operator's phone ("alert sent"). The new weekly freshness check
+(`scripts/check-backup-freshness.sh`: every copy must hold a dump newer than
+36 h, an unreachable mirror counts as stale, pages on its own) ran clean on
+spark1. **Still needed, root on spark1, three commands** - the session that
+wired this could not run sudo there:
+`sudo cp deploy/spark/systemd/anios-backup-failed.service deploy/spark/systemd/anios-backup.service deploy/spark/systemd/anios-backup-freshness.{service,timer} /etc/systemd/system/`
+then `sudo systemctl daemon-reload` and
+`sudo systemctl enable --now anios-backup-freshness.timer`. Until then
+`OnFailure=` on the installed backup unit is empty and the weekly check has no
+timer; the paging path itself is proven.
 
 ## Architecture document rewritten for newcomers, 2026-08-25
 
