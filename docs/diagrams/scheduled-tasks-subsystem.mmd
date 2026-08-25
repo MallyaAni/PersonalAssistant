@@ -24,16 +24,18 @@ flowchart LR
     Runs -->|claim| Runner[TaskRunner]
     Runner -->|bearer as the person<br/>task conversation · scheduled_task mark| Fire["/chat turn<br/>+ reply/scheduled_task block"]
     Fire --> Turn[TurnResult<br/>reply · images · rendered diagrams]
+    Turn -->|reply is exactly NOTHING_TO_REPORT<br/>a conditional check with nothing to say| Quiet[finish quiet<br/>nothing sent]
+    Quiet --> Runs
     Turn -->|channel imessage| Bridge[Mac iMessage bridge<br/>bubbles and attachments]
     Bridge --> Person
     Turn -->|channel web| Runs
-    Runner -->|finish: delivered · completed · failed| Runs
+    Runner -->|finish: delivered · completed · quiet · failed| Runs
 
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
     classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     class Person,Bridge interface;
-    class Chat,Save,Outcome,Loop,Runner,Fire,Turn,Again,Status application;
+    class Chat,Save,Outcome,Loop,Runner,Fire,Turn,Again,Status,Quiet application;
     class Locality,Tasks,Runs,Tools,Packs data;
     class Router,Picker,Reply model;

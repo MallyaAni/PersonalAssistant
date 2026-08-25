@@ -6,7 +6,7 @@ flowchart TB
     API --> Interest[DeepSeek V4 Flash<br/>typed semantic memory agent]
     Interest --> Proposal[Auto-saved memory records<br/>written immediately, no approval step]
     API --> Selector{MainActionSelector<br/>one native tool call, all options together}
-    Search_Tool[Live search_web schema] -.-> Selector
+    Search_Tool[Internet MCP server<br/>search_web · get_weather<br/>search_credits for operators only] -.-> Selector
     Toolbox[User-registered<br/>MCP tools, shortlisted] -.-> Selector
 
     Selector -->|delegate_to_presentation_agent| Presentation[Queue durable<br/>PresentationAgent job]
@@ -18,18 +18,20 @@ flowchart TB
     DiagramModel --> Artifact[Validate and persist<br/>Mermaid artifact]
 
     Selector -->|generate_image or edit_image| ImageAction[Generate or source-conditioned<br/>edit via ComfyUI FLUX]
+    Selector -->|show_image| Referent
     ImageAction -->|explicit image| ImageArtifact[Persist ready/failed<br/>image artifact]
     ImageAction -->|no explicit image| Referent[DeepSeek V4 Flash<br/>owned-image referent resolution]
     Referent -->|one match| ImageArtifact
-    Referent -->|ambiguous or absent| Stream
+    Referent -->|show: newest match re-streamed<br/>as artifact_started + artifact_ready| Stream
+    Referent -->|ambiguous edit or absent| Stream
 
-    Selector -->|search_web, search_history,<br/>a toolbox tool, or neither| Memory[MemoryCoordinatorAgent<br/>personal memory retrieval]
+    Selector -->|search_web, search_history, get_weather,<br/>search_credits, a toolbox tool, or neither| Memory[MemoryCoordinatorAgent<br/>personal memory retrieval]
     Memory --> ArtifactGate{DeepSeek V4 Flash<br/>artifact modality gate}
     ArtifactGate -->|image required| Visual[Owner-scoped pixel-vector lookup<br/>then description-vector fallback]
     ArtifactGate -->|no artifact needed| Context[Curated context]
     Visual --> VisualPolicy[DeepSeek V4 Flash<br/>visual-memory selection]
     VisualPolicy --> Context
-    Selector -->|search_web query,<br/>model-authored| Search[Privacy-screened<br/>internet search]
+    Selector -->|search_web query,<br/>model-authored| Search[Privacy-screened internet search<br/>credit-accurate budget · a failed search<br/>becomes turn state the reply admits]
     Selector -->|search_history query| History[Transcript-store semantic search<br/>top 40 by vector, both voices, HNSW<br/>Qwen3 reranker cuts to 12, fail-soft]
     Selector -->|toolbox tool| MCP[Guarded MCP<br/>invocation]
     MCP --> Context

@@ -270,7 +270,9 @@ delete-all.
 4. The firing posts the instruction through the ordinary chat path on the
    task's own conversation, so it can search, draw, or recall like any turn.
 5. The result is delivered on the task's channel - an iMessage bubble, or the
-   run record for the web.
+   run record for the web. A conditional check - "message me each morning if
+   search credits are below 100" - whose condition does not hold answers
+   `NOTHING_TO_REPORT`, and the run finishes `quiet` with nothing sent.
 6. A fired turn is walled off from changing automation ("a reminder once
    spawned four copies of itself") and exempt from memory capture ("the same
    fact 365 times a year, unattended").
@@ -278,7 +280,8 @@ delete-all.
 *Stored:* tasks, runs, taught skills. *The model decides:* that this is a
 scheduling request, the self-contained instruction, cadence fields, which
 existing task "the weather one" means. *Code decides:* cadence math and DST,
-exactly-once slots, leases, the walls above. *You control:* create, list,
+exactly-once slots, leases, the walls above, and that a reply of exactly
+`NOTHING_TO_REPORT` is silence. *You control:* create, list,
 pause, resume, cancel in plain language; the Automations panel shows every
 task and skill.
 
@@ -294,9 +297,12 @@ task and skill.
    ignored outright - "the second of two walls".
 4. The text runs through exactly the endpoint the browser uses, with a
    short-lived token carrying one scope - the full pipeline, nothing special.
-5. A picture in becomes a vision turn; a picture out goes as an attachment
+5. A picture in becomes a vision turn - every photo of a burst, in order and
+   numbered, after waiting out iCloud's lazy download for about a minute
+   (HEIC is converted on the Mac); a picture out goes as an attachment
    under the size margin the bridge enforces (diagrams are rasterised because
-   the bridge allows only JPEG, PNG, and calendar files).
+   the bridge allows only JPEG, PNG, and calendar files). A picture the
+   person already has is sent again the same way when they ask to see it.
 6. The reply is pinned to the message it answers, and a long-press reply from
    you pins the assistant to *that* image rather than the newest one.
 
@@ -1144,7 +1150,7 @@ fingerprint, a withdrawn tool and an unconfirmed consequential server are each
 refused before any request reaches it.
 
 The built-in `local_utility/current_time` server is the live acceptance fixture
-for main-model-selected MCP use. The built-in `internet` server (`search_web`, `get_weather`, and `search_credits` - the shared search key's remaining credits, offered to operators only) receives
+for main-model-selected MCP use. The built-in `internet` server (`search_web`, `get_weather`, and `search_credits` - the shared search key's remaining credits straight from the provider, offered to operators only; the local credit ceiling counts an `advanced` search as the two credits the provider bills, and a search that fails reaches the reply as turn state it must admit rather than as silence) receives
 only an already normalized and privacy-screened query and inherits only
 operator-allowlisted search environment names. It emits compact valid JSON
 below the generic MCP result cap. Internet eligibility remains deterministic

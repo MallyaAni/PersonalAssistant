@@ -14,13 +14,14 @@ flowchart LR
     end
 
     subgraph AniOS[AniOS — backend trust zone]
-        Worker[imessage worker<br/>owns the nanosecond cursor<br/>guid dedup across restarts]
+        Worker[imessage worker<br/>owns the nanosecond cursor<br/>guid dedup across restarts<br/>a photo burst: every attachment answered in order<br/>iCloud lazy download waited out about a minute]
         Conversation[ConversationService<br/>full pipeline including memory writes<br/>an explicit operator decision]
         Channel[MessagesAppChannel<br/>arguments screened by<br/>OutboundPrivacyPolicy]
     end
 
     Worker -->|read_messages since_ns<br/>IMESSAGE_BRIDGE_READ_INCOMING gate| Bridge
     Bridge -->|allowlisted 1:1 bodies only<br/>sender normalized, reply_to canonical| Worker
+    Bridge -->|read_attachment per photo<br/>HEIC converted to JPEG on the Mac<br/>not_found until iCloud has the file| Worker
     Worker --> Conversation
     Conversation --> Channel
     Channel -->|send_imessage to reply_to| Bridge

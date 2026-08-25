@@ -4,6 +4,16 @@ This file is append-only history for meaningful, verified changes. It must not c
 
 ## 2026-08-25 — Recall anything, a reranker, keyed digests, a third backup copy, and the architecture told for newcomers
 
+- **The architecture page reflects the evening's changes, and the vector
+  store decision is written down.** The chat, scheduled-task and iMessage
+  diagrams show `show_image`, the internet server's three tools, quiet
+  firings and photo bursts; the ML design records why the vector store is
+  pgvector HNSW rather than FAISS, with the measurements: 439 vectors in a
+  22 MB database, top-10 cosine in 0.5 ms (the planner does not even use
+  the index), and 0.2 ms at a synthetic 20,000 x 768-d with the index, which
+  built in 1.95 s. FAISS would duplicate the store without the owner filter
+  or the transaction; what would change that is millions of vectors or
+  GPU-batched retrieval, neither of which this system has.
 - **The search meter lives on our own internet MCP server, and a scheduled
   check can stay quiet.** `search_credits` reports the shared key's plan,
   spent, limit and remaining straight from Tavily's usage endpoint (a GET

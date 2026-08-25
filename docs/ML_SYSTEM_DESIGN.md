@@ -251,6 +251,29 @@ stored vector carries a model+scheme signature, retrieval filters on it, and
 one idempotent backfill rebuilds a space; a swap degrades to "not yet
 rebuilt", never to wrong answers.
 
+**Vector store: pgvector HNSW in Postgres, not FAISS (measured 2026-08-25).**
+Every vector column carries an HNSW index with cosine ops - nine of them,
+from `conversations` to `tool_descriptors` - inside the same database that
+holds the rows, their owners, and their encryption. That is the decision:
+nearest-neighbour search is a `WHERE user_id = ? ORDER BY embedding <=> ?`
+that the planner joins, filters and transacts like any other query, and a
+backup of the database is a backup of the index. The numbers at the scale
+this system actually runs: 439 embedded vectors across all tables (217
+conversation turns, 89 entities, 88 procedures, 21 pictures, 12 semantic
+facts, 10 summaries), a 22 MB database, and a top-10 cosine search over the
+conversation store in **0.49-0.65 ms** - so small that the planner chooses a
+sequential scan and never touches the index. Pushed to a size this system
+has not reached, a synthetic 20,000 x 768-d table built its HNSW index in
+1.95 s, took 132 MB, and answered top-10 in **0.13-0.21 ms** through the
+index. FAISS would add a second store to keep in step with the rows - no
+ownership filter, no transaction, its own persistence and rebuild story,
+and a separate process or the backend's memory to live in - to make a
+sub-millisecond search faster. *What would change it:* millions of vectors
+(pgvector's HNSW build time and RAM grow with the graph; FAISS IVF-PQ
+compresses where pgvector does not), GPU-batched retrieval over many queries
+at once (FAISS-GPU's case; nothing here issues batches), or a measured
+recall problem at `ef_search` that raising it does not fix.
+
 **Should the embedder be replaced?** No, measured twice (2026-08-23 and
 08-25). At ~500 vectors a nearest-neighbour search is dominated by threshold
 calibration, not encoder rank; the live 100%-failure cases (NULL vectors)
@@ -482,6 +505,7 @@ Scout's ranking has its own labelled harness with floors
 | Image generation on a Spark | 397 s/image class, bandwidth-bound | The desktop's RTX 5080 |
 | A newer vLLM (0.25.2 vs 0.21.1+B12X) | Newer is 9-29% slower here (`torch.compile` regression) | Recorded; untested swap |
 | Enforcing the context budget | No measured floors yet | Observe first |
+| FAISS as the vector store | 439 vectors in 22 MB; top-10 in 0.5 ms without the index, 0.2 ms at 20k with it; FAISS would duplicate the store without the owner filter or the transaction | pgvector HNSW in the same database (section 5) |
 
 ## 12. Traps specific to serving
 
