@@ -31,7 +31,7 @@ The repository contains:
   restoration, history, download, owned deletion, semantic visual recall, and
   one main chat composer with explicit image selection when several images are visible;
 - a clickable Agent memory map whose bounded store details load on demand through the owned export boundary;
-- a durable Scout discovery agent whose approved home and interests share the
+- a durable Scout agent - the scheduler for anything wanted later or on a cadence (reminders and recurring lookups through a leased task queue) and for its ambient discovery sweep, whose approved home and interests share the
   personal-memory fact lifecycle, with editable ranking strength, reversible
   travel mode, familiar-item undo, bounded sources, scheduled sweeps, digests,
   and calendar artifacts;

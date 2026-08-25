@@ -25,7 +25,9 @@ tunnel) or by texting it over iMessage. It remembers what you tell it, can find
 anything either of you has ever said, searches the web when a question needs
 it, makes pictures and edits them, draws diagrams, builds slide decks, runs
 scheduled tasks ("remind me every weekday at 7"), and - through an agent called
-Scout - looks for things happening near you that match what you care about.
+Scout - handles anything you want done later or on a schedule, from "remind
+me every weekday at 7" to its own standing sweep for things happening near
+you that match what you care about.
 
 Nothing about a conversation leaves the owner's machines except a deliberately
 minimised web-search query, and only when the assistant decides a search is
@@ -220,7 +222,12 @@ validation, ownership, retrieval bounds, lineage. *You control:* which image is
 the reference, download, delete, cancel mid-generation. When the desktop is
 off, you are told so.
 
-### Scout - things happening near you ([diagram](diagrams/discovery-subsystem.svg))
+### Scout, first shape - things happening near you ([diagram](diagrams/discovery-subsystem.svg))
+
+Scout is the scheduling agent, and it has two shapes that are one job to the
+person asking: the ambient sweep below, and anything else wanted on a
+schedule (the next section). The agent card, the catalog, and the assistant's
+own answers all call both "Scout".
 
 1. Approved facts - where you live, what you are into and how strongly - are
    the whole input; a stated interest is proposed by the classifier and
@@ -247,7 +254,7 @@ current place, sources, subscribers, thumbs-up/down (recorded, deliberately
 not yet fed back into ranking), "already known" dismissals, export and
 delete-all.
 
-### Scheduled tasks and skills ([design](TASKS_ARCHITECTURE.md), [diagram](diagrams/scheduled-tasks-subsystem.svg))
+### Scout, second shape - scheduled tasks and skills ([design](TASKS_ARCHITECTURE.md), [diagram](diagrams/scheduled-tasks-subsystem.svg))
 
 1. You say it - "remind me every weekday at 7 to check the Spark temps" - and
    the router understands it as a `schedule_task` call with instruction,
