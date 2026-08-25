@@ -1,7 +1,7 @@
 # Next session
 
-Verified state as of 2026-08-24. `deep-matter.com` serves from spark1 with the
-Windows desktop powered off. Everything below was checked by running it, not by
+Verified state as of 2026-08-24. `deep-matter.com` serves from spark1. The
+Windows desktop is powered on again and holds the GPU for image work. Everything below was checked by running it, not by
 reading it.
 
 **If you are picking this up on the Mac**, read [Where things run](#where-things-run)
@@ -27,7 +27,7 @@ task below is deliberately assigned to it.
 | spark1 | `172.16.8.3` | every app container, the database, redis, the tunnel |
 | spark2 | `172.16.8.5` | the VLM, half of the TP=2 router, the backup mirror |
 | Mac | iMessage bridge only | `allow_recipient`, `send_imessage`, `read_messages` |
-| desktop | retired | powered off; nothing depends on it |
+| desktop | `172.16.8.6` (Wi-Fi) | RTX 5080, **16 GB VRAM**; revived to host ComfyUI. Image work only while it is on |
 
 User `animallya96` on both Sparks, same password on both. No BMC and no
 wake-on-LAN, so **a powered-off Spark needs someone to press the button.**
@@ -98,8 +98,46 @@ Sparks, and proves one 4-step generation; then spark1's `.env` gets
 the backend is recreated, and `functional/test_image*` runs against it.
 The Kontext editor (`IMAGE_EDIT_MODEL=flux1-kontext-dev-Q4_K_M.gguf`) stays
 selected for edits until the 9B is measured to follow an editing
-instruction - the 4B did not. The desktop is not on the 172.16.8.0/24 LAN
-(scanned); reach it by whatever address spark1 resolves.
+instruction - the 4B did not. **Correction, measured on the desktop itself 2026-08-24 22:50:** the
+desktop *is* on the LAN, at `172.16.8.6` on its Wi-Fi adapter, same /24 as
+the Sparks and the Mac. The earlier scan missed it. Its wired `Ethernet`
+adapter is on a 169.254 link-local address, which is probably what the scan
+found.
+
+**Blockers measured on the desktop 2026-08-24 22:50, before anyone downloads
+17 GB.** All read-only; nothing on that box was changed.
+
+- **The 9B does not fit the 5080 either.** The card is **16,303 MiB total**
+  (13,727 free, the rest ordinary Windows desktop processes — no compute
+  tenant). The sizing below puts the 9B at ~18 GiB. 9B fp8 (~9 GB) plus the
+  mandatory `qwen_3_8b_fp8mixed` encoder (~8 GB) is ~17 GB against a 16 GB
+  card. It needs sequential CPU offload of the text encoder, or it does not
+  run. The 4B stack measures 11.6 GB (3.79 + 7.49 + 0.31) and fits with little
+  room. **This contradicts the plan of record and should be settled first.**
+- **Neither 9B file is on the box.** `diffusion_models/` has
+  `flux-2-klein-4b-fp8.safetensors` (3.79 GB) and
+  `flux1-dev-kontext_fp8_scaled.safetensors` (11.09 GB);
+  `text_encoders/` has `qwen_3_4b.safetensors` (7.49 GB), not the 8B. So
+  spark1's defaults currently name files that do not exist — a missing
+  checkpoint at request time, not a fallback.
+- **ComfyUI is 0.28.0 and `comfy_extras/nodes_flux2.py` is absent** (only
+  `nodes_flux.py`). `Flux2Scheduler` / `EmptyFlux2LatentImage` are likely
+  unregistered, which would affect the 4B path too. Confirm against the
+  workflow JSON before blaming anything else.
+- **`anios_comfyui` exited 137** (SIGKILL) 47 hours ago; cause not established.
+  Its image is right for this card — `nvidia/cuda:12.8.0-runtime-ubuntu22.04`
+  with cu128 wheels, i.e. Blackwell/sm_120. The "cannot emit sm_121" caveat in
+  these notes is about the DGX GB10, **not** this box.
+- **Port 8188 is closed.** Nothing listening (container down), and there is no
+  Windows firewall rule for 8188 or ComfyUI, so inbound from 172.16.8.0/24 is
+  dropped by default once it starts. Adding one needs admin on the desktop.
+- **No Hugging Face auth**: no `~/.cache/huggingface/token`, no `HF_TOKEN`. The
+  9B is gated, so this blocks the download outright.
+- Present and healthy for the Kontext editing path:
+  `unet/flux1-kontext-dev-Q4_K_M.gguf` (6.46 GB),
+  `text_encoders/t5-v1_1-xxl-encoder-Q5_K_M.gguf` (3.15 GB),
+  `clip_l.safetensors`, `vae/ae.safetensors`, and the `ComfyUI-GGUF` custom
+  node.
 
 The earlier headroom analysis, kept for the record:
 **FLUX did not fit on the Sparks as they stand.** The sm_121
