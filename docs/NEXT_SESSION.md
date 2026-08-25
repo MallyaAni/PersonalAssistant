@@ -236,9 +236,17 @@ attempt with a principle, not a phrasing: a short follow-up continuing work
 in view is part of that work, never a reference to the past. Any future
 schema touch on any builtin should expect to re-run its behaviour suite.
 
-Follow-up recorded, not done: Scout's MiniLM cross-encoder could move to the
-same reranker service, but that path is measured - judge it with
-`python -m backend.cli.evaluate_discovery_ranking`, never by eyeballing.
+Follow-up MEASURED 2026-08-25, and the answer is no for now. The swap is
+built and selectable - `DISCOVERY_RERANKER_SOURCE=service` routes Scout's
+RerankProvider contract to the vLLM Qwen3 reranker through
+`backend/embeddings/service_reranker.py`, probabilities converted back to
+log-odds so MIN_ATTRIBUTION_MARGIN keeps its meaning - but
+evaluate_discovery_ranking scored attribution 0.25 under the service
+against 0.50 local (both below the harness's own 0.60 floor; local's
+failures are wrong answers, the service's are all margin-misses). Default
+stays `local`. That both models fail the floor says shortlist attribution
+itself is weak and the labelled cases are seeded judgements worth
+correcting; revisit at the Qwen3-VL migration, by the same harness.
 
 ## Embedding research verdict, 2026-08-25 (for the coordinated space migration)
 
@@ -257,6 +265,42 @@ change plus one signature-driven backfill per store and a re-measure of the
 two distance thresholds. jina-embeddings-v4/reranker-v3 rejected: stronger
 per-parameter but CC BY-NC and no vLLM support. The cutover is sized for the
 ramp, not before: the 2B pair wants ~10+ GiB that today's boxes do not have.
+
+## Hardening wave — BUILT AND VERIFIED 2026-08-25
+
+Four improvements closed in one pass, each verified on spark1:
+
+**The memory classifier no longer stores the discussion as the user.** The
+23:52 over-capture was reproduced first (the verbatim rebuttal plus two more
+system-statement shapes, all failing at temperature 0), then fixed in the
+prompt with principles, not phrasings: a statement about how the assistant
+or any system under discussion works is the work at hand and fills nothing;
+semantic facts are what the user states about themself; another person's
+fact remains theirs. The first wording said "about the user's own life" and
+the model read a daughter's ballet into it - the refinement to
+states-about-themself closed that. `functional/test_memory_capture_discipline.py`
+pins both sides; the full memory-capture batch runs 38/38.
+
+**The phone/address digest is keyed (C12 closed).**
+`discovery.addressing.address_digest`, HMAC-SHA256 from `ENCRYPTION_KEY`
+(falling back to `SECRET_KEY`), in all four consumers at once; the rekey CLI
+moved 1 access request + 14 subscribers and reports zero on re-run, which is
+the proof the stored digests now match what the lookups compute. A
+source-inspection test forbids the unkeyed path from returning. Rotating
+`ENCRYPTION_KEY` or restoring a pre-rekey dump now requires
+`python -m backend.cli.rekey_address_digests` afterwards.
+
+**The memory export carries the sign-up phone** (`sign_up` section, schema
+version 3): the approved access request keeps the number keyed by
+desired_username, the one place a per-table coverage sweep cannot see.
+
+**The loopback binding outage, caused and fixed the same evening.** Applying
+the committed 127.0.0.1 port bindings for db/redis broke every NEW container
+connection - services dialled the host's LAN address, established
+connections coasted, health stayed 200 while 50 refusals accumulated.
+Containers now address `db` and `redis` over the compose network (the
+binding never touched it) and the gate's `POSTGRES_HOST` is literal `db` so
+spark1's host-oriented .env value cannot leak in. See the new trap below.
 
 ## Direction from the operator, 2026-08-24
 
@@ -296,12 +340,10 @@ Deferred, needing a box or a window, in priority order:
    the iMessage bridge plus a weekly "is there a dump newer than 36h on the
    mirror" check — not shipped blind because it needs the bridge token/recipient
    wired and tested on the box.
-4. **Keyed phone/address digest (C12).** The lookup digest is unkeyed SHA-256
-   over a small keyspace; a dump leaks every number. Closing it is a
-   coordinated keyed-HMAC migration that re-digests subscriber rows. Recorded
-   in SECURITY.md.
-5. Lower: the memory export omits the phone (own-number, low severity); the
-   `.env.example` vLLM cache paths are still the retired desktop's `E:/AI`.
+4. ~~Keyed phone/address digest (C12)~~ — done 2026-08-25, see the
+   hardening wave above and SECURITY.md.
+5. ~~Memory export phone; `.env.example` desktop paths~~ — both done
+   2026-08-25.
 
 **The architecture study-guide source is missing.** The prior handoff said a
 100,501-character, 65-decision draft existed at `scratchpad/study_guide.md`,
@@ -334,6 +376,14 @@ settled value.
 
 **Over-allocating GPU memory hangs the box.** No BMC, no wake-on-LAN: recovery
 is a physical button press.
+
+**Binding a published port to the host's loopback silently cuts off every
+container that dials the host's LAN address.** Applied 2026-08-25 to
+db/redis: services hardcoding `POSTGRES_HOST=animallya-spark1.local` kept
+their established connections and refused all new ones - health answered 200
+throughout, the failure lived only in the logs. Container-to-container
+traffic must use compose service names (`db`, `redis`); anything that
+regresses to host addressing will break again exactly this quietly.
 
 **Redis 7 starts empty if `appendonly yes` is set with no AOF file on disk.**
 It ignores the RDB. Enabling AOF must be done live with `CONFIG SET` first, so
