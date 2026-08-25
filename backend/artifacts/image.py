@@ -270,12 +270,26 @@ class ComfyUIImageProvider(ImageProvider):
             parts.append(self.portrait_suffix)
         return ", ".join(parts)
 
+    # The diffusion-model loader node, chosen by the file the model name ends
+    # in. A 16 GB card runs the Klein 9B either as the official fp8 safetensors
+    # or, when that does not fit beside the encoder, as a GGUF quantization
+    # through ComfyUI-GGUF's loader - the same switch the Kontext editor
+    # already makes, so a `.gguf` in IMAGE_MODEL is a deployment choice and
+    # not a code change.
+    def _model_loader(self) -> dict[str, Any]:
+        if self.model.endswith(".gguf"):
+            return {
+                "class_type": "UnetLoaderGGUF",
+                "inputs": {"unet_name": self.model},
+            }
+        return {
+            "class_type": "UNETLoader",
+            "inputs": {"unet_name": self.model, "weight_dtype": "default"},
+        }
+
     def _workflow(self, request: ImageGenerationRequest) -> dict[str, Any]:
         return {
-            "1": {
-                "class_type": "UNETLoader",
-                "inputs": {"unet_name": self.model, "weight_dtype": "default"},
-            },
+            "1": self._model_loader(),
             "2": {
                 "class_type": "CLIPLoader",
                 "inputs": {
@@ -510,13 +524,7 @@ class ComfyUIImageEditProvider(ComfyUIImageProvider, ImageEditProvider):
                 "class_type": "LoadImage",
                 "inputs": {"image": source_name},
             },
-            "2": {
-                "class_type": "UNETLoader",
-                "inputs": {
-                    "unet_name": self.model,
-                    "weight_dtype": "default",
-                },
-            },
+            "2": self._model_loader(),
             "3": {
                 "class_type": "CLIPLoader",
                 "inputs": {

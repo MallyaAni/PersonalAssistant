@@ -866,3 +866,47 @@ def test_image_failures_are_reported_as_different_faults(exc, expected):
     from backend.services.conversation_service import _image_provider_failure_message
 
     assert expected in _image_provider_failure_message(exc, "generate")
+
+
+# The Klein 9B on a 16 GB card may have to run as a GGUF quantization. The
+# loader must follow the file name the way the Kontext editor's already does,
+# so the fallback is an IMAGE_MODEL change and never a code change.
+def test_the_klein_loader_follows_the_model_file_type():
+    from backend.artifacts.image import ComfyUIImageEditProvider, ComfyUIImageProvider
+    from backend.artifacts.types import ImageGenerationRequest
+
+    def provider(model: str) -> ComfyUIImageProvider:
+        return ComfyUIImageProvider(
+            base_url="http://localhost:8188",
+            model=model,
+            timeout_seconds=1,
+            poll_seconds=0.1,
+            max_concurrency=1,
+            max_output_bytes=10_000_000,
+            max_pixels=20_000_000,
+            text_encoder="t.safetensors",
+            vae="v.safetensors",
+            steps=4,
+        )
+
+    request = ImageGenerationRequest(prompt="a lamp", width=1024, height=1024, seed=1)
+    gguf = provider("flux-2-klein-9b-Q6_K.gguf")._workflow(request)["1"]
+    assert gguf["class_type"] == "UnetLoaderGGUF"
+    assert "weight_dtype" not in gguf["inputs"]
+    plain = provider("flux-2-klein-9b-fp8.safetensors")._workflow(request)["1"]
+    assert plain["class_type"] == "UNETLoader"
+    # The Klein editor shares the switch; nothing there is spelled twice.
+    editor = ComfyUIImageEditProvider(
+        base_url="http://localhost:8188",
+        model="flux-2-klein-9b-Q6_K.gguf",
+        text_encoder="t.safetensors",
+        vae="v.safetensors",
+        timeout_seconds=1,
+        poll_seconds=0.1,
+        max_concurrency=1,
+        max_output_bytes=10_000_000,
+        max_pixels=20_000_000,
+        steps=4,
+        megapixels=2.0,
+    )
+    assert editor._model_loader()["class_type"] == "UnetLoaderGGUF"
