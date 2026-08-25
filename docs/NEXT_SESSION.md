@@ -81,7 +81,28 @@ ciphertext only: never copy `ENCRYPTION_KEY` onto it.** The key is escrowed at
 (Cosmetic: the Mac's `~/.bashrc` line 2 prints `$: command not found` on
 every non-interactive ssh; harmless, not fixed, the operator's file.)
 
-**FLUX is not deployed, and does not fit as the box stands.** The sm_121
+**FLUX decision 2026-08-25: the desktop hosts FLUX.2 Klein 9B, and image
+work is available only while the desktop is on.** The operator revived the
+RTX 5080 box for exactly this: ComfyUI is to be the only GPU tenant there,
+and when the machine is off the assistant says so ("the machine that runs
+image generation is off - try again later"; `_image_provider_failure_message`,
+29/29 gated). spark1's side is ready: defaults moved to the 9B pair
+(`flux-2-klein-9b-fp8.safetensors` + `qwen_3_8b_fp8mixed.safetensors` -
+the 8B encoder is mandatory, the 4B one produces garbage silently), the
+Klein workflow nodes are unchanged from the 4B. Still needed, in order:
+the desktop session installs the two files into `E:/AI/ComfyUI/models`
+(`diffusion_models/`, `text_encoders/`; `vae/flux2-vae.safetensors` should
+already exist), publishes 8188 with the Windows firewall open to the
+Sparks, and proves one 4-step generation; then spark1's `.env` gets
+`IMAGE_PROVIDER_BASE_URL=http://<desktop>:8188` plus the two model names,
+the backend is recreated, and `functional/test_image*` runs against it.
+The Kontext editor (`IMAGE_EDIT_MODEL=flux1-kontext-dev-Q4_K_M.gguf`) stays
+selected for edits until the 9B is measured to follow an editing
+instruction - the 4B did not. The desktop is not on the 172.16.8.0/24 LAN
+(scanned); reach it by whatever address spark1 resolves.
+
+The earlier headroom analysis, kept for the record:
+**FLUX did not fit on the Sparks as they stand.** The sm_121
 blocker is solved — `docker/comfyui/Dockerfile.gb10` (NVIDIA CUDA-13 PyTorch
 base, aarch64), selected by `COMFYUI_DOCKERFILE` in `.env`, and
 `IMAGE_PROVIDER_BASE_URL` is now env-overridable so placement is an `.env`
