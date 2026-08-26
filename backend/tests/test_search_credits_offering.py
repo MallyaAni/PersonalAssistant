@@ -90,7 +90,7 @@ async def test_search_stays_on_the_menu_while_an_allowance_is_used_up() -> None:
 
 
 @pytest.mark.asyncio
-async def test_a_firing_is_not_offered_shipped_packs() -> None:
+async def test_a_firing_is_offered_only_the_skill_its_instruction_names() -> None:
     selector, llm = _selector(_tool_call("search_web", {"query": "x"}))
     skills = [
         {"id": "s1", "slug": "morning-brief", "name": "morning brief", "description": "d", "instruction": "i", "source": "user"},
@@ -98,7 +98,9 @@ async def test_a_firing_is_not_offered_shipped_packs() -> None:
     ]
     await selector.select("who", "Remind me to stretch", [], None, skills=skills, unattended=True)
     names = {tool["function"]["name"] for tool in llm.tools}
-    assert any("morning" in name for name in names), names
-    assert not any("quick" in name for name in names), names
+    assert not any("morning" in n or "quick" in n for n in names), names
+    await selector.select("who", "run my morning brief", [], None, skills=skills, unattended=True)
+    names = {tool["function"]["name"] for tool in llm.tools}
+    assert any("morning" in n for n in names) and not any("quick" in n for n in names), names
     await selector.select("who", "give me a quick brief on x", [], None, skills=skills, unattended=False)
-    assert any("quick" in name for name in {tool["function"]["name"] for tool in llm.tools})
+    assert any("quick" in n for n in {tool["function"]["name"] for tool in llm.tools})

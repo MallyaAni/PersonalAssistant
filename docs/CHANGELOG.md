@@ -16,7 +16,9 @@ This file is append-only history for meaningful, verified changes. It must not c
   plain question, the operator's meter; its first run found a firing
   routed to history recall (now withheld from firings) and a flaky usage
   read (now retried once). A retry means the last real request, never the
-  last tool that ran.
+  last tool that ran. An invoked skill's instruction is routed together
+  with the message that invoked it: routed alone, the What's on pack's
+  instruction read as a reference to the past and went to history recall.
 - **Web results are ordered by the main model, with the person's place and
   the date in hand.** They arrived in the providers' order, which does not
   read the question (an Arlington weekend query listed a festival in West

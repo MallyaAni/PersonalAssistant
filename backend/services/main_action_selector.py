@@ -105,9 +105,12 @@ def _caller_is_operator() -> bool:
     return bool(identity is not None and identity.is_operator)
 
 
-# Whether a skill row is a shipped pack rather than one the person taught.
-def _is_pack(skill: dict[str, Any]) -> bool:
-    return str(skill.get("source") or "") == "pack" or str(skill.get("id") or "").startswith("pack:")
+# Whether a message names this skill - by its name or its slug's words.
+def _names_skill(message: str, skill: dict[str, Any]) -> bool:
+    lowered = message.casefold()
+    name = str(skill.get("name") or "").casefold().strip()
+    slug_words = str(skill.get("slug") or "").replace("-", " ").casefold().strip()
+    return bool(name and name in lowered) or bool(slug_words and slug_words in lowered)
 
 
 def render_recent_history(history: list[dict[str, Any]]) -> str:
@@ -322,12 +325,15 @@ class MainActionSelector:
                 self._builtin_definition(builtin.name, builtin.description, builtin.schema)
                 for builtin in self._available_builtins(unattended)
             )
-            # A scheduled firing may name a routine the person taught ("run my
-            # morning brief"); it never means a shipped pack. Offered the
-            # packs, a firing "Remind me to stretch" was routed to one
-            # (2026-08-26, found by exercise_search_scenarios).
+            # A scheduled firing is offered a skill only when its instruction
+            # names that skill ("run my morning brief"): decided in code, not
+            # by the model, because offered the whole list a firing "Remind me
+            # to stretch" was routed to a pack and "time to call mom" to a
+            # taught routine (2026-08-26). Nobody is there to notice.
             offered_skills.extend(
-                skill for skill in (skills or []) if not (unattended and _is_pack(skill))
+                skill
+                for skill in (skills or [])
+                if not unattended or _names_skill(query, skill)
             )
             tools.extend(skill_tool_definitions(offered_skills))
 

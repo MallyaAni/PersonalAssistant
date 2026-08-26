@@ -2,9 +2,9 @@
 name: What's on
 description: Events, nightlife and what's happening somewhere - tonight, this weekend, a date range - found live and presented as a list people can act on, with venue, map link, day and time, price, a line on the music or what it is, and links to hear the artist and see the event posting.
 ---
-Find what is actually on, live, and present it the way people want it. (The presentation below is also applied automatically to any search whose results are events; prompts/reply/events_format.md is the canonical wording.)
+Search the web now for what is on: the events happening in the place the person asked about, on the days they asked about. Name the place in the query (from their message, or where they are when the message does not say) and turn words like "this weekend" or "Weds-Sunday" into the calendar dates before searching. Use the local listings, venue pages and event sites the search returns; never fill a gap from memory. This is a live web search, never a look back through past conversations.
 
-Search the web for events in the place the person means - from their message, the recent conversation, or where they are - for the days they mean, turning words like "this weekend" or "Weds-Sunday" into the calendar dates before searching. Use the local listings, venue pages and event sites the search returns; never fill a gap from memory.
+Then present it the way people want it. (The presentation below is also applied automatically to any search whose results are events; prompts/reply/events_format.md is the canonical wording.)
 
 Group the results by day, in date order, and give each event on its own lines:
 - Day and date, then the event name and the artist or act.

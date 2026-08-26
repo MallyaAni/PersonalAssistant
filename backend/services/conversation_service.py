@@ -791,15 +791,26 @@ class ConversationService:
         history: list[dict[str, Any]],
         active_image_artifact_id: str | None,
         unattended: bool = False,
+        asked: str = "",
     ) -> tuple[MainAction, dict[str, Any] | None]:
         if not isinstance(action, UseSkillAction):
             return action, None
         if self.skills is not None and action.source == "user":
             with suppress(Exception):
                 await self.skills.touch_used(user_id, action.skill_id)
+        # The instruction is routed together with the message that invoked
+        # it. Routed alone, the What's on pack's instruction - "the place the
+        # person asked about", "where they are" - read as a reference to the
+        # past and went to history recall (2026-08-26); with "what events are
+        # happening in Arlington this weekend?" beside it, it is a web search.
+        routed = (
+            f"{action.instruction}\n\nThe message this is for: {asked.strip()}"
+            if asked.strip()
+            else action.instruction
+        )
         inner = await self._select_main_action(
             user_id,
-            action.instruction,
+            routed,
             history,
             active_image_artifact_id,
             skills=[],
@@ -2622,7 +2633,7 @@ class ConversationService:
             if skill_event is not None:
                 events.append(skill_event)
         action, skill_context = await self._resolve_skill(
-            user_id, action, history, active_image_artifact_id, unattended
+            user_id, action, history, active_image_artifact_id, unattended, asked=query
         )
         status = self._action_event(action)
         if status is not None:
