@@ -41,10 +41,22 @@ async def order_by_usefulness(
     place: str,
     results: list[dict[str, Any]],
     now: datetime | None = None,
+    known: tuple[str, ...] = (),
 ) -> list[float] | None:
     if len(results) < 2:
         return None
     today = (now or datetime.now(UTC)).strftime("%A %Y-%m-%d")
+    # What the turn already retrieved about the person - interests, facts -
+    # handed to the ranker as a tie-breaker only. It reorders results that
+    # already answer the question; it cannot add, invent, or outrank.
+    facts = [str(item).strip()[:160] for item in known if str(item).strip()][:8]
+    about = (
+        "What is known about the person (use only to break ties between results "
+        "that answer the question equally well; it must never outrank answering "
+        "the question):\n" + "\n".join(f"- {fact}" for fact in facts) + "\n"
+        if facts
+        else ""
+    )
     listing = "\n\n".join(
         f"[{index}] {str(item.get('title') or '')[:200]}\n{str(item.get('url') or '')[:200]}\n"
         f"{str(item.get('content') or '')[:_CONTENT_CHARS]}"
@@ -56,7 +68,7 @@ async def order_by_usefulness(
             {"role": "system", "content": load("search/rank")},
             {
                 "role": "user",
-                "content": f"Question: {question}\n{where}Today: {today}\n\nResults:\n\n{listing}",
+                "content": f"Question: {question}\n{where}Today: {today}\n{about}\nResults:\n\n{listing}",
             },
         ]
         answer = await asyncio.to_thread(llm.chat, messages, _MAX_TOKENS, _SCHEMA, 0.0)

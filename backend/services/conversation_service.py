@@ -381,6 +381,19 @@ def _rerank_question(question: str, place: str) -> str:
     return f"{question} (asked from {place})" if place else question
 
 
+# The words of one recalled memory item, whatever field the store put them in.
+def _memory_text(item: Any) -> str:
+    if isinstance(item, str):
+        return item.strip()
+    if not isinstance(item, dict):
+        return ""
+    for key in ("content", "value", "fact", "text", "summary", "description"):
+        value = item.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return ""
+
+
 # "this weekend" as calendar dates: the coming Saturday and Sunday, or the
 # current ones when today is a weekend day. Written for the router's clock
 # line so a relative weekend never has to be worked out by the model.
@@ -2091,6 +2104,7 @@ class ConversationService:
                     trace_id,
                     action.max_results,
                     user_id=str(context.get("user_id") or "") or None,
+                    known=await self._known_for_ranking(context),
                 )
                 if not search_succeeded:
                     # Rendered as turn state so the reply leads with it; the
@@ -2160,6 +2174,7 @@ class ConversationService:
         trace_id: str,
         max_results: int | None,
         user_id: str | None = None,
+        known: tuple[str, ...] = (),
     ) -> tuple[list[dict[str, Any]], bool]:
         gathered: list[dict[str, Any]] = []
         seen: set[str] = set()
@@ -2243,7 +2258,9 @@ class ConversationService:
             candidates = list(gathered)
 
             async def rank_call(_question: str, _documents: list[str]) -> list[float] | None:
-                return await order_by_usefulness(self.llm, question, place, candidates)
+                return await order_by_usefulness(
+                    self.llm, question, place, candidates, known=known
+                )
 
             gathered = await _rerank_web_results(
                 rank_call,
@@ -2255,6 +2272,27 @@ class ConversationService:
                 "Trace %s ordered %d web results by usefulness", trace_id, len(gathered)
             )
         return gathered, succeeded
+
+    # What this turn already retrieved about the person, as short lines for
+    # the result ranker: their interests, then the facts and moments memory
+    # recalled for this question. Nothing is fetched anew; a ranker fed the
+    # same memory the reply sees cannot know more than the reply does.
+    async def _known_for_ranking(self, context: dict[str, Any]) -> tuple[str, ...]:
+        lines: list[str] = []
+        user_id = str(context.get("user_id") or "")
+        if user_id:
+            try:
+                interests = await self._known_interests(user_id)
+            except Exception:
+                interests = ()
+            if interests:
+                lines.append("interests: " + ", ".join(str(i) for i in interests[:8]))
+        for kind in ("semantic", "episodic"):
+            for item in list(context.get(kind) or [])[:4]:
+                text = _memory_text(item)
+                if text:
+                    lines.append(text)
+        return tuple(lines[:8])
 
     # Which allowance would refuse this request's next search, or None. Asked
     # of the budgeted provider before routing; a provider without a budget

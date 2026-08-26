@@ -52,3 +52,23 @@ def test_parse_order_accepts_only_a_permutation() -> None:
     assert _parse_order({"content": '{"order": [3, 1]}'}, 3) is None
     assert _parse_order({"content": '{"order": ["a"]}'}, 1) is None
     assert _parse_order({"content": "nope"}, 2) is None
+
+
+@pytest.mark.asyncio
+async def test_what_is_known_is_handed_over_as_a_tie_breaker_only() -> None:
+    llm = _LLM(json.dumps({"order": [2, 3, 1]}))
+    await order_by_usefulness(llm, "q", "Canggu", _RESULTS, known=("interests: salsa dance, bachata dance", "lives in Canggu"))
+    content = llm.calls[0][0][1]["content"]
+    assert "use only to break ties" in content and "- interests: salsa dance, bachata dance" in content
+    llm = _LLM(json.dumps({"order": [1, 2, 3]}))
+    await order_by_usefulness(llm, "q", "", _RESULTS, known=())
+    assert "What is known about the person" not in llm.calls[0][0][1]["content"]
+
+
+def test_memory_items_become_lines_whatever_field_holds_them() -> None:
+    from backend.services.conversation_service import _memory_text
+
+    assert _memory_text({"content": "likes salsa"}) == "likes salsa"
+    assert _memory_text({"value": "Canggu, Bali"}) == "Canggu, Bali"
+    assert _memory_text("plain") == "plain"
+    assert _memory_text({"id": 3}) == ""

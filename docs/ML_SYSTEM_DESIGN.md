@@ -332,10 +332,17 @@ grammar-constrained call (`prompts/search/rank.md`, ~1 s), given the
 question, where they asked from, and today's date; the top
 `SEARCH_MAX_RESULTS` are kept, the position is recorded on each result for
 the trace, and every failure keeps the providers' order. What the ranking
-knows about the person is the **place** only - a bias toward the local,
-never a filter; interests stay out of ordinary answers on purpose (section
-7). Held on the real model by `test_search_rerank_behaviour.py`: the West
-Virginia and the September results sink below every Arlington, on-date one.
+knows about the person: the **place**, as a bias toward the local, never a
+filter; and, since the same evening, what the turn already retrieved from
+memory - interests, facts - as a **tie-breaker only**, allowed to choose
+between results that answer the question equally well and never to lift a
+worse one. The reply itself keeps interests out of ordinary answers
+(section 7); ordering results that already answer the question is the one
+place they cannot do that harm, because the ranker reorders and never adds.
+Held on the real model by `test_search_rerank_behaviour.py`: the West
+Virginia and the September results sink below every Arlington, on-date
+one, and for a person whose interests name salsa, a Saturday salsa night
+outranks the Saturday farmers market.
 
 **Why Scout keeps its CPU cross-encoder.** The same service was routed into
 Scout's shortlist ranking (probabilities converted back to log-odds so the

@@ -58,3 +58,40 @@ async def test_far_away_and_off_date_results_sink_below_the_local_on_date_ones()
     local = [i for i, t in enumerate(titles) if "Arlington" in t]
     assert titles.index("Ballhooter Festival 2026 | Bandsintown") > max(local), titles
     assert titles.index("DC JazzFest at The Wharf") > max(local), titles
+
+
+# Memory as a tie-breaker: two Arlington listings on the asked dates, one of
+# them a salsa night, for a person whose stored interests include salsa.
+_TIE = [
+    {
+        "title": "Ballhooter Festival 2026 | Bandsintown",
+        "url": "https://www.bandsintown.com/c/arlington-va",
+        "content": "Ballhooter Festival 2026 at Snowshoe Mountain, West Virginia. Two days of music on the mountain.",
+    },
+    {
+        "title": "Arlington Farmers Market | Arlington County",
+        "url": "https://www.arlingtonva.us/Government/Programs/Farmers-Markets",
+        "content": "Saturday August 29, 2026, 8 AM to noon, Courthouse Plaza, Arlington, VA. Produce, bakers, music.",
+    },
+    {
+        "title": "Salsa Night at Clarendon Ballroom",
+        "url": "https://clarendonballroom.example/salsa",
+        "content": "Saturday August 29, 2026, 9 PM, Clarendon Ballroom, Arlington, VA. Beginner lesson at 8, social dancing till late.",
+    },
+]
+
+
+async def test_what_is_known_breaks_a_tie_between_local_on_date_results() -> None:
+    llm = get_routing_llm_client()
+    candidates = [dict(r) for r in _TIE]
+
+    async def rank_call(question, documents):
+        return await order_by_usefulness(
+            llm, _QUESTION, "Arlington, Virginia", candidates, now=_NOW,
+            known=("interests: salsa dance, bachata dance, VIP clubs",),
+        )
+
+    ordered = await _rerank_web_results(rank_call, _QUESTION, candidates, keep=8)
+    titles = [r["title"] for r in ordered]
+    assert titles[0] == "Salsa Night at Clarendon Ballroom", titles
+    assert titles[-1] == "Ballhooter Festival 2026 | Bandsintown", titles
