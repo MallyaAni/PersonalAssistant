@@ -211,7 +211,14 @@ class ComfyUIImageProvider(ImageProvider):
                 provider_job_id=prompt_id,
                 metadata={
                     "seed": request.seed,
-                    "steps": 28,
+                    # The whole recipe, so a picture can be reproduced or its
+                    # prompt read back: the composed positive prompt with every
+                    # suffix, and the flag that decides the portrait suffix.
+                    "positive_prompt": self._positive_prompt(
+                        request.prompt, request.depicts_a_person
+                    ),
+                    "depicts_a_person": request.depicts_a_person,
+                    "steps": self.steps,
                     "elapsed_seconds": round(time.monotonic() - started_at, 3),
                 },
             )

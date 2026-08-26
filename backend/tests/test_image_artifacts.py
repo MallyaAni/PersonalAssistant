@@ -1043,6 +1043,12 @@ async def test_a_job_comfyui_dropped_is_resubmitted_once_when_it_returns():
     image = await provider.generate(ImageGenerationRequest("a lamp", 1024, 1024, 1))
 
     assert image.content == _png_bytes()
+    # The whole recipe is on the record: the composed prompt with its
+    # suffixes, the person flag, and the steps the workflow actually ran
+    # (the record said 28 for a 4-step Klein generation until 2026-08-26).
+    assert image.metadata["positive_prompt"].startswith("a lamp")
+    assert image.metadata["depicts_a_person"] is False
+    assert image.metadata["steps"] == provider.steps
     assert image.provider_job_id == "second"
     assert len(posts) == 2, "exactly one resubmission"
 
