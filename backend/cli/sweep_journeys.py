@@ -56,6 +56,8 @@ class Journey:
     holds: tuple[str, ...] = ()  # statements the judge must find true
     does_not_hold: tuple[str, ...] = ()  # statements the judge must find false
     metadata: dict = field(default_factory=dict)
+    before: tuple[str, ...] = ()  # earlier turns of the same conversation, sent first, not judged
+    sql_holds: tuple[str, ...] = ()  # each must return true for :u, the sweep's user
 
 
 JOURNEYS = [
@@ -103,6 +105,22 @@ JOURNEYS = [
     Journey("edit with no image", "make the background of my photo blue", (None, "Image edits"),
             holds=("The reply says there is no picture to edit yet and asks for one, or asks which picture.",),
             does_not_hold=("The reply claims a picture was edited.",)),
+    # 2026-08-26: "send another don tito reminder at 7" was captured as Scout's
+    # sweep schedule (daily, 7 AM) and announced as saved. A reminder's time is
+    # never the sweep's cadence.
+    Journey("reminder is not scout's schedule", "send me a don tito reminder tonight at 7", ("Scheduled tasks",),
+            does_not_hold=("The reply says a Scout check, sweep, or Scout schedule was saved, set, or changed.",),
+            sql_holds=("select count(*) = 0 from discovery_schedules where user_id = :u",)),
+    # Same day: "adjust this to daily at 3pm", said right after a reply about
+    # Scout's schedule, moved a stretch reminder - the only daily task. "This"
+    # is what was just discussed: Scout, whose schedule the application
+    # changes from the words; no saved task moves.
+    Journey("scout schedule continuation", "adjust this to daily at 3pm", (None,),
+            before=("when does scout run its sweep?",),
+            holds=("The reply says the sweep, check, or Scout schedule is now daily at 3 PM, or that this schedule was saved.",),
+            does_not_hold=("The reply says a reminder or task other than Scout's sweep was rescheduled or changed.",),
+            sql_holds=("select count(*) = 1 from discovery_schedules where user_id = :u and cadence = 'daily' and hour = 15",
+                       "select count(*) = 0 from scheduled_tasks where user_id = :u and hour = 15")),
 ]
 
 
@@ -135,15 +153,15 @@ class Sweep:
         except httpx.HTTPError:
             pass
         async with AsyncSessionLocal() as db:
-            for table in ("scheduled_task_runs", "scheduled_tasks", "discovery_localities", "user_sessions", "user_profiles", "conversations", "user_accounts"):
+            for table in ("scheduled_task_runs", "scheduled_tasks", "discovery_runs", "discovery_schedules", "discovery_interests", "discovery_localities", "user_sessions", "user_profiles", "conversations", "user_accounts"):
                 try:
                     await db.execute(text(f"delete from {table} where user_id = :u"), {"u": self.user})
                 except Exception:
                     await db.rollback()
             await db.commit()
 
-    async def chat(self, client: httpx.AsyncClient, query: str, metadata: dict | None = None) -> dict:
-        body: dict = {"user_id": self.user, "conversation_id": str(uuid.uuid4()), "query": query}
+    async def chat(self, client: httpx.AsyncClient, query: str, metadata: dict | None = None, conversation_id: str | None = None) -> dict:
+        body: dict = {"user_id": self.user, "conversation_id": conversation_id or str(uuid.uuid4()), "query": query}
         if metadata:
             body["metadata"] = metadata
         seen: dict = {"action": None, "sources": 0, "text": "", "error": None}
@@ -185,8 +203,15 @@ class Sweep:
             print(f"user={self.user} (Arlington, Virginia)", flush=True)
             try:
                 for journey in JOURNEYS:
-                    r = await self.chat(client, journey.query, journey.metadata or None)
+                    conversation_id = str(uuid.uuid4())
+                    for earlier in journey.before:
+                        await self.chat(client, earlier, None, conversation_id)
+                    r = await self.chat(client, journey.query, journey.metadata or None, conversation_id)
                     problems: list[str] = []
+                    for statement in journey.sql_holds:
+                        async with AsyncSessionLocal() as db:
+                            if not await db.scalar(text(statement), {"u": self.user}):
+                                problems.append(f"db: not true: {statement}")
                     if r["error"]:
                         problems.append(f"error={r['error']}")
                     if r["action"] not in journey.expect_action:

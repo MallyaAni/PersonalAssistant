@@ -2,6 +2,34 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-26 — A reminder's time is not Scout's schedule, and "this" means what was just said
+
+- **A reminder was saved as the sweep's cadence.** "send another don tito
+  reminder at 7" set the reminder correctly and, through the memory
+  proposal agent, also rewrote Scout's daily 5 PM sweep to daily 7 AM,
+  which the reply then reported as "the daily 7 AM Scout check is saved".
+  Asked "when did i say 7 am for scout?", the reply invented the
+  conversation. "adjust this to daily at 3pm" - meant for Scout - was
+  routed to the task manager, whose picker, seeing only the words "this",
+  chose the only daily task, a stretch reminder, and moved it to 3 PM;
+  the proposal agent moved Scout to 3 PM as well. Three fixes, one cause:
+  nothing that resolved "this" could see the previous turn.
+  `prompts/memory/proposal.md`'s schedule field now means the sweep's own
+  cadence and never a reminder, alarm, text, or task at a time; the
+  proposal agent and the task picker are both handed the assistant's
+  previous reply, labelled as a referent aid and not a source of facts;
+  the picker is offered "none" (a model given only ids reaches for the
+  closest one); the router matrix carries the Scout continuation as
+  NO_TOOL; `prompts/reply/system.md` answers "when did I say X?" only from
+  visible or recalled history; `prompts/reply/task_outcome.md` keeps
+  Scout's status line out of the outcome. The stretch reminder was put
+  back to daily 6 PM; Scout stays daily 3 PM (the change asked for). Pinned
+  by `functional/test_scout_schedule_referent_behaviour.py` (8 cases,
+  including "the previous reply is never a source of facts") and
+  `functional/test_task_referent_behaviour.py`; `sweep_journeys` gained the
+  reminder-versus-Scout and Scout-continuation journeys with database
+  assertions.
+
 ## 2026-08-25 — Recall anything, a reranker, keyed digests, a third backup copy, and the architecture told for newcomers
 
 - **A trip is searched from home.** "One way to Rome and back from the

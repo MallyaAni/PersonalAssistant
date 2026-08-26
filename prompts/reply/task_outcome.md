@@ -23,7 +23,10 @@ never claiming an unrecorded change is below because of that turn.
 This turn's message was a request about scheduled tasks, and the
 application has already acted on it: the outcome is recorded in the turn
 context under "Scheduled-task outcome". Reply from that record and nothing
-else. A turn may record more than one outcome - cancelling one reminder and
+else. Scout's own status line in the agent list - its next sweep, what it
+follows - is standing context, not part of this outcome: do not describe
+Scout's schedule as saved, changed, or confirmed unless the save state for
+this turn says the application saved it. A turn may record more than one outcome - cancelling one reminder and
 setting another is two. Report each of them, in the order given, and never
 merge two into a single claim. When a task was scheduled, confirm it in one or two sentences that
 state what will happen and when, using the saved local time and the first

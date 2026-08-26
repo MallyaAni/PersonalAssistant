@@ -386,6 +386,9 @@ def _rerank_question(question: str, place: str) -> str:
 # Whether this request's search results were judged to be events, set by the
 # research path for the reply's presentation. Per task, like the limit.
 _results_were_events: ContextVar[bool] = ContextVar("results_were_events", default=False)
+# The assistant's previous reply in this conversation, for anything that has
+# to resolve "this" - the task picker first. Set per request.
+_previous_assistant_said: ContextVar[str] = ContextVar("previous_assistant_said", default="")
 _results_were_travel: ContextVar[bool] = ContextVar("results_were_travel", default=False)
 
 
@@ -2454,6 +2457,7 @@ class ConversationService:
         # a limit only on a turn where a search was chosen and refused - not
         # on a stretch reminder. Reset per request.
         current_search_limit.set(None)
+        _previous_assistant_said.set(str((history[-1].get("response") or "")) if history else "")
         account_charged_this_turn.set(False)
         _results_were_events.set(False)
         _results_were_travel.set(False)
@@ -2799,7 +2803,9 @@ class ConversationService:
             return ()
         try:
             result = await self.memory_proposals.propose(
-                query, await self._known_interests(user_id)
+                query,
+                await self._known_interests(user_id),
+                previous_reply=_previous_assistant_said.get(),
             )
             return result.proposals
         except Exception:
@@ -2958,7 +2964,9 @@ class ConversationService:
             if self.main_action_selector is not None
             else self.llm
         )
-        chosen = await pick_task(picker_llm, action.which, tasks)
+        chosen = await pick_task(
+            picker_llm, action.which, tasks, hint=_previous_assistant_said.get()
+        )
         if chosen is None:
             return {"kind": "not_found", "tasks": tasks, "requested": action.which}
         before = next(item for item in tasks if item["id"] == chosen)

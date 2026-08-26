@@ -69,6 +69,37 @@ included, and the freshness check fails whenever that list and the canonical
 Mermaid source count diverge. The generated page reports 22/22; its structure,
 unique embedded SVGs, source links, and zoom controls were checked locally.
 
+## Live incident 2026-08-26 21:28 — a reminder became Scout's schedule, and "this" moved the wrong thing
+
+What the operator saw: "adjust this to daily at 3pm", said about Scout,
+moved their stretch reminder to 3 PM. What actually happened, from the
+decrypted conversation rows and the task/schedule tables:
+
+1. 21:28 "send another don tito reminder at 7" set the reminder correctly
+   *and* the memory proposal agent read "at 7" as the sweep's cadence
+   (its prompt said "asking for one to be set or changed states it just
+   as plainly"), so Scout - daily 5 PM until then (runs 21:00-22:00 UTC) -
+   became daily 7 AM, and the reply truthfully reported "the daily 7 AM
+   Scout check is saved".
+2. 21:30 "when did i say 7 am for scout?" - the reply invented a
+   conversation ("back when we were setting up your recurring events
+   sweep").
+3. 21:31 "adjust this to daily at 3pm" - the router chose the task
+   manager; the picker, given only the word "this" and two tasks, chose
+   the only daily one (stretch, 18:00) and moved it to 15:00; the proposal
+   agent moved Scout to 15:00 as well.
+
+Fixed, verified, and deployed the same evening (see CHANGELOG 2026-08-26):
+the proposal agent's `schedule` means the sweep's own cadence and never a
+reminder; the proposal agent and the task picker both see the assistant's
+previous reply; the picker is offered "none"; the router matrix carries
+the Scout continuation as NO_TOOL; the reply answers "when did I say X?"
+only from what it can see. Stretch reminder restored to daily 6 PM.
+
+**Open for the operator:** Scout is now daily 3 PM (what "adjust this"
+asked for). Before the incident it ran daily at 5 PM. Say the word to put
+it back.
+
 ## What is still open
 
 **A third backup copy on the Mac — LIVE 2026-08-25.** Remote Login is on,

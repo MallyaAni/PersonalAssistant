@@ -123,6 +123,7 @@ class MemoryProposalAgent:
         self,
         query: str,
         known_interests: tuple[str, ...] = (),
+        previous_reply: str = "",
     ) -> MemoryProposalResult:
         catalogue = (
             "The user already follows these Scout interests: "
@@ -148,7 +149,7 @@ class MemoryProposalAgent:
                         "produces no proposal. " + "Return only the required JSON."
                     ),
                 },
-                {"role": "user", "content": query},
+                {"role": "user", "content": self._utterance(query, previous_reply)},
             ],
             self.max_tokens,
             MemoryProposalDecision.model_json_schema(),
@@ -156,6 +157,22 @@ class MemoryProposalAgent:
         )
         decision = MemoryProposalDecision.model_validate(json.loads(result["content"]))
         return MemoryProposalResult(self._validated_proposals(decision))
+
+    # The message to interpret, with the assistant's previous reply alongside
+    # when there is one. "Adjust this to daily at 3pm" names its subject only
+    # by "this"; read alone it was taken as the sweep's schedule whatever the
+    # conversation was about (2026-08-26). The reply is labelled as a referent
+    # aid, not a source of facts, and the prompt says the same.
+    @staticmethod
+    def _utterance(query: str, previous_reply: str) -> str:
+        said = " ".join(previous_reply.split())[:400]
+        if not said:
+            return query
+        return (
+            "The assistant's previous reply, supplied only so that a reference "
+            f"like 'this' or 'it' can be resolved - never a source of facts: {said}"
+            f"\n\nThe user's current message: {query}"
+        )
 
     # Convert the model decision into the existing typed API proposal payloads.
     def _validated_proposals(

@@ -179,6 +179,8 @@ async def test_model_picks_among_several_and_only_offered_ids_count():
     llm = _PickingLLM("t2")
     assert await pick_task(llm, "the stretching one", _TASKS) == "t2"
     offered = llm.calls[0][1][0]["function"]["parameters"]["properties"]["item_id"]
-    assert offered["enum"] == ["t1", "t2"]
+    # "none" is offered so a vague referent has somewhere to go besides the
+    # closest task.
+    assert offered["enum"] == ["t1", "t2", "none"]
     assert await pick_task(_PickingLLM("t9"), "something", _TASKS) is None
     assert await pick_task(_PickingLLM(None), "something", _TASKS) is None

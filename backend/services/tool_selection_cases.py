@@ -197,6 +197,13 @@ _RETRY_AFTER_REFUSAL_HISTORY = (
     ),
 )
 
+# The operator's exchange of 2026-08-26: the assistant had just mentioned
+# Scout's own daily check; "adjust this to daily at 3pm" means that check -
+# a setting the application changes from the words - not a scheduled task.
+_SCOUT_CHECK_HISTORY = (
+    ("when did i say 7 am for scout?", "You mentioned the daily 7 AM Scout check when we set up your events sweep."),
+)
+
 SELECTION_CASES: tuple[SelectionCase, ...] = (
     # --- genuinely needs the web ------------------------------------------
     SelectionCase("who is the prime minister of Canada", SEARCH, "role_holder"),
@@ -550,6 +557,12 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
             "Tuesday 2026-08-25 22:58 - they are in Arlington, Virginia "
             "(America/New_York); this weekend is Sat 2026-08-29 to Sun 2026-08-30"
         ),
+    ),
+    SelectionCase(
+        "adjust this to daily at 3pm",
+        NO_TOOL,
+        "agent_settings",
+        history=_SCOUT_CHECK_HISTORY,
     ),
 )
 

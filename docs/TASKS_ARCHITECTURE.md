@@ -111,7 +111,14 @@ What exists, and where:
   cancels, pauses, resumes; the result rides into the ordinary reply as
   `context["task_outcome"]` and the model words the confirmation from it
   (`prompts/reply/task_outcome.md`). Which task "the weather one" means is
-  the model's call (`backend/tasks/picker.py`, `prompts/tasks/pick.md`).
+  the model's call (`backend/tasks/picker.py`, `prompts/tasks/pick.md`);
+  the picker is handed the assistant's previous reply so "this" means
+  what was just discussed, and is offered "none" so a referent that is
+  not a task - Scout's own schedule, a setting - moves nothing (2026-08-26:
+  "adjust this to daily at 3pm", said about Scout, moved a stretch
+  reminder). The same previous reply reaches the memory proposal agent,
+  whose `schedule` field is Scout's sweep cadence and never a reminder's
+  time.
   Timezone comes from the primary locality; none means the reply asks for
   the city and nothing is saved.
 - Storage: `backend/models/scheduled_task.py`, migration

@@ -23,6 +23,7 @@ async def pick_one(
     which: str,
     items: list[dict[str, Any]],
     describe: Callable[[dict[str, Any]], str],
+    hint: str = "",
 ) -> str | None:
     if not items:
         return None
@@ -33,21 +34,31 @@ async def pick_one(
         "type": "function",
         "function": {
             "name": "pick_item",
-            "description": "Name the one item the person is referring to.",
+            "description": (
+                "Name the one item the person is referring to, or none when "
+                "what they mean is not one of the items."
+            ),
             "parameters": {
                 "type": "object",
-                "properties": {"item_id": {"type": "string", "enum": ids}},
+                # "none" is offered explicitly: a model given only ids reaches
+                # for the closest one rather than declining to call.
+                "properties": {"item_id": {"type": "string", "enum": [*ids, "none"]}},
                 "required": ["item_id"],
                 "additionalProperties": False,
             },
         },
     }
     listing = "\n".join(f"- id {item['id']}: {describe(item)}" for item in items)
+    # What the assistant said just before is what "this", "that" and "it"
+    # point at. Without it, "adjust this to daily at 3pm" after a message
+    # about Scout's own sweep picked the person's stretch reminder - the
+    # only daily task - and moved it (2026-08-26).
+    said = f"What the assistant said just before: {hint.strip()[:600]}\n\n" if hint.strip() else ""
     messages = [
         {"role": "system", "content": load("tasks/pick")},
         {
             "role": "user",
-            "content": f"Items:\n{listing}\n\nThe person said: {which}",
+            "content": f"{said}Items:\n{listing}\n\nThe person said: {which}",
         },
     ]
     try:
@@ -59,9 +70,9 @@ async def pick_one(
 
 # The task `which` refers to, described as a task.
 async def pick_task(
-    llm: LLMClient, which: str, tasks: list[dict[str, Any]]
+    llm: LLMClient, which: str, tasks: list[dict[str, Any]], hint: str = ""
 ) -> str | None:
-    return await pick_one(llm, which, tasks, describe_task)
+    return await pick_one(llm, which, tasks, describe_task, hint=hint)
 
 
 # The skill `which` refers to, described by name and what it does.
