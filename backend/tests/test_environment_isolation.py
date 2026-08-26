@@ -25,6 +25,12 @@ def test_the_suite_runs_with_the_env_file_switched_off():
     assert Settings.model_config.get("env_file") is None
 
 
+# A generic host DEBUG mode must not stop the test settings singleton importing.
+def test_the_suite_overrides_the_hosts_generic_debug_mode():
+    assert os.environ.get("DEBUG") == "false"
+    assert settings.DEBUG is False
+
+
 # The two the repository actually sets, named individually: a default that
 # silently follows the file again would otherwise only surface as an unrelated
 # test failing on one machine.

@@ -14,8 +14,14 @@ raises into a turn, and nothing is altered.
 
 import pytest
 
-from backend.agents.graph import _turn_sections, measure_turn
+from backend.agents.graph import (
+    _build_system_prompt,
+    _turn_sections,
+    measure_turn,
+    turn_context_messages,
+)
 from backend.config.settings import settings
+from backend.core.context_budget import estimate_tokens
 
 
 @pytest.fixture
@@ -29,6 +35,9 @@ def budget_enabled():
 def _context():
     return {
         "search": [{"title": "t", "url": "u", "content": "x" * 2_000}],
+        "history_search": [
+            {"when": "2026-01-02", "said": "old question", "answered": "old answer"}
+        ],
         "tool_results": [{"tool": "clock", "value": "10:00"}],
         "images": [{"kind": "generated_image", "description": "a harbour"}],
         "recalled_turns": [{"said": "I like jazz", "when": "2026-06-11"}],
@@ -54,11 +63,12 @@ def test_every_prompt_source_is_represented():
         "system",
         "query",
         "evidence",
+        "past_conversations",
+        "turn_context",
         "tools",
         "history",
         "images",
         "recalled",
-        "memory",
     }
     assert all(section.items for section in sections), "a source counted as empty"
 
@@ -75,10 +85,45 @@ def test_history_is_ordered_most_recent_first_by_whole_exchanges():
     assert "second answer" in newest, "an exchange was split into messages"
 
 
-def test_both_memory_kinds_are_counted():
-    sections = {s.name: s for s in _turn_sections(_context(), [], "q", "SYSTEM")}
+# Personal memory already lives inside the rendered system block and is counted once.
+def test_personal_memory_is_not_double_counted():
+    base = _context()
+    base.pop("episodic")
+    base.pop("semantic")
+    with_memory = _context()
+    base_prompt = _build_system_prompt(base)
+    memory_prompt = _build_system_prompt(with_memory)
 
-    assert len(sections["memory"].items) == 2
+    base_report = measure_turn(base, [], "q", base_prompt)
+    memory_report = measure_turn(with_memory, [], "q", memory_prompt)
+
+    assert base_report is not None
+    assert memory_report is not None
+    assert memory_report.used_tokens - base_report.used_tokens == (
+        estimate_tokens(memory_prompt) - estimate_tokens(base_prompt)
+    )
+
+
+# Accounting must reserve at least the content cost of the exact messages sent.
+def test_rich_turn_measurement_is_conservative(budget_enabled):
+    context = _context()
+    system_prompt = _build_system_prompt(context)
+    report = measure_turn(context, _history(), "now what?", system_prompt)
+    actual = (
+        estimate_tokens(system_prompt)
+        + sum(
+            estimate_tokens(turn["query"]) + estimate_tokens(turn["response"])
+            for turn in _history()
+        )
+        + sum(
+            estimate_tokens(message["content"])
+            for message in turn_context_messages(context)
+        )
+        + estimate_tokens("now what?")
+    )
+
+    assert report is not None
+    assert report.used_tokens >= actual, report.summary()
 
 
 # The fixed parts are counted even though they can never be trimmed, or the

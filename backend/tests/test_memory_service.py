@@ -201,6 +201,47 @@ async def test_semantic_memory_retrieval_is_relevant_and_user_scoped(memory_serv
     }
 
 
+# Image-derived descriptions must travel through visual recall, not ordinary facts.
+@pytest.mark.asyncio
+async def test_semantic_retrieval_excludes_visual_descriptions(memory_service):
+    user_id = f"test_user_{uuid.uuid4()}"
+    await memory_service.replace_visual_semantic_memory(
+        user_id,
+        str(uuid.uuid4()),
+        "The uploaded picture shows jasmine tea.",
+        {"source": "test"},
+    )
+
+    memories = await memory_service.get_semantic_memory(
+        user_id, "What tea does the user like?"
+    )
+
+    assert memories == []
+
+
+# Vectors from an old embedding signature stay invisible until re-embedded.
+@pytest.mark.asyncio
+async def test_semantic_retrieval_excludes_a_stale_embedding_space(
+    memory_service, db_session
+):
+    user_id = f"test_user_{uuid.uuid4()}"
+    saved = await memory_service.save_semantic_memory(
+        user_id,
+        "The user likes jasmine tea.",
+        {},
+    )
+    row = await db_session.get(SemanticMemory, uuid.UUID(saved["id"]))
+    assert row is not None
+    row.embedding_model = "retired-embedding-model"
+    await db_session.commit()
+
+    memories = await memory_service.get_semantic_memory(
+        user_id, "What tea does the user like?"
+    )
+
+    assert memories == []
+
+
 @pytest.mark.asyncio
 async def test_semantic_memory_retrieval_excludes_threshold_misses(memory_service):
     user_id = f"test_user_{uuid.uuid4()}"

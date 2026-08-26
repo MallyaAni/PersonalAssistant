@@ -57,6 +57,28 @@ async def test_semantic_agent_extracts_name_and_interests_together() -> None:
     assert llm.calls[0]["response_schema"]["properties"]["preferred_name"]
 
 
+# A profile detail must not make a compatible long-term fact disappear.
+@pytest.mark.asyncio
+async def test_profile_and_general_facts_from_one_message_are_both_kept() -> None:
+    llm = _DecisionLLM(
+        {
+            "preferred_name": "Jen",
+            "interests": ["acting"],
+            "semantic_fact": "My dog is called Biscuit.",
+        }
+    )
+
+    result = await MemoryProposalAgent(llm).propose(
+        "I'm Jen, I love acting, and my dog is called Biscuit."
+    )
+
+    assert result.proposals == (
+        {"kind": "preferred_name", "value": "Jen"},
+        {"kind": "discovery_interests", "labels": ["acting"]},
+        {"kind": "semantic_fact", "content": "My dog is called Biscuit."},
+    )
+
+
 # Keep questions and model inferences out of the approval queue.
 @pytest.mark.asyncio
 async def test_semantic_agent_returns_no_unsupported_memory() -> None:

@@ -1,6 +1,6 @@
 import asyncio
-import uuid
 import logging
+import uuid
 from datetime import datetime
 from typing import Any
 
@@ -236,6 +236,9 @@ class PostgresMemoryService(MemoryService, SemanticMemoryWriter):
             query_embedding,
             min(top_k, self.retrieval_policy.max_results),
             self.retrieval_policy.max_cosine_distance,
+            embedding_model=getattr(self.embeddings, "model", "unknown"),
+            embedding_version=self.embedding_model_version,
+            embedding_dimension=len(query_embedding),
         )
         return self.retrieval_policy.select(memories, top_k)
 
@@ -344,8 +347,11 @@ class PostgresMemoryService(MemoryService, SemanticMemoryWriter):
             # from the row not existing. One tiny query on misses only, and
             # the number that tunes the constant lands in the log.
             await self._log_search_miss(
-                user_id, query_embedding, max_cosine_distance,
-                created_after, created_before,
+                user_id,
+                query_embedding,
+                max_cosine_distance,
+                created_after,
+                created_before,
             )
         return found
 
@@ -391,6 +397,9 @@ class PostgresMemoryService(MemoryService, SemanticMemoryWriter):
             query_embedding,
             top_k,
             max_cosine_distance,
+            embedding_model=getattr(self.embeddings, "model", "unknown"),
+            embedding_version=self.embedding_model_version,
+            embedding_dimension=len(query_embedding),
         )
         results: list[dict[str, Any]] = []
         for memory, distance in rows:

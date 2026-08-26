@@ -1,27 +1,21 @@
 import json
 import logging
 from datetime import UTC, datetime
-from typing import Annotated, Any, NotRequired
+from typing import Any
 
-from langgraph.config import get_stream_writer
-from langgraph.graph import END, StateGraph
-from typing_extensions import TypedDict
-
-from backend.agents.reply.emit import emit
 from backend.config.settings import settings
 from backend.core.context_budget import (
     BudgetReport,
     Section,
     plan,
 )
-from backend.core.llm import LLMClient
-from backend.core.observability import record_context_report
 from backend.core.prompts import load, render
 
 logger = logging.getLogger(__name__)
 
 
 # Define the state for LangGraph
+
 
 # Render bounded, clearly attributed web results the application chose to fetch.
 def _render_search_context(results: list[dict[str, Any]]) -> str:
@@ -224,7 +218,9 @@ def _render_search_state(search: dict[str, Any]) -> str:
             "verify. Do not offer, promise, or announce a search - none can "
             "run until the allowance resets."
         )
-    reason = str(search.get("reason") or "the search provider refused or did not answer")
+    reason = str(
+        search.get("reason") or "the search provider refused or did not answer"
+    )
     return (
         "\nThis turn: a live web search was attempted and did not run - "
         f"{reason} - so there are no live results. Say so plainly at the "
@@ -485,11 +481,13 @@ def _build_system_prompt(
         agents=_render_agent_context(context_data.get("agents") or []),
         capabilities=_render_capability_context(context_data.get("capabilities") or []),
         save_state=(
-            "" if moved else _render_save_state(context_data.get("memory_save") or {})
-        + _render_edit_state(context_data.get("image_edit") or {})
-        + _render_search_state(context_data.get("search_state") or {})
-        + _render_events_format(context_data)
-        + _render_travel_format(context_data)
+            ""
+            if moved
+            else _render_save_state(context_data.get("memory_save") or {})
+            + _render_edit_state(context_data.get("image_edit") or {})
+            + _render_search_state(context_data.get("search_state") or {})
+            + _render_events_format(context_data)
+            + _render_travel_format(context_data)
         ),
     )
     prompt += _channel_style(context_data)
@@ -584,13 +582,15 @@ def _build_turn_context(
     context_data: dict[str, Any], include_save_state: bool = True
 ) -> str:
     blocks = (
-        _render_save_state(context_data.get("memory_save") or {})
-        + _render_edit_state(context_data.get("image_edit") or {})
-        + _render_search_state(context_data.get("search_state") or {})
-        + _render_events_format(context_data)
-        + _render_travel_format(context_data)
-        if include_save_state
-        else "",
+        (
+            _render_save_state(context_data.get("memory_save") or {})
+            + _render_edit_state(context_data.get("image_edit") or {})
+            + _render_search_state(context_data.get("search_state") or {})
+            + _render_events_format(context_data)
+            + _render_travel_format(context_data)
+            if include_save_state
+            else ""
+        ),
         _render_recalled_turns(context_data.get("recalled_turns") or []),
         _render_search_context(context_data.get("search") or []),
         _render_history_recall_context(context_data.get("history_search") or []),
@@ -682,17 +682,53 @@ def _turn_sections(
         if str(turn.get("query") or "").strip()
         or str(turn.get("response") or "").strip()
     ]
+    evidence_items = tuple(
+        json.dumps(item, default=str, sort_keys=True)
+        for item in (context_data.get("search") or [])
+    )
+    past_conversation_items = tuple(
+        json.dumps(item, default=str, sort_keys=True)
+        for item in (context_data.get("history_search") or [])
+    )
+    tool_items = tuple(
+        json.dumps(item, default=str, sort_keys=True)
+        for key in ("tool_results", "tool_notices")
+        for item in (context_data.get(key) or [])
+    )
+    image_items = tuple(
+        json.dumps(item, default=str, sort_keys=True)
+        for item in (context_data.get("images") or [])
+    )
+    recalled_items = tuple(
+        str(turn.get("said") or "") for turn in _deduped_recall(context_data, history)
+    )
+
+    # The renderers add provenance, safety, state, and formatting text around
+    # their payloads. Count that real overhead once as untrimmable framing; the
+    # old report counted only payload values and understated a rich turn by 10%.
+    represented_chars = sum(
+        len(item)
+        for items in (
+            evidence_items,
+            past_conversation_items,
+            tool_items,
+            image_items,
+            recalled_items,
+        )
+        for item in items
+    )
+    rendered_turn_context = _build_turn_context(context_data).strip()
+    overhead_chars = max(0, len(rendered_turn_context) - represented_chars)
+    turn_overhead = ("x" * overhead_chars,) if overhead_chars else ()
     return (
         # Neither of these is ever trimmable; they are counted so the report
         # accounts for the whole turn rather than only its negotiable parts.
         Section("system", (system_prompt,), priority=0, floor_items=1),
         Section("query", (query,), priority=0, floor_items=1),
+        Section("turn_context", turn_overhead, priority=0, floor_items=1),
         Section(
             "evidence",
-            tuple(
-                json.dumps(item, default=str, sort_keys=True)
-                for item in (context_data.get("search") or [])
-            ),
+            evidence_items,
             priority=1,
             floor_items=1,
         ),
@@ -702,49 +738,27 @@ def _turn_sections(
         # was added - enforcement was off and no floors had been recorded.
         Section(
             "past_conversations",
-            tuple(
-                json.dumps(item, default=str, sort_keys=True)
-                for item in (context_data.get("history_search") or [])
-            ),
+            past_conversation_items,
             priority=2,
             floor_items=1,
         ),
         Section(
             "tools",
-            tuple(
-                json.dumps(item, default=str, sort_keys=True)
-                for item in (context_data.get("tool_results") or [])
-            ),
+            tool_items,
             priority=3,
             floor_items=1,
         ),
         Section("history", tuple(turns), priority=4, floor_items=2),
         Section(
             "images",
-            tuple(
-                json.dumps(item, default=str, sort_keys=True)
-                for item in (context_data.get("images") or [])
-            ),
+            image_items,
             priority=5,
             floor_items=1,
         ),
         Section(
             "recalled",
-            tuple(
-                str(turn.get("said") or "")
-                for turn in _deduped_recall(context_data, history)
-            ),
+            recalled_items,
             priority=6,
-            floor_items=1,
-        ),
-        Section(
-            "memory",
-            tuple(
-                str(item.get("content") or "")
-                for kind in ("episodic", "semantic")
-                for item in (context_data.get(kind) or [])
-            ),
-            priority=7,
             floor_items=1,
         ),
     )
@@ -776,22 +790,16 @@ def _apply_report(
     trimmed["history_search"] = list(context_data.get("history_search") or [])[
         : kept.get("past_conversations", 0)
     ]
-    trimmed["tool_results"] = list(context_data.get("tool_results") or [])[
-        : kept.get("tools", 0)
+    tool_allowance = kept.get("tools", 0)
+    tool_results = list(context_data.get("tool_results") or [])
+    trimmed["tool_results"] = tool_results[:tool_allowance]
+    trimmed["tool_notices"] = list(context_data.get("tool_notices") or [])[
+        : max(0, tool_allowance - len(trimmed["tool_results"]))
     ]
     trimmed["images"] = list(context_data.get("images") or [])[: kept.get("images", 0)]
 
     trimmed["recalled_turns"] = _deduped_recall(context_data, history)[
         : kept.get("recalled", 0)
-    ]
-
-    # The memory section counts episodic then semantic as one ordered list, so
-    # its budget is spent across both in that order.
-    allowance = kept.get("memory", 0)
-    episodic = list(context_data.get("episodic") or [])
-    trimmed["episodic"] = episodic[:allowance]
-    trimmed["semantic"] = list(context_data.get("semantic") or [])[
-        : max(0, allowance - len(trimmed["episodic"]))
     ]
 
     # History was planned most-recent-first; the stored order is oldest-first,

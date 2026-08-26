@@ -139,6 +139,11 @@ def _content_fingerprint(item: dict[str, Any]) -> str:
     )
 
 
+# Keep operational coordination records out of model-facing working memory.
+def _visible_working(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [item for item in items if item.get("purpose") != "request_coordination"]
+
+
 class MemoryCoordinatorAgent:
     """Plans and curates retrieval without granting the model storage authority."""
 
@@ -199,9 +204,12 @@ class MemoryCoordinatorAgent:
             "trace_id": trace_id,
         }
         if plan.use_working:
-            context["working"] = await self.stores.working.list_active(
-                user_id, conversation_id
-            )
+            working = await self.stores.working.list_active(user_id, conversation_id)
+            # The plan is persisted for operational inspection, not as a fact
+            # for the reply model. Feeding its own routing JSON back as personal
+            # memory wastes context and lets internal coordination bias answers.
+            visible_working = _visible_working(working)
+            context["working"] = visible_working
         if plan.use_entities:
             context["entities"] = await self.stores.entities.search(
                 user_id, query, 3, query_embedding

@@ -76,7 +76,16 @@ class FakeWorkingStore:
             "purpose": purpose,
             "expires_at": expires_at,
         }
-        self.items = [item]
+        self.items = [
+            existing
+            for existing in self.items
+            if not (
+                existing["user_id"] == user_id
+                and existing["conversation_id"] == conversation_id
+                and existing["memory_key"] == memory_key
+            )
+        ]
+        self.items.append(item)
         return item
 
     # List working items that match a user and conversation.
@@ -249,7 +258,7 @@ async def test_coordinator_plans_and_queries_only_selected_stores() -> None:
     assert cache_hit is False
     assert context["memory_plan"]["semantic_cache_hit"] is False
     assert context["profile"] == {"name": "Ani"}
-    assert context["working"][0]["memory_key"] == "memory_query_plan"
+    assert context["working"] == []
     assert context["entities"] == [{"content": "entity"}]
     assert context["knowledge"] == [{"content": "knowledge"}]
     assert context["summaries"] == [{"id": "search", "content": "summary"}]
@@ -265,6 +274,7 @@ async def test_coordinator_plans_and_queries_only_selected_stores() -> None:
         )
     )
     assert toolbox.queries
+    assert stores.working.items[0]["memory_key"] == "memory_query_plan"
     assert stores.working.items[0]["expires_at"] > datetime.now(UTC)
 
 
@@ -343,7 +353,40 @@ async def test_completed_turn_updates_session_state_and_periodic_summary() -> No
     assert "First question" in stores.summaries.saved[0]["content"]
     assert "Second answer" in stores.summaries.saved[0]["content"]
     assert context["summaries"][0]["through_turn_count"] == 2
-    assert stores.working.items[0]["memory_key"] == "memory_query_plan"
+    assert any(
+        item["memory_key"] == "memory_query_plan" for item in stores.working.items
+    )
+
+
+# User-facing working state survives while internal request coordination stays hidden.
+@pytest.mark.asyncio
+async def test_internal_query_plans_do_not_reach_the_reply_context() -> None:
+    stores = FakeStores()
+    conversation_id = "88888888-8888-4888-8888-888888888888"
+    stores.working.items.append(
+        {
+            "user_id": "ani.mallya",
+            "conversation_id": conversation_id,
+            "memory_key": "draft_goal",
+            "value": "finish the budget",
+            "purpose": "user_working_state",
+            "expires_at": datetime.now(UTC),
+        }
+    )
+    coordinator = MemoryCoordinatorAgent(cast(Any, stores), cast(Any, FakeToolbox()))
+
+    context = await coordinator.prepare_context(
+        "ani.mallya",
+        conversation_id,
+        "what is next?",
+        "99999999-9999-4999-8999-999999999999",
+        {},
+    )
+
+    assert [item["memory_key"] for item in context["working"]] == ["draft_goal"]
+    assert any(
+        item["memory_key"] == "memory_query_plan" for item in stores.working.items
+    )
 
 
 class RecordingMemory(StubMemoryService):
