@@ -429,3 +429,29 @@ async def test_a_reminder_firing_is_never_routed() -> None:
     ):
         pass
     assert selector.seen == [], "the router was asked about a plain reminder"
+
+
+@pytest.mark.asyncio
+async def test_a_question_charges_the_account_once_however_many_rounds() -> None:
+    from backend.search.budgeted import account_charged_this_turn
+
+    budget = _ProviderBudget(pool=100, brave_used=900)  # Brave spent: the pool is reserved each call
+    provider = BudgetedSearchProvider(_Inner(), budget, 2, brave_monthly_limit=900)  # type: ignore[arg-type]
+    pool_only: list[int] = []
+
+    async def reserve_pool_only(wanted, now=None):
+        pool_only.append(wanted)
+        return wanted
+
+    budget.reserve_pool_only = reserve_pool_only  # type: ignore[attr-defined]
+    token = current_search_identity.set(GUEST)
+    charged = account_charged_this_turn.set(False)
+    try:
+        await provider.search("round one")
+        await provider.search("round two")
+        await provider.search("round three")
+    finally:
+        current_search_identity.reset(token)
+        account_charged_this_turn.reset(charged)
+    assert budget.reservations == [True], "the account paid once, on the first round"
+    assert pool_only == [2, 2], "later rounds reserved from the pool alone"

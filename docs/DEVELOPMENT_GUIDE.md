@@ -688,6 +688,22 @@ the operator, the meter question. It removes the account afterwards and
 exits non-zero on any wrong turn. Run it before deploying anything that
 touches routing, search, the budget, or the scheduled-turn prompt.
 
+```bash
+docker compose exec backend python -m backend.cli.sweep_journeys
+```
+
+The sweep is the proactive one: eighteen journeys across what a person
+actually asks - events, weather, a trip, a price, news, a place nearby,
+memory, a reminder, arithmetic, directions, a recipe, a health question, a
+missing capability, hours, currency, a score, a stock, a photo with none
+attached - run as an attributed guest with a home locality, each answer
+judged for its route, for announced or invented searches, for promised
+actions, and (by the routing model as judge) for honest numbers and limits.
+Its first run found that a guest's ten daily queries were three questions
+(rounds were charged, not questions) and that the reply did not know where
+the person lived. Run it after any change to routing, search, budgets, or
+the reply prompt; add a journey whenever a person reports a new kind of ask.
+
 
 ### Install and run the free local image provider
 

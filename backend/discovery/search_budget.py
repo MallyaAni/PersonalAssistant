@@ -142,6 +142,14 @@ class SearchBudget:
         except Exception:
             return
 
+    # Reserve from the shared pool alone - a later round of a question whose
+    # account allowance is already paid. Returns what the pool granted.
+    async def reserve_pool_only(self, wanted: int, now: datetime | None = None) -> int:
+        if not self.enabled or wanted <= 0:
+            return max(wanted, 0)
+        moment = now or datetime.now(UTC)
+        return await self._take(self._pool_key(moment), wanted, self.monthly_credits, _TTL_SECONDS)
+
     # Charge the pool after the fact, for a search that turned out to be
     # served by the provider the pool meters. Used when the pool was left out
     # of the reservation because another rung had room; over-granting by a

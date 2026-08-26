@@ -67,6 +67,14 @@ class SearchLimit:
     shared: bool = False
 
 
+# Whether this request's turn has already charged the account's own daily and
+# monthly allowances. A question is answered by up to three search rounds;
+# charged per round, a guest's ten queries a day were three questions
+# (2026-08-26, found by sweep_journeys). The pool and the provider counters
+# stay per call - they meter what the key actually spends.
+account_charged_this_turn: ContextVar[bool] = ContextVar("account_charged_this_turn", default=False)
+
+
 # The limit in force for the request being handled, decided before any search
 # is chosen. The router reads it to withhold search_web; the reply reads it
 # to say so. None means searching is possible.
@@ -159,14 +167,25 @@ class BudgetedSearchProvider(SearchProvider):
         # (the operator, over iMessage, 2026-08-25), while unattributed ones
         # sailed through.
         brave_room = await self._brave_has_room()
-        granted = await self.budget.reserve(
-            identity.user_id,
-            identity.is_operator,
-            wanted=self.credits_per_search,
-            override=identity.monthly_limit,
-            daily_override=identity.daily_limit,
-            include_pool=not brave_room,
-        )
+        if account_charged_this_turn.get():
+            # A later round of the same question: the account has paid for
+            # the question; only the pool (Tavily's credits) is reserved.
+            granted = (
+                await self.budget.reserve_pool_only(self.credits_per_search)
+                if not brave_room
+                else self.credits_per_search
+            )
+        else:
+            granted = await self.budget.reserve(
+                identity.user_id,
+                identity.is_operator,
+                wanted=self.credits_per_search,
+                override=identity.monthly_limit,
+                daily_override=identity.daily_limit,
+                include_pool=not brave_room,
+            )
+            if granted >= self.credits_per_search:
+                account_charged_this_turn.set(True)
         if granted < self.credits_per_search:
             now = datetime.now(UTC)
             # Report the window that actually ran out. Saying "monthly" to

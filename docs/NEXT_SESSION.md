@@ -644,6 +644,14 @@ me to stretch" calls no tool 3/3, but "time to call mom" still searched 2/3 -
 so plain reminder firings are no longer routed at all (`_is_plain_reminder`),
 and the prompt rule covers the phrasings the regex does not.
 
+The journey sweep (`sweep_journeys`, 2026-08-26) passes 17/18 on its first run
+after two fixes it found itself: a guest's daily search allowance was charged
+per round (three questions a day) and the reply did not know the person's
+place. Two observations left open: "send an email to my landlord" is answered
+with an offer to draft (right) without saying plainly that email cannot be
+sent; and the sweep account is a guest, so the operator-only meter journey is
+not in it.
+
 One functional case is red independently of tonight: `test_scheduled_task_behaviour.py::
 test_cancelling_names_the_task_in_the_persons_words` - "cancel the weather
 texts" routes to manage_tasks with operation `list`, not `cancel`, and does so

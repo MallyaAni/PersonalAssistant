@@ -48,6 +48,7 @@ from backend.models.schemas import ChatStreamEvent
 from backend.search.budgeted import (
     SearchBudgetExceededError,
     SearchLimit,
+    account_charged_this_turn,
     current_search_identity,
     current_search_limit,
 )
@@ -2453,6 +2454,7 @@ class ConversationService:
         # a limit only on a turn where a search was chosen and refused - not
         # on a stretch reminder. Reset per request.
         current_search_limit.set(None)
+        account_charged_this_turn.set(False)
         _results_were_events.set(False)
         _results_were_travel.set(False)
         limit = await self._search_limit()
@@ -3288,9 +3290,19 @@ class ConversationService:
                 current_search_limit.set(limit)
 
         # 2. Build Context and State
+        # Where they are, for the reply: "near me", "how long to drive to",
+        # "will it rain" all need it, and the reply answered "I don't know
+        # where you are" to an account whose locality was on record
+        # (2026-08-26, found by sweep_journeys). The router had it all along.
+        try:
+            found_place = await self._primary_place(user_id)
+            place = found_place[0] if found_place else ""
+        except Exception:
+            place = ""
         context: dict[str, Any] = {
             "user_id": user_id,
             "query": query,
+            "place": place,
             "profile": profile,
             "episodic": episodic,
             "semantic": semantic,

@@ -513,6 +513,11 @@ def _build_system_prompt(
         personal_context["name"] = profile["name"]
     if profile.get("preferences"):
         personal_context["preferences"] = profile["preferences"]
+    # Their home place, from the locality they gave Scout: what "near me",
+    # "from here" and "tomorrow" mean. Interests stay out (section 7 of the
+    # ML design); a place is not a preference.
+    if context_data.get("place"):
+        personal_context["location"] = str(context_data["place"])
     if memory_contents:
         personal_context["memories"] = memory_contents
     discovery = context_data.get("discovery") or {}
