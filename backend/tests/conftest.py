@@ -45,7 +45,10 @@ def _inherit_encryption_key() -> None:
 
 
 _inherit_encryption_key()
-os.environ.setdefault("DEBUG", "false")
+# DEBUG is a generic host variable (Docker Desktop sets it to values such as
+# "release"), not an intentional test override. Force the Boolean test value so
+# an unrelated parent-process convention cannot prevent settings from importing.
+os.environ["DEBUG"] = "false"
 # Deliberately localhost, and deliberately not the Spark.
 #
 # Postgres moved to spark1 on 2026-08-23, so database-backed tests now

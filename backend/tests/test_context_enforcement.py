@@ -22,7 +22,9 @@ or a floor is set low enough to lose a findable fact.
 import pytest
 
 from backend.agents.graph import _apply_report, measure_turn
+from backend.agents.reply.nodes import after_measure
 from backend.config.settings import settings
+from backend.core.context_budget import Allocation, BudgetReport
 
 
 @pytest.fixture
@@ -67,9 +69,9 @@ def test_trimming_keeps_the_head_of_the_relevance_order(budget):
     trimmed, _ = _apply_report(context, _history(), report)
 
     kept_titles = [item["title"] for item in trimmed["search"]]
-    assert kept_titles == [f"s{i}" for i in range(len(kept_titles))], (
-        "trimming must drop the tail, never reorder or skip"
-    )
+    assert kept_titles == [
+        f"s{i}" for i in range(len(kept_titles))
+    ], "trimming must drop the tail, never reorder or skip"
     assert len(kept_titles) < 12
 
 
@@ -107,20 +109,68 @@ def test_a_deduplicated_recall_stays_dropped_under_enforcement(budget):
     assert said not in said_kept, "a remark visible in history came back"
 
 
-def test_memory_allowance_spends_episodic_before_semantic(budget):
+# Personal memory is part of the measured system prompt and cannot be silently trimmed.
+def test_enforcement_preserves_personal_memory_inside_the_system_block(budget):
     context = {
         "episodic": [{"content": f"e{i}"} for i in range(3)],
         "semantic": [{"content": f"s{i}"} for i in range(3)],
     }
     report = measure_turn(context, [], "q", "SYSTEM")
     assert report is not None
-    allowance = {i.name: len(i.kept) for i in report.allocations}["memory"]
 
     trimmed, _ = _apply_report(context, [], report)
 
-    assert len(trimmed["episodic"]) + len(trimmed["semantic"]) == allowance
-    if allowance <= 3:
-        assert trimmed["semantic"] == []
+    assert trimmed["episodic"] == context["episodic"]
+    assert trimmed["semantic"] == context["semantic"]
+
+
+# Tool notices share the same allowance instead of bypassing tool-result trimming.
+def test_tool_notices_share_the_tool_budget(budget):
+    context = {
+        "tool_results": [{"tool": "clock", "value": "10:00"}],
+        "tool_notices": [{"tool": "mail", "error": "denied"}],
+    }
+    report = measure_turn(context, [], "q", "SYSTEM")
+    assert report is not None
+    allocations = []
+    for allocation in report.allocations:
+        if allocation.name == "tools":
+            allocations.append(
+                type(allocation)(
+                    name=allocation.name,
+                    kept=allocation.kept[:1],
+                    dropped=max(0, len(allocation.kept) - 1),
+                    tokens=allocation.tokens,
+                )
+            )
+        else:
+            allocations.append(allocation)
+    constrained = type(report)(
+        budget_tokens=report.budget_tokens,
+        used_tokens=report.used_tokens,
+        allocations=tuple(allocations),
+    )
+
+    trimmed, _ = _apply_report(context, [], constrained)
+
+    assert trimmed["tool_results"] == context["tool_results"]
+    assert trimmed["tool_notices"] == []
+
+
+# Safety framing cannot be trimmed, so a plan that drops it must not be enforced.
+def test_enforcement_stops_when_turn_framing_does_not_fit(monkeypatch):
+    monkeypatch.setattr(settings, "CONTEXT_BUDGET_ENFORCE", True)
+    report = BudgetReport(
+        budget_tokens=100,
+        used_tokens=100,
+        allocations=(
+            Allocation("system", kept=("system",)),
+            Allocation("query", kept=("query",)),
+            Allocation("turn_context", dropped=1),
+        ),
+    )
+
+    assert after_measure({"budget_report": report, "trace_id": "test"}) == "assemble"
 
 
 def test_nothing_is_trimmed_when_everything_fits(budget):

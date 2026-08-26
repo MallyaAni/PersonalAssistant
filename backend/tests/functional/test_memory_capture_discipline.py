@@ -57,3 +57,15 @@ async def test_a_first_person_arrangement_still_captures(llm: object) -> None:
         "I keep my spare house key with the neighbour in flat three."
     )
     assert result.proposals, "a stated arrangement must produce a proposal"
+
+
+# One natural introduction can carry several compatible memories; none may vanish.
+async def test_profile_and_personal_fact_survive_the_same_message(llm: object) -> None:
+    result = await MemoryProposalAgent(get_llm_client()).propose(
+        "I'm Ani, I enjoy hiking, and I'm allergic to peanuts."
+    )
+    kinds = {proposal["kind"] for proposal in result.proposals}
+
+    assert "preferred_name" in kinds, result.proposals
+    assert "discovery_interests" in kinds, result.proposals
+    assert "semantic_fact" in kinds, result.proposals

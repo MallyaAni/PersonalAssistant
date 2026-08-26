@@ -21,7 +21,8 @@ import os
 
 import pytest
 
-os.environ.setdefault("DEBUG", "false")
+# Keep direct functional-suite collection independent of generic host DEBUG modes.
+os.environ["DEBUG"] = "false"
 os.environ.setdefault("SECRET_KEY", "test-secret-key-only-for-testing")
 
 

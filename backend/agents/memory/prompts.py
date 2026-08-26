@@ -14,9 +14,9 @@ interest is never proposed, never approved, and leaves no trace, so the
 phrasings are stated as a rule rather than left to the examples. They are held
 by `tests/functional/test_interest_capture_behaviour.py`.
 
-Nothing here persists anything. Every candidate is shown on an approval card and
-written only if the user says yes, which is what makes it safe to propose from a
-plain statement rather than demanding a trigger phrase.
+Nothing here persists anything. Application code validates and immediately saves
+the bounded candidates, then reports each completed write to the user. That makes
+capture precision the safety boundary rather than an approval round-trip.
 
 The mechanism — the typed decision models, the grammar, the catalogue of
 interests already held — stays in `memory/proposal_agent.py`.

@@ -32,6 +32,7 @@ def reject_sensitive_tool_memory(value: str) -> str:
 
 
 class ToolMemoryService:
+    # Store the database, embedding, and retrieval dependencies for tool memory.
     def __init__(
         self,
         session: AsyncSession,
@@ -43,6 +44,18 @@ class ToolMemoryService:
         self.embeddings = embeddings
         self.retrieval_policy = retrieval_policy
         self.embedding_version = embedding_version
+
+    # Restrict descriptor similarity to the active embedding model and shape.
+    def _current_embedding_filters(
+        self,
+        query_embedding: list[float],
+    ) -> tuple[Any, Any, Any]:
+        return (
+            ToolDescriptor.embedding_model
+            == getattr(self.embeddings, "model", "unknown"),
+            ToolDescriptor.embedding_version == self.embedding_version,
+            ToolDescriptor.embedding_dimension == len(query_embedding),
+        )
 
     async def upsert_descriptor(
         self,
@@ -133,7 +146,11 @@ class ToolMemoryService:
                 self.embeddings.embed_query, query
             )
         distance = ToolDescriptor.embedding.cosine_distance(query_embedding)
-        filters = [ToolDescriptor.user_id == user_id, ToolDescriptor.active.is_(True)]
+        filters = [
+            ToolDescriptor.user_id == user_id,
+            ToolDescriptor.active.is_(True),
+            *self._current_embedding_filters(query_embedding),
+        ]
         if server_id:
             filters.append(ToolDescriptor.server_id == server_id)
         rows = (

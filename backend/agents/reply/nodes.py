@@ -70,7 +70,9 @@ def after_measure(state: ReplyState) -> str:
     if not settings.CONTEXT_BUDGET_ENFORCE:
         return "assemble"
     named = {item.name: item for item in report.allocations}
-    if not (named["system"].complete and named["query"].complete):
+    if not all(
+        named[section].complete for section in ("system", "query", "turn_context")
+    ):
         logger.warning(
             "trace=%s window smaller than the untrimmable parts; turn sent in full",
             state.get("trace_id", ""),

@@ -194,10 +194,12 @@ class MemoryProposalAgent:
                     "weekday": decision.schedule.weekday,
                 }
             )
-        if not proposals:
-            general = self._general_proposal(decision)
-            if general:
-                proposals.append(general)
+        # Profile fields and one general memory category are compatible. The
+        # previous all-or-nothing guard silently lost a stable fact whenever the
+        # same introduction also contained a name, interest, locality, or style.
+        general = self._general_proposal(decision)
+        if general:
+            proposals.append(general)
         return tuple(proposals[:MAX_PROPOSALS_PER_TURN])
 
     # Keep a model-extracted name bounded and free of control-like punctuation.

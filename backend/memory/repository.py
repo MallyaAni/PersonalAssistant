@@ -14,6 +14,7 @@ from backend.discovery.errors import (
 )
 from backend.discovery.projection import DiscoveryProjection
 from backend.memory.errors import MemoryConflictError
+from backend.memory.purposes import VISUAL_ANALYSIS_PURPOSE
 from backend.models.artifact import VisualArtifact
 from backend.models.conversation import Conversation
 from backend.models.discovery import DiscoveryInterest, DiscoveryLocality
@@ -433,19 +434,33 @@ class MemoryRepository:
         query_embedding: list[float],
         top_k: int = 5,
         max_cosine_distance: float = 0.35,
+        embedding_model: str | None = None,
+        embedding_version: str | None = None,
+        embedding_dimension: int | None = None,
     ) -> list[tuple[SemanticMemory, float]]:
         distance = SemanticMemory.embedding.cosine_distance(query_embedding)
         effective_at = datetime.now(UTC)
+        predicates = [
+            SemanticMemory.user_id == user_id,
+            # Image-derived descriptions have their own modality gate and
+            # ownership-checked artifact join. Ordinary fact recall must not
+            # bypass that path or present pixels as a user-stated memory.
+            SemanticMemory.purpose != VISUAL_ANALYSIS_PURPOSE,
+            or_(
+                SemanticMemory.expires_at.is_(None),
+                SemanticMemory.expires_at > effective_at,
+            ),
+            distance <= max_cosine_distance,
+        ]
+        if embedding_model is not None:
+            predicates.append(SemanticMemory.embedding_model == embedding_model)
+        if embedding_version is not None:
+            predicates.append(SemanticMemory.embedding_version == embedding_version)
+        if embedding_dimension is not None:
+            predicates.append(SemanticMemory.embedding_dimension == embedding_dimension)
         stmt = (
             select(SemanticMemory, distance.label("cosine_distance"))
-            .where(
-                SemanticMemory.user_id == user_id,
-                or_(
-                    SemanticMemory.expires_at.is_(None),
-                    SemanticMemory.expires_at > effective_at,
-                ),
-                distance <= max_cosine_distance,
-            )
+            .where(*predicates)
             .order_by(distance, SemanticMemory.id)
             .limit(top_k)
         )
@@ -512,9 +527,29 @@ class MemoryRepository:
         query_embedding: list[float],
         top_k: int,
         max_cosine_distance: float,
+        embedding_model: str | None = None,
+        embedding_version: str | None = None,
+        embedding_dimension: int | None = None,
     ) -> list[tuple[SemanticMemory, float]]:
         distance = SemanticMemory.embedding.cosine_distance(query_embedding)
         effective_at = datetime.now(UTC)
+        predicates = [
+            SemanticMemory.user_id == user_id,
+            SemanticMemory.purpose == VISUAL_ANALYSIS_PURPOSE,
+            VisualArtifact.status == "ready",
+            VisualArtifact.kind.in_({"generated_image", "uploaded_image"}),
+            or_(
+                SemanticMemory.expires_at.is_(None),
+                SemanticMemory.expires_at > effective_at,
+            ),
+            distance <= max_cosine_distance,
+        ]
+        if embedding_model is not None:
+            predicates.append(SemanticMemory.embedding_model == embedding_model)
+        if embedding_version is not None:
+            predicates.append(SemanticMemory.embedding_version == embedding_version)
+        if embedding_dimension is not None:
+            predicates.append(SemanticMemory.embedding_dimension == embedding_dimension)
         stmt = (
             select(SemanticMemory, distance.label("cosine_distance"))
             .join(
@@ -525,17 +560,7 @@ class MemoryRepository:
                     == SemanticMemory.extra_data["artifact_id"].astext,
                 ),
             )
-            .where(
-                SemanticMemory.user_id == user_id,
-                SemanticMemory.purpose == "visual_artifact_analysis",
-                VisualArtifact.status == "ready",
-                VisualArtifact.kind.in_({"generated_image", "uploaded_image"}),
-                or_(
-                    SemanticMemory.expires_at.is_(None),
-                    SemanticMemory.expires_at > effective_at,
-                ),
-                distance <= max_cosine_distance,
-            )
+            .where(*predicates)
             .order_by(distance, SemanticMemory.id)
             .limit(top_k)
         )

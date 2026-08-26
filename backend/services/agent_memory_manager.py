@@ -92,6 +92,18 @@ class _VectorStore:
             "embedding_dimension": len(embedding),
         }
 
+    # Restrict vector comparisons to rows produced by the active embedding space.
+    def _current_embedding_predicates(
+        self,
+        model: Any,
+        embedding: list[float],
+    ) -> tuple[Any, Any, Any]:
+        return (
+            model.embedding_model == getattr(self.embeddings, "model", "unknown"),
+            model.embedding_version == self.embedding_version,
+            model.embedding_dimension == len(embedding),
+        )
+
 
 class SemanticCacheStore(_VectorStore):
     # Return an exact or semantically similar unexpired cached response.
@@ -133,6 +145,7 @@ class SemanticCacheStore(_VectorStore):
                     SemanticCacheEntry.user_id == user_id,
                     SemanticCacheEntry.model == model,
                     SemanticCacheEntry.expires_at > now,
+                    *self._current_embedding_predicates(SemanticCacheEntry, embedding),
                     distance <= self.retrieval_policy.max_cosine_distance,
                 )
                 .order_by(distance, SemanticCacheEntry.id)
@@ -350,6 +363,7 @@ class ProcedureStore(_VectorStore):
                     ProcedureMemory.user_id == user_id,
                     ProcedureMemory.active.is_(True),
                     ProcedureMemory.approval_state == "approved",
+                    *self._current_embedding_predicates(ProcedureMemory, embedding),
                     or_(
                         ProcedureMemory.expires_at.is_(None),
                         ProcedureMemory.expires_at > datetime.now(UTC),
@@ -448,6 +462,7 @@ class EntityStore(_VectorStore):
                 .where(
                     MemoryEntity.user_id == user_id,
                     MemoryEntity.approval_state == "approved",
+                    *self._current_embedding_predicates(MemoryEntity, embedding),
                     or_(
                         MemoryEntity.expires_at.is_(None),
                         MemoryEntity.expires_at > datetime.now(UTC),
@@ -643,6 +658,7 @@ class KnowledgeStore(_VectorStore):
                     KnowledgeChunk.user_id == user_id,
                     KnowledgeDocument.user_id == user_id,
                     KnowledgeDocument.status == "active",
+                    *self._current_embedding_predicates(KnowledgeChunk, embedding),
                     distance <= self.retrieval_policy.max_cosine_distance,
                 )
                 .order_by(distance, KnowledgeChunk.id)
@@ -750,6 +766,7 @@ class SummaryStore(_VectorStore):
                 select(ConversationSummary, distance.label("cosine_distance"))
                 .where(
                     ConversationSummary.user_id == user_id,
+                    *self._current_embedding_predicates(ConversationSummary, embedding),
                     distance <= self.retrieval_policy.max_cosine_distance,
                 )
                 .order_by(distance, ConversationSummary.id)
