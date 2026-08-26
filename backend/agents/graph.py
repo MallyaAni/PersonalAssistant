@@ -243,6 +243,14 @@ def _render_events_format(context_data: dict[str, Any]) -> str:
     return "\n\n" + load("reply/events_format")
 
 
+# The trip presentation, rendered when the turn's results were judged to be
+# fares: the legs and airports first, every price labelled indicative.
+def _render_travel_format(context_data: dict[str, Any]) -> str:
+    if not context_data.get("travel_format"):
+        return ""
+    return "\n\n" + load("reply/travel_format")
+
+
 def _render_save_state(save: dict[str, Any]) -> str:
     if not save:
         return ""
@@ -481,6 +489,7 @@ def _build_system_prompt(
         + _render_edit_state(context_data.get("image_edit") or {})
         + _render_search_state(context_data.get("search_state") or {})
         + _render_events_format(context_data)
+        + _render_travel_format(context_data)
         ),
     )
     prompt += _channel_style(context_data)
@@ -574,6 +583,7 @@ def _build_turn_context(
         + _render_edit_state(context_data.get("image_edit") or {})
         + _render_search_state(context_data.get("search_state") or {})
         + _render_events_format(context_data)
+        + _render_travel_format(context_data)
         if include_save_state
         else "",
         _render_recalled_turns(context_data.get("recalled_turns") or []),

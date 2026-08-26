@@ -33,7 +33,7 @@ async def test_the_order_becomes_scores_highest_first() -> None:
     scores = await order_by_usefulness(llm, "events in Arlington this weekend", "Arlington, Virginia", _RESULTS)
     assert scores == [1.0, 3.0, 2.0]
     messages, max_tokens, schema, temperature = llm.calls[0]
-    assert temperature == 0.0 and schema["required"] == ["order", "events"]
+    assert temperature == 0.0 and schema["required"] == ["order", "events", "travel"]
     assert "Asked from: Arlington, Virginia" in messages[1]["content"]
     assert "[1] Ballhooter Festival 2026" in messages[1]["content"]
 
@@ -84,3 +84,13 @@ async def test_the_events_verdict_rides_with_the_order() -> None:
     assert ranking.scores is None and ranking.events is True, "a bad order still carries the verdict"
     ranking = await judge_results(_LLM(json.dumps({"order": [1, 2, 3]})), "q", "", _RESULTS)
     assert ranking.events is False
+
+
+@pytest.mark.asyncio
+async def test_the_travel_verdict_rides_with_the_order() -> None:
+    from backend.core.result_ranking import judge_results
+
+    ranking = await judge_results(_LLM(json.dumps({"order": [1, 2, 3], "events": False, "travel": True})), "q", "", _RESULTS)
+    assert ranking.travel is True and ranking.events is False
+    ranking = await judge_results(_LLM(json.dumps({"order": [1, 2, 3]})), "q", "", _RESULTS)
+    assert ranking.travel is False

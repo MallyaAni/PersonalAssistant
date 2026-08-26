@@ -385,6 +385,7 @@ def _rerank_question(question: str, place: str) -> str:
 # Whether this request's search results were judged to be events, set by the
 # research path for the reply's presentation. Per task, like the limit.
 _results_were_events: ContextVar[bool] = ContextVar("results_were_events", default=False)
+_results_were_travel: ContextVar[bool] = ContextVar("results_were_travel", default=False)
 
 
 # The words of one recalled memory item, whatever field the store put them in.
@@ -2173,6 +2174,10 @@ class ConversationService:
                     # produced them - the What's on format for everyone.
                     if _results_were_events.get():
                         context["events_format"] = True
+                    # Fares get the trip shape first and every price labelled
+                    # for what it is - the operator's Rome/Amalfi answer.
+                    if _results_were_travel.get():
+                        context["travel_format"] = True
                 if tool_identity:
                     yield {
                         "event": "tool_finished",
@@ -2310,11 +2315,12 @@ class ConversationService:
             except Exception:
                 place = ""
             candidates = list(gathered)
-            verdict: dict[str, bool] = {"events": False}
+            verdict: dict[str, bool] = {"events": False, "travel": False}
 
             async def rank_call(_question: str, _documents: list[str]) -> list[float] | None:
                 ranking = await judge_results(self.llm, question, place, candidates, known=known)
                 verdict["events"] = ranking.events
+                verdict["travel"] = ranking.travel
                 return ranking.scores
 
             gathered = await _rerank_web_results(
@@ -2330,6 +2336,7 @@ class ConversationService:
                 verdict["events"],
             )
             _results_were_events.set(verdict["events"])
+            _results_were_travel.set(verdict["travel"])
         return gathered, succeeded
 
     # What this turn already retrieved about the person, as short lines for
@@ -2447,6 +2454,7 @@ class ConversationService:
         # on a stretch reminder. Reset per request.
         current_search_limit.set(None)
         _results_were_events.set(False)
+        _results_were_travel.set(False)
         limit = await self._search_limit()
         if limit is not None:
             current_search_limit.set(limit)

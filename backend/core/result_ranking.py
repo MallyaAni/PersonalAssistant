@@ -28,8 +28,11 @@ _SCHEMA: dict[str, Any] = {
         # Whether the results are events - things happening at a place and
         # time - which decides the presentation the reply uses.
         "events": {"type": "boolean"},
+        # Whether the results are flight or trip fares from aggregator pages,
+        # which decides the trip presentation.
+        "travel": {"type": "boolean"},
     },
-    "required": ["order", "events"],
+    "required": ["order", "events", "travel"],
     "additionalProperties": False,
 }
 
@@ -40,6 +43,7 @@ class Ranking:
 
     scores: list[float] | None
     events: bool = False
+    travel: bool = False
 _MAX_TOKENS = 256
 _CONTENT_CHARS = 400
 
@@ -68,7 +72,7 @@ async def judge_results(
     known: tuple[str, ...] = (),
 ) -> Ranking:
     if len(results) < 2:
-        return Ranking(None, False)
+        return Ranking(None, False, False)
     today = (now or datetime.now(UTC)).strftime("%A %Y-%m-%d")
     # What the turn already retrieved about the person - interests, facts -
     # handed to the ranker as a tie-breaker only. It reorders results that
@@ -98,19 +102,20 @@ async def judge_results(
         answer = await asyncio.to_thread(llm.chat, messages, _MAX_TOKENS, _SCHEMA, 0.0)
     except Exception:
         logger.warning("Result ranking call failed; keeping provider order", exc_info=True)
-        return Ranking(None, False)
+        return Ranking(None, False, False)
     order = _parse_order(answer, len(results))
-    events = _parse_events(answer)
+    events = _parse_flag(answer, "events")
+    travel = _parse_flag(answer, "travel")
     if order is None:
-        return Ranking(None, events)
+        return Ranking(None, events, travel)
     scores = [0.0] * len(results)
     for position, index in enumerate(order):
         scores[index - 1] = float(len(results) - position)
-    return Ranking(scores, events)
+    return Ranking(scores, events, travel)
 
 
-# The model's events verdict, false unless it is a plain true.
-def _parse_events(answer: Any) -> bool:
+# One of the model's verdicts, false unless it is a plain true.
+def _parse_flag(answer: Any, name: str) -> bool:
     import json
 
     payload = answer
@@ -121,7 +126,12 @@ def _parse_events(answer: Any) -> bool:
             payload = json.loads(payload)
         except ValueError:
             return False
-    return bool(payload.get("events")) if isinstance(payload, dict) else False
+    return bool(payload.get(name)) if isinstance(payload, dict) else False
+
+
+# Kept for callers that only ask about events.
+def _parse_events(answer: Any) -> bool:
+    return _parse_flag(answer, "events")
 
 
 # The model's order as 1-based indices, or None unless it is a permutation.
