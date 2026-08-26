@@ -421,3 +421,28 @@ async def test_a_whats_on_question_searches_for_the_place_and_the_dates(selector
     lowered = action.query.casefold()
     assert "canggu" in lowered, action.query
     assert any(mark in lowered for mark in ("aug", "27", "28", "29", "30", "31", "weekend", "2026")), action.query
+
+
+# A trip is searched from home: "to Rome and back from Amalfi" from a person
+# in Arlington was searched as a Rome-to-Amalfi flight (2026-08-26) and
+# answered with fares for a route that does not exist.
+async def test_a_trip_is_searched_from_where_the_person_is(selector):
+    action = await selector.select(
+        "functional_test_user",
+        "i took off work from October 2 to 16. planning one way trip to rome and "
+        "then back from amalfi coast. cheapest non stop option ironically?",
+        [],
+        None,
+        local_now=(
+            "Tuesday 2026-08-25 22:58 - they are in Arlington, Virginia "
+            "(America/New_York); this weekend is Sat 2026-08-29 to Sun 2026-08-30"
+        ),
+    )
+    assert isinstance(action, SearchAction), action
+    lowered = action.query.casefold()
+    assert any(o in lowered for o in ("washington", "dulles", "iad", "dca", "arlington", "dc ")), action.query
+    assert "rome" in lowered or "fco" in lowered, action.query
+    # One query covers one leg; the return from Naples is the planner's next
+    # round (test_search_compose_behaviour). What must never appear is the
+    # two foreign places read as the flight.
+    assert "rome to amalfi" not in lowered and "rome-amalfi" not in lowered, action.query

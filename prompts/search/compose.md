@@ -40,6 +40,10 @@ someone states does not.
 Today is {today} and your own knowledge ends around {cutoff}. What changed in
 between is what you cannot know and what this search is for, so ask for now
 rather than for the last state you remember.
+When the request is travel - flights, trains, a trip - the origin is where the
+person is unless they say otherwise, and a place with no airport (Amalfi) is
+searched by the airport people use for it (Naples). Both ends go in the query
+with the dates; two foreign places in the message are the trip, not the flight.
 When the request is about what is on, happening, open, or scheduled somewhere,
 the query carries the place - from the request or the conversation - and the
 calendar dates the relative days mean, plus the kind of thing: events, lineup,

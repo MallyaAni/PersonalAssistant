@@ -72,3 +72,29 @@ async def test_a_whats_on_question_searches_for_the_place_and_the_dates(llm):
     assert "canggu" in lowered, composed
     assert any(word in lowered for word in ("event", "lineup", "party", "parties", "what's on", "nightlife", "club")), composed
     assert any(mark in lowered for mark in ("aug", "27", "28", "29", "30", "31", "weekend", "2026")), composed
+
+
+# A trip's second round is the return leg from the airport people use, back
+# home - not a flight between the two foreign places (2026-08-26: "Rome to
+# Amalfi" fares, for a route that does not exist, reached the operator).
+_TRIP = (
+    "i took off work from October 2 to 16. planning one way trip to rome and "
+    "then back from amalfi coast. cheapest non stop option ironically?"
+)
+_FIRST_ROUND = [
+    {"title": "Cheap Flights from Washington to Rome (IAD - FCO) | Skyscanner", "url": "https://www.skyscanner.com/routes/iad/fco/", "content": "Nonstop flights from Washington Dulles to Rome Fiumicino from $412 one way in October."},
+    {"title": "United nonstop Washington Dulles to Rome | United Airlines", "url": "https://www.united.com/en/us/fly/flights-from-washington-to-rome.html", "content": "United flies nonstop IAD to FCO daily."},
+]
+_TRIED = ["cheapest nonstop flights Washington DC to Rome October 2026 one way"]
+
+
+async def test_the_next_round_of_a_trip_is_the_return_leg_from_the_airport_people_use(llm):
+    planner = SearchPlanner(llm)
+    proposed = planner.another_angle(_TRIP, _FIRST_ROUND, _TRIED) or planner.refine(_TRIP, _FIRST_ROUND, _TRIED)
+    lowered = proposed.casefold()
+    assert proposed, "no second round proposed"
+    # The missing leg is either the return from Naples home or the hop from
+    # Rome down to Naples - both real flights. What must never appear is a
+    # flight to Amalfi, which has no airport.
+    assert "naples" in lowered or "salerno" in lowered, proposed
+    assert "to amalfi" not in lowered and "rome-amalfi" not in lowered, proposed

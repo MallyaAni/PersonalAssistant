@@ -540,6 +540,17 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
         "firing",
         unattended=True,
     ),
+    # A trip from home: live fares, searched from where the person is.
+    SelectionCase(
+        "i took off work from October 2 to 16. planning one way trip to rome and "
+        "then back from amalfi coast. cheapest non stop option ironically?",
+        SEARCH,
+        "live_data",
+        local_now=(
+            "Tuesday 2026-08-25 22:58 - they are in Arlington, Virginia "
+            "(America/New_York); this weekend is Sat 2026-08-29 to Sun 2026-08-30"
+        ),
+    ),
 )
 
 # Set from the measured baseline once, deliberately low enough to catch a

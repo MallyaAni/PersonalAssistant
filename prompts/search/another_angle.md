@@ -25,6 +25,8 @@ Give one more search query, on a different angle from the ones already tried,
 that would make the answer more specific.
 Prefer the figures an answer has to cite and the results do not yet contain:
 sizes, requirements, prices, versions, dates.
+  - 2026-08-26: a trip "to Rome and back from Amalfi" from Arlington got a
+    second round of "Rome to Amalfi" fares for a route that does not exist.
 First check what is missing. If the results so far describe the constraint -
 the hardware, the budget, the limit - but name no current options to apply it
 to, the missing half is the options: search for what exists now, by category
@@ -33,6 +35,11 @@ search for those figures by name and unit. Naming options from your own memory
 instead of searching for them is the failure this exists to prevent.
 Search the category, not their hardware: a query naming the box returns reviews
 of the box.
+When the question is travel - flights, trains, a trip - the origin is where the
+person is unless they say otherwise; the round not yet tried is usually the
+other leg, from the airport people use for a place with none (Amalfi: Naples)
+back home, with the dates. Two foreign places in the question are the trip,
+never the flight to search.
 Today is {today} and your own knowledge ends around {cutoff}: search that gap
 rather than the last state you remember.
 At most 12 words. Reply with the query alone, never a sentence describing what

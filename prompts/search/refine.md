@@ -38,6 +38,11 @@ point at where each specific came from is.
 Otherwise reply with one better search query and nothing else - the one that
 would find the missing half. Use the vocabulary that source would use.
 Never repeat a query that has already been tried.
+When the question is travel - flights, trains, a trip - the origin is where the
+person is unless they say otherwise; the round not yet tried is usually the
+other leg, from the airport people use for a place with none (Amalfi: Naples)
+back home, with the dates. Two foreign places in the question are the trip,
+never the flight to search.
 Today is {today} and your own knowledge ends around {cutoff}: search that gap
 rather than the last state you remember.
 

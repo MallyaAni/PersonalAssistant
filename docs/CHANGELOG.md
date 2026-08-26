@@ -4,6 +4,13 @@ This file is append-only history for meaningful, verified changes. It must not c
 
 ## 2026-08-25 — Recall anything, a reranker, keyed digests, a third backup copy, and the architecture told for newcomers
 
+- **A trip is searched from home.** "One way to Rome and back from the
+  Amalfi coast, cheapest nonstop?" from a person in Arlington got fares for
+  a Rome-to-Amalfi flight - a route that does not exist - because the later
+  search rounds read the two foreign places as the flight. The router and
+  all three query planners now start a trip from where the person is, send
+  the return leg from the airport people use (Naples), and never search the
+  two foreign places as a flight; held on the real model.
 - **The events format applies to every events answer, and the search
   conversation is exercised before deploys.** The operator's next events
   answer arrived through a plain web search without the What's on format,
