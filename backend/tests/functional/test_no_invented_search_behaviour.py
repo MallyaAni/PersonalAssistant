@@ -189,3 +189,32 @@ async def test_fresh_results_are_not_called_memory(llm):
     assert text.strip()
     assert not _DENIED.search(text), text
     assert "farmers market" in text.lower() or "jazz" in text.lower(), text
+
+
+# A promise is the same lie in the future tense: on 2026-08-25 a turn the
+# router sent to history recall answered a live what's-on question with
+# "Let me search for what's on in Arlington for those dates" - and nothing
+# searched. With no results and no state, the reply may say it has not
+# checked; it may not announce a search.
+_ANNOUNCED = re.compile(
+    r"let me (search|look|check|find|pull)|i'?ll (search|look|check|find|pull) (that|this|it|those|them|for)|"
+    r"i will (search|look|check)|searching now|looking that up|checking now|one moment while i",
+    re.IGNORECASE,
+)
+
+
+async def test_a_reply_with_no_results_never_announces_a_search(llm):
+    from backend.agents.graph import turn_context_messages
+
+    context = {"capabilities": [{"label": "Web search", "description": "Look things up."}]}
+    messages = [{"role": "system", "content": _build_system_prompt(context)}]
+    messages.extend(turn_context_messages(context))
+    messages.append(
+        {"role": "user", "content": "what events are happening in Arlington Virginia this weekend?"}
+    )
+    text = str(llm.chat(messages, 300, None, 0.0)["content"])
+    assert text.strip()
+    # An offer ("want me to look that up?") is honest here - the next turn can
+    # search; an announcement ("let me search") is the lie.
+    assert not _ANNOUNCED.search(text), text
+    assert not _INVENTED.search(text), text

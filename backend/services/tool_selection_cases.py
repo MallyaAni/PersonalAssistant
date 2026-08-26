@@ -484,6 +484,18 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
         "live_data",
         history=_CANGGU_HISTORY,
     ),
+    # The exact turn that went to search_history on 2026-08-25: a live
+    # what's-on question from a person with no known zone, given the UTC
+    # clock and the weekend's dates. Live data, so a web search.
+    SelectionCase(
+        "what events are happening in Arlington Virginia this weekend?",
+        SEARCH,
+        "live_data",
+        local_now=(
+            "Wednesday 2026-08-26 00:05 UTC (their time zone is not known); "
+            "this weekend is Sat 2026-08-29 to Sun 2026-08-30"
+        ),
+    ),
 )
 
 # Set from the measured baseline once, deliberately low enough to catch a
