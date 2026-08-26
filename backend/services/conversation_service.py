@@ -427,6 +427,26 @@ def _weekend_phrase(now: datetime) -> str:
     return f"this weekend is Sat {saturday:%Y-%m-%d} to Sun {sunday:%Y-%m-%d}"
 
 
+# A label that fits in a sentence. A generated picture's description is its
+# whole generation prompt, and "Here's A lively beach club party at Fins in
+# Canggu, Bali at dusk. A vibrant crowd dancing on a again." went to a phone
+# (2026-08-26): the first clause, lower-cased at the start, or "that one".
+def _short_label(referent: Referent) -> str:
+    text = " ".join(str(referent.description or "").split())
+    if not text:
+        return _referent_label(referent)
+    first = re.split(r"[.;:!?]\s", text, maxsplit=1)[0].strip().rstrip(".,;:")
+    if len(first) > 60:
+        first = first[:60].rsplit(" ", 1)[0].rstrip(".,;:")
+        if len(first) < 20:
+            return "that one"
+    # Lower the leading capital of a sentence, not of an acronym or a name
+    # written in capitals ("DC JazzFest" keeps its D).
+    if first[:1].isupper() and not (len(first) > 1 and first[1].isupper()):
+        first = first[0].lower() + first[1:]
+    return first or "that one"
+
+
 # The most recently made of several referents, by the provenance each carries
 # (an ISO timestamp from the artifact store, so text order is time order);
 # the first offered when none says when.
@@ -1447,10 +1467,10 @@ class ConversationService:
             return
         artifact = shown[0]
         artifact_id = str(artifact.get("id") or "")
-        response_text = f"Here's {_referent_label(target)} again."
+        response_text = f"Here's {_short_label(target)} again."
         if others:
             response_text = (
-                f"Here's the newest one that matches - {_referent_label(target)}. "
+                f"Here's the newest one that matches - {_short_label(target)}. "
                 f"I found {len(others)} other picture{'s' if len(others) > 1 else ''} "
                 "like it; say which if you meant another."
             )

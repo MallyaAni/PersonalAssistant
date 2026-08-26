@@ -231,3 +231,15 @@ def test_history_that_carried_a_picture_is_recognised() -> None:
     assert _history_carried_pictures(
         [{"query": "make a cat", "response": "Here's the image.", "metadata": {"artifact_ids": ["x"]}}]
     )
+
+
+def test_the_shown_pictures_label_fits_a_sentence() -> None:
+    from backend.services.conversation_service import _short_label
+
+    long = Referent(
+        handle="x", kind="image",
+        description="A lively beach club party at Fins in Canggu, Bali at dusk. A vibrant crowd dancing on a sandy dance floor.",
+    )
+    assert _short_label(long) == "a lively beach club party at Fins in Canggu, Bali at dusk"
+    assert _short_label(Referent(handle="y", kind="image", description="a red bicycle")) == "a red bicycle"
+    assert _short_label(Referent(handle="z", kind="image", description="", title="Uploaded image")) == "Uploaded image"
