@@ -386,3 +386,16 @@ async def test_with_brave_spent_the_pool_is_reserved_up_front_as_before() -> Non
     finally:
         current_search_identity.reset(token)
     assert budget.reservations == [True]
+
+
+def test_the_weekend_is_worked_out_in_code() -> None:
+    from backend.services.conversation_service import _weekend_phrase
+
+    tuesday = datetime(2026, 8, 25, 18, 0, tzinfo=UTC)
+    assert _weekend_phrase(tuesday) == "this weekend is Sat 2026-08-29 to Sun 2026-08-30"
+    saturday = datetime(2026, 8, 29, 9, 0, tzinfo=UTC)
+    assert _weekend_phrase(saturday) == "this weekend is Sat 2026-08-29 to Sun 2026-08-30"
+    sunday = datetime(2026, 8, 30, 9, 0, tzinfo=UTC)
+    assert _weekend_phrase(sunday) == "this weekend is Sat 2026-08-29 to Sun 2026-08-30"
+    monday = datetime(2026, 8, 31, 9, 0, tzinfo=UTC)
+    assert _weekend_phrase(monday) == "this weekend is Sat 2026-09-05 to Sun 2026-09-06"

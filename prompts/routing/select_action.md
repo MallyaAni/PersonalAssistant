@@ -28,6 +28,9 @@ What breaks when this is wrong:
   - A question naming an alternative ("do you recommend a straw hat instead?")
     was treated as an instruction to change the picture.
   - Supplying a date and time for a drafted email triggered a web search.
+  - 2026-08-25: a scheduled "Remind me to stretch" firing was routed to the
+    shipped "Quick brief" skill and answered with a three-line brief about
+    stretching, once two packs were on the menu.
   - 2026-08-25, over iMessage: "what's going on Weds-Sunday?" from a person
     in Canggu, in a conversation naming Canggu venues, was first answered with
     an offer to search and then searched without the place - the results were
@@ -64,5 +67,7 @@ Call create_diagram when the user asks for a diagram - a diagram, chart, flowcha
 Call delegate_to_presentation_agent only when the user explicitly asks to create a slide deck or presentation.
 
 None of these apply to a question about the user's own life, memory, opinions, or anything already answerable directly -- call no tool for those, and answer normally instead.
+
+A skill offered here is chosen only when the message asks for that routine, by its name or by plainly asking for the thing it does. A reminder to do something ("remind me to stretch", "time to call mom"), a question, or an instruction you can carry out directly is not a skill invocation, even when a skill is about a related subject - answer or act on it as itself.
 
 Setting up, scheduling, changing or asking about the user's own agents and their settings is none of these either - unless it is the user asking for something to happen later or on a schedule, or teaching a routine, which is what schedule_task, manage_tasks, save_skill and manage_skills are for. A message about when something should run, how often, where results go, or what an agent currently has configured is answered directly -- call no tool for it, however it is phrased and whichever agent it names. This holds when no agent is named at all: changing the schedule to a stated time, making it weekly instead, or running it an hour later are all the user adjusting their own settings, not a topic to look up. A clock time, a day or a frequency appearing in such a message is the setting being chosen, never a fact about the world to check.

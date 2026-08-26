@@ -381,6 +381,20 @@ def _rerank_question(question: str, place: str) -> str:
     return f"{question} (asked from {place})" if place else question
 
 
+# "this weekend" as calendar dates: the coming Saturday and Sunday, or the
+# current ones when today is a weekend day. Written for the router's clock
+# line so a relative weekend never has to be worked out by the model.
+def _weekend_phrase(now: datetime) -> str:
+    weekday = now.weekday()  # Monday is 0
+    days_to_saturday = (5 - weekday) % 7
+    if weekday == 6:  # Sunday: the weekend under way, not next week's
+        saturday = now - timedelta(days=1)
+    else:
+        saturday = now + timedelta(days=days_to_saturday)
+    sunday = saturday + timedelta(days=1)
+    return f"this weekend is Sat {saturday:%Y-%m-%d} to Sun {sunday:%Y-%m-%d}"
+
+
 # The most recently made of several referents, by the provenance each carries
 # (an ISO timestamp from the artifact store, so text order is time order);
 # the first offered when none says when.
@@ -828,7 +842,10 @@ class ConversationService:
             # and a task "today" two years back; told UTC and that the zone is
             # unknown, it can do date arithmetic and still not guess an hour.
             now = datetime.now(UTC)
-            return f"{now:%A %Y-%m-%d %H:%M} UTC (their time zone is not known)"
+            return (
+                f"{now:%A %Y-%m-%d %H:%M} UTC (their time zone is not known); "
+                f"{_weekend_phrase(now)}"
+            )
 
         try:
             now = datetime.now(ZoneInfo(zone))
@@ -842,9 +859,15 @@ class ConversationService:
         # city, 200 miles away, with nothing wrong-looking about it.
         place = await self._primary_place(user_id)
         where = place[0] if place else ""
+        # The coming weekend's dates are computed here rather than left to the
+        # model: given only "Wednesday 2026-08-26" it searched for September 5
+        # (2026-08-25, twice) - the Labor Day weekend, not the coming one.
         if where:
-            return f"{now:%A %Y-%m-%d %H:%M} - they are in {where} ({zone})"
-        return f"{now:%A %Y-%m-%d %H:%M} ({zone})"
+            return (
+                f"{now:%A %Y-%m-%d %H:%M} - they are in {where} ({zone}); "
+                f"{_weekend_phrase(now)}"
+            )
+        return f"{now:%A %Y-%m-%d %H:%M} ({zone}); {_weekend_phrase(now)}"
 
     # Answer the turn as though no tool had been chosen.
     #

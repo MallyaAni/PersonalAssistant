@@ -12,6 +12,13 @@ This file is append-only history for meaningful, verified changes. It must not c
   keeps the top eight, records the position on each, and falls back to the
   providers' order on any failure; the place is a bias, never a filter, and
   interests stay out of ordinary answers.
+- **The router is told the coming weekend's dates, and never guesses a
+  skill.** Given only "Wednesday 2026-08-26" it searched for September 5;
+  the clock line now carries "this weekend is Sat 2026-08-29 to Sun
+  2026-08-30", computed in code. With two packs on the menu a scheduled
+  "Remind me to stretch" became a Quick brief about stretching; the router
+  prompt now says a skill is chosen only when asked for by name or by what
+  it does, held on the real router for reminders and plain questions.
 - **Arsalon's event format ships for everyone as the "What's on" skill
   pack:** venue, map link, day and time, price, a line on the music, a
   YouTube link to hear the act and an Instagram link for the posting where

@@ -232,3 +232,16 @@ async def test_a_whats_on_question_is_the_shipped_pack(selector):
     )
     assert isinstance(action, UseSkillAction), action
     assert action.name == "What's on", action
+
+
+# A firing reminder is not a routine: with two packs on the menu, the router
+# once turned "Remind me to stretch" into a Quick brief about stretching.
+@pytest.mark.parametrize(
+    "text",
+    ["Remind me to stretch", "time to call mom", "what's the capital of Peru?"],
+)
+async def test_a_reminder_or_a_plain_question_is_never_a_skill(selector, text):
+    action = await selector.select(
+        "functional_test_user", text, [], None, skills=_SKILLS, unattended=True
+    )
+    assert not isinstance(action, UseSkillAction), (text, action)
