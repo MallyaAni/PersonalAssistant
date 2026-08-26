@@ -399,3 +399,33 @@ def test_the_weekend_is_worked_out_in_code() -> None:
     assert _weekend_phrase(sunday) == "this weekend is Sat 2026-08-29 to Sun 2026-08-30"
     monday = datetime(2026, 8, 31, 9, 0, tzinfo=UTC)
     assert _weekend_phrase(monday) == "this weekend is Sat 2026-09-05 to Sun 2026-09-06"
+
+
+def test_reminder_shapes_are_recognised() -> None:
+    from backend.services.conversation_service import _is_plain_reminder
+
+    for text in ("Remind me to stretch", "time to call mom", "It's time to leave for the airport", "Don't forget the bins", "take your medicine", "Remember to water the plants"):
+        assert _is_plain_reminder(text), text
+    for text in ("check today's weather in Arlington", "what's on in Canggu this weekend?", "give me a two-line summary of what to focus on"):
+        assert not _is_plain_reminder(text), text
+
+
+@pytest.mark.asyncio
+async def test_a_reminder_firing_is_never_routed() -> None:
+    from backend.services.conversation_service import ConversationService
+    from backend.tests.doubles import StubConversationRepository, StubMemoryService, StubTracer
+
+    selector = _RecordingSelector()
+    service = ConversationService(
+        memory=StubMemoryService(),
+        llm=_NoopLLM(),  # type: ignore[arg-type]
+        repository=StubConversationRepository(),
+        tracer=StubTracer(),
+        main_action_selector=selector,  # type: ignore[arg-type]
+        search=_LimitedSearch(None),  # type: ignore[arg-type]
+    )
+    async for _ in service.process_request(
+        "u", "Remind me to stretch", "56565656-5656-4565-8565-565656565656", metadata={"scheduled_task": True}
+    ):
+        pass
+    assert selector.seen == [], "the router was asked about a plain reminder"

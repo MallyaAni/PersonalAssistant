@@ -400,6 +400,19 @@ def _memory_text(item: Any) -> str:
     return ""
 
 
+# Whether a scheduled instruction is a reminder to do something rather than
+# a task to carry out: the shapes people write reminders in.
+_REMINDER_SHAPES = re.compile(
+    r"^\s*(remind me|reminder:|time to|it'?s time to|don'?t forget|take (your|the)|"
+    r"remember to)\b",
+    re.IGNORECASE,
+)
+
+
+def _is_plain_reminder(instruction: str) -> bool:
+    return bool(_REMINDER_SHAPES.search(instruction or ""))
+
+
 # "this weekend" as calendar dates: the coming Saturday and Sunday, or the
 # current ones when today is a weekend day. Written for the router's clock
 # line so a relative weekend never has to be worked out by the model.
@@ -2420,9 +2433,16 @@ class ConversationService:
         # A scheduled task fires with nobody watching, so the tools that
         # change what is scheduled or taught are withheld from it.
         unattended = bool((metadata or {}).get("scheduled_task"))
-        action = await self._select_main_action(
-            user_id, query, history, active_image_artifact_id, unattended=unattended
-        )
+        # A firing that is a plain reminder - "remind me to stretch", "time to
+        # call mom" - is the message; it is not routed. Asked, the router
+        # searched the web for "time to call mom" two times in three
+        # (2026-08-26), and nobody is there to notice a wasted search.
+        if unattended and _is_plain_reminder(query):
+            action = None
+        else:
+            action = await self._select_main_action(
+                user_id, query, history, active_image_artifact_id, unattended=unattended
+            )
         events, action, skill_context, asked = await self._decide(
             user_id, query, action, history, active_image_artifact_id, unattended
         )

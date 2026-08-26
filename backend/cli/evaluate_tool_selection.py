@@ -47,6 +47,7 @@ from backend.services.main_action_selector import (
 from backend.search.budgeted import SearchIdentity, current_search_identity
 from backend.tools.search import SEARCH_CREDITS_TOOL
 from backend.services.tool_selection_cases import (
+    SEARCH,
     SEARCH_CREDITS,
     ACCURACY_FLOOR,
     NO_TOOL,
@@ -82,6 +83,11 @@ def tool_of(action: object) -> str:
     # internet MCP server) and its own tool by measurement.
     if isinstance(action, ToolboxAction) and action.plan.tool_name == SEARCH_CREDITS_TOOL:
         return SEARCH_CREDITS
+    # A weather question answered by the forecast tool is the live-data
+    # decision made better, not a miss - the behaviour suite already scores
+    # it so; the matrix did not, and counted every weather case against it.
+    if isinstance(action, ToolboxAction) and action.plan.tool_name == "get_weather":
+        return SEARCH
     return _ACTION_TOOL.get(type(action), NO_TOOL)
 
 
@@ -108,6 +114,7 @@ async def collect(
                     history,
                     "active-image-id" if case.active_image else None,
                     local_now=case.local_now,
+                    unattended=case.unattended,
                 )
             finally:
                 current_search_identity.reset(token)

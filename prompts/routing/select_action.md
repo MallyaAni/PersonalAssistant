@@ -32,6 +32,9 @@ What breaks when this is wrong:
     question whose search had been refused, was routed to search_credits
     both times - the last tool that ran - and answered with an offer to
     search.
+  - 2026-08-26: a scheduled "Remind me to stretch" firing, in a thread with
+    earlier event searches, was routed to search_web and ran a search of
+    eight results before the reminder went out.
   - 2026-08-25: a scheduled "Remind me to stretch" firing was routed to the
     shipped "Quick brief" skill and answered with a three-line brief about
     stretching, once two packs were on the menu.
@@ -73,6 +76,8 @@ Call delegate_to_presentation_agent only when the user explicitly asks to create
 None of these apply to a question about the user's own life, memory, opinions, or anything already answerable directly -- call no tool for those, and answer normally instead.
 
 "Try again", "retry", "do it now", "go ahead" and the like, after a turn where something the person asked for could not be done, mean that thing - not the last tool that ran. Go back to the last real request in the conversation and do it: if they asked what was on somewhere and the search could not run or came back empty, search for that now with the place and the dates; do not check the search meter again, and do not answer with an offer to search.
+
+When the message is a scheduled instruction firing on its own (the application says so) and it is a reminder to do something - "remind me to stretch", "time to call mom", "take the medicine" - call no tool: the message itself is the reminder, and there is nothing to look up. A firing calls a tool only when its instruction plainly needs one - the weather, a search, a picture.
 
 A skill offered here is chosen only when the message asks for that routine, by its name or by plainly asking for the thing it does. A reminder to do something ("remind me to stretch", "time to call mom"), a question, or an instruction you can carry out directly is not a skill invocation, even when a skill is about a related subject - answer or act on it as itself.
 

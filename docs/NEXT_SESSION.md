@@ -639,6 +639,11 @@ Zakarya's first iMessage conversation (six turns) surfaced, in order:
   monthly usage limit to the free credit), so live search is back. Google grounding (`GOOGLE_SEARCH_ENABLED`, off because the key's tier
   returned 429). Until then every live question is answered from training.
 
+Measured on the live router 2026-08-26, with the firing rule in the prompt: "Remind
+me to stretch" calls no tool 3/3, but "time to call mom" still searched 2/3 -
+so plain reminder firings are no longer routed at all (`_is_plain_reminder`),
+and the prompt rule covers the phrasings the regex does not.
+
 One functional case is red independently of tonight: `test_scheduled_task_behaviour.py::
 test_cancelling_names_the_task_in_the_persons_words` - "cancel the weather
 texts" routes to manage_tasks with operation `list`, not `cancel`, and does so

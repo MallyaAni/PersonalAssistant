@@ -84,6 +84,9 @@ class SelectionCase:
     # Whether the asker is the operator. Some tools are offered only to them
     # (the search meter), so their cases must be routed as them.
     operator: bool = False
+    # Whether this is a scheduled instruction firing on its own, which the
+    # router is told; a reminder firing calls no tool.
+    unattended: bool = False
 
 
 _OUTFIT_HISTORY = (
@@ -525,6 +528,17 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
         "live_data",
         history=_RETRY_AFTER_REFUSAL_HISTORY,
         operator=True,
+    ),
+    # Scheduled firings: a reminder is the message, and calls nothing; an
+    # instruction that plainly needs live data still gets it.
+    SelectionCase("Remind me to stretch", NO_TOOL, "firing", unattended=True, history=_CANGGU_HISTORY),
+    SelectionCase("time to call mom", NO_TOOL, "firing", unattended=True),
+    SelectionCase("take your medicine", NO_TOOL, "firing", unattended=True),
+    SelectionCase(
+        "check today's weather in Arlington and tell me whether to bring an umbrella",
+        SEARCH,
+        "firing",
+        unattended=True,
     ),
 )
 
