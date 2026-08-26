@@ -118,10 +118,12 @@ class Scenarios:
                     and "haven't checked live" not in lowered and not r["error"],
                     self.trail(r),
                 )
+                priced = any(mark in lowered for mark in ("price not listed", "free", "$"))
                 self.verdict(
                     "1b events are presented in the What's on format",
-                    "maps.google.com/?q=" in lowered and "youtube.com/results?search_query=" in lowered,
-                    f"map={'maps.google.com/?q=' in lowered} youtube={'youtube.com/results?search_query=' in lowered}",
+                    "maps.google.com/?q=" in lowered and priced and "**" not in r["text"],
+                    f"map={'maps.google.com/?q=' in lowered} price={priced} "
+                    f"youtube={'youtube.com/results?search_query=' in lowered} bold={'**' in r['text']}",
                 )
 
                 r = await self.chat(client, "try again")

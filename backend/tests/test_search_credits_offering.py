@@ -87,3 +87,18 @@ async def test_search_stays_on_the_menu_while_an_allowance_is_used_up() -> None:
         current_search_limit.reset(token)
     assert "search_web" in {tool["function"]["name"] for tool in llm.tools}
     assert action is not None
+
+
+@pytest.mark.asyncio
+async def test_a_firing_is_not_offered_shipped_packs() -> None:
+    selector, llm = _selector(_tool_call("search_web", {"query": "x"}))
+    skills = [
+        {"id": "s1", "slug": "morning-brief", "name": "morning brief", "description": "d", "instruction": "i", "source": "user"},
+        {"id": "pack:quick-brief", "slug": "quick-brief", "name": "Quick brief", "description": "d", "instruction": "i", "source": "pack"},
+    ]
+    await selector.select("who", "Remind me to stretch", [], None, skills=skills, unattended=True)
+    names = {tool["function"]["name"] for tool in llm.tools}
+    assert any("morning" in name for name in names), names
+    assert not any("quick" in name for name in names), names
+    await selector.select("who", "give me a quick brief on x", [], None, skills=skills, unattended=False)
+    assert any("quick" in name for name in {tool["function"]["name"] for tool in llm.tools})

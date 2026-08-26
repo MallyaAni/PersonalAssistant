@@ -105,6 +105,11 @@ def _caller_is_operator() -> bool:
     return bool(identity is not None and identity.is_operator)
 
 
+# Whether a skill row is a shipped pack rather than one the person taught.
+def _is_pack(skill: dict[str, Any]) -> bool:
+    return str(skill.get("source") or "") == "pack" or str(skill.get("id") or "").startswith("pack:")
+
+
 def render_recent_history(history: list[dict[str, Any]]) -> str:
     recent = history[-_MAX_HISTORY_TURNS:]
     lines: list[str] = []
@@ -317,7 +322,13 @@ class MainActionSelector:
                 self._builtin_definition(builtin.name, builtin.description, builtin.schema)
                 for builtin in self._available_builtins(unattended)
             )
-            offered_skills.extend(skills or [])
+            # A scheduled firing may name a routine the person taught ("run my
+            # morning brief"); it never means a shipped pack. Offered the
+            # packs, a firing "Remind me to stretch" was routed to one
+            # (2026-08-26, found by exercise_search_scenarios).
+            offered_skills.extend(
+                skill for skill in (skills or []) if not (unattended and _is_pack(skill))
+            )
             tools.extend(skill_tool_definitions(offered_skills))
 
             candidates: list[tuple[dict[str, Any], MCPTool]] = []
