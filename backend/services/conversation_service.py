@@ -71,6 +71,7 @@ from backend.services.main_action_selector import (
     MainActionSelector,
     ManageSkillsAction,
     ManageTasksAction,
+    ScoutScheduleAction,
     RecallHistoryAction,
     SaveSkillAction,
     ScheduleTaskAction,
@@ -2642,10 +2643,13 @@ class ConversationService:
 
         task_outcomes = [s.outcome for s in steps if s.kind == "task"]
         skill_outcomes = [s.outcome for s in steps if s.kind == "skill"]
+        scout_outcomes = [s.outcome for s in steps if s.kind == "scout"]
         if task_outcomes:
             context["task_outcomes"] = task_outcomes
         if skill_outcomes:
             context["skill_outcomes"] = skill_outcomes
+        if scout_outcomes:
+            context["scout_schedule_outcomes"] = scout_outcomes
         return context or None
 
     # Carry out one bookkeeping action, or nothing when this action is not one
@@ -2664,7 +2668,44 @@ class ConversationService:
             and self.scheduled_tasks is not None
         ):
             return "task", await self._apply_task_action(user_id, action, metadata)
+        if isinstance(action, ScoutScheduleAction) and self.discovery_runs is not None:
+            return "scout", await self._apply_scout_schedule(user_id, action)
         return None
+
+    # Set when Scout's own sweep runs and say what happened, as a record the
+    # reply reports from. The same path the memory proposal takes for a
+    # stated schedule, reached by a named tool instead of a captured fact;
+    # the timezone is the primary locality's, and with none nothing is
+    # changed and the outcome says to ask for the place.
+    async def _apply_scout_schedule(
+        self, user_id: str, action: ScoutScheduleAction
+    ) -> dict[str, Any]:
+        requested = f"{action.cadence} at {action.hour:02d}:{action.minute:02d}"
+        try:
+            timezone = (
+                await self._primary_timezone(user_id)
+                if self.discovery_profile is not None
+                else None
+            )
+            if timezone is None:
+                return {"kind": "needs_place", "requested": requested}
+            try:
+                cadence = Cadence(
+                    cadence=action.cadence,
+                    hour=action.hour,
+                    minute=action.minute,
+                    weekday=action.weekday,
+                    timezone=timezone,
+                )
+            except ValueError as exc:
+                return {"kind": "invalid", "reason": str(exc), "requested": requested}
+            schedule = await self.discovery_runs.upsert_schedule(user_id, cadence)
+            return {"kind": "scheduled", "schedule": schedule}
+        except Exception as exc:
+            logger.warning(
+                "scout_schedule_action_failed: %s: %s", type(exc).__name__, str(exc)[:200]
+            )
+            return {"kind": "failed", "requested": requested}
 
     # The routed action, announced. A skill is a stored instruction; what
     # runs is that instruction, routed again with the ordinary tools, and

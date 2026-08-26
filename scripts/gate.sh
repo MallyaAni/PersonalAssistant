@@ -65,11 +65,17 @@ echo "    (a skipped test counts as a failure here)"
 # never having run.
 # docs/ and deploy/ are mounted too: tests that hold the design documents to
 # the serving script must see the working tree, not the last image build.
+# Every file a test reads is mounted from the checkout, not taken from the
+# image: the image is rebuilt rarely, and on 2026-08-26 the internet-env
+# guard and the What's-on pack test were failing against an image from
+# 2026-08-24 that predated both files.
 if "${compose[@]}" run --rm --no-deps \
     -v "$root/backend:/app/backend:ro" \
     -v "$root/prompts:/app/prompts:ro" \
     -v "$root/docs:/app/docs:ro" \
     -v "$root/deploy:/app/deploy:ro" \
+    -v "$root/skills:/app/skills:ro" \
+    -v "$root/.env.example:/app/.env.example:ro" \
     functional-tests \
     python -m pytest "$target" "${ignores[@]}" \
         -q -p no:cacheprovider --no-header; then

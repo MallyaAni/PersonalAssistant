@@ -18,9 +18,14 @@ OPERATIONS = ("list", "cancel", "pause", "resume", "reschedule")
 #
 # The fix is structural, not prompt text. Either agent configuration gets its
 # own tool so the model chooses between two named things, or Scout's sweep
-# becomes an ordinary scheduled task and there is only one concept. Until then
-# this trade is deliberate: reminders that can actually be moved, against agent
-# reschedules that fall through to a conversational path.
+# becomes an ordinary scheduled task and there is only one concept.
+#
+# 2026-08-26: the first of those landed - `scout_schedule.py` is Scout's own
+# row - after "adjust this to daily at 3pm", said about Scout, came here and
+# moved a stretch reminder. Measured the same evening (evaluate_tool_selection,
+# 3 reps): scout_schedule 18/18, manage_tasks 23/24, none 43/66 = 0.65 against
+# the 0.47 recorded above. The picker is also offered "none" now, so a
+# referent that is not a task moves nothing even when the route is wrong.
 
 # The cadences reschedule accepts, kept identical to schedule_task's so moving
 # a task between shapes - a one-off becoming a daily - needs no second call.

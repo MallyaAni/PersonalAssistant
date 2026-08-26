@@ -20,6 +20,7 @@ from . import (
     presentation,
     save_skill,
     schedule_task,
+    scout_schedule,
     search_history,
     show_image,
 )
@@ -34,6 +35,7 @@ from .actions import (
     RecallHistoryAction,
     SaveSkillAction,
     ScheduleTaskAction,
+    ScoutScheduleAction,
     SearchAction,
     ShowImageAction,
     ToolboxAction,
@@ -62,6 +64,7 @@ _MODULES: tuple[ModuleType, ...] = (
     search_history,
     schedule_task,
     manage_tasks,
+    scout_schedule,
     save_skill,
     manage_skills,
 )
@@ -81,7 +84,13 @@ _BY_NAME: dict[str, ModuleType] = {module.NAME: module for module in _MODULES}
 # receives a confirmation instead of their reminder - plus a second task,
 # then four. The cancel side is worse: it hard-deletes without asking.
 AUTOMATION_TOOLS: frozenset[str] = frozenset(
-    (schedule_task.NAME, manage_tasks.NAME, save_skill.NAME, manage_skills.NAME)
+    (
+        schedule_task.NAME,
+        manage_tasks.NAME,
+        scout_schedule.NAME,
+        save_skill.NAME,
+        manage_skills.NAME,
+    )
 )
 # Withheld from a scheduled firing along with the automation tools: a firing
 # recalls nothing - its instruction is the whole message - and offered
@@ -190,6 +199,7 @@ _ROW_FOR_ACTION: dict[type, BuiltinTool] = {
     RecallHistoryAction: search_history.TOOL,
     ScheduleTaskAction: schedule_task.TOOL,
     ManageTasksAction: manage_tasks.TOOL,
+    ScoutScheduleAction: scout_schedule.TOOL,
     SaveSkillAction: save_skill.TOOL,
     ManageSkillsAction: manage_skills.TOOL,
 }
@@ -207,7 +217,7 @@ def _detail(action: MainAction) -> str:
         return action.query
     if isinstance(action, CreateDiagramAction | DelegateAction):
         return action.subject
-    if isinstance(action, ScheduleTaskAction):
+    if isinstance(action, ScheduleTaskAction | ScoutScheduleAction):
         return f"{action.cadence} at {action.hour:02d}:{action.minute:02d}"
     if isinstance(action, ManageTasksAction | ManageSkillsAction):
         return action.operation

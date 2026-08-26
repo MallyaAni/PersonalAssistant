@@ -37,6 +37,10 @@ CREATE_DIAGRAM = "create_diagram"
 DELEGATE_PRESENTATION = "delegate_to_presentation_agent"
 SCHEDULE_TASK = "schedule_task"
 MANAGE_TASKS = "manage_tasks"
+# Scout's own sweep cadence, its own tool since 2026-08-26 so the router
+# chooses between two named things rather than reading a sweep change as a
+# task reschedule (the measured failure in backend/tools/manage_tasks.py).
+SCOUT_SCHEDULE = "scout_schedule"
 SAVE_SKILL = "save_skill"
 MANAGE_SKILLS = "manage_skills"
 NO_TOOL = "none"
@@ -56,6 +60,7 @@ TOOL_NAMES: tuple[str, ...] = (
     # skill tools were unmeasurable by construction rather than by oversight.
     SCHEDULE_TASK,
     MANAGE_TASKS,
+    SCOUT_SCHEDULE,
     SAVE_SKILL,
     MANAGE_SKILLS,
     NO_TOOL,
@@ -199,9 +204,23 @@ _RETRY_AFTER_REFUSAL_HISTORY = (
 
 # The operator's exchange of 2026-08-26: the assistant had just mentioned
 # Scout's own daily check; "adjust this to daily at 3pm" means that check -
-# a setting the application changes from the words - not a scheduled task.
+# Scout's own sweep - not a scheduled task.
 _SCOUT_CHECK_HISTORY = (
     ("when did i say 7 am for scout?", "You mentioned the daily 7 AM Scout check when we set up your events sweep."),
+)
+# The journey sweep's shape of the same turn: Scout not yet on a schedule.
+_SCOUT_SETUP_HISTORY = (
+    (
+        "when does scout run its sweep?",
+        "Scout isn't on a schedule yet - it only sweeps when asked, and it needs an interest to follow before it can find anything. Want me to set a time?",
+    ),
+)
+# A reminder just confirmed: "this" is that reminder.
+_REMINDER_HISTORY = (
+    (
+        "send me a don tito reminder tonight at 7",
+        "Done - I've set a reminder about Don Tito's for tonight at 7:00 PM.",
+    ),
 )
 
 SELECTION_CASES: tuple[SelectionCase, ...] = (
@@ -334,19 +353,37 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
         DELEGATE_PRESENTATION,
         "deck",
     ),
-    # --- the user's own settings, which no tool covers ---------------------
+    # --- Scout's own sweep schedule: its own tool since 2026-08-26 ---------
+    # These three were labelled NO_TOOL while nothing covered them and were
+    # lost to manage_tasks the day `reschedule` was added; a named tool is
+    # the structural fix that note asked for.
     SelectionCase(
         "can you change the schedule to 9:25pm everyday?",
-        NO_TOOL,
+        SCOUT_SCHEDULE,
         "agent_config",
         history=_SCOUT_HISTORY,
     ),
     SelectionCase(
-        "yes id like scout for 9:40pm", NO_TOOL, "agent_config", history=_SCOUT_HISTORY
+        "yes id like scout for 9:40pm", SCOUT_SCHEDULE, "agent_config", history=_SCOUT_HISTORY
     ),
     SelectionCase(
-        "make it weekly instead", NO_TOOL, "agent_config", history=_SCOUT_HISTORY
+        "make it weekly instead", SCOUT_SCHEDULE, "agent_config", history=_SCOUT_HISTORY
     ),
+    SelectionCase("run scout every day at 3pm", SCOUT_SCHEDULE, "agent_config"),
+    SelectionCase(
+        "adjust this to daily at 3pm",
+        SCOUT_SCHEDULE,
+        "agent_config",
+        history=_SCOUT_SETUP_HISTORY,
+    ),
+    # The same words after a reminder was just set are that reminder.
+    SelectionCase(
+        "adjust this to daily at 3pm",
+        MANAGE_TASKS,
+        "task_reschedule",
+        history=_REMINDER_HISTORY,
+    ),
+    # Asking what is configured is answered, not changed.
     SelectionCase("what agents do i have scheduled?", NO_TOOL, "agent_config"),
     # --- short answers continue the writing task already in progress --------
     SelectionCase(
@@ -560,8 +597,8 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
     ),
     SelectionCase(
         "adjust this to daily at 3pm",
-        NO_TOOL,
-        "agent_settings",
+        SCOUT_SCHEDULE,
+        "agent_config",
         history=_SCOUT_CHECK_HISTORY,
     ),
 )
@@ -600,6 +637,10 @@ PER_TOOL_ACCURACY_FLOORS: dict[str, float] = {
     # arrives, where a misrouted diagram is obvious in the reply.
     SCHEDULE_TASK: 0.80,
     MANAGE_TASKS: 0.80,
+    # Measured 18/18 on 2026-08-26 with the tool (evaluate_tool_selection,
+    # 3 reps); held at the task tools' level rather than at 1.0 so a single
+    # unstable rep cannot fail an honest run.
+    SCOUT_SCHEDULE: 0.80,
     SAVE_SKILL: 0.66,
     MANAGE_SKILLS: 0.66,
     # Lowered from 0.85 to the measured 0.47 on 2026-08-23, deliberately and
@@ -607,5 +648,9 @@ PER_TOOL_ACCURACY_FLOORS: dict[str, float] = {
     # Scout's own sweep schedule - from no-tool to manage_tasks, and no wording
     # of the tool description recovered them. Raising this back is the check
     # that the structural fix landed; see backend/tools/manage_tasks.py.
-    NO_TOOL: 0.45,
+    # 2026-08-26: it landed (scout_schedule), and none measured 43/66 = 0.65
+    # the same evening. What remains is the known opinion_about_image class
+    # (0/9, reads as an edit) and a few searches; raised to 0.55, still a
+    # collapse detector rather than a referee.
+    NO_TOOL: 0.55,
 }

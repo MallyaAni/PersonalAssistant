@@ -115,7 +115,7 @@ JOURNEYS = [
     # Scout's schedule, moved a stretch reminder - the only daily task. "This"
     # is what was just discussed: Scout, whose schedule the application
     # changes from the words; no saved task moves.
-    Journey("scout schedule continuation", "adjust this to daily at 3pm", (None,),
+    Journey("scout schedule continuation", "adjust this to daily at 3pm", ("Scout schedule",),
             before=("when does scout run its sweep?",),
             holds=("The reply says the sweep, check, or Scout schedule is now daily at 3 PM, or that this schedule was saved.",),
             does_not_hold=("The reply says a reminder or task other than Scout's sweep was rescheduled or changed.",),

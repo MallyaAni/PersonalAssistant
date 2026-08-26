@@ -7,6 +7,10 @@ flowchart LR
     Tools[(backend/tools<br/>registry · waiting lines)] --> Router
     Packs[(skills/ packs<br/>+ user_skills)] --> Router
     Router -->|schedule_task · manage_tasks| Save[ConversationService<br/>_apply_task_action]
+    Router -->|scout_schedule| Sweep[ConversationService<br/>_apply_scout_schedule]
+    Locality --> Sweep
+    Sweep --> Sched[(discovery_schedules<br/>Scout's own cadence)]
+    Sweep --> Outcome
     Router -->|save_skill · manage_skills| Save
     Router -->|skill__name| Again[Route the skill instruction again<br/>+ reply/skill_invoked block]
     Again --> Router
@@ -36,6 +40,6 @@ flowchart LR
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     class Person,Bridge interface;
-    class Chat,Save,Outcome,Loop,Runner,Fire,Turn,Again,Status,Quiet application;
-    class Locality,Tasks,Runs,Tools,Packs data;
+    class Chat,Save,Sweep,Outcome,Loop,Runner,Fire,Turn,Again,Status,Quiet application;
+    class Locality,Tasks,Runs,Tools,Packs,Sched data;
     class Router,Picker,Reply model;

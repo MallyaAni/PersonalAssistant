@@ -1883,7 +1883,7 @@ Frontend -> POST /api/v1/chat -> FastAPI dependency assembly
          -> ConversationService -> MainActionSelector
          -> (search_web | generate_image | edit_image | show_image | create_diagram
              | delegate_to_presentation_agent | search_history
-             | schedule_task / manage_tasks | a taught skill
+             | schedule_task / manage_tasks / scout_schedule | a taught skill
              | a toolbox tool | none),
             the main model's own native tool-calling decision
 

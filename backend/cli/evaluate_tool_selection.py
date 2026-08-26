@@ -37,6 +37,7 @@ from backend.services.main_action_selector import (
     MainActionSelector,
     ManageSkillsAction,
     ManageTasksAction,
+    ScoutScheduleAction,
     SaveSkillAction,
     ScheduleTaskAction,
     RecallHistoryAction,
@@ -69,6 +70,7 @@ _ACTION_TOOL = {
     # being counted as successes for `none`.
     ScheduleTaskAction: "schedule_task",
     ManageTasksAction: "manage_tasks",
+    ScoutScheduleAction: "scout_schedule",
     SaveSkillAction: "save_skill",
     ManageSkillsAction: "manage_skills",
     # Absent again for search_history (2026-08-25): the tool shipped and

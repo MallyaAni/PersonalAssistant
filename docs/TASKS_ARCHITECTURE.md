@@ -133,6 +133,17 @@ What exists, and where:
 - Wording: `backend/tasks/describe.py` renders cadence and next run in the
   person's zone for both the picker and the reply context.
 
+- Scout's own cadence: `scout_schedule` (`backend/tools/scout_schedule.py`),
+  a separate row since 2026-08-26 so the router chooses between two named
+  things. With only `manage_tasks` offered, "change the schedule to
+  9:25pm" after talk of Scout was read as a task reschedule (measured
+  2026-08-23; no wording of the description moved it), and on 2026-08-26
+  "adjust this to daily at 3pm", said about Scout, moved a stretch
+  reminder. The action lands in `ConversationService._apply_scout_schedule`
+  -> `discovery_runs.upsert_schedule` in the primary locality's timezone,
+  and rides into the reply as `context["scout_schedule_outcomes"]`, kept
+  apart from task outcomes so the sweep is never reported as a reminder.
+
 Not yet: a web surface for runs (output is stored, nothing shows it), the
 Scout-as-task migration, WhatsApp/OpenClaw adapters, edit-in-place.
 

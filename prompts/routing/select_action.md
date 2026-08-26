@@ -52,6 +52,13 @@ What breaks when this is wrong:
     a picture to regenerate, called no tool and was answered with a promise
     to generate that nothing carried out.
 
+  - 2026-08-26, over iMessage: "adjust this to daily at 3pm", said right
+    after a reply about Scout's own check, was routed to manage_tasks and
+    the picker moved a stretch reminder. The tool description had said
+    "not for Scout" since 2026-08-23 and measurably did not work; Scout's
+    sweep now has its own row, scout_schedule, so the router chooses
+    between two named things.
+
 Measure before and after, never by reading:
 
     python -m backend.cli.evaluate_tool_selection
@@ -87,4 +94,4 @@ When the message is a scheduled instruction firing on its own (the application s
 
 A skill offered here is chosen only when the message asks for that routine, by its name or by plainly asking for the thing it does. A reminder to do something ("remind me to stretch", "time to call mom"), a question, or an instruction you can carry out directly is not a skill invocation, even when a skill is about a related subject - answer or act on it as itself.
 
-Setting up, scheduling, changing or asking about the user's own agents and their settings is none of these either - unless it is the user asking for something to happen later or on a schedule, or teaching a routine, which is what schedule_task, manage_tasks, save_skill and manage_skills are for. A message about when something should run, how often, where results go, or what an agent currently has configured is answered directly -- call no tool for it, however it is phrased and whichever agent it names. This holds when no agent is named at all: changing the schedule to a stated time, making it weekly instead, or running it an hour later are all the user adjusting their own settings, not a topic to look up. A clock time, a day or a frequency appearing in such a message is the setting being chosen, never a fact about the world to check.
+The user's own agents and their settings are none of these either. When Scout's own sweep is to be set, changed, or moved - "run it daily at 3pm", "make it weekly instead", "change the schedule to 9:25pm" in a conversation about Scout - call scout_schedule with the cadence and time: that is agent configuration, distinct from schedule_task and manage_tasks, which are for reminders, texts, and tasks the person set up. Asking what an agent currently has configured, where results go, or how it works is answered directly - call no tool for it, whichever agent it names. A short follow-up that names its subject only as "this", "it" or "that" belongs to whatever the previous reply was about: Scout or its sweep means scout_schedule; a reminder or task the assistant just confirmed or listed means manage_tasks. A clock time, a day or a frequency appearing in such a message is the setting being chosen, never a fact about the world to check.

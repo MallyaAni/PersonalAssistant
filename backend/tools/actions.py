@@ -107,6 +107,23 @@ class ManageTasksAction:
 
 
 @dataclass(frozen=True, slots=True)
+class ScoutScheduleAction:
+    """The model decided this turn sets when Scout's own sweep runs.
+
+    Its own action, not a `manage_tasks` reschedule: the sweep is agent
+    configuration, and a router offered only "reschedule a task" read
+    "change the schedule to 9:25pm" after talk of Scout as that (measured
+    2026-08-23, backend/tools/manage_tasks.py). Two named things to choose
+    between is the structural fix that note asked for (2026-08-26).
+    """
+
+    cadence: str
+    hour: int
+    minute: int = 0
+    weekday: int = 0
+
+
+@dataclass(frozen=True, slots=True)
 class SaveSkillAction:
     """The model decided this turn teaches a skill: a name and what it does."""
 
@@ -150,6 +167,7 @@ MainAction = (
     | DelegateAction
     | ScheduleTaskAction
     | ManageTasksAction
+    | ScoutScheduleAction
     | SaveSkillAction
     | ManageSkillsAction
     | UseSkillAction

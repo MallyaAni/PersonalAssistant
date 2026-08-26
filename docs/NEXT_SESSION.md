@@ -96,6 +96,13 @@ previous reply; the picker is offered "none"; the router matrix carries
 the Scout continuation as NO_TOOL; the reply answers "when did I say X?"
 only from what it can see. Stretch reminder restored to daily 6 PM.
 
+Then the journey sweep's Scout-continuation journey showed the route
+itself still wrong (manage_tasks, with the picker's "none" as the only
+thing between Scout and a moved reminder), and the 2026-08-23 note in
+`backend/tools/manage_tasks.py` had already measured that no wording
+fixes it. So the structural fix landed the same night: `scout_schedule`
+is Scout's own tool (see CHANGELOG 2026-08-26).
+
 **Open for the operator:** Scout is now daily 3 PM (what "adjust this"
 asked for). Before the incident it ran daily at 5 PM. Say the word to put
 it back.

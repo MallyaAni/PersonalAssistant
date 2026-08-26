@@ -458,6 +458,46 @@ def _render_task_outcomes(outcomes: list[dict[str, Any]]) -> str:
     return "".join(_render_task_outcome(outcome) for outcome in outcomes)
 
 
+# What the scout_schedule tool did this turn, with the words the reply may
+# use. Kept apart from task outcomes so the sweep is never reported as a
+# reminder moved, and a reminder never as the sweep.
+def _render_scout_schedule_outcome(outcome: dict[str, Any]) -> str:
+    if not outcome:
+        return ""
+    from backend.tasks.describe import next_run_phrase, schedule_phrase
+
+    kind = str(outcome.get("kind") or "")
+    lines = [f"Scout-schedule outcome: {kind}\n"]
+    schedule = outcome.get("schedule")
+    if kind == "scheduled" and isinstance(schedule, dict):
+        lines.append(
+            "- Scout's own sweep now runs "
+            f"{schedule_phrase(schedule)} ({schedule.get('timezone') or 'UTC'}). "
+            "Report exactly this as done. It is Scout's sweep schedule, not a "
+            "reminder; no saved task or reminder was changed this turn.\n"
+        )
+        upcoming = next_run_phrase(schedule)
+        if upcoming:
+            lines.append(f"- Next sweep: {upcoming}\n")
+    elif kind == "needs_place":
+        lines.append(
+            f"- Not changed (asked: {outcome.get('requested', '')}): no home place "
+            "is known, so there is no timezone to set it in. Ask which city they "
+            "are in; do not say the schedule was set.\n"
+        )
+    else:
+        lines.append(
+            f"- Not changed (asked: {outcome.get('requested', '')})"
+            f"{': ' + str(outcome['reason']) if outcome.get('reason') else ''}. "
+            "Say plainly that it was not changed; never report it as done.\n"
+        )
+    return "".join(lines) + "\n"
+
+
+def _render_scout_schedule_outcomes(outcomes: list[dict[str, Any]]) -> str:
+    return "".join(_render_scout_schedule_outcome(outcome) for outcome in outcomes)
+
+
 def _build_system_prompt(
     context_data: dict[str, Any],
     now: datetime | None = None,
@@ -600,6 +640,9 @@ def _build_turn_context(
             context_data.get("tool_notices") or [],
         ),
         _render_task_outcomes(_outcome_list(context_data, "task_outcome")),
+        _render_scout_schedule_outcomes(
+            _outcome_list(context_data, "scout_schedule_outcome")
+        ),
         _render_skill_context(context_data),
     )
     return "".join(block for block in blocks if block)

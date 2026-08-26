@@ -116,8 +116,12 @@ class FixedMemoryProposalAgent:
         self,
         query: str,
         known: tuple[str, ...] = (),
+        previous_reply: str = "",
     ) -> MemoryProposalResult:
         self.known = known
+        # The service hands over the assistant's previous reply so "this" can
+        # be resolved; the real agent's signature is the contract here.
+        self.previous_reply = previous_reply
         return MemoryProposalResult(self.proposals)
 
 
