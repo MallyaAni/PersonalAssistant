@@ -178,6 +178,22 @@ _CANGGU_HISTORY = (
     ),
 )
 
+# The operator's evening of 2026-08-25: a what's-on question refused for
+# credits, then "try again" answered by the meter, then "try again" again.
+# A retry means the search they wanted, not another meter reading.
+_RETRY_AFTER_REFUSAL_HISTORY = (
+    (
+        "what's on in DC this week? live music, salsa, anything unique",
+        "Heads up: I've used up the search allowance for this month, so this "
+        "is from memory rather than a live check; it comes back next month.",
+    ),
+    (
+        "try again",
+        "I checked my search credits for you - Tavily is fully used up "
+        "(1,000 of 1,000). There is a separate Brave credit at 896 of 900.",
+    ),
+)
+
 SELECTION_CASES: tuple[SelectionCase, ...] = (
     # --- genuinely needs the web ------------------------------------------
     SelectionCase("who is the prime minister of Canada", SEARCH, "role_holder"),
@@ -495,6 +511,20 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
             "Wednesday 2026-08-26 00:05 UTC (their time zone is not known); "
             "this weekend is Sat 2026-08-29 to Sun 2026-08-30"
         ),
+    ),
+    SelectionCase(
+        "try again",
+        SEARCH,
+        "live_data",
+        history=_RETRY_AFTER_REFUSAL_HISTORY,
+        operator=True,
+    ),
+    SelectionCase(
+        "go ahead and run the search",
+        SEARCH,
+        "live_data",
+        history=_RETRY_AFTER_REFUSAL_HISTORY,
+        operator=True,
     ),
 )
 
