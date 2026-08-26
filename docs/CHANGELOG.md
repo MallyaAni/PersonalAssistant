@@ -12,6 +12,10 @@ This file is append-only history for meaningful, verified changes. It must not c
   keeps the top eight, records the position on each, and falls back to the
   providers' order on any failure; the place is a bias, never a filter, and
   interests stay out of ordinary answers.
+  What memory already retrieved for the turn - interests, facts - goes to
+  the ranker as a tie-breaker only: a salsa night outranks a farmers market
+  for someone who dances salsa, when both are on the asked dates in the
+  asked place, and nothing worse is ever lifted.
 - **The router is told the coming weekend's dates, and never guesses a
   skill.** Given only "Wednesday 2026-08-26" it searched for September 5;
   the clock line now carries "this weekend is Sat 2026-08-29 to Sun
