@@ -49,7 +49,9 @@ This file is append-only history for meaningful, verified changes. It must not c
   and reply model; the selection matrix gate 7/7; the evaluator at 3 reps:
   scout_schedule 18/18, manage_tasks 23/24, schedule_task 9/9, no-tool
   43/66 (0.65, up from the 0.47 measured on 2026-08-23), aggregate 205/237.
-  Floors set from it: scout_schedule 0.80, no-tool 0.45 -> 0.55.
+  Floors set from it: scout_schedule 0.80, no-tool 0.45 -> 0.55. On the
+  deployed build: journey sweep 20/20 (the Scout continuation routes to
+  Scout schedule; no reminder moves), search harness all checks passing.
 
 ## 2026-08-25 — Recall anything, a reranker, keyed digests, a third backup copy, and the architecture told for newcomers
 

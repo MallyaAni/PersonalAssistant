@@ -103,9 +103,10 @@ thing between Scout and a moved reminder), and the 2026-08-23 note in
 fixes it. So the structural fix landed the same night: `scout_schedule`
 is Scout's own tool (see CHANGELOG 2026-08-26).
 
-**Open for the operator:** Scout is now daily 3 PM (what "adjust this"
-asked for). Before the incident it ran daily at 5 PM. Say the word to put
-it back.
+Closed by the operator at 22:08 UTC the same evening: "i don't want
+stretch reminders. only scout for 3pm everyday" - the stretch reminder was
+cancelled on request and Scout stays daily at 3 PM (it had run daily at
+5 PM before the incident).
 
 ## What is still open
 
