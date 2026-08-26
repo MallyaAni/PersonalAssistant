@@ -4,6 +4,19 @@ This file is append-only history for meaningful, verified changes. It must not c
 
 ## 2026-08-25 — Recall anything, a reranker, keyed digests, a third backup copy, and the architecture told for newcomers
 
+- **The events format applies to every events answer, and the search
+  conversation is exercised before deploys.** The operator's next events
+  answer arrived through a plain web search without the What's on format,
+  because the format lived in a skill the router had not invoked; the result
+  ranker now says whether the results are events and the reply renders
+  `prompts/reply/events_format.md` (the canonical wording; the pack keeps
+  the same shape) - verified on the real model. `exercise_search_scenarios`
+  runs the conversation a person lives, as an attributed account, against
+  the live API: a what's-on question, "try again", a scheduled reminder, a
+  plain question, the operator's meter; its first run found a firing
+  routed to history recall (now withheld from firings) and a flaky usage
+  read (now retried once). A retry means the last real request, never the
+  last tool that ran.
 - **Web results are ordered by the main model, with the person's place and
   the date in hand.** They arrived in the providers' order, which does not
   read the question (an Arlington weekend query listed a festival in West

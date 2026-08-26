@@ -1,4 +1,5 @@
 import asyncio
+from contextvars import ContextVar
 import logging
 import re
 import secrets
@@ -379,6 +380,11 @@ async def _rerank_web_results(
 # never a filter, so a genuinely better far-away result can still surface.
 def _rerank_question(question: str, place: str) -> str:
     return f"{question} (asked from {place})" if place else question
+
+
+# Whether this request's search results were judged to be events, set by the
+# research path for the reply's presentation. Per task, like the limit.
+_results_were_events: ContextVar[bool] = ContextVar("results_were_events", default=False)
 
 
 # The words of one recalled memory item, whatever field the store put them in.
@@ -2119,6 +2125,10 @@ class ConversationService:
                     # has not checked (it did, on 2026-08-25, with fresh
                     # Brave results in hand).
                     context["search_state"] = {"ran": True}
+                    # Events are presented the agreed way whatever route
+                    # produced them - the What's on format for everyone.
+                    if _results_were_events.get():
+                        context["events_format"] = True
                 if tool_identity:
                     yield {
                         "event": "tool_finished",
@@ -2247,7 +2257,7 @@ class ConversationService:
             # an Arlington question (prompts/search/rank.md). The person's
             # place is a hint in the question; every failure keeps the
             # providers' order.
-            from backend.core.result_ranking import order_by_usefulness
+            from backend.core.result_ranking import judge_results
 
             place = ""
             try:
@@ -2256,11 +2266,12 @@ class ConversationService:
             except Exception:
                 place = ""
             candidates = list(gathered)
+            verdict: dict[str, bool] = {"events": False}
 
             async def rank_call(_question: str, _documents: list[str]) -> list[float] | None:
-                return await order_by_usefulness(
-                    self.llm, question, place, candidates, known=known
-                )
+                ranking = await judge_results(self.llm, question, place, candidates, known=known)
+                verdict["events"] = ranking.events
+                return ranking.scores
 
             gathered = await _rerank_web_results(
                 rank_call,
@@ -2269,8 +2280,12 @@ class ConversationService:
                 max(1, max_results or settings.SEARCH_MAX_RESULTS),
             )
             logger.info(
-                "Trace %s ordered %d web results by usefulness", trace_id, len(gathered)
+                "Trace %s ordered %d web results by usefulness (events=%s)",
+                trace_id,
+                len(gathered),
+                verdict["events"],
             )
+            _results_were_events.set(verdict["events"])
         return gathered, succeeded
 
     # What this turn already retrieved about the person, as short lines for
@@ -2387,6 +2402,7 @@ class ConversationService:
         # a limit only on a turn where a search was chosen and refused - not
         # on a stretch reminder. Reset per request.
         current_search_limit.set(None)
+        _results_were_events.set(False)
         limit = await self._search_limit()
         if limit is not None:
             current_search_limit.set(limit)

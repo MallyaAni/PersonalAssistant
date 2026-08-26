@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
@@ -24,10 +25,21 @@ _SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
         "order": {"type": "array", "items": {"type": "integer"}, "minItems": 1},
+        # Whether the results are events - things happening at a place and
+        # time - which decides the presentation the reply uses.
+        "events": {"type": "boolean"},
     },
-    "required": ["order"],
+    "required": ["order", "events"],
     "additionalProperties": False,
 }
+
+
+@dataclass(frozen=True, slots=True)
+class Ranking:
+    """The model's order as scores, and whether the results are events."""
+
+    scores: list[float] | None
+    events: bool = False
 _MAX_TOKENS = 256
 _CONTENT_CHARS = 400
 
@@ -43,8 +55,20 @@ async def order_by_usefulness(
     now: datetime | None = None,
     known: tuple[str, ...] = (),
 ) -> list[float] | None:
+    return (await judge_results(llm, question, place, results, now=now, known=known)).scores
+
+
+# The order and the events flag together.
+async def judge_results(
+    llm: Any,
+    question: str,
+    place: str,
+    results: list[dict[str, Any]],
+    now: datetime | None = None,
+    known: tuple[str, ...] = (),
+) -> Ranking:
     if len(results) < 2:
-        return None
+        return Ranking(None, False)
     today = (now or datetime.now(UTC)).strftime("%A %Y-%m-%d")
     # What the turn already retrieved about the person - interests, facts -
     # handed to the ranker as a tie-breaker only. It reorders results that
@@ -74,14 +98,30 @@ async def order_by_usefulness(
         answer = await asyncio.to_thread(llm.chat, messages, _MAX_TOKENS, _SCHEMA, 0.0)
     except Exception:
         logger.warning("Result ranking call failed; keeping provider order", exc_info=True)
-        return None
+        return Ranking(None, False)
     order = _parse_order(answer, len(results))
+    events = _parse_events(answer)
     if order is None:
-        return None
+        return Ranking(None, events)
     scores = [0.0] * len(results)
     for position, index in enumerate(order):
         scores[index - 1] = float(len(results) - position)
-    return scores
+    return Ranking(scores, events)
+
+
+# The model's events verdict, false unless it is a plain true.
+def _parse_events(answer: Any) -> bool:
+    import json
+
+    payload = answer
+    if isinstance(answer, dict) and "content" in answer:
+        payload = answer["content"]
+    if isinstance(payload, str):
+        try:
+            payload = json.loads(payload)
+        except ValueError:
+            return False
+    return bool(payload.get("events")) if isinstance(payload, dict) else False
 
 
 # The model's order as 1-based indices, or None unless it is a permutation.

@@ -30,4 +30,4 @@ Most useful first: results that answer the question directly, for the place and 
 
 When something is known about the person, use it only to choose between results that answer the question equally well - a salsa night above a farmers market for someone who dances salsa, when both are on the asked dates in the asked place. It never lifts a result that answers the question worse, and it never brings in a subject the question did not ask about.
 
-Return only the order, as the list of result numbers from most useful to least, each number exactly once.
+Return the order, as the list of result numbers from most useful to least, each number exactly once - and whether these results are events: things happening at a place and time (concerts, nights out, markets, festivals, meetups, shows), as opposed to products, articles, facts, or places to visit any day.

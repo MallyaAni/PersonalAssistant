@@ -38,7 +38,7 @@ from backend.services.mcp_tool_orchestration_service import (
 from backend.skills.tools import parse_skill_call, skill_tool_definitions
 from backend.search.budgeted import current_search_identity
 from backend.tools import (
-    AUTOMATION_TOOLS,
+    UNATTENDED_WITHHELD,
     NOT_BUILTIN,
     SEARCH_CAPABILITY,
     SEARCH_TOOL,
@@ -217,7 +217,7 @@ class MainActionSelector:
         # A scheduled task firing carries the person's own instruction, which
         # reads like a request to schedule; offering the automation tools to
         # it lets a reminder reschedule or cancel itself unattended.
-        return builtin_tools(enabled, AUTOMATION_TOOLS if unattended else ())
+        return builtin_tools(enabled, UNATTENDED_WITHHELD if unattended else ())
 
     # Report whether local policy would let this turn search, without paying
     # for a session against the search server.

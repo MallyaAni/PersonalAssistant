@@ -120,3 +120,11 @@ def test_actions_are_described_and_given_a_waiting_line():
     assert describe_action(SaveSkillAction("wrap-up", "x")) == ("Skills", "wrap-up")
     assert waiting_line(GenerateImageAction("a cat")).strip()
     assert waiting_line(None) == ""
+
+
+def test_a_firing_is_offered_neither_automation_nor_history_recall():
+    from backend.tools.registry import UNATTENDED_WITHHELD
+
+    names = {row.name for row in builtin_tools(("diagram", "presentation"), UNATTENDED_WITHHELD)}
+    assert "search_history" not in names and "schedule_task" not in names
+    assert "generate_image" in names and "show_image" in names

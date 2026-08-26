@@ -672,6 +672,23 @@ pictures in place for inspection. On 2026-08-25 it found four defects every
 suite had passed over; run it after any change to routing, referent
 resolution, the image services, or the provider.
 
+```bash
+docker compose exec backend python -m backend.cli.exercise_search_scenarios          # as an operator
+docker compose exec backend python -m backend.cli.exercise_search_scenarios --guest  # as a guest
+```
+
+The search counterpart, written on 2026-08-26 after an evening in which
+every search defect reached the operator through a sequence nobody had run.
+As a throwaway *attributed* account (the branch a real person takes, which a
+tokenless probe does not) it runs the conversation the way it is lived: a
+what's-on question (a web search with live sources, no "let me search"), then
+"try again" (the search again, never the credit meter), a scheduled
+reminder (no tool, no allowance line), a plain question (no tool), and, as
+the operator, the meter question. It removes the account afterwards and
+exits non-zero on any wrong turn. Run it before deploying anything that
+touches routing, search, the budget, or the scheduled-turn prompt.
+
+
 ### Install and run the free local image provider
 
 `scripts/start-anios.sh` brings the whole stack up with one command: it waits for `vllm-main`, then `vllm-embedding`, starts host ComfyUI if needed, applies migrations, starts the remaining Compose services, and waits for the backend and for ComfyUI when it launched it. It runs under any Bash, including Git Bash on Windows. Image generation needs ComfyUI running; when it is down, `POST /api/v1/images/generate` returns a `503` with `reason: image_provider_unreachable` and a message naming ComfyUI, which the composer surfaces verbatim.

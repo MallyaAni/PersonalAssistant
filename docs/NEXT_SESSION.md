@@ -639,6 +639,14 @@ Zakarya's first iMessage conversation (six turns) surfaced, in order:
   monthly usage limit to the free credit), so live search is back. Google grounding (`GOOGLE_SEARCH_ENABLED`, off because the key's tier
   returned 429). Until then every live question is answered from training.
 
+One functional case is red independently of tonight: `test_scheduled_task_behaviour.py::
+test_cancelling_names_the_task_in_the_persons_words` - "cancel the weather
+texts" routes to manage_tasks with operation `list`, not `cancel`, and does so
+with the router prompt and the tool registry as they were at c0cea0f, so it is
+the model's decision drifting rather than tonight's prompt growth (bisected by
+removing each added paragraph; none restores it). Worth a look at the
+manage_tasks description.
+
 Pre-existing red in the unit suite, untouched here and worth a session of
 their own: `test_search_budget.py` (8), `test_access_requests.py` (5,
 `KeyError: 'request_token'`), `test_turn_measurement.py`,

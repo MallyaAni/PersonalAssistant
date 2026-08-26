@@ -31,9 +31,12 @@ class _Budget:
         self.grant = grant
         self.wanted: list[int] = []
 
-    async def reserve(self, user_id, is_operator, wanted, now=None, override=None, daily_override=None):
+    async def reserve(self, user_id, is_operator, wanted, now=None, override=None, daily_override=None, include_pool=True):
         self.wanted.append(wanted)
         return min(wanted, self.grant)
+
+    async def provider_used(self, provider, now=None):
+        return 0
 
     async def remaining_today(self, user_id, is_operator, override=None):
         return 0

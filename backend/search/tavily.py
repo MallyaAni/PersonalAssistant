@@ -223,17 +223,24 @@ class TavilyUsageClient:
             return None
         headers = {"Authorization": f"Bearer {self.api_key}"}
         url = f"{self.base_url}{_USAGE_PATH}"
-        try:
-            if self.client is not None:
-                response = await self.client.get(url, headers=headers)
-            else:
-                async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
-                    response = await client.get(url, headers=headers)
-            response.raise_for_status()
-            payload = response.json()
-        except Exception:
-            return None
-        return payload if isinstance(payload, dict) else None
+        # Two attempts: the endpoint answered "could not be read" to the meter
+        # once in an evening of otherwise instant 200s (2026-08-26), and a
+        # balance shown as unknown for a blip reads as a broken meter.
+        for attempt in range(2):
+            try:
+                if self.client is not None:
+                    response = await self.client.get(url, headers=headers)
+                else:
+                    async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
+                        response = await client.get(url, headers=headers)
+                response.raise_for_status()
+                payload = response.json()
+            except Exception:
+                if attempt == 0:
+                    continue
+                return None
+            return payload if isinstance(payload, dict) else None
+        return None
 
 
 # Credits spent, read from whichever of the known shapes the body carries.

@@ -83,6 +83,12 @@ _BY_NAME: dict[str, ModuleType] = {module.NAME: module for module in _MODULES}
 AUTOMATION_TOOLS: frozenset[str] = frozenset(
     (schedule_task.NAME, manage_tasks.NAME, save_skill.NAME, manage_skills.NAME)
 )
+# Withheld from a scheduled firing along with the automation tools: a firing
+# recalls nothing - its instruction is the whole message - and offered
+# history recall, "Remind me to stretch" in a thread with earlier turns was
+# routed to it and answered with "when would you like that reminder?"
+# (2026-08-26, found by exercise_search_scenarios).
+UNATTENDED_WITHHELD: frozenset[str] = AUTOMATION_TOOLS | frozenset((search_history.NAME,))
 
 # Returned by `parse_builtin` for a name that is not a built-in at all, so the
 # caller can tell "not ours" from "ours, but the model left out what it
