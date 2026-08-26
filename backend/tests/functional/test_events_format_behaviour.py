@@ -47,5 +47,5 @@ async def test_events_come_back_in_the_agreed_shape(llm) -> None:
     assert "youtube.com/results?search_query=" in lowered, text
     assert "$15" in text or "15" in text, text
     assert "free" in lowered, text
-    assert "**" not in text and not re.search(r"^#", text, re.M), "markdown in a phone message: " + text
+    assert not re.search(r"^#", text, re.M), "a header in a phone message: " + text
     assert "instagram.com/" not in lowered, "invented an Instagram link: " + text

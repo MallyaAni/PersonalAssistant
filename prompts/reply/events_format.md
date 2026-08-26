@@ -26,4 +26,4 @@ Group by day, in date order. Each event on its own lines:
 - Hear it: a YouTube search link for the artist, written as https://www.youtube.com/results?search_query=<artist name>, when there is a named artist.
 - Details: the Instagram or event page link only when a source gives one; never invent a handle or a URL.
 
-Include only events still ahead of today; drop anything already past. Lead with what is closest to the person's place; a genuinely notable thing further away goes last with the distance said. No headers, no tables, no markdown bold; short lines a phone can show. Finish by asking whether they want any of these kept, reminded about, or searched further.
+Include only events still ahead of today; drop anything already past. Lead with what is closest to the person's place; a genuinely notable thing further away goes last with the distance said. No headers, no tables; short lines a phone can show (bold is fine - the text is flattened for phones at the send boundary). Finish by asking whether they want any of these kept, reminded about, or searched further.

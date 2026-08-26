@@ -121,9 +121,9 @@ class Scenarios:
                 priced = any(mark in lowered for mark in ("price not listed", "free", "$"))
                 self.verdict(
                     "1b events are presented in the What's on format",
-                    "maps.google.com/?q=" in lowered and priced and "**" not in r["text"],
+                    "maps.google.com/?q=" in lowered and priced,
                     f"map={'maps.google.com/?q=' in lowered} price={priced} "
-                    f"youtube={'youtube.com/results?search_query=' in lowered} bold={'**' in r['text']}",
+                    f"youtube={'youtube.com/results?search_query=' in lowered}",
                 )
 
                 r = await self.chat(client, "try again")
