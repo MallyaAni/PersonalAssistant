@@ -76,6 +76,12 @@ This file is append-only history for meaningful, verified changes. It must not c
   routed to the forecast tool, is named in the router prompt and the
   weather tool's own description (travel time, directions, distance and
   traffic are a search) and pinned by two matrix cases.
+- **Final state of the night: c10d58df, everything green on the deployed
+  build.** Unit 1850, matrix 7/7, backup and migration, verification,
+  sweep 28/28 with the trace check, search harness passing; no page sent.
+  The page itself now says what is red and which journeys (the first one,
+  for 6206a5b5, said only "see the deploy log" while the system was
+  healthy and one journey of 28 had misrouted).
 - **Measured.** Unit gate 1841 passed, 0 failed. Real-model suites for
   everything touched: 44 tests passing, including `scheduled_task_behaviour`
   15/15 (the router's standing "cancel the weather texts" miss is gone with
