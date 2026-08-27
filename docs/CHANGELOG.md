@@ -2,6 +2,35 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-27 — A follow-up keeps its subject; results about the wrong thing become a disclosure
+
+- **The incident (jenos1, 02:41-02:49 UTC).** In a conversation about
+  Netflix's "Surviving Paradise", "does only one person win at the end?"
+  was searched as "Squid Game The Challenge ... winner" and "you mentioned
+  there was only one season" as "Love Island USA seasons": the router
+  replaced the conversation's subject with shows of its own, and the reply
+  answered from those results as if they matched (Love Island winners,
+  eight seasons). Read straight from the new turn trace.
+- **The query copies the subject, never substitutes one.** The router
+  prompt and the search composer now state that a follow-up naming its
+  subject only as "it", "they", "at the end" carries the exact show,
+  product, place or person the recent turns are about - spelled as there,
+  never a similar one, never one from memory - and call no tool when the
+  turns name none. Pinned by
+  `functional/test_followup_keeps_the_subject_behaviour.py` on the query
+  text (three show follow-ups, one product), by two matrix cases with
+  history, and by a sweep journey that checks the saved trace's query.
+- **Results about a different subject are not an answer.** Wording alone
+  did not make the reply disclose a mismatch (it answered from memory,
+  confidently), so the application decides: the result ranker - which
+  already reads the question and every result - returns an `on_subject`
+  flag, judged against what was asked *and* what was searched; false turns
+  the reply's search state into a disclosure ("the search came back about
+  something else; what follows is from memory, not checked") that forbids
+  presenting those results' facts. Pinned against the real models: the
+  ranker flags Love Island results for a Surviving Paradise question and
+  passes Surviving Paradise ones; the reply discloses.
+
 ## 2026-08-26 (late) — What "no more bugs on done items" needs: undo, one writer, a trace, a green suite, one deploy path, and no rewriting main
 
 - **Undo, and nothing destructive without a record.** `scheduled_task_changes`

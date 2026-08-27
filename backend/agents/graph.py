@@ -187,6 +187,17 @@ def _render_edit_state(edit: dict[str, Any]) -> str:
 def _render_search_state(search: dict[str, Any]) -> str:
     if not search:
         return ""
+    if search.get("ran") and search.get("off_subject"):
+        return (
+            "\nThis turn: a live web search ran, but its results are about a "
+            "different subject than the one the person is asking about - "
+            "another show, product, place or person of the same kind. They are "
+            "not the answer. Start with one plain sentence saying the search "
+            "came back about something else and that what follows is from "
+            "memory, not checked; then give only what you actually know about "
+            "the right subject, and offer to search again. Never present those "
+            "results' facts - names, winners, prices, dates - as the answer."
+        )
     if search.get("ran") and not search.get("failed"):
         return (
             "\nThis turn: a live web search ran just now, and the search results "

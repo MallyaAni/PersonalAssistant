@@ -215,6 +215,13 @@ _SCOUT_SETUP_HISTORY = (
         "Scout isn't on a schedule yet - it only sweeps when asked, and it needs an interest to follow before it can find anything. Want me to set a time?",
     ),
 )
+# A show under discussion; the follow-ups name it only by "it" and "they".
+_SHOW_HISTORY = (
+    (
+        "Please describe the premise of Netflix's Surviving Paradise",
+        "Twelve contestants think they are headed to a luxury villa in Greece; instead most are banished to the wilderness and must earn their way in, competing for $100,000. Season 1 dropped October 20, 2023.",
+    ),
+)
 # A change just made, for "undo that".
 _CANCELLED_HISTORY = (
     ("cancel the stretch reminder", "Done - the daily stretch reminder is cancelled."),
@@ -237,6 +244,8 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
     # 2026-08-26, found by sweep_journeys on the deployed build: routed to the
     # forecast tool once because of "at 5pm". Travel time is a search.
     SelectionCase("how long will it take me to drive to Dulles airport at 5pm?", SEARCH, "live_data"),
+    SelectionCase("does only one person win at the end?", SEARCH, "followup_subject", history=_SHOW_HISTORY),
+    SelectionCase("you mentioned there was only one season", SEARCH, "followup_subject", history=_SHOW_HISTORY),
     SelectionCase("is there traffic on 66 right now?", SEARCH, "live_data"),
     SelectionCase("how much does a Tesla Model 3 cost now", SEARCH, "live_data"),
     SelectionCase("what happened in the Nvidia earnings call", SEARCH, "news"),

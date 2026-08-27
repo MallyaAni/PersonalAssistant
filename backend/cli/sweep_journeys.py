@@ -65,6 +65,15 @@ class Journey:
 JOURNEYS = [
     Journey("events this weekend", "what's on in Arlington this weekend?", ("Web search", "Skill"),
             holds=("The reply lists specific events with venues and times, or says plainly it found none.",)),
+    # 2026-08-26 (jenos1): a follow-up about the show under discussion was
+    # searched as a different show. Early in the list so the guest allowance
+    # has not run out; the query is checked through the saved trace.
+    Journey("follow-up keeps the subject", "does only one person win at the end?", ("Web search",),
+            before=("Please describe the premise of Netflix's Surviving Paradise",),
+            holds=("The reply is about Surviving Paradise.",),
+            does_not_hold=("The reply presents facts about a different show (Love Island, Squid Game, The Circle) as the answer.",),
+            sql_holds=("select count(*) >= 1 from conversations where user_id = :u and extra_data->'trace'->'route'->>'detail' ilike '%surviving paradise%'",
+                       "select count(*) = 0 from conversations where user_id = :u and (extra_data->'trace'->'route'->>'detail' ilike '%love island%' or extra_data->'trace'->'route'->>'detail' ilike '%squid game%')")),
     Journey("weather tomorrow", "will it rain tomorrow in Arlington?", ("Weather", "Web search"),
             holds=("The reply gives a forecast for tomorrow with a chance of rain or conditions.",)),
     Journey("trip fares", "one way to Rome October 2 and back from the Amalfi coast October 16, cheapest nonstop?", ("Web search",),

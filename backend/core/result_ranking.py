@@ -31,8 +31,14 @@ _SCHEMA: dict[str, Any] = {
         # Whether the results are flight or trip fares from aggregator pages,
         # which decides the trip presentation.
         "travel": {"type": "boolean"},
+        # Whether the results are about the subject the question asks about -
+        # the show, product, place or person it names - rather than a
+        # different one. False turns the reply's search state into a
+        # disclosure instead of an answer (2026-08-26: a follow-up about one
+        # show was searched, and answered, as another).
+        "on_subject": {"type": "boolean"},
     },
-    "required": ["order", "events", "travel"],
+    "required": ["order", "events", "travel", "on_subject"],
     "additionalProperties": False,
 }
 
@@ -44,6 +50,8 @@ class Ranking:
     scores: list[float] | None
     events: bool = False
     travel: bool = False
+    # True unless the model says the results describe a different subject.
+    on_subject: bool = True
 _MAX_TOKENS = 256
 _CONTENT_CHARS = 400
 
@@ -72,7 +80,7 @@ async def judge_results(
     known: tuple[str, ...] = (),
 ) -> Ranking:
     if len(results) < 2:
-        return Ranking(None, False, False)
+        return Ranking(None, False, False, True)
     today = (now or datetime.now(UTC)).strftime("%A %Y-%m-%d")
     # What the turn already retrieved about the person - interests, facts -
     # handed to the ranker as a tie-breaker only. It reorders results that
@@ -102,20 +110,23 @@ async def judge_results(
         answer = await asyncio.to_thread(llm.chat, messages, _MAX_TOKENS, _SCHEMA, 0.0)
     except Exception:
         logger.warning("Result ranking call failed; keeping provider order", exc_info=True)
-        return Ranking(None, False, False)
+        return Ranking(None, False, False, True)
     order = _parse_order(answer, len(results))
     events = _parse_flag(answer, "events")
     travel = _parse_flag(answer, "travel")
+    on_subject = _parse_flag(answer, "on_subject", default=True)
     if order is None:
-        return Ranking(None, events, travel)
+        return Ranking(None, events, travel, on_subject)
     scores = [0.0] * len(results)
     for position, index in enumerate(order):
         scores[index - 1] = float(len(results) - position)
-    return Ranking(scores, events, travel)
+    return Ranking(scores, events, travel, on_subject)
 
 
-# One of the model's verdicts, false unless it is a plain true.
-def _parse_flag(answer: Any, name: str) -> bool:
+# One of the model's verdicts; `default` when it is missing or unreadable,
+# so a flag that means "something is wrong" (on_subject false) is never
+# produced by a parse failure.
+def _parse_flag(answer: Any, name: str, default: bool = False) -> bool:
     import json
 
     payload = answer
@@ -125,8 +136,10 @@ def _parse_flag(answer: Any, name: str) -> bool:
         try:
             payload = json.loads(payload)
         except ValueError:
-            return False
-    return bool(payload.get(name)) if isinstance(payload, dict) else False
+            return default
+    if not isinstance(payload, dict) or name not in payload:
+        return default
+    return bool(payload.get(name))
 
 
 # Kept for callers that only ask about events.

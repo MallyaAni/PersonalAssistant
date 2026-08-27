@@ -33,7 +33,7 @@ async def test_the_order_becomes_scores_highest_first() -> None:
     scores = await order_by_usefulness(llm, "events in Arlington this weekend", "Arlington, Virginia", _RESULTS)
     assert scores == [1.0, 3.0, 2.0]
     messages, max_tokens, schema, temperature = llm.calls[0]
-    assert temperature == 0.0 and schema["required"] == ["order", "events", "travel"]
+    assert temperature == 0.0 and schema["required"] == ["order", "events", "travel", "on_subject"]
     assert "Asked from: Arlington, Virginia" in messages[1]["content"]
     assert "[1] Ballhooter Festival 2026" in messages[1]["content"]
 

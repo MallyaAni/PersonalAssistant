@@ -32,6 +32,13 @@ Write one web search query that would find what this person is asking for.
 Use the words a source that answers them would use, not the words they used:
 names, model numbers, versions, units, and the year when the answer changes
 over time.
+When the request names its subject only as "it", "they", "the villa", "at the
+end", the subject is the one the conversation shown is about - the show, the
+product, the place, the person - copied into the query exactly as named there.
+Never substitute a different one that seems similar, and never one from your
+own memory: a conversation about "Surviving Paradise" asked "does only one
+person win at the end?" searches Surviving Paradise's winner, not another
+show's.
 A request with several requirements needs the one that decides the answer, not
 all of them at once.
 When the request is a choice, search for what the options are before searching

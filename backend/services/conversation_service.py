@@ -416,6 +416,10 @@ def _with_trace(metadata: dict[str, Any]) -> dict[str, Any]:
     }
     return {**metadata, "trace": trace} if trace else metadata
 _results_were_travel: ContextVar[bool] = ContextVar("results_were_travel", default=False)
+# Whether the ranker judged this turn's results to be about a different
+# subject than the one asked about - set by the research path, read where
+# the search state is rendered, so the reply discloses instead of answering.
+_results_off_subject: ContextVar[bool] = ContextVar("results_off_subject", default=False)
 
 
 # The words of one recalled memory item, whatever field the store put them in.
@@ -2201,7 +2205,12 @@ class ConversationService:
                     # has not checked (it did, on 2026-08-25, with fresh
                     # Brave results in hand).
                     context["search_state"] = {"ran": True}
-                    _trace("search", f"ran:{len(search_results)}")
+                    if _results_off_subject.get():
+                        # Results about a different subject are not an
+                        # answer: the reply is told so as state, the way a
+                        # refused search is, rather than left to notice.
+                        context["search_state"]["off_subject"] = True
+                    _trace("search", f"ran:{len(search_results)}" + (" off-subject" if _results_off_subject.get() else ""))
                     # Events are presented the agreed way whatever route
                     # produced them - the What's on format for everyone.
                     if _results_were_events.get():
@@ -2347,12 +2356,19 @@ class ConversationService:
             except Exception:
                 place = ""
             candidates = list(gathered)
-            verdict: dict[str, bool] = {"events": False, "travel": False}
+            verdict: dict[str, bool] = {"events": False, "travel": False, "on_subject": True}
+            # The ranker sees what was actually searched beside what was
+            # asked: a follow-up like "does only one person win?" names no
+            # subject, and the query - which now carries it - does.
+            judged_question = (
+                f"{question} (searched as: {first_query})" if first_query and first_query != question else question
+            )
 
             async def rank_call(_question: str, _documents: list[str]) -> list[float] | None:
-                ranking = await judge_results(self.llm, question, place, candidates, known=known)
+                ranking = await judge_results(self.llm, judged_question, place, candidates, known=known)
                 verdict["events"] = ranking.events
                 verdict["travel"] = ranking.travel
+                verdict["on_subject"] = ranking.on_subject
                 return ranking.scores
 
             gathered = await _rerank_web_results(
@@ -2369,6 +2385,9 @@ class ConversationService:
             )
             _results_were_events.set(verdict["events"])
             _results_were_travel.set(verdict["travel"])
+            _results_off_subject.set(not verdict["on_subject"])
+            if not verdict["on_subject"]:
+                logger.info("Trace %s: results judged off the asked subject", trace_id)
         return gathered, succeeded
 
     # What this turn already retrieved about the person, as short lines for
@@ -2490,6 +2509,7 @@ class ConversationService:
         account_charged_this_turn.set(False)
         _results_were_events.set(False)
         _results_were_travel.set(False)
+        _results_off_subject.set(False)
         limit = await self._search_limit()
         if limit is not None:
             current_search_limit.set(limit)

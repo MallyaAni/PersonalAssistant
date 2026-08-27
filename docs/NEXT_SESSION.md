@@ -114,6 +114,17 @@ linear history" if you like). The local pre-push hook now refuses rewrites
 from this checkout, but only the server setting protects the branch from
 every clone.
 
+## Live incident 2026-08-27 02:41 UTC — a follow-up searched as a different show
+
+jenos1, over iMessage, about Netflix's "Surviving Paradise": the router
+searched "does only one person win at the end?" as Squid Game: The
+Challenge and "you mentioned there was only one season" as Love Island
+USA, and the reply answered about those shows. Read from the turn trace
+in under a minute (`explain_turn --user jenos1`). Fixed the same night:
+the query copies the conversation's subject (router + composer, tested on
+the query text), and the ranker's new `on_subject` flag turns wrong-subject
+results into a disclosure instead of an answer. See CHANGELOG 2026-08-27.
+
 ## State at the end of 2026-08-26 — the "no more bugs on done items" wave
 
 Shipped through `scripts/deploy.sh` (the only deploy path now; it runs the
