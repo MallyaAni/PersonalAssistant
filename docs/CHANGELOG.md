@@ -69,6 +69,13 @@ This file is append-only history for meaningful, verified changes. It must not c
   Two findings were the sweep's own fault and are fixed as such: assertions
   on the sealed `instruction` column (`LIKE` never matches ciphertext) and
   guessed route labels. The sweep gained `--only` to rerun a subset.
+- **Deployed and swept again.** 6206a5b5 through `scripts/deploy.sh`: unit
+  1850, matrix 7/7, verification, search harness passing, sweep 27/28 with
+  the trace check passing (34 traced turns) - every earlier gap closed. The
+  one new finding, "how long will it take me to drive to Dulles at 5pm?"
+  routed to the forecast tool, is named in the router prompt and the
+  weather tool's own description (travel time, directions, distance and
+  traffic are a search) and pinned by two matrix cases.
 - **Measured.** Unit gate 1841 passed, 0 failed. Real-model suites for
   everything touched: 44 tests passing, including `scheduled_task_behaviour`
   15/15 (the router's standing "cancel the weather texts" miss is gone with

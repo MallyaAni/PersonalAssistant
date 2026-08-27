@@ -304,7 +304,9 @@ async def get_weather(place: str, days: int = 1, units: str = "imperial") -> str
     """Live current conditions and forecast for a named place.
 
     Use this, never web search, for any question about weather - right now,
-    today, tonight, or the coming days. `place` is a city or town name
+    today, tonight, or the coming days. Not for travel time, directions,
+    distance, or traffic: a clock time in "how long to drive to the airport
+    at 5pm" is when they leave, and that is a web search. `place` is a city or town name
     ("Arlington, Virginia"); `days` is how many forecast days to include
     (1 = today, up to 7); `units` is "imperial" or "metric".
     """

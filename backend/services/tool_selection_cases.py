@@ -234,6 +234,10 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
     # --- genuinely needs the web ------------------------------------------
     SelectionCase("who is the prime minister of Canada", SEARCH, "role_holder"),
     SelectionCase("what's the weather in Raleigh today", SEARCH, "live_data"),
+    # 2026-08-26, found by sweep_journeys on the deployed build: routed to the
+    # forecast tool once because of "at 5pm". Travel time is a search.
+    SelectionCase("how long will it take me to drive to Dulles airport at 5pm?", SEARCH, "live_data"),
+    SelectionCase("is there traffic on 66 right now?", SEARCH, "live_data"),
     SelectionCase("how much does a Tesla Model 3 cost now", SEARCH, "live_data"),
     SelectionCase("what happened in the Nvidia earnings call", SEARCH, "news"),
     # --- a brand-new picture ----------------------------------------------
