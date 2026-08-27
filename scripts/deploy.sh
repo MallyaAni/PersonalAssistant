@@ -173,17 +173,28 @@ $ok || { echo "verification failed" >&2; exit 1; }
 # `docker compose up -d` of them if the failure warrants it.
 step "Post-deploy checks"
 post_ok=true
+summary=()
 if $post; then
     for check in backend.cli.sweep_journeys backend.cli.exercise_search_scenarios; do
-        if "${compose[@]}" exec -T backend python -m "$check"; then
+        output="$("${compose[@]}" exec -T backend python -m "$check" 2>&1)"
+        status=$?
+        printf '%s\n' "$output"
+        short="${check##*.}"
+        if [[ $status -eq 0 ]]; then
             echo "$check: passed"
+            summary+=("$short OK")
         else
             echo "$check: FAILED" >&2
             post_ok=false
+            # What actually failed, in the words the operator can act on: the
+            # gap lines themselves. "See the deploy log" paged the operator
+            # once (2026-08-26) with nothing to act on from a phone.
+            gaps="$(grep -E '^GAP |^FAIL ' <<<"$output" | sed -E 's/^(GAP |FAIL +[0-9a-z]* )//; s/: route=.*//; s/ \|.*//' | head -3 | paste -sd ';' -)"
+            summary+=("$short FAILED: ${gaps:-see log}")
         fi
     done
     if ! $post_ok; then
-        bash "$root/scripts/notify-operator.sh" "AniOS deploy $after: a post-deploy check failed - see the deploy log" || true
+        bash "$root/scripts/notify-operator.sh" "AniOS $after is live and healthy; a post-deploy check is red: $(IFS='; '; echo "${summary[*]}")" || true
     fi
 else
     echo "WARNING: post-deploy checks skipped by request"
