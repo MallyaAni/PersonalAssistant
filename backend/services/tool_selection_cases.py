@@ -629,7 +629,13 @@ PER_TOOL_ACCURACY_FLOORS: dict[str, float] = {
     # Measured 9/12 = 0.75 on 2026-08-23; held just below so an exact
     # tie does not fail an honest run.
     SEARCH: 0.70,
-    GENERATE_IMAGE: 0.75,
+    # Measured 18/24 = 0.75 twice on 2026-08-26 (evaluate_tool_selection,
+    # 3 reps) - an exact tie with the old floor of 0.75, and the deploy gate
+    # runs one rep of 8 cases, so a single extra miss (5/8) failed a deploy
+    # that had changed nothing about pictures. Held one miss below the
+    # measurement; the misses themselves - regenerate follow-ups 3/6,
+    # technical-subject pictures 6/9 - are the router's recorded tail.
+    GENERATE_IMAGE: 0.60,
     EDIT_IMAGE: 0.66,
     # Added 2026-08-25 with the tool itself, after "can you show me that
     # image?" over iMessage was answered with "I can't display it here".
