@@ -1,4 +1,5 @@
 import asyncio
+import contextvars
 import json
 import logging
 from collections.abc import AsyncGenerator
@@ -136,7 +137,21 @@ async def _with_heartbeat(
     interval: float = _HEARTBEAT_SECONDS,
 ) -> AsyncGenerator[str, None]:
     iterator = frames.__aiter__()
-    upcoming = asyncio.ensure_future(anext(iterator))
+    # Every pull runs as its own task, and a task starts with a *copy* of the
+    # context. Pulled with ensure_future, a ContextVar the turn set during one
+    # pull - the previous reply for the task picker, the search identity and
+    # limit, the events-format flag, the turn trace - was gone by the next,
+    # in production only: an in-process test iterates the generator in one
+    # task and never sees it (found 2026-08-26 by a throwaway-account check
+    # of the saved trace, after every in-process test had passed). One
+    # context, shared by every pull, is the whole fix.
+    context = contextvars.copy_context()
+    loop = asyncio.get_running_loop()
+
+    async def _pull() -> str:
+        return await anext(iterator)
+
+    upcoming = loop.create_task(_pull(), context=context)
     # Whether the turn has already said everything it is going to say.
     #
     # The generator keeps running after the terminal event while it persists
@@ -161,7 +176,7 @@ async def _with_heartbeat(
                 return
             yield frame
             finished = finished or frame.startswith(f"event: {_TERMINAL_EVENT}")
-            upcoming = asyncio.ensure_future(anext(iterator))
+            upcoming = loop.create_task(_pull(), context=context)
     finally:
         # A caller can abandon this generator at any point - a closed browser
         # tab does exactly that - and the outstanding pull has to be cancelled

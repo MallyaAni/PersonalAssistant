@@ -39,6 +39,26 @@ This file is append-only history for meaningful, verified changes. It must not c
   "cancel it / undo that", "make it weekly", "undo a Scout change", "try
   again", "show me that image", "make it again", "what did I tell you" -
   each with the state checked in the database.
+- **A production-only context loss, found by the end-to-end check.** With
+  everything above green in-process, a throwaway account's turns on the
+  deployed build saved no trace at all. `_with_heartbeat` pulled every
+  streamed frame with `asyncio.ensure_future(anext(...))`: each pull is a
+  new task with a *copy* of the context, so a ContextVar the turn set
+  during one pull was gone by the next - the picker's previous-reply hint,
+  the search identity and limit, the events-format flag, and the trace, all
+  silently, and only over HTTP. Every pull now runs in one shared context
+  (`loop.create_task(..., context=...)`). `test_heartbeat_keeps_context.py`
+  drives the real wrapper and shows the bare boundary losing the value; the
+  sweep now asserts that routed turns saved their trace, on the HTTP path,
+  where in-process tests cannot look.
+- **Measured.** Unit gate 1841 passed, 0 failed. Real-model suites for
+  everything touched: 44 tests passing, including `scheduled_task_behaviour`
+  15/15 (the router's standing "cancel the weather texts" miss is gone with
+  the reworded tool). Selection matrix gate 7/7 twice (standalone and inside
+  the deploy). Evaluator at 3 reps with the undo cases: `task_undo` 9/9,
+  `scout_schedule` 18/18, `manage_tasks` 30/33, `schedule_task` 9/9, no-tool
+  44/66, aggregate 212/246 = 0.862. Deployed as 0b501cd8 through
+  `scripts/deploy.sh` (backup, migration `20260826_0010`, verification).
 
 ## 2026-08-26 — A reminder's time is not Scout's schedule, and "this" means what was just said
 

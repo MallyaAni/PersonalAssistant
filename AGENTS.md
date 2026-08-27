@@ -107,6 +107,13 @@ If functional validation cannot be performed, do not label the behavior verified
   `--ignore` paths must be container paths (`/app/...`): a host path is
   silently not matched, which once ran the entire real-model suite under
   `--unit`.
+- **Per-turn ContextVars survive the stream only because `_with_heartbeat`
+  runs every pull in one shared context.** A generator pulled by fresh
+  tasks (`ensure_future(anext(...))`) loses anything a ContextVar set in an
+  earlier pull; in-process tests iterate in one task and never see it. Do
+  not replace that wrapper's `create_task(..., context=...)`, and when a
+  behaviour depends on a ContextVar, verify it over HTTP (the sweep's
+  trace check), not only in-process.
 - **Deploy only through `scripts/deploy.sh`.** It runs the unit suite and
   the routing gate first and the journey sweep and search harness after.
   `docker compose up -d --build` by hand skips all of it; a build shipped

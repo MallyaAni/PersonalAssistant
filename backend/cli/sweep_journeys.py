@@ -273,6 +273,21 @@ class Sweep:
                         self.failures.append(journey.name)
                     print(f"{status} {journey.name}: route={r['action']} sources={r['sources']} | {'; '.join(problems) or 'ok'}", flush=True)
                     print(f"      reply: {r['text'][:220]!r}", flush=True)
+                # Every routed turn must have saved its trace: the record that
+                # makes "why did it do that" a minute's work. Checked here, on
+                # the HTTP path, because the in-process tests cannot see a
+                # context lost between streamed frames (2026-08-26).
+                routed = sum(1 for _ in JOURNEYS if _.expect_action != (None,))
+                async with AsyncSessionLocal() as db:
+                    traced = await db.scalar(
+                        text("select count(*) from conversations where user_id = :u and extra_data::text like :t"),
+                        {"u": self.user, "t": '%"trace"%'},
+                    )
+                if (traced or 0) < routed // 2:
+                    self.failures.append("turn trace")
+                    print(f"GAP  turn trace: {traced} traced turns for {routed} routed journeys", flush=True)
+                else:
+                    print(f"PASS turn trace: {traced} traced turns for {routed} routed journeys", flush=True)
             finally:
                 await self.remove(client)
                 print(f"cleanup: {self.user} removed; gaps={self.failures}", flush=True)
