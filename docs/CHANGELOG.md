@@ -2,6 +2,27 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-27 — A follow-up is resolved once, before anything acts on it
+
+- **Why the same class kept recurring.** Every incident of 2026-08-26/27 was
+  a second turn about something the first turn mentioned - "adjust this",
+  "regenerate it", "does only one person win at the end?", "which hat do
+  you like better for this outfit?" - and each component that had to know
+  what "this" meant (the router, the search composer, the task picker, the
+  memory agent) resolved it separately and could get it wrong its own way.
+  Fixing each site stopped repeats but not the next member of the class.
+- **One resolver.** `backend/services/followup.py` (`prompts/referent/followup.md`,
+  the routing model, one schema-enforced call per turn that has history)
+  restates the newest message so it stands alone - the exact show, product,
+  picture, reminder or draft copied as the conversation names it - and says
+  what it refers to (picture, task, scout, draft, subject, none). The router
+  sees the reading beside the person's words; the research rounds ask the
+  resolved question, so a later round cannot drift; the turn trace records
+  it. Failure is silent: the router then decides from the history alone as
+  before. Pinned on the real routing model by
+  `functional/test_followup_resolution_behaviour.py` (a show, a picture, a
+  draft, a reminder, Scout, a standalone question, and never answering).
+
 ## 2026-08-27 — A follow-up keeps its subject; results about the wrong thing become a disclosure
 
 - **The incident (jenos1, 02:41-02:49 UTC).** In a conversation about

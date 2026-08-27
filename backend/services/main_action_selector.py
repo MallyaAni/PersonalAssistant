@@ -37,6 +37,7 @@ from backend.services.mcp_tool_orchestration_service import (
 )
 from backend.skills.tools import parse_skill_call, skill_tool_definitions
 from backend.search.budgeted import current_search_identity
+from backend.services.followup import current_followup, describe, resolve_followup
 from backend.tools import (
     UNATTENDED_WITHHELD,
     NOT_BUILTIN,
@@ -367,6 +368,13 @@ class MainActionSelector:
                     live,
                 )
         history_text = render_recent_history(history)
+        # What the newest message refers to, decided once for every component
+        # that has to know: the router here, the search rounds and the picker
+        # after it. Failure is silent - the router then decides from the
+        # history alone, as it did before this step existed.
+        resolution = await resolve_followup(self.llm, query, history) if history_text else None
+        current_followup.set(resolution)
+        reading = describe(resolution, query) if resolution else ""
         visual_state = (
             "A picture is currently selected and visible to the user."
             if active_image_artifact_id
@@ -374,6 +382,7 @@ class MainActionSelector:
         )
         message_text = (
             f"Recent conversation:\n{history_text}\n\nNewest message: {query}"
+            + (f"\n{reading}" if reading else "")
             if history_text
             else query
         )

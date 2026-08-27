@@ -5,7 +5,8 @@ flowchart TB
     User([User message]) --> API[Chat API]
     API --> Interest[DeepSeek V4 Flash<br/>typed semantic memory agent]
     Interest --> Proposal[Auto-saved memory records<br/>written immediately, no approval step]
-    API --> Selector{MainActionSelector<br/>one native tool call, all options together}
+    API --> FollowUp[Follow-up resolver<br/>one reading of this · it · again<br/>picture · task · scout · draft · subject]
+    FollowUp --> Selector{MainActionSelector<br/>one native tool call, all options together}
     Search_Tool[Internet MCP server<br/>search_web · get_weather<br/>search_credits for operators only] -.-> Selector
     Toolbox[User-registered<br/>MCP tools, shortlisted] -.-> Selector
 
@@ -56,6 +57,6 @@ flowchart TB
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef failure fill:#fff3cd,stroke:#b78b20,color:#4d3900;
     class User,UI interface;
-    class API,Selector,Search_Tool,Toolbox,Presentation,Progress,Diagram,Artifact,ImageAction,ImageArtifact,Memory,Visual,MCP,Search,History,Context,Inference,Persist,Stream,Proposal application;
+    class API,Selector,Search_Tool,Toolbox,Presentation,Progress,Diagram,Artifact,ImageAction,ImageArtifact,Memory,Visual,MCP,Search,History,Context,Inference,Persist,Stream,Proposal,FollowUp application;
     class Main,DiagramModel,Interest,ArtifactGate,VisualPolicy,Referent model;
     class Failure failure;

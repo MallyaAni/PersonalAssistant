@@ -62,6 +62,7 @@ from backend.services.image_refinement_service import (
     RefinementError,
 )
 from backend.services.image_style_service import ImageStyleService
+from backend.services.followup import current_followup
 from backend.services.main_action_selector import (
     CreateDiagramAction,
     DelegateAction,
@@ -2183,8 +2184,17 @@ class ConversationService:
                             "tool_name": tool_identity[1],
                         },
                     }
+                # The research rounds ask about the message as resolved
+                # against the conversation - "does only one person win at the
+                # end of Surviving Paradise?" - so a later round cannot drift
+                # to another subject the way the first query once did.
+                resolved = current_followup.get()
+                research_question = (
+                    resolved.self_contained if resolved and resolved.changes(query) else query
+                )
+                _trace("followup", {"refers_to": resolved.refers_to, "subject": resolved.subject, "as": resolved.self_contained[:160]} if resolved and resolved.changes(query) else None)
                 search_results, search_succeeded = await self._research(
-                    query,
+                    research_question,
                     screened.query,
                     trace_id,
                     action.max_results,
@@ -2506,6 +2516,7 @@ class ConversationService:
         current_search_limit.set(None)
         _previous_assistant_said.set(str((history[-1].get("response") or "")) if history else "")
         _turn_trace.set({})
+        current_followup.set(None)
         account_charged_this_turn.set(False)
         _results_were_events.set(False)
         _results_were_travel.set(False)

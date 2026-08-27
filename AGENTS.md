@@ -107,6 +107,12 @@ If functional validation cannot be performed, do not label the behavior verified
   `--ignore` paths must be container paths (`/app/...`): a host path is
   silently not matched, which once ran the entire real-model suite under
   `--unit`.
+- **A follow-up is resolved once, in `backend/services/followup.py`, before
+  the router.** Do not add another place that works out what "this", "it"
+  or "again" means (a picker hint, a prompt sentence per tool): give the
+  resolver a case in `functional/test_followup_resolution_behaviour.py`
+  instead. Every incident of 2026-08-26/27 was one component resolving a
+  referent its own way.
 - **Per-turn ContextVars survive the stream only because `_with_heartbeat`
   runs every pull in one shared context.** A generator pulled by fresh
   tasks (`ensure_future(anext(...))`) loses anything a ContextVar set in an
