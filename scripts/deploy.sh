@@ -183,8 +183,14 @@ post_ok=true
 summary=()
 if $post; then
     for check in backend.cli.sweep_journeys backend.cli.exercise_search_scenarios; do
-        output="$("${compose[@]}" exec -T backend python -m "$check" 2>&1)"
+        # Bounded: a journey that waits on a machine that is off keeps its
+        # stream alive with heartbeats, and deploy #6's sweep never returned
+        # (2026-08-27). Forty minutes is twice a full sweep.
+        output="$(timeout 2400 "${compose[@]}" exec -T backend python -m "$check" 2>&1)"
         status=$?
+        if [[ $status -eq 124 ]]; then
+            output+=$'\n'"GAP  ${check##*.}: no result within 40 minutes"
+        fi
         printf '%s\n' "$output"
         short="${check##*.}"
         if [[ $status -eq 0 ]]; then

@@ -37,6 +37,11 @@ from backend.database.session import AsyncSessionLocal
 from backend.services.auth_service import AuthService
 
 TIMEOUT = 240.0
+# A hard deadline per turn. The stream keeps itself alive with heartbeats,
+# so a turn that waits on a machine that is off never trips the HTTP timeout:
+# deploy #6's sweep never returned (2026-08-27).
+TURN_DEADLINE = 300.0
+_PICTURE_ROUTES = {"New images", "Showing a picture again", "Image edits", "About the picture"}
 _ANNOUNCED = re.compile(
     r"let me (search|look|check|find|pull)|i'?ll (search|look|check|find|pull) (that|this|it|those|them|for)|"
     r"i will (search|look|check)|searching now|looking that up|checking now|give me a (sec|moment)",
@@ -272,16 +277,42 @@ class Sweep:
         except Exception:
             return None
 
+    # Whether the picture machine answers: picture journeys are skipped, not
+    # failed, when it is off - it is a machine that is sometimes off by design.
+    async def _pictures_available(self, client: httpx.AsyncClient) -> bool:
+        from backend.config.settings import settings
+
+        try:
+            response = await client.get(f"{settings.IMAGE_PROVIDER_BASE_URL.rstrip('/')}/system_stats", timeout=5.0)
+            return response.status_code < 500
+        except httpx.HTTPError:
+            return False
+
+    async def _turn(self, client: httpx.AsyncClient, query: str, metadata: dict | None, conversation_id: str) -> dict:
+        try:
+            return await asyncio.wait_for(self.chat(client, query, metadata, conversation_id), TURN_DEADLINE)
+        except asyncio.TimeoutError:
+            return {"action": None, "sources": 0, "text": "", "error": f"no reply within {int(TURN_DEADLINE)} s"}
+
     async def run(self) -> int:
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
             await self.create()
             print(f"user={self.user} (Arlington, Virginia)", flush=True)
+            pictures = await self._pictures_available(client)
+            if not pictures:
+                print("picture machine unreachable: picture journeys will be skipped, not failed", flush=True)
             try:
                 for journey in self.journeys:
+                    needs_pictures = bool(set(journey.expect_action) & _PICTURE_ROUTES) or any(
+                        "picture" in earlier.lower() for earlier in journey.before
+                    )
+                    if needs_pictures and not pictures:
+                        print(f"SKIP {journey.name}: picture machine unreachable", flush=True)
+                        continue
                     conversation_id = str(uuid.uuid4())
                     for earlier in journey.before:
-                        await self.chat(client, earlier, None, conversation_id)
-                    r = await self.chat(client, journey.query, journey.metadata or None, conversation_id)
+                        await self._turn(client, earlier, None, conversation_id)
+                    r = await self._turn(client, journey.query, journey.metadata or None, conversation_id)
                     problems: list[str] = []
                     for statement in journey.sql_holds:
                         async with AsyncSessionLocal() as db:
