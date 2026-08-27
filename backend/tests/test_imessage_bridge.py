@@ -1141,3 +1141,29 @@ def test_incoming_coverage_is_reported_as_counts_only(tmp_path):
     text = json.dumps(described)
     assert "5550100" not in text
     assert "9998887777" not in text
+
+
+def test_a_reaction_rendered_as_text_is_not_a_message(tmp_path):
+    from server import incoming_messages, is_tapback_text
+
+    # Some senders' reactions arrive as an ordinary row whose body is the
+    # rendered tapback. Routed as a message it was answered (2026-08-25).
+    for body in (
+        "Reacted ❤️ to “is there salsa dancing tomorrow?”",
+        "Liked “Time to stretch”",
+        "Laughed at “doggo”",
+        "Emphasized “what's the weather in DC this weekend?”",
+        "Removed a heart from “hey”",
+    ):
+        assert is_tapback_text(body), body
+    for body in ("I liked the picture", "Loved it, thanks!", "reacted badly to the news"):
+        assert not is_tapback_text(body), body
+
+    config = _incoming_config(tmp_path)
+    reaction_at, message_at = _ns_ago(5), _ns_ago(4)
+    _insert_incoming(config.incoming_db, "+15550100", "Reacted ❤️ to “is there salsa dancing tomorrow?”", reaction_at)
+    _insert_incoming(config.incoming_db, "+15550100", "is there salsa dancing tomorrow?", message_at)
+    polled = incoming_messages(config, since_ns=_ns_ago(60))
+    assert [m["text"] for m in polled["messages"]] == ["is there salsa dancing tomorrow?"]
+    # The cursor moved past the reaction: it is not delivered later either.
+    assert polled["cursor"] >= reaction_at

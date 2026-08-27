@@ -792,6 +792,19 @@ def _clean_body(value: str) -> str:
     return value.replace("￼", "").strip()
 
 
+# The text Messages writes when a reaction cannot be sent as a tapback:
+# a verb, then the quoted original. Matched by shape only.
+_TAPBACK_TEXT = re.compile(
+    r"^(?:Reacted\s.{1,12}?\sto|Liked|Loved|Laughed at|Emphasized|Disliked|Questioned|"
+    r"Removed a .{1,24}? from)\s[“\"].+[”\"]\s*$",
+    re.DOTALL,
+)
+
+
+def is_tapback_text(body: str) -> bool:
+    return bool(_TAPBACK_TEXT.match(body.strip()))
+
+
 # The most messages one poll may return. Bounds mirror a caller's on purpose;
 # a bridge that trusts its caller's limits has no limits.
 MAX_INCOMING_PER_POLL = 25
@@ -895,6 +908,13 @@ def incoming_messages(
         if not ready:
             # Old and still unreadable: presumed genuinely unreadable, skipped
             # with the cursor already advanced so it cannot stall the poll.
+            continue
+        if not attached and body is not None and is_tapback_text(body):
+            # A reaction rendered as text - "Reacted ❤️ to “...”", "Liked
+            # “...”" - arrives from some senders as an ordinary row with
+            # associated_message_type 0. It is not something the person said:
+            # routed as a message on 2026-08-25 it was answered with a salsa
+            # recommendation. Shape, not intent, so a pattern is the right tool.
             continue
         message: dict[str, object] = {
             "guid": str(guid),
