@@ -153,6 +153,10 @@ What exists, and where:
   recorded but never undoable, so "undo" twice walks back two changes.
   Added 2026-08-26 after a misread referent moved a reminder the person
   could not put back.
+- Automatic memory saves are on the same record: each saver returns a
+  receipt (`kind`, id or fact keys, a short value) written as a
+  `memory`/`save` change, and undo takes it back via
+  `ConversationService._forget_saved` (2026-08-27).
 - One writer for Scout's schedule: the memory proposal agent no longer has
   a `schedule` field; `scout_schedule` is the only path that changes
   `discovery_schedules` from conversation.

@@ -37,7 +37,7 @@ from backend.core.interfaces import (
     SearchProvider,
 )
 from backend.core.llm import LLMClient
-from backend.discovery.projection import locality_fact
+from backend.discovery.projection import interest_fact, locality_fact
 from backend.discovery.runs import DiscoveryRunRepository
 from backend.discovery.schedule import Cadence
 from backend.discovery.service import DiscoveryProfileService
@@ -2735,6 +2735,30 @@ class ConversationService:
             return "scout", await self._apply_scout_schedule(user_id, action)
         return None
 
+    # Take back one automatic memory save from its receipt. Semantic and
+    # episodic rows go by id; a name preference is cleared; a profile fact -
+    # style, locality, each interest - goes by its key.
+    async def _forget_saved(self, user_id: str, receipt: dict[str, Any]) -> bool:
+        kind = str(receipt.get("kind") or "")
+        try:
+            if kind in ("semantic_fact", "episodic") and receipt.get("id"):
+                return bool(
+                    await self.memory.delete_memory(
+                        user_id, str(receipt.get("memory_type") or "semantic"), str(receipt["id"])
+                    )
+                )
+            if kind == "preferred_name":
+                await self.memory.clear_preferred_name(user_id)
+                return True
+            keys = [str(key) for key in (receipt.get("fact_keys") or []) if key]
+            if keys:
+                for key in keys:
+                    await self.memory.clear_fact_key(user_id, key)
+                return True
+        except Exception:
+            logger.warning("Forgetting a saved %s failed", kind, exc_info=True)
+        return False
+
     # Set when Scout's own sweep runs and say what happened, as a record the
     # reply reports from. The same path the memory proposal takes for a
     # stated schedule, reached by a named tool instead of a captured fact;
@@ -2938,7 +2962,7 @@ class ConversationService:
         await self.memory.approve_preferred_name(
             user_id, candidate["value"], conversation_id, trace_id
         )
-        return True
+        return {"kind": "preferred_name", "value": str(candidate["value"])[:160]}
 
     # Save a classified reply-length preference immediately.
     async def _save_response_style_proposal(
@@ -2959,7 +2983,7 @@ class ConversationService:
             expires_at=None,
             metadata={"source": "chat_auto_save"},
         )
-        return True
+        return {"kind": "response_style", "fact_keys": ["response_style"], "value": str(candidate["value"])[:160]}
 
     # Save a classified home locality immediately, projected the same way an
     # approved one always was.
@@ -2982,7 +3006,7 @@ class ConversationService:
             expires_at=None,
             metadata={"source": "chat_auto_save"},
         )
-        return True
+        return {"kind": "discovery_locality", "fact_keys": [fact.fact_key], "value": str(candidate["label"])[:160]}
 
     # Save every classified Scout interest label in one projection.
     async def _save_discovery_interests_proposal(
@@ -2998,7 +3022,11 @@ class ConversationService:
             source_conversation_id=conversation_id,
             source_trace_id=trace_id,
         )
-        return True
+        return {
+            "kind": "discovery_interests",
+            "fact_keys": [interest_fact(str(label)).fact_key for label in candidate["labels"]],
+            "value": ", ".join(str(label) for label in candidate["labels"])[:160],
+        }
 
     # Do what a task action asks and say what happened, as a record the
     # reply reports from. Scheduling needs a timezone, read from the person's
@@ -3117,6 +3145,16 @@ class ConversationService:
             return {"kind": "nothing_to_undo"}
         before, after = change.get("before"), change.get("after")
         restored: dict[str, Any] | None = None
+        if change["kind"] == "memory":
+            receipt = after or {}
+            if receipt.get("undoable") is False:
+                return {"kind": "not_undoable", "change": change}
+            forgotten = await self._forget_saved(user_id, receipt)
+            if not forgotten:
+                return {"kind": "failed"}
+            await self.scheduled_tasks.mark_undone(user_id, change["id"])
+            await self.scheduled_tasks.record_change(user_id, "memory", "undo", receipt, None)
+            return {"kind": "undone", "change": change, "memory": receipt}
         if change["kind"] == "scout_schedule":
             if self.discovery_runs is None:
                 return {"kind": "failed"}
@@ -3372,10 +3410,15 @@ class ConversationService:
         trace_id: str,
         candidate: dict[str, Any],
     ) -> bool:
-        await self.memory.save_semantic_memory(
+        memory = await self.memory.save_semantic_memory(
             user_id, candidate["content"], {"source": "chat_auto_save"}
         )
-        return True
+        return {
+            "kind": "semantic_fact",
+            "memory_type": "semantic",
+            "id": str((memory or {}).get("id") or ""),
+            "value": str(candidate["content"])[:160],
+        }
 
     # Save a classified one-off event as an episodic memory.
     async def _save_episodic_proposal(
@@ -3385,10 +3428,15 @@ class ConversationService:
         trace_id: str,
         candidate: dict[str, Any],
     ) -> bool:
-        await self.memory.save_episodic_memory(
+        memory = await self.memory.save_episodic_memory(
             user_id, candidate["content"], {"source": "chat_auto_save"}
         )
-        return True
+        return {
+            "kind": "episodic",
+            "memory_type": "episodic",
+            "id": str((memory or {}).get("id") or ""),
+            "value": str(candidate.get("content") or candidate.get("value") or "")[:160],
+        }
 
     # Persist every classified proposal immediately - this app's memory design
     # is blanket auto-save with no approval round-trip. Asking the user to
@@ -3431,6 +3479,17 @@ class ConversationService:
                         "trace_id": trace_id,
                     }
                 )
+                # On the record for "forget that": what was saved and how to
+                # take it back. A saver that returns only True (an entity, a
+                # procedure, a document) is recorded as not reversible here.
+                receipt = persisted if isinstance(persisted, dict) else {"kind": str(kind), "undoable": False}
+                if self.scheduled_tasks is not None:
+                    try:
+                        await self.scheduled_tasks.record_change(
+                            user_id, "memory", "save", None, receipt
+                        )
+                    except Exception:
+                        logger.warning("Trace %s could not record a memory save", trace_id, exc_info=True)
         _trace("proposals_saved", [str(item.get("kind")) for item in saved])
         return tuple(saved)
 

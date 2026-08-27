@@ -163,6 +163,15 @@ JOURNEYS = [
     Journey("make it again (regenerate referent)", "make it again", ("New images",),
             before=("make a picture of a blue teapot on a table",),
             does_not_hold=("The reply promises to generate a picture without doing it, or asks what to draw.",)),
+    # An opinion about the picture is a conversation, not an edit (measured
+    # 0/9 before the follow-up resolver, 2026-08-27).
+    Journey("opinion about the picture (image referent)", "which hat would look better with this outfit, straw or cowboy?", (None,),
+            before=("make a picture of me in a linen outfit with a straw hat",),
+            does_not_hold=("The reply says it edited, changed, or is changing the picture.",)),
+    Journey("forget that (memory undo)", "forget that", ("Manage scheduled tasks",),
+            before=("my dentist is Dr Lee on Wilson Boulevard",),
+            holds=("The reply says it forgot, removed, or will no longer remember what it had saved.",),
+            sql_holds=("select count(*) = 0 from semantic_memory where user_id = :u",)),
     Journey("what did I tell you (memory referent)", "what did I tell you about my dentist?", ("Past conversations", None),
             before=("my dentist is Dr Lee on Wilson Boulevard",),
             holds=("The reply mentions Dr Lee or Wilson Boulevard.",),

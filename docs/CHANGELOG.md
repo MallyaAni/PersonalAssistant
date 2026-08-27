@@ -2,6 +2,27 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-27 — "Forget that": an automatic memory save can be taken back
+
+- Every automatic save (a fact, a moment, a name, a style, a locality, the
+  interests) now leaves a receipt in the change log - what was saved and how
+  to remove it - and "forget that" / "don't remember that" / "undo that"
+  after "saved" reverses the latest one through the same undo path as
+  reminders and Scout: semantic and episodic rows by id, a name by clearing
+  it, profile facts by key. A kind with no way back (a person, a routine, a
+  document) says so and points at the memory page. Routed in the matrix
+  (`task_undo`), reported from the record ("Forgotten: ..."), and walked by
+  a sweep journey that checks the table.
+
+## 2026-08-27 — The prompt's sentences measured against each other
+
+- `backend/cli/ablate_prompt_rules.py` drops one sentence of the router
+  prompt at a time and re-scores the labelled cases (optionally one
+  category), printing which sentences carry weight, which cost nothing, and
+  which *improve* a category when removed - the ones fighting another rule.
+  The interaction between rules had no measurement before this; every rule
+  was pinned alone.
+
 ## 2026-08-27 — A follow-up is resolved once, before anything acts on it
 
 - **Why the same class kept recurring.** Every incident of 2026-08-26/27 was

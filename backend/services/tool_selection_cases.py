@@ -229,6 +229,10 @@ _CANCELLED_HISTORY = (
 _MOVED_SCOUT_HISTORY = (
     ("run scout daily at 3pm", "Done - Scout's sweep is now scheduled for daily at 3:00 PM."),
 )
+# A memory just saved, for "forget that".
+_SAVED_HISTORY = (
+    ("my dentist is Dr Lee on Wilson Boulevard", "Noted - saved: your dentist is Dr Lee on Wilson Boulevard."),
+)
 # A reminder just confirmed: "this" is that reminder.
 _REMINDER_HISTORY = (
     (
@@ -625,6 +629,8 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
     SelectionCase("undo that", MANAGE_TASKS, "task_undo", history=_CANCELLED_HISTORY),
     SelectionCase("never mind, put the stretch reminder back", MANAGE_TASKS, "task_undo", history=_CANCELLED_HISTORY),
     SelectionCase("undo that", MANAGE_TASKS, "task_undo", history=_MOVED_SCOUT_HISTORY),
+    SelectionCase("forget that", MANAGE_TASKS, "task_undo", history=_SAVED_HISTORY),
+    SelectionCase("actually don't remember that", MANAGE_TASKS, "task_undo", history=_SAVED_HISTORY),
 )
 
 # Set from the measured baseline once, deliberately low enough to catch a

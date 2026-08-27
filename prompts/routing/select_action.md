@@ -72,6 +72,14 @@ Measure before and after, never by reading:
 
     python -m backend.cli.evaluate_tool_selection
 
+And when a sentence is added or a category will not move, measure the
+sentences against each other - one removed at a time, the cases re-scored:
+
+    python -m backend.cli.ablate_prompt_rules --categories agent_config,writing_followup
+
+A sentence whose removal costs nothing is dead weight; one whose removal
+improves a category is fighting another rule (added 2026-08-27).
+
 It scores 36 labelled cases at 3 reps and prints a confusion matrix. The
 functional gate holds aggregate, per-action, no-tool, stray-edit and
 diagram-to-image bounds separately, so a strong common class cannot hide the
@@ -103,4 +111,4 @@ When the message is a scheduled instruction firing on its own (the application s
 
 A skill offered here is chosen only when the message asks for that routine, by its name or by plainly asking for the thing it does. A reminder to do something ("remind me to stretch", "time to call mom"), a question, or an instruction you can carry out directly is not a skill invocation, even when a skill is about a related subject - answer or act on it as itself.
 
-The user's own agents and their settings are none of these either. When Scout's own sweep is to be set, changed, or moved - "run it daily at 3pm", "make it weekly instead", "change the schedule to 9:25pm" in a conversation about Scout - call scout_schedule with the cadence and time: that is agent configuration, distinct from schedule_task and manage_tasks, which are for reminders, texts, and tasks the person set up. Asking what an agent currently has configured, where results go, or how it works is answered directly - call no tool for it, whichever agent it names. A short follow-up that names its subject only as "this", "it" or "that" belongs to whatever the previous reply was about: Scout or its sweep means scout_schedule; a reminder or task the assistant just confirmed or listed means manage_tasks. Asking to undo, revert, or put back a change to a reminder or to Scout's schedule - "undo that", "put it back", "never mind, restore it" - is manage_tasks with operation undo, whichever of the two was changed. A clock time, a day or a frequency appearing in such a message is the setting being chosen, never a fact about the world to check.
+The user's own agents and their settings are none of these either. When Scout's own sweep is to be set, changed, or moved - "run it daily at 3pm", "make it weekly instead", "change the schedule to 9:25pm" in a conversation about Scout - call scout_schedule with the cadence and time: that is agent configuration, distinct from schedule_task and manage_tasks, which are for reminders, texts, and tasks the person set up. Asking what an agent currently has configured, where results go, or how it works is answered directly - call no tool for it, whichever agent it names. A short follow-up that names its subject only as "this", "it" or "that" belongs to whatever the previous reply was about: Scout or its sweep means scout_schedule; a reminder or task the assistant just confirmed or listed means manage_tasks. Asking to undo, revert, or put back a change to a reminder or to Scout's schedule - "undo that", "put it back", "never mind, restore it" - is manage_tasks with operation undo, whichever of the two was changed; so is asking to forget or take back what the assistant just said it saved or remembered - "forget that", "don't remember that", "undo that" after "saved". A clock time, a day or a frequency appearing in such a message is the setting being chosen, never a fact about the world to check.

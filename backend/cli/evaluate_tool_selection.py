@@ -48,6 +48,7 @@ from backend.services.main_action_selector import (
 from backend.search.budgeted import SearchIdentity, current_search_identity
 from backend.tools.search import SEARCH_CREDITS_TOOL
 from backend.services.tool_selection_cases import (
+    SelectionCase,
     SEARCH,
     SEARCH_CREDITS,
     ACCURACY_FLOOR,
@@ -97,9 +98,10 @@ def tool_of(action: object) -> str:
 async def collect(
     selector: MainActionSelector,
     reps: int,
+    cases: tuple[SelectionCase, ...] = SELECTION_CASES,
 ) -> list[tuple[str, str, str]]:
     observations: list[tuple[str, str, str]] = []
-    for case in SELECTION_CASES:
+    for case in cases:
         history = [
             {"query": query, "response": response} for query, response in case.history
         ]

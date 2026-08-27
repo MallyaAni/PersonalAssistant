@@ -472,11 +472,22 @@ def _render_task_outcome(outcome: dict[str, Any]) -> str:
         if isinstance(item, dict):
             lines.append(f"- {describe_task(item)}\n")
     change = outcome.get("change")
-    if outcome.get("kind") == "undone" and isinstance(change, dict):
+    memory = outcome.get("memory")
+    if outcome.get("kind") == "undone" and isinstance(memory, dict):
+        lines.append(
+            f"- Forgotten: the memory saved a moment ago ({memory.get('kind', '')}: "
+            f"{memory.get('value', '')}) is removed; say it is forgotten, nothing more.\n"
+        )
+    elif outcome.get("kind") == "undone" and isinstance(change, dict):
         what = "Scout's sweep schedule" if change.get("kind") == "scout_schedule" else "a reminder"
         lines.append(
             f"- Undone: the last change ({change.get('operation', '')} of {what}) is "
             "put back as it was; report exactly what is restored above, nothing more.\n"
+        )
+    if outcome.get("kind") == "not_undoable":
+        lines.append(
+            "- The last change was a saved memory of a kind that cannot be taken back "
+            "here (a person, a routine, or a document); say so and offer the memory page.\n"
         )
     if outcome.get("kind") == "nothing_to_undo":
         lines.append("- Nothing to undo: no recent change is on record. Say so; change nothing.\n")
