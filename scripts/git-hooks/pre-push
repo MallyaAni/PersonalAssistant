@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Refuse any push that would rewrite history on the remote.
+#
+# 2026-08-26: a second agent working in this same checkout force-pushed a
+# branch that was behind origin/main, and three published commits vanished
+# from the remote until they were merged back by hand. GitHub's branch
+# protection is the real guard (Settings -> Branches -> main -> "Do not allow
+# force pushes"); this hook is the local one, and it covers every agent that
+# pushes from this checkout because `core.hooksPath` points here.
+#
+# Git hands a pre-push hook one line per ref: <local ref> <local sha> <remote
+# ref> <remote sha>. A push is a rewrite when the remote's current commit is
+# not an ancestor of what is being pushed.
+set -euo pipefail
+remote_name="$1"
+zero="0000000000000000000000000000000000000000"
+while read -r local_ref local_sha remote_ref remote_sha; do
+    [[ "$remote_sha" == "$zero" ]] && continue   # new branch on the remote
+    [[ "$local_sha" == "$zero" ]] && continue    # a delete; not a rewrite
+    if ! git merge-base --is-ancestor "$remote_sha" "$local_sha" 2>/dev/null; then
+        echo "pre-push: refusing to rewrite $remote_ref on $remote_name." >&2
+        echo "          $remote_sha is not an ancestor of $local_sha." >&2
+        echo "          Fetch and merge (or rebase onto) the remote first; never --force main." >&2
+        exit 1
+    fi
+done
+exit 0

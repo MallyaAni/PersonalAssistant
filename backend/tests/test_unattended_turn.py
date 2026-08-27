@@ -105,7 +105,8 @@ async def test_an_ordinary_turn_still_schedules():
             # is told to ask for the place - which is the attended path
             # running, not the gate refusing it.
             assert outcome is not None
-            assert outcome["task_outcome"]["kind"] == "needs_place"
+            # One record per step since the multi-step turn (task_outcomes).
+            assert outcome["task_outcomes"][0]["kind"] == "needs_place"
     finally:
         await _cleanup(user_id)
 

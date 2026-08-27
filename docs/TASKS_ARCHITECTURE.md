@@ -144,6 +144,23 @@ What exists, and where:
   and rides into the reply as `context["scout_schedule_outcomes"]`, kept
   apart from task outcomes so the sweep is never reported as a reminder.
 
+- Undo: every cancel, reschedule, pause, resume, and Scout schedule
+  change is written to `scheduled_task_changes` with what it replaced
+  (snapshots sealed like the instruction; migration `20260826_0010`).
+  `manage_tasks(operation="undo")` puts the latest one back: a cancelled
+  task is re-created under its old id from its snapshot, a moved one moves
+  back, Scout's schedule returns to what it was or to none. The undo is
+  recorded but never undoable, so "undo" twice walks back two changes.
+  Added 2026-08-26 after a misread referent moved a reminder the person
+  could not put back.
+- One writer for Scout's schedule: the memory proposal agent no longer has
+  a `schedule` field; `scout_schedule` is the only path that changes
+  `discovery_schedules` from conversation.
+- Every turn saves a trace with the conversation row
+  (`extra_data["trace"]`: route, picker input/output, proposals saved,
+  outcomes, search) - `python -m backend.cli.explain_turn --user <id>`
+  prints the last turns decrypted with it.
+
 Not yet: a web surface for runs (output is stored, nothing shows it), the
 Scout-as-task migration, WhatsApp/OpenClaw adapters, edit-in-place.
 

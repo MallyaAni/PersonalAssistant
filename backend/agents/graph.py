@@ -445,6 +445,15 @@ def _render_task_outcome(outcome: dict[str, Any]) -> str:
     for item in outcome.get("tasks") or []:
         if isinstance(item, dict):
             lines.append(f"- {describe_task(item)}\n")
+    change = outcome.get("change")
+    if outcome.get("kind") == "undone" and isinstance(change, dict):
+        what = "Scout's sweep schedule" if change.get("kind") == "scout_schedule" else "a reminder"
+        lines.append(
+            f"- Undone: the last change ({change.get('operation', '')} of {what}) is "
+            "put back as it was; report exactly what is restored above, nothing more.\n"
+        )
+    if outcome.get("kind") == "nothing_to_undo":
+        lines.append("- Nothing to undo: no recent change is on record. Say so; change nothing.\n")
     for key in ("reason", "requested"):
         if outcome.get(key):
             lines.append(f"- {key}: {outcome[key]}\n")

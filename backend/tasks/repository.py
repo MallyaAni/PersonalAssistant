@@ -8,8 +8,9 @@ task's next slot - or disables a one-time task.
 """
 
 import logging
+import json
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any, cast
 
 from sqlalchemy import or_, select
@@ -18,7 +19,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.config.settings import settings
 from backend.discovery.schedule import Cadence, next_run_at
-from backend.models.scheduled_task import ScheduledTask, ScheduledTaskRun
+from backend.models.scheduled_task import (
+    ScheduledTask,
+    ScheduledTaskChange,
+    ScheduledTaskRun,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +46,21 @@ def _task_dict(task: ScheduledTask) -> dict[str, Any]:
         "enabled": task.enabled,
         "last_run_at": task.last_run_at,
         "last_status": task.last_status,
+    }
+
+
+# A change row as plain data, snapshots decoded.
+def _change_dict(change: ScheduledTaskChange) -> dict[str, Any]:
+    return {
+        "id": str(change.id),
+        "user_id": change.user_id,
+        "kind": change.kind,
+        "operation": change.operation,
+        "task_id": str(change.task_id) if change.task_id else None,
+        "before": json.loads(change.before) if change.before else None,
+        "after": json.loads(change.after) if change.after else None,
+        "created_at": change.created_at,
+        "undone_at": change.undone_at,
     }
 
 
@@ -168,6 +188,105 @@ class ScheduledTaskRepository:
         await self.session.delete(task)
         await self.session.commit()
         return True
+
+    # Write down one change and what it replaced. Snapshots are the task dicts
+    # this repository hands out (datetimes as ISO text), or a Scout schedule
+    # dict; None before means "did not exist", None after means "removed".
+    async def record_change(
+        self,
+        user_id: str,
+        kind: str,
+        operation: str,
+        before: dict[str, Any] | None,
+        after: dict[str, Any] | None,
+        task_id: str | None = None,
+    ) -> dict[str, Any]:
+        change = ScheduledTaskChange(
+            user_id=user_id,
+            kind=kind,
+            operation=operation,
+            task_id=uuid.UUID(task_id) if task_id else None,
+            before=json.dumps(before, default=str) if before is not None else None,
+            after=json.dumps(after, default=str) if after is not None else None,
+        )
+        self.session.add(change)
+        await self.session.commit()
+        await self.session.refresh(change)
+        return _change_dict(change)
+
+    # The most recent change of this person's that has not been undone, or
+    # None. Undo itself is recorded as an operation but is never undoable:
+    # "undo" twice walks back two changes, not one and its reversal.
+    async def latest_undoable(self, user_id: str) -> dict[str, Any] | None:
+        result = await self.session.execute(
+            select(ScheduledTaskChange)
+            .where(
+                ScheduledTaskChange.user_id == user_id,
+                ScheduledTaskChange.undone_at.is_(None),
+                ScheduledTaskChange.operation != "undo",
+            )
+            .order_by(ScheduledTaskChange.created_at.desc())
+            .limit(1)
+        )
+        change = result.scalar_one_or_none()
+        return _change_dict(change) if change else None
+
+    async def mark_undone(self, user_id: str, change_id: str) -> bool:
+        result = await self.session.execute(
+            select(ScheduledTaskChange).where(
+                ScheduledTaskChange.id == uuid.UUID(change_id),
+                ScheduledTaskChange.user_id == user_id,
+            )
+        )
+        change = result.scalar_one_or_none()
+        if change is None:
+            return False
+        change.undone_at = datetime.now(UTC)
+        await self.session.commit()
+        return True
+
+    # Put a cancelled task back from its snapshot, under its old id so its
+    # conversation and run history still belong to it. The next run is
+    # computed afresh: the snapshot's may be in the past.
+    async def restore(
+        self, user_id: str, snapshot: dict[str, Any], now: datetime | None = None
+    ) -> dict[str, Any]:
+        moment = now or datetime.now(UTC)
+        cadence = Cadence(
+            cadence=str(snapshot["cadence"]),
+            hour=int(snapshot["hour"]),
+            minute=int(snapshot.get("minute") or 0),
+            weekday=int(snapshot.get("weekday") or 0),
+            timezone=str(snapshot["timezone"]),
+            on_date=(
+                date.fromisoformat(str(snapshot["on_date"]))
+                if snapshot.get("on_date")
+                else None
+            ),
+        )
+        task = ScheduledTask(
+            id=uuid.UUID(str(snapshot["id"])) if snapshot.get("id") else uuid.uuid4(),
+            user_id=user_id,
+            instruction=str(snapshot["instruction"]),
+            cadence=cadence.cadence,
+            hour=cadence.hour,
+            minute=cadence.minute,
+            weekday=cadence.weekday,
+            on_date=cadence.on_date,
+            timezone=cadence.timezone,
+            channel=str(snapshot.get("channel") or "web"),
+            conversation_id=(
+                uuid.UUID(str(snapshot["conversation_id"]))
+                if snapshot.get("conversation_id")
+                else uuid.uuid4()
+            ),
+            next_run_at=next_run_at(cadence, moment),
+            enabled=bool(snapshot.get("enabled", True)),
+        )
+        self.session.add(task)
+        await self.session.commit()
+        await self.session.refresh(task)
+        return _task_dict(task)
 
     async def _owned(self, user_id: str, task_id: str) -> ScheduledTask | None:
         try:

@@ -6,8 +6,10 @@ found by a person, not by the assistant's own checks: each harness had been
 written after an incident. This one is written from the journeys - events,
 weather, a trip, a price, news, a place nearby, memory, a reminder, arithmetic,
 directions, a recipe, a health question, a missing capability, hours, currency,
-a score, a stock, a photo with none attached - and runs them as an attributed
-guest in Arlington against the live API. Each answer is checked for: the
+a score, a stock, a photo with none attached - then, from 2026-08-26, one
+journey per referent shape ("move it", "undo that", "make it weekly", "try
+again", "show me that image", "make it again", "what did I tell you") - and
+runs them as an attributed guest in Arlington against the live API. Each answer is checked for: the
 route it should take, phrases that announce or invent a search, promises of
 actions not taken, and, by the routing model as judge, whether numbers and
 limits are stated honestly.
@@ -121,6 +123,40 @@ JOURNEYS = [
             does_not_hold=("The reply says a reminder or task other than Scout's sweep was rescheduled or changed.",),
             sql_holds=("select count(*) = 1 from discovery_schedules where user_id = :u and cadence = 'daily' and hour = 15",
                        "select count(*) = 0 from scheduled_tasks where user_id = :u and hour = 15")),
+    # --- referents: "it", "that", "again" on every capability ---------------
+    # Every incident this week was a second turn about something the first
+    # turn made. One journey per referent shape, with the state checked.
+    Journey("move it (task referent)", "move it to 10am", ("Manage scheduled tasks",),
+            before=("remind me tomorrow at 9am to call the dentist",),
+            holds=("The reply says the dentist reminder is now at 10:00 AM.",),
+            sql_holds=("select count(*) = 1 from scheduled_tasks where user_id = :u and instruction like '%dentist%' and hour = 10",
+                       "select count(*) = 0 from scheduled_tasks where user_id = :u and instruction like '%dentist%' and hour = 9")),
+    Journey("cancel it then undo", "undo that", ("Manage scheduled tasks",),
+            before=("remind me tomorrow at 8am to water the plants", "cancel it"),
+            holds=("The reply says the plants reminder is back or restored.",),
+            does_not_hold=("The reply says nothing could be undone.",),
+            sql_holds=("select count(*) = 1 from scheduled_tasks where user_id = :u and instruction like '%plants%' and enabled",)),
+    Journey("make it weekly (scout referent)", "make it weekly instead, on Sundays", ("Scout schedule",),
+            before=("run scout every day at 3pm",),
+            holds=("The reply says Scout's sweep is now weekly on Sunday.",),
+            sql_holds=("select count(*) = 1 from discovery_schedules where user_id = :u and cadence = 'weekly' and weekday = 6",)),
+    Journey("undo a scout change", "undo that", ("Manage scheduled tasks",),
+            before=("run scout every day at 3pm", "change it to 9pm"),
+            holds=("The reply says Scout's sweep or schedule is back to 3 PM.",),
+            sql_holds=("select count(*) = 1 from discovery_schedules where user_id = :u and hour = 15",)),
+    Journey("try again (search referent)", "try again", ("Web search",),
+            before=("what's on in Arlington this weekend?",),
+            does_not_hold=("The reply reports search credits, an allowance, or a meter instead of results.",)),
+    Journey("show me that image (image referent)", "show me that image", ("Show image",),
+            before=("make a picture of a red fox in the snow",),
+            does_not_hold=("The reply says it cannot display, show, or find the image.",)),
+    Journey("make it again (regenerate referent)", "make it again", ("Image generation",),
+            before=("make a picture of a blue teapot on a table",),
+            does_not_hold=("The reply promises to generate a picture without doing it, or asks what to draw.",)),
+    Journey("what did I tell you (memory referent)", "what did I tell you about my dentist?", ("Past conversations", None),
+            before=("my dentist is Dr Lee on Wilson Boulevard",),
+            holds=("The reply mentions Dr Lee or Wilson Boulevard.",),
+            does_not_hold=("The reply says it has no record or does not know the dentist.",)),
 ]
 
 
@@ -153,7 +189,7 @@ class Sweep:
         except httpx.HTTPError:
             pass
         async with AsyncSessionLocal() as db:
-            for table in ("scheduled_task_runs", "scheduled_tasks", "discovery_runs", "discovery_schedules", "discovery_interests", "discovery_localities", "user_sessions", "user_profiles", "conversations", "user_accounts"):
+            for table in ("scheduled_task_changes", "scheduled_task_runs", "scheduled_tasks", "discovery_runs", "discovery_schedules", "discovery_interests", "discovery_localities", "visual_artifacts", "user_sessions", "user_profiles", "conversations", "user_accounts"):
                 try:
                     await db.execute(text(f"delete from {table} where user_id = :u"), {"u": self.user})
                 except Exception:

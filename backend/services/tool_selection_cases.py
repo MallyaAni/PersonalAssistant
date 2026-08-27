@@ -215,6 +215,13 @@ _SCOUT_SETUP_HISTORY = (
         "Scout isn't on a schedule yet - it only sweeps when asked, and it needs an interest to follow before it can find anything. Want me to set a time?",
     ),
 )
+# A change just made, for "undo that".
+_CANCELLED_HISTORY = (
+    ("cancel the stretch reminder", "Done - the daily stretch reminder is cancelled."),
+)
+_MOVED_SCOUT_HISTORY = (
+    ("run scout daily at 3pm", "Done - Scout's sweep is now scheduled for daily at 3:00 PM."),
+)
 # A reminder just confirmed: "this" is that reminder.
 _REMINDER_HISTORY = (
     (
@@ -601,6 +608,10 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
         "agent_config",
         history=_SCOUT_CHECK_HISTORY,
     ),
+    # --- undo: put back the last change, whichever thing it touched -------
+    SelectionCase("undo that", MANAGE_TASKS, "task_undo", history=_CANCELLED_HISTORY),
+    SelectionCase("never mind, put the stretch reminder back", MANAGE_TASKS, "task_undo", history=_CANCELLED_HISTORY),
+    SelectionCase("undo that", MANAGE_TASKS, "task_undo", history=_MOVED_SCOUT_HISTORY),
 )
 
 # Set from the measured baseline once, deliberately low enough to catch a

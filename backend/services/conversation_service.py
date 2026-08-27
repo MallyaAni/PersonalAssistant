@@ -390,6 +390,31 @@ _results_were_events: ContextVar[bool] = ContextVar("results_were_events", defau
 # The assistant's previous reply in this conversation, for anything that has
 # to resolve "this" - the task picker first. Set per request.
 _previous_assistant_said: ContextVar[str] = ContextVar("previous_assistant_said", default="")
+# What this turn decided and did - route, picker, proposals, outcomes, search
+# state - saved with the turn as extra_data["trace"] and read back by
+# backend/cli/explain_turn.py. Reconstructing 2026-08-26's chain of three
+# wrong turns took decrypting rows by hand; this is the record that should
+# have existed. None outside a request, so nothing leaks between turns.
+_turn_trace: ContextVar[dict[str, Any] | None] = ContextVar("turn_trace", default=None)
+
+
+# Note one fact about the current turn, when a turn is in progress.
+def _trace(key: str, value: Any) -> None:
+    trace = _turn_trace.get()
+    if trace is not None:
+        trace[key] = value
+
+
+# The turn's metadata with its trace, when the trace says anything: a plain
+# answer with no route, no picker, nothing saved and nothing scheduled
+# stores no trace at all rather than a record of empties.
+def _with_trace(metadata: dict[str, Any]) -> dict[str, Any]:
+    trace = {
+        key: value
+        for key, value in (_turn_trace.get() or {}).items()
+        if value not in (None, [], {}, "")
+    }
+    return {**metadata, "trace": trace} if trace else metadata
 _results_were_travel: ContextVar[bool] = ContextVar("results_were_travel", default=False)
 
 
@@ -2169,12 +2194,14 @@ class ConversationService:
                     context["search_state"] = (
                         _search_state_for(limit) if limit is not None else {"failed": True}
                     )
+                    _trace("search", "limit" if limit is not None else "failed")
                 elif search_results:
                     # The mirror image: results that arrived this turn are
                     # live, and the reply must not call them memory or say it
                     # has not checked (it did, on 2026-08-25, with fresh
                     # Brave results in hand).
                     context["search_state"] = {"ran": True}
+                    _trace("search", f"ran:{len(search_results)}")
                     # Events are presented the agreed way whatever route
                     # produced them - the What's on format for everyone.
                     if _results_were_events.get():
@@ -2459,6 +2486,7 @@ class ConversationService:
         # on a stretch reminder. Reset per request.
         current_search_limit.set(None)
         _previous_assistant_said.set(str((history[-1].get("response") or "")) if history else "")
+        _turn_trace.set({})
         account_charged_this_turn.set(False)
         _results_were_events.set(False)
         _results_were_travel.set(False)
@@ -2644,6 +2672,10 @@ class ConversationService:
         task_outcomes = [s.outcome for s in steps if s.kind == "task"]
         skill_outcomes = [s.outcome for s in steps if s.kind == "skill"]
         scout_outcomes = [s.outcome for s in steps if s.kind == "scout"]
+        _trace(
+            "outcomes",
+            [f"{s.kind}:{(s.outcome or {}).get('kind', '')}" for s in steps if s.outcome],
+        )
         if task_outcomes:
             context["task_outcomes"] = task_outcomes
         if skill_outcomes:
@@ -2699,7 +2731,12 @@ class ConversationService:
                 )
             except ValueError as exc:
                 return {"kind": "invalid", "reason": str(exc), "requested": requested}
+            before = await self.discovery_runs.get_schedule(user_id)
             schedule = await self.discovery_runs.upsert_schedule(user_id, cadence)
+            if self.scheduled_tasks is not None:
+                await self.scheduled_tasks.record_change(
+                    user_id, "scout_schedule", "schedule", before, schedule
+                )
             return {"kind": "scheduled", "schedule": schedule}
         except Exception as exc:
             logger.warning(
@@ -2733,6 +2770,8 @@ class ConversationService:
         status = self._action_event(action)
         if status is not None:
             events.append(status)
+        described = describe_action(action)
+        _trace("route", {"label": described[0], "detail": described[1][:160]} if described else None)
         asked = str(skill_context["skill"]["instruction"]) if skill_context else query
         return events, action, skill_context, asked
 
@@ -3005,22 +3044,97 @@ class ConversationService:
             if self.main_action_selector is not None
             else self.llm
         )
+        if action.operation == "undo":
+            return await self._undo_last_change(user_id)
         chosen = await pick_task(
             picker_llm, action.which, tasks, hint=_previous_assistant_said.get()
         )
+        _trace("picker", {"which": action.which, "hint": _previous_assistant_said.get()[:160], "chosen": chosen})
         if chosen is None:
             return {"kind": "not_found", "tasks": tasks, "requested": action.which}
         before = next(item for item in tasks if item["id"] == chosen)
         if action.operation == "cancel":
             await self.scheduled_tasks.delete_owned(user_id, chosen)
+            await self.scheduled_tasks.record_change(
+                user_id, "task", "cancel", before, None, task_id=chosen
+            )
             return {"kind": "cancelled", "task": before}
         if action.operation == "reschedule":
-            return await self._reschedule_task(user_id, chosen, action, before)
+            outcome = await self._reschedule_task(user_id, chosen, action, before)
+            if outcome.get("kind") == "rescheduled":
+                await self.scheduled_tasks.record_change(
+                    user_id, "task", "reschedule", before, outcome["task"], task_id=chosen
+                )
+            return outcome
         await self.scheduled_tasks.set_enabled(
             user_id, chosen, action.operation == "resume"
         )
         task = await self.scheduled_tasks.get_owned(user_id, chosen) or before
+        await self.scheduled_tasks.record_change(
+            user_id, "task", action.operation, before, task, task_id=chosen
+        )
         return {"kind": f"{action.operation}d", "task": task}
+
+    # Put back what the most recent change replaced: a cancelled reminder is
+    # re-created from its snapshot, a moved one moves back, a paused one
+    # resumes, Scout's schedule returns to what it was (or to none). The
+    # undo is itself recorded, so the record says what happened, but it is
+    # never undoable - "undo" twice walks back two changes.
+    async def _undo_last_change(self, user_id: str) -> dict[str, Any]:
+        change = await self.scheduled_tasks.latest_undoable(user_id)
+        if change is None:
+            return {"kind": "nothing_to_undo"}
+        before, after = change.get("before"), change.get("after")
+        restored: dict[str, Any] | None = None
+        if change["kind"] == "scout_schedule":
+            if self.discovery_runs is None:
+                return {"kind": "failed"}
+            if before is None:
+                await self.discovery_runs.delete_schedule(user_id)
+            else:
+                restored = await self.discovery_runs.upsert_schedule(
+                    user_id,
+                    Cadence(
+                        cadence=str(before["cadence"]),
+                        hour=int(before["hour"]),
+                        minute=int(before.get("minute") or 0),
+                        weekday=int(before.get("weekday") or 0),
+                        timezone=str(before["timezone"]),
+                    ),
+                    enabled=bool(before.get("enabled", True)),
+                )
+        elif change["operation"] == "cancel" and before is not None:
+            restored = await self.scheduled_tasks.restore(user_id, before)
+        elif change["operation"] == "reschedule" and before is not None:
+            restored = await self.scheduled_tasks.reschedule_owned(
+                user_id,
+                str(before["id"]),
+                Cadence(
+                    cadence=str(before["cadence"]),
+                    hour=int(before["hour"]),
+                    minute=int(before.get("minute") or 0),
+                    weekday=int(before.get("weekday") or 0),
+                    timezone=str(before["timezone"]),
+                    on_date=(
+                        date.fromisoformat(str(before["on_date"]))
+                        if before.get("on_date")
+                        else None
+                    ),
+                ),
+                instruction=str(before.get("instruction") or "") or None,
+            )
+        elif change["operation"] in ("pause", "resume") and before is not None:
+            await self.scheduled_tasks.set_enabled(
+                user_id, str(before["id"]), bool(before.get("enabled", True))
+            )
+            restored = await self.scheduled_tasks.get_owned(user_id, str(before["id"]))
+        else:
+            return {"kind": "nothing_to_undo"}
+        await self.scheduled_tasks.mark_undone(user_id, change["id"])
+        await self.scheduled_tasks.record_change(
+            user_id, change["kind"], "undo", after, restored, task_id=change.get("task_id")
+        )
+        return {"kind": "undone", "change": change, "task": restored}
 
     # Move one task to a new time, keeping its timezone. The task's own
     # timezone is used rather than the person's current one, so rescheduling
@@ -3281,6 +3395,7 @@ class ConversationService:
                         "trace_id": trace_id,
                     }
                 )
+        _trace("proposals_saved", [str(item.get("kind")) for item in saved])
         return tuple(saved)
 
     # Retrieve context, run the primary response model, and persist one turn.
@@ -3714,7 +3829,7 @@ class ConversationService:
                 "user_id": user_id,
                 "query": query,
                 "response": response_text,
-                "metadata": metadata,
+                "metadata": _with_trace(metadata),
                 **await self._recall_vector(query, response_text),
             },
         )

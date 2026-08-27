@@ -108,6 +108,12 @@ stretch reminders. only scout for 3pm everyday" - the stretch reminder was
 cancelled on request and Scout stays daily at 3 PM (it had run daily at
 5 PM before the incident).
 
+**For the operator, one click:** GitHub -> repository Settings -> Branches
+-> add a rule for `main` -> tick "Do not allow force pushes" (and "Require
+linear history" if you like). The local pre-push hook now refuses rewrites
+from this checkout, but only the server setting protects the branch from
+every clone.
+
 ## What is still open
 
 **A third backup copy on the Mac — LIVE 2026-08-25.** Remote Login is on,

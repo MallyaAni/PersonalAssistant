@@ -419,7 +419,10 @@ async def test_conversation_service_streams_ready_diagram_artifact() -> None:
     ]
     assert events[-2]["data"]["source_format"] == "mermaid"
     assert artifacts.status == "ready"
-    assert conversations.saved_turns[0][1]["metadata"] == {
+    # The turn's trace rides with its metadata: the route it took is on record.
+    saved_metadata = dict(conversations.saved_turns[0][1]["metadata"])
+    assert saved_metadata.pop("trace")["route"]["label"] == "Diagrams"
+    assert saved_metadata == {
         "artifact_ids": [artifacts.artifact_id],
         "artifact_status": "ready",
     }

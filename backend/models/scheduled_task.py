@@ -114,3 +114,39 @@ class ScheduledTaskRun(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+
+
+class ScheduledTaskChange(Base):
+    """One change to a person's reminders or Scout's schedule, with what it
+    replaced, so "undo that" can put it back.
+
+    Cancel used to be a hard delete and a reschedule kept nothing of the old
+    timing; a misread referent - "adjust this to daily at 3pm" moving the
+    wrong reminder on 2026-08-26 - was unrecoverable by the person. The
+    snapshots carry the task's instruction, so they are sealed like it is.
+    """
+
+    __tablename__ = "scheduled_task_changes"
+    __table_args__ = (
+        Index("ix_scheduled_task_changes_user_created", "user_id", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    user_id: Mapped[str] = mapped_column(String(50), nullable=False)
+    # "task" or "scout_schedule": which row the snapshots describe.
+    kind: Mapped[str] = mapped_column(String(20), nullable=False)
+    # cancel, reschedule, pause, resume, schedule (Scout), undo.
+    operation: Mapped[str] = mapped_column(String(20), nullable=False)
+    task_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    # JSON snapshots, sealed: None before means the row did not exist, None
+    # after means it was removed.
+    before: Mapped[str | None] = mapped_column(EncryptedText, nullable=True)
+    after: Mapped[str | None] = mapped_column(EncryptedText, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    undone_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )

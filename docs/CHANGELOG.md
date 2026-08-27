@@ -2,6 +2,44 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-26 (late) — What "no more bugs on done items" needs: undo, one writer, a trace, a green suite, one deploy path, and no rewriting main
+
+- **Undo, and nothing destructive without a record.** `scheduled_task_changes`
+  (migration `20260826_0010`) keeps what every cancel, reschedule, pause,
+  resume, and Scout schedule change replaced, sealed like the instruction;
+  `manage_tasks(undo)` puts the latest change back - a cancelled reminder
+  returns under its old id, a moved one moves back, Scout's schedule
+  returns to what it was. Routed by the same words people use ("undo that",
+  "put it back"), pinned in the matrix; the reply reports "undone" or
+  "nothing to undo" from the record.
+- **One writer for Scout's schedule.** The memory proposal agent's
+  `schedule` field is gone; `scout_schedule` is the only path from
+  conversation to `discovery_schedules`. A stated time now fills nothing in
+  memory capture, pinned by `functional/test_scout_schedule_referent_behaviour.py`.
+- **A trace on every turn.** `extra_data["trace"]` records the route, the
+  task picker's input and choice, which memory proposals were saved, task
+  and Scout outcomes, and whether a search ran; `backend.cli.explain_turn`
+  prints a person's last turns decrypted with it. The 21:28 chain would
+  have taken minutes to read instead of an hour of decrypting rows.
+- **The unit suite is green, and it gates.** The 24 "stale" failures were
+  the test container having no Redis (the login rate limiter answers 503,
+  the search budget grants everything) and reading `bridges/`, `skills/`
+  and `.env.example` from an image built 2026-08-24; `scripts/gate.sh
+  --unit` mounts every directory a test reads, points at the compose Redis,
+  and ignores by container path (host paths were silently ignored, which
+  once collected the whole real-model suite). 1838 passed, 0 failed.
+- **One deploy path.** `scripts/deploy.sh` runs the unit suite and the
+  routing gate before touching anything, and the journey sweep and search
+  harness on the deployed system after, paging the operator on a red one.
+- **No rewriting `main`.** A second agent force-pushed over three published
+  commits this evening; `scripts/git-hooks/pre-push` (via
+  `core.hooksPath`) refuses any non-fast-forward push from this checkout.
+  GitHub's own protection still needs the operator's click.
+- **The sweep walks referents.** Eight new multi-turn journeys - "move it",
+  "cancel it / undo that", "make it weekly", "undo a Scout change", "try
+  again", "show me that image", "make it again", "what did I tell you" -
+  each with the state checked in the database.
+
 ## 2026-08-26 — A reminder's time is not Scout's schedule, and "this" means what was just said
 
 - **A reminder was saved as the sweep's cadence.** "send another don tito

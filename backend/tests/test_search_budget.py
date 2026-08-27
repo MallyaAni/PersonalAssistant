@@ -20,7 +20,11 @@ from backend.discovery.search_budget import (
     SearchBudget,
 )
 
-_REDIS = "redis://localhost:6379/0"
+# The compose Redis when the gate runs the suite (scripts/gate.sh --unit sets
+# REDIS_URL); localhost for a developer with one running. Without a reachable
+# Redis the budget deliberately grants everything - a rate limiter, not an
+# authorization boundary - and every assertion here reads as a stale test.
+_REDIS = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 _NOW = datetime(2026, 8, 2, 12, 0, tzinfo=UTC)
 
 

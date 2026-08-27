@@ -15,7 +15,7 @@ class _LLM:
 
     def chat(self, messages, max_tokens=1024, response_schema=None, temperature=None):
         self.messages = messages
-        return {"content": json.dumps({"schedule": {"cadence": "daily", "hour": 15, "minute": 0, "weekday": 0}})}
+        return {"content": json.dumps({"semantic_fact": "My dentist is Dr. Lee."})}
 
 
 @pytest.mark.asyncio
@@ -28,7 +28,7 @@ async def test_the_previous_reply_travels_labelled_as_a_referent_aid() -> None:
     user = llm.messages[1]["content"]
     assert "never a source of facts: You mentioned the daily 7 AM Scout check." in user
     assert user.endswith("The user's current message: adjust this to daily at 3pm")
-    assert result.proposals[0]["kind"] == "discovery_schedule"
+    assert result.proposals[0]["kind"] == "semantic_fact"
 
 
 @pytest.mark.asyncio

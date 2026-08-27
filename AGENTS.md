@@ -92,6 +92,26 @@ If functional validation cannot be performed, do not label the behavior verified
 
 ## Operational traps in this repository
 
+- **Two agents share this checkout; never rewrite `main`.** On 2026-08-26 a
+  force-push from a branch that was behind removed three published commits
+  from the remote until they were merged back. `git config core.hooksPath
+  scripts/git-hooks` is set here so `scripts/git-hooks/pre-push` refuses a
+  non-fast-forward push; fetch and merge instead. Re-run that config line
+  after a fresh clone.
+- **The test image is stale by design; mount, don't trust it.** The
+  `functional-tests` image is built rarely. `scripts/gate.sh` mounts
+  `backend/`, `bridges/`, `prompts/`, `skills/`, `docs/`, `deploy/` and
+  `.env.example` from the checkout and points `REDIS_URL` at the compose
+  Redis; without those, 24 tests read as stale (503 from the rate limiter,
+  a budget that grants everything, an import that does not exist yet).
+  `--ignore` paths must be container paths (`/app/...`): a host path is
+  silently not matched, which once ran the entire real-model suite under
+  `--unit`.
+- **Deploy only through `scripts/deploy.sh`.** It runs the unit suite and
+  the routing gate first and the journey sweep and search harness after.
+  `docker compose up -d --build` by hand skips all of it; a build shipped
+  that way carried a seven-test regression for hours.
+
 Each of these has cost real time or real data here. They are recorded because
 they are not discoverable from the code alone.
 

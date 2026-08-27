@@ -7,7 +7,7 @@ from .base import BuiltinTool
 
 NAME = "manage_tasks"
 
-OPERATIONS = ("list", "cancel", "pause", "resume", "reschedule")
+OPERATIONS = ("list", "cancel", "pause", "resume", "reschedule", "undo")
 
 # KNOWN, MEASURED: the "not for Scout" sentence in the description below does
 # not work. Adding `reschedule` took the four `agent_config` cases in
@@ -107,11 +107,14 @@ TOOL = BuiltinTool(
         "restart one they name. reschedule: move one to a new time, carrying "
         "that time - 'change the tesla reminder to 5 minutes from now'. "
         "Rescheduling is a single call; never answer as though a reminder "
-        "moved without making it. "
-        "One exception: the events sweep's OWN cadence - how often Scout "
-        "looks for things near them - is agent configuration and needs no "
-        "tool. Everything else the person has scheduled, including any "
-        "recurring search or report, is a task and belongs here."
+        "moved without making it. undo: put back the most recent change to "
+        "their reminders or to Scout's schedule - 'undo that', 'put it back', "
+        "'never mind, restore the stretch reminder' - the application knows "
+        "which change was last. "
+        "The events sweep's OWN cadence - how often Scout looks for things "
+        "near them - belongs to scout_schedule, not here. Everything else the "
+        "person has scheduled, including any recurring search or report, is a "
+        "task and belongs here."
     ),
     schema=_SCHEMA,
     waiting=(

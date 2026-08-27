@@ -34,7 +34,11 @@ from backend.models.presentation import (
     PresentationJob,
     PresentationRevision,
 )
-from backend.models.scheduled_task import ScheduledTask, ScheduledTaskRun
+from backend.models.scheduled_task import (
+    ScheduledTask,
+    ScheduledTaskChange,
+    ScheduledTaskRun,
+)
 from backend.models.tool_memory import ToolDescriptor, ToolPreference, ToolUsageOutcome
 
 _MODELS = (

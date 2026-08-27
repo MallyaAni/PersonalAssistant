@@ -3,7 +3,14 @@
 #
 #   bash scripts/deploy.sh              # pull, then rebuild what changed
 #   bash scripts/deploy.sh --no-pull    # deploy the working tree as it stands
-#   bash scripts/deploy.sh --skip-gate  # ship without the routing gate
+#   bash scripts/deploy.sh --skip-gate  # ship without the unit suite and routing gate
+#   bash scripts/deploy.sh --skip-post  # ship without the post-deploy sweep and harness
+#
+# This is the only deploy path. `docker compose up --build` by hand skips
+# every check below, and on 2026-08-26 a build shipped that way had a
+# seven-test regression sitting unnoticed among what looked like stale
+# failures. Green or nothing ships; after the restart the live checks run,
+# and a red one pages the operator.
 #
 # Written to be run over any remote shell:
 #
@@ -25,10 +32,12 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 compose=(docker compose -f "$root/docker-compose.yml")
 pull=true
 gate=true
+post=true
 for arg in "$@"; do
     case "$arg" in
         --no-pull)   pull=false ;;
         --skip-gate) gate=false ;;
+        --skip-post) post=false ;;
     esac
 done
 
@@ -87,13 +96,20 @@ step "Gating"
 # users; a hotfix that cannot ship is a worse outage than the regression this
 # guards against.
 if $gate; then
+    # The whole unit suite first: it is a minute, and it is where a
+    # regression in a "done" item shows up before any model is asked.
+    if ! bash "$root/scripts/gate.sh" --unit; then
+        echo "Unit suite failed; the running system was left on the previous code." >&2
+        echo "Fix or delete the failing test - a red suite hides the next regression." >&2
+        exit 1
+    fi
     if ! bash "$root/scripts/gate.sh"; then
         echo "Routing gate failed; the running system was left on the previous code." >&2
         echo "Re-run with --skip-gate only if you have read the failure and accept it." >&2
         exit 1
     fi
 else
-    echo "WARNING: routing gate skipped by request"
+    echo "WARNING: unit suite and routing gate skipped by request"
 fi
 
 step "Backing up before touching the schema"
@@ -148,6 +164,31 @@ else
     "${compose[@]}" logs --tail 20 backend >&2 || true
 fi
 
+$ok || { echo "verification failed" >&2; exit 1; }
+
+# The live checks, on the code that is now serving: every journey a person
+# takes, and the search chain. They run after the restart because they need
+# the deployed system; a failure here is reported loudly and paged, not
+# rolled back - the previous images are still present for a manual
+# `docker compose up -d` of them if the failure warrants it.
+step "Post-deploy checks"
+post_ok=true
+if $post; then
+    for check in backend.cli.sweep_journeys backend.cli.exercise_search_scenarios; do
+        if "${compose[@]}" exec -T backend python -m "$check"; then
+            echo "$check: passed"
+        else
+            echo "$check: FAILED" >&2
+            post_ok=false
+        fi
+    done
+    if ! $post_ok; then
+        bash "$root/scripts/notify-operator.sh" "AniOS deploy $after: a post-deploy check failed - see the deploy log" || true
+    fi
+else
+    echo "WARNING: post-deploy checks skipped by request"
+fi
+
 step "Result"
 echo "deployed $after"
-$ok || { echo "verification failed" >&2; exit 1; }
+$post_ok || { echo "deployed, but a post-deploy check failed" >&2; exit 1; }

@@ -68,13 +68,25 @@ async def test_the_service_sets_the_sweep_in_the_persons_zone():
         def __init__(self):
             self.calls = []
 
+        async def get_schedule(self, user_id):
+            return None
+
         async def upsert_schedule(self, user_id, cadence):
             self.calls.append((user_id, cadence))
             return {"cadence": cadence.cadence, "hour": cadence.hour, "minute": cadence.minute,
                     "weekday": cadence.weekday, "timezone": cadence.timezone, "next_run_at": None}
 
+    class _Changes:
+        def __init__(self):
+            self.recorded = []
+
+        async def record_change(self, user_id, kind, operation, before, after, task_id=None):
+            self.recorded.append((kind, operation, before, after))
+            return {}
+
     service = ConversationService.__new__(ConversationService)
     service.discovery_runs = _Runs()
+    service.scheduled_tasks = _Changes()
     service.discovery_profile = object()
 
     async def _zone(user_id):
@@ -86,6 +98,9 @@ async def test_the_service_sets_the_sweep_in_the_persons_zone():
     assert outcome["schedule"]["hour"] == 15
     user, cadence = service.discovery_runs.calls[0]
     assert user == "ani" and cadence.timezone == "America/New_York" and cadence.cadence == "daily"
+    # The change is on record for "undo that": nothing before, the new schedule after.
+    kind, operation, before, after = service.scheduled_tasks.recorded[0]
+    assert (kind, operation, before, after["hour"]) == ("scout_schedule", "schedule", None, 15)
 
     async def _none(user_id):
         return None

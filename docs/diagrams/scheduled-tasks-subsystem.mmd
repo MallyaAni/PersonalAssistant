@@ -19,6 +19,8 @@ flowchart LR
     Locality[(Primary locality<br/>timezone)] --> Save
     Save -->|which task they mean| Picker[Routing model<br/>pick_task]
     Save --> Tasks[(scheduled_tasks<br/>instruction encrypted · cadence · next_run_at)]
+    Save -->|every cancel · reschedule · pause<br/>before and after, sealed| Changes[(scheduled_task_changes<br/>undo puts the last one back)]
+    Sweep --> Changes
     Save --> Outcome[task_outcome context<br/>+ reply/task_outcome block]
     Outcome --> Reply[Reply model<br/>words the confirmation]
     Reply --> Person
@@ -41,5 +43,5 @@ flowchart LR
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     class Person,Bridge interface;
     class Chat,Save,Sweep,Outcome,Loop,Runner,Fire,Turn,Again,Status,Quiet application;
-    class Locality,Tasks,Runs,Tools,Packs,Sched data;
+    class Locality,Tasks,Runs,Tools,Packs,Sched,Changes data;
     class Router,Picker,Reply model;

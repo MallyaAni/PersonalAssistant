@@ -197,7 +197,7 @@ were truncated mid-JSON.
 | Scout | `timezones.py` — place to IANA zone | 32 | 0.0 | yes |
 | Deck | `provider.py` — plan, outline, slide, new slide, revision | caller | **default** | yes |
 | Diagram | `diagram.py` — Mermaid source | 2048 | 0.0 | yes |
-| Memory capture | `proposal_agent.py` — what to save; sees the assistant's previous reply only to resolve "this" | 1024 | 0.0 | yes |
+| Memory capture | `proposal_agent.py` — what to save (never a schedule: Scout's cadence has one writer, the `scout_schedule` tool); sees the assistant's previous reply only to resolve "this" | 1024 | 0.0 | yes |
 | *(not an agent)* | `agents/vision/memory.py` — select relevant offered visual memories | 128 | 0.0 | yes |
 | *(not an agent)* | `agents/vision/upload.py` — one structured primary image inspection | 512 | 0.0 | yes |
 | *(not an agent)* | optional specialist retry after `model_uncertain` | 512 | 0.0 | yes |

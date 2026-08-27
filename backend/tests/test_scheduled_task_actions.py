@@ -100,6 +100,11 @@ def test_manage_tasks_call_becomes_a_typed_action():
     assert parse_builtin("manage_tasks", {"operation": "delete"}, "") is None
 
 
+def test_undo_is_a_manage_tasks_call_with_nothing_to_pick():
+    action = parse_builtin("manage_tasks", {"operation": "undo"}, "")
+    assert action == ManageTasksAction(operation="undo", which="")
+
+
 def test_schedule_phrases_read_as_a_person_would_say_them():
     assert schedule_phrase({"cadence": "daily", "hour": 7, "minute": 0}) == (
         "every day at 7:00 AM"

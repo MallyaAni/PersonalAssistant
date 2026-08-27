@@ -38,10 +38,16 @@ compose=(docker compose -f "$root/docker-compose.yml" --profile test)
 # The matrix alone by default. 51 cases against a serialized GPU is a cost a
 # deploy can carry; the whole directory is not, until someone has timed it.
 target="backend/tests/functional/test_tool_selection_matrix_behaviour.py"
+unit=false
 case "${1:-}" in
-    --all) target="backend/tests/functional" ;;
-    "")    ;;
-    *)     target="$1" ;;
+    --all)  target="backend/tests/functional" ;;
+    # The whole unit suite, green or fail. It needs the compose Redis (the
+    # login rate limiter and the search budget answer 503 / grant everything
+    # without one - 19 tests read as "stale" for two days for exactly that)
+    # and every directory a test reads, mounted from the checkout.
+    --unit) target="backend/tests"; unit=true ;;
+    "")     ;;
+    *)      target="$1" ;;
 esac
 
 # Deselected by path, visibly rather than by a marker nobody reads:
@@ -51,10 +57,17 @@ esac
 # test_image_text_language_behaviour.py generates a picture on the desktop
 # that hosts ComfyUI, which is off at times; a required-functional skip would
 # fail every deploy for a machine being asleep. It is run by hand (see the file).
+# Container paths: pytest runs inside the image, where the checkout is
+# mounted at /app. Host paths here are silently not matched - which is how
+# `--unit` once collected the whole real-model suite and ran for an hour.
 ignores=(
-    --ignore="$root/backend/tests/functional/test_gateway_follows_the_backend.py"
-    --ignore="$root/backend/tests/functional/test_image_text_language_behaviour.py"
+    --ignore=/app/backend/tests/functional/test_gateway_follows_the_backend.py
+    --ignore=/app/backend/tests/functional/test_image_text_language_behaviour.py
 )
+if $unit; then
+    ignores+=(--ignore=/app/backend/tests/functional)
+    "${compose[@]}" up -d --wait redis db >/dev/null
+fi
 
 echo "==> Gating on $target"
 echo "    (a skipped test counts as a failure here)"
@@ -75,7 +88,9 @@ if "${compose[@]}" run --rm --no-deps \
     -v "$root/docs:/app/docs:ro" \
     -v "$root/deploy:/app/deploy:ro" \
     -v "$root/skills:/app/skills:ro" \
+    -v "$root/bridges:/app/bridges:ro" \
     -v "$root/.env.example:/app/.env.example:ro" \
+    -e REDIS_URL=redis://redis:6379/0 \
     functional-tests \
     python -m pytest "$target" "${ignores[@]}" \
         -q -p no:cacheprovider --no-header; then
