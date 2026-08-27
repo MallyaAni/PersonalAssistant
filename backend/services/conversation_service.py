@@ -3134,6 +3134,11 @@ class ConversationService:
         await self.scheduled_tasks.record_change(
             user_id, change["kind"], "undo", after, restored, task_id=change.get("task_id")
         )
+        # A restored Scout schedule is not a task: it has no instruction, and
+        # rendered as one it raised inside the reply graph (found by the
+        # sweep's "undo a scout change" journey on 2026-08-26).
+        if change["kind"] == "scout_schedule":
+            return {"kind": "undone", "change": change, "schedule": restored}
         return {"kind": "undone", "change": change, "task": restored}
 
     # Move one task to a new time, keeping its timezone. The task's own
@@ -3458,15 +3463,24 @@ class ConversationService:
         # "will it rain" all need it, and the reply answered "I don't know
         # where you are" to an account whose locality was on record
         # (2026-08-26, found by sweep_journeys). The router had it all along.
+        # And their clock: the reply's "today" was UTC's, which at 9 PM
+        # Eastern is already tomorrow - so a reminder set "for tomorrow" was
+        # confirmed as "today" (2026-08-26, found by sweep_journeys).
+        local_now: datetime | None = None
         try:
             found_place = await self._primary_place(user_id)
             place = found_place[0] if found_place else ""
+            if found_place and found_place[1]:
+                from zoneinfo import ZoneInfo
+
+                local_now = datetime.now(ZoneInfo(str(found_place[1])))
         except Exception:
             place = ""
         context: dict[str, Any] = {
             "user_id": user_id,
             "query": query,
             "place": place,
+            "local_now": local_now,
             "profile": profile,
             "episodic": episodic,
             "semantic": semantic,

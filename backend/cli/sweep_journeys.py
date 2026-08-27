@@ -129,13 +129,14 @@ JOURNEYS = [
     Journey("move it (task referent)", "move it to 10am", ("Manage scheduled tasks",),
             before=("remind me tomorrow at 9am to call the dentist",),
             holds=("The reply says the dentist reminder is now at 10:00 AM.",),
-            sql_holds=("select count(*) = 1 from scheduled_tasks where user_id = :u and instruction like '%dentist%' and hour = 10",
-                       "select count(*) = 0 from scheduled_tasks where user_id = :u and instruction like '%dentist%' and hour = 9")),
+            # The instruction is sealed at rest, so it cannot be matched here; the
+            # clock can. The bank reminder from the earlier journey stays at 9.
+            sql_holds=("select count(*) = 1 from scheduled_tasks where user_id = :u and hour = 10 and enabled",)),
     Journey("cancel it then undo", "undo that", ("Manage scheduled tasks",),
             before=("remind me tomorrow at 8am to water the plants", "cancel it"),
             holds=("The reply says the plants reminder is back or restored.",),
             does_not_hold=("The reply says nothing could be undone.",),
-            sql_holds=("select count(*) = 1 from scheduled_tasks where user_id = :u and instruction like '%plants%' and enabled",)),
+            sql_holds=("select count(*) = 1 from scheduled_tasks where user_id = :u and hour = 8 and enabled",)),
     Journey("make it weekly (scout referent)", "make it weekly instead, on Sundays", ("Scout schedule",),
             before=("run scout every day at 3pm",),
             holds=("The reply says Scout's sweep is now weekly on Sunday.",),
@@ -147,10 +148,10 @@ JOURNEYS = [
     Journey("try again (search referent)", "try again", ("Web search",),
             before=("what's on in Arlington this weekend?",),
             does_not_hold=("The reply reports search credits, an allowance, or a meter instead of results.",)),
-    Journey("show me that image (image referent)", "show me that image", ("Show image",),
+    Journey("show me that image (image referent)", "show me that image", ("Showing a picture again",),
             before=("make a picture of a red fox in the snow",),
             does_not_hold=("The reply says it cannot display, show, or find the image.",)),
-    Journey("make it again (regenerate referent)", "make it again", ("Image generation",),
+    Journey("make it again (regenerate referent)", "make it again", ("New images",),
             before=("make a picture of a blue teapot on a table",),
             does_not_hold=("The reply promises to generate a picture without doing it, or asks what to draw.",)),
     Journey("what did I tell you (memory referent)", "what did I tell you about my dentist?", ("Past conversations", None),
@@ -161,8 +162,11 @@ JOURNEYS = [
 
 
 class Sweep:
-    def __init__(self, base_url: str) -> None:
+    def __init__(self, base_url: str, only: str = "") -> None:
         self.base = base_url.rstrip("/")
+        # A substring of journey names, to rerun what a fix touched without
+        # walking all of them.
+        self.journeys = [j for j in JOURNEYS if only.lower() in j.name.lower()] if only else list(JOURNEYS)
         self.user = f"sweep_{uuid.uuid4().hex[:8]}"
         self.headers: dict[str, str] = {}
         self.failures: list[str] = []
@@ -238,7 +242,7 @@ class Sweep:
             await self.create()
             print(f"user={self.user} (Arlington, Virginia)", flush=True)
             try:
-                for journey in JOURNEYS:
+                for journey in self.journeys:
                     conversation_id = str(uuid.uuid4())
                     for earlier in journey.before:
                         await self.chat(client, earlier, None, conversation_id)
@@ -277,7 +281,7 @@ class Sweep:
                 # makes "why did it do that" a minute's work. Checked here, on
                 # the HTTP path, because the in-process tests cannot see a
                 # context lost between streamed frames (2026-08-26).
-                routed = sum(1 for _ in JOURNEYS if _.expect_action != (None,))
+                routed = sum(1 for _ in self.journeys if _.expect_action != (None,))
                 async with AsyncSessionLocal() as db:
                     traced = await db.scalar(
                         text("select count(*) from conversations where user_id = :u and extra_data::text like :t"),
@@ -297,8 +301,9 @@ class Sweep:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--base-url", default="http://localhost:8000/api/v1")
+    parser.add_argument("--only", default="", help="run only journeys whose name contains this")
     arguments = parser.parse_args(argv)
-    return asyncio.run(Sweep(arguments.base_url).run())
+    return asyncio.run(Sweep(arguments.base_url, arguments.only).run())
 
 
 if __name__ == "__main__":

@@ -57,6 +57,18 @@ This file is append-only history for meaningful, verified changes. It must not c
   to 0.60 - one miss below the measurement, as the others are - with the
   tail it covers (regenerate follow-ups 3/6, technical pictures 6/9) listed
   under open risks in NEXT_SESSION.
+- **What the first full deploy's sweep found, fixed the same night.** On
+  the deployed build the new referent journeys caught: undoing a Scout
+  schedule change crashed the reply graph (the restored schedule was
+  rendered as a task; it is now its own line), "Let me check what's
+  around" narrated a search that had already run with eight results in
+  hand (the search-state block now forbids narration, pinned by
+  `functional/test_no_narrated_search_behaviour.py`), and the reply dated
+  "tomorrow" as "today" because the reply's date was UTC while the person
+  was on the previous evening (the reply now gets the person's local date).
+  Two findings were the sweep's own fault and are fixed as such: assertions
+  on the sealed `instruction` column (`LIKE` never matches ciphertext) and
+  guessed route labels. The sweep gained `--only` to rerun a subset.
 - **Measured.** Unit gate 1841 passed, 0 failed. Real-model suites for
   everything touched: 44 tests passing, including `scheduled_task_behaviour`
   15/15 (the router's standing "cancel the weather texts" miss is gone with

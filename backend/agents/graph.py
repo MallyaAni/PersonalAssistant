@@ -193,7 +193,9 @@ def _render_search_state(search: dict[str, Any]) -> str:
             "above came from it. Treat them as current information you have "
             "checked: do not call them memory, do not say you have not checked "
             "live, and do not add a caveat that they may be out of date beyond "
-            "what the results themselves say."
+            "what the results themselves say. Do not narrate the check either - "
+            "no 'let me check', 'let me look that up', or 'give me a moment': "
+            "it already happened, so lead with what was found."
         )
     if not search.get("failed"):
         return ""
@@ -437,11 +439,24 @@ def _render_task_outcome(outcome: dict[str, Any]) -> str:
 
     lines = [f"Scheduled-task outcome: {outcome.get('kind', '')}\n"]
     task = outcome.get("task")
-    if isinstance(task, dict):
+    if isinstance(task, dict) and task.get("instruction") is not None:
         lines.append(f"- Task: {describe_task(task)}\n")
         first = next_run_phrase(task)
         if first:
             lines.append(f"- Next run: {first}\n")
+    schedule = outcome.get("schedule")
+    if isinstance(schedule, dict):
+        from backend.tasks.describe import schedule_phrase
+
+        lines.append(
+            f"- Scout's sweep: {schedule_phrase(schedule)} "
+            f"({schedule.get('timezone') or 'UTC'})\n"
+        )
+        upcoming = next_run_phrase(schedule)
+        if upcoming:
+            lines.append(f"- Next sweep: {upcoming}\n")
+    elif outcome.get("kind") == "undone" and (outcome.get("change") or {}).get("kind") == "scout_schedule":
+        lines.append("- Scout's sweep: no schedule (it had none before the change).\n")
     for item in outcome.get("tasks") or []:
         if isinstance(item, dict):
             lines.append(f"- {describe_task(item)}\n")
@@ -512,8 +527,12 @@ def _build_system_prompt(
     now: datetime | None = None,
 ) -> str:
     # The model cannot judge whether its training data is current without
-    # knowing today's date, so the application always supplies it.
-    today = (now or datetime.now(UTC)).strftime("%Y-%m-%d")
+    # knowing today's date, so the application always supplies it - the
+    # person's date, when their zone is known: UTC's is a day ahead of the
+    # eastern US every evening, and the reply called "tomorrow" "today".
+    local_now = context_data.get("local_now")
+    clock = now or (local_now if isinstance(local_now, datetime) else None) or datetime.now(UTC)
+    today = clock.strftime("%Y-%m-%d")
     # The wording lives in `prompts/reply/system.md` so it can be tuned
     # without opening this file; the header there records what each block is
     # for and which failure it prevents. The rendered blocks below are still
