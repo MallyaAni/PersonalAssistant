@@ -44,8 +44,15 @@ done
 step() { printf '\n\033[1m==> %s\033[0m\n' "$1"; }
 
 step "Current state"
-before="$(git -C "$root" rev-parse --short HEAD)"
-echo "at $before on $(git -C "$root" rev-parse --abbrev-ref HEAD)"
+# What is actually running, not what the checkout happens to be at: the
+# checkout is pulled by hand between deploys (a docs commit, a hotfix), and
+# diffing against the pre-pull HEAD then found "no code changes", rebuilt
+# nothing, and ran the post-deploy checks against the old images
+# (2026-08-27, deploy #6). The last successful deploy writes its commit
+# here; the first deploy after this change falls back to the pre-pull HEAD.
+deployed_marker="$root/data/.deployed-commit"
+before="$(cat "$deployed_marker" 2>/dev/null || git -C "$root" rev-parse --short HEAD)"
+echo "running $before; checkout at $(git -C "$root" rev-parse --short HEAD) on $(git -C "$root" rev-parse --abbrev-ref HEAD)"
 if [[ -n "$(git -C "$root" status --porcelain)" ]]; then
     # Deploying a dirty tree is legitimate while developing, but it means the
     # running system does not correspond to any commit, so say so out loud.
@@ -59,8 +66,8 @@ if $pull; then
 fi
 
 after="$(git -C "$root" rev-parse --short HEAD)"
-if [[ "$before" == "$after" ]] && $pull; then
-    echo "already at $after"
+if [[ "$before" == "$after" ]]; then
+    echo "already running $after"
 fi
 
 # Rebuild only what the change actually touched. A full rebuild of every image
@@ -201,5 +208,7 @@ else
 fi
 
 step "Result"
+mkdir -p "$(dirname "$deployed_marker")"
+printf '%s\n' "$after" > "$deployed_marker"
 echo "deployed $after"
 $post_ok || { echo "deployed, but a post-deploy check failed" >&2; exit 1; }
