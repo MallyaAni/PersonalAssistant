@@ -50,6 +50,7 @@ from backend.tools import (
     BuiltinTool,
     CreateDiagramAction,
     DelegateAction,
+    DiscussImageAction,
     EditImageAction,
     GenerateImageAction,
     MainAction,
@@ -71,6 +72,7 @@ __all__ = [
     "BuiltinTool",
     "CreateDiagramAction",
     "DelegateAction",
+    "DiscussImageAction",
     "EditImageAction",
     "GenerateImageAction",
     "MainAction",
@@ -297,6 +299,22 @@ class MainActionSelector:
         if not query.strip():
             return None
 
+        history_text = render_recent_history(history)
+        # What the newest message refers to, decided once for every component
+        # that has to know: the router here, the search rounds and the picker
+        # after it. Failure is silent - the router then decides from the
+        # history alone, as it did before this step existed.
+        resolution = await resolve_followup(self.llm, query, history) if history_text else None
+        current_followup.set(resolution)
+        reading = describe(resolution, query) if resolution else ""
+        # A turn that continues a draft - "More casual", "Ask them to reply by
+        # Thursday at noon" - is offered no scheduling, task, Scout, skill or
+        # history tool: those were exactly where such turns went (6/12,
+        # 2026-08-27). A model judgement, acted on in code rather than by
+        # asking the prompt nicely - the same mechanism a firing uses.
+        drafting = resolution is not None and resolution.refers_to == "draft"
+        withheld_now = UNATTENDED_WITHHELD if drafting else frozenset()
+
         tools: list[dict[str, Any]] = []
         aliases: dict[str, Any] = {}
         offered_skills: list[dict[str, Any]] = []
@@ -327,6 +345,7 @@ class MainActionSelector:
             tools.extend(
                 self._builtin_definition(builtin.name, builtin.description, builtin.schema)
                 for builtin in self._available_builtins(unattended)
+                if builtin.name not in withheld_now
             )
             # A scheduled firing is offered a skill only when its instruction
             # names that skill ("run my morning brief"): decided in code, not
@@ -336,7 +355,7 @@ class MainActionSelector:
             offered_skills.extend(
                 skill
                 for skill in (skills or [])
-                if not unattended or _names_skill(query, skill)
+                if (not unattended or _names_skill(query, skill)) and not drafting
             )
             tools.extend(skill_tool_definitions(offered_skills))
 
@@ -367,14 +386,6 @@ class MainActionSelector:
                     {"schema_fingerprint": live.schema_fingerprint},
                     live,
                 )
-        history_text = render_recent_history(history)
-        # What the newest message refers to, decided once for every component
-        # that has to know: the router here, the search rounds and the picker
-        # after it. Failure is silent - the router then decides from the
-        # history alone, as it did before this step existed.
-        resolution = await resolve_followup(self.llm, query, history) if history_text else None
-        current_followup.set(resolution)
-        reading = describe(resolution, query) if resolution else ""
         visual_state = (
             "A picture is currently selected and visible to the user."
             if active_image_artifact_id

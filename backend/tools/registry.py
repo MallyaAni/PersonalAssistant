@@ -13,6 +13,7 @@ from typing import Any
 
 from . import (
     create_diagram,
+    discuss_image,
     edit_image,
     generate_image,
     manage_skills,
@@ -27,6 +28,7 @@ from . import (
 from .actions import (
     CreateDiagramAction,
     DelegateAction,
+    DiscussImageAction,
     EditImageAction,
     GenerateImageAction,
     MainAction,
@@ -59,6 +61,7 @@ _MODULES: tuple[ModuleType, ...] = (
     generate_image,
     edit_image,
     show_image,
+    discuss_image,
     create_diagram,
     presentation,
     search_history,
@@ -194,6 +197,7 @@ _ROW_FOR_ACTION: dict[type, BuiltinTool] = {
     GenerateImageAction: generate_image.TOOL,
     EditImageAction: edit_image.TOOL,
     ShowImageAction: show_image.TOOL,
+    DiscussImageAction: discuss_image.TOOL,
     CreateDiagramAction: create_diagram.TOOL,
     DelegateAction: presentation.TOOL,
     RecallHistoryAction: search_history.TOOL,
@@ -213,6 +217,8 @@ def _detail(action: MainAction) -> str:
         return action.instruction
     if isinstance(action, ShowImageAction):
         return action.which
+    if isinstance(action, DiscussImageAction):
+        return action.about
     if isinstance(action, RecallHistoryAction):
         return action.query
     if isinstance(action, CreateDiagramAction | DelegateAction):

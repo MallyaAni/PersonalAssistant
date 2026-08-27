@@ -30,6 +30,9 @@ SEARCH = "search_web"
 GENERATE_IMAGE = "generate_image"
 EDIT_IMAGE = "edit_image"
 SHOW_IMAGE = "show_image"
+# Talking about the picture in view - its own tool since 2026-08-27, so an
+# opinion is neither an edit nor a re-show.
+DISCUSS_IMAGE = "discuss_image"
 SEARCH_HISTORY = "search_history"
 # Lives on the internet MCP server, not the registry; scored by its tool name.
 SEARCH_CREDITS = "search_credits"
@@ -50,6 +53,7 @@ TOOL_NAMES: tuple[str, ...] = (
     GENERATE_IMAGE,
     EDIT_IMAGE,
     SHOW_IMAGE,
+    DISCUSS_IMAGE,
     SEARCH_HISTORY,
     SEARCH_CREDITS,
     CREATE_DIAGRAM,
@@ -340,21 +344,21 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
     # --- a question about the picture is not an instruction ----------------
     SelectionCase(
         "which hat do you like better for this outfit?",
-        NO_TOOL,
+        DISCUSS_IMAGE,
         "opinion_about_image",
         active_image=True,
         history=_OUTFIT_HISTORY,
     ),
     SelectionCase(
         "do you recommend a straw hat instead?",
-        NO_TOOL,
+        DISCUSS_IMAGE,
         "opinion_about_image",
         active_image=True,
         history=_OUTFIT_HISTORY,
     ),
     SelectionCase(
         "would the cowboy hat have suited me better?",
-        NO_TOOL,
+        DISCUSS_IMAGE,
         "opinion_about_image",
         active_image=True,
         history=_OUTFIT_HISTORY,
@@ -659,6 +663,9 @@ PER_TOOL_ACCURACY_FLOORS: dict[str, float] = {
     # Added 2026-08-25 with the tool itself, after "can you show me that
     # image?" over iMessage was answered with "I can't display it here".
     SHOW_IMAGE: 0.66,
+    # First measured 2026-08-27 with the tool; the three opinion cases were
+    # 0/9 as no-tool (edit, then show) before it.
+    DISCUSS_IMAGE: 0.60,
     # search_history shipped 2026-08-25 with no routing coverage at all - the
     # exact gap test_tool_coverage_completeness.py exists to catch, and it did.
     # Floored at first measurement the same day.

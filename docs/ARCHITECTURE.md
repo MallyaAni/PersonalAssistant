@@ -1882,7 +1882,7 @@ The current scaffold expresses this intended flow:
 Frontend -> POST /api/v1/chat -> FastAPI dependency assembly
          -> ConversationService -> follow-up resolver (one reading of "this")
          -> MainActionSelector
-         -> (search_web | generate_image | edit_image | show_image | create_diagram
+         -> (search_web | generate_image | edit_image | show_image | discuss_image | create_diagram
              | delegate_to_presentation_agent | search_history
              | schedule_task / manage_tasks / scout_schedule | a taught skill
              | a toolbox tool | none),

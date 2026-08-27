@@ -165,9 +165,15 @@ JOURNEYS = [
             does_not_hold=("The reply promises to generate a picture without doing it, or asks what to draw.",)),
     # An opinion about the picture is a conversation, not an edit (measured
     # 0/9 before the follow-up resolver, 2026-08-27).
-    Journey("opinion about the picture (image referent)", "which hat would look better with this outfit, straw or cowboy?", (None,),
+    Journey("opinion about the picture (image referent)", "which hat would look better with this outfit, straw or cowboy?", ("About the picture", None),
             before=("make a picture of me in a linen outfit with a straw hat",),
             does_not_hold=("The reply says it edited, changed, or is changing the picture.",)),
+    # A draft continuation goes to no tool: measured 6/12 before the resolver
+    # withheld automation for such turns (2026-08-27).
+    Journey("more casual (draft referent)", "make it more casual and ask them to reply by Thursday at noon", (None,),
+            before=("draft a short email to my retail team asking for shift coverage this Saturday",),
+            holds=("The reply contains a rewritten, more casual email or message asking for a reply by Thursday at noon.",),
+            does_not_hold=("The reply says it set a reminder, scheduled something, or searched the web.",)),
     Journey("forget that (memory undo)", "forget that", ("Manage scheduled tasks",),
             before=("my dentist is Dr Lee on Wilson Boulevard",),
             holds=("The reply says it forgot, removed, or will no longer remember what it had saved.",),

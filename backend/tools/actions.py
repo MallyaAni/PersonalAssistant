@@ -61,6 +61,21 @@ class ShowImageAction:
 
 
 @dataclass(frozen=True, slots=True)
+class DiscussImageAction:
+    """The model decided this turn talks about the picture in view - an
+    opinion, a comparison, a question about it - and changes nothing.
+
+    Its own row because, offered only "edit" and "show", the router read
+    every sentence about the picture as one of them: opinions went to edit
+    (0/9, 2026-08-26) and, once a resolver said "this is about the picture",
+    to show (0/9, 2026-08-27). Nothing runs for this action; the reply
+    answers from the picture's description already in its context.
+    """
+
+    about: str = ""
+
+
+@dataclass(frozen=True, slots=True)
 class CreateDiagramAction:
     """The model decided this turn wants a diagram drafted."""
 
@@ -163,6 +178,7 @@ MainAction = (
     | GenerateImageAction
     | EditImageAction
     | ShowImageAction
+    | DiscussImageAction
     | CreateDiagramAction
     | DelegateAction
     | ScheduleTaskAction

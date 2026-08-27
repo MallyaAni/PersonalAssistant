@@ -2,6 +2,23 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-27 — Talking about a picture is its own tool; a draft continuation is offered no automation
+
+- **`discuss_image`.** Offered only "edit" and "show", the router read every
+  sentence about the picture in view as one of them: opinions went to edit
+  (0/9 on 2026-08-26 - caught in production only by the edit path's own
+  semantic guard) and, once the follow-up resolver said "this is about the
+  picture", to show (0/9 on 2026-08-27, with no guard). A named "talk about
+  it, change nothing" row gives the router a third thing to choose; nothing
+  runs for it and the reply answers from the picture's description.
+- **A draft continuation is offered no automation.** When the resolver says
+  the message continues a draft ("More casual", "Ask them to reply by
+  Thursday at noon"), the router is not offered the scheduling, task,
+  Scout, skill or history tools for that turn - the failures were exactly
+  those (6/12 before). A model judgement, acted on structurally.
+- "Remind me what my interests are" / "what is my name?" is named in the
+  router prompt as a question about the person's record, not a reminder.
+
 ## 2026-08-27 — "Forget that": an automatic memory save can be taken back
 
 - Every automatic save (a fact, a moment, a name, a style, a locality, the

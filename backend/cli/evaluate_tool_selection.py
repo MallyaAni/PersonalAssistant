@@ -32,6 +32,7 @@ from backend.core.dependencies import (
 from backend.services.main_action_selector import (
     CreateDiagramAction,
     DelegateAction,
+    DiscussImageAction,
     EditImageAction,
     GenerateImageAction,
     MainActionSelector,
@@ -64,6 +65,7 @@ _ACTION_TOOL = {
     ShowImageAction: "show_image",
     CreateDiagramAction: "create_diagram",
     DelegateAction: "delegate_to_presentation_agent",
+    DiscussImageAction: "discuss_image",
     ToolboxAction: "mcp_tool",
     # Absent until 2026-08-23, so every task and skill decision - correct or
     # not - was scored as "no tool". The four newest capabilities were

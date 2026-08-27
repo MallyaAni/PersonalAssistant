@@ -36,6 +36,7 @@ def test_every_builtin_row_is_complete():
         "generate_image",
         "edit_image",
         "show_image",
+        "discuss_image",
         "create_diagram",
         "delegate_to_presentation_agent",
         "search_history",

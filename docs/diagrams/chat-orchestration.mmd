@@ -20,6 +20,7 @@ flowchart TB
 
     Selector -->|generate_image or edit_image| ImageAction[Generate or source-conditioned<br/>edit via ComfyUI FLUX]
     Selector -->|show_image| Referent
+    Selector -->|discuss_image: nothing runs| Memory
     ImageAction -->|explicit image| ImageArtifact[Persist ready/failed<br/>image artifact]
     ImageAction -->|no explicit image| Referent[DeepSeek V4 Flash<br/>owned-image referent resolution]
     Referent -->|one match| ImageArtifact
