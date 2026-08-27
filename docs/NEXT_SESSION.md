@@ -147,11 +147,13 @@ sentences against each other; the ranker's **on_subject** flag turning
 wrong-subject results into a disclosure.
 
 Still open, in order of risk:
-1. **The router's tail, now measured with the resolver in place** - see the
-   evaluator numbers in the CHANGELOG. If opinions about a picture still
-   read as an edit, the next structural step is a `discuss_image` row (a
-   named "talk about it, change nothing"), and a `regenerate_image` row
-   that reuses the stored prompt.
+1. **The router's tail.** With the resolver alone: regenerate 5/6 (from
+   3/6), followup_subject 6/6, diagrams 12/12 - but opinions about a
+   picture moved from edit to *show* (0/9) and draft continuations stayed
+   6/12. So: `discuss_image` (a named "talk about it, change nothing") and
+   no automation offered on a draft turn. Measure again; if writing
+   follow-ups still leak, the next step is a `regenerate_image` row and a
+   two-stage router.
 2. **Run the ablation** on the router prompt (`--categories` for the weak
    ones first) and delete what costs nothing.
 3. **GitHub branch protection** - the operator's click (above).
