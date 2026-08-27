@@ -114,6 +114,33 @@ linear history" if you like). The local pre-push hook now refuses rewrites
 from this checkout, but only the server setting protects the branch from
 every clone.
 
+## State at the end of 2026-08-26 — the "no more bugs on done items" wave
+
+Shipped through `scripts/deploy.sh` (the only deploy path now; it runs the
+unit suite and routing gate before, the journey sweep and search harness
+after): undo for reminders and Scout's schedule (`scheduled_task_changes`),
+one writer for Scout's cadence (`scout_schedule`; the proposal agent has no
+schedule field), a trace on every turn (`backend.cli.explain_turn`), a green
+unit suite (1841; the 24 "stale" failures were the test container's missing
+Redis and stale image copies), eight referent-shaped multi-turn journeys,
+a pre-push hook against rewriting `main`, and - found only by an HTTP
+end-to-end check - the stream wrapper losing every per-turn ContextVar
+between frames (`_with_heartbeat` now runs each pull in one context).
+
+Still open, in order of risk:
+1. **Prompt-rule interactions are unmeasured.** system.md is ~1,200 sent
+   words, the router ~1,400; each rule is pinned alone by a functional test,
+   nothing measures them together beyond the matrix aggregate (0.86). A
+   rule-ablation run (drop one sentence, re-run the matrix and the sweep)
+   would show which sentences carry weight and which fight each other.
+2. **The router's known tail**: opinions about an image read as an edit
+   (0/9), writing follow-ups 7/12, picture requests occasionally routed to
+   history recall. Structural options: a separate "about the image" tool,
+   or a two-stage router (kind first, tool second).
+3. **GitHub branch protection** - the operator's click (above).
+4. Tavily plan/credits; schedutil on the Sparks; wake-on-LAN for the
+   desktop; a fare API for trips (all earlier notes).
+
 ## What is still open
 
 **A third backup copy on the Mac — LIVE 2026-08-25.** Remote Login is on,
