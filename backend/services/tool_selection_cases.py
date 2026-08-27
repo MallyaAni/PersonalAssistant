@@ -462,6 +462,9 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
         "schedule_new",
     ),
     SelectionCase("what do i have scheduled?", MANAGE_TASKS, "task_list"),
+    # Real phrasings from the conversation table (backend.cli.real_utterances, 2026-08-27).
+    SelectionCase("what scheduled jobs do you have for me?", MANAGE_TASKS, "task_list"),
+    SelectionCase("change the tesla reminded to remind me in 5 minutes", MANAGE_TASKS, "task_reschedule"),
     SelectionCase("cancel the weather texts", MANAGE_TASKS, "task_change"),
     SelectionCase("pause the stretch reminder for now", MANAGE_TASKS, "task_change"),
     SelectionCase(
@@ -492,6 +495,8 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
     SelectionCase("forget the standup skill", MANAGE_SKILLS, "skill_change"),
     # --- ordinary conversation and the user's own memory --------------------
     SelectionCase("what is my name?", NO_TOOL, "personal_memory"),
+    SelectionCase("who am i", NO_TOOL, "personal_memory"),
+    SelectionCase("what are my interests?", NO_TOOL, "personal_memory"),
     SelectionCase("remind me what my interests are", NO_TOOL, "personal_memory"),
     SelectionCase("what is the derivative of x squared", NO_TOOL, "stable_knowledge"),
     SelectionCase(

@@ -107,6 +107,11 @@ If functional validation cannot be performed, do not label the behavior verified
   `--ignore` paths must be container paths (`/app/...`): a host path is
   silently not matched, which once ran the entire real-model suite under
   `--unit`.
+- **Write cases from real sentences, not imagined ones.** Run
+  `python -m backend.cli.real_utterances --days 14` in the backend container
+  before adding a matrix case, sweep journey or functional test: every
+  incident of 2026-08-26/27 was a phrasing the tests had not imagined
+  ("DC" for "Arlington", "adjust this" for "move the stretch reminder").
 - **A follow-up is resolved once, in `backend/services/followup.py`, before
   the router.** Do not add another place that works out what "this", "it"
   or "again" means (a picker hint, a prompt sentence per tool): give the

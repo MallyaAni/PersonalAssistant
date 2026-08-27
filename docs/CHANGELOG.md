@@ -2,6 +2,42 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-27 — Tests are written from what people actually say
+
+- The weather failure was a test-design failure first: the tool's coverage
+  was the router choosing it, and the sweep said "Arlington" where a person
+  here says "DC". `backend/cli/real_utterances.py` prints the last days'
+  user messages, decrypted and grouped by the route each took, so matrix
+  cases, sweep journeys and functional tests start from a real sentence.
+  First harvest: "what scheduled jobs do you have for me?", "change the
+  tesla reminded to remind me in 5 minutes", "who am i", "what are my
+  interests?", "hows the weather forecast today?" (no place named) and
+  "DMV area" are now cases or journeys; an iMessage tapback arriving as a
+  message is filtered at the bridge.
+
+## 2026-08-27 — Weather for the places people write, from the source their phones use
+
+- **The incident (ama_edm, 15:55 UTC).** "What's the weather in DC this
+  weekend?" was answered with a request for a ZIP code: Open-Meteo's
+  geocoder returns nothing for "Washington, DC", "Washington DC" or "DC"
+  (only "Washington" and a ZIP resolve). The ZIP then produced "showers /
+  violent showers / overcast" for Thu-Sat - a 29% day worded as violent,
+  a mostly-sunny Saturday as overcast, and no Sunday for a weekend asked on
+  a Thursday.
+- **Places.** The tool now tries what people write: an alias table (DC,
+  NYC, LA, SF, "the District"...), the whole string, then the city with
+  its state remembered so "Arlington, TX" is not Virginia; ZIPs pass
+  through. It never asks for a ZIP.
+- **Source.** For US places the daily forecast comes from the National
+  Weather Service (api.weather.gov - free, keyless, official, and what
+  phone forecasts track); Open-Meteo stays for the rest of the world and
+  as fallback, with its day wording softened by the rain chance it reports
+  ("chance of showers (29%)", never "violent showers" for a 29% day). Rows
+  carry the weekday and the reply is told which days are covered; the
+  tool's `days` rule says a weekend asked on Thursday needs four.
+  Pinned live by `functional/test_weather_places_behaviour.py` (DC in four
+  spellings, NWS for Arlington, Texas over Virginia, Bali still answers).
+
 ## 2026-08-27 — Talking about a picture is its own tool; a draft continuation is offered no automation
 
 - **`discuss_image`.** Offered only "edit" and "show", the router read every

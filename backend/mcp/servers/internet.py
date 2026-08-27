@@ -279,7 +279,7 @@ _WEATHER_CODES = {
     77: "snow grains",
     80: "light showers",
     81: "showers",
-    82: "violent showers",
+    82: "heavy showers",
     85: "light snow showers",
     86: "snow showers",
     95: "thunderstorm",
@@ -298,7 +298,150 @@ def _describe_code(code: object) -> str:
 # Real forecast data for a real question. Web search answered "today's
 # weather" from SEO forecast pages and delivered a monthly outlook as
 # today; a forecast API returns the actual numbers for the actual day.
-# Open-Meteo is free, keyless, and non-commercial-friendly.
+#
+# Two sources. For the United States the National Weather Service - free,
+# keyless, official, and what the phone forecasts people compare against;
+# on 2026-08-27 Open-Meteo called a 29%-chance day "violent showers" and a
+# mostly-sunny Saturday "overcast" for Washington while NWS said "chance of
+# showers" and "mostly sunny". Open-Meteo everywhere else and as fallback.
+
+# Place names the geocoder does not know as written. Open-Meteo's search
+# returns nothing for "Washington, DC", "Washington DC" or "DC" - the first
+# thing a person in this area asks about - though "Washington" and a ZIP
+# both resolve. Written spellings people use, mapped to what resolves.
+_PLACE_ALIASES: dict[str, tuple[str, str]] = {
+    "dc": ("Washington", "District of Columbia"),
+    "washington dc": ("Washington", "District of Columbia"),
+    "washington d.c.": ("Washington", "District of Columbia"),
+    "washington, d.c.": ("Washington", "District of Columbia"),
+    "washington, dc": ("Washington", "District of Columbia"),
+    "the district": ("Washington", "District of Columbia"),
+    "nyc": ("New York", "New York"),
+    "new york city": ("New York", "New York"),
+    "la": ("Los Angeles", "California"),
+    "sf": ("San Francisco", "California"),
+    "philly": ("Philadelphia", "Pennsylvania"),
+    "nova": ("Arlington", "Virginia"),
+    "northern virginia": ("Arlington", "Virginia"),
+    "dmv": ("Washington", "District of Columbia"),
+    "dmv area": ("Washington", "District of Columbia"),
+    "the dmv": ("Washington", "District of Columbia"),
+}
+# The same table keyed without dots, so "D.C." and "DC" meet.
+_ALIASES_BY_KEY = {key.replace(".", ""): value for key, value in _PLACE_ALIASES.items()}
+_US_STATES = {
+    "al": "Alabama", "ak": "Alaska", "az": "Arizona", "ar": "Arkansas", "ca": "California",
+    "co": "Colorado", "ct": "Connecticut", "de": "Delaware", "dc": "District of Columbia",
+    "fl": "Florida", "ga": "Georgia", "hi": "Hawaii", "id": "Idaho", "il": "Illinois",
+    "in": "Indiana", "ia": "Iowa", "ks": "Kansas", "ky": "Kentucky", "la": "Louisiana",
+    "me": "Maine", "md": "Maryland", "ma": "Massachusetts", "mi": "Michigan", "mn": "Minnesota",
+    "ms": "Mississippi", "mo": "Missouri", "mt": "Montana", "ne": "Nebraska", "nv": "Nevada",
+    "nh": "New Hampshire", "nj": "New Jersey", "nm": "New Mexico", "ny": "New York",
+    "nc": "North Carolina", "nd": "North Dakota", "oh": "Ohio", "ok": "Oklahoma", "or": "Oregon",
+    "pa": "Pennsylvania", "ri": "Rhode Island", "sc": "South Carolina", "sd": "South Dakota",
+    "tn": "Tennessee", "tx": "Texas", "ut": "Utah", "vt": "Vermont", "va": "Virginia",
+    "wa": "Washington", "wv": "West Virginia", "wi": "Wisconsin", "wy": "Wyoming",
+}
+_WEEKDAYS = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+
+
+# The searches to try for a written place, most specific first: an alias
+# when one applies, the whole string, then the part before the comma with
+# the state after it remembered so the right "Arlington" is chosen.
+def place_candidates(name: str) -> list[tuple[str, str | None]]:
+    cleaned = " ".join(name.split())
+    lowered = cleaned.casefold().replace(".", "").strip(" ,")
+    if lowered in _ALIASES_BY_KEY:
+        return [_ALIASES_BY_KEY[lowered]]
+    candidates: list[tuple[str, str | None]] = [(cleaned, None)]
+    head, _, tail = cleaned.partition(",")
+    tail = tail.strip()
+    if tail:
+        region = _US_STATES.get(tail.casefold().strip(" ."), tail)
+        candidates.append((head.strip(), region))
+        if head.casefold().replace(".", "").strip() in _ALIASES_BY_KEY:
+            candidates.insert(0, _ALIASES_BY_KEY[head.casefold().replace(".", "").strip()])
+    else:
+        words = cleaned.split()
+        if len(words) >= 2 and words[-1].casefold().strip(".") in _US_STATES:
+            candidates.append((" ".join(words[:-1]), _US_STATES[words[-1].casefold().strip(".")]))
+    return candidates
+
+
+# The best of the geocoder's matches: the one in the named region when a
+# region was named, else the first (the geocoder's own ranking).
+def choose_match(matches: list[dict], region: str | None) -> dict | None:
+    if not matches:
+        return None
+    if region:
+        wanted = region.casefold()
+        for match in matches:
+            admin = str(match.get("admin1") or "").casefold()
+            if wanted and (wanted in admin or admin in wanted):
+                return match
+    return matches[0]
+
+
+# Plain words for a forecast day: the WMO category, softened by the rain
+# chance the same source reports - code 82 with a 29% chance is "a chance
+# of showers", not "violent showers".
+def describe_day(code: object, precipitation_chance: object) -> str:
+    words = _describe_code(code)
+    try:
+        chance = int(precipitation_chance)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        chance = None
+    wet = words not in ("clear sky", "mainly clear", "partly cloudy", "overcast", "fog", "depositing rime fog", "unknown conditions")
+    if wet and chance is not None and chance < 40:
+        kind = "storms" if "thunder" in words else ("snow" if "snow" in words else "showers")
+        return f"chance of {kind} ({chance}%)"
+    return words
+
+
+def _weekday(date_text: object) -> str | None:
+    from datetime import date
+
+    try:
+        return _WEEKDAYS[date.fromisoformat(str(date_text)[:10]).weekday()]
+    except (TypeError, ValueError):
+        return None
+
+
+# The NWS daily forecast for a US point as rows, or None when it cannot be
+# had. Periods come as day/night pairs; the day carries the conditions and
+# high, its night the low.
+async def _nws_daily(client: "httpx.AsyncClient", latitude: float, longitude: float, wanted_days: int) -> list[dict] | None:
+    headers = {"User-Agent": "AniOS personal assistant (weather lookup)", "Accept": "application/geo+json"}
+    try:
+        point = await client.get(f"https://api.weather.gov/points/{latitude:.4f},{longitude:.4f}", headers=headers)
+        forecast_url = ((point.json() or {}).get("properties") or {}).get("forecast")
+        if not forecast_url:
+            return None
+        forecast = await client.get(forecast_url, headers=headers)
+        periods = ((forecast.json() or {}).get("properties") or {}).get("periods") or []
+    except Exception:
+        return None
+    rows: dict[str, dict] = {}
+    for period in periods:
+        day = str(period.get("startTime") or "")[:10]
+        if not day:
+            continue
+        row = rows.setdefault(day, {"date": day, "weekday": _weekday(day), "conditions": None, "high": None, "low": None, "precipitation_chance_percent": None})
+        chance = (period.get("probabilityOfPrecipitation") or {}).get("value")
+        if period.get("isDaytime"):
+            row["conditions"] = period.get("shortForecast")
+            row["high"] = period.get("temperature")
+            row["precipitation_chance_percent"] = chance
+        else:
+            row["low"] = period.get("temperature")
+            if row["conditions"] is None:
+                row["conditions"] = f"tonight: {period.get('shortForecast')}"
+            if row["precipitation_chance_percent"] is None:
+                row["precipitation_chance_percent"] = chance
+    ordered = [rows[key] for key in sorted(rows)][:wanted_days]
+    return ordered or None
+
+
 @mcp.tool()
 async def get_weather(place: str, days: int = 1, units: str = "imperial") -> str:
     """Live current conditions and forecast for a named place.
@@ -306,12 +449,13 @@ async def get_weather(place: str, days: int = 1, units: str = "imperial") -> str
     Use this, never web search, for any question about weather - right now,
     today, tonight, or the coming days. Not for travel time, directions,
     distance, or traffic: a clock time in "how long to drive to the airport
-    at 5pm" is when they leave, and that is a web search. `place` is a city or town name
-    ("Arlington, Virginia"); `days` is how many forecast days to include
-    (1 = today, up to 7); `units` is "imperial" or "metric".
+    at 5pm" is when they leave, and that is a web search. `place` is a city or
+    town name as the person wrote it ("Arlington, Virginia", "DC", "NYC", a
+    ZIP code); `days` is how many forecast days to include, counting today
+    as 1, up to 7 - for "this weekend" or a named day, enough days to reach
+    that day from today in the person's zone (asked on a Thursday, the
+    weekend needs 4); `units` is "imperial" or "metric".
     """
-    import httpx
-
     name = (place or "").strip()
     if not name:
         return json.dumps({"error": "no place given"})
@@ -319,14 +463,19 @@ async def get_weather(place: str, days: int = 1, units: str = "imperial") -> str
     imperial = units != "metric"
 
     async with httpx.AsyncClient(timeout=15) as client:
-        geo = await client.get(
-            "https://geocoding-api.open-meteo.com/v1/search",
-            params={"name": name, "count": 1, "language": "en", "format": "json"},
-        )
-        matches = (geo.json() or {}).get("results") or []
-        if not matches:
-            return json.dumps({"error": f"no place found for {name!r}"})
-        spot = matches[0]
+        spot = None
+        tried: list[str] = []
+        for query, region in place_candidates(name):
+            tried.append(query)
+            geo = await client.get(
+                "https://geocoding-api.open-meteo.com/v1/search",
+                params={"name": query, "count": 5, "language": "en", "format": "json"},
+            )
+            spot = choose_match((geo.json() or {}).get("results") or [], region)
+            if spot:
+                break
+        if not spot:
+            return json.dumps({"error": f"no place found for {name!r}", "tried": tried})
         forecast = await client.get(
             "https://api.open-meteo.com/v1/forecast",
             params={
@@ -350,6 +499,11 @@ async def get_weather(place: str, days: int = 1, units: str = "imperial") -> str
             },
         )
         body = forecast.json() or {}
+        nws_rows = (
+            await _nws_daily(client, float(spot["latitude"]), float(spot["longitude"]), wanted_days)
+            if imperial and str(spot.get("country_code") or "").upper() == "US"
+            else None
+        )
 
     current = body.get("current") or {}
     daily = body.get("daily") or {}
@@ -360,20 +514,28 @@ async def get_weather(place: str, days: int = 1, units: str = "imperial") -> str
         for part in (spot.get("name"), spot.get("admin1"), spot.get("country"))
         if part
     )
-    forecast_days = [
-        {
-            "date": (daily.get("time") or [None] * wanted_days)[index],
-            "conditions": _describe_code(
-                (daily.get("weather_code") or [None] * wanted_days)[index]
-            ),
-            "high": (daily.get("temperature_2m_max") or [None] * wanted_days)[index],
-            "low": (daily.get("temperature_2m_min") or [None] * wanted_days)[index],
-            "precipitation_chance_percent": (
-                daily.get("precipitation_probability_max") or [None] * wanted_days
-            )[index],
-        }
-        for index in range(min(wanted_days, len(daily.get("time") or [])))
-    ]
+    if nws_rows:
+        forecast_days = nws_rows
+        source = "weather.gov (National Weather Service); current conditions open-meteo.com"
+    else:
+        forecast_days = [
+            {
+                "date": (daily.get("time") or [None] * wanted_days)[index],
+                "weekday": _weekday((daily.get("time") or [None] * wanted_days)[index]),
+                "conditions": describe_day(
+                    (daily.get("weather_code") or [None] * wanted_days)[index],
+                    (daily.get("precipitation_probability_max") or [None] * wanted_days)[index],
+                ),
+                "high": (daily.get("temperature_2m_max") or [None] * wanted_days)[index],
+                "low": (daily.get("temperature_2m_min") or [None] * wanted_days)[index],
+                "precipitation_chance_percent": (
+                    daily.get("precipitation_probability_max") or [None] * wanted_days
+                )[index],
+            }
+            for index in range(min(wanted_days, len(daily.get("time") or [])))
+        ]
+        source = "open-meteo.com"
+    covered = [row.get("weekday") for row in forecast_days if row.get("weekday")]
     return json.dumps(
         {
             "place": resolved,
@@ -388,7 +550,10 @@ async def get_weather(place: str, days: int = 1, units: str = "imperial") -> str
                 "units": {"temperature": temp_unit, "wind": wind_unit},
             },
             "daily": forecast_days,
-            "source": "open-meteo.com",
+            # Which days the rows cover, so a reply asked about the weekend
+            # says so when Saturday or Sunday is not among them.
+            "covers": covered,
+            "source": source,
         }
     )
 

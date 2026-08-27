@@ -74,6 +74,17 @@ JOURNEYS = [
             does_not_hold=("The reply presents facts about a different show (Love Island, Squid Game, The Circle) as the answer.",),
             sql_holds=("select count(*) >= 1 from conversations where user_id = :u and extra_data->'trace'->'route'->>'detail' ilike '%surviving paradise%'",
                        "select count(*) = 0 from conversations where user_id = :u and (extra_data->'trace'->'route'->>'detail' ilike '%love island%' or extra_data->'trace'->'route'->>'detail' ilike '%squid game%')")),
+    # 2026-08-27 (ama_edm): "DC this weekend" was answered with a ZIP request.
+    Journey("weather for the weekend in DC", "what's the weather in DC this weekend?", ("Weather",),
+            must_not=("zip code", "zip"),
+            holds=("The reply gives a forecast for Washington, DC that mentions Saturday or Sunday.",),
+            does_not_hold=("The reply asks the person for a ZIP code or a different place name.",)),
+    # Real phrasing (ani.mallya): no place named - the person's own locality
+    # is what "the forecast" means.
+    Journey("weather with no place named", "hows the weather forecast today?", ("Weather",),
+            must_not=("zip code",),
+            holds=("The reply gives today's forecast for Arlington, Virginia or the Washington area.",),
+            does_not_hold=("The reply asks where the person is or for a place name.",)),
     Journey("weather tomorrow", "will it rain tomorrow in Arlington?", ("Weather", "Web search"),
             holds=("The reply gives a forecast for tomorrow with a chance of rain or conditions.",)),
     Journey("trip fares", "one way to Rome October 2 and back from the Amalfi coast October 16, cheapest nonstop?", ("Web search",),

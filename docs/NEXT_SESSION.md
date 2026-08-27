@@ -114,6 +114,16 @@ linear history" if you like). The local pre-push hook now refuses rewrites
 from this checkout, but only the server setting protects the branch from
 every clone.
 
+## Live incident 2026-08-27 15:55 UTC — "weather in DC" asked for a ZIP code, then got the wrong words
+
+ama_edm (new that day, no locality on record) asked for DC's weekend
+weather; the geocoder had nothing for "Washington, DC" so the reply asked
+for a ZIP, and the forecast it then gave was Open-Meteo's WMO wording
+("violent showers" on a 29% day, "overcast" on a mostly-sunny Saturday)
+without Sunday. Fixed the same day: place aliases and fallbacks, NWS as
+the US source, plain wording with the rain chance, weekdays and coverage.
+See CHANGELOG 2026-08-27.
+
 ## Live incident 2026-08-27 02:41 UTC — a follow-up searched as a different show
 
 jenos1, over iMessage, about Netflix's "Surviving Paradise": the router
@@ -156,8 +166,13 @@ Still open, in order of risk:
    two-stage router.
 2. **Run the ablation** on the router prompt (`--categories` for the weak
    ones first) and delete what costs nothing.
-3. **GitHub branch protection** - the operator's click (above).
-4. Tavily plan/credits; schedutil on the Sparks; wake-on-LAN for the
+3. **Operations on several tasks at once.** "delete the paused ones"
+   (real phrasing) reaches a picker that chooses one task; cancel/pause of
+   a set is not supported. Needs `manage_tasks` to accept a selection
+   ("all paused", "the weather ones") and a confirmation line listing what
+   it touched.
+4. **GitHub branch protection** - the operator's click (above).
+5. Tavily plan/credits; schedutil on the Sparks; wake-on-LAN for the
    desktop; a fare API for trips (all earlier notes).
 
 ## What is still open
