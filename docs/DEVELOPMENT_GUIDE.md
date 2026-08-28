@@ -102,6 +102,7 @@ for the kind of change it covers (AGENTS.md, completion rule).
 | Journey sweep | every capability walked over HTTP as a guest, with database and trace assertions | `python -m backend.cli.sweep_journeys [--only name]` (run by deploy.sh) |
 | Search harness | the search chain, budget and meter as the operator | `python -m backend.cli.exercise_search_scenarios` (run by deploy.sh) |
 | Image harness | the ten picture scenarios on the real chat path | `python -m backend.cli.exercise_image_scenarios` |
+| Lettering read-back | the writing on a generated sign reads back in English (needs the desktop on) | `docker compose --profile test run --rm --no-deps -v $PWD/backend:/app/backend:ro -v $PWD/prompts:/app/prompts:ro functional-tests python -m pytest backend/tests/functional/test_image_text_language_behaviour.py -q` |
 | Real utterances | what people actually say, by route - write cases from these | `python -m backend.cli.real_utterances --days 14` |
 | Turn trace | why a turn did what it did, decrypted | `python -m backend.cli.explain_turn --user <id> --last 8` |
 | Coverage guard | every tool has a live test, every capability a journey, every prompt a pin | part of the unit gate: `backend/tests/test_functional_coverage_completeness.py` |

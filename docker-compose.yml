@@ -190,6 +190,17 @@ services:
       - ROUTING_LLM_MODEL=${ROUTING_LLM_MODEL:-deepseek-v4-flash}
       - VISION_BASE_URL=${VISION_BASE_URL:-http://animallya-spark2.local:8001}
       - VISION_MODEL=${VISION_MODEL:-qwen3-vl-8b}
+      # The picture tests reach the desktop's ComfyUI with the deployed
+      # recipe; without these the test container asked for a model file the
+      # desktop does not have (400) and read pictures back from a server
+      # that does not exist (2026-08-27).
+      - IMAGE_PROVIDER_BASE_URL=${IMAGE_PROVIDER_BASE_URL:-http://127.0.0.1:8188}
+      - IMAGE_MODEL=${IMAGE_MODEL:-flux-2-klein-9b-fp8.safetensors}
+      - IMAGE_TEXT_ENCODER=${IMAGE_TEXT_ENCODER:-qwen_3_8b_fp8mixed.safetensors}
+      - IMAGE_VAE=${IMAGE_VAE:-flux2-vae.safetensors}
+      - IMAGE_GENERATION_STEPS=${IMAGE_GENERATION_STEPS:-4}
+      - IMAGE_EDIT_MODEL=${IMAGE_EDIT_MODEL:-}
+      - IMAGE_EDIT_MEGAPIXELS=${IMAGE_EDIT_MEGAPIXELS:-2.0}
       - EMBEDDING_BASE_URL=${EMBEDDING_BASE_URL:-http://vllm-embedding:8000}
       - RERANKER_BASE_URL=${RERANKER_BASE_URL:-http://vllm-reranker:8000}
       - RERANKER_MODEL=${RERANKER_MODEL:-qwen3-reranker-0.6b}
