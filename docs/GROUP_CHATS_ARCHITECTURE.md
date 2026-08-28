@@ -69,8 +69,10 @@ rows. Everything the group owns lives under that `user_id`.
 - One session per group: the ordinary `imessage:chat:conversation:{user_id}`
   key under the group's user id, with the same idle window as a person's thread.
 - The turn runs as the group with `metadata = {channel: "imessage_group",
-  group: {chat_name, speaker_user_id, members, addressed_by}}`; the pipeline
-  fills in `speaker_name` and `group_user_id`. Replies, acks, and pictures go to
+  group: {chat_name, speaker_user_id, members, addressed_by, assistant_name}}`
+  (`assistant_name` is the bridge's display name - what a mention renders and
+  what the room calls the assistant; the reply prompt says "in this chat you
+  are called X"); the pipeline fills in `speaker_name` and `group_user_id`. Replies, acks, and pictures go to
   the chat (`reply_to` is the chat guid). A photo in the room is a vision turn
   under the group.
 - Burst judgement (`_collect`): every addressed text fragment - room or

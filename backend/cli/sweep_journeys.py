@@ -299,6 +299,7 @@ class Sweep:
                 "speaker_user_id": self.user,
                 "members": [self.user, self.member],
                 "addressed_by": "name",
+                "assistant_name": "Scout",
             },
         }
 

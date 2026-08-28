@@ -1270,6 +1270,7 @@ def test_a_reply_in_a_thread_on_the_accounts_bubble_is_addressed(tmp_path):
     assert message["chat_name"] == "Lunch crew"
     assert message["reply_to_guid"] == "bot-1"
     assert message["participants"] == sorted(normalize_recipient(p) for p in _PEOPLE)
+    assert message["assistant_name"] == "Scout"
 
 
 def test_a_thread_on_somebody_elses_bubble_is_not_addressed(tmp_path):

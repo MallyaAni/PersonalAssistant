@@ -214,6 +214,12 @@ const publishedDiagrams = [
     change: "How an allowed text becomes a full AniOS turn and returns through the Mac.",
   },
   {
+    name: "group-chats-subsystem",
+    title: "Group chats — a room is an account",
+    scope: "Addressed-only reads, the membership wall, tastes, attribution, delivery to the chat",
+    change: "How a message in an iMessage group reaches the assistant only when it was meant for it, what the room may know about each member, and whose memory a fact lands in.",
+  },
+  {
     name: "scheduled-tasks-subsystem",
     title: "Tasks & skills",
     scope: "Scheduling, learned workflows, unattended turns, and delivery",

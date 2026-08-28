@@ -402,6 +402,7 @@ def _render_group_block(group: dict[str, Any]) -> str:
     return render(
         "reply/imessage_group",
         chat_name=str(group.get("chat_name") or "the group"),
+        assistant_name=str(group.get("assistant_name") or "AniOS"),
         speaker=str(group.get("speaker_name") or "a member"),
         roster="\n".join(lines) or "- (nobody is listed yet)",
     )

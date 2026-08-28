@@ -254,8 +254,9 @@ Inside a listed room, only what is addressed to this account leaves the Mac:
 Everything else in the room is discarded on the Mac, body and all. A
 forwarded room message carries `chat_guid`, `chat_identifier`, `chat_name`,
 `participants` (every member's address, normalized, so the backend can
-insist that each one is somebody it knows) and `addressed_by`
-(`reply` | `mention` | `name`); its `reply_to` is the chat, so the answer
+insist that each one is somebody it knows), `addressed_by`
+(`reply` | `mention` | `name`) and `assistant_name` (the display name, so the
+reply knows what the room calls it); its `reply_to` is the chat, so the answer
 lands in the room. Sends to a listed room go through `send_imessage` with
 the room's identifier or guid as `to`; the AppleScript addresses the chat by
 `chat id` rather than a participant. Every sender in a room still has to be

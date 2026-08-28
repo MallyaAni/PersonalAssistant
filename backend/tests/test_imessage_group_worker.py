@@ -86,6 +86,7 @@ def _room_message(guid: str, sender: str, text: str, participants=("5550100", "5
         "chat_name": "Lunch crew",
         "participants": list(participants),
         "addressed_by": addressed_by,
+        "assistant_name": "Scout",
     }
 
 
@@ -139,6 +140,7 @@ async def test_an_addressed_room_message_runs_as_the_group_and_answers_the_room(
         "speaker_user_id": "u-jen",
         "members": ["u-ani", "u-jen"],
         "addressed_by": "name",
+        "assistant_name": "Scout",
     }
     assert bridge.sent == [{"to": ROOM_GUID, "body": "Thai, Jen - Ani's been craving it."}]
 

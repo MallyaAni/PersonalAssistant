@@ -365,6 +365,7 @@ class IMessageChatWorker:
             "speaker_user_id": speaker,
             "members": list(group.members),
             "addressed_by": str(message.get("addressed_by") or ""),
+            "assistant_name": str(message.get("assistant_name") or ""),
         }
         pinned = await self._artifact_for_bubble(str(message.get("reply_to_guid") or ""))
         status: list[str] = []

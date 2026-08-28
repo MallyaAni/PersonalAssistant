@@ -2,6 +2,30 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-28 — The reply gets to the point
+
+- The operator: "deepseek's responses are way too long ... it needs to get
+  to the point quicker". The reply prompt (`prompts/reply/system.md`) ends
+  with a "get to the point" block: the answer or recommendation in the
+  first sentence, then only what changes what the person will do; no
+  preamble, no restated question, no narrated reasoning, no closing summary
+  or offer; a list only for genuinely separate items; long answers given by
+  their shape with the rest offered in a clause; a saved "detailed"
+  preference opts a person out.
+- Measured on the real reply model at temperature 0
+  (`backend/cli/measure_reply_length.py`, seven fixed questions through the
+  production web prompt): 9,350 characters in total before, 4,000 after;
+  "ModuleNotFoundError" 1,156 → 213, "ibuprofen with coffee" 1,230 → 417,
+  "three days in Lisbon" 2,470 → 1,114; every answer leads with the point.
+  Held by `functional/test_reply_brevity_behaviour.py` (8 passed; on the
+  old prompt 7 of 8 failed), which also refuses opening and closing filler.
+  The same answer moves by up to ~250 characters between runs on the TP=2
+  server, so the ceilings carry that headroom.
+- A group chat's reply prompt now says what the room calls the assistant
+  (`assistant_name`, the bridge's display name, carried with every room
+  message), so "Scout, thai or pizza?" is read as addressed to it rather
+  than to somebody else; the web prompt still calls it AniOS.
+
 ## 2026-08-27 — The iMessage waiting bubble is timed against what is known
 
 - The operator noticed the "on it" bubble arriving a breath before the

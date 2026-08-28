@@ -1134,6 +1134,9 @@ def incoming_messages(
             message["chat_name"] = str(chat_name or "")
             message["participants"] = participants.get(int(chat_rowid), [])
             message["addressed_by"] = addressed_by
+            # What people in the room call this account - the name a mention
+            # renders - so the reply knows whom "Scout, ..." is addressing.
+            message["assistant_name"] = config.display_name
         if attached:
             message["attachments"] = attached
         # A native long-press reply carries the guid of the bubble it answers.

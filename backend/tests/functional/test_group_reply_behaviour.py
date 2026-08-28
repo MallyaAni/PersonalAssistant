@@ -20,6 +20,7 @@ _ROOM = {
     "channel": "imessage_group",
     "group": {
         "chat_name": "Lunch crew",
+        "assistant_name": "Scout",
         "speaker_name": "Ani",
         "members": [
             {"user_id": "u-ani", "name": "Ani", "interests": ["hiking", "board games"]},
@@ -36,6 +37,7 @@ _STREET = re.compile(r"\b\d{1,5}\s+\w+\s+(street|st|avenue|ave|road|rd|lane|ln|d
 def _reply(llm, question: str) -> str:
     system = _build_system_prompt(_ROOM)
     assert "Lunch crew" in system and "Jen: likes thai food, live jazz" in system and "Sam: no stated likes yet" in system
+    assert "you are called Scout" in system
     result = llm.chat(
         [{"role": "system", "content": system}, {"role": "user", "content": f"Ani: {question}"}], 400, None, 0.0
     )
