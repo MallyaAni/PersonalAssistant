@@ -44,6 +44,9 @@ async def _desktop_is_up() -> bool:
 
 async def _read_writing(png: bytes) -> str:
     base = (os.getenv("VISION_BASE_URL") or settings.VISION_LLM_BASE_URL).rstrip("/")
+    # The vision server speaks the OpenAI path; a base without /v1 404s.
+    if not base.rstrip("/").endswith("/v1"):
+        base = base.rstrip("/") + "/v1"
     async with httpx.AsyncClient(timeout=120.0) as client:
 
         payload = {

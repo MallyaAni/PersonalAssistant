@@ -42,8 +42,11 @@ This file is append-only history for meaningful, verified changes. It must not c
   asks for a blank space instead) and typeset onto the finished picture in
   a clean face, centred on a translucent band. Deterministic English. The
   recipe records `typeset_text` so a reader knows which lettering was set.
-  Measured by the vision read-back (image harness scenario 10,
-  `functional/test_image_text_language_behaviour.py`) when the desktop is on.
+  Measured the same day once the desktop was on: the generated sign's
+  writing read back in English (`functional/test_image_text_language_behaviour.py`,
+  run with the deployed image settings and the served vision model
+  forwarded to the test container; the test now appends `/v1` to a vision
+  base that lacks it).
 
 ## 2026-08-27 — Tests are written from what people actually say
 
