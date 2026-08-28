@@ -3,6 +3,7 @@ from contextvars import ContextVar
 import logging
 import re
 import secrets
+import time
 import uuid
 from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import suppress
@@ -410,12 +411,19 @@ def _trace(key: str, value: Any) -> None:
 # answer with no route, no picker, nothing saved and nothing scheduled
 # stores no trace at all rather than a record of empties.
 def _with_trace(metadata: dict[str, Any]) -> dict[str, Any]:
-    trace = {
-        key: value
-        for key, value in (_turn_trace.get() or {}).items()
-        if value not in (None, [], {}, "")
-    }
-    return {**metadata, "trace": trace} if trace else metadata
+    raw = dict(_turn_trace.get() or {})
+    started = raw.pop("_started", None)
+    route_ms = raw.pop("route_ms", None)
+    trace = {key: value for key, value in raw.items() if value not in (None, [], {}, "")}
+    if not trace:
+        return metadata
+    # Timing rides only with a turn that decided something; a plain answer
+    # stays trace-less rather than a record of two numbers.
+    if started:
+        trace["ms"] = int((time.monotonic() - started) * 1000)
+    if route_ms is not None:
+        trace["route_ms"] = route_ms
+    return {**metadata, "trace": trace}
 _results_were_travel: ContextVar[bool] = ContextVar("results_were_travel", default=False)
 # Whether the ranker judged this turn's results to be about a different
 # subject than the one asked about - set by the research path, read where
@@ -2515,7 +2523,7 @@ class ConversationService:
         # on a stretch reminder. Reset per request.
         current_search_limit.set(None)
         _previous_assistant_said.set(str((history[-1].get("response") or "")) if history else "")
-        _turn_trace.set({})
+        _turn_trace.set({"_started": time.monotonic()})
         current_followup.set(None)
         account_charged_this_turn.set(False)
         _results_were_events.set(False)
@@ -2836,6 +2844,11 @@ class ConversationService:
             events.append(status)
         described = describe_action(action)
         _trace("route", {"label": described[0], "detail": described[1][:160]} if described else None)
+        # How long the decision took, in milliseconds: the iMessage waiting
+        # bubble is timed against this (2026-08-27, "the filler comes late").
+        started = (_turn_trace.get() or {}).get("_started")
+        if started:
+            _trace("route_ms", int((time.monotonic() - started) * 1000))
         asked = str(skill_context["skill"]["instruction"]) if skill_context else query
         return events, action, skill_context, asked
 

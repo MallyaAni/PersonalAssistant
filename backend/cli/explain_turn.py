@@ -58,6 +58,8 @@ async def explain(user_id: str, last: int, since: datetime | None) -> int:
             print(f"   outcomes: {', '.join(trace['outcomes'])}")
         if "search" in trace:
             print(f"   search: {trace['search']}")
+        if "ms" in trace:
+            print(f"   timing: routed at {trace.get('route_ms', '?')} ms, finished at {trace['ms']} ms")
     return 0
 
 

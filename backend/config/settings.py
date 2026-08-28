@@ -472,9 +472,13 @@ class Settings(BaseSettings):
     # picture keeps it; a lull lets it go.
     IMESSAGE_CHAT_IMAGE_IDLE_MINUTES: float = Field(default=60.0, gt=0, le=1440)
     # iMessage cannot stream and shows no typing indicator, so a turn that
-    # fans out into search is minutes of silence. After this long, one fixed
-    # bubble says the silence is work; the real answer still follows.
-    IMESSAGE_CHAT_ACK_SECONDS: float = Field(default=15.0, gt=0, le=120)
+    # fans out into search is minutes of silence. A turn that routes to
+    # something slow - search, a picture, a diagram, a deck, recall - gets its
+    # tool's own line the moment that route is known (a few seconds in);
+    # any other turn gets one generic bubble after this long. Lowered from 15 s
+    # on 2026-08-27: a search answer took 15-25 s, so the bubble arrived a
+    # breath before the answer and reassured nobody.
+    IMESSAGE_CHAT_ACK_SECONDS: float = Field(default=6.0, gt=0, le=120)
     # Scheduled tasks: anything a person asked to have done later or on a
     # schedule, run as a chat turn under their identity and delivered on the
     # channel they asked from. The loop shares the discovery worker process.

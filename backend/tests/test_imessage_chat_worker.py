@@ -800,3 +800,55 @@ async def test_photos_past_the_cap_are_named_not_dropped(monkeypatch):
     assert turn.reply.endswith(
         "I looked at the first 2 - send the rest separately if you want those described too."
     )
+
+
+# The bubble is timed against what is known (2026-08-27: at a 15 s threshold
+# it arrived a breath before every search answer). A slow route's own line
+# goes out as soon as the router names it; a fast route gets nothing when
+# the answer beats the threshold.
+@pytest.mark.asyncio
+async def test_a_slow_route_earns_its_line_as_soon_as_it_is_known(monkeypatch):
+    import asyncio
+
+    from backend.config.settings import settings
+
+    monkeypatch.setattr(settings, "IMESSAGE_CHAT_ACK_SECONDS", 5.0)
+    bridge = _Bridge({"messages": [_message("g8", "7372025933", "what's on this weekend?")], "cursor": 40})
+    worker, _ = _worker(bridge, monkeypatch, accounts={"7372025933": "ani.mallya"}, replies={})
+
+    async def searching(user_id, text, active_image=None, **kwargs):
+        await asyncio.sleep(0.05)
+        kwargs["status"].append("🔎 Searching the web…")
+        await asyncio.sleep(0.6)
+        return TurnResult("three things are on")
+
+    monkeypatch.setattr(worker, "_converse", searching)
+    await worker.tick()
+    assert [b["body"] for b in bridge.sent] == ["🔎 Searching the web…", "three things are on"]
+
+
+@pytest.mark.asyncio
+async def test_a_fast_route_that_beats_the_threshold_stays_one_bubble(monkeypatch):
+    import asyncio
+
+    from backend.config.settings import settings
+    from backend.workers.imessage_chat import IMessageChatWorker
+
+    monkeypatch.setattr(settings, "IMESSAGE_CHAT_ACK_SECONDS", 5.0)
+    bridge = _Bridge({"messages": [_message("g9", "7372025933", "remind me at 5 to stretch")], "cursor": 41})
+    worker, _ = _worker(bridge, monkeypatch, accounts={"7372025933": "ani.mallya"}, replies={})
+
+    async def quick(user_id, text, active_image=None, **kwargs):
+        # A reminder's action event carries a waiting line, but the route is
+        # not a slow one: the consumer leaves status empty.
+        status = []
+        await IMessageChatWorker._consume_event(worker, user_id, "action", {"label": "Scheduled tasks", "waiting": "🗂️ Setting that up…"}, [], [], status)
+        assert status == []
+        await IMessageChatWorker._consume_event(worker, user_id, "action", {"label": "Web search", "waiting": "🔎 Searching…"}, [], [], status)
+        assert status == ["🔎 Searching…"]
+        await asyncio.sleep(0.3)
+        return TurnResult("done, 5 PM")
+
+    monkeypatch.setattr(worker, "_converse", quick)
+    await worker.tick()
+    assert [b["body"] for b in bridge.sent] == ["done, 5 PM"]

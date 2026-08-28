@@ -2,6 +2,17 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-27 — The iMessage waiting bubble is timed against what is known
+
+- The operator noticed the "on it" bubble arriving a breath before the
+  answer. It was sent after a fixed 15 s, and a search answer takes 15-25 s.
+  Now a slow route - search, a picture, an edit, a diagram, a deck, recall,
+  a skill - sends its tool's own line the moment the router names it (a few
+  seconds in), a turn with no such route gets one generic bubble only after
+  6 s, and a quick reply stays one bubble. Every turn's trace now records
+  when it was routed and when it finished (`route_ms`, `ms`), shown by
+  `explain_turn`, so the timing is measured rather than felt.
+
 ## 2026-08-27 — The deploy path itself, fixed three times by its own evidence
 
 - Deploys #6 and #7 shipped their code but ended silently at the

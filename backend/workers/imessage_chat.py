@@ -29,6 +29,7 @@ import asyncio
 import base64
 import json
 import random
+import time
 import re
 import uuid
 from dataclasses import dataclass, field
@@ -147,6 +148,13 @@ _FAILURE_REPLY = "I hit a problem answering that. Give me a minute and try again
 # latency to the exact moment the point is masking latency; varied rather
 # than fixed because the same canned line on every wait reads like a bot
 # and different ones read like somebody typing.
+# How often the turn is checked while deciding whether to send a bubble.
+_ACK_POLL_SECONDS = 0.25
+# Routes whose answer is seconds to minutes away once chosen.
+_SLOW_ROUTES = frozenset(
+    ("Web search", "New images", "Image edits", "Diagrams", "Presentations", "Past conversations", "Skill")
+)
+
 _ACK_REPLIES = (
     "On it — digging in 🔍",
     "Good one, give me a sec 🤔",
@@ -374,11 +382,26 @@ class IMessageChatWorker:
         self, work, reply_to: str, status: list[str] | None = None
     ) -> "TurnResult":
         turn = asyncio.create_task(work)
-        done, _ = await asyncio.wait({turn}, timeout=settings.IMESSAGE_CHAT_ACK_SECONDS)
-        if not done:
-            # The tool's own waiting line when the backend named one, else
-            # the generic pleasantry.
-            body = status[-1] if status else random.choice(_ACK_REPLIES)
+        started = time.monotonic()
+        threshold = settings.IMESSAGE_CHAT_ACK_SECONDS
+        body: str | None = None
+        # Watch the turn in short slices. The bubble is timed against what is
+        # known: a slow route names its own line as soon as the router chose
+        # it (the backend's action event, a few seconds in), and a turn with
+        # no such route gets the generic line only once it has run past the
+        # threshold - a quick reply stays one bubble either way.
+        while True:
+            remaining = threshold - (time.monotonic() - started)
+            done, _ = await asyncio.wait({turn}, timeout=max(0.01, min(_ACK_POLL_SECONDS, remaining)))
+            if done:
+                break
+            if status:
+                body = status[-1]
+                break
+            if time.monotonic() - started >= threshold:
+                body = random.choice(_ACK_REPLIES)
+                break
+        if body is not None:
             try:
                 await self.invoke_tool(
                     settings.DISCOVERY_IMESSAGE_TOOL,
@@ -706,7 +729,10 @@ class IMessageChatWorker:
             await self._remember_conversation(user_id, str(data["conversation_id"]))
         elif event == "action" and status is not None:
             waiting = str(data.get("waiting") or "").strip()
-            if waiting:
+            # Only a route that will take a while earns an immediate bubble;
+            # a reminder or a schedule change answers within a second or two
+            # and a bubble before it would arrive on top of the answer.
+            if waiting and str(data.get("label") or "") in _SLOW_ROUTES:
                 status.append(waiting)
         elif event == "delta" and isinstance(data.get("content"), str):
             collected.append(data["content"])
