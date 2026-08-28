@@ -397,8 +397,15 @@ def _render_group_block(group: dict[str, Any]) -> str:
     lines = []
     for member in members:
         name = str(member.get("name") or "a member")
+        parts = []
         likes = ", ".join(str(item) for item in (member.get("interests") or []))
-        lines.append(f"- {name}: likes {likes}" if likes else f"- {name}: no stated likes yet")
+        parts.append(f"likes {likes}" if likes else "no stated likes yet")
+        if member.get("home"):
+            parts.append(f"lives around {member['home']}")
+        facts = [str(item) for item in (member.get("facts") or []) if str(item).strip()]
+        if facts:
+            parts.append("has told you: " + "; ".join(facts))
+        lines.append(f"- {name}: " + ". ".join(parts))
     # What the room calls the assistant: the bridge's display name when one
     # is set; otherwise each member addresses it by whatever contact name
     # they saved, and the only certainty is that a message which reached it

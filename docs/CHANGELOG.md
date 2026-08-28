@@ -2,6 +2,26 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-28 — In a group, a member's non-sensitive memory is known
+
+- The operator, after the first live turn could not say their own name:
+  "non sensitive memory data should be known automatically in group chats
+  where all users are approved". The room now knows each member's name,
+  likes, city-level home and up to six everyday remembered statements
+  ("I drive a red Mini Cooper"), read through Scout's own personal-context
+  door (approved, screened for secrets and personal medical/financial/legal
+  framing, bounded) and then judged by meaning on the routing model
+  (`backend/memory/share_screen.py`, `prompts/memory/share_in_group.md`):
+  health, money, legal, relationships, exact addresses, credentials and
+  anything said to be private never reach the room, and the judgement fails
+  closed. Verdicts are cached per statement. ADR 0016 records the widening.
+- Verified: `test_group_share_screen_behaviour` 2/2 on the real model (of
+  nine private statements none passed; of eight everyday ones at most two
+  were withheld), `test_group_reply_behaviour` 4/4 (the room answers "what
+  car does Jen drive?" from her fact; a member's private detail is still
+  hers to share), unit 60; sweep journey "group: a member's everyday fact is
+  known" beside the address journey that proves the sensitive stays out.
+
 ## 2026-08-28 — First live group chat, and what it taught
 
 - Live acceptance in the operator's group "Groupie" (two approved members):

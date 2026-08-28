@@ -78,10 +78,13 @@ This document separates current security facts from future requirements. A contr
   is discarded on the Mac. The backend adds a second wall: every participant
   must be an approved subscriber or the room is answered nowhere (the
   operator is texted once a day per room, without the strangers' addresses).
-  A room is its own account; what it may know about a member is a fixed
-  allowlist (name and Scout interests, `backend/memory/tastes.py`), and a
-  fact said in the room is never written into another member's memory
-  (`backend/memory/attribution.py`; ADR 0016). Inbound text runs through the same
+  A room is its own account; what it may know about a member is the
+  non-sensitive part of their memory - name, Scout interests, city-level
+  home, and remembered statements that pass the deterministic outbound screen
+  and a by-meaning share judgement (`backend/memory/tastes.py`,
+  `backend/memory/share_screen.py`; fails closed) - and a fact said in the
+  room is never written into another member's memory
+  (`backend/memory/attribution.py`; ADR 0016, widened 2026-08-28). Inbound text runs through the same
   conversation pipeline as the web UI, **including immediate memory
   persistence — an explicit operator decision** (2026-08-21). What makes that
   acceptable for senders beyond the operator is **per-sender account

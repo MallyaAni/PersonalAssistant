@@ -18,11 +18,15 @@ Decision record: [ADR 0016](adr/0016-a-group-is-an-account.md). Status:
   message on the backend's say-so (see Status).
 - A burst of small messages ("ok" / "thai then" / "friday?") gets one answer,
   once the person has finished; "sounds good, thanks" gets none.
-- It knows what members like - their name and the interests they follow - from
-  what they already told it in private, and nothing else of theirs: not where
-  they live, not what they said in a private conversation. Asked for a member's
-  private detail in the room, it says that is theirs to share (operator's
-  decision, 2026-08-28: tastes only).
+- It knows the non-sensitive things about members - their name, what they
+  like, the city they live around, and the everyday things they have told it
+  ("I drive a red Mini") - from what they already told it in private, judged
+  by meaning; nothing sensitive (health, money, legal, relationships, exact
+  addresses, credentials, anything said to be private) reaches the room, and
+  asked for such a thing it says that is theirs to share. Operator's decision,
+  2026-08-28, widening the first cut's "tastes only": "non sensitive memory
+  data should be known automatically in group chats where all users are
+  approved" - the first live turn could not say the operator's own name.
 - "Jen and I love Thai food" is remembered for Ani (their own share) and for the
   group with its source ("said by Ani"); "we love hiking" for the group; "Jen is
   allergic to peanuts" is the group's knowledge with its source and is never
@@ -110,9 +114,15 @@ rows. Everything the group owns lives under that `user_id`.
 - `backend/memory/tastes.py` (`TasteProjection`): the only door from a member's
   store to a group prompt - profile name (or the account's username as a first
   name, "ani.mallya" → "Ani", when no name is on record; the first live turn
-  addressed the operator as "Member 2") and Scout interest labels, at most 8;
-  a member whose profile cannot be read stays on the roster as "Member n".
-  Home area, semantic facts, relationships are deliberately not read here.
+  addressed the operator as "Member 2"), Scout interest labels (at most 8),
+  the city-level home locality, and up to 6 remembered statements read through
+  Scout's own `PersonalContextReader` (approved facts and recent semantic
+  memories; secrets, card numbers and personal medical/financial/legal framing
+  screened deterministically; bounded) and then judged by meaning by
+  `backend/memory/share_screen.py` (`prompts/memory/share_in_group.md`, routing
+  model, schema; verdicts cached per statement; fails closed - without a
+  judgement nothing is shared). A member whose profile cannot be read stays on
+  the roster as "Member n".
 - One bounded exception, for the turn only: "here", "near me", "tomorrow" in
   a room are the *speaker's* - the group has no home place - so the speaker's
   own primary locality (city-level, the same `_primary_place` a one-to-one
@@ -122,7 +132,8 @@ rows. Everything the group owns lives under that `user_id`.
   (2026-08-28). Sweep journey "group: weather here is the speaker's here".
 - `prompts/reply/imessage_group.md`, appended after `imessage_style` when
   `channel == "imessage_group"`: the chat's name, who is speaking, each member's
-  likes, and the rule that everything else about a member is theirs to share.
+  likes, home area and everyday statements, and the rule that everything else
+  about a member - and anything sensitive - is theirs to share.
 
 ### Memory attribution
 - `proposal_agent.propose(..., speaker=, roster=)` adds

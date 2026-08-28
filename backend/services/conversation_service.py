@@ -3000,8 +3000,9 @@ class ConversationService:
         speaker_id = str(room.get("speaker_user_id") or "")
         if speaker_id and speaker_id not in member_ids:
             member_ids = (*member_ids, speaker_id)
+        judge = getattr(self.main_action_selector, "llm", None) or self.llm
         try:
-            tastes = await TasteProjection(self.memory, self.discovery_profile).for_members(member_ids)
+            tastes = await TasteProjection(self.memory, self.discovery_profile, judge).for_members(member_ids)
         except Exception:
             logger.warning("Group tastes could not be read; replying without them", exc_info=True)
             tastes = ()

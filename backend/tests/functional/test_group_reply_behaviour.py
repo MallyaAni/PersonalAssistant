@@ -24,7 +24,7 @@ _ROOM = {
         "speaker_name": "Ani",
         "members": [
             {"user_id": "u-ani", "name": "Ani", "interests": ["hiking", "board games"]},
-            {"user_id": "u-jen", "name": "Jen", "interests": ["thai food", "live jazz"]},
+            {"user_id": "u-jen", "name": "Jen", "interests": ["thai food", "live jazz"], "home": "Arlington, Virginia", "facts": ["I drive a red Mini Cooper", "My dog is called Biscuit"]},
             {"user_id": "u-sam", "name": "Sam", "interests": []},
         ],
     },
@@ -37,6 +37,7 @@ _STREET = re.compile(r"\b\d{1,5}\s+\w+\s+(street|st|avenue|ave|road|rd|lane|ln|d
 def _reply(llm, question: str) -> str:
     system = _build_system_prompt(_ROOM)
     assert "Lunch crew" in system and "Jen: likes thai food, live jazz" in system and "Sam: no stated likes yet" in system
+    assert "lives around Arlington, Virginia" in system and "has told you: I drive a red Mini Cooper; My dog is called Biscuit" in system
     assert "you are called Scout" in system
     assert "addressed to you" in _build_system_prompt({**_ROOM, "group": {**_ROOM["group"], "assistant_name": ""}})
     result = llm.chat(
@@ -60,6 +61,12 @@ async def test_a_members_private_detail_is_theirs_to_share(llm):
     lowered = text.casefold()
     assert "jen" in lowered, text
     assert any(word in lowered for word in ("don't have", "dont have", "not something i", "hers to share", "ask jen", "ask her", "can't share", "cant share", "up to jen", "jen can", "she can")), text
+
+
+async def test_a_members_everyday_fact_is_answered_from_the_roster(llm):
+    text = _reply(llm, "Scout, what car does Jen drive? and what's her dog called?")
+    lowered = text.casefold()
+    assert "mini" in lowered and "biscuit" in lowered, text
 
 
 async def test_the_speakers_name_is_used_when_answering_them(llm):

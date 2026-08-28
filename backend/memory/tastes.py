@@ -1,11 +1,17 @@
-"""What a group may know about its members: tastes, and nothing else.
+"""What a group may know about its members: the non-sensitive.
 
-A member's memory is theirs. In a group the assistant still has to suggest
-a restaurant everyone will like, so this projects a small, fixed allowlist
-of each member's profile into the group turn - their name and the interests
-they follow - and never a fact, an address, a relationship, or anything a
-member said in a private conversation (ADR 0016). The allowlist is the
-whole of this module; a field not read here does not reach the room.
+A member's memory is theirs, and a room has other people in it. The
+operator's decision (2026-08-28, widening the first cut's "tastes only"):
+in a group where everyone is approved, a member's non-sensitive memory is
+known automatically - their name, what they like, their home area, and the
+everyday things they have told the assistant - and only what is sensitive
+stays theirs to share. This module is the one door from a member's store to
+a group turn: profile name (or account name), Scout interests, city-level
+home, and remembered statements read through Scout's own
+`PersonalContextReader` (approved, screened for secrets and personal
+medical/financial/legal framing, bounded) and then judged by meaning
+(`share_screen`) before any of them reaches the room. What is not read here
+does not reach the room; what is judged private does not either.
 """
 
 from __future__ import annotations
@@ -19,6 +25,9 @@ from backend.core.logging_config import get_logger
 logger = get_logger(__name__)
 
 MAX_INTERESTS = 8
+# Everyday statements per member, after the share screen. Few: a room's
+# prompt carries every member.
+MAX_FACTS = 6
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,17 +37,28 @@ class Taste:
     user_id: str
     name: str
     interests: tuple[str, ...]
+    home: str = ""
+    facts: tuple[str, ...] = ()
 
     def as_dict(self) -> dict[str, Any]:
-        return {"user_id": self.user_id, "name": self.name, "interests": list(self.interests)}
+        return {
+            "user_id": self.user_id,
+            "name": self.name,
+            "interests": list(self.interests),
+            "home": self.home,
+            "facts": list(self.facts),
+        }
 
 
 class TasteProjection:
-    """Read-only door from a member's profile to the group turn."""
+    """Read-only door from a member's profile and memory to the group turn."""
 
-    def __init__(self, memory: Any, discovery_profile: Any | None) -> None:
+    # `judge` is the routing model that decides what is private; without one
+    # no remembered statement reaches the room (fail closed).
+    def __init__(self, memory: Any, discovery_profile: Any | None, judge: Any | None = None) -> None:
         self.memory = memory
         self.discovery_profile = discovery_profile
+        self.judge = judge
 
     # Each member's name and interests, in roster order. A member whose
     # profile cannot be read is still on the roster, by a placeholder name,
@@ -62,15 +82,44 @@ class TasteProjection:
             # operator's first live group turn addressed them as "Member 2".
             name = await self._username(user_id)
         interests: tuple[str, ...] = ()
+        home = ""
         if self.discovery_profile is not None:
             try:
                 scout = await self.discovery_profile.get_profile(user_id)
                 interests = tuple(
                     str(interest.label) for interest in scout.interests[:MAX_INTERESTS]
                 )
+                locality = scout.primary_locality() if hasattr(scout, "primary_locality") else None
+                home = str(getattr(locality, "label", "") or "") if locality else ""
             except Exception:
                 logger.warning("taste_projection_interests_unreadable", extra={"user": user_id})
-        return Taste(user_id=user_id, name=name or f"Member {position}", interests=interests)
+        facts = await self._facts(user_id)
+        return Taste(user_id=user_id, name=name or f"Member {position}", interests=interests, home=home, facts=facts)
+
+    # The member's remembered statements that may be said in the room: read
+    # through Scout's door (approved, screened, bounded), then judged.
+    async def _facts(self, user_id: str) -> tuple[str, ...]:
+        if self.judge is None:
+            return ()
+        try:
+            statements = await self._statements(user_id)
+        except Exception:
+            logger.warning("taste_projection_memory_unreadable", extra={"user": user_id})
+            return ()
+        if not statements:
+            return ()
+        from backend.memory.share_screen import shareable
+
+        allowed = await shareable(self.judge, statements)
+        return tuple(allowed[:MAX_FACTS])
+
+    async def _statements(self, user_id: str) -> tuple[str, ...]:
+        from backend.database.session import AsyncSessionLocal
+        from backend.discovery.personal_context import PersonalContextReader
+
+        async with AsyncSessionLocal() as db:
+            context = await PersonalContextReader(db).read(user_id)
+        return tuple(context.statements)
 
     # The account's username as a first name: the part before the first
     # separator, trailing digits dropped, capitalised. Empty when unreadable.

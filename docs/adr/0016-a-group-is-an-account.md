@@ -65,6 +65,17 @@ otherwise the assistant stays silent there and the operator is told once.
 Digests and reminders for the group are delivered **into the group chat**
 through a subscriber whose address is the chat itself.
 
+## Decision widened, 2026-08-28 (same day)
+
+The first cut projected members' tastes only. After the first live turn
+could not say the operator's own name, the operator decided: "non sensitive
+memory data should be known automatically in group chats where all users
+are approved". A member's name, likes, home area and everyday remembered
+statements now reach the room; what is sensitive is judged by meaning
+(`backend/memory/share_screen.py`) and never does. The ownership rule is
+unchanged: nothing is written into another member's memory on someone
+else's word.
+
 ## Consequences
 
 - One guest search allowance per group, shared by every member's asks there.

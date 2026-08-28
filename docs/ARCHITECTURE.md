@@ -316,8 +316,9 @@ task and skill.
    thread on one of its bubbles, an @mention, or its name. Every member must
    be an approved user or it stays silent and you get one text. The room is
    then an account of its own (`group:<slug>`) with its own session, memory,
-   tasks, and Scout; members' names and interests are the only private thing
-   the room may know about them; a fact said in the room lands in the
+   tasks, and Scout; members' names, likes, home area and everyday remembered
+   statements are known in the room (what is sensitive is judged by meaning
+   and never reaches it); a fact said in the room lands in the
    speaker's memory when it is theirs and in the group's with its source
    otherwise, never in another member's on someone else's word; and the
    answer, digests, and reminders post back into the chat.
