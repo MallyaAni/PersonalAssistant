@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from backend.agents.memory.prompts import MEMORY_PROPOSAL_SYSTEM
 from backend.core.llm import LLMClient
+from backend.core.prompts import render
 from backend.discovery.types import MAX_LABEL_CHARS, MAX_REGION_CHARS, normalize_label
 
 MAX_PROPOSALS_PER_TURN = 8
@@ -76,6 +77,16 @@ class MemoryProposalDecision(BaseModel):
     episodic_event: str | None = Field(default=None, max_length=300)
 
 
+class GroupMemoryProposalDecision(MemoryProposalDecision):
+    """The same interpretation, plus who each fact is about (a group turn)."""
+
+    about: list[str] = Field(
+        default_factory=list,
+        max_length=8,
+        description='Roster names the captured facts are about, or "the group".',
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class MemoryProposalResult:
     """Validated proposal payloads with no persistence authority."""
@@ -97,7 +108,23 @@ class MemoryProposalAgent:
         query: str,
         known_interests: tuple[str, ...] = (),
         previous_reply: str = "",
+        # A group turn: who is speaking and who is in the room. With a
+        # roster the decision carries `about`, and every proposal says who
+        # it concerns; without one the call is exactly what it always was.
+        speaker: str = "",
+        roster: tuple[str, ...] = (),
     ) -> MemoryProposalResult:
+        in_group = bool(roster)
+        group_block = (
+            render(
+                "memory/proposal_group",
+                speaker=speaker or "a member",
+                roster=", ".join(roster),
+            )
+            + " "
+            if in_group
+            else ""
+        )
         catalogue = (
             "The user already follows these Scout interests: "
             + ", ".join(f'"{label}"' for label in known_interests)
@@ -113,6 +140,8 @@ class MemoryProposalAgent:
                     "role": "system",
                     "content": (
                         MEMORY_PROPOSAL_SYSTEM
+                        + " "
+                        + group_block
                         + catalogue
                         + 'Meaning examples: "Remember that my dog is called '
                         'Biscuit" and "Please keep track of the fact that my dog is '
@@ -125,10 +154,17 @@ class MemoryProposalAgent:
                 {"role": "user", "content": self._utterance(query, previous_reply)},
             ],
             self.max_tokens,
-            MemoryProposalDecision.model_json_schema(),
+            (GroupMemoryProposalDecision if in_group else MemoryProposalDecision).model_json_schema(),
             0,
         )
-        decision = MemoryProposalDecision.model_validate(json.loads(result["content"]))
+        payload = json.loads(result["content"])
+        if in_group:
+            group_decision = GroupMemoryProposalDecision.model_validate(payload)
+            about = tuple(" ".join(str(name).split()) for name in group_decision.about if str(name).strip())
+            return MemoryProposalResult(
+                tuple({**proposal, "about": list(about)} for proposal in self._validated_proposals(group_decision))
+            )
+        decision = MemoryProposalDecision.model_validate(payload)
         return MemoryProposalResult(self._validated_proposals(decision))
 
     # The message to interpret, with the assistant's previous reply alongside

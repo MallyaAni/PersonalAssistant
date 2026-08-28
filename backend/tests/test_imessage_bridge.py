@@ -338,6 +338,10 @@ def _typedstream(body: str) -> bytes:
 # The minimal slice of the Messages schema the incoming query touches.
 def _chat_db(tmp_path: Path) -> Path:
     path = tmp_path / "chat.db"
+    # One database per test directory: a second config over the same
+    # directory (a room config beside a plain one) shares it.
+    if path.exists():
+        return path
     db = sqlite3.connect(path)
     db.executescript(
         """
@@ -356,8 +360,16 @@ def _chat_db(tmp_path: Path) -> Path:
             cache_has_attachments INTEGER DEFAULT 0
         );
         CREATE TABLE handle (ROWID INTEGER PRIMARY KEY, id TEXT);
-        CREATE TABLE chat (ROWID INTEGER PRIMARY KEY, room_name TEXT, style INTEGER);
+        CREATE TABLE chat (
+            ROWID INTEGER PRIMARY KEY,
+            room_name TEXT,
+            style INTEGER,
+            chat_identifier TEXT,
+            display_name TEXT,
+            guid TEXT
+        );
         CREATE TABLE chat_message_join (chat_id INTEGER, message_id INTEGER);
+        CREATE TABLE chat_handle_join (chat_id INTEGER, handle_id INTEGER);
         CREATE TABLE attachment (
             ROWID INTEGER PRIMARY KEY,
             filename TEXT,
@@ -398,19 +410,29 @@ def _insert_incoming(
     reaction: int = 0,
     raw_blob: bytes | None = None,
     reply_to_guid: str | None = None,
+    # A room: its identifier (one chat row per identifier, shared across
+    # inserts the way chat.db shares it), its name, everyone in it, and
+    # whether the body carries Messages' mention marker.
+    chat_identifier: str | None = None,
+    chat_name: str = "",
+    participants: tuple[str, ...] = (),
+    mention: bool = False,
+    guid: str | None = None,
 ) -> None:
     db = sqlite3.connect(path)
     handle_id = db.execute("INSERT INTO handle (id) VALUES (?)", (sender,)).lastrowid
     blob = raw_blob
-    if blob is None and in_blob:
+    if blob is None and (in_blob or mention):
         blob = _typedstream(body)
+    if mention:
+        blob = (blob or b"") + b"\x00__kIMMentionConfirmedMention\x00"
     message_id = db.execute(
         "INSERT INTO message (guid, text, attributedBody, handle_id, is_from_me,"
         " date, associated_message_type, thread_originator_guid)"
         " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         (
-            f"guid-{handle_id}-{at_ns}",
-            None if (in_blob or raw_blob is not None) else body,
+            guid or f"guid-{handle_id}-{at_ns}",
+            None if (in_blob or mention or raw_blob is not None) else body,
             blob,
             handle_id,
             1 if from_me else 0,
@@ -419,13 +441,36 @@ def _insert_incoming(
             reply_to_guid,
         ),
     ).lastrowid
-    chat_id = db.execute(
-        "INSERT INTO chat (room_name, style) VALUES (?, ?)",
-        ("chat12345" if group else None, 43 if group else 45),
-    ).lastrowid
+    in_room = group or chat_identifier is not None
+    identifier = chat_identifier or ("chat12345" if group else None)
+    chat_id = (
+        db.execute("SELECT ROWID FROM chat WHERE chat_identifier = ?", (identifier,)).fetchone()
+        if identifier
+        else None
+    )
+    if chat_id is None:
+        chat_id = (
+            db.execute(
+                "INSERT INTO chat (room_name, style, chat_identifier, display_name, guid)"
+                " VALUES (?, ?, ?, ?, ?)",
+                (
+                    identifier if in_room else None,
+                    43 if in_room else 45,
+                    identifier,
+                    chat_name or None,
+                    f"iMessage;+;{identifier}" if in_room else None,
+                ),
+            ).lastrowid,
+        )
+        for person in participants:
+            person_id = db.execute("INSERT INTO handle (id) VALUES (?)", (person,)).lastrowid
+            db.execute(
+                "INSERT INTO chat_handle_join (chat_id, handle_id) VALUES (?, ?)",
+                (chat_id[0], person_id),
+            )
     db.execute(
         "INSERT INTO chat_message_join (chat_id, message_id) VALUES (?, ?)",
-        (chat_id, message_id),
+        (chat_id[0], message_id),
     )
     db.commit()
     db.close()
@@ -461,6 +506,9 @@ def _incoming_config(
     recipients: tuple[str, ...] = ("+15550100",),
     *,
     attachments: bool = False,
+    groups: tuple[str, ...] = (),
+    read_groups: bool = False,
+    display_name: str = "",
 ) -> BridgeConfig:
     (tmp_path / "Attachments").mkdir(exist_ok=True)
     return BridgeConfig(
@@ -472,6 +520,9 @@ def _incoming_config(
         incoming_db=_chat_db(tmp_path),
         attachments_enabled=attachments,
         attachments_root=tmp_path / "Attachments",
+        groups=frozenset(groups),
+        read_groups=read_groups,
+        display_name=display_name,
     )
 
 
@@ -1167,3 +1218,255 @@ def test_a_reaction_rendered_as_text_is_not_a_message(tmp_path):
     assert [m["text"] for m in polled["messages"]] == ["is there salsa dancing tomorrow?"]
     # The cursor moved past the reaction: it is not delivered later either.
     assert polled["cursor"] >= reaction_at
+
+
+# --- Group chats: only what is addressed to this account leaves the Mac ---
+
+_ROOM = "chat778899001122"
+_ROOM_GUID = f"iMessage;+;{_ROOM}"
+_PEOPLE = ("+15550100", "+15550101")
+
+
+def _room_config(tmp_path: Path, *, read: bool = True, name: str = "Scout") -> BridgeConfig:
+    return _incoming_config(
+        tmp_path, _PEOPLE, groups=(_ROOM,), read_groups=read, display_name=name
+    )
+
+
+def _room_messages(config: BridgeConfig) -> list[dict]:
+    from server import incoming_messages
+
+    return incoming_messages(config, since_ns=_ns_ago(120))["messages"]
+
+
+def test_room_talk_not_addressed_to_the_account_stays_on_the_mac(tmp_path):
+    config = _room_config(tmp_path)
+    _insert_incoming(
+        config.incoming_db, "+15550100", "lunch friday?", _ns_ago(5),
+        chat_identifier=_ROOM, participants=_PEOPLE,
+    )
+    assert _room_messages(config) == []
+
+
+def test_a_reply_in_a_thread_on_the_accounts_bubble_is_addressed(tmp_path):
+    config = _room_config(tmp_path)
+    db = config.incoming_db
+    _insert_incoming(
+        db, "+15550100", "Thai on Friday?", _ns_ago(30),
+        chat_identifier=_ROOM, chat_name="Lunch crew", participants=_PEOPLE, from_me=True, guid="bot-1",
+    )
+    _insert_incoming(
+        db, "+15550101", "yes please", _ns_ago(5), chat_identifier=_ROOM, reply_to_guid="bot-1"
+    )
+    (message,) = _room_messages(config)
+    assert message["addressed_by"] == "reply"
+    assert message["text"] == "yes please"
+    # Addresses leave the bridge normalized, as they do for one-to-one rows.
+    assert message["sender"] == normalize_recipient("+15550101")
+    # Answered in the room, anchored to the bubble the person replied to.
+    assert message["reply_to"] == _ROOM_GUID
+    assert message["chat_guid"] == _ROOM_GUID
+    assert message["chat_identifier"] == _ROOM
+    assert message["chat_name"] == "Lunch crew"
+    assert message["reply_to_guid"] == "bot-1"
+    assert message["participants"] == sorted(normalize_recipient(p) for p in _PEOPLE)
+
+
+def test_a_thread_on_somebody_elses_bubble_is_not_addressed(tmp_path):
+    config = _room_config(tmp_path)
+    db = config.incoming_db
+    _insert_incoming(
+        db, "+15550100", "pizza?", _ns_ago(30), chat_identifier=_ROOM, participants=_PEOPLE, guid="jen-1"
+    )
+    _insert_incoming(db, "+15550101", "sure", _ns_ago(5), chat_identifier=_ROOM, reply_to_guid="jen-1")
+    assert _room_messages(config) == []
+
+
+def test_a_mention_is_addressed(tmp_path):
+    config = _room_config(tmp_path)
+    _insert_incoming(
+        config.incoming_db, "+15550100", "@Scout what's the weather friday", _ns_ago(5),
+        chat_identifier=_ROOM, participants=_PEOPLE, mention=True,
+    )
+    (message,) = _room_messages(config)
+    assert message["addressed_by"] == "mention"
+    assert message["text"] == "@Scout what's the weather friday"
+
+
+def test_a_mention_of_somebody_else_is_not_addressed(tmp_path):
+    config = _room_config(tmp_path)
+    _insert_incoming(
+        config.incoming_db, "+15550100", "@Jen are you coming", _ns_ago(5),
+        chat_identifier=_ROOM, participants=_PEOPLE, mention=True,
+    )
+    assert _room_messages(config) == []
+
+
+def test_the_accounts_name_as_a_word_is_addressed_whatever_the_case(tmp_path):
+    config = _room_config(tmp_path)
+    _insert_incoming(
+        config.incoming_db, "+15550100", "scout, thai or pizza?", _ns_ago(5),
+        chat_identifier=_ROOM, participants=_PEOPLE,
+    )
+    (message,) = _room_messages(config)
+    assert message["addressed_by"] == "name"
+
+
+def test_the_name_inside_another_word_is_not_addressed(tmp_path):
+    config = _room_config(tmp_path)
+    _insert_incoming(
+        config.incoming_db, "+15550100", "we went scouting yesterday", _ns_ago(5),
+        chat_identifier=_ROOM, participants=_PEOPLE,
+    )
+    assert _room_messages(config) == []
+
+
+def test_room_rows_need_reading_switched_on(tmp_path):
+    config = _room_config(tmp_path, read=False)
+    _insert_incoming(
+        config.incoming_db, "+15550100", "Scout, hi", _ns_ago(5),
+        chat_identifier=_ROOM, participants=_PEOPLE,
+    )
+    assert _room_messages(config) == []
+
+
+def test_a_room_not_on_the_list_is_never_read(tmp_path):
+    config = _room_config(tmp_path)
+    _insert_incoming(
+        config.incoming_db, "+15550100", "Scout, hi", _ns_ago(5),
+        chat_identifier="chat999999999999", participants=_PEOPLE,
+    )
+    assert _room_messages(config) == []
+
+
+def test_a_room_sender_must_be_allowlisted(tmp_path):
+    config = _room_config(tmp_path)
+    _insert_incoming(
+        config.incoming_db, "+15550199", "Scout, hi", _ns_ago(5),
+        chat_identifier=_ROOM, participants=(*_PEOPLE, "+15550199"),
+    )
+    assert _room_messages(config) == []
+
+
+def test_a_room_tapback_rendered_as_text_is_skipped_even_with_the_name(tmp_path):
+    config = _room_config(tmp_path)
+    _insert_incoming(
+        config.incoming_db, "+15550100", "Loved “Scout: Thai on Friday?”", _ns_ago(5),
+        chat_identifier=_ROOM, participants=_PEOPLE,
+    )
+    assert _room_messages(config) == []
+
+
+def test_room_and_direct_messages_arrive_together_in_order(tmp_path):
+    config = _room_config(tmp_path)
+    db = config.incoming_db
+    _insert_incoming(db, "+15550100", "hi there", _ns_ago(10))
+    _insert_incoming(
+        db, "+15550101", "Scout, thai?", _ns_ago(5), chat_identifier=_ROOM, participants=_PEOPLE
+    )
+    direct, room = _room_messages(config)
+    assert direct["text"] == "hi there"
+    assert direct["reply_to"] == "+15550100"
+    assert "chat_identifier" not in direct
+    assert room["chat_identifier"] == _ROOM
+
+
+def test_reading_rooms_requires_the_accounts_display_name(monkeypatch, tmp_path):
+    monkeypatch.setenv("IMESSAGE_BRIDGE_TOKEN", "secret")
+    monkeypatch.setenv("IMESSAGE_BRIDGE_RECIPIENTS", "+15550100")
+    monkeypatch.setenv("IMESSAGE_BRIDGE_GROUPS", f"{_ROOM}, iMessage;+;chat112233445566")
+    monkeypatch.setenv("IMESSAGE_BRIDGE_READ_GROUPS", "1")
+    monkeypatch.delenv("IMESSAGE_BRIDGE_DISPLAY_NAME", raising=False)
+    with pytest.raises(BridgeError):
+        BridgeConfig.from_environment()
+    monkeypatch.setenv("IMESSAGE_BRIDGE_DISPLAY_NAME", "Scout")
+    config = BridgeConfig.from_environment()
+    assert config.groups == frozenset({_ROOM, "chat112233445566"})
+    assert config.read_groups is True
+    assert config.display_name == "Scout"
+
+
+def test_chat_targets_are_recognised_by_shape():
+    from server import normalize_chat_target
+
+    assert normalize_chat_target(_ROOM) == _ROOM
+    assert normalize_chat_target(_ROOM_GUID) == _ROOM
+    assert normalize_chat_target(" iMessage;+;chat778899001122 ") == _ROOM
+    assert normalize_chat_target("+15550100") is None
+    assert normalize_chat_target("chat12") is None
+    assert normalize_chat_target("chatroom") is None
+    assert normalize_chat_target("") is None
+
+
+def test_a_listed_room_is_a_valid_recipient_and_others_are_not(tmp_path):
+    config = _room_config(tmp_path)
+    assert check_recipient(config, _ROOM) == _ROOM_GUID
+    assert check_recipient(config, _ROOM_GUID) == _ROOM_GUID
+    with pytest.raises(BridgeError):
+        check_recipient(config, "chat999999999999")
+    with pytest.raises(BridgeError):
+        check_recipient(_incoming_config(tmp_path), _ROOM)
+
+
+def test_rooms_cannot_be_granted_by_callers(tmp_path):
+    config = _room_config(tmp_path)
+    with pytest.raises(BridgeError):
+        store_grant(config, "chat999999999999")
+    assert not config.grants_path.exists()
+
+
+def test_sending_to_a_room_addresses_the_chat(tmp_path, monkeypatch):
+    import server
+
+    calls: list[tuple[str, list[str]]] = []
+    monkeypatch.setattr(server, "run_osascript", lambda script, args: calls.append((script, args)))
+    monkeypatch.setattr(server, "latest_sent_guid", lambda *a, **k: "room-guid-1")
+    config = _room_config(tmp_path)
+    assert server.send_message(config, _ROOM, "Thai it is") == "room-guid-1"
+    ((script, args),) = calls
+    assert script is server._SEND_TEXT_TO_CHAT
+    assert args[1] == _ROOM_GUID
+    assert args[2] == "Thai it is"
+
+
+def test_sending_to_a_person_still_uses_the_participant_script(tmp_path, monkeypatch):
+    import server
+
+    calls: list[tuple[str, list[str]]] = []
+    monkeypatch.setattr(server, "run_osascript", lambda script, args: calls.append((script, args)))
+    monkeypatch.setattr(server, "latest_sent_guid", lambda *a, **k: None)
+    config = _room_config(tmp_path)
+    assert server.send_message(config, "+15550100", "hi") == "sent"
+    ((script, args),) = calls
+    assert script is server._SEND_TEXT
+    assert args[1] == "+15550100"
+
+
+def test_readback_after_a_room_send_is_scoped_to_that_room(tmp_path):
+    from server import latest_sent_guid
+
+    config = _room_config(tmp_path)
+    db = config.incoming_db
+    _insert_incoming(
+        db, "+15550100", "same words", _ns_ago(3), chat_identifier=_ROOM,
+        participants=_PEOPLE, from_me=True, guid="in-room",
+    )
+    _insert_incoming(db, "+15550100", "same words", _ns_ago(1), from_me=True, guid="direct")
+    assert latest_sent_guid(config, "+15550100", "same words") == "direct"
+    assert latest_sent_guid(config, _ROOM_GUID, "same words", chat_identifier=_ROOM) == "in-room"
+
+
+def test_a_room_picture_is_readable_only_when_rooms_are(tmp_path):
+    from server import _owned_attachment
+
+    config = _room_config(tmp_path)
+    photo = config.attachments_root / "room.jpg"
+    photo.write_bytes(b"\xff\xd8\xff\xe0" + b"0" * 64)
+    message_id = _insert_incoming(
+        config.incoming_db, "+15550100", "Scout, what is this", _ns_ago(5),
+        chat_identifier=_ROOM, participants=_PEOPLE,
+    )
+    attachment_id = _attach_file(config.incoming_db, message_id, photo, "image/jpeg", "room.jpg")
+    assert _owned_attachment(config, attachment_id) is not None
+    quiet = _room_config(tmp_path, read=False)
+    assert _owned_attachment(quiet, attachment_id) is None

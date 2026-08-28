@@ -11,16 +11,22 @@ Decision record: [ADR 0016](adr/0016-a-group-is-an-account.md). Status:
   set up on its own; if anyone in the group is not an approved user it stays
   silent and the operator gets one text.
 - It answers when addressed: tap-and-hold → Reply on any of its bubbles (and
-  every later message in that thread, from anyone, at any time), an @mention or
-  its name, the next message from someone it asked a question, or a tapback on
-  its bubble meaning "yes, do that".
+  every later message in that thread, from anyone, at any time), an @mention, or
+  its name as a word. Two more triggers are designed and not yet built - the
+  next message from someone it asked a question, and a tapback on its bubble
+  meaning "yes, do that" - because both need the Mac to forward an unaddressed
+  message on the backend's say-so (see Status).
 - A burst of small messages ("ok" / "thai then" / "friday?") gets one answer,
   once the person has finished; "sounds good, thanks" gets none.
-- It knows what members like (interests, cuisines, activities, home area) from
-  what they already told it in private - and never repeats a private fact.
-- "Jen and I love Thai food" is remembered for both; "we love hiking" for the
-  group; "Jen is allergic to peanuts" is not written into Jen's memory on
-  someone else's word.
+- It knows what members like - their name and the interests they follow - from
+  what they already told it in private, and nothing else of theirs: not where
+  they live, not what they said in a private conversation. Asked for a member's
+  private detail in the room, it says that is theirs to share (operator's
+  decision, 2026-08-28: tastes only).
+- "Jen and I love Thai food" is remembered for Ani (their own share) and for the
+  group with its source ("said by Ani"); "we love hiking" for the group; "Jen is
+  allergic to peanuts" is the group's knowledge with its source and is never
+  written into Jen's memory on someone else's word.
 - Scout digests on the group's shared interests and the group's reminders
   arrive in the group thread.
 
@@ -50,38 +56,69 @@ rows. Everything the group owns lives under that `user_id`.
   allowlisted chat target; guid readback is scoped per chat.
 
 ### Worker - `backend/workers/imessage_chat.py`
-- One session per chat (`imessage:chat:group:{chat_digest}`); speaker and every
-  participant resolved through `_account_for`; any unresolved participant →
-  silent and one operator alert (`OPERATOR_ALERT_PHONE`, dedup per chat).
-- Provisioning is automatic on the first addressed message when all resolve.
+- A room's message (`chat_identifier` on the payload) takes its own path,
+  `_handle_room_message`: the speaker and every participant are resolved through
+  `_account_for` (the subscriber allowlist); any unresolved participant → the
+  row is finished silently and the operator gets one text per room per day
+  (`OPERATOR_ALERT_PHONE`, dedup in Redis `imessage:chat:room_alert:{digest}`;
+  nothing about the strangers is sent).
+- Provisioning is automatic on the first addressed message when all resolve
+  (`_group_for`: `ConversationGroupRepository.provision`, idempotent per chat;
+  membership re-synced on every message; departed members are marked as left,
+  never deleted). A disabled group finishes rows silently.
+- One session per group: the ordinary `imessage:chat:conversation:{user_id}`
+  key under the group's user id, with the same idle window as a person's thread.
 - The turn runs as the group with `metadata = {channel: "imessage_group",
-  speaker_id, speaker_name, chat_digest, addressed_by}`; replies, acks and
-  pictures go to the chat.
-- Burst judgement: after each addressed fragment, `judge_readiness(last_bubble,
-  fragments)` (routing model, schema `{complete, needs_reply}`) decides whether
-  to keep listening, answer the whole burst, or stay quiet. Applied to one-to-one
-  chats too.
+  group: {chat_name, speaker_user_id, members, addressed_by}}`; the pipeline
+  fills in `speaker_name` and `group_user_id`. Replies, acks, and pictures go to
+  the chat (`reply_to` is the chat guid). A photo in the room is a vision turn
+  under the group.
+- Burst judgement (`_collect`): every addressed text fragment - room or
+  one-to-one - is appended to a pending record keyed by the reply address, and
+  `POST /chat/readiness` (`services/readiness.py`, routing model, schema
+  `{complete, needs_reply, reason}`, `prompts/routing/readiness.md`) is asked
+  whether the person has finished and whether an answer is wanted. Not finished
+  → keep listening; finished and wanted → one turn for the joined fragments;
+  finished and unwanted ("thanks!") → no bubble. A pending burst older than
+  `IMESSAGE_CHAT_BURST_CAP_SECONDS` (90 s) is answered by the next poll. The
+  judgement fails open to answering; `IMESSAGE_CHAT_READINESS_ENABLED=false`
+  restores answer-every-message.
 
 ### Reply pipeline
-- `GroupTurn` from the metadata: group, speaker, members with tastes.
-- Transcript labels through `backend/services/transcript.py` in the reply
-  assembly, the follow-up resolver, the router's history window, and the two
-  digesters.
-- `backend/memory/tastes.py`: the only door from a member's store to a group
-  prompt - interests, likes, city-level home, preferred name; screened by
-  `OutboundPrivacyPolicy`; bounded.
-- `prompts/reply/imessage_group.md`: a shared thread, address the named speaker,
-  others read along, use only what this context holds.
+- `ConversationService._attach_group` puts the room on the turn context:
+  members through the taste allowlist, the speaker's name (written back onto
+  the request metadata, so the stored turn's `extra_data.group.speaker_name`
+  says who spoke), and a `group` entry in the turn trace.
+- Transcript labels through `backend/services/transcript.py` (`speaker_label`,
+  `user_content`) in the reply assembly (`agents/reply/nodes.py`), the
+  follow-up resolver, the router's history window, and the planner history -
+  "Jen: thai?" where a one-to-one turn is the bare query, byte for byte.
+- `backend/memory/tastes.py` (`TasteProjection`): the only door from a member's
+  store to a group prompt - profile name and Scout interest labels, at most 8;
+  a member whose profile cannot be read stays on the roster as "Member n".
+  Home area, semantic facts, relationships are deliberately not read here.
+- `prompts/reply/imessage_group.md`, appended after `imessage_style` when
+  `channel == "imessage_group"`: the chat's name, who is speaking, each member's
+  likes, and the rule that everything else about a member is theirs to share.
 
 ### Memory attribution
-- `proposal_agent.propose(..., roster=)` uses a group decision whose kinds carry
-  `about` (schema enum: `speaker`, member ids, `group`); no `preferred_name` or
-  `response_style` fields at all.
-- `backend/memory/attribution.owners_for` (pure): tastes → every named member
-  (+ group when named); personal facts → speaker if about the speaker, group if
-  about the group, never another member.
-- `_persist_memory_proposals` writes per owner with provenance and records a
-  change per owner so "forget that" works from that owner's own thread.
+- `proposal_agent.propose(..., speaker=, roster=)` adds
+  `prompts/memory/proposal_group.md` and a decision with `about`: a list of
+  roster names or "the group", read for meaning ("Jen and I", "us", "the two
+  of us"); every proposal of the turn carries it. Without a roster the call is
+  unchanged.
+- `backend/memory/attribution.owners_for` (pure): named the speaker, or nothing
+  → the speaker's own store plus the group's copy with its source; named the
+  group, another member, or an outsider → the group's store only, with its
+  source. `with_provenance` puts the source in the words ("… (said by Ani)")
+  because the group's memory is read without the roster.
+- `_owned_copies` in the conversation service applies the profile rule on top:
+  a name, style, or locality is only ever the speaker's; an interest is the
+  speaker's, or the group's when the fact is about the group; never another
+  member's.
+- `_persist_memory_proposals` writes each copy through the ordinary saver
+  under its owner and records a change per owner (`scheduled_task_changes`),
+  so "forget that" works from the group and from a member's own thread.
 
 ### Delivery
 - `SUBSCRIBER_CHANNELS` gains `imessage_group`; the channel map sends it through
@@ -90,8 +127,9 @@ rows. Everything the group owns lives under that `user_id`.
   live under the group id; `deliver` fans out to the group's subscriber.
 
 ### Admin
-- `GET /admin/groups`, `POST /admin/groups/{id}/disable|enable`,
-  `DELETE /admin/groups/{id}`.
+- `GET /admin/groups` (members and state; never the chat address),
+  `POST /admin/groups/{id}/enabled?enabled=true|false`, `DELETE /admin/groups/{id}`
+  (the same schema-driven purge account deletion runs, then the group rows).
 
 ## Proof
 
@@ -123,21 +161,33 @@ Edge cases every suite must cover (the operator's standing instruction,
   chats, sends), worker (membership wall, one alert, provisioning, chat replies),
   repository, attribution policy, per-owner persistence, transcript labels.
 - Real model: `functional/test_group_attribution_behaviour.py` (phrasings and
-  the third-person-fact case), `test_group_reply_behaviour.py`,
-  `test_group_privacy_behaviour.py` (a private fact never appears),
-  `test_turn_readiness_behaviour.py` (bursts).
-- HTTP: sweep journeys "group: …" with database assertions.
+  the third-person-fact case), `test_group_reply_behaviour.py` (a member's
+  taste steers a suggestion; a private detail is theirs to share; the speaker
+  is addressed), `test_burst_readiness_behaviour.py` (fifteen bursts plus the
+  room aside).
+- HTTP: sweep journeys "group: …" - the room is provisioned for the sweep with a
+  second member "Jen" who likes thai food; a plan lands in the group's memory
+  and not the member's; a dinner suggestion; a private address told in Jen's
+  own thread never appears in the room.
 - Manual acceptance on the Mac with the operator's second number and one friend.
+
+Unit: `test_imessage_bridge.py` (rooms: 19 cases), `test_imessage_group_worker.py`,
+`test_conversation_groups.py`, `test_group_admin_routes.py`, `test_memory_attribution.py`,
+`test_transcript_labels.py`, `test_group_tastes.py`, `test_readiness_judgement.py`,
+`test_readiness_api.py`, `test_memory_proposal_roster.py`, `test_task_runner.py`
+(group delivery).
 
 ## Status
 | Part | State |
 |---|---|
 | Design, ADR | written 2026-08-28 |
-| Bridge group reads and chat sends | not started |
-| Data model, migration, provisioning | not started |
-| Worker session, membership wall, readiness judgement | not started |
-| Reply pipeline, tastes door, transcript labels | not started |
-| Memory attribution and per-owner writes | not started |
-| Delivery to the chat | not started |
-| Admin | not started |
-| Sweep journeys, docs, diagrams | not started |
+| Bridge group reads and chat sends | built 2026-08-28; unit-tested (rooms fixture); a live `chat id` send awaits the operator's acceptance chat |
+| Data model, migration, provisioning | built; migration `20260828_0011`; repository tested against the database |
+| Worker session, membership wall, readiness judgement | built; unit-tested; readiness pinned on the real routing model |
+| Reply pipeline, tastes door, transcript labels | built; group reply pinned on the real reply model |
+| Memory attribution and per-owner writes | built; attribution pinned on the real routing model |
+| Delivery to the chat | built (`imessage_group` channel, task runner) |
+| Admin | built; routes tested |
+| Sweep journeys, docs, diagrams | built; verified by deploy (see CHANGELOG) |
+| Pending-question and tapback triggers | not built - need a bridge tool that forwards one member's next message on request |
+| Manual acceptance on the Mac | pending: list the acceptance chat in `IMESSAGE_BRIDGE_GROUPS`, set `IMESSAGE_BRIDGE_READ_GROUPS` and `IMESSAGE_BRIDGE_DISPLAY_NAME`, restart the bridge |

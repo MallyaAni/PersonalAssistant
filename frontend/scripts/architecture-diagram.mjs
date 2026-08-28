@@ -29,6 +29,7 @@ const diagramNames = [
   "memory-overview",
   "discovery-subsystem",
   "imessage-bridge",
+  "group-chats-subsystem",
   "scheduled-tasks-subsystem",
   "agent-scout",
   "agent-deck",

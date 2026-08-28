@@ -21,7 +21,7 @@ is built and why. Where something is not built, it is labelled `PLANNED`.
 
 AniOS is a private personal assistant that runs entirely on hardware its owner
 controls. You talk to it in a browser (`deep-matter.com`, through a Cloudflare
-tunnel) or by texting it over iMessage. It remembers what you tell it, can find
+tunnel) or by texting it over iMessage (alone, or in a group with friends who are approved users). It remembers what you tell it, can find
 anything either of you has ever said, searches the web when a question needs
 it, makes pictures and edits them, draws diagrams, builds slide decks, runs
 scheduled tasks ("remind me every weekday at 7"), and - through an agent called
@@ -305,15 +305,34 @@ task and skill.
    person already has is sent again the same way when they ask to see it.
 6. The reply is pinned to the message it answers, and a long-press reply from
    you pins the assistant to *that* image rather than the newest one.
+7. Before answering a text, the worker asks the routing model whether the
+   person has finished and whether an answer is wanted, so "ok so" waits for
+   the rest, "thai then" gets one answer, and "thanks!" gets none - judged by
+   meaning, never by a timer (a pending fragment is answered after 90 s
+   regardless).
+8. In a group chat the Mac's operator has listed ([design](GROUP_CHATS_ARCHITECTURE.md),
+   [ADR 0016](adr/0016-a-group-is-an-account.md), [diagram](diagrams/group-chats-subsystem.svg)),
+   only what is addressed to the assistant leaves the Mac - a reply in a
+   thread on one of its bubbles, an @mention, or its name. Every member must
+   be an approved user or it stays silent and you get one text. The room is
+   then an account of its own (`group:<slug>`) with its own session, memory,
+   tasks, and Scout; members' names and interests are the only private thing
+   the room may know about them; a fact said in the room lands in the
+   speaker's memory when it is theirs and in the group's with its source
+   otherwise, never in another member's on someone else's word; and the
+   answer, digests, and reminders post back into the chat.
 
 *Stored:* durable state only through the normal chat path; the bridge and
-worker keep a cursor, seen IDs, and bubble-to-artifact maps in Redis.
-*The model decides:* only the answer - the recipient is always the bridge's
-`reply_to` handle, "never anything the model wrote". *Never leaves the Mac:*
-bodies from anyone not on the allowlist, anything in a group chat, and the
-text the reaction tools compare. *You control:* four independent grants on
-the Mac (send, read reactions, read incoming, read attachments), which Apple
-ID sends, and the allowlist itself - which approval on the web can extend.
+worker keep a cursor, seen IDs, pending bursts, and bubble-to-artifact maps
+in Redis. *The model decides:* only the answer (and whether one is wanted) -
+the recipient is always the bridge's `reply_to` handle, "never anything the
+model wrote". *Never leaves the Mac:* bodies from anyone not on the
+allowlist, anything in a group chat that is not listed or not addressed to
+the assistant, and the text the reaction tools compare. *You control:* five
+independent grants on the Mac (send, read reactions, read incoming, read
+attachments, read listed groups), which Apple ID sends, the allowlist itself
+- which approval on the web can extend - and the group list, which nothing
+but the Mac's environment can.
 
 ### Slide decks and diagrams ([deck diagram](diagrams/presentation-subsystem.svg), [Deck agent](diagrams/agent-deck.svg), [Diagram agent](diagrams/agent-diagram.svg))
 

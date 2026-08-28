@@ -35,6 +35,49 @@ task below is deliberately assigned to it.
 User `animallya96` on both Sparks, same password on both. No BMC and no
 wake-on-LAN, so **a powered-off Spark needs someone to press the button.**
 
+## Group chats — BUILT AND GATED 2026-08-28, live acceptance pending
+
+The assistant in an iMessage group with approved users, as its own account
+(ADR 0016; design, proof and status in `docs/GROUP_CHATS_ARCHITECTURE.md`;
+diagram `docs/diagrams/group-chats-subsystem.svg`). Bridge, worker, pipeline,
+attribution, delivery, admin, sweep journeys, and three real-model suites are
+in; the unit gate and `sweep --only group` ran green before the deploy that
+carried them (CHANGELOG).
+
+**Acceptance on the Mac, the one thing a machine cannot do here.** Make a
+group in Messages with your second number and one friend who is an approved
+user, then on the Mac:
+
+1. find the room's identifier - `osascript -e 'tell application "Messages" to
+   get {id, name} of every chat'` and pick the `iMessage;+;chatNNN` whose name
+   matches;
+2. add to `~/Library/LaunchAgents/com.anios.imessage-bridge.plist`:
+   `IMESSAGE_BRIDGE_GROUPS=chatNNN`, `IMESSAGE_BRIDGE_READ_GROUPS=true`,
+   `IMESSAGE_BRIDGE_DISPLAY_NAME=<the contact name the friend sees>`; then
+   `launchctl kickstart -k gui/$(id -u)/com.anios.imessage-bridge`;
+3. in the group, from the friend's phone: "Scout, thai or pizza friday?" →
+   one answer in the room; a tap-and-hold Reply to that bubble: "thai then"
+   → answered; "thanks!" → no bubble; an unaddressed "lol" → nothing leaves
+   the Mac (bridge log shows no forward);
+4. `GET /api/v1/admin/groups` lists the room with both members;
+5. `python -m backend.cli.explain_turn --user group:<slug> --last 3` shows
+   `group: {speaker, members}` in each trace.
+
+If anyone in the room is not approved, the assistant stays quiet and your
+phone (`OPERATOR_ALERT_PHONE`) gets one text a day about that room.
+
+**Not built, by design of the first cut:** the "next message from someone
+it asked a question" and "tapback on its bubble" triggers - both need the
+Mac to forward an unaddressed message on the backend's request (an
+`expect_reply(chat, sender)` bridge tool with a short TTL). Listed in the
+design doc's status table.
+
+**Seen once, passed on rerun (deploy #8's hand-run sweep, 2026-08-28):**
+"more casual (draft referent)" routed to Web search once, and "forget that
+(memory undo)" once left a semantic row behind. Both passed when rerun with
+`--only`; if either shows again, trace it with `explain_turn` before
+touching a prompt.
+
 ## Shipped 2026-08-24
 
 **Sign-up collects a phone number, and approving someone allowlists them.**

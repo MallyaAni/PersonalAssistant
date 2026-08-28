@@ -38,6 +38,10 @@ def normalize_address(value: str) -> str:
     if "@" in cleaned:
         # An Apple ID is an email; case never distinguishes two of them.
         return cleaned.casefold()
+    if ";+;" in cleaned:
+        # A group chat, as Messages names it (`iMessage;+;chatNNN`): not a
+        # phone, and its digits are not a number. Kept whole, case-folded.
+        return cleaned.casefold()
     digits = _NON_DIGITS.sub("", cleaned)
     if not digits:
         # Not phone-shaped and not an email: keep what the user wrote rather

@@ -479,6 +479,18 @@ class Settings(BaseSettings):
     # on 2026-08-27: a search answer took 15-25 s, so the bubble arrived a
     # breath before the answer and reassured nobody.
     IMESSAGE_CHAT_ACK_SECONDS: float = Field(default=6.0, gt=0, le=120)
+    # Bursts: people text in fragments, so each addressed fragment is judged
+    # by meaning (routing/readiness) before a reply - finished or not, and
+    # wanting an answer or not. Off means every message is answered as it
+    # arrives, the behaviour before 2026-08-28.
+    IMESSAGE_CHAT_READINESS_ENABLED: bool = True
+    # The safety cap on "not finished": a fragment judged incomplete that
+    # nothing follows is answered after this long anyway.
+    IMESSAGE_CHAT_BURST_CAP_SECONDS: float = Field(default=90.0, gt=0, le=900)
+    # Where the operator is told, once a day per chat, that the assistant
+    # was added to a group it must stay silent in (a participant is not an
+    # approved user). Empty means nobody is told.
+    OPERATOR_ALERT_PHONE: str = ""
     # Scheduled tasks: anything a person asked to have done later or on a
     # schedule, run as a chat turn under their identity and delivered on the
     # channel they asked from. The loop shares the discovery worker process.

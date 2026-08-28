@@ -31,7 +31,7 @@ from backend.core.auth import (
     authorize_user,
 )
 from backend.core.dependencies import DependencyConversationService, ModelGateDependency
-from backend.models.schemas import ChatRequest, ChatStreamEvent
+from backend.models.schemas import ChatRequest, ChatStreamEvent, ReadinessRequest
 
 logger = logging.getLogger(__name__)
 
@@ -92,6 +92,23 @@ async def chat(
             "X-Accel-Buffering": "no",
         },
     )
+
+
+# Whether a texting burst is finished and wants an answer, judged by the
+# routing model (services/readiness.py). The iMessage worker asks this
+# before every reply so "ok so" is not answered and "thanks!" is not either.
+@router.post("/chat/readiness")
+async def chat_readiness(
+    body: ReadinessRequest,
+    service: DependencyConversationService,
+    identity: IdentityDependency,
+) -> dict[str, Any]:
+    authorize_user(body.user_id, identity)
+    authorize_scope(identity, SCOPE_CHAT)
+    verdict = await service.judge_readiness(
+        body.previous_reply, list(body.fragments), in_group=body.in_group
+    )
+    return {"complete": verdict.complete, "needs_reply": verdict.needs_reply, "reason": verdict.reason}
 
 
 async def _encode_sse(

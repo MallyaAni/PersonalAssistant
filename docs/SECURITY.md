@@ -66,11 +66,21 @@ This document separates current security facts from future requirements. A contr
 - The iMessage bridge is the one inbound message-content ingress. Behind a
   separate Mac-side grant (`IMESSAGE_BRIDGE_READ_INCOMING`, off by default), its
   `read_messages` tool returns the bodies of incoming one-to-one iMessages from
-  senders on the Mac operator's allowlist — today, only the operator's own
-  addresses. Who may be heard is decided on the Mac, never by the caller;
-  strangers' bodies and everything in group chats are filtered inside the
-  bridge process and never leave it, and bodies are never logged on either
-  machine (no redaction layer exists). Inbound text runs through the same
+  senders on the Mac operator's allowlist. Who may be heard is decided on the
+  Mac, never by the caller; strangers' bodies are filtered inside the bridge
+  process and never leave it, and bodies are never logged on either machine
+  (no redaction layer exists). Group chats are a separate, env-only grant
+  (`IMESSAGE_BRIDGE_GROUPS` + `IMESSAGE_BRIDGE_READ_GROUPS`, 2026-08-28):
+  from a listed room only messages addressed to the assistant - a reply in a
+  thread on its bubble, a mention, its name - from allowlisted senders are
+  forwarded, with the room's participant list; everything else in the room
+  is discarded on the Mac. The backend adds a second wall: every participant
+  must be an approved subscriber or the room is answered nowhere (the
+  operator is texted once a day per room, without the strangers' addresses).
+  A room is its own account; what it may know about a member is a fixed
+  allowlist (name and Scout interests, `backend/memory/tastes.py`), and a
+  fact said in the room is never written into another member's memory
+  (`backend/memory/attribution.py`; ADR 0016). Inbound text runs through the same
   conversation pipeline as the web UI, **including immediate memory
   persistence — an explicit operator decision** (2026-08-21). What makes that
   acceptable for senders beyond the operator is **per-sender account

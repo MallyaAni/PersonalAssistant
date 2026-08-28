@@ -104,6 +104,7 @@ for the kind of change it covers (AGENTS.md, completion rule).
 | Image harness | the ten picture scenarios on the real chat path | `python -m backend.cli.exercise_image_scenarios` |
 | Lettering read-back | the writing on a generated sign reads back in English (needs the desktop on) | `docker compose --profile test run --rm --no-deps -v $PWD/backend:/app/backend:ro -v $PWD/prompts:/app/prompts:ro functional-tests python -m pytest backend/tests/functional/test_image_text_language_behaviour.py -q` |
 | Real utterances | what people actually say, by route - write cases from these | `python -m backend.cli.real_utterances --days 14` |
+| Group chats | the room's rules on the real models: bursts (`test_burst_readiness_behaviour`), who a fact is about (`test_group_attribution_behaviour`), the room reply (`test_group_reply_behaviour`); over HTTP, `sweep_journeys --only group` provisions a room with a second member and checks the private-fact wall in the database | `bash scripts/gate.sh backend/tests/functional/test_group_attribution_behaviour.py` etc. |
 | Turn trace | why a turn did what it did, decrypted | `python -m backend.cli.explain_turn --user <id> --last 8` |
 | Coverage guard | every tool has a live test, every capability a journey, every prompt a pin | part of the unit gate: `backend/tests/test_functional_coverage_completeness.py` |
 | Deploy | all of the above in order, then the sweep and harness on the deployed system, paging on red | `bash scripts/deploy.sh` |

@@ -156,3 +156,12 @@ async def test_run_once_closes_a_run_whose_turn_failed(monkeypatch):
     assert await harness.runner.run_once() is True
     assert harness.finished == [("run-5", "failed", None, "turn_failed")]
     assert harness.sent == []
+
+
+@pytest.mark.asyncio
+async def test_a_group_task_is_delivered_into_the_chat(monkeypatch):
+    room = "iMessage;+;chat778899001122"
+    harness = _Harness(monkeypatch, TurnResult("Digest for the crew", ()), room)
+    await harness.runner._deliver("run-1", _task("imessage_group"), TurnResult("Digest for the crew", ()))
+    assert harness.sent == [{"to": room, "body": "Digest for the crew"}]
+    assert harness.finished == [("run-1", "delivered", "Digest for the crew", None)]

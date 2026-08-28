@@ -356,6 +356,25 @@ Safe tool-descriptor embeddings, approved preference/sanitized outcome memory, l
 - voice interaction;
 - mobile applications.
 
+### Group chats over iMessage — BUILT AND GATED 2026-08-28, live acceptance pending
+
+- `VERIFIED` (bounded): a group chat the Mac's operator lists is read for
+  messages addressed to the assistant only (a reply in a thread on its bubble,
+  an @mention, its name); every participant must be an approved user or the
+  room is answered nowhere and the operator is texted once; the room is an
+  account of its own (`group:<slug>`, ADR 0016) with its own session, memory,
+  tasks and Scout; members' names and Scout interests are the only private
+  thing the room may know; a fact said in the room lands in the speaker's
+  memory when it is theirs and in the group's with its source otherwise,
+  never in another member's on someone else's word; replies, digests and
+  reminders post back into the chat; bursts in any thread are judged by
+  meaning before a reply. Design and proof: `docs/GROUP_CHATS_ARCHITECTURE.md`.
+- `UNVERIFIED`: a live send into a real group from the Mac (`chat id`
+  AppleScript form resolves; the operator's acceptance chat is the first
+  real send). `PLANNED`: two more triggers - the next message from someone
+  the assistant asked a question, and a tapback on its bubble - which need
+  a bridge tool that forwards one member's next message on request.
+
 ### Ambient local discovery and notification — IN PROGRESS
 
 The first capability that reaches *out* rather than answering when asked: on a

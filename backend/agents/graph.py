@@ -378,9 +378,33 @@ def _training_boundary() -> str:
 # the web UI appends nothing and is byte-identical to before. Per-channel
 # prefixes each stay stable, so prompt caching holds.
 def _channel_style(context_data: dict[str, Any]) -> str:
-    if context_data.get("channel") == "imessage":
+    channel = context_data.get("channel")
+    if channel == "imessage":
         return "\n\n" + load("reply/imessage_style")
+    if channel == "imessage_group":
+        # A room: the texting style, then who is in it and what they like.
+        # The roster changes only when membership does; the speaker line
+        # changes per turn, which costs the cached prefix on a group turn -
+        # accepted, groups are a small share of turns.
+        return "\n\n" + load("reply/imessage_style") + "\n\n" + _render_group_block(context_data.get("group") or {})
     return ""
+
+
+# The group block: chat name, who is speaking, and each member's tastes -
+# the whole of what the room may know about anyone (memory/tastes.py).
+def _render_group_block(group: dict[str, Any]) -> str:
+    members = group.get("members") or []
+    lines = []
+    for member in members:
+        name = str(member.get("name") or "a member")
+        likes = ", ".join(str(item) for item in (member.get("interests") or []))
+        lines.append(f"- {name}: likes {likes}" if likes else f"- {name}: no stated likes yet")
+    return render(
+        "reply/imessage_group",
+        chat_name=str(group.get("chat_name") or "the group"),
+        speaker=str(group.get("speaker_name") or "a member"),
+        roster="\n".join(lines) or "- (nobody is listed yet)",
+    )
 
 
 # What kind of turn this is, when it is not a person typing a question: a

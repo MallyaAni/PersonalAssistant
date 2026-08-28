@@ -67,6 +67,7 @@ from backend.tools import (
     builtin_tools,
     parse_builtin,
 )
+from backend.services.transcript import speaker_label
 
 __all__ = [
     "BuiltinTool",
@@ -125,7 +126,7 @@ def render_recent_history(history: list[dict[str, Any]]) -> str:
         user_text = str(turn.get("query") or "").strip()
         assistant_text = str(turn.get("response") or "").strip()
         if user_text:
-            lines.append(f"User: {user_text}")
+            lines.append(f"{speaker_label(turn)}: {user_text}")
         if assistant_text:
             lines.append(f"Assistant: {assistant_text}")
     rendered = "\n".join(lines)[-_MAX_HISTORY_CHARS:]

@@ -59,8 +59,21 @@ _IMAGE_KEY = "imessage:chat:image:{user_id}"
 # guid. This is what lets a native reply to that bubble pin that image as
 # the ask/edit target, overriding recency.
 _BUBBLE_KEY = "imessage:chat:bubble:{guid}"
+# A burst in progress: the fragments a person has sent since the last reply
+# that were judged unfinished, keyed by where the reply would go. The index
+# lets a poll find bursts whose safety cap has passed.
+_PENDING_KEY = "imessage:chat:pending:{to}"
+_PENDING_INDEX_KEY = "imessage:chat:pending"
+# The last bubble sent to an address, for the readiness judgement's "what
+# the assistant said before these fragments".
+_LAST_REPLY_KEY = "imessage:chat:last_reply:{to}"
+# One operator alert per room per day about a room the assistant must stay
+# quiet in.
+_ROOM_ALERT_KEY = "imessage:chat:room_alert:{digest}"
 _SEEN_TTL_SECONDS = 3 * 24 * 3600
 _BUBBLE_TTL_SECONDS = 7 * 24 * 3600
+_PENDING_TTL_SECONDS = 24 * 3600
+_ROOM_ALERT_TTL_SECONDS = 24 * 3600
 
 # Margin under the bridge's 5MB attachment cap, which bounds what a
 # compromised backend could pump through the Mac and is not negotiated
@@ -224,6 +237,9 @@ class IMessageChatWorker:
         new_cursor = payload.get("cursor")
         if isinstance(new_cursor, int):
             await self._remember_cursor(new_cursor)
+        # Bursts judged unfinished that nothing followed: answered once the
+        # safety cap has passed, so a person left mid-thought still gets a reply.
+        answered += await self._flush_stale_bursts()
         return answered
 
     # One inbound message, answered or skipped; returns 1 when a reply was
@@ -249,6 +265,10 @@ class IMessageChatWorker:
             return 0
         if await self._already_seen(guid):
             return 0
+        if message.get("chat_identifier"):
+            # A room's message: the bridge already established it was
+            # addressed to this account; the worker establishes the room.
+            return await self._handle_room_message(message, guid, text, reply_to, attachments)
         user_id = await self._account_for(str(message.get("sender") or ""))
         if user_id is None:
             # A stranger's row must not replay forever; it is finished.
@@ -269,8 +289,14 @@ class IMessageChatWorker:
                 self._photo_turn(user_id, text, attachments), reply_to, status
             )
         else:
+            # Judged by meaning before a reply: unfinished fragments wait for
+            # the rest, a closing "thanks!" gets no reply, and a finished
+            # burst is answered as one message.
+            burst = await self._collect(user_id, reply_to, guid, text, in_group=False)
+            if burst is None:
+                return 0
             turn = await self._with_ack(
-                self._converse(user_id, text, active_image=pinned, status=status),
+                self._converse(user_id, burst, active_image=pinned, status=status),
                 reply_to,
                 status,
             )
@@ -302,11 +328,273 @@ class IMessageChatWorker:
         await self._mark_seen(guid)
         return answered
 
+    # One message from a group chat. Every participant must be an approved
+    # user, or the assistant stays silent in that room and tells the
+    # operator once; the room is then provisioned as an account of its own
+    # (ADR 0016), the turn runs as the group with the speaker attached, and
+    # the reply goes back into the chat.
+    async def _handle_room_message(
+        self, message: dict, guid: str, text: str, reply_to: str, attachments: list[dict]
+    ) -> int:
+        chat_guid = str(message.get("chat_guid") or reply_to)
+        chat_name = str(message.get("chat_name") or "")
+        speaker = await self._account_for(str(message.get("sender") or ""))
+        if speaker is None:
+            await self._mark_seen(guid)
+            return 0
+        members: list[str] = []
+        strangers = 0
+        for participant in message.get("participants") or []:
+            account = await self._account_for(str(participant or ""))
+            if account is None:
+                strangers += 1
+            elif account not in members:
+                members.append(account)
+        if speaker not in members:
+            members.append(speaker)
+        if strangers:
+            await self._alert_operator_about_room(chat_guid, chat_name, strangers)
+            await self._mark_seen(guid)
+            return 0
+        group = await self._group_for(chat_guid, chat_name, tuple(members))
+        if group is None or not group.enabled:
+            await self._mark_seen(guid)
+            return 0
+        room = {
+            "chat_name": chat_name,
+            "speaker_user_id": speaker,
+            "members": list(group.members),
+            "addressed_by": str(message.get("addressed_by") or ""),
+        }
+        pinned = await self._artifact_for_bubble(str(message.get("reply_to_guid") or ""))
+        status: list[str] = []
+        if attachments:
+            turn = await self._with_ack(
+                self._photo_turn(group.user_id, text, attachments), reply_to, status
+            )
+        else:
+            burst = await self._collect(group.user_id, reply_to, guid, text, in_group=True, room=room)
+            if burst is None:
+                return 0
+            turn = await self._with_ack(
+                self._converse(group.user_id, burst, active_image=pinned, status=status, room=room),
+                reply_to,
+                status,
+            )
+        if pinned:
+            await self._remember_image(group.user_id, pinned)
+        answered = 0
+        try:
+            await self._deliver(reply_to, turn)
+            answered = 1
+            if turn.images:
+                await self._remember_image(group.user_id, turn.images[-1].artifact_id)
+        except Exception as exc:
+            logger.warning(
+                "imessage_chat_room_reply_failed: %s: %s",
+                type(exc).__name__,
+                str(exc)[:200],
+                extra={"user": group.user_id},
+            )
+        await self._mark_seen(guid)
+        return answered
+
+    # The group account for a chat: provisioned on first contact when every
+    # participant is approved, its membership brought in line with the chat
+    # on every message after. None when the database cannot be reached.
+    async def _group_for(self, chat_guid: str, chat_name: str, members: tuple[str, ...]):
+        from dataclasses import replace
+
+        from backend.discovery.addressing import address_digest, normalize_address
+        from backend.groups.repository import ConversationGroupRepository
+
+        try:
+            async with AsyncSessionLocal() as db:
+                repository = ConversationGroupRepository(db)
+                group = await repository.by_chat_digest(address_digest(normalize_address(chat_guid)))
+                if group is None:
+                    group = await repository.provision(normalize_address(chat_guid), chat_name, members)
+                    logger.info("imessage_group_provisioned", extra={"user": group.user_id, "members": len(members)})
+                elif set(group.members) != set(members):
+                    group = replace(group, members=await repository.sync_members(group.user_id, members))
+                await repository.touch(group.user_id)
+                return group
+        except Exception as exc:
+            logger.warning(
+                "imessage_group_unavailable: %s: %s", type(exc).__name__, str(exc)[:200]
+            )
+            return None
+
+    # Tell the operator, once a day per room, that the assistant was added
+    # to a chat it must stay quiet in. Nothing about the strangers is sent -
+    # only that there are some.
+    async def _alert_operator_about_room(self, chat_guid: str, chat_name: str, strangers: int) -> None:
+        phone = settings.OPERATOR_ALERT_PHONE.strip()
+        if not phone:
+            return
+        from backend.discovery.addressing import address_digest
+
+        key = _ROOM_ALERT_KEY.format(digest=address_digest(chat_guid))
+        try:
+            if await self.redis.get(key):
+                return
+            await self.redis.set(key, "1", ex=_ROOM_ALERT_TTL_SECONDS)
+        except Exception:
+            pass
+        title = f"“{chat_name}”" if chat_name else "a group chat"
+        people = "one person" if strangers == 1 else f"{strangers} people"
+        try:
+            await self.invoke_tool(
+                settings.DISCOVERY_IMESSAGE_TOOL,
+                {
+                    "to": phone,
+                    "body": (
+                        f"I was added to {title}, but {people} in it aren't approved "
+                        "users, so I'm staying quiet there until they are."
+                    ),
+                },
+            )
+        except Exception:
+            logger.warning("imessage_room_alert_failed")
+
+    # What to answer, judged by meaning: the fragments since the last reply
+    # as one message when the person has finished and wants an answer; None
+    # when they have not finished (kept, answered after the cap) or when
+    # what they sent wants no reply. The fragment is marked seen either
+    # way - a kept fragment lives in the pending record, not in the cursor.
+    async def _collect(
+        self,
+        user_id: str,
+        reply_to: str,
+        guid: str,
+        text: str,
+        *,
+        in_group: bool,
+        room: dict | None = None,
+    ) -> str | None:
+        if not settings.IMESSAGE_CHAT_READINESS_ENABLED:
+            return text
+        pending = await self._pending_add(reply_to, user_id, guid, text, in_group, room)
+        fragments = [str(item.get("text") or "") for item in pending.get("fragments") or []]
+        verdict = await self._readiness(user_id, reply_to, fragments, in_group)
+        oldest = float((pending.get("fragments") or [{}])[0].get("at") or time.time())
+        capped = time.time() - oldest >= settings.IMESSAGE_CHAT_BURST_CAP_SECONDS
+        if not verdict["complete"] and not capped:
+            await self._mark_seen(guid)
+            logger.info("imessage_chat_burst_waiting", extra={"fragments": len(fragments)})
+            return None
+        await self._pending_clear(reply_to)
+        if not verdict["needs_reply"]:
+            await self._mark_seen(guid)
+            logger.info("imessage_chat_no_reply_needed", extra={"fragments": len(fragments)})
+            return None
+        return "\n".join(fragment for fragment in fragments if fragment)
+
+    # The judgement itself, through the backend so the routing model is
+    # asked the way every other judgement is. Fails open to "answer it".
+    async def _readiness(self, user_id: str, reply_to: str, fragments: list[str], in_group: bool) -> dict:
+        previous = ""
+        try:
+            previous = await self.redis.get(_LAST_REPLY_KEY.format(to=reply_to)) or ""
+        except Exception:
+            pass
+        token = issue_user_token(user_id, ttl_seconds=120, scopes=["chat"])
+        try:
+            async with httpx.AsyncClient(timeout=30) as client:
+                response = await client.post(
+                    f"{self.base_url}/api/v1/chat/readiness",
+                    json={
+                        "user_id": user_id,
+                        "fragments": fragments[-12:],
+                        "previous_reply": previous[-4000:],
+                        "in_group": in_group,
+                    },
+                    headers={"Authorization": f"Bearer {token}"},
+                )
+                response.raise_for_status()
+                verdict = response.json()
+            return {"complete": bool(verdict.get("complete", True)), "needs_reply": bool(verdict.get("needs_reply", True))}
+        except Exception as exc:
+            logger.warning("imessage_chat_readiness_failed: %s: %s", type(exc).__name__, str(exc)[:200])
+            return {"complete": True, "needs_reply": True}
+
+    # Append a fragment to the address's pending burst and return the burst.
+    async def _pending_add(
+        self, reply_to: str, user_id: str, guid: str, text: str, in_group: bool, room: dict | None
+    ) -> dict:
+        key = _PENDING_KEY.format(to=reply_to)
+        record: dict = {"user_id": user_id, "reply_to": reply_to, "in_group": in_group, "room": room, "fragments": []}
+        try:
+            stored = await self.redis.get(key)
+            if stored:
+                record = json.loads(stored)
+        except Exception:
+            pass
+        record["fragments"] = [*(record.get("fragments") or []), {"guid": guid, "text": text, "at": time.time()}][-12:]
+        record["room"] = room or record.get("room")
+        try:
+            await self.redis.set(key, json.dumps(record), ex=_PENDING_TTL_SECONDS)
+            await self.redis.sadd(_PENDING_INDEX_KEY, reply_to)
+        except Exception:
+            pass
+        return record
+
+    async def _pending_clear(self, reply_to: str) -> None:
+        try:
+            await self.redis.delete(_PENDING_KEY.format(to=reply_to))
+            await self.redis.srem(_PENDING_INDEX_KEY, reply_to)
+        except Exception:
+            pass
+
+    # Bursts whose oldest fragment has passed the safety cap, answered now
+    # as one message each. Runs every poll; a quiet bridge finds nothing.
+    async def _flush_stale_bursts(self) -> int:
+        try:
+            addresses = await self.redis.smembers(_PENDING_INDEX_KEY)
+        except Exception:
+            return 0
+        answered = 0
+        for reply_to in addresses or ():
+            try:
+                stored = await self.redis.get(_PENDING_KEY.format(to=reply_to))
+            except Exception:
+                continue
+            if not stored:
+                await self._pending_clear(reply_to)
+                continue
+            record = json.loads(stored)
+            fragments = record.get("fragments") or []
+            if not fragments:
+                await self._pending_clear(reply_to)
+                continue
+            if time.time() - float(fragments[0].get("at") or 0) < settings.IMESSAGE_CHAT_BURST_CAP_SECONDS:
+                continue
+            await self._pending_clear(reply_to)
+            text = "\n".join(str(item.get("text") or "") for item in fragments)
+            user_id = str(record.get("user_id") or "")
+            room = record.get("room") if record.get("in_group") else None
+            status: list[str] = []
+            turn = await self._with_ack(
+                self._converse(user_id, text, status=status, room=room), reply_to, status
+            )
+            try:
+                await self._deliver(reply_to, turn)
+                answered += 1
+            except Exception as exc:
+                logger.warning("imessage_chat_burst_reply_failed: %s: %s", type(exc).__name__, str(exc)[:200])
+        return answered
+
     # One turn's answer onto the thread: text flattened at the send boundary
     # and delivered the way a person texts a long thought - a few separate
     # bubbles at a typing pace - then any picture the turn made, as a photo
     # after the words that introduce it.
     async def _deliver(self, reply_to: str, turn: "TurnResult") -> None:
+        try:
+            await self.redis.set(
+                _LAST_REPLY_KEY.format(to=reply_to), plain_text(turn.reply)[:4000], ex=_PENDING_TTL_SECONDS
+            )
+        except Exception:
+            pass
         for position, piece in enumerate(bubbles(plain_text(turn.reply))):
             if position:
                 await asyncio.sleep(_BUBBLE_PACE_SECONDS)
@@ -423,6 +711,7 @@ class IMessageChatWorker:
         text: str,
         active_image: str | None = None,
         status: list[str] | None = None,
+        room: dict | None = None,
     ) -> "TurnResult":
         token = issue_user_token(user_id, ttl_seconds=600, scopes=["chat", "vision"])
         body: dict[str, object] = {
@@ -431,7 +720,10 @@ class IMessageChatWorker:
             # Tells the reply model where its words land, so it writes like
             # a text instead of a web page. The flattener downstream stays:
             # writing for the medium and repairing for it are both wanted.
-            "metadata": {"channel": "imessage"},
+            # A room says so, and who is in it and who is speaking.
+            "metadata": (
+                {"channel": "imessage_group", "group": dict(room)} if room else {"channel": "imessage"}
+            ),
         }
         body.update(await self._thread_state(user_id, pinned=active_image))
         collected: list[str] = []

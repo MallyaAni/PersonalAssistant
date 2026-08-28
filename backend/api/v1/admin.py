@@ -19,6 +19,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import delete, select, text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.config.settings import settings
 from backend.core.auth import AdminDependency, IdentityDependency
@@ -753,25 +754,11 @@ async def set_account_active(
 #
 # Deletion is retried while it makes progress, so foreign keys between user-owned
 # tables resolve themselves without hardcoding an order that would also drift.
-@router.delete("/accounts/{user_id}", status_code=status.HTTP_200_OK)
-async def delete_account(
-    admin: AdminDependency,
-    identity: IdentityDependency,
-    db: DbDependency,
-    user_id: str,
-) -> dict[str, object]:
-    account = await db.scalar(select(UserAccount).where(UserAccount.user_id == user_id))
-    if account is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Account not found."
-        )
-    # Deleting the only account that can undo it needs database access to fix.
-    if account.user_id == _operator_id(identity):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="You cannot delete your own operator account.",
-        )
-
+# Every row the account owns, table by table, retried until the foreign
+# keys let each one go. Shared by account deletion and group deletion: a
+# group is an account, and its memory, tasks, subscriber row, and turns are
+# keyed by its user_id like anybody's (ADR 0016).
+async def purge_owned_rows(db: AsyncSession, user_id: str) -> dict[str, int]:
     tables = [
         row[0]
         for row in (
@@ -808,6 +795,29 @@ async def delete_account(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Could not clear: {', '.join(sorted(pending))}.",
             )
+    return removed
+
+
+@router.delete("/accounts/{user_id}", status_code=status.HTTP_200_OK)
+async def delete_account(
+    admin: AdminDependency,
+    identity: IdentityDependency,
+    db: DbDependency,
+    user_id: str,
+) -> dict[str, object]:
+    account = await db.scalar(select(UserAccount).where(UserAccount.user_id == user_id))
+    if account is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Account not found."
+        )
+    # Deleting the only account that can undo it needs database access to fix.
+    if account.user_id == _operator_id(identity):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="You cannot delete your own operator account.",
+        )
+
+    removed = await purge_owned_rows(db, user_id)
     # `access_requests` has no user_id column, so the schema sweep above never
     # reaches it - and it holds the person's phone number and the Argon2 hash of
     # the password they chose. It links to the account by desired_username, which
@@ -822,7 +832,7 @@ async def delete_account(
     return {
         "user_id": user_id,
         "deleted": {name: count for name, count in removed.items() if count},
-        "tables_scanned": len(tables),
+        "tables_scanned": len(removed),
     }
 
 
@@ -849,3 +859,50 @@ async def set_search_limit(
         "using_default": account.search_monthly_limit is None
         and account.search_daily_limit is None,
     }
+
+
+# --- Group chats (ADR 0016): the operator's list, switch, and delete ---
+
+
+# Every group the assistant has been added to, with its members. Chat
+# addresses are not returned: the chat is another person's room.
+@router.get("/groups")
+async def list_groups(admin: AdminDependency, db: DbDependency) -> dict[str, object]:
+    from backend.groups.repository import ConversationGroupRepository, as_dict
+
+    groups = await ConversationGroupRepository(db).list_all()
+    return {"groups": [as_dict(group) for group in groups]}
+
+
+# Silence a group without forgetting it (its memory and tasks stay), or
+# restore it.
+@router.post("/groups/{group_user_id}/enabled", status_code=status.HTTP_200_OK)
+async def set_group_enabled(
+    admin: AdminDependency, db: DbDependency, group_user_id: str, enabled: bool = Query(...)
+) -> dict[str, object]:
+    from backend.groups.repository import ConversationGroupRepository, is_group_id
+
+    if not is_group_id(group_user_id):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found.")
+    if not await ConversationGroupRepository(db).set_enabled(group_user_id, enabled):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found.")
+    return {"user_id": group_user_id, "enabled": enabled}
+
+
+# Remove a group: its rows, its account, and everything the account owns -
+# the same purge an account deletion runs, because a group is an account.
+@router.delete("/groups/{group_user_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_group(admin: AdminDependency, db: DbDependency, group_user_id: str) -> None:
+    from backend.groups.repository import ConversationGroupRepository, is_group_id
+
+    if not is_group_id(group_user_id):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found.")
+    repository = ConversationGroupRepository(db)
+    if await repository.by_user_id(group_user_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found.")
+    # The sweep reaches the group's own rows too (they carry user_id), so
+    # what is left for the repository is at most nothing; the commit is
+    # what makes the sweep real.
+    await purge_owned_rows(db, group_user_id)
+    await db.commit()
+    await repository.delete(group_user_id)

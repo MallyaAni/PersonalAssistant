@@ -1312,10 +1312,15 @@ def get_discovery_channels() -> dict[str, NotificationChannel]:
     }
     if not settings.DISCOVERY_EGRESS_ENABLED:
         channels["imessage"] = NullChannel("imessage")
+        channels["imessage_group"] = NullChannel("imessage_group")
         return channels
     channels["imessage"] = MessagesAppChannel(
         _invoke_discovery_tool, settings.DISCOVERY_IMESSAGE_TOOL
     )
+    # A group chat is delivered by the same Mac: its subscriber address is
+    # the chat itself, which the bridge accepts only for rooms its operator
+    # listed (ADR 0016).
+    channels["imessage_group"] = channels["imessage"]
     return channels
 
 

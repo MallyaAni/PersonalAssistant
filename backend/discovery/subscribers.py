@@ -16,7 +16,7 @@ from backend.models.discovery_subscriber import DiscoverySubscriber
 # "imessage" delivers through an Apple device the operator controls.
 # "shortcuts_pull" delivers nothing: the recipient's own device fetches, so
 # AniOS makes no outbound connection at all.
-SUBSCRIBER_CHANNELS = ("imessage", "shortcuts_pull")
+SUBSCRIBER_CHANNELS = ("imessage", "imessage_group", "shortcuts_pull")
 
 # Small on purpose. This is a personal loop for people the user knows, and a
 # bound is the difference between a digest and a broadcast.

@@ -30,6 +30,11 @@ from backend.workers.imessage_chat import (
 
 logger = get_logger(__name__)
 
+# The channels the Mac delivers on: a person's thread, or a group chat whose
+# subscriber address is the chat itself. A task saved from a group turn
+# carries "imessage_group" and posts back into the room.
+_MESSAGES_CHANNELS = ("imessage", "imessage_group")
+
 
 class TaskRunner:
     """Produce due runs and work the oldest claimable one."""
@@ -101,7 +106,7 @@ class TaskRunner:
         if is_nothing_to_report(turn.reply):
             await self._finish(run_id, "quiet", task, turn.reply)
             return
-        if task["channel"] != "imessage":
+        if task["channel"] not in _MESSAGES_CHANNELS:
             await self._finish(run_id, "completed", task, turn.reply)
             return
         address = await self._address_for(task["user_id"])
@@ -147,7 +152,7 @@ class TaskRunner:
 
     # One short line on the task's own channel when a firing is given up on.
     async def _apologize(self, task: dict) -> None:
-        if task.get("channel") != "imessage":
+        if task.get("channel") not in _MESSAGES_CHANNELS:
             return
         address = await self._address_for(str(task["user_id"]))
         if address is None:
@@ -249,7 +254,7 @@ class TaskRunner:
                 select(DiscoverySubscriber)
                 .where(
                     DiscoverySubscriber.user_id == user_id,
-                    DiscoverySubscriber.channel == "imessage",
+                    DiscoverySubscriber.channel.in_(_MESSAGES_CHANNELS),
                     DiscoverySubscriber.active.is_(True),
                     DiscoverySubscriber.approved_at.is_not(None),
                 )

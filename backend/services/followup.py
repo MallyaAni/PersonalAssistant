@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from backend.core.prompts import load
+from backend.services.transcript import speaker_label
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +64,7 @@ def _recent(history: list[dict[str, Any]]) -> str:
         user_text = str(turn.get("query") or "").strip()
         assistant_text = str(turn.get("response") or "").strip()
         if user_text:
-            lines.append(f"User: {user_text}")
+            lines.append(f"{speaker_label(turn)}: {user_text}")
         if assistant_text:
             lines.append(f"Assistant: {assistant_text}")
     return "\n".join(lines)[-_HISTORY_CHARS:]

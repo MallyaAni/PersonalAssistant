@@ -32,6 +32,7 @@ from backend.agents.reply.emit import emit
 from backend.agents.reply.state import ReplyState, TurnDeps
 from backend.config.settings import settings
 from backend.core.observability import record_context_report
+from backend.services.transcript import user_content
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +112,9 @@ def assemble(state: ReplyState) -> dict[str, Any]:
     messages = [{"role": "system", "content": state["system_prompt"]}]
     for turn in state.get("history") or []:
         if turn.get("query"):
-            messages.append({"role": "user", "content": turn["query"]})
+            # A group member's words carry their name (transcript.user_content);
+            # a one-to-one turn is the bare query, byte-identical to before.
+            messages.append({"role": "user", "content": user_content(turn)})
         if turn.get("response"):
             messages.append({"role": "assistant", "content": turn["response"]})
     # This turn's volatile material goes after the history, so the prefix above

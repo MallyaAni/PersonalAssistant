@@ -18,6 +18,7 @@ from backend.models.agent_memory import (
 from backend.models.artifact import VisualArtifact
 from backend.models.auth import RegistrationInvite, UserAccount, UserSession
 from backend.models.conversation import Conversation
+from backend.models.conversation_group import ConversationGroup, ConversationGroupMember
 from backend.models.discovery import DiscoveryInterest, DiscoveryLocality
 from backend.models.discovery_familiar import DiscoveryFamiliarItem
 from backend.models.discovery_run import DiscoveryRun, DiscoverySchedule

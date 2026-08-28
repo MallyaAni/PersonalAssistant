@@ -64,6 +64,7 @@ from backend.services.image_refinement_service import (
 )
 from backend.services.image_style_service import ImageStyleService
 from backend.services.followup import current_followup
+from backend.services.transcript import user_content
 from backend.services.main_action_selector import (
     CreateDiagramAction,
     DelegateAction,
@@ -168,7 +169,7 @@ def _planner_history(
     turns: list[dict[str, Any]] = []
     for exchange in (history or [])[-2:]:
         if exchange.get("query"):
-            turns.append({"role": "user", "content": str(exchange["query"])})
+            turns.append({"role": "user", "content": user_content(exchange)})
         if exchange.get("response"):
             turns.append({"role": "assistant", "content": str(exchange["response"])})
     return turns
@@ -535,6 +536,55 @@ def _proposal_summary(proposal: dict[str, Any]) -> str:
     return ""
 
 
+# Profile fields belong only to the person they describe: a member's own
+# name, style, locality, or interests go to their own store, and interests
+# said to be the group's go to the group's; nobody's profile is edited on
+# somebody else's word. Facts (semantic, episodic, entity, knowledge,
+# procedure) go to every owner attribution names, the group's copy carrying
+# its source in the words.
+_PROFILE_KINDS = frozenset({"preferred_name", "response_style", "discovery_locality"})
+_FACT_CONTENT_FIELDS = {"semantic_fact": "content", "episodic": "content", "knowledge": "content"}
+
+
+# (owner user_id, the candidate as that owner stores it), for one candidate.
+# A one-to-one turn is the one owner and the candidate unchanged.
+def _owned_copies(
+    candidate: dict[str, Any], user_id: str, room: dict[str, Any] | None
+) -> list[tuple[str, dict[str, Any]]]:
+    if not room:
+        return [(user_id, candidate)]
+    from backend.memory.attribution import owners_for, with_provenance
+
+    speaker_id = str(room.get("speaker_user_id") or "")
+    speaker_name = str(room.get("speaker_name") or "")
+    roster = {
+        str(member.get("name") or ""): str(member.get("user_id") or "")
+        for member in (room.get("members") or [])
+        if member.get("name") and member.get("user_id")
+    }
+    if not speaker_id:
+        return [(user_id, candidate)]
+    owners = owners_for(list(candidate.get("about") or []), roster, speaker_id, speaker_name, user_id)
+    kind = str(candidate.get("kind") or "")
+    copies: list[tuple[str, dict[str, Any]]] = []
+    for owner in owners:
+        if kind in _PROFILE_KINDS and owner.user_id != speaker_id:
+            continue
+        if kind == "discovery_interests" and owner.user_id != speaker_id and owner.provenance:
+            # The room's copy of a member's own interest is already in view
+            # through the taste allowlist; only the group's own interests
+            # ("we're all into climbing") are stored under the group.
+            if any(str(name).casefold() in {"the group", "group", "us", "we", "everyone"} for name in candidate.get("about") or []):
+                copies.append((owner.user_id, candidate))
+            continue
+        field = _FACT_CONTENT_FIELDS.get(kind)
+        if field and owner.provenance:
+            copies.append((owner.user_id, {**candidate, field: with_provenance(str(candidate.get(field) or ""), owner.provenance)}))
+        else:
+            copies.append((owner.user_id, candidate))
+    return copies
+
+
 # Describe all pending profile saves so the assistant accurately explains consent.
 def _proposal_summaries(proposals: tuple[dict[str, Any], ...]) -> str:
     summaries = filter(None, (_proposal_summary(item) for item in proposals))
@@ -556,6 +606,10 @@ def _mark_turn(
         context["channel"] = channel
     if metadata.get("scheduled_task"):
         context["scheduled_task"] = True
+    # A group turn: the room as the worker described it, enriched with the
+    # roster's names and tastes by `_attach_group` before the reply runs.
+    if isinstance(metadata.get("group"), dict) and "group" not in context:
+        context["group"] = dict(metadata["group"])
     if extra_context:
         context.update(extra_context)
 
@@ -2903,6 +2957,50 @@ class ConversationService:
             return ()
         return tuple(interest.label for interest in profile.interests)
 
+    # The room on the context: names and tastes for every member through the
+    # read-only allowlist (memory/tastes.py), and the speaker's name written
+    # back onto the request metadata so the persisted turn says who spoke.
+    # A one-to-one turn has no room and this does nothing.
+    async def _attach_group(
+        self, context: dict[str, Any], metadata: dict[str, Any], user_id: str
+    ) -> None:
+        room = metadata.get("group")
+        if not isinstance(room, dict) or str(metadata.get("channel") or "") != "imessage_group":
+            return
+        from backend.memory.tastes import TasteProjection
+
+        member_ids = tuple(
+            str(item) for item in (room.get("members") or []) if str(item or "").strip()
+        )
+        speaker_id = str(room.get("speaker_user_id") or "")
+        if speaker_id and speaker_id not in member_ids:
+            member_ids = (*member_ids, speaker_id)
+        try:
+            tastes = await TasteProjection(self.memory, self.discovery_profile).for_members(member_ids)
+        except Exception:
+            logger.warning("Group tastes could not be read; replying without them", exc_info=True)
+            tastes = ()
+        members = [taste.as_dict() for taste in tastes]
+        speaker_name = next(
+            (member["name"] for member in members if member["user_id"] == speaker_id), ""
+        )
+        room["speaker_name"] = speaker_name or str(room.get("speaker_name") or "a member")
+        room["group_user_id"] = user_id
+        context["group"] = {**room, "members": members}
+        _trace("group", {"speaker": room["speaker_name"], "members": len(members)})
+
+    # Whether a texting burst is finished and wants an answer, for the
+    # iMessage worker (services/readiness.py). Judged on the routing model.
+    async def judge_readiness(
+        self, previous_reply: str, fragments: list[str], *, in_group: bool = False
+    ) -> "Readiness":
+        from backend.services.readiness import FAIL_OPEN, judge_readiness
+
+        llm = getattr(self.main_action_selector, "llm", None) or self.llm
+        if llm is None:
+            return FAIL_OPEN
+        return await judge_readiness(llm, previous_reply, fragments, in_group=in_group)
+
     # Ask the focused local model for typed memory without blocking the chat turn.
     # Read the live agent roster, or nothing when it cannot be read.
     #
@@ -2955,14 +3053,30 @@ class ConversationService:
         query: str,
         trace_id: str,
         user_id: str,
+        room: dict[str, Any] | None = None,
     ) -> tuple[dict[str, Any], ...]:
         if self.memory_proposals is None:
             return ()
         try:
+            # In a room the agent is told who is speaking and who is there,
+            # and says who each fact is about; the speaker's own interests
+            # are the catalogue, since theirs is the store an interest lands in.
+            speaker_id = str((room or {}).get("speaker_user_id") or "") or user_id
+            group_arguments = (
+                {
+                    "speaker": str(room.get("speaker_name") or ""),
+                    "roster": tuple(str(member.get("name") or "") for member in (room.get("members") or [])),
+                }
+                if room
+                else {}
+            )
+            # A one-to-one turn's call is exactly what it always was; only a
+            # room adds the speaker and the roster.
             result = await self.memory_proposals.propose(
                 query,
-                await self._known_interests(user_id),
+                await self._known_interests(speaker_id),
                 previous_reply=_previous_assistant_said.get(),
+                **group_arguments,
             )
             return result.proposals
         except Exception:
@@ -3480,6 +3594,7 @@ class ConversationService:
         conversation_id: str,
         trace_id: str,
         candidates: tuple[dict[str, Any], ...],
+        room: dict[str, Any] | None = None,
     ) -> tuple[dict[str, Any], ...]:
         saved: list[dict[str, Any]] = []
         for candidate in candidates:
@@ -3487,16 +3602,35 @@ class ConversationService:
             saver = self._memory_proposal_savers.get(str(kind))
             if saver is None:
                 continue
-            try:
-                persisted = await saver(user_id, conversation_id, trace_id, candidate)
-            except Exception:
-                logger.warning(
-                    "Trace %s failed to auto-save a %s memory proposal",
-                    trace_id,
-                    kind,
-                    exc_info=True,
-                )
-                continue
+            # One store in a one-to-one turn; in a room, the owners the
+            # attribution rule names, each with its own copy of the fact.
+            persisted: Any = False
+            for owner_id, copy in _owned_copies(candidate, user_id, room):
+                try:
+                    wrote = await saver(owner_id, conversation_id, trace_id, copy)
+                except Exception:
+                    logger.warning(
+                        "Trace %s failed to auto-save a %s memory proposal",
+                        trace_id,
+                        kind,
+                        exc_info=True,
+                    )
+                    continue
+                if not wrote:
+                    continue
+                if owner_id == user_id or not persisted:
+                    persisted = wrote
+                # A copy written to another owner (a member's own share of a
+                # group turn) is on that owner's record, so "forget that"
+                # from their own thread can take it back.
+                if owner_id != user_id and self.scheduled_tasks is not None:
+                    try:
+                        await self.scheduled_tasks.record_change(
+                            owner_id, "memory", "save", None,
+                            wrote if isinstance(wrote, dict) else {"kind": str(kind), "undoable": False},
+                        )
+                    except Exception:
+                        logger.warning("Trace %s could not record a member's memory save", trace_id, exc_info=True)
             if persisted:
                 saved.append(
                     {
@@ -3602,6 +3736,10 @@ class ConversationService:
             "semantic": semantic,
             "recalled_turns": recalled_turns,
         }
+        # A group turn carries its room: who is in it and what they like,
+        # through the taste allowlist, and who is speaking - written back
+        # onto the request metadata so the stored turn says who said it.
+        await self._attach_group(context, metadata, user_id)
         # Scout's profile is deliberately not added here. It was, on the
         # reasoning that an ordinary turn may as well know what the user likes
         # — but a standing list of interests with strengths in every prompt is
@@ -3649,9 +3787,10 @@ class ConversationService:
         if metadata.get("scheduled_task"):
             candidates, proposals = [], []
         else:
-            candidates = await self._classify_memory_proposals(query, trace_id, user_id)
+            room = context.get("group") if isinstance(context.get("group"), dict) else None
+            candidates = await self._classify_memory_proposals(query, trace_id, user_id, room=room)
             proposals = await self._persist_memory_proposals(
-                user_id, conversation_id, trace_id, candidates
+                user_id, conversation_id, trace_id, candidates, room=room
             )
         # What specialized agents exist, read from the registry rather than
         # listed in the prompt: each agent describes itself from its own

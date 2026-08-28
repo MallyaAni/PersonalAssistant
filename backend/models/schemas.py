@@ -22,6 +22,17 @@ class ChatRequest(BaseModel):
         return value
 
 
+class ReadinessRequest(BaseModel):
+    """What a texting client has received since its last reply, to be judged."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    user_id: str = Field(min_length=1, max_length=50)
+    fragments: list[str] = Field(min_length=1, max_length=12)
+    previous_reply: str = Field(default="", max_length=4_000)
+    in_group: bool = False
+
+
 class ChatStreamEvent(TypedDict):
     event: Literal[
         "start",

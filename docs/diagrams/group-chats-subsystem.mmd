@@ -1,0 +1,26 @@
+---
+title: Group Chats - a room is an account
+---
+flowchart TB
+    Room(["iMessage group chat<br/>Ani · Jen · Scout"]) --> Bridge["Mac bridge<br/>room listed in IMESSAGE_BRIDGE_GROUPS"]
+    Bridge -->|"not addressed to Scout"| Dropped["Discarded on the Mac<br/>body never leaves"]
+    Bridge -->|"reply in a thread on Scout's bubble<br/>@mention · Scout's name"| Worker["iMessage worker"]
+    Worker --> Wall{"Every participant<br/>an approved user?"}
+    Wall -->|no| Quiet["Silent in the room<br/>one text to the operator per day"]
+    Wall -->|yes| Group[("group:slug account<br/>members · chat address<br/>own memory · tasks · Scout")]
+    Group --> Burst{"Readiness judgement<br/>routing model, schema<br/>finished? wants a reply?"}
+    Burst -->|"not finished"| Wait["Keep listening<br/>safety cap 90 s"]
+    Burst -->|"finished, no reply wanted"| Silence["No bubble"]
+    Burst -->|"finished, reply wanted"| Chat["/chat as the group<br/>speaker attached"]
+    Chat --> Tastes["Taste allowlist<br/>each member's name + interests<br/>nothing else of theirs"]
+    Chat --> Transcript["Transcript labels<br/>Jen: … · Ani: …"]
+    Tastes --> Reply["Reply model<br/>imessage_style + imessage_group"]
+    Transcript --> Reply
+    Chat --> Memory["Memory agent with roster<br/>says who each fact is about"]
+    Memory --> Owners{"Attribution"}
+    Owners -->|"about the speaker"| Speaker[("Speaker's own memory<br/>and the room's copy, with source")]
+    Owners -->|"about the group · another member · an outsider"| Shared[("Group's memory only<br/>… said by Ani")]
+    Reply --> Deliver["send_imessage to the chat<br/>chat id, not a participant"]
+    Deliver --> Room
+    Scout["Scout digests · reminders<br/>for the group"] -->|"imessage_group subscriber = the chat"| Deliver
+    Admin["Operator: /admin/groups<br/>list · silence · delete with purge"] -.-> Group

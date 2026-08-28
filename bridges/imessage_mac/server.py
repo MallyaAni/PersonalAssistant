@@ -28,7 +28,10 @@ composed — no bodies ever leave those queries. `IMESSAGE_BRIDGE_READ_INCOMING`
 is the larger grant: it returns the bodies of one-to-one messages from senders
 on the allowlist, so those people can converse with AniOS. Messages from anyone
 not on the allowlist are filtered here, inside this process, and never leave
-it; group chats are not read at all. Bodies are never logged.
+it. Group chats are read only when the Mac's operator lists them in
+IMESSAGE_BRIDGE_GROUPS with reading on, and then only what is addressed to
+this account leaves the Mac (a reply in a thread on one of its bubbles, a
+mention, or its name). Bodies are never logged.
 
 Setup lives in README.md next to this file.
 """
@@ -129,6 +132,38 @@ on run argv
 end run
 """
 
+# The same two sends addressed to a group chat by its guid. `participant`
+# can only ever name one person; a room is addressed by `chat id`, which
+# Messages lists as `iMessage;+;chatNNN` (verified on macOS 13, 2026-08-28).
+_SEND_TEXT_TO_CHAT = """
+on run argv
+    set accountId to item 1 of argv
+    set targetId to item 2 of argv
+    set messageBody to item 3 of argv
+    tell application "Messages"
+        set targetChat to chat id targetId
+        send messageBody to targetChat
+    end tell
+end run
+"""
+
+_SEND_WITH_ATTACHMENT_TO_CHAT = """
+on run argv
+    set accountId to item 1 of argv
+    set targetId to item 2 of argv
+    set messageBody to item 3 of argv
+    set filePath to item 4 of argv
+    tell application "Messages"
+        set attachmentFile to (POSIX file filePath) as alias
+        set targetChat to chat id targetId
+        send attachmentFile to targetChat
+        if messageBody is not "" then
+            send messageBody to targetChat
+        end if
+    end tell
+end run
+"""
+
 _SEND_WITH_ATTACHMENT = """
 on run argv
     set accountId to item 1 of argv
@@ -207,6 +242,16 @@ class BridgeConfig:
     # outside the Messages store.
     attachments_enabled: bool = False
     attachments_root: Path = Path.home() / "Library" / "Messages" / "Attachments"
+    # Group chats this bridge may read from and send to, by chat identifier
+    # (`chatNNN`), and whether group reading is on at all. Its own grant on top
+    # of incoming, env-only - grants never widen it - because a room is not a
+    # person who was allowlisted. Even inside an allowlisted room only what is
+    # addressed to this Mac's account leaves it (see `_addressed_to_bot`).
+    groups: frozenset[str] = frozenset()
+    read_groups: bool = False
+    # The name other people see for this account - what a mention renders
+    # and what "hey <name>" says. Required when groups are read.
+    display_name: str = ""
 
     @classmethod
     def from_environment(cls) -> BridgeConfig:
@@ -223,9 +268,25 @@ class BridgeConfig:
             raise BridgeError(
                 "Set IMESSAGE_BRIDGE_RECIPIENTS to the numbers this may message."
             )
+        groups = frozenset(
+            identifier
+            for identifier in (
+                normalize_chat_target(part) for part in os.environ.get("IMESSAGE_BRIDGE_GROUPS", "").split(",")
+            )
+            if identifier
+        )
+        read_groups = os.environ.get("IMESSAGE_BRIDGE_READ_GROUPS", "").strip().lower() in {"1", "true", "yes"}
+        display_name = os.environ.get("IMESSAGE_BRIDGE_DISPLAY_NAME", "").strip()
+        if read_groups and not display_name:
+            raise BridgeError(
+                "Set IMESSAGE_BRIDGE_DISPLAY_NAME (the contact name people see) to read group chats."
+            )
         return cls(
             token=token,
             allowed_recipients=allowed,
+            groups=groups,
+            read_groups=read_groups,
+            display_name=display_name,
             # Loopback by default: reaching this from another machine is a
             # deliberate act, not the out-of-the-box state.
             host=os.environ.get("IMESSAGE_BRIDGE_HOST", "127.0.0.1"),
@@ -285,6 +346,11 @@ def load_grants(config: BridgeConfig) -> frozenset[str]:
 
 # Record one granted recipient. Returns whether it was newly added.
 def store_grant(config: BridgeConfig, recipient: str) -> bool:
+    # A room is granted by the Mac's operator in the environment, never by a
+    # caller: a chat-shaped value is refused here rather than stored as an
+    # address that can never match one.
+    if normalize_chat_target(recipient) is not None:
+        raise BridgeError("Group chats are allowlisted on the Mac, not granted by callers.")
     if config.grants_path is None:
         raise BridgeError(
             "This bridge does not accept grants. "
@@ -322,7 +388,31 @@ def normalize_recipient(value: str) -> str:
     return digits
 
 
+# A group chat target as this bridge names it - `chatNNN`, also accepted as
+# the full `iMessage;+;chatNNN` guid Messages lists - or None for anything
+# else. Shape only.
+def normalize_chat_target(value: str) -> str | None:
+    cleaned = (value or "").strip()
+    if ";+;" in cleaned:
+        cleaned = cleaned.split(";+;", 1)[1]
+    if cleaned.startswith("chat") and cleaned[4:].isdigit() and len(cleaned) >= 10:
+        return cleaned
+    return None
+
+
+# The guid Messages addresses a group by.
+def chat_guid_for(identifier: str) -> str:
+    return f"iMessage;+;{identifier}"
+
+
 def check_recipient(config: BridgeConfig, recipient: str) -> str:
+    # A group chat: allowed only when its identifier is in the env-only group
+    # list. Never widened by grants, and never echoed back.
+    chat = normalize_chat_target(recipient)
+    if chat is not None:
+        if chat not in config.groups:
+            raise BridgeError("That recipient is not on this bridge's allowlist.")
+        return chat_guid_for(chat)
     normalized = normalize_recipient(recipient)
     if not normalized:
         raise BridgeError("A recipient is required.")
@@ -466,7 +556,7 @@ def _open_db_reporting(
 # the text is compared, so a message the operator typed by hand a moment earlier
 # cannot be mistaken for ours.
 def latest_sent_guid(
-    config: BridgeConfig, recipient: str, body: str
+    config: BridgeConfig, recipient: str, body: str, chat_identifier: str | None = None
 ) -> str | None:
     # An empty body cannot be matched: it equals every NULL-text outgoing row,
     # of which recent macOS has many, so it would return whichever came first.
@@ -495,17 +585,33 @@ def latest_sent_guid(
     # send, matched on the body wherever the body can be read at all.
     since = _apple_time(datetime.now(timezone.utc) - timedelta(seconds=SEND_WINDOW))  # noqa: UP017
     try:
-        rows = connection.execute(
-            """
-            SELECT guid, text, attributedBody
-            FROM message
-            WHERE is_from_me = 1
-              AND date >= ?
-            ORDER BY date DESC
-            LIMIT 10
-            """,
-            (since,),
-        ).fetchall()
+        # Scoped to the room when the send went to one: the same words sent to
+        # two chats a breath apart must read back their own bubble.
+        if chat_identifier:
+            rows = connection.execute(
+                """
+                SELECT m.guid, m.text, m.attributedBody
+                FROM message m
+                JOIN chat_message_join cmj ON cmj.message_id = m.ROWID
+                JOIN chat c ON c.ROWID = cmj.chat_id
+                WHERE m.is_from_me = 1 AND m.date >= ? AND c.chat_identifier = ?
+                ORDER BY m.date DESC
+                LIMIT 10
+                """,
+                (since, chat_identifier),
+            ).fetchall()
+        else:
+            rows = connection.execute(
+                """
+                SELECT guid, text, attributedBody
+                FROM message
+                WHERE is_from_me = 1
+                  AND date >= ?
+                ORDER BY date DESC
+                LIMIT 10
+                """,
+                (since,),
+            ).fetchall()
     except sqlite3.Error:
         return None
     finally:
@@ -531,20 +637,35 @@ def latest_sent_guid(
 # in the window really is the one just sent - the send returned a breath ago -
 # so matching by recency is safe, and it is the only handle a captionless
 # picture has.
-def latest_sent_attachment_guid(config: BridgeConfig) -> str | None:
+def latest_sent_attachment_guid(
+    config: BridgeConfig, chat_identifier: str | None = None
+) -> str | None:
     connection, _ = _open_db_reporting(config.messages_db or config.incoming_db)
     if connection is None:
         return None
     since = _apple_time(datetime.now(timezone.utc) - timedelta(seconds=SEND_WINDOW))  # noqa: UP017
     try:
-        row = connection.execute(
-            """
-            SELECT guid FROM message
-            WHERE is_from_me = 1 AND cache_has_attachments = 1 AND date >= ?
-            ORDER BY date DESC LIMIT 1
-            """,
-            (since,),
-        ).fetchone()
+        if chat_identifier:
+            row = connection.execute(
+                """
+                SELECT m.guid FROM message m
+                JOIN chat_message_join cmj ON cmj.message_id = m.ROWID
+                JOIN chat c ON c.ROWID = cmj.chat_id
+                WHERE m.is_from_me = 1 AND m.cache_has_attachments = 1 AND m.date >= ?
+                  AND c.chat_identifier = ?
+                ORDER BY m.date DESC LIMIT 1
+                """,
+                (since, chat_identifier),
+            ).fetchone()
+        else:
+            row = connection.execute(
+                """
+                SELECT guid FROM message
+                WHERE is_from_me = 1 AND cache_has_attachments = 1 AND date >= ?
+                ORDER BY date DESC LIMIT 1
+                """,
+                (since,),
+            ).fetchone()
     except sqlite3.Error:
         return None
     finally:
@@ -828,6 +949,61 @@ MAX_INCOMING_PER_POLL = 25
 SETTLE_SECONDS = 3
 
 
+# Every participant of a room, as normalized addresses, so the caller can
+# check that each one is somebody it knows. Read only for allowlisted rooms.
+def _participants(connection: sqlite3.Connection, chat_rowid: int) -> list[str]:
+    try:
+        rows = connection.execute(
+            """
+            SELECT h.id FROM chat_handle_join chj
+            JOIN handle h ON h.ROWID = chj.handle_id
+            WHERE chj.chat_id = ?
+            """,
+            (chat_rowid,),
+        ).fetchall()
+    except sqlite3.Error:
+        return []
+    return sorted({normalize_recipient(str(row[0] or "")) for row in rows if row[0]})
+
+
+# The bubbles this account sent in a room over the last month: the anchors a
+# reply thread may point at. chat.db is the ledger, so the bridge keeps none.
+def _sent_guids_in_chat(connection: sqlite3.Connection, chat_rowid: int) -> set[str]:
+    since = _apple_time(datetime.now(timezone.utc) - timedelta(days=30))  # noqa: UP017
+    try:
+        rows = connection.execute(
+            """
+            SELECT m.guid FROM message m
+            JOIN chat_message_join cmj ON cmj.message_id = m.ROWID
+            WHERE cmj.chat_id = ? AND m.is_from_me = 1 AND m.date >= ?
+            """,
+            (chat_rowid, since),
+        ).fetchall()
+    except sqlite3.Error:
+        return set()
+    return {str(row[0]) for row in rows if row[0]}
+
+
+# Why a room's message is for this account, or None when it is not. Three
+# shapes, no intent: a reply whose thread is anchored on a bubble this account
+# sent there; a mention (the typedstream marker plus the rendered name); the
+# account's name as a word in the body.
+def _addressed_to_bot(
+    originator: str, body: str, blob: object, sent_guids: set[str], display_name: str
+) -> str | None:
+    if originator and originator in sent_guids:
+        return "reply"
+    name = (display_name or "").strip()
+    if not name:
+        return None
+    lowered = body.casefold()
+    if blob is not None and b"kIMMention" in bytes(blob) and name.casefold() in lowered:
+        return "mention"
+    if re.search(r"(?<![\w])" + re.escape(name) + r"(?![\w])", body, re.IGNORECASE):
+        return "name"
+    return None
+
+
 # Incoming one-to-one messages from allowlisted senders, after a cursor.
 #
 # The bridge stays stateless: the caller owns the cursor, which is the raw
@@ -860,10 +1036,21 @@ def incoming_messages(
         # `handle.id` is exactly the address a reply should be sent to. No age
         # ceiling in SQL: decodability, checked per row below, decides what is
         # ready — an age gate would delay every message, not just mid-write ones.
+        # One-to-one rows always; rows from allowlisted rooms only when group
+        # reading is on. With it off the query is the one it always was.
+        group_ids = sorted(config.groups) if config.read_groups else []
+        room_clause = (
+            "AND (c.room_name IS NULL OR (c.style = 43 AND c.chat_identifier IN ("
+            + ",".join("?" for _ in group_ids)
+            + ")))"
+            if group_ids
+            else "AND c.room_name IS NULL"
+        )
         rows = connection.execute(
-            """
+            f"""
             SELECT m.ROWID, m.guid, m.date, m.text, m.attributedBody, h.id,
-                   m.thread_originator_guid
+                   m.thread_originator_guid, c.ROWID, c.style, c.chat_identifier,
+                   c.display_name
             FROM message m
             JOIN handle h ON h.ROWID = m.handle_id
             JOIN chat_message_join cmj ON cmj.message_id = m.ROWID
@@ -872,12 +1059,17 @@ def incoming_messages(
               AND m.associated_message_type = 0
               AND m.item_type = 0
               AND m.date > ?
-              AND c.room_name IS NULL
+              {room_clause}
             ORDER BY m.date ASC
             LIMIT ?
             """,
-            (cursor, bounded),
+            (cursor, *group_ids, bounded),
         ).fetchall()
+        # What deciding "addressed" needs, read while the connection is open:
+        # each room's participants and the bubbles this account sent there.
+        rooms = {int(row[7]) for row in rows if int(row[8] or 0) == 43}
+        participants = {room: _participants(connection, room) for room in rooms}
+        sent_in_room = {room: _sent_guids_in_chat(connection, room) for room in rooms}
         listings = (
             _attachment_listings(connection, [int(row[0]) for row in rows])
             if config.attachments_enabled and rows
@@ -890,7 +1082,7 @@ def incoming_messages(
 
     allowed = config.allowed_recipients | load_grants(config)
     messages: list[dict[str, object]] = []
-    for rowid, guid, date, text, blob, handle, originator in rows:
+    for rowid, guid, date, text, blob, handle, originator, chat_rowid, style, chat_identifier, chat_name in rows:
         attached = listings.get(int(rowid), [])
         body = extract_body(text, blob)
         # A photo with no caption has no body but is still a message; a row is
@@ -916,13 +1108,32 @@ def incoming_messages(
             # routed as a message on 2026-08-25 it was answered with a salsa
             # recommendation. Shape, not intent, so a pattern is the right tool.
             continue
+        in_room = int(style or 0) == 43
+        addressed_by = None
+        if in_room:
+            # A room's words leave this Mac only when they are for this
+            # account: a reply in a thread anchored on one of its bubbles, a
+            # mention, or its name. Everything else is discarded here, body
+            # and all, with the cursor already past it.
+            addressed_by = _addressed_to_bot(
+                str(originator or ""), body or "", blob, sent_in_room.get(int(chat_rowid), set()), config.display_name
+            )
+            if addressed_by is None:
+                continue
         message: dict[str, object] = {
             "guid": str(guid),
             "sender": sender,
-            "reply_to": str(handle),
+            # A room is answered in the room: the reply address is the chat.
+            "reply_to": chat_guid_for(str(chat_identifier)) if in_room else str(handle),
             "text": body or "",
             "sent_at": _apple_epoch(date),
         }
+        if in_room:
+            message["chat_guid"] = chat_guid_for(str(chat_identifier))
+            message["chat_identifier"] = str(chat_identifier)
+            message["chat_name"] = str(chat_name or "")
+            message["participants"] = participants.get(int(chat_rowid), [])
+            message["addressed_by"] = addressed_by
         if attached:
             message["attachments"] = attached
         # A native long-press reply carries the guid of the bubble it answers.
@@ -1044,6 +1255,9 @@ def _owned_attachment(
     connection, _ = _open_db_reporting(config.incoming_db)
     if connection is None:
         return None
+    # A picture from an allowlisted room is read like a one-to-one one; the
+    # sender is re-proved below either way.
+    room_ids = sorted(config.groups) if config.read_groups else []
     try:
         row = connection.execute(
             """
@@ -1056,10 +1270,13 @@ def _owned_attachment(
             JOIN chat c ON c.ROWID = cmj.chat_id
             WHERE a.ROWID = ?
               AND m.is_from_me = 0
-              AND c.room_name IS NULL
+              AND (c.room_name IS NULL OR (c.style = 43 AND c.chat_identifier IN ({rooms})))
             LIMIT 1
-            """,
-            (rowid,),
+            """.replace(
+                "{rooms}",
+                ",".join("?" for _ in room_ids) if room_ids else "''",
+            ),
+            (rowid, *room_ids),
         ).fetchone()
     except sqlite3.Error:
         return None
@@ -1143,7 +1360,9 @@ def describe_incoming(config: BridgeConfig) -> dict[str, object]:
     finally:
         connection.close()
     decodable = sum(1 for text, blob in rows if extract_body(text, blob) is not None)
+    groups_note = {"groups_readable": config.read_groups, "groups_allowlisted": len(config.groups)}
     return {
+        **groups_note,
         "readable": True,
         "opened_with": how,
         "incoming_last_day": len(rows),
@@ -1424,6 +1643,8 @@ def send_message(
     attachment_base64: str | None = None,
 ) -> str:
     recipient = check_recipient(config, to)
+    chat = normalize_chat_target(recipient)
+    to_chat = chat is not None
     text = body.strip()
     if len(text) > MAX_BODY_CHARS:
         raise BridgeError("Message body is too long.")
@@ -1439,11 +1660,14 @@ def send_message(
         # ever left the Mac.
         if not text:
             raise BridgeError("A message body is required.")
-        run_osascript(_SEND_TEXT, [config.account_id, recipient, text])
+        run_osascript(
+            _SEND_TEXT_TO_CHAT if to_chat else _SEND_TEXT,
+            [config.account_id, recipient, text],
+        )
         # The identifier a tapback will point at, when this Mac allows it to be
         # read. "sent" otherwise, which is what every caller understood before
         # feedback existed and still handles.
-        return latest_sent_guid(config, recipient, text) or "sent"
+        return latest_sent_guid(config, recipient, text, chat_identifier=chat) or "sent"
 
     safe_name, content = attachment
     # Spooled, not temp-filed, and spooled somewhere Messages may read (see
@@ -1458,7 +1682,8 @@ def send_message(
     path = directory / safe_name
     path.write_bytes(content)
     run_osascript(
-        _SEND_WITH_ATTACHMENT, [config.account_id, recipient, text, str(path)]
+        _SEND_WITH_ATTACHMENT_TO_CHAT if to_chat else _SEND_WITH_ATTACHMENT,
+        [config.account_id, recipient, text, str(path)],
     )
     # The guid readback, so a caller can remember which bubble carried which
     # picture. A captioned send matches on its body like a text send; an
@@ -1466,9 +1691,9 @@ def send_message(
     # newest outgoing row that carries an attachment instead. "sent with
     # attachment" only when the guid cannot be read - what callers saw before.
     guid = (
-        latest_sent_guid(config, recipient, text)
+        latest_sent_guid(config, recipient, text, chat_identifier=chat)
         if text
-        else latest_sent_attachment_guid(config)
+        else latest_sent_attachment_guid(config, chat_identifier=chat)
     )
     return guid or "sent with attachment"
 

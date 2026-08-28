@@ -220,6 +220,47 @@ The Mac also needs to be:
   or change the applicable macOS power setting. Closing the laptop lid still
   sleeps the Mac unless it is in supported clamshell mode.
 
+## Group chats
+
+Off unless the Mac's operator lists the rooms. A group chat is not a person
+who was allowlisted, so it has its own grant, set only in the environment -
+grants over HTTP never widen it - and reading it is a separate switch:
+
+```bash
+# Which rooms, by the identifier Messages shows (`chat` followed by digits;
+# the full `iMessage;+;chatNNN` guid is accepted too). Comma-separated.
+export IMESSAGE_BRIDGE_GROUPS="chat778899001122"
+export IMESSAGE_BRIDGE_READ_GROUPS=true
+# The name people see for this account in Messages - what a mention renders.
+export IMESSAGE_BRIDGE_DISPLAY_NAME="Scout"
+```
+
+To find a room's identifier, with Messages open:
+
+```bash
+osascript -e 'tell application "Messages" to get {id, name} of every chat' | tr ',' '\n' | grep -n "iMessage;+;chat"
+```
+
+Inside a listed room, only what is addressed to this account leaves the Mac:
+
+- a message sent as a **reply** (tap and hold → Reply) to one of this
+  account's bubbles - the thread anchor is in chat.db, so this needs no
+  timing and works however long after the bubble;
+- a **mention** (`@Scout`), detected by the marker Messages stores with the
+  message plus the rendered name;
+- the account's **name** as a whole word ("scout, thai or pizza?"; not
+  "scouting").
+
+Everything else in the room is discarded on the Mac, body and all. A
+forwarded room message carries `chat_guid`, `chat_identifier`, `chat_name`,
+`participants` (every member's address, normalized, so the backend can
+insist that each one is somebody it knows) and `addressed_by`
+(`reply` | `mention` | `name`); its `reply_to` is the chat, so the answer
+lands in the room. Sends to a listed room go through `send_imessage` with
+the room's identifier or guid as `to`; the AppleScript addresses the chat by
+`chat id` rather than a participant. Every sender in a room still has to be
+on the recipient allowlist, exactly as in a one-to-one thread.
+
 ## Pointing AniOS at it
 
 Add the bridge to `MCP_SERVERS_JSON` using the Mac's LAN address, then enable
