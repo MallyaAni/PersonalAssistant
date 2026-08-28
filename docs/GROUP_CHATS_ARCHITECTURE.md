@@ -241,6 +241,6 @@ Unit: `test_imessage_bridge.py` (rooms: 19 cases), `test_imessage_group_worker.p
 | Memory attribution and per-owner writes | built; attribution pinned on the real routing model |
 | Delivery to the chat | built (`imessage_group` channel, task runner) |
 | Admin | built; routes tested |
-| Sweep journeys, docs, diagrams | built; deploy #9 (5c634e8, 2026-08-28) ran the three group journeys live: dinner suggestion and private-detail wall passed, the group-plan memory journey found the memory agent proposing nothing for "we all settled on thai" - fixed in `prompts/memory/proposal_group.md` the same day and re-verified |
+| Sweep journeys, docs, diagrams | built; eight group journeys; deploy #19 (cecb2f6, 2026-08-28) ran the whole sweep green with no gaps |
 | Pending-question and tapback triggers | not built - need a bridge tool that forwards one member's next message on request |
 | Manual acceptance on the Mac | 2026-08-28 in the operator's group "Groupie" (`chat308729799386740866`, both members approved): @mention forwarded, group provisioned, answered in the chat in 22 s; tap-and-hold reply forwarded and answered (late - the burst judge's fault, fixed); the weather answer was for "Here, Somalia" (fixed: the tool refuses a non-place, a room runs on the speaker's place). Re-test after deploy dd3cc92e: mention, thread reply, "thanks!" |

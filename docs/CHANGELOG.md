@@ -48,6 +48,10 @@ This file is append-only history for meaningful, verified changes. It must not c
   journey "group: a reminder in the room uses the speaker's clock"). A
   deploy.sh change takes effect on the deploy after the one that carries
   it (the script pulls itself mid-run) - noted in AGENTS.md.
+- Deploy #19 (cecb2f6): unit 2059, routing 7/7, sweep green with no gaps -
+  all eight group journeys passed (plan memory, dinner, private detail,
+  name, everyday fact, shared interest on the group's Scout, reminder on the
+  speaker's clock, weather here) - harness green, nobody paged.
 
 ## 2026-08-28 — Two intermittent sweep gaps traced instead of rerun
 

@@ -1,6 +1,6 @@
 # ADR 0016: A group is an account
 
-- Status: Accepted; implemented and deployed 2026-08-28 (commit 5c634e8 - unit gate 2018, routing 7/7, sweep 35 pass / 5 skipped with the picture machine off / 1 gap fixed the same day: a decision made together is the group's fact; harness 6/6). Acceptance in a real group on the Mac is pending the operator listing the room.
+- Status: Accepted; implemented and deployed 2026-08-28 (first in 5c634e8; current in cecb2f6 - unit 2059, routing 7/7, the sweep green with all eight group journeys, harness green). Live in the operator's group "Groupie" the same day: mention, thread reply, name, everyday facts, weather for the speaker's city; the reminder-on-the-speaker's-clock fix is the last live finding and shipped in cecb2f6.
 - Date: 2026-08-28
 
 ## Context
