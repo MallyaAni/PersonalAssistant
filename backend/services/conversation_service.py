@@ -3504,9 +3504,11 @@ class ConversationService:
             return where, zone
         return None
 
+    # In a group the clock is the speaker's: the room has no zone of its own,
+    # and the first live reminder in a group asked which city (2026-08-28).
     async def _primary_timezone(self, user_id: str) -> str | None:
         try:
-            profile = await self.discovery_profile.get_profile(user_id)
+            profile = await self.discovery_profile.get_profile(_place_owner(user_id))
         except Exception:
             logger.warning("Discovery profile unavailable for schedule", exc_info=True)
             return None

@@ -521,6 +521,12 @@ bundle. After a frontend change run `docker compose build gateway` followed by
 from inside a container and prove it contains the new behavior. A public 200
 can still be stale UI.
 
+- **`deploy.sh` runs the version it started with.** The script pulls main
+  while it is executing, and bash keeps reading the file it opened - so a
+  change to `deploy.sh` (the retry-once for flaky journeys, 2026-08-28) takes
+  effect on the *next* deploy, not the one that carried the commit. Read the
+  deployed log with that in mind before concluding a deploy.sh change did
+  nothing.
 - **A launch agent's plist env is loaded at bootstrap, not at restart.** Editing
   `~/Library/LaunchAgents/com.anios.imessage-bridge.plist` and running
   `launchctl kickstart -k` restarts the bridge with the *old* environment; a

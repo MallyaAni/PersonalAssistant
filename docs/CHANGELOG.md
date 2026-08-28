@@ -36,6 +36,18 @@ This file is append-only history for meaningful, verified changes. It must not c
 - `deploy.sh` re-runs a failed sweep journey once on its own and logs it as
   flaky instead of paging when it passes; a journey that fails twice still
   pages. The test container reaches the embedder by its service name.
+- Deployed in d23339e (deploy #18: unit 2058, routing 7/7, harness green;
+  six of seven group journeys passed live - name, everyday fact, private
+  detail withheld, dinner, shared interest on the group's Scout, weather
+  here for the speaker's city; the group-plan journey missed its capture
+  once, 6/6 when probed directly).
+- Live right after: "remind us to grab ice cream at 9pm local time" in the
+  group asked which city, with both members' home areas on the roster - a
+  task's clock was read from the account's own locality and the group has
+  none. It is the speaker's now, as "here" already was (unit-tested; sweep
+  journey "group: a reminder in the room uses the speaker's clock"). A
+  deploy.sh change takes effect on the deploy after the one that carries
+  it (the script pulls itself mid-run) - noted in AGENTS.md.
 
 ## 2026-08-28 — Two intermittent sweep gaps traced instead of rerun
 

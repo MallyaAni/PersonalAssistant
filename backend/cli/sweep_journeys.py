@@ -249,6 +249,12 @@ JOURNEYS = [
     Journey("group: a shared interest seeds the group's Scout", "Scout, what do we both like?", (None, "Past conversations"),
             as_group=True, holds=("the reply says both of them like Thai food",),
             sql_holds=("select count(*) > 0 from discovery_interests where user_id = :g and provenance = 'shared_by_members'",)),
+    # A reminder set in a room runs on the speaker's clock: the group has no
+    # zone of its own (its members may live in different cities), and the
+    # first live reminder in a group asked "which city?" (2026-08-28).
+    Journey("group: a reminder in the room uses the speaker's clock", "Scout, remind us to grab ice cream at 9pm tonight", ("Scheduled tasks",),
+            as_group=True, does_not_hold=("the reply asks which city or where the people are",),
+            sql_holds=("select count(*) > 0 from scheduled_tasks where user_id = :g",)),
     # "here" in a room is the speaker's here: the group has no home place of
     # its own, and the first live group turn (2026-08-28) answered "weather
     # here" for nowhere in particular.
