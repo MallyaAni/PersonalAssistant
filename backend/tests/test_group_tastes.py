@@ -27,7 +27,8 @@ class _Scout:
         return SimpleNamespace(
             interests=[SimpleNamespace(label=label, strength=3) for label in self.interests.get(user_id, [])],
             localities=[SimpleNamespace(label="Arlington")],
-            primary_locality=lambda: SimpleNamespace(label="Arlington"),
+            # A property on the real DiscoveryProfile; a plain attribute here.
+            primary_locality=SimpleNamespace(label="Arlington"),
         )
 
 

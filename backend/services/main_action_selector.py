@@ -39,6 +39,7 @@ from backend.skills.tools import parse_skill_call, skill_tool_definitions
 from backend.search.budgeted import current_search_identity
 from backend.services.followup import current_followup, describe, resolve_followup
 from backend.tools import (
+    DRAFT_WITHHELD,
     UNATTENDED_WITHHELD,
     NOT_BUILTIN,
     SEARCH_CAPABILITY,
@@ -314,7 +315,7 @@ class MainActionSelector:
         # 2026-08-27). A model judgement, acted on in code rather than by
         # asking the prompt nicely - the same mechanism a firing uses.
         drafting = resolution is not None and resolution.refers_to == "draft"
-        withheld_now = UNATTENDED_WITHHELD if drafting else frozenset()
+        withheld_now = DRAFT_WITHHELD if drafting else frozenset()
 
         tools: list[dict[str, Any]] = []
         aliases: dict[str, Any] = {}

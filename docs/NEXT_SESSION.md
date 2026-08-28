@@ -81,11 +81,14 @@ Mac to forward an unaddressed message on the backend's request (an
 `expect_reply(chat, sender)` bridge tool with a short TTL). Listed in the
 design doc's status table.
 
-**Seen once, passed on rerun (deploy #8's hand-run sweep, 2026-08-28):**
-"more casual (draft referent)" routed to Web search once, and "forget that
-(memory undo)" once left a semantic row behind. Both passed when rerun with
-`--only`; if either shows again, trace it with `explain_turn` before
-touching a prompt.
+**Two intermittent sweep gaps, traced and closed (2026-08-28):** "more
+casual (draft referent)" - the resolver read "draft" every time, but a
+draft turn could still be offered `edit_image` and the router took it
+1-in-3; picture-editing tools are now withheld on draft turns and the
+follow-up reading is traced on every routed turn. "forget that (memory
+undo)" - its assertion counted every semantic row of the sweep user, so
+earlier journeys' captures failed it in full sweeps; it asserts the change
+log now. `sweep_journeys --keep` exists for the next one.
 
 ## Shipped 2026-08-24
 

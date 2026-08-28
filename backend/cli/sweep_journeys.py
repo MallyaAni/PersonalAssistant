@@ -206,10 +206,17 @@ JOURNEYS = [
             before=("draft a short email to my retail team asking for shift coverage this Saturday",),
             holds=("The reply contains a rewritten, more casual email or message asking for a reply by Thursday at noon.",),
             does_not_hold=("The reply says it set a reminder, scheduled something, or searched the web.",)),
+    # Asserted on the change log, not on the user's whole memory table: in a
+    # full sweep earlier journeys may have saved facts of their own, and
+    # "count = 0" then fails for reasons that have nothing to do with undo
+    # (deploys #8 and #13, 2026-08-28).
     Journey("forget that (memory undo)", "forget that", ("Manage scheduled tasks",),
             before=("my dentist is Dr Lee on Wilson Boulevard",),
             holds=("The reply says it forgot, removed, or will no longer remember what it had saved.",),
-            sql_holds=("select count(*) = 0 from semantic_memory where user_id = :u",)),
+            sql_holds=(
+                "select exists(select 1 from scheduled_task_changes where user_id = :u and kind = 'memory' and operation = 'undo')",
+                "select coalesce((select undone_at is not null from scheduled_task_changes where user_id = :u and kind = 'memory' and operation = 'save' order by created_at desc limit 1), false)",
+            )),
     Journey("what did I tell you (memory referent)", "what did I tell you about my dentist?", ("Past conversations", None),
             before=("my dentist is Dr Lee on Wilson Boulevard",),
             holds=("The reply mentions Dr Lee or Wilson Boulevard.",),
@@ -242,8 +249,11 @@ JOURNEYS = [
 
 
 class Sweep:
-    def __init__(self, base_url: str, only: str = "") -> None:
+    def __init__(self, base_url: str, only: str = "", keep: bool = False) -> None:
         self.base = base_url.rstrip("/")
+        # Keep the sweep's accounts and turns after the run, so a gap can be
+        # read with explain_turn instead of guessed at from the summary line.
+        self.keep = keep
         # A substring of journey names, to rerun what a fix touched without
         # walking all of them.
         self.journeys = [j for j in JOURNEYS if only.lower() in j.name.lower()] if only else list(JOURNEYS)
@@ -492,8 +502,11 @@ class Sweep:
                 else:
                     print(f"PASS turn trace: {traced} traced turns for {routed} routed journeys", flush=True)
             finally:
-                await self.remove(client)
-                print(f"cleanup: {self.user} removed; gaps={self.failures}", flush=True)
+                if self.keep:
+                    print(f"kept: {self.user} (and {self.group_id or 'no group'}); gaps={self.failures}", flush=True)
+                else:
+                    await self.remove(client)
+                    print(f"cleanup: {self.user} removed; gaps={self.failures}", flush=True)
         return 1 if self.failures else 0
 
 
@@ -501,8 +514,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--base-url", default="http://localhost:8000/api/v1")
     parser.add_argument("--only", default="", help="run only journeys whose name contains this")
+    parser.add_argument("--keep", action="store_true", help="keep the sweep's accounts and turns for explain_turn")
     arguments = parser.parse_args(argv)
-    return asyncio.run(Sweep(arguments.base_url, arguments.only).run())
+    return asyncio.run(Sweep(arguments.base_url, arguments.only, keep=arguments.keep).run())
 
 
 if __name__ == "__main__":

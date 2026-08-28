@@ -101,6 +101,16 @@ AUTOMATION_TOOLS: frozenset[str] = frozenset(
 # routed to it and answered with "when would you like that reminder?"
 # (2026-08-26, found by exercise_search_scenarios).
 UNATTENDED_WITHHELD: frozenset[str] = AUTOMATION_TOOLS | frozenset((search_history.NAME,))
+# Withheld when the newest message is about a draft - text being written
+# together. A draft is not a picture: "make it more casual" after a drafted
+# email was routed to edit_image (deploy #12's sweep, 2026-08-28) and, in an
+# earlier sweep, to web search. The automation tools are withheld for the
+# same reason they are for a firing: a draft turn schedules nothing.
+# Creating a picture stays offered: "add a picture of the store" is explicit,
+# where "make it more casual" is not.
+DRAFT_WITHHELD: frozenset[str] = UNATTENDED_WITHHELD | frozenset(
+    (edit_image.NAME, show_image.NAME, discuss_image.NAME)
+)
 
 # Returned by `parse_builtin` for a name that is not a built-in at all, so the
 # caller can tell "not ours" from "ours, but the model left out what it

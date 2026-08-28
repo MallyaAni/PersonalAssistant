@@ -2923,6 +2923,11 @@ class ConversationService:
             events.append(status)
         described = describe_action(action)
         _trace("route", {"label": described[0], "detail": described[1][:160]} if described else None)
+        # The follow-up reading beside the route, on every routed turn: without
+        # it a misroute like "more casual" -> edit_image (deploy #12) cannot be
+        # told apart from a resolver that read "picture" or one that never ran.
+        _followed = current_followup.get()
+        _trace("followup", {"refers_to": _followed.refers_to, "subject": _followed.subject, "as": _followed.self_contained[:160]} if _followed else None)
         # How long the decision took, in milliseconds: the iMessage waiting
         # bubble is timed against this (2026-08-27, "the filler comes late").
         started = (_turn_trace.get() or {}).get("_started")

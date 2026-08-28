@@ -117,8 +117,10 @@ rows. Everything the group owns lives under that `user_id`.
   addressed the operator as "Member 2"), Scout interest labels (at most 8),
   the city-level home locality, and up to 6 remembered statements read through
   Scout's own `PersonalContextReader` (approved facts and recent semantic
-  memories; secrets, card numbers and personal medical/financial/legal framing
-  screened deterministically; bounded) and then judged by meaning by
+  memories, leaving out visual-analysis memories - descriptions of generated
+  pictures are not facts about anyone; secrets, card numbers and personal
+  medical/financial/legal framing screened deterministically; bounded) and
+  then judged by meaning by
   `backend/memory/share_screen.py` (`prompts/memory/share_in_group.md`, routing
   model, schema; verdicts cached per statement; fails closed - without a
   judgement nothing is shared). A member whose profile cannot be read stays on

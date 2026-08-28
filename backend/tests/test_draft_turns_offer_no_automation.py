@@ -44,6 +44,10 @@ async def test_a_draft_continuation_is_offered_no_automation():
     for name in ("schedule_task", "manage_tasks", "scout_schedule", "save_skill", "manage_skills", "search_history"):
         assert name not in llm.offered, llm.offered
     assert not any(name.startswith("skill__") for name in llm.offered), llm.offered
+    # A draft is not a picture: "make it more casual" was routed to edit_image
+    # (deploy #12's sweep). Creating one stays possible, editing one does not.
+    for name in ("edit_image", "show_image", "discuss_image"):
+        assert name not in llm.offered, llm.offered
     assert "generate_image" in llm.offered
 
 
@@ -52,3 +56,4 @@ async def test_any_other_reading_keeps_the_full_offer():
     llm = _Llm("subject")
     await _selector(llm).select("u", "and the villa?", _HISTORY, None)
     assert "manage_tasks" in llm.offered and "schedule_task" in llm.offered
+    assert "edit_image" in llm.offered and "show_image" in llm.offered

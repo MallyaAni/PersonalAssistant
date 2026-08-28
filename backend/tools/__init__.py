@@ -29,6 +29,7 @@ from .actions import (
 from .base import BuiltinTool
 from .registry import (
     AUTOMATION_TOOLS,
+    DRAFT_WITHHELD,
     UNATTENDED_WITHHELD,
     NOT_BUILTIN,
     SEARCH_CAPABILITY,
@@ -45,6 +46,7 @@ from .registry import (
 
 __all__ = [
     "AUTOMATION_TOOLS",
+    "DRAFT_WITHHELD",
     "UNATTENDED_WITHHELD",
     "NOT_BUILTIN",
     "SEARCH_CAPABILITY",

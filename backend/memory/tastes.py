@@ -93,7 +93,10 @@ class TasteProjection:
                 interests = tuple(
                     str(interest.label) for interest in scout.interests[:MAX_INTERESTS]
                 )
-                locality = scout.primary_locality() if hasattr(scout, "primary_locality") else None
+                # A property on the real profile, a callable on some fakes.
+                locality = getattr(scout, "primary_locality", None)
+                if callable(locality):
+                    locality = locality()
                 home = str(getattr(locality, "label", "") or "") if locality else ""
             except Exception:
                 logger.warning("taste_projection_interests_unreadable", extra={"user": user_id})

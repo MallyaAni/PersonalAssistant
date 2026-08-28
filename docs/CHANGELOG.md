@@ -2,6 +2,27 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-28 — Two intermittent sweep gaps traced instead of rerun
+
+- "more casual (draft referent)" misrouted in two of the last six sweeps
+  (to web search once, to Image edits once) and reproduced 1-in-3 with the
+  turns kept. The resolver reads the message as a draft continuation 6/6;
+  the router still picked `edit_image`, which a draft turn was allowed to
+  see. A draft turn is now offered no picture-editing tool at all
+  (`DRAFT_WITHHELD`: edit, show, discuss - creation stays), the mechanism
+  that already keeps scheduling off such turns. The follow-up reading is
+  traced beside the route on every routed turn, so the next misroute can be
+  read rather than guessed at.
+- "forget that (memory undo)" passed 3/3 with the turns kept and failed
+  only inside full sweeps: its assertion counted every semantic row the
+  sweep user had, so any earlier journey that captured a fact failed it.
+  It now asserts the change log - an undo was recorded and the latest
+  memory save is marked undone.
+- `sweep_journeys --keep` keeps the sweep's accounts and turns for
+  `explain_turn`. The room's home locality is read from the profile
+  property it is (it stayed empty on the first cut); verified on the
+  operator's real memory: Ani, Courthouse, interests, everyday facts.
+
 ## 2026-08-28 — In a group, a member's non-sensitive memory is known
 
 - The operator, after the first live turn could not say their own name:
@@ -21,6 +42,13 @@ This file is append-only history for meaningful, verified changes. It must not c
   car does Jen drive?" from her fact; a member's private detail is still
   hers to share), unit 60; sweep journey "group: a member's everyday fact is
   known" beside the address journey that proves the sensitive stays out.
+  Deployed in 4a354ef (deploy #13: unit 2046, routing 7/7, harness green,
+  all four group journeys passed live; on the operator's real memory the
+  screen held back the stock position, birthdate and relationship status
+  and passed the car, home area and preferences). The same deploy carries
+  the "Member 2" fix - the projection read a row attribute off the dict the
+  memory service returns - and leaves generated-picture descriptions out of
+  the room.
 
 ## 2026-08-28 — First live group chat, and what it taught
 
