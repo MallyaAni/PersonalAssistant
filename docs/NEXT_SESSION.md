@@ -44,9 +44,15 @@ attribution, delivery, admin, sweep journeys, and three real-model suites are
 in; the unit gate and `sweep --only group` ran green before the deploy that
 carried them (CHANGELOG).
 
-**Acceptance on the Mac, the one thing a machine cannot do here.** Make a
-group in Messages with your second number and one friend who is an approved
-user, then on the Mac:
+**Done live on 2026-08-28 in "Groupie"** (`chat308729799386740866`, the
+operator + jenos1): mention → answered in the chat in 22 s; thread reply →
+answered (late, fixed); weather "here" → Somalia (fixed). The bridge's plist
+now carries `IMESSAGE_BRIDGE_GROUPS`, `IMESSAGE_BRIDGE_READ_GROUPS=true` and
+`IMESSAGE_BRIDGE_ADDRESSES=deep-matter@agentmail.to`. What remains is a
+re-test on the build that carries the fixes (dd3cc92e): an @mention asking
+the weather (answered for the speaker's city, or asked if none is on
+record), a tap-and-hold reply with a question (seconds, not a minute), and
+a "thanks!" reply (no bubble). For any other group, the steps:
 
 1. find the room's identifier - `osascript -e 'tell application "Messages" to
    get {id, name} of every chat'` and pick the `iMessage;+;chatNNN` whose name

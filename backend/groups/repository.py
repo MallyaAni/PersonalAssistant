@@ -17,12 +17,15 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.core.logging_config import get_logger
 from backend.discovery.addressing import address_digest
 from backend.discovery.subscribers import SubscriberRepository
 from backend.memory.repository import MemoryRepository
 from backend.models.auth import UserAccount
 from backend.models.conversation_group import ConversationGroup, ConversationGroupMember
 from backend.services.auth_service import hash_password
+
+logger = get_logger(__name__)
 
 GROUP_PREFIX = "group:"
 # Which delivery channel a group's chat is on: the same Messages channel, its
@@ -99,10 +102,45 @@ class ConversationGroupRepository:
         ).scalars().all()
         return tuple([await self._as_group(row) for row in rows])
 
-    # Every group, for the operator's list.
+    # Every group, for the operator's list. Read column by column: the name
+    # and address are sealed, and one row this process cannot unseal (a key
+    # rotated, a test container without the key beside a live row) must not
+    # cost the operator the whole list - it is listed as unreadable instead.
     async def list_all(self) -> tuple[Group, ...]:
-        rows = (await self.session.execute(select(ConversationGroup).order_by(ConversationGroup.created_at))).scalars().all()
-        return tuple([await self._as_group(row) for row in rows])
+        rows = (
+            await self.session.execute(
+                select(
+                    ConversationGroup.user_id,
+                    ConversationGroup.chat_digest,
+                    ConversationGroup.enabled,
+                ).order_by(ConversationGroup.created_at)
+            )
+        ).all()
+        groups: list[Group] = []
+        for user_id, chat_digest, enabled in rows:
+            groups.append(
+                Group(
+                    user_id=str(user_id),
+                    chat_address="",
+                    chat_digest=str(chat_digest),
+                    display_name=await self._display_name(str(user_id)),
+                    enabled=bool(enabled),
+                    members=await self.members(str(user_id)),
+                )
+            )
+        return tuple(groups)
+
+    # A group's sealed name, or "(unreadable)" when this process lacks the
+    # key that sealed it.
+    async def _display_name(self, user_id: str) -> str:
+        try:
+            name = await self.session.scalar(
+                select(ConversationGroup.display_name).where(ConversationGroup.user_id == user_id)
+            )
+            return str(name or "")
+        except Exception:
+            logger.warning("conversation_group_name_unreadable", extra={"user": user_id})
+            return "(unreadable)"
 
     # Create the group's account and rows in one transaction, or return the
     # existing group for this chat. Idempotent per chat.
