@@ -2,6 +2,19 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-27 — The deploy path itself, fixed three times by its own evidence
+
+- Deploys #6 and #7 shipped their code but ended silently at the
+  post-deploy step. Three causes, each fixed: under `set -e`,
+  `output="$(check)"` killed the script when a check was red, before it
+  printed or paged (the assignment now captures the status); a turn that
+  waited on the powered-off desktop kept its stream alive with heartbeats,
+  so the sweep never returned (a 300 s deadline per turn, picture journeys
+  skipped when the picture machine does not answer, forty minutes per
+  check); and diffing against the pre-pull HEAD could find "no code changes"
+  after a hand-pull (a deploy now records its commit in
+  `data/.deployed-commit` and rebuilds everything since it).
+
 ## 2026-08-27 — What the deployed build's sweep found in the Scout/undo family, fixed
 
 - "Undo that" and "forget that" answered "none" for anyone with no
