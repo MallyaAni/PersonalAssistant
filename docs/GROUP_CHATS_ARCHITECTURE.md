@@ -42,13 +42,18 @@ rows. Everything the group owns lives under that `user_id`.
 ### Bridge (Mac) - `bridges/imessage_mac/server.py`
 - Grants: `IMESSAGE_BRIDGE_READ_GROUPS` (off by default, needs `READ_INCOMING`),
   `IMESSAGE_BRIDGE_GROUPS` (allowlisted `chatNNN` identifiers; env only, grants
-  never widen it), `IMESSAGE_BRIDGE_DISPLAY_NAME` (the contact name others see).
+  never widen it), `IMESSAGE_BRIDGE_ADDRESSES` (this account's own email and
+  number - what a mention is matched on) and, optionally,
+  `IMESSAGE_BRIDGE_DISPLAY_NAME` (a name to answer to as a word).
 - `incoming_messages` keeps `room_name IS NULL` for one-to-one rows and adds the
   allowlisted-group branch. A group row is returned only when the sender is
   allowlisted **and** the message is addressed: reply-thread (its
   `thread_originator_guid` is a from-me guid in that chat - chat.db is the
-  ledger, the bridge stays stateless), mention (`kIMMention` bytes in
-  `attributedBody` plus the display name), name (whole word). Payload gains
+  ledger, the bridge stays stateless), mention (the handle stored after
+  `__kIMMentionConfirmedMention` in `attributedBody` is one of the bridge's
+  addresses - measured 2026-08-28: a mention rendered "Scout" carried
+  `deep-matter@agentmail.to`, so the name each person saved the contact
+  under does not matter), name (whole word, only when a display name is set). Payload gains
   `chat_guid`, `chat_identifier`, `chat_name`, `participants` (from
   `chat_handle_join`), `addressed_by`.
 - Sending to a group uses the `chat id "iMessage;+;chatNNN"` AppleScript form
@@ -190,6 +195,6 @@ Unit: `test_imessage_bridge.py` (rooms: 19 cases), `test_imessage_group_worker.p
 | Memory attribution and per-owner writes | built; attribution pinned on the real routing model |
 | Delivery to the chat | built (`imessage_group` channel, task runner) |
 | Admin | built; routes tested |
-| Sweep journeys, docs, diagrams | built; verified by deploy (see CHANGELOG) |
+| Sweep journeys, docs, diagrams | built; deploy #9 (5c634e8, 2026-08-28) ran the three group journeys live: dinner suggestion and private-detail wall passed, the group-plan memory journey found the memory agent proposing nothing for "we all settled on thai" - fixed in `prompts/memory/proposal_group.md` the same day and re-verified |
 | Pending-question and tapback triggers | not built - need a bridge tool that forwards one member's next message on request |
-| Manual acceptance on the Mac | pending: list the acceptance chat in `IMESSAGE_BRIDGE_GROUPS`, set `IMESSAGE_BRIDGE_READ_GROUPS` and `IMESSAGE_BRIDGE_DISPLAY_NAME`, restart the bridge |
+| Manual acceptance on the Mac | pending: list the acceptance chat in `IMESSAGE_BRIDGE_GROUPS`, set `IMESSAGE_BRIDGE_READ_GROUPS` (`IMESSAGE_BRIDGE_ADDRESSES` is already set to the account's email), restart the bridge |

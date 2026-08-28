@@ -17,7 +17,7 @@ task below is deliberately assigned to it.
 | | |
 |---|---|
 | site | `deep-matter.com` 200, tunnel is a compose service on spark1 |
-| database | 37 tables, 2,506 rows, on spark1, migration head `20260824_0008` |
+| database | on spark1, migration head `20260828_0011` (conversation groups; 39 tables) |
 | redis | 6,655 keys, append-only on, cursor `imessage:chat:cursor` present |
 | models | DeepSeek-V4-Flash TP=2 (spark1+spark2), Qwen3-VL-8B (spark2), nomic 768-dim + Qwen3-Reranker-0.6B (spark1), FLUX.2 Klein 9B Q6_K + Kontext via ComfyUI on the desktop (only while it is on) |
 | deploy gate | `bash scripts/gate.sh` — 7 passed, 0 skipped, ~5 min; exits 1 with the router down |
@@ -52,8 +52,11 @@ user, then on the Mac:
    get {id, name} of every chat'` and pick the `iMessage;+;chatNNN` whose name
    matches;
 2. add to `~/Library/LaunchAgents/com.anios.imessage-bridge.plist`:
-   `IMESSAGE_BRIDGE_GROUPS=chatNNN`, `IMESSAGE_BRIDGE_READ_GROUPS=true`,
-   `IMESSAGE_BRIDGE_DISPLAY_NAME=<the contact name the friend sees>`; then
+   `IMESSAGE_BRIDGE_GROUPS=chatNNN` and `IMESSAGE_BRIDGE_READ_GROUPS=true`
+   (`IMESSAGE_BRIDGE_ADDRESSES=deep-matter@agentmail.to` is already there:
+   a mention is matched on the account's address, so the name each friend
+   saved the contact under does not matter; `IMESSAGE_BRIDGE_DISPLAY_NAME`
+   is optional and only adds "scout, ..." as a plain-word trigger); then
    `launchctl kickstart -k gui/$(id -u)/com.anios.imessage-bridge`;
 3. in the group, from the friend's phone: "Scout, thai or pizza friday?" →
    one answer in the room; a tap-and-hold Reply to that bubble: "thai then"

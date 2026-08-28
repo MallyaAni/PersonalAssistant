@@ -1,6 +1,6 @@
 # ADR 0016: A group is an account
 
-- Status: Accepted, in implementation
+- Status: Accepted; implemented and deployed 2026-08-28 (commit 5c634e8 - unit gate 2018, routing 7/7, sweep 35 pass / 5 skipped with the picture machine off / 1 gap fixed the same day: a decision made together is the group's fact; harness 6/6). Acceptance in a real group on the Mac is pending the operator listing the room.
 - Date: 2026-08-28
 
 ## Context

@@ -72,8 +72,9 @@ This document separates current security facts from future requirements. A contr
   (no redaction layer exists). Group chats are a separate, env-only grant
   (`IMESSAGE_BRIDGE_GROUPS` + `IMESSAGE_BRIDGE_READ_GROUPS`, 2026-08-28):
   from a listed room only messages addressed to the assistant - a reply in a
-  thread on its bubble, a mention, its name - from allowlisted senders are
-  forwarded, with the room's participant list; everything else in the room
+  thread on its bubble, a mention of its own address (`IMESSAGE_BRIDGE_ADDRESSES`),
+  optionally its name - from allowlisted senders are forwarded, with the
+  room's participant list; everything else in the room
   is discarded on the Mac. The backend adds a second wall: every participant
   must be an approved subscriber or the room is answered nowhere (the
   operator is texted once a day per room, without the strangers' addresses).

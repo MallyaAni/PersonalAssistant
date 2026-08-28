@@ -38,6 +38,7 @@ def _reply(llm, question: str) -> str:
     system = _build_system_prompt(_ROOM)
     assert "Lunch crew" in system and "Jen: likes thai food, live jazz" in system and "Sam: no stated likes yet" in system
     assert "you are called Scout" in system
+    assert "addressed to you" in _build_system_prompt({**_ROOM, "group": {**_ROOM["group"], "assistant_name": ""}})
     result = llm.chat(
         [{"role": "system", "content": system}, {"role": "user", "content": f"Ani: {question}"}], 400, None, 0.0
     )

@@ -416,7 +416,9 @@ def _insert_incoming(
     chat_identifier: str | None = None,
     chat_name: str = "",
     participants: tuple[str, ...] = (),
-    mention: bool = False,
+    # A mention: the mentioned account's handle, stored after the marker the
+    # way Messages stores it (the rendered name is only in the body).
+    mention: str | None = None,
     guid: str | None = None,
 ) -> None:
     db = sqlite3.connect(path)
@@ -425,7 +427,8 @@ def _insert_incoming(
     if blob is None and (in_blob or mention):
         blob = _typedstream(body)
     if mention:
-        blob = (blob or b"") + b"\x00__kIMMentionConfirmedMention\x00"
+        target = mention.encode("utf-8")
+        blob = (blob or b"") + b"\x86\x92\x84\x98\x98\x1c__kIMMentionConfirmedMention\x86\x92\x84\x98\x98" + bytes([len(target)]) + target + b"\x86\x86"
     message_id = db.execute(
         "INSERT INTO message (guid, text, attributedBody, handle_id, is_from_me,"
         " date, associated_message_type, thread_originator_guid)"
@@ -509,6 +512,7 @@ def _incoming_config(
     groups: tuple[str, ...] = (),
     read_groups: bool = False,
     display_name: str = "",
+    addresses: tuple[str, ...] = (),
 ) -> BridgeConfig:
     (tmp_path / "Attachments").mkdir(exist_ok=True)
     return BridgeConfig(
@@ -523,6 +527,7 @@ def _incoming_config(
         groups=frozenset(groups),
         read_groups=read_groups,
         display_name=display_name,
+        addresses=frozenset(normalize_recipient(a) for a in addresses),
     )
 
 
@@ -1227,9 +1232,14 @@ _ROOM_GUID = f"iMessage;+;{_ROOM}"
 _PEOPLE = ("+15550100", "+15550101")
 
 
-def _room_config(tmp_path: Path, *, read: bool = True, name: str = "Scout") -> BridgeConfig:
+_BOT = "deep-matter@agentmail.to"
+
+
+def _room_config(
+    tmp_path: Path, *, read: bool = True, name: str = "Scout", addresses: tuple[str, ...] = (_BOT,)
+) -> BridgeConfig:
     return _incoming_config(
-        tmp_path, _PEOPLE, groups=(_ROOM,), read_groups=read, display_name=name
+        tmp_path, _PEOPLE, groups=(_ROOM,), read_groups=read, display_name=name, addresses=addresses
     )
 
 
@@ -1283,24 +1293,49 @@ def test_a_thread_on_somebody_elses_bubble_is_not_addressed(tmp_path):
     assert _room_messages(config) == []
 
 
-def test_a_mention_is_addressed(tmp_path):
-    config = _room_config(tmp_path)
+def test_a_mention_is_matched_on_the_accounts_address_whatever_name_it_renders_as(tmp_path):
+    # Each person saves the contact under their own name; the mention stores
+    # the handle. No display name configured at all here.
+    config = _room_config(tmp_path, name="")
     _insert_incoming(
-        config.incoming_db, "+15550100", "@Scout what's the weather friday", _ns_ago(5),
-        chat_identifier=_ROOM, participants=_PEOPLE, mention=True,
+        config.incoming_db, "+15550100", "Ani's bot\xa0what's the weather friday", _ns_ago(5),
+        chat_identifier=_ROOM, participants=_PEOPLE, mention=_BOT,
     )
     (message,) = _room_messages(config)
     assert message["addressed_by"] == "mention"
-    assert message["text"] == "@Scout what's the weather friday"
+    assert message["text"] == "Ani's bot\xa0what's the weather friday"
+
+
+def test_a_mention_of_the_accounts_number_counts_too(tmp_path):
+    config = _room_config(tmp_path, name="", addresses=(_BOT, "+1 (555) 020-0000"))
+    _insert_incoming(
+        config.incoming_db, "+15550100", "Scout are you there", _ns_ago(5),
+        chat_identifier=_ROOM, participants=_PEOPLE, mention="+15550200000",
+    )
+    (message,) = _room_messages(config)
+    assert message["addressed_by"] == "mention"
 
 
 def test_a_mention_of_somebody_else_is_not_addressed(tmp_path):
-    config = _room_config(tmp_path)
+    config = _room_config(tmp_path, name="")
     _insert_incoming(
-        config.incoming_db, "+15550100", "@Jen are you coming", _ns_ago(5),
-        chat_identifier=_ROOM, participants=_PEOPLE, mention=True,
+        config.incoming_db, "+15550100", "Jen are you coming", _ns_ago(5),
+        chat_identifier=_ROOM, participants=_PEOPLE, mention="+15550101",
     )
     assert _room_messages(config) == []
+
+
+def test_mention_targets_are_read_from_the_typedstream():
+    from server import mention_targets
+
+    blob = _typedstream("Scout how are you?") + (
+        b"\x86\x92\x84\x96\x96\x1c__kIMMentionConfirmedMention\x86\x92\x84\x96\x96\x18deep-matter@agentmail.to\x86\x86"
+    )
+    assert mention_targets(blob) == {normalize_recipient(_BOT)}
+    assert mention_targets(None) == set()
+    assert mention_targets(_typedstream("no mention here")) == set()
+    two = blob + b"\x86\x92\x84\x96\x96\x1c__kIMMentionConfirmedMention\x86\x92\x84\x96\x96\x0c+12079290146\x86\x86"
+    assert mention_targets(two) == {normalize_recipient(_BOT), normalize_recipient("+12079290146")}
 
 
 def test_the_accounts_name_as_a_word_is_addressed_whatever_the_case(tmp_path):
@@ -1372,19 +1407,23 @@ def test_room_and_direct_messages_arrive_together_in_order(tmp_path):
     assert room["chat_identifier"] == _ROOM
 
 
-def test_reading_rooms_requires_the_accounts_display_name(monkeypatch, tmp_path):
+def test_reading_rooms_needs_a_way_to_be_addressed(monkeypatch, tmp_path):
     monkeypatch.setenv("IMESSAGE_BRIDGE_TOKEN", "secret")
     monkeypatch.setenv("IMESSAGE_BRIDGE_RECIPIENTS", "+15550100")
     monkeypatch.setenv("IMESSAGE_BRIDGE_GROUPS", f"{_ROOM}, iMessage;+;chat112233445566")
     monkeypatch.setenv("IMESSAGE_BRIDGE_READ_GROUPS", "1")
     monkeypatch.delenv("IMESSAGE_BRIDGE_DISPLAY_NAME", raising=False)
+    monkeypatch.delenv("IMESSAGE_BRIDGE_ADDRESSES", raising=False)
     with pytest.raises(BridgeError):
         BridgeConfig.from_environment()
-    monkeypatch.setenv("IMESSAGE_BRIDGE_DISPLAY_NAME", "Scout")
+    monkeypatch.setenv("IMESSAGE_BRIDGE_ADDRESSES", f"{_BOT}, +1 555 020 0000")
     config = BridgeConfig.from_environment()
     assert config.groups == frozenset({_ROOM, "chat112233445566"})
     assert config.read_groups is True
-    assert config.display_name == "Scout"
+    assert config.addresses == frozenset({normalize_recipient(_BOT), normalize_recipient("+15550200000")})
+    assert config.display_name == ""
+    monkeypatch.setenv("IMESSAGE_BRIDGE_DISPLAY_NAME", "Scout")
+    assert BridgeConfig.from_environment().display_name == "Scout"
 
 
 def test_chat_targets_are_recognised_by_shape():

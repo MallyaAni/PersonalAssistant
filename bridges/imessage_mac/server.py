@@ -249,8 +249,14 @@ class BridgeConfig:
     # addressed to this Mac's account leaves it (see `_addressed_to_bot`).
     groups: frozenset[str] = frozenset()
     read_groups: bool = False
-    # The name other people see for this account - what a mention renders
-    # and what "hey <name>" says. Required when groups are read.
+    # This account's own addresses (the Apple ID email, the number), as
+    # people mention it: a mention stores the mentioned handle, not the
+    # rendered name (`__kIMMentionConfirmedMention` → deep-matter@…, read
+    # from chat.db 2026-08-28), so this is what a mention is matched on and
+    # it holds whatever contact name each person saved. Normalized.
+    addresses: frozenset[str] = frozenset()
+    # The name to answer to as a plain word ("scout, thai or pizza?"). Only
+    # as reliable as everyone saving the contact under that name; optional.
     display_name: str = ""
 
     @classmethod
@@ -277,15 +283,22 @@ class BridgeConfig:
         )
         read_groups = os.environ.get("IMESSAGE_BRIDGE_READ_GROUPS", "").strip().lower() in {"1", "true", "yes"}
         display_name = os.environ.get("IMESSAGE_BRIDGE_DISPLAY_NAME", "").strip()
-        if read_groups and not display_name:
+        addresses = frozenset(
+            normalize_recipient(part)
+            for part in os.environ.get("IMESSAGE_BRIDGE_ADDRESSES", "").split(",")
+            if part.strip()
+        )
+        if read_groups and not addresses and not display_name:
             raise BridgeError(
-                "Set IMESSAGE_BRIDGE_DISPLAY_NAME (the contact name people see) to read group chats."
+                "Set IMESSAGE_BRIDGE_ADDRESSES (this account's email and number, for mentions) "
+                "and/or IMESSAGE_BRIDGE_DISPLAY_NAME (a name to answer to) to read group chats."
             )
         return cls(
             token=token,
             allowed_recipients=allowed,
             groups=groups,
             read_groups=read_groups,
+            addresses=addresses,
             display_name=display_name,
             # Loopback by default: reaching this from another machine is a
             # deliberate act, not the out-of-the-box state.
@@ -984,22 +997,52 @@ def _sent_guids_in_chat(connection: sqlite3.Connection, chat_rowid: int) -> set[
     return {str(row[0]) for row in rows if row[0]}
 
 
+# The handles a message mentions, read from its typedstream: each
+# `__kIMMentionConfirmedMention` attribute is followed by the mentioned
+# account's address (an email or a number), whatever name the sender's
+# contacts rendered it as. Normalized; empty when there is no mention.
+_MENTION_MARKER = b"__kIMMentionConfirmedMention"
+
+
+def mention_targets(blob: object) -> set[str]:
+    if blob is None:
+        return set()
+    data = bytes(blob)
+    found: set[str] = set()
+    for match in re.finditer(_MENTION_MARKER, data):
+        # The address is the next printable run; a length byte that happens
+        # to be printable (a 40-character address has length 0x28, "(") can
+        # ride in front of it and is dropped.
+        run = re.search(rb"[\x20-\x7e]{3,}", data[match.end():match.end() + 400])
+        if not run:
+            continue
+        candidate = run.group(0).decode("ascii", "ignore")
+        if candidate and not (candidate[0].isalnum() or candidate[0] == "+"):
+            candidate = candidate[1:]
+        normalized = normalize_recipient(candidate)
+        if normalized:
+            found.add(normalized)
+    return found
+
+
 # Why a room's message is for this account, or None when it is not. Three
 # shapes, no intent: a reply whose thread is anchored on a bubble this account
-# sent there; a mention (the typedstream marker plus the rendered name); the
-# account's name as a word in the body.
+# sent there; a mention of one of this account's addresses; the account's
+# name as a word in the body, when a name was configured.
 def _addressed_to_bot(
-    originator: str, body: str, blob: object, sent_guids: set[str], display_name: str
+    originator: str,
+    body: str,
+    blob: object,
+    sent_guids: set[str],
+    display_name: str,
+    addresses: frozenset[str] = frozenset(),
 ) -> str | None:
     if originator and originator in sent_guids:
         return "reply"
-    name = (display_name or "").strip()
-    if not name:
-        return None
-    lowered = body.casefold()
-    if blob is not None and b"kIMMention" in bytes(blob) and name.casefold() in lowered:
+    if addresses and mention_targets(blob) & addresses:
         return "mention"
-    if re.search(r"(?<![\w])" + re.escape(name) + r"(?![\w])", body, re.IGNORECASE):
+    name = (display_name or "").strip()
+    if name and re.search(r"(?<![\w])" + re.escape(name) + r"(?![\w])", body, re.IGNORECASE):
         return "name"
     return None
 
@@ -1116,7 +1159,12 @@ def incoming_messages(
             # mention, or its name. Everything else is discarded here, body
             # and all, with the cursor already past it.
             addressed_by = _addressed_to_bot(
-                str(originator or ""), body or "", blob, sent_in_room.get(int(chat_rowid), set()), config.display_name
+                str(originator or ""),
+                body or "",
+                blob,
+                sent_in_room.get(int(chat_rowid), set()),
+                config.display_name,
+                config.addresses,
             )
             if addressed_by is None:
                 continue
@@ -1363,7 +1411,11 @@ def describe_incoming(config: BridgeConfig) -> dict[str, object]:
     finally:
         connection.close()
     decodable = sum(1 for text, blob in rows if extract_body(text, blob) is not None)
-    groups_note = {"groups_readable": config.read_groups, "groups_allowlisted": len(config.groups)}
+    groups_note = {
+        "groups_readable": config.read_groups,
+        "groups_allowlisted": len(config.groups),
+        "mention_addresses": len(config.addresses),
+    }
     return {
         **groups_note,
         "readable": True,

@@ -54,6 +54,22 @@ async def test_jen_and_i_is_about_both_not_the_speaker_alone(structured_llm):
         assert "u-ani" in copies
 
 
+async def test_a_decision_made_together_is_the_groups_fact(structured_llm):
+    # Deploy #9's sweep gap (2026-08-28): this exact sentence produced no
+    # proposal, so the room forgot its own plan.
+    for text in (
+        "Scout, just so you know, we all settled on thai for friday dinner",
+        "we're doing Thai on Friday at 7",
+    ):
+        proposals = await _propose(structured_llm, text)
+        facts = [p for p in proposals if p["kind"] == "semantic_fact"]
+        assert facts, (text, proposals)
+        assert "the group" in _names(facts) or _names(facts) >= {"ani", "jen"}, (text, facts)
+        copies = [owner for proposal in facts for owner, _ in _owned_copies(proposal, GROUP, ROOM)]
+        assert GROUP in copies, (text, copies)
+        assert "u-jen" not in copies and "u-sam" not in copies, (text, copies)
+
+
 async def test_us_and_we_are_the_group(structured_llm):
     for text in ("we're all into climbing these days", "let's meet at the usual place at 6 for us"):
         proposals = await _propose(structured_llm, text)

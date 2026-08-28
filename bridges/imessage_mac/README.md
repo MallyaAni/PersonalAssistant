@@ -231,7 +231,13 @@ grants over HTTP never widen it - and reading it is a separate switch:
 # the full `iMessage;+;chatNNN` guid is accepted too). Comma-separated.
 export IMESSAGE_BRIDGE_GROUPS="chat778899001122"
 export IMESSAGE_BRIDGE_READ_GROUPS=true
-# The name people see for this account in Messages - what a mention renders.
+# This account's own addresses - the Apple ID email and/or number people
+# message it at. A mention is matched on these: Messages stores the
+# mentioned handle with the message, not the name it rendered, so it does
+# not matter what each person saved the contact as.
+export IMESSAGE_BRIDGE_ADDRESSES="deep-matter@agentmail.to"
+# Optional: a name to answer to as a plain word ("scout, thai or pizza?").
+# Only as reliable as everyone saving the contact under that name.
 export IMESSAGE_BRIDGE_DISPLAY_NAME="Scout"
 ```
 
@@ -246,10 +252,13 @@ Inside a listed room, only what is addressed to this account leaves the Mac:
 - a message sent as a **reply** (tap and hold → Reply) to one of this
   account's bubbles - the thread anchor is in chat.db, so this needs no
   timing and works however long after the bubble;
-- a **mention** (`@Scout`), detected by the marker Messages stores with the
-  message plus the rendered name;
+- a **mention** of this account, detected by the handle Messages stores in
+  the message's `__kIMMentionConfirmedMention` attribute (read from chat.db
+  2026-08-28: a mention rendered "Scout" carried `deep-matter@agentmail.to`)
+  matched against `IMESSAGE_BRIDGE_ADDRESSES` - whatever name the sender's
+  contacts show;
 - the account's **name** as a whole word ("scout, thai or pizza?"; not
-  "scouting").
+  "scouting"), when `IMESSAGE_BRIDGE_DISPLAY_NAME` is set.
 
 Everything else in the room is discarded on the Mac, body and all. A
 forwarded room message carries `chat_guid`, `chat_identifier`, `chat_name`,

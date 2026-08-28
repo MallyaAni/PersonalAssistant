@@ -399,10 +399,20 @@ def _render_group_block(group: dict[str, Any]) -> str:
         name = str(member.get("name") or "a member")
         likes = ", ".join(str(item) for item in (member.get("interests") or []))
         lines.append(f"- {name}: likes {likes}" if likes else f"- {name}: no stated likes yet")
+    # What the room calls the assistant: the bridge's display name when one
+    # is set; otherwise each member addresses it by whatever contact name
+    # they saved, and the only certainty is that a message which reached it
+    # was meant for it.
+    name = str(group.get("assistant_name") or "").strip()
+    called = (
+        f"In it you are called {name} - that is the name people address you by and the name a mention of you shows."
+        if name
+        else "In it each person addresses you by whatever contact name they saved for you, so you may be called different things by different people; every message you receive here was addressed to you."
+    )
     return render(
         "reply/imessage_group",
         chat_name=str(group.get("chat_name") or "the group"),
-        assistant_name=str(group.get("assistant_name") or "AniOS"),
+        called=called,
         speaker=str(group.get("speaker_name") or "a member"),
         roster="\n".join(lines) or "- (nobody is listed yet)",
     )

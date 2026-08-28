@@ -2,6 +2,63 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-28 — Group chats: a room is an account (deployed in 5c634e8)
+
+- The assistant can be in an iMessage group with approved users
+  ([ADR 0016](adr/0016-a-group-is-an-account.md), design and status in
+  `docs/GROUP_CHATS_ARCHITECTURE.md`). The Mac's bridge reads a room only
+  when its operator lists it (`IMESSAGE_BRIDGE_GROUPS`, `READ_GROUPS`), and
+  from it forwards only what is addressed to the account: a reply in a
+  thread on one of its bubbles, a mention, or its name as a word. A mention
+  is matched on the account's own address, because Messages stores the
+  mentioned handle with the message rather than the name it rendered (read
+  from chat.db: a mention shown as "Scout" carried `deep-matter@agentmail.to`),
+  so what each person saved the contact as does not matter
+  (`IMESSAGE_BRIDGE_ADDRESSES`). Everything else in the room is discarded on
+  the Mac.
+- The worker requires every participant to be an approved subscriber;
+  otherwise the room is answered nowhere and the operator gets one text a
+  day about it (no addresses in it). A room that passes is provisioned as an
+  account of its own (`group:<slug>`, migration `20260828_0011`) with its own
+  session, memory, tasks, Scout profile and an `imessage_group` subscriber
+  whose address is the chat, so digests and reminders post into the room.
+- What the room may know about a member is a fixed allowlist - profile name
+  and Scout interests (`backend/memory/tastes.py`); asked for anything else
+  about a member, the reply says it is theirs to share. Turns are labelled
+  by speaker in every transcript a model sees (`services/transcript.py`).
+- The memory agent is told who is speaking and who is in the room and says
+  who each fact is about; `backend/memory/attribution.py` turns that into
+  owners: a member's own statement is theirs and the room's with its source,
+  a decision made together or a fact about another member is the room's
+  only, with its source - never another member's memory on someone else's
+  word. Per-owner change records keep "forget that" working from each
+  owner's thread.
+- Bursts are judged by meaning before any reply, in rooms and one-to-one:
+  the routing model says whether the person has finished and whether an
+  answer is wanted (`services/readiness.py`, `POST /chat/readiness`,
+  `prompts/routing/readiness.md`, 17/17 on the real model), with a 90 s cap
+  on "not finished" and fail-open to answering.
+- Operator routes: `GET /admin/groups`, `POST /admin/groups/{id}/enabled`,
+  `DELETE /admin/groups/{id}` (the same schema-driven purge account deletion
+  uses).
+- Verified: unit gate 2018 passed (bridge rooms fixture 22 cases, worker,
+  repository against the database, admin routes, attribution, tastes,
+  transcript labels, readiness, task runner); real-model suites
+  `test_group_attribution_behaviour` 5/5, `test_group_reply_behaviour` 3/3,
+  `test_burst_readiness_behaviour` 17/17; deploy #9 (5c634e8): routing 7/7,
+  harness 6/6, sweep 35 pass / 5 skipped (picture machine off) / 1 gap -
+  the group-plan journey found the memory agent proposing nothing for
+  "we all settled on thai for friday dinner". Fixed the same day in
+  `prompts/memory/proposal_group.md` (a decision made together is the
+  group's own fact), probed on the real model (both phrasings capture; a
+  question still captures nothing) and pinned as a strict case in
+  `test_group_attribution_behaviour` (6/6 after the fix; group reply 3/3
+  re-run with the prompt that handles an account with no single name).
+- Not in this cut: the "next message from someone the assistant asked" and
+  "tapback on its bubble" triggers - both need the Mac to forward an
+  unaddressed message on request. Acceptance in a real group awaits the
+  operator listing the room on the Mac.
+
 ## 2026-08-28 — The reply gets to the point
 
 - The operator: "deepseek's responses are way too long ... it needs to get
