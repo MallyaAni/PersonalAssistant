@@ -101,6 +101,14 @@ sweep (user `sweep_708ace97`) showed exactly that: the undo removed the
 dentist row, the leftovers were "the user has a retail team" (captured from
 the draft-email journey) and the next journey's restatement of the dentist.
 
+**Router wobble, observed once (deploy #17's sweep):** "Scout hows the
+weather here today?" in a group, with the speaker's place known, routed to
+a history search; it was Weather in deploys #15 and #16 and 2/2 in
+`test_weather_here_uses_the_known_place_or_asks`. Deploys retry a failed
+journey once from #18 on; if this shows twice in one deploy, it is not a
+wobble - trace it with `--keep` and read the `followup` and `route` in the
+turn's trace before touching the router prompt.
+
 **Observed once in the kept full sweep, not yet fixed:** the group dinner
 question ("where should the two of us go for dinner on friday?") was routed
 to a built-in skill pack that searched "events happening this weekend"
