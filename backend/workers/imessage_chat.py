@@ -151,8 +151,10 @@ _FAILURE_REPLY = "I hit a problem answering that. Give me a minute and try again
 # How often the turn is checked while deciding whether to send a bubble.
 _ACK_POLL_SECONDS = 0.25
 # Routes whose answer is seconds to minutes away once chosen.
+# Weather is two or three lookups plus the reply - six to eight seconds - so
+# its line at second three still buys real reassurance.
 _SLOW_ROUTES = frozenset(
-    ("Web search", "New images", "Image edits", "Diagrams", "Presentations", "Past conversations", "Skill")
+    ("Web search", "Weather", "New images", "Image edits", "Diagrams", "Presentations", "Past conversations", "Skill")
 )
 
 _ACK_REPLIES = (
