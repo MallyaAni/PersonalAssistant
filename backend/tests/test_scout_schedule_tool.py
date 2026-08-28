@@ -28,6 +28,13 @@ def test_the_call_becomes_a_typed_action():
     ) == ScoutScheduleAction(cadence="weekly", hour=9, minute=25, weekday=6)
 
 
+def test_show_reports_without_a_cadence_and_weekly_carries_its_day():
+    assert parse_builtin("scout_schedule", {"operation": "show"}, "") == ScoutScheduleAction(cadence="", hour=0, operation="show")
+    assert describe_action(ScoutScheduleAction(cadence="", hour=0, operation="show")) == ("Scout schedule", "show")
+    from backend.tools.scout_schedule import _SCHEMA
+    assert "weekday" in _SCHEMA["required"] and "operation" in _SCHEMA["required"]
+
+
 def test_a_missing_hour_or_a_task_cadence_is_no_call():
     assert parse_builtin("scout_schedule", {"cadence": "daily"}, "") is None
     assert parse_builtin("scout_schedule", {"cadence": "once", "hour": 9}, "") is None

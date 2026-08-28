@@ -2,6 +2,21 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-27 — What the deployed build's sweep found in the Scout/undo family, fixed
+
+- "Undo that" and "forget that" answered "none" for anyone with no
+  reminders: the undo branch sat below the task list's early return. Undo
+  reads the change log now, before anything asks whether tasks exist.
+- "Make it weekly, on Sundays" landed on Monday: `weekday` was optional in
+  the tool's schema and the router left it out; it is required now, and a
+  second identical schedule step in one turn no longer overwrites the
+  first. "When does scout run?" went to the task list; `scout_schedule`
+  has a `show` operation that reports without changing. "Undo that" after
+  a Scout change was routed to `scout_schedule` and set the old time by
+  hand; the router prompt names undo as `manage_tasks` whatever the
+  reading beside the message says. Pinned on the real router in
+  `functional/test_scout_schedule_behaviour.py`.
+
 ## 2026-08-27 — Lettering in pictures: the instruction first, the words typeset
 
 - FLUX.2 Klein (Black Forest Labs; its Qwen3 text encoder) letters pictures

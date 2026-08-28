@@ -21,6 +21,11 @@ CADENCES = ("daily", "weekly")
 _SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
+        "operation": {
+            "type": "string",
+            "enum": ["set", "show"],
+            "description": "set to change when the sweep runs; show to report its current schedule without changing it.",
+        },
         "cadence": {
             "type": "string",
             "enum": list(CADENCES),
@@ -42,10 +47,13 @@ _SCHEMA: dict[str, Any] = {
             "type": "integer",
             "minimum": 0,
             "maximum": 6,
-            "description": "Weekly only: 0 is Monday, 6 is Sunday.",
+            "description": (
+                "The day for a weekly sweep: 0 is Monday, 6 is Sunday - 'on Sundays' is 6. "
+                "0 for a daily sweep. Always given: left out, 'weekly on Sundays' landed on Monday."
+            ),
         },
     },
-    "required": ["cadence", "hour"],
+    "required": ["operation", "cadence", "hour", "weekday"],
     "additionalProperties": False,
 }
 
@@ -59,7 +67,9 @@ TOOL = BuiltinTool(
         "'run scout daily at 3pm', 'change the schedule to 9:25pm everyday' "
         "in a conversation about Scout, 'make it weekly instead' or 'adjust "
         "this to daily at 3pm' when the previous reply was about Scout's "
-        "schedule. It is agent configuration: not a reminder, text, or task "
+        "schedule; and with operation show when they ask what it is - 'when "
+        "does scout run?', 'what's scout's schedule?'. It is agent "
+        "configuration: not a reminder, text, or task "
         "the person set up - those belong to schedule_task and manage_tasks - "
         "and not a question about what Scout currently has configured, which "
         "needs no tool."
@@ -76,6 +86,8 @@ TOOL = BuiltinTool(
 # out of range: a sweep silently set to midnight is a wrong answer that
 # looks like a right one.
 def parse(arguments: dict[str, Any]) -> ScoutScheduleAction | None:
+    if arguments.get("operation") == "show":
+        return ScoutScheduleAction(cadence="", hour=0, operation="show")
     cadence = arguments.get("cadence")
     if cadence not in CADENCES:
         return None

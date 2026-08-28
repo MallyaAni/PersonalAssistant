@@ -136,6 +136,9 @@ class ScoutScheduleAction:
     hour: int
     minute: int = 0
     weekday: int = 0
+    # "set" changes the sweep's schedule; "show" only reports it - "when does
+    # scout run?" was a task list before it had a named target (2026-08-27).
+    operation: str = "set"
 
 
 @dataclass(frozen=True, slots=True)

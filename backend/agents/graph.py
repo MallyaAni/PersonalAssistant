@@ -515,6 +515,18 @@ def _render_scout_schedule_outcome(outcome: dict[str, Any]) -> str:
     kind = str(outcome.get("kind") or "")
     lines = [f"Scout-schedule outcome: {kind}\n"]
     schedule = outcome.get("schedule")
+    if kind == "shown":
+        if isinstance(schedule, dict) and schedule.get("enabled", True):
+            lines.append(
+                f"- Scout's sweep runs {schedule_phrase(schedule)} ({schedule.get('timezone') or 'UTC'}); "
+                "report exactly this - nothing was changed this turn.\n"
+            )
+            upcoming = next_run_phrase(schedule)
+            if upcoming:
+                lines.append(f"- Next sweep: {upcoming}\n")
+        else:
+            lines.append("- Scout has no schedule set: it runs only when asked. Say so; offer to set one.\n")
+        return "".join(lines) + "\n"
     if kind == "scheduled" and isinstance(schedule, dict):
         lines.append(
             "- Scout's own sweep now runs "

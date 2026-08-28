@@ -398,6 +398,9 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
         "make it weekly instead", SCOUT_SCHEDULE, "agent_config", history=_SCOUT_HISTORY
     ),
     SelectionCase("run scout every day at 3pm", SCOUT_SCHEDULE, "agent_config"),
+    # Asking is the tool's show operation, not a task list (sweep, 2026-08-27).
+    SelectionCase("when does scout run its sweep?", SCOUT_SCHEDULE, "agent_config"),
+    SelectionCase("what's scout's schedule?", SCOUT_SCHEDULE, "agent_config"),
     SelectionCase(
         "adjust this to daily at 3pm",
         SCOUT_SCHEDULE,

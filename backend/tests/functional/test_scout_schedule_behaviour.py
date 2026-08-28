@@ -59,6 +59,28 @@ async def test_this_after_a_reminder_moves_that_reminder(selector):
     assert action.operation == "reschedule", action
 
 
+async def test_asking_when_scout_runs_is_show_not_a_task_list(selector):
+    for said in ("when does scout run its sweep?", "what's scout's schedule?"):
+        action = await selector.select("functional_test_user", said, [], None)
+        assert isinstance(action, ScoutScheduleAction) and action.operation == "show", (said, action)
+
+
+async def test_weekly_on_sundays_carries_sunday(selector):
+    history = [{"query": "run scout every day at 3pm", "response": "Done - Scout's sweep is now scheduled for daily at 3:00 PM."}]
+    action = await selector.select("functional_test_user", "make it weekly instead, on Sundays", history, None)
+    assert isinstance(action, ScoutScheduleAction) and action.operation == "set", action
+    assert (action.cadence, action.weekday) == ("weekly", 6), action
+
+
+async def test_undo_after_a_scout_change_is_the_undo_tool(selector):
+    history = [
+        {"query": "run scout every day at 3pm", "response": "Done - Scout's sweep is now scheduled to run every day at 3:00 PM (America/New_York)."},
+        {"query": "change it to 9pm", "response": "Done - Scout's sweep is now scheduled to run every day at 9:00 PM (America/New_York)."},
+    ]
+    action = await selector.select("functional_test_user", "undo that", history, None)
+    assert isinstance(action, ManageTasksAction) and action.operation == "undo", action
+
+
 async def test_a_named_sweep_change_needs_no_history(selector):
     action = await selector.select("functional_test_user", "run scout every day at 3pm", [], None)
     assert isinstance(action, ScoutScheduleAction), action

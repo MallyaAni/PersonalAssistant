@@ -2695,7 +2695,10 @@ class ConversationService:
             apply=lambda item: self._apply_step(user_id, item, metadata),
             decide=decide,
             describe=_step_line,
-            creates=lambda item: isinstance(item, ScheduleTaskAction),
+            # One creation per turn: a second identical scout_schedule step
+            # once overwrote "weekly on Sundays" with the router's default day.
+            creates=lambda item: isinstance(item, ScheduleTaskAction)
+            or (isinstance(item, ScoutScheduleAction) and item.operation == "set"),
             max_steps=settings.TURN_MAX_STEPS if steppable else 1,
             budget_seconds=settings.TURN_STEP_BUDGET_SECONDS,
         )
@@ -2768,6 +2771,12 @@ class ConversationService:
         self, user_id: str, action: ScoutScheduleAction
     ) -> dict[str, Any]:
         requested = f"{action.cadence} at {action.hour:02d}:{action.minute:02d}"
+        if action.operation == "show":
+            try:
+                return {"kind": "shown", "schedule": await self.discovery_runs.get_schedule(user_id)}
+            except Exception:
+                logger.warning("scout_schedule show failed", exc_info=True)
+                return {"kind": "failed", "requested": "show"}
         try:
             timezone = (
                 await self._primary_timezone(user_id)
@@ -3094,6 +3103,12 @@ class ConversationService:
         tasks = await self.scheduled_tasks.list_for_user(user_id, enabled_only=False)
         if action.operation == "list":
             return {"kind": "listed", "tasks": tasks}
+        # Undo looks at the change log, not the task list: a person with no
+        # reminders can still take back a memory save or a Scout change. It
+        # sat below the "no tasks" return once and answered "none" for both
+        # (found by the sweep, 2026-08-27).
+        if action.operation == "undo":
+            return await self._undo_last_change(user_id)
         if not tasks:
             return {"kind": "none"}
         from backend.tasks.picker import pick_task
@@ -3103,8 +3118,6 @@ class ConversationService:
             if self.main_action_selector is not None
             else self.llm
         )
-        if action.operation == "undo":
-            return await self._undo_last_change(user_id)
         chosen = await pick_task(
             picker_llm, action.which, tasks, hint=_previous_assistant_said.get()
         )

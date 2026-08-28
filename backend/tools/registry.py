@@ -223,6 +223,8 @@ def _detail(action: MainAction) -> str:
         return action.query
     if isinstance(action, CreateDiagramAction | DelegateAction):
         return action.subject
+    if isinstance(action, ScoutScheduleAction) and action.operation == "show":
+        return "show"
     if isinstance(action, ScheduleTaskAction | ScoutScheduleAction):
         return f"{action.cadence} at {action.hour:02d}:{action.minute:02d}"
     if isinstance(action, ManageTasksAction | ManageSkillsAction):
