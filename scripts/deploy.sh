@@ -27,6 +27,11 @@
 # not evidence that anything works.
 
 set -euo pipefail
+# A silent death names its line. Deploys #6-#8 (2026-08-27/28) ended at the
+# post-deploy step with nothing in the log; whatever the cause, the next one
+# says where it stopped and with what status.
+trap 'status=$?; if [[ $status -ne 0 ]]; then echo "deploy.sh: exiting with status $status at line ${BASH_LINENO[0]:-?} (${BASH_COMMAND})" >&2; fi' EXIT
+trap 'echo "deploy.sh: received SIGHUP, continuing" >&2' HUP
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 compose=(docker compose -f "$root/docker-compose.yml")
