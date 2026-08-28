@@ -389,6 +389,30 @@ async def test_a_weather_question_routes_to_the_forecast_tool(selector):
         assert "arlington" in place, (query, action.plan.arguments)
 
 
+# "Weather here" with the person's place known routes to the forecast tool
+# for that place; with no place known it routes to no tool so the reply can
+# ask. The first live group turn (2026-08-28) went to Here, Somalia; the
+# wording that fixed that then read as "call no tool when they say here",
+# and the sweep's group weather journey routed to nothing with Arlington on
+# record. Both readings are held here.
+async def test_weather_here_uses_the_known_place_or_asks(selector):
+    known = "Friday 2026-08-28 16:10 - they are in Arlington, Virginia (America/New_York); the coming weekend is Saturday 2026-08-29 and Sunday 2026-08-30"
+    unknown = "Friday 2026-08-28 20:10 UTC (their time zone is not known); the coming weekend is Saturday 2026-08-29 and Sunday 2026-08-30"
+    for query in ("Scout hows the weather here today?", "how's the weather here today?"):
+        action = await selector.select("functional_test_user", query, [], None, local_now=known)
+        assert isinstance(action, ToolboxAction) and action.plan.tool_name == "get_weather", (query, action)
+        assert "arlington" in str(action.plan.arguments.get("place", "")).casefold(), (query, action.plan.arguments)
+    # With no place known the router may still reach for the tool with a
+    # non-place ("unknown", "here"); the tool refuses those before the
+    # geocoder, so the reply asks either way. What must never happen is a
+    # real-looking place invented for the argument.
+    from backend.mcp.servers.internet import not_a_place
+
+    action = await selector.select("functional_test_user", "how's the weather here today?", [], None, local_now=unknown)
+    if isinstance(action, ToolboxAction) and action.plan.tool_name == "get_weather":
+        assert not_a_place(str(action.plan.arguments.get("place", ""))), action.plan.arguments
+
+
 # A live "what's on" question whose place is only in the conversation: the
 # router searches, and the query it writes names the place and the dates -
 # 2026-08-25, Canggu: it first offered to search, then searched without the

@@ -88,7 +88,18 @@ draft turn could still be offered `edit_image` and the router took it
 follow-up reading is traced on every routed turn. "forget that (memory
 undo)" - its assertion counted every semantic row of the sweep user, so
 earlier journeys' captures failed it in full sweeps; it asserts the change
-log now. `sweep_journeys --keep` exists for the next one.
+log now. `sweep_journeys --keep` exists for the next one. The kept full
+sweep (user `sweep_708ace97`) showed exactly that: the undo removed the
+dentist row, the leftovers were "the user has a retail team" (captured from
+the draft-email journey) and the next journey's restatement of the dentist.
+
+**Observed once in the kept full sweep, not yet fixed:** the group dinner
+question ("where should the two of us go for dinner on friday?") was routed
+to a built-in skill pack that searched "events happening this weekend"
+(off-subject results; the reply still answered from the room's Thai plan).
+A dinner question is not a weekend brief. Measure with the evaluator before
+touching the router prompt; the sweep journey keeps `Skill` out of its
+accepted routes on purpose.
 
 ## Shipped 2026-08-24
 

@@ -18,6 +18,15 @@ This file is append-only history for meaningful, verified changes. It must not c
   sweep user had, so any earlier journey that captured a fact failed it.
   It now asserts the change log - an undo was recorded and the latest
   memory save is marked undone.
+- The kept full sweep confirmed it: the undo removed the dentist row; the
+  leftovers were another journey's capture and the next journey's
+  restatement.
+- The forecast tool's wording from the Somalia fix read to the router as
+  "call no tool when they say here", and the group weather journey routed to
+  nothing with Arlington on record. It now says "here" means the place the
+  context knows; pinned on the real router (`test_weather_here_uses_the_known_place_or_asks`:
+  Arlington with a known place; with none, the tool refuses the router's
+  non-place argument and the reply asks).
 - `sweep_journeys --keep` keeps the sweep's accounts and turns for
   `explain_turn`. The room's home locality is read from the profile
   property it is (it stayed empty on the first cut); verified on the

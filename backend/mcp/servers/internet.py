@@ -470,8 +470,11 @@ async def get_weather(place: str, days: int = 1, units: str = "imperial") -> str
     as 1, up to 7 - for "this weekend" or a named day, enough days to reach
     that day from today in the person's zone (asked on a Thursday, the
     weekend needs 4); `units` is "imperial" or "metric". `place` must name a
-    real place: "here", "my location" or "outside" are refused, so when the
-    person names none and none is known, call no tool and let the reply ask.
+    real place - "here", "my location" or "outside" are refused - so when the
+    person says "here" or names no place, pass the place the context says
+    they are in ("they are in Arlington, Virginia" means place="Arlington,
+    Virginia"); only when no place is known at all, call no tool and let the
+    reply ask where they are.
     """
     # A place that is not a place: "here", "my location", "outside". The
     # geocoder resolves such words literally - "here" is Here, Togdheer,
