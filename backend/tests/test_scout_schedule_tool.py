@@ -87,7 +87,7 @@ async def test_the_service_sets_the_sweep_in_the_persons_zone():
         def __init__(self):
             self.recorded = []
 
-        async def record_change(self, user_id, kind, operation, before, after, task_id=None):
+        async def record_change(self, user_id, kind, operation, before, after, task_id=None, conversation_id=None):
             self.recorded.append((kind, operation, before, after))
             return {}
 

@@ -536,6 +536,12 @@ def _proposal_summary(proposal: dict[str, Any]) -> str:
     return ""
 
 
+# The conversation this turn belongs to, for the length of the request: every
+# change recorded during the turn carries it, and "undo" walks back only this
+# conversation's changes.
+_turn_conversation: ContextVar[str | None] = ContextVar("_turn_conversation", default=None)
+
+
 # The member speaking in a group turn, for the length of the request; None
 # for a one-to-one turn. Set at the top of `process_request` from the
 # worker's metadata and read wherever "here" or "now" is resolved.
@@ -2603,6 +2609,7 @@ class ConversationService:
         _previous_assistant_said.set(str((history[-1].get("response") or "")) if history else "")
         _turn_trace.set({"_started": time.monotonic()})
         _turn_speaker.set(_speaker_of(metadata))
+        _turn_conversation.set(resolved_conversation_id)
         current_followup.set(None)
         account_charged_this_turn.set(False)
         _results_were_events.set(False)
@@ -2886,8 +2893,7 @@ class ConversationService:
             schedule = await self.discovery_runs.upsert_schedule(user_id, cadence)
             if self.scheduled_tasks is not None:
                 await self.scheduled_tasks.record_change(
-                    user_id, "scout_schedule", "schedule", before, schedule
-                )
+                    user_id, "scout_schedule", "schedule", before, schedule, conversation_id=_turn_conversation.get())
             return {"kind": "scheduled", "schedule": schedule}
         except Exception as exc:
             logger.warning(
@@ -2992,7 +2998,12 @@ class ConversationService:
     # back onto the request metadata so the persisted turn says who spoke.
     # A one-to-one turn has no room and this does nothing.
     async def _attach_group(
-        self, context: dict[str, Any], metadata: dict[str, Any], user_id: str
+        self,
+        context: dict[str, Any],
+        metadata: dict[str, Any],
+        user_id: str,
+        query: str = "",
+        query_embedding: list[float] | None = None,
     ) -> None:
         room = metadata.get("group")
         if not isinstance(room, dict) or str(metadata.get("channel") or "") != "imessage_group":
@@ -3007,7 +3018,9 @@ class ConversationService:
             member_ids = (*member_ids, speaker_id)
         judge = getattr(self.main_action_selector, "llm", None) or self.llm
         try:
-            tastes = await TasteProjection(self.memory, self.discovery_profile, judge).for_members(member_ids)
+            tastes = await TasteProjection(self.memory, self.discovery_profile, judge).for_members(
+                member_ids, query=query, query_embedding=query_embedding
+            )
         except Exception:
             logger.warning("Group tastes could not be read; replying without them", exc_info=True)
             tastes = ()
@@ -3023,14 +3036,14 @@ class ConversationService:
     # Whether a texting burst is finished and wants an answer, for the
     # iMessage worker (services/readiness.py). Judged on the routing model.
     async def judge_readiness(
-        self, previous_reply: str, fragments: list[str], *, in_group: bool = False
+        self, previous_reply: str, fragments: list[str], *, in_group: bool = False, addressed_by: str = ""
     ) -> "Readiness":
         from backend.services.readiness import FAIL_OPEN, judge_readiness
 
         llm = getattr(self.main_action_selector, "llm", None) or self.llm
         if llm is None:
             return FAIL_OPEN
-        return await judge_readiness(llm, previous_reply, fragments, in_group=in_group)
+        return await judge_readiness(llm, previous_reply, fragments, in_group=in_group, addressed_by=addressed_by)
 
     # Ask the focused local model for typed memory without blocking the chat turn.
     # Read the live agent roster, or nothing when it cannot be read.
@@ -3286,23 +3299,20 @@ class ConversationService:
         if action.operation == "cancel":
             await self.scheduled_tasks.delete_owned(user_id, chosen)
             await self.scheduled_tasks.record_change(
-                user_id, "task", "cancel", before, None, task_id=chosen
-            )
+                user_id, "task", "cancel", before, None, task_id=chosen, conversation_id=_turn_conversation.get())
             return {"kind": "cancelled", "task": before}
         if action.operation == "reschedule":
             outcome = await self._reschedule_task(user_id, chosen, action, before)
             if outcome.get("kind") == "rescheduled":
                 await self.scheduled_tasks.record_change(
-                    user_id, "task", "reschedule", before, outcome["task"], task_id=chosen
-                )
+                    user_id, "task", "reschedule", before, outcome["task"], task_id=chosen, conversation_id=_turn_conversation.get())
             return outcome
         await self.scheduled_tasks.set_enabled(
             user_id, chosen, action.operation == "resume"
         )
         task = await self.scheduled_tasks.get_owned(user_id, chosen) or before
         await self.scheduled_tasks.record_change(
-            user_id, "task", action.operation, before, task, task_id=chosen
-        )
+            user_id, "task", action.operation, before, task, task_id=chosen, conversation_id=_turn_conversation.get())
         return {"kind": f"{action.operation}d", "task": task}
 
     # Put back what the most recent change replaced: a cancelled reminder is
@@ -3311,7 +3321,7 @@ class ConversationService:
     # undo is itself recorded, so the record says what happened, but it is
     # never undoable - "undo" twice walks back two changes.
     async def _undo_last_change(self, user_id: str) -> dict[str, Any]:
-        change = await self.scheduled_tasks.latest_undoable(user_id)
+        change = await self.scheduled_tasks.latest_undoable(user_id, _turn_conversation.get())
         if change is None:
             return {"kind": "nothing_to_undo"}
         before, after = change.get("before"), change.get("after")
@@ -3324,7 +3334,7 @@ class ConversationService:
             if not forgotten:
                 return {"kind": "failed"}
             await self.scheduled_tasks.mark_undone(user_id, change["id"])
-            await self.scheduled_tasks.record_change(user_id, "memory", "undo", receipt, None)
+            await self.scheduled_tasks.record_change(user_id, "memory", "undo", receipt, None, conversation_id=_turn_conversation.get())
             return {"kind": "undone", "change": change, "memory": receipt}
         if change["kind"] == "scout_schedule":
             if self.discovery_runs is None:
@@ -3372,8 +3382,7 @@ class ConversationService:
             return {"kind": "nothing_to_undo"}
         await self.scheduled_tasks.mark_undone(user_id, change["id"])
         await self.scheduled_tasks.record_change(
-            user_id, change["kind"], "undo", after, restored, task_id=change.get("task_id")
-        )
+            user_id, change["kind"], "undo", after, restored, task_id=change.get("task_id"), conversation_id=_turn_conversation.get())
         # A restored Scout schedule is not a task: it has no instruction, and
         # rendered as one it raised inside the reply graph (found by the
         # sweep's "undo a scout change" journey on 2026-08-26).
@@ -3660,8 +3669,7 @@ class ConversationService:
                     try:
                         await self.scheduled_tasks.record_change(
                             owner_id, "memory", "save", None,
-                            wrote if isinstance(wrote, dict) else {"kind": str(kind), "undoable": False},
-                        )
+                            wrote if isinstance(wrote, dict) else {"kind": str(kind), "undoable": False}, conversation_id=_turn_conversation.get())
                     except Exception:
                         logger.warning("Trace %s could not record a member's memory save", trace_id, exc_info=True)
             if persisted:
@@ -3679,8 +3687,7 @@ class ConversationService:
                 if self.scheduled_tasks is not None:
                     try:
                         await self.scheduled_tasks.record_change(
-                            user_id, "memory", "save", None, receipt
-                        )
+                            user_id, "memory", "save", None, receipt, conversation_id=_turn_conversation.get())
                     except Exception:
                         logger.warning("Trace %s could not record a memory save", trace_id, exc_info=True)
         _trace("proposals_saved", [str(item.get("kind")) for item in saved])
@@ -3772,7 +3779,7 @@ class ConversationService:
         # A group turn carries its room: who is in it and what they like,
         # through the taste allowlist, and who is speaking - written back
         # onto the request metadata so the stored turn says who said it.
-        await self._attach_group(context, metadata, user_id)
+        await self._attach_group(context, metadata, user_id, query, query_embedding)
         # Scout's profile is deliberately not added here. It was, on the
         # reasoning that an ordinary turn may as well know what the user likes
         # — but a standing list of interests with strengths in every prompt is

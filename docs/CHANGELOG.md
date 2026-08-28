@@ -2,6 +2,41 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-28 — "Undo" never reaches another conversation; a reply to the assistant's bubble is always answered; a group knows its members by relevance
+
+- **Undo scoped to the conversation.** Deploy #16's sweep: "forget that" in
+  a fresh conversation cancelled a reminder set minutes earlier in another
+  one, because the change log's "latest undoable change" was per person,
+  not per conversation (the journey's own setup turn had failed under model
+  contention, so there was nothing of its own to undo). The change log now
+  records the conversation (migration `20260828_0012`), every change made
+  in a turn carries it, and "undo"/"forget that" walk back only this
+  conversation's changes - with nothing here, nothing is undone. Unit-tested
+  against the database. The sweep now reports a failed setup turn as the
+  journey's failure instead of judging a journey without its premise.
+- **A reply to the assistant's bubble, or a mention, is always answered.**
+  Live: "we are a groupie!!" sent as a tap-and-hold reply got silence -
+  the burst judge read it as a closing remark. A deliberate address is now
+  answered in code regardless of that verdict; the judge decides only
+  whether the message is finished for those, and both, as before, for
+  messages that reached the assistant without naming it. A rule for this
+  in the prompt cost three other cases (25 → 21) and was withdrawn; the
+  suite is 23/23 with the judgement told how the message arrived.
+- **A group reads its members' memory by relevance.** Each member's
+  memories nearest the message come first (the same search a one-to-one
+  turn runs), then recent ones, all screened deterministically and then by
+  meaning. On the real database and embeddings, a chili recipe told first
+  among ten memories was found for a recipe question.
+- **A group's Scout starts from what members share.** On provisioning and
+  on every membership change, interests two or more members hold are
+  written to the group (`shared_by_members`) and removed when no longer
+  shared; a home is seeded only when every member's agrees. Real-database
+  test and a sweep journey. Operator's intent: schedules on common interests
+  and shared cooking.
+- `deploy.sh` re-runs a failed sweep journey once on its own and logs it as
+  flaky instead of paging when it passes; a journey that fails twice still
+  pages. The test container reaches the embedder by its service name.
+
 ## 2026-08-28 — Two intermittent sweep gaps traced instead of rerun
 
 - "more casual (draft referent)" misrouted in two of the last six sweeps

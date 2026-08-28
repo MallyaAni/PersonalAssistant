@@ -76,6 +76,11 @@ statements now reach the room; what is sensitive is judged by meaning
 unchanged: nothing is written into another member's memory on someone
 else's word.
 
+Later the same day, for schedules on common interests: a group's Scout is
+seeded from the interests two or more members share
+(`backend/groups/shared_interests.py`), and a member's memories are read
+by relevance to the message, not only by recency.
+
 ## Consequences
 
 - One guest search allowance per group, shared by every member's asks there.

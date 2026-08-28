@@ -140,6 +140,11 @@ class ScheduledTaskChange(Base):
     # cancel, reschedule, pause, resume, schedule (Scout), undo.
     operation: Mapped[str] = mapped_column(String(20), nullable=False)
     task_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    # The conversation the change was made in. "Undo" and "forget that" walk
+    # back the latest change of *this* conversation: in a full sweep, "forget
+    # that" in a fresh conversation cancelled a reminder set minutes earlier
+    # in another one (deploy #16, 2026-08-28). Null on rows from before.
+    conversation_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     # JSON snapshots, sealed: None before means the row did not exist, None
     # after means it was removed.
     before: Mapped[str | None] = mapped_column(EncryptedText, nullable=True)

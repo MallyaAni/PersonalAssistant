@@ -62,3 +62,35 @@ async def test_undo_itself_is_recorded_but_never_undoable():
             assert latest["operation"] == "schedule"
     finally:
         await _cleanup(user)
+
+
+@pytest.mark.asyncio
+async def test_undo_never_reaches_another_conversation():
+    """Deploy #16, 2026-08-28: "forget that" in a fresh conversation cancelled
+    a reminder set minutes earlier in another one. The latest undoable change
+    is looked up within the conversation that asks."""
+    import uuid
+
+    from backend.database.session import AsyncSessionLocal
+    from backend.tasks.repository import ScheduledTaskRepository
+
+    user = f"undo_{uuid.uuid4().hex[:8]}"
+    a, b = str(uuid.uuid4()), str(uuid.uuid4())
+    async with AsyncSessionLocal() as db:
+        repo = ScheduledTaskRepository(db)
+        try:
+            await repo.record_change(user, "task", "cancel", {"x": 1}, None, conversation_id=a)
+            saved = await repo.record_change(user, "memory", "save", None, {"kind": "semantic_fact", "id": "m1"}, conversation_id=b)
+            assert saved["conversation_id"] == b
+            # Asked from conversation b: the memory save, not a's reminder.
+            latest = await repo.latest_undoable(user, b)
+            assert latest is not None and latest["kind"] == "memory"
+            # Asked from a conversation with no changes: nothing, never a's.
+            assert await repo.latest_undoable(user, str(uuid.uuid4())) is None
+            # Unscoped (older callers): the most recent overall, as before.
+            assert (await repo.latest_undoable(user))["kind"] == "memory"
+        finally:
+            from sqlalchemy import text
+
+            await db.execute(text("delete from scheduled_task_changes where user_id = :u"), {"u": user})
+            await db.commit()

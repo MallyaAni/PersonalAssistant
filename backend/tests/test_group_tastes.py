@@ -166,3 +166,100 @@ async def test_the_personal_context_reader_can_leave_a_purpose_out():
         "A brown horse wearing a pink hat",
         "I drive a red Mini",
     ]
+
+
+
+@pytest.mark.asyncio
+async def test_the_messages_nearest_memories_come_first_and_pictures_stay_out(monkeypatch):
+    from backend.memory import share_screen
+
+    share_screen.forget_verdicts()
+
+    class _Searching(_Memory):
+        async def get_semantic_memory(self, user_id, query, top_k=5, query_embedding=None):
+            assert query == "what was my chili recipe?" and query_embedding == [0.1]
+            return [
+                {"content": "A bowl of chili in a red pot", "purpose": "visual_artifact_analysis"},
+                {"content": "My chili recipe: two chipotles, cumin, and dark beer", "purpose": "personalization"},
+                {"content": "I drive a red Mini", "purpose": "personalization"},
+            ]
+
+    class _Judge:
+        def chat(self, messages, max_tokens, schema, temperature):
+            import json
+
+            return {"content": json.dumps({"private": []})}
+
+    projection = TasteProjection(_Searching({"u-jen": SimpleNamespace(name="Jen")}), _Scout({}), _Judge())
+
+    async def statements(user_id):
+        return ("I drive a red Mini", "My dog is Biscuit")
+
+    monkeypatch.setattr(projection, "_statements", statements)
+    (taste,) = await projection.for_members(("u-jen",), query="what was my chili recipe?", query_embedding=[0.1])
+    assert taste.facts == (
+        "My chili recipe: two chipotles, cumin, and dark beer",
+        "I drive a red Mini",
+        "My dog is Biscuit",
+    )
+    share_screen.forget_verdicts()
+
+
+@pytest.mark.asyncio
+async def test_without_a_message_only_recent_statements_are_read(monkeypatch):
+    from backend.memory import share_screen
+
+    share_screen.forget_verdicts()
+
+    class _Searching(_Memory):
+        async def get_semantic_memory(self, *a, **k):
+            raise AssertionError("no query, no search")
+
+    class _Judge:
+        def chat(self, messages, max_tokens, schema, temperature):
+            import json
+
+            return {"content": json.dumps({"private": []})}
+
+    projection = TasteProjection(_Searching({"u-jen": SimpleNamespace(name="Jen")}), _Scout({}), _Judge())
+
+    async def statements(user_id):
+        return ("My dog is Biscuit",)
+
+    monkeypatch.setattr(projection, "_statements", statements)
+    (taste,) = await projection.for_members(("u-jen",))
+    assert taste.facts == ("My dog is Biscuit",)
+    share_screen.forget_verdicts()
+
+
+@pytest.mark.asyncio
+async def test_a_secret_in_a_relevant_memory_never_reaches_the_room(monkeypatch):
+    from backend.memory import share_screen
+
+    share_screen.forget_verdicts()
+
+    class _Searching(_Memory):
+        async def get_semantic_memory(self, user_id, query, top_k=5, query_embedding=None):
+            return [{"content": "my wifi password is hunter2 and the API key is sk-live-abcdefghijklmnopqrstuvwxyz1234", "purpose": "personalization"}]
+
+    judged = []
+
+    class _Judge:
+        def chat(self, messages, max_tokens, schema, temperature):
+            import json
+
+            judged.append(messages[1]["content"])
+            return {"content": json.dumps({"private": []})}
+
+    projection = TasteProjection(_Searching({"u-jen": SimpleNamespace(name="Jen")}), _Scout({}), _Judge())
+
+    async def statements(user_id):
+        return ()
+
+    monkeypatch.setattr(projection, "_statements", statements)
+    (taste,) = await projection.for_members(("u-jen",), query="what's the wifi?", query_embedding=[0.2])
+    # The deterministic screen blocks the secret before any judgement; the
+    # judge never even sees it.
+    assert taste.facts == ()
+    assert judged == []
+    share_screen.forget_verdicts()

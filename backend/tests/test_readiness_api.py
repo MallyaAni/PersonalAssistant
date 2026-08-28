@@ -14,8 +14,8 @@ from backend.services.readiness import Readiness
 async def test_the_endpoint_returns_the_judgement(monkeypatch):
     asked: list[tuple] = []
 
-    async def judge(self, previous_reply, fragments, *, in_group=False):
-        asked.append((previous_reply, fragments, in_group))
+    async def judge(self, previous_reply, fragments, *, in_group=False, addressed_by=""):
+        asked.append((previous_reply, fragments, in_group, addressed_by))
         return Readiness(False, True, "unfinished")
 
     monkeypatch.setattr(ConversationService, "judge_readiness", judge)
@@ -23,12 +23,12 @@ async def test_the_endpoint_returns_the_judgement(monkeypatch):
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
             "/api/v1/chat/readiness",
-            json={"user_id": "readiness_user", "fragments": ["ok so"], "previous_reply": "Thai?", "in_group": True},
+            json={"user_id": "readiness_user", "fragments": ["ok so"], "previous_reply": "Thai?", "in_group": True, "addressed_by": "reply"},
             headers={"Authorization": f"Bearer {token}"},
         )
     assert response.status_code == 200, response.text
     assert response.json() == {"complete": False, "needs_reply": True, "reason": "unfinished"}
-    assert asked == [("Thai?", ["ok so"], True)]
+    assert asked == [("Thai?", ["ok so"], True, "reply")]
 
 
 @pytest.mark.asyncio

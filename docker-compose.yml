@@ -201,7 +201,10 @@ services:
       - IMAGE_GENERATION_STEPS=${IMAGE_GENERATION_STEPS:-4}
       - IMAGE_EDIT_MODEL=${IMAGE_EDIT_MODEL:-}
       - IMAGE_EDIT_MEGAPIXELS=${IMAGE_EDIT_MEGAPIXELS:-2.0}
-      - EMBEDDING_BASE_URL=${EMBEDDING_BASE_URL:-http://vllm-embedding:8000}
+      # Inside the compose network the embedder is the service, not the
+      # host-published port .env names for the operator's shell: a functional
+      # test that embeds (a member's memory found by relevance) needs this one.
+      - EMBEDDING_BASE_URL=http://vllm-embedding:8000
       - RERANKER_BASE_URL=${RERANKER_BASE_URL:-http://vllm-reranker:8000}
       - RERANKER_MODEL=${RERANKER_MODEL:-qwen3-reranker-0.6b}
       - EMBEDDING_MODEL=${EMBEDDING_MODEL:-text-embedding-nomic-embed-text-v1.5}

@@ -54,7 +54,7 @@ FAIL_OPEN = Readiness(complete=True, needs_reply=True, reason="judgement unavail
 # Judge what has arrived so far against the assistant's previous bubble.
 # `fragments` are the person's messages since that bubble, oldest first.
 async def judge_readiness(
-    llm: Any, previous_reply: str, fragments: list[str], *, in_group: bool = False
+    llm: Any, previous_reply: str, fragments: list[str], *, in_group: bool = False, addressed_by: str = ""
 ) -> Readiness:
     pieces = [" ".join(str(item or "").split()) for item in fragments[-_MAX_FRAGMENTS:]]
     pieces = [piece for piece in pieces if piece]
@@ -63,12 +63,20 @@ async def judge_readiness(
     said = " ".join(previous_reply.split())[-_PREVIOUS_CHARS:]
     numbered = "\n".join(f"{index}. {piece}" for index, piece in enumerate(pieces, start=1))
     setting = "a group chat with several people" if in_group else "a one-to-one text conversation"
+    # How the message reached the assistant: a reply to its own bubble is a
+    # deliberate address ("we are a groupie!!" as a reply wants an answer;
+    # judged as a closing remark it got none, 2026-08-28).
+    how = {
+        "reply": "The person sent this as a reply to the assistant's own message (tap-and-hold reply).",
+        "mention": "The person mentioned the assistant by name to send this.",
+        "name": "The person addressed the assistant by name.",
+    }.get(addressed_by, "")
     messages = [
         {"role": "system", "content": load("routing/readiness")},
         {
             "role": "user",
             "content": (
-                f"Setting: {setting}.\n"
+                f"Setting: {setting}. {how}\n"
                 f"The assistant's previous message: {said or '(none)'}\n\n"
                 f"What the person has sent since, in order:\n{numbered}"
             ),

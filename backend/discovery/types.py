@@ -15,7 +15,10 @@ MAX_REGION_CHARS = 80
 MIN_RADIUS_KM = 1
 MAX_RADIUS_KM = 200
 
-INTEREST_PROVENANCE = ("user_explicit", "approved_proposal")
+# `shared_by_members`: an interest a group holds because two or more of its
+# members hold it (backend/groups/shared_interests.py); never written by a
+# person and refreshed whenever the membership changes.
+INTEREST_PROVENANCE = ("user_explicit", "approved_proposal", "shared_by_members")
 
 
 @dataclass(frozen=True, slots=True)

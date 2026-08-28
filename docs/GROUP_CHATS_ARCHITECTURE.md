@@ -97,7 +97,10 @@ rows. Everything the group owns lives under that `user_id`.
   `{complete, needs_reply, reason}`, `prompts/routing/readiness.md`) is asked
   whether the person has finished and whether an answer is wanted. Not finished
   → keep listening; finished and wanted → one turn for the joined fragments;
-  finished and unwanted ("thanks!") → no bubble. A pending burst older than
+  finished and unwanted ("thanks!") → no bubble - except that a reply to the
+  assistant's own bubble or a mention is a deliberate address and is always
+  answered ("we are a groupie!!" got silence on the first live day); for those
+  the judgement decides completeness only. A pending burst older than
   `IMESSAGE_CHAT_BURST_CAP_SECONDS` (45 s) is answered by the next poll. The
   judgement fails open to answering; `IMESSAGE_CHAT_READINESS_ENABLED=false`
   restores answer-every-message.
@@ -115,9 +118,11 @@ rows. Everything the group owns lives under that `user_id`.
   store to a group prompt - profile name (or the account's username as a first
   name, "ani.mallya" → "Ani", when no name is on record; the first live turn
   addressed the operator as "Member 2"), Scout interest labels (at most 8),
-  the city-level home locality, and up to 6 remembered statements read through
-  Scout's own `PersonalContextReader` (approved facts and recent semantic
-  memories, leaving out visual-analysis memories - descriptions of generated
+  the city-level home locality, and up to 6 remembered statements: first the
+  member's memories nearest the message (the same relevance search a
+  one-to-one turn runs, so an older recipe is found for a recipe question),
+  then the recent ones through Scout's own `PersonalContextReader` (approved
+  facts and recent semantic memories, leaving out visual-analysis memories - descriptions of generated
   pictures are not facts about anyone; secrets, card numbers and personal
   medical/financial/legal framing screened deterministically; bounded) and
   then judged by meaning by
@@ -155,6 +160,18 @@ rows. Everything the group owns lives under that `user_id`.
 - `_persist_memory_proposals` writes each copy through the ordinary saver
   under its owner and records a change per owner (`scheduled_task_changes`),
   so "forget that" works from the group and from a member's own thread.
+
+### The group's own Scout
+- A group's Scout runs on the group's interest rows. When a group is
+  provisioned and whenever its membership changes, the interests two or more
+  members hold are written to the group with provenance `shared_by_members`
+  and the ones no longer shared are removed (`backend/groups/shared_interests.py`);
+  what the room adds itself carries its own provenance and is never touched.
+  A home locality is seeded only when every member's primary locality agrees;
+  a room with members in two cities is asked where. The sweep's schedule is
+  set in the room the way a person sets theirs ("scout, run weekly on
+  Sundays"). Operator's intent, 2026-08-28: schedules on common interests and
+  shared cooking.
 
 ### Delivery
 - `SUBSCRIBER_CHANNELS` gains `imessage_group`; the channel map sends it through

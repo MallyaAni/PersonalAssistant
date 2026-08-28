@@ -108,7 +108,7 @@ for the kind of change it covers (AGENTS.md, completion rule).
 | Group chats | the room's rules on the real models: bursts (`test_burst_readiness_behaviour`), who a fact is about (`test_group_attribution_behaviour`), the room reply (`test_group_reply_behaviour`); over HTTP, `sweep_journeys --only group` provisions a room with a second member and checks the private-fact wall in the database | `bash scripts/gate.sh backend/tests/functional/test_group_attribution_behaviour.py` etc. |
 | Turn trace | why a turn did what it did, decrypted | `python -m backend.cli.explain_turn --user <id> --last 8` |
 | Coverage guard | every tool has a live test, every capability a journey, every prompt a pin | part of the unit gate: `backend/tests/test_functional_coverage_completeness.py` |
-| Deploy | all of the above in order, then the sweep and harness on the deployed system, paging on red | `bash scripts/deploy.sh` |
+| Deploy | all of the above in order, then the sweep and harness on the deployed system; a journey that fails once is re-run alone and logged as flaky if it passes; paging on red | `bash scripts/deploy.sh` |
 
 ## Search routing evaluation
 

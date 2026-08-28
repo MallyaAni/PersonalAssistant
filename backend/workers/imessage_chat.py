@@ -409,7 +409,9 @@ class IMessageChatWorker:
                 self._photo_turn(group.user_id, text, attachments), reply_to, status
             )
         else:
-            burst = await self._collect(group.user_id, reply_to, guid, text, in_group=True, room=room)
+            burst = await self._collect(
+                group.user_id, reply_to, guid, text, in_group=True, room=room, addressed_by=room["addressed_by"]
+            )
             if burst is None:
                 return 0
             try:
@@ -452,12 +454,25 @@ class IMessageChatWorker:
             async with AsyncSessionLocal() as db:
                 repository = ConversationGroupRepository(db)
                 group = await repository.by_chat_digest(address_digest(normalize_address(chat_guid)))
+                changed = False
                 if group is None:
                     group = await repository.provision(normalize_address(chat_guid), chat_name, members)
                     logger.info("imessage_group_provisioned", extra={"user": group.user_id, "members": len(members)})
+                    changed = True
                 elif set(group.members) != set(members):
                     group = replace(group, members=await repository.sync_members(group.user_id, members))
+                    changed = True
                 await repository.touch(group.user_id)
+                if changed:
+                    # The group's Scout starts from what its members share;
+                    # best effort, and never the reason a room goes unanswered.
+                    try:
+                        from backend.groups.shared_interests import refresh_shared_interests
+
+                        shared = await refresh_shared_interests(db, group.user_id, group.members)
+                        logger.info("imessage_group_shared_interests", extra={"user": group.user_id, "count": len(shared)})
+                    except Exception as exc:
+                        logger.warning("imessage_group_shared_interests_failed: %s: %s", type(exc).__name__, str(exc)[:200])
                 return group
         except Exception as exc:
             logger.warning(
@@ -511,12 +526,13 @@ class IMessageChatWorker:
         *,
         in_group: bool,
         room: dict | None = None,
+        addressed_by: str = "",
     ) -> str | None:
         if not settings.IMESSAGE_CHAT_READINESS_ENABLED:
             return text
         pending = await self._pending_add(reply_to, user_id, guid, text, in_group, room)
         fragments = [str(item.get("text") or "") for item in pending.get("fragments") or []]
-        verdict = await self._readiness(user_id, reply_to, fragments, in_group)
+        verdict = await self._readiness(user_id, reply_to, fragments, in_group, addressed_by)
         oldest = float((pending.get("fragments") or [{}])[0].get("at") or time.time())
         capped = time.time() - oldest >= settings.IMESSAGE_CHAT_BURST_CAP_SECONDS
         if not verdict["complete"] and not capped:
@@ -524,7 +540,13 @@ class IMessageChatWorker:
             logger.info("imessage_chat_burst_waiting", extra={"fragments": len(fragments)})
             return None
         await self._pending_clear(reply_to)
-        if not verdict["needs_reply"]:
+        # A reply to the assistant's own bubble, or a mention, is a deliberate
+        # address and is always answered - "we are a groupie!!" sent as a reply
+        # got silence when the judge read it as a closing remark (2026-08-28).
+        # The judge decides completeness there, and whether a reply is wanted
+        # only for messages that reached the assistant without naming it.
+        deliberate = addressed_by in ("reply", "mention")
+        if not verdict["needs_reply"] and not deliberate:
             await self._mark_seen(guid)
             logger.info("imessage_chat_no_reply_needed", extra={"fragments": len(fragments)})
             return None
@@ -532,7 +554,9 @@ class IMessageChatWorker:
 
     # The judgement itself, through the backend so the routing model is
     # asked the way every other judgement is. Fails open to "answer it".
-    async def _readiness(self, user_id: str, reply_to: str, fragments: list[str], in_group: bool) -> dict:
+    async def _readiness(
+        self, user_id: str, reply_to: str, fragments: list[str], in_group: bool, addressed_by: str = ""
+    ) -> dict:
         previous = ""
         try:
             previous = await self.redis.get(_LAST_REPLY_KEY.format(to=reply_to)) or ""
@@ -548,6 +572,7 @@ class IMessageChatWorker:
                         "fragments": fragments[-12:],
                         "previous_reply": previous[-4000:],
                         "in_group": in_group,
+                        "addressed_by": addressed_by,
                     },
                     headers={"Authorization": f"Bearer {token}"},
                 )

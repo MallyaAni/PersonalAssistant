@@ -50,6 +50,17 @@ def _task_dict(task: ScheduledTask) -> dict[str, Any]:
 
 
 # A change row as plain data, snapshots decoded.
+# A conversation id as the column stores it, or None for anything that is
+# not a UUID (older callers, tests).
+def _uuid_or_none(value: str | None) -> uuid.UUID | None:
+    if not value:
+        return None
+    try:
+        return uuid.UUID(str(value))
+    except (TypeError, ValueError):
+        return None
+
+
 def _change_dict(change: ScheduledTaskChange) -> dict[str, Any]:
     return {
         "id": str(change.id),
@@ -57,6 +68,7 @@ def _change_dict(change: ScheduledTaskChange) -> dict[str, Any]:
         "kind": change.kind,
         "operation": change.operation,
         "task_id": str(change.task_id) if change.task_id else None,
+        "conversation_id": str(change.conversation_id) if change.conversation_id else None,
         "before": json.loads(change.before) if change.before else None,
         "after": json.loads(change.after) if change.after else None,
         "created_at": change.created_at,
@@ -200,12 +212,14 @@ class ScheduledTaskRepository:
         before: dict[str, Any] | None,
         after: dict[str, Any] | None,
         task_id: str | None = None,
+        conversation_id: str | None = None,
     ) -> dict[str, Any]:
         change = ScheduledTaskChange(
             user_id=user_id,
             kind=kind,
             operation=operation,
             task_id=uuid.UUID(task_id) if task_id else None,
+            conversation_id=_uuid_or_none(conversation_id),
             before=json.dumps(before, default=str) if before is not None else None,
             after=json.dumps(after, default=str) if after is not None else None,
         )
@@ -216,15 +230,23 @@ class ScheduledTaskRepository:
 
     # The most recent change of this person's that has not been undone, or
     # None. Undo itself is recorded as an operation but is never undoable:
-    # "undo" twice walks back two changes, not one and its reversal.
-    async def latest_undoable(self, user_id: str) -> dict[str, Any] | None:
+    # "undo" twice walks back two changes, not one and its reversal. With a
+    # conversation given, only changes made in that conversation count: an
+    # "undo" never reaches into another thread's reminders (deploy #16).
+    async def latest_undoable(
+        self, user_id: str, conversation_id: str | None = None
+    ) -> dict[str, Any] | None:
+        conditions = [
+            ScheduledTaskChange.user_id == user_id,
+            ScheduledTaskChange.undone_at.is_(None),
+            ScheduledTaskChange.operation != "undo",
+        ]
+        scoped = _uuid_or_none(conversation_id)
+        if scoped is not None:
+            conditions.append(ScheduledTaskChange.conversation_id == scoped)
         result = await self.session.execute(
             select(ScheduledTaskChange)
-            .where(
-                ScheduledTaskChange.user_id == user_id,
-                ScheduledTaskChange.undone_at.is_(None),
-                ScheduledTaskChange.operation != "undo",
-            )
+            .where(*conditions)
             .order_by(ScheduledTaskChange.created_at.desc())
             .limit(1)
         )

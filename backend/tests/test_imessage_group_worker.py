@@ -110,7 +110,7 @@ def _worker(bridge, monkeypatch, accounts: dict, replies: dict, *, group=None, r
 
     verdicts = list(readiness or [])
 
-    async def readiness_call(user_id, reply_to, fragments, in_group):
+    async def readiness_call(user_id, reply_to, fragments, in_group, addressed_by=""):
         if verdicts:
             return verdicts.pop(0)
         return {"complete": True, "needs_reply": True}
@@ -219,12 +219,26 @@ async def test_an_unfinished_fragment_waits_and_the_finished_burst_is_answered_o
 
 
 @pytest.mark.asyncio
-async def test_a_closing_thanks_gets_no_reply(monkeypatch):
-    bridge = _Bridge({"messages": [_room_message("g1", "5550100", "thanks Scout!", addressed_by="reply")], "cursor": 5})
+async def test_a_closing_thanks_addressed_by_name_gets_no_reply(monkeypatch):
+    bridge = _Bridge({"messages": [_room_message("g1", "5550100", "thanks Scout!", addressed_by="name")], "cursor": 5})
     worker, conversed, _ = _worker(bridge, monkeypatch, ACCOUNTS, {}, group=GROUP, readiness=[{"complete": True, "needs_reply": False}])
     assert await worker.tick() == 0
     assert conversed == [] and bridge.sent == []
     assert await worker._already_seen("g1")
+
+
+@pytest.mark.asyncio
+async def test_a_reply_to_the_assistants_bubble_is_always_answered(monkeypatch):
+    # Live, 2026-08-28: "we are a groupie!!" as a reply to its bubble got
+    # silence because the judge read it as a closing remark.
+    bridge = _Bridge({"messages": [_room_message("g1", "5550100", "we are a groupie!!", addressed_by="reply")], "cursor": 5})
+    worker, conversed, _ = _worker(
+        bridge, monkeypatch, ACCOUNTS, {"we are a groupie!!": "Groupies forever 🎉"}, group=GROUP,
+        readiness=[{"complete": True, "needs_reply": False}],
+    )
+    assert await worker.tick() == 1
+    assert conversed[0]["text"] == "we are a groupie!!"
+    assert bridge.sent == [{"to": ROOM_GUID, "body": "Groupies forever 🎉"}]
 
 
 @pytest.mark.asyncio
@@ -286,8 +300,8 @@ async def test_the_readiness_call_fails_open_to_answering(monkeypatch):
     worker, conversed, _ = _worker(bridge, monkeypatch, ACCOUNTS, {"Scout, thai?": "Sure."}, group=GROUP)
     monkeypatch.setattr(worker, "base_url", "http://127.0.0.1:9")  # nothing listens
 
-    async def real_readiness(user_id, reply_to, fragments, in_group):
-        return await IMessageChatWorker._readiness(worker, user_id, reply_to, fragments, in_group)
+    async def real_readiness(user_id, reply_to, fragments, in_group, addressed_by=""):
+        return await IMessageChatWorker._readiness(worker, user_id, reply_to, fragments, in_group, addressed_by)
 
     monkeypatch.setattr(worker, "_readiness", real_readiness)
     assert await worker.tick() == 1
@@ -445,3 +459,44 @@ def test_only_a_missing_backend_counts_as_unavailable():
     assert not _is_unavailable(httpx.HTTPStatusError("server error", request=request, response=httpx.Response(500, request=request)))
     assert not _is_unavailable(httpx.ReadTimeout("slow"))
     assert not _is_unavailable(RuntimeError("bug"))
+
+
+@pytest.mark.asyncio
+async def test_provisioning_a_room_seeds_its_scout_from_what_members_share(monkeypatch):
+    import backend.groups.repository as repo_module
+    import backend.groups.shared_interests as shared_module
+    import backend.workers.imessage_chat as worker_module
+
+    refreshed: list[tuple] = []
+
+    class _Repo:
+        def __init__(self, db):
+            pass
+
+        async def by_chat_digest(self, digest):
+            return None
+
+        async def provision(self, chat, name, members):
+            return _Group("group:new", chat, "d", name, True, members)
+
+        async def touch(self, user_id):
+            pass
+
+    async def refresh(db, group_user_id, members):
+        refreshed.append((group_user_id, members))
+        return ("thai food",)
+
+    class _Db:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+    monkeypatch.setattr(repo_module, "ConversationGroupRepository", _Repo)
+    monkeypatch.setattr(shared_module, "refresh_shared_interests", refresh)
+    monkeypatch.setattr(worker_module, "AsyncSessionLocal", lambda: _Db())
+    worker = IMessageChatWorker(_Bridge({"messages": [], "cursor": 0}), base_url="http://test", redis=_Redis())
+    group = await IMessageChatWorker._group_for(worker, ROOM_GUID, "Lunch crew", ("u-ani", "u-jen"))
+    assert group.user_id == "group:new"
+    assert refreshed == [("group:new", ("u-ani", "u-jen"))]

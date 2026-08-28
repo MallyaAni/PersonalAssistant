@@ -62,14 +62,24 @@ class TasteProjection:
 
     # Each member's name and interests, in roster order. A member whose
     # profile cannot be read is still on the roster, by a placeholder name,
-    # so attribution can name everyone who is in the room.
-    async def for_members(self, member_ids: tuple[str, ...]) -> tuple[Taste, ...]:
+    # so attribution can name everyone who is in the room. With the message
+    # (and its embedding) given, each member's memories nearest to it come
+    # first - an older recipe is found for a recipe question, not only what
+    # was said most recently.
+    async def for_members(
+        self,
+        member_ids: tuple[str, ...],
+        query: str = "",
+        query_embedding: list[float] | None = None,
+    ) -> tuple[Taste, ...]:
         tastes: list[Taste] = []
         for position, user_id in enumerate(member_ids, start=1):
-            tastes.append(await self._one(user_id, position))
+            tastes.append(await self._one(user_id, position, query, query_embedding))
         return tuple(tastes)
 
-    async def _one(self, user_id: str, position: int) -> Taste:
+    async def _one(
+        self, user_id: str, position: int, query: str = "", query_embedding: list[float] | None = None
+    ) -> Taste:
         name = ""
         try:
             profile = await self.memory.get_user_profile(user_id)
@@ -100,25 +110,66 @@ class TasteProjection:
                 home = str(getattr(locality, "label", "") or "") if locality else ""
             except Exception:
                 logger.warning("taste_projection_interests_unreadable", extra={"user": user_id})
-        facts = await self._facts(user_id)
+        facts = await self._facts(user_id, query, query_embedding)
         return Taste(user_id=user_id, name=name or f"Member {position}", interests=interests, home=home, facts=facts)
 
-    # The member's remembered statements that may be said in the room: read
-    # through Scout's door (approved, screened, bounded), then judged.
-    async def _facts(self, user_id: str) -> tuple[str, ...]:
+    # The member's remembered statements that may be said in the room: the
+    # ones nearest the message first (the same search a one-to-one turn
+    # runs), then the recent ones through Scout's door (approved, screened,
+    # bounded); deduplicated, then judged by meaning.
+    async def _facts(
+        self, user_id: str, query: str = "", query_embedding: list[float] | None = None
+    ) -> tuple[str, ...]:
         if self.judge is None:
             return ()
+        statements: list[str] = []
+        seen: set[str] = set()
+
+        def admit(text: str) -> None:
+            cleaned = _screened(text)
+            if cleaned and cleaned.casefold() not in seen:
+                seen.add(cleaned.casefold())
+                statements.append(cleaned)
+
+        if query.strip():
+            try:
+                for item in await self._relevant(user_id, query, query_embedding):
+                    admit(item)
+            except Exception:
+                logger.warning("taste_projection_relevance_unavailable", extra={"user": user_id})
         try:
-            statements = await self._statements(user_id)
+            for item in await self._statements(user_id):
+                admit(item)
         except Exception:
             logger.warning("taste_projection_memory_unreadable", extra={"user": user_id})
-            return ()
         if not statements:
             return ()
         from backend.memory.share_screen import shareable
 
-        allowed = await shareable(self.judge, statements)
+        allowed = await shareable(self.judge, tuple(statements))
         return tuple(allowed[:MAX_FACTS])
+
+    # The member's semantic memories nearest the message, as plain text;
+    # visual-analysis memories left out. Empty when the memory store cannot
+    # search.
+    async def _relevant(
+        self, user_id: str, query: str, query_embedding: list[float] | None
+    ) -> tuple[str, ...]:
+        from backend.memory.purposes import VISUAL_ANALYSIS_PURPOSE
+
+        search = getattr(self.memory, "get_semantic_memory", None)
+        if search is None:
+            return ()
+        found = await search(user_id, query, top_k=MAX_FACTS, query_embedding=query_embedding)
+        texts: list[str] = []
+        for item in found or ():
+            purpose = str((item.get("purpose") if isinstance(item, dict) else getattr(item, "purpose", "")) or "")
+            if purpose == VISUAL_ANALYSIS_PURPOSE:
+                continue
+            content = item.get("content") if isinstance(item, dict) else getattr(item, "content", "")
+            if content:
+                texts.append(str(content))
+        return tuple(texts)
 
     async def _statements(self, user_id: str) -> tuple[str, ...]:
         from backend.database.session import AsyncSessionLocal
@@ -141,6 +192,22 @@ class TasteProjection:
             return humanize_username(str(getattr(account, "username", "") or ""))
         except Exception:
             return ""
+
+
+# One statement as the room may read it: bounded and control-free, then
+# through the same deterministic outbound screen Scout's door applies -
+# secrets and card numbers dropped, personal medical/financial/legal framing
+# minimised. Empty when nothing may pass.
+def _screened(text: str) -> str:
+    from backend.core.egress import OutboundPrivacyPolicy
+    from backend.discovery.events import clean_text
+    from backend.discovery.personal_context import MAX_STATEMENT_CHARS
+
+    cleaned = clean_text(text, MAX_STATEMENT_CHARS)
+    if not cleaned:
+        return ""
+    screened = OutboundPrivacyPolicy().sanitize(cleaned)
+    return screened.query if screened.allowed and screened.query else ""
 
 
 # "ani.mallya" → "Ani", "jenos1" → "Jenos", "amanda_k" → "Amanda". Empty in,

@@ -201,6 +201,32 @@ if $post; then
         fi
         printf '%s\n' "$output"
         short="${check##*.}"
+        # A journey that failed once and passes when re-run alone is a wobble
+        # in a model judgement, not a regression: recorded here as flaky, and
+        # the operator is not paged for it. Seven deploys in a day each paged
+        # for one such journey (2026-08-28). A journey that fails twice pages.
+        if [[ $status -ne 0 && $check == backend.cli.sweep_journeys ]]; then
+            names="$(grep -o "gaps=\[.*\]" <<<"$output" | tail -1 | python3 -c "import sys,ast; raw=sys.stdin.read().strip(); print('\n'.join(ast.literal_eval(raw.split('=',1)[1])) if raw else '')" 2>/dev/null || true)"
+            if [[ -n "$names" ]]; then
+                still=()
+                flaky=()
+                while IFS= read -r name; do
+                    [[ -z "$name" ]] && continue
+                    echo "retrying journey once: $name"
+                    if timeout 900 "${compose[@]}" exec -T backend python -m backend.cli.sweep_journeys --only "$name" 2>&1 | tail -3; then
+                        flaky+=("$name")
+                    else
+                        still+=("$name")
+                    fi
+                done <<<"$names"
+                if [[ ${#still[@]} -eq 0 ]]; then
+                    echo "$check: passed on retry (flaky: $(IFS='; '; echo "${flaky[*]}"))"
+                    status=0
+                    summary+=("$short OK after retry (flaky: $(IFS='; '; echo "${flaky[*]}"))")
+                    continue
+                fi
+            fi
+        fi
         if [[ $status -eq 0 ]]; then
             echo "$check: passed"
             summary+=("$short OK")

@@ -14,7 +14,7 @@ class _Tasks:
     async def list_for_user(self, user_id, enabled_only=False):
         return []
 
-    async def latest_undoable(self, user_id):
+    async def latest_undoable(self, user_id, conversation_id=None):
         return {"id": "c1", "kind": "memory", "operation": "save", "before": None,
                 "after": {"kind": "semantic_fact", "memory_type": "semantic", "id": "m1", "value": "My dentist is Dr Lee."}}
 

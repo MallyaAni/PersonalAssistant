@@ -23,6 +23,14 @@ fragment. "no thanks" to "Want me to book it for 7?" was judged as wanting
 no reply; that reading is accepted (nothing was booked, silence is the
 honest state) and the case is left unpinned either way.
 
+Live, later the same day: "we are a groupie!!" sent as a reply to the
+assistant's bubble was judged as wanting no reply, and the room got
+silence for a deliberate address. Adding a rule for that here cost three
+other cases their verdicts (25 -> 21), so the rule lives in code instead:
+the worker answers a reply to its bubble or a mention regardless of
+needs_reply and asks this judgement only whether the message is finished.
+The judgement is still told how the message reached the assistant.
+
 First live group turn (2026-08-28): a tap-and-hold reply "what location
 are you looking?" was judged unfinished, so the answer waited out the whole
 safety cap. The rule that a question mark ends a thought was added, the

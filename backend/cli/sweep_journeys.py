@@ -244,6 +244,11 @@ JOURNEYS = [
     Journey("group: a member's everyday fact is known", "Scout, what car does Jen drive?", (None, "Past conversations"),
             as_group=True, holds=("the reply says Jen drives a Mini (a red Mini Cooper)",),
             before_as_member=("remember that I drive a red Mini Cooper",)),
+    # The group's Scout starts from what its members share (both like thai
+    # food here), so schedules on common interests have something to run on.
+    Journey("group: a shared interest seeds the group's Scout", "Scout, what do we both like?", (None, "Past conversations"),
+            as_group=True, holds=("the reply says both of them like Thai food",),
+            sql_holds=("select count(*) > 0 from discovery_interests where user_id = :g and provenance = 'shared_by_members'",)),
     # "here" in a room is the speaker's here: the group has no home place of
     # its own, and the first live group turn (2026-08-28) answered "weather
     # here" for nowhere in particular.
@@ -307,12 +312,18 @@ class Sweep:
             await memory.upsert_user_profile(self.member, "Jen", {})
             await db.commit()
             await repo_cls(db).upsert_interest(self.member, "thai food", 3, "user_explicit")
+            # Both members like thai food: the group's Scout should start from it.
+            await repo_cls(db).upsert_interest(self.user, "Thai food", 2, "user_explicit")
             await repo_cls(db).upsert_locality(
                 user_id=self.member, label="Arlington, Virginia", region="Virginia",
                 radius_km=25, timezone="America/New_York", is_primary=True,
             )
             await db.commit()
             group = await ConversationGroupRepository(db).provision(self.group_chat, "Sweep crew", (self.user, self.member))
+            from backend.groups.shared_interests import refresh_shared_interests
+
+            # What the worker does after provisioning.
+            await refresh_shared_interests(db, group.user_id, (self.user, self.member))
         self.group_id = group.user_id
         self.member_headers = {"Authorization": f"Bearer {issue_user_token(self.member, ttl_seconds=3600)}"}
         self.group_headers = {"Authorization": f"Bearer {issue_user_token(self.group_id, ttl_seconds=3600)}"}
@@ -451,15 +462,23 @@ class Sweep:
                         print(f"SKIP {journey.name}: picture machine unreachable", flush=True)
                         continue
                     conversation_id = str(uuid.uuid4())
+                    # A setup turn that fails is the journey's failure, said
+                    # so: silently skipping it made "forget that" undo another
+                    # conversation's reminder in deploy #16 (2026-08-28).
+                    setup_problems: list[str] = []
                     for earlier in journey.before_as_member:
-                        await self._turn(client, earlier, None, str(uuid.uuid4()), who="member")
+                        earlier_result = await self._turn(client, earlier, None, str(uuid.uuid4()), who="member")
+                        if earlier_result.get("error"):
+                            setup_problems.append(f"setup turn failed ({earlier[:40]!r}): {earlier_result['error']}")
                     for earlier in journey.before:
-                        await self._turn(client, earlier, None, conversation_id)
+                        earlier_result = await self._turn(client, earlier, None, conversation_id)
+                        if earlier_result.get("error"):
+                            setup_problems.append(f"setup turn failed ({earlier[:40]!r}): {earlier_result['error']}")
                     if journey.as_group:
                         r = await self._turn(client, journey.query, self._room(), conversation_id, who="group")
                     else:
                         r = await self._turn(client, journey.query, journey.metadata or None, conversation_id)
-                    problems: list[str] = []
+                    problems: list[str] = list(setup_problems)
                     for statement in journey.sql_holds:
                         async with AsyncSessionLocal() as db:
                             if not await db.scalar(text(statement), {"u": self.user, "g": self.group_id, "m": self.member}):

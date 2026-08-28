@@ -48,6 +48,22 @@ async def test_each_burst_is_judged_by_meaning(structured_llm, previous, fragmen
         assert verdict.needs_reply is needs_reply, (fragments, verdict)
 
 
+# A reply to the assistant's bubble or a mention is answered by the worker
+# regardless of this judgement (deliberate address); what the judge must
+# still get right for those is completeness.
+@pytest.mark.parametrize("fragments, addressed_by", [
+    (["we are a groupie!!"], "reply"),
+    (["haha nice"], "reply"),
+    (["thanks!"], "reply"),
+    (["lol"], "mention"),
+])
+async def test_a_reply_to_the_assistants_bubble_is_read_as_finished(structured_llm, fragments, addressed_by):
+    verdict = await judge_readiness(
+        structured_llm, "Folks in here are: Ani and Jen.", list(fragments), in_group=True, addressed_by=addressed_by
+    )
+    assert verdict.complete is True, (fragments, verdict)
+
+
 async def test_a_reply_to_the_room_but_not_to_the_assistant_wants_nothing(structured_llm):
     verdict = await judge_readiness(
         structured_llm, "Thai on Friday at 7 works for everyone?", ["Jen are you bringing Sam?"], in_group=True

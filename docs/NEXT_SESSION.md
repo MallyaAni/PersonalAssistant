@@ -81,6 +81,14 @@ Mac to forward an unaddressed message on the backend's request (an
 `expect_reply(chat, sender)` bridge tool with a short TTL). Listed in the
 design doc's status table.
 
+**Deploy #16 then showed the real defect behind "forget that":** with the
+journey's own setup turn failed under model contention, "forget that" undid
+a *task change from another conversation* - the change log's latest
+undoable change was per person, not per conversation. Scoped to the
+conversation now (migration `20260828_0012`); the sweep reports a failed
+setup turn as the journey's failure. Deploys now retry a failed journey once
+before paging.
+
 **Two intermittent sweep gaps, traced and closed (2026-08-28):** "more
 casual (draft referent)" - the resolver read "draft" every time, but a
 draft turn could still be offered `edit_image` and the router took it

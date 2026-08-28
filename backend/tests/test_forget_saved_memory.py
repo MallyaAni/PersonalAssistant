@@ -28,13 +28,13 @@ class _Log:
     def __init__(self, latest):
         self.latest = latest; self.undone = []; self.recorded = []
 
-    async def latest_undoable(self, user_id):
+    async def latest_undoable(self, user_id, conversation_id=None):
         return self.latest
 
     async def mark_undone(self, user_id, change_id):
         self.undone.append(change_id); return True
 
-    async def record_change(self, user_id, kind, operation, before, after, task_id=None):
+    async def record_change(self, user_id, kind, operation, before, after, task_id=None, conversation_id=None):
         self.recorded.append((kind, operation, before, after)); return {}
 
 

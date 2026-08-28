@@ -31,6 +31,8 @@ class ReadinessRequest(BaseModel):
     fragments: list[str] = Field(min_length=1, max_length=12)
     previous_reply: str = Field(default="", max_length=4_000)
     in_group: bool = False
+    # How the message reached the assistant: "reply", "mention", "name" or "".
+    addressed_by: str = Field(default="", max_length=20)
 
 
 class ChatStreamEvent(TypedDict):
