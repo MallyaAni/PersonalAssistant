@@ -84,6 +84,13 @@ def test_usernames_read_as_first_names():
 
 
 @pytest.mark.asyncio
+async def test_a_profile_handed_back_as_a_dict_still_names_the_member():
+    memory = _Memory({"u-ani": {"name": "Ani", "preferences": {}}})
+    (taste,) = await TasteProjection(memory, None).for_members(("u-ani",))
+    assert taste.name == "Ani"
+
+
+@pytest.mark.asyncio
 async def test_without_scout_there_are_no_interests():
     memory = _Memory({"u-ani": SimpleNamespace(name="Ani")})
     assert await TasteProjection(memory, None).for_members(("u-ani",)) == (Taste("u-ani", "Ani", ()),)
@@ -124,3 +131,37 @@ async def test_without_a_judge_no_statement_reaches_the_room(monkeypatch):
     monkeypatch.setattr(projection, "_statements", statements)
     (taste,) = await projection.for_members(("u-jen",))
     assert taste.facts == ()
+
+
+
+@pytest.mark.asyncio
+async def test_the_personal_context_reader_can_leave_a_purpose_out():
+    from types import SimpleNamespace
+
+    from backend.discovery.personal_context import PersonalContextReader
+
+    rows = [
+        SimpleNamespace(content="A brown horse wearing a pink hat", purpose="visual_artifact_analysis"),
+        SimpleNamespace(content="I drive a red Mini", purpose="personalization"),
+    ]
+
+    class _Result:
+        def scalars(self):
+            return self
+
+        def all(self):
+            return rows
+
+    class _Session:
+        async def execute(self, statement):
+            return _Result()
+
+    from datetime import UTC, datetime
+
+    now = datetime.now(UTC)
+    reader = PersonalContextReader(_Session(), exclude_purposes=("visual_artifact_analysis",))
+    assert await reader._semantic("u-jen", now) == ["I drive a red Mini"]
+    assert await PersonalContextReader(_Session())._semantic("u-jen", now) == [
+        "A brown horse wearing a pink hat",
+        "I drive a red Mini",
+    ]

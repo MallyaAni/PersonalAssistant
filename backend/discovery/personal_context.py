@@ -120,8 +120,14 @@ class PersonalContextReader:
         session: AsyncSession,
         privacy: OutboundPrivacyPolicy | None = None,
         max_statements: int = MAX_STATEMENTS,
+        # Memory purposes to leave out. A group turn leaves out the
+        # descriptions of generated pictures ("a brown horse wearing a pink
+        # hat"): true, harmless, and not a fact about anyone. Scout's sweeps
+        # read as before.
+        exclude_purposes: tuple[str, ...] = (),
     ) -> None:
         self.session = session
+        self.exclude_purposes = tuple(exclude_purposes)
         # Screening is not optional. These statements shape text that reaches a
         # third-party search provider, so they pass the same gate a typed query
         # passes, at the point they are read rather than at the point they are
@@ -191,13 +197,18 @@ class PersonalContextReader:
                         ),
                     )
                     .order_by(SemanticMemory.created_at.desc(), SemanticMemory.id)
-                    .limit(MAX_SEMANTIC_MEMORIES)
+                    .limit(MAX_SEMANTIC_MEMORIES + len(self.exclude_purposes) * MAX_SEMANTIC_MEMORIES)
                 )
             )
             .scalars()
             .all()
         )
-        return [row.content for row in rows if row.content]
+        kept = [
+            row.content
+            for row in rows
+            if row.content and str(getattr(row, "purpose", "") or "") not in self.exclude_purposes
+        ]
+        return kept[:MAX_SEMANTIC_MEMORIES]
 
 
 # Say a keyed fact the way a person would. The key carries the meaning for a

@@ -73,7 +73,11 @@ class TasteProjection:
         name = ""
         try:
             profile = await self.memory.get_user_profile(user_id)
-            name = str(getattr(profile, "name", "") or "").strip() if profile else ""
+            # The memory service hands back a dict, the repository a row; the
+            # first live turn read the row's attribute off a dict and called
+            # the operator "Member 2" with their name on record.
+            raw = profile.get("name") if isinstance(profile, dict) else getattr(profile, "name", "")
+            name = str(raw or "").strip() if profile else ""
         except Exception:
             logger.warning("taste_projection_profile_unreadable", extra={"user": user_id})
         if not name:
@@ -116,9 +120,10 @@ class TasteProjection:
     async def _statements(self, user_id: str) -> tuple[str, ...]:
         from backend.database.session import AsyncSessionLocal
         from backend.discovery.personal_context import PersonalContextReader
+        from backend.memory.purposes import VISUAL_ANALYSIS_PURPOSE
 
         async with AsyncSessionLocal() as db:
-            context = await PersonalContextReader(db).read(user_id)
+            context = await PersonalContextReader(db, exclude_purposes=(VISUAL_ANALYSIS_PURPOSE,)).read(user_id)
         return tuple(context.statements)
 
     # The account's username as a first name: the part before the first
