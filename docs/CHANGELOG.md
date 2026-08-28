@@ -49,6 +49,12 @@ This file is append-only history for meaningful, verified changes. It must not c
   the "Member 2" fix - the projection read a row attribute off the dict the
   memory service returns - and leaves generated-picture descriptions out of
   the room.
+- The operator's actual question, "what's my name?", then drew "I only have
+  Ani as the sender label on your message" from the live model: the group
+  prompt now says the speaker's name is their name, known, not a label, and
+  presents the roster as who people are. Pinned in
+  `test_group_reply_behaviour` (5/5) and as sweep journey "group: a member's
+  name is known".
 
 ## 2026-08-28 — First live group chat, and what it taught
 

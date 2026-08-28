@@ -63,6 +63,16 @@ async def test_a_members_private_detail_is_theirs_to_share(llm):
     assert any(word in lowered for word in ("don't have", "dont have", "not something i", "hers to share", "ask jen", "ask her", "can't share", "cant share", "up to jen", "jen can", "she can")), text
 
 
+async def test_the_speaker_is_told_their_own_name(llm):
+    # The operator's first question in a real group: "what's my name?" was
+    # answered "no clue" (a build that read the profile wrong), then "I only
+    # have Ani as the sender label" (the prompt let the name read as a label).
+    text = _reply(llm, "Scout i'm a lonely pig, what's my name?")
+    lowered = text.casefold()
+    assert "ani" in lowered, text
+    assert not any(w in lowered for w in ("no clue", "don't know your name", "haven't told me", "sender label", "what should i call you")), text
+
+
 async def test_a_members_everyday_fact_is_answered_from_the_roster(llm):
     text = _reply(llm, "Scout, what car does Jen drive? and what's her dog called?")
     lowered = text.casefold()
