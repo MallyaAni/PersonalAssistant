@@ -73,6 +73,28 @@ async def test_the_speaker_is_told_their_own_name(llm):
     assert not any(w in lowered for w in ("no clue", "don't know your name", "haven't told me", "sender label", "what should i call you")), text
 
 
+async def test_the_name_survives_an_earlier_no_clue_and_an_empty_history_search(llm):
+    # Live, 2026-08-28: "try again" as a thread reply to an older build's "no
+    # clue" bubble was answered "still drawing a blank" - with the name in
+    # the instructions - after a history search found nothing. The identity
+    # line at the end of the turn context is what this pins.
+    from backend.agents.graph import turn_context_messages
+
+    system = _build_system_prompt(_ROOM)
+    context = {**_ROOM, "history_search": []}
+    messages = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": "Ani: Scout i'm a lonely pig, whats my name?"},
+        {"role": "assistant", "content": "Haha, no clue — you'd have to tell me. I don't keep track of names on my own. Want me to start calling you something?"},
+    ]
+    messages.extend(turn_context_messages(context))
+    messages.append({"role": "user", "content": "Ani: try again"})
+    text = str(llm.chat(messages, 300, None, 0.0)["content"]).strip()
+    lowered = text.casefold()
+    assert "ani" in lowered, text
+    assert not any(w in lowered for w in ("drawing a blank", "no clue", "what should i call you", "haven't told me")), text
+
+
 async def test_a_members_everyday_fact_is_answered_from_the_roster(llm):
     text = _reply(llm, "Scout, what car does Jen drive? and what's her dog called?")
     lowered = text.casefold()

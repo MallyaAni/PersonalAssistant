@@ -748,8 +748,37 @@ def _build_turn_context(
             _outcome_list(context_data, "scout_schedule_outcome")
         ),
         _render_skill_context(context_data),
+        # Last on purpose: the model follows the last instruction on a subject.
+        _render_group_turn_context(context_data),
     )
     return "".join(block for block in blocks if block)
+
+
+# The room's speaker and members at the end of the turn context, beside the
+# search state. The roster in the system prompt was not enough: asked "what's
+# my name?" after a history search that found nothing, and after an earlier
+# reply in the same chat (an older build) had said "no clue", the live model
+# stayed consistent with the search and the history - "still drawing a
+# blank" - with the person's name in its instructions (2026-08-28). What is
+# last wins, so the identity is said again here.
+def _render_group_turn_context(context_data: dict[str, Any]) -> str:
+    if context_data.get("channel") != "imessage_group":
+        return ""
+    group = context_data.get("group") or {}
+    speaker = str(group.get("speaker_name") or "").strip()
+    names = [str(m.get("name") or "").strip() for m in (group.get("members") or []) if str(m.get("name") or "").strip()]
+    if not speaker and not names:
+        return ""
+    chat = str(group.get("chat_name") or "the group")
+    who = f"was sent by {speaker} - that is their name, known to you" if speaker else "was sent by a member"
+    people = f"; the people in it are {', '.join(names)}" if names else ""
+    return (
+        f'\n\nThis message is in the group chat "{chat}" and {who}{people}. What you know about each of them - '
+        "their name, what they like, where they live, and what they have told you - is in your instructions above, "
+        "and it is current: answer about them from it. A search of past conversations that found nothing about a "
+        "person does not mean you do not know them, and an earlier reply in this chat that said you did not know "
+        "is superseded by what your instructions say now."
+    )
 
 
 # This turn's volatile material as the message it is actually sent in: one

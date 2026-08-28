@@ -64,6 +64,14 @@ This file is append-only history for meaningful, verified changes. It must not c
   presents the roster as who people are. Pinned in
   `test_group_reply_behaviour` (5/5) and as sweep journey "group: a member's
   name is known".
+- Then "try again" as a thread reply to the older bubble drew "still drawing
+  a blank" from the live model with the name in its instructions: the
+  router had searched past conversations for the name, found nothing, and
+  that state - and the earlier "no clue" in the same chat - sat at the end
+  of the prompt where the roster did not. The speaker's identity is now
+  restated last, in the turn context beside the search state; pinned on the
+  real model with that exact adverse setup (`test_group_reply_behaviour`
+  6/6; unit `test_group_turn_context`).
 
 ## 2026-08-28 — First live group chat, and what it taught
 
