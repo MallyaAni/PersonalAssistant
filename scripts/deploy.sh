@@ -186,8 +186,11 @@ if $post; then
         # Bounded: a journey that waits on a machine that is off keeps its
         # stream alive with heartbeats, and deploy #6's sweep never returned
         # (2026-08-27). Forty minutes is twice a full sweep.
-        output="$(timeout 2400 "${compose[@]}" exec -T backend python -m "$check" 2>&1)"
-        status=$?
+        # Not `output="$(...)"` on its own: under `set -e` a red check makes
+        # that assignment exit the script before it prints or pages - deploys
+        # #6 and #7 ended silently at this line (2026-08-27).
+        status=0
+        output="$(timeout 2400 "${compose[@]}" exec -T backend python -m "$check" 2>&1)" || status=$?
         if [[ $status -eq 124 ]]; then
             output+=$'\n'"GAP  ${check##*.}: no result within 40 minutes"
         fi
