@@ -10,6 +10,7 @@ whole of this module; a field not read here does not reach the room.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -55,6 +56,11 @@ class TasteProjection:
             name = str(getattr(profile, "name", "") or "").strip() if profile else ""
         except Exception:
             logger.warning("taste_projection_profile_unreadable", extra={"user": user_id})
+        if not name:
+            # No preferred name on record: the account's username, made
+            # readable ("ani.mallya" → "Ani"), before any placeholder. The
+            # operator's first live group turn addressed them as "Member 2".
+            name = await self._username(user_id)
         interests: tuple[str, ...] = ()
         if self.discovery_profile is not None:
             try:
@@ -65,3 +71,24 @@ class TasteProjection:
             except Exception:
                 logger.warning("taste_projection_interests_unreadable", extra={"user": user_id})
         return Taste(user_id=user_id, name=name or f"Member {position}", interests=interests)
+
+    # The account's username as a first name: the part before the first
+    # separator, trailing digits dropped, capitalised. Empty when unreadable.
+    async def _username(self, user_id: str) -> str:
+        try:
+            from backend.database.session import AsyncSessionLocal
+            from backend.models.auth import UserAccount
+
+            async with AsyncSessionLocal() as db:
+                account = await db.get(UserAccount, user_id)
+            return humanize_username(str(getattr(account, "username", "") or ""))
+        except Exception:
+            return ""
+
+
+# "ani.mallya" → "Ani", "jenos1" → "Jenos", "amanda_k" → "Amanda". Empty in,
+# empty out.
+def humanize_username(username: str) -> str:
+    first = re.split(r"[._\-\s]+", username.strip())[0] if username.strip() else ""
+    first = re.sub(r"\d+$", "", first)
+    return first[:1].upper() + first[1:] if first else ""

@@ -48,9 +48,36 @@ async def test_only_name_and_interests_are_projected_in_roster_order():
 
 
 @pytest.mark.asyncio
-async def test_an_unreadable_member_stays_on_the_roster_by_placeholder():
-    tastes = await TasteProjection(_Memory({}), _Scout({})).for_members(("u-broken", "u-nobody"))
+async def test_an_unreadable_member_stays_on_the_roster_by_placeholder(monkeypatch):
+    projection = TasteProjection(_Memory({}), _Scout({}))
+
+    async def no_username(user_id):
+        return ""
+
+    monkeypatch.setattr(projection, "_username", no_username)
+    tastes = await projection.for_members(("u-broken", "u-nobody"))
     assert tastes == (Taste("u-broken", "Member 1", ()), Taste("u-nobody", "Member 2", ()))
+
+
+@pytest.mark.asyncio
+async def test_without_a_profile_name_the_username_serves(monkeypatch):
+    projection = TasteProjection(_Memory({"u-ani": SimpleNamespace(name="")}), _Scout({}))
+
+    async def username(user_id):
+        return {"u-ani": "Ani"}.get(user_id, "")
+
+    monkeypatch.setattr(projection, "_username", username)
+    assert await projection.for_members(("u-ani",)) == (Taste("u-ani", "Ani", ()),)
+
+
+def test_usernames_read_as_first_names():
+    from backend.memory.tastes import humanize_username
+
+    assert humanize_username("ani.mallya") == "Ani"
+    assert humanize_username("jenos1") == "Jenos"
+    assert humanize_username("amanda_k") == "Amanda"
+    assert humanize_username("  ") == ""
+    assert humanize_username("42") == ""
 
 
 @pytest.mark.asyncio

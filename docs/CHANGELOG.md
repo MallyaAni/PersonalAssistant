@@ -2,6 +2,48 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-28 — First live group chat, and what it taught
+
+- Live acceptance in the operator's group "Groupie" (two approved members):
+  the bridge forwarded an @mention (matched on the account's address, not
+  the name the sender saved), the worker provisioned the group, and the
+  answer landed in the chat 22 s after the message. A tap-and-hold reply was
+  forwarded and answered too - but 100 s late, and the weather answer was
+  for the wrong place. Six defects found and fixed the same afternoon, each
+  pinned:
+  - `launchctl kickstart -k` restarts the bridge with the old environment;
+    new plist keys need bootout/bootstrap (AGENTS.md trap, bridge README).
+  - The burst judge called "what location are you looking?" unfinished, so
+    the reply waited out the whole 90 s cap. A fragment ending in "?" and
+    texting shorthand ("where r u") are finished by rule; a question naming
+    another member is theirs to answer; the cap is 45 s
+    (`test_burst_readiness_behaviour` 19/19).
+  - "Weather here" was answered for **Here, Togdheer, Somalia**: the router
+    passed `place="here"` and the geocoder matched it literally. The forecast
+    tool now refuses a place that is not a place ("here", "my location",
+    "outside", …) and the reply, handed that refusal, asks where the person
+    is and reports no weather (`test_weather_places_behaviour` 8/8; unit).
+  - A group has no home place, so "here", "near me" and "today" in a room
+    now run on the speaker's own locality (`_place_owner`, a per-turn
+    ContextVar), never stated as a fact about them (sweep journey "group:
+    weather here is the speaker's here").
+  - The operator, who has no profile name, was addressed as "Member 2"; a
+    member without a name is called by their account name as a first name
+    ("ani.mallya" → "Ani").
+  - A message that found the backend away (a deploy's restart; the database
+    unreachable) was apologised for and dropped. It is now parked in Redis
+    and retried every poll for 10 minutes, with one "give me a minute"
+    bubble after 60 s, and only then apologised for; a room whose database
+    is away is parked whole. Nothing addressed to the assistant is lost to a
+    restart (unit: five parking cases).
+- Deploy #10 (665ed98) carried the shorter reply prompt and the address-
+  matched mentions; its sweep flagged two checks that were the sweep's own:
+  an honest "searched our history and found nothing" was counted as an
+  invented result (history searches count no web sources), and the group
+  dinner question legitimately recalled the room's Thai plan (Past
+  conversations is an accepted route). Both widened.
+- `explain_turn` prints the group line (speaker, members) for a room's turn.
+
 ## 2026-08-28 — Group chats: a room is an account (deployed in 5c634e8)
 
 - The assistant can be in an iMessage group with approved users

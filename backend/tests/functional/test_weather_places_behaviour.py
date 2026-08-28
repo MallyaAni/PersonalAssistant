@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import json
 
+import re
+
 import pytest
 
 from backend.mcp.servers.internet import get_weather
@@ -42,3 +44,35 @@ async def test_a_state_abbreviation_picks_the_right_city() -> None:
 async def test_elsewhere_still_answers_from_open_meteo() -> None:
     payload = json.loads(await get_weather("Canggu, Bali", days=1, units="metric"))
     assert "error" not in payload and payload["source"] == "open-meteo.com", payload
+
+
+
+_TEMPERATURE = re.compile(r"\b\d{2,3}\s*°?\s*[FfCc]?\b")
+
+
+async def test_with_no_place_known_the_reply_asks_instead_of_reporting_somewhere(llm) -> None:
+    """The live group turn of 2026-08-28: "hows the weather here today?" with no
+    place on record was answered for Here, Somalia. The tool now refuses a
+    non-place; the reply, handed that refusal, must ask where they are and
+    report no weather at all."""
+    from backend.agents.graph import _build_system_prompt, turn_context_messages
+
+    context = {
+        "channel": "imessage",
+        "tool_results": [
+            {
+                "tool": "get_weather",
+                "arguments": {"place": "here", "days": 1},
+                "result": {"error": "no_place", "place": "here", "message": "No place was named and none is on record; ask where they are rather than guessing."},
+            }
+        ],
+    }
+    messages = [{"role": "system", "content": _build_system_prompt(context)}]
+    messages.extend(turn_context_messages(context))
+    messages.append({"role": "user", "content": "hows the weather here today?"})
+    text = str(llm.chat(messages, 300, None, 0.0)["content"]).strip()
+    lowered = text.casefold()
+    assert "?" in text, text
+    assert any(word in lowered for word in ("where", "which city", "what city", "location", "town")), text
+    assert not _TEMPERATURE.search(text), text
+    assert not any(word in lowered for word in ("sunny", "clear sky", "humidity", "rain", "cloudy")), text

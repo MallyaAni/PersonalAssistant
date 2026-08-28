@@ -80,6 +80,13 @@ rows. Everything the group owns lives under that `user_id`.
   are called X"); the pipeline fills in `speaker_name` and `group_user_id`. Replies, acks, and pictures go to
   the chat (`reply_to` is the chat guid). A photo in the room is a vision turn
   under the group.
+- Nothing addressed to the assistant is lost to a restart: a turn that finds
+  the backend away (connection refused, 502-504) or a room whose database
+  cannot be reached is parked in Redis (`imessage:chat:parked`) with its
+  guid left open, retried at the start of every poll for
+  `IMESSAGE_CHAT_RETRY_MINUTES` (10), told once after
+  `IMESSAGE_CHAT_RETRY_NOTICE_SECONDS` (60) that the answer is coming, and
+  only then given the fixed apology. Operator's question, 2026-08-28.
 - Burst judgement (`_collect`): every addressed text fragment - room or
   one-to-one - is appended to a pending record keyed by the reply address, and
   `POST /chat/readiness` (`services/readiness.py`, routing model, schema
@@ -87,7 +94,7 @@ rows. Everything the group owns lives under that `user_id`.
   whether the person has finished and whether an answer is wanted. Not finished
   → keep listening; finished and wanted → one turn for the joined fragments;
   finished and unwanted ("thanks!") → no bubble. A pending burst older than
-  `IMESSAGE_CHAT_BURST_CAP_SECONDS` (90 s) is answered by the next poll. The
+  `IMESSAGE_CHAT_BURST_CAP_SECONDS` (45 s) is answered by the next poll. The
   judgement fails open to answering; `IMESSAGE_CHAT_READINESS_ENABLED=false`
   restores answer-every-message.
 
@@ -101,9 +108,18 @@ rows. Everything the group owns lives under that `user_id`.
   follow-up resolver, the router's history window, and the planner history -
   "Jen: thai?" where a one-to-one turn is the bare query, byte for byte.
 - `backend/memory/tastes.py` (`TasteProjection`): the only door from a member's
-  store to a group prompt - profile name and Scout interest labels, at most 8;
+  store to a group prompt - profile name (or the account's username as a first
+  name, "ani.mallya" → "Ani", when no name is on record; the first live turn
+  addressed the operator as "Member 2") and Scout interest labels, at most 8;
   a member whose profile cannot be read stays on the roster as "Member n".
   Home area, semantic facts, relationships are deliberately not read here.
+- One bounded exception, for the turn only: "here", "near me", "tomorrow" in
+  a room are the *speaker's* - the group has no home place - so the speaker's
+  own primary locality (city-level, the same `_primary_place` a one-to-one
+  turn uses) grounds their turn's place and clock. It is used to answer and
+  to route (weather, nearby), never stated as a fact about them; the first
+  live group turn answered "weather here today?" for no place at all
+  (2026-08-28). Sweep journey "group: weather here is the speaker's here".
 - `prompts/reply/imessage_group.md`, appended after `imessage_style` when
   `channel == "imessage_group"`: the chat's name, who is speaking, each member's
   likes, and the rule that everything else about a member is theirs to share.

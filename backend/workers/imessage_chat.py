@@ -70,10 +70,18 @@ _LAST_REPLY_KEY = "imessage:chat:last_reply:{to}"
 # One operator alert per room per day about a room the assistant must stay
 # quiet in.
 _ROOM_ALERT_KEY = "imessage:chat:room_alert:{digest}"
+# Turns that failed for an infrastructure reason - the backend refusing
+# connections mid-deploy, the database unreachable - parked here and retried
+# every poll until they answer or the window closes. Nothing addressed to the
+# assistant is lost to a restart (operator's question, 2026-08-28).
+_PARKED_KEY = "imessage:chat:parked"
 _SEEN_TTL_SECONDS = 3 * 24 * 3600
 _BUBBLE_TTL_SECONDS = 7 * 24 * 3600
 _PENDING_TTL_SECONDS = 24 * 3600
 _ROOM_ALERT_TTL_SECONDS = 24 * 3600
+_PARKED_TTL_SECONDS = 24 * 3600
+# Fixed wording, like the failure reply, for the same reason.
+_PARKED_NOTICE = "Give me a minute - I'm mid-restart and will answer this shortly."
 
 # Margin under the bridge's 5MB attachment cap, which bounds what a
 # compromised backend could pump through the Mac and is not negotiated
@@ -197,6 +205,21 @@ class TurnResult:
     images: tuple[TurnImage, ...] = field(default=())
 
 
+class BackendUnavailable(Exception):
+    """The backend could not be reached at all - a restart, not a bad turn."""
+
+
+# Whether an exception from the chat call means "nobody is listening" (park
+# and retry) rather than "the turn went wrong" (apologise). A read timeout is
+# not unavailability: a slow model is still a model.
+def _is_unavailable(exc: Exception) -> bool:
+    if isinstance(exc, (httpx.ConnectError, httpx.ConnectTimeout, httpx.RemoteProtocolError)):
+        return True
+    if isinstance(exc, httpx.HTTPStatusError):
+        return exc.response.status_code in (502, 503, 504)
+    return False
+
+
 class IMessageChatWorker:
     """Poll inbound texts, converse through /chat, reply through the bridge."""
 
@@ -221,6 +244,9 @@ class IMessageChatWorker:
         if cursor is None:
             logger.warning("imessage_chat_cursor_unavailable; skipping this poll")
             return 0
+        # What earlier polls could not answer, first: a person who asked
+        # during a restart is answered before anyone who asked after it.
+        answered_late = await self._retry_parked()
         try:
             answer = await self.invoke_tool(
                 settings.IMESSAGE_CHAT_READ_TOOL,
@@ -231,7 +257,7 @@ class IMessageChatWorker:
             # this time", exactly as it does for reactions.
             return 0
         payload = _payload(answer)
-        answered = 0
+        answered = answered_late
         for message in payload.get("messages", []):
             answered += await self._handle_message(message)
         new_cursor = payload.get("cursor")
@@ -295,11 +321,15 @@ class IMessageChatWorker:
             burst = await self._collect(user_id, reply_to, guid, text, in_group=False)
             if burst is None:
                 return 0
-            turn = await self._with_ack(
-                self._converse(user_id, burst, active_image=pinned, status=status),
-                reply_to,
-                status,
-            )
+            try:
+                turn = await self._with_ack(
+                    self._converse(user_id, burst, active_image=pinned, status=status),
+                    reply_to,
+                    status,
+                )
+            except BackendUnavailable:
+                await self._park(guid, user_id, reply_to, burst, pinned=pinned)
+                return 0
         if pinned:
             # Replying to a picture brings it back into view for the turns
             # that follow, exactly as focusing it would.
@@ -357,7 +387,12 @@ class IMessageChatWorker:
             await self._mark_seen(guid)
             return 0
         group = await self._group_for(chat_guid, chat_name, tuple(members))
-        if group is None or not group.enabled:
+        if group is None:
+            # The database, not the room: parked as the message it was and
+            # handled again from the start once it answers.
+            await self._park(guid, "", reply_to, text, message=message)
+            return 0
+        if not group.enabled:
             await self._mark_seen(guid)
             return 0
         room = {
@@ -377,11 +412,15 @@ class IMessageChatWorker:
             burst = await self._collect(group.user_id, reply_to, guid, text, in_group=True, room=room)
             if burst is None:
                 return 0
-            turn = await self._with_ack(
-                self._converse(group.user_id, burst, active_image=pinned, status=status, room=room),
-                reply_to,
-                status,
-            )
+            try:
+                turn = await self._with_ack(
+                    self._converse(group.user_id, burst, active_image=pinned, status=status, room=room),
+                    reply_to,
+                    status,
+                )
+            except BackendUnavailable:
+                await self._park(guid, group.user_id, reply_to, burst, pinned=pinned, room=room)
+                return 0
         if pinned:
             await self._remember_image(group.user_id, pinned)
         answered = 0
@@ -585,6 +624,137 @@ class IMessageChatWorker:
                 logger.warning("imessage_chat_burst_reply_failed: %s: %s", type(exc).__name__, str(exc)[:200])
         return answered
 
+    # Park one turn (or, before a room could be resolved, one message) for
+    # retry. Not marked seen: the guid stays open until it is answered or
+    # given up on. Re-parking a guid replaces its record and keeps its clock.
+    async def _park(
+        self,
+        guid: str,
+        user_id: str,
+        reply_to: str,
+        text: str,
+        *,
+        pinned: str | None = None,
+        room: dict | None = None,
+        message: dict | None = None,
+        previous: dict | None = None,
+    ) -> None:
+        records = await self._parked()
+        previous = previous or next((item for item in records if item.get("guid") == guid), None)
+        record = {
+            "guid": guid,
+            "user_id": user_id,
+            "reply_to": reply_to,
+            "text": text,
+            "pinned": pinned,
+            "room": room,
+            "message": message,
+            "since": float(previous.get("since") or time.time()) if previous else time.time(),
+            "attempts": int(previous.get("attempts") or 0) + 1 if previous else 1,
+            "noticed": bool(previous.get("noticed")) if previous else False,
+        }
+        records = [item for item in records if item.get("guid") != guid] + [record]
+        await self._save_parked(records)
+        logger.warning(
+            "imessage_chat_parked", extra={"guid": guid[:12], "attempts": record["attempts"]}
+        )
+
+    # Every parked record, oldest first; empty when Redis cannot be read.
+    async def _parked(self) -> list[dict]:
+        try:
+            stored = await self.redis.get(_PARKED_KEY)
+        except Exception:
+            return []
+        if not stored:
+            return []
+        try:
+            records = json.loads(stored)
+        except ValueError:
+            return []
+        return [item for item in records if isinstance(item, dict)]
+
+    async def _save_parked(self, records: list[dict]) -> None:
+        try:
+            if records:
+                await self.redis.set(_PARKED_KEY, json.dumps(records), ex=_PARKED_TTL_SECONDS)
+            else:
+                await self.redis.delete(_PARKED_KEY)
+        except Exception:
+            return
+
+    # Retry what is parked: answer it if the backend is back, give up with the
+    # apology once the window closes, and after the first minute say once
+    # that the answer is coming. Returns how many were answered.
+    async def _retry_parked(self) -> int:
+        records = await self._parked()
+        if not records:
+            return 0
+        answered = 0
+        window = settings.IMESSAGE_CHAT_RETRY_MINUTES * 60
+        for record in list(records):
+            guid = str(record.get("guid") or "")
+            reply_to = str(record.get("reply_to") or "")
+            age = time.time() - float(record.get("since") or time.time())
+            # Taken off the list before the attempt; a failure parks it again
+            # with its clock and count intact.
+            await self._save_parked([item for item in await self._parked() if item.get("guid") != guid])
+            if age > window:
+                try:
+                    await self._deliver(reply_to, TurnResult(_FAILURE_REPLY, ()))
+                except Exception:
+                    logger.warning("imessage_chat_parked_apology_failed")
+                await self._mark_seen(guid)
+                logger.warning("imessage_chat_parked_given_up", extra={"guid": guid[:12]})
+                continue
+            if record.get("message"):
+                # Parked before the room could be resolved: the whole path again.
+                answered += await self._handle_message(dict(record["message"]))
+                continue
+            status: list[str] = []
+            try:
+                turn = await self._with_ack(
+                    self._converse(
+                        str(record.get("user_id") or ""),
+                        str(record.get("text") or ""),
+                        active_image=record.get("pinned"),
+                        status=status,
+                        room=record.get("room"),
+                    ),
+                    reply_to,
+                    status,
+                )
+            except BackendUnavailable:
+                # Its clock and count carry over: the record was taken off
+                # the list before the attempt.
+                await self._park(
+                    guid, str(record.get("user_id") or ""), reply_to, str(record.get("text") or ""),
+                    pinned=record.get("pinned"), room=record.get("room"), previous=record,
+                )
+                if age > settings.IMESSAGE_CHAT_RETRY_NOTICE_SECONDS and not record.get("noticed"):
+                    await self._notice_parked(guid, reply_to)
+                continue
+            try:
+                await self._deliver(reply_to, turn)
+                answered += 1
+            except Exception as exc:
+                logger.warning("imessage_chat_parked_reply_failed: %s: %s", type(exc).__name__, str(exc)[:200])
+            await self._mark_seen(guid)
+        return answered
+
+    # One fixed bubble, once per parked turn, so a person is not left
+    # wondering whether the message was seen.
+    async def _notice_parked(self, guid: str, reply_to: str) -> None:
+        try:
+            await self.invoke_tool(settings.DISCOVERY_IMESSAGE_TOOL, {"to": reply_to, "body": _PARKED_NOTICE})
+        except Exception:
+            logger.warning("imessage_chat_parked_notice_failed")
+            return
+        records = await self._parked()
+        for item in records:
+            if item.get("guid") == guid:
+                item["noticed"] = True
+        await self._save_parked(records)
+
     # One turn's answer onto the thread: text flattened at the send boundary
     # and delivered the way a person texts a long thought - a few separate
     # bubbles at a typing pace - then any picture the turn made, as a photo
@@ -772,6 +942,10 @@ class IMessageChatWorker:
                 str(exc)[:200],
                 extra={"user": user_id},
             )
+            if _is_unavailable(exc):
+                # Nobody answered at all: the caller parks the turn and asks
+                # again next poll rather than apologising for a restart.
+                raise BackendUnavailable(str(exc)[:200]) from exc
             return TurnResult(_FAILURE_REPLY, ())
         reply = "".join(collected).strip()
         carried = tuple(image for image in images if image.data_base64)

@@ -319,3 +319,129 @@ async def test_a_room_photo_is_a_vision_turn_for_the_group(monkeypatch):
     assert seen == [("group:abc", "Scout what is this", 1)]
     assert conversed == []
     assert bridge.sent == [{"to": ROOM_GUID, "body": "A bowl of pho."}]
+
+
+# --- Nothing addressed to the assistant is lost to a restart ---
+
+from backend.workers.imessage_chat import _PARKED_KEY, BackendUnavailable, _FAILURE_REPLY as _APOLOGY, _PARKED_NOTICE
+
+
+def _flaky_worker(bridge, monkeypatch, accounts, replies, *, group=None, down: list):
+    """A worker whose backend is down while `down[0]` is True."""
+    worker, conversed, provisioned = _worker(bridge, monkeypatch, accounts, replies, group=group)
+
+    async def converse(user_id, text, active_image=None, status=None, room=None):
+        if down[0]:
+            raise BackendUnavailable("connection refused")
+        conversed.append({"user_id": user_id, "text": text, "room": room})
+        return TurnResult(replies.get(text, _APOLOGY))
+
+    monkeypatch.setattr(worker, "_converse", converse)
+    return worker, conversed
+
+
+@pytest.mark.asyncio
+async def test_a_message_that_finds_the_backend_down_is_parked_not_apologised_for(monkeypatch):
+    down = [True]
+    direct = {"guid": "d1", "sender": "5550100", "reply_to": "+15550100", "text": "what's the weather", "sent_at": "2026-08-28T20:00:00Z"}
+    bridge = _Bridge({"messages": [direct], "cursor": 5})
+    worker, conversed = _flaky_worker(bridge, monkeypatch, ACCOUNTS, {"what's the weather": "Sunny."}, down=down)
+    assert await worker.tick() == 0
+    assert bridge.sent == [] and conversed == []
+    assert not await worker._already_seen("d1")
+    parked = json.loads(worker.redis.store[_PARKED_KEY])
+    assert [p["guid"] for p in parked] == ["d1"] and parked[0]["text"] == "what's the weather"
+    # Still down on the next poll: parked again, nothing sent, one record.
+    worker.invoke_tool.payload = {"messages": [], "cursor": 6}
+    assert await worker.tick() == 0
+    assert len(json.loads(worker.redis.store[_PARKED_KEY])) == 1
+    assert json.loads(worker.redis.store[_PARKED_KEY])[0]["attempts"] == 2
+    # Back: answered once, at the original address, and finished.
+    down[0] = False
+    assert await worker.tick() == 1
+    assert bridge.sent == [{"to": "+15550100", "body": "Sunny."}]
+    assert conversed[0]["text"] == "what's the weather"
+    assert await worker._already_seen("d1")
+    assert _PARKED_KEY not in worker.redis.store
+
+
+@pytest.mark.asyncio
+async def test_a_parked_turn_gets_one_notice_after_a_minute(monkeypatch):
+    monkeypatch.setattr(settings, "IMESSAGE_CHAT_RETRY_NOTICE_SECONDS", 0.0)
+    down = [True]
+    direct = {"guid": "d1", "sender": "5550100", "reply_to": "+15550100", "text": "hi", "sent_at": "2026-08-28T20:00:00Z"}
+    bridge = _Bridge({"messages": [direct], "cursor": 5})
+    worker, _ = _flaky_worker(bridge, monkeypatch, ACCOUNTS, {}, down=down)
+    await worker.tick()
+    worker.invoke_tool.payload = {"messages": [], "cursor": 6}
+    await worker.tick()
+    await worker.tick()
+    assert bridge.sent == [{"to": "+15550100", "body": _PARKED_NOTICE}]
+
+
+@pytest.mark.asyncio
+async def test_a_turn_parked_past_the_window_gets_the_apology_once(monkeypatch):
+    monkeypatch.setattr(settings, "IMESSAGE_CHAT_RETRY_MINUTES", 0.0001)
+    down = [True]
+    direct = {"guid": "d1", "sender": "5550100", "reply_to": "+15550100", "text": "hi", "sent_at": "2026-08-28T20:00:00Z"}
+    bridge = _Bridge({"messages": [direct], "cursor": 5})
+    worker, _ = _flaky_worker(bridge, monkeypatch, ACCOUNTS, {}, down=down)
+    await worker.tick()
+    import asyncio
+
+    await asyncio.sleep(0.02)
+    worker.invoke_tool.payload = {"messages": [], "cursor": 6}
+    await worker.tick()
+    assert bridge.sent == [{"to": "+15550100", "body": _APOLOGY}]
+    assert await worker._already_seen("d1")
+    assert _PARKED_KEY not in worker.redis.store
+    await worker.tick()
+    assert len(bridge.sent) == 1
+
+
+@pytest.mark.asyncio
+async def test_a_room_whose_database_is_away_is_parked_whole_and_answered_later(monkeypatch):
+    bridge = _Bridge({"messages": [_room_message("g1", "5550100", "Scout, thai?")], "cursor": 5})
+    worker, conversed, provisioned = _worker(bridge, monkeypatch, ACCOUNTS, {"Scout, thai?": "Thai it is."}, group=None)
+    assert await worker.tick() == 0
+    assert not await worker._already_seen("g1")
+    parked = json.loads(worker.redis.store[_PARKED_KEY])
+    assert parked[0]["guid"] == "g1" and parked[0]["message"]["chat_identifier"] == "chat778899001122"
+
+    async def group_for(chat_guid, chat_name, members):
+        return GROUP
+
+    monkeypatch.setattr(worker, "_group_for", group_for)
+    worker.invoke_tool.payload = {"messages": [], "cursor": 6}
+    assert await worker.tick() == 1
+    assert conversed[0]["user_id"] == "group:abc" and conversed[0]["text"] == "Scout, thai?"
+    assert bridge.sent == [{"to": ROOM_GUID, "body": "Thai it is."}]
+    assert await worker._already_seen("g1")
+
+
+@pytest.mark.asyncio
+async def test_a_group_turn_that_finds_the_backend_down_is_parked_with_its_room(monkeypatch):
+    down = [True]
+    bridge = _Bridge({"messages": [_room_message("g1", "5550101", "Scout, thai?")], "cursor": 5})
+    worker, conversed = _flaky_worker(bridge, monkeypatch, ACCOUNTS, {"Scout, thai?": "Thai."}, group=GROUP, down=down)
+    assert await worker.tick() == 0
+    parked = json.loads(worker.redis.store[_PARKED_KEY])
+    assert parked[0]["room"]["speaker_user_id"] == "u-jen" and parked[0]["user_id"] == "group:abc"
+    down[0] = False
+    worker.invoke_tool.payload = {"messages": [], "cursor": 6}
+    assert await worker.tick() == 1
+    assert conversed[0]["room"]["chat_name"] == "Lunch crew"
+    assert bridge.sent == [{"to": ROOM_GUID, "body": "Thai."}]
+
+
+def test_only_a_missing_backend_counts_as_unavailable():
+    import httpx
+
+    from backend.workers.imessage_chat import _is_unavailable
+
+    assert _is_unavailable(httpx.ConnectError("refused"))
+    request = httpx.Request("POST", "http://backend:8000/api/v1/chat")
+    assert _is_unavailable(httpx.HTTPStatusError("bad gateway", request=request, response=httpx.Response(502, request=request)))
+    assert not _is_unavailable(httpx.HTTPStatusError("server error", request=request, response=httpx.Response(500, request=request)))
+    assert not _is_unavailable(httpx.ReadTimeout("slow"))
+    assert not _is_unavailable(RuntimeError("bug"))

@@ -486,7 +486,14 @@ class Settings(BaseSettings):
     IMESSAGE_CHAT_READINESS_ENABLED: bool = True
     # The safety cap on "not finished": a fragment judged incomplete that
     # nothing follows is answered after this long anyway.
-    IMESSAGE_CHAT_BURST_CAP_SECONDS: float = Field(default=90.0, gt=0, le=900)
+    # 45 s: a wrong "not finished" costs at most this long (the first live
+    # group turn waited the full 90 s on a finished question, 2026-08-28).
+    IMESSAGE_CHAT_BURST_CAP_SECONDS: float = Field(default=45.0, gt=0, le=900)
+    # A turn that failed because nobody answered (the backend restarting, the
+    # database away) is parked and retried every poll for this long, with one
+    # "give me a minute" bubble after the notice delay; only then the apology.
+    IMESSAGE_CHAT_RETRY_MINUTES: float = Field(default=10.0, gt=0, le=180)
+    IMESSAGE_CHAT_RETRY_NOTICE_SECONDS: float = Field(default=60.0, ge=0, le=3600)
     # Where the operator is told, once a day per chat, that the assistant
     # was added to a group it must stay silent in (a participant is not an
     # approved user). Empty means nobody is told.

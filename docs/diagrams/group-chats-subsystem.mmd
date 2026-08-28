@@ -9,7 +9,7 @@ flowchart TB
     Wall -->|no| Quiet["Silent in the room<br/>one text to the operator per day"]
     Wall -->|yes| Group[("group:slug account<br/>members · chat address<br/>own memory · tasks · Scout")]
     Group --> Burst{"Readiness judgement<br/>routing model, schema<br/>finished? wants a reply?"}
-    Burst -->|"not finished"| Wait["Keep listening<br/>safety cap 90 s"]
+    Burst -->|"not finished"| Wait["Keep listening<br/>safety cap 45 s"]
     Burst -->|"finished, no reply wanted"| Silence["No bubble"]
     Burst -->|"finished, reply wanted"| Chat["/chat as the group<br/>speaker attached"]
     Chat --> Tastes["Taste allowlist<br/>each member's name + interests<br/>nothing else of theirs"]

@@ -442,6 +442,21 @@ async def _nws_daily(client: "httpx.AsyncClient", latitude: float, longitude: fl
     return ordered or None
 
 
+# Words that point at a place without naming one. Shape, not intent: the
+# geocoder will match them to a town somewhere, which is worse than asking.
+_DEICTIC_PLACES = frozenset({
+    "", "here", "right here", "there", "my location", "my current location", "current location",
+    "my area", "the area", "where i am", "where i live", "my city", "my town", "home", "at home",
+    "outside", "near me", "around me", "nearby", "local", "locally", "my place", "this area",
+    "the local area", "our area", "our location", "unknown", "n/a", "none", "null",
+})
+
+
+def not_a_place(place: str) -> bool:
+    cleaned = " ".join(str(place or "").casefold().replace("?", "").replace(".", "").split())
+    return cleaned in _DEICTIC_PLACES
+
+
 @mcp.tool()
 async def get_weather(place: str, days: int = 1, units: str = "imperial") -> str:
     """Live current conditions and forecast for a named place.
@@ -454,8 +469,21 @@ async def get_weather(place: str, days: int = 1, units: str = "imperial") -> str
     ZIP code); `days` is how many forecast days to include, counting today
     as 1, up to 7 - for "this weekend" or a named day, enough days to reach
     that day from today in the person's zone (asked on a Thursday, the
-    weekend needs 4); `units` is "imperial" or "metric".
+    weekend needs 4); `units` is "imperial" or "metric". `place` must name a
+    real place: "here", "my location" or "outside" are refused, so when the
+    person names none and none is known, call no tool and let the reply ask.
     """
+    # A place that is not a place: "here", "my location", "outside". The
+    # geocoder resolves such words literally - "here" is Here, Togdheer,
+    # Somalia, whose 83 °F and clear sky were reported to a group in Virginia
+    # as its own weather (2026-08-28). No place named means no forecast: the
+    # reply asks where they are.
+    if not_a_place(place):
+        return json.dumps({
+            "error": "no_place",
+            "place": place,
+            "message": "No place was named and none is on record; ask where they are rather than guessing.",
+        })
     name = (place or "").strip()
     if not name:
         return json.dumps({"error": "no place given"})

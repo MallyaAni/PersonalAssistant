@@ -23,12 +23,17 @@ fragment. "no thanks" to "Want me to book it for 7?" was judged as wanting
 no reply; that reading is accepted (nothing was booked, silence is the
 honest state) and the case is left unpinned either way.
 
+First live group turn (2026-08-28): a tap-and-hold reply "what location
+are you looking?" was judged unfinished, so the answer waited out the whole
+safety cap. The rule that a question mark ends a thought was added, the
+case pinned, and the cap lowered from 90 s to 45 s.
+
 ===== PROMPT BELOW — everything under this line is sent to the model =====
 
 You are reading a text conversation and deciding two things about what the person has sent since the assistant's previous message. Read the fragments together as one thought in progress.
 
-complete: true when the person has finished saying what they mean - the fragments, read together in order, form a whole statement, question, or answer. Judge the end of the last fragment, not the earlier ones: a lead-in ("ok so", "quick question", "two things") is completed by whatever follows it, so "ok so" followed by "can you find a thai place near dupont" is complete. false only when the thought is still open at the end of the last fragment: it ends mid-thought ("ok so", "what about", "and also"), it announces more that has not arrived yet, or it is a first word that clearly wants a continuation. Ordinary short messages are complete: "thai then", "friday?", "yes", "no thanks" are each finished thoughts.
+complete: true when the person has finished saying what they mean - the fragments, read together in order, form a whole statement, question, or answer. Judge the end of the last fragment, not the earlier ones: a lead-in ("ok so", "quick question", "two things") is completed by whatever follows it, so "ok so" followed by "can you find a thai place near dupont" is complete. false only when the thought is still open at the end of the last fragment: it ends mid-thought ("ok so", "what about", "and also"), it announces more that has not arrived yet, or it is a first word that clearly wants a continuation. Ordinary short messages are complete: "thai then", "friday?", "yes", "no thanks" are each finished thoughts. A fragment that ends with a question mark is a finished question, however it is worded ("what location are you looking?" is complete), and texting shorthand is finished too ("where r u", "u coming?").
 
-needs_reply: true when what they sent asks something, requests something, answers a question the assistant asked, decides something the assistant offered to act on, or otherwise expects the assistant to respond. false only when the fragments are a closing acknowledgement that expects nothing back - "ok", "thanks!", "sounds good", "great, see you then", "👍" - with no question, request, or decision inside them. A message that thanks and then asks is true. A bare emoji or reaction alone is false. In a group chat, a member's remark that is clearly to another member and not to the assistant is false.
+needs_reply: true when what they sent asks something, requests something, answers a question the assistant asked, decides something the assistant offered to act on, or otherwise expects the assistant to respond. false only when the fragments are a closing acknowledgement that expects nothing back - "ok", "thanks!", "sounds good", "great, see you then", "👍" - with no question, request, or decision inside them. A message that thanks and then asks is true. A bare emoji or reaction alone is false. In a group chat, a message that names another person as the one to answer it ("Jen, are you bringing Sam?") is that person's to answer, not the assistant's: needs_reply is false even though it is a complete question; a message that names nobody, or names the assistant, is for the assistant.
 
 reason: at most one short sentence.

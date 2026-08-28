@@ -52,6 +52,9 @@ async def explain(user_id: str, last: int, since: datetime | None) -> int:
         if "picker" in trace:
             p = trace["picker"]
             print(f"   picker: which={p.get('which')!r} chosen={p.get('chosen')} hint={p.get('hint')!r}")
+        if trace.get("group"):
+            g = trace["group"]
+            print(f"   group: spoken by {g.get('speaker')} among {g.get('members')} members")
         if trace.get("proposals_saved"):
             print(f"   memory saved: {', '.join(trace['proposals_saved'])}")
         if trace.get("outcomes"):

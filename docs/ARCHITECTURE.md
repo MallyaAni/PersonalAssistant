@@ -308,7 +308,7 @@ task and skill.
 7. Before answering a text, the worker asks the routing model whether the
    person has finished and whether an answer is wanted, so "ok so" waits for
    the rest, "thai then" gets one answer, and "thanks!" gets none - judged by
-   meaning, never by a timer (a pending fragment is answered after 90 s
+   meaning, never by a timer (a pending fragment is answered after 45 s
    regardless).
 8. In a group chat the Mac's operator has listed ([design](GROUP_CHATS_ARCHITECTURE.md),
    [ADR 0016](adr/0016-a-group-is-an-account.md), [diagram](diagrams/group-chats-subsystem.svg)),
@@ -323,8 +323,15 @@ task and skill.
    answer, digests, and reminders post back into the chat.
 
 *Stored:* durable state only through the normal chat path; the bridge and
-worker keep a cursor, seen IDs, pending bursts, and bubble-to-artifact maps
-in Redis. *The model decides:* only the answer (and whether one is wanted) -
+worker keep a cursor, seen IDs, pending bursts, parked turns, and
+bubble-to-artifact maps in Redis. *Never lost to a restart:* the cursor
+moves only after a poll is handled and chat.db is the ledger, so a message
+that arrives while the worker or the Mac is down is read when they are
+back; one that finds the backend itself away (a deploy's restart, the
+database unreachable) is parked and retried every poll for ten minutes -
+one "give me a minute" bubble after the first - and only then apologised
+for. A turn that genuinely failed is apologised for at once; retrying a
+bug helps nobody. *The model decides:* only the answer (and whether one is wanted) -
 the recipient is always the bridge's `reply_to` handle, "never anything the
 model wrote". *Never leaves the Mac:* bodies from anyone not on the
 allowlist, anything in a group chat that is not listed or not addressed to

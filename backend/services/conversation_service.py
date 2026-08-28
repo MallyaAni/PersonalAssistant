@@ -536,6 +536,30 @@ def _proposal_summary(proposal: dict[str, Any]) -> str:
     return ""
 
 
+# The member speaking in a group turn, for the length of the request; None
+# for a one-to-one turn. Set at the top of `process_request` from the
+# worker's metadata and read wherever "here" or "now" is resolved.
+_turn_speaker: ContextVar[str | None] = ContextVar("_turn_speaker", default=None)
+
+
+# The speaker's user id from a group turn's metadata, or None.
+def _speaker_of(metadata: dict[str, Any] | None) -> str | None:
+    if not isinstance(metadata, dict) or str(metadata.get("channel") or "") != "imessage_group":
+        return None
+    room = metadata.get("group")
+    speaker = str((room or {}).get("speaker_user_id") or "") if isinstance(room, dict) else ""
+    return speaker or None
+
+
+# Whose place and clock a turn runs on: a group's turn runs on its speaker's,
+# because a room has no home; everyone else runs on their own.
+def _place_owner(user_id: str) -> str:
+    from backend.groups.repository import is_group_id
+
+    speaker = _turn_speaker.get()
+    return speaker if speaker and is_group_id(user_id) else user_id
+
+
 # Profile fields belong only to the person they describe: a member's own
 # name, style, locality, or interests go to their own store, and interests
 # said to be the group's go to the group's; nobody's profile is edited on
@@ -2578,6 +2602,7 @@ class ConversationService:
         current_search_limit.set(None)
         _previous_assistant_said.set(str((history[-1].get("response") or "")) if history else "")
         _turn_trace.set({"_started": time.monotonic()})
+        _turn_speaker.set(_speaker_of(metadata))
         current_followup.set(None)
         account_charged_this_turn.set(False)
         _results_were_events.set(False)
@@ -3437,10 +3462,12 @@ class ConversationService:
         """Where the person is, as (label, timezone), or None if unknown.
 
         Travel wins over home when a trip is active, because the answer to
-        "what's the weather" is about where they are standing.
+        "what's the weather" is about where they are standing. In a group
+        the person is the speaker: the group has no place of its own, and
+        "weather here" answered for nowhere on the first live group turn.
         """
         try:
-            profile = await self.discovery_profile.get_profile(user_id)
+            profile = await self.discovery_profile.get_profile(_place_owner(user_id))
         except Exception:
             logger.warning("Discovery profile unavailable", exc_info=True)
             return None

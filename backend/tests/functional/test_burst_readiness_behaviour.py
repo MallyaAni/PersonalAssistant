@@ -34,6 +34,9 @@ CASES = [
     ("", ["thanks! also what time does the apple store close"], True, True),
     ("", ["what about"], False, None),
     ("", ["remind me tomorrow at 9 to call the bank"], True, True),
+    # Live, 2026-08-28: judged unfinished, answered only after the cap.
+    ("Clear sky and hot here today, 94 high.", ["what location are you looking?"], True, True),
+    ("", ["where r u"], True, True),
 ]
 
 
