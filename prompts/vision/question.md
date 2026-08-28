@@ -1,6 +1,7 @@
 name: vision/question
 used by: backend/agents/vision/observation.py
 runs on: the vision model (VISION_*)
+pinned by: functional/test_visual_observation_behaviour.py
 
 Answering a direct question about an image, as opposed to describing it.
 

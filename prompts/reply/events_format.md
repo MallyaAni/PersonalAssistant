@@ -1,6 +1,7 @@
 name: reply/events_format
 used by: backend/agents/graph.py -> _render_events_format (context["events_format"])
 runs on: the reply model, appended to the turn state when the turn's search results are events
+pinned by: functional/test_events_format_behaviour.py
 placeholders: none
 
 How a list of events is presented, whatever route produced it. Arsalon

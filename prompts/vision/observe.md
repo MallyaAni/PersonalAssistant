@@ -2,6 +2,7 @@ name: vision/observe
 used by: backend/agents/vision/observation.py and, as DESCRIBE_PROMPT,
   backend/services/image_intent.py
 runs on: the vision model (VISION_*)
+pinned by: functional/test_visual_observation_behaviour.py
 
 The one canonical description of an image. Every later pass - reasoning,
 intent, recall - reads this description instead of the pixels, so a detail

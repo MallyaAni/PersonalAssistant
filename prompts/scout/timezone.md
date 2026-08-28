@@ -1,6 +1,7 @@
 name: scout/timezone
 used by: backend/agents/scout/timezones.py
 runs on: the structured/routing role (schema-enforcing engine)
+pinned by: functional/test_timezone_prompt_behaviour.py
 
 Names the IANA timezone of a place so schedules run in the user's day.
 

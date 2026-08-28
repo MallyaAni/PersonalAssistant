@@ -166,13 +166,16 @@ Still open, in order of risk:
    two-stage router.
 2. **Run the ablation** on the router prompt (`--categories` for the weak
    ones first) and delete what costs nothing.
-3. **Operations on several tasks at once.** "delete the paused ones"
+3. **Two prompts with no functional pin yet** (declared in their headers,
+   enforced by `test_functional_coverage_completeness`): `refinement/keep_scene`
+   and `style/distill` - both need the edit model on a real picture.
+4. **Operations on several tasks at once.** "delete the paused ones"
    (real phrasing) reaches a picker that chooses one task; cancel/pause of
    a set is not supported. Needs `manage_tasks` to accept a selection
    ("all paused", "the weather ones") and a confirmation line listing what
    it touched.
-4. **GitHub branch protection** - the operator's click (above).
-5. Tavily plan/credits; schedutil on the Sparks; wake-on-LAN for the
+5. **GitHub branch protection** - the operator's click (above).
+6. Tavily plan/credits; schedutil on the Sparks; wake-on-LAN for the
    desktop; a fare API for trips (all earlier notes).
 
 ## What is still open

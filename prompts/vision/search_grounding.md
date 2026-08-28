@@ -1,6 +1,7 @@
 name: vision/search_grounding
 used by: backend/services/visual_search_grounding.py
 runs on: the routing model (schema-enforcing engine)
+pinned by: functional/test_visual_grounding_decision_behaviour.py
 
 Whether an image warrants an outbound web search and what to search for.
 

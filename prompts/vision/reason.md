@@ -1,6 +1,7 @@
 name: vision/reason
 used by: backend/agents/vision/reasoning.py -> build_reasoning_messages()
 runs on: the reply model (MAIN_LLM_*)
+pinned by: functional/test_visual_reasoning_behaviour.py
 
 Reasoning over the observation the vision pass produced. The functional
 suite in test_visual_reasoning_behaviour.py gates this wording: honest

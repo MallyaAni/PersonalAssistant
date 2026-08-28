@@ -1,6 +1,7 @@
 name: referent/followup
 used by: backend/services/followup.py -> resolve_followup (called by MainActionSelector before routing)
 runs on: the routing model (schema-enforcing engine), one call per turn that has history
+pinned by: functional/test_followup_resolution_behaviour.py
 
 What the newest message is about, decided once, before anything acts on it.
 

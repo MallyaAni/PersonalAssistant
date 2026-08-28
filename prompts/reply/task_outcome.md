@@ -1,6 +1,7 @@
 name: reply/task_outcome
 used by: backend/agents/graph.py -> _build_system_prompt (context["task_outcome"])
 runs on: the reply model, appended to reply/system when this turn scheduled, listed, or changed a task
+pinned by: functional/test_scheduled_task_behaviour.py, functional/test_task_reschedule_behaviour.py
 
 When the router decides a message is a request to schedule something, or to
 list, cancel, pause, resume, or reschedule a scheduled task, the application does the

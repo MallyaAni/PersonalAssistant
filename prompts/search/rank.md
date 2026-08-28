@@ -1,6 +1,7 @@
 name: search/rank
 used by: backend/core/result_ranking.py -> order_by_usefulness()
 runs on: the routing model (ROUTING_LLM_MODEL - the same DeepSeek that answers), one grammar-constrained call per search turn
+pinned by: functional/test_search_rerank_behaviour.py, functional/test_followup_keeps_the_subject_behaviour.py
 placeholders: none
 
 Orders the web results a search gathered before they reach the reply prompt.

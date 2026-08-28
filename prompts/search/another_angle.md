@@ -1,6 +1,7 @@
 name: search/another_angle
 used by: backend/services/search_planner.py -> SearchPlanner.another_angle()
 runs on: the reply model (MAIN_LLM_MODEL), on rounds below SEARCH_MIN_ROUNDS
+pinned by: functional/test_search_compose_behaviour.py
 placeholders: {today} {cutoff}
 
 Asks for the NEXT search, unconditionally. This runs instead of judging whether

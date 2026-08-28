@@ -1,6 +1,7 @@
 name: memory/digest
 used by: backend/memory/digest.py -> summarise()
 runs on: the reply model (MAIN_LLM_MODEL), via get_reasoning_llm_client()
+pinned by: functional/test_conversation_digest_behaviour.py
 placeholders: {previous} {exchanges} {max_words}
 
 Compresses a stretch of conversation into a digest that later turns read as

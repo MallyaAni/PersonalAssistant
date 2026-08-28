@@ -1,6 +1,7 @@
 name: reply/imessage_style
 used by: backend/agents/graph.py -> _build_system_prompt (channel == "imessage")
 runs on: the reply model, appended to reply/system for iMessage turns only
+pinned by: functional/test_imessage_reply_style.py
 
 The reply model writes for the web UI by default: markdown, headings,
 thorough paragraphs. Delivered to a phone as a text message, that arrived

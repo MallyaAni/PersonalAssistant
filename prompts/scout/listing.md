@@ -1,6 +1,7 @@
 name: scout/listing
 used by: backend/agents/scout/describing.py
 runs on: the structured writer role, one focused call per selected find
+pinned by: functional/test_prompt_behaviour.py
 
 Decides one thing: is this page a listing of many happenings rather than one
 happening? The verdict is a schema-enforced boolean; code does the dropping,

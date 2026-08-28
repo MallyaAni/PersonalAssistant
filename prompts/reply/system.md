@@ -1,6 +1,7 @@
 name: reply/system
 used by: backend/agents/graph.py -> _build_system_prompt()
 runs on: the reply model (MAIN_LLM_MODEL) — every single chat turn
+pinned by: functional/test_reply_graph_behaviour.py, functional/test_evidence_honesty_behaviour.py, functional/test_no_invented_search_behaviour.py, functional/test_task_referent_behaviour.py
 placeholders: {today} {training_boundary} {agents} {capabilities} {save_state}
 
 The instruction the assistant answers under. Changing anything here changes

@@ -1,6 +1,7 @@
 name: style/distill
 used by: backend/services/image_style_service.py
 runs on: the routing model
+pinned by: none yet - the style-distilling prompt has no test that runs it against real picture feedback
 
 Distilling durable per-user image style from feedback. Wrong wording here
 compounds: the distilled style is appended to every later generation.

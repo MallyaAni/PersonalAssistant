@@ -1,6 +1,7 @@
 name: image_intent/context
 used by: backend/services/image_intent.py, appended to image_intent/classify
 runs on: the routing model
+pinned by: functional/test_image_intent_behaviour.py
 placeholders: {context}
 
 Recent conversation appended when the message alone is ambiguous.

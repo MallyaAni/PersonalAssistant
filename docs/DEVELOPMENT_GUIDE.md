@@ -87,6 +87,26 @@ Use this ownership map when selecting affected views:
 
 Internal refactors, bug fixes, styling, tests, and field-level implementation details do not trigger a diagram edit when those architectural relationships remain unchanged. The synchronization check still validates every registered pair, while visual inspection may stay limited to diagrams whose source changed.
 
+## How to verify a change
+
+The instruments, in the order a change meets them. None of them is optional
+for the kind of change it covers (AGENTS.md, completion rule).
+
+| Instrument | What it proves | Command |
+|---|---|---|
+| Unit gate | wiring, parsing, state; green or nothing ships | `bash scripts/gate.sh --unit` (mounts the checkout, uses the compose Redis) |
+| Functional suite | what the real models answer for a prompt or tool | `bash scripts/gate.sh backend/tests/functional/<file>.py` |
+| Routing gate | the router's accuracy per tool against recorded floors | `bash scripts/gate.sh` |
+| Evaluator | the numbers behind those floors, 3 reps, confusion by category | `python -m backend.cli.evaluate_tool_selection` |
+| Ablation | which router sentences carry weight or fight each other | `python -m backend.cli.ablate_prompt_rules --categories ...` |
+| Journey sweep | every capability walked over HTTP as a guest, with database and trace assertions | `python -m backend.cli.sweep_journeys [--only name]` (run by deploy.sh) |
+| Search harness | the search chain, budget and meter as the operator | `python -m backend.cli.exercise_search_scenarios` (run by deploy.sh) |
+| Image harness | the ten picture scenarios on the real chat path | `python -m backend.cli.exercise_image_scenarios` |
+| Real utterances | what people actually say, by route - write cases from these | `python -m backend.cli.real_utterances --days 14` |
+| Turn trace | why a turn did what it did, decrypted | `python -m backend.cli.explain_turn --user <id> --last 8` |
+| Coverage guard | every tool has a live test, every capability a journey, every prompt a pin | part of the unit gate: `backend/tests/test_functional_coverage_completeness.py` |
+| Deploy | all of the above in order, then the sweep and harness on the deployed system, paging on red | `bash scripts/deploy.sh` |
+
 ## Search routing evaluation
 
 Routing quality is measured against a committed labelled set rather than

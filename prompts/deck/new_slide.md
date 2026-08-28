@@ -1,6 +1,7 @@
 name: deck/new_slide
 used by: backend/agents/deck/prompts.py
 runs on: the presentation role (PRESENTATION_LLM_*)
+pinned by: functional/test_deck_prompt_behaviour.py
 
 Adds a slide to an existing deck without disturbing the rest.
 

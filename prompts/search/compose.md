@@ -1,6 +1,7 @@
 name: search/compose
 used by: backend/services/search_planner.py -> SearchPlanner.compose()
 runs on: the reply model (MAIN_LLM_MODEL), once per turn that searches
+pinned by: functional/test_search_compose_behaviour.py, functional/test_followup_keeps_the_subject_behaviour.py
 placeholders: {today} {cutoff}
 
 Writes the FIRST web search query of a turn. The router decides *whether* to

@@ -1,6 +1,7 @@
 name: refinement/keep_scene
 used by: backend/services/image_refinement_service.py
 runs on: sent to the image editor (FLUX Kontext), not a chat model
+pinned by: none yet - the scene-keeping edit prompt has no test that runs the edit model on a real picture
 
 What an edit must preserve. Wrong wording here restages the scene, which
 was the original editing complaint.

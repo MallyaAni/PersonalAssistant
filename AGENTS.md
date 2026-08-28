@@ -64,8 +64,16 @@ Before declaring a task complete:
 2. Exercise the actual user or system acceptance path.
 3. Validate expected content, state transitions, side effects, persistence, logs, and error handling—not only reachability.
 4. Run relevant automated tests and builds.
-5. If the change adds or alters a prompt, add a functional test in `backend/tests/functional/` and run it. A test that a model was called, or that its answer parsed, does not show that it answered well.
-6. Report every applicable criterion as `VERIFIED`, `FAILED`, or `UNVERIFIED` with concrete evidence.
+5. Add the functional proof the change needs - by what changed, not by habit:
+   - **A prompt or a rule in one** - a test in `backend/tests/functional/` that runs the real model and asserts on what came back, named in the prompt's header as `pinned by:`; if it is a routing rule, a matrix case too, and `backend.cli.ablate_prompt_rules` when a category will not move.
+   - **A tool (built-in or MCP)** - a live test that *calls the tool* with real inputs written from `backend.cli.real_utterances` (the phrasings people use, including the failing ones: a place the geocoder does not know, a provider that is down), plus a sweep journey so it is walked over HTTP.
+   - **Anything that resolves "this", "it", "again"** - a case in `functional/test_followup_resolution_behaviour.py`; never a new place that works it out.
+   - **Anything that changes state** (a reminder, Scout, a memory) - a sweep journey with a database assertion, and a receipt in the change log so "undo that" can reverse it.
+   - **Anything carried in a per-turn ContextVar** - checked over HTTP (a sweep journey or harness), because an in-process test iterates the stream in one task and cannot see the boundary that lost every such value on 2026-08-26.
+   - **A new tool or route** - the evaluator's numbers recorded in the CHANGELOG and a floor set one miss below them.
+   A test that a model was called, or that its answer parsed, does not show that it answered well. `backend/tests/test_functional_coverage_completeness.py` fails when a tool has no live test, a capability has no sweep journey, or a prompt declares no pin - it is the mechanical form of this rule.
+6. Ship only through `scripts/deploy.sh`: the unit suite and the routing gate before, the sweep and the search harness after, on the deployed system.
+7. Report every applicable criterion as `VERIFIED`, `FAILED`, or `UNVERIFIED` with concrete evidence, with the numbers.
 
 User-interface behavior is `VERIFIED` only after an automated browser test or a documented manual browser session exercises the intended workflow. Serving HTML or reaching an API is insufficient. UI validation should fail on page exceptions, blocking console errors, failed required network requests, incorrect rendered content, broken interactions, or missing required persistence.
 

@@ -1,6 +1,7 @@
 name: welcome/system
 used by: backend/services/welcome_service.py -> build_welcome()
 runs on: the reply model (MAIN_LLM_MODEL) — once per approved account
+pinned by: functional/test_welcome_message_behaviour.py
 placeholders: {display_name} {agents} {capabilities}
 
 The introduction a newly approved person receives, unprompted, as their first

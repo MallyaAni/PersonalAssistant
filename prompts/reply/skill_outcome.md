@@ -1,6 +1,7 @@
 name: reply/skill_outcome
 used by: backend/agents/graph.py -> _build_system_prompt (context["skill_outcome"])
 runs on: the reply model, appended to reply/system when this turn saved, listed, or deleted a skill
+pinned by: functional/test_skills_behaviour.py
 
 When the router decides a message teaches a skill ("when I say X, do Y")
 or asks about the skills already taught, the application saves or reads

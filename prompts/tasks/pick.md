@@ -1,6 +1,7 @@
 name: tasks/pick
 used by: backend/tasks/picker.py -> pick_one (tasks and skills)
 runs on: the routing model, a single forced tool call
+pinned by: functional/test_task_referent_behaviour.py
 
 A person asking to cancel "the weather one", pause "my Friday reminder",
 or forget "the morning skill" is naming a saved item by meaning, not by

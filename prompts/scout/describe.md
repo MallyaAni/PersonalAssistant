@@ -1,6 +1,7 @@
 name: scout/describe
 used by: backend/agents/scout/describing.py
 runs on: the discovery prose writer role
+pinned by: functional/test_prompt_behaviour.py, functional/test_description_quality.py
 
 Types the facts of one scraped happening; the page text never reaches
 the digest directly.

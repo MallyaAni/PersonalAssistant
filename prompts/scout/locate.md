@@ -1,6 +1,7 @@
 name: scout/locate
 used by: backend/agents/scout/describing.py
 runs on: the structured writer role, one focused call per selected find
+pinned by: functional/test_prompt_behaviour.py
 
 Decides one thing: does the page place this happening away from the
 reader's area? The verdict is a schema-enforced boolean; code does the

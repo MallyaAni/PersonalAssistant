@@ -1,6 +1,7 @@
 name: routing/select_action
 used by: backend/services/main_action_selector.py -> MainActionSelector
 runs on: the routing model (ROUTING_LLM_MODEL — currently deepseek-v4-flash)
+pinned by: functional/test_tool_selection_matrix_behaviour.py, functional/test_main_action_selector_behaviour.py
 placeholders: none
 
 Decides what a turn DOES before it is answered: search the web, make a picture,

@@ -1,6 +1,7 @@
 name: reply/scheduled_task
 used by: backend/agents/graph.py -> _build_system_prompt (context["scheduled_task"])
 runs on: the reply model, appended to reply/system when a turn is a scheduled task firing
+pinned by: functional/test_scheduled_task_behaviour.py, functional/test_scheduled_quiet_behaviour.py
 
 A scheduled task runs as an ordinary conversation turn under the person's
 identity, with the instruction they wrote as the user message. The model

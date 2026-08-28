@@ -1,6 +1,7 @@
 name: scout/aim
 used by: backend/agents/scout/aiming.py
 runs on: the structured/routing role (schema-enforcing engine)
+pinned by: functional/test_aiming_behaviour.py
 
 Aims the weekly local-events search at one person's stated interests.
 

@@ -1,6 +1,7 @@
 name: scout/rerank
 used by: backend/agents/scout/reranking.py
 runs on: the structured/routing role (schema-enforcing engine)
+pinned by: functional/test_prompt_behaviour.py
 
 Orders a shortlist of happenings for one person; the women-only
 mitigation and past-events rejection live in this wording.

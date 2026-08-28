@@ -1,6 +1,7 @@
 name: scout/digest_message
 used by: backend/agents/scout/digesting.py
 runs on: the discovery prose writer role
+pinned by: functional/test_digest_writing.py
 placeholders: {MAX_GREETING_CHARS} {MAX_LINE_CHARS}
 
 The weekly Scout message itself - written, not assembled. Literal

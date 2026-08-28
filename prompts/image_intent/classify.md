@@ -1,6 +1,7 @@
 name: image_intent/classify
 used by: backend/services/image_intent.py -> ImageIntentClassifier
 runs on: the routing model (schema-enforcing engine)
+pinned by: functional/test_image_intent_behaviour.py
 placeholders: {text}
 
 Whether a message typed while looking at a picture is an edit request or

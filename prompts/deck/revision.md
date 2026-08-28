@@ -1,6 +1,7 @@
 name: deck/revision
 used by: backend/agents/deck/prompts.py
 runs on: the presentation role (PRESENTATION_LLM_*)
+pinned by: functional/test_deck_prompt_behaviour.py
 
 Revises one slide from feedback while keeping the deck's through-line.
 

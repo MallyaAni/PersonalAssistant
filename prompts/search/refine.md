@@ -1,6 +1,7 @@
 name: search/refine
 used by: backend/services/search_planner.py -> SearchPlanner.refine()
 runs on: the reply model (MAIN_LLM_MODEL), on rounds at or above SEARCH_MIN_ROUNDS
+pinned by: functional/test_search_compose_behaviour.py
 placeholders: {today} {cutoff}
 
 Decides whether to keep searching, and if so what for. Unlike search/another_angle

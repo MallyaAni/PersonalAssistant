@@ -1,6 +1,7 @@
 name: reply/skill_invoked
 used by: backend/agents/graph.py -> _build_system_prompt (context["skill"])
 runs on: the reply model, appended to reply/system when a turn invokes one of the person's skills
+pinned by: functional/test_skills_behaviour.py
 
 A skill is a routine the person taught earlier ("morning brief: the weather
 for Arlington, then my tasks"). When they invoke it, their message is short

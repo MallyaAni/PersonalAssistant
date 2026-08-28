@@ -1,6 +1,7 @@
 name: referent/system
 used by: backend/services/referent_resolution.py
 runs on: the routing model (schema-enforcing engine)
+pinned by: functional/test_referent_resolution_behaviour.py
 
 Which owned thing - image, document, conversation - a message like 'the
 one with the boat' is pointing at, across modalities.

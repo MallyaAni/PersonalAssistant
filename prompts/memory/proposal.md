@@ -1,6 +1,7 @@
 name: memory/proposal
 used by: backend/memory/proposal_agent.py via backend/agents/memory/prompts.py
 runs on: the routing model (schema-enforcing engine)
+pinned by: functional/test_memory_capture_discipline.py, functional/test_scout_schedule_referent_behaviour.py
 
 What from one utterance is worth remembering. Known ceiling is the model,
 not this wording: Raleigh extracts 4/4 and the identical sentence naming

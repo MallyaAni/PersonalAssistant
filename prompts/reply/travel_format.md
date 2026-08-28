@@ -1,6 +1,7 @@
 name: reply/travel_format
 used by: backend/agents/graph.py -> _render_travel_format (context["travel_format"])
 runs on: the reply model, appended to the turn state when the turn's search results are flight or trip fares
+pinned by: functional/test_travel_format_behaviour.py
 placeholders: none
 
 How a trip answer is built when the evidence is aggregator fare pages. On

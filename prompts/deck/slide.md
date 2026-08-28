@@ -1,6 +1,7 @@
 name: deck/slide
 used by: backend/agents/deck/prompts.py -> per-slide writing
 runs on: the presentation role (PRESENTATION_LLM_*)
+pinned by: functional/test_deck_prompt_behaviour.py
 
 Writes one slide's content from the approved outline.
 

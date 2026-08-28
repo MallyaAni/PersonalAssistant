@@ -1,6 +1,7 @@
 name: scout/place_suggest
 used by: backend/agents/scout/place_suggest.py
 runs on: the structured/routing role (schema-enforcing engine)
+pinned by: functional/test_prompt_behaviour.py
 
 Completes a town or city name someone is typing. Returned an empty
 tuple on ds4-server before the schema-enforcement split existed.
