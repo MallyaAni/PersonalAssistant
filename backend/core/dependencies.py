@@ -677,6 +677,8 @@ def _build_comfyui_image_provider() -> ComfyUIImageProvider:
         style_suffix=settings.IMAGE_STYLE_SUFFIX,
         portrait_suffix=settings.IMAGE_PORTRAIT_SUFFIX,
         text_suffix=settings.IMAGE_TEXT_SUFFIX,
+        text_prefix=settings.IMAGE_TEXT_PREFIX,
+        text_overlay=settings.IMAGE_TEXT_OVERLAY,
     )
 
 

@@ -378,6 +378,15 @@ class Settings(BaseSettings):
     IMAGE_TEXT_SUFFIX: str = (
         "any writing in the picture is in clear, correctly spelled English"
     )
+    # The same instruction, first. FLUX.2 Klein's Qwen3 text encoder weighs
+    # the start of the prompt; the suffix alone still lettered pictures in a
+    # German-looking script for two people on 2026-08-27. Empty disables it.
+    IMAGE_TEXT_PREFIX: str = "English lettering only:"
+    # Words the person put in quotes - a sign, a title, a label - are typeset
+    # onto the finished picture in a clean face instead of being painted by
+    # a 4-step distilled model that cannot spell. The diffusion prompt then
+    # asks for the space without the words. Off returns to painted text.
+    IMAGE_TEXT_OVERLAY: bool = True
     # A single GPU cannot hold the generation model and the diffusion model at
     # once. When enabled, AniOS sleeps local inference for the duration of one
     # image job so the diffusion runtime stops streaming weights from host RAM.

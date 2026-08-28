@@ -2,6 +2,7 @@ import asyncio
 import hashlib
 import io
 import logging
+import re
 import time
 import warnings
 from contextlib import suppress
@@ -85,6 +86,74 @@ def _match_source_size(edited: bytes, source: bytes) -> bytes:
         return edited
 
 
+_QUOTED = re.compile(r"[\"“”']([^\"“”']{2,80})[\"“”']")
+
+
+# The phrases the person put in quotes: the words a sign, a title or a label
+# must actually say. Bounded to what fits on a picture.
+def quoted_words(prompt: str) -> list[str]:
+    found = [" ".join(match.split()) for match in _QUOTED.findall(prompt or "")]
+    return [word for word in found if word][:4]
+
+
+# The prompt with those phrases replaced by the space for them, so the model
+# paints a blank sign rather than misspelling one.
+def without_quoted_words(prompt: str) -> str:
+    stripped = _QUOTED.sub("a blank space for lettering", prompt or "")
+    return " ".join(stripped.split())
+
+
+# Typeset the quoted words onto the finished picture: a translucent band at
+# the bottom, centred, in the largest built-in face that fits. Deterministic
+# English, unlike anything a 4-step distilled diffusion model letters.
+def typeset_onto(content: bytes, words: list[str]) -> bytes:
+    from PIL import ImageDraw
+
+    with Image.open(io.BytesIO(content)) as opened:
+        picture = opened.convert("RGBA")
+    width, height = picture.size
+    text = "  ·  ".join(words)
+    size = max(18, min(width // 14, height // 10))
+    font = _font(size)
+    draw = ImageDraw.Draw(picture)
+    while size > 14:
+        left, top, right, bottom = draw.textbbox((0, 0), text, font=font)
+        if right - left <= width * 0.92:
+            break
+        size -= 2
+        font = _font(size)
+    left, top, right, bottom = draw.textbbox((0, 0), text, font=font)
+    text_width, text_height = right - left, bottom - top
+    pad = max(8, size // 2)
+    band = Image.new("RGBA", (width, text_height + 2 * pad), (0, 0, 0, 150))
+    picture.alpha_composite(band, (0, height - band.height))
+    draw = ImageDraw.Draw(picture)
+    draw.text(
+        ((width - text_width) // 2 - left, height - band.height + pad - top),
+        text,
+        font=font,
+        fill=(255, 255, 255, 255),
+    )
+    out = io.BytesIO()
+    picture.convert("RGB").save(out, format="PNG")
+    return out.getvalue()
+
+
+def _font(size: int):
+    from PIL import ImageFont
+
+    for candidate in (
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        "/System/Library/Fonts/Helvetica.ttc",
+    ):
+        try:
+            return ImageFont.truetype(candidate, size)
+        except OSError:
+            continue
+    return ImageFont.load_default(size=size) if hasattr(ImageFont, "load_default") else ImageFont.load_default()
+
+
 def validate_image_bytes(
     content: bytes,
     declared_mime_type: str | None,
@@ -154,6 +223,8 @@ class ComfyUIImageProvider(ImageProvider):
         restart_wait_seconds: float = 90.0,
         transport: httpx.AsyncBaseTransport | None = None,
         text_suffix: str = "",
+        text_prefix: str = "",
+        text_overlay: bool = False,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.model = model
@@ -165,6 +236,10 @@ class ComfyUIImageProvider(ImageProvider):
         self.portrait_suffix = portrait_suffix.strip().strip(",").strip()
         # The language of any writing; see IMAGE_TEXT_SUFFIX for why.
         self.text_suffix = text_suffix.strip().strip(",").strip()
+        # The same, first, where the encoder weighs it most - IMAGE_TEXT_PREFIX.
+        self.text_prefix = text_prefix.strip()
+        # Quoted words typeset onto the picture rather than painted - IMAGE_TEXT_OVERLAY.
+        self.text_overlay = text_overlay
         # No negative prompt: FLUX.2 Klein runs distilled at cfg 1.0, where the
         # negative conditioning is inert, so the workflow zeroes it out rather
         # than carrying text nothing reads. Realism is steered by the positive
@@ -199,6 +274,12 @@ class ComfyUIImageProvider(ImageProvider):
                         self.max_output_bytes,
                         self.max_pixels,
                     )
+                    typeset = quoted_words(request.prompt) if self.text_overlay else []
+                    if typeset:
+                        content = typeset_onto(content, typeset)
+                        validated = validate_image_bytes(
+                            content, "image/png", self.max_output_bytes, self.max_pixels
+                        )
                 except asyncio.CancelledError:
                     if inflight:
                         await self._interrupt(client, inflight[-1])
@@ -211,6 +292,9 @@ class ComfyUIImageProvider(ImageProvider):
                 provider_job_id=prompt_id,
                 metadata={
                     "seed": request.seed,
+                    # Words typeset after generation, so a reader of the
+                    # recipe knows which lettering was painted and which set.
+                    "typeset_text": typeset,
                     # The whole recipe, so a picture can be reproduced or its
                     # prompt read back: the composed positive prompt with every
                     # suffix, and the flag that decides the portrait suffix.
@@ -340,6 +424,10 @@ class ComfyUIImageProvider(ImageProvider):
     # user's wording leads and the style steer follows.
     def _positive_prompt(self, prompt: str, depicts_a_person: bool = False) -> str:
         text = prompt.strip()
+        if self.text_overlay:
+            text = without_quoted_words(text)
+        if self.text_prefix and text and self.text_prefix.lower() not in text.lower():
+            text = f"{self.text_prefix} {text}"
         parts = [text] if text else []
         if self.style_suffix and self.style_suffix.lower() not in text.lower():
             parts.append(self.style_suffix)

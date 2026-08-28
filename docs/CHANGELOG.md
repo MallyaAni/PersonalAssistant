@@ -2,6 +2,21 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-27 — Lettering in pictures: the instruction first, the words typeset
+
+- FLUX.2 Klein (Black Forest Labs; its Qwen3 text encoder) letters pictures
+  in a German-looking script when the prompt says nothing early enough about
+  language, and a 4-step distilled model cannot spell in any case. Two
+  changes: `IMAGE_TEXT_PREFIX` puts "English lettering only:" at the front
+  of every generation prompt, where the encoder weighs it most (the suffix
+  stays); and with `IMAGE_TEXT_OVERLAY` on, words the person put in quotes -
+  a sign, a title, a label - are removed from the diffusion prompt (which
+  asks for a blank space instead) and typeset onto the finished picture in
+  a clean face, centred on a translucent band. Deterministic English. The
+  recipe records `typeset_text` so a reader knows which lettering was set.
+  Measured by the vision read-back (image harness scenario 10,
+  `functional/test_image_text_language_behaviour.py`) when the desktop is on.
+
 ## 2026-08-27 — Tests are written from what people actually say
 
 - The weather failure was a test-design failure first: the tool's coverage
