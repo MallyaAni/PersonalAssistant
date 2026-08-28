@@ -241,7 +241,15 @@ export IMESSAGE_BRIDGE_ADDRESSES="deep-matter@agentmail.to"
 export IMESSAGE_BRIDGE_DISPLAY_NAME="Scout"
 ```
 
-To find a room's identifier, with Messages open:
+Changing these in the launch agent's plist needs a **reload, not a
+restart**: `launchctl kickstart -k` restarts the process with the
+environment launchd already loaded, so new keys are silently absent
+(2026-08-28: the bridge refused the first group send for exactly this reason).
+Use `launchctl bootout gui/$(id -u)/com.anios.imessage-bridge` then
+`launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.anios.imessage-bridge.plist`,
+and confirm with `launchctl print gui/$(id -u)/com.anios.imessage-bridge | grep IMESSAGE_BRIDGE_`.
+
+To find a group chat's identifier, with Messages open:
 
 ```bash
 osascript -e 'tell application "Messages" to get {id, name} of every chat' | tr ',' '\n' | grep -n "iMessage;+;chat"

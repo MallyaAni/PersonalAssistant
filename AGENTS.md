@@ -521,6 +521,14 @@ bundle. After a frontend change run `docker compose build gateway` followed by
 from inside a container and prove it contains the new behavior. A public 200
 can still be stale UI.
 
+- **A launch agent's plist env is loaded at bootstrap, not at restart.** Editing
+  `~/Library/LaunchAgents/com.anios.imessage-bridge.plist` and running
+  `launchctl kickstart -k` restarts the bridge with the *old* environment; a
+  new key is silently missing and the bridge refuses what the plist plainly
+  allows. Reload it: `launchctl bootout gui/$(id -u)/com.anios.imessage-bridge`
+  then `launchctl bootstrap gui/$(id -u) <plist>`, and check with
+  `launchctl print ... | grep IMESSAGE_BRIDGE_`. (2026-08-28, first group send.)
+
 ## Documentation ownership
 
 - `README.md`: stable overview, entry points, and documentation map.
