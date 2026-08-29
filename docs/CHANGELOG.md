@@ -16,7 +16,9 @@ This file is append-only history for meaningful, verified changes. It must not c
   question, so no question is written to disk - the file holds public web
   results only; an empty answer is never kept, because that is what an
   outage looks like; the file prunes itself at 2,000 rows; a cache that
-  cannot be read is a miss, never a failed search. 8 unit tests.
+  cannot be read is a miss, never a failed search. 10 unit tests, and proved
+  on the deployed build (8169610): the same question asked twice moved the
+  Brave counter 560 → 561 → 561 and returned the same three results.
 - **Cheapest provider first.** `SEARCH_PROVIDER_ORDER` is now
   `tavily,brave,google` on this machine. Tavily gives 1,000 credits a month
   free and resets on the 1st; Brave retired its free tier in February 2026,

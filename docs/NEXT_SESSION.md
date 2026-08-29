@@ -50,9 +50,17 @@ wake-on-LAN, so **a powered-off Spark needs someone to press the button.**
   queries/day free → then only `GOOGLE_SEARCH_ENABLED=true` is needed.
 - **The sweep is the biggest spender**: ~344 of the month's ~403 searches
   were verification runs, against ~59 from people. The 30-minute answer
-  cache cuts repeat deploys; if that is not enough, give the sweep a
-  "skip the live-search journeys" mode for routine deploys and keep the full
-  set for weekly runs.
+  cache is live and measured (560 → 561 → 561 for a repeated question); if
+  that is not enough, give the sweep a "skip the live-search journeys" mode
+  for routine deploys and keep the full set for weekly runs.
+- **`BRAVE_SEARCH_MONTHLY_LIMIT` is now a spend cap, not a free allowance**
+  (900). The operator has not chosen that number under the new billing -
+  ask before assuming it is right.
+- **"group: dinner suggestion uses a member's taste" is now flaky rather
+  than wrong**: the tightened "What's on" description fixed it in the
+  measurements and in deploys #21-#22, and it missed once in #23 and passed
+  on the retry. If it fails twice in one deploy, it is back - measure the
+  pack description with the evaluator rather than adding words to it.
 
 ## Group chats — BUILT AND GATED 2026-08-28, live acceptance pending
 
