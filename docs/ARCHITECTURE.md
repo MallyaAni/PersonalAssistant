@@ -310,7 +310,17 @@ task and skill.
    the rest, "thai then" gets one answer, and "thanks!" gets none - judged by
    meaning, never by a timer (a pending fragment is answered after 45 s
    regardless).
-8. In a group chat the Mac's operator has listed ([design](GROUP_CHATS_ARCHITECTURE.md),
+8. Every sent text bubble whose Apple GUID can be read is retained in a bounded
+   seven-day Redis ledger. The worker asks the bridge only for reactions on
+   those exact GUIDs. A ❤️ or 👍 is a third schema-constrained judgement:
+   it becomes "yes, do that" only when the targeted bubble offered one concrete
+   action that yes unambiguously accepts. A reaction to an answer, joke, choice,
+   or open question stays quiet; one accepted reaction is claimed once before
+   it enters the ordinary conversation/router path. In a room the bridge also
+   returns the reactor only when that address is allowlisted; the backend maps
+   that person to a current member and runs the turn as them, never as the
+   member who happened to elicit the offer.
+9. In a group chat the Mac's operator has listed ([design](GROUP_CHATS_ARCHITECTURE.md),
    [ADR 0016](adr/0016-a-group-is-an-account.md), [diagram](diagrams/group-chats-subsystem.svg)),
    every member's message is read for context and memory, and only what
    addresses the assistant is answered - a reply in a thread on one of its
@@ -325,15 +335,17 @@ task and skill.
    answer, digests, and reminders post back into the chat.
 
 *Stored:* durable state only through the normal chat path; the bridge and
-worker keep a cursor, seen IDs, pending bursts, parked turns, and
-bubble-to-artifact maps in Redis. *Never lost to a restart:* the cursor
+worker keep a cursor, seen IDs, pending bursts, parked turns,
+bubble-to-artifact maps, and the bounded recent-outgoing-bubble ledger in
+Redis. *Never lost to a restart:* the cursor
 moves only after a poll is handled and chat.db is the ledger, so a message
 that arrives while the worker or the Mac is down is read when they are
 back; one that finds the backend itself away (a deploy's restart, the
 database unreachable) is parked and retried every poll for ten minutes -
 one "give me a minute" bubble after the first - and only then apologised
 for. A turn that genuinely failed is apologised for at once; retrying a
-bug helps nobody. *The model decides:* only the answer (and whether one is wanted) -
+bug helps nobody. *The model decides:* the answer, whether one is wanted, and
+whether a positive tapback unambiguously accepts an offered action -
 the recipient is always the bridge's `reply_to` handle, "never anything the
 model wrote". *Never leaves the Mac:* bodies from anyone not on the
 allowlist, anything in a group chat that is not listed, and the text the
@@ -809,7 +821,7 @@ Image and presentation paths:
 | Deck outline, one slide-content microtask per slide, or slide revision | `deepseek-v4-flash` (`PRESENTATION_LLM_MODEL`) | Sparks |
 | Diagram generation | `deepseek-v4-flash` (`DIAGRAM_LLM_MODEL`) | Sparks |
 | Architecture candidates | legacy `LLM_MODEL` (DeepSeek) unless its CLI environment is overridden | Sparks |
-| Google-grounded research, when enabled | `gemini-3.6-flash` (`GOOGLE_SEARCH_MODEL`) | external Google API |
+| Google-grounded research, when enabled | `gemini-3.1-flash-lite` (`GOOGLE_SEARCH_MODEL`) | external Google API |
 
 Web research, only when routing decides to search, calls Google Gemini grounding
 or Tavily - external/cloud, never local hardware. Role names are independently
@@ -900,7 +912,7 @@ cascade that used to make this call has been deleted; its labelled set
 selector to the same recall and specificity floor. Neither the local model nor
 the cloud worker owns outbound eligibility beyond that one decision.
 
-The Google worker is a request-scoped `gemini-3.6-flash` ADK `Agent` with the
+The Google worker is a request-scoped `gemini-3.1-flash-lite` ADK `Agent` with the
 native `google_search` tool. Each call creates a random in-memory session,
 disables prior contents, and sends only the already normalized and
 privacy-screened public query under a constant anonymous worker identity. It
@@ -910,11 +922,17 @@ without grounding metadata and attributable web sources so fallback can run.
 This is one specialized research agent behind the existing provider contract,
 not general LangGraph subagent scheduling or A2A.
 
-`SQLiteDailySearchQuota` reserves Google calls atomically across short-lived
+`SQLiteDailySearchQuota` reserves Google billable search queries atomically
+across short-lived
 stdio processes. It persists only provider, Pacific calendar day, and count in
-the `searchdata` volume; it does not store query or result content. The default
-local limit is 450 calls/day. This is a safety ceiling, not proof of provider
-quota or free access. Current Gemini 3 Search Grounding availability depends on
+the `searchdata` volume; it does not store query or result content. Gemini 3
+may execute several searches for one prompt, so the provider reserves ten
+units before a request and reconciles both daily and monthly counters to the
+non-empty `web_search_queries` returned in grounding metadata. An uncertain
+timeout keeps that reservation rather than assuming it was free. The default
+local limit is 450 queries/day and 4,800/month. This is a buffered safety
+ceiling, not proof of provider quota or free access. Current Gemini 3 Search
+Grounding availability depends on
 the Google API project's plan and billing state; AniOS never enables billing or
 switches tiers automatically. The unpaid Gemini service may use submitted
 prompts and responses to improve Google products, so the existing minimization

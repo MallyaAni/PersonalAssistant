@@ -457,6 +457,9 @@ class Settings(BaseSettings):
     IMESSAGE_CHAT_ACTIVE_POLL_SECONDS: float = Field(default=1.5, gt=0, le=60)
     IMESSAGE_CHAT_ACTIVE_WINDOW_SECONDS: float = Field(default=45.0, ge=0, le=600)
     IMESSAGE_CHAT_READ_TOOL: str = "read_messages"
+    # Positive tapbacks are queried only for message GUIDs this worker stored
+    # after sending; a bridge without the tool leaves ordinary chat untouched.
+    IMESSAGE_CHAT_REACTIONS_TOOL: str = "read_reactions_by_guid"
     # Where this worker reaches its own backend. The compose network name by
     # default; a host-run worker overrides it.
     IMESSAGE_CHAT_BASE_URL: str = "http://backend:8000"
@@ -795,15 +798,29 @@ class Settings(BaseSettings):
     # without it. Left on, every search would pay ~220ms for a call that cannot
     # succeed, so the provider stays off until an operator confirms entitlement.
     GOOGLE_SEARCH_ENABLED: bool = False
-    GOOGLE_SEARCH_MODEL: str = "gemini-3.6-flash"
+    GOOGLE_SEARCH_MODEL: str = "gemini-3.1-flash-lite"
     GOOGLE_SEARCH_TIMEOUT_SECONDS: float = Field(default=30.0, gt=0, le=120)
-    # Covers reasoning tokens as well as the answer: gemini-3.6-flash spends
-    # roughly 500-700 tokens thinking before it writes, so a 1024 budget
-    # leaves a long grounded answer at risk of being truncated to nothing.
+    # Covers reasoning tokens as well as the answer; a small budget can end a
+    # grounded reasoning response before it emits any attributable text.
     GOOGLE_SEARCH_MAX_OUTPUT_TOKENS: int = Field(default=2_048, ge=128, le=8_192)
-    # Bound local Google calls independently of the provider account quota.
-    GOOGLE_SEARCH_DAILY_LIMIT: int = Field(default=450, ge=1, le=500)
-    # Stores provider/day/count only; no queries or result content are retained.
+    # Bound local Google *search queries* independently of the provider account
+    # quota. The unit is queries, not prompts: one Gemini 3 prompt may run
+    # several separately billed searches, so 450 queries a day is roughly two
+    # hundred to four hundred prompts.
+    #
+    # The floor is the reservation each call holds, not 1. A limit below it
+    # refuses every call before it starts, and does so as "budget exhausted"
+    # rather than "misconfigured" - a provider silently dead with nothing in
+    # the log to say why (found in review, 2026-08-29).
+    GOOGLE_SEARCH_DAILY_LIMIT: int = Field(default=450, ge=10, le=500)
+    # The month is the ceiling that stands between a mistake and a bill:
+    # grounded search is included up to 5,000 queries a month and $14 per
+    # thousand after it. It had no field here at all and was read straight from
+    # the environment by the search subprocess, so `GOOGLE_SEARCH_MONTHLY_LIMIT=50000`
+    # in .env was accepted in silence and would have billed. Bounded here so a
+    # value past the included allowance fails at startup instead.
+    GOOGLE_SEARCH_MONTHLY_LIMIT: int = Field(default=4_800, ge=10, le=5_000)
+    # Stores provider/period/count only; no queries or result content are retained.
     GOOGLE_SEARCH_QUOTA_DB_PATH: str = "data/search/google_search_quota.sqlite3"
 
     # MCP servers, as a JSON array of objects with server_id, command, args,

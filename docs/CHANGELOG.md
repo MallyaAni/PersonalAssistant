@@ -2,6 +2,88 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-29 — The two sessions' work merged, with six defects found in review
+
+Both workstreams reviewed together before merging: conversational tapbacks and
+the Google query meter, alongside this session's events, personalization and
+browser work. Six things the review caught, all fixed here.
+
+In the Google spend path, three of them cost money or lied about it:
+
+- An answer with no grounding metadata - Gemini replying from what it already
+  knows, which runs no search and bills nothing - was charged the whole
+  ten-query reservation. Four hundred and eighty such turns would have
+  exhausted the month, and `search_credits` would have been wrong by ten each
+  time, permanently. It is charged one, the same conservative unit the module
+  already gives empty metadata, and reconciled before the raise.
+- The reconcile ran inside the try, so a locked SQLite file - three containers
+  share it - discarded a grounded answer that had already been requested and
+  billed, and spent a second provider instead. Bookkeeping can no longer fail
+  the turn.
+- Only the last event's metadata was counted. The ADK loop is agentic and a
+  follow-up search arrives in its own event, so four queries were charged as
+  one - the direction that costs money. Counted across every event now, and
+  returned rather than held on the provider, which serves concurrent turns.
+
+Three more were about a ceiling that could be raised by accident:
+
+- `GOOGLE_SEARCH_MONTHLY_LIMIT` - the only thing between a mistake and $14 per
+  thousand - had no Settings field at all and was read straight from the
+  environment by the search subprocess. `=50000` in `.env` was accepted in
+  silence. It is a validated field now, and the subprocess clamps it to the
+  5,000 Google includes regardless of what it is told.
+- `GOOGLE_SEARCH_DAILY_LIMIT` accepted values below the ten-query reservation,
+  which refuses every call before it starts and reports "budget exhausted"
+  rather than "misconfigured" - a provider silently dead with nothing in the
+  log. The floor is the reservation now.
+- Nothing bounded the count written from provider metadata, so one malformed
+  response reporting nine thousand queries would have switched Google off for
+  the rest of the calendar month, recoverable only by hand. Capped at fifty,
+  with a warning.
+
+On the tapback path the design held up - the reservation-before-spend shape,
+the fail-closed judge, the once-only claim and the room-member check are all
+right - but two safety properties had no test. A tapback while the readiness
+judge is unreachable must do nothing *and* stay unconsumed, so an outage delays
+an acceptance rather than losing it; and a thumbs-down must never reach the
+judge at all. Both are pinned now.
+
+Also finished rather than shipped half-done: `frontend/pnpm-workspace.yaml`
+carried the literal placeholder pnpm writes for a human ("set this to true or
+false"). The answer is false - puppeteer arrives under the mermaid CLI, which
+`scripts/architecture-diagram.mjs` hands an explicit `executablePath`, so its
+bundled Chromium is never launched and letting the install script run would
+download 150MB nothing opens. `.pnpm-store/` is a package cache and is
+gitignored rather than committed. ADR 0004 now describes the counter it
+actually has, and says plainly that its privacy clause rests on unpaid-tier
+terms which must be re-read *before* billing is enabled, not after.
+
+## 2026-08-29 — Gemini grounding is metered by query, and the smaller worker wins
+
+- The paid project was tested instead of inferred from its pricing page:
+  `gemini-3.6-flash` returned HTTP 200, an answer, two search queries, and five
+  grounded sources through the direct API; the AniOS provider returned an
+  attributable `python.org` result. The earlier 429 described the project
+  before billing was linked, not its current entitlement.
+- The old 4,800 ceiling counted prompts, while Gemini 3 bills each non-empty
+  `webSearchQueries` entry. One observed prompt used two. AniOS now reserves ten
+  units atomically before a call, reconciles the daily and monthly SQLite
+  counters to Google's returned query count, retains the conservative hold
+  when a timeout makes usage unknowable, and records an unexpected overage so
+  all later work stops. The live patched acceptance moved both counters 0 → 1
+  for a response reporting one query and returned three official sources.
+- The environment guard found the monthly limit never reached the deployed MCP
+  child and the cache path had the same gap. Compose now supplies both settings
+  to every search-owning service, and the documented `inherit_env` includes
+  them. The focused configuration guard is 8/8 and the search/quota/provider
+  set is 37/37.
+- `gemini-3.1-flash-lite` replaces 3.6 as the retrieval-worker default. Across
+  matched Python, Federal Reserve, and Artemis questions it returned the same
+  current facts and official sources. On the two timed comparison cases it took
+  1.56/1.95 seconds instead of 3.25/7.96 and used one Google query each instead
+  of one/two. The full non-functional backend suite passed 2,092 tests with
+  four documented environment-dependent skips.
+
 ## 2026-08-29 — The browser is proven, and both its allowlists fail closed
 
 The Playwright MCP container is up and every gate in front of it was measured

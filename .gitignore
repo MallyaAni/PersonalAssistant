@@ -39,3 +39,7 @@ data/
 # Playwright run output, including diagram review screenshots.
 test-results/
 secrets/
+
+# pnpm's content-addressed package store. Created by an install in the
+# repository root; it is a cache of somebody else's tarballs, not source.
+.pnpm-store/

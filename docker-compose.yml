@@ -559,6 +559,8 @@ services:
       - BRAVE_SEARCH_MONTHLY_LIMIT=${BRAVE_SEARCH_MONTHLY_LIMIT:-900}
       - BRAVE_SEARCH_QUOTA_DB_PATH=${BRAVE_SEARCH_QUOTA_DB_PATH:-/app/data/search/brave_search_quota.sqlite3}
       - SEARCH_PROVIDER_ORDER=${SEARCH_PROVIDER_ORDER:-brave,google,tavily}
+      - SEARCH_CACHE_TTL_SECONDS=${SEARCH_CACHE_TTL_SECONDS:-1800}
+      - SEARCH_CACHE_DB_PATH=/app/data/search/search_cache.sqlite3
       - SEARCH_MCP_TOOL_NAME=${SEARCH_MCP_TOOL_NAME:-search_web}
       # Declared so they reach the internet MCP subprocess too, which
       # inherits SEARCH_* from this environment and does the actual
@@ -578,10 +580,11 @@ services:
       - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - GOOGLE_SEARCH_ENABLED=${GOOGLE_SEARCH_ENABLED:-false}
-      - GOOGLE_SEARCH_MODEL=${GOOGLE_SEARCH_MODEL:-gemini-3.6-flash}
+      - GOOGLE_SEARCH_MODEL=${GOOGLE_SEARCH_MODEL:-gemini-3.1-flash-lite}
       - GOOGLE_SEARCH_TIMEOUT_SECONDS=${GOOGLE_SEARCH_TIMEOUT_SECONDS:-30}
       - GOOGLE_SEARCH_MAX_OUTPUT_TOKENS=${GOOGLE_SEARCH_MAX_OUTPUT_TOKENS:-2048}
       - GOOGLE_SEARCH_DAILY_LIMIT=${GOOGLE_SEARCH_DAILY_LIMIT:-450}
+      - GOOGLE_SEARCH_MONTHLY_LIMIT=${GOOGLE_SEARCH_MONTHLY_LIMIT:-4800}
       - GOOGLE_SEARCH_QUOTA_DB_PATH=/app/data/search/google_search_quota.sqlite3
       - MCP_SERVERS_JSON=${MCP_SERVERS_JSON:-[]}
       - PRESENTATION_JOB_POLL_SECONDS=${PRESENTATION_JOB_POLL_SECONDS:-0.5}
@@ -679,6 +682,8 @@ services:
       - BRAVE_SEARCH_MONTHLY_LIMIT=${BRAVE_SEARCH_MONTHLY_LIMIT:-900}
       - BRAVE_SEARCH_QUOTA_DB_PATH=${BRAVE_SEARCH_QUOTA_DB_PATH:-/app/data/search/brave_search_quota.sqlite3}
       - SEARCH_PROVIDER_ORDER=${SEARCH_PROVIDER_ORDER:-brave,google,tavily}
+      - SEARCH_CACHE_TTL_SECONDS=${SEARCH_CACHE_TTL_SECONDS:-1800}
+      - SEARCH_CACHE_DB_PATH=/app/data/search/search_cache.sqlite3
       - SEARCH_MCP_TOOL_NAME=${SEARCH_MCP_TOOL_NAME:-search_web}
       # Declared so they reach the internet MCP subprocess too, which
       # inherits SEARCH_* from this environment and does the actual
@@ -717,8 +722,9 @@ services:
       - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - GOOGLE_SEARCH_ENABLED=${GOOGLE_SEARCH_ENABLED:-false}
-      - GOOGLE_SEARCH_MODEL=${GOOGLE_SEARCH_MODEL:-gemini-3.6-flash}
+      - GOOGLE_SEARCH_MODEL=${GOOGLE_SEARCH_MODEL:-gemini-3.1-flash-lite}
       - GOOGLE_SEARCH_DAILY_LIMIT=${GOOGLE_SEARCH_DAILY_LIMIT:-450}
+      - GOOGLE_SEARCH_MONTHLY_LIMIT=${GOOGLE_SEARCH_MONTHLY_LIMIT:-4800}
       - GOOGLE_SEARCH_QUOTA_DB_PATH=/app/data/search/google_search_quota.sqlite3
       # The sweep writes each find's description with the model, falling back to
       # a first-sentence extract when it cannot. Undeclared, LLM_BASE_URL
@@ -964,6 +970,8 @@ services:
       - BRAVE_SEARCH_MONTHLY_LIMIT=${BRAVE_SEARCH_MONTHLY_LIMIT:-900}
       - BRAVE_SEARCH_QUOTA_DB_PATH=${BRAVE_SEARCH_QUOTA_DB_PATH:-/app/data/search/brave_search_quota.sqlite3}
       - SEARCH_PROVIDER_ORDER=${SEARCH_PROVIDER_ORDER:-brave,google,tavily}
+      - SEARCH_CACHE_TTL_SECONDS=${SEARCH_CACHE_TTL_SECONDS:-1800}
+      - SEARCH_CACHE_DB_PATH=/app/data/search/search_cache.sqlite3
       - SEARCH_MCP_TOOL_NAME=${SEARCH_MCP_TOOL_NAME:-search_web}
       # Declared so they reach the internet MCP subprocess too, which
       # inherits SEARCH_* from this environment and does the actual
@@ -983,10 +991,11 @@ services:
       - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - GOOGLE_SEARCH_ENABLED=${GOOGLE_SEARCH_ENABLED:-false}
-      - GOOGLE_SEARCH_MODEL=${GOOGLE_SEARCH_MODEL:-gemini-3.6-flash}
+      - GOOGLE_SEARCH_MODEL=${GOOGLE_SEARCH_MODEL:-gemini-3.1-flash-lite}
       - GOOGLE_SEARCH_TIMEOUT_SECONDS=${GOOGLE_SEARCH_TIMEOUT_SECONDS:-30}
       - GOOGLE_SEARCH_MAX_OUTPUT_TOKENS=${GOOGLE_SEARCH_MAX_OUTPUT_TOKENS:-2048}
       - GOOGLE_SEARCH_DAILY_LIMIT=${GOOGLE_SEARCH_DAILY_LIMIT:-450}
+      - GOOGLE_SEARCH_MONTHLY_LIMIT=${GOOGLE_SEARCH_MONTHLY_LIMIT:-4800}
       - GOOGLE_SEARCH_QUOTA_DB_PATH=/app/data/search/google_search_quota.sqlite3
       - MCP_SERVERS_JSON=${MCP_SERVERS_JSON:-[]}
       - OTEL_ENABLED=${OTEL_ENABLED:-false}

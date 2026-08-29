@@ -704,8 +704,8 @@ def _apple_time(moment: datetime) -> int:
 #
 # Only the identifiers AniOS supplies are looked at, and only the reaction type
 # is returned. Tapbacks live in the same table as messages, distinguished by
-# `associated_message_type`: 2001 is a thumbs up and 2002 a thumbs down, while
-# 3001 and 3002 are those same reactions being removed again.
+# `associated_message_type`: 2000 is a heart, 2001 a thumbs up and 2002 a
+# thumbs down; the corresponding 3000-series values remove them.
 def read_tapbacks(
     config: BridgeConfig, guids: list[str]
 ) -> list[dict[str, object]]:
@@ -741,10 +741,12 @@ def read_tapbacks(
     try:
         rows = connection.execute(
             f"""
-            SELECT associated_message_guid, associated_message_type, date
-            FROM message
-            WHERE associated_message_type IN (2001, 2002, 3001, 3002)
-              AND ({clauses})
+            SELECT m.associated_message_guid, m.associated_message_type, m.date,
+                   h.id
+            FROM message m
+            LEFT JOIN handle h ON h.ROWID = m.handle_id
+            WHERE m.associated_message_type IN (2000, 2001, 2002, 3000, 3001, 3002)
+              AND ({clauses.replace("associated_message_guid", "m.associated_message_guid")})
             ORDER BY date ASC
             """,
             parameters,
@@ -757,19 +759,24 @@ def read_tapbacks(
     # Latest wins: someone who thumbs-ups and then removes it has no opinion,
     # and someone who switches from down to up has changed their mind.
     latest: dict[str, dict[str, object]] = {}
-    for associated, kind, when in rows:
+    allowed = config.allowed_recipients | load_grants(config)
+    for associated, kind, when, handle in rows:
         suffix = str(associated or "").split("/")[-1]
         guid = wanted.get(suffix)
         if guid is None:
             continue
-        if kind in (3001, 3002):
+        if kind in (3000, 3001, 3002):
             latest.pop(guid, None)
             continue
-        latest[guid] = {
+        item: dict[str, object] = {
             "message_guid": guid,
-            "reaction": "liked" if kind == 2001 else "disliked",
+            "reaction": {2000: "loved", 2001: "liked", 2002: "disliked"}[kind],
             "at": _apple_epoch(when),
         }
+        sender = normalize_recipient(str(handle or ""))
+        if sender and sender in allowed:
+            item["sender"] = sender
+        latest[guid] = item
     return list(latest.values())
 
 
@@ -1426,7 +1433,7 @@ def describe_incoming(config: BridgeConfig) -> dict[str, object]:
     }
 
 
-# Which of the given message bodies were thumbed up or down, by position.
+# Which of the given message bodies were hearted, thumbed up or down, by position.
 #
 # Matching on the body rather than on an identifier is the whole point. Apple
 # hands back no identifier at send time, the one this bridge looked up afterwards
@@ -1467,7 +1474,7 @@ def reactions_for_bodies(
             f"""
             SELECT associated_message_guid, associated_message_type, date
             FROM message
-            WHERE associated_message_type IN (2001, 2002, 3001, 3002)
+            WHERE associated_message_type IN (2000, 2001, 2002, 3000, 3001, 3002)
               AND ({clauses})
             ORDER BY date ASC
             """,
@@ -1485,12 +1492,12 @@ def reactions_for_bodies(
         index = by_guid.get(str(associated or "").split("/")[-1])
         if index is None:
             continue
-        if kind in (3001, 3002):
+        if kind in (3000, 3001, 3002):
             latest.pop(index, None)
             continue
         latest[index] = {
             "index": index,
-            "reaction": "liked" if kind == 2001 else "disliked",
+            "reaction": {2000: "loved", 2001: "liked", 2002: "disliked"}[kind],
             "at": _apple_epoch(when),
         }
     return list(latest.values())
@@ -1871,7 +1878,7 @@ def create_bridge(config: BridgeConfig) -> FastMCP:
 
     @server.tool()
     def read_reactions(bodies: list[str]) -> str:
-        """Report thumbs-up and thumbs-down tapbacks on messages this sent."""
+        """Report heart, thumbs-up and thumbs-down tapbacks on messages this sent."""
         # Answers positionally: "the third body you gave me was thumbed up".
         # The caller already knows what it sent, so nothing about any message
         # needs to come back — and asking by body rather than by identifier is
@@ -1881,7 +1888,7 @@ def create_bridge(config: BridgeConfig) -> FastMCP:
 
     @server.tool()
     def read_reactions_by_guid(message_guids: list[str]) -> str:
-        """Report thumbs-up and thumbs-down tapbacks on messages this sent."""
+        """Report heart, thumbs-up and thumbs-down tapbacks on messages this sent."""
         # Answers only about identifiers the caller already has, which are the
         # ones this bridge handed back when it sent them. It cannot be asked
         # "what has been said to you lately", no message text is read, and a Mac

@@ -377,11 +377,11 @@ Key settings are:
 | `SEARCH_MCP_SERVER_ID` | `internet` | Fixed server identity used after deterministic search routing |
 | `SEARCH_MCP_TOOL_NAME` | `search_web` | Fixed read-only MCP search tool name |
 | `GOOGLE_API_KEY` / `GEMINI_API_KEY` | none | Either key enables the isolated Google ADK research worker; never configure both unless they identify the same intended project |
-| `GOOGLE_SEARCH_MODEL` | `gemini-3.6-flash` | Request-scoped grounded research model; the configured main role remains the local final-answer model |
+| `GOOGLE_SEARCH_MODEL` | `gemini-3.1-flash-lite` | Low-cost request-scoped grounded research model; the configured main role remains the local final-answer model |
 | `GOOGLE_SEARCH_TIMEOUT_SECONDS` | `30` | Whole Google ADK research deadline before Tavily fallback |
 | `GOOGLE_SEARCH_MAX_OUTPUT_TOKENS` | `1024` | Bounded worker answer used only to build attributable result snippets |
-| `GOOGLE_SEARCH_DAILY_LIMIT` | `450` | Local Pacific-day safety cap; it does not guarantee provider quota or free access |
-| `GOOGLE_SEARCH_QUOTA_DB_PATH` | `data/search/google_search_quota.sqlite3` | SQLite counter containing provider/day/count only; Compose maps this into `searchdata` |
+| `GOOGLE_SEARCH_DAILY_LIMIT` | `450` | Local Pacific-day search-query cap; one Gemini 3 prompt may consume several units |
+| `GOOGLE_SEARCH_QUOTA_DB_PATH` | `data/search/google_search_quota.sqlite3` | SQLite counter containing provider/period/query count only; Compose maps this into `searchdata` |
 | `MCP_SERVERS_JSON` | `[]` | Operator-owned stdio/HTTP connections, local trust, and optional environment-name allowlists |
 | `MCP_LIST_TIMEOUT_SECONDS` | `30` | Bound for live catalogue and tool sessions |
 | `TOOL_SEARCH_MAX_RESULTS` | `5` | Maximum live-validated schemas exposed to the main model per turn |
@@ -978,9 +978,9 @@ To use the built-in free read-only servers and MCP-backed web search, configure:
 SEARCH_PROVIDER_NAME=mcp
 GOOGLE_API_KEY=
 GEMINI_API_KEY=
-GOOGLE_SEARCH_MODEL=gemini-3.6-flash
+GOOGLE_SEARCH_MODEL=gemini-3.1-flash-lite
 GOOGLE_SEARCH_DAILY_LIMIT=450
-MCP_SERVERS_JSON=[{"server_id":"local_utility","command":"python","args":["-m","backend.mcp.servers.local_utility"],"risk_classification":"read_only"},{"server_id":"internet","command":"python","args":["-m","backend.mcp.servers.internet"],"inherit_env":["SEARCH_API_KEY","SEARCH_BASE_URL","SEARCH_MAX_RESULTS","SEARCH_TIMEOUT_SECONDS","SEARCH_MAX_CONTENT_CHARS","SEARCH_MIN_SCORE","SEARCH_DEPTH","SEARCH_RESULT_CHARS","SEARCH_PAYLOAD_CHARS","GOOGLE_API_KEY","GEMINI_API_KEY","GOOGLE_SEARCH_MODEL","GOOGLE_SEARCH_TIMEOUT_SECONDS","GOOGLE_SEARCH_MAX_OUTPUT_TOKENS","GOOGLE_SEARCH_DAILY_LIMIT","GOOGLE_SEARCH_QUOTA_DB_PATH","BRAVE_SEARCH_API_KEY","BRAVE_SEARCH_MONTHLY_LIMIT","BRAVE_SEARCH_QUOTA_DB_PATH","SEARCH_PROVIDER_ORDER"],"risk_classification":"read_only"}]
+MCP_SERVERS_JSON=[{"server_id":"local_utility","command":"python","args":["-m","backend.mcp.servers.local_utility"],"risk_classification":"read_only"},{"server_id":"internet","command":"python","args":["-m","backend.mcp.servers.internet"],"inherit_env":["SEARCH_API_KEY","SEARCH_BASE_URL","SEARCH_MAX_RESULTS","SEARCH_TIMEOUT_SECONDS","SEARCH_MAX_CONTENT_CHARS","SEARCH_MIN_SCORE","SEARCH_DEPTH","SEARCH_RESULT_CHARS","SEARCH_PAYLOAD_CHARS","GOOGLE_API_KEY","GEMINI_API_KEY","GOOGLE_SEARCH_ENABLED","GOOGLE_SEARCH_MODEL","GOOGLE_SEARCH_TIMEOUT_SECONDS","GOOGLE_SEARCH_MAX_OUTPUT_TOKENS","GOOGLE_SEARCH_DAILY_LIMIT","GOOGLE_SEARCH_MONTHLY_LIMIT","GOOGLE_SEARCH_QUOTA_DB_PATH","BRAVE_SEARCH_API_KEY","BRAVE_SEARCH_MONTHLY_LIMIT","BRAVE_SEARCH_QUOTA_DB_PATH","SEARCH_PROVIDER_ORDER","SEARCH_CACHE_TTL_SECONDS","SEARCH_CACHE_DB_PATH"],"risk_classification":"read_only"}]
 ```
 
 The default example also registers the Compose `local-capabilities` sidecar:
@@ -1028,7 +1028,11 @@ history, user identity, personal memory, private documents, or image bytes to
 that boundary. Google's
 [unpaid-service terms](https://ai.google.dev/gemini-api/terms) say submitted
 content and responses may be used to improve products and may be human
-reviewed. The local default of 450 reservations/day is only a safety ceiling.
+reviewed. The provider reserves ten query units before each call, reconciles
+that hold to the non-empty `web_search_queries` in Google's response, and keeps
+the hold when a timeout makes the true usage unknowable. The local defaults of
+450 queries/day and 4,800/month leave a buffer but remain application-side
+safety ceilings.
 Check the current
 [Google pricing](https://ai.google.dev/gemini-api/docs/pricing) and the API
 project's rate-limit page before enabling the worker: Gemini 3 Search Grounding

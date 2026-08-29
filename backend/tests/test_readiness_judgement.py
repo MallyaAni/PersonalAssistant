@@ -21,12 +21,24 @@ class _Llm:
 
 @pytest.mark.asyncio
 async def test_the_fragments_are_numbered_under_the_previous_reply():
-    llm = _Llm({"complete": True, "needs_reply": True, "reason": "a question"})
+    llm = _Llm(
+        {
+            "complete": True,
+            "needs_reply": True,
+            "accepts_offer": False,
+            "reason": "a question",
+        }
+    )
     verdict = await judge_readiness(llm, "Thai or pizza on Friday?", ["ok so", "thai then?"])
     assert verdict == Readiness(True, True, "a question")
     ((messages, _tokens, schema, temperature),) = llm.calls
     assert temperature == 0.0
-    assert schema["required"] == ["complete", "needs_reply", "reason"]
+    assert schema["required"] == [
+        "complete",
+        "needs_reply",
+        "accepts_offer",
+        "reason",
+    ]
     assert messages[0]["role"] == "system" and "complete" in messages[0]["content"]
     user = messages[1]["content"]
     assert "Setting: a one-to-one text conversation." in user
@@ -36,7 +48,14 @@ async def test_the_fragments_are_numbered_under_the_previous_reply():
 
 @pytest.mark.asyncio
 async def test_a_group_setting_is_named():
-    llm = _Llm({"complete": True, "needs_reply": False, "reason": "chatter"})
+    llm = _Llm(
+        {
+            "complete": True,
+            "needs_reply": False,
+            "accepts_offer": False,
+            "reason": "chatter",
+        }
+    )
     await judge_readiness(llm, "", ["sounds good"], in_group=True)
     assert "Setting: a group chat with several people." in llm.calls[0][0][1]["content"]
     assert "previous message: (none)" in llm.calls[0][0][1]["content"]
@@ -44,7 +63,14 @@ async def test_a_group_setting_is_named():
 
 @pytest.mark.asyncio
 async def test_nothing_said_needs_no_model_and_no_reply():
-    llm = _Llm({"complete": True, "needs_reply": True, "reason": ""})
+    llm = _Llm(
+        {
+            "complete": True,
+            "needs_reply": True,
+            "accepts_offer": False,
+            "reason": "",
+        }
+    )
     verdict = await judge_readiness(llm, "x", ["", "   "])
     assert verdict.needs_reply is False and verdict.complete is True
     assert llm.calls == []
@@ -61,6 +87,15 @@ def test_unreadable_answers_fail_open():
     assert parse_readiness("not json") == FAIL_OPEN
     assert parse_readiness({"content": "{}"}) == FAIL_OPEN
     assert parse_readiness(None) == FAIL_OPEN
-    assert parse_readiness({"content": json.dumps({"complete": False, "needs_reply": True, "reason": "x" * 300})}) == Readiness(
-        False, True, "x" * 160
-    )
+    assert parse_readiness(
+        {
+            "content": json.dumps(
+                {
+                    "complete": False,
+                    "needs_reply": True,
+                    "accepts_offer": False,
+                    "reason": "x" * 300,
+                }
+            )
+        }
+    ) == Readiness(False, True, "x" * 160)

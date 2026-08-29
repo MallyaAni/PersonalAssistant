@@ -9,6 +9,7 @@ must refuse independently of whatever asked it to send.
 import base64
 import os
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -529,6 +530,44 @@ def _incoming_config(
         display_name=display_name,
         addresses=frozenset(normalize_recipient(a) for a in addresses),
     )
+
+
+# Apple's heart tapback is exposed for an exact GUID alongside the existing
+# thumbs, so conversational acceptance can use the reaction named in the plan.
+def test_a_heart_tapback_is_read_for_the_exact_sent_message(tmp_path):
+    from server import read_tapbacks
+
+    base = _incoming_config(tmp_path)
+    config = replace(base, messages_db=base.incoming_db)
+    db = sqlite3.connect(config.messages_db)
+    handle_id = db.execute(
+        "INSERT INTO handle (id) VALUES (?)", ("+15550100",)
+    ).lastrowid
+    db.execute(
+        "INSERT INTO message (guid, text, is_from_me, date) VALUES (?, ?, ?, ?)",
+        ("target-guid", "Want me to do that?", 1, _ns_ago(8)),
+    )
+    db.execute(
+        "INSERT INTO message (guid, handle_id, is_from_me, date,"
+        " associated_message_type, associated_message_guid)"
+        " VALUES (?, ?, ?, ?, ?, ?)",
+        (
+            "reaction-guid",
+            handle_id,
+            0,
+            _ns_ago(4),
+            2000,
+            "p:0/target-guid",
+        ),
+    )
+    db.commit()
+    db.close()
+
+    (reaction,) = read_tapbacks(config, ["target-guid"])
+    assert reaction["message_guid"] == "target-guid"
+    assert reaction["reaction"] == "loved"
+    assert reaction["sender"] == normalize_recipient("+15550100")
+    assert reaction["at"] is not None
 
 
 def test_incoming_reading_is_off_unless_the_operator_grants_it(monkeypatch, tmp_path):

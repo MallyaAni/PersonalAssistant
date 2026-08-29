@@ -104,7 +104,8 @@ rows. Everything the group owns lives under that `user_id`.
 - Burst judgement (`_collect`): every addressed text fragment - room or
   one-to-one - is appended to a pending record keyed by the reply address, and
   `POST /chat/readiness` (`services/readiness.py`, routing model, schema
-  `{complete, needs_reply, reason}`, `prompts/routing/readiness.md`) is asked
+  `{complete, needs_reply, accepts_offer, reason}`,
+  `prompts/routing/readiness.md`) is asked
   whether the person has finished and whether an answer is wanted. Not finished
   → keep listening; finished and wanted → one turn for the joined fragments;
   finished and unwanted ("thanks!") → no bubble - except that a reply to the
@@ -114,6 +115,18 @@ rows. Everything the group owns lives under that `user_id`.
   `IMESSAGE_CHAT_BURST_CAP_SECONDS` (45 s) is answered by the next poll. The
   judgement fails open to answering; `IMESSAGE_CHAT_READINESS_ENABLED=false`
   restores answer-every-message.
+- Positive tapbacks reuse that judgement without widening what the bridge can
+  read. Each sent Scout text bubble's GUID, body, account, destination, and room
+  context are held in a bounded seven-day Redis ledger. The worker calls
+  `read_reactions_by_guid` only with those GUIDs; ❤️/👍 becomes an ordinary
+  contextual "yes, do that" turn only when `accepts_offer=true`. Choices, open
+  questions, completed actions, answers, and social bubbles remain silent. A
+  Redis `SET NX` receipt consumes an accepted reaction once. Judge outage fails
+  closed and retries; it never guesses an external action. The bridge returns
+  a reactor address only when it is allowlisted. A room acceptance then maps
+  that address to a current member and replaces `speaker_user_id`; a missing,
+  unknown, or departed reactor is refused rather than borrowing the original
+  speaker's identity.
 
 ### Reply pipeline
 - `ConversationService._attach_group` puts the room on the turn context:
@@ -257,5 +270,6 @@ Unit: `test_imessage_bridge.py` (rooms: 19 cases), `test_imessage_group_worker.p
 | Delivery to the chat | built (`imessage_group` channel, task runner) |
 | Admin | built; routes tested |
 | Sweep journeys, docs, diagrams | built; eight group journeys; deploy #19 (cecb2f6, 2026-08-28) ran the whole sweep green with no gaps |
-| Pending-question and tapback triggers | not built - need a bridge tool that forwards one member's next message on request |
+| Pending-question trigger | not built - needs a scoped expectation for one member's next otherwise-unaddressed message |
+| Positive tapback trigger | candidate built 2026-08-29; bridge/worker/API 179/179 focused tests on the Mac (178 passed plus one expected macOS-only skip on Linux), readiness 33/33 and offered-search routing 1/1 on the real model; live Mac acceptance and deploy pending |
 | Manual acceptance on the Mac | 2026-08-28 in the operator's group "Groupie" (`chat308729799386740866`, both members approved): @mention forwarded, group provisioned, answered in the chat in 22 s; tap-and-hold reply forwarded and answered (late - the burst judge's fault, fixed); the weather answer was for "Here, Somalia" (fixed: the tool refuses a non-place, a room runs on the speaker's place). Re-test after deploy dd3cc92e: mention, thread reply, "thanks!" |

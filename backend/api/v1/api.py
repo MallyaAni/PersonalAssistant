@@ -127,7 +127,12 @@ async def chat_readiness(
     verdict = await service.judge_readiness(
         body.previous_reply, list(body.fragments), in_group=body.in_group, addressed_by=body.addressed_by
     )
-    return {"complete": verdict.complete, "needs_reply": verdict.needs_reply, "reason": verdict.reason}
+    return {
+        "complete": verdict.complete,
+        "needs_reply": verdict.needs_reply,
+        "accepts_offer": verdict.accepts_offer,
+        "reason": verdict.reason,
+    }
 
 
 async def _encode_sse(

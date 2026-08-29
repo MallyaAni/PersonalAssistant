@@ -155,6 +155,242 @@ async def test_an_unreachable_bridge_is_a_quiet_tick(monkeypatch):
     assert await worker.tick() == 0
 
 
+# A positive tapback on a bubble that offered work becomes one contextual turn,
+# and the handled receipt prevents the same persistent reaction running twice.
+@pytest.mark.asyncio
+async def test_a_positive_tapback_accepts_the_exact_scout_offer_once(monkeypatch):
+    sent: list[dict] = []
+    send_count = 0
+
+    # Emulate the three bridge calls this path uses: send, reactions, and inbox.
+    async def bridge(tool: str, arguments: dict) -> object:
+        nonlocal send_count
+        if tool == "read_reactions_by_guid":
+            return json.dumps(
+                {
+                    "reactions": [
+                        {
+                            "message_guid": arguments["message_guids"][0],
+                            "reaction": "liked",
+                        }
+                    ]
+                }
+            )
+        if tool == "read_messages":
+            return json.dumps({"messages": [], "cursor": 90})
+        sent.append(dict(arguments))
+        send_count += 1
+        return f"iMessage;-;00000000-0000-0000-0000-{send_count:012d}"
+
+    worker, conversed = _worker(
+        bridge, monkeypatch, accounts={}, replies={}
+    )
+    judged: list[tuple[str, str]] = []
+
+    # Preserve the exact target supplied to the semantic offer judgement.
+    async def readiness(
+        user_id,
+        reply_to,
+        fragments,
+        in_group,
+        addressed_by="",
+        previous_reply=None,
+    ):
+        judged.append((addressed_by, previous_reply))
+        return {
+            "complete": True,
+            "needs_reply": False,
+            "accepts_offer": True,
+            "available": True,
+        }
+
+    monkeypatch.setattr(worker, "_readiness", readiness)
+    await worker._deliver(
+        "+15550100",
+        TurnResult("Want me to find a few good Thai places?"),
+        user_id="ani.mallya",
+    )
+
+    assert await worker.tick() == 1
+    assert await worker.tick() == 0
+    assert judged == [("tapback", "Want me to find a few good Thai places?")]
+    assert conversed == [
+        (
+            "ani.mallya",
+            "Yes — do what you offered in this message: "
+            "“Want me to find a few good Thai places?”",
+        )
+    ]
+    assert len(sent) == 2
+
+
+# A heart on an ordinary answer is warmth, not authority to invent an action.
+@pytest.mark.asyncio
+async def test_a_positive_tapback_on_a_non_offer_stays_quiet(monkeypatch):
+    sent: list[dict] = []
+
+    # Return a heart for the only known bubble and an otherwise empty inbox.
+    async def bridge(tool: str, arguments: dict) -> object:
+        if tool == "read_reactions_by_guid":
+            return json.dumps(
+                {
+                    "reactions": [
+                        {
+                            "message_guid": arguments["message_guids"][0],
+                            "reaction": "loved",
+                        }
+                    ]
+                }
+            )
+        if tool == "read_messages":
+            return json.dumps({"messages": [], "cursor": 91})
+        sent.append(dict(arguments))
+        return "iMessage;-;11111111-1111-1111-1111-111111111111"
+
+    worker, conversed = _worker(bridge, monkeypatch, accounts={}, replies={})
+
+    # The semantic judge says this targeted weather answer offered no action.
+    async def readiness(*args, **kwargs):
+        return {
+            "complete": True,
+            "needs_reply": False,
+            "accepts_offer": False,
+            "available": True,
+        }
+
+    monkeypatch.setattr(worker, "_readiness", readiness)
+    await worker._deliver(
+        "+15550100",
+        TurnResult("Friday should be sunny, around 75."),
+        user_id="ani.mallya",
+    )
+
+    assert await worker.tick() == 0
+    assert conversed == []
+    assert sent == [{"to": "+15550100", "body": "Friday should be sunny, around 75."}]
+
+
+# A reaction is the one input that can start an outward action with no words in
+# it, so the judge being unreachable must mean "not yet", never "probably yes".
+# Ordinary text fails open - a person who wrote something gets an answer even
+# when the judgement is down - and that is exactly the wrong default here.
+@pytest.mark.asyncio
+async def test_a_tapback_does_nothing_while_the_judge_is_unreachable(monkeypatch):
+    sent: list[dict] = []
+
+    async def bridge(tool: str, arguments: dict) -> object:
+        if tool == "read_reactions_by_guid":
+            return json.dumps(
+                {
+                    "reactions": [
+                        {
+                            "message_guid": arguments["message_guids"][0],
+                            "reaction": "loved",
+                        }
+                    ]
+                }
+            )
+        if tool == "read_messages":
+            return json.dumps({"messages": [], "cursor": 93})
+        sent.append(dict(arguments))
+        return "iMessage;-;22222222-2222-2222-2222-222222222222"
+
+    worker, conversed = _worker(bridge, monkeypatch, accounts={}, replies={})
+
+    async def readiness(*args, **kwargs):
+        # Exactly what the worker returns when the backend cannot be reached.
+        return {
+            "complete": True,
+            "needs_reply": True,
+            "accepts_offer": False,
+            "available": False,
+        }
+
+    monkeypatch.setattr(worker, "_readiness", readiness)
+    await worker._deliver(
+        "+15550100",
+        TurnResult("Want me to book that for you?"),
+        user_id="ani.mallya",
+    )
+    sent.clear()
+
+    assert await worker.tick() == 0
+    assert conversed == []
+    assert sent == []
+
+    # And it is not consumed: the same heart is judged again next poll, so an
+    # acceptance is delayed by an outage rather than lost to one.
+    guid = next(iter(worker.redis.store))
+    assert not any(key.startswith("imessage:chat:tapback_handled") for key in worker.redis.store), (
+        guid,
+        sorted(worker.redis.store),
+    )
+
+
+# A thumbs-down is a person saying no. It must never be read as assent, and it
+# must not silently consume the bubble either.
+@pytest.mark.asyncio
+async def test_a_negative_tapback_is_not_an_acceptance(monkeypatch):
+    judged: list[tuple] = []
+    sent: list[dict] = []
+
+    async def bridge(tool: str, arguments: dict) -> object:
+        if tool == "read_reactions_by_guid":
+            return json.dumps(
+                {
+                    "reactions": [
+                        {
+                            "message_guid": arguments["message_guids"][0],
+                            "reaction": "disliked",
+                        }
+                    ]
+                }
+            )
+        if tool == "read_messages":
+            return json.dumps({"messages": [], "cursor": 94})
+        sent.append(dict(arguments))
+        return "iMessage;-;33333333-3333-3333-3333-333333333333"
+
+    worker, conversed = _worker(bridge, monkeypatch, accounts={}, replies={})
+
+    async def readiness(*args, **kwargs):
+        judged.append(args)
+        return {"complete": True, "needs_reply": True, "accepts_offer": True, "available": True}
+
+    monkeypatch.setattr(worker, "_readiness", readiness)
+    await worker._deliver(
+        "+15550100",
+        TurnResult("Want me to book that for you?"),
+        user_id="ani.mallya",
+    )
+    sent.clear()
+
+    assert await worker.tick() == 0
+    assert conversed == []
+    assert sent == []
+    # Not even asked: a negative reaction is settled before any model sees it,
+    # so a judge that answered "yes" to everything could not turn it into one.
+    assert judged == []
+
+
+# The global Redis key may be refreshed by later sends, but individual bubble
+# records still expire after seven days rather than accumulating indefinitely.
+@pytest.mark.asyncio
+async def test_the_outgoing_bubble_ledger_prunes_old_records(monkeypatch):
+    import time
+
+    bridge = _Bridge({"messages": [], "cursor": 92})
+    worker, _ = _worker(bridge, monkeypatch, accounts={}, replies={})
+    worker.redis.store["imessage:chat:outgoing_bubbles"] = json.dumps(
+        [
+            {"guid": "old", "at": time.time() - 8 * 24 * 3600},
+            {"guid": "new", "at": time.time()},
+        ]
+    )
+
+    assert [item["guid"] for item in await worker._outgoing_bubbles()] == ["new"]
+
+
 # The session boundary is a lull. The stored thread id carries a TTL and
 # every use renews it, so an active exchange stays one conversation and the
 # first text after a quiet day starts a new one - iMessage has no "new

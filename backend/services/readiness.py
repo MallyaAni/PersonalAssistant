@@ -1,9 +1,9 @@
-"""Has the person finished, and does it call for a reply?
+"""Has the person finished, does it call for a reply, or accept an offer?
 
 People text in fragments: "ok" / "thai then" / "friday?". A timer cannot
 tell a pause for thought from the end of a thought, and it was rejected for
 that reason (2026-08-28). This asks the routing model, with a schema, the
-two questions that decide what the worker does with what has arrived so
+judgements that decide what the worker does with what has arrived so
 far: is the person done saying what they mean, and does what they said want
 an answer. Not done: keep listening. Done and wanting one: answer the whole
 burst at once. Done and wanting none ("sounds good, thanks"): stay quiet.
@@ -27,9 +27,10 @@ _SCHEMA: dict[str, Any] = {
     "properties": {
         "complete": {"type": "boolean"},
         "needs_reply": {"type": "boolean"},
+        "accepts_offer": {"type": "boolean"},
         "reason": {"type": "string", "maxLength": 160},
     },
-    "required": ["complete", "needs_reply", "reason"],
+    "required": ["complete", "needs_reply", "accepts_offer", "reason"],
     "additionalProperties": False,
 }
 _MAX_TOKENS = 120
@@ -39,16 +40,22 @@ _PREVIOUS_CHARS = 600
 
 @dataclass(frozen=True, slots=True)
 class Readiness:
-    """The judgement: finished or not, and whether an answer is wanted."""
+    """Completion, reply need, and unambiguous acceptance of an offer."""
 
     complete: bool
     needs_reply: bool
     reason: str = ""
+    accepts_offer: bool = False
 
 
 # Fail open: when the model cannot be asked, the person is answered, which
 # is the behaviour before this judgement existed.
-FAIL_OPEN = Readiness(complete=True, needs_reply=True, reason="judgement unavailable")
+FAIL_OPEN = Readiness(
+    complete=True,
+    needs_reply=True,
+    reason="judgement unavailable",
+    accepts_offer=False,
+)
 
 
 # Judge what has arrived so far against the assistant's previous bubble.
@@ -70,6 +77,10 @@ async def judge_readiness(
         "reply": "The person sent this as a reply to the assistant's own message (tap-and-hold reply).",
         "mention": "The person mentioned the assistant by name to send this.",
         "name": "The person addressed the assistant by name.",
+        "tapback": (
+            "The person left a positive heart or thumbs-up tapback on exactly "
+            "the assistant message shown below."
+        ),
     }.get(addressed_by, "")
     messages = [
         {"role": "system", "content": load("routing/readiness")},
@@ -98,10 +109,16 @@ def parse_readiness(answer: Any) -> Readiness:
             payload = json.loads(payload)
         except ValueError:
             return FAIL_OPEN
-    if not isinstance(payload, dict) or "complete" not in payload or "needs_reply" not in payload:
+    if (
+        not isinstance(payload, dict)
+        or "complete" not in payload
+        or "needs_reply" not in payload
+        or "accepts_offer" not in payload
+    ):
         return FAIL_OPEN
     return Readiness(
         complete=bool(payload.get("complete")),
         needs_reply=bool(payload.get("needs_reply")),
         reason=str(payload.get("reason") or "")[:160],
+        accepts_offer=bool(payload.get("accepts_offer")),
     )

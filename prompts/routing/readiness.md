@@ -8,7 +8,8 @@ to each one answers a thought that is not finished. A timer cannot tell a
 pause from an ending, so the decision is made by meaning: is the person
 done, and does what they said want an answer. Added 2026-08-28 with group
 chats, where the same judgement also keeps the assistant from answering a
-room's every "sounds good".
+room's every "sounds good". Positive tapbacks add a third judgement: whether
+the exact bubble they target offered an action that "yes" unambiguously accepts.
 
 The two failure modes to hold in balance: replying too early (answering
 "ok so" before the question lands) and staying quiet when an answer was
@@ -38,10 +39,12 @@ case pinned, and the cap lowered from 90 s to 45 s.
 
 ===== PROMPT BELOW — everything under this line is sent to the model =====
 
-You are reading a text conversation and deciding two things about what the person has sent since the assistant's previous message. Read the fragments together as one thought in progress.
+You are reading a text conversation and deciding three things about what the person has sent since the assistant's previous message. Read the fragments together as one thought in progress.
 
 complete: true when the person has finished saying what they mean - the fragments, read together in order, form a whole statement, question, or answer. Judge the end of the last fragment, not the earlier ones: a lead-in ("ok so", "quick question", "two things") is completed by whatever follows it, so "ok so" followed by "can you find a thai place near dupont" is complete. false only when the thought is still open at the end of the last fragment: it ends mid-thought ("ok so", "what about", "and also"), it announces more that has not arrived yet, or it is a first word that clearly wants a continuation. Ordinary short messages are complete: "thai then", "friday?", "yes", "no thanks" are each finished thoughts. A fragment that ends with a question mark is a finished question, however it is worded ("what location are you looking?" is complete), and texting shorthand is finished too ("where r u", "u coming?").
 
-needs_reply: true when what they sent asks something, requests something, answers a question the assistant asked, decides something the assistant offered to act on, or otherwise expects the assistant to respond. false only when the fragments are a closing acknowledgement that expects nothing back - "ok", "thanks!", "sounds good", "great, see you then", "👍" - with no question, request, or decision inside them. A message that thanks and then asks is true. A bare emoji or reaction alone is false. In a group chat, a message that names another person as the one to answer it ("Jen, are you bringing Sam?") is that person's to answer, not the assistant's: needs_reply is false even though it is a complete question; a message that names nobody, or names the assistant, is for the assistant.
+needs_reply: true when what they sent asks something, requests something, answers a question the assistant asked, decides something the assistant offered to act on, or otherwise expects the assistant to respond. false only when the fragments are a closing acknowledgement that expects nothing back - "ok", "thanks!", "sounds good", "great, see you then", "👍" - with no question, request, or decision inside them. A message that thanks and then asks is true. A bare emoji or reaction alone normally needs no reply. In a group chat, a message that names another person as the one to answer it ("Jen, are you bringing Sam?") is that person's to answer, not the assistant's: needs_reply is false even though it is a complete question; a message that names nobody, or names the assistant, is for the assistant.
+
+accepts_offer: false for every ordinary text or reaction. It can be true only when the setting explicitly says this is a positive tapback on the exact assistant message shown. Then it means "yes, do that" when that message offered to perform a concrete action or asked for yes-or-no confirmation before acting, and only when "yes" answers it unambiguously. An offer stated as "I can do X if you want" is still an offer: when the only missing condition is the person's assent, the positive tapback supplies it. A choice, an open question, or a request for missing details is not accepted because "yes" does not supply the missing answer. A message that merely answered, stated a fact, joked, or expressed warmth offered nothing to accept. Whether such an ambiguous tapback might deserve a conversational clarification is irrelevant to accepts_offer: return false, because no action was authorized.
 
 reason: at most one short sentence.

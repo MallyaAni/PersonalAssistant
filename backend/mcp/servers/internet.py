@@ -2,6 +2,7 @@
 
 import json
 import os
+import sys
 
 import httpx
 
@@ -37,6 +38,31 @@ _RESULT_CHARS = int(os.getenv("SEARCH_RESULT_CHARS", "2500"))
 _MAX_SERIALIZED_RESULT_CHARS = int(os.getenv("SEARCH_PAYLOAD_CHARS", "24000"))
 
 
+# The month's ceiling, read from the environment and held under the allowance
+# Google includes.
+#
+# This subprocess reads its configuration from the environment rather than from
+# Settings, so the validation that guards the backend's boot does not reach
+# here. Clamped rather than trusted: past 5,000 queries a month grounded search
+# costs $14 per thousand, and the one place that decides whether to spend
+# should not be able to be told a number that bills. A value that cannot be
+# parsed falls back to the default rather than failing the turn.
+_INCLUDED_MONTHLY_QUERIES = 5_000
+
+
+def _monthly_limit() -> int:
+    try:
+        asked = int(os.getenv("GOOGLE_SEARCH_MONTHLY_LIMIT") or "4800")
+    except ValueError:
+        # No logger in this subprocess; stderr is what the parent captures.
+        print(
+            "internet: GOOGLE_SEARCH_MONTHLY_LIMIT is not a number; using 4800",
+            file=sys.stderr,
+        )
+        return 4_800
+    return max(1, min(asked, _INCLUDED_MONTHLY_QUERIES))
+
+
 # Compose the Google-first provider policy from operator-owned environment.
 def _build_search_provider() -> HybridSearchProvider:
     max_results = int(os.getenv("SEARCH_MAX_RESULTS", "5"))
@@ -45,16 +71,15 @@ def _build_search_provider() -> HybridSearchProvider:
         api_key=os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY"),
         enabled=os.getenv("GOOGLE_SEARCH_ENABLED", "false").strip().lower()
         in {"1", "true", "yes", "on"},
-        model=os.getenv("GOOGLE_SEARCH_MODEL", "gemini-3.6-flash"),
+        model=os.getenv("GOOGLE_SEARCH_MODEL", "gemini-3.1-flash-lite"),
         timeout_seconds=float(os.getenv("GOOGLE_SEARCH_TIMEOUT_SECONDS", "30")),
         max_results=max_results,
         max_content_chars=max_content_chars,
         max_output_tokens=int(os.getenv("GOOGLE_SEARCH_MAX_OUTPUT_TOKENS", "2048")),
-        # Two lines, not one: grounding is free to a monthly allowance
-        # (5,000 requests a month on Gemini 3.x as of 2026-08-29, then $14
-        # per 1,000), and a daily cap alone does not hold that - 450 a day
-        # is 13,500 a month. The monthly ceiling defaults below Google's
-        # free allowance so switching grounding on cannot bill by accident.
+        # Gemini 3 meters the non-empty web searches in grounding metadata,
+        # not prompts. The provider reserves before each call and reconciles
+        # both counters to that observed count. The 4,800 monthly ceiling
+        # leaves a buffer beneath Google's included 5,000-query allowance.
         quota=EveryQuota(
             SQLiteDailySearchQuota(
                 path=os.getenv(
@@ -70,7 +95,7 @@ def _build_search_provider() -> HybridSearchProvider:
                     "data/search/google_search_quota.sqlite3",
                 ),
                 provider="google-month",
-                monthly_limit=int(os.getenv("GOOGLE_SEARCH_MONTHLY_LIMIT", "4800")),
+                monthly_limit=_monthly_limit(),
             ),
         ),
     )
@@ -722,13 +747,14 @@ async def _google_meter() -> dict[str, object] | None:
 
     Grounding is unavailable on Google's free tier - a grounded call on a
     free-tier project returns 429 while a plain call on the same key
-    succeeds (measured 2026-08-29). With billing on, the first 5,000 a month
-    are free; this reports the local ceiling that keeps it under that.
+    succeeds (measured 2026-08-29). With billing on, the first 5,000 search
+    queries a month have no grounding surcharge; this reports AniOS's local
+    query count and buffered ceiling.
     """
     enabled = os.getenv("GOOGLE_SEARCH_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
     if not enabled or not (os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY") or "").strip():
         return None
-    monthly = int(os.getenv("GOOGLE_SEARCH_MONTHLY_LIMIT") or "4800")
+    monthly = _monthly_limit()
     daily = int(os.getenv("GOOGLE_SEARCH_DAILY_LIMIT") or "450")
     path = os.getenv("GOOGLE_SEARCH_QUOTA_DB_PATH") or "data/search/google_search_quota.sqlite3"
     used_month = await SQLiteMonthlySearchQuota(path, "google-month", monthly).used()
@@ -739,7 +765,7 @@ async def _google_meter() -> dict[str, object] | None:
         "remaining_this_month": max(0, monthly - used_month),
         "used_today": used_day,
         "daily_limit": daily,
-        "period": "this calendar month, held under Google's free grounding allowance",
+        "period": "this calendar month, counted from Google's grounding metadata",
     }
 
 

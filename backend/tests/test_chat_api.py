@@ -877,6 +877,18 @@ class RecordingImageRefinement:
         return {"id": "child-artifact", "status": "ready", "kind": "generated_image"}
 
 
+class StubOwnedImageArtifacts:
+    """Return controlled ready artifacts after the service re-checks ownership."""
+
+    # Keep the rows keyed exactly as the production owned lookup expects.
+    def __init__(self, rows) -> None:
+        self.rows = {row["id"]: row for row in rows}
+
+    # Return an offered row without introducing persistence into this test.
+    async def get_owned(self, user_id, artifact_id):
+        return self.rows.get(artifact_id)
+
+
 # The behaviour this replaced the dead end with: one confident match is edited
 # without the user selecting anything, and the reply names which picture it
 # chose so a wrong guess is visible in the same breath.
@@ -946,6 +958,12 @@ async def test_an_ambiguous_target_asks_which_one_and_edits_nothing():
             EditImageAction(instruction="make the jacket red")
         ),
         image_refinement=RefusingImageRefinement(),  # type: ignore[arg-type]
+        image_artifacts=StubOwnedImageArtifacts(  # type: ignore[arg-type]
+            [
+                {"id": "a", "status": "ready"},
+                {"id": "b", "status": "ready"},
+            ]
+        ),
         referent_resolver=StubReferentResolver([first, second]),  # type: ignore[arg-type]
     )
     service.image_referents = _StubSource([first, second])  # type: ignore[assignment]
@@ -966,6 +984,11 @@ async def test_an_ambiguous_target_asks_which_one_and_edits_nothing():
     assert "which of these" in text.casefold()
     assert "by the water" in text
     assert "night street" in text
+    image_events = [event for event in events if event["event"] == "image_matches"]
+    assert [item["id"] for item in image_events[0]["data"]["artifacts"]] == [
+        "a",
+        "b",
+    ]
 
 
 class _StubSource:

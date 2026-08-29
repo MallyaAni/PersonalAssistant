@@ -1,0 +1,12 @@
+# pnpm asks, per package, whether its install scripts may run. Left unanswered
+# it prompts, which stalls a non-interactive install - so the answer is written
+# down here rather than typed each time.
+#
+# puppeteer: false. It arrives under @mermaid-js/mermaid-cli, whose only job
+# here is rendering the architecture diagrams, and scripts/architecture-diagram.mjs
+# hands that CLI an explicit `executablePath` - Playwright's Chromium, or
+# whatever ARCHITECTURE_DIAGRAM_BROWSER names. Puppeteer's own bundled
+# Chromium is therefore never launched, and letting its install script run
+# would download about 150MB that nothing opens.
+allowBuilds:
+  puppeteer: false

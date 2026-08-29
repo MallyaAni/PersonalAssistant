@@ -241,6 +241,96 @@ async def test_a_reply_to_the_assistants_bubble_is_always_answered(monkeypatch):
     assert bridge.sent == [{"to": ROOM_GUID, "body": "Groupies forever 🎉"}]
 
 
+# A tapback in a room runs as the group and retains the speaker/membership
+# context from the Scout turn that produced the targeted bubble.
+@pytest.mark.asyncio
+async def test_a_positive_tapback_accepts_a_group_offer_in_the_room(monkeypatch):
+    sent: list[dict] = []
+    send_count = 0
+
+    # Return one persistent heart on the first sent room bubble.
+    async def bridge(tool: str, arguments: dict) -> object:
+        nonlocal send_count
+        if tool == "read_reactions_by_guid":
+            return json.dumps(
+                {
+                    "reactions": [
+                        {
+                            "message_guid": arguments["message_guids"][0],
+                            "reaction": "loved",
+                            "sender": "5550100",
+                        }
+                    ]
+                }
+            )
+        if tool == "read_messages":
+            return json.dumps({"messages": [], "cursor": 51})
+        sent.append(dict(arguments))
+        send_count += 1
+        return f"iMessage;-;22222222-2222-2222-2222-{send_count:012d}"
+
+    worker, conversed, _ = _worker(
+        bridge, monkeypatch, ACCOUNTS, {}, group=GROUP
+    )
+    room = {
+        "chat_name": "Lunch crew",
+        "speaker_user_id": "u-jen",
+        "members": ["u-ani", "u-jen"],
+        "addressed_by": "name",
+        "assistant_name": "Scout",
+    }
+
+    # This exact bubble offered an action, so the semantic gate admits it.
+    async def readiness(*args, **kwargs):
+        return {
+            "complete": True,
+            "needs_reply": False,
+            "accepts_offer": True,
+            "available": True,
+        }
+
+    monkeypatch.setattr(worker, "_readiness", readiness)
+    await worker._deliver(
+        ROOM_GUID,
+        TurnResult("Want me to find a table for Friday?"),
+        user_id=GROUP.user_id,
+        room=room,
+    )
+
+    assert await worker.tick() == 1
+    assert conversed[0]["user_id"] == GROUP.user_id
+    assert conversed[0]["room"] == {
+        **room,
+        "speaker_user_id": "u-ani",
+        "addressed_by": "tapback",
+    }
+    assert conversed[0]["text"].startswith("Yes — do what you offered")
+    assert sent[-1]["to"] == ROOM_GUID
+
+
+# A reaction in a room has authority only when its sender maps to one of that
+# room's approved accounts; missing or unknown identity never borrows another
+# member's speaker context.
+@pytest.mark.asyncio
+async def test_an_unknown_group_reactor_cannot_accept_an_offer(monkeypatch):
+    bridge = _Bridge({"messages": [], "cursor": 52})
+    worker, _, _ = _worker(bridge, monkeypatch, ACCOUNTS, {}, group=GROUP)
+    room = {
+        "chat_name": "Lunch crew",
+        "speaker_user_id": "u-jen",
+        "members": ["u-ani", "u-jen"],
+    }
+    record = {
+        "user_id": GROUP.user_id,
+        "reply_to": ROOM_GUID,
+        "body": "Want me to find a table?",
+        "room": room,
+    }
+
+    assert await worker._tapback_context({"sender": "5550199"}, record) is None
+    assert await worker._tapback_context({}, record) is None
+
+
 @pytest.mark.asyncio
 async def test_a_fragment_past_the_cap_is_answered_on_arrival(monkeypatch):
     import asyncio

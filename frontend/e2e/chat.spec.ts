@@ -1041,8 +1041,7 @@ test('an unknown event mid-stream does not kill the answer', async ({ page }) =>
       'data: {}',
       '',
       '',
-    ].join('
-')
+    ].join('\n')
     await route.fulfill({
       status: 200,
       contentType: 'text/event-stream',
@@ -2861,6 +2860,64 @@ test('shows a recalled image as a compact thumbnail that expands on click', asyn
   await expandedCard.getByRole('button', { name: 'Collapse' }).click()
   await expect(collapsed).toBeVisible()
   await expect(page.getByLabel('Image: Uploaded image', { exact: true })).not.toBeVisible()
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// Verify an ambiguous unselected edit renders the owned choices instead of
+// failing the stream contract or silently choosing a picture to change.
+test('asks which owned image to edit when an unselected reference is ambiguous', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  const firstId = '35353535-3535-4535-8535-353535353535'
+  const secondId = '36363636-3636-4636-8636-363636363636'
+  const conversationId = '37373737-3737-4737-8737-373737373737'
+  const question = 'Which of these did you mean: the jacket by the water, or the jacket at night?'
+  let chatBody: Record<string, unknown> = {}
+
+  for (const artifactId of [firstId, secondId]) {
+    await page.route(
+      `http://localhost:8000/api/v1/artifacts/ani.mallya/${artifactId}/content`,
+      route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
+    )
+  }
+  await page.route('http://localhost:8000/api/v1/chat', async route => {
+    chatBody = route.request().postDataJSON() as Record<string, unknown>
+    const artifacts = [
+      imageArtifactRecord('uploaded_image', firstId, conversationId),
+      imageArtifactRecord('uploaded_image', secondId, conversationId),
+    ]
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body: [
+        'event: start',
+        `data: ${JSON.stringify({ trace_id: 'ambiguous-edit-trace', conversation_id: conversationId })}`,
+        '',
+        'event: image_matches',
+        `data: ${JSON.stringify({ artifacts })}`,
+        '',
+        'event: delta',
+        `data: ${JSON.stringify({ content: question })}`,
+        '',
+        'event: done',
+        'data: {}',
+        '',
+        '',
+      ].join('\n'),
+    })
+  })
+
+  await page.goto('/')
+  const textarea = page.getByLabel('Message DeepMatter')
+  await textarea.fill('make the jacket red')
+  await page.getByRole('button', { name: 'Send message' }).click()
+
+  await expect(page.getByText(question, { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Expand image: Uploaded image' })).toHaveCount(2)
+  await expect(textarea).toBeEnabled()
+  expect(chatBody).toMatchObject({
+    query: 'make the jacket red',
+    active_image_artifact_id: null,
+  })
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 

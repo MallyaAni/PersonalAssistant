@@ -27,7 +27,12 @@ async def test_the_endpoint_returns_the_judgement(monkeypatch):
             headers={"Authorization": f"Bearer {token}"},
         )
     assert response.status_code == 200, response.text
-    assert response.json() == {"complete": False, "needs_reply": True, "reason": "unfinished"}
+    assert response.json() == {
+        "complete": False,
+        "needs_reply": True,
+        "accepts_offer": False,
+        "reason": "unfinished",
+    }
     assert asked == [("Thai?", ["ok so"], True, "reply")]
 
 

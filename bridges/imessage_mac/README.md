@@ -85,8 +85,10 @@ python3 server.py
 ## Reading reactions
 
 Scout sends a digest as one message per find so each can carry a tapback — the
-👍 or 👎 you get by long-pressing a bubble. That is the only way it learns what
-someone actually liked, rather than what they said they already knew.
+👍 or 👎 you get by long-pressing a bubble. That is how discovery learns what
+someone actually liked. Ordinary Scout conversation also queries reactions by
+the exact GUIDs of its recent bubbles: ❤️/👍 can accept an action that bubble
+offered, after the backend's semantic judgement.
 
 Apple provides no callback when a reaction is left, so the only way to see one is
 to read the Messages database. That needs **Full Disk Access** for whatever runs
@@ -115,8 +117,14 @@ than taking on trust:
   compare them and discarded; only positions, a reaction type and a timestamp
   come back. (`read_messages` below is the one tool that returns bodies, under
   its own separate grant, and only for allowlisted senders);
-- only 👍 and 👎 are reported. The other four tapbacks are ambiguous about
-  whether someone wants more of something.
+- GUID-based conversational reactions may also return the normalized reactor
+  address, but only when it is already on this Mac's recipient/grant allowlist;
+  this lets a group turn run as the member who actually reacted without making
+  the reaction tool an address-listing endpoint;
+- ❤️, 👍 and 👎 are reported. Discovery deliberately records only 👍/👎 as
+  preference feedback; conversational acceptance considers only ❤️/👍 and only
+  after matching the exact sent GUID and judging that the bubble offered one
+  action that "yes" answers unambiguously. The other tapbacks remain ignored.
 
 ### Reacting from a phone, in a thread with yourself
 

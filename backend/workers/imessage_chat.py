@@ -68,6 +68,10 @@ _PENDING_INDEX_KEY = "imessage:chat:pending"
 # The last bubble sent to an address, for the readiness judgement's "what
 # the assistant said before these fragments".
 _LAST_REPLY_KEY = "imessage:chat:last_reply:{to}"
+# Recent text bubbles Scout sent, keyed together so one bounded bridge query can
+# ask only whether those exact messages received a tapback.
+_OUTGOING_BUBBLES_KEY = "imessage:chat:outgoing_bubbles"
+_TAPBACK_HANDLED_KEY = "imessage:chat:tapback_handled:{guid}"
 # One operator alert per room per day about a room the assistant must stay
 # quiet in.
 _ROOM_ALERT_KEY = "imessage:chat:room_alert:{digest}"
@@ -78,6 +82,7 @@ _ROOM_ALERT_KEY = "imessage:chat:room_alert:{digest}"
 _PARKED_KEY = "imessage:chat:parked"
 _SEEN_TTL_SECONDS = 3 * 24 * 3600
 _BUBBLE_TTL_SECONDS = 7 * 24 * 3600
+_MAX_OUTGOING_BUBBLES = 100
 _PENDING_TTL_SECONDS = 24 * 3600
 _ROOM_ALERT_TTL_SECONDS = 24 * 3600
 _PARKED_TTL_SECONDS = 24 * 3600
@@ -252,7 +257,8 @@ class IMessageChatWorker:
             return 0
         # What earlier polls could not answer, first: a person who asked
         # during a restart is answered before anyone who asked after it.
-        answered_late = await self._retry_parked()
+        answered = await self._handle_tapbacks()
+        answered += await self._retry_parked()
         try:
             answer = await self.invoke_tool(
                 settings.IMESSAGE_CHAT_READ_TOOL,
@@ -261,9 +267,8 @@ class IMessageChatWorker:
         except Exception:
             # An unreachable Mac or a bridge without the tool means "nothing
             # this time", exactly as it does for reactions.
-            return 0
+            return answered
         payload = _payload(answer)
-        answered = answered_late
         for message in payload.get("messages", []):
             answered += await self._handle_message(message)
         new_cursor = payload.get("cursor")
@@ -342,7 +347,7 @@ class IMessageChatWorker:
             await self._remember_image(user_id, pinned)
         answered = 0
         try:
-            await self._deliver(reply_to, turn)
+            await self._deliver(reply_to, turn, user_id=user_id)
             answered = 1
             # A picture the turn generated becomes the thread's
             # picture-in-view, exactly as the web UI marks it active after
@@ -441,7 +446,7 @@ class IMessageChatWorker:
             await self._remember_image(group.user_id, pinned)
         answered = 0
         try:
-            await self._deliver(reply_to, turn)
+            await self._deliver(reply_to, turn, user_id=group.user_id, room=room)
             answered = 1
             if turn.images:
                 await self._remember_image(group.user_id, turn.images[-1].artifact_id)
@@ -597,13 +602,20 @@ class IMessageChatWorker:
     # The judgement itself, through the backend so the routing model is
     # asked the way every other judgement is. Fails open to "answer it".
     async def _readiness(
-        self, user_id: str, reply_to: str, fragments: list[str], in_group: bool, addressed_by: str = ""
+        self,
+        user_id: str,
+        reply_to: str,
+        fragments: list[str],
+        in_group: bool,
+        addressed_by: str = "",
+        previous_reply: str | None = None,
     ) -> dict:
-        previous = ""
-        try:
-            previous = await self.redis.get(_LAST_REPLY_KEY.format(to=reply_to)) or ""
-        except Exception:
-            pass
+        previous = previous_reply or ""
+        if previous_reply is None:
+            try:
+                previous = await self.redis.get(_LAST_REPLY_KEY.format(to=reply_to)) or ""
+            except Exception:
+                pass
         token = issue_user_token(user_id, ttl_seconds=120, scopes=["chat"])
         try:
             async with httpx.AsyncClient(timeout=30) as client:
@@ -620,10 +632,193 @@ class IMessageChatWorker:
                 )
                 response.raise_for_status()
                 verdict = response.json()
-            return {"complete": bool(verdict.get("complete", True)), "needs_reply": bool(verdict.get("needs_reply", True))}
+            return {
+                "complete": bool(verdict.get("complete", True)),
+                "needs_reply": bool(verdict.get("needs_reply", True)),
+                "accepts_offer": bool(verdict.get("accepts_offer", False)),
+                "available": True,
+            }
         except Exception as exc:
             logger.warning("imessage_chat_readiness_failed: %s: %s", type(exc).__name__, str(exc)[:200])
-            return {"complete": True, "needs_reply": True}
+            return {
+                "complete": True,
+                "needs_reply": True,
+                "accepts_offer": False,
+                "available": False,
+            }
+
+    # Turn positive tapbacks on known Scout bubbles into contextual acceptance.
+    # The readiness model first proves the exact bubble offered an action; a
+    # heart on an answer or joke is recorded as handled and gets no reply.
+    async def _handle_tapbacks(self) -> int:
+        records = await self._outgoing_bubbles()
+        if not records:
+            return 0
+        try:
+            answer = await self.invoke_tool(
+                settings.IMESSAGE_CHAT_REACTIONS_TOOL,
+                {"message_guids": [str(item["guid"]) for item in records]},
+            )
+        except Exception:
+            return 0
+        by_guid = {_bare_guid(str(item.get("guid") or "")): item for item in records}
+        answered = 0
+        for reaction in _payload(answer).get("reactions", []):
+            if isinstance(reaction, dict):
+                answered += await self._handle_tapback(reaction, by_guid)
+        return answered
+
+    # Handle one reported reaction, returning one only when it produced a reply.
+    async def _handle_tapback(
+        self, reaction: dict, by_guid: dict[str, dict]
+    ) -> int:
+        kind = str(reaction.get("reaction") or "")
+        if kind not in {"loved", "liked"}:
+            return 0
+        guid = _bare_guid(str(reaction.get("message_guid") or ""))
+        record = by_guid.get(guid)
+        if not guid or record is None or await self._tapback_was_handled(guid):
+            return 0
+        context = await self._tapback_context(reaction, record)
+        if context is None:
+            return 0
+        user_id, reply_to, body, room = context
+        verdict = await self._readiness(
+            user_id,
+            reply_to,
+            ["❤️" if kind == "loved" else "👍"],
+            room is not None,
+            "tapback",
+            previous_reply=body,
+        )
+        # Unlike ordinary text, a reaction must fail closed: an unavailable
+        # judge is retried next poll, never guessed into an external action.
+        if not verdict.get("available", True) or not await self._claim_tapback(guid):
+            return 0
+        if not verdict.get("accepts_offer"):
+            return 0
+        text = _tapback_acceptance(body)
+        status: list[str] = []
+        try:
+            turn = await self._with_ack(
+                self._converse(user_id, text, status=status, room=room),
+                reply_to,
+                status,
+            )
+            await self._deliver(reply_to, turn, user_id=user_id, room=room)
+            return 1
+        except BackendUnavailable:
+            await self._release_tapback(guid)
+        except Exception as exc:
+            logger.warning(
+                "imessage_chat_tapback_failed: %s: %s",
+                type(exc).__name__,
+                str(exc)[:200],
+            )
+        return 0
+
+    # Validate who reacted and return the account/context that is allowed to act.
+    # A group reaction must name an approved current member; its turn belongs to
+    # that reactor, never to whoever happened to elicit Scout's earlier offer.
+    async def _tapback_context(
+        self, reaction: dict, record: dict
+    ) -> tuple[str, str, str, dict | None] | None:
+        user_id = str(record.get("user_id") or "")
+        reply_to = str(record.get("reply_to") or "")
+        body = str(record.get("body") or "")
+        room = record.get("room") if isinstance(record.get("room"), dict) else None
+        if not user_id or not reply_to or not body:
+            return None
+        sender = str(reaction.get("sender") or "")
+        if room is not None:
+            reactor = await self._account_for(sender) if sender else None
+            if reactor is None or reactor not in set(room.get("members") or []):
+                return None
+            room = {**room, "speaker_user_id": reactor, "addressed_by": "tapback"}
+        elif sender:
+            reactor = await self._account_for(sender)
+            if reactor != user_id:
+                return None
+        return user_id, reply_to, body, room
+
+    # Read the bounded ledger of text bubbles whose reactions may still matter.
+    async def _outgoing_bubbles(self) -> list[dict]:
+        try:
+            stored = await self.redis.get(_OUTGOING_BUBBLES_KEY)
+        except Exception:
+            return []
+        if not stored:
+            return []
+        try:
+            records = json.loads(stored)
+        except ValueError:
+            return []
+        cutoff = time.time() - _BUBBLE_TTL_SECONDS
+        shaped = [
+            item
+            for item in records
+            if isinstance(item, dict) and float(item.get("at") or 0) >= cutoff
+        ]
+        return shaped[-_MAX_OUTGOING_BUBBLES:]
+
+    # Remember one successfully sent bubble with only the context needed to
+    # interpret a later tapback on that exact message.
+    async def _remember_outgoing_bubble(
+        self, guid: str, body: str, reply_to: str, user_id: str, room: dict | None
+    ) -> None:
+        key = _bare_guid(guid)
+        if not key or not body or not user_id:
+            return
+        records = [
+            item
+            for item in await self._outgoing_bubbles()
+            if _bare_guid(str(item.get("guid") or "")) != key
+        ]
+        records.append(
+            {
+                "guid": guid,
+                "body": body[:4000],
+                "reply_to": reply_to,
+                "user_id": user_id,
+                "room": room,
+                "at": time.time(),
+            }
+        )
+        try:
+            await self.redis.set(
+                _OUTGOING_BUBBLES_KEY,
+                json.dumps(records[-_MAX_OUTGOING_BUBBLES:]),
+                ex=_BUBBLE_TTL_SECONDS,
+            )
+        except Exception:
+            return
+
+    # Whether this bubble's positive tapback has already been consumed.
+    async def _tapback_was_handled(self, guid: str) -> bool:
+        try:
+            return bool(await self.redis.get(_TAPBACK_HANDLED_KEY.format(guid=guid)))
+        except Exception:
+            return False
+
+    # Claim one tapback before acting so two overlapping ticks cannot run it twice.
+    async def _claim_tapback(self, guid: str) -> bool:
+        try:
+            claimed = await self.redis.set(
+                _TAPBACK_HANDLED_KEY.format(guid=guid),
+                "1",
+                ex=_BUBBLE_TTL_SECONDS,
+                nx=True,
+            )
+            return bool(claimed)
+        except Exception:
+            return False
+
+    # Release a claim only when no backend accepted the turn, so it can retry.
+    async def _release_tapback(self, guid: str) -> None:
+        try:
+            await self.redis.delete(_TAPBACK_HANDLED_KEY.format(guid=guid))
+        except Exception:
+            return
 
     # Append a fragment to the address's pending burst and return the burst.
     async def _pending_add(
@@ -685,7 +880,7 @@ class IMessageChatWorker:
                 self._converse(user_id, text, status=status, room=room), reply_to, status
             )
             try:
-                await self._deliver(reply_to, turn)
+                await self._deliver(reply_to, turn, user_id=user_id, room=room)
                 answered += 1
             except Exception as exc:
                 logger.warning("imessage_chat_burst_reply_failed: %s: %s", type(exc).__name__, str(exc)[:200])
@@ -801,7 +996,12 @@ class IMessageChatWorker:
                     await self._notice_parked(guid, reply_to)
                 continue
             try:
-                await self._deliver(reply_to, turn)
+                await self._deliver(
+                    reply_to,
+                    turn,
+                    user_id=str(record.get("user_id") or ""),
+                    room=record.get("room"),
+                )
                 answered += 1
             except Exception as exc:
                 logger.warning("imessage_chat_parked_reply_failed: %s: %s", type(exc).__name__, str(exc)[:200])
@@ -825,8 +1025,16 @@ class IMessageChatWorker:
     # One turn's answer onto the thread: text flattened at the send boundary
     # and delivered the way a person texts a long thought - a few separate
     # bubbles at a typing pace - then any picture the turn made, as a photo
-    # after the words that introduce it.
-    async def _deliver(self, reply_to: str, turn: "TurnResult") -> None:
+    # after the words that introduce it. Each text bubble's returned GUID is
+    # retained so a later positive tapback can refer to that exact bubble.
+    async def _deliver(
+        self,
+        reply_to: str,
+        turn: "TurnResult",
+        *,
+        user_id: str = "",
+        room: dict | None = None,
+    ) -> None:
         # The second wall. The backend fences the reply as it is written;
         # this checks again with what came over the wire, so an address
         # nobody vouched for cannot reach the Mac even if that fence were
@@ -851,10 +1059,15 @@ class IMessageChatWorker:
         for position, piece in enumerate(bubbles(plain_text(turn.reply))):
             if position:
                 await asyncio.sleep(_BUBBLE_PACE_SECONDS)
-            await self.invoke_tool(
+            answer = await self.invoke_tool(
                 settings.DISCOVERY_IMESSAGE_TOOL,
                 {"to": reply_to, "body": piece},
             )
+            guid = _message_guid(answer)
+            if guid:
+                await self._remember_outgoing_bubble(
+                    guid, piece, reply_to, user_id, room
+                )
         for image in turn.images:
             await asyncio.sleep(_BUBBLE_PACE_SECONDS)
             extension = "jpg" if "jpeg" in image.media_type else "png"
@@ -1506,6 +1719,12 @@ def _loads(text: str) -> dict:
 # guid the bridge itself matches on everywhere else.
 def _bare_guid(guid: str) -> str:
     return (guid or "").split(";")[-1].split("/")[-1].strip()
+
+
+# Turn a native positive tapback into the explicit words the ordinary
+# conversation path can resolve and route against the targeted Scout bubble.
+def _tapback_acceptance(body: str) -> str:
+    return f'Yes — do what you offered in this message: “{body}”'
 
 
 # The bridge answers a JSON string inside the MCP result, in the same shapes

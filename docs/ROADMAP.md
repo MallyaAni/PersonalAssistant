@@ -266,13 +266,13 @@ scale without coupling the system to the current RTX 5080 or planned DGX Spark.
   same set by a functional test against the real model. Long-duration accuracy
   drift, contexts above the verified 8k workstation profile, and DGX Spark
   behavior remain unmeasured;
-- `VERIFIED` (Tavily runtime; Google deterministic): deterministic
+- `VERIFIED` (Tavily and paid Google runtime): deterministic
   privacy-preserving MCP internet research with an isolated Google ADK worker,
   Tavily fallback, explicit dual-provider verification, local non-content
   quota protection, visible tool/search status, and provider-attributed source
-  cards. Live Google requests are `FAILED` for the tested free-only account:
-  Gemini 2.5 models reject new users and Gemini 3 Search Grounding returns zero
-  available account quota without the required plan;
+  cards. The paid project returned attributable Gemini 3 grounding through
+  both the direct API and AniOS provider on 2026-08-29; free-only projects still
+  return zero Gemini 3 Search Grounding quota;
 - coding, finance, and scheduling capabilities;
 - reflection and multi-agent orchestration;
 - `VERIFIED`: trace-correlated tool execution with visible running/success/refusal/failure status; durable audit and consequential-call approval UI remain planned.
@@ -306,11 +306,12 @@ Internet-search policy and acceptance gates:
 
 Search routing, query normalization, privacy enforcement, read-only MCP
 execution, Google-first/Tavily-fallback policy, explicit cross-checking,
-cloud-worker context isolation, non-content daily quota, untrusted result
+cloud-worker context isolation, non-content daily/monthly query quota, untrusted result
 isolation, visible status, and provider source provenance are implemented.
 Deterministic coverage verifies both provider branches; direct API and real
-Chromium acceptance verify Tavily fallback. A real Google-grounded request is
-`UNVERIFIED` until an operator configures a key. The local models have no unrestricted
+Chromium acceptance verify Tavily fallback. Paid Google grounding is verified
+through the live provider; browser acceptance after enabling it remains
+`UNVERIFIED`. The local models have no unrestricted
 network access. Review/approval when a useful query needs materially identifying
 context, broader PII classification, durable redacted decision audit,
 distributed quota coordination, and claim-level citation evaluation remain
@@ -371,9 +372,11 @@ Safe tool-descriptor embeddings, approved preference/sanitized outcome memory, l
   meaning before a reply. Design and proof: `docs/GROUP_CHATS_ARCHITECTURE.md`.
 - `UNVERIFIED`: a live send into a real group from the Mac (`chat id`
   AppleScript form resolves; the operator's acceptance chat is the first
-  real send). `PLANNED`: two more triggers - the next message from someone
-  the assistant asked a question, and a tapback on its bubble - which need
-  a bridge tool that forwards one member's next message on request.
+  real send). `VERIFIED` (candidate, live acceptance pending): ❤️/👍 on an exact
+  Scout bubble accepts it only when the semantic judge says it unambiguously
+  offered one action; choices and social reactions stay quiet, and accepted
+  work re-enters the ordinary router. `PLANNED`: the next message from someone
+  the assistant asked a question as an otherwise-unaddressed trigger.
 
 ### Ambient local discovery and notification — IN PROGRESS
 

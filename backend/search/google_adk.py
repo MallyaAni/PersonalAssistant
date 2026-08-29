@@ -18,6 +18,9 @@ from backend.search.types import SearchResult, SearchResults
 logger = logging.getLogger(__name__)
 _APP_NAME = "anios-google-research"
 _ANONYMOUS_USER_ID = "public-research"
+# Hold enough capacity for a normal multi-query Gemini 3 grounding turn before
+# it starts. The response replaces this reservation with its observed count.
+_QUERY_RESERVATION = 10
 
 
 class ResearchRunner(Protocol):
@@ -76,6 +79,33 @@ def _source_segments(metadata: Any) -> dict[int, list[str]]:
             if isinstance(raw_index, int):
                 mapped.setdefault(raw_index, []).append(segment.strip())
     return mapped
+
+
+# The most one response is allowed to charge.
+#
+# The count comes from the provider, and the counter it is written to has no
+# upper bound: a single response reporting nine thousand queries would write
+# nine thousand and switch Google off for the rest of the calendar month, with
+# no log line and manual SQL as the only way back. A prompt that genuinely ran
+# more searches than this is a runaway either way, and the ceiling makes the
+# failure loud instead of durable.
+_MAX_OBSERVED_QUERIES = 50
+
+
+# Count non-empty search queries using the same response field Google bills.
+def _billable_search_query_count(metadata: Any) -> int:
+    queries = getattr(metadata, "web_search_queries", None) or []
+    observed = sum(1 for query in queries if isinstance(query, str) and query.strip())
+    if observed > _MAX_OBSERVED_QUERIES:
+        logger.warning(
+            "Google reported %d search queries for one response; charging %d",
+            observed,
+            _MAX_OBSERVED_QUERIES,
+        )
+        return _MAX_OBSERVED_QUERIES
+    # Grounded sources without usable query text stay charged conservatively;
+    # empty provider metadata must never make possible usage disappear.
+    return max(1, observed)
 
 
 # Convert Google grounding metadata into bounded, attributable web results.
@@ -151,11 +181,13 @@ class GoogleADKSearchProvider(SearchProvider):
     ) -> SearchResults:
         if not self.is_enabled():
             raise RuntimeError("Google Search Grounding is not configured.")
-        # Reserved before the call so concurrent requests cannot overshoot the
-        # budget, and returned below whenever no usable result was produced.
-        await self.quota.consume()
+        # A Gemini 3 prompt may execute several separately billed searches.
+        # Reserve before the call so concurrent requests cannot race the cap,
+        # then replace the reservation with Google's observed query count.
+        await self.quota.consume(count=_QUERY_RESERVATION)
         bounded = max(1, min(max_results or self.max_results, self.max_results))
         session_id = str(uuid.uuid4())
+        request_started = False
         try:
             runner = self.runner_factory(self.model, self.max_output_tokens)
             try:
@@ -164,12 +196,22 @@ class GoogleADKSearchProvider(SearchProvider):
                     user_id=_ANONYMOUS_USER_ID,
                     session_id=session_id,
                 )
-                answer, metadata = await asyncio.wait_for(
+                request_started = True
+                answer, metadata, billable = await asyncio.wait_for(
                     self._run_research(runner, session_id, query),
                     timeout=self.timeout_seconds,
                 )
             finally:
                 await runner.close()
+            # An answer with no grounding metadata is a request that came back
+            # without searching, which Google bills nothing for. Retaining the
+            # whole ten-query reservation for it - as this did until the review
+            # on 2026-08-29 - burns the month in 480 such turns and leaves the
+            # meter permanently wrong. Charged the same conservative single
+            # unit that empty metadata gets a few lines above, so the two paths
+            # agree, and reconciled *before* the raise.
+            observed = max(1, billable) if metadata is not None else 1
+            await self._reconcile(observed)
             if metadata is None:
                 raise RuntimeError("Google research returned no grounding metadata.")
             results = _grounded_results(
@@ -181,9 +223,12 @@ class GoogleADKSearchProvider(SearchProvider):
             if not results:
                 raise RuntimeError("Google research returned no attributable sources.")
         except Exception:
-            # A refused or failed attempt spent no provider quota, so the local
-            # budget must not record one either.
-            await self.quota.release()
+            # Factory/session failures before the model request spend nothing.
+            # Once a request starts, a timeout or malformed response may still
+            # be billable, so retain its conservative reservation unless the
+            # provider returned enough metadata to reconcile it exactly.
+            if not request_started:
+                await self.quota.release(count=_QUERY_RESERVATION)
             raise
         return SearchResults(
             query=query,
@@ -191,15 +236,39 @@ class GoogleADKSearchProvider(SearchProvider):
             provider="google",
         )
 
+
+    # Replace the reservation with what Google says it actually ran.
+    #
+    # Never allowed to fail the turn. The counter lives in SQLite shared by
+    # three containers, so a locked database is an ordinary event - and losing
+    # a grounded answer that has already been requested and billed, because
+    # the bookkeeping write lost a race, is the worst of both outcomes.
+    async def _reconcile(self, observed: int) -> None:
+        try:
+            await self.quota.reconcile(_QUERY_RESERVATION, observed)
+        except Exception:
+            logger.warning(
+                "Google quota reconcile failed; the reservation stands",
+                exc_info=True,
+            )
+
     # Collect the terminal answer and latest grounding metadata from ADK events.
     async def _run_research(
         self,
         runner: ResearchRunner,
         session_id: str,
         query: str,
-    ) -> tuple[str, Any | None]:
+    ) -> tuple[str, Any | None, int]:
         answer = ""
         grounding_metadata = None
+        # Counted across every event and returned, not held on the instance:
+        # one provider serves concurrent turns, and instance state would let
+        # two searches bill each other. The ADK loop is agentic - a follow-up
+        # search arrives in a second model turn with its own metadata - and
+        # keeping only the newest charged one query for four, the direction
+        # that costs money. Attribution still comes from the last event's
+        # chunks; merging those is a separate change.
+        billable = 0
         message = types.Content(role="user", parts=[types.Part(text=query)])
         async for event in runner.run_async(
             user_id=_ANONYMOUS_USER_ID,
@@ -209,6 +278,7 @@ class GoogleADKSearchProvider(SearchProvider):
             metadata = getattr(event, "grounding_metadata", None)
             if metadata is not None:
                 grounding_metadata = metadata
+                billable += _billable_search_query_count(metadata)
             is_final = getattr(event, "is_final_response", None)
             if callable(is_final) and is_final():
                 candidate = _event_text(event)
@@ -216,4 +286,4 @@ class GoogleADKSearchProvider(SearchProvider):
                     answer = candidate
         if not answer:
             logger.warning("Google research completed without terminal answer text")
-        return answer, grounding_metadata
+        return answer, grounding_metadata, billable

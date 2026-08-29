@@ -37,7 +37,8 @@ the final user response.
    application policy decides whether internet research is allowed and
    privacy-screens the query before any provider call.
 2. The primary optional research provider is a request-scoped Google ADK
-   `Agent` using `gemini-3.6-flash` and the native `google_search` tool.
+   `Agent` using the configured low-cost Gemini Flash-Lite model and the native
+   `google_search` tool.
 3. Every Google call uses a new in-memory single-turn session with prior
    contents disabled. The worker receives only the minimized public query under
    a constant anonymous worker ID. It receives no AniOS user/conversation ID,
@@ -51,11 +52,16 @@ the final user response.
    provider. Explicit "verify", "cross-check", "double-check", or corroboration
    language runs each configured provider once and URL-deduplicates the merged
    sources.
-6. A SQLite counter reserves Google calls atomically across short-lived stdio
-   MCP processes. It stores only provider, Pacific calendar date, and count in
-   a dedicated volume. The default limit is 450 calls/day as a local safety
-   ceiling; it does not guarantee provider quota or free access. AniOS never
-   enables billing or a paid fallback automatically.
+6. A SQLite counter reserves Google **search queries** - not prompts -
+   atomically across short-lived stdio MCP processes. One Gemini 3 prompt may
+   run several separately billed searches, so each call holds a ten-query
+   reservation before it leaves and reconciles it against the response's own
+   `web_search_queries`; an outcome that cannot be known keeps the
+   reservation, and no single response may charge more than fifty. It stores
+   only provider, period, and count in a dedicated volume. The defaults are
+   450 queries/day and 4,800/month, both local safety ceilings beneath the
+   5,000 queries a month Google includes; neither guarantees provider quota or
+   free access. AniOS never enables billing or a paid fallback automatically.
 7. Provider attribution survives provider output, compact MCP JSON, local
    validation, SSE, and browser source cards. Scores are nullable because
    Google grounding metadata does not expose Tavily-style relevance scores.
@@ -81,7 +87,13 @@ Costs and risks:
 - Google and Tavily remain external trust boundaries and can observe the
   screened query plus network metadata;
 - Google's unpaid-service terms permit product-improvement use and potential
-  human review, so only non-sensitive public queries are acceptable;
+  human review, so only non-sensitive public queries are acceptable. That is
+  the posture this ADR was written under and it still holds, because billing
+  is not enabled: `GOOGLE_SEARCH_ENABLED` is false and grounding is not
+  available on the unpaid tier at all (a grounded call returns 429 while a
+  plain one on the same key succeeds - measured 2026-08-29). Enabling billing
+  changes which terms govern, and this clause must be re-read against the paid
+  terms before that switch is thrown rather than after;
 - the local quota is a protective budget, not proof of Google's current
   server-side allowance, which can change;
 - SQLite coordinates the current local/Compose deployment but is not a

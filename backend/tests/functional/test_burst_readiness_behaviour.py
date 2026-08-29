@@ -72,6 +72,31 @@ async def test_a_reply_to_the_room_but_not_to_the_assistant_wants_nothing(struct
     assert verdict.needs_reply is False, verdict
 
 
+# A positive tapback accepts an action offered by the exact bubble it targets,
+# but remains a quiet social reaction when that bubble offered nothing to do.
+@pytest.mark.parametrize(
+    "previous, expected",
+    [
+        ("Want me to search for a few places near you?", True),
+        ("I can move that reminder to Friday if you want.", True),
+        ("Should I move the reminder to Friday?", True),
+        ("I can send you the full list if you'd like.", True),
+        ("Friday should be sunny, with a high around 75.", False),
+        ("Haha, that really is a tiny hat 😄", False),
+        ("Which sounds better to you, Thai or pizza?", False),
+        ("Done — I moved the reminder to Friday.", False),
+        ("Here are three good Thai places near Dupont Circle.", False),
+        ("Thanks for telling me — that helps.", False),
+    ],
+)
+async def test_a_positive_tapback_only_accepts_an_offer(structured_llm, previous, expected):
+    verdict = await judge_readiness(
+        structured_llm, previous, ["❤️"], addressed_by="tapback"
+    )
+    assert verdict.complete is True, verdict
+    assert verdict.accepts_offer is expected, verdict
+
+
 async def test_the_whole_run_holds_a_floor(structured_llm):
     right = 0
     for previous, fragments, complete, needs_reply in CASES:
