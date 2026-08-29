@@ -2,6 +2,19 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-29 — The search harness gets the same one retry the sweep has
+
+- Deploy #24 paged the operator for a single judged wobble: the harness
+  asked whether an events answer carried a map link, one reply left it out,
+  and the pinned suite for that same format passed on its own. The harness
+  now re-runs once before paging, exactly as the journey sweep does - cheap
+  now that a repeated question comes from the answer cache.
+- Recorded rather than churned on: the "What's on" pack still swallows a
+  dinner recommendation. Measured with the packs offered - 4/4 chose the
+  skill without the clock, 1/4 with it; moving the exclusion to the end of
+  the description made it 2/4, so that edit was reverted. The next step is a
+  semantic shortlist for skills, measured, not another sentence.
+
 ## 2026-08-29 — Grounding, priced honestly, and a ceiling so switching it on cannot bill
 
 - Google's own pricing page settles what our 429 showed: **Grounding with

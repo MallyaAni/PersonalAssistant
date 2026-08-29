@@ -205,6 +205,20 @@ if $post; then
         # in a model judgement, not a regression: recorded here as flaky, and
         # the operator is not paged for it. Seven deploys in a day each paged
         # for one such journey (2026-08-28). A journey that fails twice pages.
+        # The harness is judged by a model too, and it has no --only, so a
+        # single flaky scenario re-runs the whole set once. That is cheap now
+        # that repeated questions are served from the answer cache, and it
+        # stops one wobble paging the operator at midnight (deploy #24: the
+        # events format check wanted a map link and one reply left it out,
+        # while the pinned suite for that format passed).
+        if [[ $status -ne 0 && $check == backend.cli.exercise_search_scenarios ]]; then
+            echo "retrying the search harness once"
+            if timeout 1200 "${compose[@]}" exec -T backend python -m "$check" 2>&1 | tail -8; then
+                echo "$check: passed on retry (flaky)"
+                summary+=("$short OK after retry (flaky)")
+                continue
+            fi
+        fi
         if [[ $status -ne 0 && $check == backend.cli.sweep_journeys ]]; then
             names="$(grep -o "gaps=\[.*\]" <<<"$output" | tail -1 | python3 -c "import sys,ast; raw=sys.stdin.read().strip(); print('\n'.join(ast.literal_eval(raw.split('=',1)[1])) if raw else '')" 2>/dev/null || true)"
             if [[ -n "$names" ]]; then

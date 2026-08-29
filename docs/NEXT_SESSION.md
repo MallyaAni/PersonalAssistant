@@ -68,11 +68,19 @@ wake-on-LAN, so **a powered-off Spark needs someone to press the button.**
 - **`BRAVE_SEARCH_MONTHLY_LIMIT` is now a spend cap, not a free allowance**
   (900). The operator has not chosen that number under the new billing -
   ask before assuming it is right.
-- **"group: dinner suggestion uses a member's taste" is now flaky rather
-  than wrong**: the tightened "What's on" description fixed it in the
-  measurements and in deploys #21-#22, and it missed once in #23 and passed
-  on the retry. If it fails twice in one deploy, it is back - measure the
-  pack description with the evaluator rather than adding words to it.
+- **"group: dinner suggestion uses a member's taste" is flaky, and wording
+  will not close it.** Measured 2026-08-29 on "where should the two of us go
+  for dinner on friday?" with the shipped packs offered: **4/4 chose the
+  "What's on" skill without the clock, 1/4 with it**; moving the exclusion to
+  the end of the pack description made it 2/4 (worse), so that edit was
+  reverted. The pack is offered on every turn, and a dinner question that
+  names a day looks like a listing request to the router. The fix is
+  structural, not another sentence: shortlist skills semantically the way
+  MCP tools are shortlisted, so a pack is only offered when it plausibly
+  matches - then measure with `evaluate_tool_selection` and the matrix
+  before keeping it. Both deploys since absorbed it with the retry, so it
+  pages nobody, but a real dinner question still gets weekend listings
+  sometimes.
 
 ## Group chats — BUILT AND GATED 2026-08-28, live acceptance pending
 
