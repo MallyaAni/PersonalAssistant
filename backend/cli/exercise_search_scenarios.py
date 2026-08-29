@@ -141,7 +141,12 @@ class Scenarios:
                     and "haven't checked live" not in lowered and not r["error"],
                     self.trail(r),
                 )
-                priced = any(mark in lowered for mark in ("price not listed", "free", "$"))
+                # "price: entry IDR 250k", "price not listed", or a bare
+                # "free"/"$25" from the prose path. Since 2026-08-29 a flagged
+                # events turn is rendered by code and always states one or the
+                # other (backend/core/events_listing.py); the older markers
+                # stay for the prose fallback.
+                priced = any(mark in lowered for mark in ("price", "free", "$"))
                 self.verdict(
                     "1b events are presented in the What's on format",
                     "maps.google.com/?q=" in lowered and priced,

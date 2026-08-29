@@ -2,6 +2,30 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-29 — An events turn is answered by code, and one tool call means one
+
+The typed events path from earlier today is now wired to the turn. On a turn
+the ranker judges to be events, the listing rendered from checked records *is*
+the reply: the model is not asked to write it and cannot alter it. When the
+extraction finds nothing, the model writes it as before, behind the link fence,
+so this is an improvement on a flagged turn and never a cliff.
+
+- The price is always stated - "price: entry IDR 250k" or "price not listed".
+  A listing that silently omits it reads as free.
+- "Today" and "Tomorrow" are the person's day, not UTC's, which at 9 PM eastern
+  is already the next one.
+- `docs/EVENTS_ARCHITECTURE.md` and
+  [ADR 0017](adr/0017-a-reply-may-only-say-what-something-else-stated.md)
+  record the path and the decision, with a status table naming what is not
+  built: the calendar offer and the booking tool.
+
+And one bug found by reading the inference engine's own request schema rather
+than by waiting for an incident: it defaults `parallel_tool_calls` to true, and
+the selector read `tool_calls[0]` and dropped the rest without a word. A turn
+where the model asked for two things did one of them, invisibly. The request
+now pins a single call, so the engine's grammar decides it, and if more than
+one ever arrives the drop is logged with both names.
+
 ## 2026-08-29 — Every stored turn now says when it was said
 
 A group was told that an ice-cream run set the previous evening was happening

@@ -470,6 +470,22 @@ class MainActionSelector:
         calls = message.get("tool_calls")
         if not calls or not isinstance(calls, list):
             return None
+        if len(calls) > 1:
+            # The request pins `parallel_tool_calls: False` (core/llm.py), so
+            # the engine's grammar should make this unreachable. Said out loud
+            # rather than assumed: for as long as this line took only the
+            # first call and said nothing, a turn that asked for two things
+            # did one of them invisibly.
+            logger.warning(
+                "The model returned %d tool calls; taking the first (%s) and dropping %s",
+                len(calls),
+                (calls[0].get("function") or {}).get("name") if isinstance(calls[0], dict) else "?",
+                [
+                    (c.get("function") or {}).get("name")
+                    for c in calls[1:]
+                    if isinstance(c, dict)
+                ],
+            )
         call = calls[0]
         function = call.get("function") if isinstance(call, dict) else None
         name = function.get("name") if isinstance(function, dict) else None

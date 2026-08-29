@@ -112,8 +112,14 @@ def _clock(value: time) -> str:
     return f"{hour}{meridiem}" if value.minute == 0 else f"{hour}:{value.minute:02d}{meridiem}"
 
 
+# Always labelled, and always present. A listing that simply omits the price
+# when a page did not give one reads as free; and the post-deploy harness looks
+# for a price statement as its evidence that the events shape was applied
+# (backend/cli/exercise_search_scenarios.py), which it can only do if there is
+# always one to find.
 def _price(event: ListedEvent) -> str:
-    return event.price_text.strip() if event.price_text.strip() else "price not listed"
+    stated = event.price_text.strip()
+    return f"price: {stated}" if stated else "price not listed"
 
 
 # What did not make the listing, and why. Silence here would read as "that is

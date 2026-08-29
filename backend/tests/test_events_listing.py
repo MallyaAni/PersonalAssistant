@@ -77,9 +77,12 @@ def test_an_event_with_no_clock_time_says_so_rather_than_inventing_one():
     assert "12am" not in text and "0:00" not in text
 
 
-def test_a_price_nobody_published_is_named_as_missing():
-    text = render_listing(Extraction((_potato(),)), NOW)
-    assert "price not listed" in text
+def test_a_price_is_always_stated_one_way_or_the_other():
+    # A listing that simply omits the price when a page gave none reads as
+    # free. Both shapes are labelled so a reader - and the post-deploy
+    # harness - can always find the statement.
+    assert "price not listed" in render_listing(Extraction((_potato(),)), NOW)
+    assert "price: free before 6pm" in render_listing(Extraction((_lawn(),)), NOW)
 
 
 def test_events_are_grouped_under_the_day_they_happen():

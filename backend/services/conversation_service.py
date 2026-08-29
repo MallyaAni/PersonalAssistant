@@ -395,6 +395,10 @@ def _rerank_question(question: str, place: str) -> str:
 # Whether this request's search results were judged to be events, set by the
 # research path for the reply's presentation. Per task, like the limit.
 _results_were_events: ContextVar[bool] = ContextVar("results_were_events", default=False)
+# The typed events pulled out of those results, when there were any. Carried
+# the same way and for the same reason: the research path finds them and the
+# reply path renders them, with the whole turn's state in between.
+_events_found: ContextVar[Any] = ContextVar("events_found", default=None)
 # The assistant's previous reply in this conversation, for anything that has
 # to resolve "this" - the task picker first. Set per request.
 _previous_assistant_said: ContextVar[str] = ContextVar("previous_assistant_said", default="")
@@ -2357,7 +2361,30 @@ class ConversationService:
                     # Events are presented the agreed way whatever route
                     # produced them - the What's on format for everyone.
                     if _results_were_events.get():
-                        context["events_format"] = True
+                        # When the events could be typed, the listing is
+                        # written by code and the model is not asked for it -
+                        # a model given raw snippets is how a venue's opening
+                        # hours became an event's start time on 2026-08-29.
+                        # When they could not, the model writes it as before,
+                        # told how by the events format block, behind the
+                        # link fence. One or the other, never both.
+                        found = _events_found.get()
+                        listing = ""
+                        if found is not None and found.events:
+                            from backend.core.events_listing import render_listing
+
+                            # The person's clock, so "Today" and "Tomorrow"
+                            # mean their day rather than UTC's - which at 9 PM
+                            # eastern is already the next one.
+                            listing = render_listing(found, context.get("local_now"))
+                        if listing:
+                            context["events_listing"] = listing
+                            _trace(
+                                "events",
+                                f"listed:{len(found.events)} dropped:{found.dropped}",
+                            )
+                        else:
+                            context["events_format"] = True
                     # Fares get the trip shape first and every price labelled
                     # for what it is - the operator's Rome/Amalfi answer.
                     if _results_were_travel.get():
@@ -2527,6 +2554,27 @@ class ConversationService:
                 verdict["events"],
             )
             _results_were_events.set(verdict["events"])
+            if verdict["events"]:
+                # Typed here, where the results and the ranker's verdict are
+                # both in hand, so the reply path renders records rather than
+                # reading prose. Every failure leaves it None and the turn
+                # falls back to the model writing the listing, which the link
+                # fence still guards (backend/core/event_extraction.py).
+                from backend.core.event_extraction import extract_events
+
+                try:
+                    found = await extract_events(self.llm, gathered)
+                except Exception:
+                    logger.warning("Event extraction failed; keeping the prose listing", exc_info=True)
+                    found = None
+                _events_found.set(found)
+                if found is not None:
+                    logger.info(
+                        "Trace %s typed %d events (%d dropped)",
+                        trace_id,
+                        len(found.events),
+                        found.dropped,
+                    )
             _results_were_travel.set(verdict["travel"])
             _results_off_subject.set(not verdict["on_subject"])
             if not verdict["on_subject"]:
@@ -3975,31 +4023,55 @@ class ConversationService:
         # ranker flags the results, and it did not flag that turn.
         fence = _link_fence(context)
 
-        async for _namespace, event in self.assistant_graph.astream(
-            seed,
-            stream_mode="custom",
-            subgraphs=True,
-            context=TurnDeps(llm=self.llm),
-        ):
-            # The wire shape. Everything a node emits is already a
-            # ChatStreamEvent, so this relays rather than translates.
-            if "event" in event:
-                if event["event"] == "delta":
-                    fenced = fence.feed(event["data"]["content"])
-                    if not fenced:
-                        continue
-                    response_chunks.append(fenced)
-                    yield {"event": "delta", "data": {"content": fenced}}
+        # An events listing is written by code, from records whose every field
+        # some page actually stated, so the model is not asked to write it and
+        # cannot alter it. This is the difference between a rule the prompt
+        # asks for and one the turn cannot break: on 2026-08-29 a listing
+        # reached a phone with five invented map links and a venue's opening
+        # hours where a start time goes, and no instruction would have caught
+        # either. Only turns the ranker judged to be events reach here, and
+        # only when the extraction found something; everything else streams
+        # from the model as before, behind the same fence.
+        listing = str(context.get("events_listing") or "")
+        if listing:
+            # Written by code, from records whose every field some page
+            # actually stated, so the model is neither asked for the listing
+            # nor able to alter it. Everything after this branch - the fence's
+            # tail, the save, the proposals - is the ordinary path, so a turn
+            # answered this way is stored and traced like any other.
+            logger.info("Trace %s answering with the rendered events listing", trace_id)
+            for line in listing.splitlines(keepends=True):
+                fenced = fence.feed(line)
+                if not fenced:
                     continue
-                yield event
-                continue
-            # The shape the single node used before C3. Kept for one commit so
-            # a revert of either side alone still streams.
-            if event.get("type") == "message.delta":
-                fenced = fence.feed(event["content"])
-                if fenced:
-                    response_chunks.append(fenced)
-                    yield {"event": "delta", "data": {"content": fenced}}
+                response_chunks.append(fenced)
+                yield {"event": "delta", "data": {"content": fenced}}
+        else:
+            async for _namespace, event in self.assistant_graph.astream(
+                seed,
+                stream_mode="custom",
+                subgraphs=True,
+                context=TurnDeps(llm=self.llm),
+            ):
+                # The wire shape. Everything a node emits is already a
+                # ChatStreamEvent, so this relays rather than translates.
+                if "event" in event:
+                    if event["event"] == "delta":
+                        fenced = fence.feed(event["data"]["content"])
+                        if not fenced:
+                            continue
+                        response_chunks.append(fenced)
+                        yield {"event": "delta", "data": {"content": fenced}}
+                        continue
+                    yield event
+                    continue
+                # The shape the single node used before C3. Kept for one
+                # commit so a revert of either side alone still streams.
+                if event.get("type") == "message.delta":
+                    fenced = fence.feed(event["content"])
+                    if fenced:
+                        response_chunks.append(fenced)
+                        yield {"event": "delta", "data": {"content": fenced}}
         # Whatever the model was still writing when it stopped.
         tail = fence.flush()
         if tail:

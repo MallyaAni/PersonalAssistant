@@ -108,6 +108,16 @@ class OpenAICompatibleInferenceProvider(InferenceProvider):
             "messages": messages,
             "tools": tools,
             "tool_choice": "auto",
+            # One call, decided by the engine's grammar rather than by us
+            # throwing the rest away. The server defaults this to true, and
+            # `_extract_call` reads `tool_calls[0]` and drops the remainder
+            # silently (main_action_selector.py) - so a turn where the model
+            # asked for two things quietly did one of them, with nothing in
+            # any log to say so. This turn is a single routing decision; if
+            # multi-step work is ever wanted here it needs a design, not a
+            # default. (2026-08-29, found by reading the engine's own request
+            # schema rather than from an incident, which is the cheaper way.)
+            "parallel_tool_calls": False,
             # Tool selection is a bounded application decision, not creative
             # prose. Leaving this unset used the runtime's sampling default and
             # made one unchanged request alternate among search, delegation and
