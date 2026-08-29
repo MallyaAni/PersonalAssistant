@@ -2,6 +2,22 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-28 — The reply model gets the follow-up reading too
+
+- Live in the group: "what's your favorite ice cream?" was answered, then
+  "based on what you know about us what do you think we will like" drew
+  nights out matched to the roster's interests instead of flavours. The
+  follow-up resolver's one reading of "this/that/what we'd like" reached
+  the router, the search rounds and the task picker - never the reply
+  model, which in a room has a roster pulling it elsewhere. The reading is
+  now attached in the one context funnel every branch passes through
+  (`_mark_turn`) and rendered last in the turn context; `Resolution.as_dict`
+  is the single serialisation the trace and the reply share. The resolver
+  is also told an implicit subject counts ("what do you think we'd like"
+  after ice cream is about ice cream). Verified: unit 16; group reply suite
+  7/7 (flavours, no nights out, with the roster present); resolver suite
+  with the ice-cream case.
+
 ## 2026-08-28 — "Undo" never reaches another conversation; a reply to the assistant's bubble is always answered; a group knows its members by relevance
 
 - **Undo scoped to the conversation.** Deploy #16's sweep: "forget that" in

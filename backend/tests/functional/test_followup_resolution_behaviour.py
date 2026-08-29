@@ -26,6 +26,8 @@ _TASK = [{"query": "remind me tomorrow at 9am to call the dentist",
           "response": "Done - I've set a reminder to call the dentist tomorrow at 9:00 AM."}]
 _SCOUT = [{"query": "run scout every day at 3pm",
            "response": "Done - Scout's sweep is now scheduled for daily at 3:00 PM."}]
+_ICE_CREAM = [{"query": "what's your favorite ice cream?",
+               "response": "Ha, I don't have taste buds, but for your 9pm run tonight I'd go classic salted caramel. What's yours two?"}]
 
 
 @pytest.mark.parametrize(
@@ -38,6 +40,8 @@ _SCOUT = [{"query": "run scout every day at 3pm",
         (_DRAFT, "More casual", "draft", ""),
         (_TASK, "move it to 10am", "task", "dentist"),
         (_SCOUT, "make it weekly instead", "scout", "scout"),
+        # Live in a group, 2026-08-28: no pronoun, but only about ice cream.
+        (_ICE_CREAM, "based on what you know about us what do you think we will like", "subject", "ice cream"),
     ],
 )
 async def test_the_reading_names_the_thing_and_its_kind(llm, history, message, kind, must_contain):
@@ -45,7 +49,10 @@ async def test_the_reading_names_the_thing_and_its_kind(llm, history, message, k
     assert resolution is not None
     assert resolution.refers_to == kind, resolution
     restated = resolution.self_contained.casefold()
-    assert must_contain in restated, resolution
+    # The thing may be named in the restatement or in `subject`: the reply
+    # and the search rounds read both (an implicit subject - "what do you
+    # think we will like" after ice cream - tends to land in `subject`).
+    assert must_contain in restated or must_contain in resolution.subject.casefold(), resolution
     for other in ("love island", "squid game"):
         assert other not in restated, resolution
 

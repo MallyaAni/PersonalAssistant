@@ -137,6 +137,11 @@ rows. Everything the group owns lives under that `user_id`.
   to route (weather, nearby), never stated as a fact about them; the first
   live group turn answered "weather here today?" for no place at all
   (2026-08-28). Sweep journey "group: weather here is the speaker's here".
+- The follow-up resolver's reading (subject and restatement) is rendered
+  last in the turn context for every branch, not only handed to the router
+  and the search rounds: in a room the roster pulls the reply toward the
+  members' interests, and "what do you think we'd like" after ice cream was
+  answered with nights out (2026-08-28).
 - `prompts/reply/imessage_group.md`, appended after `imessage_style` when
   `channel == "imessage_group"`: the chat's name, who is speaking, each member's
   likes, home area and everyday statements, and the rule that everything else

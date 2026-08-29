@@ -50,6 +50,15 @@ class Resolution:
     def changes(self, query: str) -> bool:
         return self.self_contained.strip() != query.strip() or self.refers_to != "none"
 
+    # The reading as plain data - the turn trace and the reply's context both
+    # carry exactly this, so explain_turn and the reply model read one thing.
+    def as_dict(self, limit: int = 160) -> dict[str, str]:
+        return {
+            "refers_to": self.refers_to,
+            "subject": self.subject,
+            "as": self.self_contained[:limit],
+        }
+
 
 # This turn's resolution, for the components after the router that need the
 # same reading: the search composer and the research rounds. None when the

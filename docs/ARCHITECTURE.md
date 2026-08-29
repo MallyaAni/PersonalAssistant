@@ -1907,7 +1907,9 @@ The current scaffold expresses this intended flow:
 
 ```text
 Frontend -> POST /api/v1/chat -> FastAPI dependency assembly
-         -> ConversationService -> follow-up resolver (one reading of "this")
+         -> ConversationService -> follow-up resolver (one reading of "this",
+                                   handed to the router, the search rounds, the
+                                   task picker and, last in the turn context, the reply)
          -> MainActionSelector
          -> (search_web | generate_image | edit_image | show_image | discuss_image | create_diagram
              | delegate_to_presentation_agent | search_history

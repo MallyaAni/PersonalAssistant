@@ -640,6 +640,13 @@ def _mark_turn(
     # roster's names and tastes by `_attach_group` before the reply runs.
     if isinstance(metadata.get("group"), dict) and "group" not in context:
         context["group"] = dict(metadata["group"])
+    # The follow-up resolver's reading, for the reply model - the same one the
+    # router, the search rounds and the task picker act on. Attached here, in
+    # the one place every branch's context passes through, whenever it says
+    # anything the message itself does not.
+    resolved = current_followup.get()
+    if resolved is not None and resolved.changes(str(context.get("query") or "")):
+        context["followup"] = resolved.as_dict(limit=600)
     if extra_context:
         context.update(extra_context)
 
@@ -2284,7 +2291,7 @@ class ConversationService:
                 research_question = (
                     resolved.self_contained if resolved and resolved.changes(query) else query
                 )
-                _trace("followup", {"refers_to": resolved.refers_to, "subject": resolved.subject, "as": resolved.self_contained[:160]} if resolved and resolved.changes(query) else None)
+                _trace("followup", resolved.as_dict() if resolved and resolved.changes(query) else None)
                 search_results, search_succeeded = await self._research(
                     research_question,
                     screened.query,
@@ -2933,7 +2940,7 @@ class ConversationService:
         # it a misroute like "more casual" -> edit_image (deploy #12) cannot be
         # told apart from a resolver that read "picture" or one that never ran.
         _followed = current_followup.get()
-        _trace("followup", {"refers_to": _followed.refers_to, "subject": _followed.subject, "as": _followed.self_contained[:160]} if _followed else None)
+        _trace("followup", _followed.as_dict() if _followed else None)
         # How long the decision took, in milliseconds: the iMessage waiting
         # bubble is timed against this (2026-08-27, "the filler comes late").
         started = (_turn_trace.get() or {}).get("_started")

@@ -748,10 +748,32 @@ def _build_turn_context(
             _outcome_list(context_data, "scout_schedule_outcome")
         ),
         _render_skill_context(context_data),
-        # Last on purpose: the model follows the last instruction on a subject.
         _render_group_turn_context(context_data),
+        # Last on purpose: the model follows the last instruction on a subject,
+        # and what the message is about outranks everything else here.
+        _render_followup_reading(context_data),
     )
     return "".join(block for block in blocks if block)
+
+
+# The follow-up resolver's reading of the newest message, for the reply
+# model. Until now only the router and the search rounds saw it: asked "based
+# on what you know about us what do you think we will like" straight after
+# an exchange about ice cream, the reply - with a roster of the members'
+# interests in front of it - recommended nights out, not flavours (live,
+# 2026-08-28). One reading for every component includes the one that writes.
+def _render_followup_reading(context_data: dict[str, Any]) -> str:
+    reading = context_data.get("followup")
+    if not isinstance(reading, dict):
+        return ""
+    restated = str(reading.get("as") or "").strip()
+    subject = str(reading.get("subject") or "").strip()
+    if not restated and not subject:
+        return ""
+    about = f" It is about {subject} - the thing this conversation was just discussing - so answer about that, not about something broader." if subject else ""
+    return (
+        f"\n\nRead against this conversation, the newest message means: {restated or 'as written'}.{about}"
+    )
 
 
 # The room's speaker and members at the end of the turn context, beside the

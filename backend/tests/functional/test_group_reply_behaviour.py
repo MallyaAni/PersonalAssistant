@@ -95,6 +95,27 @@ async def test_the_name_survives_an_earlier_no_clue_and_an_empty_history_search(
     assert not any(w in lowered for w in ("drawing a blank", "no clue", "what should i call you", "haven't told me")), text
 
 
+async def test_the_reply_keeps_to_the_subject_under_discussion_despite_the_roster(llm):
+    # Live, 2026-08-28: "based on what you know about us what do you think
+    # we will like", right after an exchange about ice cream, drew nights out
+    # matched to the roster's interests instead of flavours. The resolver's
+    # reading now reaches the reply, last in the turn context.
+    from backend.agents.graph import turn_context_messages
+
+    context = {**_ROOM, "followup": {"refers_to": "subject", "subject": "ice cream", "as": "Based on what you know about us, which ice cream flavours do you think we'd like?"}}
+    messages = [
+        {"role": "system", "content": _build_system_prompt(_ROOM)},
+        {"role": "user", "content": "Ani: what's your favorite ice cream?"},
+        {"role": "assistant", "content": "Ha, I don't have taste buds, but for your 9pm run tonight I'd go classic salted caramel. What's yours two?"},
+    ]
+    messages.extend(turn_context_messages(context))
+    messages.append({"role": "user", "content": "Ani: based on what you know about us what do you think we will like"})
+    text = str(llm.chat(messages, 400, None, 0.0)["content"]).strip()
+    lowered = text.casefold()
+    assert any(w in lowered for w in ("ice cream", "flavour", "flavor", "scoop", "gelato", "sorbet")), text
+    assert not any(w in lowered for w in ("line dancing", "farmers market", "vintage", "theater", "theatre", "film screening", "bookshop")), text
+
+
 async def test_a_members_everyday_fact_is_answered_from_the_roster(llm):
     text = _reply(llm, "Scout, what car does Jen drive? and what's her dog called?")
     lowered = text.casefold()
