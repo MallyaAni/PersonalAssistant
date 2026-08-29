@@ -449,12 +449,28 @@ services:
       # The browser's own origin allowlist, in front of the one this
       # application enforces (MCP_SERVERS_JSON -> allowed_hosts). Two layers on
       # purpose: ours refuses to *ask* for a host nobody permitted, this one
-      # refuses to *fetch* one, including subresources a page pulls in by
-      # itself. Empty here and empty there is the right state to ship in: the
-      # tool is wired and can reach nothing until an operator says where.
-      - --allowed-origins=${BROWSER_ALLOWED_ORIGINS:-}
+      # refuses to *fetch* one, including the subresources a page pulls in by
+      # itself, which ours never sees.
+      #
+      # The default is a domain that cannot resolve, and that is deliberate:
+      # passing an empty value here means "no origin restriction", not "no
+      # origins" - measured 2026-08-29, when a navigation succeeded through an
+      # empty list. Naming an unresolvable origin is the only way to say
+      # "nowhere" to this flag, so the container ships able to fetch nothing
+      # and an operator has to say where before it can.
+      - --allowed-origins=${BROWSER_ALLOWED_ORIGINS:-https://nowhere.invalid}
       - --port=8931
       - --host=0.0.0.0
+      # Not the same thing as --allowed-origins above, despite the names, and
+      # the difference is worth stating because getting it backwards would be
+      # silent. `--allowed-origins` is where the *browser* may go.
+      # `--allowed-hosts` is who may talk *to* this server: it checks the Host
+      # header, defaults to whatever the server bound to, and is what stops a
+      # page in some other browser from driving this one by DNS rebinding.
+      # Binding to 0.0.0.0 for the compose network means the default no longer
+      # matches, so the one name siblings reach it by is named here - and only
+      # that one. Never '*'.
+      - --allowed-hosts=browser:8931
     security_opt:
       - no-new-privileges:true
     cap_drop:

@@ -2,6 +2,41 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-29 — The browser is proven, and both its allowlists fail closed
+
+The Playwright MCP container is up and every gate in front of it was measured
+from inside the application rather than reasoned about:
+
+    1. the server's whole catalogue: 24 tools
+       of which dangerous ones present: browser_evaluate, browser_file_upload,
+                                        browser_run_code_unsafe
+    2. after the allowlist: 13 tools
+    3. can it be called without a confirmation? False
+    4. confirmed, but no host named: host_not_allowed
+    5. a tool outside the allowlist: tool_not_offered
+    6. a host outside the allowlist: host_not_allowed
+    7. the permitted host, confirmed: Page URL: https://example.com/
+
+Two things that measurement found, which reading the documentation would not
+have:
+
+- The server rejects a request whose Host header it does not recognise, and it
+  defaults to the address it bound to. Binding to 0.0.0.0 for the compose
+  network therefore broke every call with a bare 403 until `--allowed-hosts`
+  named `browser:8931`. That flag is not `--allowed-origins`, despite the
+  names: one is who may talk *to* the server, the other is where the browser
+  may *go*.
+- Passing `--allowed-origins` an empty value means "no origin restriction", not
+  "no origins" - step 7 succeeded through what was meant to be an empty
+  allowlist. The compose default is now an unresolvable origin, which is the
+  only way to say "nowhere" to that flag, so the container ships able to fetch
+  nothing and the same navigation returns ERR_BLOCKED_BY_CLIENT.
+
+`docs/BROWSER_ARCHITECTURE.md` records the five gates, the measurement, and a
+status table naming what is not built: the navigation loop, the dry-run
+screenshot, and a booking a person confirms. The tool is not enabled - it is
+absent from MCP_SERVERS_JSON and no host is named.
+
 ## 2026-08-29 — The recommendation is for the person again, and a browser behind the gate
 
 A survey of how personalized the recommendations actually are found that this
