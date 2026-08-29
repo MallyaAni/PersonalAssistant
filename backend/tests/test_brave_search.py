@@ -162,6 +162,10 @@ async def test_the_internet_server_reports_the_brave_meter(monkeypatch, tmp_path
 
     monkeypatch.setenv("BRAVE_SEARCH_API_KEY", "k")
     monkeypatch.setenv("BRAVE_SEARCH_MONTHLY_LIMIT", "900")
+    # Pinned rather than inherited: this asserts what the meter reports for a
+    # given order, and the machine's own order changed on 2026-08-29 (Tavily
+    # first, since Brave began metering) which failed it for no defect.
+    monkeypatch.setenv("SEARCH_PROVIDER_ORDER", "brave,google,tavily")
     monkeypatch.setenv("BRAVE_SEARCH_QUOTA_DB_PATH", str(tmp_path / "q.sqlite3"))
     await SQLiteMonthlySearchQuota(str(tmp_path / "q.sqlite3"), "brave", 900).consume()
 

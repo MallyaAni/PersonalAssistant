@@ -2,6 +2,37 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-29 — Search costs: the same question is not bought twice, and the cheapest provider goes first
+
+- **Where the credits went.** The operator asked how Brave had spent 540
+  requests in two days. Counted per account: real people made ~59 searches
+  over four days; **~344 came from verification runs** - every `deploy.sh`
+  runs `sweep_journeys`, which deliberately asks the same ten live questions
+  (events this weekend, opening hours, currency, a stock price, a sports
+  score) to prove the search chain end to end, and nine deploys ran that day.
+- **A short answer cache** (`backend/search/cache.py`): a repeated question
+  inside `SEARCH_CACHE_TTL_SECONDS` (30 minutes) is served from the previous
+  answer instead of a new request. Keyed by a SHA-256 of the normalized
+  question, so no question is written to disk - the file holds public web
+  results only; an empty answer is never kept, because that is what an
+  outage looks like; the file prunes itself at 2,000 rows; a cache that
+  cannot be read is a miss, never a failed search. 8 unit tests.
+- **Cheapest provider first.** `SEARCH_PROVIDER_ORDER` is now
+  `tavily,brave,google` on this machine. Tavily gives 1,000 credits a month
+  free and resets on the 1st; Brave retired its free tier in February 2026,
+  and its API confirms the position from the live headers -
+  `x-ratelimit-policy: 50;w=1, 0;w=2678400`, a monthly allowance of **zero**
+  with requests still served, which means metered billing. Worth the
+  operator checking the Brave dashboard.
+- **Gemini grounding cannot be turned on for free on this project.** The
+  provider is fully built and was only disabled. Tested on the live key: a
+  plain `gemini-3.6-flash` call succeeds and the same call with
+  `google_search` grounding returns 429 RESOURCE_EXHAUSTED at the same
+  moment - so the key is healthy and the project simply carries no grounding
+  quota, exactly as the provider's own comment predicted. Enabling billing
+  on the Google project would give 1,500 grounded queries a day free; then
+  `GOOGLE_SEARCH_ENABLED=true` is the only change needed.
+
 ## 2026-08-29 — The router defects that suite had been carrying, fixed
 
 - The selector's own functional suite was red on five cases. Checked against

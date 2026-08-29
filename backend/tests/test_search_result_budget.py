@@ -21,6 +21,10 @@ import pytest
 
 
 def _server(monkeypatch: pytest.MonkeyPatch, **env: str):
+    # No answer cache unless a test asks for one: otherwise the second
+    # identical query in a test is served from the first and never reaches
+    # the provider the test is measuring.
+    monkeypatch.setenv("SEARCH_CACHE_TTL_SECONDS", env.pop("SEARCH_CACHE_TTL_SECONDS", "0"))
     for name, value in env.items():
         monkeypatch.setenv(name, value)
     import backend.mcp.servers.internet as internet
@@ -256,3 +260,60 @@ def _restore_module():
     import backend.mcp.servers.internet as internet
 
     importlib.reload(internet)
+
+
+def test_a_repeat_question_inside_the_window_never_reaches_a_provider(monkeypatch, tmp_path):
+    """The point of the cache, at the tool boundary: the sweep's ten fixed
+    questions cost one set of provider calls per window, not one per deploy
+    (2026-08-29: 344 of the month's 403 searches were verification runs)."""
+    internet = _server(
+        monkeypatch,
+        SEARCH_MAX_RESULTS="5",
+        SEARCH_CACHE_TTL_SECONDS="600",
+        SEARCH_CACHE_DB_PATH=str(tmp_path / "cache.sqlite3"),
+    )
+    calls: list[str] = []
+
+    class Provider:
+        async def search(self, query: str, max_results: int = 0):
+            calls.append(query)
+            return _results(2, "live content")
+
+    monkeypatch.setattr(internet, "_build_search_provider", lambda: Provider())
+
+    import asyncio
+    import json
+
+    first = json.loads(asyncio.run(internet.search_web("what is on this weekend")))
+    second = json.loads(asyncio.run(internet.search_web("what is on this weekend")))
+    assert calls == ["what is on this weekend"], calls
+    assert first["results"] == second["results"]
+    assert len(second["results"]) == 2
+
+    # A different question is still bought, and a different result count is a
+    # different question.
+    asyncio.run(internet.search_web("something else entirely"))
+    asyncio.run(internet.search_web("what is on this weekend", max_results=1))
+    assert len(calls) == 3, calls
+
+
+def test_an_empty_answer_is_not_cached_at_the_tool_boundary(monkeypatch, tmp_path):
+    internet = _server(
+        monkeypatch,
+        SEARCH_CACHE_TTL_SECONDS="600",
+        SEARCH_CACHE_DB_PATH=str(tmp_path / "cache.sqlite3"),
+    )
+    calls: list[str] = []
+
+    class Empty:
+        async def search(self, query: str, max_results: int = 0):
+            calls.append(query)
+            return _results(0, "")
+
+    monkeypatch.setattr(internet, "_build_search_provider", lambda: Empty())
+
+    import asyncio
+
+    asyncio.run(internet.search_web("nothing comes back"))
+    asyncio.run(internet.search_web("nothing comes back"))
+    assert len(calls) == 2, "an outage must not be served for the whole window"

@@ -35,6 +35,25 @@ task below is deliberately assigned to it.
 User `animallya96` on both Sparks, same password on both. No BMC and no
 wake-on-LAN, so **a powered-off Spark needs someone to press the button.**
 
+## Search spend and providers — 2026-08-29
+
+- **Brave is metered now.** Its live headers say `50;w=1, 0;w=2678400`: 50
+  per second, **0 per month**, and requests are still served - i.e. billed
+  (~$5/1k). The local `BRAVE_SEARCH_MONTHLY_LIMIT=900` is a spend cap, not a
+  free allowance. Check the Brave dashboard and decide the cap deliberately.
+- **Tavily leads now** (`SEARCH_PROVIDER_ORDER=tavily,brave,google` in
+  `.env`, backup `.env.bak-20260829-search`): 1,000 free credits a month,
+  reset on the 1st, so from 1 September the free one is spent first.
+- **Gemini grounding stays off**: the key is healthy (a plain call works)
+  but the project has no grounding quota (429 on the grounded call at the
+  same moment). Enable billing on the Google project → 1,500 grounded
+  queries/day free → then only `GOOGLE_SEARCH_ENABLED=true` is needed.
+- **The sweep is the biggest spender**: ~344 of the month's ~403 searches
+  were verification runs, against ~59 from people. The 30-minute answer
+  cache cuts repeat deploys; if that is not enough, give the sweep a
+  "skip the live-search journeys" mode for routine deploys and keep the full
+  set for weekly runs.
+
 ## Group chats — BUILT AND GATED 2026-08-28, live acceptance pending
 
 The assistant in an iMessage group with approved users, as its own account

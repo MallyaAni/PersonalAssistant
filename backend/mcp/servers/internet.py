@@ -8,6 +8,7 @@ import httpx
 from mcp.server.fastmcp import FastMCP
 
 from backend.search.brave import BraveSearchProvider
+from backend.search.cache import SQLiteSearchCache
 from backend.search.google_adk import GoogleADKSearchProvider
 from backend.search.hybrid import EveryProviderExhausted, HybridSearchProvider
 from backend.search.quota import (
@@ -221,6 +222,16 @@ def _encode_results(found: SearchResults) -> str:
     return encoded
 
 
+# The answer cache, built per call like the provider: this server is a
+# short-lived stdio subprocess, so the file is the memory. Off with
+# SEARCH_CACHE_TTL_SECONDS=0.
+def _build_search_cache() -> SQLiteSearchCache:
+    return SQLiteSearchCache(
+        path=os.getenv("SEARCH_CACHE_DB_PATH", "data/search/search_cache.sqlite3"),
+        ttl_seconds=float(os.getenv("SEARCH_CACHE_TTL_SECONDS", "1800")),
+    )
+
+
 # Search with Google first, Tavily fallback, or both for explicit verification.
 @mcp.tool()
 async def search_web(query: str, max_results: int = 0) -> str:
@@ -231,6 +242,16 @@ async def search_web(query: str, max_results: int = 0) -> str:
     # SEARCH_MAX_RESULTS and the configured count never applied.
     configured = int(os.getenv("SEARCH_MAX_RESULTS", "5"))
     wanted = min(max_results, configured) if max_results > 0 else configured
+    # The same question asked twice inside the window is answered from the
+    # first answer. Every deploy's sweep asks the same ten live questions to
+    # prove this chain works, and on 2026-08-29 that testing accounted for
+    # 344 of the month's 403 searches against an allowance that is no longer
+    # free. Short by default (30 minutes), keyed by a hash so no question is
+    # written to disk, and never holding an empty answer.
+    cache = _build_search_cache()
+    cached = await cache.get(query, wanted)
+    if cached is not None:
+        return _encode_results(cached)
     try:
         found = await provider.search(query, max_results=wanted)
     except (EveryProviderExhausted, SearchQuotaExceededError):
@@ -250,6 +271,7 @@ async def search_web(query: str, max_results: int = 0) -> str:
                 {"provider": "tavily", "error": "quota_exhausted", "status": status, "results": []}
             )
         raise
+    await cache.put(query, wanted, found)
     return _encode_results(found)
 
 

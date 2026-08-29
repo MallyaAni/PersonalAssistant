@@ -97,7 +97,7 @@ reply). The whole path is drawn in
 | Image embeddings | **nomic-embed-vision-v1.5** (ONNX, CPU) | spark1, in-process | Aligned to the text model above; small enough to run without a GPU. |
 | Reranking (second opinion on retrieved candidates) | **Qwen3-Reranker-0.6B** | spark1 `vllm-reranker` | A cross-encoder reads query and candidate *together*, which is where retrieval precision comes from. Fail-soft: if it is down, the first-pass order stands. |
 | Image generation and editing | **FLUX.2 Klein 9B** via ComfyUI (FLUX.1 Kontext for instruction edits) | Desktop | The only machine with a discrete GPU that is not full. Image work is available while the desktop is on, and honestly unavailable when it is not. |
-| Web search | Gemini grounding or Tavily | External | The one outbound boundary; queries are minimised and screened before they leave. |
+| Web search | Tavily, then Brave (Gemini grounding when a project carries it) | External | The one outbound boundary; queries are minimised and screened before they leave, and a repeated question inside 30 minutes is answered from the previous result rather than bought again. |
 
 Everything is served through an OpenAI-compatible boundary, so the application
 never knows which runtime is behind a role; roles are configured

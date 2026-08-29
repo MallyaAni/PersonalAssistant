@@ -62,6 +62,11 @@ def test_search_package_holds_only_web_search():
         # Admitted 2026-08-25: Brave Search as the first rung of the provider
         # chain, a web-search provider like tavily and google_adk beside it.
         "brave",
+        # Admitted 2026-08-29: one recent answer per question, so a repeat
+        # inside half an hour is not bought twice. It holds web-search
+        # results and nothing else - the same meaning of the word as the
+        # providers beside it, not a fourth one.
+        "cache",
         "google_adk",
         "hybrid",
         "mcp",
