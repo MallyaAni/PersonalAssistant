@@ -112,6 +112,27 @@ def _caller_is_operator() -> bool:
     return bool(identity is not None and identity.is_operator)
 
 
+# A shipped pack is offered only when the message asks for it by name.
+#
+# The packs ship enabled for everyone, so they sat on the menu for every turn
+# and competed for requests that were never about them: "where should the two
+# of us go for dinner on friday?" chose the "What's on" listing skill 4 times
+# in 4 without the person's clock in context and 1 in 4 with it, and searched
+# the weekend's events instead of answering (measured 2026-08-29, and it
+# failed a deploy's sweep twice). Both the pack's description and the router
+# prompt already said a skill is for its own routine; a third sentence was
+# tried and measured worse. So the menu is what changes: a pack the person
+# has not asked for by name is not offered at all.
+#
+# The cost of that is small and known: the events formatting a listing wants
+# is applied to any search whose results are events (prompts/reply/events_format.md),
+# so an unnamed "what's happening this weekend?" still comes back in that
+# shape from an ordinary search. A skill the person taught is theirs and is
+# always offered - this rule is only about what shipped in the box.
+def _is_pack(skill: dict[str, Any]) -> bool:
+    return str(skill.get("id") or "").startswith("pack:")
+
+
 # Whether a message names this skill - by its name or its slug's words.
 def _names_skill(message: str, skill: dict[str, Any]) -> bool:
     lowered = message.casefold()
@@ -357,7 +378,9 @@ class MainActionSelector:
             offered_skills.extend(
                 skill
                 for skill in (skills or [])
-                if (not unattended or _names_skill(query, skill)) and not drafting
+                if (not unattended or _names_skill(query, skill))
+                and (not _is_pack(skill) or _names_skill(query, skill))
+                and not drafting
             )
             tools.extend(skill_tool_definitions(offered_skills))
 

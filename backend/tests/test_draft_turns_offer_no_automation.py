@@ -57,3 +57,30 @@ async def test_any_other_reading_keeps_the_full_offer():
     await _selector(llm).select("u", "and the villa?", _HISTORY, None)
     assert "manage_tasks" in llm.offered and "schedule_task" in llm.offered
     assert "edit_image" in llm.offered and "show_image" in llm.offered
+
+
+# A shipped pack is on every user's menu, so it competed for requests that
+# were never about it: "where should the two of us go for dinner on friday?"
+# chose the "What's on" listing 4/4 without the clock and 1/4 with it, and
+# failed a deploy's sweep twice (2026-08-29). Wording was tried in the pack's
+# description and in the router prompt and measured no better, so the menu is
+# what changed: a pack is offered only when the message names it. A skill the
+# person taught is theirs and is always offered.
+@pytest.mark.asyncio
+async def test_a_shipped_pack_is_offered_only_when_the_message_names_it():
+    taught = {"id": "s1", "name": "Weekend plan", "slug": "weekend-plan", "instruction": "x"}
+    pack = {"id": "pack:what-s-on", "name": "What's on", "slug": "what-s-on", "instruction": "y"}
+
+    llm = _Llm("none")
+    await _selector(llm).select("u", "where should we go for dinner on friday?", [], None, skills=[taught, pack])
+    offered = [name for name in llm.offered if name.startswith("skill__")]
+    assert len(offered) == 1, llm.offered
+    assert "weekend" in offered[0], offered
+
+    named = _Llm("none")
+    await _selector(named).select("u", "what's on in Arlington this weekend?", [], None, skills=[taught, pack])
+    assert len([name for name in named.offered if name.startswith("skill__")]) == 2, named.offered
+
+    by_slug = _Llm("none")
+    await _selector(by_slug).select("u", "run my weekend plan routine", [], None, skills=[taught, pack])
+    assert len([name for name in by_slug.offered if name.startswith("skill__")]) == 1, by_slug.offered

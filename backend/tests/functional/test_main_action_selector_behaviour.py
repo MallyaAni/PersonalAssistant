@@ -516,6 +516,9 @@ async def test_a_recommendation_does_not_become_a_whats_on_listing(selector):
     packs = [pack.as_skill() for pack in load_packs().values()]
     assert any(skill["slug"] == "what-s-on" for skill in packs), packs
 
+    # Measured 2026-08-29: with every pack on the menu the dinner question
+    # chose the listing skill 4/4 without the clock and 1/4 with it; offering
+    # a pack only when it is named made it 0/3, and both positive cases 3/3.
     for question in (
         "where should the two of us go for dinner on friday? something we'd both like",
         "any good coffee place near me?",
@@ -527,6 +530,11 @@ async def test_a_recommendation_does_not_become_a_whats_on_listing(selector):
         "functional_test_user", "what's on in Arlington this weekend?", [], None, skills=packs
     )
     assert isinstance(listing, UseSkillAction) and listing.name.casefold().startswith("what"), listing
+
+    brief = await selector.select(
+        "functional_test_user", "give me a quick brief on the federal reserve", [], None, skills=packs
+    )
+    assert isinstance(brief, UseSkillAction) and "brief" in brief.name.casefold(), brief
 
 
 # Two defects this suite carried for at least a week (both reproduce at

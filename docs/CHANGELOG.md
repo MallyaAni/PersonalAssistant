@@ -2,6 +2,28 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-29 — A shipped skill is offered only when it is asked for by name
+
+- Deploy #26's fixed retry did its job: it re-checked the dinner journey, it
+  failed again, and the operator was paged. So the "What's on" pack
+  swallowing "where should the two of us go for dinner on friday?" was a
+  reproducible defect, not a wobble - and it answered a dinner question with
+  the weekend's event listings.
+- Wording was already correct in both places it could live: the pack's
+  description says it is not for recommendations, and the router prompt says
+  a skill is chosen only for its own routine. A third attempt measured worse
+  and was reverted. The menu changed instead: **a shipped pack is offered to
+  the router only when the message names it** (by name or slug words). A
+  skill the person taught is theirs and is always offered - this is only
+  about what ships in the box.
+- Measured before and after: dinner question 4/4 skill without the clock and
+  1/4 with it → **0/3**; "what's on in Arlington this weekend?" **3/3**
+  skill; "give me a quick brief on the federal reserve" **3/3** skill; "any
+  good coffee place near me?" 0/3. The cost is bounded and known: the events
+  format is applied to any search whose results are events, so an unnamed
+  "what's happening this weekend?" still comes back in that shape from an
+  ordinary search.
+
 ## 2026-08-29 — The retry that hid a red, fixed
 
 - Deploy #25 gapped two journeys, retried **one**, and reported the sweep
