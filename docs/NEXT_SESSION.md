@@ -101,15 +101,33 @@ sweep (user `sweep_708ace97`) showed exactly that: the undo removed the
 dentist row, the leftovers were "the user has a retail team" (captured from
 the draft-email journey) and the next journey's restatement of the dentist.
 
-**Pre-existing, measured 2026-08-29, not from the group work:**
-`functional/test_main_action_selector_behaviour.py` has red cases on the
-deployed build (`1e5adde`, checked with the working tree stashed): the
-retired-cascades accuracy floor, "write a haiku about rain" and "what did I
-say my dog's name was" choosing an action, a Scout-schedule confirmation
-calling an external tool, and a labelled image not choosing edit_image. This
-suite is not part of the deploy gate, so it drifted unseen. Measure with
-`evaluate_tool_selection` before touching the router prompt - do not fix it
-case by case.
+**Fixed 2026-08-29 (they predated this session - four of five reproduce at
+`7df424b6`):** the five red cases in
+`functional/test_main_action_selector_behaviour.py` - a haiku routed to
+generate_image, a polite "can you generate a labelled image of this?"
+routing to nothing, an invented "Arlington, Virginia" when no place was
+known, and two tests left stale by capabilities that shipped after them.
+See the CHANGELOG for what each measured before and after. **The lesson to
+carry:** this suite is not part of the deploy gate, so it drifted unseen for
+at least a week. Consider adding it to `deploy.sh` (it costs ~7 minutes) or
+running it weekly.
+
+**Still red, deliberately: `test_search_routing_quality_meets_the_retired_cascades_floor`.**
+Recall 0.806 against the 0.85 floor, the same five misses at this session's
+base commit and with today's weather wording reverted - a real decline, not
+variance and not from this session. The misses are all questions whose
+subject the conversation never names ("did the merger go through", "what
+time does the game start", "has the strike ended", "any news about the
+merger", "is the farmers market open this sunday"): the subject-copy rule
+added after the Surviving Paradise incident tells the router to call no tool
+when nothing names the subject. Narrowing that rule to pointing words was
+tried and measured *worse* (6 misses, two new: the euro cases), and was
+reverted. Next step is the proper instrument, not another wording guess:
+`ablate_prompt_rules` over the search rules plus `evaluate_tool_selection`,
+then decide whether these cases should search in the person's own words or
+whether the cases themselves encode behaviour the incident rule deliberately
+replaced. The floor is left red on purpose - lowering it would hide the
+decline.
 
 **Router wobble, observed once (deploy #17's sweep):** "Scout hows the
 weather here today?" in a group, with the speaker's place known, routed to

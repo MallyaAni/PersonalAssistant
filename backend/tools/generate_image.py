@@ -34,12 +34,13 @@ TOOL = BuiltinTool(
     name=NAME,
     label="New images",
     description=(
-        "Create a brand-new picture from a text description. Only when the "
-        "user actually asks for an image, picture, drawing, or artwork to be "
-        "made - never for a request to write text, such as a poem, haiku, "
-        "story, or description, even when its subject is visual (rain, a "
-        "sunset, a mountain): that is answered as words, not illustrated, "
-        "unless the user separately asks for a picture too."
+        "Create a brand-new picture from a text description, when the user "
+        "asks for an image, picture, drawing, or artwork to be made. Writing "
+        "is not drawing: a request to write a poem, haiku, song, story, "
+        "caption, description, or any other text is never this tool, however "
+        "visual its subject - 'write a haiku about rain' is answered in words "
+        "and nothing is drawn. Call this tool only when the thing being asked "
+        "for is itself a picture."
     ),
     schema=_SCHEMA,
     waiting=(

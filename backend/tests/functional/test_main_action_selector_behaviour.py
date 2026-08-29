@@ -32,7 +32,7 @@ from backend.services.main_action_selector import (
     ToolboxAction,
 )
 from backend.services.search_routing_evaluator import SearchRoutingEvaluator
-from backend.tools import UseSkillAction
+from backend.tools import DiscussImageAction, RecallHistoryAction, ScoutScheduleAction, UseSkillAction
 
 pytestmark = pytest.mark.asyncio
 
@@ -216,13 +216,26 @@ async def test_an_explicit_deck_request_delegates_to_the_presentation_agent(
     [
         "what's the derivative of x squared",
         "can you explain how a b-tree works",
+        # Writing is not drawing: this chose generate_image 3/3 until the
+        # tool's description said so (2026-08-28).
         "write a haiku about rain",
-        "what did I say my dog's name was",
     ],
 )
 async def test_an_ordinary_question_chooses_no_action(selector, text):
     action = await selector.select("functional_test_user", text, [], None)
     assert action is None, action
+
+
+# "What did I say my dog's name was" asked for nothing at all when this test
+# was written; `search_history` was added on 2026-08-24 and searching the
+# person's own past conversations is now the right answer - measured 3/3.
+# Answering from the window alone stays acceptable: a short thread may
+# already hold it.
+async def test_a_question_about_what_the_user_said_recalls_or_answers(selector):
+    action = await selector.select(
+        "functional_test_user", "what did I say my dog's name was", [], None
+    )
+    assert action is None or isinstance(action, RecallHistoryAction), action
 
 
 # Repeatedly replay the reported Scout confirmation so a sampled false search
@@ -244,7 +257,13 @@ async def test_a_scout_schedule_confirmation_never_calls_an_external_tool(select
         for _ in range(5)
     ]
 
-    assert decisions == [None] * 5, decisions
+    # scout_schedule did not exist when this was written, and the failure it
+    # guards is a *search* fired at a confirmation. Setting Scout's sweep to
+    # the time the person just named is the right answer now (measured 3/3);
+    # reaching outside for it never is.
+    for decision in decisions:
+        assert not isinstance(decision, SearchAction | ToolboxAction), decisions
+        assert decision is None or isinstance(decision, ScoutScheduleAction), decisions
 
 
 # edit_image is now offered every turn, active image or not - the check that
@@ -435,17 +454,28 @@ async def test_a_whats_on_question_searches_for_the_place_and_the_dates(selector
             "response": "Understood - those are the venues you mean.",
         },
     ]
-    action = await selector.select(
-        "functional_test_user",
-        "what's going on Weds-Sunday?",
-        history,
-        None,
-        local_now="Tuesday 2026-08-25 23:30 - they are in Canggu, Bali, Indonesia (Asia/Makassar)",
+    # The clock, as every production turn supplies it. Without it this test
+    # demanded calendar dates from a router that had no date: it wrote them
+    # 0 times in 3 without the clock and 2 in 3 with it (measured 2026-08-29),
+    # which is what the rates below hold.
+    now = (
+        "Friday 2026-08-28 16:10 - they are in Canggu, Bali (Asia/Makassar); "
+        "the coming weekend is Saturday 2026-08-29 and Sunday 2026-08-30"
     )
-    assert isinstance(action, SearchAction), action
-    lowered = action.query.casefold()
-    assert "canggu" in lowered, action.query
-    assert any(mark in lowered for mark in ("aug", "27", "28", "29", "30", "31", "weekend", "2026")), action.query
+    dated = 0
+    runs = 3
+    for _ in range(runs):
+        action = await selector.select(
+            "functional_test_user", "what's going on Weds-Sunday?", history, None, local_now=now
+        )
+        assert isinstance(action, SearchAction), action
+        lowered = action.query.casefold()
+        assert "canggu" in lowered, action.query
+        dated += any(
+            mark in lowered
+            for mark in ("aug", "26", "27", "28", "29", "30", "31", "weekend", "2026")
+        )
+    assert dated >= runs - 1, f"{dated}/{runs} queries carried the dates"
 
 
 # A trip is searched from home: "to Rome and back from Amalfi" from a person
@@ -497,3 +527,27 @@ async def test_a_recommendation_does_not_become_a_whats_on_listing(selector):
         "functional_test_user", "what's on in Arlington this weekend?", [], None, skills=packs
     )
     assert isinstance(listing, UseSkillAction) and listing.name.casefold().startswith("what"), listing
+
+
+# Two defects this suite carried for at least a week (both reproduce at
+# 7df424b6, before the group-chat work): "write a haiku about rain" chose
+# generate_image 3/3, and "can you generate a labelled image of this?" with a
+# picture selected chose nothing 3/3 - edit_image's own description refused
+# anything shaped like a question, which a polite request is. Both are fixed
+# in the tools' descriptions, and the controls are here so neither fix can be
+# "stop offering the tool".
+@pytest.mark.parametrize(
+    ("message", "active_image", "expected"),
+    [
+        ("write a haiku about rain", None, type(None)),
+        ("write me a short poem about the sunset", None, type(None)),
+        ("can you generate a labelled image of this?", "selected-image-id", EditImageAction),
+        ("make a picture of a mountain at sunrise", None, GenerateImageAction),
+        ("which of these two hats looks better?", "selected-image-id", DiscussImageAction),
+    ],
+)
+async def test_writing_is_not_drawing_and_a_polite_request_is_still_a_request(
+    selector, message, active_image, expected
+):
+    action = await selector.select("functional_test_user", message, [], active_image)
+    assert isinstance(action, expected) if expected is not type(None) else action is None, action

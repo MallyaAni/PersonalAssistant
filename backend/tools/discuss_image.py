@@ -34,8 +34,12 @@ TOOL = BuiltinTool(
         "putting it back on screen: an opinion ('which hat do you like better "
         "for this outfit?'), a comparison, advice, or a question about what "
         "is in it. Nothing is generated, edited, or displayed - the answer is "
-        "written from the picture. Use edit_image only when they ask to change "
-        "the picture, show_image only when they ask to see one again."
+        "written from the picture. Use edit_image whenever they ask for the "
+        "picture to be changed or added to - labels, annotations, a caption "
+        "burned in, a different colour - even when the asking is polite and "
+        "shaped like a question ('can you add labels to this?'); this tool is "
+        "for questions that want your view rather than a new version. Use "
+        "show_image only when they ask to see one again."
     ),
     schema=_SCHEMA,
     waiting=(

@@ -55,13 +55,16 @@ TOOL = BuiltinTool(
         "that text more casual, formal, friendly, concise, or professional. "
         "Even when the message says 'edit' and no other "
         "tool fits that request - answer those directly instead of calling "
-        "any tool. Only for a direct instruction to change the picture, never "
-        "for a question, including one that names the alternative it is asking "
-        "about: asking whether something would look better, which of two is "
-        "preferable, or what you would recommend is asking what you think, not "
-        "telling you to change anything, even when the same subject was just "
-        "edited - answer "
-        "it directly from what is already visible instead."
+        "any tool. Only for a request to change the picture, never for a "
+        "question about it, including one that names the alternative it is "
+        "asking about: asking whether something would look better, which of "
+        "two is preferable, or what you would recommend is asking what you "
+        "think, not telling you to change anything, even when the same "
+        "subject was just edited - answer it directly from what is already "
+        "visible instead. A request made politely is still a request: 'can "
+        "you add labels to this?', 'could you make it brighter?' and 'can you "
+        "generate a labelled version of this?' each ask for the picture in "
+        "view to be changed, and are this tool."
     ),
     schema=_SCHEMA,
     waiting=(

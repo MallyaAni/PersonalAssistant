@@ -469,12 +469,14 @@ async def get_weather(place: str, days: int = 1, units: str = "imperial") -> str
     ZIP code); `days` is how many forecast days to include, counting today
     as 1, up to 7 - for "this weekend" or a named day, enough days to reach
     that day from today in the person's zone (asked on a Thursday, the
-    weekend needs 4); `units` is "imperial" or "metric". `place` must name a
-    real place - "here", "my location" or "outside" are refused - so when the
-    person says "here" or names no place, pass the place the context says
-    they are in ("they are in Arlington, Virginia" means place="Arlington,
-    Virginia"); only when no place is known at all, call no tool and let the
-    reply ask where they are.
+    weekend needs 4); `units` is "imperial" or "metric". `place` must be a
+    real place taken from the person's message or from the context line
+    saying where they are - "here", "my location" and "outside" are refused,
+    so when they say "here" pass the place the context gives. The city names
+    written in this description are formats, never defaults: when the message
+    names no place and the context says their location is not known, call no
+    tool at all and let the reply ask where they are. Inventing a plausible
+    city sends a real forecast for somewhere they are not.
     """
     # A place that is not a place: "here", "my location", "outside". The
     # geocoder resolves such words literally - "here" is Here, Togdheer,

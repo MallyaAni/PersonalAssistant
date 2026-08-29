@@ -2,6 +2,47 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-29 — The router defects that suite had been carrying, fixed
+
+- The selector's own functional suite was red on five cases. Checked against
+  this session's starting commit in a clean worktree: four of them fail there
+  too, so they predate the group work. Each was measured before anything was
+  changed, and the causes turned out to be different in kind:
+  - **"Write a haiku about rain" made a picture** (generate_image 3/3). The
+    description already forbade it - and ended by re-priming "asks for a
+    picture". Rewritten to lead with what the tool is and end with the
+    prohibition: 4/4 no action, with "make a picture of a mountain" still
+    4/4 generate_image.
+  - **"Can you generate a labelled image of this?" did nothing** (3/3), with
+    a picture selected. edit_image's own description refused anything shaped
+    like a question - and a polite request is shaped like one. It now says a
+    polite request is still a request, and discuss_image points changes back
+    at edit_image: 4/4 edit, and "which of these two hats looks better?"
+    still 4/4 discuss.
+  - **With no place known, the forecast was called for "Arlington, Virginia"**
+    2 times in 4 - the example city in the tool's own description, copied as
+    a default. The description now says its city names are formats, never
+    defaults: 4/4 pass "here", which the tool refuses, so the reply asks.
+  - **Two stale tests, not defects.** "What did I say my dog's name was"
+    routes to past conversations 3/3 - correct since `search_history` shipped
+    on 2026-08-24 - and "yes id like scout for 9:40pm" sets Scout's sweep
+    3/3, which is what the tool that arrived later is for. Both now assert
+    what the capability means, and the Scout case still refuses any external
+    tool, which is the failure it was written for.
+  - **One test demanded the impossible.** The Canggu follow-up asked for
+    calendar dates from a router it never gave the date to: 0 dated queries
+    in 3 without the clock, 2 in 3 with it. It now runs as production does.
+  - **The fifth is a real gap and stays red.** Search-routing recall is
+    0.806 against a 0.85 floor - identical, with the same misses, at this
+    session's starting commit and with today's weather description reverted,
+    so it is neither variance nor new. Every miss is a question whose
+    subject the conversation never names: "did the merger go through", "what
+    time does the game start", "has the strike ended", "any news about the
+    merger", "is the farmers market open this sunday". Narrowing the
+    subject-copy rule to pointing words was tried and measured worse (6
+    misses, two of them new), so it was reverted. Left red rather than
+    lowered: the floor is the alarm.
+
 ## 2026-08-29 — The room is read whole, and group memory stops disturbing private memory
 
 - **Every message in a listed room is read for context; only what addresses
