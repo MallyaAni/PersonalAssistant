@@ -512,7 +512,14 @@ def _render_task_outcome(outcome: dict[str, Any]) -> str:
         lines.append("- Scout's sweep: no schedule (it had none before the change).\n")
     for item in outcome.get("tasks") or []:
         if isinstance(item, dict):
-            lines.append(f"- {describe_task(item)}\n")
+            # With its next firing, not only its cadence. "every day at 9:00
+            # PM" does not say whether tonight's has already gone, and on
+            # 2026-08-29 a group was told an ice-cream run that had fired the
+            # previous evening was happening "tonight". The row carries
+            # next_run_at (tasks/repository.py) and the listing was dropping it.
+            upcoming = next_run_phrase(item)
+            suffix = f" - next {upcoming}" if upcoming else ""
+            lines.append(f"- {describe_task(item)}{suffix}\n")
     change = outcome.get("change")
     memory = outcome.get("memory")
     if outcome.get("kind") == "undone" and isinstance(memory, dict):

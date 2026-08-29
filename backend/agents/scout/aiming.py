@@ -55,7 +55,7 @@ from backend.core.egress import OutboundPrivacyPolicy
 from backend.core.interfaces import TextWriter
 from backend.core.prompts import load
 from backend.discovery.personal_context import PersonalContext
-from backend.discovery.sources.web import MONTH_STEMS
+from backend.core.dates import MONTH_STEMS
 from backend.discovery.types import InterestAim, SweepAim, normalize_label
 
 # Short enough that the place and the month still dominate the query. A subject

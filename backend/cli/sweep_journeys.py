@@ -33,6 +33,7 @@ import httpx
 from sqlalchemy import text
 
 from backend.core.auth import issue_user_token
+from backend.core.harness_identity import harness_id
 from backend.database.session import AsyncSessionLocal
 from backend.services.auth_service import AuthService
 
@@ -273,8 +274,20 @@ JOURNEYS = [
 ]
 
 
+# The sweep's three identities, derived from the one harness namespace
+# (backend/core/harness_identity.py) rather than spelled out here, so that
+# whatever cleans up after a harness recognises this one without being told
+# about it. `--run` gives an isolated set when two sweeps must not collide.
+def sweep_identities(run: str = "") -> tuple[str, str, str]:
+    user = harness_id("journeys", run)
+    member = harness_id("journeys", f"{run}_member" if run else "member")
+    # The room is addressed as a chat, not as an account; its account id is a
+    # deterministic slug of this address (groups/repository.py::group_user_id).
+    return user, member, f"imessage;+;chat{user}"
+
+
 class Sweep:
-    def __init__(self, base_url: str, only: str = "", keep: bool = False) -> None:
+    def __init__(self, base_url: str, only: str = "", keep: bool = False, run: str = "") -> None:
         self.base = base_url.rstrip("/")
         # Keep the sweep's accounts and turns after the run, so a gap can be
         # read with explain_turn instead of guessed at from the summary line.
@@ -282,21 +295,35 @@ class Sweep:
         # A substring of journey names, to rerun what a fix touched without
         # walking all of them.
         self.journeys = [j for j in JOURNEYS if only.lower() in j.name.lower()] if only else list(JOURNEYS)
-        self.user = f"sweep_{uuid.uuid4().hex[:8]}"
+        # One account, reused by every run, rather than a fresh random one.
+        #
+        # A random id per run meant that any run which did not reach its
+        # cleanup - a killed `timeout`, a crash, the deploy's single-journey
+        # retry, which made a whole new account of its own - left a permanent
+        # stranger in the database. By 2026-08-29 there were ten of them, with
+        # sixty-three turns and two group rooms between them, and the operator
+        # found them before this harness did. A fixed id cannot leak more than
+        # itself: whatever a previous run abandoned is purged below before this
+        # one starts, so the worst case is one stale test account, and it is
+        # recognisable on sight instead of looking like a person.
+        self.user, self.member, self.group_chat = sweep_identities(run)
         self.headers: dict[str, str] = {}
         self.failures: list[str] = []
         # The group the group journeys run in, and its other member - made
         # only when a group journey is selected.
-        self.member = f"sweepm_{uuid.uuid4().hex[:8]}"
         self.member_headers: dict[str, str] = {}
         self.group_id = ""
         self.group_headers: dict[str, str] = {}
-        self.group_chat = f"imessage;+;chatsweep{uuid.uuid4().hex[:12]}"
+
 
     async def create(self) -> None:
         import backend.discovery.repository as dr
 
         repo_cls = next(v for k, v in vars(dr).items() if k.endswith("Repository") and isinstance(v, type))
+        # Whatever the last run abandoned. Reusing an id means inheriting its
+        # leftovers - a saved memory, a scheduled task - and a journey that
+        # asserts "count(*) = 1" would then be judging the previous run.
+        await self.purge_previous()
         async with AsyncSessionLocal() as db:
             await AuthService(db).create_account_with_hash(
                 user_id=self.user, username=self.user, password_hash="$2b$12$" + "x" * 53
@@ -357,6 +384,33 @@ class Sweep:
             },
         }
 
+    # Erase every trace of a previous run under these fixed ids, without a
+    # token or a live API - the account may not exist, and the run that made it
+    # may have died before it could clean up. Deliberately blunt: `remove` is
+    # the graceful path, this is the one that has to work on wreckage.
+    async def purge_previous(self) -> None:
+        from backend.api.v1.admin import purge_owned_rows
+        from backend.groups.repository import ConversationGroupRepository, group_user_id
+
+        # The room's account id is a deterministic slug of its chat address, so
+        # a fixed chat address means the same group account every run - no
+        # lookup needed, and it is found even if the row is half-written.
+        stale_group = group_user_id(self.group_chat)
+        async with AsyncSessionLocal() as db:
+            owners = [self.user, self.member, stale_group]
+            for owner in owners:
+                try:
+                    await purge_owned_rows(db, owner)
+                    await db.commit()
+                except Exception as exc:
+                    await db.rollback()
+                    print(f"purge: {owner} left behind: {exc}", flush=True)
+            try:
+                await ConversationGroupRepository(db).delete(stale_group)
+                await db.commit()
+            except Exception:
+                await db.rollback()
+
     async def remove(self, client: httpx.AsyncClient) -> None:
         if self.group_id:
             from backend.api.v1.admin import purge_owned_rows
@@ -381,12 +435,15 @@ class Sweep:
         except httpx.HTTPError:
             pass
         async with AsyncSessionLocal() as db:
-            for table in ("scheduled_task_changes", "scheduled_task_runs", "scheduled_tasks", "discovery_runs", "discovery_schedules", "discovery_interests", "discovery_localities", "visual_artifacts", "user_sessions", "user_profiles", "conversations", "user_accounts"):
-                try:
-                    await db.execute(text(f"delete from {table} where user_id = :u"), {"u": self.user})
-                except Exception:
-                    await db.rollback()
-            await db.commit()
+            # Discovered from the schema rather than listed here: a table that
+            # gains a user_id next month is cleaned without anyone having to
+            # remember this file exists.
+            try:
+                await purge_owned_rows(db, self.user)
+                await db.commit()
+            except Exception as exc:
+                await db.rollback()
+                print(f"cleanup: {self.user} left behind: {exc}", flush=True)
 
     async def chat(
         self,
@@ -567,8 +624,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--base-url", default="http://localhost:8000/api/v1")
     parser.add_argument("--only", default="", help="run only journeys whose name contains this")
     parser.add_argument("--keep", action="store_true", help="keep the sweep's accounts and turns for explain_turn")
+    parser.add_argument("--run", default="", help="an isolated set of harness accounts, for two sweeps at once")
     arguments = parser.parse_args(argv)
-    return asyncio.run(Sweep(arguments.base_url, arguments.only, keep=arguments.keep).run())
+    return asyncio.run(
+        Sweep(arguments.base_url, arguments.only, keep=arguments.keep, run=arguments.run).run()
+    )
 
 
 if __name__ == "__main__":

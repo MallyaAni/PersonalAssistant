@@ -2,6 +2,88 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-29 — Every stored turn now says when it was said
+
+A group was told that an ice-cream run set the previous evening was happening
+"tonight". Nothing was hallucinated: "Reminder set for tonight at 9:00 PM" was
+sitting in the conversation history, and the history carried no times at all,
+so a sentence from last night and one from a minute ago were indistinguishable.
+`created_at` was in the database the whole time; the turn dict handed to every
+renderer simply dropped it.
+
+- `Conversation.to_dict` carries `created_at`, and `backend/services/transcript.py`
+  is the one place that decides how a turn's time is written. Every renderer
+  that shows a conversation to a model - the reply's message list, the router,
+  the follow-up resolver, the search planner - now stamps each turn
+  `[Fri 28 Aug 7:17pm]` in the person's zone (the speaker's, in a group).
+- Absolute, never relative. "Yesterday" would change between turns and throw
+  away the cached history prefix, measured at 16.5x on a 34k conversation; the
+  current time is already in front of the model, after the history.
+- `render_recent_history` and the follow-up resolver's `_recent` were two
+  copies of the same loop and are now one shared `transcript_lines`.
+- Task listings say when each next fires. The row carried `next_run_at` and
+  the listing was dropping it, so "every day at 9:00 PM" never said whether
+  tonight's had already gone.
+- Measured on the real model: asked what day the reminder was set, it answers
+  "Friday, August 28th at 7:17 PM ... so that's already passed", and a plan
+  made this morning for 9pm is still correctly "tonight"
+  (`functional/test_time_awareness_behaviour.py`).
+
+## 2026-08-29 — Events become records, and code writes the listing
+
+The same recommendation that invented map links also printed a venue's opening
+hours - "Sundays, 4 PM - 10 PM" - where an event's start time goes. The link
+fence stopped the addresses. This stops the rest, structurally: the reply model
+no longer writes the listing.
+
+- `backend/core/event_extraction.py` asks the routing model to *quote* - which
+  result each event came from, the exact phrase stating the day, the exact
+  phrase stating the price - and then checks every quotation against that
+  result. A phrase the page does not carry is dropped, not shown.
+- The model classifies what kind of phrase it copied. `opening_hours` is a
+  listed kind and is discarded, which is the 29 August failure named and made
+  impossible rather than discouraged.
+- Code decides every date, clock time and link. A weekday resolves to its next
+  occurrence; a door time is read only from a start word ("doors 6pm") within
+  a short window of the quoted date, so "open until 11pm" is never borrowed.
+- `backend/core/events_listing.py` renders the lines and builds the maps and
+  YouTube links from the venue and the act - the only addresses code can
+  honestly construct. What was dropped is printed too: "nothing is on" and
+  "four turned up and none said when" are different answers.
+- `backend/core/grounding.py` is now the one rule for "did the evidence say
+  this", shared by the link fence and the extractor, and `backend/core/dates.py`
+  the one date parser, moved out of the discovery source so `core` no longer
+  reaches across for it.
+- Measured on the real model with the Canggu results: two events kept, the
+  opening-hours page and the directory page correctly dropped, every address
+  traceable (`functional/test_events_extraction_behaviour.py`).
+
+## 2026-08-29 — One test account, not one per run
+
+The operator found ten unfamiliar profiles beside their own, with sixty-three
+turns and two group rooms between them. They were the journey sweep's: a fresh
+random account per run, and any run that did not reach its cleanup - a killed
+`timeout`, a crash, the deploy's single-journey retry, which opened an account
+of its own - left one behind permanently.
+
+- `backend/core/harness_identity.py` is the one namespace. A harness asks for
+  an id; a cleaner asks whether an id is one. A new harness is covered by
+  construction, because there is no second list to update.
+- The sweep and the search harness use one fixed account per role and purge it
+  before each run, so a leak is bounded at one stale account rather than one
+  per run. `--run` gives an isolated set when two sweeps must not collide.
+- Both cleanups now discover the tables they own from the schema instead of
+  naming them; the search harness's list named four and left the rest behind.
+- Public registration refuses the reserved namespace, so a person can never
+  register into a name a cleaner deletes without asking.
+- `backend/cli/purge_test_accounts.py` removes what leaked before, with three
+  independent guards: the id is in the namespace, the account has no consented
+  delivery address, and a room goes only when every member is synthetic. Dry
+  run unless `--apply`.
+- One `StubMainActionSelector` in `backend/tests/doubles.py`. There were four
+  identical copies, and adding one keyword to the real selector turned twenty
+  tests red in four files at once.
+
 ## 2026-08-29 — No address leaves that the application cannot vouch for
 
 - The failure: a recommendation sent to arsalon carried

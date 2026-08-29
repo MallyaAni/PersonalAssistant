@@ -68,7 +68,7 @@ from backend.tools import (
     builtin_tools,
     parse_builtin,
 )
-from backend.services.transcript import speaker_label
+from backend.services.transcript import transcript_lines
 
 __all__ = [
     "BuiltinTool",
@@ -141,18 +141,11 @@ def _names_skill(message: str, skill: dict[str, Any]) -> bool:
     return bool(name and name in lowered) or bool(slug_words and slug_words in lowered)
 
 
-def render_recent_history(history: list[dict[str, Any]]) -> str:
-    recent = history[-_MAX_HISTORY_TURNS:]
-    lines: list[str] = []
-    for turn in recent:
-        user_text = str(turn.get("query") or "").strip()
-        assistant_text = str(turn.get("response") or "").strip()
-        if user_text:
-            lines.append(f"{speaker_label(turn)}: {user_text}")
-        if assistant_text:
-            lines.append(f"Assistant: {assistant_text}")
-    rendered = "\n".join(lines)[-_MAX_HISTORY_CHARS:]
-    return rendered
+def render_recent_history(history: list[dict[str, Any]], zone: str = "") -> str:
+    # Dated: the router decides whether a message is about something already
+    # done, and it cannot tell without knowing when the history happened.
+    lines = transcript_lines(history[-_MAX_HISTORY_TURNS:], zone)
+    return "\n".join(lines)[-_MAX_HISTORY_CHARS:]
 
 
 class MainActionSelector:
@@ -318,16 +311,19 @@ class MainActionSelector:
         unattended: bool = False,
         only: frozenset[str] | None = None,
         steps_taken: list[str] | None = None,
+        zone: str = "",
     ) -> MainAction:
         if not query.strip():
             return None
 
-        history_text = render_recent_history(history)
+        # The zone the history's timestamps are written in - the person's, or
+        # in a group the speaker's. Empty stamps them UTC and says so.
+        history_text = render_recent_history(history, zone)
         # What the newest message refers to, decided once for every component
         # that has to know: the router here, the search rounds and the picker
         # after it. Failure is silent - the router then decides from the
         # history alone, as it did before this step existed.
-        resolution = await resolve_followup(self.llm, query, history) if history_text else None
+        resolution = await resolve_followup(self.llm, query, history, zone) if history_text else None
         current_followup.set(resolution)
         reading = describe(resolution, query) if resolution else ""
         # A turn that continues a draft - "More casual", "Ask them to reply by

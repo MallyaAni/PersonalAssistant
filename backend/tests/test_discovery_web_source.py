@@ -18,7 +18,8 @@ from backend.discovery.digest import render_message
 from backend.discovery.fetching import RequestBudget
 from backend.discovery.novelty import ScoredCandidate
 from backend.discovery.relevance import MAX_UNDATED, RankedCandidate, RelevanceRanker
-from backend.discovery.sources.web import WebEventSource, extract_explicit_date
+from backend.core.dates import extract_explicit_date
+from backend.discovery.sources.web import WebEventSource
 from backend.search.types import SearchResult, SearchResults
 
 _NOW = datetime(2026, 8, 1, 12, 0, tzinfo=UTC)

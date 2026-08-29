@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from backend.core.prompts import load
-from backend.services.transcript import speaker_label
+from backend.services.transcript import transcript_lines
 
 logger = logging.getLogger(__name__)
 
@@ -67,16 +67,12 @@ current_followup: ContextVar[Resolution | None] = ContextVar("current_followup",
 
 
 # The conversation the resolver reads: the last few turns, bounded.
-def _recent(history: list[dict[str, Any]]) -> str:
-    lines: list[str] = []
-    for turn in history[-_HISTORY_TURNS:]:
-        user_text = str(turn.get("query") or "").strip()
-        assistant_text = str(turn.get("response") or "").strip()
-        if user_text:
-            lines.append(f"{speaker_label(turn)}: {user_text}")
-        if assistant_text:
-            lines.append(f"Assistant: {assistant_text}")
-    return "\n".join(lines)[-_HISTORY_CHARS:]
+def _recent(history: list[dict[str, Any]], zone: str = "") -> str:
+    # Dated, because "that one" and "the same again" are resolved against
+    # turns whose age changes the answer: a plan made last night is not the
+    # plan for tonight (2026-08-29, a group told an ice-cream run that had
+    # already happened was happening "tonight").
+    return "\n".join(transcript_lines(history[-_HISTORY_TURNS:], zone))[-_HISTORY_CHARS:]
 
 
 # Resolve one message against its conversation, or None when there is no
@@ -84,9 +80,9 @@ def _recent(history: list[dict[str, Any]]) -> str:
 # failure here is never a failure of the turn: the router still sees the
 # history and decides as it did before this step existed.
 async def resolve_followup(
-    llm: Any, query: str, history: list[dict[str, Any]]
+    llm: Any, query: str, history: list[dict[str, Any]], zone: str = ""
 ) -> Resolution | None:
-    recent = _recent(history or [])
+    recent = _recent(history or [], zone)
     if not recent or not query.strip():
         return None
     messages = [

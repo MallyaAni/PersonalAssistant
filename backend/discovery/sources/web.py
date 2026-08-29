@@ -21,11 +21,13 @@ Results are untrusted third-party text and are bounded and stripped at this
 boundary like any feed.
 """
 
-import re
 from collections.abc import Iterable
 from datetime import UTC, datetime
 from typing import Any
 
+# One date parser, in core, imported by everything that reads a date out of
+# text (backend/core/dates.py).
+from backend.core.dates import stated_date as parse_stated_date
 from backend.core.interfaces import SearchProvider
 from backend.discovery.events import (
     MAX_EVENTS_PER_SOURCE,
@@ -46,56 +48,6 @@ from backend.discovery.listing_filter import looks_like_a_directory
 # sweep into twenty metered calls.
 MAX_QUERIES_PER_SWEEP = 4
 MAX_RESULTS_PER_QUERY = 8
-
-# Three-letter stems, so "Sept", "Sep." and "September" all match one branch.
-# Listing full names only would silently miss the abbreviations that dominate
-# real listings.
-#
-# Public because the query skeleton below appends a month, so anything building
-# a subject to go in front of it has to recognise the same set to avoid saying
-# the month twice. One list, or the two drift.
-MONTH_STEMS = "jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec"
-
-# Explicit, unambiguous date forms only. Anything requiring inference — "this
-# weekend", "next Saturday", "summer" — is deliberately absent, because
-# resolving it needs a reference point the snippet does not carry.
-_DATE_PATTERNS: tuple[re.Pattern[str], ...] = (
-    # 2026-09-12
-    re.compile(r"\b(?P<y>20\d{2})-(?P<m>\d{1,2})-(?P<d>\d{1,2})\b"),
-    # September 12, 2026  /  Sept 12 2026
-    re.compile(
-        rf"\b(?P<mon>{MONTH_STEMS})[a-z]*\.?\s+(?P<d>\d{{1,2}})(?:st|nd|rd|th)?,?\s+"
-        rf"(?P<y>20\d{{2}})\b",
-        re.IGNORECASE,
-    ),
-    # 12 September 2026
-    re.compile(
-        rf"\b(?P<d>\d{{1,2}})(?:st|nd|rd|th)?\s+(?P<mon>{MONTH_STEMS})[a-z]*\.?,?\s+"
-        rf"(?P<y>20\d{{2}})\b",
-        re.IGNORECASE,
-    ),
-)
-
-_MONTH_NUMBERS = {
-    name: index
-    for index, name in enumerate(
-        (
-            "january",
-            "february",
-            "march",
-            "april",
-            "may",
-            "june",
-            "july",
-            "august",
-            "september",
-            "october",
-            "november",
-            "december",
-        ),
-        start=1,
-    )
-}
 
 
 class WebEventSource(EventSource):
@@ -241,7 +193,7 @@ def _to_event(
         return None
     summary = clean_text(content, MAX_SUMMARY_CHARS)
     date_text = f"{cleaned_title} {summary or ''}"
-    stated_date = _extract_stated_date(date_text)
+    stated_date = parse_stated_date(date_text)
     if stated_date is not None and stated_date.date() < datetime.now(UTC).date():
         return None
     return DiscoveredEvent(
@@ -257,49 +209,3 @@ def _to_event(
         url=url,
         summary=summary,
     )
-
-
-# Pull a date out of text only when the text states one outright.
-#
-# Returns midnight UTC on that day. That is a deliberate compromise: the day is
-# what the source actually asserted, and a fabricated clock time would be
-# invented precision. A calendar entry built from this reads as an all-day event
-# rather than claiming a start nobody published.
-def extract_explicit_date(text: str, now: datetime | None = None) -> datetime | None:
-    moment = now or datetime.now(UTC)
-    parsed = _extract_stated_date(text)
-    if parsed is None or parsed.date() < moment.date():
-        return None
-    return parsed
-
-
-# Parse the first explicit calendar date without deciding whether it is current.
-def _extract_stated_date(text: str) -> datetime | None:
-    for pattern in _DATE_PATTERNS:
-        match = pattern.search(text)
-        if match is None:
-            continue
-        groups = match.groupdict()
-        month = groups.get("m")
-        if month is None:
-            month_name = (groups.get("mon") or "").lower()
-            month_number = _month_number(month_name)
-        else:
-            month_number = int(month)
-        if month_number is None or not 1 <= month_number <= 12:
-            continue
-        try:
-            parsed = datetime(
-                int(groups["y"]), month_number, int(groups["d"]), tzinfo=UTC
-            )
-        except ValueError:
-            continue
-        return parsed
-    return None
-
-
-def _month_number(name: str) -> int | None:
-    for full, number in _MONTH_NUMBERS.items():
-        if full.startswith(name[:3]) and name:
-            return number
-    return None

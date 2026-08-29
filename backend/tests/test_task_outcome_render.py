@@ -43,3 +43,40 @@ def test_a_schedule_dict_in_the_task_slot_never_raises():
 
 def test_nothing_to_undo_is_stated():
     assert "Nothing to undo" in _render_task_outcome({"kind": "nothing_to_undo"})
+
+
+def test_a_listed_task_says_when_it_next_fires():
+    # A cadence alone does not say whether tonight's has already gone. On
+    # 2026-08-29 a group was told an ice-cream run that had fired the previous
+    # evening was happening "tonight"; the row knew better than the listing.
+    text = _render_task_outcome(
+        {
+            "kind": "listed",
+            "tasks": [
+                {
+                    "instruction": "grab ice cream",
+                    "cadence": "daily",
+                    "hour": 21,
+                    "minute": 0,
+                    "enabled": True,
+                    "timezone": "America/New_York",
+                    "next_run_at": datetime(2026, 8, 30, 1, 0, tzinfo=UTC),
+                }
+            ],
+        }
+    )
+    assert '"grab ice cream" - every day at 9:00 PM' in text
+    assert "next Saturday 2026-08-29 at 9:00 PM" in text
+
+
+def test_a_listed_task_with_no_next_run_is_listed_without_one():
+    text = _render_task_outcome(
+        {
+            "kind": "listed",
+            "tasks": [
+                {"instruction": "stretch", "cadence": "weekdays", "hour": 9, "minute": 0, "enabled": False}
+            ],
+        }
+    )
+    assert '"stretch" - every weekday at 9:00 AM (paused)' in text
+    assert "next " not in text

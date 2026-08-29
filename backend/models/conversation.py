@@ -43,4 +43,9 @@ class Conversation(Base):
             "query": self.query,
             "response": self.response,
             "metadata": self.extra_data or {},
+            # When it was said. Absent from this dict until 2026-08-29, which
+            # is why the assistant told a group that an ice-cream run set the
+            # previous evening was happening "tonight": the words were in the
+            # history, and nothing in the history said how old they were.
+            "created_at": self.created_at.isoformat() if self.created_at else None,
         }

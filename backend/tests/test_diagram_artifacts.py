@@ -28,29 +28,10 @@ from backend.services.diagram_artifact_service import DiagramArtifactService
 from backend.services.main_action_selector import CreateDiagramAction, MainAction
 from backend.tests.doubles import (
     StubConversationRepository,
+    StubMainActionSelector,
     StubMemoryService,
     StubTracer,
 )
-
-
-class StubMainActionSelector:
-    """Return one fixed action without a native tool-calling round trip."""
-
-    def __init__(self, action: MainAction) -> None:
-        self.action = action
-
-    async def select(
-        self,
-        user_id,
-        query,
-        history,
-        active_image_artifact_id,
-        query_embedding=None,
-        local_now=None,
-        skills=None,
-        unattended=False,
-    ) -> MainAction:
-        return self.action
 
 
 class CapturingArtifactRepository(ArtifactRepository):

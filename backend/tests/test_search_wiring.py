@@ -8,6 +8,7 @@ from backend.services.conversation_service import ConversationService
 from backend.services.main_action_selector import MainAction, SearchAction
 from backend.tests.doubles import (
     StubConversationRepository,
+    StubMainActionSelector,
     StubMemoryService,
     StubTracer,
 )
@@ -138,36 +139,6 @@ async def _run(service: ConversationService, query: str) -> None:
         {"source": "test"},
     ):
         pass
-
-
-class StubMainActionSelector:
-    """Return one fixed action without a native tool-calling round trip.
-
-    Routing itself -- whether the main model decides to search -- is the
-    model's own native tool-call decision, tested in
-    test_main_action_selector.py against a controlled LLM double and again in
-    the functional suite against the real runtime. This file is downstream of
-    that decision: it exercises what the application does once told to
-    search -- egress screening, budget handling, event ordering, and image
-    context -- so each test states its action explicitly rather than relying
-    on wording a pattern would happen to match.
-    """
-
-    def __init__(self, action: MainAction) -> None:
-        self.action = action
-
-    async def select(
-        self,
-        user_id: str,
-        query: str,
-        history: list[dict],
-        active_image_artifact_id: str | None,
-        query_embedding: list[float] | None = None,
-        local_now: str | None = None,
-        skills: list | None = None,
-        unattended: bool = False,
-    ) -> MainAction:
-        return self.action
 
 
 def _service(

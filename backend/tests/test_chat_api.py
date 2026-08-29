@@ -23,6 +23,7 @@ from backend.services.main_action_selector import (
 from backend.services.mcp_tool_orchestration_service import MCPToolPlan
 from backend.tests.doubles import (
     StubConversationRepository,
+    StubMainActionSelector,
     StubMemoryService,
     StubTracer,
 )
@@ -123,26 +124,6 @@ class FixedMemoryProposalAgent:
         # be resolved; the real agent's signature is the contract here.
         self.previous_reply = previous_reply
         return MemoryProposalResult(self.proposals)
-
-
-class StubMainActionSelector:
-    """Return one fixed action without a native tool-calling round trip."""
-
-    def __init__(self, action: MainAction) -> None:
-        self.action = action
-
-    async def select(
-        self,
-        user_id,
-        query,
-        history,
-        active_image_artifact_id,
-        query_embedding=None,
-        local_now=None,
-        skills=None,
-        unattended=False,
-    ) -> MainAction:
-        return self.action
 
 
 class FixedToolOrchestration:

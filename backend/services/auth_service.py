@@ -11,6 +11,7 @@ from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.core.harness_identity import is_harness_id
 from backend.models.auth import RegistrationInvite, UserAccount, UserSession
 
 _USERNAME_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._-]{0,49}$")
@@ -139,6 +140,14 @@ class AuthService:
         username: str | None = None,
     ) -> UserAccount:
         normalized = normalize_user_id(user_id)
+        # The harness namespace is reserved, and this is the path a person
+        # signs up on. Tools that clean up after a test run identify their
+        # accounts by that namespace and delete them without asking; a person
+        # who registered into it would be deleted by a cleaner one day, which
+        # is not a thing to leave to naming luck. The harnesses themselves use
+        # `create_account_with_hash`, which is not reachable from the network.
+        if is_harness_id(normalized):
+            raise ValueError("that username is reserved")
         normalized_username = normalize_user_id(username or user_id)
         if await self.session.get(UserAccount, normalized) is not None:
             raise ValueError("account already exists")

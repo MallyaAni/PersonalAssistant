@@ -30,7 +30,10 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from typing import Iterable
-from urllib.parse import parse_qs, unquote_plus, urlsplit
+from datetime import datetime, timedelta
+from urllib.parse import parse_qs, quote_plus, unquote_plus, urlencode, urlsplit
+
+from backend.core.grounding import mentions
 
 # One pattern for "something in this text is an address", shared with the
 # Scout digest writer so the two cannot drift apart.
@@ -117,18 +120,10 @@ def template_is_grounded(url: str, evidence: str) -> bool:
     # Punctuation is dropped from both sides before comparing: a search box
     # spells "Old Man's Beach Bar" as "Old+Mans+Beach+Bar", and a fence that
     # rejected that would strip the very links this system builds correctly.
-    subject = _bare_words(unquote_plus(values[0]))
-    haystack = _bare_words(evidence)
-    words = [word for word in subject.split() if len(word) > 2]
-    if not words:
-        return False
-    return all(word in haystack for word in words)
-
-
-# Text reduced to lowercase words with punctuation removed, so "Man's" and
-# "Mans" are the same word on both sides of the comparison.
-def _bare_words(text: str) -> str:
-    return re.sub(r"[^\w\s]+", "", (text or "").casefold())
+    # `mentions` is the shared rule (backend/core/grounding.py) - the same one
+    # the event extractor holds a venue name to, so a link and the listing it
+    # sits in can never disagree about whether the evidence named the place.
+    return mentions(unquote_plus(values[0]), evidence)
 
 
 # Every address the application put in front of the model this turn. Nothing
@@ -272,3 +267,50 @@ def fence_text(
     fence = LinkFence(allowed=allowed, evidence=evidence, templates_ok=templates_ok)
     fenced = fence.feed(text) + fence.flush()
     return fenced, fence.dropped
+
+
+# The other side of the fence: the addresses code is allowed to build.
+#
+# Each of these produces a URL in `_TEMPLATES`, so a fence downstream will
+# recognise it as a search box rather than a claim about a destination - and,
+# because the values passed in come from the evidence, `template_is_grounded`
+# accepts it. Anything that wants a link in a reply builds it here; nothing
+# asks a model to write one.
+def maps_search(subject: str) -> str:
+    return f"https://maps.google.com/?q={quote_plus(' '.join((subject or '').split()))}"
+
+
+def youtube_search(subject: str) -> str:
+    return (
+        "https://www.youtube.com/results?search_query="
+        f"{quote_plus(' '.join((subject or '').split()))}"
+    )
+
+
+# A Google Calendar prefill. Times are UTC and formatted the way the render
+# endpoint requires; an event with no clock time is written as an all-day
+# entry rather than being given a start nobody published.
+def calendar_link(
+    title: str,
+    starts_at: datetime | None,
+    ends_at: datetime | None = None,
+    location: str = "",
+    details: str = "",
+) -> str:
+    fields = {"text": " ".join((title or "").split())}
+    if starts_at is not None:
+        finish = ends_at or (starts_at + timedelta(hours=2))
+        if starts_at.hour == 0 and starts_at.minute == 0 and ends_at is None:
+            fields["dates"] = (
+                f"{starts_at.strftime('%Y%m%d')}/"
+                f"{(starts_at + timedelta(days=1)).strftime('%Y%m%d')}"
+            )
+        else:
+            fields["dates"] = (
+                f"{starts_at.strftime('%Y%m%dT%H%M%SZ')}/{finish.strftime('%Y%m%dT%H%M%SZ')}"
+            )
+    if location:
+        fields["location"] = " ".join(location.split())
+    if details:
+        fields["details"] = " ".join(details.split())
+    return "https://calendar.google.com/calendar/render?action=TEMPLATE&" + urlencode(fields)

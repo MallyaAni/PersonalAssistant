@@ -132,3 +132,46 @@ class StubTracer(ConversationTracer):
         metadata: dict[str, Any],
     ) -> None:
         return None
+
+
+class StubMainActionSelector:
+    """Return one fixed action without a native tool-calling round trip.
+
+    Routing itself - whether the main model decides to search - is the model's
+    own native tool-call decision, tested in test_main_action_selector.py
+    against a controlled LLM double and again in the functional suite against
+    the real runtime. The tests that use this one are downstream of that
+    decision: they exercise what the application does once told to search, or
+    to show a picture, or to draw a diagram, so each states its action
+    explicitly rather than relying on wording a pattern would happen to match.
+
+    One copy, here. There were four identical ones - in test_chat_api.py,
+    test_search_wiring.py, test_show_image.py and test_diagram_artifacts.py -
+    and on 2026-08-29 adding a keyword argument to the real selector turned
+    twenty tests red in four files at once, each needing the same edit. The
+    signature below mirrors MainActionSelector.select; when that gains an
+    argument, this is the one place that has to learn about it.
+    """
+
+    def __init__(self, action: Any) -> None:
+        self.action = action
+        # What it was last asked, so a test can assert on what the service
+        # passed down without a second double.
+        self.calls: list[dict[str, Any]] = []
+
+    async def select(
+        self,
+        user_id: str,
+        query: str,
+        history: list[dict[str, Any]],
+        active_image_artifact_id: str | None,
+        query_embedding: list[float] | None = None,
+        local_now: str | None = None,
+        skills: list[dict[str, Any]] | None = None,
+        unattended: bool = False,
+        only: frozenset[str] | None = None,
+        steps_taken: list[str] | None = None,
+        zone: str = "",
+    ) -> Any:
+        self.calls.append({"user_id": user_id, "query": query, "zone": zone})
+        return self.action

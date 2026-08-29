@@ -26,6 +26,7 @@ import httpx
 from sqlalchemy import text
 
 from backend.core.auth import issue_user_token
+from backend.core.harness_identity import harness_id
 from backend.database.session import AsyncSessionLocal
 from backend.services.auth_service import AuthService
 
@@ -35,7 +36,11 @@ TIMEOUT = 240.0
 class Scenarios:
     def __init__(self, base_url: str, operator: bool) -> None:
         self.base = base_url.rstrip("/")
-        self.user = f"search_e2e_{uuid.uuid4().hex[:8]}"
+        # From the one harness namespace, for the reason sweep_journeys.py
+        # records at length: a random id per run means every interrupted run
+        # leaks an account forever, and a name only a stale list recognises
+        # means the next cleaner will not find it.
+        self.user = harness_id("search")
         self.operator = operator
         self.headers: dict[str, str] = {}
         self.conversation = str(uuid.uuid4())
@@ -43,6 +48,17 @@ class Scenarios:
 
     async def create(self) -> None:
         async with AsyncSessionLocal() as db:
+            # Whatever a killed run left under this id. With a fixed account
+            # the create below would otherwise fail on the duplicate, and the
+            # harness would go red for a reason that has nothing to do with
+            # search.
+            from backend.api.v1.admin import purge_owned_rows
+
+            try:
+                await purge_owned_rows(db, self.user)
+                await db.commit()
+            except Exception:
+                await db.rollback()
             await AuthService(db).create_account_with_hash(
                 user_id=self.user, username=self.user, password_hash="$2b$12$" + "x" * 53
             )
@@ -60,9 +76,16 @@ class Scenarios:
         except httpx.HTTPError:
             pass
         async with AsyncSessionLocal() as db:
-            for table in ("user_sessions", "user_profiles", "conversations", "user_accounts"):
-                await db.execute(text(f"delete from {table} where user_id = :u"), {"u": self.user})
-            await db.commit()
+            from backend.api.v1.admin import purge_owned_rows
+
+            # Discovered from the schema, not listed: this cleanup used to name
+            # four tables and left every other thing the account owned behind.
+            try:
+                await purge_owned_rows(db, self.user)
+                await db.commit()
+            except Exception as exc:
+                await db.rollback()
+                print(f"cleanup: {self.user} left behind: {exc}", flush=True)
 
     # POST one turn, read the SSE stream, keep what matters.
     async def chat(self, client: httpx.AsyncClient, query: str, metadata: dict | None = None) -> dict:

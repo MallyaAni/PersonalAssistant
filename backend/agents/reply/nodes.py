@@ -110,11 +110,17 @@ def enforce(state: ReplyState) -> dict[str, Any]:
 def assemble(state: ReplyState) -> dict[str, Any]:
     context = state.get("context") or {}
     messages = [{"role": "system", "content": state["system_prompt"]}]
+    # The zone every history stamp is written in - the person's, or the
+    # group speaker's. Empty means UTC, which is marked as such by the clock
+    # line rather than silently assumed here.
+    zone = str(context.get("timezone") or "")
     for turn in state.get("history") or []:
         if turn.get("query"):
-            # A group member's words carry their name (transcript.user_content);
-            # a one-to-one turn is the bare query, byte-identical to before.
-            messages.append({"role": "user", "content": user_content(turn)})
+            # A group member's words carry their name, and every turn carries
+            # when it was said (transcript.user_content). Without the stamp a
+            # reminder set last night reads as tonight's - which is what a
+            # group was told on 2026-08-29.
+            messages.append({"role": "user", "content": user_content(turn, zone)})
         if turn.get("response"):
             messages.append({"role": "assistant", "content": turn["response"]})
     # This turn's volatile material goes after the history, so the prefix above

@@ -166,11 +166,15 @@ def _step_line(action: MainAction, kind: str) -> str:
 
 def _planner_history(
     history: list[dict[str, Any]] | None,
+    zone: str = "",
 ) -> list[dict[str, Any]]:
     turns: list[dict[str, Any]] = []
     for exchange in (history or [])[-2:]:
         if exchange.get("query"):
-            turns.append({"role": "user", "content": user_content(exchange)})
+            # Dated like every other rendering of a stored turn: a planner
+            # deciding what to search for needs to know whether "tonight" was
+            # said an hour ago or two days ago.
+            turns.append({"role": "user", "content": user_content(exchange, zone)})
         if exchange.get("response"):
             turns.append({"role": "assistant", "content": str(exchange["response"])})
     return turns
@@ -943,6 +947,10 @@ class ConversationService:
                 history,
                 active_image_artifact_id,
                 local_now=await self._local_now(user_id),
+                # The zone the history's timestamps are written in. Without it
+                # the router reads a transcript stamped UTC beside a clock line
+                # in local time, which is worse than either alone.
+                zone=await self._primary_timezone(user_id) or "",
                 unattended=unattended,
                 skills=(
                     await self._offered_skills(user_id) if skills is None else skills
@@ -2266,7 +2274,9 @@ class ConversationService:
                 # turn and the iMessage worker, because that worker answers
                 # serially behind the same loop.
                 composed = await asyncio.to_thread(
-                    self.search_planner.compose, query, _planner_history(history)
+                    self.search_planner.compose,
+                    query,
+                    _planner_history(history, str(context.get("timezone") or "")),
                 )
                 if composed:
                     chosen_query = composed
@@ -2810,6 +2820,7 @@ class ConversationService:
                 history or [],
                 None,
                 local_now=await self._local_now(user_id) if query else None,
+                zone=await self._primary_timezone(user_id) or "",
                 unattended=unattended,
                 only=AUTOMATION_TOOLS,
                 steps_taken=lines,
@@ -3822,13 +3833,18 @@ class ConversationService:
         # Eastern is already tomorrow - so a reminder set "for tomorrow" was
         # confirmed as "today" (2026-08-26, found by sweep_journeys).
         local_now: datetime | None = None
+        # The zone, not only the clock: the history's turns are stamped with
+        # when they were said, and a stamp in the wrong zone is worse than
+        # none - it would put an evening's conversation on the wrong day.
+        zone = ""
         try:
             found_place = await self._primary_place(user_id)
             place = found_place[0] if found_place else ""
             if found_place and found_place[1]:
                 from zoneinfo import ZoneInfo
 
-                local_now = datetime.now(ZoneInfo(str(found_place[1])))
+                zone = str(found_place[1])
+                local_now = datetime.now(ZoneInfo(zone))
         except Exception:
             place = ""
         context: dict[str, Any] = {
@@ -3836,6 +3852,7 @@ class ConversationService:
             "query": query,
             "place": place,
             "local_now": local_now,
+            "timezone": zone,
             "profile": profile,
             "episodic": episodic,
             "semantic": semantic,
