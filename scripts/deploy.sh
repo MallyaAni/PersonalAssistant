@@ -213,7 +213,7 @@ if $post; then
         # while the pinned suite for that format passed).
         if [[ $status -ne 0 && $check == backend.cli.exercise_search_scenarios ]]; then
             echo "retrying the search harness once"
-            if timeout 1200 "${compose[@]}" exec -T backend python -m "$check" 2>&1 | tail -8; then
+            if timeout 1200 "${compose[@]}" exec -T backend python -m "$check" </dev/null 2>&1 | tail -8; then
                 echo "$check: passed on retry (flaky)"
                 summary+=("$short OK after retry (flaky)")
                 continue
@@ -224,20 +224,33 @@ if $post; then
             if [[ -n "$names" ]]; then
                 still=()
                 flaky=()
+                # `</dev/null` is load-bearing: `docker compose exec -T` reads
+                # stdin, and inside `while read <<<"$names"` it swallowed the
+                # remaining names. Deploy #25 gapped two journeys, retried
+                # only the first, and reported the sweep green - a retry that
+                # hid a red, which is worse than no retry at all.
+                retried=0
                 while IFS= read -r name; do
                     [[ -z "$name" ]] && continue
+                    retried=$((retried + 1))
                     echo "retrying journey once: $name"
-                    if timeout 900 "${compose[@]}" exec -T backend python -m backend.cli.sweep_journeys --only "$name" 2>&1 | tail -3; then
+                    if timeout 900 "${compose[@]}" exec -T backend python -m backend.cli.sweep_journeys --only "$name" </dev/null 2>&1 | tail -3; then
                         flaky+=("$name")
                     else
                         still+=("$name")
                     fi
                 done <<<"$names"
-                if [[ ${#still[@]} -eq 0 ]]; then
-                    echo "$check: passed on retry (flaky: $(IFS='; '; echo "${flaky[*]}"))"
+                # Every gap must have been re-checked before this counts as a
+                # pass: a name the loop never reached is not a name that passed.
+                wanted=$(grep -c . <<<"$names")
+                if [[ ${#still[@]} -eq 0 && $retried -eq $wanted && $retried -gt 0 ]]; then
+                    echo "$check: passed on retry ($retried re-checked; flaky: $(IFS='; '; echo "${flaky[*]}"))"
                     status=0
                     summary+=("$short OK after retry (flaky: $(IFS='; '; echo "${flaky[*]}"))")
                     continue
+                fi
+                if [[ $retried -ne $wanted ]]; then
+                    echo "retry re-checked $retried of $wanted gaps; treating as failed" >&2
                 fi
             fi
         fi

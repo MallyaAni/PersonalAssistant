@@ -528,6 +528,12 @@ can still be stale UI.
   system stored as a user fact: 6/6 wrong with the space, 6/6 right without,
   measured 2026-08-28). Give each optional block its own trailing separator
   and concatenate with none, and pin the no-block prompt byte for byte.
+- **A command inside `while read` eats the loop's input.** `docker compose
+  exec -T`, `ssh`, and anything else that reads stdin will consume the
+  here-string the loop is iterating, so the loop runs once and stops -
+  silently. Deploy #25's retry re-checked one of two failing journeys and
+  called the sweep green. Redirect the inner command's stdin (`</dev/null`)
+  and assert the loop reached every item.
 - **`deploy.sh` runs the version it started with.** The script pulls main
   while it is executing, and bash keeps reading the file it opened - so a
   change to `deploy.sh` (the retry-once for flaky journeys, 2026-08-28) takes

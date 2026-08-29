@@ -2,6 +2,19 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-29 — The retry that hid a red, fixed
+
+- Deploy #25 gapped two journeys, retried **one**, and reported the sweep
+  green. `docker compose exec -T` reads stdin, and inside
+  `while read <<<"$names"` it swallowed every name after the first - so the
+  second gap was never re-checked and never reported. A retry that hides a
+  failure is worse than no retry, and this one hid a real misroute.
+- Fixed: the retry runs with `</dev/null`, and a pass now requires that the
+  number of gaps re-checked equals the number found - a name the loop never
+  reached is not a name that passed. Reproduced and verified in isolation
+  before and after (the broken loop reaches "first" only; the fixed one
+  reaches both, and a still-failing second name keeps the deploy red).
+
 ## 2026-08-29 — The search harness gets the same one retry the sweep has
 
 - Deploy #24 paged the operator for a single judged wobble: the harness
