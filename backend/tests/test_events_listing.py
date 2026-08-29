@@ -58,6 +58,33 @@ def test_a_dropped_count_is_said_out_loud():
     assert "opening hours" in text
 
 
+def test_every_event_carries_a_one_tap_calendar_link():
+    # The listing used to end by asking "want any of these in your calendar?"
+    # and then have no way to do it. An offer an assistant cannot fulfil is
+    # worse than no offer.
+    text = render_listing(Extraction((_lawn(),)), NOW)
+    assert "Add: https://calendar.google.com/calendar/render?action=TEMPLATE" in text
+    assert "text=Sunday+Sessions" in text
+    assert "dates=20260830T160000Z" in text
+    assert "location=The+Lawn+Batu+Bolong" in text
+    # And it is grounded, so the link fence keeps it.
+    assert template_is_grounded(
+        [
+            url
+            for url in URL_IN_TEXT.findall(text)
+            if "calendar.google.com" in url
+        ][0].rstrip(".,)"),
+        EVIDENCE + " Sunday Sessions",
+    )
+
+
+def test_an_event_with_no_clock_time_gets_an_all_day_calendar_entry():
+    # Never an invented start: a day nobody gave an hour for is an all-day
+    # entry, which is what the source actually asserted.
+    text = render_listing(Extraction((_potato(start_time=None, starts_at=datetime(2026, 9, 5, 0, 0, tzinfo=UTC)),)), NOW)
+    assert "dates=20260905%2F20260906" in text, text
+
+
 def test_a_clean_listing_says_nothing_about_drops():
     text = render_listing(Extraction((_lawn(),)), NOW)
     assert "Not listed" not in text

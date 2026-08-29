@@ -2,6 +2,39 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-29 — The listing can be acted on, and an outside agent stays outside
+
+The listing ended by offering a calendar entry it could not make. Now every
+event carries a one-tap Google Calendar link built from its own record - name,
+start, place already filled in - and the closing line says what to do with it.
+
+Then the question worth asking before building more: does "remind me about the
+second one" already work? Measured against the real routing model, it does -
+`ScheduleTaskAction(instruction='Remind me about the Sunset Session at Potato
+Head, Seminyak on Saturday 5 September at 6pm.', on_date='2026-09-05')`. No new
+machinery was needed, because the code-rendered listing puts the day, the time
+and the place into the history in a form the router can use, and the history is
+now dated. Pinned by `functional/test_act_on_a_listed_event_behaviour.py` so it
+stays true.
+
+Two published agent frameworks were assessed for this - OpenClaw, then DeepSeek
+Harness - and both declined as runtimes.
+[ADR 0018](adr/0018-an-outside-agent-enters-as-a-tool-or-not-at-all.md) records
+why in terms of this system rather than their quality: `dsh` has no browser
+automation in core (the capability it was wanted for), it is an MCP client with
+no server package so it can only be a peer rather than a tool, and its posture
+is a developer workstation. The browsing and booking work proceeds as an MCP
+server behind the boundary that already exists. `docs/RUNTIME_CAPABILITIES.md`
+records the separate survey of the vLLM engine actually serving this system,
+with a ranked list of what we hand-roll that it already enforces.
+
+And a defect of my own, caught in deploy #31's log: `sweep_journeys.remove`
+imported `purge_owned_rows` inside its group branch and used it after, so the
+single-journey retry - which has no group - raised UnboundLocalError and
+printed "harness_journeys left behind". The account was removed on the next
+attempt, so the only casualty was a misleading line in a deploy log, which is
+its own kind of defect. Fixed and pinned.
+
 ## 2026-08-29 — An events turn is answered by code, and one tool call means one
 
 The typed events path from earlier today is now wired to the turn. On a turn

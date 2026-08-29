@@ -24,6 +24,13 @@ _HASH = "$2b$12$" + "x" * 53
 
 
 async def _account(user_id: str) -> None:
+    # Purged first. These ids are fixed on purpose - that is the whole point of
+    # the namespace - so one may already be sitting in the database, left by a
+    # sweep that died before its cleanup. That is the exact condition this tool
+    # exists for, and a test that fell over on it would be testing the tidiness
+    # of the last run rather than the tool. (Seen 2026-08-29: the unit gate ran
+    # minutes after a deploy whose retry had left `harness_journeys` behind.)
+    await _forget(user_id)
     async with AsyncSessionLocal() as db:
         await AuthService(db).create_account_with_hash(
             user_id=user_id, username=user_id, password_hash=_HASH

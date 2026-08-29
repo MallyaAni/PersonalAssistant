@@ -412,8 +412,15 @@ class Sweep:
                 await db.rollback()
 
     async def remove(self, client: httpx.AsyncClient) -> None:
+        # Imported once, at the top. It used to be imported inside the group
+        # branch and used again below it, so a run with no group journey - the
+        # deploy's single-journey retry - raised UnboundLocalError and printed
+        # "left behind" (deploy #31, 2026-08-29). The account was removed on the
+        # second attempt, so the only casualty was a misleading line in the log,
+        # which is its own kind of defect.
+        from backend.api.v1.admin import purge_owned_rows
+
         if self.group_id:
-            from backend.api.v1.admin import purge_owned_rows
             from backend.groups.repository import ConversationGroupRepository
 
             try:

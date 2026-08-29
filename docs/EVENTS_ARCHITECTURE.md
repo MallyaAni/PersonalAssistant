@@ -65,12 +65,13 @@ links were by commission.
 | Second fence at the iMessage send boundary | Deployed 2026-08-29 (68ddd8e) | `backend/workers/imessage_chat.py` |
 | Shared "did the evidence say this" rule | Deployed 2026-08-29 (9db5e747) | `backend/core/grounding.py` |
 | One date parser, in core | Deployed 2026-08-29 (9db5e747) | `backend/core/dates.py` |
-| Typed event extraction | Built and gated; wiring in the next deploy | `backend/core/event_extraction.py` |
-| Code-rendered listing | Built and gated; wiring in the next deploy | `backend/core/events_listing.py` |
-| Deterministic reply on a flagged events turn | Written, gating | `backend/services/conversation_service.py` |
-| Calendar offer: `.ics` into the thread + Google Calendar link | **Not built** | would reuse `backend/discovery/calendar.py` |
-| `add_to_calendar` tool resolving "the second one" | **Not built** | needs a short-lived record of what was just listed |
-| Booking through a bounded browser tool | **Not built** | see the plan; `docs/BROWSER_ARCHITECTURE.md` does not exist yet |
+| Typed event extraction | Deployed 2026-08-29 (cabfdecd) | `backend/core/event_extraction.py` |
+| Code-rendered listing | Deployed 2026-08-29 (cabfdecd) | `backend/core/events_listing.py` |
+| The listing is the reply on a flagged events turn | Deployed 2026-08-29 (cabfdecd) | `backend/services/conversation_service.py` |
+| One-tap Google Calendar link per event | Deployed 2026-08-29 | `backend/core/events_listing.py` |
+| "Remind me about the second one" | Works with no new machinery — measured | `functional/test_act_on_a_listed_event_behaviour.py` |
+| `.ics` attached into the iMessage thread | **Not built** | needs `TurnResult` to carry a non-image file; would reuse `backend/discovery/calendar.py` |
+| Booking through a bounded browser tool | **Not built** | as an MCP server behind the existing boundary — see [ADR 0018](adr/0018-an-outside-agent-enters-as-a-tool-or-not-at-all.md) |
 
 ## What is deliberately not done
 

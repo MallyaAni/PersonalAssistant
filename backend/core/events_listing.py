@@ -24,7 +24,7 @@ from __future__ import annotations
 from datetime import UTC, date, datetime, time
 
 from backend.core.event_extraction import Extraction, ListedEvent
-from backend.core.links import maps_search, youtube_search
+from backend.core.links import calendar_link, maps_search, youtube_search
 
 # Longer than a phone shows at a glance, and past the point where a listing
 # stops being read. The rest is offered rather than printed.
@@ -55,7 +55,7 @@ def render_listing(
     tail = _dropped_line(extraction, len(extraction.events) - len(events))
     if tail:
         lines.extend(["", tail])
-    lines.extend(["", "Want any of these in your calendar?"])
+    lines.extend(["", "Tap Add on any of them, or tell me which one and I'll set a reminder."])
     return "\n".join(lines)
 
 
@@ -88,6 +88,11 @@ def _event_lines(event: ListedEvent) -> list[str]:
         lines.append(f"  {detail}")
     subject = " ".join(part for part in (event.venue, event.area) if part)
     lines.append(f"  Map: {maps_search(subject)}")
+    # One tap and it is in their calendar, with the name, the time and the
+    # place already filled in. The listing used to end by asking "want any of
+    # these in your calendar?" and then have no way to do it, which is the
+    # kind of offer that makes an assistant feel like a brochure.
+    lines.append(f"  Add: {calendar_link(event.name, event.starts_at, location=subject)}")
     if event.artist:
         lines.append(f"  Hear it: {youtube_search(event.artist)}")
     if event.source_url:
