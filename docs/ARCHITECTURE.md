@@ -809,7 +809,7 @@ Image and presentation paths:
 | Deck outline, one slide-content microtask per slide, or slide revision | `deepseek-v4-flash` (`PRESENTATION_LLM_MODEL`) | Sparks |
 | Diagram generation | `deepseek-v4-flash` (`DIAGRAM_LLM_MODEL`) | Sparks |
 | Architecture candidates | legacy `LLM_MODEL` (DeepSeek) unless its CLI environment is overridden | Sparks |
-| Google-grounded research, when enabled | `gemini-3.1-flash-lite` (`GOOGLE_SEARCH_MODEL`) | external Google API |
+| Google-grounded research, when enabled | `gemini-3.6-flash` (`GOOGLE_SEARCH_MODEL`) | external Google API |
 
 Web research, only when routing decides to search, calls Google Gemini grounding
 or Tavily - external/cloud, never local hardware. Role names are independently
@@ -900,7 +900,7 @@ cascade that used to make this call has been deleted; its labelled set
 selector to the same recall and specificity floor. Neither the local model nor
 the cloud worker owns outbound eligibility beyond that one decision.
 
-The Google worker is a request-scoped `gemini-3.1-flash-lite` ADK `Agent` with the
+The Google worker is a request-scoped `gemini-3.6-flash` ADK `Agent` with the
 native `google_search` tool. Each call creates a random in-memory session,
 disables prior contents, and sends only the already normalized and
 privacy-screened public query under a constant anonymous worker identity. It
@@ -910,17 +910,11 @@ without grounding metadata and attributable web sources so fallback can run.
 This is one specialized research agent behind the existing provider contract,
 not general LangGraph subagent scheduling or A2A.
 
-`SQLiteDailySearchQuota` reserves Google billable search queries atomically
-across short-lived
+`SQLiteDailySearchQuota` reserves Google calls atomically across short-lived
 stdio processes. It persists only provider, Pacific calendar day, and count in
-the `searchdata` volume; it does not store query or result content. Gemini 3
-may execute several searches for one prompt, so the provider reserves ten
-units before a request and reconciles both daily and monthly counters to the
-non-empty `web_search_queries` returned in grounding metadata. An uncertain
-timeout keeps that reservation rather than assuming it was free. The default
-local limit is 450 queries/day and 4,800/month. This is a buffered safety
-ceiling, not proof of provider quota or free access. Current Gemini 3 Search
-Grounding availability depends on
+the `searchdata` volume; it does not store query or result content. The default
+local limit is 450 calls/day. This is a safety ceiling, not proof of provider
+quota or free access. Current Gemini 3 Search Grounding availability depends on
 the Google API project's plan and billing state; AniOS never enables billing or
 switches tiers automatically. The unpaid Gemini service may use submitted
 prompts and responses to improve Google products, so the existing minimization

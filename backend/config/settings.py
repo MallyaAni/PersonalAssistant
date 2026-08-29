@@ -795,10 +795,11 @@ class Settings(BaseSettings):
     # without it. Left on, every search would pay ~220ms for a call that cannot
     # succeed, so the provider stays off until an operator confirms entitlement.
     GOOGLE_SEARCH_ENABLED: bool = False
-    GOOGLE_SEARCH_MODEL: str = "gemini-3.1-flash-lite"
+    GOOGLE_SEARCH_MODEL: str = "gemini-3.6-flash"
     GOOGLE_SEARCH_TIMEOUT_SECONDS: float = Field(default=30.0, gt=0, le=120)
-    # Covers reasoning tokens as well as the answer; a small budget can end a
-    # grounded reasoning response before it emits any attributable text.
+    # Covers reasoning tokens as well as the answer: gemini-3.6-flash spends
+    # roughly 500-700 tokens thinking before it writes, so a 1024 budget
+    # leaves a long grounded answer at risk of being truncated to nothing.
     GOOGLE_SEARCH_MAX_OUTPUT_TOKENS: int = Field(default=2_048, ge=128, le=8_192)
     # Bound local Google calls independently of the provider account quota.
     GOOGLE_SEARCH_DAILY_LIMIT: int = Field(default=450, ge=1, le=500)

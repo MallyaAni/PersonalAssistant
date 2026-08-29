@@ -275,12 +275,14 @@ async def test_conversation_service_streams_and_persists_required_turn_fields():
         )
     ]
 
-    assert [event["event"] for event in events] == [
-        "start",
-        "delta",
-        "delta",
-        "done",
-    ]
+    # Shape, not chunk count: since 2026-08-29 the reply passes a link fence
+    # that rules on whole lines, because whether a line survives cannot be
+    # decided until the address on it has finished arriving. How many deltas
+    # a sentence arrives in is the model's business and the fence's; what the
+    # reader ends up with is this test's.
+    kinds = [event["event"] for event in events]
+    assert kinds[0] == "start" and kinds[-1] == "done"
+    assert set(kinds[1:-1]) == {"delta"} and len(kinds) >= 3
     assert (
         "".join(event["data"].get("content", "") for event in events)
         == "deterministic response"
@@ -327,13 +329,12 @@ async def test_conversation_service_auto_saves_a_proposed_name():
         )
     ]
 
-    assert [event["event"] for event in events] == [
-        "start",
-        "delta",
-        "delta",
-        "memory_proposal",
-        "done",
-    ]
+    # As above: the number of deltas is the fence's business now, the order
+    # of the kinds is this test's.
+    kinds = [event["event"] for event in events]
+    assert kinds[0] == "start" and kinds[-1] == "done"
+    assert kinds[-2] == "memory_proposal"
+    assert set(kinds[1:-2]) == {"delta"}
     assert events[-2]["event"] == "memory_proposal"
     assert events[-2]["data"]["kind"] == "preferred_name"
     assert events[-2]["data"]["value"] == "Proposed Name"

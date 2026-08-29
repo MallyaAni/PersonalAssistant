@@ -18,9 +18,6 @@ from backend.search.types import SearchResult, SearchResults
 logger = logging.getLogger(__name__)
 _APP_NAME = "anios-google-research"
 _ANONYMOUS_USER_ID = "public-research"
-# Hold enough capacity for a normal multi-query Gemini 3 grounding turn before
-# it starts. The response replaces this reservation with its observed count.
-_QUERY_RESERVATION = 10
 
 
 class ResearchRunner(Protocol):
@@ -79,15 +76,6 @@ def _source_segments(metadata: Any) -> dict[int, list[str]]:
             if isinstance(raw_index, int):
                 mapped.setdefault(raw_index, []).append(segment.strip())
     return mapped
-
-
-# Count non-empty search queries using the same response field Google bills.
-def _billable_search_query_count(metadata: Any) -> int:
-    queries = getattr(metadata, "web_search_queries", None) or []
-    observed = sum(1 for query in queries if isinstance(query, str) and query.strip())
-    # Grounded sources without usable query text stay charged conservatively;
-    # empty provider metadata must never make possible usage disappear.
-    return max(1, observed)
 
 
 # Convert Google grounding metadata into bounded, attributable web results.
@@ -163,13 +151,11 @@ class GoogleADKSearchProvider(SearchProvider):
     ) -> SearchResults:
         if not self.is_enabled():
             raise RuntimeError("Google Search Grounding is not configured.")
-        # A Gemini 3 prompt may execute several separately billed searches.
-        # Reserve before the call so concurrent requests cannot race the cap,
-        # then replace the reservation with Google's observed query count.
-        await self.quota.consume(count=_QUERY_RESERVATION)
+        # Reserved before the call so concurrent requests cannot overshoot the
+        # budget, and returned below whenever no usable result was produced.
+        await self.quota.consume()
         bounded = max(1, min(max_results or self.max_results, self.max_results))
         session_id = str(uuid.uuid4())
-        request_started = False
         try:
             runner = self.runner_factory(self.model, self.max_output_tokens)
             try:
@@ -178,7 +164,6 @@ class GoogleADKSearchProvider(SearchProvider):
                     user_id=_ANONYMOUS_USER_ID,
                     session_id=session_id,
                 )
-                request_started = True
                 answer, metadata = await asyncio.wait_for(
                     self._run_research(runner, session_id, query),
                     timeout=self.timeout_seconds,
@@ -187,10 +172,6 @@ class GoogleADKSearchProvider(SearchProvider):
                 await runner.close()
             if metadata is None:
                 raise RuntimeError("Google research returned no grounding metadata.")
-            await self.quota.reconcile(
-                _QUERY_RESERVATION,
-                _billable_search_query_count(metadata),
-            )
             results = _grounded_results(
                 metadata,
                 answer,
@@ -200,12 +181,9 @@ class GoogleADKSearchProvider(SearchProvider):
             if not results:
                 raise RuntimeError("Google research returned no attributable sources.")
         except Exception:
-            # Factory/session failures before the model request spend nothing.
-            # Once a request starts, a timeout or malformed response may still
-            # be billable, so retain its conservative reservation unless the
-            # provider returned enough metadata to reconcile it exactly.
-            if not request_started:
-                await self.quota.release(count=_QUERY_RESERVATION)
+            # A refused or failed attempt spent no provider quota, so the local
+            # budget must not record one either.
+            await self.quota.release()
             raise
         return SearchResults(
             query=query,

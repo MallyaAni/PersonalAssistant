@@ -135,12 +135,10 @@ This document separates current security facts from future requirements. A contr
 - Google's unpaid Gemini service may use submitted prompts and responses to
   improve its products and may subject them to human review. Do not route
   sensitive, confidential, personal, or private-memory content to that worker.
-  The local SQLite budget stores only provider, period, and billable query
-  count; it contains no query or result text. Gemini 3 calls reserve ten units
-  before leaving, reconcile to non-empty `web_search_queries`, and retain the
-  reservation when a timeout makes actual use unknowable. Its 450/day and
-  4,800/month defaults are buffered protective caps, not contractual or
-  distributed provider limits, and AniOS never enables billing automatically.
+  The local SQLite budget stores only provider, Pacific date, and request count;
+  it contains no query or result text. Its 450/day default is a protective cap,
+  not a contractual or distributed rate limit, and AniOS never enables billing
+  automatically.
 - Qwen may choose at most one action per turn from a single native tool-calling call offered by `MainActionSelector`: the live `search_web` schema, built-in image/diagram/delegation actions, and a user-scoped semantic shortlist of the user's own tools whose schemas were re-read from locally configured `trusted` or `read_only` MCP servers. A name the call did not actually offer this round is refused before any downstream effect, regardless of what the model returns. The model cannot invoke a toolbox tool directly: AniOS revalidates the live fingerprint, description, schema, arguments, and privacy policy. Consequential servers are not offered to autonomous chat selection.
 - The application-owned local capability FastMCP server is configured `untrusted` and
   requires explicit confirmation. Its schemas omit user, conversation, and
@@ -214,10 +212,10 @@ The following controls are requirements for future milestones, not current featu
   before any downstream effect;
 - `VERIFIED` (bounded): outbound query classification/minimization blocks credentials, common account identifiers, and identifying personal framing; broader PII/document classification remains `PLANNED`;
 - `PLANNED`: user review of the sanitized query whenever useful search depends on private or materially identifying context; if a safe query cannot be formed, no request is sent;
-- `VERIFIED` (Tavily and paid Google runtime): search results are bounded
+- `VERIFIED` (Tavily runtime; Google deterministic): search results are bounded
   untrusted prompt data and source cards preserve per-provider provenance;
   claim-level citation evaluation, a durable redacted decision audit, and a
-  live browser acceptance with Google enabled remain incomplete;
+  live Google-grounding acceptance remain incomplete;
 - `PLANNED`: TLS and outbound-provider trust controls;
 - `VERIFIED` (local boundary): a loopback-only same-origin Nginx gateway serves
   the compiled UI and proxies API/SSE/upload/download traffic. `PLANNED`:

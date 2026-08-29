@@ -2,32 +2,6 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
-## 2026-08-29 — Gemini grounding is metered by query, and the smaller worker wins
-
-- The paid project was tested instead of inferred from its pricing page:
-  `gemini-3.6-flash` returned HTTP 200, an answer, two search queries, and five
-  grounded sources through the direct API; the AniOS provider returned an
-  attributable `python.org` result. The earlier 429 described the project
-  before billing was linked, not its current entitlement.
-- The old 4,800 ceiling counted prompts, while Gemini 3 bills each non-empty
-  `webSearchQueries` entry. One observed prompt used two. AniOS now reserves ten
-  units atomically before a call, reconciles the daily and monthly SQLite
-  counters to Google's returned query count, retains the conservative hold
-  when a timeout makes usage unknowable, and records an unexpected overage so
-  all later work stops. The live patched acceptance moved both counters 0 → 1
-  for a response reporting one query and returned three official sources.
-- The environment guard found the monthly limit never reached the deployed MCP
-  child and the cache path had the same gap. Compose now supplies both settings
-  to every search-owning service, and the documented `inherit_env` includes
-  them. The focused configuration guard is 8/8 and the search/quota/provider
-  set is 37/37.
-- `gemini-3.1-flash-lite` replaces 3.6 as the retrieval-worker default. Across
-  matched Python, Federal Reserve, and Artemis questions it returned the same
-  current facts and official sources. On the two timed comparison cases it took
-  1.56/1.95 seconds instead of 3.25/7.96 and used one Google query each instead
-  of one/two. The full non-functional backend suite passed 2,092 tests with
-  four documented environment-dependent skips.
-
 ## 2026-08-29 — No address leaves that the application cannot vouch for
 
 - The failure: a recommendation sent to arsalon carried
