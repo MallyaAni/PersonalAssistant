@@ -37,7 +37,8 @@ the final user response.
    application policy decides whether internet research is allowed and
    privacy-screens the query before any provider call.
 2. The primary optional research provider is a request-scoped Google ADK
-   `Agent` using `gemini-3.6-flash` and the native `google_search` tool.
+   `Agent` using the configured low-cost Gemini Flash-Lite model and the native
+   `google_search` tool.
 3. Every Google call uses a new in-memory single-turn session with prior
    contents disabled. The worker receives only the minimized public query under
    a constant anonymous worker ID. It receives no AniOS user/conversation ID,

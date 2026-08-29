@@ -45,16 +45,15 @@ def _build_search_provider() -> HybridSearchProvider:
         api_key=os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY"),
         enabled=os.getenv("GOOGLE_SEARCH_ENABLED", "false").strip().lower()
         in {"1", "true", "yes", "on"},
-        model=os.getenv("GOOGLE_SEARCH_MODEL", "gemini-3.6-flash"),
+        model=os.getenv("GOOGLE_SEARCH_MODEL", "gemini-3.1-flash-lite"),
         timeout_seconds=float(os.getenv("GOOGLE_SEARCH_TIMEOUT_SECONDS", "30")),
         max_results=max_results,
         max_content_chars=max_content_chars,
         max_output_tokens=int(os.getenv("GOOGLE_SEARCH_MAX_OUTPUT_TOKENS", "2048")),
-        # Two lines, not one: grounding is free to a monthly allowance
-        # (5,000 requests a month on Gemini 3.x as of 2026-08-29, then $14
-        # per 1,000), and a daily cap alone does not hold that - 450 a day
-        # is 13,500 a month. The monthly ceiling defaults below Google's
-        # free allowance so switching grounding on cannot bill by accident.
+        # Gemini 3 meters the non-empty web searches in grounding metadata,
+        # not prompts. The provider reserves before each call and reconciles
+        # both counters to that observed count. The 4,800 monthly ceiling
+        # leaves a buffer beneath Google's included 5,000-query allowance.
         quota=EveryQuota(
             SQLiteDailySearchQuota(
                 path=os.getenv(
@@ -722,8 +721,9 @@ async def _google_meter() -> dict[str, object] | None:
 
     Grounding is unavailable on Google's free tier - a grounded call on a
     free-tier project returns 429 while a plain call on the same key
-    succeeds (measured 2026-08-29). With billing on, the first 5,000 a month
-    are free; this reports the local ceiling that keeps it under that.
+    succeeds (measured 2026-08-29). With billing on, the first 5,000 search
+    queries a month have no grounding surcharge; this reports AniOS's local
+    query count and buffered ceiling.
     """
     enabled = os.getenv("GOOGLE_SEARCH_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
     if not enabled or not (os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY") or "").strip():
@@ -739,7 +739,7 @@ async def _google_meter() -> dict[str, object] | None:
         "remaining_this_month": max(0, monthly - used_month),
         "used_today": used_day,
         "daily_limit": daily,
-        "period": "this calendar month, held under Google's free grounding allowance",
+        "period": "this calendar month, counted from Google's grounding metadata",
     }
 
 

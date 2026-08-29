@@ -32,7 +32,7 @@ import random
 import time
 import re
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 import httpx
 from redis.asyncio import Redis
@@ -42,6 +42,7 @@ from backend.config.settings import settings
 from backend.core.auth import issue_user_token
 from backend.core.logging_config import get_logger
 from backend.database.session import AsyncSessionLocal
+from backend.core.links import allowed_urls, fence_text
 from backend.discovery.addressing import normalize_address
 
 # The digest channel's guid reader, reused rather than re-derived: it already
@@ -203,6 +204,11 @@ class TurnResult:
 
     reply: str
     images: tuple[TurnImage, ...] = field(default=())
+    # Every address this turn's sources actually carried, read off the
+    # stream. The wall in `_deliver` holds the reply to them: a bridge that
+    # trusts its caller's rules has no rules, and on 2026-08-29 a reply full
+    # of invented links reached a phone.
+    allowed_urls: frozenset[str] = field(default=frozenset())
 
 
 class BackendUnavailable(Exception):
@@ -821,6 +827,21 @@ class IMessageChatWorker:
     # bubbles at a typing pace - then any picture the turn made, as a photo
     # after the words that introduce it.
     async def _deliver(self, reply_to: str, turn: "TurnResult") -> None:
+        # The second wall. The backend fences the reply as it is written;
+        # this checks again with what came over the wire, so an address
+        # nobody vouched for cannot reach the Mac even if that fence were
+        # switched off or bypassed. Search templates pass here: the text
+        # they were checked against does not cross the wire, and a search
+        # box cannot carry anyone to an invented destination.
+        fenced, dropped = fence_text(
+            turn.reply, turn.allowed_urls, templates_ok=True
+        )
+        if dropped:
+            logger.warning(
+                "imessage_chat_link_wall_removed",
+                extra={"hosts": ", ".join(sorted(set(dropped)))[:120]},
+            )
+            turn = replace(turn, reply=fenced)
         try:
             await self.redis.set(
                 _LAST_REPLY_KEY.format(to=reply_to), plain_text(turn.reply)[:4000], ex=_PENDING_TTL_SECONDS
@@ -960,6 +981,7 @@ class IMessageChatWorker:
         body.update(await self._thread_state(user_id, pinned=active_image))
         collected: list[str] = []
         images: list[TurnImage] = []
+        seen_urls: set[str] = set()
         try:
             async with (
                 httpx.AsyncClient(timeout=_CHAT_TIMEOUT_SECONDS) as client,
@@ -983,6 +1005,7 @@ class IMessageChatWorker:
                             collected,
                             images,
                             status,
+                            seen_urls,
                         )
             # Fetched inside the turn while the token is fresh, through the
             # same owned-artifact endpoint the browser uses. A diagram
@@ -1010,7 +1033,7 @@ class IMessageChatWorker:
             return TurnResult(_FAILURE_REPLY, ())
         reply = "".join(collected).strip()
         carried = tuple(image for image in images if image.data_base64)
-        return TurnResult(reply or _FAILURE_REPLY, carried)
+        return TurnResult(reply or _FAILURE_REPLY, carried, allowed_urls(seen_urls))
 
     # What the thread already established: its conversation id and, when a
     # photo was sent recently, the picture-in-view a follow-up text edits.
@@ -1254,8 +1277,14 @@ class IMessageChatWorker:
         collected: list,
         images: list,
         status: list | None = None,
+        seen_urls: set[str] | None = None,
     ) -> None:
-        if event == "start" and data.get("conversation_id"):
+        if event == "search_results" and seen_urls is not None:
+            # What the turn was actually shown, for the wall in `_deliver`.
+            for source in data.get("sources") or ():
+                if isinstance(source, dict) and source.get("url"):
+                    seen_urls.add(str(source["url"]))
+        elif event == "start" and data.get("conversation_id"):
             await self._remember_conversation(user_id, str(data["conversation_id"]))
         elif event == "action" and status is not None:
             waiting = str(data.get("waiting") or "").strip()

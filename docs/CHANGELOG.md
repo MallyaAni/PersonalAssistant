@@ -2,6 +2,69 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-29 — Gemini grounding is metered by query, and the smaller worker wins
+
+- The paid project was tested instead of inferred from its pricing page:
+  `gemini-3.6-flash` returned HTTP 200, an answer, two search queries, and five
+  grounded sources through the direct API; the AniOS provider returned an
+  attributable `python.org` result. The earlier 429 described the project
+  before billing was linked, not its current entitlement.
+- The old 4,800 ceiling counted prompts, while Gemini 3 bills each non-empty
+  `webSearchQueries` entry. One observed prompt used two. AniOS now reserves ten
+  units atomically before a call, reconciles the daily and monthly SQLite
+  counters to Google's returned query count, retains the conservative hold
+  when a timeout makes usage unknowable, and records an unexpected overage so
+  all later work stops. The live patched acceptance moved both counters 0 → 1
+  for a response reporting one query and returned three official sources.
+- The environment guard found the monthly limit never reached the deployed MCP
+  child and the cache path had the same gap. Compose now supplies both settings
+  to every search-owning service, and the documented `inherit_env` includes
+  them. The focused configuration guard is 8/8 and the search/quota/provider
+  set is 37/37.
+- `gemini-3.1-flash-lite` replaces 3.6 as the retrieval-worker default. Across
+  matched Python, Federal Reserve, and Artemis questions it returned the same
+  current facts and official sources. On the two timed comparison cases it took
+  1.56/1.95 seconds instead of 3.25/7.96 and used one Google query each instead
+  of one/two. The full non-functional backend suite passed 2,092 tests with
+  four documented environment-dependent skips.
+
+## 2026-08-29 — No address leaves that the application cannot vouch for
+
+- The failure: a recommendation sent to arsalon carried
+  `https://maps.app.goo.gl/xyz`, `/abc`, `/def`, `/ghi`, `/jkl` and
+  `https://youtu.be/xyz` - shortened links with placeholder ids, invented
+  whole - and "Time: Sundays, 4 PM – 10 PM", a venue's opening hours
+  presented as an event. On the chat path the reply model is handed four
+  fields per result (title, url, content, provider) and asked, in prose, to
+  *construct* a maps link from a venue it also inferred; nothing checked the
+  result. The events format that at least prescribes a deterministic form is
+  applied only when a ranker flags the results as events, and it did not
+  flag that turn.
+- **The link fence** (`backend/core/links.py`), the rule Scout's digest has
+  always had, carried to chat: an address survives only if it appeared in
+  this turn's evidence, or code can see it is a search template whose
+  subject is made of words the evidence contains. It runs where the reply is
+  written (`conversation_service`'s relay loop), so the streamed bytes and
+  the stored bytes are the same bytes and every route is covered - including
+  the one that failed. A dropped address takes its markdown label with it,
+  and a line left saying only "Map link:" is dropped whole.
+- **A second wall before the Mac** (`backend/workers/imessage_chat.py`): the
+  turn carries the addresses its sources actually had, and `_deliver` checks
+  again. A bridge that trusts its caller's rules has no rules.
+- Deliberately not covered, and said out loud: a bare handle like
+  "@thelawncanggu" is not a URL and no pattern can tell an invented one from
+  a real one. That is fixed by not asking a model for handles, in the typed
+  listing that follows.
+- Streaming is now line-paced where a line carries an address (a ruling
+  cannot be made until the address has finished arriving); risk-free prose
+  over 200 characters still streams as it is written. Two tests that pinned
+  the exact number of deltas now pin the order of kinds instead.
+- Verified: 12 unit tests including the arsalon reply itself and
+  chunk-boundary invariance (the same reply split at every point fences
+  identically); a delivery-wall test; three real-model tests
+  (`test_no_invented_links_behaviour`) measuring what the model reaches for
+  and proving a no-evidence turn keeps no address. Unit gate 2093.
+
 ## 2026-08-29 — A shipped skill is offered only when it is asked for by name
 
 - Deploy #26's fixed retry did its job: it re-checked the dinner journey, it

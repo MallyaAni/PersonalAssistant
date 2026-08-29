@@ -19,14 +19,18 @@ class RecordingQuota:
         self.releases = 0
 
     # Record one attempted provider call.
-    async def consume(self) -> None:
-        self.calls += 1
+    async def consume(self, *, count: int = 1) -> None:
+        self.calls += count
         if self.failure is not None:
             raise self.failure
 
     # Record one reservation returned after a failed attempt.
-    async def release(self) -> None:
-        self.releases += 1
+    async def release(self, *, count: int = 1) -> None:
+        self.releases += count
+
+    # Replace a reservation with the provider's observed billable usage.
+    async def reconcile(self, reserved_count: int, actual_count: int) -> None:
+        self.calls += actual_count - reserved_count
 
 
 class RecordingSessionService:
@@ -77,6 +81,7 @@ class RecordingRunner:
 # Build minimal Google grounding metadata with one attributable web source.
 def _grounding_metadata() -> SimpleNamespace:
     return SimpleNamespace(
+        web_search_queries=["current Python release", "python stable release"],
         grounding_chunks=[
             SimpleNamespace(
                 web=SimpleNamespace(
@@ -130,7 +135,8 @@ async def test_google_research_is_isolated_and_returns_grounded_sources() -> Non
 
     found = await _provider(runner, quota).search("latest Python release")
 
-    assert quota.calls == 1
+    assert quota.calls == 2
+    assert quota.releases == 0
     assert found.provider == "google"
     assert found.results[0].provider == "google"
     assert found.results[0].content == "Python 3.x is current."
@@ -139,6 +145,16 @@ async def test_google_research_is_isolated_and_returns_grounded_sources() -> Non
     assert sent.parts[0].text == "latest Python release"
     assert runner.calls[0]["user_id"] == "public-research"
     assert runner.closed is True
+
+
+# Verify empty query entries are ignored while an unknown count stays safe.
+def test_billable_search_query_count_matches_google_metadata() -> None:
+    from backend.search.google_adk import _billable_search_query_count
+
+    metadata = SimpleNamespace(web_search_queries=["one", "", "  ", "two"])
+
+    assert _billable_search_query_count(metadata) == 2
+    assert _billable_search_query_count(SimpleNamespace(web_search_queries=[])) == 1
 
 
 # Verify unattributed Gemini output is rejected so the fallback can run.
@@ -177,17 +193,18 @@ async def test_google_research_stops_before_adk_when_quota_is_exhausted() -> Non
     with pytest.raises(SearchQuotaExceededError, match="budget is exhausted"):
         await _provider(runner, quota).search("latest Python release")
 
+    assert quota.calls == 10
     assert runner.session_service.calls == []
     assert runner.calls == []
 
 
-# A failed provider call must not spend a slot from the daily budget.
+# A failure before the provider request must return the full reservation.
 @pytest.mark.asyncio
 async def test_a_failed_search_returns_its_quota_reservation(tmp_path):
     from backend.search.quota import SQLiteDailySearchQuota
 
     quota = SQLiteDailySearchQuota(
-        path=str(tmp_path / "quota.sqlite3"), provider="google", daily_limit=5
+        path=str(tmp_path / "quota.sqlite3"), provider="google", daily_limit=20
     )
 
     # Simulate the provider rejecting every request, as a 429 does.
@@ -218,6 +235,26 @@ async def test_a_failed_search_returns_its_quota_reservation(tmp_path):
     ).fetchone()
     connection.close()
     assert used[0] == 0
+
+
+# A failure after the request starts keeps a conservative billable reservation.
+@pytest.mark.asyncio
+async def test_an_uncertain_provider_failure_keeps_its_reservation() -> None:
+    class FailingRunner(RecordingRunner):
+        # Fail after the provider has started the external model request.
+        async def run_async(self, **kwargs: Any):
+            self.calls.append(kwargs)
+            raise RuntimeError("connection lost after request")
+            yield  # pragma: no cover
+
+    runner = FailingRunner(FakeEvent("", None))
+    quota = RecordingQuota()
+
+    with pytest.raises(RuntimeError, match="connection lost"):
+        await _provider(runner, quota).search("latest Python release")
+
+    assert quota.calls == 10
+    assert quota.releases == 0
 
 
 # Releasing more than was reserved must never drive the counter negative.

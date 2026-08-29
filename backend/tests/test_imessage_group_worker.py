@@ -558,3 +558,34 @@ async def test_observing_posts_the_room_turn_under_the_groups_conversation(monke
     assert "conversation_id" not in call["json"]
     # The conversation the backend opened is the thread from now on.
     assert await worker._stored_conversation("group:abc") == "conv-1"
+
+
+@pytest.mark.asyncio
+async def test_an_address_nobody_vouched_for_never_reaches_the_mac(monkeypatch):
+    """The second wall. The backend fences the reply as it is written; this
+    proves a reply carrying an unvouched address is not deliverable even if
+    that fence were off - the failure on 2026-08-29 put maps.app.goo.gl/xyz
+    on a real phone."""
+    from backend.core.links import allowed_urls as _allowed
+
+    direct = {"guid": "d1", "sender": "5550100", "reply_to": "+15550100", "text": "what's on", "sent_at": "2026-08-29T20:00:00Z"}
+    bridge = _Bridge({"messages": [direct], "cursor": 5})
+    worker, _conversed, _ = _worker(bridge, monkeypatch, ACCOUNTS, {})
+
+    async def converse(user_id, text, active_image=None, status=None, room=None):
+        return TurnResult(
+            "Two spots:\nLa Brisa — https://labrisabali.com/whats-on\n"
+            "Map link: https://maps.app.goo.gl/xyz\n"
+            "Map: https://maps.google.com/?q=La+Brisa+Canggu",
+            (),
+            _allowed([{"url": "https://labrisabali.com/whats-on"}]),
+        )
+
+    monkeypatch.setattr(worker, "_converse", converse)
+    assert await worker.tick() == 1
+    sent = " ".join(str(call.get("body") or "") for call in bridge.sent)
+    assert "maps.app.goo.gl" not in sent, sent
+    # The source's own link and a search template both survive.
+    assert "labrisabali.com/whats-on" in sent
+    assert "maps.google.com/?q=La+Brisa+Canggu" in sent
+    assert "Map link:" not in sent

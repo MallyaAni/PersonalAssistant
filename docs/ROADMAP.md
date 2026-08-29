@@ -266,13 +266,13 @@ scale without coupling the system to the current RTX 5080 or planned DGX Spark.
   same set by a functional test against the real model. Long-duration accuracy
   drift, contexts above the verified 8k workstation profile, and DGX Spark
   behavior remain unmeasured;
-- `VERIFIED` (Tavily runtime; Google deterministic): deterministic
+- `VERIFIED` (Tavily and paid Google runtime): deterministic
   privacy-preserving MCP internet research with an isolated Google ADK worker,
   Tavily fallback, explicit dual-provider verification, local non-content
   quota protection, visible tool/search status, and provider-attributed source
-  cards. Live Google requests are `FAILED` for the tested free-only account:
-  Gemini 2.5 models reject new users and Gemini 3 Search Grounding returns zero
-  available account quota without the required plan;
+  cards. The paid project returned attributable Gemini 3 grounding through
+  both the direct API and AniOS provider on 2026-08-29; free-only projects still
+  return zero Gemini 3 Search Grounding quota;
 - coding, finance, and scheduling capabilities;
 - reflection and multi-agent orchestration;
 - `VERIFIED`: trace-correlated tool execution with visible running/success/refusal/failure status; durable audit and consequential-call approval UI remain planned.
@@ -306,11 +306,12 @@ Internet-search policy and acceptance gates:
 
 Search routing, query normalization, privacy enforcement, read-only MCP
 execution, Google-first/Tavily-fallback policy, explicit cross-checking,
-cloud-worker context isolation, non-content daily quota, untrusted result
+cloud-worker context isolation, non-content daily/monthly query quota, untrusted result
 isolation, visible status, and provider source provenance are implemented.
 Deterministic coverage verifies both provider branches; direct API and real
-Chromium acceptance verify Tavily fallback. A real Google-grounded request is
-`UNVERIFIED` until an operator configures a key. The local models have no unrestricted
+Chromium acceptance verify Tavily fallback. Paid Google grounding is verified
+through the live provider; browser acceptance after enabling it remains
+`UNVERIFIED`. The local models have no unrestricted
 network access. Review/approval when a useful query needs materially identifying
 context, broader PII classification, durable redacted decision audit,
 distributed quota coordination, and claim-level citation evaluation remain

@@ -37,6 +37,7 @@ from backend.core.interfaces import (
     MemoryService,
     SearchProvider,
 )
+from backend.core.links import URL_IN_TEXT, LinkFence, allowed_urls
 from backend.core.llm import LLMClient
 from backend.discovery.projection import interest_fact, locality_fact
 from backend.discovery.runs import DiscoveryRunRepository
@@ -613,6 +614,29 @@ def _owned_copies(
         else:
             copies.append((owner.user_id, candidate))
     return copies
+
+
+# The fence for one turn: the addresses the application showed the model, and
+# the text those results carried. A search template ("maps.google.com/?q=…")
+# is allowed only when its subject is made of words that text contains, so a
+# venue read from a result passes and an invented one does not.
+def _link_fence(context: dict[str, Any]) -> LinkFence:
+    sources: list[dict[str, Any]] = []
+    evidence: list[str] = []
+    for key in ("search", "history_search", "tool_results", "images"):
+        for item in context.get(key) or ():
+            if isinstance(item, dict):
+                sources.append(item)
+                for field_name in ("title", "content", "said", "name", "summary"):
+                    value = item.get(field_name)
+                    if isinstance(value, str):
+                        evidence.append(value)
+    # What the person themself wrote is evidence too: a link they sent is a
+    # link they can be given back.
+    query = str(context.get("query") or "")
+    sources.extend({"url": found} for found in URL_IN_TEXT.findall(query))
+    evidence.append(query)
+    return LinkFence(allowed=allowed_urls(sources), evidence=" ".join(evidence))
 
 
 # Describe all pending profile saves so the assistant accurately explains consent.
@@ -3924,6 +3948,16 @@ class ConversationService:
         # on langgraph 1.2.9: one event arrives instead of two, no warning
         # anywhere. Adding the flag later, at the moment the first subgraph is
         # written, is how that becomes an afternoon of confusion.
+        # Every address this reply may say, gathered from what the application
+        # put in front of the model. A recommendation went to a phone on
+        # 2026-08-29 carrying maps.app.goo.gl/xyz, /abc, /def and youtu.be/xyz
+        # - shortened links with placeholder ids, invented because the prompt
+        # asked the model to write links and nothing checked them. Held here,
+        # where the streamed bytes and the stored bytes are the same bytes,
+        # and on every route - the events format is only applied when a
+        # ranker flags the results, and it did not flag that turn.
+        fence = _link_fence(context)
+
         async for _namespace, event in self.assistant_graph.astream(
             seed,
             stream_mode="custom",
@@ -3934,15 +3968,36 @@ class ConversationService:
             # ChatStreamEvent, so this relays rather than translates.
             if "event" in event:
                 if event["event"] == "delta":
-                    response_chunks.append(event["data"]["content"])
+                    fenced = fence.feed(event["data"]["content"])
+                    if not fenced:
+                        continue
+                    response_chunks.append(fenced)
+                    yield {"event": "delta", "data": {"content": fenced}}
+                    continue
                 yield event
                 continue
             # The shape the single node used before C3. Kept for one commit so
             # a revert of either side alone still streams.
             if event.get("type") == "message.delta":
-                chunk = event["content"]
-                response_chunks.append(chunk)
-                yield {"event": "delta", "data": {"content": chunk}}
+                fenced = fence.feed(event["content"])
+                if fenced:
+                    response_chunks.append(fenced)
+                    yield {"event": "delta", "data": {"content": fenced}}
+        # Whatever the model was still writing when it stopped.
+        tail = fence.flush()
+        if tail:
+            response_chunks.append(tail)
+            yield {"event": "delta", "data": {"content": tail}}
+        if fence.dropped:
+            # Hosts only: the address itself is untrusted text, and the reason
+            # it is going is that nobody vouched for it.
+            logger.warning(
+                "Trace %s: the link fence removed %d address(es): %s",
+                trace_id,
+                len(fence.dropped),
+                ", ".join(sorted(set(fence.dropped)))[:200],
+            )
+            _trace("links_dropped", sorted(set(fence.dropped))[:8])
         self.tracer.log_step(trace_id, "graph_execution", {"status": "completed"})
 
         response_text = "".join(response_chunks)

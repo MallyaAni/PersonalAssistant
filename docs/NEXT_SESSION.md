@@ -47,8 +47,8 @@ wake-on-LAN, so **a powered-off Spark needs someone to press the button.**
 - **Gemini grounding stays off, and turning it on is now three steps.**
   Google's pricing page: grounding is *not available* on the free tier
   (which is the 429 we measured - a plain call on the same key works). With
-  billing enabled the first 5,000 grounded requests a month are free on
-  Gemini 3.x, then $14/1,000, and prompts stop being used to improve
+  billing enabled the first 5,000 search queries a month carry no grounding
+  surcharge on Gemini 3.x, then $14/1,000, and prompts stop being used to improve
   Google's products.
   1. AI Studio → API keys → find the Cloud project behind `GOOGLE_API_KEY`.
   2. Google Cloud console → Billing → link a billing account to that
@@ -56,10 +56,19 @@ wake-on-LAN, so **a powered-off Spark needs someone to press the button.**
   3. On spark1: `GOOGLE_SEARCH_ENABLED=true` in `.env` (already inherited by
      the search subprocess), and put `google` first in
      `SEARCH_PROVIDER_ORDER`. The ceiling is already in place -
-     `GOOGLE_SEARCH_MONTHLY_LIMIT` defaults to 4,800, under Google's free
-     5,000, with the daily 450 beneath it - so a mistake cannot bill.
+     `GOOGLE_SEARCH_MONTHLY_LIMIT` defaults to 4,800, under Google's included
+     5,000 search queries, with the daily 450 beneath it. As of the paid-key
+     acceptance on 2026-08-29, AniOS reserves ten queries before each call and
+     reconciles the counters from `web_search_queries`; an uncertain timeout
+     keeps the reservation. This is a buffered local stop, not a provider bill
+     cap.
   Verify with one grounded call and `search_credits`, which now reports the
   Google allowance beside Brave's.
+  The paid-key comparison chose `gemini-3.1-flash-lite` for this retrieval
+  worker: across Python, Federal Reserve, and Artemis queries it returned the
+  same current facts and official sources as 3.6, while the two timed comparison
+  cases took 1.56/1.95 seconds instead of 3.25/7.96 and used one search query
+  each instead of one/two. Current paid token rates are also lower.
 - **The sweep is the biggest spender**: ~344 of the month's ~403 searches
   were verification runs, against ~59 from people. The 30-minute answer
   cache is live and measured (560 → 561 → 561 for a repeated question); if
