@@ -59,4 +59,40 @@ class SessionMCPToolLister(MCPToolLister):
                 cursor = page.nextCursor
                 if not cursor:
                     break
-        return collected
+        return _permitted(server, collected)
+
+
+# The catalogue narrowed to what the operator permits.
+#
+# Filtered here rather than at each caller, because there are three - the
+# invocation service, the registry and the descriptor sync - and a control
+# that has to be composed correctly in three places is a control that will one
+# day be composed incorrectly in one. Everything reads the catalogue through
+# this function, so a tool nobody permitted is never indexed, never offered to
+# the model, and never resolvable.
+def _permitted(server: MCPServerConfig, tools: list[MCPTool]) -> list[MCPTool]:
+    if not server.allowed_tools:
+        return tools
+    allowed = set(server.allowed_tools)
+    kept = [tool for tool in tools if tool.name in allowed]
+    withheld = sorted({tool.name for tool in tools} - allowed)
+    if withheld:
+        # Named, not counted. A third-party catalogue that grows a tool is
+        # worth an operator seeing by name, and the alternative - silence - is
+        # how a `browser_run_code_unsafe` arrives unnoticed.
+        logger.info(
+            "Server %s offers %d tool(s) outside its allowlist, withheld: %s",
+            server.server_id,
+            len(withheld),
+            ", ".join(withheld)[:400],
+        )
+    missing = sorted(allowed - {tool.name for tool in tools})
+    if missing:
+        # The other direction, and it matters just as much: a permitted tool
+        # the server no longer offers means the contract moved under us.
+        logger.warning(
+            "Server %s no longer offers permitted tool(s): %s",
+            server.server_id,
+            ", ".join(missing),
+        )
+    return kept

@@ -1,5 +1,6 @@
 import json
 import logging
+from urllib.parse import urlsplit
 from typing import Any
 
 from backend.core.egress import OutboundPrivacyPolicy
@@ -105,6 +106,43 @@ class MCPInvocationService:
             screened[name] = result.query
         return screened
 
+    # Refuse any argument naming a host this server may not reach.
+    #
+    # The egress screen beside this one asks "may these words leave the
+    # machine". This asks the other half of the question, which a browsing
+    # tool makes urgent: "may this machine go there". A search query travels
+    # to one known provider; a navigation tool goes wherever its argument
+    # says, so the destination is the argument and has to be checked like one.
+    #
+    # Subdomains of a permitted host are permitted - "opentable.com" covers
+    # "www.opentable.com" - because a booking flow moves between them. A
+    # suffix that is not a dot-boundary is not a match, so "notopentable.com"
+    # is refused.
+    #
+    # A server marked `navigates` with an empty allowlist reaches nothing,
+    # which is the state the browser ships in: wired, and unable to go
+    # anywhere until an operator says where.
+    def _check_hosts(
+        self, server: MCPServerConfig, arguments: dict[str, Any]
+    ) -> None:
+        if not server.allowed_hosts and not server.navigates:
+            return
+        for name, value in arguments.items():
+            if not isinstance(value, str) or "://" not in value:
+                continue
+            host = urlsplit(value.strip()).netloc.casefold().rsplit("@", 1)[-1]
+            host = host.rsplit(":", 1)[0] if host.count(":") == 1 else host
+            if not host:
+                continue
+            if not any(
+                host == allowed or host.endswith(f".{allowed}")
+                for allowed in server.allowed_hosts
+            ):
+                raise MCPInvocationError(
+                    "host_not_allowed",
+                    f"{name}: {host} is not on {server.server_id}'s allowlist",
+                )
+
     # Report whether local policy permits autonomous calls to one server.
     def can_auto_invoke(self, server_id: str) -> bool:
         server = self.servers.get(server_id)
@@ -129,6 +167,14 @@ class MCPInvocationService:
             raise MCPInvocationError("tool_not_offered", f"{server_id}/{tool_name}")
         if expected_fingerprint:
             assert_descriptor_is_current(live, expected_fingerprint)
+
+        # The catalogue reader already withheld anything outside the
+        # allowlist, so a name arriving here that is not permitted means the
+        # descriptor came from somewhere else - a stale index, a swapped
+        # lister, a caller passing a name by hand. Checked again rather than
+        # assumed, because this is the last gate before a call.
+        if server.allowed_tools and tool_name not in set(server.allowed_tools):
+            raise MCPInvocationError("tool_not_permitted", f"{server_id}/{tool_name}")
 
         markers = inspect_untrusted_text(live.description)
         if markers:
@@ -158,6 +204,7 @@ class MCPInvocationService:
         live = await self.resolve_tool(server_id, tool_name, expected_fingerprint)
 
         validate_arguments(live.input_schema, arguments)
+        self._check_hosts(server, arguments)
         screened = self._screen_arguments(server_id, tool_name, arguments)
 
         logger.info(

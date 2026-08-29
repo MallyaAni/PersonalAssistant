@@ -405,6 +405,64 @@ services:
       presentation-renderer:
         condition: service_healthy
 
+  browser:
+    # Microsoft's Playwright MCP server: the browser AniOS drives, as a tool
+    # rather than as a second agent (ADR 0018). Chosen over writing one because
+    # the navigation primitives, the browser lifecycle and - the part that
+    # matters most - the accessibility-tree snapshot are somebody else's
+    # maintained problem. That snapshot is why no vision model is in this loop:
+    # the local DeepSeek reasons about real DOM semantics rather than pixels.
+    #
+    # Pinned by index digest, which resolves per architecture, so one line
+    # serves the amd64 dev box and the aarch64 Sparks alike. `latest` here
+    # would be the same hazard as `npx -y`, on a container that drives a real
+    # browser against the open web.
+    restart: unless-stopped
+    image: mcr.microsoft.com/playwright/mcp:v0.0.79@sha256:18c0a9c934004fe9580cc79f1e8e6e6cde7c667348b215335e8a23fd3e509804
+    container_name: anios_browser
+    logging: *bounded-logs
+    # Reaps the processes a browser leaves behind.
+    init: true
+    # Its own network, and only its own. Nothing here needs Postgres, Redis or
+    # the model, and a container running third-party code that fetches the open
+    # web should not be one hop from the database. `backend` and
+    # `discovery-worker` join this network as well as the default one, so they
+    # can reach it and it can reach nothing of ours.
+    networks:
+      - browser
+    # No published port: siblings reach it at http://browser:8931/mcp and the
+    # LAN does not reach it at all.
+    entrypoint: ["node"]
+    command:
+      - /app/cli.js
+      - --headless
+      - --browser=chromium
+      # Chromium's own sandbox needs privileges this container deliberately
+      # does not have. The container is the sandbox instead: no capabilities,
+      # no privilege escalation, its own network, and an in-memory profile.
+      - --no-sandbox
+      # The profile lives in memory and is never written to disk, so no cookie,
+      # no session and no saved card survives a single run. That is the "never
+      # a stored card" rule held by the browser itself rather than by anyone
+      # remembering it.
+      - --isolated
+      # The browser's own origin allowlist, in front of the one this
+      # application enforces (MCP_SERVERS_JSON -> allowed_hosts). Two layers on
+      # purpose: ours refuses to *ask* for a host nobody permitted, this one
+      # refuses to *fetch* one, including subresources a page pulls in by
+      # itself. Empty here and empty there is the right state to ship in: the
+      # tool is wired and can reach nothing until an operator says where.
+      - --allowed-origins=${BROWSER_ALLOWED_ORIGINS:-}
+      - --port=8931
+      - --host=0.0.0.0
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # Chromium crashes on Docker's default 64MB of shared memory.
+    shm_size: 512m
+    mem_limit: ${BROWSER_MEMORY_LIMIT:-2g}
+
   presentation-renderer:
     extra_hosts: *spark-hosts
     # Comes back when Docker does, so a reboot does not
@@ -685,6 +743,14 @@ services:
         condition: service_healthy
       vllm-embedding:
         condition: service_healthy
+      browser:
+        condition: service_started
+    # iMessage turns run here, so this is the service that actually invokes a
+    # browser tool for the operator. On the default network like every sibling,
+    # and additionally on the browser's own.
+    networks:
+      - default
+      - browser
 
   backend:
     # Comes back when Docker does, so a reboot does not
@@ -940,6 +1006,13 @@ services:
         condition: service_healthy
       presentation-worker:
         condition: service_started
+      browser:
+        condition: service_started
+    # On the default network like every sibling, and additionally on the
+    # browser's own, which is the only way to reach it.
+    networks:
+      - default
+      - browser
 
   frontend:
     # Comes back when Docker does, so a reboot does not
@@ -1142,6 +1215,13 @@ services:
     depends_on:
       db:
         condition: service_healthy
+
+networks:
+  # Only `browser` and the two services that invoke tools sit on this one,
+  # so the container running third-party code that fetches the open web has
+  # no route to Postgres, Redis or the inference servers.
+  browser:
+    driver: bridge
 
 volumes:
   redisdata:

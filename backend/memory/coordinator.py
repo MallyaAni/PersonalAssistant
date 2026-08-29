@@ -96,12 +96,19 @@ def build_memory_query_plan(query: str) -> MemoryQueryPlan:
     # Episodic memory is the one store with no embedding, so it cannot be
     # recalled by similarity and stays selected by explicit intent until it is
     # embedded. Everything else is always-on.
+    # Space-delimited so a term matches a word rather than a fragment. Stems
+    # are listed explicitly for the same reason: " event " does not match
+    # "events", and the commonest question this store exists to serve - "what
+    # events are on this weekend" - was silently excluded by that one letter
+    # until 2026-08-29.
     episodic_terms = (
         " remember ",
         " last time ",
         " when did ",
         " experience ",
+        " experiences ",
         " event ",
+        " events ",
         " happened ",
     )
     use_episodic = any(term in normalized for term in episodic_terms)

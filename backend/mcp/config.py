@@ -27,6 +27,13 @@ def _parse_server_entry(entry: object) -> MCPServerConfig | None:
             risk_classification=str(entry.get("risk_classification", "untrusted")),
             enabled=bool(entry.get("enabled", True)),
             discover=bool(entry.get("discover", False)),
+            allowed_tools=tuple(str(name) for name in entry.get("allowed_tools", [])),
+            navigates=bool(entry.get("navigates", False)),
+            allowed_hosts=tuple(
+                str(host).strip().casefold()
+                for host in entry.get("allowed_hosts", [])
+                if str(host).strip()
+            ),
         )
     except ValueError:
         # A misconfigured transport is skipped rather than crashing discovery.

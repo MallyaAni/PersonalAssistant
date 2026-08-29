@@ -392,6 +392,33 @@ def _rerank_question(question: str, place: str) -> str:
     return f"{question} (asked from {place})" if place else question
 
 
+
+# The interests most likely to matter to *this* question, then the rest.
+#
+# The cap exists so a standing list does not crowd out the question; which
+# eight survive it was, until 2026-08-29, whichever eight were saved first.
+# Every one of the operator's twenty interests carries the same strength, so
+# that cut was pure chronological accident: asked about a Saturday night, the
+# ranker was told "farmers markets, vintage shops, traveling" while salsa,
+# bachata and swing dancing - the four that would have decided the answer -
+# sat below the line.
+#
+# Word overlap rather than an embedding call: this runs on every search turn,
+# the labels are short, and "salsa night" finding "salsa dance" is the whole
+# job. Anything the question does not name keeps its old order behind those
+# that it does, so nothing is lost - only reordered.
+def _interests_for(question: str, interests: tuple[str, ...], limit: int = 8) -> list[str]:
+    from backend.core.grounding import bare_words
+
+    asked = {word for word in bare_words(question).split() if len(word) > 2}
+    scored: list[tuple[int, int, str]] = []
+    for position, interest in enumerate(interests):
+        words = {word for word in bare_words(str(interest)).split() if len(word) > 2}
+        # Negative so a higher overlap sorts first, position breaks ties.
+        scored.append((-len(asked & words), position, str(interest)))
+    scored.sort()
+    return [interest for _overlap, _position, interest in scored[:limit]]
+
 # Whether this request's search results were judged to be events, set by the
 # research path for the reply's presentation. Per task, like the limit.
 _results_were_events: ContextVar[bool] = ContextVar("results_were_events", default=False)
@@ -2563,7 +2590,10 @@ class ConversationService:
                 from backend.core.event_extraction import extract_events
 
                 try:
-                    found = await extract_events(self.llm, gathered)
+                    # The same `known` the ranker used, so the one line the
+                    # model writes per event is written for this person rather
+                    # than for a generic reader.
+                    found = await extract_events(self.llm, gathered, known=known)
                 except Exception:
                     logger.warning("Event extraction failed; keeping the prose listing", exc_info=True)
                     found = None
@@ -2594,7 +2624,10 @@ class ConversationService:
             except Exception:
                 interests = ()
             if interests:
-                lines.append("interests: " + ", ".join(str(i) for i in interests[:8]))
+                lines.append(
+                    "interests: "
+                    + ", ".join(_interests_for(str(context.get("query") or ""), interests))
+                )
         for kind in ("semantic", "episodic"):
             for item in list(context.get(kind) or [])[:4]:
                 text = _memory_text(item)

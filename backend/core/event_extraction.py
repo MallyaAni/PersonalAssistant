@@ -24,7 +24,7 @@ import asyncio
 import json
 import logging
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, time, timedelta
 from typing import Any
 
@@ -119,6 +119,15 @@ class ListedEvent:
     price_text: str
     source_url: str
     source_title: str
+    # Which result this came from, 1-based, in the order the ranker put them.
+    #
+    # That order is the only per-person signal on this path: the ranker reads
+    # the question, the place and what is known about the person, and puts the
+    # results it judges most useful to *them* first. Carried here because the
+    # listing shows fewer events than the extraction finds, and choosing which
+    # ones to drop by date alone threw that judgement away - a Tuesday craft
+    # fair displacing a Saturday salsa night purely on the calendar.
+    source_rank: int = 999
 
     # Where the person would go to check it. Never model-authored.
     @property
@@ -149,6 +158,7 @@ async def extract_events(
     llm: Any,
     results: list[dict[str, Any]],
     now: datetime | None = None,
+    known: tuple[str, ...] = (),
 ) -> Extraction:
     usable = [item for item in (results or []) if isinstance(item, dict)][:MAX_RESULTS_READ]
     if not usable or llm is None:
@@ -171,7 +181,14 @@ async def extract_events(
     except Exception:
         logger.warning("Event extraction call failed; keeping the prose listing", exc_info=True)
         return Extraction()
-    return build_extraction(_parse(answer), usable, moment)
+    found = build_extraction(_parse(answer), usable, moment)
+    # Which events exist is now settled, and only then is the reader mentioned.
+    # Measured on the real model 2026-08-29: told about the reader during
+    # extraction, it *filtered* - one person got only the salsa night, the
+    # other only the book club - so two people asking the same question got
+    # different facts and the dropped-count stopped being true. Separating the
+    # two passes makes that impossible rather than discouraged.
+    return await describe_for(llm, found, known, moment)
 
 
 # The model's records, checked against the results they name. Split out from
@@ -233,8 +250,11 @@ def build_extraction(
                 price_text=price if states(price, evidence) else "",
                 source_url=str(result.get("url") or ""),
                 source_title=str(result.get("title") or "")[:200],
+                source_rank=source,
             )
         )
+    # Date order for reading; the fit rank is preserved on each record so the
+    # renderer can choose *which* events survive a cut before it groups them.
     kept.sort(key=lambda event: (event.starts_at or datetime.max.replace(tzinfo=UTC), event.name))
     return Extraction(tuple(kept), undated, opening_hours, unsourced)
 
@@ -357,3 +377,89 @@ def _parse(answer: Any) -> list[dict[str, Any]]:
         return []
     records = payload.get("events")
     return [item for item in records if isinstance(item, dict)] if isinstance(records, list) else []
+
+
+_LINES_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "lines": {
+            "type": "array",
+            "maxItems": MAX_EVENTS,
+            "items": {
+                "type": "object",
+                "properties": {
+                    "index": {"type": "integer"},
+                    "what": {"type": "string"},
+                },
+                "required": ["index", "what"],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["lines"],
+    "additionalProperties": False,
+}
+
+
+# Rewrite each event's one line for the person it is going to.
+#
+# The event set is an input here and is never returned differently: this
+# function maps descriptions onto events by index and keeps the extractor's
+# own line for anything it does not get back. So a reader can change how an
+# evening is described and can never change which evenings there are, what
+# time they start, or how many were dropped - the failure this exists to
+# prevent, measured before it shipped.
+async def describe_for(
+    llm: Any,
+    found: Extraction,
+    known: tuple[str, ...] = (),
+    now: datetime | None = None,
+) -> Extraction:
+    facts = [str(item).strip()[:160] for item in known if str(item).strip()][:8]
+    if not found.events or not facts or llm is None:
+        return found
+    listing = "\n".join(
+        f"[{index}] {event.name} at {event.venue}"
+        + (f", {event.area}" if event.area else "")
+        + (f" - {event.artist}" if event.artist else "")
+        + f" ({event.what})"
+        for index, event in enumerate(found.events, start=1)
+    )
+    about = "\n".join(f"- {fact}" for fact in facts)
+    try:
+        messages = [
+            {"role": "system", "content": load("search/event_lines")},
+            {
+                "role": "user",
+                "content": f"The person:\n{about}\n\nThe events:\n\n{listing}",
+            },
+        ]
+        answer = await asyncio.to_thread(llm.chat, messages, _MAX_TOKENS, _LINES_SCHEMA, 0.0)
+    except Exception:
+        logger.warning("Event description call failed; keeping the plain lines", exc_info=True)
+        return found
+    written: dict[int, str] = {}
+    payload = answer
+    if isinstance(payload, dict) and "content" in payload:
+        payload = payload["content"]
+    if isinstance(payload, str):
+        try:
+            payload = json.loads(payload)
+        except ValueError:
+            return found
+    for row in (payload or {}).get("lines", []) if isinstance(payload, dict) else []:
+        if not isinstance(row, dict):
+            continue
+        index = _index(row.get("index"), len(found.events))
+        line = _own_words(row.get("what"))
+        if index is not None and line:
+            written[index] = line
+    if not written:
+        return found
+    return replace(
+        found,
+        events=tuple(
+            replace(event, what=written.get(index, event.what))
+            for index, event in enumerate(found.events, start=1)
+        ),
+    )

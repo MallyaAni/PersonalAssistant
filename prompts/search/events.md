@@ -57,6 +57,11 @@ For each record:
 - what: one short line, in your own words, saying what it is - the style, the
   vibe, who it is for. No links, no addresses, no times, no prices. Under
   twenty words.
+  When you are told about the person you are writing for, write this line for
+  them: say what would draw *them* to it. Never claim they have been, never
+  say they will like it, and never invent a connection the event does not have
+  - "an outdoor night, which you said you would drive for" is fair, "your
+  favourite spot" is not. When nothing is known about them, describe it plainly.
 
 Rules that are not negotiable:
 

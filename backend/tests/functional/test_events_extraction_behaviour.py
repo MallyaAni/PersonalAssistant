@@ -107,3 +107,69 @@ async def test_a_directory_page_is_not_read_as_an_event(llm):
     for event in found.events:
         assert "20 best" not in event.name.casefold(), event
         assert "roundup" not in event.what.casefold(), event
+
+
+# What is known about the reader, as `_known_for_ranking` assembles it.
+ANI = (
+    "interests: salsa dance, bachata dance, swing dancing, live music",
+    "Prefers quality events with people in their demographic; cost is not a concern.",
+)
+JEN = (
+    "interests: true crime, mystery books, chocolate, theater",
+    "Prefers a quiet evening with a story to a loud room.",
+)
+
+MIXED = [
+    {
+        "title": "Salsa Saturdays at Clarendon Ballroom",
+        "url": "https://clarendonballroom.test/salsa",
+        "content": "Salsa Saturdays at Clarendon Ballroom, Arlington. Every Saturday from 9pm, live band. Entry $20.",
+    },
+    {
+        "title": "Mystery book club - Central Library",
+        "url": "https://library.test/mystery",
+        "content": "Mystery book club meets at Central Library, Arlington. Every Saturday from 2pm. Free.",
+    },
+]
+MIXED_EVIDENCE = " ".join(f"{item['title']} {item['content']}" for item in MIXED)
+
+
+async def test_the_line_it_writes_is_written_for_the_reader(llm):
+    # The regression this closes: when the listing became code-rendered, the
+    # reply model - which holds the person's memories - stopped being called on
+    # events turns, and the extractor was told nothing about them. The one line
+    # the model still writes was being written for a generic reader.
+    for_ani = await extract_events(get_routing_llm_client(), MIXED, NOW, known=ANI)
+    for_jen = await extract_events(get_routing_llm_client(), MIXED, NOW, known=JEN)
+    said_to_ani = {event.name: event.what for event in for_ani.events}
+    said_to_jen = {event.name: event.what for event in for_jen.events}
+    print(f"\nto Ani: {said_to_ani}\nto Jen: {said_to_jen}")
+
+    assert said_to_ani and said_to_jen
+    shared = set(said_to_ani) & set(said_to_jen)
+    assert shared, (said_to_ani, said_to_jen)
+    # At least one event is described differently for the two of them. This is
+    # the whole claim: the same page, two readers, two descriptions.
+    assert any(said_to_ani[name] != said_to_jen[name] for name in shared), (
+        said_to_ani,
+        said_to_jen,
+    )
+
+
+async def test_knowing_the_reader_cannot_change_a_single_fact(llm):
+    # The safety half. Whatever the description says, every factual field is
+    # still a quotation checked against the result it names, so two readers get
+    # the same events at the same times from the same sources.
+    for_ani = await extract_events(get_routing_llm_client(), MIXED, NOW, known=ANI)
+    for_jen = await extract_events(get_routing_llm_client(), MIXED, NOW, known=JEN)
+
+    def facts(found):
+        return sorted(
+            (e.name, e.venue, e.starts_at, e.start_time, e.price_text, e.source_url)
+            for e in found.events
+        )
+
+    assert facts(for_ani) == facts(for_jen), (facts(for_ani), facts(for_jen))
+    for event in list(for_ani.events) + list(for_jen.events):
+        assert states(event.when_text, MIXED_EVIDENCE), event
+        assert not URL_IN_TEXT.findall(event.what), event

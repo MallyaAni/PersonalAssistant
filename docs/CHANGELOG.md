@@ -2,6 +2,55 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-29 — The recommendation is for the person again, and a browser behind the gate
+
+A survey of how personalized the recommendations actually are found that this
+morning's code-rendered events listing had made them worse on exactly the turns
+that are recommendations. Three losses, all real, all now repaired:
+
+- The reply model is not called on those turns, so nothing it holds about the
+  person reached the answer. The one line still written per event now gets a
+  second, separate pass that knows the reader
+  (`prompts/search/event_lines.md`). Measured: the same salsa night reads
+  "a live-band salsa night for dancing and socialising, right up your alley"
+  to one member and "a lively salsa night with a live band" to another, while
+  both get the same events at the same times from the same sources.
+- That separation is not a nicety. Told about the reader *during* extraction,
+  the model filtered rather than described - one reader was returned only the
+  salsa night, the other only the book club, from the same two pages. Two
+  people asking one question would have got different facts and the "not
+  listed" count would have stopped being true. Caught by a safety test before
+  it shipped; impossible now, because the events are settled before the reader
+  is ever mentioned.
+- The listing kept the *earliest* events rather than the ones the ranker judged
+  the best fit, so a Tuesday craft fair displaced a Saturday salsa night on the
+  calendar alone. Each record now carries the ranker's order, the cut is made
+  by fit, and only the survivors are put in date order for reading.
+
+Two older weaknesses the same survey found, fixed here:
+
+- The eight interests sent to the ranker were whichever eight were saved first.
+  Every one of the operator's twenty carries the same strength, so asked about
+  a Saturday night it was told "farmers markets, vintage shops, traveling"
+  while salsa, bachata and swing dancing sat below the cut. They are now chosen
+  for the question asked; a question naming nothing keeps the order it had.
+- Episodic memory was gated on `" event "` with spaces, which "events" does not
+  match - so the commonest question that store exists to serve was excluded by
+  one letter.
+
+And the browser: Microsoft's Playwright MCP server runs as the `browser`
+container, pinned by index digest, headless, with an in-memory profile that
+keeps no cookie or card between runs, on its own Docker network with no route
+to Postgres or the model. It is a tool behind the boundary that already exists,
+never a second agent (ADR 0018). Two new controls make a third-party catalogue
+safe to run: `allowed_tools` names the only tools of a server that may ever be
+listed or called - so `browser_run_code_unsafe`, `browser_evaluate` and the
+cookie family are withheld before they are indexed, and a catalogue that grows
+overnight cannot widen what this system does - and `navigates` + `allowed_hosts`
+say where it may go, with an empty list meaning *nowhere* for anything that
+navigates. It ships wired and able to reach nothing until an operator names a
+host.
+
 ## 2026-08-29 — The listing can be acted on, and an outside agent stays outside
 
 The listing ended by offering a calendar entry it could not make. Now every

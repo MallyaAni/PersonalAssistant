@@ -38,7 +38,17 @@ def render_listing(
     now: datetime | None = None,
     limit: int = MAX_LISTED,
 ) -> str:
-    events = list(extraction.events)[: max(1, limit)]
+    # Which events survive the cut is decided by fit, and only then are the
+    # survivors put in date order for reading. Taking the earliest N instead -
+    # which is what this did when the path first shipped - discards the only
+    # per-person judgement on it, and a Tuesday craft fair displaces a Saturday
+    # salsa night on the calendar alone.
+    kept = max(1, limit)
+    by_fit = sorted(extraction.events, key=lambda event: event.source_rank)[:kept]
+    events = sorted(
+        by_fit,
+        key=lambda event: (event.starts_at or datetime.max.replace(tzinfo=UTC), event.name),
+    )
     if not events:
         return ""
     moment = now or datetime.now(UTC)

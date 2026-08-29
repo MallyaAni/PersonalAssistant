@@ -33,6 +33,31 @@ class MCPServerConfig:
     forward_context: bool = False
     risk_classification: str = "untrusted"
     enabled: bool = True
+    # The only tools of this server's catalogue that may ever be listed or
+    # called. Empty means "whatever it offers", which is right for a server
+    # written here and wrong for one written by somebody else.
+    #
+    # A third-party server's catalogue is its own to change. Microsoft's
+    # Playwright MCP server, for instance, ships `browser_run_code_unsafe` and
+    # `browser_evaluate` beside the navigation tools, and a capability flag on
+    # their side is their decision to revisit, not ours to depend on. Naming
+    # the permitted tools here means a catalogue that grows overnight does not
+    # widen what this system can do.
+    allowed_tools: tuple[str, ...] = ()
+    # Hosts this server's arguments may name.
+    allowed_hosts: tuple[str, ...] = ()
+    # Whether this server fetches whatever address it is handed.
+    #
+    # It decides which way an empty `allowed_hosts` reads, and the two answers
+    # are opposite. For a search tool an empty list means "no restriction",
+    # which is correct: its job is the open web behind a screened query, and
+    # it goes to one known provider either way. For a server that navigates,
+    # an empty list must mean "nowhere" - a browser wired up with nobody
+    # having said where it may go should be able to go nowhere, not
+    # everywhere. Declared rather than guessed from tool names, because a
+    # rule that depends on a third party's naming is a rule that changes when
+    # they rename something.
+    navigates: bool = False
     # This server lives on a LAN device whose DHCP address can change, so when
     # its configured host stops answering, scan the subnet for it rather than
     # staying down until an operator edits the URL. Off by default: a server
