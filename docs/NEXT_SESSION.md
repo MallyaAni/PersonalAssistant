@@ -101,6 +101,16 @@ sweep (user `sweep_708ace97`) showed exactly that: the undo removed the
 dentist row, the leftovers were "the user has a retail team" (captured from
 the draft-email journey) and the next journey's restatement of the dentist.
 
+**Pre-existing, measured 2026-08-29, not from the group work:**
+`functional/test_main_action_selector_behaviour.py` has red cases on the
+deployed build (`1e5adde`, checked with the working tree stashed): the
+retired-cascades accuracy floor, "write a haiku about rain" and "what did I
+say my dog's name was" choosing an action, a Scout-schedule confirmation
+calling an external tool, and a labelled image not choosing edit_image. This
+suite is not part of the deploy gate, so it drifted unseen. Measure with
+`evaluate_tool_selection` before touching the router prompt - do not fix it
+case by case.
+
 **Router wobble, observed once (deploy #17's sweep):** "Scout hows the
 weather here today?" in a group, with the speaker's place known, routed to
 a history search; it was Weather in deploys #15 and #16 and 2/2 in

@@ -521,6 +521,13 @@ bundle. After a frontend change run `docker compose build gateway` followed by
 from inside a container and prove it contains the new behavior. A public 200
 can still be stale UI.
 
+- **A conditional prompt block must leave the prompt byte-identical when it
+  is absent.** Adding `SYSTEM + " " + block + rest` for a new feature put one
+  extra space into every prompt that had no block - and at temperature 0 that
+  space flipped the memory classifier on a pinned case (a remark about the
+  system stored as a user fact: 6/6 wrong with the space, 6/6 right without,
+  measured 2026-08-28). Give each optional block its own trailing separator
+  and concatenate with none, and pin the no-block prompt byte for byte.
 - **`deploy.sh` runs the version it started with.** The script pulls main
   while it is executing, and bash keeps reading the file it opened - so a
   change to `deploy.sh` (the retry-once for flaky journeys, 2026-08-28) takes

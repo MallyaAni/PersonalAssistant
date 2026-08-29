@@ -10,9 +10,13 @@ Decision record: [ADR 0016](adr/0016-a-group-is-an-account.md). Status:
   friends who are approved users. The first time it is addressed, the group is
   set up on its own; if anyone in the group is not an approved user it stays
   silent and the operator gets one text.
-- It answers when addressed: tap-and-hold → Reply on any of its bubbles (and
-  every later message in that thread, from anyone, at any time), an @mention, or
-  its name as a word. Two more triggers are designed and not yet built - the
+- It reads every message in the group for context - what the members say to
+  each other is the room's memory too ("we all settled on thai for friday",
+  said between two members, sticks) - and answers only when addressed:
+  tap-and-hold → Reply on any of its bubbles (and every later message in that
+  thread, from anyone, at any time), an @mention, or its name as a word.
+  Operator's decision, 2026-08-28: "it must be reading every message for
+  context". Two more triggers are designed and not yet built - the
   next message from someone it asked a question, and a tapback on its bubble
   meaning "yes, do that" - because both need the Mac to forward an unaddressed
   message on the backend's say-so (see Status).
@@ -50,8 +54,10 @@ rows. Everything the group owns lives under that `user_id`.
   number - what a mention is matched on) and, optionally,
   `IMESSAGE_BRIDGE_DISPLAY_NAME` (a name to answer to as a word).
 - `incoming_messages` keeps `room_name IS NULL` for one-to-one rows and adds the
-  allowlisted-group branch. A group row is returned only when the sender is
-  allowlisted **and** the message is addressed: reply-thread (its
+  allowlisted-group branch. Every allowlisted sender's row in a listed room is
+  returned, marked with how it addressed the account or `addressed_by: ""`
+  when it did not (the first cut forwarded addressed rows only; the operator
+  widened it the same day). Addressed means: reply-thread (its
   `thread_originator_guid` is a from-me guid in that chat - chat.db is the
   ledger, the bridge stays stateless), mention (the handle stored after
   `__kIMMentionConfirmedMention` in `attributedBody` is one of the bridge's
@@ -66,7 +72,11 @@ rows. Everything the group owns lives under that `user_id`.
 
 ### Worker - `backend/workers/imessage_chat.py`
 - A room's message (`chat_identifier` on the payload) takes its own path,
-  `_handle_room_message`: the speaker and every participant are resolved through
+  `_handle_room_message`: an unaddressed one is *observed* - posted to
+  `POST /chat/observe`, which stores it under the group's conversation as a
+  turn with no reply and runs the memory agent on it with the roster, so the
+  next answered turn's history and the group's memory hold what the room
+  said; an addressed one is answered. The speaker and every participant are resolved through
   `_account_for` (the subscriber allowlist); any unresolved participant → the
   row is finished silently and the operator gets one text per room per day
   (`OPERATOR_ALERT_PHONE`, dedup in Redis `imessage:chat:room_alert:{digest}`;

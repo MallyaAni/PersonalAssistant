@@ -31,7 +31,7 @@ from backend.core.auth import (
     authorize_user,
 )
 from backend.core.dependencies import DependencyConversationService, ModelGateDependency
-from backend.models.schemas import ChatRequest, ChatStreamEvent, ReadinessRequest
+from backend.models.schemas import ChatRequest, ChatStreamEvent, ObserveRequest, ReadinessRequest
 
 logger = logging.getLogger(__name__)
 
@@ -92,6 +92,25 @@ async def chat(
             "X-Accel-Buffering": "no",
         },
     )
+
+
+# A room message the assistant reads without answering (operator's decision,
+# 2026-08-28: the whole group is context; only what addresses the assistant
+# is answered). Stored as a turn with no reply under the group, and
+# classified for memory like any turn, so "we settled on Thai" said between
+# two members sticks.
+@router.post("/chat/observe")
+async def chat_observe(
+    body: ObserveRequest,
+    service: DependencyConversationService,
+    identity: IdentityDependency,
+) -> dict[str, Any]:
+    authorize_user(body.user_id, identity)
+    authorize_scope(identity, SCOPE_CHAT)
+    conversation_id = await service.observe(
+        body.user_id, body.query, str(body.conversation_id) if body.conversation_id else None, body.metadata
+    )
+    return {"conversation_id": conversation_id}
 
 
 # Whether a texting burst is finished and wants an answer, judged by the

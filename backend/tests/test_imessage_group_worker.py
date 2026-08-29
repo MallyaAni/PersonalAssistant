@@ -500,3 +500,61 @@ async def test_provisioning_a_room_seeds_its_scout_from_what_members_share(monke
     group = await IMessageChatWorker._group_for(worker, ROOM_GUID, "Lunch crew", ("u-ani", "u-jen"))
     assert group.user_id == "group:new"
     assert refreshed == [("group:new", ("u-ani", "u-jen"))]
+
+
+@pytest.mark.asyncio
+async def test_an_unaddressed_room_message_is_observed_not_answered(monkeypatch):
+    # Operator's decision, 2026-08-28: the whole room is context; only what
+    # addresses the assistant is answered.
+    bridge = _Bridge({"messages": [_room_message("g1", "5550101", "we all settled on thai for friday", addressed_by="")], "cursor": 5})
+    worker, conversed, _ = _worker(bridge, monkeypatch, ACCOUNTS, {}, group=GROUP)
+    observed: list[tuple] = []
+
+    async def observe(user_id, text, room):
+        observed.append((user_id, text, room["speaker_user_id"], room["addressed_by"]))
+
+    monkeypatch.setattr(worker, "_observe", observe)
+    assert await worker.tick() == 0
+    assert observed == [("group:abc", "we all settled on thai for friday", "u-jen", "")]
+    assert conversed == [] and bridge.sent == []
+    assert await worker._already_seen("g1")
+
+
+@pytest.mark.asyncio
+async def test_observing_posts_the_room_turn_under_the_groups_conversation(monkeypatch):
+    import httpx
+
+    bridge = _Bridge({"messages": [], "cursor": 0})
+    worker = IMessageChatWorker(bridge, base_url="http://test", redis=_Redis())
+    posted: list[dict] = []
+
+    class _Response:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"conversation_id": "conv-1"}
+
+    class _Client:
+        def __init__(self, *a, **k):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def post(self, url, json=None, headers=None):
+            posted.append({"url": url, "json": json, "auth": bool(headers and headers.get("Authorization"))})
+            return _Response()
+
+    monkeypatch.setattr(httpx, "AsyncClient", _Client)
+    await worker._observe("group:abc", "lunch friday?", {"chat_name": "Lunch crew", "speaker_user_id": "u-ani", "members": ["u-ani"], "addressed_by": "", "assistant_name": ""})
+    (call,) = posted
+    assert call["url"].endswith("/api/v1/chat/observe") and call["auth"]
+    assert call["json"]["user_id"] == "group:abc" and call["json"]["query"] == "lunch friday?"
+    assert call["json"]["metadata"]["channel"] == "imessage_group"
+    assert "conversation_id" not in call["json"]
+    # The conversation the backend opened is the thread from now on.
+    assert await worker._stored_conversation("group:abc") == "conv-1"

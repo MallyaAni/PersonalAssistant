@@ -22,6 +22,18 @@ class ChatRequest(BaseModel):
         return value
 
 
+class ObserveRequest(BaseModel):
+    """A group message read for context, not answered: stored as a turn with
+    no reply, and classified for memory the way an answered turn is."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    user_id: str = Field(min_length=1, max_length=50)
+    conversation_id: UUID | None = None
+    query: str = Field(min_length=1, max_length=10_000)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
 class ReadinessRequest(BaseModel):
     """What a texting client has received since its last reply, to be judged."""
 

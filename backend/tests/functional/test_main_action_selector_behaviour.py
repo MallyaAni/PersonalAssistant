@@ -32,6 +32,7 @@ from backend.services.main_action_selector import (
     ToolboxAction,
 )
 from backend.services.search_routing_evaluator import SearchRoutingEvaluator
+from backend.tools import UseSkillAction
 
 pytestmark = pytest.mark.asyncio
 
@@ -470,3 +471,29 @@ async def test_a_trip_is_searched_from_where_the_person_is(selector):
     # round (test_search_compose_behaviour). What must never appear is the
     # two foreign places read as the flight.
     assert "rome to amalfi" not in lowered and "rome-amalfi" not in lowered, action.query
+
+
+# A recommendation is not a listing. The shipped "What's on" skill pack is
+# offered on every turn, and "where should the two of us go for dinner on
+# friday? something we'd both like" was routed to it twice (a kept sweep on
+# 2026-08-28 and deploy #20), which then searched "events happening this
+# weekend" and answered off-subject. The pack's own description does the
+# steering, so this holds whichever wording it drifts to - and the positive
+# case is here so the fix cannot be "never choose the skill".
+async def test_a_recommendation_does_not_become_a_whats_on_listing(selector):
+    from backend.skills.packs import load_packs
+
+    packs = [pack.as_skill() for pack in load_packs().values()]
+    assert any(skill["slug"] == "what-s-on" for skill in packs), packs
+
+    for question in (
+        "where should the two of us go for dinner on friday? something we'd both like",
+        "any good coffee place near me?",
+    ):
+        action = await selector.select("functional_test_user", question, [], None, skills=packs)
+        assert not isinstance(action, UseSkillAction), (question, action)
+
+    listing = await selector.select(
+        "functional_test_user", "what's on in Arlington this weekend?", [], None, skills=packs
+    )
+    assert isinstance(listing, UseSkillAction) and listing.name.casefold().startswith("what"), listing

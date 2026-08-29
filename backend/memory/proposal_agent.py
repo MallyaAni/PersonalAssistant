@@ -115,23 +115,36 @@ class MemoryProposalAgent:
         roster: tuple[str, ...] = (),
     ) -> MemoryProposalResult:
         in_group = bool(roster)
-        group_block = (
-            render(
-                "memory/proposal_group",
-                speaker=speaker or "a member",
-                roster=", ".join(roster),
-            )
-            + " "
-            if in_group
-            else ""
-        )
+        # The catalogue exists so a new phrasing of an interest reuses its
+        # label instead of creating a near-duplicate. It said nothing about
+        # the other kinds, and the model read it as "this is already known":
+        # with "Thai food" in the list, "we all settled on thai for friday
+        # dinner" produced no proposal at all 3 times in 6 - the group's plan
+        # lost because a member liked Thai food (2026-08-28, deploy #20).
         catalogue = (
             "The user already follows these Scout interests: "
             + ", ".join(f'"{label}"' for label in known_interests)
             + ". Reuse an existing label exactly when a new phrase means the same "
-            "interest or a narrower form of it. "
+            "interest or a narrower form of it. This list is about interest "
+            "labels only: it never means a fact, plan, decision or event is "
+            "already known, so a statement worth remembering is still captured "
+            "in its own field even when it mentions one of these interests. "
             if known_interests
             else ""
+        )
+        # A group turn asks a second, separate question - who is each fact
+        # about, and what does a member say about another member - instead of
+        # adding text to this one. Prompt added for the group crowded out
+        # ordinary capture ("I love hiking, honestly it's my favourite thing"
+        # produced an interest 6/6 in a private message and 2/6 in a room),
+        # and one stray space alone flipped a pinned case at temperature 0
+        # (both measured 2026-08-28). Started first so the two calls overlap:
+        # a room costs no extra wait, and this prompt stays byte-identical to
+        # the one-to-one path it has always been.
+        group_call = (
+            asyncio.create_task(self._group_reading(query, speaker, roster, previous_reply))
+            if in_group
+            else None
         )
         result = await asyncio.to_thread(
             self.llm.chat,
@@ -140,8 +153,6 @@ class MemoryProposalAgent:
                     "role": "system",
                     "content": (
                         MEMORY_PROPOSAL_SYSTEM
-                        + " "
-                        + group_block
                         + catalogue
                         + 'Meaning examples: "Remember that my dog is called '
                         'Biscuit" and "Please keep track of the fact that my dog is '
@@ -154,18 +165,76 @@ class MemoryProposalAgent:
                 {"role": "user", "content": self._utterance(query, previous_reply)},
             ],
             self.max_tokens,
-            (GroupMemoryProposalDecision if in_group else MemoryProposalDecision).model_json_schema(),
+            MemoryProposalDecision.model_json_schema(),
             0,
         )
-        payload = json.loads(result["content"])
-        if in_group:
-            group_decision = GroupMemoryProposalDecision.model_validate(payload)
-            about = tuple(" ".join(str(name).split()) for name in group_decision.about if str(name).strip())
-            return MemoryProposalResult(
-                tuple({**proposal, "about": list(about)} for proposal in self._validated_proposals(group_decision))
+        decision = MemoryProposalDecision.model_validate(json.loads(result["content"]))
+        proposals = self._validated_proposals(decision)
+        if group_call is None:
+            return MemoryProposalResult(proposals)
+        about, others = await group_call
+        return MemoryProposalResult(self._merged(proposals, about, others))
+
+    # The group's second question: who the captured facts are about, and what
+    # this member said about another member. Never raises into the turn - a
+    # failure leaves the ordinary proposals unattributed, which the owner
+    # rule reads as the speaker's own words.
+    async def _group_reading(
+        self, query: str, speaker: str, roster: tuple[str, ...], previous_reply: str
+    ) -> tuple[tuple[str, ...], tuple[dict[str, Any], ...]]:
+        try:
+            result = await asyncio.to_thread(
+                self.llm.chat,
+                [
+                    {
+                        "role": "system",
+                        "content": render(
+                            "memory/proposal_group",
+                            speaker=speaker or "a member",
+                            roster=", ".join(roster),
+                        )
+                        + " Return only the required JSON.",
+                    },
+                    {"role": "user", "content": self._utterance(query, previous_reply)},
+                ],
+                self.max_tokens,
+                GroupMemoryProposalDecision.model_json_schema(),
+                0,
             )
-        decision = MemoryProposalDecision.model_validate(payload)
-        return MemoryProposalResult(self._validated_proposals(decision))
+            group_decision = GroupMemoryProposalDecision.model_validate(
+                json.loads(result["content"])
+            )
+        except Exception:
+            return (), ()
+        about = tuple(
+            " ".join(str(name).split()) for name in group_decision.about if str(name).strip()
+        )
+        return about, self._validated_proposals(group_decision)
+
+    # The ordinary proposals, each stamped with who it is about, plus
+    # anything the group reading found that the ordinary one could not - a
+    # fact about another member, which the one-to-one rules rightly drop.
+    @staticmethod
+    def _merged(
+        proposals: tuple[dict[str, Any], ...],
+        about: tuple[str, ...],
+        others: tuple[dict[str, Any], ...],
+    ) -> tuple[dict[str, Any], ...]:
+        def identity(proposal: dict[str, Any]) -> tuple[Any, ...]:
+            return (
+                str(proposal.get("kind") or ""),
+                str(proposal.get("content") or proposal.get("value") or proposal.get("name") or proposal.get("title") or ""),
+                tuple(sorted(str(label) for label in proposal.get("labels") or ())),
+            )
+
+        merged = [{**proposal, "about": list(about)} for proposal in proposals]
+        seen = {identity(proposal) for proposal in merged}
+        for proposal in others:
+            if identity(proposal) in seen:
+                continue
+            seen.add(identity(proposal))
+            merged.append({**proposal, "about": list(about)})
+        return tuple(merged[:MAX_PROPOSALS_PER_TURN])
 
     # The message to interpret, with the assistant's previous reply alongside
     # when there is one. "Adjust this to daily at 3pm" names its subject only

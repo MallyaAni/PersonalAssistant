@@ -255,7 +255,10 @@ To find a group chat's identifier, with Messages open:
 osascript -e 'tell application "Messages" to get {id, name} of every chat' | tr ',' '\n' | grep -n "iMessage;+;chat"
 ```
 
-Inside a listed room, only what is addressed to this account leaves the Mac:
+Inside a listed room every allowlisted member's message is forwarded - the
+operator's decision, 2026-08-28: the assistant reads the whole room for
+context and answers only what was for it. Each message is marked with how it
+addressed this account, or not at all:
 
 - a message sent as a **reply** (tap and hold → Reply) to one of this
   account's bubbles - the thread anchor is in chat.db, so this needs no
@@ -268,8 +271,7 @@ Inside a listed room, only what is addressed to this account leaves the Mac:
 - the account's **name** as a whole word ("scout, thai or pizza?"; not
   "scouting"), when `IMESSAGE_BRIDGE_DISPLAY_NAME` is set.
 
-Everything else in the room is discarded on the Mac, body and all. A
-forwarded room message carries `chat_guid`, `chat_identifier`, `chat_name`,
+A forwarded room message carries `chat_guid`, `chat_identifier`, `chat_name`,
 `participants` (every member's address, normalized, so the backend can
 insist that each one is somebody it knows), `addressed_by`
 (`reply` | `mention` | `name`) and `assistant_name` (the display name, so the

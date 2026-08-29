@@ -71,6 +71,9 @@ class Journey:
     # privately, which the room must never hear.
     as_group: bool = False
     before_as_member: tuple[str, ...] = ()
+    # Room chatter the assistant only reads (posted to /chat/observe as the
+    # group with the sweep user speaking, in the journey's conversation).
+    observed_before: tuple[str, ...] = ()
 
 
 JOURNEYS = [
@@ -244,6 +247,12 @@ JOURNEYS = [
     Journey("group: a member's everyday fact is known", "Scout, what car does Jen drive?", (None, "Past conversations"),
             as_group=True, holds=("the reply says Jen drives a Mini (a red Mini Cooper)",),
             before_as_member=("remember that I drive a red Mini Cooper",)),
+    # The room is read whole: chatter between members is context and memory,
+    # answered only when the assistant is addressed (operator, 2026-08-28).
+    Journey("group: room chatter is context", "Scout, what did we decide for friday?", (None, "Past conversations"),
+            as_group=True, observed_before=("ok so we all settled on thai for friday dinner, 7pm",),
+            holds=("the reply says the group decided on Thai for Friday dinner",),
+            sql_holds=("select count(*) > 0 from conversations where user_id = :g and extra_data::text like '%observed%'",)),
     # The group's Scout starts from what its members share (both like thai
     # food here), so schedules on common interests have something to run on.
     Journey("group: a shared interest seeds the group's Scout", "Scout, what do we both like?", (None, "Past conversations"),
@@ -480,6 +489,19 @@ class Sweep:
                         earlier_result = await self._turn(client, earlier, None, conversation_id)
                         if earlier_result.get("error"):
                             setup_problems.append(f"setup turn failed ({earlier[:40]!r}): {earlier_result['error']}")
+                    for earlier in journey.observed_before:
+                        try:
+                            room = self._room()
+                            room["group"]["addressed_by"] = ""
+                            response = await client.post(
+                                f"{self.base}/chat/observe",
+                                json={"user_id": self.group_id, "conversation_id": conversation_id, "query": earlier, "metadata": room},
+                                headers=self.group_headers,
+                            )
+                            if response.status_code != 200:
+                                setup_problems.append(f"observe failed ({earlier[:40]!r}): HTTP {response.status_code}")
+                        except httpx.HTTPError as exc:
+                            setup_problems.append(f"observe failed ({earlier[:40]!r}): {exc}")
                     if journey.as_group:
                         r = await self._turn(client, journey.query, self._room(), conversation_id, who="group")
                     else:

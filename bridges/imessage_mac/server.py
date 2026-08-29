@@ -29,9 +29,11 @@ is the larger grant: it returns the bodies of one-to-one messages from senders
 on the allowlist, so those people can converse with AniOS. Messages from anyone
 not on the allowlist are filtered here, inside this process, and never leave
 it. Group chats are read only when the Mac's operator lists them in
-IMESSAGE_BRIDGE_GROUPS with reading on, and then only what is addressed to
-this account leaves the Mac (a reply in a thread on one of its bubbles, a
-mention, or its name). Bodies are never logged.
+IMESSAGE_BRIDGE_GROUPS with reading on; every allowlisted member's message
+in a listed room is forwarded, marked with how it addressed this account
+(a reply in a thread on one of its bubbles, a mention, its name) or not at
+all, so the backend reads the room for context and answers only what was
+for it. Bodies are never logged.
 
 Setup lives in README.md next to this file.
 """
@@ -1154,10 +1156,11 @@ def incoming_messages(
         in_room = int(style or 0) == 43
         addressed_by = None
         if in_room:
-            # A room's words leave this Mac only when they are for this
-            # account: a reply in a thread anchored on one of its bubbles, a
-            # mention, or its name. Everything else is discarded here, body
-            # and all, with the cursor already past it.
+            # Every allowlisted member's message in a listed room is forwarded
+            # - the operator's decision (2026-08-28): the assistant reads the
+            # whole room for context and replies only when addressed. How it
+            # was addressed, when it was: a reply in a thread anchored on one
+            # of its bubbles, a mention, or its name; empty otherwise.
             addressed_by = _addressed_to_bot(
                 str(originator or ""),
                 body or "",
@@ -1165,9 +1168,7 @@ def incoming_messages(
                 sent_in_room.get(int(chat_rowid), set()),
                 config.display_name,
                 config.addresses,
-            )
-            if addressed_by is None:
-                continue
+            ) or ""
         message: dict[str, object] = {
             "guid": str(guid),
             "sender": sender,

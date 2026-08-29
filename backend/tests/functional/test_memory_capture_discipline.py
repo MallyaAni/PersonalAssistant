@@ -69,3 +69,37 @@ async def test_profile_and_personal_fact_survive_the_same_message(llm: object) -
     assert "preferred_name" in kinds, result.proposals
     assert "discovery_interests" in kinds, result.proposals
     assert "semantic_fact" in kinds, result.proposals
+
+
+# The interest catalogue is about labels, not about what is already known.
+#
+# Deploy #20, 2026-08-28: with "Thai food" among the person's followed
+# interests, "we all settled on thai for friday dinner" produced no proposal
+# at all in three runs of six - the model read the catalogue as "you already
+# know this" and dropped the plan. Measured over several runs because the
+# failure was intermittent; a single green run proves nothing here.
+# Only facts the one-to-one rules capture in the first place: a plan with a
+# day ("thai on friday", "the market at 9 on Saturday") is deliberately left
+# to the scheduling tools here (2026-08-26), and is the group's own fact only
+# under the group block - held in functional/test_group_attribution_behaviour.
+@pytest.mark.parametrize(
+    ("message", "catalogue"),
+    [
+        ("my dentist is Dr Lee on Wilson Boulevard", ("hiking", "live music")),
+        ("my dog is called Biscuit", ("dog training", "hiking")),
+        ("I'm allergic to shellfish", ("thai food", "cooking")),
+    ],
+)
+async def test_a_fact_survives_a_catalogue_that_mentions_its_subject(
+    llm: object, message: str, catalogue: tuple[str, ...]
+) -> None:
+    agent = MemoryProposalAgent(get_llm_client())
+    captured = 0
+    runs = 4
+    for _ in range(runs):
+        result = await agent.propose(message, catalogue)
+        captured += any(
+            proposal["kind"] in {"semantic_fact", "episodic", "entity", "knowledge"}
+            for proposal in result.proposals
+        )
+    assert captured >= runs - 1, f"{captured}/{runs} captured for {message!r}"

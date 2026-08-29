@@ -3040,6 +3040,38 @@ class ConversationService:
         context["group"] = {**room, "members": members}
         _trace("group", {"speaker": room["speaker_name"], "members": len(members)})
 
+    # Read one group message for context without answering it: the room's
+    # names attached, memory classified and saved per owner exactly as for an
+    # answered turn, and the turn stored with no reply so the next answered
+    # turn's history holds what the room said. Returns the conversation id.
+    async def observe(
+        self,
+        user_id: str,
+        query: str,
+        conversation_id: str | None,
+        metadata: dict[str, Any] | None,
+    ) -> str:
+        metadata = dict(metadata or {})
+        resolved_conversation_id = conversation_id or str(uuid.uuid4())
+        trace_id = self.tracer.start_trace(user_id)
+        _turn_trace.set({"_started": time.monotonic()})
+        _turn_speaker.set(_speaker_of(metadata))
+        _turn_conversation.set(resolved_conversation_id)
+        current_followup.set(None)
+        history = await self.repository.get_history(resolved_conversation_id, user_id, self.history_turn_limit)
+        _previous_assistant_said.set(str((history[-1].get("response") or "")) if history else "")
+        context: dict[str, Any] = {"user_id": user_id, "query": query}
+        await self._attach_group(context, metadata, user_id, query, None)
+        room = context.get("group") if isinstance(context.get("group"), dict) else None
+        candidates = await self._classify_memory_proposals(query, trace_id, user_id, room=room)
+        await self._persist_memory_proposals(user_id, resolved_conversation_id, trace_id, candidates, room=room)
+        _trace("observed", True)
+        await self.repository.save_turn(
+            resolved_conversation_id,
+            {"user_id": user_id, "query": query, "response": "", "metadata": _with_trace(metadata)},
+        )
+        return resolved_conversation_id
+
     # Whether a texting burst is finished and wants an answer, for the
     # iMessage worker (services/readiness.py). Judged on the routing model.
     async def judge_readiness(

@@ -81,6 +81,12 @@ seeded from the interests two or more members share
 (`backend/groups/shared_interests.py`), and a member's memories are read
 by relevance to the message, not only by recency.
 
+Later still: the operator decided the assistant "must be reading every
+message for context". Every allowlisted member's message in a listed room
+now leaves the Mac and is stored under the group's conversation (answered
+turns and observed ones alike), and the memory agent reads observed messages
+too. Only an addressed message is answered.
+
 ## Consequences
 
 - One guest search allowance per group, shared by every member's asks there.

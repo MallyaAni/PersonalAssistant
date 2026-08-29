@@ -58,3 +58,24 @@ async def test_empty_fragments_are_rejected_by_the_schema():
             headers={"Authorization": f"Bearer {token}"},
         )
     assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_the_observe_endpoint_stores_without_answering(monkeypatch):
+    seen: list[tuple] = []
+
+    async def observe(self, user_id, query, conversation_id, metadata):
+        seen.append((user_id, query, conversation_id, metadata.get("channel")))
+        return "conv-9"
+
+    monkeypatch.setattr(ConversationService, "observe", observe)
+    token = issue_user_token("readiness_user", ttl_seconds=60, scopes=["chat"])
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            "/api/v1/chat/observe",
+            json={"user_id": "readiness_user", "query": "lunch friday?", "metadata": {"channel": "imessage_group", "group": {"speaker_user_id": "u"}}},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+    assert response.status_code == 200, response.text
+    assert response.json() == {"conversation_id": "conv-9"}
+    assert seen == [("readiness_user", "lunch friday?", None, "imessage_group")]

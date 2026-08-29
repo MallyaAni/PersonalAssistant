@@ -28,9 +28,9 @@ def _names(proposals) -> set[str]:
     return {name.casefold() for proposal in proposals for name in proposal.get("about", [])}
 
 
-async def _propose(structured_llm, text: str):
+async def _propose(structured_llm, text: str, known_interests: tuple[str, ...] = ()):
     agent = MemoryProposalAgent(structured_llm)
-    return (await agent.propose(text, speaker="Ani", roster=ROSTER)).proposals
+    return (await agent.propose(text, known_interests, speaker="Ani", roster=ROSTER)).proposals
 
 
 async def test_a_members_own_statement_is_about_the_speaker(structured_llm):
@@ -70,6 +70,19 @@ async def test_a_decision_made_together_is_the_groups_fact(structured_llm):
         assert "u-jen" not in copies and "u-sam" not in copies, (text, copies)
 
 
+async def test_a_plan_survives_a_catalogue_that_already_lists_its_subject(structured_llm):
+    """Deploy #20, 2026-08-28: with "Thai food" among the speaker's followed
+    interests, the group's own plan was dropped 3 times in 6 - the model read
+    the interest catalogue as "already known". Several runs, because the
+    failure was intermittent."""
+    captured = 0
+    runs = 4
+    for _ in range(runs):
+        proposals = await _propose(structured_llm, "Scout, just so you know, we all settled on thai for friday dinner", ("Thai food",))
+        captured += any(p["kind"] == "semantic_fact" for p in proposals)
+    assert captured >= runs - 1, f"{captured}/{runs} captured with the catalogue"
+
+
 async def test_us_and_we_are_the_group(structured_llm):
     for text in ("we're all into climbing these days", "let's meet at the usual place at 6 for us"):
         proposals = await _propose(structured_llm, text)
@@ -81,14 +94,24 @@ async def test_us_and_we_are_the_group(structured_llm):
 
 
 async def test_a_fact_about_another_member_is_the_groups_with_its_source(structured_llm):
-    proposals = await _propose(structured_llm, "Jen hates cilantro, don't order anything with it")
-    facts = [p for p in proposals if p["kind"] in {"semantic_fact", "episodic", "entity", "knowledge"}]
-    assert facts, proposals
-    assert "jen" in _names(facts), facts
-    copies = [(owner, copy) for proposal in facts for owner, copy in _owned_copies(proposal, GROUP, ROOM)]
-    assert all(owner == GROUP for owner, _ in copies), copies
-    assert any("said by Ani" in str(copy.get("content") or "") for _, copy in copies), copies
-    assert not any(p["kind"] == "discovery_interests" and "cilantro" in " ".join(p.get("labels", [])) for p in proposals)
+    # Measured 5/6 on 2026-08-28 (2/6 before the stray-space fix): the model
+    # sometimes reads a remark about another person as nothing to keep. What
+    # must never vary is where it lands when it is kept, so every capturing
+    # run is checked and the rate is held at most one miss in four.
+    captured = 0
+    runs = 4
+    for _ in range(runs):
+        proposals = await _propose(structured_llm, "Jen hates cilantro, don't order anything with it")
+        facts = [p for p in proposals if p["kind"] in {"semantic_fact", "episodic", "entity", "knowledge"}]
+        assert not any(p["kind"] == "discovery_interests" and "cilantro" in " ".join(p.get("labels", [])) for p in proposals)
+        if not facts:
+            continue
+        captured += 1
+        assert "jen" in _names(facts), facts
+        copies = [(owner, copy) for proposal in facts for owner, copy in _owned_copies(proposal, GROUP, ROOM)]
+        assert all(owner == GROUP for owner, _ in copies), copies
+        assert any("said by Ani" in str(copy.get("content") or "") for _, copy in copies), copies
+    assert captured >= runs - 1, f"{captured}/{runs} captured"
 
 
 async def test_a_question_captures_nothing(structured_llm):

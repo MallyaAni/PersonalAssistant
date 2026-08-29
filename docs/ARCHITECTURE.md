@@ -312,8 +312,9 @@ task and skill.
    regardless).
 8. In a group chat the Mac's operator has listed ([design](GROUP_CHATS_ARCHITECTURE.md),
    [ADR 0016](adr/0016-a-group-is-an-account.md), [diagram](diagrams/group-chats-subsystem.svg)),
-   only what is addressed to the assistant leaves the Mac - a reply in a
-   thread on one of its bubbles, an @mention, or its name. Every member must
+   every member's message is read for context and memory, and only what
+   addresses the assistant is answered - a reply in a thread on one of its
+   bubbles, an @mention, or its name. Every member must
    be an approved user or it stays silent and you get one text. The room is
    then an account of its own (`group:<slug>`) with its own session, memory,
    tasks, and Scout; members' names, likes, home area and everyday remembered
@@ -335,8 +336,8 @@ for. A turn that genuinely failed is apologised for at once; retrying a
 bug helps nobody. *The model decides:* only the answer (and whether one is wanted) -
 the recipient is always the bridge's `reply_to` handle, "never anything the
 model wrote". *Never leaves the Mac:* bodies from anyone not on the
-allowlist, anything in a group chat that is not listed or not addressed to
-the assistant, and the text the reaction tools compare. *You control:* five
+allowlist, anything in a group chat that is not listed, and the text the
+reaction tools compare. *You control:* five
 independent grants on the Mac (send, read reactions, read incoming, read
 attachments, read listed groups), which Apple ID sends, the allowlist itself
 - which approval on the web can extend - and the group list, which nothing

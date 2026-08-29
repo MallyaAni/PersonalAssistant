@@ -212,3 +212,55 @@ async def test_semantic_agent_maps_each_typed_category(
     )
 
     assert result.proposals == expected
+
+
+@pytest.mark.asyncio
+async def test_the_interest_catalogue_says_it_is_about_labels_only() -> None:
+    """Deploy #20, 2026-08-28: with "Thai food" already followed, "we all
+    settled on thai for friday dinner" produced nothing 3 times in 6 - the
+    model read the catalogue as "already known". The catalogue now says what
+    it is for; this holds the wording that carries that meaning."""
+    llm = _DecisionLLM({"semantic_fact": "The group settled on Thai for Friday dinner."})
+    await MemoryProposalAgent(llm).propose("we all settled on thai for friday dinner", ("Thai food",))
+    system = llm.calls[0]["messages"][0]["content"]
+    assert "already follows these Scout interests" in system
+    assert "interest labels only" in system
+    assert "never means a fact, plan, decision or event is already known" in system
+    # Without a catalogue the prompt is unchanged.
+    plain = _DecisionLLM({"semantic_fact": "x"})
+    await MemoryProposalAgent(plain).propose("something", ())
+    assert "already follows" not in plain.calls[0]["messages"][0]["content"]
+
+
+@pytest.mark.asyncio
+async def test_the_ordinary_prompt_is_byte_identical_whether_or_not_there_is_a_group() -> None:
+    """One stray space from an empty group block flipped this classifier on a
+    pinned case - a remark about the system stored as a user fact, 6/6 wrong
+    against 6/6 right at temperature 0 - and group text in this prompt cost
+    ordinary capture (an interest 6/6 privately, 2/6 in a room). A group turn
+    asks its own question in its own call; this prompt never changes."""
+    from backend.agents.memory.prompts import MEMORY_PROPOSAL_SYSTEM
+
+    plain = _DecisionLLM({})
+    await MemoryProposalAgent(plain).propose("hello")
+    (only_call,) = plain.calls
+    system = only_call["messages"][0]["content"]
+    assert system.startswith(MEMORY_PROPOSAL_SYSTEM + "Meaning examples:"), repr(
+        system[len(MEMORY_PROPOSAL_SYSTEM) :][:40]
+    )
+
+    catalogued = _DecisionLLM({})
+    await MemoryProposalAgent(catalogued).propose("hello", ("hiking",))
+    assert catalogued.calls[0]["messages"][0]["content"].startswith(
+        MEMORY_PROPOSAL_SYSTEM + "The user already follows"
+    )
+
+    grouped = _DecisionLLM({})
+    await MemoryProposalAgent(grouped).propose("hello", speaker="Ani", roster=("Ani", "Jen"))
+    prompts = [call["messages"][0]["content"] for call in grouped.calls]
+    ordinary = [text for text in prompts if "group chat" not in text]
+    attribution = [text for text in prompts if "group chat" in text]
+    assert len(ordinary) == 1 and len(attribution) == 1, prompts
+    # Byte for byte the prompt a private message gets.
+    assert ordinary[0] == system
+    assert MEMORY_PROPOSAL_SYSTEM not in attribution[0]

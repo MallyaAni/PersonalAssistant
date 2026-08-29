@@ -1,6 +1,6 @@
 ---
 name: What's on
-description: Events, nightlife and what's happening somewhere - tonight, this weekend, a date range - found live and presented as a list people can act on, with venue, map link, day and time, price, a line on the music or what it is, and links to hear the artist and see the event posting.
+description: What is on somewhere on given days - listed events, gigs, nightlife, markets, shows - found live and presented as a list people can act on, with venue, map link, day and time, price, a line on the music or what it is, and links to hear the artist and see the event posting. Only for a request to see what is happening on a day or range of days; not for recommending a place to eat, drink or visit, choosing between options, or any question about where to go that is not asking for listings.
 ---
 Search the web now for what is on: the events happening in the place the person asked about, on the days they asked about. Name the place in the query (from their message, or where they are when the message does not say) and turn words like "this weekend" or "Weds-Sunday" into the calendar dates before searching. Use the local listings, venue pages and event sites the search returns; never fill a gap from memory. This is a live web search, never a look back through past conversations.
 

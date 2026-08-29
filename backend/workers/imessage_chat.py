@@ -402,6 +402,14 @@ class IMessageChatWorker:
             "addressed_by": str(message.get("addressed_by") or ""),
             "assistant_name": str(message.get("assistant_name") or ""),
         }
+        if not room["addressed_by"]:
+            # Not for the assistant: read for context (and memory), never
+            # answered. The operator's decision, 2026-08-28: the whole room
+            # is context; only what addresses the assistant gets a reply.
+            if text:
+                await self._observe(group.user_id, text, room)
+            await self._mark_seen(guid)
+            return 0
         pinned = await self._artifact_for_bubble(str(message.get("reply_to_guid") or ""))
         status: list[str] = []
         if attachments:
@@ -440,6 +448,34 @@ class IMessageChatWorker:
             )
         await self._mark_seen(guid)
         return answered
+
+    # Store one unaddressed room message under the group's conversation, so
+    # the next answered turn's history holds it. Best effort: an observation
+    # that cannot be stored is logged, never retried, never answered.
+    async def _observe(self, user_id: str, text: str, room: dict) -> None:
+        token = issue_user_token(user_id, ttl_seconds=120, scopes=["chat"])
+        body: dict[str, object] = {
+            "user_id": user_id,
+            "query": text,
+            "metadata": {"channel": "imessage_group", "group": dict(room)},
+        }
+        stored = await self._stored_conversation(user_id)
+        if stored:
+            body["conversation_id"] = stored
+        try:
+            async with httpx.AsyncClient(timeout=60) as client:
+                response = await client.post(
+                    f"{self.base_url}/api/v1/chat/observe",
+                    json=body,
+                    headers={"Authorization": f"Bearer {token}"},
+                )
+                response.raise_for_status()
+                conversation = str(response.json().get("conversation_id") or "")
+            if conversation and not stored:
+                await self._remember_conversation(user_id, conversation)
+            logger.info("imessage_group_observed", extra={"user": user_id})
+        except Exception as exc:
+            logger.warning("imessage_group_observe_failed: %s: %s", type(exc).__name__, str(exc)[:200])
 
     # The group account for a chat: provisioned on first contact when every
     # participant is approved, its membership brought in line with the chat

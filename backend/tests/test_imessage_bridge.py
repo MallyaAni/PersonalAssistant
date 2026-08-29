@@ -1249,13 +1249,18 @@ def _room_messages(config: BridgeConfig) -> list[dict]:
     return incoming_messages(config, since_ns=_ns_ago(120))["messages"]
 
 
-def test_room_talk_not_addressed_to_the_account_stays_on_the_mac(tmp_path):
+def test_room_talk_not_addressed_to_the_account_is_forwarded_unaddressed(tmp_path):
+    # Operator's decision, 2026-08-28: the assistant reads the whole room for
+    # context and answers only what was for it. The bridge says which.
     config = _room_config(tmp_path)
     _insert_incoming(
         config.incoming_db, "+15550100", "lunch friday?", _ns_ago(5),
         chat_identifier=_ROOM, participants=_PEOPLE,
     )
-    assert _room_messages(config) == []
+    (message,) = _room_messages(config)
+    assert message["addressed_by"] == ""
+    assert message["text"] == "lunch friday?"
+    assert message["chat_identifier"] == _ROOM
 
 
 def test_a_reply_in_a_thread_on_the_accounts_bubble_is_addressed(tmp_path):
@@ -1290,7 +1295,7 @@ def test_a_thread_on_somebody_elses_bubble_is_not_addressed(tmp_path):
         db, "+15550100", "pizza?", _ns_ago(30), chat_identifier=_ROOM, participants=_PEOPLE, guid="jen-1"
     )
     _insert_incoming(db, "+15550101", "sure", _ns_ago(5), chat_identifier=_ROOM, reply_to_guid="jen-1")
-    assert _room_messages(config) == []
+    assert [m["addressed_by"] for m in _room_messages(config)] == ["", ""]
 
 
 def test_a_mention_is_matched_on_the_accounts_address_whatever_name_it_renders_as(tmp_path):
@@ -1322,7 +1327,8 @@ def test_a_mention_of_somebody_else_is_not_addressed(tmp_path):
         config.incoming_db, "+15550100", "Jen are you coming", _ns_ago(5),
         chat_identifier=_ROOM, participants=_PEOPLE, mention="+15550101",
     )
-    assert _room_messages(config) == []
+    (message,) = _room_messages(config)
+    assert message["addressed_by"] == ""
 
 
 def test_mention_targets_are_read_from_the_typedstream():
@@ -1354,7 +1360,8 @@ def test_the_name_inside_another_word_is_not_addressed(tmp_path):
         config.incoming_db, "+15550100", "we went scouting yesterday", _ns_ago(5),
         chat_identifier=_ROOM, participants=_PEOPLE,
     )
-    assert _room_messages(config) == []
+    (message,) = _room_messages(config)
+    assert message["addressed_by"] == ""
 
 
 def test_room_rows_need_reading_switched_on(tmp_path):

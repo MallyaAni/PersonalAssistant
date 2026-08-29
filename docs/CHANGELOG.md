@@ -2,6 +2,47 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-29 — The room is read whole, and group memory stops disturbing private memory
+
+- **Every message in a listed room is read for context; only what addresses
+  the assistant is answered** (operator: "it must be reading every message
+  for context"). The bridge forwards each allowlisted member's message with
+  `addressed_by` saying how it reached the assistant, or empty; an
+  unaddressed one is stored through `POST /chat/observe` as a turn with no
+  reply under the group and classified for memory, so what members say to
+  each other is the room's context and the room's memory. Bodies from listed
+  rooms now leave the Mac; that is the trade the decision makes, and
+  SECURITY.md says so.
+- **One stray space cost a pinned incident case.** Concatenating an empty
+  group block as `SYSTEM + " " + block` put one extra space into *every*
+  one-to-one memory prompt. Measured at temperature 0: with it, a remark
+  about how the system works was stored as a user fact 6 runs out of 6;
+  without it, 0 out of 6. Recorded in AGENTS.md as a trap - an optional
+  prompt block must leave the prompt byte-identical when absent - and pinned
+  by a byte-level test.
+- **Group text in the shared prompt cost ordinary capture.** "I love hiking,
+  honestly it's my favourite thing" produced an interest 6/6 in a private
+  message and 2/6 in a room. Wording did not fix it (1/6 on the next
+  attempt), so the design changed instead: a group turn asks a *second*
+  question in its own call - who each fact is about, and what a member said
+  about another member - concurrently with the ordinary classification,
+  whose prompt is now byte-identical to the one-to-one path. Group capture
+  is 6/6; the private path is untouched. `_merged` stamps attribution and
+  adds what only the group reading could find.
+- **The interest catalogue no longer reads as "already known".** With "Thai
+  food" among the person's interests, "we all settled on thai for friday
+  dinner" produced nothing 3 times in 6 - deploy #20's failing journey. The
+  catalogue now says it is about interest labels only.
+- **A recommendation is not a listing.** The shipped "What's on" pack
+  advertised itself broadly enough that "where should the two of us go for
+  dinner on friday?" was routed to it twice, and it searched weekend events.
+  Its description now says what it is not for; both directions pinned on the
+  real router.
+- Verified: unit gate 2068; `test_group_attribution_behaviour` 7/7,
+  `test_group_reply_behaviour` 7/7, `test_memory_capture_discipline` 9/9 on
+  the real models, each intermittent case measured over several runs rather
+  than one.
+
 ## 2026-08-28 — The reply model gets the follow-up reading too
 
 - Live in the group: "what's your favorite ice cream?" was answered, then
