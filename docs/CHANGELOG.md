@@ -2,6 +2,26 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-29 — Grounding, priced honestly, and a ceiling so switching it on cannot bill
+
+- Google's own pricing page settles what our 429 showed: **Grounding with
+  Google Search is not available on the free tier at all**. With billing
+  enabled, the first **5,000 grounded requests a month are free** on the
+  Gemini 3.x family (this machine's model is `gemini-3.6-flash`), then $14
+  per 1,000. The paid tier also stops prompts being used to improve Google's
+  products, which the free tier does.
+- So "free grounding" means enabling billing and staying under the
+  allowance - which needs a guard, because the existing daily cap of 450 is
+  13,500 a month. `EveryQuota` counts a call against several budgets at once
+  and refunds the earlier ones when a later refuses, and the Google provider
+  now holds a daily rate **and** a monthly ceiling
+  (`GOOGLE_SEARCH_MONTHLY_LIMIT`, default 4,800 - below Google's 5,000).
+  `search_credits` reports both.
+- At this household's rate (~400 searches a month, mostly the sweep's own),
+  grounding would cost nothing against that allowance, and the token side
+  is about $1-2 a month at $0.75/$3.75 per million in and out - cheaper than
+  Brave's metered $5 per 1,000, with better data terms.
+
 ## 2026-08-29 — Search costs: the same question is not bought twice, and the cheapest provider goes first
 
 - **Where the credits went.** The operator asked how Brave had spent 540

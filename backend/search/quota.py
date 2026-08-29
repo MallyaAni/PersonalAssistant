@@ -123,3 +123,39 @@ class SQLiteMonthlySearchQuota(SQLiteDailySearchQuota):
 
     def _period(self, now: datetime | None) -> str:
         return (now or datetime.now(UTC)).astimezone(UTC).strftime("%Y-%m")
+
+
+class EveryQuota:
+    """Budgets that must all permit a call - a daily rate and a monthly ceiling.
+
+    Google's Search grounding is free only above a billing switch, and only
+    up to a monthly allowance (5,000 requests a month on the Gemini 3.x
+    family as of 2026-08-29, then $14 per 1,000). A daily cap alone cannot
+    hold that line: 450 a day is 13,500 a month. Both are counted, and a
+    call that the second budget refuses gives the first its credit back, so
+    a refusal costs nothing.
+    """
+
+    def __init__(self, *quotas: SQLiteDailySearchQuota) -> None:
+        self.quotas = tuple(quotas)
+
+    # Reserve one call against every budget, or none.
+    async def consume(self, now: datetime | None = None) -> None:
+        taken: list[SQLiteDailySearchQuota] = []
+        for quota in self.quotas:
+            try:
+                await quota.consume(now)
+            except SearchQuotaExceededError:
+                for spent in reversed(taken):
+                    await spent.release(now)
+                raise
+            taken.append(quota)
+
+    # Give back one call to every budget that took it.
+    async def release(self, now: datetime | None = None) -> None:
+        for quota in reversed(self.quotas):
+            await quota.release(now)
+
+    # The first budget's count, which is the one a rate is read against.
+    async def used(self, now: datetime | None = None) -> int:
+        return await self.quotas[0].used(now) if self.quotas else 0

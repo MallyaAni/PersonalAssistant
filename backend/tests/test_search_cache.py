@@ -108,3 +108,57 @@ async def test_a_corrupt_payload_is_a_miss(tmp_path):
         db.execute("update search_cache set payload = ?", (json.dumps({"results": "not a list"}),))
         db.commit()
     assert await cache.get("ps5 price", 5) is None
+
+
+# --- Two budgets at once, for a provider whose free allowance is monthly ---
+
+
+@pytest.mark.asyncio
+async def test_both_budgets_must_permit_a_call_and_a_refusal_costs_nothing(tmp_path):
+    """Grounding is free only to a monthly allowance, so a daily rate alone
+    cannot hold the line (450 a day is 13,500 a month). A call the month
+    refuses must give the day its credit back, or the day drifts down for
+    calls that never happened."""
+    from backend.search.quota import (
+        EveryQuota,
+        SearchQuotaExceededError,
+        SQLiteDailySearchQuota,
+        SQLiteMonthlySearchQuota,
+    )
+
+    path = str(tmp_path / "q.sqlite3")
+    day = SQLiteDailySearchQuota(path, "google", daily_limit=10)
+    month = SQLiteMonthlySearchQuota(path, "google-month", monthly_limit=2)
+    both = EveryQuota(day, month)
+
+    await both.consume()
+    await both.consume()
+    assert await day.used() == 2 and await month.used() == 2
+
+    with pytest.raises(SearchQuotaExceededError):
+        await both.consume()
+    # The month refused, so the day is not charged for it.
+    assert await day.used() == 2
+    assert await both.used() == 2
+
+    await both.release()
+    assert await day.used() == 1 and await month.used() == 1
+
+
+@pytest.mark.asyncio
+async def test_the_daily_rate_still_stops_a_burst(tmp_path):
+    from backend.search.quota import (
+        EveryQuota,
+        SearchQuotaExceededError,
+        SQLiteDailySearchQuota,
+        SQLiteMonthlySearchQuota,
+    )
+
+    path = str(tmp_path / "q.sqlite3")
+    both = EveryQuota(
+        SQLiteDailySearchQuota(path, "google", daily_limit=1),
+        SQLiteMonthlySearchQuota(path, "google-month", monthly_limit=100),
+    )
+    await both.consume()
+    with pytest.raises(SearchQuotaExceededError):
+        await both.consume()

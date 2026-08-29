@@ -14,6 +14,7 @@ from backend.search.hybrid import EveryProviderExhausted, HybridSearchProvider
 from backend.search.quota import (
     SearchQuotaExceededError,
     SQLiteDailySearchQuota,
+    EveryQuota,
     SQLiteMonthlySearchQuota,
 )
 from backend.search.tavily import TavilySearchProvider, TavilyUsageClient
@@ -49,13 +50,28 @@ def _build_search_provider() -> HybridSearchProvider:
         max_results=max_results,
         max_content_chars=max_content_chars,
         max_output_tokens=int(os.getenv("GOOGLE_SEARCH_MAX_OUTPUT_TOKENS", "2048")),
-        quota=SQLiteDailySearchQuota(
-            path=os.getenv(
-                "GOOGLE_SEARCH_QUOTA_DB_PATH",
-                "data/search/google_search_quota.sqlite3",
+        # Two lines, not one: grounding is free to a monthly allowance
+        # (5,000 requests a month on Gemini 3.x as of 2026-08-29, then $14
+        # per 1,000), and a daily cap alone does not hold that - 450 a day
+        # is 13,500 a month. The monthly ceiling defaults below Google's
+        # free allowance so switching grounding on cannot bill by accident.
+        quota=EveryQuota(
+            SQLiteDailySearchQuota(
+                path=os.getenv(
+                    "GOOGLE_SEARCH_QUOTA_DB_PATH",
+                    "data/search/google_search_quota.sqlite3",
+                ),
+                provider="google",
+                daily_limit=int(os.getenv("GOOGLE_SEARCH_DAILY_LIMIT", "450")),
             ),
-            provider="google",
-            daily_limit=int(os.getenv("GOOGLE_SEARCH_DAILY_LIMIT", "450")),
+            SQLiteMonthlySearchQuota(
+                path=os.getenv(
+                    "GOOGLE_SEARCH_QUOTA_DB_PATH",
+                    "data/search/google_search_quota.sqlite3",
+                ),
+                provider="google-month",
+                monthly_limit=int(os.getenv("GOOGLE_SEARCH_MONTHLY_LIMIT", "4800")),
+            ),
         ),
     )
     tavily = TavilySearchProvider(
@@ -666,6 +682,7 @@ async def search_credits() -> str:
             in {"1", "true", "yes", "on"},
             "period": "the provider's current billing period",
             "brave": await _brave_meter(),
+            "google": await _google_meter(),
             "order": os.getenv("SEARCH_PROVIDER_ORDER") or "brave,google,tavily",
             "summary": _meter_summary(report, await _brave_meter()),
         }
@@ -700,6 +717,32 @@ def _meter_summary(tavily: dict[str, object], brave: dict[str, object] | None) -
 
 # Brave's meter is local: the provider bills in dollars and reports no
 # monthly request count, so the count that stops us is the one kept here.
+async def _google_meter() -> dict[str, object] | None:
+    """What grounding has left this month, or None when it is switched off.
+
+    Grounding is unavailable on Google's free tier - a grounded call on a
+    free-tier project returns 429 while a plain call on the same key
+    succeeds (measured 2026-08-29). With billing on, the first 5,000 a month
+    are free; this reports the local ceiling that keeps it under that.
+    """
+    enabled = os.getenv("GOOGLE_SEARCH_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
+    if not enabled or not (os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY") or "").strip():
+        return None
+    monthly = int(os.getenv("GOOGLE_SEARCH_MONTHLY_LIMIT") or "4800")
+    daily = int(os.getenv("GOOGLE_SEARCH_DAILY_LIMIT") or "450")
+    path = os.getenv("GOOGLE_SEARCH_QUOTA_DB_PATH") or "data/search/google_search_quota.sqlite3"
+    used_month = await SQLiteMonthlySearchQuota(path, "google-month", monthly).used()
+    used_day = await SQLiteDailySearchQuota(path, "google", daily).used()
+    return {
+        "used_this_month": used_month,
+        "monthly_limit": monthly,
+        "remaining_this_month": max(0, monthly - used_month),
+        "used_today": used_day,
+        "daily_limit": daily,
+        "period": "this calendar month, held under Google's free grounding allowance",
+    }
+
+
 async def _brave_meter() -> dict[str, object] | None:
     if not (os.getenv("BRAVE_SEARCH_API_KEY") or "").strip():
         return None

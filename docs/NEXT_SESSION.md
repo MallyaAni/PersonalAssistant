@@ -44,10 +44,22 @@ wake-on-LAN, so **a powered-off Spark needs someone to press the button.**
 - **Tavily leads now** (`SEARCH_PROVIDER_ORDER=tavily,brave,google` in
   `.env`, backup `.env.bak-20260829-search`): 1,000 free credits a month,
   reset on the 1st, so from 1 September the free one is spent first.
-- **Gemini grounding stays off**: the key is healthy (a plain call works)
-  but the project has no grounding quota (429 on the grounded call at the
-  same moment). Enable billing on the Google project → 1,500 grounded
-  queries/day free → then only `GOOGLE_SEARCH_ENABLED=true` is needed.
+- **Gemini grounding stays off, and turning it on is now three steps.**
+  Google's pricing page: grounding is *not available* on the free tier
+  (which is the 429 we measured - a plain call on the same key works). With
+  billing enabled the first 5,000 grounded requests a month are free on
+  Gemini 3.x, then $14/1,000, and prompts stop being used to improve
+  Google's products.
+  1. AI Studio → API keys → find the Cloud project behind `GOOGLE_API_KEY`.
+  2. Google Cloud console → Billing → link a billing account to that
+     project, and confirm Tier 1 on the rate-limits page.
+  3. On spark1: `GOOGLE_SEARCH_ENABLED=true` in `.env` (already inherited by
+     the search subprocess), and put `google` first in
+     `SEARCH_PROVIDER_ORDER`. The ceiling is already in place -
+     `GOOGLE_SEARCH_MONTHLY_LIMIT` defaults to 4,800, under Google's free
+     5,000, with the daily 450 beneath it - so a mistake cannot bill.
+  Verify with one grounded call and `search_credits`, which now reports the
+  Google allowance beside Brave's.
 - **The sweep is the biggest spender**: ~344 of the month's ~403 searches
   were verification runs, against ~59 from people. The 30-minute answer
   cache is live and measured (560 → 561 → 561 for a repeated question); if
