@@ -2821,8 +2821,22 @@ class ConversationService:
         active_image_artifact_id: str | None,
     ) -> AsyncGenerator[ChatStreamEvent, None] | None:
         if isinstance(action, CreateDiagramAction) and self.diagram_artifacts:
+            # The router's own subject, not the words the person typed.
+            #
+            # The diagram agent is given one string and no conversation, so
+            # "try again" or "draw it as a diagram" reached it with nothing to
+            # draw and it invented something unrelated - reported live on
+            # 2026-08-30 after a conversation about Roman aqueducts. The router
+            # had already resolved the subject and written it into the action
+            # ("Roman aqueduct architecture thinking process"); it was simply
+            # discarded here. The typed words are kept as the fallback for a
+            # router that returned no subject at all.
             return self._process_diagram_request(
-                user_id, asked, conversation_id, trace_id, metadata
+                user_id,
+                str(getattr(action, "subject", "") or "").strip() or asked,
+                conversation_id,
+                trace_id,
+                metadata,
             )
         if (
             isinstance(action, DelegateAction)

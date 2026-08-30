@@ -730,3 +730,62 @@ def test_the_schema_asks_for_lines_and_bounds_them():
     # At least a declaration and one statement, so the grammar itself refuses
     # the bare-header answer that this change exists to end.
     assert lines["minItems"] == 2
+
+
+@pytest.mark.asyncio
+async def test_the_diagram_is_drawn_from_the_resolved_subject_not_the_typed_words():
+    """"Try again" must not reach the diagram agent as the thing to draw.
+
+    Reported live on 2026-08-30: after a conversation about Roman aqueducts and
+    a diagram that had just failed, "try again" produced a diagram about
+    something else entirely. The diagram agent is given one string and no
+    conversation, and the string it was given was the words typed.
+
+    The router had resolved the subject correctly the whole time - measured
+    against the real routing model on that conversation, "try again" came back
+    as CreateDiagramAction(subject="Roman aqueduct with stacked arches"). It
+    was simply thrown away here.
+    """
+    drawn: list[str] = []
+
+    class _RecordingProvider(StaticDiagramProvider):
+        async def generate(self, query: str):
+            drawn.append(query)
+            return await super().generate(query)
+
+    service = ConversationService(
+        memory=StubMemoryService(),
+        llm=NoopLLM(),
+        repository=CapturingConversationRepository(),
+        tracer=StubTracer(),
+        main_action_selector=StubMainActionSelector(  # type: ignore[arg-type]
+            CreateDiagramAction(subject="Roman aqueduct with stacked arches")
+        ),
+        diagram_artifacts=DiagramArtifactService(
+            DiagramAgent(_RecordingProvider()),
+            CapturingArtifactRepository(),
+            "test_provider",
+            "test_model",
+        ),
+    )
+
+    async for _ in service.process_request(
+        "diagram_user",
+        "try again",
+        "88888888-8888-4888-8888-888888888888",
+    ):
+        pass
+
+    assert drawn == ["Roman aqueduct with stacked arches"], drawn
+
+
+def test_the_branch_prefers_the_actions_subject_over_the_message():
+    # Read off the branch itself: the typed words remain the fallback for a
+    # router that returned no subject, and nothing else.
+    import inspect
+
+    from backend.services.conversation_service import ConversationService
+
+    source = inspect.getsource(ConversationService._generating_branch)
+    assert 'getattr(action, "subject", "")' in source, source
+    assert "or asked" in source, source

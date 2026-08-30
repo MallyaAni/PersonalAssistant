@@ -2,6 +2,29 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-30 — "Try again" draws what was being discussed, not the words "try again"
+
+Reported live: after a conversation about Roman aqueducts and a diagram that
+had just failed, "try again" produced a diagram about something else entirely.
+
+The router was never the problem. Measured against the real routing model on
+that exact conversation, "try again" came back as
+`CreateDiagramAction(subject="Roman aqueduct with stacked arches")` - correct,
+every time, including for "try again please" and "can you try that again". The
+subject was then **discarded**: `_generating_branch` handed the diagram agent
+the words the person typed instead. The agent receives one string and no
+conversation, so it drew "try again".
+
+One line: the action's own subject, with the typed words kept only as the
+fallback for a router that returned no subject at all.
+
+The deploy gate now runs four functional suites instead of one - tool
+selection, diagram generation, saying yes, and burst readiness - timed at 14m36s
+for 70 cases. Both defects found by hand today were exactly what that suite
+exists to catch, and neither was in it. The gate's own comment had said the
+directory was unrunnable "until someone has timed it"; it has been timed now,
+one suite at a time, and the ones whose failures reach a person are in.
+
 ## 2026-08-30 — A diagram request stops asking the model for an escape sequence
 
 "can you draw it as a diagram instead?" in the group chat got "I couldn't

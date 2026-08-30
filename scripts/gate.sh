@@ -35,20 +35,45 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 compose=(docker compose -f "$root/docker-compose.yml" --profile test)
 
-# The matrix alone by default. 51 cases against a serialized GPU is a cost a
-# deploy can carry; the whole directory is not, until someone has timed it.
-target="backend/tests/functional/test_tool_selection_matrix_behaviour.py"
+# What a deploy gates on by default, and the reason each one is here.
+#
+# It was the tool-selection matrix alone, with a note that the whole directory
+# had not been timed. It has been now, one suite at a time, and the ones below
+# are the ones whose failures reach a person rather than a log:
+#
+#   tool_selection_matrix  - 51 cases, ~9.5 min. Selection collapsing is the
+#                            failure that makes everything else look broken.
+#   diagram_generation     - 11 cases, ~2 min. Added 2026-08-30 after a group
+#                            chat got "I couldn't create that diagram" twice
+#                            from a defect that had been live and unnoticed:
+#                            the unit suite passed throughout, because the
+#                            model's output was the thing that was wrong.
+#   saying_yes             - 19 cases, ~1.5 min. "Yes" to an offer is the
+#                            commonest instruction there is, and it had a hole
+#                            in it that no structural test could see.
+#   burst_readiness        - the judgement that decides whether to answer at
+#                            all, including whether a tapback accepts an offer.
+#
+# Everything else stays out until it earns a place the same way: a real failure
+# that reached a person, and a measured cost.
+targets=(
+    "backend/tests/functional/test_tool_selection_matrix_behaviour.py"
+    "backend/tests/functional/test_diagram_generation_behaviour.py"
+    "backend/tests/functional/test_saying_yes_behaviour.py"
+    "backend/tests/functional/test_burst_readiness_behaviour.py"
+)
 unit=false
 case "${1:-}" in
-    --all)  target="backend/tests/functional" ;;
+    --all)  targets=("backend/tests/functional") ;;
     # The whole unit suite, green or fail. It needs the compose Redis (the
     # login rate limiter and the search budget answer 503 / grant everything
     # without one - 19 tests read as "stale" for two days for exactly that)
     # and every directory a test reads, mounted from the checkout.
-    --unit) target="backend/tests"; unit=true ;;
+    --unit) targets=("backend/tests"); unit=true ;;
     "")     ;;
-    *)      target="$1" ;;
+    *)      targets=("$1") ;;
 esac
+target="${targets[*]}"
 
 # Deselected by path, visibly rather than by a marker nobody reads:
 # test_gateway_follows_the_backend.py shells out to the docker CLI to inspect
@@ -92,7 +117,7 @@ if "${compose[@]}" run --rm --no-deps \
     -v "$root/.env.example:/app/.env.example:ro" \
     -e REDIS_URL=redis://redis:6379/0 \
     functional-tests \
-    python -m pytest "$target" "${ignores[@]}" \
+    python -m pytest "${targets[@]}" "${ignores[@]}" \
         -q -p no:cacheprovider --no-header; then
     echo "==> Gate passed"
     exit 0
