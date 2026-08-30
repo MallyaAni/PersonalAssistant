@@ -460,6 +460,15 @@ class Settings(BaseSettings):
     # Positive tapbacks are queried only for message GUIDs this worker stored
     # after sending; a bridge without the tool leaves ordinary chat untouched.
     IMESSAGE_CHAT_REACTIONS_TOOL: str = "read_reactions_by_guid"
+    # How long after sending a bubble its reactions are still polled for.
+    #
+    # The ledger keeps bubbles for seven days so a late tapback can still be
+    # interpreted; this is the shorter window in which the Mac is *asked*.
+    # Without it the worker called the bridge every two to six seconds forever,
+    # because the ledger is never empty on an active account - a round trip and
+    # a SQLite query on the operator's laptop, all day, to learn nothing.
+    # People react within minutes. Zero switches the polling off entirely.
+    IMESSAGE_CHAT_REACTION_WINDOW_SECONDS: int = Field(default=3_600, ge=0, le=86_400)
     # Where this worker reaches its own backend. The compose network name by
     # default; a host-run worker overrides it.
     IMESSAGE_CHAT_BASE_URL: str = "http://backend:8000"

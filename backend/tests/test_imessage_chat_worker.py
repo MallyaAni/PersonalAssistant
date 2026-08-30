@@ -1088,3 +1088,97 @@ async def test_a_fast_route_that_beats_the_threshold_stays_one_bubble(monkeypatc
     monkeypatch.setattr(worker, "_converse", quick)
     await worker.tick()
     assert [b["body"] for b in bridge.sent] == ["done, 5 PM"]
+
+
+# Before this, `tick` asked the Mac about every bubble in the ledger every two
+# to six seconds, forever, because a seven-day ledger is never empty on an
+# active account. One MCP round trip and one SQLite query on the operator's
+# laptop, all day, to learn nothing. Measured live on 2026-08-29.
+@pytest.mark.asyncio
+async def test_an_idle_thread_does_not_ask_the_mac_about_reactions(monkeypatch):
+    import time
+
+    asked: list[str] = []
+
+    async def bridge(tool: str, arguments: dict) -> object:
+        asked.append(tool)
+        if tool == "read_messages":
+            return json.dumps({"messages": [], "cursor": 95})
+        return json.dumps({"reactions": []})
+
+    worker, _ = _worker(bridge, monkeypatch, accounts={}, replies={})
+    # A bubble from yesterday: still in the ledger so a late tapback could be
+    # interpreted, but far outside the window in which the Mac is asked.
+    worker.redis.store["imessage:chat:outgoing_bubbles"] = json.dumps(
+        [
+            {
+                "guid": "44444444-4444-4444-8444-444444444444",
+                "body": "Want me to book that?",
+                "reply_to": "+15550100",
+                "user_id": "ani.mallya",
+                "room": None,
+                "at": time.time() - 26 * 3600,
+            }
+        ]
+    )
+
+    await worker.tick()
+    assert "read_reactions_by_guid" not in asked, asked
+
+
+@pytest.mark.asyncio
+async def test_a_bubble_sent_a_moment_ago_is_still_asked_about(monkeypatch):
+    # The other half: shrinking the window must not cost a real reaction its
+    # latency. One sent seconds ago is polled on the very next tick.
+    import time
+
+    asked: list[str] = []
+
+    async def bridge(tool: str, arguments: dict) -> object:
+        asked.append(tool)
+        if tool == "read_messages":
+            return json.dumps({"messages": [], "cursor": 96})
+        return json.dumps({"reactions": []})
+
+    worker, _ = _worker(bridge, monkeypatch, accounts={}, replies={})
+    worker.redis.store["imessage:chat:outgoing_bubbles"] = json.dumps(
+        [
+            {
+                "guid": "55555555-5555-4555-8555-555555555555",
+                "body": "Want me to book that?",
+                "reply_to": "+15550100",
+                "user_id": "ani.mallya",
+                "room": None,
+                "at": time.time() - 30,
+            }
+        ]
+    )
+
+    await worker.tick()
+    assert "read_reactions_by_guid" in asked, asked
+
+
+@pytest.mark.asyncio
+async def test_the_window_can_be_switched_off(monkeypatch):
+    import time
+
+    from backend.config.settings import settings
+
+    asked: list[str] = []
+
+    async def bridge(tool: str, arguments: dict) -> object:
+        asked.append(tool)
+        if tool == "read_messages":
+            return json.dumps({"messages": [], "cursor": 97})
+        return json.dumps({"reactions": []})
+
+    worker, _ = _worker(bridge, monkeypatch, accounts={}, replies={})
+    worker.redis.store["imessage:chat:outgoing_bubbles"] = json.dumps(
+        [{"guid": "66666666-6666-4666-8666-666666666666", "body": "x",
+          "reply_to": "+15550100", "user_id": "ani.mallya", "room": None,
+          "at": time.time()}]
+    )
+    monkeypatch.setattr(settings, "IMESSAGE_CHAT_REACTION_WINDOW_SECONDS", 0)
+
+    await worker.tick()
+    assert "read_reactions_by_guid" not in asked, asked

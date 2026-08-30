@@ -651,7 +651,7 @@ class IMessageChatWorker:
     # The readiness model first proves the exact bubble offered an action; a
     # heart on an answer or joke is recorded as handled and gets no reply.
     async def _handle_tapbacks(self) -> int:
-        records = await self._outgoing_bubbles()
+        records = await self._recently_reactable()
         if not records:
             return 0
         try:
@@ -667,6 +667,28 @@ class IMessageChatWorker:
             if isinstance(reaction, dict):
                 answered += await self._handle_tapback(reaction, by_guid)
         return answered
+
+    # The bubbles a reaction could still plausibly arrive on.
+    #
+    # The ledger holds seven days so a late tapback can still be *interpreted*;
+    # asking the Mac about all of it on every tick is a different thing. Before
+    # this, `tick` called the bridge every two to six seconds forever, because
+    # the ledger is never empty on an active account - one MCP round trip and
+    # one SQLite query on the operator's laptop, all day, to learn nothing.
+    #
+    # People react within minutes. Outside the window the poll is skipped
+    # entirely, so an idle thread costs nothing, and a reaction inside it is
+    # still seen on the very next tick with no added latency.
+    async def _recently_reactable(self) -> list[dict]:
+        window = max(0, settings.IMESSAGE_CHAT_REACTION_WINDOW_SECONDS)
+        if not window:
+            return []
+        cutoff = time.time() - window
+        return [
+            item
+            for item in await self._outgoing_bubbles()
+            if float(item.get("at") or 0) >= cutoff
+        ]
 
     # Handle one reported reaction, returning one only when it produced a reply.
     async def _handle_tapback(

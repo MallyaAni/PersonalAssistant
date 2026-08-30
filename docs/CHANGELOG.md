@@ -2,6 +2,20 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-29 — The reaction poll stops asking when there is nothing to ask about
+
+Measured on the operator's own Mac: the worker called the bridge for reactions
+every two to six seconds, continuously, whether or not anyone had reacted. The
+guard meant to prevent that only skipped an *empty* ledger, and the ledger
+holds seven days, so on an active account it is never empty - one MCP round
+trip and one SQLite query on a laptop, all day, to learn nothing.
+
+The seven days exist so a late tapback can still be *interpreted*. Asking about
+all of it is a different question. The Mac is now asked only about bubbles sent
+within `IMESSAGE_CHAT_REACTION_WINDOW_SECONDS` (an hour by default, zero to
+switch the polling off). An idle thread costs nothing; a reaction inside the
+window is still seen on the very next tick, so nothing got slower.
+
 ## 2026-08-29 — Saying yes, in words, and refusing to act when nothing was offered
 
 The operator's judgement on the tapback work: "natural language is the right
