@@ -29,6 +29,10 @@ You are given the recent conversation and the newest message from the same perso
 
 Replace every reference that leans on the conversation - "it", "this", "that", "they", "the one", "again", "at the end", "the villa", "this outfit" - with the exact thing the conversation names, copied as it is spelled there: the show, product, place, person, picture, reminder, or draft. Keep everything else as the person said it: their intent, their wording, their question. Never answer the message, never add a fact the conversation does not contain, and never replace the thing with a different one that seems similar. A question that only makes sense about the thing just discussed names it too, even with no pronoun in it: "based on what you know about us, what do you think we'd like?" right after talking about ice cream means "which ice cream flavours do you think we'd like?", and subject is "ice cream". If the message already stands on its own, return it unchanged.
 
+A message that asks to *change* the thing under discussion - "more casual", "shorter", "make it funnier", "add a line about parking" - keeps its own instruction and names what it applies to: "make the shift-coverage email more casual". Do not replace it with the earlier request that produced the thing. Measured on 2026-08-29, "More casual" after a drafted email was restated as "Draft an email to my retail team asking for shift coverage this Saturday" five times in six - the instruction vanished, and a reader given that restatement would write the email again from scratch rather than soften the one that exists.
+
+That paragraph is about the restatement alone. It never changes which kind the message refers to: a change to Scout's sweep is still scout, a change to a reminder is still task, a change to a picture is still picture. Describing the action does not make it one.
+
 Also say what the message refers to:
 - picture: a picture the assistant made or was sent, including opinions and questions about it and requests to make it again;
 - task: a reminder or scheduled task the person set up;

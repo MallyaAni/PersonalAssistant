@@ -2,6 +2,35 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-29 — "More casual" stops losing the words "more casual"
+
+Deploy #36's sweep went flaky on the draft-referent journey again - "more
+casual" after a drafted email routing a web search instead of taking no tool.
+That journey has been intermittently red for several deploys and had been
+written off as flaky. It is not flaky; it is a defect that fires most of the
+time.
+
+Measured six times: the follow-up resolver restated "More casual" as **"Draft
+an email to my retail team asking for shift coverage this Saturday"** in five of
+six runs. The instruction vanished and the original request took its place, so
+what reached the router read like a fresh drafting job rather than a change to
+one that exists. Web search is deliberately not withheld from draft turns -
+"look up our hours and add them" is a real draft turn - so the router was free
+to act on it, and sometimes did.
+
+The prompt now says that a message asking to *change* the thing under
+discussion keeps its own instruction and names what it applies to. Six of six:
+"Make the shift-coverage email more casual."
+
+The first version of that fix broke something else, which is why it was
+measured rather than assumed. It bled into the *kind* classification: "make it
+weekly instead" after a Scout schedule came back `task` instead of `scout`, six
+times out of six, which would have sent a sweep change to the reminder tool. The
+paragraph is now explicitly about the restatement alone and never the kind.
+Both cases are six of six correct, and the Scout restatement improved as well -
+"make Scout's sweep weekly instead of daily at 3pm" where it used to be the
+original request.
+
 ## 2026-08-29 — The reaction poll stops asking when there is nothing to ask about
 
 Measured on the operator's own Mac: the worker called the bridge for reactions
