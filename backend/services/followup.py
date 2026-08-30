@@ -184,3 +184,4 @@ def is_bare_acceptance(message: str) -> bool:
     stripped = _FILLER.sub(" ", str(message or "").casefold())
     collapsed = " ".join(stripped.split())
     return collapsed in _ASSENT
+

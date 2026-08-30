@@ -2,6 +2,36 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-30 — The diagram reads the request and the conversation together
+
+Passing the conversation was right and the way it was passed was wrong. It
+arrived with "draw what is asked below, not the conversation" - a guard so a
+room about aqueducts could not hijack an explicit request for something else.
+The router then resolved "Try Again" into a subject, faithfully, and the model
+obeyed the guard and drew a flowchart about trying again. The context was in
+the prompt the whole time; it had been told to ignore it.
+
+The first repair was a list of retry phrases in code. It would have caught "try
+again" and missed "nah do that one more time" - a lookup table, not
+understanding, and the operator said so.
+
+So the guard is gone and there is one framing: here is the conversation, here
+is what they asked, draw what they mean - if their words name what to draw draw
+that, if they only ask you to repeat then draw what the conversation is about.
+The judgement belongs to the thing that can make it.
+
+Measured three of three each: "Try Again", "nah do that one more time", "bro
+thats not it, again" and "still not right - go again" all draw the aqueduct,
+and "how a pull request gets merged" asked in that same room still draws a pull
+request. Twenty-one cases now pinned in the gated suite.
+
+Worth recording for whoever meets this next: the follow-up resolver is no help
+here. Asked about any of those phrasings it answers `subject="Try Again Flow"` -
+the title of the last failed diagram - because the assistant's own bookkeeping
+replies ("Created an editable diagram: ...") sit in the conversation and read
+like subject matter. The conversation's record of its own failures becomes what
+the next question appears to be about.
+
 ## 2026-08-30 — The diagram agent finally sees the conversation
 
 Using the router's resolved subject fixed "try again" the moment it went live -

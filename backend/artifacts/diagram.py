@@ -208,12 +208,35 @@ class LLMDiagramProvider(DiagramProvider):
     # line is still what it is asked to draw; the conversation is only there to
     # say what that subject means.
     async def generate(self, query: str, context: str = "") -> DiagramSpecification:
-        asked = (
-            f"The conversation so far, for context only - draw what is asked "
-            f"below, not the conversation:\n\n{context}\n\nDraw: {query}"
-            if context.strip()
-            else query
-        )
+        # The conversation and the request, together, and the model decides
+        # what they mean between them. There is no code here trying to tell a
+        # subject from a retry.
+        #
+        # It was tried the other way first and it is worth saying why it
+        # failed. The context arrived with "draw what is asked below, not the
+        # conversation" - a guard so a room about aqueducts could not hijack an
+        # explicit request for something else. The router then resolved "Try
+        # Again" into a subject, faithfully, and the model obeyed the guard and
+        # drew a flowchart about trying again. Twice, on a real phone.
+        #
+        # The next attempt was a list of retry phrases in code. It would have
+        # caught "try again" and missed "nah do that one more time", which is
+        # not understanding, it is a lookup table. Measured with this framing
+        # instead: three of three on "Try Again", three of three on "nah do
+        # that one more time", and three of three still drawing a pull request
+        # when a pull request is what was asked for in a room full of
+        # aqueducts. The judgement belongs to the thing that can make it.
+        if context.strip():
+            asked = (
+                f"The conversation so far:\n\n{context}\n\n"
+                f"The person has now asked: {query}\n\n"
+                f"Draw what they mean. If their words name what to draw, draw "
+                f"that. If they only ask you to try again or repeat, draw the "
+                f"subject the conversation is about - never the act of asking "
+                f"again."
+            )
+        else:
+            asked = query
         messages = [
             {
                 "role": "system",

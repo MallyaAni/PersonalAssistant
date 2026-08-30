@@ -145,7 +145,21 @@ _ROOM = [
 ]
 
 
-@pytest.mark.parametrize("subject", ["architecture thinking process", "try again"])
+# Phrasings a list of retry words would never cover. The judgement is the
+# model's, reading the conversation and the request together, which is the
+# whole point: "nah do that one more time" means the same as "try again" and
+# no lookup table gets there.
+@pytest.mark.parametrize(
+    "subject",
+    [
+        "architecture thinking process",
+        "try again",
+        "Try Again",
+        "nah do that one more time",
+        "bro thats not it, again",
+        "still not right - go again",
+    ],
+)
 async def test_a_vague_subject_is_drawn_in_the_conversation_it_was_asked_in(provider, subject):
     from backend.services.transcript import transcript_lines
 
