@@ -2,6 +2,40 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-30 — A diagram is not a picture, and a retry stops rewriting the prompt
+
+Two of the remaining defects, each measured before and after.
+
+**A diagram had no referent category, so the resolver called it a picture and
+the router believed it.** Measured on a real thread: "draw the aqueduct one"
+routed to `show_image` and "make the diagram simpler" to `edit_image`, which
+edits photographs. Both would have acted on the wrong artifact or on none. The
+tools have always been distinct and diagrams are stored as their own kind; only
+the list of referent kinds was not. With `diagram` added, all four phrasings -
+including "show me that diagram again" and "try again" - route to
+`create_diagram` with the right subject.
+
+Adding it raised `KeyError` inside the router, because `describe()` kept its own
+copy of the categories and indexed it directly. Every turn the resolver put in
+the new category would have died. It reads with a default now: a phrase nobody
+has written is worth less than the reading, and the reading is worth far less
+than the turn.
+
+**Both JSON retry loops rewrote the system prompt to say one sentence.**
+`backend/artifacts/diagram.py` and `backend/presentations/provider.py` appended
+their correction to `messages[0]`, which is the one part of a request that is
+identical between calls and therefore the part the server can reuse. Rewriting
+it discards the cached prefix and recomputes everything - on a retry, which is
+already the slow path, and in a system that works elsewhere to keep that prefix
+byte-stable (measured at 16.5x on a 34k conversation). The correction is a new
+turn now. The tests that broke were asserting the mechanism rather than the
+behaviour: they checked the correction sat in `messages[0]`, when what matters
+is that it reached the model.
+
+Checked for collateral rather than assumed: 2277 unit tests, and 30 real-model
+cases across every other referent category - picture, task, scout, draft,
+subject - all green.
+
 ## 2026-08-30 — A retry needs to know what was asked and whether it worked
 
 The operator's point, and it is the right frame: "try again" refers to the last

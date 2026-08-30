@@ -267,9 +267,23 @@ class LLMDiagramProvider(DiagramProvider):
                     raise ValueError(
                         "Diagram provider did not return a valid specification"
                     ) from error
-                messages[0]["content"] += (
-                    " Your previous output was invalid. Correct it and return only "
-                    "valid JSON. Escape every source newline as \\n and do not use "
-                    "any other backslash escape."
+                # Appended as a new turn rather than onto the system prompt.
+                #
+                # Mutating messages[0] rewrites the one part of the request
+                # that is identical between calls, so the server's KV cache
+                # cannot reuse it - the whole prefix is recomputed, on a retry,
+                # which is exactly when the turn is already slow. The rest of
+                # this system works hard to keep that prefix byte-stable
+                # (backend/agents/graph.py, measured at 16.5x on a 34k
+                # conversation) and this threw it away to say one sentence.
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": (
+                            "That was not valid. Return only the JSON object the "
+                            "contract asks for: one statement per element of "
+                            "lines, nothing else."
+                        ),
+                    }
                 )
         raise AssertionError("Diagram validation retry did not terminate")

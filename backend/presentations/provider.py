@@ -558,10 +558,19 @@ class LLMPresentationProvider(PresentationProvider):
                     raise ValueError(
                         "Presentation provider did not return a valid specification"
                     ) from exc
-                messages[0]["content"] += (
-                    " Your prior JSON failed validation for this reason: "
-                    f"{str(exc)[:2_000]}. Return one corrected JSON object only, "
-                    "with every required field and no Markdown. Use only the exact "
-                    "field names in the contract and never prefix one with optional_."
+                # A new turn, not an edit to the system prompt: rewriting
+                # messages[0] is what stops the server reusing its cached
+                # prefix, and a retry is the worst moment to pay for that.
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": (
+                            "Your prior JSON failed validation for this reason: "
+                            f"{str(exc)[:2_000]}. Return one corrected JSON object "
+                            "only, with every required field and no Markdown. Use "
+                            "only the exact field names in the contract and never "
+                            "prefix one with optional_."
+                        ),
+                    }
                 )
         raise AssertionError("Presentation validation retry did not terminate")

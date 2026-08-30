@@ -1,4 +1,5 @@
 import asyncio
+from pathlib import Path
 import os
 import uuid
 from collections.abc import Iterator
@@ -789,3 +790,25 @@ def test_the_branch_prefers_the_actions_subject_over_the_message():
     source = inspect.getsource(ConversationService._generating_branch)
     assert 'getattr(action, "subject", "")' in source, source
     assert "or asked" in source, source
+
+
+def test_a_retry_does_not_rewrite_the_system_prompt():
+    """The cached prefix survives a correction.
+
+    Mutating messages[0] rewrites the one part of the request that is identical
+    between calls, so the server cannot reuse its KV blocks and recomputes the
+    whole prefix - on a retry, which is already the slow path. The rest of this
+    system works to keep that prefix byte-stable (measured at 16.5x on a 34k
+    conversation); this threw it away to say one sentence.
+    """
+    import inspect
+
+    from backend.artifacts.diagram import LLMDiagramProvider
+    from backend.presentations.provider import __file__ as presentations_file
+
+    diagram = inspect.getsource(LLMDiagramProvider.generate)
+    assert 'messages[0]["content"] +=' not in diagram, diagram
+    assert "messages.append(" in diagram, diagram
+
+    presentations = Path(presentations_file).read_text()
+    assert 'messages[0]["content"] +=' not in presentations

@@ -77,3 +77,28 @@ def test_the_parser_reads_the_field_and_defaults_it_false():
         {"self_contained": "yes", "refers_to": "none", "subject": ""}, "yes"
     )
     assert missing is not None and missing.accepts_offer is False
+
+
+def test_every_referent_category_has_a_reading_and_none_can_raise():
+    """A category added to the enum and forgotten in describe() took the turn down.
+
+    Measured 2026-08-30: adding "diagram" to REFERS_TO raised KeyError inside
+    the router for every message the resolver put in it. The reading is worth
+    less than the turn, so an unknown category now degrades to a general phrase.
+    """
+    from backend.services.followup import REFERS_TO, Resolution, describe
+
+    for kind in REFERS_TO:
+        reading = describe(Resolution("restated differently", kind, "x"), "original")
+        assert "It refers to" in reading, (kind, reading)
+
+    # And a category this function has never heard of does not raise.
+    invented = describe(Resolution("restated differently", "hologram", ""), "original")
+    assert "something earlier in the conversation" in invented, invented
+
+
+def test_a_diagram_is_not_described_as_a_picture():
+    from backend.services.followup import Resolution, describe
+
+    reading = describe(Resolution("make the aqueduct diagram simpler", "diagram", "aqueduct"), "simpler")
+    assert "not a picture" in reading, reading

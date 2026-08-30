@@ -34,7 +34,8 @@ A message that asks to *change* the thing under discussion - "more casual", "sho
 That paragraph is about the restatement alone. It never changes which kind the message refers to: a change to Scout's sweep is still scout, a change to a reminder is still task, a change to a picture is still picture. Describing the action does not make it one.
 
 Also say what the message refers to:
-- picture: a picture the assistant made or was sent, including opinions and questions about it and requests to make it again;
+- picture: a photograph or generated image the assistant made or was sent, including opinions and questions about it and requests to make it again;
+- diagram: a flowchart, sequence, mindmap or other drawn diagram the assistant made, including asking for it again, differently, or simpler. A diagram is not a picture: they are made by different tools and stored separately, and calling one the other sends a request to edit a photograph;
 - task: a reminder or scheduled task the person set up;
 - scout: Scout's own sweep, check, digest, or its schedule;
 - draft: text being written together - an email, a message, a plan - including changes to its tone or content;

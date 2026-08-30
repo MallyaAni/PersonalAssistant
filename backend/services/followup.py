@@ -22,7 +22,16 @@ from backend.services.transcript import transcript_lines
 
 logger = logging.getLogger(__name__)
 
-REFERS_TO = ("picture", "task", "scout", "draft", "subject", "none")
+# A diagram is not a picture, however alike they look.
+#
+# There was no category for one until 2026-08-30, so the resolver called them
+# pictures - the closest thing on offer - and the router believed it. Measured
+# on a real thread: "draw the aqueduct one" routed to show_image and "make the
+# diagram simpler" to edit_image, which edits photographs. Both would act on
+# the wrong artifact or on none. The tools have always been distinct
+# (create_diagram, and diagrams are stored as their own kind); only this list
+# was not.
+REFERS_TO = ("picture", "diagram", "task", "scout", "draft", "subject", "none")
 
 _SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -145,14 +154,20 @@ def parse_resolution(answer: Any, query: str) -> Resolution | None:
 def describe(resolution: Resolution, query: str) -> str:
     if not resolution.changes(query):
         return ""
+    # `.get`, not `[]`. A category added to REFERS_TO and forgotten here raised
+    # KeyError inside the router and took the whole turn down - caught in
+    # measurement on 2026-08-30 when "diagram" was added. A reading nobody has
+    # written a phrase for is worth less than the reading; it is never worth
+    # the turn.
     about = {
         "picture": "a picture the assistant made or was sent",
+        "diagram": "a diagram the assistant drew, which is not a picture and is redrawn rather than edited",
         "task": "a reminder or task the person set up",
         "scout": "Scout's own sweep or its schedule",
         "draft": "the text being written together",
         "subject": "the thing under discussion",
         "none": "nothing earlier",
-    }[resolution.refers_to]
+    }.get(resolution.refers_to, "something earlier in the conversation")
     subject = f" ({resolution.subject})" if resolution.subject else ""
     return (
         f"Read in context as: {resolution.self_contained}\n"

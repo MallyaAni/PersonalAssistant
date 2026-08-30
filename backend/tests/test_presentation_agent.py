@@ -12,6 +12,18 @@ from backend.presentations.types import DeckSpec, SlideSpec, TextElement
 
 
 # Build a minimal two-slide deck with stable identifiers for revision tests.
+
+# Everything the retry actually sent, as one string.
+#
+# These used to read `requests[1][0][0]["content"]` - the system prompt of the
+# second call - because the correction was appended to it. It is a new turn
+# now, so that the one part of the request that is identical between calls
+# stays identical and the server can reuse its cached prefix. What these tests
+# are for is that the correction reached the model, not where it sat.
+def _second_request_text(llm) -> str:
+    return "\n".join(str(message.get("content") or "") for message in llm.requests[1][0])
+
+
 def _deck() -> DeckSpec:
     return DeckSpec(
         title="Agent acceptance",
@@ -238,7 +250,7 @@ async def test_compact_plan_retries_one_wrong_slide_count() -> None:
     deck = await provider.create("Build exactly 6 slides about horses")
     assert len(deck.slides) == 6
     assert len(llm.requests) == 2
-    assert "Expected exactly 6 slides" in llm.requests[1][0][0]["content"]
+    assert "Expected exactly 6 slides" in _second_request_text(llm)
 
 
 # A revision regenerates the slide's concise content and recompiles it into
@@ -311,7 +323,7 @@ async def test_slide_revision_retries_one_invalid_reply() -> None:
 
     assert revised.title == "Corrected opening"
     assert len(llm.requests) == 2
-    assert "failed validation" in llm.requests[1][0][0]["content"]
+    assert "failed validation" in _second_request_text(llm)
 
 
 # A revision rewrites text but must not drop an image already on the slide.
@@ -439,7 +451,7 @@ async def test_progressive_plan_compiles_each_scheduled_slide() -> None:
     assert all(draft.expected_slide_count == 2 for draft in drafts)
     assert [request[1] for request in llm.requests] == [1_024, 1_024, 1_024]
     assert (
-        "never prefix a field name with optional_" in llm.requests[1][0][0]["content"]
+        "never prefix a field name with optional_" in _second_request_text(llm)
     )
 
 
@@ -535,8 +547,8 @@ async def test_progressive_plan_corrects_one_invalid_outline() -> None:
 
     assert [len(draft.specification.slides) for draft in drafts] == [1, 2]
     assert len(llm.requests) == 4
-    assert "failed validation" in llm.requests[1][0][0]["content"]
-    assert "never prefix one with optional_" in llm.requests[1][0][0]["content"]
+    assert "failed validation" in _second_request_text(llm)
+    assert "never prefix one with optional_" in _second_request_text(llm)
 
 
 # Adding a slide must leave every existing slide byte-for-byte intact. The whole
