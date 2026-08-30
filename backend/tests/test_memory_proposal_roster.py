@@ -52,7 +52,12 @@ async def test_a_direct_turn_asks_one_question_and_is_unchanged():
     (call,) = llm.calls
     assert "about" not in call["schema"]["properties"]
     assert "group chat" not in call["messages"][0]["content"]
-    assert result.proposals == ({"kind": "semantic_fact", "content": "My dog is Biscuit"},)
+    # `is_preference` rides along with every semantic fact since 2026-08-30:
+    # a preference is stored under its own purpose so a recommendation turn
+    # can find it by kind, which embedding distance cannot do.
+    assert result.proposals == (
+        {"kind": "semantic_fact", "content": "My dog is Biscuit", "is_preference": False},
+    )
 
 
 @pytest.mark.asyncio
@@ -67,7 +72,14 @@ async def test_a_failed_attribution_call_leaves_the_ordinary_proposals():
         "I love hiking", speaker="Ani", roster=("Ani", "Jen")
     )
     # Unattributed: the owner rule reads that as the speaker's own words.
-    assert result.proposals == ({"kind": "semantic_fact", "content": "I love hiking", "about": []},)
+    assert result.proposals == (
+        {
+            "kind": "semantic_fact",
+            "content": "I love hiking",
+            "is_preference": False,
+            "about": [],
+        },
+    )
 
 
 @pytest.mark.asyncio

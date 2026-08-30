@@ -22,12 +22,22 @@ from backend.memory.proposal_agent import MemoryProposalAgent
 pytestmark = pytest.mark.asyncio
 
 
+# A label the way it is compared here: lowercase, and with a hyphen read as
+# the space it stands for. "stand-up comedy" and "stand up comedy" are one
+# interest spelled two ways, and the model returns the hyphenated form
+# deterministically - failing on that asserted the model's punctuation rather
+# than the thing this file is about, which is whether a phrase was split.
+# "stand up" or "comedy" alone still does not match, so the guard is intact.
+def _label(text: str) -> str:
+    return text.lower().replace("-", " ").strip()
+
+
 def _interests(result: object) -> list[str]:
     labels: list[str] = []
     for proposal in result.proposals:  # type: ignore[attr-defined]
         if proposal.get("kind") == "discovery_interests":
             labels.extend(proposal.get("labels") or [])
-    return [label.lower() for label in labels]
+    return [_label(label) for label in labels]
 
 
 # Every one of these says the same thing about the same person. None of them is
@@ -76,7 +86,7 @@ async def test_a_multi_word_interest_is_one_label(
 ) -> None:
     found = _interests(await MemoryProposalAgent(get_llm_client()).propose(said))
     for label in expected:
-        assert label in found, f"{label!r} missing from {found!r}"
+        assert _label(label) in found, f"{label!r} missing from {found!r}"
 
 
 # The other half of the judgement, kept here so a prompt loosened to catch the

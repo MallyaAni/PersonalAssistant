@@ -14,7 +14,7 @@ from backend.discovery.errors import (
 )
 from backend.discovery.projection import DiscoveryProjection
 from backend.memory.errors import MemoryConflictError
-from backend.memory.purposes import VISUAL_ANALYSIS_PURPOSE
+from backend.memory.purposes import PREFERENCE_PURPOSES, VISUAL_ANALYSIS_PURPOSE
 from backend.models.artifact import VisualArtifact
 from backend.models.conversation import Conversation
 from backend.models.discovery import DiscoveryInterest, DiscoveryLocality
@@ -648,6 +648,34 @@ class MemoryRepository:
             stmt = stmt.limit(limit)
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
+
+    # The person's standing preferences, newest first.
+    #
+    # Selected by kind rather than by embedding distance, because distance does
+    # not separate them: measured 2026-08-30, "prefers metro-connected venues"
+    # sits at cosine 0.371 from "what events are happening this weekend" while
+    # an unrelated question about Peru sits at 0.499 from the same memory. No
+    # threshold divides those, and the deployed reranker divides them worse.
+    # The person's standing preferences, newest first. Selected by what the
+    # fact IS - a purpose set when it was saved - rather than by asking an
+    # embedding whether it looks relevant to this question. That choice is
+    # deliberate: measured on 2026-08-29, "recommend a salsa night" and "what
+    # is the capital of Peru" scored 0.371-0.476 and 0.499 against the same
+    # stored preference, so no distance threshold separates a question a
+    # preference should colour from one it should not.
+    async def list_preferences(
+        self, user_id: str, limit: int = 5
+    ) -> list[SemanticMemory]:
+        stmt = (
+            select(SemanticMemory)
+            .where(
+                SemanticMemory.user_id == user_id,
+                SemanticMemory.purpose.in_(PREFERENCE_PURPOSES),
+            )
+            .order_by(SemanticMemory.created_at.desc())
+            .limit(max(1, limit))
+        )
+        return list((await self.session.execute(stmt)).scalars().all())
 
     async def list_conversations(
         self, user_id: str, limit: int | None = None

@@ -71,7 +71,10 @@ case "${1:-}" in
     # and every directory a test reads, mounted from the checkout.
     --unit) targets=("backend/tests"); unit=true ;;
     "")     ;;
-    *)      targets=("$1") ;;
+    # Several files at once, so one command covers everything a change
+    # touches. Passing four paths and silently gating on the first was worth
+    # a wrong "gate passed" on 2026-08-30.
+    *)      targets=("$@") ;;
 esac
 target="${targets[*]}"
 

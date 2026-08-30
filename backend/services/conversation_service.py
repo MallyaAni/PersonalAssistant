@@ -2642,12 +2642,39 @@ class ConversationService:
                     "interests: "
                     + ", ".join(_interests_for(str(context.get("query") or ""), interests))
                 )
+            # Standing preferences, selected by kind rather than by distance.
+            #
+            # This is deliberately narrow about where they land. `known` feeds
+            # two things: the result ranker, where the prompt says it may break
+            # a tie and must never outrank answering the question, and the
+            # per-event description on a turn already judged to be events. It
+            # does not reach the reply prompt, which is where a standing
+            # interest list once bent unrelated answers toward hiking - the
+            # reason interests are kept out of it to this day.
+            try:
+                preferences = await self._known_preferences(user_id)
+            except Exception:
+                preferences = ()
+            lines.extend(preferences)
         for kind in ("semantic", "episodic"):
             for item in list(context.get(kind) or [])[:4]:
                 text = _memory_text(item)
                 if text:
                     lines.append(text)
         return tuple(lines[:8])
+
+    # The person's saved preferences as short lines, bounded.
+    async def _known_preferences(self, user_id: str, limit: int = 3) -> tuple[str, ...]:
+        reader = getattr(self.memory, "get_preferences", None)
+        if reader is None:
+            return ()
+        found = await reader(user_id, limit=limit)
+        lines = []
+        for item in found or []:
+            text = _memory_text(item)
+            if text:
+                lines.append(text)
+        return tuple(lines[:limit])
 
     # Which allowance would refuse this request's next search, or None. Asked
     # of the budgeted provider before routing; a provider without a budget
@@ -3777,8 +3804,20 @@ class ConversationService:
         trace_id: str,
         candidate: dict[str, Any],
     ) -> bool:
+        # A preference is stored as one, so a recommendation turn can find it
+        # by kind. Nothing else about the row changes.
+        from backend.memory.purposes import PREFERENCE_PURPOSE
+
+        # Passed only when it is one: the interface defaults to "user_explicit"
+        # and handing it None would overwrite that default with nothing.
+        preference = (
+            {"purpose": PREFERENCE_PURPOSE} if candidate.get("is_preference") else {}
+        )
         memory = await self.memory.save_semantic_memory(
-            user_id, candidate["content"], {"source": "chat_auto_save"}
+            user_id,
+            candidate["content"],
+            {"source": "chat_auto_save"},
+            **preference,
         )
         return {
             "kind": "semantic_fact",

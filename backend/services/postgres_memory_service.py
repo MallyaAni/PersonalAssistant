@@ -494,6 +494,15 @@ class PostgresMemoryService(MemoryService, SemanticMemoryWriter):
         return memory.to_dict() if memory else None
 
     # Return a personal-memory snapshot, bounded for the display path.
+    # The person's standing preferences, for the turns that recommend things.
+    # Standing preferences for this person, decrypted, newest first. Feeds
+    # result ranking and the per-event description - never the reply prompt.
+    async def get_preferences(self, user_id: str, limit: int = 5) -> list[dict]:
+        return [
+            memory.to_dict()
+            for memory in await self.repo.list_preferences(user_id, limit=limit)
+        ]
+
     async def get_memory_snapshot(
         self, user_id: str, limit: int | None = None
     ) -> dict[str, Any]:

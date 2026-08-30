@@ -74,6 +74,29 @@ class MemoryProposalDecision(BaseModel):
         max_length=400,
         description="One stable personal fact not represented by a narrower field.",
     )
+    # Whether that fact is a standing preference rather than a plain fact.
+    #
+    # Measured 2026-08-29/30: on a recommendation-shaped question - "what's on
+    # this weekend", "recommend a salsa night" - nothing was retrieved at all,
+    # because the two memories that would have mattered sit at cosine 0.371 and
+    # 0.467 while an unrelated question about Peru sits at 0.499. Signal and
+    # noise overlap, so no threshold separates them and the deployed reranker
+    # separates them worse. What distinguishes them is not distance, it is
+    # kind: "prefers venues on the metro but will drive for something really
+    # good" is a preference; "I own a 2022 Tesla Model 3" is not. So the model
+    # that already classifies the fact says which it is, and retrieval selects
+    # by that rather than by distance.
+    semantic_fact_is_preference: bool = Field(
+        default=False,
+        description=(
+            "True when the fact is a standing preference about what they like, "
+            "avoid, or want - taste, tolerance, constraint, budget. False for a "
+            "plain fact about them or the world, and false for how they feel "
+            "today or what they want on one particular day: a preference has to "
+            "be true next month as well, or acting on it later acts on "
+            "something that stopped being true."
+        ),
+    )
     episodic_event: str | None = Field(default=None, max_length=300)
 
 
@@ -159,7 +182,15 @@ class MemoryProposalAgent:
                         'called Biscuit" both produce semantic_fact "My dog is '
                         'called Biscuit." with no interest. "I love training dogs" '
                         'produces interest "dog training". "What is my dog called?" '
-                        "produces no proposal. " + "Return only the required JSON."
+                        'produces no proposal. Set semantic_fact_is_preference '
+                        'true when the fact is a standing preference - what they '
+                        'like, avoid, or want, including taste, tolerance, budget '
+                        'and constraints: "prefers quiet places", "will drive for '
+                        'something really good", "cost is not a concern". False '
+                        'for a plain fact - "owns a Tesla Model 3" - and false for '
+                        'how they feel today: "tired today and wants something '
+                        'chill" is not a preference, because it stops being true. '
+                        "Return only the required JSON."
                     ),
                 },
                 {"role": "user", "content": self._utterance(query, previous_reply)},
@@ -354,7 +385,11 @@ class MemoryProposalAgent:
                 "content": decision.knowledge.content.strip(),
             }
         if decision.semantic_fact:
-            return {"kind": "semantic_fact", "content": decision.semantic_fact.strip()}
+            return {
+                "kind": "semantic_fact",
+                "content": decision.semantic_fact.strip(),
+                "is_preference": bool(decision.semantic_fact_is_preference),
+            }
         if decision.episodic_event:
             return {"kind": "episodic", "content": decision.episodic_event.strip()}
         return None
