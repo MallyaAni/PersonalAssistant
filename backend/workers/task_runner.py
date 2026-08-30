@@ -30,6 +30,23 @@ from backend.workers.imessage_chat import (
 
 logger = get_logger(__name__)
 
+# What a firing actually asks for. A reminder asks for its instruction and
+# nothing more. A check-in - one the assistant armed after the person merely
+# mentioned something - asks for it in a particular manner, which lives here
+# rather than in the stored instruction: the instruction is what the person
+# reads when they list what is scheduled, and it should not be full of
+# directions addressed to a model.
+def _asked(task: dict) -> str:
+    instruction = str(task["instruction"])
+    if not str(task.get("kind") or "").startswith("checkin:"):
+        return instruction
+    return (
+        f"{instruction} Say it in one short, warm line, as someone who "
+        "remembered on their own would. Do not search for anything, do not "
+        "offer to do anything, and do not mention that this was scheduled."
+    )
+
+
 # The channels the Mac delivers on: a person's thread, or a group chat whose
 # subscriber address is the chat itself. A task saved from a group turn
 # carries "imessage_group" and posts back into the room.
@@ -180,7 +197,7 @@ class TaskRunner:
         token = issue_user_token(user_id, ttl_seconds=900, scopes=["chat", "vision"])
         body = {
             "user_id": user_id,
-            "query": task["instruction"],
+            "query": _asked(task),
             "conversation_id": task["conversation_id"],
             "metadata": {"channel": task["channel"], "scheduled_task": True},
         }

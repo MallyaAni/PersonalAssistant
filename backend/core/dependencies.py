@@ -1644,6 +1644,9 @@ def get_conversation_service(
         scheduled_tasks=scheduled_tasks,
         skills=skills,
         memory_proposals=memory_proposals,
+        # The check-in judgement: a small strict-JSON call, so it sits on
+        # the routing role beside the rest of them.
+        check_in_llm=get_structured_llm_client(),
         visual_memory=VisualMemorySelector(get_structured_llm_client()),
         # The modality gate runs before any owner-scoped artifact vector index.
         # Only images have a conversational context loader today; documents,

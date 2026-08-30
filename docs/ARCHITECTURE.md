@@ -277,6 +277,27 @@ delete-all.
    spawned four copies of itself") and exempt from memory capture ("the same
    fact 365 times a year, unattended").
 
+### Scout, third shape - check-ins it arms itself ([design](CHECKIN_ARCHITECTURE.md), [ADR](adr/0019-a-check-in-is-a-scheduled-task.md))
+
+1. You mention something in passing - "we're heading to National Harbor on
+   Saturday evening", or that you have been feeling awful all week. You are
+   not asking for anything, so the router never sees it.
+2. A judgement runs alongside the memory proposal, overlapping it so the turn
+   costs no extra wait, and decides whether this is worth coming back to,
+   what to call it, and how many days out.
+3. If it is, a one-off task is armed on your own calendar day at a civil hour
+   - the same table, runner and delivery as any reminder, marked `kind`
+   `checkin`.
+4. It fires once: "how was the visit to National Harbor?" You cancel it by
+   naming it, exactly like a reminder you set yourself.
+
+*Stored:* the same task rows, with a kind. *The model decides:* whether
+something was mentioned worth following up, what to call it, and roughly when.
+*Code decides:* at most three waiting, one wellbeing check a week, never the
+same subject twice, never in a group room, never without a timezone, and the
+day and hour bounds. *You control:* list, pause and cancel them in the same
+words as any other automation.
+
 *Stored:* tasks, runs, taught skills. *The model decides:* that this is a
 scheduling request, the self-contained instruction, cadence fields, which
 existing task "the weather one" means. *Code decides:* cadence math and DST,

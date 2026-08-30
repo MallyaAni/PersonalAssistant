@@ -45,6 +45,7 @@ from backend.discovery.schedule import Cadence
 from backend.discovery.service import DiscoveryProfileService
 from backend.mcp.invocation import MCPInvocationError
 from backend.memory.coordinator import MemoryCoordinatorAgent
+from backend.core.checkin import propose_check_in
 from backend.memory.proposal_agent import MemoryProposalAgent
 from backend.models.schemas import ChatStreamEvent
 from backend.search.budgeted import (
@@ -95,6 +96,7 @@ from backend.services.referent_resolution import (
 from backend.services.referent_sources import ImageReferentSource
 from backend.services.search_planner import SearchPlanner
 from backend.skills.repository import SkillRepository
+from backend.services.checkin_arming import arm_check_in
 from backend.tasks.repository import ScheduledTaskRepository
 from backend.services.turn_steps import run_steps
 from backend.tools import AUTOMATION_TOOLS, describe_action, waiting_line
@@ -881,8 +883,13 @@ class ConversationService:
         artifact_context_router: ArtifactContextRouter | None = None,
         agent_memory: AgentMemoryManager | None = None,
         referent_resolver: ReferentResolver | None = None,
+        check_in_llm: Any | None = None,
     ):
         self.memory = memory
+        # The model that judges whether something mentioned in passing is
+        # worth coming back to. None disables check-ins entirely, which is
+        # what every test double and every older caller gets.
+        self.check_in_llm = check_in_llm
         # Kept as well as being handed to the graph: `_manage_tasks` and the
         # skill picker fall back to it when no action selector is wired, and
         # that read would otherwise raise AttributeError rather than degrade.
@@ -3341,6 +3348,58 @@ class ConversationService:
             )
             return ()
 
+    # Arm a check-in when the person mentioned something worth coming back
+    # to. Runs alongside the memory proposal rather than after it, so the
+    # two calls overlap and a turn costs no extra wait for this.
+    #
+    # Everything here is best-effort by design: a check-in is a courtesy,
+    # and a turn that fails to arm one is a turn that is merely ordinary.
+    # Nothing it does can change the reply.
+    async def _arm_check_in(
+        self,
+        query: str,
+        user_id: str,
+        metadata: dict[str, Any],
+        room: dict[str, Any] | None,
+        timezone: str = "",
+    ) -> None:
+        if self.check_in_llm is None or self.scheduled_tasks is None:
+            return
+        # A room arms nothing, so it should not spend a call finding that
+        # out; and without a timezone there is no hour to land on, which is
+        # a refusal either way. Both are settled before the model is asked.
+        if room is not None:
+            return
+        try:
+            # The turn has already resolved the person's zone for its own
+            # sake; asking the profile again would be a second read for the
+            # same answer, and a chance for the two to disagree about which
+            # day it is. The fallback is only for callers that resolve none.
+            if not timezone and self.discovery_profile is not None:
+                timezone = str(await self._primary_timezone(user_id) or "")
+            if not timezone:
+                _trace("check_in", "no_timezone")
+                return
+            proposed = await propose_check_in(
+                self.check_in_llm, query, timezone=timezone
+            )
+            if proposed is None:
+                return
+            outcome = await arm_check_in(
+                self.scheduled_tasks,
+                user_id,
+                proposed,
+                timezone,
+                str(metadata.get("channel") or "web"),
+                in_group=False,
+            )
+            _trace(
+                "check_in",
+                f"{outcome.reason}:{proposed.subject}" if outcome.armed else outcome.reason,
+            )
+        except Exception:
+            logger.warning("check_in_failed", exc_info=True)
+
     # Save a classified name preference immediately - no approval round-trip.
     async def _save_preferred_name_proposal(
         self,
@@ -4058,10 +4117,24 @@ class ConversationService:
             candidates, proposals = [], []
         else:
             room = context.get("group") if isinstance(context.get("group"), dict) else None
-            candidates = await self._classify_memory_proposals(query, trace_id, user_id, room=room)
-            proposals = await self._persist_memory_proposals(
-                user_id, conversation_id, trace_id, candidates, room=room
+            # Started first so it overlaps the classification below. A
+            # firing check-in must never arm another - that is a thread
+            # that asks after itself forever - and it cannot, because this
+            # whole branch is skipped for a scheduled task above.
+            check_in = asyncio.create_task(
+                self._arm_check_in(
+                    query, user_id, metadata, room, str(context.get("timezone") or "")
+                )
             )
+            try:
+                candidates = await self._classify_memory_proposals(query, trace_id, user_id, room=room)
+                proposals = await self._persist_memory_proposals(
+                    user_id, conversation_id, trace_id, candidates, room=room
+                )
+            finally:
+                # Awaited whatever the classification did, so a failure
+                # there cannot leave this one orphaned and unretrieved.
+                await check_in
         # What specialized agents exist, read from the registry rather than
         # listed in the prompt: each agent describes itself from its own
         # tables, so this cannot advertise a capability an agent stopped

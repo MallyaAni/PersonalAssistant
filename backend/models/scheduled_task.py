@@ -41,6 +41,13 @@ class ScheduledTask(Base):
     user_id: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     instruction: Mapped[str] = mapped_column(EncryptedText, nullable=False)
     cadence: Mapped[str] = mapped_column(String(10), nullable=False)
+    # What kind of thing this is: a "reminder" the person asked for, or a
+    # "checkin" the assistant armed after they mentioned something. Stored
+    # rather than inferred from the instruction, because check-ins are
+    # capped per person and a cap that parses prose is a cap that drifts.
+    kind: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="reminder", server_default="reminder"
+    )
     hour: Mapped[int] = mapped_column(Integer, nullable=False)
     minute: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     weekday: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

@@ -2,6 +2,54 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-30 — The assistant comes back to things nobody asked it to remember
+
+"How was National Harbor?" two days after the outing was mentioned, and "how
+are you feeling?" a day after someone said they were unwell. Neither is a
+request, so the router - which fires on what a person asks for - was never
+going to see either one.
+
+**It costs one column and one prompt.** A check-in is an ordinary one-off
+scheduled task. `scheduled_tasks` already stored a `once` cadence with a
+calendar day, a local hour and a timezone; the runner already claimed a due
+slot under a lease, conversed in the task's own thread and delivered per
+channel; the picker already resolved "cancel the national harbor one" against
+the person's own words. A check-in inherits all of it by being one, marked
+`kind` `checkin:event` or `checkin:wellbeing` (migration `20260830_0013`;
+the nine existing tasks are all reminders). The only new thing is noticing.
+
+**Measured against the running model**, three runs per case, from a Thursday
+afternoon in New York. Six things worth following up were caught 3/3 each,
+with the arithmetic right: "heading to National Harbor on Saturday evening"
+lands +3 days at 11:00, "dentist appointment tomorrow morning" +1 at 12:00,
+"flying to Chicago on Friday for a few days" +4, "final interview on Tuesday"
++6, and two ways of saying unwell at +1 and +2 in the early evening. Twelve
+ordinary turns - a search, a diagram request, a reminder, a plain fact, a
+thank-you, "a bit tired this morning but I'm fine", a brother's surgery -
+armed nothing, 0 false positives in 36. What a firing actually says was
+measured too: "How was National Harbor? Hope it was a good one." and "Hey,
+just thinking of you — how are you feeling today?", with the router choosing
+no tool for either, so a check-in cannot come back with opening hours.
+
+**Every limit is code, not a sentence in a prompt.** The judgement sees one
+message and remembers nothing it has already proposed, so left alone it would
+arm something most turns. At most three may wait; a wellbeing check-in is one
+a week; the same subject is never armed twice, compared by meaningful words so
+"the visit to National Harbor" and "our National Harbor visit" are one thing;
+a room arms nothing, because asking one member about their health puts it in
+front of everyone; no timezone means no check-in, since guessing one is how a
+question arrives at 4am. A slot that has already passed today moves to
+tomorrow - `next_run_at` returns a past one-off instant as it stands, by
+design, and a check-in nobody asked for must not fire seconds after the
+message that caused it.
+
+The stored instruction is one plain sentence, because it is what the person
+reads when they list what is scheduled. How a check-in should be worded
+travels with the task's kind, in the runner.
+
+Design in `docs/CHECKIN_ARCHITECTURE.md`, decision in
+[ADR 0019](adr/0019-a-check-in-is-a-scheduled-task.md).
+
 ## 2026-08-30 — A diagram is not a picture, and a retry stops rewriting the prompt
 
 Two of the remaining defects, each measured before and after.
