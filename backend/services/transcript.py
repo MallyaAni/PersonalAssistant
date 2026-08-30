@@ -105,7 +105,7 @@ def transcript_lines(
     lines: list[str] = []
     for turn in history or []:
         said = str((turn or {}).get("query") or "").strip()
-        answered = str((turn or {}).get("response") or "").strip()
+        answered = _answer_line(turn)
         stamp = said_at(turn, zone)
         prefix = f"[{stamp}] " if stamp else ""
         if said:
@@ -113,3 +113,42 @@ def transcript_lines(
         if answered:
             lines.append(f"{prefix}{assistant_label}: {answered}")
     return lines
+
+
+# What the assistant said, unless what it said was bookkeeping about something
+# it made.
+#
+# "Created an editable diagram: Try Again Flow." is a receipt, not subject
+# matter, and it reads like subject matter. Measured on a real thread 2026-08-30:
+# after three failed diagram attempts the follow-up resolver answered
+# `subject="Try Again Flow"` - the title of the last failure - for every
+# referential message put to it, including "draw the stacked arches". The
+# assistant's record of what it had done had become what the conversation
+# appeared to be about.
+#
+# Detected from the turn's own metadata rather than from its words: a turn that
+# produced an artifact carries `artifact_ids`, whatever language the sentence
+# happens to be in. The outcome is kept - a person asking "try again" means the
+# failure, and the reply needs to know one happened - and only the title goes.
+def _answer_line(turn: dict[str, Any] | None) -> str:
+    answered = str((turn or {}).get("response") or "").strip()
+    metadata = (turn or {}).get("metadata")
+    if not isinstance(metadata, dict) or not metadata.get("artifact_ids"):
+        return answered
+    route = (metadata.get("trace") or {}).get("route") or {}
+    made = str(route.get("label") or "artifact").strip().casefold()
+    kind = {"diagrams": "diagram", "new images": "picture", "presentations": "deck"}.get(
+        made, "attachment"
+    )
+    # What it was asked to make, as the router resolved it at the time. This is
+    # the part that makes "try again" answerable: a retry refers to the last
+    # request that was not satisfied, so the record has to say what each
+    # attempt was *for* as well as whether it worked. Dropping the subject and
+    # keeping only "[a diagram was created]" left a reader able to see that
+    # something happened and not what it was about.
+    about = " ".join(str(route.get("detail") or "").split())[:120]
+    the_ask = f' for "{about}"' if about else ""
+    status = str(metadata.get("artifact_status") or "").strip().casefold()
+    if status and status not in {"ready", "complete", "completed"}:
+        return f"[a {kind} was attempted{the_ask} and did not succeed]"
+    return f"[a {kind} was created{the_ask}]"

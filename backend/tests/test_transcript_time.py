@@ -110,3 +110,58 @@ def test_the_stamp_does_not_change_between_turns():
     assert user_content(turn, EAST) == user_content(turn, EAST)
     assert "yesterday" not in user_content(turn, EAST).casefold()
     assert "ago" not in user_content(turn, EAST).casefold()
+
+
+# An artifact receipt is not subject matter, and it reads like subject matter.
+#
+# Measured on a real thread 2026-08-30: after three failed diagram attempts the
+# follow-up resolver answered subject="Try Again Flow" - the title of the last
+# failure - for every referential message put to it, including "draw the
+# stacked arches". The assistant's record of what it had done had become what
+# the conversation appeared to be about.
+def _made(kind: str, status: str = "ready") -> dict:
+    return {
+        "artifact_ids": ["11111111-1111-4111-8111-111111111111"],
+        "artifact_status": status,
+        "trace": {"route": {"label": kind}},
+    }
+
+
+def test_a_diagram_receipt_does_not_read_as_the_subject():
+    history = [
+        {"query": "try again!", "response": "Created an editable diagram: Try Again Flow.",
+         "metadata": _made("Diagrams")},
+    ]
+    (asked, answered) = transcript_lines(history)
+    assert answered == "Assistant: [a diagram was created]"
+    assert "Try Again Flow" not in answered
+
+
+def test_a_failed_attempt_still_says_it_failed():
+    # The outcome has to survive: "try again" means the failure, and the reply
+    # needs to know one happened.
+    history = [
+        {"query": "draw it", "response": "I couldn't create that diagram.",
+         "metadata": _made("Diagrams", status="failed")},
+    ]
+    assert transcript_lines(history)[1] == "Assistant: [a diagram was attempted and did not succeed]"
+
+
+def test_pictures_and_decks_are_named_for_what_they_are():
+    for label, word in (("New images", "picture"), ("Presentations", "deck")):
+        history = [{"query": "make one", "response": "Here it is.", "metadata": _made(label)}]
+        assert transcript_lines(history)[1] == f"Assistant: [a {word} was created]"
+
+
+def test_an_ordinary_answer_is_untouched():
+    # The detection is on the turn's metadata, never on its words, so a reply
+    # that merely mentions a diagram is left exactly as it was.
+    history = [
+        {"query": "how high", "response": "Stacked arches carry the load down two posts.",
+         "metadata": {}},
+        {"query": "what is mermaid", "response": "A tool for creating an editable diagram from text.",
+         "metadata": {"trace": {"route": {"label": "None"}}}},
+    ]
+    lines = transcript_lines(history)
+    assert lines[1] == "Assistant: Stacked arches carry the load down two posts."
+    assert lines[3] == "Assistant: A tool for creating an editable diagram from text."

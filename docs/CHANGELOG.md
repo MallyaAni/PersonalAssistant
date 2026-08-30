@@ -2,6 +2,43 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-30 — A retry needs to know what was asked and whether it worked
+
+The operator's point, and it is the right frame: "try again" refers to the last
+request that was not satisfied, so the system has to know what each attempt was
+*for* and how it ended. Patching the symptom - pass the subject, pass the
+conversation, drop the ignore-instruction - kept missing that.
+
+It was already recorded. Every turn that makes something stores `artifact_ids`,
+`artifact_status`, and the subject the router resolved at the time. The shared
+transcript was throwing all of it away and rendering the assistant's receipt as
+if it were speech: "Created an editable diagram: Try Again Flow." - a title
+that then read as subject matter. Measured on the live thread, the follow-up
+resolver answered `subject="Try Again Flow"` for every referential message put
+to it, including "draw the stacked arches".
+
+A turn that produced an artifact now renders as what it was:
+
+    [a diagram was attempted for "Roman aqueduct architecture thinking process" and did not succeed]
+    [a diagram was created for "Roman aqueduct architecture thinking process"]
+    [a diagram was created for "Try Again"]
+
+Detected from the turn's metadata, never from its words, so a reply that merely
+mentions a diagram is untouched.
+
+Measured on the hardest shape the live thread produced - where the *most
+recent* attempt was itself recorded as being for "Try Again" - three of three
+recover the aqueduct, for "Try Again" and for "nah do that one more time"
+alike, while an explicit request for a pull request still draws a pull request.
+A reader that looks only at the last attempt learns nothing; one that can see
+the chain finds the intent nobody satisfied.
+
+Deploy #41 failed its gate on `test_a_yes_carrying_its_own_instruction_is_never_withheld`,
+which passes in isolation and chose a different reasonable tool under an 80-call
+gate run. The assertion was wrong rather than the code: that test exists to
+prove the acceptance guard does not withhold a message carrying its own
+instruction, and it was asserting on which tool the router then preferred.
+
 ## 2026-08-30 — The diagram reads the request and the conversation together
 
 Passing the conversation was right and the way it was passed was wrong. It

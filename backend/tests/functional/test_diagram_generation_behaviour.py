@@ -189,3 +189,65 @@ async def test_the_conversation_is_context_and_never_the_thing_drawn(provider):
         spec.title,
         spec.source[:200],
     )
+
+
+# What was asked for, and whether it worked - the record a retry actually needs.
+#
+# The hardest shape, taken from the live thread: by the time the person asks
+# again, the *most recent* attempt was itself recorded as being for "Try
+# Again". A reader that looks only at the last attempt learns nothing; one that
+# can see the chain finds the intent that was never satisfied.
+def _attempt(detail: str, status: str = "ready") -> dict:
+    return {
+        "artifact_ids": ["11111111-1111-4111-8111-111111111111"],
+        "artifact_status": status,
+        "trace": {"route": {"label": "Diagrams", "detail": detail}},
+    }
+
+
+_CHAIN = [
+    {"query": "how did the romans move water so far",
+     "response": "Aqueducts. A gentle continuous gradient carried the water, with stacked arches to cross valleys.",
+     "metadata": {}},
+    {"query": "how did they build it that high",
+     "response": "Stacked arches. Each arch carries weight down its two posts.", "metadata": {}},
+    {"query": "can you draw it as a diagram instead?", "response": "I couldn't create that diagram.",
+     "metadata": _attempt("Roman aqueduct architecture thinking process", "failed")},
+    {"query": "try again!", "response": "Created an editable diagram: Try Again Flow.",
+     "metadata": _attempt("Roman aqueduct architecture thinking process")},
+    {"query": "architecture thinking process", "response": "Created an editable diagram.",
+     "metadata": _attempt("architecture thinking process")},
+    {"query": "Try Again", "response": "Created an editable diagram: Try Again.",
+     "metadata": _attempt("Try Again")},
+]
+
+
+@pytest.mark.parametrize("said", ["Try Again", "nah do that one more time"])
+async def test_a_retry_finds_the_intent_that_was_never_satisfied(provider, said):
+    from backend.services.conversation_service import _diagram_context
+
+    context = _diagram_context(_CHAIN)
+    # The record has to carry both halves for this to be answerable at all.
+    assert "was attempted for" in context and "did not succeed" in context, context
+
+    spec = await provider.generate(said, context)
+    print(f"\n{said!r} after a chain of retries -> {spec.title!r}")
+    haystack = f"{spec.title} {spec.source}".casefold()
+    assert any(
+        word in haystack
+        for word in ("aqueduct", "arch", "water", "channel", "gradient", "roman")
+    ), (said, spec.title, spec.source[:200])
+    assert "try again" not in haystack, (said, spec.title)
+
+
+async def test_an_explicit_request_still_wins_over_the_chain(provider):
+    from backend.services.conversation_service import _diagram_context
+
+    spec = await provider.generate(
+        "how a pull request gets reviewed and merged", _diagram_context(_CHAIN)
+    )
+    haystack = f"{spec.title} {spec.source}".casefold()
+    assert any(word in haystack for word in ("pull request", "review", "merge", "branch")), (
+        spec.title,
+        spec.source[:200],
+    )
