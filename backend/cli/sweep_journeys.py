@@ -121,6 +121,18 @@ JOURNEYS = [
             holds=("The reply confirms a reminder for tomorrow at 9 am.",)),
     Journey("arithmetic", "what's 18% of 245?", (None,),
             holds=("The reply gives 44.1 as the answer.",)),
+    # 2026-08-30: the check-in path, end to end. Mentioning an outing is not
+    # a request, so nothing routes; what has to happen is invisible in the
+    # reply and visible in the table, which is what sql_holds is for. The
+    # reply assertions are the other half - a check-in the assistant
+    # announces is not a check-in, it is a notification.
+    Journey("a mentioned outing arms a check-in",
+            "we're heading to National Harbor on Saturday evening", (None,),
+            holds=("The reply responds to the plan like a friend would.",),
+            does_not_hold=("The reply says it has scheduled, set, or armed anything.",),
+            sql_holds=("select count(*) >= 1 from scheduled_tasks where user_id = :u and kind = 'checkin:following_up'",
+                       "select count(*) <= 3 from scheduled_tasks where user_id = :u and kind like 'checkin:%' and enabled",
+                       "select count(*) = 0 from scheduled_tasks where user_id = :u and kind like 'checkin:%' and next_run_at <= now()")),
     Journey("directions", "how long will it take me to drive to Dulles airport at 5pm?", ("Web search", None),
             holds=("The reply gives an estimate with a caveat about live traffic, or says it cannot check live traffic.",),
             does_not_hold=("The reply states an exact minute figure as the certain current travel time.",)),

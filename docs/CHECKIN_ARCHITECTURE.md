@@ -40,7 +40,7 @@ reads what they merely mentioned.
 3. **The caller decides whether it is allowed to**
    (`backend/services/checkin_arming.py`). This is where every limit lives.
 4. **A one-off task is created** through `ScheduledTaskRepository.create` with
-   `kind="checkin:event"` or `"checkin:wellbeing"`, on the person's own
+   `kind="checkin:following_up"` or `"checkin:wellbeing"`, on the person's own
    calendar day in their own timezone - and never on a slot that has already
    passed, since `next_run_at` returns a past one-off instant as it stands.
 5. **The runner fires it** like any other task and texts the result. The
@@ -50,6 +50,36 @@ reads what they merely mentioned.
    no announcing itself as an automation) is attached by the runner from the
    task's kind (`task_runner._asked`), so nobody has to read directions
    addressed to a model in their own reminder list.
+
+## What is open on purpose
+
+The two examples asked for were an outing and an illness. They are not the
+specification, and three parts of this are deliberately not enumerated so
+that a situation nobody thought of is still handled:
+
+- **The model writes the question.** "Ask whether they heard back about the
+  flat." is not "Ask how X went." with a different X. A template per category
+  silently caps what can ever be followed up at the categories someone wrote
+  first.
+- **There are two kinds, and they describe what governs the rules rather
+  than what happened.** `wellbeing` is separate because it alone is rationed
+  and alone must never be asked in a room; `following_up` is an outing, a
+  trip, an appointment, an interview, a result someone is waiting on, and
+  whatever else has an outcome. Adding a situation is not a migration.
+- **A plan called off calls off its check-in.** The worst thing this feature
+  can do is not silence - it is asking how a trip went that the person had
+  already said was cancelled. The same call that notices a plan notices
+  "we bailed on Saturday" and "Harbor moved to next weekend", names which
+  waiting thing it means, and the caller drops it - and arms the new date in
+  its place when it moved rather than ended. Only a subject copied back
+  exactly from the list supplied is honoured, so a paraphrase takes nothing
+  down, and a reminder can never be taken down at all.
+- **"Have I already asked about this?" is asked, not computed.** The
+  judgement is handed the subjects already waiting and answers false when
+  this message is the same thing worded differently. "That Harbor thing on
+  Saturday" and "the visit to National Harbor" are one outing, and no
+  comparison in code is going to know that. The word comparison in
+  `checkin_arming` remains as a backstop for the near-identical case.
 
 ## What is decided in code, and why none of it is in the prompt
 
@@ -64,12 +94,14 @@ a comparison, not a sentence a model is asked to honour:
 | Same subject twice | refused | Mentioning an outing twice should be asked about once. |
 | Group threads | refused | A room is not the place to ask one member about their health. |
 | No timezone | refused | Guessing one is how a check-in arrives at 4am. |
-| Days ahead | 0-14 | Longer is resurfacing, not following up. |
+| Days ahead | 0-45, refused beyond | Clamping a wedding next spring into the window does not make a smaller mistake, it asks "how was the wedding?" months early. |
 | Hour | 09-21 | Nothing should propose 3am in the first place. |
 
-Subjects are compared by their meaningful words rather than as strings, so
-"the visit to National Harbor" and "our National Harbor visit" are recognised
-as one thing (`is_same_subject`).
+The subject is stored on the row. It used to be recovered by matching the
+front of the instruction against the templates that wrote it, which tied two
+functions together through prose - reword the question and the duplicate
+check quietly stops working. Now that the question is written rather than
+chosen, there is no template to match against at all.
 
 `kind` is a column rather than something read out of the instruction, so the
 cap is a query and reminders the person asked for are never counted against
@@ -79,6 +111,25 @@ rather than matching a prefix on an instruction that gets reworded the first
 time anyone improves its wording.
 
 ## What can go wrong, and what happens
+
+One distinction is carried by *how* a check-in goes away rather than by a
+column recording why. A person who cancels the question ("cancel the harbor
+one") disables the row, and the duplicate rule reads disabled rows, so
+mentioning the outing again does not quietly bring the question back - they
+said stop asking. A plan falling through removes the row instead, because
+that says nothing about wanting to be asked, and a trip that is back on next
+week deserves its check-in back.
+
+## What it does not do
+
+- **One check-in per message.** "National Harbor on Saturday and the dentist
+  on Monday" arms the first, not both. Graceful rather than wrong, and the
+  alternative - several armed from one sentence - is the intrusive failure
+  this feature is mostly written to avoid.
+- **Nothing is armed from what the assistant suggested**, only from what the
+  person says they are doing. Saying yes to a suggestion counts, because the
+  judgement is given the previous reply and can resolve "that one".
+- **Nothing is armed in a room**, so a group plan is never followed up.
 
 | If | Then |
 | --- | --- |
@@ -97,4 +148,5 @@ time anyone improves its wording.
 | `kind` column and migration | Built (`20260830_0013`) |
 | One-to-one threads | Built |
 | Group threads | Deliberately not armed; see the table above |
+| Situations with no template | Built: the question is written per check-in |
 | Asking about something Scout suggested and the person accepted | Not built. Today a check-in follows what the person says they are doing, not what they said yes to. |

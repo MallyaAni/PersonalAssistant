@@ -48,6 +48,12 @@ class ScheduledTask(Base):
     kind: Mapped[str] = mapped_column(
         String(20), nullable=False, default="reminder", server_default="reminder"
     )
+    # What a check-in is about, in the person's own words. Stored rather
+    # than recovered from the instruction: the instruction is a sentence the
+    # model wrote, and recognising the same outing mentioned twice must not
+    # depend on the shape of a sentence. Null for a reminder, which has no
+    # subject. Encrypted like every other piece of user text here.
+    subject: Mapped[str | None] = mapped_column(EncryptedText, nullable=True)
     hour: Mapped[int] = mapped_column(Integer, nullable=False)
     minute: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     weekday: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

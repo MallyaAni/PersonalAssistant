@@ -2,6 +2,79 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-30 — Check-ins, shaped by the problem rather than by the two examples
+
+The first version of the check-in feature was fitted to the two cases it was
+asked for - an outing and an illness. Asked to "account for scenarios we
+haven't seen before", four things in it turned out to be fitted rather than
+general, and a fifth was a bug that would have been embarrassing in public.
+
+**A plan far out was clamped, not refused.** A wedding ninety days away was
+squeezed into the fourteen-day window, so it would have asked "how was the
+wedding?" seventy-six days early. Clamping does not make a smaller mistake
+here, it makes a confident wrong one. The horizon is now six weeks and it
+refuses beyond it.
+
+**The taxonomy capped what could ever be noticed.** Only `event` and
+`wellbeing` existed, so "just submitted the flat application", "my thesis
+defence is on the 3rd", "taking the cat to the vet", "I put an offer in on a
+car" and "starting the new job on Monday" fell outside it while being the
+same shape. There are now two kinds naming what governs the rules rather
+than what happened - `wellbeing`, which alone is rationed and alone must
+never be asked in a room, and `following_up` for everything with an outcome.
+All five of those now arm 3/3.
+
+**The question was a template**, so even an allowed new category would have
+got the wrong sentence. The model writes it: "Ask whether they heard back
+about the flat application." is not "Ask how X went." with a different X.
+
+**Duplicate detection parsed prose through an English stopword list**, tying
+two functions together through wording. The judgement is now handed what is
+already waiting and answers false when the message is the same thing said
+differently; the subject is stored on the row; the word comparison remains
+as a backstop.
+
+**A cancelled plan was still asked about.** The worst thing this feature can
+do is not silence - it is asking how a trip went that the person had already
+said was off. The same call now names which waiting thing a message calls
+off, and the caller drops it. Only a subject copied back exactly from the
+list supplied is honoured, so a paraphrase takes nothing down and a reminder
+can never be taken down at all. Standing one down removes the row while a
+person cancelling the question disables it, so "stop asking me" is permanent
+and a trip that is back on gets its check-in back.
+
+**Three of the fixes were the shape of the schema, not the wording**, and
+each first looked like a wording problem. With `check_in` declared first it
+was decided before anything justifying it existed: "I've got a dentist
+appointment tomorrow morning" came back false beside a perfectly good
+subject, question, day and hour, 0/3. Moving it last was worse - every
+judgement then passed through five invented fields before it could say
+"nothing here", and every `following_up` case went false while every
+`wellbeing` case went true, a coupling to the invented fields rather than a
+reading of the message. What works is a line of reading first and the
+decision straight after, with `calls_off` beside the reading: cancellations
+had collapsed to 0/3 the moment the reading existed, because the reading
+said "nothing" and by the time `calls_off` was reached the message was
+already settled as being about nothing.
+
+The last was arithmetic. From a Thursday, "we're heading to National Harbor
+on Saturday evening" answered two days - Saturday morning, asking how an
+evening went before the evening. The call now says when the thing happens
+and the caller adds the day, so a check-in cannot land before the thing it
+asks about.
+
+Measured against the running model, three runs per case: eleven things worth
+noticing at 3/3 each, every one asked about after it is over - Saturday
+evening on Sunday, a Friday trip on Tuesday, a Monday first day on Tuesday.
+Twelve ordinary turns at 0/36, including "a bit tired this morning but I'm
+fine" and a brother's operation. Plans beyond six weeks refused. Three
+wordings of the same waiting outing armed nothing. Three of four
+cancellation phrasings at 3/3, with "we bailed on Saturday, staying in
+instead" - which never names the outing - at 0/3, so the test asserts two of
+three rather than each. A plan that moved is recognised and dropped but not
+re-armed in the same breath; removing the row rather than disabling it is
+what makes the next mention arm it afresh.
+
 ## 2026-08-30 — The assistant comes back to things nobody asked it to remember
 
 "How was National Harbor?" two days after the outing was mentioned, and "how
@@ -15,7 +88,7 @@ calendar day, a local hour and a timezone; the runner already claimed a due
 slot under a lease, conversed in the task's own thread and delivered per
 channel; the picker already resolved "cancel the national harbor one" against
 the person's own words. A check-in inherits all of it by being one, marked
-`kind` `checkin:event` or `checkin:wellbeing` (migration `20260830_0013`;
+`kind` `checkin:following_up` or `checkin:wellbeing` (migration `20260830_0013`;
 the nine existing tasks are all reminders). The only new thing is noticing.
 
 **Measured against the running model**, three runs per case, from a Thursday

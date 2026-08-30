@@ -96,7 +96,11 @@ from backend.services.referent_resolution import (
 from backend.services.referent_sources import ImageReferentSource
 from backend.services.search_planner import SearchPlanner
 from backend.skills.repository import SkillRepository
-from backend.services.checkin_arming import arm_check_in
+from backend.services.checkin_arming import (
+    arm_check_in,
+    stand_down,
+    waiting_subjects,
+)
 from backend.tasks.repository import ScheduledTaskRepository
 from backend.services.turn_steps import run_steps
 from backend.tools import AUTOMATION_TOOLS, describe_action, waiting_line
@@ -3380,22 +3384,47 @@ class ConversationService:
             if not timezone:
                 _trace("check_in", "no_timezone")
                 return
-            proposed = await propose_check_in(
-                self.check_in_llm, query, timezone=timezone
+            # The assistant's last reply, for the same reason the memory
+            # proposal gets it: "yes, let's do that one" names nothing on
+            # its own, and the outing being agreed to is in what was just
+            # said. It resolves a reference and is never itself a reason -
+            # the prompt is explicit that an offer nobody accepted is not a
+            # plan anyone has.
+            judged = await propose_check_in(
+                self.check_in_llm,
+                query,
+                _previous_assistant_said.get(),
+                timezone=timezone,
+                # What is already waiting, so the judgement can recognise
+                # this message as being about one of them - to avoid asking
+                # twice, and to notice when one is called off. It is the
+                # model's job because "that Harbor thing on Saturday" and
+                # "the visit to National Harbor" are the same outing, and no
+                # comparison in code is going to know that.
+                already_waiting=await waiting_subjects(self.scheduled_tasks, user_id),
             )
-            if proposed is None:
+            if not judged:
+                return
+            # Dropped first, so a plan that moved frees its own place under
+            # the cap before the new date asks for one.
+            if judged.calls_off:
+                dropped = await stand_down(
+                    self.scheduled_tasks, user_id, judged.calls_off
+                )
+                _trace("check_in", f"{'dropped' if dropped else 'not_found'}:{judged.calls_off}")
+            if judged.arm is None:
                 return
             outcome = await arm_check_in(
                 self.scheduled_tasks,
                 user_id,
-                proposed,
+                judged.arm,
                 timezone,
                 str(metadata.get("channel") or "web"),
                 in_group=False,
             )
             _trace(
                 "check_in",
-                f"{outcome.reason}:{proposed.subject}" if outcome.armed else outcome.reason,
+                f"{outcome.reason}:{judged.arm.subject}" if outcome.armed else outcome.reason,
             )
         except Exception:
             logger.warning("check_in_failed", exc_info=True)

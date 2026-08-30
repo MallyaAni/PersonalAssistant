@@ -28,11 +28,17 @@ pytestmark = pytest.mark.asyncio
 
 EVENT_TASK = {
     "instruction": "Ask how the visit to National Harbor went.",
-    "kind": "checkin:event",
+    "kind": "checkin:following_up",
 }
 WELLBEING_TASK = {
     "instruction": "Check in on how they are doing after not feeling well.",
     "kind": "checkin:wellbeing",
+}
+# A question the judgement wrote for a situation with no template, to prove
+# the manner the runner attaches works on a sentence nobody anticipated.
+PENDING_TASK = {
+    "instruction": "Ask whether they heard back about the flat in Clarendon.",
+    "kind": "checkin:following_up",
 }
 
 
@@ -102,7 +108,7 @@ async def test_a_firing_check_in_does_not_go_looking_things_up(llm) -> None:
         diagram_enabled=True,
         presentation_enabled=True,
     )
-    for task in (EVENT_TASK, WELLBEING_TASK):
+    for task in (EVENT_TASK, WELLBEING_TASK, PENDING_TASK):
         token = current_search_identity.set(
             SearchIdentity(user_id="check_in_behaviour", is_operator=True)
         )
@@ -115,6 +121,18 @@ async def test_a_firing_check_in_does_not_go_looking_things_up(llm) -> None:
         chosen = tool_of(action)
         print(f"\n{task['kind']} -> {chosen}")
         assert chosen == "none", (task["kind"], chosen)
+
+
+async def test_a_written_question_for_an_unforeseen_situation_still_reads_well(llm) -> None:
+    # The question is the model's, so the manner has to work on a sentence
+    # nobody wrote a template for - not just on "Ask how X went."
+    said = _fires(llm, PENDING_TASK)
+    print(f"\npending check-in fired:\n{said}\n")
+    assert "?" in said, said
+    assert len(said.split()) <= 45, said
+    assert "flat" in said.casefold(), said
+    for giveaway in ("scheduled", "reminder", "automation"):
+        assert giveaway not in said.casefold(), said
 
 
 async def test_a_plain_reminder_is_not_given_the_check_in_manner(llm) -> None:

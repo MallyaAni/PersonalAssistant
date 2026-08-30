@@ -36,6 +36,7 @@ def _task_dict(task: ScheduledTask) -> dict[str, Any]:
         "instruction": task.instruction,
         "cadence": task.cadence,
         "kind": task.kind,
+        "subject": task.subject,
         "hour": task.hour,
         "minute": task.minute,
         "weekday": task.weekday,
@@ -107,12 +108,14 @@ class ScheduledTaskRepository:
         channel: str,
         now: datetime | None = None,
         kind: str = "reminder",
+        subject: str | None = None,
     ) -> dict[str, Any]:
         moment = now or datetime.now(UTC)
         task = ScheduledTask(
             user_id=user_id,
             instruction=instruction.strip(),
             kind=kind,
+            subject=(subject or None),
             cadence=cadence.cadence,
             hour=cadence.hour,
             minute=cadence.minute,
@@ -294,6 +297,7 @@ class ScheduledTaskRepository:
             user_id=user_id,
             instruction=str(snapshot["instruction"]),
             kind=str(snapshot.get("kind") or "reminder"),
+            subject=(str(snapshot["subject"]) if snapshot.get("subject") else None),
             cadence=cadence.cadence,
             hour=cadence.hour,
             minute=cadence.minute,

@@ -24,7 +24,7 @@ changes, a second cancel vocabulary for the person to learn.
 ## Decision
 
 A check-in is an ordinary one-off scheduled task, distinguished by a `kind`
-column - `checkin:event` or `checkin:wellbeing` against a reminder's
+column - `checkin:following_up` or `checkin:wellbeing` against a reminder's
 `reminder` - and nothing else. Only the noticing is new.
 
 `scheduled_tasks` already stores a `once` cadence with a calendar day, a local
@@ -45,6 +45,26 @@ about instructions dropped a plain fact from 4/4 to 1/4.
 Every limit that keeps check-ins civil is in code, not in the prompt: how many
 may wait, how far apart, in which threads, at which hours. The judgement is
 free to say yes as often as it likes and still arm nothing.
+
+## What is deliberately not enumerated
+
+Asked on 2026-08-30 to "account for scenarios we haven't seen before", three
+things were opened up that the first version had fixed:
+
+The question is written per check-in rather than chosen from a template per
+category. "Ask whether they heard back about the flat." is not "Ask how X
+went." with a different X, and a template per category caps what can ever be
+followed up at the categories somebody wrote first.
+
+There are two kinds and they name what governs the rules, not what happened.
+`wellbeing` alone is rationed and alone must never be asked in a room;
+everything else is `following_up`. A new sort of situation is not a
+migration and not a prompt edit.
+
+The far horizon refuses instead of clamping. Squeezing a wedding next spring
+into a fourteen-day window does not produce a smaller mistake, it produces
+"how was the wedding?" months early - a check-in that is confidently wrong
+rather than absent. Beyond about six weeks the answer is no.
 
 ## Consequences
 

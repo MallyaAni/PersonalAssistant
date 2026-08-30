@@ -106,6 +106,18 @@ If functional validation cannot be performed, do not label the behavior verified
   scripts/git-hooks` is set here so `scripts/git-hooks/pre-push` refuses a
   non-fast-forward push; fetch and merge instead. Re-run that config line
   after a fresh clone.
+- **A migration has to reach the database before the gate that tests it.**
+  `scripts/deploy.sh` runs the unit gate *before* it backs up and migrates, and
+  the unit suite talks to the real schema rather than one built from the
+  models. So a commit that adds a column fails its own deploy: on 2026-08-30
+  the `kind` column on `scheduled_tasks` failed nine task tests with
+  `UndefinedColumnError` at the gate, several steps before the migration that
+  would have created it. Apply it first - `bash scripts/backup-db.sh`, then
+  `docker compose run --rm -e POSTGRES_HOST=db -v $PWD/migrations:/app/migrations:ro
+  backend python -m alembic upgrade head` - and let the deploy's own migrate
+  step re-run it as a no-op. This is only safe for an additive change the
+  running code ignores; a column the old code cannot tolerate has to go out
+  with its code, which means taking the outage rather than reordering these.
 - **The test image is stale by design; mount, don't trust it.** The
   `functional-tests` image is built rarely. `scripts/gate.sh` mounts
   `backend/`, `bridges/`, `prompts/`, `skills/`, `docs/`, `deploy/` and

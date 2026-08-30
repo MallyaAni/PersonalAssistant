@@ -10,8 +10,10 @@ tested without a model:
     thread with questions arriving days later;
   * one wellbeing check-in a week, because the second "how are you
     feeling?" in three days reads as nagging rather than care;
-  * nothing armed twice for the same subject, however the second message
-    happened to word it;
+  * nothing armed twice for the same subject. The judgement is handed
+    what is already waiting and answers false when this is the same thing
+    said differently, which is where that has to be right; the comparison
+    here is a backstop for the case it misses, not the mechanism;
   * one-to-one threads only. A room is not the place to ask one member
     how their health is, and the group's own thread already tells
     everyone what everyone said.
@@ -35,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 # The task kind stored on the row, so a check-in can be counted and capped
 # by a query rather than by reading the prose of an instruction. The kind
-# carries which sort it is too - "checkin:event", "checkin:wellbeing" - so
+# carries which sort it is too - "checkin:following_up", "checkin:wellbeing" - so
 # the wellbeing cooldown is a comparison rather than a prefix match on an
 # instruction that gets reworded the moment anyone improves it.
 CHECKIN_PREFIX = "checkin:"
@@ -56,6 +58,20 @@ MAX_WAITING = 3
 WELLBEING_COOLDOWN_DAYS = 7
 
 
+# What is already waiting to be asked about, newest first, so the judgement
+# can recognise this message as being about one of them. Never raises: a
+# turn that cannot read them proposes without them and is caught by the
+# backstop below, which is the same outcome as before this existed.
+async def waiting_subjects(tasks: Any, user_id: str, limit: int = MAX_WAITING) -> tuple[str, ...]:
+    try:
+        existing = await tasks.list_for_user(user_id, enabled_only=True)
+    except Exception:
+        logger.warning("check_in_waiting_unreadable", exc_info=True)
+        return ()
+    found = [_subject_of(task) for task in existing if is_check_in(task)]
+    return tuple(subject for subject in found if subject)[:limit]
+
+
 @dataclass(frozen=True, slots=True)
 class Armed:
     """What happened, for the trace. `task` is set only when one was created."""
@@ -69,6 +85,13 @@ class Armed:
 # punctuation, no articles. "The visit to National Harbor" and "our National
 # Harbor visit" collapse together, which is the point - a person who mentions
 # an outing twice should be asked about it once.
+#
+# This is a backstop and is written to be read as one. The judgement is told
+# what is already waiting and is what has to recognise "that Harbor thing on
+# Saturday" as the same outing; a word list cannot, and one that tried would
+# be a list of the English function words we happened to think of. What this
+# catches is the cheap case the model can still miss - the same subject
+# worded almost identically - at no cost and with no call.
 _NOISE = frozenset({"the", "a", "an", "to", "our", "my", "at", "in", "on", "for", "of", "with"})
 
 
@@ -124,10 +147,53 @@ def _landing_day(after_days: int, hour: int, zone: str, now: datetime | None = N
 # should be written - short, warm, no searching - is the runner's business
 # and travels with the task's kind, because a person reading their own
 # reminders should not have to read instructions addressed to a model.
+# The sentence is the model's, because the situations worth following up on
+# do not fit a fixed number of templates: "Ask whether they heard back about
+# the flat." is not "Ask how X went." with a different X. The fallback is
+# for a judgement that produced a subject and no usable question, which the
+# caller already rejects - it exists so this function is total rather than
+# because anything is expected to reach it.
 def instruction_for(check_in: CheckIn) -> str:
+    written = " ".join(str(check_in.question or "").split())
+    if written:
+        return written
     if check_in.kind == WELLBEING:
         return f"Check in on how they are doing after {check_in.subject}."
     return f"Ask how {check_in.subject} went."
+
+
+# Drop a waiting check-in because the person said the thing is off, already
+# happened, or moved. Matched by the stored subject, and only against the
+# list the judgement was given, so a message can never take down a check-in
+# it was not shown.
+#
+# Deleted rather than disabled, and the difference carries meaning that is
+# otherwise lost. A row disabled by hand is a person saying "stop asking me
+# about this", and the duplicate rule reads disabled rows so that mentioning
+# the outing again does not quietly bring the question back. A plan falling
+# through is a different statement: it says nothing about wanting to be
+# asked, and if the trip is back on next week the check-in should be too.
+# Removing the row is what keeps those two apart without a column recording
+# which of them happened.
+async def stand_down(tasks: Any, user_id: str, subject: str) -> bool:
+    if not str(subject or "").strip():
+        return False
+    try:
+        existing = await tasks.list_for_user(user_id, enabled_only=True)
+    except Exception:
+        logger.warning("check_in_stand_down_unreadable", exc_info=True)
+        return False
+    for task in existing:
+        if not is_check_in(task):
+            continue
+        if not is_same_subject(subject, _subject_of(task)):
+            continue
+        try:
+            return bool(await tasks.delete_owned(user_id, str(task.get("id"))))
+        except Exception:
+            logger.warning("check_in_stand_down_failed", exc_info=True)
+            return False
+    return False
 
 
 # Arm a check-in, or say why not. Never raises into the turn: a check-in is
@@ -179,6 +245,7 @@ async def arm_check_in(
             cadence,
             channel,
             kind=kind_for(check_in),
+            subject=check_in.subject,
         )
     except Exception:
         logger.warning("check_in_arming_failed", exc_info=True)
@@ -186,16 +253,15 @@ async def arm_check_in(
     return Armed(True, check_in.kind, task)
 
 
-# The subject of an already-armed check-in, recovered from its instruction.
-# The instruction is what is stored; the subject is not a column because it
-# only ever matters here, and a column that exists for one comparison is a
-# column that goes stale.
+# The subject of an already-armed check-in.
+#
+# It used to be recovered by matching the front of the instruction against
+# the templates that wrote it, which tied two functions together through
+# prose: reword the question and the duplicate check quietly stops working.
+# Now that the model writes the question, there is no template to match
+# against at all, so the subject is stored on the row beside it.
 def _subject_of(task: dict[str, Any]) -> str:
-    instruction = str(task.get("instruction") or "")
-    for opener, closer in (("Ask how ", " went."), ("Check in on how they are doing after ", ".")):
-        if instruction.startswith(opener) and closer in instruction:
-            return instruction[len(opener) : instruction.index(closer, len(opener))]
-    return ""
+    return str(task.get("subject") or "")
 
 
 # Whether a wellbeing check-in was already asked, or is already waiting,
