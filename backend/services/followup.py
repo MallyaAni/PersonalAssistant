@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 import logging
 from contextvars import ContextVar
 from dataclasses import dataclass
@@ -29,8 +30,11 @@ _SCHEMA: dict[str, Any] = {
         "self_contained": {"type": "string", "maxLength": 600},
         "refers_to": {"type": "string", "enum": list(REFERS_TO)},
         "subject": {"type": "string", "maxLength": 120},
+        # Whether the assistant's own last message offered to do something
+        # that this message accepts. See `Resolution.accepts_offer`.
+        "accepts_offer": {"type": "boolean"},
     },
-    "required": ["self_contained", "refers_to", "subject"],
+    "required": ["self_contained", "refers_to", "subject", "accepts_offer"],
     "additionalProperties": False,
 }
 _MAX_TOKENS = 220
@@ -45,6 +49,21 @@ class Resolution:
     self_contained: str
     refers_to: str
     subject: str
+    # Whether the assistant's previous message offered to *do* something that
+    # this message accepts.
+    #
+    # "Yes" is not an instruction on its own; it is an instruction only when
+    # something was offered. Measured on the real model 2026-08-29: "yes"
+    # after a plain weather answer routed a fresh weather call - agreeing with
+    # a statement sent the assistant off doing work. The router now refuses to
+    # take any tool for a bare acceptance that accepts nothing.
+    #
+    # The same question is asked of the readiness model for a tapback
+    # (`backend/services/readiness.py`). Two places, deliberately: that one
+    # runs in the iMessage worker before a turn exists and decides whether to
+    # answer at all; this one runs inside every turn on every channel and
+    # decides what may be done.
+    accepts_offer: bool = False
 
     # Whether the reading adds anything beyond the message itself.
     def changes(self, query: str) -> bool:
@@ -116,7 +135,10 @@ def parse_resolution(answer: Any, query: str) -> Resolution | None:
         refers_to = "none"
     restated = " ".join(str(payload.get("self_contained") or "").split()) or query.strip()
     subject = " ".join(str(payload.get("subject") or "").split())[:120]
-    return Resolution(restated, refers_to, subject)
+    # Absent means false, which is the safe direction: the router withholds
+    # every tool from a bare acceptance that accepts nothing, and an
+    # unreadable answer should leave it answering in words rather than acting.
+    return Resolution(restated, refers_to, subject, bool(payload.get("accepts_offer")))
 
 
 # One line for the router: the reading beside the person's own words.
@@ -136,3 +158,29 @@ def describe(resolution: Resolution, query: str) -> str:
         f"Read in context as: {resolution.self_contained}\n"
         f"It refers to {about}{subject}."
     )
+
+
+# Whether a message is nothing but assent.
+#
+# The bound on a guard that refuses to act: only a message with no content of
+# its own can reach it, so "yes, and book the later one" is routed normally
+# however the offer question is answered. Matched on the whole message after
+# punctuation and filler are stripped, never as a substring - "yes" inside
+# "yesterday" or "can you say yes for me" is not assent.
+_ASSENT = frozenset(
+    {
+        "yes", "yes please", "yes pls", "yep", "yeah", "yea", "ya", "yup",
+        "sure", "ok", "okay", "k", "kk", "fine", "alright", "all right",
+        "do it", "go ahead", "go for it", "please do", "sounds good",
+        "yes do it", "yeah do it", "yes go ahead", "yeah go ahead",
+        "yes please do", "sure do it", "ok do it", "okay do it", "yes thanks",
+        "perfect", "great", "cool", "nice", "lets do it", "let's do it",
+    }
+)
+_FILLER = re.compile(r"[^\w\s']+")
+
+
+def is_bare_acceptance(message: str) -> bool:
+    stripped = _FILLER.sub(" ", str(message or "").casefold())
+    collapsed = " ".join(stripped.split())
+    return collapsed in _ASSENT

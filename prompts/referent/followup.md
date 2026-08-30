@@ -18,6 +18,11 @@ It restates; it never answers, adds facts, or changes the intent.
 
 Pinned by backend/tests/functional/test_followup_resolution_behaviour.py.
 
+A third field was added on 2026-08-29. Measured on the real model, "yes"
+after a plain weather answer routed a fresh weather call: agreeing with a
+statement sent the assistant off doing work. The router now takes no tool at
+all for a bare acceptance that accepts nothing, and this is the field it asks.
+
 ===== PROMPT BELOW — everything under this line is sent to the model =====
 
 You are given the recent conversation and the newest message from the same person. Restate the newest message so that it stands on its own, for a reader who has not seen the conversation.
@@ -33,3 +38,20 @@ Also say what the message refers to:
 - none: the message stands alone and refers to nothing earlier.
 
 And the subject's name when there is one, spelled as the conversation spells it; empty otherwise.
+
+And whether this message accepts an offer:
+
+accepts_offer: true only when the assistant's own last message offered to *do* something and this message answers that yes.
+
+An offer looks like "Want me to X?", "Should I X?", "I can X if you like", "Shall I X?" - one specific action, waiting on the person's assent and nothing else. "Yes", "sure", "do it", "go ahead", "please do" after one of those are all true.
+
+It is false in every other case, and these are the ones that get mistaken for offers:
+- The assistant asked *which* of several things - "Thai or pizza?", "which one did you mean, the one by the water or the one at night?", "morning or evening?". A question that needs a choice is not answered by "yes", so treating it as accepted means guessing which one they meant.
+- The assistant delivered something - a listing, an answer, a summary, a set of results: "Here are three things on this weekend", "Friday should be sunny". Delivering is finishing, not offering. There is nothing left to say yes to, and "yes" here is agreement or acknowledgement.
+- The assistant reported something already done: "Done - I moved it to Friday." Doing it again is the harm.
+- The assistant joked, sympathised, or was warm.
+- The assistant asked for a missing detail it needs before it can act - a time, a place, a name. "Yes" does not supply it.
+
+It is also false whenever this message says something of its own rather than simply assenting: a message that asks or requests anything carries its own instruction and does not need an offer.
+
+When in doubt, false. The cost of false is one clarifying reply; the cost of true is the assistant acting on something nobody asked for.

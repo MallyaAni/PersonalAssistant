@@ -37,7 +37,12 @@ from backend.services.mcp_tool_orchestration_service import (
 )
 from backend.skills.tools import parse_skill_call, skill_tool_definitions
 from backend.search.budgeted import current_search_identity
-from backend.services.followup import current_followup, describe, resolve_followup
+from backend.services.followup import (
+    current_followup,
+    describe,
+    is_bare_acceptance,
+    resolve_followup,
+)
 from backend.tools import (
     DRAFT_WITHHELD,
     UNATTENDED_WITHHELD,
@@ -333,6 +338,25 @@ class MainActionSelector:
         # asking the prompt nicely - the same mechanism a firing uses.
         drafting = resolution is not None and resolution.refers_to == "draft"
         withheld_now = DRAFT_WITHHELD if drafting else frozenset()
+
+        # A bare "yes" is an instruction only when something was offered.
+        #
+        # Measured on the real model 2026-08-29: "yes" after a plain weather
+        # answer routed a fresh seven-day weather call. Agreeing with a
+        # statement sent the assistant off doing work, and the same shape after
+        # a bubble about booking would be worse than wasteful. So a message
+        # that is *nothing but* assent, following a message that offered
+        # nothing to assent to, takes no tool at all - decided in code, not
+        # asked of the prompt.
+        #
+        # Deliberately narrow: only a message with no content of its own can
+        # reach this. "Yes, and find parking too" carries its own instruction
+        # and is routed normally, whatever was offered before it.
+        if is_bare_acceptance(query) and resolution is not None and not resolution.accepts_offer:
+            logger.info(
+                "A bare acceptance follows nothing that was offered; taking no tool"
+            )
+            return None
 
         tools: list[dict[str, Any]] = []
         aliases: dict[str, Any] = {}

@@ -2,6 +2,40 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-29 — Saying yes, in words, and refusing to act when nothing was offered
+
+The operator's judgement on the tapback work: "natural language is the right
+way to do this." So the plain path was measured for the first time - the
+assistant offers, the person types yes - and it had a real hole.
+
+Seven ways of saying yes ("yes", "sure", "do it", "go for it", "please do"...)
+all route the offered search correctly, with its subject and place intact, and
+a reminder offer reschedules the right task at the right time. But **"yes"
+after a message that offered nothing routed work anyway**: following a plain
+weather answer it ran a fresh seven-day weather call. Agreeing with a statement
+sent the assistant off doing something, and the same shape after a bubble about
+booking would be worse than wasteful.
+
+The fix is a guard in code, not a sentence in a prompt. The follow-up resolver
+already runs on every turn on every channel and already reads the assistant's
+previous message, so it now also answers whether that message offered something
+this one accepts. A message that is *nothing but* assent, following a message
+that offered nothing, takes no tool at all
+(`main_action_selector`, beside the draft withholding it mirrors).
+
+Deliberately narrow, and the tests are mostly about the narrowness: only a
+message carrying no content of its own can reach the guard. "Yes, and find me a
+rooftop bar" still searches. "Yesterday", "can you say yes for me" and "did she
+say yes?" are not assent. "No thanks" never reaches it.
+
+Measured on the real model, before and after. Now taking no tool: after a plain
+answer, after a choice ("Thai or pizza?"), after a clarifying question ("which
+one did you mean?"), after "Done - I moved it", after a joke, after a delivered
+listing, and with no conversation at all. Two of those - the clarifying question
+and the delivered listing - still acted after the first attempt, so the
+judgement was tightened by naming those shapes and re-measured rather than
+assumed.
+
 ## 2026-08-29 — The two sessions' work merged, with six defects found in review
 
 Both workstreams reviewed together before merging: conversational tapbacks and
