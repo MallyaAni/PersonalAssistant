@@ -68,3 +68,59 @@ async def test_the_same_request_survives_repetition(provider):
     for attempt in range(4):
         spec = await provider.generate("Roman aqueduct architecture thinking process")
         assert len(spec.source.splitlines()) >= 2, (attempt, spec.source)
+
+
+# The conversation that failed on a real phone on 2026-08-30, end to end: the
+# router reads it, the service uses the subject the router resolved, and the
+# diagram model draws from that. Before the fix the diagram agent was handed
+# the words "try again" and drew them.
+_AQUEDUCT = [
+    {
+        "query": "how did the romans move water so far",
+        "response": "Aqueducts. A gentle continuous gradient carried the water, with stacked arches to cross valleys.",
+        "created_at": "2026-08-30T02:33:00+00:00",
+    },
+    {
+        "query": "how did they build it that high",
+        "response": "Stacked arches - rows of arches one on top of another, two or three tiers deep.",
+        "created_at": "2026-08-30T02:34:00+00:00",
+    },
+    {
+        "query": "can you draw it as a diagram instead?",
+        "response": "I couldn't create that diagram. Please revise the request and try again.",
+        "created_at": "2026-08-30T02:38:00+00:00",
+    },
+]
+_NOW_LINE = (
+    "Sunday 2026-08-30 04:00 - they are in Arlington, Virginia (America/New_York)"
+)
+
+
+@pytest.mark.parametrize("said", ["try again", "try again please", "can you try that again"])
+async def test_try_again_draws_what_was_being_discussed(provider, said):
+    from backend.core.dependencies import get_mcp_invocation_service, get_routing_llm_client
+    from backend.services.main_action_selector import MainActionSelector
+
+    selector = MainActionSelector(
+        get_routing_llm_client(),
+        get_mcp_invocation_service(),
+        settings.SEARCH_MCP_SERVER_ID,
+        settings.SEARCH_MCP_TOOL_NAME,
+        tool_orchestration=None,
+        diagram_enabled=True,
+        presentation_enabled=True,
+    )
+    action = await selector.select("diag_user", said, _AQUEDUCT, None, local_now=_NOW_LINE)
+    subject = str(getattr(action, "subject", "") or "").strip()
+    # What the service passes: the resolved subject, with the typed words as
+    # the fallback only when the router returned none.
+    spec = await provider.generate(subject or said)
+    print(f"\n{said!r} -> subject={subject!r} title={spec.title!r}")
+
+    haystack = f"{spec.title} {spec.source}".casefold()
+    assert any(
+        word in haystack
+        for word in ("aqueduct", "arch", "water", "channel", "gradient", "roman")
+    ), (said, subject, spec.title, spec.source[:200])
+    # And never the words the person typed, which is what it used to draw.
+    assert "try again" not in haystack, (said, spec.title)

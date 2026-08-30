@@ -4,6 +4,12 @@ This file is append-only history for meaningful, verified changes. It must not c
 
 ## 2026-08-30 — "Try again" draws what was being discussed, not the words "try again"
 
+Confirmed live on the deployed build: four of four runs through the real router
+and the real diagram model, on the conversation that failed, produced "Roman
+Aqueduct with Stacked Arches" - a 16 to 20 line flowchart, never the words that
+were typed. Pinned in the gated suite for "try again", "try again please" and
+"can you try that again" (14 cases, 3m29s).
+
 Reported live: after a conversation about Roman aqueducts and a diagram that
 had just failed, "try again" produced a diagram about something else entirely.
 
