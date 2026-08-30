@@ -11,6 +11,8 @@ class DiagramState(TypedDict):
     """Typed state passed through the focused diagram-generation graph."""
 
     query: str
+    # The conversation the diagram was asked for in, for context only.
+    context: NotRequired[str]
     specification: NotRequired[DiagramSpecification]
 
 
@@ -20,8 +22,8 @@ class DiagramAgent:
         self.graph = build_diagram_graph(provider)
 
     # Generate one validated specification through the diagram graph.
-    async def generate(self, query: str) -> DiagramSpecification:
-        result = await self.graph.ainvoke({"query": query})
+    async def generate(self, query: str, context: str = "") -> DiagramSpecification:
+        result = await self.graph.ainvoke({"query": query, "context": context})
         specification = result.get("specification")
         if not isinstance(specification, DiagramSpecification):
             raise RuntimeError("Diagram graph completed without a specification")
@@ -32,7 +34,11 @@ class DiagramAgent:
 def build_diagram_graph(provider: DiagramProvider) -> Any:
     # Delegate bounded source generation to the injected provider.
     async def generate_node(state: DiagramState) -> dict[str, DiagramSpecification]:
-        return {"specification": await provider.generate(state["query"])}
+        return {
+            "specification": await provider.generate(
+                state["query"], state.get("context", "")
+            )
+        }
 
     workflow = StateGraph(DiagramState)
     workflow.add_node("generate_diagram", generate_node)

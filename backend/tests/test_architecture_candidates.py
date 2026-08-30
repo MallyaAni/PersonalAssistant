@@ -21,7 +21,7 @@ class CapturingRepositoryDiagramProvider(DiagramProvider):
         self.query = ""
 
     # Capture evidence and return one safe architecture flowchart.
-    async def generate(self, query: str) -> DiagramSpecification:
+    async def generate(self, query: str, context: str = "") -> DiagramSpecification:
         self.query = query
         return DiagramSpecification(
             title="Repository candidate",
@@ -36,7 +36,7 @@ class CorrectingRepositoryDiagramProvider(DiagramProvider):
         self.calls = 0
 
     # Return the required repository workflow only on the bounded correction.
-    async def generate(self, query: str) -> DiagramSpecification:
+    async def generate(self, query: str, context: str = "") -> DiagramSpecification:
         self.calls += 1
         source = "flowchart TD\n  Source --> Review"
         if self.calls == 2:

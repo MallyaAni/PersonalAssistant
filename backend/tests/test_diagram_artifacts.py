@@ -156,7 +156,7 @@ class CapturingArtifactRepository(ArtifactRepository):
 
 class StaticDiagramProvider(DiagramProvider):
     # Return a fixed valid flowchart for deterministic orchestration tests.
-    async def generate(self, query: str) -> DiagramSpecification:
+    async def generate(self, query: str, context: str = "") -> DiagramSpecification:
         return DiagramSpecification(
             title="Validation flow",
             diagram_type="flowchart",
@@ -166,13 +166,13 @@ class StaticDiagramProvider(DiagramProvider):
 
 class FailingDiagramProvider(DiagramProvider):
     # Raise a provider failure without returning unsafe partial source.
-    async def generate(self, query: str) -> DiagramSpecification:
+    async def generate(self, query: str, context: str = "") -> DiagramSpecification:
         raise RuntimeError("private provider detail")
 
 
 class BlockingDiagramProvider(DiagramProvider):
     # Wait indefinitely so the test can cancel generation after pending persistence.
-    async def generate(self, query: str) -> DiagramSpecification:
+    async def generate(self, query: str, context: str = "") -> DiagramSpecification:
         await asyncio.Event().wait()
         raise AssertionError("cancelled provider unexpectedly resumed")
 
@@ -749,7 +749,7 @@ async def test_the_diagram_is_drawn_from_the_resolved_subject_not_the_typed_word
     drawn: list[str] = []
 
     class _RecordingProvider(StaticDiagramProvider):
-        async def generate(self, query: str):
+        async def generate(self, query: str, context: str = ""):
             drawn.append(query)
             return await super().generate(query)
 

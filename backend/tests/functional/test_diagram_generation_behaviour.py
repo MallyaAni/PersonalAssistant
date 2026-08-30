@@ -124,3 +124,54 @@ async def test_try_again_draws_what_was_being_discussed(provider, said):
     ), (said, subject, spec.title, spec.source[:200])
     # And never the words the person typed, which is what it used to draw.
     assert "try again" not in haystack, (said, spec.title)
+
+
+# The conversation itself, which the diagram agent used to be the only
+# generator not to see. Reported live on 2026-08-30: after the aqueduct talk,
+# "architecture thinking process" drew a generic architecture flowchart, and
+# "try again" drew one titled "Try Again Flow". The router's subject alone was
+# not enough - by then the failed attempts had crowded the aqueduct out of it.
+_ROOM = [
+    {"query": "how did the romans move water so far",
+     "response": "Aqueducts. A gentle continuous gradient carried the water, with stacked arches to cross valleys."},
+    {"query": "how did they build it that high",
+     "response": "Stacked arches. Each arch carries weight down its two posts, so they laid rows of arches one on top of another."},
+    {"query": "generate a picture of the architecture thinking process",
+     "response": "Here's the image you asked for."},
+    {"query": "can you draw it as a diagram instead?",
+     "response": "I couldn't create that diagram. Please revise the request and try again."},
+    {"query": "you try again bruh",
+     "response": "Created an editable diagram: Simple Flowchart."},
+]
+
+
+@pytest.mark.parametrize("subject", ["architecture thinking process", "try again"])
+async def test_a_vague_subject_is_drawn_in_the_conversation_it_was_asked_in(provider, subject):
+    from backend.services.transcript import transcript_lines
+
+    context = "\n".join(transcript_lines(_ROOM))
+    spec = await provider.generate(subject, context)
+    print(f"\n{subject!r} in context -> {spec.title!r}")
+
+    haystack = f"{spec.title} {spec.source}".casefold()
+    assert any(
+        word in haystack
+        for word in ("aqueduct", "arch", "water", "channel", "gradient", "roman")
+    ), (subject, spec.title, spec.source[:200])
+    assert "try again" not in haystack, (subject, spec.title)
+
+
+async def test_the_conversation_is_context_and_never_the_thing_drawn(provider):
+    # The bound: a room full of one topic must not override an explicit
+    # request for another. The context says what "it" means; it does not
+    # choose the subject.
+    from backend.services.transcript import transcript_lines
+
+    context = "\n".join(transcript_lines(_ROOM))
+    spec = await provider.generate("how a pull request gets reviewed and merged", context)
+    print(f"\nexplicit subject in an aqueduct room -> {spec.title!r}")
+    haystack = f"{spec.title} {spec.source}".casefold()
+    assert any(word in haystack for word in ("pull request", "review", "merge", "branch")), (
+        spec.title,
+        spec.source[:200],
+    )

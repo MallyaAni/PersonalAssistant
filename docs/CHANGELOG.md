@@ -2,6 +2,33 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-30 — The diagram agent finally sees the conversation
+
+Using the router's resolved subject fixed "try again" the moment it went live -
+four of four drew the aqueduct. It was not enough. Reported again from the
+room: "architecture thinking process" drew a generic architecture flowchart,
+because by then three failed diagram attempts sat between the aqueduct talk and
+the question, and the subject the router resolved had narrowed to the words
+typed.
+
+Measured on that conversation, the follow-up resolver restated "architecture
+thinking process" as itself and read "try again" as a picture with no subject
+at all. Asking it to resolve better is asking the wrong component: the diagram
+agent was the only generator in this system given no conversation whatsoever -
+one string and nothing else - while the router, the reply, the search planner
+and the follow-up resolver all read the dated transcript.
+
+It reads it now. `_process_diagram_request` already loaded the history and
+threw it away; the last six exchanges go to the provider as context, through
+the same `transcript_lines` everything else uses. The subject is still what it
+is asked to draw - the conversation only says what that subject means.
+
+Measured after, three of three each: "architecture thinking process" draws the
+aqueduct, "try again" draws "Roman Aqueduct Architecture", and an explicit
+request for something else - "how a pull request gets reviewed and merged" - is
+still drawn as asked in a room full of aqueducts, so the context informs and
+never overrides. Pinned in the gated suite (17 cases, 3m25s).
+
 ## 2026-08-30 — "Try again" draws what was being discussed, not the words "try again"
 
 Confirmed live on the deployed build: four of four runs through the real router

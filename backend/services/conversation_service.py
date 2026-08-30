@@ -419,6 +419,20 @@ def _interests_for(question: str, interests: tuple[str, ...], limit: int = 8) ->
     scored.sort()
     return [interest for _overlap, _position, interest in scored[:limit]]
 
+
+# The recent conversation as the diagram agent's context, bounded.
+#
+# Short on purpose: the agent is being told what "it" refers to, not asked to
+# summarise a thread. The last few exchanges are where the subject of a
+# follow-up lives, and a longer window mostly adds the failed attempts that
+# pushed the subject out in the first place.
+def _diagram_context(history: list[dict[str, Any]] | None, turns: int = 6) -> str:
+    from backend.services.transcript import transcript_lines
+
+    lines = transcript_lines(list(history or [])[-turns:])
+    return "\n".join(lines)[-2_000:]
+
+
 # Whether this request's search results were judged to be events, set by the
 # research path for the reply's presentation. Per task, like the limit.
 _results_were_events: ContextVar[bool] = ContextVar("results_were_events", default=False)
@@ -4215,6 +4229,11 @@ class ConversationService:
                 artifact_id,
                 user_id,
                 query,
+                # The conversation, which this turn already loaded and then
+                # threw away. Same dated transcript the router and the reply
+                # read, so a diagram cannot be the one thing in the system
+                # answering without context.
+                _diagram_context(history),
             )
         except asyncio.CancelledError:
             with CancelScope(shield=True):

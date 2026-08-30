@@ -39,8 +39,9 @@ class DiagramArtifactService:
         artifact_id: str,
         user_id: str,
         query: str,
+        context: str = "",
     ) -> dict[str, Any]:
-        specification = await self.agent.generate(query)
+        specification = await self.agent.generate(query, context)
         return await self.repository.mark_ready(
             artifact_id,
             user_id,

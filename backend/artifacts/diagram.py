@@ -199,13 +199,27 @@ class LLMDiagramProvider(DiagramProvider):
         self.model_name = model_name
 
     # Ask the local model for bounded JSON and retry one invalid format once.
-    async def generate(self, query: str) -> DiagramSpecification:
+    #
+    # `context` is the conversation this was asked in. It used to receive one
+    # string and nothing else, which is why "try again" after a discussion of
+    # Roman aqueducts drew a flowchart titled "Try Again Flow", and why
+    # "architecture thinking process" drew a generic one: every other generator
+    # in this system sees the conversation and this one was blind. The subject
+    # line is still what it is asked to draw; the conversation is only there to
+    # say what that subject means.
+    async def generate(self, query: str, context: str = "") -> DiagramSpecification:
+        asked = (
+            f"The conversation so far, for context only - draw what is asked "
+            f"below, not the conversation:\n\n{context}\n\nDraw: {query}"
+            if context.strip()
+            else query
+        )
         messages = [
             {
                 "role": "system",
                 "content": (DIAGRAM_SYSTEM),
             },
-            {"role": "user", "content": query},
+            {"role": "user", "content": asked},
         ]
         for attempt in range(2):
             result = await asyncio.to_thread(
