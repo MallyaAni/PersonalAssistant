@@ -121,16 +121,24 @@ JOURNEYS = [
             holds=("The reply confirms a reminder for tomorrow at 9 am.",)),
     Journey("arithmetic", "what's 18% of 245?", (None,),
             holds=("The reply gives 44.1 as the answer.",)),
-    # 2026-08-30: the check-in path, end to end. Mentioning an outing is not
+    # 2026-08-30: the check-in path, end to end. Mentioning something is not
     # a request, so nothing routes; what has to happen is invisible in the
     # reply and visible in the table, which is what sql_holds is for. The
     # reply assertions are the other half - a check-in the assistant
     # announces is not a check-in, it is a notification.
-    Journey("a mentioned outing arms a check-in",
-            "we're heading to National Harbor on Saturday evening", (None,),
-            holds=("The reply responds to the plan like a friend would.",),
+    #
+    # The sentence was chosen by measurement, not by taste. "we're heading to
+    # National Harbor on Saturday evening" is the operator's own example and
+    # is useless here: it routes to Web search 3/3 in isolation and to Weather
+    # 3/3 for an account with a locality, so the journey failed on routing
+    # before reaching its real assertion. An offer on a car names no place to
+    # look up the weather for and no company to search, takes no tool 3/3, and
+    # arms a check-in 3/3.
+    Journey("something mentioned in passing arms a check-in",
+            "I put an offer in on a car this morning", (None,),
+            holds=("The reply responds to the news like a friend would.",),
             does_not_hold=("The reply says it has scheduled, set, or armed anything.",),
-            sql_holds=("select count(*) >= 1 from scheduled_tasks where user_id = :u and kind = 'checkin:following_up'",
+            sql_holds=("select count(*) >= 1 from scheduled_tasks where user_id = :u and kind like 'checkin:%'",
                        "select count(*) <= 3 from scheduled_tasks where user_id = :u and kind like 'checkin:%' and enabled",
                        "select count(*) = 0 from scheduled_tasks where user_id = :u and kind like 'checkin:%' and next_run_at <= now()")),
     Journey("directions", "how long will it take me to drive to Dulles airport at 5pm?", ("Web search", None),
@@ -179,7 +187,13 @@ JOURNEYS = [
             holds=("The reply says the sweep, check, or Scout schedule is now daily at 3 PM, or that this schedule was saved.",),
             does_not_hold=("The reply says a reminder or task other than Scout's sweep was rescheduled or changed.",),
             sql_holds=("select count(*) = 1 from discovery_schedules where user_id = :u and cadence = 'daily' and hour = 15",
-                       "select count(*) = 0 from scheduled_tasks where user_id = :u and hour = 15")),
+                       "select count(*) = 0 from scheduled_tasks where user_id = :u and hour = 15 and kind = 'reminder'")),
+    # Every count over scheduled_tasks below says `kind = 'reminder'`, and it
+    # has to. Check-ins are rows in the same table (2026-08-30), the sweep's
+    # journeys all share one account, and a check-in armed by an earlier
+    # journey lands at any hour from 9 to 21 - so "exactly one task at 10am"
+    # became two and the deploy's post-check failed. The hour-8 assertion
+    # passed in the same run, which is the tell: a check-in can never be at 8.
     # --- referents: "it", "that", "again" on every capability ---------------
     # Every incident this week was a second turn about something the first
     # turn made. One journey per referent shape, with the state checked.
@@ -188,12 +202,12 @@ JOURNEYS = [
             holds=("The reply says the dentist reminder is now at 10:00 AM.",),
             # The instruction is sealed at rest, so it cannot be matched here; the
             # clock can. The bank reminder from the earlier journey stays at 9.
-            sql_holds=("select count(*) = 1 from scheduled_tasks where user_id = :u and hour = 10 and enabled",)),
+            sql_holds=("select count(*) = 1 from scheduled_tasks where user_id = :u and hour = 10 and enabled and kind = 'reminder'",)),
     Journey("cancel it then undo", "undo that", ("Manage scheduled tasks",),
             before=("remind me tomorrow at 8am to water the plants", "cancel it"),
             holds=("The reply says the plants reminder is back or restored.",),
             does_not_hold=("The reply says nothing could be undone.",),
-            sql_holds=("select count(*) = 1 from scheduled_tasks where user_id = :u and hour = 8 and enabled",)),
+            sql_holds=("select count(*) = 1 from scheduled_tasks where user_id = :u and hour = 8 and enabled and kind = 'reminder'",)),
     Journey("make it weekly (scout referent)", "make it weekly instead, on Sundays", ("Scout schedule",),
             before=("run scout every day at 3pm",),
             holds=("The reply says Scout's sweep is now weekly on Sunday.",),
@@ -276,7 +290,7 @@ JOURNEYS = [
     # first live reminder in a group asked "which city?" (2026-08-28).
     Journey("group: a reminder in the room uses the speaker's clock", "Scout, remind us to grab ice cream at 9pm tonight", ("Scheduled tasks",),
             as_group=True, does_not_hold=("the reply asks which city or where the people are",),
-            sql_holds=("select count(*) > 0 from scheduled_tasks where user_id = :g",)),
+            sql_holds=("select count(*) > 0 from scheduled_tasks where user_id = :g and kind = 'reminder'",)),
     # "here" in a room is the speaker's here: the group has no home place of
     # its own, and the first live group turn (2026-08-28) answered "weather
     # here" for nowhere in particular.
