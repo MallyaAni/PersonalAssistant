@@ -18,18 +18,22 @@ class RecordingQuota:
         self.calls = 0
         self.releases = 0
 
-    # Record one attempted provider call.
-    async def consume(self, *, count: int = 1) -> None:
+    # Record one attempted provider call. The provider passes one clock
+    # positionally to every quota method, so that a request spanning midnight
+    # reserves and reconciles against the same period.
+    async def consume(self, now=None, *, count: int = 1) -> None:
         self.calls += count
         if self.failure is not None:
             raise self.failure
 
     # Record one reservation returned after a failed attempt.
-    async def release(self, *, count: int = 1) -> None:
+    async def release(self, now=None, *, count: int = 1) -> None:
         self.releases += count
 
     # Replace a reservation with the provider's observed billable usage.
-    async def reconcile(self, reserved_count: int, actual_count: int) -> None:
+    async def reconcile(
+        self, reserved_count: int, actual_count: int, now=None
+    ) -> None:
         self.calls += actual_count - reserved_count
 
 
@@ -329,21 +333,27 @@ class _LedgerQuota:
 
     def __init__(self, exhausted: bool = False) -> None:
         self.log: list[tuple] = []
+        self.clocks: list = []
         self.exhausted = exhausted
         self.reconcile_fails = False
 
-    async def consume(self, count: int = 1) -> None:
+    # One clock is passed positionally by the provider so that a call spanning
+    # midnight reserves and reconciles against the same period.
+    async def consume(self, now=None, count: int = 1) -> None:
         self.log.append(("consume", count))
+        self.clocks.append(now)
         if self.exhausted:
             raise SearchQuotaExceededError("google", 0)
 
-    async def reconcile(self, reserved: int, actual: int) -> None:
+    async def reconcile(self, reserved: int, actual: int, now=None) -> None:
         self.log.append(("reconcile", reserved, actual))
+        self.clocks.append(now)
         if self.reconcile_fails:
             raise RuntimeError("database is locked")
 
-    async def release(self, count: int = 1) -> None:
+    async def release(self, now=None, count: int = 1) -> None:
         self.log.append(("release", count))
+        self.clocks.append(now)
 
     # The charge the ledger settles on, for readable assertions.
     @property
@@ -430,3 +440,16 @@ def test_one_response_cannot_charge_a_whole_month():
         web_search_queries = [f"q{index}" for index in range(9_999)]
 
     assert _billable_search_query_count(_Absurd()) == _MAX_OBSERVED_QUERIES
+
+
+@pytest.mark.asyncio
+async def test_one_call_reserves_and_reconciles_against_the_same_period():
+    # Without a shared clock each call resolved its own period, so a request
+    # spanning Pacific midnight reserved ten against yesterday and reconciled
+    # against today: the hold was never returned and both rows stayed wrong.
+    quota = _LedgerQuota()
+    runner = RecordingRunner(FakeEvent("Python 3.x is current.", _grounding_metadata()))
+    await _provider(runner, quota).search("python release")
+    stamps = [clock for clock in quota.clocks if clock is not None]
+    assert stamps, quota.clocks
+    assert len(set(stamps)) == 1, stamps

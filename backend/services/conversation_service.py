@@ -4065,6 +4065,22 @@ class ConversationService:
         # either. Only turns the ranker judged to be events reach here, and
         # only when the extraction found something; everything else streams
         # from the model as before, behind the same fence.
+        # The one sentence that must never be missing, written by code.
+        #
+        # When the search came back about a different subject, the answer that
+        # follows is memory rather than something checked, and the person has
+        # to be told so before they read it. Asked of the model, that sentence
+        # arrived once in six (measured 2026-08-29). It is not a judgement -
+        # the ranker already decided the results are off subject - so there is
+        # no reason for a model to be the one to say it.
+        if (context.get("search_state") or {}).get("off_subject"):
+            disclosure = (
+                "Quick flag: the search came back about something else, so what "
+                "follows is from memory rather than checked.\n\n"
+            )
+            response_chunks.append(disclosure)
+            yield {"event": "delta", "data": {"content": disclosure}}
+
         listing = str(context.get("events_listing") or "")
         if listing:
             # Written by code, from records whose every field some page

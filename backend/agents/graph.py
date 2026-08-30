@@ -188,14 +188,23 @@ def _render_search_state(search: dict[str, Any]) -> str:
     if not search:
         return ""
     if search.get("ran") and search.get("off_subject"):
+        # The disclosure sentence itself is written by code and has already
+        # been sent by the time this is read (conversation_service, beside the
+        # events listing). Asked for here instead, it arrived once in six
+        # (measured 2026-08-29): five times out of six the assistant answered
+        # from memory as though it had checked, which is the one thing this
+        # state exists to prevent. So the model is told the disclosure is done
+        # and asked only not to undo it.
         return (
             "\nThis turn: a live web search ran, but its results are about a "
             "different subject than the one the person is asking about - "
             "another show, product, place or person of the same kind. They are "
-            "not the answer. Start with one plain sentence saying the search "
-            "came back about something else and that what follows is from "
-            "memory, not checked; then give only what you actually know about "
-            "the right subject, and offer to search again. Never present those "
+            "not the answer. A sentence has ALREADY been sent to the person "
+            "saying the search came back about something else and that what "
+            "follows is from memory rather than checked - do not repeat it and "
+            "do not contradict it. Continue from there: give only what you "
+            "actually know about the right subject, say nothing that implies "
+            "you looked it up, and offer to search again. Never present those "
             "results' facts - names, winners, prices, dates - as the answer."
         )
     if search.get("ran") and not search.get("failed"):
@@ -669,9 +678,13 @@ def _build_system_prompt(
         personal_context["location"] = str(context_data["place"])
     if memory_contents:
         personal_context["memories"] = memory_contents
-    discovery = context_data.get("discovery") or {}
-    if discovery:
-        personal_context["discovery_profile"] = discovery
+    # `context_data["discovery"]` was never set by anything in production and
+    # `personal_context["discovery_profile"]` was never read, so this branch
+    # could not fire and would have done nothing if it had. Removed 2026-08-29
+    # rather than left as an affordance that looks live: a standing interest
+    # list is deliberately kept out of the reply prompt (see the reasoning in
+    # conversation_service, where it bent unrelated answers toward hiking), so
+    # the missing wiring was the decision, not an oversight to finish.
 
     context_fields = {
         "working": ("memory_key", "value", "purpose"),

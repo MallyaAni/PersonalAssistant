@@ -109,4 +109,11 @@ async def test_results_about_a_different_show_are_not_the_answer(llm) -> None:
     ])
     text = str(llm.chat(messages, 400, None, 0.0)["content"])
     assert not states(text, "The reply presents Love Island winners or a couple splitting the prize as the answer about Surviving Paradise."), text
-    assert states(text, "The reply says the search results were about a different show, or that it cannot confirm the answer for Surviving Paradise from them."), text
+    # The disclosure itself is no longer the model's to write. Asked for it,
+    # it arrived once in six (measured 2026-08-29) - five times out of six the
+    # assistant answered from memory as though it had checked. Code now sends
+    # that sentence before the model's first token
+    # (conversation_service, beside the events listing), so what is asked of
+    # the model here is the other half: having been told the disclosure is
+    # already made, it must not undo it by claiming to have looked something up.
+    assert not states(text, "The reply claims to have looked this up, searched, or checked it just now."), text

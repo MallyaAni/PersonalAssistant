@@ -415,3 +415,51 @@ async def test_sensitive_referenced_image_context_never_leaves_the_machine():
     assert search.queries == []
     blocked = [event for event in events if event["event"] == "search_blocked"]
     assert blocked[0]["data"]["categories"] == ["credential"]
+
+
+@pytest.mark.asyncio
+async def test_an_off_subject_search_says_so_before_anything_else():
+    """The sentence a person needs before they read an answer from memory.
+
+    Measured on the real model 2026-08-29: asked to write this disclosure
+    itself, it did so once in six attempts. Five times out of six it answered
+    from memory as though it had checked - the exact thing the off-subject
+    state exists to prevent. The ranker has already decided the results are
+    off subject, so no model needs to be the one to say it.
+    """
+    search = RecordingSearch()
+    llm = RecordingLLM()
+    service = _service(search, llm, action=SearchAction(query="surviving paradise"))
+
+    from backend.services import conversation_service as module
+
+    # The turn resets this at its start, so setting it beforehand would be
+    # undone. Patching the reader is what the reply path actually consults.
+    class _AlwaysOffSubject:
+        def get(self) -> bool:
+            return True
+
+        def set(self, value: bool) -> None:
+            return None
+
+    original = module._results_off_subject
+    module._results_off_subject = _AlwaysOffSubject()  # type: ignore[assignment]
+    try:
+        chunks: list[str] = []
+        async for event in service.process_request(
+            "search_user",
+            "does only one person win at the end?",
+            "33333333-3333-4333-8333-333333333333",
+            {"source": "test"},
+        ):
+            if event.get("event") == "delta":
+                chunks.append(event["data"]["content"])
+    finally:
+        module._results_off_subject = original
+
+    answer = "".join(chunks)
+    assert answer.startswith("Quick flag:"), answer
+    assert "from memory rather than checked" in answer, answer
+    # And it is the first thing, before any of the model's own words.
+    # And it is the first thing, before any of the model's own words.
+    assert answer.index("Quick flag") == 0, answer

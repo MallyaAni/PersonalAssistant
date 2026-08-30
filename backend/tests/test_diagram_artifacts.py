@@ -608,3 +608,125 @@ def test_conversation_snapshot_route_restores_owned_diagram() -> None:
         }
     finally:
         app.dependency_overrides.clear()
+
+
+def test_a_one_line_semicolon_flowchart_is_a_diagram_not_a_failure():
+    """Mermaid accepts semicolons; the body check counted lines and did not.
+
+    A live group chat got "I couldn't create that diagram" twice on
+    2026-08-29, and the same request reproduced it four times out of four. The
+    model's graph was right every time - right nodes, right edges, right
+    labels - and only the separator differed, which is the same situation the
+    `<br/>` repair beside it already handles.
+    """
+    from backend.artifacts.diagram import validate_diagram_specification
+
+    spec = validate_diagram_specification(
+        {
+            "title": "Roman Aqueduct Architecture",
+            "source": (
+                "flowchart TD; A[Water Source] --> B[Sedimentation Tank]; "
+                "B --> C[Main Channel]; C --> D[Bridge Structure]; "
+                "D --> E[Distribution Tank]"
+            ),
+        }
+    )
+    assert spec.diagram_type == "flowchart"
+    assert spec.source.splitlines()[0] == "flowchart TD"
+    assert "A[Water Source] --> B[Sedimentation Tank]" in spec.source.splitlines()
+    assert len(spec.source.splitlines()) == 5
+
+
+def test_a_source_that_already_has_lines_is_left_alone():
+    # The repair only fires when there is nothing else to go on. A normal
+    # multi-line diagram containing a semicolon in a label must not be split.
+    from backend.artifacts.diagram import validate_diagram_specification
+
+    spec = validate_diagram_specification(
+        {
+            "title": "Two steps",
+            "source": "flowchart TD\nA[First; then second] --> B[Done]",
+        }
+    )
+    assert spec.source.splitlines() == ["flowchart TD", "A[First; then second] --> B[Done]"]
+
+
+def test_a_header_with_no_body_is_still_refused():
+    # The check being relaxed still has to do its job: a bare declaration is
+    # not a diagram, however it is punctuated.
+    import pytest
+
+    from backend.artifacts.diagram import validate_diagram_specification
+
+    for empty in ("flowchart TD", "flowchart TD;", "flowchart TD; ;"):
+        with pytest.raises(ValueError, match="body"):
+            validate_diagram_specification({"title": "Empty", "source": empty})
+
+
+def test_the_model_returns_statements_as_an_array():
+    """No escape sequence, so the shape that kept failing cannot occur.
+
+    Measured 2026-08-29 on the request a live group chat had just failed on:
+    asked for one string with escaped newlines, the model returned everything
+    on a single line four times in five, and rewording the instruction only
+    traded that for a bare "flowchart TD" with no body. Asked for an array, it
+    produced a diagram five times in five.
+    """
+    from backend.artifacts.diagram import validate_diagram_specification
+
+    spec = validate_diagram_specification(
+        {
+            "title": "Aqueduct",
+            "lines": [
+                "flowchart TD",
+                "A[Water Source] --> B[Sedimentation Basin]",
+                "B --> C[Main Channel]",
+            ],
+        }
+    )
+    assert spec.diagram_type == "flowchart"
+    assert spec.source.splitlines() == [
+        "flowchart TD",
+        "A[Water Source] --> B[Sedimentation Basin]",
+        "B --> C[Main Channel]",
+    ]
+
+
+def test_blank_elements_do_not_become_blank_lines():
+    from backend.artifacts.diagram import validate_diagram_specification
+
+    spec = validate_diagram_specification(
+        {"title": "Two", "lines": ["flowchart TD", "   ", "A --> B", ""]}
+    )
+    assert spec.source.splitlines() == ["flowchart TD", "A --> B"]
+
+
+def test_an_array_with_only_a_declaration_is_still_refused():
+    import pytest
+
+    from backend.artifacts.diagram import validate_diagram_specification
+
+    with pytest.raises(ValueError, match="body"):
+        validate_diagram_specification({"title": "Empty", "lines": ["flowchart TD"]})
+
+
+def test_a_stored_artifact_written_before_the_array_still_validates():
+    # `source` remains accepted: it is what artifacts saved before this change
+    # hold, and what code assembling a diagram by hand naturally writes.
+    from backend.artifacts.diagram import validate_diagram_specification
+
+    spec = validate_diagram_specification(
+        {"title": "Legacy", "source": "flowchart TD\nA --> B"}
+    )
+    assert spec.source.splitlines() == ["flowchart TD", "A --> B"]
+
+
+def test_the_schema_asks_for_lines_and_bounds_them():
+    from backend.artifacts.diagram import _DIAGRAM_REPLY_SCHEMA
+
+    assert "lines" in _DIAGRAM_REPLY_SCHEMA["required"]
+    lines = _DIAGRAM_REPLY_SCHEMA["properties"]["lines"]
+    assert lines["type"] == "array"
+    # At least a declaration and one statement, so the grammar itself refuses
+    # the bare-header answer that this change exists to end.
+    assert lines["minItems"] == 2

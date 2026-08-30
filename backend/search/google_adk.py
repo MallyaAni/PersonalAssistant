@@ -1,6 +1,7 @@
 """Google ADK research subagent backed by Gemini Search Grounding."""
 
 import asyncio
+from datetime import UTC, datetime
 import logging
 import uuid
 from collections.abc import Callable
@@ -184,7 +185,12 @@ class GoogleADKSearchProvider(SearchProvider):
         # A Gemini 3 prompt may execute several separately billed searches.
         # Reserve before the call so concurrent requests cannot race the cap,
         # then replace the reservation with Google's observed query count.
-        await self.quota.consume(count=_QUERY_RESERVATION)
+        # One clock for the whole call. Without it `consume` and `reconcile`
+        # each resolved their own period, so a request spanning Pacific
+        # midnight reserved ten against yesterday and reconciled against today:
+        # the hold was never returned and both rows stayed wrong.
+        moment = datetime.now(UTC)
+        await self.quota.consume(moment, count=_QUERY_RESERVATION)
         bounded = max(1, min(max_results or self.max_results, self.max_results))
         session_id = str(uuid.uuid4())
         request_started = False
@@ -211,7 +217,7 @@ class GoogleADKSearchProvider(SearchProvider):
             # unit that empty metadata gets a few lines above, so the two paths
             # agree, and reconciled *before* the raise.
             observed = max(1, billable) if metadata is not None else 1
-            await self._reconcile(observed)
+            await self._reconcile(observed, moment)
             if metadata is None:
                 raise RuntimeError("Google research returned no grounding metadata.")
             results = _grounded_results(
@@ -228,7 +234,7 @@ class GoogleADKSearchProvider(SearchProvider):
             # be billable, so retain its conservative reservation unless the
             # provider returned enough metadata to reconcile it exactly.
             if not request_started:
-                await self.quota.release(count=_QUERY_RESERVATION)
+                await self.quota.release(moment, count=_QUERY_RESERVATION)
             raise
         return SearchResults(
             query=query,
@@ -243,9 +249,9 @@ class GoogleADKSearchProvider(SearchProvider):
     # three containers, so a locked database is an ordinary event - and losing
     # a grounded answer that has already been requested and billed, because
     # the bookkeeping write lost a race, is the worst of both outcomes.
-    async def _reconcile(self, observed: int) -> None:
+    async def _reconcile(self, observed: int, moment: datetime) -> None:
         try:
-            await self.quota.reconcile(_QUERY_RESERVATION, observed)
+            await self.quota.reconcile(_QUERY_RESERVATION, observed, moment)
         except Exception:
             logger.warning(
                 "Google quota reconcile failed; the reservation stands",

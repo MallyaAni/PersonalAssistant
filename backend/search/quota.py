@@ -1,6 +1,7 @@
 """Persist non-content provider budgets across short-lived MCP processes."""
 
 import asyncio
+import logging
 import sqlite3
 from contextlib import closing
 from datetime import UTC, datetime
@@ -9,6 +10,9 @@ from zoneinfo import ZoneInfo
 
 _GOOGLE_RESET_ZONE = ZoneInfo("America/Los_Angeles")
 
+
+
+logger = logging.getLogger(__name__)
 
 class SearchQuotaExceededError(RuntimeError):
     """Raised before a provider call would exceed its configured free budget."""
@@ -189,14 +193,26 @@ class EveryQuota:
         self.quotas = tuple(quotas)
 
     # Reserve the same billable units against every budget, or none.
+    #
+    # Any failure rolls back, not only an exceeded budget. Catching just
+    # SearchQuotaExceededError meant a locked database on the second quota left
+    # the first holding the reservation with nobody to give it back - and since
+    # this runs outside the provider's own try, nothing downstream released it
+    # either. Ten units stranded per occurrence, silently.
     async def consume(self, now: datetime | None = None, count: int = 1) -> None:
         taken: list[SQLiteDailySearchQuota] = []
         for quota in self.quotas:
             try:
                 await quota.consume(now, count=count)
-            except SearchQuotaExceededError:
+            except Exception:
                 for spent in reversed(taken):
-                    await spent.release(now, count=count)
+                    try:
+                        await spent.release(now, count=count)
+                    except Exception:
+                        logger.warning(
+                            "Could not return a reservation while rolling back",
+                            exc_info=True,
+                        )
                 raise
             taken.append(quota)
 
@@ -212,8 +228,18 @@ class EveryQuota:
         actual_count: int,
         now: datetime | None = None,
     ) -> None:
+        # Every budget is attempted even when one fails, so a locked daily row
+        # cannot leave the monthly one holding a reservation it never spent.
+        # The first failure is raised once they have all had their turn.
+        failure: Exception | None = None
         for quota in self.quotas:
-            await quota.reconcile(reserved_count, actual_count, now)
+            try:
+                await quota.reconcile(reserved_count, actual_count, now)
+            except Exception as exc:
+                logger.warning("A budget could not be reconciled", exc_info=True)
+                failure = failure or exc
+        if failure is not None:
+            raise failure
 
     # The first budget's count, which is the one a rate is read against.
     async def used(self, now: datetime | None = None) -> int:

@@ -2,6 +2,79 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-30 — A diagram request stops asking the model for an escape sequence
+
+"can you draw it as a diagram instead?" in the group chat got "I couldn't
+create that diagram." Twice.
+
+The model's reasoning was never wrong. Measured on that exact request, it drew
+the right graph every time and simply would not put an escape sequence inside a
+JSON string: it returned the whole diagram on one line - `flowchart TD A[Source
+Spring] --> B[Settling Basin] B --> C[...]` - and the validator rejected it for
+having no body. **One attempt in five survived.**
+
+The instruction that would have prevented it had been destroyed by its own
+escape. `prompts/diagram/system.md` held a real line break where it meant the
+two characters backslash and n, so the model read "JSON newlines must use valid
+escaped" followed by a broken line. It was never actually told.
+
+Rewording that only traded one failure for another - a bare `flowchart TD` with
+no body, three times in five. The fix is to stop asking for the escape at all:
+the reply schema takes `lines`, an array with one Mermaid statement per element,
+so no escape is involved and the engine's grammar requires a declaration plus at
+least one statement. The bare-header answer is now unrepresentable rather than
+discouraged.
+
+Measured after: **five of five** on the failing request, and **eleven of eleven**
+across flowchart, sequence, state, mindmap, timeline, class and entity-relationship
+requests, each landing in the family it asked for
+(`functional/test_diagram_generation_behaviour.py`). `source` is still accepted
+for artifacts stored before this and for diagrams assembled in code, and a
+one-line semicolon form - which Mermaid does accept - is now split rather than
+refused.
+
+## 2026-08-29 — The sentence that must never be missing, and four quota edges
+
+A red functional test that had been red long enough to be background noise:
+when a search comes back about the wrong subject, the reply is supposed to say
+so before answering from memory. Measured six times, it said so **once**. Five
+times out of six the assistant answered as though it had checked - the exact
+thing that state exists to prevent, and the kind of quiet dishonesty that is
+worse than a wrong answer because nothing looks wrong.
+
+That sentence is not a judgement. The ranker has already decided the results
+are off subject, so there was never a reason for a model to be the one to say
+it. Code writes it now, before the model's first token, and the prompt block
+tells the model the disclosure is already made and asks only that it not
+contradict it by claiming to have looked something up. Measured after: the
+model no longer writes it (0/6, correctly) and no longer claims to have
+checked. The functional test now asserts the half the model is actually
+responsible for.
+
+Four edges from the merge review, all in the money path, none of which would
+bill but all of which would lie or lose:
+
+- `EveryQuota.consume` rolled back only on an exceeded budget. A locked
+  database on the second quota left the first holding ten units with nobody to
+  return them - and since it runs outside the provider's own try, nothing
+  downstream released them either. Any failure rolls back now.
+- `EveryQuota.reconcile` stopped at the first failure, so a locked daily row
+  left the monthly one holding a reservation it never spent. Every budget is
+  attempted; the first failure is raised after they all have.
+- `consume` and `reconcile` each resolved their own period, so a request
+  spanning Pacific midnight reserved against yesterday and reconciled against
+  today - the hold never returned, both rows wrong. One clock for the call.
+- The search cache promised "never raises" and caught only `sqlite3.Error`,
+  while its own connect path creates a directory: a read-only or full disk
+  raised `OSError` straight through a docstring's promise. Both read and write
+  now degrade to a miss and say so in the log.
+
+And a dead branch removed rather than left looking live: `graph.py` wrote
+`personal_context["discovery_profile"]` from a context key nothing ever set,
+and nothing read the result either. The missing wiring was the decision - a
+standing interest list is deliberately kept out of the reply prompt - not an
+oversight to finish.
+
 ## 2026-08-29 — "More casual" stops losing the words "more casual"
 
 Deploy #36's sweep went flaky on the draft-referent journey again - "more

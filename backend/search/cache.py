@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import logging
 import json
 import sqlite3
 import time
@@ -41,6 +42,9 @@ from backend.search.types import SearchResult, SearchResults
 # oldest rows go first, which is also the least useful.
 MAX_ROWS = 2_000
 
+
+
+logger = logging.getLogger(__name__)
 
 def _key(query: str, limit: int) -> str:
     normalized = " ".join(str(query or "").split()).casefold()
@@ -103,7 +107,11 @@ class SQLiteSearchCache:
             return None
         try:
             payload = await asyncio.to_thread(self._get_sync, _key(query, limit))
-        except sqlite3.Error:
+        except Exception:
+            # Broader than sqlite3.Error on purpose: `_connect` creates the
+            # directory, so a read-only or full disk raises OSError, which
+            # would have escaped a promise this docstring makes.
+            logger.warning("Search cache unreadable; treating as a miss", exc_info=True)
             return None
         return _load(query, payload) if payload else None
 
@@ -114,7 +122,10 @@ class SQLiteSearchCache:
             return
         try:
             await asyncio.to_thread(self._put_sync, _key(query, limit), _dump(results))
-        except sqlite3.Error:
+        except Exception:
+            # Same reasoning as `get`: a cache that cannot be written is a
+            # cache that will miss, never a search that failed.
+            logger.warning("Search cache unwritable; the answer is not kept", exc_info=True)
             return
 
     def _connect(self) -> sqlite3.Connection:

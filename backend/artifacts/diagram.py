@@ -95,14 +95,27 @@ _DIAGRAM_REPLY_SCHEMA: dict[str, Any] = {
             "minLength": 1,
             "maxLength": MAX_DIAGRAM_TITLE_CHARS,
         },
-        "source": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": MAX_DIAGRAM_SOURCE_CHARS,
+        # One array element per Mermaid statement, rather than one string with
+        # escaped newlines in it.
+        #
+        # Asking for the newlines was the whole failure. Measured 2026-08-29 on
+        # the request a live group chat had just failed on: with the string
+        # field the model returned everything on one line - "flowchart TD
+        # A[Source] --> B[Basin] B --> C[Channel]" - four times in five, and
+        # rewording the instruction only traded that for a bare "flowchart TD"
+        # with no body at all. It reliably drew the right graph and reliably
+        # would not put an escape sequence inside a JSON string. An array needs
+        # no escape, and the engine's grammar enforces the shape, so the
+        # failure cannot happen rather than being asked not to.
+        "lines": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": MAX_DIAGRAM_LINES,
+            "items": {"type": "string", "minLength": 1, "maxLength": 400},
         },
         "diagram_type": {"type": "string", "enum": sorted(DIAGRAM_DECLARATIONS)},
     },
-    "required": ["title", "source"],
+    "required": ["title", "lines"],
     "additionalProperties": False,
 }
 
@@ -115,7 +128,17 @@ _HTML_LINE_BREAK = re.compile(r"\s*<\s*br\s*/?\s*>\s*", re.IGNORECASE)
 # Validate and normalize a provider-produced Mermaid specification.
 def validate_diagram_specification(payload: dict[str, Any]) -> DiagramSpecification:
     title = _validated_title(payload)
-    source = payload.get("source")
+    # `lines` is what the model is asked for now, because an array needs no
+    # escape sequence. `source` is still accepted: it is what a stored artifact
+    # from before 2026-08-29 holds, and what a caller assembling a diagram in
+    # code naturally writes.
+    listed = payload.get("lines")
+    if isinstance(listed, list) and listed:
+        source = "\n".join(
+            str(line).strip() for line in listed if str(line).strip()
+        )
+    else:
+        source = payload.get("source")
     if not isinstance(source, str) or not source.strip():
         raise ValueError("Mermaid source is required")
 
@@ -127,6 +150,20 @@ def validate_diagram_specification(payload: dict[str, Any]) -> DiagramSpecificat
     # here rather than answered with a larger model, because nothing about the
     # reasoning was wrong.
     source = _HTML_LINE_BREAK.sub("\n", source)
+    # A whole flowchart on one line, statements divided by semicolons. Mermaid
+    # accepts that form; this validator's "must contain a body" check counts
+    # lines and does not, so a correct diagram was refused. A live group chat
+    # got "I couldn't create that diagram" twice on 2026-08-29, and the request
+    # reproduced it four times out of four.
+    #
+    # Repaired here for the same reason `<br/>` above is: the graph was right
+    # every time - right nodes, right edges, right labels - and only the
+    # separator differed. Split rather than rejected, and only when there is
+    # nothing else to go on, so a source that already has lines is untouched.
+    if "\n" not in source and ";" in source:
+        source = "\n".join(
+            piece.strip() for piece in source.split(";") if piece.strip()
+        )
     if source.startswith("```"):
         source = re.sub(r"^```(?:mermaid)?\s*", "", source, flags=re.IGNORECASE)
         source = re.sub(r"\s*```$", "", source).strip()

@@ -17,7 +17,11 @@ def test_the_flag_defaults_to_on_subject_when_missing_or_unreadable():
 
 def test_off_subject_state_is_a_disclosure_and_forbids_the_facts():
     text = _render_search_state({"ran": True, "off_subject": True})
-    assert "different subject" in text and "from memory, not checked" in text
+    assert "different subject" in text
+    # The disclosure sentence itself is sent by code now, so the block tells
+    # the model it is already done rather than asking for it.
+    assert "ALREADY been sent" in text
+    assert "from memory rather than checked" in text
     assert "Never present those results' facts" in text
     ran = _render_search_state({"ran": True})
     assert "different subject" not in ran and "lead with what was found" in ran
