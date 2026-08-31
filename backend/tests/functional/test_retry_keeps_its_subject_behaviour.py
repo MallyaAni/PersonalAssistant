@@ -27,6 +27,7 @@ from backend.config.settings import settings
 from backend.core.dependencies import get_mcp_invocation_service, get_routing_llm_client
 from backend.search.budgeted import SearchIdentity, current_search_identity
 from backend.services.main_action_selector import MainActionSelector
+from backend.tests.functional.judge import describes
 
 pytestmark = pytest.mark.asyncio
 
@@ -130,3 +131,37 @@ async def test_replying_to_the_picture_asks_for_the_picture() -> None:
     # diagram. Getting this "wrong" would mean ignoring what they pointed at.
     action = await _routed("try again", "Here's the image you asked for.")
     assert type(action).__name__ == "GenerateImageAction", action
+
+
+# What actually gets drawn, judged rather than pattern-matched.
+#
+# The subject string is a proxy and it let the real failure through: it read
+# "architecture thinking process", which contains neither "try again" nor
+# anything else a substring assertion would catch, while the diagram it
+# produced was a generic software-architecture flowchart with no aqueduct in
+# it. The only honest question is whether the thing made is the thing wanted,
+# so the diagram's own source goes back through a model and is asked.
+async def test_the_diagram_a_retry_produces_is_about_the_aqueduct(llm: object) -> None:
+    from backend.artifacts.diagram import LLMDiagramProvider
+    from backend.config.settings import settings
+    from backend.core.dependencies import get_llm_client
+    from backend.services.followup import _answering_line, _recent
+
+    replied_to = "I couldn't create that diagram. Please revise the request and try again."
+    action = await _routed("try again", replied_to)
+    subject = _subject(action)
+
+    _, at = _answering_line(replied_to, HISTORY)
+    provider = LLMDiagramProvider(
+        get_llm_client(), settings.MAIN_LLM_MODEL or settings.LLM_MODEL
+    )
+    drawn = await provider.generate(subject, _recent(HISTORY, "", at))
+
+    verdict = await describes(
+        get_llm_client(),
+        getattr(drawn, "source", "") or "",
+        "a diagram about Roman aqueducts - how they were built, how they "
+        "carried water, or the engineering thinking behind them. A generic "
+        "software or business process flowchart does not match.",
+    )
+    assert verdict, f"subject was {subject!r}; {verdict}"
