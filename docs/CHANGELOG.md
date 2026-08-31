@@ -2,6 +2,43 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-31 — A reply's shorthand completes on both sides of the pointer
+
+The sequel the previous entry did not close, found in production rows rather
+than reported twice: at 12:50Z the operator long-pressed the picture receipt
+and replied "Architecture Thinking Process" - the thread's own title for the
+thing - and the subject came back as those words, so the diagram was generic
+again. Replayed in the backend container: deterministic, 3/3. Every shipped
+3/3 had used "try again", a said with nothing to echo; and replying to the
+receipt was never green even for "try again" (0/3 with the deployed prompt) -
+its test asserted the action type alone, so the kind was right while the
+subject was the shorthand.
+
+Two licenses let the echo through, fixed at their own altitudes. The resolver
+prompt called a complete-looking phrase a name ("spelled as the conversation
+spells it"; "if it stands on its own, return it unchanged"); it now says a
+phrase the conversation coined is the shorthand, not the thing. And
+`_answering_line` quoted the pointed-at exchange whose own words are the
+shorthand, so the model read the subject off the quote; the block now says
+those words lean on the conversation above them like any others. Prompt edits
+alone plateaued at 2/3 on the operator's case - the structural line took both
+receipt-anchored cases to 3/3. One wording tried on the way - "earlier and
+fuller" - truncated every subject to "aqueduct" and taught the rule's shape:
+completion, never truncation.
+
+Verified on the deployed image, unpatched: all five case shapes 3/3 with the
+full "Roman aqueduct architecture thinking process" (both production replays,
+"try again" against both anchors, the bare retries), receipt anchors 6/6
+across sweeps. The functional suite - now also pinning the shorthand-carrying
+reply against both anchors, and the receipt reply's subject as well as its
+kind - passed 10/10 inside the running container (pytest installed
+ephemerally; the image ships without it). A test-reading lesson recorded in
+the suite itself: `GenerateImageAction` carries its reading in `prompt` and
+has no subject field - the first assertion read an empty field while the
+prompt opened with the aqueduct. The iMessage worker ferries turns to the
+backend over HTTP, so restarting `anios_backend` alone put the fix on the
+group-chat path.
+
 ## 2026-08-31 — A room may be asked how the trip went, and a retry keeps its subject
 
 **Check-ins in rooms are now a rule about what is asked, not about rooms.**
