@@ -133,6 +133,40 @@ async def test_replying_to_the_picture_asks_for_the_picture() -> None:
     assert type(action).__name__ == "GenerateImageAction", action
 
 
+# The 2026-08-31 sequel, from production rows rather than a thought experiment.
+# At 12:50 UTC the operator long-pressed the picture receipt and replied with
+# the words "Architecture Thinking Process" - the title the thread had been
+# using for four turns - and the subject came back as those words, so the
+# diagram drawn was a generic flowchart again. Two things were licensing the
+# echo and both are fixed: the resolver prompt treated a complete-looking
+# phrase as a name, and the answering block quoted the pointed-at exchange
+# without saying its words lean on the conversation above it. A said that
+# carries the shorthand itself is the case "try again" never measured.
+@pytest.mark.parametrize(
+    ("replied_to", "kind"),
+    [
+        ("Here's the image you asked for.", "GenerateImageAction"),
+        ("I couldn't create that diagram. Please revise the request and try again.",
+         "CreateDiagramAction"),
+    ],
+)
+async def test_a_reply_carrying_the_shorthand_still_completes_it(
+    replied_to: str, kind: str
+) -> None:
+    action = await _routed("Architecture Thinking Process", replied_to)
+    subject = _subject(action) or str(getattr(action, "about", "") or "")
+    assert type(action).__name__ == kind, action
+    assert "aqueduct" in subject.casefold(), subject
+
+
+async def test_replying_to_the_picture_completes_the_subject_too() -> None:
+    # Asserting the action type alone is what let 12:50 through: the kind was
+    # right and the subject was the shorthand. Both halves are the behaviour.
+    action = await _routed("try again", "Here's the image you asked for.")
+    subject = _subject(action) or str(getattr(action, "about", "") or "")
+    assert "aqueduct" in subject.casefold(), subject
+
+
 # What actually gets drawn, judged rather than pattern-matched.
 #
 # The subject string is a proxy and it let the real failure through: it read

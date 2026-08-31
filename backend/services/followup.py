@@ -229,7 +229,10 @@ def _answering_line(
             break
     return (
         "\n\nThey have replied directly to this earlier exchange, so it is "
-        f"what their newest message is about:\n{shown}",
+        f"what their newest message is about:\n{shown}\n"
+        "The words of that exchange lean on the conversation above it the "
+        "same way any shorthand does: read them completed, as what the "
+        "thread says they mean, not as a name in themselves.",
         found,
     )
 
