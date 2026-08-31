@@ -2,6 +2,70 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-31 — A room may be asked how the trip went, and a retry keeps its subject
+
+**Check-ins in rooms are now a rule about what is asked, not about rooms.**
+The first version refused them in group chats outright. The operator's
+correction: a shared outing is the room's business and following it up is what
+anyone else in the group would do, while how one member is feeling is theirs
+to tell. `SENSITIVE_IN_A_ROOM` holds `wellbeing` alone - a set rather than a
+comparison, so the next kind that carries something private is one line. The
+reason wellbeing stays out is that a room may include people who were not in
+the conversation where it was said, so asking there is the assistant
+disclosing it on someone's behalf.
+
+The turn held a second copy of the old rule: a short-circuit that skipped the
+judgement entirely for rooms because "a room arms nothing". An optimisation
+that encodes a policy is that policy in two places, and only one of them was
+in the module named after it.
+
+Proved end to end in the operator's own room rather than by unit test. A turn
+posted as the room - "planning our Scout Sunday next weekend, water taxi to
+National Harbor..." - produced, with nothing hand-written:
+
+    kind        checkin:following_up
+    subject     the Scout Sunday trip to National Harbor
+    on 2026-09-06 at 11:00 America/New_York, channel imessage_group
+
+The row was removed afterwards: the sentence was the harness's, not a person's,
+and left alone it would have asked a room of real people about a trip nobody
+was taking. Two sweep journeys now cover both halves in an actual room.
+
+Two things that looked like defects and were not, recorded because the next
+person will hit them. A retrospective - "we finally made it out to National
+Harbor today" - arms nothing, correctly: if they tell you how it went there is
+nothing left to ask. And a room turn missing `speaker_user_id` refuses with
+`no_timezone`, because a room has no clock of its own and takes the speaker's;
+that was a harness that sent `speaker_name` alone, not a bug.
+
+**A retry keeps its subject.** Separately, on the same thread: a diagram of
+Roman aqueducts failed and the retries went "you try again bruh", "try
+again!", "Try Again", each resolved against the most recent message - which
+during a run of failures is the failure. The thread ended holding a diagram
+titled "Try Again Flow" and then one titled "Try Again".
+
+The follow-up resolver asked for `self_contained` first, before the model had
+decided what the message referred to, so it restated "try again" as "try
+again" and had nothing left to name a subject from. Asked in dependency order -
+what it refers to, then the message written out, then the subject named from
+that - the router returns "Architecture thinking process" 3/3 where it
+returned the words of the request before. Naming the subject first was tried
+and is worse: blank 3/3.
+
+And the long-press reply is finally used. iMessage carries the guid of the
+bubble replied to, the bridge already read it, and it was used for one thing:
+pinning an image. A reply to a text bubble changed nothing. The bridge now
+resolves the guid to its words for any bubble in the thread - people reply to
+their own earlier request as often as to ours - and the resolver matches it to
+the exchange it belongs to and opens the transcript there. Replying to the
+failure message or to their own diagram request both give the aqueduct 3/3;
+replying to the picture receipt asks for the picture, which is right.
+
+A known gap, stated rather than left to be found: check-ins fire only on new
+messages. A plan already in memory - the National Harbor itinerary was stored
+on 2026-08-29, two days before the trip - is never followed up, because
+nothing sweeps what is already known.
+
 ## 2026-08-30 — Check-ins, shaped by the problem rather than by the two examples
 
 The first version of the check-in feature was fitted to the two cases it was
