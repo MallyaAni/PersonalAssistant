@@ -92,7 +92,7 @@ a comparison, not a sentence a model is asked to honour:
 | Waiting at once | 3 | A chatty afternoon otherwise fills next week with questions. |
 | Wellbeing spacing | 7 days | A second "how are you feeling?" in three days reads as nagging. |
 | Same subject twice | refused | Mentioning an outing twice should be asked about once. |
-| Group threads | refused | A room is not the place to ask one member about their health. |
+| Sensitive kinds in a room | refused | A room may be asked how the trip went; how one member is feeling is theirs to tell, and the room may include people who were not in the conversation where they said it. |
 | No timezone | refused | Guessing one is how a check-in arrives at 4am. |
 | Days ahead | 0-45, refused beyond | Clamping a wedding next spring into the window does not make a smaller mistake, it asks "how was the wedding?" months early. |
 | Hour | 09-21 | Nothing should propose 3am in the first place. |
@@ -129,7 +129,8 @@ week deserves its check-in back.
 - **Nothing is armed from what the assistant suggested**, only from what the
   person says they are doing. Saying yes to a suggestion counts, because the
   judgement is given the previous reply and can resolve "that one".
-- **Nothing is armed in a room**, so a group plan is never followed up.
+- **Nothing sensitive is armed in a room.** A shared outing is followed up
+  there like anything else; a `wellbeing` check-in never is.
 
 | If | Then |
 | --- | --- |
@@ -147,6 +148,7 @@ week deserves its check-in back.
 | The limits | Built, pinned by `test_checkin_arming.py` |
 | `kind` column and migration | Built (`20260830_0013`) |
 | One-to-one threads | Built |
-| Group threads | Deliberately not armed; see the table above |
+| Rooms, non-sensitive kinds | Built: a shared outing is followed up in the room |
+| Rooms, wellbeing | Deliberately refused; see the table above |
 | Situations with no template | Built: the question is written per check-in |
 | Asking about something Scout suggested and the person accepted | Not built. Today a check-in follows what the person says they are doing, not what they said yes to. |

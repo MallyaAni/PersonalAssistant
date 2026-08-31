@@ -135,15 +135,44 @@ async def test_a_slot_still_to_come_today_stays_today():
 
 
 @pytest.mark.asyncio
-async def test_nothing_is_armed_in_a_group():
-    # A room is not the place to ask one member how their health is.
+async def test_a_room_is_never_told_how_someone_is_feeling():
+    # Their health is theirs to tell, and the room may include people who
+    # were not in the conversation where they said it.
     tasks = _Tasks()
     outcome = await arm_check_in(
-        tasks, "ani", CheckIn(WELLBEING, "not feeling well", "Ask how it went.", 2, 18),
+        tasks, "ani",
+        CheckIn(WELLBEING, "not feeling well", "Check in on how they are feeling.", 2, 18),
         ZONE, "imessage_group", in_group=True, now=NOW,
     )
-    assert not outcome.armed and outcome.reason == "group"
+    assert not outcome.armed and outcome.reason == "sensitive_in_room"
     assert tasks.created == []
+
+
+@pytest.mark.asyncio
+async def test_a_room_can_be_asked_how_the_trip_went():
+    # A shared outing is the room's business, and asking about it is what
+    # anyone else in the group would do.
+    tasks = _Tasks()
+    outcome = await arm_check_in(
+        tasks, "group:abc",
+        CheckIn(FOLLOWING_UP, "the visit to National Harbor",
+                "Ask how the visit to National Harbor went.", 1, 11),
+        ZONE, "imessage_group", in_group=True, now=NOW,
+    )
+    assert outcome.armed, outcome
+    assert tasks.created[0]["channel"] == "imessage_group"
+    assert tasks.created[0]["kind"] == f"{CHECKIN_PREFIX}{FOLLOWING_UP}"
+
+
+@pytest.mark.asyncio
+async def test_the_same_thing_one_to_one_is_unaffected():
+    tasks = _Tasks()
+    outcome = await arm_check_in(
+        tasks, "ani",
+        CheckIn(WELLBEING, "not feeling well", "Check in on how they are feeling.", 2, 18),
+        ZONE, "imessage", in_group=False, now=NOW,
+    )
+    assert outcome.armed, outcome
 
 
 @pytest.mark.asyncio

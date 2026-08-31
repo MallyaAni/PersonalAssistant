@@ -72,10 +72,14 @@ A check-in appears in "what reminders do I have?" and is cancelled the same way
 as any other. That is intended: a thing the assistant armed on its own should
 be at least as easy to call off as one the person asked for.
 
-Group rooms arm nothing. Asking a room how one member's health is would put a
-fact about them in front of everyone, and the group thread already shows
-everyone what everyone said. If group event check-ins are wanted later, they
-are a per-kind rule in `checkin_arming`, not a new mechanism.
+Group rooms arm everything except what is sensitive. Asking a room how one
+member's health is would put a fact about them in front of everyone, some of
+whom were not in the conversation where they said it; asking how the trip went
+is what anyone else in the group would do. The distinction is a per-kind rule
+in `checkin_arming` (`SENSITIVE_IN_A_ROOM`), which is where the next kind that
+carries something private goes too - it was written as a rule about rooms
+first, on 2026-08-30, and corrected the same day to a rule about what is being
+asked.
 
 `kind` defaults to `reminder` at the column level, so any writer that does not
 know about check-ins still produces a reminder rather than a null.

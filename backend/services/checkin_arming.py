@@ -14,9 +14,11 @@ tested without a model:
     what is already waiting and answers false when this is the same thing
     said differently, which is where that has to be right; the comparison
     here is a backstop for the case it misses, not the mechanism;
-  * one-to-one threads only. A room is not the place to ask one member
-    how their health is, and the group's own thread already tells
-    everyone what everyone said.
+  * nothing sensitive in a room. A shared outing is the room's business
+    and asking how it went is what a friend in the group would do; how one
+    member's health is, is theirs to tell. The rule is about the kind of
+    thing being asked, not about rooms - a room simply happens to be where
+    the distinction bites.
 
 An armed check-in is an ordinary one-off scheduled task, so the person
 lists it, cancels it and undoes it with the words they already use.
@@ -56,6 +58,12 @@ def is_check_in(task: dict[str, Any]) -> bool:
 MAX_WAITING = 3
 # How long after one wellbeing check-in before another may be armed.
 WELLBEING_COOLDOWN_DAYS = 7
+
+# The kinds that must never be asked in front of other people. Named as a
+# set rather than tested as `== WELLBEING` so that adding a kind which
+# carries something private is a one-line change here, and so that the
+# reason is written down where the rule is.
+SENSITIVE_IN_A_ROOM = frozenset({WELLBEING})
 
 
 # What is already waiting to be asked about, newest first, so the judgement
@@ -207,8 +215,15 @@ async def arm_check_in(
     in_group: bool = False,
     now: datetime | None = None,
 ) -> Armed:
-    if in_group:
-        return Armed(False, "group")
+    # A room may be asked how the trip went and never how someone is
+    # feeling. `wellbeing` is the kind that carries something the person
+    # said about themselves, and repeating it to everyone they happen to be
+    # in a group with is the assistant disclosing it on their behalf - to an
+    # audience that may not have been in the conversation where it was said.
+    # Everything else is about a thing rather than a person, and a room is
+    # exactly where a shared plan gets followed up.
+    if in_group and check_in.kind in SENSITIVE_IN_A_ROOM:
+        return Armed(False, "sensitive_in_room")
     if not timezone:
         # Without a timezone there is no hour to land on, and guessing one
         # is how a check-in arrives at 4am.

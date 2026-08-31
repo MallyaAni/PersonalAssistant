@@ -3403,11 +3403,6 @@ class ConversationService:
     ) -> None:
         if self.check_in_llm is None or self.scheduled_tasks is None:
             return
-        # A room arms nothing, so it should not spend a call finding that
-        # out; and without a timezone there is no hour to land on, which is
-        # a refusal either way. Both are settled before the model is asked.
-        if room is not None:
-            return
         try:
             # The turn has already resolved the person's zone for its own
             # sake; asking the profile again would be a second read for the
@@ -3454,7 +3449,9 @@ class ConversationService:
                 judged.arm,
                 timezone,
                 str(metadata.get("channel") or "web"),
-                in_group=False,
+                # A room can be asked how the trip went; it must not be told
+                # how one member is feeling. The caller decides which by kind.
+                in_group=room is not None,
             )
             _trace(
                 "check_in",
