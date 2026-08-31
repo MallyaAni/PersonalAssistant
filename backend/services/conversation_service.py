@@ -432,11 +432,22 @@ def _interests_for(question: str, interests: tuple[str, ...], limit: int = 8) ->
 # summarise a thread. The last few exchanges are where the subject of a
 # follow-up lives, and a longer window mostly adds the failed attempts that
 # pushed the subject out in the first place.
+# What the diagram agent is told about the conversation it is drawing from.
+#
+# The same window the referent resolver uses, and for the same reason: this
+# used to take the last six turns and the last 2,000 characters of them, so
+# in a thread that opened with Roman aqueducts and had since moved on to
+# sugar, "draw the architecture thinking process" arrived with no aqueduct
+# anywhere in view and produced a generic flowchart (2026-08-31, the
+# operator's group). Keeping the opening is what makes an elliptical request
+# drawable; opening at the replied-to turn is what makes a long-press reply
+# mean something here too.
 def _diagram_context(history: list[dict[str, Any]] | None, turns: int = 6) -> str:
-    from backend.services.transcript import transcript_lines
+    from backend.services.followup import _answering_line, _recent
 
-    lines = transcript_lines(list(history or [])[-turns:])
-    return "\n".join(lines)[-2_000:]
+    turns_seen = list(history or [])
+    _, replied_at = _answering_line(_replying_to.get(), turns_seen)
+    return _recent(turns_seen, "", replied_at)
 
 
 # Whether this request's search results were judged to be events, set by the

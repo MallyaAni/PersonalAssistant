@@ -146,11 +146,24 @@ def _names_skill(message: str, skill: dict[str, Any]) -> bool:
     return bool(name and name in lowered) or bool(slug_words and slug_words in lowered)
 
 
-def render_recent_history(history: list[dict[str, Any]], zone: str = "") -> str:
+def render_recent_history(
+    history: list[dict[str, Any]], zone: str = "", replying_to: str = ""
+) -> str:
     # Dated: the router decides whether a message is about something already
     # done, and it cannot tell without knowing when the history happened.
-    lines = transcript_lines(history[-_MAX_HISTORY_TURNS:], zone)
-    return "\n".join(lines)[-_MAX_HISTORY_CHARS:]
+    #
+    # The window is the resolver's, not a second one. This was the third copy
+    # of "take the last few turns and the last few thousand characters", after
+    # `followup._recent` and `_diagram_context`, and fixing two of three fixed
+    # nothing: on 2026-08-31 the resolver was reading the aqueduct and naming
+    # it correctly while the router, reading its own tail, still called the
+    # subject "Architecture Thinking Process" - the name of a later failed
+    # attempt. One window, three callers, and a reply means the same thing to
+    # all of them.
+    from backend.services.followup import _answering_line, _recent
+
+    _, replied_at = _answering_line(replying_to, history or [])
+    return _recent(history or [], zone, replied_at)
 
 
 class MainActionSelector:
@@ -324,7 +337,7 @@ class MainActionSelector:
 
         # The zone the history's timestamps are written in - the person's, or
         # in a group the speaker's. Empty stamps them UTC and says so.
-        history_text = render_recent_history(history, zone)
+        history_text = render_recent_history(history, zone, replying_to)
         # What the newest message refers to, decided once for every component
         # that has to know: the router here, the search rounds and the picker
         # after it. Failure is silent - the router then decides from the

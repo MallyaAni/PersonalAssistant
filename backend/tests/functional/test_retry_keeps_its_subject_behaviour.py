@@ -30,20 +30,40 @@ from backend.services.main_action_selector import MainActionSelector
 
 pytestmark = pytest.mark.asyncio
 
-# The thread as it happened, including the two receipts that poisoned it.
+# The thread as it happened - with the metadata production stores.
+#
+# That metadata is the point. An artifact turn's stored response reads
+# "Created an editable diagram: Try Again Flow.", and `transcript_lines`
+# rewrites it to `[a diagram was created for "..."]` using the turn's route
+# detail, so no model ever reads the title as if it were the subject. A test
+# history without that metadata is a transcript the system never shows: it
+# made this file pass while the real thread failed, and then made it fail
+# while the real thread passed. Build the history the way the database has
+# it, or measure something else entirely.
+def _drew(query: str, title: str, detail: str) -> dict:
+    return {
+        "query": query,
+        "response": f"Created an editable diagram: {title}.",
+        "metadata": {
+            "artifact_ids": [f"id-{title}"],
+            "artifact_status": "ready",
+            "trace": {"route": {"label": "Diagrams", "detail": detail}},
+        },
+    }
+
+
+AQUEDUCT = "Roman aqueduct architecture thinking process"
 HISTORY = [
     {"query": "JenOS what is an aqueduct?",
-     "response": "An aqueduct is a channel that carries water from one place to another."},
+     "response": "An aqueduct is a channel that carries water. The Romans built the famous ones."},
     {"query": "how did they build it that high",
-     "response": "They used stacked arches, letting them span valleys with little material."},
+     "response": "They used stacked arches to span valleys with little material."},
     {"query": "generate a picture of the architecture thinking process",
      "response": "Here's the image you asked for."},
     {"query": "can you draw it as a diagram instead?",
      "response": "I couldn't create that diagram. Please revise the request and try again."},
-    {"query": "you try again bruh",
-     "response": "Created an editable diagram: Simple Flowchart."},
-    {"query": "try again!",
-     "response": "Created an editable diagram: Try Again Flow."},
+    _drew("you try again bruh", "Simple Flowchart", AQUEDUCT),
+    _drew("try again!", "Try Again Flow", AQUEDUCT),
 ]
 
 
@@ -78,12 +98,15 @@ def _subject(action: object) -> str:
 
 @pytest.mark.parametrize("said", ["try again", "try again!", "you try again bruh"])
 async def test_a_bare_retry_redraws_the_subject_not_the_request(said: str) -> None:
-    # The failure verbatim: a diagram titled after the words of the request.
+    # The failure verbatim: a diagram named after the words of the request.
+    # The bar is the subject saying what the diagram is *of* - "architecture
+    # thinking process" is shorthand that means nothing on its own and drew a
+    # generic flowchart, which is what the operator saw on 2026-08-31.
     action = await _routed(said)
     subject = _subject(action)
     assert type(action).__name__ == "CreateDiagramAction", (said, action)
     assert "try again" not in subject.casefold(), subject
-    assert subject.strip(), "a retry with no subject draws whatever it likes"
+    assert "aqueduct" in subject.casefold(), subject
 
 
 @pytest.mark.parametrize(
@@ -98,7 +121,7 @@ async def test_replying_to_an_older_message_answers_that_message(replied_to: str
     subject = _subject(action)
     assert type(action).__name__ == "CreateDiagramAction", action
     assert "try again" not in subject.casefold(), subject
-    assert "architecture" in subject.casefold() or "aqueduct" in subject.casefold(), subject
+    assert "aqueduct" in subject.casefold(), subject
 
 
 async def test_replying_to_the_picture_asks_for_the_picture() -> None:

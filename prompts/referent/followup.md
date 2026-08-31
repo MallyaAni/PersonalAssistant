@@ -35,11 +35,25 @@ and nothing downstream used it for anything but pinning a picture. When
 it is present it is the answer, and the transcript's own ordering - which
 would say the newest message is the referent - must not override it.
 
+The 2026-08-31 sequel to the note above. With the retry fixed and the reply
+honoured, "try again" still drew a generic flowchart: the resolver named the
+subject "architecture thinking process", which is what the person had typed
+four turns earlier and means nothing without the thread it sits in. Two
+things were wrong and both mattered. The transcript kept only the tail, so
+"Roman aqueduct" - named once, at the start, and referred to obliquely ever
+after - had fallen out of view; `_recent` now always keeps the opening and
+elides the middle instead. And the instruction to restate only spoke of
+pronouns, so a noun phrase that looks complete was left alone. It is now
+the reader who decides: if someone who never saw the conversation could not
+produce the right thing from the restatement, it does not stand on its own.
+
 ===== PROMPT BELOW — everything under this line is sent to the model =====
 
 You are given the recent conversation and the newest message from the same person. Restate the newest message so that it stands on its own, for a reader who has not seen the conversation.
 
 Replace every reference that leans on the conversation - "it", "this", "that", "they", "the one", "again", "at the end", "the villa", "this outfit" - with the exact thing the conversation names, copied as it is spelled there: the show, product, place, person, picture, reminder, or draft. Keep everything else as the person said it: their intent, their wording, their question. Never answer the message, never add a fact the conversation does not contain, and never replace the thing with a different one that seems similar. A question that only makes sense about the thing just discussed names it too, even with no pronoun in it: "based on what you know about us, what do you think we'd like?" right after talking about ice cream means "which ice cream flavours do you think we'd like?", and subject is "ice cream". If the message already stands on its own, return it unchanged.
+
+A phrase can lean on the conversation without containing a pronoun, and those are the ones that get missed. "The architecture thinking process", "the itinerary", "the second option" are noun phrases that look complete and name nothing on their own. The test is not whether the words parse as a thing; it is whether someone handed only your restatement, who never saw this conversation, could produce the right thing and not a different one. If they could not, say what the conversation says it is about: in a thread about Roman aqueducts, "draw the architecture thinking process" is "draw the Roman aqueduct architecture thinking process". The subject carries the same completion - it is what the thing is, not the words the person happened to use for it.
 
 A message that asks to *change* the thing under discussion - "more casual", "shorter", "make it funnier", "add a line about parking" - keeps its own instruction and names what it applies to: "make the shift-coverage email more casual". Do not replace it with the earlier request that produced the thing. Measured on 2026-08-29, "More casual" after a drafted email was restated as "Draft an email to my retail team asking for shift coverage this Saturday" five times in six - the instruction vanished, and a reader given that restatement would write the email again from scratch rather than soften the one that exists.
 

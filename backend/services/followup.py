@@ -62,6 +62,8 @@ _SCHEMA: dict[str, Any] = {
 }
 _MAX_TOKENS = 220
 _HISTORY_TURNS = 4
+# How much of a thread's opening is always shown: where it names its subject.
+_OPENING_TURNS = 2
 _HISTORY_CHARS = 2400
 
 
@@ -115,19 +117,64 @@ def _recent(history: list[dict[str, Any]], zone: str = "", from_index: int | Non
     # plan for tonight (2026-08-29, a group told an ice-cream run that had
     # already happened was happening "tonight").
     #
-    # Normally the last few turns. When the person replied to a specific
-    # older message the window opens at the turn before that one instead: a
-    # reply reopens the conversation at the point it names, and the subject
-    # usually sits just behind it. On 2026-08-30 "can you draw it as a
-    # diagram instead?" was the message replied to, and neither it nor its
-    # answer says what "it" is - the aqueduct is two turns further back,
-    # outside a four-turn window entirely.
-    start = (
-        max(0, min(from_index, len(history) - 1) - 1)
-        if from_index is not None
-        else max(0, len(history) - _HISTORY_TURNS)
-    )
-    return "\n".join(transcript_lines(history[start:], zone))[-_HISTORY_CHARS:]
+    # Always the opening of the conversation, and always the recent end.
+    #
+    # A thread names its subject once, at the start, and then talks in
+    # shorthand about it. Keeping only the tail loses the name and leaves
+    # the shorthand: on 2026-08-31 the operator replied to a failed diagram
+    # in a thread that opened with Roman aqueducts, and by then the visible
+    # turns said only "the architecture thinking process". That is what got
+    # drawn - a generic thinking-process flowchart - because it is all the
+    # resolver could see. Both the old turn window and the old character
+    # cap trimmed from the front, so the name went first in both.
+    #
+    # When the person replied to a specific message the middle opens at that
+    # turn too, since that is the part of the conversation they are pointing
+    # at.
+    if not history:
+        return ""
+    last = len(history) - 1
+    if from_index is not None:
+        # A reply says which moment is meant, so the conversation is read as
+        # it stood at that moment. What came after is the attempts being
+        # asked about again, and their own wording is the thing that
+        # corrupts the answer: on 2026-08-31 the turns after the replied-to
+        # message were three failed diagrams and a reply naming one of them,
+        # and the subject came back as the name of the failure instead of
+        # the aqueduct the thread had been about. They are counted, not
+        # quoted - the model should know retries happened without reading
+        # what they were called.
+        at = min(from_index, last)
+        lines = transcript_lines(history[: at + 1], zone)
+        after = last - at
+        if after > 0:
+            lines.append(
+                f"[{after} later exchange{'s' if after != 1 else ''} followed, "
+                "which is what they are asking about again]"
+            )
+        return _within_budget(lines)
+    keep = set(range(min(_OPENING_TURNS, len(history))))
+    keep |= set(range(max(0, last - _HISTORY_TURNS + 1), len(history)))
+    chosen = sorted(keep)
+    lines: list[str] = []
+    previous: int | None = None
+    for index in chosen:
+        if previous is not None and index > previous + 1:
+            lines.append("[...]")
+        lines.extend(transcript_lines([history[index]], zone))
+        previous = index
+    return _within_budget(lines)
+
+
+# Trim from the middle, never from the front. The front is where the
+# subject was named, which is the one part that must survive.
+def _within_budget(lines: list[str]) -> str:
+    text = "\n".join(lines)
+    if len(text) <= _HISTORY_CHARS:
+        return text
+    head = "\n".join(lines[:2])[: _HISTORY_CHARS // 3]
+    tail = "\n".join(lines[2:])[-(_HISTORY_CHARS - len(head) - 8) :]
+    return f"{head}\n[...]\n{tail}"
 
 
 # Resolve one message against its conversation, or None when there is no
@@ -144,6 +191,26 @@ def _recent(history: list[dict[str, Any]], zone: str = "", from_index: int | Non
 #
 # Matched by containment rather than equality because a long reply is
 # delivered as several bubbles, and the person replied to one of them.
+# Whether a turn's text is the bubble that was replied to.
+#
+# Containment in one direction only, plus a length guard, and both halves
+# are load-bearing. A long reply is delivered as several bubbles and the
+# person replied to one of them, so the bubble being inside the turn's text
+# has to count. The reverse - the turn's text inside the bubble - only
+# counts when it is substantially the whole of it, because otherwise any
+# short message matches any long one that happens to contain those words:
+# on 2026-08-31 "try again" matched "...please revise the request and try
+# again", and since the search runs backwards it matched the newest such
+# turn. The window then opened at the end of the thread rather than at the
+# message being pointed at, which is the opposite of the point.
+def _same_bubble(said: str, text: str) -> bool:
+    if not text or not said:
+        return False
+    if said in text:
+        return True
+    return text in said and len(text) >= 0.6 * len(said)
+
+
 def _answering_line(
     replying_to: str, history: list[dict[str, Any]]
 ) -> tuple[str, int | None]:
@@ -155,9 +222,7 @@ def _answering_line(
         turn = history[index]
         answer = " ".join(str(turn.get("response") or "").split())
         asked = " ".join(str(turn.get("query") or "").split())
-        matched = (answer and (said in answer or answer in said)) or (
-            asked and (said in asked or asked in said)
-        )
+        matched = _same_bubble(said, answer) or _same_bubble(said, asked)
         if matched:
             shown = f"They asked: {asked[:600]}\nYou answered: {answer[:900]}"
             found = index
