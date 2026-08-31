@@ -305,6 +305,90 @@ async def test_a_remembered_sentence_reaches_the_context():
         await _cleanup(user_id)
 
 
+# Image descriptions are records of what a picture shows, not facts about the
+# person, and in a bounded context they crowd out the durable preferences a
+# sweep ranks by. The discovery reader opts out of them, the same exclusion the
+# group taste projection makes.
+@pytest.mark.asyncio
+async def test_image_description_memories_are_left_out_of_a_sweep():
+    from backend.memory.purposes import VISUAL_ANALYSIS_PURPOSE
+
+    user_id = f"pc_{uuid.uuid4().hex[:12]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            session.add_all(
+                (
+                    SemanticMemory(
+                        user_id=user_id,
+                        content="Description of an image the user has: a red bicycle.",
+                        embedding=_vec(1.0),
+                        purpose=VISUAL_ANALYSIS_PURPOSE,
+                        embedding_model="stub",
+                        embedding_version="1",
+                        embedding_dimension=768,
+                        expires_at=None,
+                        extra_data={},
+                    ),
+                    SemanticMemory(
+                        user_id=user_id,
+                        content="The user is 30 years old.",
+                        embedding=_vec(0.9),
+                        purpose="user_explicit",
+                        embedding_model="stub",
+                        embedding_version="1",
+                        embedding_dimension=768,
+                        expires_at=None,
+                        extra_data={},
+                    ),
+                )
+            )
+            await session.commit()
+
+            default = await PersonalContextReader(session).read(user_id, now=_NOW)
+            excluding = await PersonalContextReader(
+                session, exclude_purposes=(VISUAL_ANALYSIS_PURPOSE,)
+            ).read(user_id, now=_NOW)
+
+        assert "red bicycle" not in " ".join(excluding.statements)
+        assert "30 years old" in " ".join(excluding.statements)
+        # Without the exclusion the image description is admitted like any other
+        # remembered sentence, which is why the sweep has to ask for it.
+        assert "red bicycle" in " ".join(default.statements)
+    finally:
+        await _cleanup(user_id)
+
+
+# A transient fact ("feeling tired today") is stored with a short life so it
+# stops steering a weekly recommendation once the state it described is gone.
+# The reader already refuses an expired semantic memory; this pins that the
+# expiry is what takes it out of a sweep.
+@pytest.mark.asyncio
+async def test_an_expired_semantic_memory_stops_reaching_a_sweep():
+    user_id = f"pc_{uuid.uuid4().hex[:12]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            session.add(
+                SemanticMemory(
+                    user_id=user_id,
+                    content="The user is feeling tired today and wants something chill.",
+                    embedding=_vec(1.0),
+                    purpose="user_explicit",
+                    embedding_model="stub",
+                    embedding_version="1",
+                    embedding_dimension=768,
+                    expires_at=_NOW - timedelta(days=1),
+                    extra_data={},
+                )
+            )
+            await session.commit()
+
+            context = await PersonalContextReader(session).read(user_id, now=_NOW)
+
+        assert "tired today" not in " ".join(context.statements)
+    finally:
+        await _cleanup(user_id)
+
+
 # --- aiming the queries -----------------------------------------------------
 
 

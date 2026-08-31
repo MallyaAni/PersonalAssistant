@@ -122,6 +122,31 @@ async def test_approving_a_fact_configures_the_agent():
         await _cleanup(user_id)
 
 
+# A region that repeats a segment ("Courthouse, Arlington, Arlington") is a
+# copy-paste error, not a place: it doubles in every query and makes a
+# US-state check miss a region that is really "Virginia". The projection
+# collapses exact repeats, and only exact repeats, so "New York, New York"
+# becomes "New York" and "County Dublin" is untouched.
+@pytest.mark.asyncio
+async def test_a_repeated_region_segment_is_collapsed():
+    user_id = f"proj_{uuid.uuid4().hex[:12]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            repository = DiscoveryProfileRepository(session)
+            projection = DiscoveryProjection(session)
+
+            await projection.apply_fact(
+                user_id, LOCALITY_KEY, "Courthouse, Arlington, Arlington"
+            )
+            profile = await repository.get_profile(user_id)
+
+        assert profile.primary_locality is not None
+        assert profile.primary_locality.label == "Courthouse"
+        assert profile.primary_locality.region == "Arlington"
+    finally:
+        await _cleanup(user_id)
+
+
 # Ignore memory fact keys that belong to another projection.
 @pytest.mark.asyncio
 async def test_an_unrelated_fact_is_ignored_rather_than_rejected():

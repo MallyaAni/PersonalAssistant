@@ -54,9 +54,16 @@ async def test_a_direct_turn_asks_one_question_and_is_unchanged():
     assert "group chat" not in call["messages"][0]["content"]
     # `is_preference` rides along with every semantic fact since 2026-08-30:
     # a preference is stored under its own purpose so a recommendation turn
-    # can find it by kind, which embedding distance cannot do.
+    # can find it by kind, which embedding distance cannot do. `is_transient`
+    # rides along since 2026-08-31 so a temporary state can be given a short
+    # life and stop steering a weekly recommendation.
     assert result.proposals == (
-        {"kind": "semantic_fact", "content": "My dog is Biscuit", "is_preference": False},
+        {
+            "kind": "semantic_fact",
+            "content": "My dog is Biscuit",
+            "is_preference": False,
+            "is_transient": False,
+        },
     )
 
 
@@ -77,6 +84,7 @@ async def test_a_failed_attribution_call_leaves_the_ordinary_proposals():
             "kind": "semantic_fact",
             "content": "I love hiking",
             "is_preference": False,
+            "is_transient": False,
             "about": [],
         },
     )

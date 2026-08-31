@@ -7,6 +7,63 @@ was checked by running it, not by reading it. The seven image scenarios can
 be re-run any time with `python -m backend.cli.exercise_image_scenarios`
 inside the backend container.
 
+## 2026-08-31 — recommendation quality: ranked by the person, not a stale mood (deploy pending)
+
+The operator's digest on 2026-08-31 recommended a guided walk at Arlington
+Court, **Devon, England** to someone in Courthouse, Arlington, Virginia.
+Root cause, all verified by running the live pipeline: the profile's region
+was stored **`Arlington, Arlington`** (a repeated region), which makes the
+US-state-only `contradicts_locality` guard see nothing and every query say
+"Courthouse, Arlington, Arlington"; the Brave snippet named only the estate's
+town, so the `_located_elsewhere` judge said "local"; and the URL
+(`/visit/devon/`) — where the page actually is — was never shown to the
+judge. With one novel candidate that sweep, it shipped. Second contributor:
+the memory classifier had stored "feeling a little tired today" (2026-08-29)
+with **no expiry**, so it aimed the hiking query at "easy scenic nature
+walks" and put a hiking-guide page ahead of the dance events the account
+asks for.
+
+**Fixed and functionally verified in the working tree (deploy pending via
+`scripts/deploy.sh`):**
+
+- **Region**: `_apply_locality` collapses a repeated region segment
+  (projection.py); ani.mallya's locality corrected to `Courthouse, Virginia`
+  (approved fact + `discovery_localities`), which re-arms the US-state guard
+  and fixes the queries.
+- **Locate judge sees the URL** (describing.py + prompts/scout/locate.md):
+  the Devon snippet alone returns not-elsewhere, with the URL it returns
+  elsewhere — verified live.
+- **Sweep context excludes image descriptions** (runner.py, purpose
+  `visual_artifact_analysis`), so durable demographics/preferences fill the
+  bounded context.
+- **Transient facts expire** (proposal_agent.py `semantic_fact_is_transient`
+  + conversation_service save path, `TRANSIENT_FACT_DAYS=7`); ani.mallya's
+  stale "tired today" row expired.
+
+**Rehearsal proof** (`DiscoveryRunner.sweep(...persist=False)` for
+ani.mallya, worker image with the tree mounted): query now
+"Courthouse, Virginia"; shortlist all line-dancing/social-dance finds;
+reranker (memory) orders NVCDA social dances, Virginia Line Dance Festival,
+DanceSportVA — no Devon, no hiking guide.
+
+**Measurements**: `evaluate_discovery_ranking` green (filtering 0.857/1.0,
+geography retention 1.0; the new Devon case is labelled and the deterministic
+US-only guard honestly still can't catch it — the model stage now does).
+`test_description_quality.py` 101/101, `test_prompt_behaviour.py` 22/22,
+`test_preference_labelling_behaviour.py` 13/13, `test_memory_capture_discipline.py`
+green, discovery/memory units 512+44+17+30.
+
+**Known**: `test_memory_capture_discipline.py::test_a_fact_survives_a_catalogue_that_mentions_its_subject`
+is flaky by nature (per-message 3/4 recall on a documented-fragile case; it
+flaked with and without this change, and is not in the deploy gate). The
+reranker's exclusion of an explicit restriction (e.g. "55+") is deliberately
+conservative and flaky (see reranking.py) — ordering, not exclusion, is the
+memory mechanism.
+
+**Deploy**: `bash scripts/deploy.sh`, then confirm the next ani.mallya sweep
+(19:00 UTC) recommends local dance/social finds. After deploy, re-check
+`docker compose exec backend` has the new code (it is image-baked).
+
 **If you are picking this up on the Mac**, read [Where things run](#where-things-run)
 and [Operational traps](#operational-traps-that-cost-real-time) first. The Mac is
 not currently part of the running system except as the iMessage bridge, and one

@@ -174,6 +174,18 @@ async def test_reranking_does_not_drop_what_is_merely_a_weak_match(llm):
     assert len(ordered) == len(shortlist)
 
 
+async def test_reranking_keeps_an_age_marked_thing_without_a_contradicting_fact(llm):
+    # An age-restricted find with no fact about the person's age stays:
+    # absence is not contradiction, and the conservative wording excludes
+    # nothing it does not have to (measured in reranking.py).
+    shortlist = _ranked("21+ tasting event", "A guided walk")
+    context = PersonalContext(("They enjoy quiet evenings indoors.",))
+
+    ordered = await MemoryReranker(llm).order(shortlist, context)
+
+    assert len(ordered) == len(shortlist)
+
+
 # Flowcharts, which is what almost every request asks for. This was xfailed as
 # "a real defect" and the defect turned out to be serialization, not reasoning:
 # inside a JSON string the model joined its Mermaid lines with <br/> instead of

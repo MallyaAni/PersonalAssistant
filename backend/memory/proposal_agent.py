@@ -97,6 +97,28 @@ class MemoryProposalDecision(BaseModel):
             "something that stopped being true."
         ),
     )
+    # Whether that fact is a temporary state rather than a durable trait.
+    #
+    # A fact that describes how things are right now - "feeling tired today",
+    # "busy this week, keep it light", "currently avoiding X" - stops being
+    # true on its own, so it is stored with a short life and then stops
+    # shaping anything, least of all an unattended weekly recommendation.
+    # False for a fact that stays true (owns a Tesla, lives in X, is 30).
+    # Measured 2026-08-31: a "feeling a little tired today" statement from
+    # two days earlier steered a discovery sweep toward easy scenic walks,
+    # which is how a hiking-guide page outranked the dance events the user
+    # actually asks for. The classifier already knew the statement was not a
+    # preference; it still never expired, so it kept acting.
+    semantic_fact_is_transient: bool = Field(
+        default=False,
+        description=(
+            "True when the fact describes a temporary state - how they feel "
+            "today, what they want this week - that will not be true next "
+            "month. False when it stays true: a trait, an ownership, a "
+            "preference. A fact that is transient is stored with a short "
+            "life so it cannot steer a later recommendation."
+        ),
+    )
     episodic_event: str | None = Field(default=None, max_length=300)
 
 
@@ -190,6 +212,12 @@ class MemoryProposalAgent:
                         'for a plain fact - "owns a Tesla Model 3" - and false for '
                         'how they feel today: "tired today and wants something '
                         'chill" is not a preference, because it stops being true. '
+                        "Set semantic_fact_is_transient true when the fact "
+                        "describes a temporary state - how they feel today, what "
+                        "they want this week - that will not be true next month; "
+                        "false for a durable fact or preference. A transient "
+                        "fact is stored with a short life so it stops shaping "
+                        "recommendations after it stops being true. "
                         "Return only the required JSON."
                     ),
                 },
@@ -389,6 +417,7 @@ class MemoryProposalAgent:
                 "kind": "semantic_fact",
                 "content": decision.semantic_fact.strip(),
                 "is_preference": bool(decision.semantic_fact_is_preference),
+                "is_transient": bool(decision.semantic_fact_is_transient),
             }
         if decision.episodic_event:
             return {"kind": "episodic", "content": decision.episodic_event.strip()}

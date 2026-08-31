@@ -95,6 +95,44 @@ async def test_how_someone_feels_today_is_not_a_standing_preference(
     assert not top.get("is_preference"), f"a passing mood stored as standing: {top}"
 
 
+# The reason a passing mood must not be a preference is that it stops being
+# true - and a fact that stops being true must not steer a weekly
+# recommendation weeks later. The model usually declines to capture a passing
+# state at all (the right answer), so the safety property is the direction
+# that hurts: a captured transient state must never be stored durable. The
+# dangerous direction is asserting on is_preference only, which passes on an
+# empty capture; this asserts that if a semantic fact is offered at all, it
+# is marked transient.
+@pytest.mark.parametrize(
+    "said",
+    [
+        "I'm feeling a little tired today and want something chill nearby.",
+        "I'm pretty busy this week so keep it light.",
+    ],
+)
+async def test_a_captured_temporary_state_is_marked_transient(llm: object, said: str) -> None:
+    top = await _proposal(said)
+    if not top:
+        # Declining to capture a passing state is the better answer, not a miss.
+        return
+    assert top.get("is_transient") is True, f"a passing state stored as durable: {top}"
+
+
+@pytest.mark.parametrize(
+    "said",
+    [
+        "I drive a Tesla Model 3.",
+        "The user is 30 years old, born May 7, 1996.",
+        "I only want places I can get to on the metro, nothing needing a car.",
+    ],
+)
+async def test_a_durable_fact_or_preference_is_not_transient(
+    llm: object, said: str
+) -> None:
+    top = await _proposal(said)
+    assert top.get("is_transient") is not True, f"a durable statement marked transient: {top}"
+
+
 # A plain fact is not a preference, or the label selects everything and the
 # ranker is handed noise instead of taste.
 @pytest.mark.parametrize(

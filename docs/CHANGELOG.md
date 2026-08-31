@@ -2,6 +2,47 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-31 — Recommendations are ranked by the person again, not by a stale mood
+
+The operator's digest on 2026-08-31 recommended "Guided wider estate walks at
+Arlington" — a National Trust walk at Arlington Court in Devon, England, for
+someone in Courthouse, Arlington, Virginia. The query correctly named
+"Courthouse, Arlington, Arlington"; the region had been stored doubled, so a
+US-state-only locality check saw nothing to contradict, the snippet named only
+the estate's town, and the URL (`/visit/devon/`) — where the page actually is —
+was never shown to the judge. With one novel candidate that sweep, it shipped.
+
+Four fixes, each measured where it runs. **The region the profile stored was
+`Arlington, Arlington`; the projection now collapses a repeated region
+segment, and the operator's locality was corrected to `Courthouse, Virginia`,
+which re-arms the US-state locality guard and makes the queries name the right
+place.** **The locate judge now sees the page's URL as data**, so a find whose
+address says it is elsewhere is refused even when the search snippet hides it
+(verified live: the Devon snippet alone returns not-elsewhere, with the URL it
+returns elsewhere). **The sweep's personal context no longer reads the
+person's image descriptions** — records of what a picture shows, not facts
+about who they are — freeing the bounded context for the durable preferences a
+digest is supposed to rank by. **A captured temporary state ("feeling tired
+today") now gets a seven-day life instead of steering a weekly recommendation
+forever**: the memory classifier marks a fact transient (its schema and prompt
+carry the question, pinned by functional tests) and the save path attaches an
+expiry, and the operator's two-day-old "feeling a little tired" row was
+expired, which is what had aimed the hiking query at "easy scenic nature
+walks" and put a hiking-guide page ahead of the dance events the account
+actually asks for.
+
+Measured: a rehearsal sweep for `ani.mallya` now returns line-dancing and
+social-dance finds in Courthouse, Virginia (the previous run's sole candidate
+was the Devon walk). `evaluate_discovery_ranking` stays green (filtering
+0.857/1.0, geography retention 1.0) with the Devon item added as a labelled
+case; the state-only deterministic guard still cannot catch a foreign find,
+which is exactly why the model stage now reads the URL. Functional suites:
+`test_description_quality.py` 101/101 including the new URL case,
+`test_prompt_behaviour.py` 22/22, `test_preference_labelling_behaviour.py`
+13/13, `test_memory_capture_discipline.py` green, discovery/memory unit
+batches 512 + 44 + 17 + 30 passing. Deploy pending via `scripts/deploy.sh`.
+
+
 ## 2026-08-31 — Yesterday's wrong answer was teaching tomorrow's turns
 
 The evening sequel, and the lesson is about data rather than code. "Generate a

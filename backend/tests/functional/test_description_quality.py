@@ -471,6 +471,44 @@ async def test_no_configured_place_never_flags(structured_llm: object) -> None:
     assert readable.located_elsewhere is False, readable
 
 
+# A guided walk "at Arlington" was sent to someone in Arlington, Virginia - it
+# was at Arlington Court in Devon, England. The snippet named only the estate's
+# town, so the model reading the snippet alone said it was local; the URL said
+# where it actually is, and the judge was never shown it. This pins both sides:
+# the address is data like the text, and the snippet's silence is not
+# evidence of local.
+async def test_a_page_whose_url_places_it_elsewhere_is_flagged(
+    structured_llm: object,
+) -> None:
+    snippet = (
+        "Join one of our guided walks to explore the wilder side of Arlington, "
+        "venturing into the little-known parts of the estate."
+    )
+    devon_url = (
+        "https://www.nationaltrust.org.uk/visit/devon/arlington-court-and-"
+        "the-national-trust-carriage-museum/events/dcd9b86e"
+    )
+
+    with_url = await EventDescriber(structured_llm).describe(
+        "Guided wider estate walks at Arlington",
+        snippet,
+        TODAY,
+        "Courthouse, Arlington",
+        devon_url,
+    )
+    without_url = await EventDescriber(structured_llm).describe(
+        "Guided wider estate walks at Arlington",
+        snippet,
+        TODAY,
+        "Courthouse, Arlington",
+    )
+
+    assert with_url.located_elsewhere is True, with_url
+    # The same snippet without the address carries no signal at all, so the
+    # find stays - the conservative direction for a page that never says.
+    assert without_url.located_elsewhere is False, without_url
+
+
 # A delivered digest promised "Paint & Sip at Lveltú Social Club" and linked
 # a city-wide search listing where no such event was visible: the page was a
 # directory, and the describer picked one event off it. The model reading

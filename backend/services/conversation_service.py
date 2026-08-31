@@ -113,6 +113,12 @@ _IMAGE_DESCRIPTION_CHARS = 500
 # Long enough to identify a picture in a sentence, short enough to stay a label.
 _REFERENT_LABEL_CHARS = 90
 
+# How long a transient fact ("feeling tired today", "busy this week") lives
+# before it stops shaping anything. A state that stops being true on its own
+# must not steer an unattended weekly recommendation after it has gone; seven
+# days covers a "this weekend" plan and is far short of forever.
+TRANSIENT_FACT_DAYS = 7
+
 # Extracted page text arrives with Markdown headings, emphasis and list markers.
 # A citation is displayed as plain prose, so the syntax is stripped rather than
 # rendered: these snippets are untrusted third-party text and must never be
@@ -3984,10 +3990,18 @@ class ConversationService:
         preference = (
             {"purpose": PREFERENCE_PURPOSE} if candidate.get("is_preference") else {}
         )
+        # A transient fact describes how things are right now - "feeling tired
+        # today" - and stops being true on its own. Stored with a short life
+        # rather than forever, so it stops steering an unattended weekly
+        # recommendation once the state it described is gone.
+        expires_at = None
+        if candidate.get("is_transient"):
+            expires_at = datetime.now(UTC) + timedelta(days=TRANSIENT_FACT_DAYS)
         memory = await self.memory.save_semantic_memory(
             user_id,
             candidate["content"],
             {"source": "chat_auto_save"},
+            expires_at=expires_at,
             **preference,
         )
         return {

@@ -27,6 +27,24 @@ FACT_TYPE = "profile"
 PURPOSE = "personalization"
 
 
+# Collapse a region that repeats a segment ("Arlington, Arlington" ->
+# "Arlington"). Shape, not meaning: a doubled town or state reads as a
+# copy-paste error however it got written, and the doubled text then turns
+# every query into "Courthouse, Arlington, Arlington" and makes a US-state
+# check miss a region that is really "Virginia". Only exact repeats are
+# removed, so "New York, New York" becomes "New York" and "County Dublin"
+# is untouched.
+def _collapse_repeated_segments(region: str) -> str:
+    parts = [part for part in (piece.strip() for piece in region.split(",")) if part]
+    if not parts:
+        return ""
+    collapsed: list[str] = [parts[0]]
+    for part in parts[1:]:
+        if part.casefold() != collapsed[-1].casefold():
+            collapsed.append(part)
+    return ", ".join(collapsed)
+
+
 @dataclass(frozen=True, slots=True)
 class ProjectedFact:
     """Describe one approved fact that owns a discovery profile projection."""
@@ -105,7 +123,7 @@ class DiscoveryProjection:
     async def _apply_locality(self, user_id: str, value: str) -> None:
         label, separator, region = value.partition(",")
         label = label.strip()
-        region = region.strip() if separator else ""
+        region = _collapse_repeated_segments(region.strip() if separator else "")
         if not label or len(label) > MAX_LABEL_CHARS or len(region) > MAX_REGION_CHARS:
             raise ValueError("The approved locality is outside supported bounds")
         digest = label_digest(label)

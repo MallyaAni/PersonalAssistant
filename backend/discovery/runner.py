@@ -274,7 +274,16 @@ class DiscoveryRunner:
         # What memory knows about the person this sweep is for. Reading it is
         # the whole reason a query can be about someone rather than about a
         # topic; without it both stages below fall back to bare labels.
-        self.personal = PersonalContextReader(seen.session)
+        # Descriptions of the person's images are left out: they are records
+        # of what a picture shows, not facts about who they are, and in a
+        # bounded context they crowd out the durable preferences a sweep is
+        # supposed to rank by. The same exclusion the group taste projection
+        # makes.
+        from backend.memory.purposes import VISUAL_ANALYSIS_PURPOSE
+
+        self.personal = PersonalContextReader(
+            seen.session, exclude_purposes=(VISUAL_ANALYSIS_PURPOSE,)
+        )
         # The sweep's judgement calls go to the strongest model first, with
         # the grammar engine answering whenever its JSON does not survive the
         # wrapper's check. A sweep runs in the background, so the strong
@@ -501,7 +510,9 @@ class DiscoveryRunner:
         for item in selected:
             event = item.event
             source = event.summary or await self._page_text(event.url, budget)
-            described = await self.describer.describe(event.title, source, today, place)
+            described = await self.describer.describe(
+                event.title, source, today, place, event.url
+            )
             # The page is a directory of many happenings, not one. A find
             # described off a listing names an event its link cannot honor -
             # a delivered "Paint & Sip" linked a city-wide search instead.

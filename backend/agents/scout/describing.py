@@ -225,14 +225,20 @@ class EventDescriber:
 
     # Does the page place this happening away from the reader's area? Asked
     # of a model because town names repeat across regions and a venue's
-    # whereabouts is world knowledge no lookup table scales to.
+    # whereabouts is world knowledge no lookup table scales to. The URL is
+    # read as data with the text: the snippet is the search engine's summary
+    # and a page's address is where it says it is, which is what caught a
+    # "guided walk at Arlington" that was at Arlington Court in Devon.
     async def _located_elsewhere(
-        self, title: str, source: str, place: str | None
+        self, title: str, source: str, place: str | None, url: str | None = None
     ) -> bool:
         if not place or not source:
             return False
         prompt = _LOCATE_PROMPT.format(
-            title=title, source=source[:MAX_SOURCE_CHARS], place=place
+            title=title,
+            source=source[:MAX_SOURCE_CHARS],
+            place=place,
+            url=" ".join((url or "").split())[:300],
         )
         return await self._page_verdict(prompt, _LOCATE_SCHEMA, "located_elsewhere")
 
@@ -290,6 +296,7 @@ class EventDescriber:
         source: str | None,
         today: date | None = None,
         place: str | None = None,
+        url: str | None = None,
     ) -> Readable:
         # The source's own title still prepares the prompt and still stands in
         # when there is no model answer at all. That is not a rewriting of what
@@ -305,7 +312,7 @@ class EventDescriber:
         if await self._lists_many(cleaned, source):
             return Readable(title=cleaned, description=None, lists_many=True)
 
-        elsewhere = await self._located_elsewhere(cleaned, source, place)
+        elsewhere = await self._located_elsewhere(cleaned, source, place, url)
         prompt = _PROMPT.format(
             title=cleaned,
             source=source[:MAX_SOURCE_CHARS],

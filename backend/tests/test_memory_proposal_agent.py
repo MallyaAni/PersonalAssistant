@@ -75,7 +75,12 @@ async def test_profile_and_general_facts_from_one_message_are_both_kept() -> Non
     assert result.proposals == (
         {"kind": "preferred_name", "value": "Jen"},
         {"kind": "discovery_interests", "labels": ["acting"]},
-        {"kind": "semantic_fact", "content": "My dog is called Biscuit.", "is_preference": False},
+        {
+            "kind": "semantic_fact",
+            "content": "My dog is called Biscuit.",
+            "is_preference": False,
+            "is_transient": False,
+        },
     )
 
 
@@ -190,7 +195,14 @@ async def test_semantic_agent_maps_an_explicit_entity_relationship() -> None:
         ),
         (
             {"semantic_fact": "My dog is called Biscuit."},
-            ({"kind": "semantic_fact", "content": "My dog is called Biscuit.", "is_preference": False},),
+            (
+                {
+                    "kind": "semantic_fact",
+                    "content": "My dog is called Biscuit.",
+                    "is_preference": False,
+                    "is_transient": False,
+                },
+            ),
         ),
         (
             {"episodic_event": "I attended the summer acting workshop."},
