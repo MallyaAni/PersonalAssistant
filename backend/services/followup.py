@@ -224,7 +224,18 @@ def _answering_line(
         asked = " ".join(str(turn.get("query") or "").split())
         matched = _same_bubble(said, answer) or _same_bubble(said, asked)
         if matched:
-            shown = f"They asked: {asked[:600]}\nYou answered: {answer[:900]}"
+            # Matching is against the raw bubble - that is what the person
+            # long-pressed. But the *quote* goes through the same
+            # metadata-aware line the transcript uses, because a receipt's
+            # raw text is a title pretending to be subject matter: on
+            # 2026-08-31 a reply to "Created an editable diagram:
+            # Architecture Thinking Process." put the title in front of the
+            # resolver as if it were the thing, undoing what
+            # transcript._answer_line exists to prevent.
+            from backend.services.transcript import _answer_line
+
+            rendered = " ".join(_answer_line(turn).split())
+            shown = f"They asked: {asked[:600]}\nYou answered: {rendered[:900]}"
             found = index
             break
     return (

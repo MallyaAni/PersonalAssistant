@@ -162,6 +162,20 @@ async def test_a_reply_carrying_the_shorthand_still_completes_it(
     assert "aqueduct" in subject.casefold(), subject
 
 
+async def test_replying_to_a_receipt_reads_what_it_was_for() -> None:
+    # 2026-08-31, the evening sequel: a reply directly to a receipt bubble.
+    # The receipt's raw text is a title pretending to be subject matter, and
+    # `_answering_line` used to quote it raw - putting the title in front of
+    # the resolver as if it were the thing, undoing transcript._answer_line's
+    # whole point. The quote now renders the metadata-aware line, so what the
+    # resolver reads is what the attempt was for.
+    action = await _routed("try again", "Created an editable diagram: Try Again Flow.")
+    subject = _subject(action) or str(getattr(action, "prompt", "") or "")
+    assert type(action).__name__ == "CreateDiagramAction", action
+    assert "try again" not in subject.casefold(), subject
+    assert "aqueduct" in subject.casefold(), subject
+
+
 async def test_replying_to_the_picture_completes_the_subject_too() -> None:
     # Asserting the action type alone is what let 12:50 through: the kind was
     # right and the subject was the shorthand. Both halves are the behaviour.
