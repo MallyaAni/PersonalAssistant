@@ -2,6 +2,32 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-08-31 — Yesterday's wrong answer was teaching tomorrow's turns
+
+The evening sequel, and the lesson is about data rather than code. "Generate a
+picture of this" replying to the aqueduct answer resolved perfectly - subject
+"Roman aqueduct" - and failed only because image generation lives on the
+desktop, which was off. But the follow-up reply to that error notice went
+generic again, and the four-way replay showed why: the earlier bad turns had
+stored their own wrong resolution as `trace.route.detail`, the ten-turn
+history window had scrolled the aqueduct opening out of view, and the
+transcript's only remaining names for the thing were the polluted "[a diagram
+was created for 'Architecture Thinking Process']" lines. Correcting the
+details in the replay recovered 3/3 with no code change; the code fix alone
+recovered nothing on that turn. Metadata written by a buggy resolver outlives
+the fix - after repairing a resolver, check what it wrote.
+
+Two acts, each at its altitude. With the operator's explicit approval, the
+three poisoned rows (04:14, 12:50, 20:45 UTC) had `route.detail` and
+`followup.subject` corrected to what those attempts were for; verified by
+re-reading the rows. And `_answering_line` - which matched the replied-to
+bubble raw, correctly, but also quoted it raw - now renders the same
+metadata-aware line the transcript uses, closing the remaining entry point
+where a reply directly to a receipt bubble put "Created an editable diagram:
+<title>" in front of the resolver as if the title were the thing. The suite
+pins it - replying to a receipt bubble resolves to the aqueduct, never the
+title - and passed 11/11 inside the rebuilt container.
+
 ## 2026-08-31 — A reply's shorthand completes on both sides of the pointer
 
 The sequel the previous entry did not close, found in production rows rather
