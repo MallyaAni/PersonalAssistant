@@ -23,6 +23,18 @@ after a plain weather answer routed a fresh weather call: agreeing with a
 statement sent the assistant off doing work. The router now takes no tool at
 all for a bare acceptance that accepts nothing, and this is the field it asks.
 
+The 2026-08-30 group thread, which is why a replied-to message is now
+supplied. A diagram of Roman aqueducts failed, and the retries went "you
+try again bruh", then "try again!", then "Try Again" - each read against
+whatever was said most recently, which during a run of failures is the
+failure. The subject decayed out of the conversation until the thread
+held a diagram titled "Try Again Flow" and then one titled "Try Again".
+The operator had been long-pressing the aqueduct message and replying to
+it the whole time; iMessage carries that reference, the bridge reads it,
+and nothing downstream used it for anything but pinning a picture. When
+it is present it is the answer, and the transcript's own ordering - which
+would say the newest message is the referent - must not override it.
+
 ===== PROMPT BELOW — everything under this line is sent to the model =====
 
 You are given the recent conversation and the newest message from the same person. Restate the newest message so that it stands on its own, for a reader who has not seen the conversation.
@@ -41,6 +53,8 @@ Also say what the message refers to:
 - draft: text being written together - an email, a message, a plan - including changes to its tone or content;
 - subject: a thing under discussion - a show, product, place, person, event;
 - none: the message stands alone and refers to nothing earlier.
+
+When you are told they have replied directly to an earlier message of yours, that message is what the newest one is about, whatever the transcript's order suggests and however many messages have been exchanged since. Read the subject out of the message they replied to, not out of the most recent exchange - a run of failed attempts sitting in between is not the subject, it is the thing they are asking you to do again.
 
 And the subject's name when there is one, spelled as the conversation spells it; empty otherwise.
 

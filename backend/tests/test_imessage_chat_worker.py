@@ -1182,3 +1182,60 @@ async def test_the_window_can_be_switched_off(monkeypatch):
 
     await worker.tick()
     assert "read_reactions_by_guid" not in asked, asked
+
+
+# A long-press reply is carried into the turn, not just used to pin a
+# picture. Before 2026-08-30 the reference reached the worker and stopped
+# there unless the bubble happened to hold an image, so replying to an old
+# text message changed nothing and "try again" was answered against the
+# newest exchange - which, during a run of failed diagram attempts, is the
+# failure.
+@pytest.mark.asyncio
+async def test_a_reply_to_an_old_message_is_carried_into_the_turn(monkeypatch):
+    bridge = _Bridge(
+        {
+            "messages": [
+                {
+                    **_message("g20", "7372025933", "try again"),
+                    "reply_to_guid": "the-diagram-request",
+                    "reply_to_text": "can you draw it as a diagram instead?",
+                }
+            ],
+            "cursor": 90,
+        }
+    )
+    worker, _ = _worker(
+        bridge, monkeypatch, accounts={"7372025933": "ani.mallya"}, replies={}
+    )
+    seen: list[str] = []
+
+    async def converse(user_id, text, active_image=None, replying_to="", **_):
+        seen.append(replying_to)
+        return TurnResult("Redrawing it now.")
+
+    monkeypatch.setattr(worker, "_converse", converse)
+
+    await worker.tick()
+
+    assert seen == ["can you draw it as a diagram instead?"]
+
+
+@pytest.mark.asyncio
+async def test_an_ordinary_message_carries_no_reply(monkeypatch):
+    bridge = _Bridge(
+        {"messages": [_message("g21", "7372025933", "what's on tonight?")], "cursor": 91}
+    )
+    worker, _ = _worker(
+        bridge, monkeypatch, accounts={"7372025933": "ani.mallya"}, replies={}
+    )
+    seen: list[str] = []
+
+    async def converse(user_id, text, active_image=None, replying_to="", **_):
+        seen.append(replying_to)
+        return TurnResult("Plenty on.")
+
+    monkeypatch.setattr(worker, "_converse", converse)
+
+    await worker.tick()
+
+    assert seen == [""]

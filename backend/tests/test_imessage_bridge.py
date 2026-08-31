@@ -1556,3 +1556,70 @@ def test_a_room_picture_is_readable_only_when_rooms_are(tmp_path):
     assert _owned_attachment(config, attachment_id) is not None
     quiet = _room_config(tmp_path, read=False)
     assert _owned_attachment(quiet, attachment_id) is None
+
+
+# A reply carries the guid of the bubble it answers, and nothing else. The
+# words are in another row, and without them the caller knows a reply
+# happened but not what it was about - which on 2026-08-30 was the whole
+# failure: a run of "try again" retries in a group thread resolved against
+# the most recent message instead of the aqueduct message being pointed at.
+def test_a_reply_carries_what_the_replied_to_message_said(tmp_path):
+    from server import incoming_messages
+
+    config = _incoming_config(tmp_path)
+    _insert_incoming(
+        config.incoming_db, "+15550100", "can you draw it as a diagram instead?",
+        _ns_ago(60), guid="the-diagram-request",
+    )
+    _insert_incoming(
+        config.incoming_db, "+15550100", "try again", _ns_ago(5),
+        reply_to_guid="the-diagram-request",
+    )
+
+    message = incoming_messages(config, since_ns=_ns_ago(120))["messages"][-1]
+    assert message["reply_to_guid"] == "the-diagram-request"
+    assert message["reply_to_text"] == "can you draw it as a diagram instead?"
+
+
+def test_a_reply_to_a_bubble_whose_words_are_in_the_blob_still_reads(tmp_path):
+    # Recent macOS keeps the body in attributedBody and leaves `text` null.
+    from server import incoming_messages
+
+    config = _incoming_config(tmp_path)
+    _insert_incoming(
+        config.incoming_db, "+15550100", "draw the aqueduct", _ns_ago(60),
+        guid="the-aqueduct-bubble", in_blob=True,
+    )
+    _insert_incoming(
+        config.incoming_db, "+15550100", "try again", _ns_ago(5),
+        reply_to_guid="the-aqueduct-bubble",
+    )
+
+    message = incoming_messages(config, since_ns=_ns_ago(120))["messages"][-1]
+    assert "aqueduct" in message["reply_to_text"]
+
+
+def test_an_ordinary_message_carries_no_replied_to_text(tmp_path):
+    from server import incoming_messages
+
+    config = _incoming_config(tmp_path)
+    _insert_incoming(config.incoming_db, "+15550100", "hello", _ns_ago(5))
+
+    (message,) = incoming_messages(config, since_ns=_ns_ago(60))["messages"]
+    assert "reply_to_text" not in message
+
+
+def test_a_reply_to_a_bubble_that_is_gone_says_nothing_rather_than_failing(tmp_path):
+    # An old bubble pruned out of chat.db, or one from before this account
+    # existed. The reference is still reported; the words simply are not.
+    from server import incoming_messages
+
+    config = _incoming_config(tmp_path)
+    _insert_incoming(
+        config.incoming_db, "+15550100", "try again", _ns_ago(5),
+        reply_to_guid="no-such-bubble",
+    )
+
+    (message,) = incoming_messages(config, since_ns=_ns_ago(60))["messages"]
+    assert message["reply_to_guid"] == "no-such-bubble"
+    assert "reply_to_text" not in message

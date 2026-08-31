@@ -33,17 +33,31 @@ logger = logging.getLogger(__name__)
 # was not.
 REFERS_TO = ("picture", "diagram", "task", "scout", "draft", "subject", "none")
 
+# The order is load-bearing. The engine fills fields in the order they are
+# declared, and `self_contained` used to come first - so the model had to
+# restate the message before it had decided what the message was about.
+# Measured 2026-08-30 on the operator's own group thread, where "try again"
+# followed a run of failed diagram attempts: it restated "try again" as
+# "try again", every run, and then had nothing left to name a subject from -
+# empty 2/3, and "Try Again Flow" the rest of the time, which is the title
+# of its own previous failure.
+#
+# The dependency runs one way: what it refers to, then the message written
+# out in full, then the subject named from that. Restating first left the
+# model echoing "try again"; naming the subject first left it blank 3/3 while
+# the restatement carried the subject perfectly well. Each field is now asked
+# for only once the thing it is derived from has been written.
 _SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
-        "self_contained": {"type": "string", "maxLength": 600},
         "refers_to": {"type": "string", "enum": list(REFERS_TO)},
+        "self_contained": {"type": "string", "maxLength": 600},
         "subject": {"type": "string", "maxLength": 120},
         # Whether the assistant's own last message offered to do something
         # that this message accepts. See `Resolution.accepts_offer`.
         "accepts_offer": {"type": "boolean"},
     },
-    "required": ["self_contained", "refers_to", "subject", "accepts_offer"],
+    "required": ["refers_to", "self_contained", "subject", "accepts_offer"],
     "additionalProperties": False,
 }
 _MAX_TOKENS = 220
@@ -95,29 +109,87 @@ current_followup: ContextVar[Resolution | None] = ContextVar("current_followup",
 
 
 # The conversation the resolver reads: the last few turns, bounded.
-def _recent(history: list[dict[str, Any]], zone: str = "") -> str:
+def _recent(history: list[dict[str, Any]], zone: str = "", from_index: int | None = None) -> str:
     # Dated, because "that one" and "the same again" are resolved against
     # turns whose age changes the answer: a plan made last night is not the
     # plan for tonight (2026-08-29, a group told an ice-cream run that had
     # already happened was happening "tonight").
-    return "\n".join(transcript_lines(history[-_HISTORY_TURNS:], zone))[-_HISTORY_CHARS:]
+    #
+    # Normally the last few turns. When the person replied to a specific
+    # older message the window opens at the turn before that one instead: a
+    # reply reopens the conversation at the point it names, and the subject
+    # usually sits just behind it. On 2026-08-30 "can you draw it as a
+    # diagram instead?" was the message replied to, and neither it nor its
+    # answer says what "it" is - the aqueduct is two turns further back,
+    # outside a four-turn window entirely.
+    start = (
+        max(0, min(from_index, len(history) - 1) - 1)
+        if from_index is not None
+        else max(0, len(history) - _HISTORY_TURNS)
+    )
+    return "\n".join(transcript_lines(history[start:], zone))[-_HISTORY_CHARS:]
 
 
 # Resolve one message against its conversation, or None when there is no
 # conversation to resolve against or the model could not be reached. A
 # failure here is never a failure of the turn: the router still sees the
 # history and decides as it did before this step existed.
+# The exchange a reply points at, rendered for the prompt.
+#
+# A person replying to an old bubble means the conversation that bubble
+# belongs to, not the bubble's words alone: the message they pointed at on
+# 2026-08-30 was "I couldn't create that diagram", which names no subject at
+# all. So the turn is found in the history and both halves are shown - the
+# request that produced it is where the subject actually lives.
+#
+# Matched by containment rather than equality because a long reply is
+# delivered as several bubbles, and the person replied to one of them.
+def _answering_line(
+    replying_to: str, history: list[dict[str, Any]]
+) -> tuple[str, int | None]:
+    said = " ".join(str(replying_to or "").split())
+    if not said:
+        return "", None
+    shown, found = said[:1200], None
+    for index in range(len(history) - 1, -1, -1):
+        turn = history[index]
+        answer = " ".join(str(turn.get("response") or "").split())
+        asked = " ".join(str(turn.get("query") or "").split())
+        matched = (answer and (said in answer or answer in said)) or (
+            asked and (said in asked or asked in said)
+        )
+        if matched:
+            shown = f"They asked: {asked[:600]}\nYou answered: {answer[:900]}"
+            found = index
+            break
+    return (
+        "\n\nThey have replied directly to this earlier exchange, so it is "
+        f"what their newest message is about:\n{shown}",
+        found,
+    )
+
+
 async def resolve_followup(
-    llm: Any, query: str, history: list[dict[str, Any]], zone: str = ""
+    llm: Any,
+    query: str,
+    history: list[dict[str, Any]],
+    zone: str = "",
+    replying_to: str = "",
 ) -> Resolution | None:
-    recent = _recent(history or [], zone)
+    answered, matched_at = _answering_line(replying_to, history or [])
+    recent = _recent(history or [], zone, matched_at)
     if not recent or not query.strip():
         return None
+    # When the person used a native reply they named the message themselves,
+    # and that beats anything inferred from the words. Given as its own line
+    # rather than folded into the transcript, because the whole point is that
+    # it is not the most recent message - and the transcript's own ordering
+    # would otherwise say it was.
     messages = [
         {"role": "system", "content": load("referent/followup")},
         {
             "role": "user",
-            "content": f"Recent conversation:\n{recent}\n\nNewest message: {query}",
+            "content": f"Recent conversation:\n{recent}{answered}\n\nNewest message: {query}",
         },
     ]
     try:

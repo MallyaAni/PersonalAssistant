@@ -449,6 +449,35 @@ _events_found: ContextVar[Any] = ContextVar("events_found", default=None)
 # The assistant's previous reply in this conversation, for anything that has
 # to resolve "this" - the task picker first. Set per request.
 _previous_assistant_said: ContextVar[str] = ContextVar("previous_assistant_said", default="")
+
+
+# The earlier message this turn is an explicit reply to, or empty. Distinct
+# from `_previous_assistant_said`, which falls back to the newest reply: this
+# one is set only when the person actually pointed at a message, because the
+# resolver is told "they replied directly to this", which would be a lie
+# about a turn that merely followed one.
+_replying_to: ContextVar[str] = ContextVar("replying_to", default="")
+
+
+# Which of the assistant's earlier messages this turn is answering.
+#
+# Normally the last one, because that is what "it", "that" and "try again"
+# almost always mean. But iMessage lets a person long-press an older bubble
+# and reply to it directly, and when they have done that they have said
+# which message they mean far more precisely than any resolver could infer.
+#
+# The 2026-08-30 group thread is why this exists. A diagram of Roman
+# aqueducts failed, and the retries went "you try again bruh", "try again!",
+# "Try Again" - each answered against the previous attempt until the subject
+# had decayed into the words of the request itself, and the thread ended up
+# with a diagram titled "Try Again". The operator had been replying to the
+# aqueduct message the whole time; the reference was read off the wire and
+# then used for nothing but pinning a picture.
+def _answering(metadata: dict[str, Any] | None, history: list[dict[str, Any]]) -> str:
+    replied_to = str((metadata or {}).get("replying_to") or "").strip()
+    if replied_to:
+        return replied_to
+    return str((history[-1].get("response") or "")) if history else ""
 # What this turn decided and did - route, picker, proposals, outcomes, search
 # state - saved with the turn as extra_data["trace"] and read back by
 # backend/cli/explain_turn.py. Reconstructing 2026-08-26's chain of three
@@ -1011,6 +1040,9 @@ class ConversationService:
                 skills=(
                     await self._offered_skills(user_id) if skills is None else skills
                 ),
+                # A long-press reply names the message being answered, which
+                # no resolver can infer from "try again".
+                replying_to=_replying_to.get(),
             )
         except Exception:
             logger.warning("Main action selection failed", exc_info=True)
@@ -2780,7 +2812,8 @@ class ConversationService:
         # a limit only on a turn where a search was chosen and refused - not
         # on a stretch reminder. Reset per request.
         current_search_limit.set(None)
-        _previous_assistant_said.set(str((history[-1].get("response") or "")) if history else "")
+        _replying_to.set(str((metadata or {}).get("replying_to") or "").strip())
+        _previous_assistant_said.set(_answering(metadata, history))
         _turn_trace.set({"_started": time.monotonic()})
         _turn_speaker.set(_speaker_of(metadata))
         _turn_conversation.set(resolved_conversation_id)
@@ -3241,7 +3274,8 @@ class ConversationService:
         _turn_conversation.set(resolved_conversation_id)
         current_followup.set(None)
         history = await self.repository.get_history(resolved_conversation_id, user_id, self.history_turn_limit)
-        _previous_assistant_said.set(str((history[-1].get("response") or "")) if history else "")
+        _replying_to.set(str((metadata or {}).get("replying_to") or "").strip())
+        _previous_assistant_said.set(_answering(metadata, history))
         context: dict[str, Any] = {"user_id": user_id, "query": query}
         await self._attach_group(context, metadata, user_id, query, None)
         room = context.get("group") if isinstance(context.get("group"), dict) else None

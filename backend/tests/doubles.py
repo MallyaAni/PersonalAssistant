@@ -172,6 +172,16 @@ class StubMainActionSelector:
         only: frozenset[str] | None = None,
         steps_taken: list[str] | None = None,
         zone: str = "",
+        replying_to: str = "",
     ) -> Any:
-        self.calls.append({"user_id": user_id, "query": query, "zone": zone})
+        self.calls.append(
+            {
+                "user_id": user_id,
+                "query": query,
+                "zone": zone,
+                # Recorded so a test can assert the turn passed down which
+                # message was replied to, without a second double.
+                "replying_to": replying_to,
+            }
+        )
         return self.action

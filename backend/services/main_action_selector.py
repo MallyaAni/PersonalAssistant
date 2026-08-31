@@ -317,6 +317,7 @@ class MainActionSelector:
         only: frozenset[str] | None = None,
         steps_taken: list[str] | None = None,
         zone: str = "",
+        replying_to: str = "",
     ) -> MainAction:
         if not query.strip():
             return None
@@ -328,7 +329,11 @@ class MainActionSelector:
         # that has to know: the router here, the search rounds and the picker
         # after it. Failure is silent - the router then decides from the
         # history alone, as it did before this step existed.
-        resolution = await resolve_followup(self.llm, query, history, zone) if history_text else None
+        resolution = (
+            await resolve_followup(self.llm, query, history, zone, replying_to)
+            if history_text
+            else None
+        )
         current_followup.set(resolution)
         reading = describe(resolution, query) if resolution else ""
         # A turn that continues a draft - "More casual", "Ask them to reply by

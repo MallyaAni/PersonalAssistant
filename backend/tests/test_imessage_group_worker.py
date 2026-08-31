@@ -98,7 +98,7 @@ def _worker(bridge, monkeypatch, accounts: dict, replies: dict, *, group=None, r
 
     conversed: list[dict] = []
 
-    async def converse(user_id: str, text: str, active_image=None, status=None, room=None):
+    async def converse(user_id: str, text: str, active_image=None, status=None, room=None, **_):
         conversed.append({"user_id": user_id, "text": text, "room": room})
         return TurnResult(replies.get(text, _FAILURE_REPLY))
 
@@ -434,7 +434,7 @@ def _flaky_worker(bridge, monkeypatch, accounts, replies, *, group=None, down: l
     """A worker whose backend is down while `down[0]` is True."""
     worker, conversed, provisioned = _worker(bridge, monkeypatch, accounts, replies, group=group)
 
-    async def converse(user_id, text, active_image=None, status=None, room=None):
+    async def converse(user_id, text, active_image=None, status=None, room=None, **_):
         if down[0]:
             raise BackendUnavailable("connection refused")
         conversed.append({"user_id": user_id, "text": text, "room": room})
@@ -662,7 +662,7 @@ async def test_an_address_nobody_vouched_for_never_reaches_the_mac(monkeypatch):
     bridge = _Bridge({"messages": [direct], "cursor": 5})
     worker, _conversed, _ = _worker(bridge, monkeypatch, ACCOUNTS, {})
 
-    async def converse(user_id, text, active_image=None, status=None, room=None):
+    async def converse(user_id, text, active_image=None, status=None, room=None, **_):
         return TurnResult(
             "Two spots:\nLa Brisa — https://labrisabali.com/whats-on\n"
             "Map link: https://maps.app.goo.gl/xyz\n"

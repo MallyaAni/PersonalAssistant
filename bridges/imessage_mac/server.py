@@ -790,6 +790,37 @@ def read_tapbacks(
 #
 # Nothing is returned to the caller from here: the body is read, compared, and
 # discarded inside this function, and only identifiers leave it.
+# What the message a reply points at actually said.
+#
+# iMessage carries only the guid of the replied-to bubble; the words are in
+# another row. Without them the caller knows a reply happened and not what
+# it was about - and on 2026-08-30 that was the whole failure: the reference
+# was read off the wire, used for nothing but pinning a picture, and a run of
+# "try again" retries in a group thread resolved against the most recent
+# failure instead of the aqueduct message being pointed at.
+#
+# Works for any bubble in the thread, which matters: a person replies to
+# their own earlier request at least as often as to one of ours, and the
+# outgoing-bubble record the worker keeps only ever held ours.
+def _replied_body(connection: sqlite3.Connection, guid: str) -> str:
+    suffix = str(guid or "").strip()
+    if not suffix:
+        return ""
+    try:
+        row = connection.execute(
+            "SELECT text, attributedBody FROM message WHERE guid LIKE ? LIMIT 1",
+            (f"%{suffix[-36:]}",),
+        ).fetchone()
+    except sqlite3.Error:
+        return ""
+    if row is None:
+        return ""
+    # The same extractor the message loop uses, not the narrow slice
+    # `_twins` takes: that one wants a distinctive fragment to recognise a
+    # duplicate by, and this wants the sentence a person actually replied to.
+    return str(extract_body(row[0], row[1]) or "").strip()[:2000]
+
+
 def _twins(
     connection: sqlite3.Connection, asked: tuple[tuple[str, str], ...]
 ) -> dict[str, str]:
@@ -1127,6 +1158,15 @@ def incoming_messages(
             if config.attachments_enabled and rows
             else {}
         )
+        # What each replied-to bubble said. Resolved here, while the
+        # connection is still open: the loop that builds the messages runs
+        # after the `finally` below has closed it, and a lookup down there
+        # fails silently and reports nothing at all.
+        replied = {
+            str(row[6]): _replied_body(connection, str(row[6]))
+            for row in rows
+            if row[6]
+        }
     except sqlite3.Error:
         return {"messages": [], "cursor": cursor}
     finally:
@@ -1200,6 +1240,11 @@ def incoming_messages(
         # rather than always the most recent one. Absent on ordinary messages.
         if originator:
             message["reply_to_guid"] = str(originator)
+            # And what it said, so the caller can tell which conversation is
+            # being resumed rather than only that one is.
+            said = replied.get(str(originator), "")
+            if said:
+                message["reply_to_text"] = said
         messages.append(message)
     return {"messages": messages, "cursor": cursor}
 

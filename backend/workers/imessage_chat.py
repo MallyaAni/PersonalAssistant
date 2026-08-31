@@ -314,9 +314,11 @@ class IMessageChatWorker:
         # A native reply to one of our image bubbles pins that image as the
         # target, overriding recency - "this one" beats "the latest one"
         # whenever the person says it.
-        pinned = await self._artifact_for_bubble(
-            str(message.get("reply_to_guid") or "")
-        )
+        reply_guid = str(message.get("reply_to_guid") or "")
+        pinned = await self._artifact_for_bubble(reply_guid)
+        # And what that bubble said, so a reply to an old text message is
+        # answered against that message rather than against the newest one.
+        answering = str(message.get("reply_to_text") or "").strip() or await self._said_in_bubble(reply_guid)
         # What the turn is doing, as the backend announces it, so a long
         # wait can be acknowledged with "🔎 Rummaging through the internet…"
         # rather than a random pleasantry.
@@ -334,7 +336,13 @@ class IMessageChatWorker:
                 return 0
             try:
                 turn = await self._with_ack(
-                    self._converse(user_id, burst, active_image=pinned, status=status),
+                    self._converse(
+                        user_id,
+                        burst,
+                        active_image=pinned,
+                        status=status,
+                        replying_to=answering,
+                    ),
                     reply_to,
                     status,
                 )
@@ -421,7 +429,9 @@ class IMessageChatWorker:
                 await self._observe(group.user_id, text, room)
             await self._mark_seen(guid)
             return 0
-        pinned = await self._artifact_for_bubble(str(message.get("reply_to_guid") or ""))
+        reply_guid = str(message.get("reply_to_guid") or "")
+        pinned = await self._artifact_for_bubble(reply_guid)
+        answering = str(message.get("reply_to_text") or "").strip() or await self._said_in_bubble(reply_guid)
         status: list[str] = []
         if attachments:
             turn = await self._with_ack(
@@ -435,7 +445,14 @@ class IMessageChatWorker:
                 return 0
             try:
                 turn = await self._with_ack(
-                    self._converse(group.user_id, burst, active_image=pinned, status=status, room=room),
+                    self._converse(
+                        group.user_id,
+                        burst,
+                        active_image=pinned,
+                        status=status,
+                        room=room,
+                        replying_to=answering,
+                    ),
                     reply_to,
                     status,
                 )
@@ -1200,6 +1217,7 @@ class IMessageChatWorker:
         active_image: str | None = None,
         status: list[str] | None = None,
         room: dict | None = None,
+        replying_to: str = "",
     ) -> "TurnResult":
         token = issue_user_token(user_id, ttl_seconds=600, scopes=["chat", "vision"])
         body: dict[str, object] = {
@@ -1213,6 +1231,10 @@ class IMessageChatWorker:
                 {"channel": "imessage_group", "group": dict(room)} if room else {"channel": "imessage"}
             ),
         }
+        # A long-press reply says which message is being answered, which is
+        # more than any resolver can infer from the words alone.
+        if replying_to:
+            body["metadata"]["replying_to"] = replying_to[:4000]  # type: ignore[index]
         body.update(await self._thread_state(user_id, pinned=active_image))
         collected: list[str] = []
         images: list[TurnImage] = []
@@ -1462,6 +1484,29 @@ class IMessageChatWorker:
             )
         except Exception:
             return
+
+    # What the assistant said in the bubble this message is a reply to.
+    #
+    # Outgoing text bubbles were already recorded, for reactions; this reads
+    # the same record for the other thing a person does to an old bubble,
+    # which is reply to it. Without this a native reply changed nothing
+    # unless the bubble happened to carry a picture, so "try again" on the
+    # aqueduct message from an hour ago was answered against whatever was
+    # said most recently - which, during a run of failed retries, is the
+    # failure itself (the 2026-08-30 group thread, where the retries decayed
+    # into a diagram titled "Try Again").
+    async def _said_in_bubble(self, guid: str) -> str:
+        key = _bare_guid(guid)
+        if not key:
+            return ""
+        try:
+            records = await self._outgoing_bubbles()
+        except Exception:
+            return ""
+        for item in records:
+            if _bare_guid(str(item.get("guid") or "")) == key:
+                return str(item.get("body") or "")
+        return ""
 
     async def _artifact_for_bubble(self, guid: str) -> str | None:
         key = _bare_guid(guid)
