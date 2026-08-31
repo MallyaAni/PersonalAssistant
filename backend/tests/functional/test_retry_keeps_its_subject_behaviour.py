@@ -154,7 +154,10 @@ async def test_a_reply_carrying_the_shorthand_still_completes_it(
     replied_to: str, kind: str
 ) -> None:
     action = await _routed("Architecture Thinking Process", replied_to)
-    subject = _subject(action) or str(getattr(action, "about", "") or "")
+    # An image action carries its reading in `prompt` - it has no subject
+    # field, which is what the first version of this test read (empty) while
+    # the prompt opened with the aqueduct.
+    subject = _subject(action) or str(getattr(action, "prompt", "") or "")
     assert type(action).__name__ == kind, action
     assert "aqueduct" in subject.casefold(), subject
 
@@ -163,7 +166,7 @@ async def test_replying_to_the_picture_completes_the_subject_too() -> None:
     # Asserting the action type alone is what let 12:50 through: the kind was
     # right and the subject was the shorthand. Both halves are the behaviour.
     action = await _routed("try again", "Here's the image you asked for.")
-    subject = _subject(action) or str(getattr(action, "about", "") or "")
+    subject = _subject(action) or str(getattr(action, "prompt", "") or "")
     assert "aqueduct" in subject.casefold(), subject
 
 
