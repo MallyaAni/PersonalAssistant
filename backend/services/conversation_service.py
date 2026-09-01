@@ -450,6 +450,40 @@ def _diagram_context(history: list[dict[str, Any]] | None, turns: int = 6) -> st
     return _recent(turns_seen, "", replied_at)
 
 
+# A long-press reply can point at a message older than the history window.
+# The words still arrive (the bridge resolves the bubble from the full
+# thread), but the turn itself is not among the fetched rows - so the window
+# cannot open at it and, worse, a receipt bubble is quoted raw: its title
+# leaks back to the resolver, which is the exact disease the metadata
+# rendering exists to prevent (found live 2026-09-01, "Try Again Flow").
+# One wider fetch on the miss path finds the turn and puts it at the front,
+# where every downstream reader already knows what to do with it.
+async def _rescue_replied_turn(
+    repository: Any,
+    conversation_id: str,
+    user_id: str,
+    replying_to: str,
+    history: list[dict[str, Any]],
+    wider: int = 80,
+) -> list[dict[str, Any]]:
+    from backend.services.followup import _answering_line
+
+    said = str(replying_to or "").strip()
+    if not said or not history:
+        return history
+    _, found = _answering_line(said, history)
+    if found is not None:
+        return history
+    try:
+        deep = await repository.get_history(conversation_id, user_id, wider)
+    except Exception:
+        return history
+    _, at = _answering_line(said, deep[: max(len(deep) - len(history), 0)])
+    if at is None:
+        return history
+    return [deep[at], *history]
+
+
 # Whether this request's search results were judged to be events, set by the
 # research path for the reply's presentation. Per task, like the limit.
 _results_were_events: ContextVar[bool] = ContextVar("results_were_events", default=False)
@@ -2823,6 +2857,13 @@ class ConversationService:
         # a limit only on a turn where a search was chosen and refused - not
         # on a stretch reminder. Reset per request.
         current_search_limit.set(None)
+        history = await _rescue_replied_turn(
+            self.repository,
+            resolved_conversation_id,
+            user_id,
+            str((metadata or {}).get("replying_to") or ""),
+            history,
+        )
         _replying_to.set(str((metadata or {}).get("replying_to") or "").strip())
         _previous_assistant_said.set(_answering(metadata, history))
         _turn_trace.set({"_started": time.monotonic()})
