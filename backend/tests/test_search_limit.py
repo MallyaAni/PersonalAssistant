@@ -147,8 +147,9 @@ async def test_the_pool_is_reconciled_with_the_provider_once_per_interval() -> N
     budget = SearchBudget("redis://127.0.0.1:1/0", monthly_credits=1000)
     budget.redis = _Redis()  # type: ignore[assignment]
     usage = _Usage(spent=993)
-    await budget.reconcile_if_stale(usage, 600)
-    await budget.reconcile_if_stale(usage, 600)
+    # The clock is passed so the pool key and the check agree on the month.
+    await budget.reconcile_if_stale(usage, 600, now=NOW)
+    await budget.reconcile_if_stale(usage, 600, now=NOW)
     assert usage.calls == 1, "the marker key holds the cadence"
     assert await budget.pool_remaining(NOW) == 7
 

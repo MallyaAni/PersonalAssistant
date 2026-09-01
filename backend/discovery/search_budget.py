@@ -123,8 +123,14 @@ class SearchBudget:
     # Spend against the shared pool, and what it has already cost this month.
     # Reconcile against the provider's meter unless it was done within
     # `max_age_seconds`. The marker is a Redis key with that TTL, so every
-    # process sharing the pool shares the cadence too.
-    async def reconcile_if_stale(self, usage: Any, max_age_seconds: float) -> None:
+    # process sharing the pool shares the cadence too. `now` is injectable so a
+    # test can reconcile a fixed month against a fixed clock — without it the
+    # pool key is stamped with the real month and a test pinned to another month
+    # reads the wrong key (the August/September rollover that froze a batch of
+    # tests on 2026-09-01).
+    async def reconcile_if_stale(
+        self, usage: Any, max_age_seconds: float, now: datetime | None = None
+    ) -> None:
         if not self.enabled:
             return
         marker = "anios:search:_pool:reconciled"
@@ -136,7 +142,7 @@ class SearchBudget:
         reported = await usage.spent()
         if reported is None:
             return
-        await self.reconcile(int(reported))
+        await self.reconcile(int(reported), now)
         try:
             await self.redis.set(marker, "1", ex=max(1, int(max_age_seconds)))
         except Exception:
