@@ -3,6 +3,7 @@ import { Bot, CheckCircle2, MoreHorizontal, Search, ShieldAlert, Sparkles, Wrenc
 import ReactMarkdown from 'react-markdown'
 import DiagramArtifact from '../DiagramArtifact/DiagramArtifact'
 import ImageArtifact from '../ImageArtifact/ImageArtifact'
+import { linkifyMarkdown } from '../../utils/linkify'
 import type {
   ImageArtifact as ImageArtifactRecord,
   ActionActivity,
@@ -126,7 +127,7 @@ const MessageBubble: React.FC<MessageProps> = ({
         </p>
       ) : (
         <div className="assistant-markdown text-[16px] leading-7 text-[#333336] md:text-[17px]">
-          <ReactMarkdown>{visibleContent}</ReactMarkdown>
+          <ReactMarkdown>{linkifyMarkdown(visibleContent)}</ReactMarkdown>
         </div>
       )}
       {!isUser && !isSearching && searchSources && searchSources.length > 0 && (

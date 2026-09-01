@@ -97,16 +97,16 @@ def _event_lines(event: ListedEvent) -> list[str]:
     if detail:
         lines.append(f"  {detail}")
     subject = " ".join(part for part in (event.venue, event.area) if part)
-    lines.append(f"  Map: {maps_search(subject)}")
+    lines.append(f"  [Map]({maps_search(subject)})")
     # One tap and it is in their calendar, with the name, the time and the
     # place already filled in. The listing used to end by asking "want any of
     # these in your calendar?" and then have no way to do it, which is the
     # kind of offer that makes an assistant feel like a brochure.
-    lines.append(f"  Add: {calendar_link(event.name, event.starts_at, location=subject)}")
+    lines.append(f"  [Add]({calendar_link(event.name, event.starts_at, location=subject)})")
     if event.artist:
-        lines.append(f"  Hear it: {youtube_search(event.artist)}")
+        lines.append(f"  [Hear it]({youtube_search(event.artist)})")
     if event.source_url:
-        lines.append(f"  Details: {event.source_url}")
+        lines.append(f"  [Details]({event.source_url})")
     return lines
 
 

@@ -1004,6 +1004,42 @@ test('renders a completed deterministic chat stream and clears loading state', a
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
+// A reply that names an address must present it as a tappable link, whether the
+// model wrote a markdown link or pasted a bare URL. Bare URLs only survive the
+// reply fence when the application vouches for them, so wrapping every bare URL
+// the UI sees cannot surface an invented address.
+test('renders markdown links and bare URLs in an answer as tappable links', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  let requestPayload: unknown
+  await page.route('http://localhost:8000/api/v1/chat', async route => {
+    requestPayload = route.request().postDataJSON()
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body: chatEventStream(
+        'linkify-trace',
+        (requestPayload as { conversation_id: string }).conversation_id,
+        'Check [DeepMatter](https://deep-matter.com) or the raw ' +
+          'https://deep-matter.com/api/v1/auth/session endpoint.',
+      ),
+    })
+  })
+
+  await page.goto('/')
+  const { textarea, sendButton } = chatControls(page)
+  await textarea.fill('send a link')
+  await sendButton.click()
+
+  const answer = latestAssistantAnswer(page)
+  const labelled = answer.locator('a[href="https://deep-matter.com"]')
+  await expect(labelled).toHaveCount(1)
+  await expect(labelled).toHaveText('DeepMatter')
+  const raw = answer.locator('a[href="https://deep-matter.com/api/v1/auth/session"]')
+  await expect(raw).toHaveCount(1)
+  await expect(raw).toHaveText('https://deep-matter.com/api/v1/auth/session')
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
 // A newer backend may name an event this build has never heard of, and the
 // answer must still arrive.
 //

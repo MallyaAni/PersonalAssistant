@@ -61,6 +61,14 @@ router = APIRouter(
 )
 UserId = Annotated[str, Path(min_length=1, max_length=50)]
 
+
+# The absolute address of one event's calendar file, from the configured base
+# (the tunnel or LAN address a phone can reach) rather than a relative path,
+# which only resolves on the origin the page was served from and silently fails
+# when the same link is opened from a phone.
+def _calendar_link(base: str, user_id: str, digest: str) -> str:
+    return f"{base.rstrip('/')}/{user_id}/calendar/{digest}.ics"
+
 # A subscriber's own calendar feed is addressed by an unguessable token and
 # nothing else, so it cannot sit behind the owning user's path or authorization.
 # This is how every calendar subscription URL works, including Apple's and
@@ -408,9 +416,11 @@ async def run_sweep(
                 # that event rather than whatever its title happened to be.
                 "item_digest": item.candidate.digest,
                 # Only a dated event can become a calendar file. Offering a
-                # link that would fail is worse than offering none.
+                # link that would fail is worse than offering none. Absolute so
+                # it opens from a phone, where the panel's origin is not this
+                # API's origin (a relative path failed silently there).
                 "calendar_path": (
-                    f"/api/v1/discovery/{user_id}/calendar/{item.candidate.digest}.ics"
+                    _calendar_link(base, user_id, item.candidate.digest)
                     if item.event.starts_at is not None
                     else None
                 ),
@@ -830,6 +840,7 @@ async def list_runs(
     limit: int = 10,
 ) -> dict[str, object]:
     records = await runs.recent_runs(user_id, limit)
+    base = calendar_base_url(settings.DISCOVERY_CALENDAR_BASE_URL)
     history: list[dict[str, object]] = []
     for record in records:
         digest = record.get("digest_json")
@@ -850,8 +861,11 @@ async def list_runs(
                                 event.source_id, event.external_id
                             ),
                             "calendar_path": (
-                                f"/api/v1/discovery/{user_id}/calendar/"
-                                f"{item_digest(event.source_id, event.external_id)}.ics"
+                                _calendar_link(
+                                    base,
+                                    user_id,
+                                    item_digest(event.source_id, event.external_id),
+                                )
                                 if event.starts_at is not None
                                 else None
                             ),

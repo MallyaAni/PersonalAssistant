@@ -7,6 +7,51 @@ was checked by running it, not by reading it. The seven image scenarios can
 be re-run any time with `python -m backend.cli.exercise_image_scenarios`
 inside the backend container.
 
+## 2026-09-01 — links are hyperlinks on every surface (deploy pending)
+
+Chat replies and digests pasted bare long URLs: the listing wrote `Map:
+https://maps.google.com/...` and `Details: https://...` as raw text, the web
+chat rendered bare URLs as inert text, the Scout "Add to calendar" used a
+relative `/api/v1/discovery/...` path, and a feed URL with a stray newline
+became dead text in iMessage. Fixes in the working tree (deploy pending via
+`scripts/deploy.sh`):
+
+- **Listing emits markdown links** `[Map]/[Add]/[Hear it]/[Details](url)`
+  (backend/core/events_listing.py). Web chat renders them tappable; the
+  iMessage worker's `plain_text` converts to `label (url)` which iMessage
+  auto-links. The link fence keeps every one (verified).
+- **Web chat auto-links bare URLs**: `frontend/src/utils/linkify.ts`
+  `linkifyMarkdown` in MessageBubble, plus `frontend/src/components/Linkified.tsx`
+  for the Scout preview/rehearsal panes (ScoutSetup.tsx). Safe because the
+  reply fence already stripped unvouched URLs.
+- **`calendar_path` is absolute** (backend/api/v1/discovery.py `_calendar_link`,
+  both call sites), built from `DISCOVERY_CALENDAR_BASE_URL`
+  (`https://deep-matter.com/api/v1/discovery`), so the `.ics` opens from a
+  phone. NOTE: the single-event `.ics` route is still behind `authorize_path_user`
+  — a phone without a session still gets 401. If "Add to calendar" must work
+  unauthenticated, make it public-by-unguessable-digest like the feed router.
+- **Digest URLs cleaned** (`_clean_url` in backend/discovery/digest.py, applied
+  at every append site) — strips control characters/whitespace.
+
+Verified: 187 unit tests (including new: cleaned digest URLs, absolute
+calendar link, markdown listing assertions), fence keeps all listing links,
+`plain_text` round-trips, frontend type-checks. A deterministic Playwright
+test (`renders markdown links and bare URLs in an answer as tappable links`
+in frontend/e2e/chat.spec.ts) is written but **could not be run here — no
+host node/browser**; run `npm run test:e2e` (or open the web chat and confirm
+the listing's Map/Add/Details are clickable) to close the UI check.
+
+**Still open from the 2026-08-31 work**: four commits (`1a5b8a3`, `e9a476b`,
+`9627a26`, `bff350f`) are deployed but UNPUSHED to origin (no git auth on this
+host — push from the Mac). The "group: a shared plan arms a check-in" routing
+wobble is intermittent (passed in the first deploy, red twice in the last —
+not caused by the chat-grounding change, which does not touch routing). The
+digest still over-selects routine socials over notable events (a rehearsal
+showed 3 of 4 line-dancing finds) — the "quality signal" item. `NEXT_SESSION`
+and `CHANGELOG` got entries for the 2026-08-31 fixes; the Google-fallback,
+pool, spread/repeat, date-rollover, and chat-grounding changes need their
+handoff entries folded in.
+
 ## 2026-08-31 — recommendation quality: ranked by the person, not a stale mood (deploy pending)
 
 The operator's digest on 2026-08-31 recommended a guided walk at Arlington

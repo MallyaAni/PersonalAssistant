@@ -7,7 +7,7 @@ failure mode that matters for something that messages you unprompted.
 
 from datetime import UTC, date, datetime, timedelta
 
-from backend.discovery.digest import render_message
+from backend.discovery.digest import _clean_url, render_message
 from backend.discovery.events import DiscoveredEvent, clean_title
 from backend.discovery.listing_filter import looks_like_a_directory
 from backend.discovery.relevance import (
@@ -279,3 +279,41 @@ def test_a_venue_calendar_is_not_a_happening():
         "Old Town Alexandria Events - The Alexandrian | Marriott",
         "https://www.thealexandrian.com/hotel/calendar-of-events",
     )
+
+
+# --- 6. a link a phone can actually open --------------------------------------
+
+
+def test_a_url_is_cleaned_before_it_is_pasted_into_a_message():
+    # A feed can bury whitespace or a control character in a URL; iMessage only
+    # auto-links a URL that is whole and well-formed, so a raw paste with a
+    # stray newline is dead text on a phone.
+    assert (
+        _clean_url("https://example.org/e?q=1\n")
+        == "https://example.org/e?q=1"
+    )
+    assert _clean_url("https://exa\x00mple.org/e") == "https://example.org/e"
+    assert _clean_url("  https://example.org/e  ") == "https://example.org/e"
+    assert _clean_url("") is None
+    assert _clean_url(None) is None
+
+
+def test_the_cleaned_url_reaches_the_assembled_message():
+    event = DiscoveredEvent(
+        source_id="s",
+        external_id="e",
+        title="Garden Party",
+        starts_at=datetime(2026, 8, 12, 18, 0, tzinfo=UTC),
+        ends_at=None,
+        place=None,
+        url="https://example.org/garden\n",
+        summary=None,
+    )
+    message = render_message(
+        (RankedCandidate(ScoredCandidate(event, None), 0.9, "social"),),
+        timezone="America/New_York",
+        now=datetime(2026, 8, 10, tzinfo=UTC),
+    )
+    assert message is not None
+    assert "https://example.org/garden" in message
+    assert "\nhttps://example.org/garden\n" not in message

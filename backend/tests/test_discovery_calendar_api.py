@@ -171,3 +171,20 @@ def test_an_unknown_digest_is_not_found():
     with TestClient(app) as client:
         response = client.get(f"/api/v1/discovery/{user_id}/calendar/{'0' * 64}.ics")
         assert response.status_code == 404
+
+
+def test_the_calendar_link_is_absolute_so_a_phone_can_open_it():
+    # A relative path only resolves on the origin the page was served from and
+    # fails silently when the same link is opened from a phone, which is where
+    # an "Add to calendar" tap happens.
+    from backend.api.v1.discovery import _calendar_link
+
+    assert (
+        _calendar_link("https://deep-matter.com/api/v1/discovery", "ani.mallya", "abc123")
+        == "https://deep-matter.com/api/v1/discovery/ani.mallya/calendar/abc123.ics"
+    )
+    # A trailing slash on the base must not double the separator.
+    assert (
+        _calendar_link("https://x.test/api/v1/discovery/", "u", "d")
+        == "https://x.test/api/v1/discovery/u/calendar/d.ics"
+    )

@@ -2,6 +2,38 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-01 — Links are hyperlinks, on every surface that shows one
+
+Replies and digests pasted bare long URLs: the chat listing wrote `Map:
+https://maps.google.com/...` and `Details: https://...` as raw text, the web
+chat rendered bare URLs as inert text (react-markdown does not auto-link), the
+Scout panel's "Add to calendar" used a relative `/api/v1/discovery/...` path
+that only resolves on the origin the page was served from, and a feed URL with
+a stray newline became dead text in an iMessage bubble.
+
+Five fixes. **The chat's event listing now emits markdown links**
+(`[Map](…)`, `[Add](…)`, `[Hear it](…)`, `[Details](…)`) — the web chat
+renders them as tappable links, and the iMessage worker's `plain_text`
+converts them to `label (url)`, which iMessage auto-links (verified both
+shapes and that the link fence keeps every one). **The web chat auto-links
+bare URLs** (`linkifyMarkdown` before react-markdown, and a `Linkified`
+component for the Scout preview/rehearsal panes) — safe because the reply
+fence has already stripped any URL nobody vouched for. **Scout's
+`calendar_path` is now an absolute URL** built from `DISCOVERY_CALENDAR_BASE_URL`
+instead of a relative path, so the "Add to calendar" `.ics` opens from a
+phone. **Digest URLs are cleaned before being pasted** (`_clean_url` strips
+control characters and whitespace a feed can bury in a URL, which broke
+iMessage auto-linking). **A deterministic Playwright test pins the web-chat
+link rendering** (markdown links and bare URLs both become `<a>` elements).
+
+Verified: 187 unit tests pass across the listing, digest, calendar, delivery,
+and iMessage-worker suites (including the three new tests: cleaned digest
+URLs, absolute calendar link, and the updated markdown listing assertions);
+the fence keeps every listing link; `plain_text` round-trips the markdown
+links to `label (url)`; the frontend type-checks. The web-chat Playwright test
+is written for the deterministic suite but the browser could not be run on
+this host, so the rendered `<a>` behavior awaits a browser session.
+
 ## 2026-08-31 — Recommendations are ranked by the person again, not by a stale mood
 
 The operator's digest on 2026-08-31 recommended "Guided wider estate walks at

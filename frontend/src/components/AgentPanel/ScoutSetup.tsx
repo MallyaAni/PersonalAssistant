@@ -49,6 +49,7 @@ import {
   getSearchUsage,
   type SearchUsage,
 } from '../../services/api'
+import Linkified from '../../components/Linkified'
 
 const WEEKDAYS = [
   'Monday',
@@ -1002,7 +1003,7 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
             {trial.committed ? 'Found and saved' : 'Rehearsal — nothing was saved'}
           </p>
           <pre className="overflow-x-auto whitespace-pre-wrap break-words font-sans text-sm leading-5 text-[#1d1d1f]">
-            {trial.message}
+            <Linkified text={trial.message} />
           </pre>
           {trial.selected.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5">
@@ -1037,7 +1038,7 @@ const ScoutSetup = ({ userId, onChanged }: ScoutSetupProps) => {
             What would be sent
           </p>
           <pre className="overflow-x-auto whitespace-pre-wrap break-words font-sans text-sm leading-5 text-[#1d1d1f]">
-            {preview.message}
+            <Linkified text={preview.message} />
           </pre>
           <p className="mt-3 border-t border-black/[0.05] pt-2 text-[11px] leading-4 text-[#86868b]">
             {preview.recipients.length === 0

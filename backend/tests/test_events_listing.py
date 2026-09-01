@@ -63,7 +63,7 @@ def test_every_event_carries_a_one_tap_calendar_link():
     # and then have no way to do it. An offer an assistant cannot fulfil is
     # worse than no offer.
     text = render_listing(Extraction((_lawn(),)), NOW)
-    assert "Add: https://calendar.google.com/calendar/render?action=TEMPLATE" in text
+    assert "[Add](https://calendar.google.com/calendar/render?action=TEMPLATE" in text
     assert "text=Sunday+Sessions" in text
     assert "dates=20260830T160000Z" in text
     assert "location=The+Lawn+Batu+Bolong" in text

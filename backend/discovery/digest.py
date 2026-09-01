@@ -42,6 +42,17 @@ MAX_PLACE_CHARS = 60
 MAX_SUMMARY_CHARS = 170
 
 
+# Strip the whitespace and control characters a feed can bury in a URL before
+# it is pasted into a message. iMessage auto-links a URL only when it is whole
+# and well-formed; a stray newline or tab in the middle of it is the kind of
+# break that turns a tappable link into dead text on a phone.
+def _clean_url(url: str | None) -> str | None:
+    if not url:
+        return None
+    cleaned = "".join(character for character in url if ord(character) >= 32)
+    return cleaned.strip() or None
+
+
 # One entry per find: what it is, when, where, and a link when the source gave
 # one. No calendar file and no calendar link — a message is read on a phone in a
 # few seconds, and an attachment nobody asked for is friction rather than help.
@@ -123,8 +134,9 @@ async def write_bubbles(
         # given the ones that qualified, and its job is wording, not selection.
         text = written_by_index.get(position) or _assembled_bubble(item, zone)
         # The source's own link, from the typed record, never from the model.
-        if item.event.url and item.event.url not in text:
-            text = f"{text}\n{item.event.url}"
+        clean = _clean_url(item.event.url)
+        if clean and clean not in text:
+            text = f"{text}\n{clean}"
         bubbles.append(
             Bubble(
                 text=text,
@@ -148,7 +160,7 @@ def _assembled_bubble(item: RankedCandidate, zone: ZoneInfo) -> str:
     if event.summary:
         parts.append(_bound(event.summary, MAX_SUMMARY_CHARS))
     if event.url:
-        parts.append(event.url)
+        parts.append(_clean_url(event.url))
     return "\n".join(parts)
 
 
@@ -193,8 +205,9 @@ async def write_message(
         # The source's own link, from the typed record, never from the model.
         # Not every find has one — a trail or a park is a place rather than a
         # page — and a line saying nothing is worse than no line.
-        if item.event.url:
-            lines.append(f"  {item.event.url}")
+        clean = _clean_url(item.event.url)
+        if clean:
+            lines.append(f"  {clean}")
         lines.append("")
     remaining = len(live) - len(written.lines)
     if remaining > 0:
@@ -297,8 +310,9 @@ def _render_dated(
         # The source's own link, which works from anywhere. Not every find has
         # one — a trail or a park is a place rather than a page — and a line
         # saying nothing is worse than no line.
-        if event.url:
-            lines.append(f"  {event.url}")
+        clean = _clean_url(event.url)
+        if clean:
+            lines.append(f"  {clean}")
     remaining = len(dated) - limit
     if remaining > 0:
         lines.extend(["", f"and {remaining} more"])
@@ -321,8 +335,9 @@ def _render_undated(undated: list[RankedCandidate]) -> list[str]:
         lines.append(f"• {_bound(item.event.title, MAX_TITLE_CHARS)}")
         if item.event.summary:
             lines.append(f"  {_bound(item.event.summary, MAX_SUMMARY_CHARS)}")
-        if item.event.url:
-            lines.append(f"  {item.event.url}")
+        clean = _clean_url(item.event.url)
+        if clean:
+            lines.append(f"  {clean}")
     return lines
 
 
