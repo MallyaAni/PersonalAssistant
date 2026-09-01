@@ -228,6 +228,35 @@ class SeenItemRepository:
                 events.append(event)
         return tuple(events)
 
+    # Every announced, still-upcoming item, with its stored embedding, so a
+    # thin sweep can re-offer a quality find it already suggested. The digest
+    # keeps "announce once" for what is new; this is the fallback that fills an
+    # otherwise-empty day with the best still-ahead finds the user already saw,
+    # rather than sending nothing.
+    async def announced_candidates(
+        self, user_id: str, now: datetime | None = None, limit: int = 100
+    ) -> tuple[ScoredCandidate, ...]:
+        moment = now or datetime.now(UTC)
+        stmt = (
+            select(DiscoverySeenItem)
+            .where(
+                DiscoverySeenItem.user_id == user_id,
+                DiscoverySeenItem.announced_at.is_not(None),
+                DiscoverySeenItem.starts_at.is_not(None),
+                DiscoverySeenItem.starts_at >= moment,
+                DiscoverySeenItem.embedding.is_not(None),
+            )
+            .order_by(DiscoverySeenItem.starts_at.asc())
+            .limit(limit)
+        )
+        rows = (await self.session.execute(stmt)).scalars().all()
+        candidates: list[ScoredCandidate] = []
+        for row in rows:
+            event = _event_from_payload(row.payload_json)
+            if event is not None:
+                candidates.append(ScoredCandidate(event=event, embedding=row.embedding))
+        return tuple(candidates)
+
     async def count_seen(self, user_id: str) -> int:
         stmt = select(func.count(DiscoverySeenItem.id)).where(
             DiscoverySeenItem.user_id == user_id

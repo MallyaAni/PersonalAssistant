@@ -58,6 +58,7 @@ from backend.discovery.relevance import (
     RelevanceRanker,
     candidate_text,
     cap_by_lead_time,
+    cosine_similarity,
 )
 from backend.discovery.search_budget import SearchBudget
 from backend.discovery.sources.ics import IcsEventSource
@@ -74,6 +75,54 @@ from backend.discovery.url_dates import deadline_has_passed
 # digest — while a sweep that found fewer than that behaves exactly as it did
 # before, because there is nothing extra to drop.
 SHORTLIST_FACTOR = 2
+
+
+# The interest a candidate matches best by cosine, whatever it was attributed
+# as. A find is shown because it matches an interest, so this is the handle the
+# spread uses to keep a digest from being eight of the same one.
+def _best_interest_label(
+    embedding: list[float] | None,
+    interest_vectors: dict[str, list[float]],
+) -> str | None:
+    best_label: str | None = None
+    best_similarity = -1.0
+    for label, vector in interest_vectors.items():
+        similarity = cosine_similarity(embedding or [], vector)
+        if similarity > best_similarity:
+            best_label, best_similarity = label, similarity
+    return best_label
+
+
+# Spread a ranked shortlist across the user's interests before the digest is
+# cut, quality first. The input is already ranked by the caller and has passed
+# eligibility, so this only reorders — the top find of each distinct interest
+# comes first, in the rank order the caller chose, then everything else in that
+# same order fills the rest. A digest of eight must not be eight of the same
+# thing, but it must never reach below the ranker's floor to make room for an
+# interest with no quality find either: what is not in the shortlist is not
+# added, and what is added is only reordered.
+def _spread_by_interest(
+    shortlist: tuple[RankedCandidate, ...],
+    interest_vectors: dict[str, list[float]],
+    limit: int,
+    undated_limit: int,
+    now: datetime | None = None,
+) -> tuple[RankedCandidate, ...]:
+    if not shortlist:
+        return shortlist
+    moment = now or datetime.now(UTC)
+    # The top find of each distinct interest, in the rank order the caller
+    # chose (so the overall best still leads), then everything else behind it
+    # in that same order.
+    first_by_interest: dict[str, RankedCandidate] = {}
+    for item in shortlist:
+        label = _best_interest_label(item.candidate.embedding, interest_vectors)
+        if label is not None and label not in first_by_interest:
+            first_by_interest[label] = item
+    leading = set(id(item) for item in first_by_interest.values())
+    spread = list(first_by_interest.values())
+    spread.extend(item for item in shortlist if id(item) not in leading)
+    return cap_by_lead_time(tuple(spread), moment, limit, undated_limit)
 
 
 # Only what a sweep needs from the embedding provider, so the runner can be
@@ -409,7 +458,27 @@ class DiscoveryRunner:
         # without ever seeing them together, which is why they cluster; this
         # reorders what they admitted and re-decides which interest to name.
         shortlist = await self.precision.order(shortlist, aim)
-        selected = await self._order(shortlist, context, moment, limit)
+        # Memory orders the whole shortlist — a wider cut than the digest, so a
+        # model that reorders a bad day cannot silently drop an entire interest
+        # from it. Then the digest is spread across interests and cut: the top
+        # find of each interest leads in the memory order (quality first), the
+        # rest fills behind it, and nothing below the ranker's floor is added.
+        interest_vectors = ranker.interest_vectors
+        ordered = await self._order(
+            shortlist,
+            context,
+            moment,
+            limit * SHORTLIST_FACTOR,
+            undated_limit=MAX_UNDATED * SHORTLIST_FACTOR,
+        )
+        selected = _spread_by_interest(
+            ordered, interest_vectors, limit, MAX_UNDATED, now=moment
+        )
+        # A thin novel side does not mean a silent day: fill what is left with
+        # the best still-upcoming finds this account was already offered.
+        selected = await self._repeat_fill(
+            user_id, selected, ranker, limit, moment
+        )
 
         # Chosen before anything is recorded as seen. Afterwards these
         # candidates would be in the history they are measured against, and
@@ -635,29 +704,65 @@ class DiscoveryRunner:
         except Exception:
             return SweepAim.from_labels(labels)
 
-    # Order the shortlist against approved memory and cut it to the digest's
-    # size. With the model path off or unavailable this is the plain truncation
-    # `RelevanceRanker.rank` would have done on its own.
+    # Order the shortlist against approved memory. Returns the full order, not
+    # a cut, so the caller can spread it across interests and then cap: a model
+    # that reordered a shortlist and also decided what fits would let a bad day
+    # silently drop whole interests from the digest. With the model path off or
+    # unavailable this is the plain deterministic order.
     async def _order(
         self,
         shortlist: tuple[RankedCandidate, ...],
         context: PersonalContext,
         now: datetime,
         limit: int,
+        undated_limit: int = MAX_UNDATED,
     ) -> tuple[RankedCandidate, ...]:
         if not settings.DISCOVERY_MEMORY_RERANK_ENABLED:
-            return cap_by_lead_time(shortlist, now, limit, MAX_UNDATED)
+            return shortlist
         try:
             return await self.reranker.order(
-                shortlist, context, now=now, limit=limit, undated_limit=MAX_UNDATED
+                shortlist, context, now=now, limit=limit, undated_limit=undated_limit
             )
         except Exception:
-            return cap_by_lead_time(shortlist, now, limit, MAX_UNDATED)
+            return shortlist
+
+    # Fill a thin digest with the best still-upcoming finds already suggested,
+    # so a day with nothing new does not go silent. Novelty still decides what
+    # is new; this only fills what novelty left empty, re-scoring announced
+    # items against the same interests so only the still-relevant ones return,
+    # and spreading the result so a repeated cluster does not dominate.
+    async def _repeat_fill(
+        self,
+        user_id: str,
+        selected: tuple[RankedCandidate, ...],
+        ranker: RelevanceRanker,
+        limit: int,
+        now: datetime | None = None,
+    ) -> tuple[RankedCandidate, ...]:
+        if len(selected) >= limit + MAX_UNDATED:
+            return selected
+        moment = now or datetime.now(UTC)
+        try:
+            repeats = await self.seen.announced_candidates(user_id, now=moment)
+        except Exception:
+            return selected
+        if not repeats:
+            return selected
+        chosen = {item.candidate.digest for item in selected}
+        candidates = tuple(c for c in repeats if c.digest not in chosen)
+        if not candidates:
+            return selected
+        ranked = ranker.rank(
+            candidates, now=moment, limit=limit, undated_limit=MAX_UNDATED
+        )
+        combined = tuple(selected) + ranked
+        return _spread_by_interest(
+            combined, ranker.interest_vectors, limit, MAX_UNDATED, now=moment
+        )
 
     # Search for what no feed publishes. Failure here is silent by design: a
     # sweep with working feeds must not fail because a search provider is down.
-    async def _search_events(
-        self,
+    async def _search_events(        self,
         user_id: str,
         profile: DiscoveryProfile,
         budget: RequestBudget,
@@ -679,7 +784,20 @@ class DiscoveryRunner:
                 user_id, self.is_operator, wanted, override=self.search_limit
             )
             if granted <= 0:
-                return ()
+                # The shared pool meters Tavily's free credits. When those are
+                # gone the pool reads spent even though a later rung — Google,
+                # prepaid and metered by its own quota — can still serve. So a
+                # spent pool alone must not stop a sweep; only the account's own
+                # daily or monthly window is a hard stop.
+                daily = await self.search_budget.remaining_today(
+                    user_id, self.is_operator
+                )
+                monthly = await self.search_budget.remaining(
+                    user_id, self.is_operator, override=self.search_limit
+                )
+                if daily <= 0 or monthly <= 0:
+                    return ()
+                granted = wanted
 
         source = WebEventSource(
             source_id="web-search",

@@ -435,9 +435,12 @@ async def test_the_skeleton_and_the_budget_are_unchanged():
 
     # `{subject} {place} {month year}` — the phrasing that was measured. Naming
     # the month kept 6 of 9 results where "events near X upcoming" kept 0 of 5.
+    # The month is the sweep's real clock, so it is read, not assumed (the
+    # month rolls over at midnight UTC and must not freeze a test to August).
+    month = datetime.now(UTC).strftime("%B %Y")
     assert search.queries == [
-        "casual weekend group runs Arlington, Virginia August 2026",
-        "beginner pottery classes Arlington, Virginia August 2026",
+        f"casual weekend group runs Arlington, Virginia {month}",
+        f"beginner pottery classes Arlington, Virginia {month}",
     ]
 
 
@@ -706,9 +709,11 @@ async def test_a_sweep_searches_and_ranks_with_what_memory_knows(monkeypatch):
 
             result = await runner.sweep(user_id, profile, now=_NOW, persist=False)
 
-        # The query is about this person, in the skeleton that was measured.
+        # The query is about this person, in the skeleton that was measured. The
+        # month is the sweep's real clock, so it is read, not assumed.
+        month = datetime.now(UTC).strftime("%B %Y")
         assert (
-            "casual weekend group runs Arlington, Virginia August 2026"
+            f"casual weekend group runs Arlington, Virginia {month}"
             in search.queries
         )
         # And the vector a candidate was scored against is no longer two words.
@@ -772,7 +777,9 @@ async def test_a_sweep_with_the_flags_off_searches_the_bare_label(monkeypatch):
 
             await runner.sweep(user_id, profile, now=_NOW, persist=False)
 
-        assert "Run Clubs Arlington, Virginia August 2026" in search.queries
+        # The month is the sweep's real clock, so it is read, not assumed.
+        month = datetime.now(UTC).strftime("%B %Y")
+        assert f"Run Clubs Arlington, Virginia {month}" in search.queries
         # Nothing was read out of memory and nothing was asked of the model.
         assert writer.prompts == []
     finally:

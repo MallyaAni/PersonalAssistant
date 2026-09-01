@@ -35,6 +35,43 @@ from backend.discovery.types import DiscoveryProfile, Interest
 from backend.models.discovery_source import DiscoverySeenItem, DiscoverySource
 
 
+# The spread keeps a digest from being eight of the same thing: the top find of
+# each distinct interest leads, in the order it was ranked, and everything else
+# fills behind it in that same order. Never admits anything — only reorders what
+# the caller already qualified.
+def test_spread_puts_one_find_of_each_interest_first():
+    from backend.discovery.runner import _spread_by_interest
+
+    vectors = {
+        "jazz": [1.0, 0.0],
+        "hiking": [0.0, 1.0],
+    }
+    # Ranked order: two jazz, one hiking, then a second jazz.
+    def _candidate(title: str, vector: list[float]) -> ScoredCandidate:
+        return ScoredCandidate(
+            _event(title.replace(" ", "-"), title), vector
+        )
+
+    jazz_a = _candidate("Jazz night", [0.9, 0.1])
+    jazz_b = _candidate("Jazz brunch", [0.8, 0.2])
+    hike = _candidate("Trail walk", [0.1, 0.9])
+    from backend.discovery.runner import RankedCandidate
+
+    shortlist = (
+        RankedCandidate(jazz_a, 0.9, "jazz"),
+        RankedCandidate(hike, 0.8, "hiking"),
+        RankedCandidate(jazz_b, 0.7, "jazz"),
+    )
+    spread = _spread_by_interest(shortlist, vectors, 8, 3, now=_NOW)
+
+    # The overall best leads, then the other interest's best, then the repeat.
+    assert [item.event.title for item in spread] == [
+        "Jazz night",
+        "Trail walk",
+        "Jazz brunch",
+    ]
+
+
 # These tests are about novelty, so they state the setting they need. Reading it
 # from the deployment's own configuration made the suite pass or fail depending
 # on what an operator had switched off that afternoon — which it did.
@@ -174,8 +211,9 @@ def test_ranking_drops_candidates_below_the_floor():
 
 
 @pytest.mark.asyncio
-async def test_a_repeated_sweep_over_an_unchanged_feed_announces_nothing():
-    """The acceptance criterion for stage 4."""
+async def test_a_repeated_sweep_over_an_unchanged_feed_reoffers_still_upcoming():
+    """A quiet day is not a silent one: nothing new is announced, and the
+    digest re-offers the still-upcoming finds already suggested."""
     user_id = f"nov_{uuid.uuid4().hex[:12]}"
     events = (_event("evt-1", "Jazz at the Green"), _event("evt-2", "Jazz brunch"))
     try:
@@ -210,7 +248,14 @@ async def test_a_repeated_sweep_over_an_unchanged_feed_announces_nothing():
             assert stub.fetches == 2
             assert second.candidate_count == 2
             assert second.novel_count == 0
-            assert second.selected == ()
+            # Novelty still decides what is new — nothing is — but a day with
+            # nothing new is not a silent one: the fallback re-offers the
+            # still-upcoming finds this account was already shown, so a quality
+            # suggestion that has not passed returns.
+            assert {item.event.title for item in second.selected} == {
+                "Jazz at the Green",
+                "Jazz brunch",
+            }
     finally:
         await _cleanup(user_id)
 
@@ -384,7 +429,8 @@ async def test_a_rehearsal_records_nothing_and_repeats_identically():
 @pytest.mark.asyncio
 async def test_a_real_sweep_after_a_rehearsal_still_behaves_normally():
     # A rehearsal must not have poisoned the seen store, so the real sweep that
-    # follows announces everything once and then nothing.
+    # follows announces everything once and then, on a quiet day, re-offers the
+    # still-upcoming find rather than going silent.
     user_id = f"nov_{uuid.uuid4().hex[:12]}"
     try:
         async with AsyncSessionLocal() as session:
@@ -413,7 +459,10 @@ async def test_a_real_sweep_after_a_rehearsal_still_behaves_normally():
             again = await runner.sweep(user_id, profile, now=_NOW)
 
             assert len(real.selected) == 1
-            assert again.selected == ()
+            # Nothing new, so the still-upcoming suggestion is re-offered.
+            assert [item.event.title for item in again.selected] == [
+                "Jazz at the Green"
+            ]
     finally:
         await _cleanup(user_id)
 
