@@ -48,6 +48,17 @@ and `CHANGELOG` got entries for the 2026-08-31 fixes; the Google-fallback,
 pool, spread/repeat, date-rollover, and chat-grounding changes need their
 handoff entries folded in.
 
+## 2026-09-01 — manage_tasks claims its memory undo (deploying with this commit)
+
+- **`backend/tools/manage_tasks.py`**: the tool description now says undo puts
+  back "the most recent change the assistant made - a reminder, Scout's
+  schedule, or a fact it just saved to memory - 'forget that'..." . The router
+  reads each tool's own description when choosing, and the old text never
+  mentioned the memory undo this tool performs, so "forget that" mis-routed to
+  Past conversations/None ~1/3 of the time with a false "forgotten" claim.
+  Controlled in-process A/B: 4/15 -> 15/15 manage_tasks. Full matrix with the
+  fix: manage_tasks 45/45, task_undo 15/15, no new cross-tool cell.
+
 ## 2026-09-01 — "forget that" routing fix + judge pin (deploying with this commit)
 
 - **`prompts/routing/select_action.md`**: removed the contradiction that made

@@ -2,6 +2,27 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-01 — manage_tasks's own contract now claims the memory undo it performs
+
+The router kept mis-routing "forget that" - to Past conversations or to no
+tool - roughly a third of the time, and the reply then claimed a forgetfulness
+that was never written (the sweep journey caught it; reproduced 2/10 and 3/10
+over HTTP, and 4/15 in a controlled in-process A/B). The prompt already said
+"forget that" is manage_tasks undo, and the matrix case existed; neither was
+enough. What the router actually reads when choosing among tools is each tool's
+own description, and manage_tasks's said undo puts back "their reminders or to
+Scout's schedule" - it never mentioned the memory it also restores. The
+description now says the most recent change the assistant made, including "a
+fact it just saved to memory", with "forget that" as an example.
+
+Measured: controlled in-process A/B on "forget that" (same conditions, only
+the description changed) took routing from 4/15 to 15/15 manage_tasks. The
+full matrix with the fix: 0.9043 overall (within run-to-run noise of the
+0.9113-0.9184 baseline), manage_tasks 45/45, task_undo 15/15, and no new
+cross-tool cell (none->manage_tasks stays 3). The tool's contract now claims
+exactly what its undo operation performs, which is where a router should be
+able to learn it.
+
 ## 2026-09-01 — "forget that" reliably routes to manage_tasks, and the semantic judge is pinned
 
 Two follow-ups to the routing-wobble thread. **The router prompt no longer
