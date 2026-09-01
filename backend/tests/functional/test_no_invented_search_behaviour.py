@@ -21,9 +21,14 @@ from backend.tests.functional.semantic import states
 pytestmark = pytest.mark.asyncio
 
 # Phrasings that assert a search happened. Any of these with zero evidence
-# is the lie this gate exists to catch.
+# is the lie this gate exists to catch. The "search results" phrase is only a
+# lie when the speaker claims to hold them ("the search results showed...");
+# an honest "I don't have web search results in front of me" is a disclosure,
+# not an invention, and a bare "search results" would flag it (seen live
+# 2026-09-01: an honest reply failed its own gate).
 _INVENTED = re.compile(
-    r"search results|results i (have|got|found)|i searched|my search|"
+    r"(the|my|these|those) search results|results i (have|got|found)|"
+    r"i searched|my search|"
     r"the search (came back|returned|found|didn't|did not|flaked)|"
     r"nothing (came up|turned up) in",
     re.IGNORECASE,

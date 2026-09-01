@@ -92,3 +92,73 @@ async def test_a_request_for_links_over_imessage_carries_a_url(llm):
     text = str(result["content"])
 
     assert "example-retailer.com" in text, text
+
+
+# A real game-show question on 2026-09-01: the results said "ESPN Jeopardy! on
+# Hulu", and the reply asserted "Jeopardy! and Wheel of Fortune are the big
+# classics, both on Hulu" plus "Family Feud on Hulu" - none of which a result
+# stated. Reading one specific and generalising it to other shows on the same
+# service is the same invention as the fabricated stock: the reply's specifics
+# must be the results' specifics, not the model's inference from them.
+_GAME_SHOW_EVIDENCE = {
+    "search": [
+        {
+            "title": "Where to Watch Game Shows in 2026: Streaming Guide",
+            "url": "https://www.gameshows.com/news/where-to-watch-game-shows-2026",
+            "content": (
+                "Start with Hulu for maximum breadth, Paramount+ for The Price "
+                "Is Right, and Peacock for Deal or No Deal. Add YouTube TV if "
+                "you want live television access."
+            ),
+        },
+        {
+            "title": "Watch Popular Game Shows Online | Hulu",
+            "url": "https://www.hulu.com/hub/game-shows",
+            "content": (
+                "Watch popular Game Shows on Hulu. Contestants compete for the "
+                "title of 'ESPN Jeopardy!' champion. Produced by Sony Pictures "
+                "Television."
+            ),
+        },
+    ]
+}
+
+
+def _plain_messages(context: dict, query: str) -> list[dict]:
+    messages = [{"role": "system", "content": _build_system_prompt(context)}]
+    messages.extend(turn_context_messages(context))
+    messages.append({"role": "user", "content": query})
+    return messages
+
+
+async def test_a_show_is_never_assigned_to_a_service_the_results_do_not_name(llm):
+    from backend.tests.functional.semantic import states
+
+    result = llm.chat(
+        _plain_messages(
+            dict(_GAME_SHOW_EVIDENCE),
+            "what are the most popular game shows and which streaming "
+            "services are they on?",
+        ),
+        400,
+        None,
+        0.0,
+    )
+    text = str(result["content"])
+
+    assert text.strip()
+    # The results name ESPN Jeopardy! on Hulu - not the classic Jeopardy! or
+    # Wheel of Fortune, and not Family Feud. Assigning those to Hulu is the
+    # model's own inference, which is the exact lie this pins.
+    assert not states(
+        text,
+        "The reply states that the classic Jeopardy! show, Wheel of Fortune, "
+        "or Family Feud is available on Hulu.",
+    ), text
+    # The grounded specifics survive, or the reply hedges rather than invents.
+    assert states(
+        text,
+        "The reply says The Price Is Right is on Paramount+ or Deal or No Deal "
+        "is on Peacock, or says it cannot confirm which services carry "
+        "specific shows.",
+    ), text
