@@ -51,6 +51,7 @@ Git is recoverable code history, documentation is reasoning context, and functio
 - Create commits, tags, branches, worktrees, reverts, or other Git mutations only when authorized by the user or the requested workflow.
 - Call a commit a verified checkpoint only when its exact tree passed the applicable acceptance path; record the commit SHA and evidence in `NEXT_SESSION.md` after verification.
 - For recovery, prefer inspecting or branching from the verified SHA without overwriting the current worktree.
+- More than one agent commits to this repository (sessions on the Mac, opencode on the Spark). GitHub `main` is the single truth: run `git pull --rebase origin main` before starting work, and push as soon as a checkpoint is verified. Unpushed commits diverge silently - on 2026-09-01 eight local commits and one on origin had to be reconciled by hand, and `scripts/deploy.sh` (ff-only pull) rightly refused to build the diverged tree. Two agents editing the same file at the same time is the one thing this rule cannot fix; split by area.
 - Never run `git reset --hard`, `git clean -fd`, `git restore .`, destructive checkout commands, or force pushes without explicit approval.
 - If Git is unavailable, report Git state as `UNAVAILABLE` and do not invent branch, commit, or diff information.
 
