@@ -186,6 +186,36 @@ async def test_reranking_keeps_an_age_marked_thing_without_a_contradicting_fact(
     assert len(ordered) == len(shortlist)
 
 
+async def test_reranking_prefers_a_notable_one_off_over_a_routine_social(llm):
+    # Facts that would positively support one find over the other are absent,
+    # so the notability tiebreak decides: a one-off festival leads a weekly
+    # recurring social, because a routine social is already on the calendar.
+    shortlist = _ranked(
+        "Weekly line dancing social at the barn, every Thursday",
+        "Riverfront Bluegrass Festival, a weekend of live bands",
+    )
+    context = PersonalContext(("They grew up in the Midwest.",))
+
+    ordered = await MemoryReranker(llm).order(shortlist, context)
+
+    assert ordered[0].event.title.startswith("Riverfront")
+
+
+async def test_reranking_never_drops_a_find_for_being_routine(llm):
+    # The notability principle is an order tiebreak, never an exclusion: a
+    # routine weekly social with no stated restriction is still shown, just not
+    # first.
+    shortlist = _ranked(
+        "Beginner line dancing social, every Thursday, all welcome",
+        "Riverfront Bluegrass Festival, a weekend of live bands",
+    )
+    context = PersonalContext(("They grew up in the Midwest.",))
+
+    ordered = await MemoryReranker(llm).order(shortlist, context)
+
+    assert len(ordered) == len(shortlist)
+
+
 # Flowcharts, which is what almost every request asks for. This was xfailed as
 # "a real defect" and the defect turned out to be serialization, not reasoning:
 # inside a JSON string the model joined its Mermaid lines with <br/> instead of

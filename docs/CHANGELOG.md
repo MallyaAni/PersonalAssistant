@@ -2,6 +2,30 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-01 — a digest prefers the notable one-off, and the check-in journey stops flaking
+
+Two follow-ups to today's recommendation work. **The reranker now carries a
+notability tiebreak** (`prompts/scout/rerank.md`): among finds the approved
+facts do not distinguish, a one-off festival or headline performance leads a
+routine weekly social, because a recurring social is already on the calendar.
+Deliberately reorder-only — it can never empty a digest, the way a
+selection-side filter once did (`is_a_listing`) — and a find the facts clearly
+support still leads. Measured: `evaluate_discovery_ranking` green (filtering
+recall 0.8571 vs a 0.80 floor, geography happening-retention 1.0), and the
+tiebreak is pinned by two functional cases in `test_prompt_behaviour.py`
+(notable-one-off-first when facts are silent; nothing dropped for being
+routine). A rehearsal sweep still shows variety, not a single-type digest.
+
+**The "a shared plan arms a check-in in the room" journey no longer demands
+route=None.** The check-in arming is route-independent (it runs in parallel
+before the reply, whichever tool fires), and in the runs where the router
+chose "Past conversations" the check-in was still armed — the journey flagged
+only the route. A history lookup on "the car" is a benign alternative, the
+same allowance the dinner-suggestion journey already makes, so the expected
+routes are now `(None, "Past conversations")` and the sql_holds (the armed
+task) stays the real assertion. This turns a journey that flaked red twice in
+two deploys into a stable one; verified 3/3 green.
+
 ## 2026-09-01 — Links are hyperlinks, on every surface that shows one
 
 Replies and digests pasted bare long URLs: the chat listing wrote `Map:

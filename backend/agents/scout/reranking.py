@@ -20,6 +20,15 @@ be deciding what qualifies during an unattended sweep, which is what
 `relevance.py` refuses. A model that can only reorder an already-qualified
 shortlist can be wrong about the order and never wrong about the standard.
 
+The order also carries a notability tiebreak (prompts/scout/rerank.md, added
+2026-09-01): among finds the approved facts do not distinguish, a one-off
+festival or headline performance leads a routine weekly social, because a
+recurring social is already on the calendar. Reorder-only, never an exclusion,
+so it cannot empty a digest the way a selection-side filter once did. Measured:
+`evaluate_discovery_ranking` green (filtering recall 0.8571, geography
+happening-retention 1.0) and a rehearsal sweep shows variety; the tiebreak
+itself is pinned by two functional cases in test_prompt_behaviour.py.
+
 Exclusion is the one exception, and it is deliberately narrow. A find may be
 dropped only when the listing itself states a restriction and an approved fact
 explicitly contradicts it. Never inferred — not from a name, not from an

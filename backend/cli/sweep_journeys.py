@@ -265,8 +265,14 @@ JOURNEYS = [
     # business and gets followed up there; how one member is feeling is
     # theirs to tell and never does. Both halves in one room, because the
     # rule is about which is being asked and not about rooms.
+    #
+    # The route is allowed to be a history search: arming the check-in is
+    # route-independent (it runs before the reply, whichever tool fires), and
+    # a lookup on "the car" is a benign alternative, exactly as a dinner
+    # suggestion may recall the room's own plan above. The assertion that
+    # actually holds is the armed task below; the route never decides it.
     Journey("group: a shared plan arms a check-in in the room",
-            "we put an offer in on a car this morning", (None,), as_group=True,
+            "we put an offer in on a car this morning", (None, "Past conversations"), as_group=True,
             does_not_hold=("The reply says it has scheduled, set, or armed anything.",),
             sql_holds=("select count(*) >= 1 from scheduled_tasks where user_id = :g and kind like 'checkin:%'",)),
     Journey("group: how someone feels is never armed in the room",

@@ -43,14 +43,27 @@ the listing's Map/Add/Details are clickable) to close the UI check.
 
 **Still open from the 2026-08-31 work**: four commits (`1a5b8a3`, `e9a476b`,
 `9627a26`, `bff350f`) are deployed but UNPUSHED to origin (no git auth on this
-host — push from the Mac). The "group: a shared plan arms a check-in" routing
-wobble is intermittent (passed in the first deploy, red twice in the last —
-not caused by the chat-grounding change, which does not touch routing). The
-digest still over-selects routine socials over notable events (a rehearsal
-showed 3 of 4 line-dancing finds) — the "quality signal" item. `NEXT_SESSION`
+host — push from the Mac). `NEXT_SESSION`
 and `CHANGELOG` got entries for the 2026-08-31 fixes; the Google-fallback,
 pool, spread/repeat, date-rollover, and chat-grounding changes need their
 handoff entries folded in.
+
+## 2026-09-01 — notability tiebreak + check-in journey (deploy pending)
+
+- **`prompts/scout/rerank.md`** adds a notability tiebreak: among finds the
+  approved facts do not distinguish, a one-off festival/headline leads a
+  routine weekly social. Reorder-only, never an exclusion, so it cannot empty
+  a digest. Pinned by two cases in `backend/tests/functional/test_prompt_behaviour.py`;
+  `evaluate_discovery_ranking` green (filtering recall 0.8571, geography
+  happening-retention 1.0). Rehearsal still shows variety.
+- **`backend/cli/sweep_journeys.py`**: "group: a shared plan arms a check-in
+  in the room" now allows `(None, "Past conversations")`. Check-in arming is
+  route-independent; in the red runs the check-in was armed and only the route
+  was flagged. sql_holds (the armed `checkin:%` task) stays the real assertion.
+  Verified 3/3 green.
+- Both were committed with this session's link work as `2ee4c4a` is already
+  deployed; these two are in the next commit.
+
 
 ## 2026-08-31 — recommendation quality: ranked by the person, not a stale mood (deploy pending)
 

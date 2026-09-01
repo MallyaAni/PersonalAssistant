@@ -14,6 +14,13 @@ Every item has already qualified. Your job is the order, best first, judged only
 by the approved facts about this person. Prefer a find those facts positively
 support over one they merely do not contradict.
 
+Among finds the approved facts do not distinguish, prefer a notable one-off — a
+festival, a special event, a headline performance, a one-night exhibit — over a
+routine recurring social — a weekly class, a standing drop-in, a regular open
+night. A recurring social is already on the calendar; the digest earns its
+interruption by surfacing what is worth the trip. This is a tiebreak only: it
+never removes anything, and a find the facts clearly support still leads.
+
 Put an item in `excluded` only when the item's own text states who may attend and
 an approved fact plainly contradicts it — an event stated as women-only when a
 fact states the person is a man, an over-21 event when a fact states they are
