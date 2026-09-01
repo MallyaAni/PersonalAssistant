@@ -62,3 +62,29 @@ def test_digest_preserves_an_unresolved_conflict(llm, monkeypatch) -> None:
     assert any(
         word in lowered for word in ("conflict", "unresolved", "unclear")
     ), result
+
+
+# A working thread names its artifact once and then works on it across many
+# turns that never restate it; the digest must carry the artifact and what was
+# decided about it, not just the surrounding chatter.
+def test_digest_keeps_the_artifact_and_the_decision_about_it(llm, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "MEMORY_DIGEST_MODEL_ENABLED", True)
+    turns = [
+        {
+            "query": "Let's refactor the retry loop in backend/services/poller.py so it stops double-counting.",
+            "response": "I'll look at poller.py's retry loop.",
+        },
+        {
+            "query": "Use exponential backoff capped at 8 seconds, and keep the counter in the worker, not the job.",
+            "response": "Got it - exponential backoff, cap 8s, counter in the worker.",
+        },
+    ]
+
+    result = summarise(llm, "", turns)
+
+    assert result is not None
+    lowered = result.casefold()
+    assert "poller.py" in lowered, result
+    assert "backoff" in lowered, result
+    assert "8" in result, result
+    assert "worker" in lowered, result

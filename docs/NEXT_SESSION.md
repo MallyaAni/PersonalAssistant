@@ -48,7 +48,22 @@ and `CHANGELOG` got entries for the 2026-08-31 fixes; the Google-fallback,
 pool, spread/repeat, date-rollover, and chat-grounding changes need their
 handoff entries folded in.
 
-## 2026-09-01 — manage_tasks claims its memory undo (deploying with this commit)
+## 2026-09-01 — digest keeps the working artifact (deploying with this commit)
+
+- **`prompts/memory/digest.md`**: the rolling digest now explicitly keeps "the
+  artifact they are working on... and what was decided or changed about it, by
+  name." A long coding thread can outlive the ten-turn window; the durable fact
+  is which file/artifact was in play, which the old keep-list captured only via
+  "what the person is trying to do". Pinned by
+  `test_digest_keeps_the_artifact_and_the_decision_about_it`
+  (`test_conversation_digest_behaviour.py`); 14 digest tests pass.
+- Investigation result worth remembering: the durable-context machinery already
+  exists and is sound - cumulative digest every 10 turns at priority 0 (never
+  trimmed), reply prompt already hedges on missing earlier turns, reply-rescue
+  covers explicit replies. No new system was needed; this is a one-line
+  keep-list refinement plus a pin.
+
+## 2026-09-01 — manage_tasks claims its memory undo (deployed 7fff8d9→ecc233a)
 
 - **`backend/tools/manage_tasks.py`**: the tool description now says undo puts
   back "the most recent change the assistant made - a reminder, Scout's

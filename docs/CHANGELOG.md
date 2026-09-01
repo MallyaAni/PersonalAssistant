@@ -2,6 +2,21 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-01 — the rolling digest keeps the artifact a working thread is on
+
+A long coding thread can outlive the ten-turn history window, and the durable
+fact later turns depend on is which file or document was in play and what was
+decided about it, not the chatter around it. The rolling digest
+(`prompts/memory/digest.md`) already carried "what the person is trying to do
+and any constraint" - which covers much of this - but did not name the artifact
+explicitly, so a task described once and then worked on across many turns that
+never restate it could drop the file name. The digest now keeps "the artifact
+they are working on, when they named one - a file, a piece of code, a document,
+a diagram, an item - and what was decided or changed about it, by name." Pinned
+by a new functional case in `test_conversation_digest_behaviour.py` (a refactor
+of `backend/services/poller.py` with a backoff cap and a worker-not-job
+decision; all four survive the real-model digest). 14 digest tests pass.
+
 ## 2026-09-01 — manage_tasks's own contract now claims the memory undo it performs
 
 The router kept mis-routing "forget that" - to Past conversations or to no

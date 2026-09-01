@@ -27,6 +27,13 @@ previous digest forever, so it only grew. If this call fails the caller falls
 back to bounded truncation, which is worse than a good digest and much better
 than an unbounded one.
 
+The artifact line exists because a long working thread - most visibly a coding
+one - can outlive the ten-turn window, and the durable fact later turns depend
+on is which file or document was in play and what was decided about it, not the
+chatter around it. "What the person is trying to do" already carries much of
+this; naming the artifact explicitly keeps it when the task is described once
+and then worked on across many later turns that never restate it.
+
 Do not ask for headings, bullets, or a structure. Later turns read this as
 background prose, and imposed structure makes a model treat it as a document to
 be discussed rather than as context it already knows.
@@ -40,6 +47,9 @@ no preamble, no closing remark. Write only the notes.
 
 Keep, in rough order of importance:
 - what the person is trying to do, and any constraint they stated
+- the artifact they are working on, when they named one - a file, a piece of
+  code, a document, a diagram, an item - and what was decided or changed
+  about it, by name
 - decisions reached, and anything explicitly ruled out
 - facts they gave about themselves or their situation
 - questions left open
