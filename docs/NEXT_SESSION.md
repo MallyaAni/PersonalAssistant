@@ -7,7 +7,7 @@ was checked by running it, not by reading it. The seven image scenarios can
 be re-run any time with `python -m backend.cli.exercise_image_scenarios`
 inside the backend container.
 
-## 2026-09-01 — links are hyperlinks on every surface (deploy pending)
+## 2026-09-01 — links are hyperlinks on every surface (deployed 2ee4c4a)
 
 Chat replies and digests pasted bare long URLs: the listing wrote `Map:
 https://maps.google.com/...` and `Details: https://...` as raw text, the web
@@ -48,7 +48,22 @@ and `CHANGELOG` got entries for the 2026-08-31 fixes; the Google-fallback,
 pool, spread/repeat, date-rollover, and chat-grounding changes need their
 handoff entries folded in.
 
-## 2026-09-01 — notability tiebreak + check-in journey (deploy pending)
+## 2026-09-01 — "forget that" routing fix + judge pin (deploying with this commit)
+
+- **`prompts/routing/select_action.md`**: removed the contradiction that made
+  the router sometimes route "forget that" to no tool, leaving the reply to
+  claim a forgetfulness that was never written (the sweep journey caught it).
+  An instruction to change what the assistant holds is an action (manage_tasks
+  undo), never a question to answer. Verified 5/5 journey runs; matrix gate
+  7/7; evaluator 0.9184 overall, manage_tasks 43/45, task_undo 13/15.
+- **`backend/tests/functional/test_semantic_judge_reliability.py`**: pins
+  `semantic.states` (the judge behind a dozen functional modules and every
+  journey) against ten unambiguous seeds at a floor one miss below the
+  measured 10/10. Finding recorded in the module: the judge reads action
+  wording ("forgot, removed") but not state wording ("no longer remembers"),
+  which is why journey statements already carry the action words.
+
+## 2026-09-01 — notability tiebreak + check-in journey (deployed 593cf3c)
 
 - **`prompts/scout/rerank.md`** adds a notability tiebreak: among finds the
   approved facts do not distinguish, a one-off festival/headline leads a

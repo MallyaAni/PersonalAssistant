@@ -2,6 +2,30 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-01 — "forget that" reliably routes to manage_tasks, and the semantic judge is pinned
+
+Two follow-ups to the routing-wobble thread. **The router prompt no longer
+contradicts itself over memory.** Line 107 said "a question about the user's
+own memory... call no tool", while the undo paragraph said "forget that" is
+manage_tasks undo — so the model sometimes chose None and the reply then
+claimed a forgetfulness that was never written (the sweep journey caught it:
+the reply read "I won't keep that" while no undo row existed, exactly the
+silent-failure shape this repository warns about). The contradiction is
+removed: an *instruction to change* what the assistant holds is an action with
+the tool that records it, never a question to answer. Verified 5/5 journey
+runs route to manage_tasks, the per-tool matrix gate passes (7/7 floors), and
+the evaluator measures 0.9184 overall with manage_tasks at 43/45 and
+task_undo at 13/15.
+
+**The semantic judge is measured against known verdicts.** `semantic.states`
+backs the `holds`/`does_not_hold` assertions of a dozen functional modules and
+of every journey, so every one of those assumptions is checked everywhere
+except the judge itself. `test_semantic_judge_reliability.py` pins it against
+ten unambiguous seeds at a floor one miss below the measured 10/10. Measured
+2026-09-01: a reworded truth reads as action wording ("forgot, removed, or
+will no longer remember") but not as state wording ("no longer remembers") —
+which is why the journey statements already carry the action words.
+
 ## 2026-09-01 — a digest prefers the notable one-off, and the check-in journey stops flaking
 
 Two follow-ups to today's recommendation work. **The reranker now carries a
