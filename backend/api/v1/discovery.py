@@ -76,6 +76,14 @@ def _calendar_link(base: str, user_id: str, digest: str) -> str:
 # revocation and rotation are the same operation.
 feed_router = APIRouter(prefix="/discovery/feed", tags=["discovery"])
 
+# One event's calendar file is addressed the same way: unguessable by digest,
+# so it can be opened from a phone with no session. A phone's "Add to
+# calendar" tap opens this URL in Safari, which has no AniOS cookie; behind
+# authorization it returned 401 and the tap silently failed. The event digest
+# is sha256 of the source's own identity (see `item_digest`), which is why
+# this router carries no user authorization.
+calendar_router = APIRouter(prefix="/discovery", tags=["discovery"])
+
 
 class InterestRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -454,8 +462,9 @@ async def run_sweep(
 
 # One event as a calendar file. iOS adds a .ics natively from a link, so this is
 # the whole "add to calendar" mechanism: no CalDAV, no developer account, and no
-# write access to the user's calendar.
-@router.get("/calendar/{item_digest}.ics")
+# write access to the user's calendar. Public by unguessable digest, like the
+# feed router, because the phone opening the link has no AniOS session.
+@calendar_router.get("/{user_id}/calendar/{item_digest}.ics")
 async def download_event_calendar(
     user_id: UserId,
     item_digest: str,

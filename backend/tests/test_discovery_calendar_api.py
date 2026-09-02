@@ -166,6 +166,55 @@ def test_a_stored_event_downloads_as_a_calendar_file():
         asyncio.run(_forget())
 
 
+# The phone's "Add to calendar" tap opens the .ics in Safari, which has no
+# AniOS session, so the file must be served without one. This is the same
+# public-by-unguessable-digest model as the subscription feed router.
+def test_a_stored_event_downloads_without_any_session():
+    import asyncio
+    from datetime import UTC, datetime, timedelta
+
+    from backend.config.settings import settings
+    from backend.database.session import AsyncSessionLocal
+    from backend.discovery.events import DiscoveredEvent
+
+    previous = settings.AUTH_REQUIRED
+    settings.AUTH_REQUIRED = True
+    user_id = _user()
+    starts_at = datetime.now(UTC) + timedelta(days=9)
+    event = DiscoveredEvent(
+        source_id="src-api",
+        external_id="evt-auth",
+        title="Jazz at the Green",
+        starts_at=starts_at,
+        ends_at=None,
+        place="New Haven, CT",
+        url="https://example.org/jazz",
+        summary=None,
+    )
+    candidate = ScoredCandidate(event=event, embedding=_vector())
+
+    async def _seed() -> str:
+        async with AsyncSessionLocal() as session:
+            repo = SeenItemRepository(session)
+            await repo.record_seen(user_id, candidate, announced=True)
+            await session.commit()
+        return candidate.digest
+
+    async def _forget() -> None:
+        async with AsyncSessionLocal() as session:
+            await SeenItemRepository(session).forget_all(user_id)
+
+    digest = asyncio.run(_seed())
+    try:
+        with TestClient(app) as client:
+            response = client.get(f"/api/v1/discovery/{user_id}/calendar/{digest}.ics")
+            assert response.status_code == 200, response.text
+            assert "SUMMARY:Jazz at the Green" in response.text
+    finally:
+        settings.AUTH_REQUIRED = previous
+        asyncio.run(_forget())
+
+
 def test_an_unknown_digest_is_not_found():
     user_id = _user()
     with TestClient(app) as client:

@@ -2,6 +2,7 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+<<<<<<< HEAD
 ## 2026-09-02 - A deck stops waiting for a quiet machine, and plans its slides together
 
 A live deck was watched taking 12m32s for seven slides: 7m09s of that was the
@@ -55,6 +56,20 @@ actually runs, which had no live coverage at all before this; 2,387 unit tests
 green in the deployed container, the two failures being the documented
 in-container environment leak (`AUTH_COOKIE_SECURE`, `LLM_BASE_URL`) and
 passing once those are neutralised. Not yet deployed.
+## 2026-09-02 - The single-event .ics route is public by unguessable digest
+
+The "Add to calendar" link on a Scout event (an absolute `.ics` URL) was
+behind the auth-gated discovery router, so a phone opening it in Safari with
+no AniOS session got a 401 and the tap silently failed — the link iOS uses to
+add the event natively. It now lives on a public `calendar_router` with the
+same URL shape (`/discovery/{user_id}/calendar/{digest}.ics`), addressed by
+the event digest, which is already sha256 of the source's own identity. This
+is the same secret-in-the-URL model as the subscription feed router. Verified:
+7 calendar-API tests pass including a new one that forces `AUTH_REQUIRED=true`
+and fetches the file with no session; 114 discovery/setup/worker/MCP tests
+green; the auth router no longer serves any `.ics`.
+
+## 2026-09-02 - A deck plans its slides together, and background work stops waiting for quiet
 
 ## 2026-09-02 - Documents become knowledge: upload, parse, cite, pin, forget (Phases 2-4 of document knowledge)
 
