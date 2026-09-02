@@ -2,6 +2,17 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-02 - The task pickers hold over a crowded list; the sweep's first-run gap is elsewhere
+
+"delete the paused ones" gapped on its first run in three consecutive
+sweeps and passed alone on retry. Measured on the real router over the
+sweep's crowded shape (six reminders, similar words, some paused, the live
+hint): the set picker returns exactly the paused pair 3/3, and the single
+picker finds "the bank reminder" and "the plants reminder" 6/6. Both are now
+functional tests. The first-run gap is therefore not the pickers; it needs
+a kept trace of a first run inside a full sweep, which the retry mechanics
+do not keep, and is recorded here as open.
+
 ## 2026-09-02 - A history search that finds only the share no longer hides the document
 
 The retention live check declined twice on "which hotel did we stay at in
