@@ -2309,15 +2309,30 @@ class ConversationService:
         # absent rather than merely None.
         if getattr(self, "agent_memory", None) is not None:
             try:
-                found_knowledge = await self.agent_memory.knowledge.search(
-                    user_id,
-                    query,
-                    _KNOWLEDGE_TOP_K,
-                    query_embedding,
-                    document_id=_active_document.get() or None,
-                )
-                if found_knowledge:
-                    context["knowledge"] = found_knowledge
+                # Two probes, one search, as history recall does: the person's
+                # own words (embedding already computed) AND the follow-up
+                # resolver's completed reading. "whats on evening of day 1?"
+                # sat 0.46 from the itinerary's Day 1 passage; "the evening of
+                # day 1 of the Itinerary Amalfi Choral Tour" sat 0.33 (live,
+                # 2026-09-02). The reading carries the document the shorthand
+                # left out, and the merge keeps each passage's best score.
+                probes: list[tuple[str, list[float] | None]] = [(query, query_embedding)]
+                reading = context.get("followup") if isinstance(context.get("followup"), dict) else None
+                restated = str((reading or {}).get("as") or "").strip()
+                if restated and restated.casefold() != query.strip().casefold():
+                    probes.append((restated, None))
+                pinned = _active_document.get() or None
+                merged: dict[str, dict[str, Any]] = {}
+                for text, vector in probes:
+                    for item in await self.agent_memory.knowledge.search(
+                        user_id, text, _KNOWLEDGE_TOP_K, vector, document_id=pinned
+                    ):
+                        key = str(item.get("id"))
+                        kept = merged.get(key)
+                        if kept is None or _distance_of(item) < _distance_of(kept):
+                            merged[key] = item
+                if merged:
+                    context["knowledge"] = sorted(merged.values(), key=_distance_of)[:_KNOWLEDGE_TOP_K]
             except Exception:
                 logger.warning(
                     "Knowledge retrieval failed; answering without documents",

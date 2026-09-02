@@ -129,3 +129,38 @@ async def test_an_ingested_document_is_found_by_a_question_about_it():
                 await manager.knowledge.delete(user_id, document["id"])
     except (ConnectionError, OSError) as exc:
         pytest.skip(f"database or embedding runtime unreachable: {type(exc).__name__}")
+
+
+# The document cutoff, measured on the live miss: "Scout whats on evening of
+# day 1?" sat 0.46 from the itinerary's Day 1 passage, which the memory
+# policy (0.35) rejected outright - the reply then answered from an older
+# plan. Under the document policy the passage comes back for the person's
+# own words, unaided by any restatement.
+async def test_a_documents_passage_is_found_for_the_persons_own_shorthand():
+    from backend.core.dependencies import get_agent_memory_manager, get_embedding_provider
+    from backend.database.session import AsyncSessionLocal
+
+    itinerary = (
+        "## Day 1: Sun., October 11\n\n"
+        "Arrivals throughout the day - Grand Hotel of Salerno 6:00 p.m. - "
+        "Orientation 7:30 p.m. - Dinner in Hotel (included)\n\n"
+        "## Day 2: Mon., October 12\n\nExcursion - 8:30 a.m. departure Pompeii and/or Paestum\n\n"
+        "## Day 5: Thurs., October 15\n\nMorning - Independent: Boat trip along the coast (on your own)"
+    )
+    user_id = f"functional-shorthand-{uuid.uuid4().hex[:8]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            manager = get_agent_memory_manager(session, get_embedding_provider())
+            stored = await manager.knowledge.ingest(
+                user_id, _DOCUMENT["title"], itinerary, _DOCUMENT["source_uri"], "uploaded_document"
+            )
+            try:
+                found = await manager.knowledge.search(user_id, "Scout whats on evening of day 1?", 6)
+                assert found, "the shorthand retrieved nothing under the document policy"
+                assert any("Day 1" in item.get("content", "") for item in found), [
+                    item.get("content", "")[:60] for item in found
+                ]
+            finally:
+                await manager.knowledge.delete(user_id, stored["id"])
+    except (ConnectionError, OSError) as exc:
+        pytest.skip(f"database or embedding runtime unreachable: {type(exc).__name__}")

@@ -232,6 +232,9 @@ class TurnResult:
     # the bubble that confirms it can be replied to and pin the document.
     # Last on purpose: callers build TurnResult positionally.
     document_id: str = ""
+    # Titles a document turn read, so a silent room share can still be
+    # observed into the thread by name.
+    read_titles: tuple[str, ...] = field(default=())
 
 
 class BackendUnavailable(Exception):
@@ -463,13 +466,17 @@ class IMessageChatWorker:
         # context the room will ask about later ("Scout look above"). The
         # confirmation bubble is sent only when the assistant was addressed,
         # so a casual share does not draw a reply nobody asked for.
-        stored_reply: str | None = None
         if documents:
             turn = await self._document_turn(group.user_id, text, documents)
-            stored_reply = turn.reply
             if room["addressed_by"]:
                 await self._deliver(reply_to, turn, user_id=group.user_id, room=room)
                 return 1
+            # Read silently, but not invisibly: the share is observed into the
+            # thread by name so the next "what's on day 1?" resolves to this
+            # document rather than to whatever was said an hour ago. Live,
+            # 2026-09-02: without this line "day 1" became the trivia plan.
+            for title in turn.read_titles:
+                await self._observe(group.user_id, f'shared a document: "{title}"', room)
         if not room["addressed_by"]:
             # Not for the assistant: read for context (and memory), never
             # answered. The operator's decision, 2026-08-28: the whole room
@@ -1408,26 +1415,34 @@ class IMessageChatWorker:
         conversation = await self._stored_conversation(user_id) or str(uuid.uuid4())
         replies: list[str] = []
         stored_id = ""
+        read_titles: list[str] = []
         for attachment in documents[:_MAX_DOCUMENTS_PER_MESSAGE]:
-            reply, document_id = await self._ingest_document(user_id, caption, attachment, conversation)
+            reply, document_id, title = await self._ingest_document(user_id, caption, attachment, conversation)
             replies.append(reply)
             stored_id = document_id or stored_id
+            if document_id and title:
+                read_titles.append(title)
         if len(documents) > _MAX_DOCUMENTS_PER_MESSAGE:
             replies.append(
                 f"I read the first {_MAX_DOCUMENTS_PER_MESSAGE} - send the rest "
                 "separately if you want those too."
             )
         await self._remember_conversation(user_id, conversation)
-        return TurnResult("\n\n".join(replies) or _FAILURE_REPLY, (), document_id=stored_id)
+        return TurnResult(
+            "\n\n".join(replies) or _FAILURE_REPLY,
+            (),
+            document_id=stored_id,
+            read_titles=tuple(read_titles),
+        )
 
     # One document stored, or a sentence saying why not. Words rather than an
     # exception, so one unreadable file in a burst does not lose the others.
     async def _ingest_document(
         self, user_id: str, caption: str, attachment: dict, conversation: str
-    ) -> tuple[str, str]:
+    ) -> tuple[str, str, str]:
         fetched = await self._fetch_inbound_attachment(str(attachment.get("attachment_id") or ""))
         if fetched is None:
-            return "I couldn't open that file yet. Mind sending it again?", ""
+            return "I couldn't open that file yet. Mind sending it again?", "", ""
         media_type, name, data = fetched
         content = base64.b64decode(data)
         token = issue_user_token(
@@ -1445,7 +1460,7 @@ class IMessageChatWorker:
                     # The parser's own sentence - "does not look like a PDF",
                     # "parsing is not switched on" - is written to be shown.
                     detail = (response.json() or {}).get("detail")
-                    return str(detail or "I couldn't read that file."), ""
+                    return str(detail or "I couldn't read that file."), "", name
                 response.raise_for_status()
                 stored = response.json()
         except Exception as exc:
@@ -1455,15 +1470,15 @@ class IMessageChatWorker:
                 str(exc)[:200],
                 extra={"user": user_id},
             )
-            return "I couldn't read that file right now. I'll be able to once the parser is back.", ""
+            return "I couldn't read that file right now. I'll be able to once the parser is back.", "", name
         if stored.get("queued"):
             return (
                 f"Got {name}. The reader isn't reachable right now, so I've kept it "
                 "and will read it as soon as it's back - then ask me anything about it."
-            ), ""
+            ), "", name
         pages = int(stored.get("pages") or 0)
         pages_note = f" ({pages} pages)" if pages > 1 else ""
-        return f"Got it - I've read {name}{pages_note}. Ask me anything about it.", str(stored.get("id") or "")
+        return f"Got it - I've read {name}{pages_note}. Ask me anything about it.", str(stored.get("id") or ""), name
 
     # One photo's answer and the artifact it became, or a sentence saying why
     # not. Returned as words rather than raised so a burst with one bad photo

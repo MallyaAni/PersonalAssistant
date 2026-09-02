@@ -1,4 +1,5 @@
 import asyncio
+from dataclasses import replace
 import hashlib
 import json
 import re
@@ -9,6 +10,7 @@ from typing import Any
 from sqlalchemy import delete, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.config.settings import settings
 from backend.database.locks import transaction_advisory_lock
 from backend.embeddings.base import EmbeddingProvider
 from backend.memory.retrieval import SemanticRetrievalPolicy
@@ -817,7 +819,15 @@ class AgentMemoryManager:
         self.working = WorkingMemoryStore(session)
         self.procedures = ProcedureStore(*args)
         self.entities = EntityStore(*args)
-        self.knowledge = KnowledgeStore(*args)
+        # Documents get their own distance gate (see KNOWLEDGE_MAX_COSINE_DISTANCE):
+        # the memory cutoff, tuned for one-line facts, rejects real passages.
+        knowledge_args = tuple(
+            replace(arg, max_cosine_distance=settings.KNOWLEDGE_MAX_COSINE_DISTANCE)
+            if isinstance(arg, SemanticRetrievalPolicy)
+            else arg
+            for arg in args
+        )
+        self.knowledge = KnowledgeStore(*knowledge_args)
         self.summaries = SummaryStore(*args)
 
     # Embed one retrieval query so a single turn can reuse the vector everywhere.

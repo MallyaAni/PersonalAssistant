@@ -721,10 +721,22 @@ async def test_an_unaddressed_room_pdf_is_read_silently(monkeypatch):
 
     async def document_turn(user_id, caption, documents):
         seen.append((user_id, len(documents)))
-        return TurnResult("Got it - I've read Itinerary.pdf (2 pages).", (), document_id="doc-1")
+        return TurnResult(
+            "Got it - I've read Itinerary.pdf (2 pages).", (), document_id="doc-1", read_titles=("Itinerary.pdf",)
+        )
+
+    observed: list[tuple[str, str]] = []
+
+    async def observe(user_id, text, room):
+        observed.append((user_id, text))
 
     monkeypatch.setattr(worker, "_document_turn", document_turn)
+    monkeypatch.setattr(worker, "_observe", observe)
     await worker.tick()
     assert seen == [("group:abc", 1)]
     assert conversed == []
     assert bridge.sent == []
+    # The share is on the record by name - before the caption is observed as
+    # ordinary room chatter - so "day 1" later means this file.
+    assert observed[0] == ("group:abc", 'shared a document: "Itinerary.pdf"'), observed
+    assert ("group:abc", "here's the itinerary, what do you think?") in observed, observed

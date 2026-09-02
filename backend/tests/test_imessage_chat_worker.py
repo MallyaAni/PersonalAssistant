@@ -1317,9 +1317,9 @@ async def test_an_unfetchable_document_is_reported_without_a_document_id(monkeyp
 
     monkeypatch.setattr(worker, "_fetch_inbound_attachment", fetch)
 
-    reply, document_id = await worker._ingest_document(
+    reply, document_id, title = await worker._ingest_document(
         "ani.mallya", "", {"attachment_id": "att-x"}, "conv-1"
     )
 
     assert "couldn't open" in reply
-    assert document_id == ""
+    assert document_id == "" and title == ""

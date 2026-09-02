@@ -249,6 +249,14 @@ class Settings(BaseSettings):
     EMBEDDING_DIMENSION: int = Field(default=768, ge=1, le=2_000)
     EMBEDDING_MAX_CONCURRENCY: int = Field(default=1, ge=1, le=32)
     MEMORY_SEMANTIC_MAX_COSINE_DISTANCE: float = Field(default=0.35, ge=0, le=2)
+    # Document passages are longer and more varied than memory facts, so the
+    # memory cutoff rejects them: measured 2026-09-02 on the operator's
+    # itinerary, "whats on evening of day 1?" sat at 0.460 from the Day 1
+    # chunk (0 results at 0.35); named with the document it sat at 0.332.
+    # The reply answers only from the passages it is shown and abstains
+    # otherwise, so a looser gate here costs nothing but a few extra
+    # passages. Precedent: recall turns 0.45, history search 0.6.
+    KNOWLEDGE_MAX_COSINE_DISTANCE: float = Field(default=0.5, ge=0, le=2)
     MEMORY_SEMANTIC_MAX_RESULTS: int = Field(default=5, ge=1, le=20)
     # Searching the user's own past turns, not only the facts a classifier
     # promoted out of them. An account with fourteen conversations had zero
