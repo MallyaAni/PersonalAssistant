@@ -211,6 +211,18 @@ worker uses it as the "still working" bubble instead of a random
 pleasantry. Skills and tasks are visible and removable in the new
 Automations panel (`/api/v1/automations/{user_id}`).
 
+## A set of tasks, and a change that did not happen (2026-09-02)
+
+- "Delete the paused ones" names a set; `pick_many` returns every id the
+  words cover. Its answer budget is sized to the ids offered (64 + 40 per
+  id): saved items carry UUIDs, and a fixed 64 held one and not two, so the
+  call truncated, parsed as nothing, and the outcome was `not_found` while
+  the reply said both were deleted (the deploy sweep, kept turn). Measured
+  after the fix: the set over real UUIDs with the live hint, 3/3.
+- A `not_found` outcome is rendered as flatly as "nothing to undo": NO task
+  was cancelled, paused, resumed, or moved this turn. Held on the real reply
+  model, 3/3: the reply never reports a deletion the record does not carry.
+
 ## What a firing is not allowed to do (2026-08-22, audit pass)
 
 An audit of the firing path, prompted by a reminder that answered "I can't

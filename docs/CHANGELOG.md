@@ -2,6 +2,23 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-02 - A set of tasks is picked whole, and a change that did not happen is never reported as done
+
+The deploy sweep's "delete the paused ones" journey failed with the reply
+"Both paused reminders are now deleted" while both rows stayed. The kept
+turn showed why: the set picker gave the model 64 tokens for its answer,
+enough for the short ids in its test ("t-stretch") and not for two real
+UUIDs, so the tool call truncated, parsed as no ids, and the outcome was
+`not_found` - which the reply then rendered as success, with the person's
+own words and a "Done - paused" just before them in the thread. The
+picker's answer budget is now sized to the ids it offers; the functional
+test picks over real UUIDs with the live hint, three reps. The task-outcome
+record states `not_found` as flatly as "nothing to undo" ("NO task was
+cancelled, paused, resumed, or moved this turn"), and a functional case
+holds the reply to it on the real model. A registry test also requires a
+describing row for every built-in action, after the writer shipped
+without one and the sweep saw route=None for a file it had made.
+
 ## 2026-09-02 - The architecture page carries the document-knowledge decisions
 
 `docs/ML_SYSTEM_DESIGN.md` gains section 13 (document knowledge: where

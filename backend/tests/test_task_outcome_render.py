@@ -111,3 +111,9 @@ def test_several_cancelled_tasks_are_all_named():
     )
     assert '"call the bank"' in text
     assert '"water the plants"' in text
+
+
+def test_nothing_matched_says_no_task_was_changed():
+    text = _render_task_outcome({"kind": "not_found", "requested": "the paused ones", "tasks": []})
+    assert "NO task was cancelled" in text
+    assert "the paused ones" in text

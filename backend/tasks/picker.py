@@ -15,6 +15,16 @@ from backend.core.prompts import load
 from .describe import describe_task
 
 
+# Tokens the model may spend on its answer: a tool call carrying up to
+# `count` ids. Saved items carry UUIDs, and a UUID is some 25 tokens of hex
+# and dashes, so a fixed 64 held one id and not two: "delete the paused
+# ones" over two real reminders came back truncated, parsed as nothing, and
+# the reply reported a deletion that never happened (sweep, 2026-09-02).
+# The functional test had passed on ids like "t-stretch".
+def _answer_budget(count: int) -> int:
+    return 64 + 40 * max(1, count)
+
+
 # The id of the item `which` refers to, or None when none of them does.
 # One candidate is chosen without asking: there is nothing to tell apart.
 # Two or more go to the model.
@@ -62,7 +72,7 @@ async def pick_one(
         },
     ]
     try:
-        message = await asyncio.to_thread(llm.chat_with_tools, messages, [tool], 64)
+        message = await asyncio.to_thread(llm.chat_with_tools, messages, [tool], _answer_budget(1))
     except Exception:
         return None
     return _chosen(message, set(ids))
@@ -165,7 +175,7 @@ async def pick_many(
         },
     ]
     try:
-        message = await asyncio.to_thread(llm.chat_with_tools, messages, [tool], 64)
+        message = await asyncio.to_thread(llm.chat_with_tools, messages, [tool], _answer_budget(len(ids)))
     except Exception:
         return []
     return _chosen_many(message, set(ids))

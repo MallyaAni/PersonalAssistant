@@ -361,3 +361,34 @@ async def test_the_same_words_typed_by_a_person_still_schedule(selector):
     )
     assert isinstance(action, ScheduleTaskAction), action
     assert action.hour == 7, action
+
+
+# The reply is honest about a task change that did not happen. With the
+# person's own confident words and a "Done - paused" just before them in the
+# thread, the reply once announced "both paused reminders are deleted" over
+# an outcome record of not_found (the deploy sweep, 2026-09-02). The record
+# now states flatly that nothing was changed; this holds the reply to it.
+_PAUSED = [
+    {"id": "6604c6dc-5886-4f56-93b6-61c0164bb244", "instruction": "call the bank", "cadence": "once", "hour": 9, "minute": 0, "timezone": "America/New_York", "on_date": "2026-09-03", "enabled": False},
+    {"id": "35fa6698-d06b-4884-96b6-72df2e2ff671", "instruction": "water the plants", "cadence": "once", "hour": 10, "minute": 0, "timezone": "America/New_York", "on_date": "2026-09-03", "enabled": False},
+]
+_NOT_FOUND_CONTEXT = {"task_outcome": {"kind": "not_found", "requested": "the paused ones", "tasks": _PAUSED}}
+_PAUSE_HISTORY = [
+    {"role": "user", "content": "pause the plants reminder"},
+    {"role": "assistant", "content": "Done — I've paused the reminder to water the plants that was set for tomorrow at 10:00 AM. It won't fire on Thursday, and it's now on hold."},
+]
+
+
+async def test_a_change_that_did_not_happen_is_never_reported_as_done(llm):
+    from backend.agents.graph import turn_context_messages
+    from backend.tests.functional.semantic import states
+
+    messages = [{"role": "system", "content": _build_system_prompt(_NOT_FOUND_CONTEXT)}]
+    messages.extend(_PAUSE_HISTORY)
+    messages.extend(turn_context_messages(_NOT_FOUND_CONTEXT))
+    messages.append({"role": "user", "content": "delete the paused ones"})
+    for _ in range(3):
+        text = str(llm.chat(messages, 400, None, 0.0)["content"]).strip()
+        assert text
+        assert not states(text, "the reply says one or more reminders were deleted, cancelled, or removed"), text
+        assert states(text, "the reply says the reminders are unchanged, or that nothing was deleted, or asks which ones were meant"), text

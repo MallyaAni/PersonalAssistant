@@ -586,6 +586,16 @@ def _render_task_outcome(outcome: dict[str, Any]) -> str:
         )
     if outcome.get("kind") == "nothing_to_undo":
         lines.append("- Nothing to undo: no recent change is on record. Say so; change nothing.\n")
+    if outcome.get("kind") == "not_found":
+        # Stated as flatly as "nothing to undo" is: with the person's own
+        # words and a "Done - paused" just before it in the thread, the reply
+        # once announced a deletion this record said never happened (sweep,
+        # 2026-09-02). Nothing below this line was changed.
+        lines.append(
+            "- Nothing matched: NO task was cancelled, paused, resumed, or moved "
+            "this turn. Say the tasks are unchanged, list the ones above, and ask "
+            "which they meant. Never say one was deleted or changed.\n"
+        )
     for key in ("reason", "requested"):
         if outcome.get(key):
             lines.append(f"- {key}: {outcome[key]}\n")
