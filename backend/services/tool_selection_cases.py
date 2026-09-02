@@ -658,6 +658,12 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
     SelectionCase("forget that", MANAGE_TASKS, "task_undo", history=_SAVED_HISTORY),
     # A document just shared and read: forgetting it is the same undo.
     SelectionCase("forget that document", MANAGE_TASKS, "task_undo", history=_SHARED_DOCUMENT_HISTORY),
+    # A question about a named thing IN a shared document is answered from it,
+    # not searched for on the web: the tour is on hand, not out there.
+    SelectionCase("what happens on the evening of day 1 of the tour?", NO_TOOL, "shared_document", history=_SHARED_DOCUMENT_HISTORY),
+    # Measured 3/3: this one goes through the transcript search first, which
+    # is also an answer from what is on hand - just never the web.
+    SelectionCase("which day has the Pompeii excursion?", SEARCH_HISTORY, "shared_document", history=_SHARED_DOCUMENT_HISTORY),
     SelectionCase("actually don't remember that", MANAGE_TASKS, "task_undo", history=_SAVED_HISTORY),
 )
 

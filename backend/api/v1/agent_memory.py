@@ -1,4 +1,5 @@
 import json
+import logging
 import uuid
 from datetime import UTC, datetime
 from typing import Annotated, Any, Literal
@@ -17,6 +18,8 @@ from backend.core.dependencies import (
     DependencyMemoryReembeddingService,
     DependencyMemoryRetentionService,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/memory",
@@ -417,6 +420,18 @@ async def ingest_document(
     background.add_task(
         propose_document_facts, service, tracer, user_id, source_conversation_id, filename, parsed.markdown, note, room
     )
+    # The share leaves a line in the conversation it was made in, so the next
+    # "what's on day 1?" resolves to this document rather than to whatever was
+    # said before it, and the router knows a document is on hand. The iMessage
+    # worker records this itself for rooms (it sends speaker context); the
+    # web and API paths have nobody else to do it.
+    if source_conversation_id and not speaker_user_id and getattr(service, "observe", None):
+        try:
+            await service.observe(
+                user_id, f'shared a document: "{filename}"', source_conversation_id, {"channel": "document_upload"}
+            )
+        except Exception:
+            logger.warning("Recording the document share in the conversation failed", exc_info=True)
     # On the record for "forget that": the same undo ledger a saved memory
     # uses, tied to the conversation the document arrived in.
     await changes.record_change(
