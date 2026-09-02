@@ -2300,7 +2300,10 @@ class ConversationService:
         # cosine-distance policy means an unrelated turn retrieves nothing and
         # adds nothing; a relevant one grounds the reply in what the document
         # says, cited by title. A retrieval failure never costs the turn.
-        if self.agent_memory is not None:
+        # getattr rather than direct attribute access: tests build the service
+        # with __new__ and never assign agent_memory, so the attribute can be
+        # absent rather than merely None.
+        if getattr(self, "agent_memory", None) is not None:
             try:
                 found_knowledge = await self.agent_memory.knowledge.search(
                     user_id, query, _KNOWLEDGE_TOP_K, query_embedding
