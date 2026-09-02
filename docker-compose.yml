@@ -922,6 +922,10 @@ services:
       - VISION_ESCALATION_LLM_REASONING_EFFORT=${VISION_ESCALATION_LLM_REASONING_EFFORT:-none}
       - EMBEDDING_INFERENCE_ADAPTER=${EMBEDDING_INFERENCE_ADAPTER:-}
       - EMBEDDING_BASE_URL=http://vllm-embedding:8000
+      # Document parsing (docs/DOCUMENT_KNOWLEDGE_ARCHITECTURE.md): Docling on the
+      # desktop GPU. Empty keeps document uploads switched off with a clear
+      # message; set DOCLING_BASE_URL in .env to turn them on.
+      - DOCLING_BASE_URL=${DOCLING_BASE_URL:-}
       - EMBEDDING_MODEL=text-embedding-nomic-embed-text-v1.5
       # The reranker rides beside the embedder: it re-scores what the vector
       # search retrieved. It was wired into the test container only for a
