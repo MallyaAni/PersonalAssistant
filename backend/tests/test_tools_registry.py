@@ -131,3 +131,24 @@ def test_a_firing_is_offered_neither_automation_nor_history_recall():
     names = {row.name for row in builtin_tools(("diagram", "presentation"), UNATTENDED_WITHHELD)}
     assert "search_history" not in names and "schedule_task" not in names
     assert "generate_image" in names and "show_image" in names
+
+
+# Every action a built-in parses into must be describable to the surfaces:
+# the web status line, the iMessage waiting bubble, and the sweep's route
+# label all read `_ROW_FOR_ACTION`. create_document shipped without its row
+# (2026-09-02): the file was written and the sweep still saw route=None.
+def test_every_builtin_action_has_a_describing_row():
+    from backend.tools import registry
+
+    for module in registry._MODULES:
+        parse = getattr(module, "parse", None)
+        produced = str(getattr(parse, "__annotations__", {}).get("return", ""))
+        names = {
+            part.strip().strip("'\"").rsplit(".", 1)[-1]
+            for part in produced.replace("|", " ").replace("[", " ").replace("]", " ").replace(",", " ").split()
+        }
+        action_names = {name for name in names if name.endswith("Action")}
+        assert action_names, f"{module.NAME}.parse declares no action type"
+        rows = {cls.__name__ for cls in registry._ROW_FOR_ACTION}
+        missing = action_names - rows
+        assert not missing, f"{module.NAME}: no _ROW_FOR_ACTION entry for {sorted(missing)}"

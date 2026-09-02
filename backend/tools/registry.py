@@ -212,6 +212,7 @@ _ROW_FOR_ACTION: dict[type, BuiltinTool] = {
     ShowImageAction: show_image.TOOL,
     DiscussImageAction: discuss_image.TOOL,
     CreateDiagramAction: create_diagram.TOOL,
+    CreateDocumentAction: create_document.TOOL,
     DelegateAction: presentation.TOOL,
     RecallHistoryAction: search_history.TOOL,
     ScheduleTaskAction: schedule_task.TOOL,

@@ -208,7 +208,7 @@ _ACK_POLL_SECONDS = 0.25
 # Weather is two or three lookups plus the reply - six to eight seconds - so
 # its line at second three still buys real reassurance.
 _SLOW_ROUTES = frozenset(
-    ("Web search", "Weather", "New images", "Image edits", "Diagrams", "Presentations", "Past conversations", "Skill")
+    ("Web search", "Weather", "New images", "Image edits", "Diagrams", "Documents as files", "Presentations", "Past conversations", "Skill")
 )
 
 _ACK_REPLIES = (
