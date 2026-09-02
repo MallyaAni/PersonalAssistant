@@ -2,6 +2,23 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-02 - The assistant writes the PDF it offered
+
+In the Amalfi group chat the assistant offered to put the revised itinerary
+in a PDF, which nothing in the stack could produce: the capability list it
+sees mentions reading documents and building slide decks, and it inferred
+the rest. Rather than suppress the offer, it is now true. A `create_document`
+tool writes the reply (or the text the router puts in the call) to a Word file
+built here with no dependency, and to a PDF by having Gotenberg's
+LibreOffice route on the desktop print that same file (its Chromium route
+cannot start there); the file is kept as an artifact of kind `document`, shown as a
+card on the web and attached under its title in iMessage, and the bridge
+lets a PDF or a Word file out proven by its first bytes. A PDF asked for
+while the desktop is off is answered with the Word file and says so. Routing
+cases cover the ask and the non-ask (a shorter version in chat is words, not
+a file); the functional test prints a real PDF and reads it back through
+Docling.
+
 ## 2026-09-02 - A document shared while the parser is off is queued in seconds, not minutes
 
 The live queue test (parser stopped on the desktop, document shared, parser

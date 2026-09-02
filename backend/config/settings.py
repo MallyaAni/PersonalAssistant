@@ -240,6 +240,11 @@ class Settings(BaseSettings):
     DOCLING_BASE_URL: str = ""
     DOCLING_TIMEOUT_SECONDS: int = Field(default=300, ge=10, le=1800)
     DOCUMENT_UPLOAD_MAX_BYTES: int = Field(default=25 * 1024 * 1024, ge=1024)
+    # Document writing (the mirror of parsing): Gotenberg prints the
+    # assistant's words to a PDF. Empty means PDFs are answered as Word files,
+    # which need no renderer. Bursty, and it lives on the desktop with Docling.
+    GOTENBERG_BASE_URL: str = ""
+    GOTENBERG_TIMEOUT_SECONDS: int = Field(default=120, ge=10, le=900)
     # How often the durable parse queue retries documents that arrived while
     # the parser was unreachable. Zero disables the loop.
     DOCUMENT_PARSE_QUEUE_INTERVAL_SECONDS: int = Field(default=60, ge=0, le=3600)

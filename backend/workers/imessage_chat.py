@@ -174,6 +174,19 @@ _DOCUMENT_TYPES = frozenset(
     }
 )
 
+_DOCUMENT_SUFFIX = {
+    "application/pdf": ".pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": ".pptx",
+}
+
+
+# A file name for a written document: its title, kept to what a file system
+# and the bridge accept, with the suffix its type demands.
+def _document_filename(title: str, media_type: str) -> str:
+    stem = re.sub(r"[^A-Za-z0-9 _.-]+", "", title).strip(" .")[:80] or "document"
+    return f"{stem}{_DOCUMENT_SUFFIX.get(media_type, '')}"
+
 # One reply can take a while on the local model; the read timeout has to
 # outlive a long generation, not a network hiccup.
 _CHAT_TIMEOUT_SECONDS = 300.0
@@ -210,11 +223,14 @@ _ACK_REPLIES = (
 
 @dataclass
 class TurnImage:
-    """One image artifact a turn produced, fetched for the thread."""
+    """One artifact a turn produced, fetched for the thread: a picture, or a
+    written document (PDF or Word), which travels the same way with its own
+    file name."""
 
     artifact_id: str
     media_type: str
     data_base64: str | None = None
+    filename: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -1188,7 +1204,7 @@ class IMessageChatWorker:
                 {
                     "to": reply_to,
                     "body": "",
-                    "attachment_name": f"{image.artifact_id}.{extension}",
+                    "attachment_name": image.filename or f"{image.artifact_id}.{extension}",
                     "attachment_media_type": image.media_type,
                     "attachment_base64": image.data_base64,
                 },
@@ -1752,6 +1768,18 @@ class IMessageChatWorker:
                     media_type=str(data["mime_type"]),
                 )
             )
+        elif event == "artifact_ready" and str(data.get("mime_type") or "") in _DOCUMENT_TYPES:
+            # A document the assistant wrote: attached under its title so the
+            # phone shows "Amalfi itinerary.pdf", not a uuid.
+            images.append(
+                TurnImage(
+                    artifact_id=str(data.get("id") or ""),
+                    media_type=str(data["mime_type"]),
+                    filename=_document_filename(
+                        str(data.get("title") or ""), str(data["mime_type"])
+                    ),
+                )
+            )
 
     # A diagram artifact rendered to a PNG the thread can carry, or None
     # when the source is outside the renderer's flowchart subset - in which
@@ -1797,9 +1825,12 @@ class IMessageChatWorker:
                 )
                 response.raise_for_status()
                 media_type = str(response.headers.get("content-type") or "image/png")
-                content, media_type = await asyncio.to_thread(
-                    _shrink_for_send, response.content, media_type
-                )
+                content = response.content
+                # Only pictures are shrunk; a document is sent as written.
+                if media_type.startswith("image/"):
+                    content, media_type = await asyncio.to_thread(
+                        _shrink_for_send, content, media_type
+                    )
                 return base64.b64encode(content).decode("ascii"), media_type
         except Exception:
             logger.warning(

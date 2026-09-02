@@ -78,6 +78,40 @@ the desktop being off (a durable queue); answering never depends on it.
    them and remove any of it - documents are their memory, on the same terms as
    the rest.
 
+### Stage 6 - Writing (2026-09-02)
+
+The mirror of stage 1. When the person asks for what the assistant just wrote
+as a file - "put that in a PDF", "make that a Word document", "create a pdf
+of the revised itinerary so I can send it to Jen" - the router picks
+`create_document` (title, format, and the body, or empty for "what you just
+wrote", which resolves to the previous reply of at least a sentence or two).
+The body is the Markdown subset the assistant writes anyway: headings,
+paragraphs, bullets, bold.
+
+- **PDF**: the Word file below, printed by Gotenberg's LibreOffice route
+  (`GOTENBERG_BASE_URL`, on the desktop beside Docling) - one source for both
+  formats. Gotenberg's Chromium route cannot start on the desktop's Docker
+  (crashpad, measured 2026-09-02), so it is not used. The renderer is probed
+  first; when it is away the person gets the Word file and is told the PDF
+  comes back with the desktop.
+- **Word**: built here from the standard library (a .docx is three XML parts
+  in a zip); headings are sized bold paragraphs, bullets hang, bold survives.
+  No renderer, so it never waits on anything.
+- **Kept as an artifact** of kind `document` in the visual-artifact store:
+  bytes under an opaque key, hash and size on the row, served by the
+  owned-artifact content route. The web shows a card with the file to save;
+  the iMessage worker attaches it under its title (`Amalfi itinerary.pdf`),
+  and the bridge lets a PDF or a Word file out, proven by its first bytes,
+  under the same size cap as a picture.
+- **Round trip**: a file the assistant wrote can be shared back to it and
+  read through stage 1, which is how the functional test proves the PDF
+  says what was asked - Docling reads it and the day-by-day is there.
+
+Not Microsoft 365. A Graph or Office MCP would put the file in someone's
+OneDrive and needs a tenant, consent, and tokens the household does not have;
+the person asked for a file they can send, which this is. An MCP that edits
+an existing .docx in place is the later step, if it is wanted.
+
 ## What exists versus what is new
 
 | Piece | State |
@@ -87,6 +121,8 @@ the desktop being off (a durable queue); answering never depends on it.
 | Docling parse service + durable, desktop-off-tolerant parse queue; Gotenberg for Office | NEW (Docling reused from the drop) |
 | Wiring `KnowledgeStore.search` into the per-turn reply, with citations and abstention | NEW - the load-bearing piece |
 | Reply-to-document scoping, "forget that document", lifecycle | NEW |
+
+| Writing a PDF or Word file from the reply | NEW: `document_writer` (Gotenberg + docx builder), `create_document` tool, artifact kind `document`, worker attachment, bridge rule |
 
 ## Build order (each phase ends in something the assistant can do)
 
@@ -104,6 +140,13 @@ the desktop being off (a durable queue); answering never depends on it.
    page) is the breadth check.
 4. **Control and citation.** VERIFIED LIVE 2026-09-02 (`live_document_acceptance`: the deployed API cited the itinerary by name and page, answered a pinned question from the document alone, and removed it on "forget that document"; queue tests 12/12 x3 against the real table). Unit-verified (a document pin scopes retrieval; the confirming iMessage bubble pins the document; `forget that` deletes a stored document via the undo ledger; every chunk carries its page and the citation names it). Live acceptance in the Groupie chat pending. Reply-to-document scoping, forget, and citations
    surfaced in the reply so a person can see which page an answer came from.
+
+6. **Writing** - `create_document` → Word file built here, PDF printed by
+   Gotenberg's LibreOffice route, kept as an artifact, attached in iMessage /
+   a card on the web. VERIFIED 2026-09-02: routing 12/12 (three phrasings and
+   one non-ask, three reps); the PDF and the Word file read back through
+   Docling with every day present (2/2); worker, bridge, and writer unit
+   tests; sweep journey "plan as a pdf" walks it after every deploy.
 
 ## Edge cases, as built (2026-09-02)
 

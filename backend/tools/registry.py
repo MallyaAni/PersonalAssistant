@@ -13,6 +13,7 @@ from typing import Any
 
 from . import (
     create_diagram,
+    create_document,
     discuss_image,
     edit_image,
     generate_image,
@@ -27,6 +28,7 @@ from . import (
 )
 from .actions import (
     CreateDiagramAction,
+    CreateDocumentAction,
     DelegateAction,
     DiscussImageAction,
     EditImageAction,
@@ -63,6 +65,7 @@ _MODULES: tuple[ModuleType, ...] = (
     show_image,
     discuss_image,
     create_diagram,
+    create_document,
     presentation,
     search_history,
     schedule_task,
@@ -233,6 +236,8 @@ def _detail(action: MainAction) -> str:
         return action.query
     if isinstance(action, CreateDiagramAction | DelegateAction):
         return action.subject
+    if isinstance(action, CreateDocumentAction):
+        return f"{action.title} ({action.format})"
     if isinstance(action, ScoutScheduleAction) and action.operation == "show":
         return "show"
     if isinstance(action, ScheduleTaskAction | ScoutScheduleAction):

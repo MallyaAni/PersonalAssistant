@@ -23,7 +23,7 @@ class VisualArtifact(Base):
     __tablename__ = "visual_artifacts"
     __table_args__ = (
         CheckConstraint(
-            "kind IN ('diagram', 'generated_image', 'uploaded_image')",
+            "kind IN ('diagram', 'generated_image', 'uploaded_image', 'document')",
             name="ck_visual_artifacts_kind",
         ),
         CheckConstraint(

@@ -107,10 +107,12 @@ def test_no_attachment_is_a_valid_send():
     assert decode_attachment(None, None, None) is None
 
 
-def test_only_calendar_attachments_are_accepted():
+def test_only_listed_attachment_types_are_accepted():
+    # A PDF joined the list on 2026-09-02 (the assistant writes them); an
+    # archive is the example of what still may not leave.
     encoded = base64.b64encode(_CALENDAR).decode()
     with pytest.raises(BridgeError, match="Unsupported attachment type"):
-        decode_attachment("x.ics", "application/pdf", encoded)
+        decode_attachment("x.zip", "application/zip", encoded)
 
 
 def test_a_path_traversal_filename_is_reduced_to_its_name():
@@ -1623,3 +1625,34 @@ def test_a_reply_to_a_bubble_that_is_gone_says_nothing_rather_than_failing(tmp_p
     (message,) = incoming_messages(config, since_ns=_ns_ago(60))["messages"]
     assert message["reply_to_guid"] == "no-such-bubble"
     assert "reply_to_text" not in message
+
+
+# The two document types the assistant writes may leave, each proven by its
+# first bytes like a picture is; anything else dressed in their name may not.
+def test_an_outbound_pdf_attachment_decodes():
+    pdf = b"%PDF-1.4\n" + b"x" * 64
+    name, content = decode_attachment(
+        "Amalfi itinerary.pdf", "application/pdf", base64.b64encode(pdf).decode()
+    )
+    assert name == "Amalfi itinerary.pdf"
+    assert content == pdf
+
+
+def test_an_outbound_word_file_decodes():
+    docx = b"PK\x03\x04" + b"x" * 64
+    media = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    name, _ = decode_attachment("Plan.docx", media, base64.b64encode(docx).decode())
+    assert name == "Plan.docx"
+
+
+def test_a_picture_dressed_as_a_pdf_is_refused():
+    with pytest.raises(BridgeError):
+        decode_attachment(
+            "sneaky.pdf", "application/pdf", base64.b64encode(_PNG_1PX).decode()
+        )
+
+
+def test_a_pdf_must_be_named_as_one():
+    pdf = b"%PDF-1.4\n" + b"x" * 64
+    with pytest.raises(BridgeError, match="must be named"):
+        decode_attachment("payload.sh", "application/pdf", base64.b64encode(pdf).decode())

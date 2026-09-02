@@ -83,6 +83,20 @@ class CreateDiagramAction:
 
 
 @dataclass(frozen=True, slots=True)
+class CreateDocumentAction:
+    """Write the assistant's words to a file the person can keep and share.
+
+    `body_markdown` empty means "what you just wrote": the previous reply in
+    the conversation is the document, which is the commonest case - a plan
+    or itinerary composed in chat, then asked for as a PDF.
+    """
+
+    title: str
+    format: str
+    body_markdown: str = ""
+
+
+@dataclass(frozen=True, slots=True)
 class DelegateAction:
     """The model decided this turn belongs to a specialist agent."""
 
@@ -183,6 +197,7 @@ MainAction = (
     | ShowImageAction
     | DiscussImageAction
     | CreateDiagramAction
+    | CreateDocumentAction
     | DelegateAction
     | ScheduleTaskAction
     | ManageTasksAction

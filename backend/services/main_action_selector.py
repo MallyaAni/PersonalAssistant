@@ -55,6 +55,7 @@ from backend.tools import (
     WEATHER_TOOL,
     BuiltinTool,
     CreateDiagramAction,
+    CreateDocumentAction,
     DelegateAction,
     DiscussImageAction,
     EditImageAction,
@@ -78,6 +79,7 @@ from backend.services.transcript import transcript_lines
 __all__ = [
     "BuiltinTool",
     "CreateDiagramAction",
+    "CreateDocumentAction",
     "DelegateAction",
     "DiscussImageAction",
     "EditImageAction",

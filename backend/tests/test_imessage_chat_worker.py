@@ -1323,3 +1323,59 @@ async def test_an_unfetchable_document_is_reported_without_a_document_id(monkeyp
 
     assert "couldn't open" in reply
     assert document_id == "" and title == ""
+
+
+# A document the assistant wrote rides the thread the way a picture does,
+# named after its title so the phone shows the file, not a uuid.
+@pytest.mark.asyncio
+async def test_a_written_document_is_sent_under_its_title(monkeypatch):
+    from backend.workers.imessage_chat import TurnImage
+
+    bridge = _Bridge(
+        {"messages": [_message("g9d", "7372025933", "put that in a PDF")], "cursor": 41}
+    )
+    worker, _ = _worker(
+        bridge, monkeypatch, accounts={"7372025933": "ani.mallya"}, replies={}
+    )
+
+    async def converse(user_id, text, active_image=None, **_):
+        return TurnResult(
+            'Here is "Amalfi itinerary" as a PDF.',
+            (
+                TurnImage(
+                    "doc-1",
+                    "application/pdf",
+                    data_base64="JVBERi0xLjQK",
+                    filename="Amalfi itinerary.pdf",
+                ),
+            ),
+        )
+
+    monkeypatch.setattr(worker, "_converse", converse)
+
+    assert await worker.tick() == 1
+    assert bridge.sent[0]["body"] == 'Here is "Amalfi itinerary" as a PDF.'
+    attachment = bridge.sent[1]
+    assert attachment["attachment_name"] == "Amalfi itinerary.pdf"
+    assert attachment["attachment_media_type"] == "application/pdf"
+    assert attachment["attachment_base64"] == "JVBERi0xLjQK"
+
+
+@pytest.mark.asyncio
+async def test_a_document_artifact_event_becomes_a_named_attachment(monkeypatch):
+    bridge = _Bridge({"messages": [], "cursor": 0})
+    worker, _ = _worker(bridge, monkeypatch, accounts={}, replies={})
+    images: list = []
+    await worker._consume_event(
+        "ani.mallya",
+        "artifact_ready",
+        {"id": "doc-2", "kind": "document", "mime_type": "application/pdf", "title": "Amalfi itinerary: revised"},
+        [],
+        images,
+        [],
+        set(),
+    )
+    assert len(images) == 1
+    assert images[0].artifact_id == "doc-2"
+    assert images[0].filename == "Amalfi itinerary revised.pdf"
+    assert images[0].data_base64 is None  # fetched afterwards through the owned-artifact route

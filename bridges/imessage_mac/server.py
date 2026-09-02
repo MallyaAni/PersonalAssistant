@@ -70,12 +70,27 @@ SEND_TIMEOUT_SECONDS = 30.0
 # Pictures may be larger than calendars, and nothing may be larger than this.
 MAX_IMAGE_ATTACHMENT_BYTES = 5 * 1024 * 1024
 
+# A written document (a PDF printed from a page, a Word file) is bounded the
+# way a picture is.
+MAX_DOCUMENT_ATTACHMENT_BYTES = MAX_IMAGE_ATTACHMENT_BYTES
+
 # What may be attached to an outbound message: for each media type, the file
 # suffixes it may be named with, its size cap, and the leading bytes that prove
-# the content is what the type claims. Calendars and pictures, nothing else — a
+# the content is what the type claims. Calendars, pictures, and the two
+# document types the assistant writes (a PDF, a Word file), nothing else — a
 # general file-sending endpoint on a machine signed into someone's Apple ID is
 # a much larger thing than this needs to be.
 OUTBOUND_ATTACHMENT_RULES: dict[str, tuple[frozenset[str], int, tuple[bytes, ...]]] = {
+    "application/pdf": (
+        frozenset({".pdf"}),
+        MAX_DOCUMENT_ATTACHMENT_BYTES,
+        (b"%PDF-",),
+    ),
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": (
+        frozenset({".docx"}),
+        MAX_DOCUMENT_ATTACHMENT_BYTES,
+        (b"PK\x03\x04",),
+    ),
     "text/calendar": (
         frozenset({".ics"}),
         MAX_ATTACHMENT_BYTES,

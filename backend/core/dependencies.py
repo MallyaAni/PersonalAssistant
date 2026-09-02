@@ -89,6 +89,7 @@ from backend.services.artifact_deletion_service import ArtifactDeletionService
 from backend.services.artifact_repository import SQLAlchemyArtifactRepository
 from backend.services.conversation_service import ConversationService
 from backend.services.diagram_artifact_service import DiagramArtifactService
+from backend.services.document_artifact_service import DocumentArtifactService
 from backend.services.image_artifact_service import ImageArtifactService
 from backend.services.image_intent import ImageIntentClassifier
 from backend.services.image_refinement_service import ImageRefinementService
@@ -1071,6 +1072,21 @@ DiagramArtifactDependency = Annotated[
 ]
 
 
+# Write a PDF or Word file and keep it as an owned artifact (the mirror of
+# document parsing; docs/DOCUMENT_KNOWLEDGE_ARCHITECTURE.md, stage 6).
+def get_document_artifact_service(
+    repository: ArtifactRepositoryDependency,
+    store: BinaryArtifactStoreDependency,
+) -> DocumentArtifactService:
+    return DocumentArtifactService(repository, store)
+
+
+DocumentArtifactDependency = Annotated[
+    DocumentArtifactService,
+    Depends(get_document_artifact_service),
+]
+
+
 DependencyMemoryService = Annotated[PostgresMemoryService, Depends(get_memory_service)]
 
 
@@ -1595,6 +1611,7 @@ def get_conversation_service(
     tracer: TracerDependency,
     memory_coordinator: MemoryCoordinatorDependency,
     diagram_artifacts: DiagramArtifactDependency,
+    document_artifacts: DocumentArtifactDependency,
     search: SearchDependency,
     artifacts: ArtifactRepositoryDependency,
     tool_orchestration: MCPToolOrchestrationDependency,
@@ -1620,6 +1637,7 @@ def get_conversation_service(
         history_turn_limit=settings.CONVERSATION_HISTORY_TURNS,
         memory_coordinator=memory_coordinator,
         diagram_artifacts=diagram_artifacts,
+        document_artifacts=document_artifacts,
         agent_registry=agent_registry,
         search=search,
         image_search=artifacts,

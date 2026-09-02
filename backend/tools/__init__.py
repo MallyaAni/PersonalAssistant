@@ -10,6 +10,7 @@ same router alongside these.
 
 from .actions import (
     CreateDiagramAction,
+    CreateDocumentAction,
     DelegateAction,
     DiscussImageAction,
     EditImageAction,
@@ -57,6 +58,7 @@ __all__ = [
     "WEATHER_TOOL",
     "BuiltinTool",
     "CreateDiagramAction",
+    "CreateDocumentAction",
     "DelegateAction",
     "DiscussImageAction",
     "EditImageAction",

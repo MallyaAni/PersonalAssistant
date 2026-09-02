@@ -3,6 +3,7 @@ import { Bot, CheckCircle2, MoreHorizontal, Search, ShieldAlert, Sparkles, Wrenc
 import ReactMarkdown from 'react-markdown'
 import DiagramArtifact from '../DiagramArtifact/DiagramArtifact'
 import ImageArtifact from '../ImageArtifact/ImageArtifact'
+import { DocumentArtifact } from '../DocumentArtifact/DocumentArtifact'
 import { linkifyMarkdown } from '../../utils/linkify'
 import type {
   ImageArtifact as ImageArtifactRecord,
@@ -253,7 +254,8 @@ const MessageBubble: React.FC<MessageProps> = ({
         </p>
       )}
       {!isUser && artifact?.kind === 'diagram' && <DiagramArtifact artifact={artifact} />}
-      {!isUser && artifact && artifact.kind !== 'diagram' && (
+      {!isUser && artifact?.kind === 'document' && <DocumentArtifact artifact={artifact} />}
+      {!isUser && artifact && artifact.kind !== 'diagram' && artifact.kind !== 'document' && (
         <ImageArtifact
           artifact={artifact}
           onDeleted={onArtifactDeleted}

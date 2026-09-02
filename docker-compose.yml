@@ -934,6 +934,7 @@ services:
       # desktop GPU. Empty keeps document uploads switched off with a clear
       # message; set DOCLING_BASE_URL in .env to turn them on.
       - DOCLING_BASE_URL=${DOCLING_BASE_URL:-}
+      - GOTENBERG_BASE_URL=${GOTENBERG_BASE_URL:-}
       - EMBEDDING_MODEL=text-embedding-nomic-embed-text-v1.5
       # The reranker rides beside the embedder: it re-scores what the vector
       # search retrieved. It was wired into the test container only for a

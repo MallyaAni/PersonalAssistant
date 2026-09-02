@@ -28,6 +28,7 @@ from dataclasses import dataclass
 # a decision rather than an absence of one.
 SEARCH = "search_web"
 GENERATE_IMAGE = "generate_image"
+CREATE_DOCUMENT = "create_document"
 EDIT_IMAGE = "edit_image"
 SHOW_IMAGE = "show_image"
 # Talking about the picture in view - its own tool since 2026-08-27, so an
@@ -57,6 +58,7 @@ TOOL_NAMES: tuple[str, ...] = (
     SEARCH_HISTORY,
     SEARCH_CREDITS,
     CREATE_DIAGRAM,
+    CREATE_DOCUMENT,
     DELEGATE_PRESENTATION,
     # The four newest built-ins were missing here, which is why no case could
     # be labelled with them: `test_every_case_is_labelled_with_a_tool_that_exists`
@@ -239,6 +241,14 @@ _SHARED_DOCUMENT_HISTORY = (
     (
         "Scout whats on evening of day 1?",
         "Evening of day 1 (Sun, Oct 11): orientation at 6:00pm, then dinner at the hotel in Salerno.",
+    ),
+)
+# A plan the assistant just composed in chat, which "that" then names.
+_ITINERARY_WRITTEN_HISTORY = (
+    ("can you revise the tour so we get more time in Amalfi and Capri?", ""),
+    (
+        "yes",
+        "Here's the full revised day-by-day.\n\nDay 1 (Sun, Oct 11) - Arrival. Arrive Salerno, 6pm orientation, 7:30pm dinner at the hotel.\n\nDay 2 (Mon) - Pompeii only; afternoon free for Amalfi town.\n\nDay 3 (Tues) - Positano morning, rehearsal at 3pm.\n\nDay 4 (Wed) - Capri morning, concert in Naples in the evening.",
     ),
 )
 # A memory just saved, for "forget that".
@@ -665,6 +675,14 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
     # is also an answer from what is on hand - just never the web.
     SelectionCase("which day has the Pompeii excursion?", SEARCH_HISTORY, "shared_document", history=_SHARED_DOCUMENT_HISTORY),
     SelectionCase("actually don't remember that", MANAGE_TASKS, "task_undo", history=_SAVED_HISTORY),
+    # The plan just written, asked for as a file: a PDF, a Word document, a
+    # copy to keep. Live on 2026-09-02 the assistant offered a PDF it had no
+    # way to make; now it has one, and the offer must route to it.
+    SelectionCase("put that in a PDF", CREATE_DOCUMENT, "document_file", history=_ITINERARY_WRITTEN_HISTORY),
+    SelectionCase("can you make that a word document?", CREATE_DOCUMENT, "document_file", history=_ITINERARY_WRITTEN_HISTORY),
+    SelectionCase("create a pdf of the revised itinerary so I can send it to Jen", CREATE_DOCUMENT, "document_file", history=_ITINERARY_WRITTEN_HISTORY),
+    # Words about the plan stay words: a shorter version in the chat is not a file.
+    SelectionCase("give me a two-line summary of that plan", NO_TOOL, "document_file", history=_ITINERARY_WRITTEN_HISTORY),
 )
 
 # Set from the measured baseline once, deliberately low enough to catch a
@@ -703,6 +721,10 @@ PER_TOOL_ACCURACY_FLOORS: dict[str, float] = {
     # First measured 2026-08-25 with the tool.
     SEARCH_CREDITS: 0.66,
     CREATE_DIAGRAM: 0.60,
+    # Measured 9/9 on 2026-09-02 with the tool (three phrasings, three reps,
+    # evaluate_tool_selection's collector); held below so one wobble on a
+    # small router does not fail a deploy that changed nothing about files.
+    CREATE_DOCUMENT: 0.66,
     DELEGATE_PRESENTATION: 0.50,
     # Set on 2026-08-23 when these were first measured at all. Task routing is
     # held higher than the image tools because its failure is silent: a

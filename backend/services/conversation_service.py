@@ -58,6 +58,7 @@ from backend.search.budgeted import (
 from backend.search.query import normalize_search_query
 from backend.services.agent_memory_manager import AgentMemoryManager
 from backend.services.diagram_artifact_service import DiagramArtifactService
+from backend.services.document_artifact_service import DocumentArtifactService
 from backend.services.image_artifact_service import ImageArtifactService
 from backend.services.image_intent import ImageIntentClassifier
 from backend.services.image_refinement_service import (
@@ -69,6 +70,7 @@ from backend.services.followup import current_followup
 from backend.services.transcript import user_content
 from backend.services.main_action_selector import (
     CreateDiagramAction,
+    CreateDocumentAction,
     DelegateAction,
     EditImageAction,
     GenerateImageAction,
@@ -972,6 +974,17 @@ def _once_date(
     return today + timedelta(days=1)
 
 
+
+# The most recent reply in a conversation that is long enough to be a
+# document: "put that in a PDF" means the plan or itinerary just written,
+# never a one-line acknowledgement. Empty when there is no such reply.
+def _previous_reply(history: list[dict[str, Any]], minimum_chars: int = 80) -> str:
+    for turn in reversed(history or []):
+        response = str(turn.get("response") or "").strip()
+        if len(response) >= minimum_chars:
+            return response
+    return ""
+
 class ConversationService:
     # Assemble the conversation workflow from replaceable application boundaries.
     def __init__(
@@ -983,6 +996,7 @@ class ConversationService:
         history_turn_limit: int = 10,
         memory_coordinator: MemoryCoordinatorAgent | None = None,
         diagram_artifacts: DiagramArtifactService | None = None,
+        document_artifacts: DocumentArtifactService | None = None,
         agent_registry: Any | None = None,
         search: SearchProvider | None = None,
         image_search: ArtifactEmbeddingStore | None = None,
@@ -1041,6 +1055,7 @@ class ConversationService:
         self.history_turn_limit = history_turn_limit
         self.memory_coordinator = memory_coordinator
         self.diagram_artifacts = diagram_artifacts
+        self.document_artifacts = document_artifacts
         self.agent_registry = agent_registry
         self.search = search
         self.image_search = image_search
@@ -3050,6 +3065,10 @@ class ConversationService:
         history: list[dict[str, Any]],
         active_image_artifact_id: str | None,
     ) -> AsyncGenerator[ChatStreamEvent, None] | None:
+        if isinstance(action, CreateDocumentAction) and self.document_artifacts:
+            return self._process_document_request(
+                user_id, asked, action, conversation_id, trace_id, metadata
+            )
         if isinstance(action, CreateDiagramAction) and self.diagram_artifacts:
             # The router's own subject, not the words the person typed.
             #
@@ -4701,6 +4720,100 @@ class ConversationService:
             trace_id,
             "diagram_generation",
             {"status": "completed", "artifact_id": artifact_id},
+        )
+        yield {"event": "delta", "data": {"content": response_text}}
+        yield {"event": "artifact_ready", "data": artifact}
+        yield {"event": "done", "data": {}}
+
+    # Write the assistant's words to a PDF or Word file and hand it over as an
+    # artifact: the web shows a card with the file, the iMessage worker
+    # attaches it. The body is what the router put in the call or, when it
+    # left that empty ("put that in a PDF"), the previous reply in this
+    # conversation - the plan or itinerary just composed.
+    async def _process_document_request(
+        self,
+        user_id: str,
+        query: str,
+        action: CreateDocumentAction,
+        conversation_id: str,
+        trace_id: str,
+        metadata: dict[str, Any],
+    ) -> AsyncGenerator[ChatStreamEvent, None]:
+        if self.document_artifacts is None:
+            raise RuntimeError("Document artifact service is not configured")
+        history = await self.repository.get_history(
+            conversation_id,
+            user_id,
+            self.history_turn_limit,
+        )
+        body = action.body_markdown.strip() or _previous_reply(history)
+        title = action.title.strip() or "Document"
+        if not body:
+            response_text = (
+                "There is nothing to put in a document yet - tell me what it "
+                "should say, or ask for it right after I have written something."
+            )
+            await self._persist_completed_turn(
+                user_id, conversation_id, query, response_text, trace_id, history, metadata
+            )
+            yield {"event": "delta", "data": {"content": response_text}}
+            yield {"event": "done", "data": {}}
+            return
+        pending = await self.document_artifacts.begin(
+            user_id, conversation_id, trace_id, title, action.format
+        )
+        artifact_id = str(pending["id"])
+        yield {
+            "event": "artifact_started",
+            "data": {"id": artifact_id, "kind": "document", "status": "pending"},
+        }
+        self.tracer.log_step(trace_id, "document_writing", {"status": "started", "format": action.format})
+        try:
+            artifact, written = await self.document_artifacts.complete(
+                artifact_id, user_id, title, body, action.format
+            )
+        except asyncio.CancelledError:
+            with CancelScope(shield=True):
+                await self.document_artifacts.fail(artifact_id, user_id, error_code="cancelled")
+            raise
+        except Exception as exc:
+            logger.warning("Document writing failed for trace %s: %s", trace_id, exc, exc_info=True)
+            await self.document_artifacts.fail(artifact_id, user_id)
+            response_text = f"I couldn't write that document: {str(exc)[:160] or 'the file could not be produced.'}"
+            await self._persist_completed_turn(
+                user_id,
+                conversation_id,
+                query,
+                response_text,
+                trace_id,
+                history,
+                {**metadata, "artifact_ids": [artifact_id], "artifact_status": "failed"},
+            )
+            self.tracer.log_step(trace_id, "document_writing", {"status": "failed", "artifact_id": artifact_id})
+            yield {"event": "delta", "data": {"content": response_text}}
+            yield {"event": "artifact_error", "data": {"id": artifact_id, "message": "Unable to write the document."}}
+            yield {"event": "done", "data": {}}
+            return
+        name = "PDF" if written.format == "pdf" else "Word document"
+        response_text = f'Here is "{title}" as a {name}.'
+        if written.format != action.format:
+            response_text += (
+                " The PDF renderer is off right now, so this is the Word version; "
+                "ask again later for the PDF."
+            )
+        await self._persist_completed_turn(
+            user_id,
+            conversation_id,
+            query,
+            response_text,
+            trace_id,
+            history,
+            {**metadata, "artifact_ids": [artifact_id], "artifact_status": "ready"},
+        )
+        self.tracer.log_step(
+            trace_id,
+            "document_writing",
+            {"status": "completed", "artifact_id": artifact_id, "format": written.format},
         )
         yield {"event": "delta", "data": {"content": response_text}}
         yield {"event": "artifact_ready", "data": artifact}

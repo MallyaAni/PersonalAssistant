@@ -119,6 +119,14 @@ JOURNEYS = [
             does_not_hold=("The reply invents a detail about a dentist appointment as if the reader had mentioned it.",)),
     Journey("schedule a reminder", "remind me tomorrow at 9am to call the bank", ("Scheduled tasks",),
             holds=("The reply confirms a reminder for tomorrow at 9 am.",)),
+    # The plan the assistant just wrote, asked for as a file. Live on
+    # 2026-09-02 the assistant offered a PDF it could not make; the route now
+    # exists and this walks it over HTTP: the reply names the file it made
+    # (a PDF, or the Word file when the desktop's renderer is off).
+    Journey("plan as a pdf", "put that in a PDF", ("Documents as files",),
+            before=("plan me a relaxed Saturday in Old Town Alexandria: a late breakfast, a walk by the water, a bookshop, and dinner - with rough times",),
+            holds=("the reply says a document file was made - a PDF, or a Word document - and gives its title",),
+            does_not_hold=("the reply says it cannot create files or documents",)),
     Journey("arithmetic", "what's 18% of 245?", (None,),
             holds=("The reply gives 44.1 as the answer.",)),
     # 2026-08-30: the check-in path, end to end. Mentioning something is not

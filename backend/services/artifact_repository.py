@@ -106,7 +106,9 @@ class SQLAlchemyArtifactRepository(
         title: str | None,
         parent_artifact_id: str | None = None,
     ) -> dict[str, Any]:
-        if kind not in {"generated_image", "uploaded_image"}:
+        # A written document (PDF or Word) is stored the way a picture is:
+        # bytes under an opaque key, hash and size on the row.
+        if kind not in {"generated_image", "uploaded_image", "document"}:
             raise ValueError("Binary artifact kind is not supported")
         artifact = VisualArtifact(
             user_id=user_id,

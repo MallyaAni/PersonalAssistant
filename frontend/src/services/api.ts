@@ -190,7 +190,21 @@ export interface ImageArtifact extends ArtifactBase {
   height: number;
 }
 
-export type VisualArtifact = DiagramArtifact | ImageArtifact;
+// A document the assistant wrote (a PDF or a Word file), kept in the same
+// store as a picture and fetched through the same owned-artifact boundary.
+export interface DocumentArtifact extends ArtifactBase {
+  kind: 'document';
+  source_format: null;
+  source: null;
+  mime_type:
+    | 'application/pdf'
+    | 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  content_available: true;
+  byte_size: number;
+  sha256: string;
+}
+
+export type VisualArtifact = DiagramArtifact | ImageArtifact | DocumentArtifact;
 
 export interface PresentationTheme {
   font_face: string;

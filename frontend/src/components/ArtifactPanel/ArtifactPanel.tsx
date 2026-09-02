@@ -4,6 +4,7 @@ import { RefreshCw, Trash2 } from 'lucide-react'
 import { deleteArtifact, getReadyArtifacts, type VisualArtifact } from '../../services/api'
 import DiagramArtifact from '../DiagramArtifact/DiagramArtifact'
 import ImageArtifact from '../ImageArtifact/ImageArtifact'
+import { DocumentArtifact } from '../DocumentArtifact/DocumentArtifact'
 
 interface ArtifactPanelProps {
   userId: string;
@@ -95,6 +96,8 @@ const ArtifactPanel = ({ userId }: ArtifactPanelProps) => {
                       <Trash2 size={13} /> Delete artifact
                     </button>
                   </>
+                ) : artifact.kind === 'document' ? (
+                  <DocumentArtifact artifact={artifact} />
                 ) : (
                   <ImageArtifact artifact={artifact} onDeleted={removeDeletedImage} />
                 )}
