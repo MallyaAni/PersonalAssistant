@@ -235,13 +235,13 @@ async def test_the_interest_catalogue_says_it_is_about_labels_only() -> None:
     llm = _DecisionLLM({"semantic_fact": "The group settled on Thai for Friday dinner."})
     await MemoryProposalAgent(llm).propose("we all settled on thai for friday dinner", ("Thai food",))
     system = llm.calls[0]["messages"][0]["content"]
-    assert "already follows these Scout interests" in system
-    assert "interest labels only" in system
-    assert "never means a fact, plan, decision or event is already known" in system
+    assert "has these Scout interest labels" in system
+    assert "labels for interests only" in system
+    assert "nothing about whether any fact, plan, decision or event is already known" in system
     # Without a catalogue the prompt is unchanged.
     plain = _DecisionLLM({"semantic_fact": "x"})
     await MemoryProposalAgent(plain).propose("something", ())
-    assert "already follows" not in plain.calls[0]["messages"][0]["content"]
+    assert "Scout interest labels" not in plain.calls[0]["messages"][0]["content"]
 
 
 @pytest.mark.asyncio
@@ -264,7 +264,7 @@ async def test_the_ordinary_prompt_is_byte_identical_whether_or_not_there_is_a_g
     catalogued = _DecisionLLM({})
     await MemoryProposalAgent(catalogued).propose("hello", ("hiking",))
     assert catalogued.calls[0]["messages"][0]["content"].startswith(
-        MEMORY_PROPOSAL_SYSTEM + "The user already follows"
+        MEMORY_PROPOSAL_SYSTEM + "The user has these Scout interest labels"
     )
 
     grouped = _DecisionLLM({})
