@@ -79,6 +79,21 @@ class _Block:
     text: str
 
 
+# Markdown a reply may carry that has no place in a printed page as syntax:
+# an image tag has no picture to show (the writer carries text only, for
+# now), a link is kept as its words with the address after them.
+_IMAGE = re.compile(r"!\[([^\]]*)\]\([^)]*\)")
+_LINK = re.compile(r"\[([^\]]+)\]\(([^)\s]+)\)")
+
+
+def _plain(text: str) -> str:
+    """Inline Markdown the page cannot render, reduced to words: images
+    dropped (their alt text kept when they have one), links as text (url)."""
+    text = _IMAGE.sub(lambda m: m.group(1), text)
+    text = _LINK.sub(lambda m: f"{m.group(1)} ({m.group(2)})", text)
+    return " ".join(text.split())
+
+
 _HEADING = re.compile(r"^(#{1,3})\s+(.*)$")
 _BULLET = re.compile(r"^\s*(?:[-*•]|\d+[.)])\s+(.*)$")
 _BOLD = re.compile(r"\*\*(.+?)\*\*")
@@ -96,7 +111,7 @@ def _blocks(markdown: str) -> list[_Block]:
             paragraph.clear()
 
     for raw in markdown.splitlines():
-        line = raw.rstrip()
+        line = _plain(raw.rstrip())
         if not line.strip():
             flush()
             continue

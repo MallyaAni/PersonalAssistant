@@ -2,6 +2,14 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-02 - A written document carries links as words and drops image tags
+
+A reply can carry Markdown a printed page cannot render: a link would have
+appeared as `[text](url)` and an image tag as `![alt](url)`. The writer now
+reduces a link to "text (url)" and an image tag to its alt text, or nothing.
+The writer carries text only; embedding a generated picture into the file is
+not built.
+
 ## 2026-09-02 - An archived itinerary answers where they stayed
 
 The retention live check found the archived itinerary and the reply still

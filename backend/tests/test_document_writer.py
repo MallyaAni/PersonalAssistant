@@ -75,3 +75,13 @@ async def test_a_word_file_needs_nothing_switched_on(monkeypatch):
     written = await write_document("Plan", BODY, DOCX)
     assert written.format == DOCX and written.extension == "docx"
     assert written.media_type.endswith("wordprocessingml.document")
+
+
+def test_links_become_words_and_image_tags_are_dropped():
+    body = "See [the tour site](https://example.com/tour) for details.\n\n![map of Salerno](https://example.com/map.png)\n\n![](https://example.com/blank.png)\n- Tickets at [the box office](https://example.com/box)"
+    blocks = _blocks(body)
+    assert blocks[0].text == "See the tour site (https://example.com/tour) for details."
+    assert blocks[1].text == "map of Salerno"
+    assert [b.text for b in blocks[2:]] == ["Tickets at the box office (https://example.com/box)"]
+    document = render_docx("t", body).decode("latin-1", errors="ignore")
+    assert "![" not in document and "](" not in document
