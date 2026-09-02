@@ -4,7 +4,7 @@ import {
   analyzeImage,
   getArtifact,
   getArtifactImage,
-  ingestDocument,
+  ingestDocument, uploadDocument,
   refineImage,
   streamChat,
   type ActionActivity,
@@ -17,7 +17,7 @@ import {
 } from '../../services/api'
 import { submitOnEnter } from '../../utils/submitOnEnter'
 
-type ComposerAction = 'chat' | 'analyze' | 'ingest';
+type ComposerAction = 'chat' | 'analyze' | 'ingest' | 'parse'
 
 // Documents are read client-side and capped to the knowledge endpoint's limit.
 const MAX_DOCUMENT_CHARS = 200_000
@@ -42,6 +42,14 @@ const isImageFile = (file: File): boolean =>
 
 const isTextDocument = (file: File): boolean =>
   file.type.startsWith('text/')
+// A document the server parses (Docling) rather than one the browser can read
+// as text: PDF, Word, PowerPoint - by declared type or, failing that, suffix.
+const isParsedDocument = (file: File): boolean =>
+  ['application/pdf',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  ].includes(file.type)
+  || /\.(pdf|docx|pptx)$/i.test(file.name)
   || /\.(txt|md|markdown|csv|json|log|ya?ml)$/i.test(file.name)
 
 // Say which of the two failures happened, because the fix differs.
@@ -176,11 +184,27 @@ const Composer: React.FC<ComposerProps> = ({
     if (file) {
       if (isImageFile(file)) return 'analyze'
       if (isTextDocument(file)) return 'ingest'
+      if (isParsedDocument(file)) return 'parse'
       return 'unsupported'
     }
     return 'chat'
   }
 
+  // Send a PDF, Word or PowerPoint file to be parsed on the server (Docling)
+  // and stored as knowledge, then say so the way the text path does.
+  const uploadAttachedDocument = async (file: File, note: string) => {
+    onSendMessage('user', note ? `${note}\n\n📎 ${file.name}` : `📎 ${file.name}`)
+    try {
+      const stored = await uploadDocument(userId, file, note, conversationId)
+      const pages = typeof stored.pages === 'number' && stored.pages > 1 ? ` (${stored.pages} pages)` : ''
+      onSendMessage(
+        'assistant',
+        `Added **${file.name}**${pages} to your knowledge — I can reference it in our conversation now.`,
+      )
+    } catch (error) {
+      onSendMessage('assistant', error instanceof Error ? error.message : `I couldn't read ${file.name}.`)
+    }
+  }
   // Read a text document and index it into memory so it can be recalled later.
   const ingestAttachedDocument = async (file: File, note: string) => {
     onSendMessage('user', note ? `${note}\n\n📎 ${file.name}` : `📎 ${file.name}`)
@@ -232,7 +256,7 @@ const Composer: React.FC<ComposerProps> = ({
 
     const action = resolveAction(file, prompt)
     if (action === 'unsupported') {
-      setVisualError('Attach an image (PNG, JPEG, WebP) or a text document for now.')
+      setVisualError('Attach an image (PNG, JPEG, WebP), a PDF, a Word or PowerPoint file, or a text document.')
       return
     }
 
@@ -248,6 +272,10 @@ const Composer: React.FC<ComposerProps> = ({
     try {
       if (action === 'ingest') {
         await ingestAttachedDocument(file as File, prompt)
+        return
+      }
+      if (action === 'parse') {
+        await uploadAttachedDocument(file as File, prompt)
         return
       }
 

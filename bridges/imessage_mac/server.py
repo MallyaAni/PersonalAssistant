@@ -1292,6 +1292,21 @@ MAX_INBOUND_ATTACHMENT_BYTES = 10 * 1024 * 1024
 INBOUND_IMAGE_TYPES = frozenset(
     {"image/jpeg", "image/png", "image/gif", "image/webp", "image/heic", "image/heif"}
 )
+# Documents the assistant can read (docs/DOCUMENT_KNOWLEDGE_ARCHITECTURE.md):
+# parsed on the server, never opened here. Each is proven by its first bytes in
+# _attachment_bytes, so a renamed file cannot ride a friendly suffix through.
+INBOUND_DOCUMENT_TYPES = frozenset(
+    {
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    }
+)
+_DOCUMENT_MAGIC = {
+    "application/pdf": (b"%PDF-",),
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": (b"PK\x03\x04",),
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": (b"PK\x03\x04",),
+}
 
 # The media type a file's suffix implies, when the database recorded none.
 def _suffix_media(path: Path) -> str:
@@ -1303,6 +1318,9 @@ def _suffix_media(path: Path) -> str:
         ".webp": "image/webp",
         ".heic": "image/heic",
         ".heif": "image/heif",
+        ".pdf": "application/pdf",
+        ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     }.get(path.suffix.lower(), "")
 
 
@@ -1345,7 +1363,7 @@ def attachment_payload(config: BridgeConfig, attachment_id: str) -> dict[str, ob
     if owned is None:
         return {"error": "not_found"}
     resolved, media, name = owned
-    if media not in INBOUND_IMAGE_TYPES:
+    if media not in INBOUND_IMAGE_TYPES and media not in INBOUND_DOCUMENT_TYPES:
         return {"error": "unsupported_type", "media_type": media}
     return _attachment_bytes(resolved, media, name)
 
@@ -1427,6 +1445,12 @@ def _attachment_bytes(
             return {"error": "unreadable"}
     if len(data) > MAX_INBOUND_ATTACHMENT_BYTES:
         return {"error": "too_large", "bytes": len(data)}
+    # A document is proven by its first bytes, as an outbound attachment is:
+    # the suffix chose the type, the content has to agree, or a renamed file
+    # would be handed to the parser under a name it did not earn.
+    magics = _DOCUMENT_MAGIC.get(media)
+    if magics and not any(data.startswith(magic) for magic in magics):
+        return {"error": "unsupported_type", "media_type": media}
     return {
         "media_type": media,
         "name": name,

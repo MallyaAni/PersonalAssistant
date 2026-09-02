@@ -39,7 +39,7 @@ from redis.asyncio import Redis
 from sqlalchemy import select
 
 from backend.config.settings import settings
-from backend.core.auth import issue_user_token
+from backend.core.auth import issue_user_token, SCOPE_MEMORY_WRITE
 from backend.core.logging_config import get_logger
 from backend.database.session import AsyncSessionLocal
 from backend.core.links import allowed_urls, fence_text
@@ -159,6 +159,20 @@ _FETCH_RETRY_SECONDS = 3.0
 # How many photos one message is answered for. Messages carries every photo
 # of a burst on one row; each becomes its own vision turn, in order.
 _MAX_PHOTOS_PER_MESSAGE = 4
+# Documents per message the worker will read; the rest are asked for again.
+_MAX_DOCUMENTS_PER_MESSAGE = 3
+# Parsing a scanned PDF through Docling can take minutes; well past the chat
+# timeout, and a wait that ends in a stored document is a wait worth having.
+_DOCUMENT_TIMEOUT_SECONDS = 600
+# Attachment media types that are documents to read, not pictures to look at.
+# Mirrors the bridge's INBOUND_DOCUMENT_TYPES; the bridge proves the bytes.
+_DOCUMENT_TYPES = frozenset(
+    {
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    }
+)
 
 # One reply can take a while on the local model; the read timeout has to
 # outlive a long generation, not a network hiccup.
@@ -296,9 +310,18 @@ class IMessageChatWorker:
             if isinstance(item, dict)
             and str(item.get("media_type") or "").startswith("image/")
         ]
+        # Documents ride the same message shape as pictures but go to the
+        # knowledge store, not the vision model: a PDF, Word or PowerPoint file
+        # is parsed on the server and answered from, cited, on later turns.
+        documents = [
+            item
+            for item in (message.get("attachments") or [])
+            if isinstance(item, dict)
+            and str(item.get("media_type") or "") in _DOCUMENT_TYPES
+        ]
         # A photo with no caption is a valid message - the picture is the
         # message - so emptiness only skips a row that carries neither.
-        if not guid or not reply_to or (not text and not attachments):
+        if not guid or not reply_to or (not text and not attachments and not documents):
             return 0
         if await self._already_seen(guid):
             return 0
@@ -323,7 +346,11 @@ class IMessageChatWorker:
         # wait can be acknowledged with "🔎 Rummaging through the internet…"
         # rather than a random pleasantry.
         status: list[str] = []
-        if attachments:
+        if documents:
+            turn = await self._with_ack(
+                self._document_turn(user_id, text, documents), reply_to, status
+            )
+        elif attachments:
             turn = await self._with_ack(
                 self._photo_turn(user_id, text, attachments), reply_to, status
             )
@@ -1339,6 +1366,64 @@ class IMessageChatWorker:
             await self._remember_conversation(user_id, conversation)
             await self._remember_image(user_id, remembered)
         return TurnResult("\n\n".join(replies) or _FAILURE_REPLY, ())
+
+    # A document sent as an attachment: fetched from the bridge, handed to the
+    # backend to parse and store as knowledge, and acknowledged by name. Later
+    # turns answer from it because the per-turn retrieval reads that store.
+    async def _document_turn(
+        self, user_id: str, caption: str, documents: list[dict]
+    ) -> "TurnResult":
+        conversation = await self._stored_conversation(user_id) or str(uuid.uuid4())
+        replies: list[str] = []
+        for attachment in documents[:_MAX_DOCUMENTS_PER_MESSAGE]:
+            replies.append(await self._ingest_document(user_id, caption, attachment, conversation))
+        if len(documents) > _MAX_DOCUMENTS_PER_MESSAGE:
+            replies.append(
+                f"I read the first {_MAX_DOCUMENTS_PER_MESSAGE} - send the rest "
+                "separately if you want those too."
+            )
+        await self._remember_conversation(user_id, conversation)
+        return TurnResult("\n\n".join(replies) or _FAILURE_REPLY, ())
+
+    # One document stored, or a sentence saying why not. Words rather than an
+    # exception, so one unreadable file in a burst does not lose the others.
+    async def _ingest_document(
+        self, user_id: str, caption: str, attachment: dict, conversation: str
+    ) -> str:
+        fetched = await self._fetch_inbound_attachment(str(attachment.get("attachment_id") or ""))
+        if fetched is None:
+            return "I couldn't open that file yet. Mind sending it again?"
+        media_type, name, data = fetched
+        content = base64.b64decode(data)
+        token = issue_user_token(
+            user_id, ttl_seconds=600, scopes=["chat", SCOPE_MEMORY_WRITE]
+        )
+        try:
+            async with httpx.AsyncClient(timeout=_DOCUMENT_TIMEOUT_SECONDS) as client:
+                response = await client.post(
+                    f"{self.base_url}/api/v1/memory/{user_id}/agent/knowledge/document",
+                    data={"note": caption, "source_conversation_id": conversation},
+                    files={"document": (name, content, media_type)},
+                    headers={"Authorization": f"Bearer {token}"},
+                )
+                if response.status_code == 422:
+                    # The parser's own sentence - "does not look like a PDF",
+                    # "parsing is not switched on" - is written to be shown.
+                    detail = (response.json() or {}).get("detail")
+                    return str(detail or "I couldn't read that file.")
+                response.raise_for_status()
+                stored = response.json()
+        except Exception as exc:
+            logger.warning(
+                "imessage_chat_document_turn_failed: %s: %s",
+                type(exc).__name__,
+                str(exc)[:200],
+                extra={"user": user_id},
+            )
+            return "I couldn't read that file right now. I'll be able to once the parser is back."
+        pages = int(stored.get("pages") or 0)
+        pages_note = f" ({pages} pages)" if pages > 1 else ""
+        return f"Got it - I've read {name}{pages_note}. Ask me anything about it."
 
     # One photo's answer and the artifact it became, or a sentence saying why
     # not. Returned as words rather than raised so a burst with one bad photo

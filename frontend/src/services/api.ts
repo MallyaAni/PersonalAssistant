@@ -878,6 +878,31 @@ export function saveProfile(
   })
 }
 
+// Upload a document file (PDF, Word, PowerPoint) to be parsed by Docling on
+// the server and stored as knowledge, so ordinary turns can answer from it
+// with a citation. Multipart, like the image upload: the bytes go up, the
+// server proves the type and does the reading.
+export async function uploadDocument(
+  userId: string,
+  file: File,
+  note: string,
+  conversationId: string,
+) {
+  const form = new FormData()
+  form.set('document', file)
+  form.set('note', note)
+  form.set('source_conversation_id', conversationId)
+  const response = await authenticatedFetch(
+    `${API_BASE_URL}/api/v1/memory/${encodeURIComponent(userId)}/agent/knowledge/document`,
+    { method: 'POST', body: form },
+  )
+  if (!response.ok) {
+    const detail = await response.json().catch(() => ({}))
+    throw new Error(apiErrorMessage(detail, response.status))
+  }
+  return await response.json() as { id: string; title?: string; pages?: number; chunk_count?: number }
+}
+
 // Ingest an uploaded text document into the user's knowledge store so it is
 // chunked, embedded, and recalled by ordinary conversation turns.
 export function ingestDocument(
