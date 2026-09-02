@@ -117,6 +117,13 @@ the desktop being off (a durable queue); answering never depends on it.
   leaves every job untouched while it is down (an overnight desktop burns no
   attempts). A reachable parser that fails on a file three times fails that
   job with the parser's own sentence.
+- **Parser off, and how long the sharer waits to hear it** - the parser's
+  host drops connection attempts while the container is stopped (it does not
+  refuse them), so an upload handed straight to the parser waited out the
+  kernel's retries, about two minutes, before "queued" came back (measured
+  live 2026-09-02). The route now asks `/health` first, eight seconds at
+  worst, and the parser client connects in ten seconds or gives up while
+  still reading for the configured minutes. Plain text never asks.
 - **"Forget that document"** - routes to undo (the affordance names a
   document it was given), and the undo targets the newest *document* receipt
   when the words name one - a share is followed seconds later by the memory

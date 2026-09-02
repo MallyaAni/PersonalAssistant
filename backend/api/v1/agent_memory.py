@@ -375,12 +375,26 @@ async def ingest_document(
 ) -> dict[str, Any]:
     from backend.api.v1.vision import _read_bounded_upload
     from backend.config.settings import settings
-    from backend.services.document_parse_queue import enqueue_document
-    from backend.services.document_parser import ParseError, ParseUnavailable, classify, parse_document
+    from backend.services.document_parse_queue import enqueue_document, parser_reachable
+    from backend.services.document_parser import (
+        PARSER_AWAY,
+        ParseError,
+        ParseUnavailable,
+        classify,
+        needs_parser,
+        parse_document,
+    )
 
     filename = (document.filename or "document").rsplit("/", 1)[-1]
     content = await _read_bounded_upload(document, settings.DOCUMENT_UPLOAD_MAX_BYTES)
+    media_type = classify(filename, content)
     try:
+        # Ask whether the parser is there before handing it the file: while
+        # its host is down a connection attempt hangs, and the sharer would
+        # wait minutes to hear "queued" (measured 2026-09-02). The probe is
+        # eight seconds at worst, milliseconds when the parser is up.
+        if needs_parser(media_type) and settings.DOCLING_BASE_URL and not await parser_reachable():
+            raise ParseUnavailable(PARSER_AWAY)
         parsed = await parse_document(filename, content)
     except ParseUnavailable as exc:
         # The file is fine; the parser is away. Keep it and finish later
@@ -388,7 +402,7 @@ async def ingest_document(
         if not settings.DOCLING_BASE_URL:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
         job = await enqueue_document(
-            manager.session, user_id, filename, classify(filename, content), content, note, source_conversation_id
+            manager.session, user_id, filename, media_type, content, note, source_conversation_id
         )
         return {"queued": True, "job_id": job["id"], "title": filename, "detail": str(exc)}
     except ParseError as exc:

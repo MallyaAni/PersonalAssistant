@@ -2,6 +2,20 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-02 - A document shared while the parser is off is queued in seconds, not minutes
+
+The live queue test (parser stopped on the desktop, document shared, parser
+started) proved the document lands on the first pass after the parser
+returns, and exposed a wait: the desktop drops connection attempts while
+Docling is stopped rather than refusing them, so the upload sat through the
+kernel's retries, about two minutes, before answering "queued". The route
+now probes the parser's health before handing it a file (eight seconds at
+worst, milliseconds when it is up) and the parser client has a ten-second
+connect timeout beside its long read timeout. Unit tests cover the probe
+(a PDF is queued without the parser ever being called; plain text never
+asks) and the client's timeouts; the live staged test now fails if "queued"
+takes more than thirty seconds.
+
 ## 2026-09-02 - "Forget that document" takes back the document, not the newest change
 
 A share is followed seconds later by the memory receipt its facts pass

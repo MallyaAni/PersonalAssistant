@@ -36,3 +36,49 @@ async def test_plain_text_passes_through_without_docling():
 async def test_empty_text_is_refused():
     with pytest.raises(ParseError, match="looks empty"):
         await parse_document("blank.txt", b"   \n")
+
+
+def test_a_file_needs_the_parser_unless_it_is_plain_text():
+    from backend.services.document_parser import needs_parser
+
+    assert needs_parser("application/pdf")
+    assert needs_parser("application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    assert not needs_parser("text/plain")
+    assert not needs_parser("text/markdown")
+
+
+@pytest.mark.asyncio
+async def test_the_parser_client_connects_fast_and_reads_long(monkeypatch):
+    """The read timeout is the configured one (a big scan takes minutes); the
+    connect timeout is short, so a host that drops connection attempts while
+    the parser is stopped is admitted to be away in seconds, not after the
+    kernel's retries."""
+    import httpx
+
+    from backend.config.settings import settings
+    from backend.services import document_parser
+    from backend.services.document_parser import PARSER_CONNECT_SECONDS, ParseUnavailable
+
+    monkeypatch.setattr(settings, "DOCLING_BASE_URL", "http://parser.invalid:5001")
+    seen: dict[str, object] = {}
+
+    class Client:
+        def __init__(self, *args, **kwargs):
+            seen["timeout"] = kwargs.get("timeout")
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *exc):
+            return False
+
+        async def post(self, *args, **kwargs):
+            raise httpx.ConnectTimeout("simulated")
+
+    monkeypatch.setattr(document_parser.httpx, "AsyncClient", Client)
+    with pytest.raises(ParseUnavailable):
+        await document_parser.parse_document("scan.pdf", b"%PDF-1.4 fake")
+    timeout = seen["timeout"]
+    assert isinstance(timeout, httpx.Timeout)
+    assert timeout.connect == PARSER_CONNECT_SECONDS <= 10
+    assert timeout.read == settings.DOCLING_TIMEOUT_SECONDS

@@ -73,6 +73,25 @@ def classify(filename: str, content: bytes) -> str:
 
 # Convert one document to Markdown. Text passes straight through; everything
 # else goes to Docling and comes back with page breaks marked.
+# Seconds to establish a connection to the parser before it counts as away.
+PARSER_CONNECT_SECONDS = 10
+
+# What the caller is told when the parser cannot be reached.
+PARSER_AWAY = (
+    "The document parser is not reachable right now; I will not be able "
+    "to read that file until it is back."
+)
+
+
+def needs_parser(media_type: str) -> bool:
+    """Whether a file of this type goes through Docling at all.
+
+    Plain text is read in place; everything else needs the parser, so only
+    those uploads should wait on it or be queued when it is away.
+    """
+    return not media_type.startswith("text/")
+
+
 async def parse_document(filename: str, content: bytes) -> ParsedDocument:
     media_type = classify(filename, content)
     if media_type.startswith("text/"):
@@ -87,7 +106,13 @@ async def parse_document(filename: str, content: bytes) -> ParsedDocument:
             "plain text for now."
         )
     try:
-        async with httpx.AsyncClient(timeout=settings.DOCLING_TIMEOUT_SECONDS) as client:
+        # A long read (a big scan takes minutes) but a short connect: the
+        # parser's host drops connection attempts while the container is
+        # stopped, and one number for both would wait out the kernel's
+        # ~2 minutes of retries before admitting it is away (measured
+        # 2026-09-02).
+        timeout = httpx.Timeout(settings.DOCLING_TIMEOUT_SECONDS, connect=PARSER_CONNECT_SECONDS)
+        async with httpx.AsyncClient(timeout=timeout) as client:
             response = await client.post(
                 f"{base}/v1/convert/file",
                 files={"files": (filename, content, media_type)},
@@ -101,10 +126,7 @@ async def parse_document(filename: str, content: bytes) -> ParsedDocument:
             payload = response.json()
     except httpx.HTTPError as exc:
         logger.warning("Docling unreachable or failed for %s", filename, exc_info=True)
-        raise ParseUnavailable(
-            "The document parser is not reachable right now; I will not be able "
-            "to read that file until it is back."
-        ) from exc
+        raise ParseUnavailable(PARSER_AWAY) from exc
     markdown = str(((payload.get("document") or {}).get("md_content")) or "").strip()
     if payload.get("status") not in (None, "success") or not markdown:
         raise ParseError(f'I could not get any readable text out of "{filename}".')
