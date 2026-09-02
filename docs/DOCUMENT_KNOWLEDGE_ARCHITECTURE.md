@@ -1,6 +1,6 @@
 # Document knowledge for AniOS
 
-Status: LIVE (deployed f3dca29, 2026-09-02). Phases 1-4 VERIFIED in the deployed
+Status: LIVE (deployed f3dca29, then 61435af for room shares, 2026-09-02). Phases 1-4 VERIFIED in the deployed
 image, including a live acceptance through the real API; the operator's own
 iMessage run in the Groupie room is the last confirmation. This describes the
 capability as built. Sections marked EXISTS are already built and VERIFIED; sections marked
@@ -28,7 +28,9 @@ the desktop being off (a durable queue); answering never depends on it.
 ## The five stages
 
 1. **Arrive.** A document attaches on any channel — iMessage one-to-one, an
-   allowlisted room, or deep-matter.com. Today the iMessage bridge accepts
+   allowlisted room, or deep-matter. In a room the document is read whether or not the
+   assistant is named - it is context, like observed chatter - and the
+   confirmation is sent only when it is addressed.com. Today the iMessage bridge accepts
    images only (`INBOUND_IMAGE_TYPES`); NEW: extend the allowlist to PDF, DOCX,
    PPTX, ODT, RTF, and common image scans, each gated by a magic-byte check the
    same way images are, with a per-type size cap. The turn is routed to a
