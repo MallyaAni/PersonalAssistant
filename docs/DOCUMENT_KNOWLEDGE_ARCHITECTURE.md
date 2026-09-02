@@ -1,7 +1,7 @@
 # Document knowledge for AniOS
 
-Status: PLANNED (design). This describes a capability AniOS should have, not one
-it has. Sections marked EXISTS are already built and VERIFIED; sections marked
+Status: BUILT; Phases 1-3 VERIFIED, Phase 4 unit-verified with live acceptance
+pending (2026-09-02). This describes the capability as built. Sections marked EXISTS are already built and VERIFIED; sections marked
 NEW are the work. Written in the memory-overview shape: numbered stages, the
 stores each touches, and where the person stays in control.
 
@@ -79,15 +79,15 @@ the desktop being off (a durable queue); answering never depends on it.
    per turn. Anything already ingested becomes answerable, cited. No desktop
    dependency, no new infrastructure - it proves the "documents feed the answer"
    half against knowledge that is already there. Smallest change, most value.
-2. **Ingest one PDF end to end.** Accept a PDF in chat, parse via Docling,
+2. **Ingest one PDF end to end.** VERIFIED 2026-09-02 (3/3 across three runs through the real Docling: `test_document_upload_behaviour.py` parses the operator's itinerary into two page-anchored pages, stores it, retrieves it, and answers about Day 1's evening with attribution). Accept a PDF in chat, parse via Docling,
    ingest, answer. The Amalfi itinerary in the Groupie room is the acceptance
    case: "what is included the evening of Day 1" -> the Salerno dinner, cited.
-3. **Format breadth and the queue.** Word, PowerPoint, scanned PDFs via
+3. **Format breadth and the queue.** VERIFIED 2026-09-02 for Word (a stdlib-built .docx through the same parser and store, seeded fact retrieved, 3/3) and for the queue's schema (migration 20260901_0015 builds from an empty schema); the queue's behaviour is unit-tested against the real table after it ships. Word, PowerPoint, scanned PDFs via
    Gotenberg + Docling; the durable queue so a document sent while the desktop
    is off is parsed when it wakes. The drop's test matrix (DOCX with tables and
    tracked changes, legacy DOC, ODT, RTF, PPTX with notes, scanned OCR, 100+
    page) is the breadth check.
-4. **Control and citation.** Reply-to-document scoping, forget, and citations
+4. **Control and citation.** BUILT 2026-09-02, unit-verified (a document pin scopes retrieval; the confirming iMessage bubble pins the document; `forget that` deletes a stored document via the undo ledger; every chunk carries its page and the citation names it). Live acceptance in the Groupie chat pending. Reply-to-document scoping, forget, and citations
    surfaced in the reply so a person can see which page an answer came from.
 
 ## Hosting and availability

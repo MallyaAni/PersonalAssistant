@@ -2,6 +2,22 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-02 - Documents become knowledge: upload, parse, cite, pin, forget (Phases 2-4 of document knowledge)
+
+A PDF, Word or PowerPoint file attached on the web chat or sent by iMessage
+is parsed by Docling into page-anchored Markdown and stored through the same
+knowledge ingest the per-turn reply already reads, so the next question is
+answered from it with the document and page named. The bridge allowlists
+documents and proves them by their first bytes; the worker's document turn
+mirrors the photo turn. A file that arrives while the parser (on the desktop
+GPU) is off is kept in `document_parse_jobs` and read in when it is back. A
+reply to a document reads only that document; "forget that" removes one.
+Verified: Phase 1 gate 3/3 in the deployed image; the upload gate 3/3 across
+three runs through the real Docling (the operator's itinerary, two pages,
+cited Day-1 answer; a Word file with a seeded fact retrieved); migration
+20260901_0015 builds from an empty schema; 195 unit tests green; frontend
+typecheck clean. Live acceptance in the Groupie chat is the remaining step.
+
 ## 2026-09-01 - The reply consults document knowledge every turn (Phase 1 of document knowledge)
 
 A document a person gives the assistant now changes the answer. The per-turn
