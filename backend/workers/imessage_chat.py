@@ -223,6 +223,9 @@ class TurnResult:
 
     reply: str
     images: tuple[TurnImage, ...] = field(default=())
+    # The knowledge document this turn stored, if it was a document turn, so
+    # the bubble that confirms it can be replied to and pin the document.
+    document_id: str = ""
     # Every address this turn's sources actually carried, read off the
     # stream. The wall in `_deliver` holds the reply to them: a bridge that
     # trusts its caller's rules has no rules, and on 2026-08-29 a reply full
@@ -1134,6 +1137,10 @@ class IMessageChatWorker:
                 await self._remember_outgoing_bubble(
                     guid, piece, reply_to, user_id, room
                 )
+                # A document turn's confirming bubble pins the document: a
+                # native reply to it is answered from that file alone.
+                if turn.document_id:
+                    await self._remember_bubble(guid, f"doc:{turn.document_id}")
         for image in turn.images:
             await asyncio.sleep(_BUBBLE_PACE_SECONDS)
             extension = "jpg" if "jpeg" in image.media_type else "png"
@@ -1330,6 +1337,9 @@ class IMessageChatWorker:
             state["conversation_id"] = stored
         # An explicit pin - a native reply to a specific image bubble - beats
         # whatever recency had in view.
+        if pinned and pinned.startswith("doc:"):
+            state["active_document_id"] = pinned[4:]
+            return state
         active_image = pinned or await self._stored_image(user_id)
         if active_image:
             state["active_image_artifact_id"] = active_image
@@ -1375,24 +1385,27 @@ class IMessageChatWorker:
     ) -> "TurnResult":
         conversation = await self._stored_conversation(user_id) or str(uuid.uuid4())
         replies: list[str] = []
+        stored_id = ""
         for attachment in documents[:_MAX_DOCUMENTS_PER_MESSAGE]:
-            replies.append(await self._ingest_document(user_id, caption, attachment, conversation))
+            reply, document_id = await self._ingest_document(user_id, caption, attachment, conversation)
+            replies.append(reply)
+            stored_id = document_id or stored_id
         if len(documents) > _MAX_DOCUMENTS_PER_MESSAGE:
             replies.append(
                 f"I read the first {_MAX_DOCUMENTS_PER_MESSAGE} - send the rest "
                 "separately if you want those too."
             )
         await self._remember_conversation(user_id, conversation)
-        return TurnResult("\n\n".join(replies) or _FAILURE_REPLY, ())
+        return TurnResult("\n\n".join(replies) or _FAILURE_REPLY, (), document_id=stored_id)
 
     # One document stored, or a sentence saying why not. Words rather than an
     # exception, so one unreadable file in a burst does not lose the others.
     async def _ingest_document(
         self, user_id: str, caption: str, attachment: dict, conversation: str
-    ) -> str:
+    ) -> tuple[str, str]:
         fetched = await self._fetch_inbound_attachment(str(attachment.get("attachment_id") or ""))
         if fetched is None:
-            return "I couldn't open that file yet. Mind sending it again?"
+            return "I couldn't open that file yet. Mind sending it again?", ""
         media_type, name, data = fetched
         content = base64.b64decode(data)
         token = issue_user_token(
@@ -1410,7 +1423,7 @@ class IMessageChatWorker:
                     # The parser's own sentence - "does not look like a PDF",
                     # "parsing is not switched on" - is written to be shown.
                     detail = (response.json() or {}).get("detail")
-                    return str(detail or "I couldn't read that file.")
+                    return str(detail or "I couldn't read that file."), ""
                 response.raise_for_status()
                 stored = response.json()
         except Exception as exc:
@@ -1420,10 +1433,15 @@ class IMessageChatWorker:
                 str(exc)[:200],
                 extra={"user": user_id},
             )
-            return "I couldn't read that file right now. I'll be able to once the parser is back."
+            return "I couldn't read that file right now. I'll be able to once the parser is back.", ""
+        if stored.get("queued"):
+            return (
+                f"Got {name}. The reader isn't reachable right now, so I've kept it "
+                "and will read it as soon as it's back - then ask me anything about it."
+            ), ""
         pages = int(stored.get("pages") or 0)
         pages_note = f" ({pages} pages)" if pages > 1 else ""
-        return f"Got it - I've read {name}{pages_note}. Ask me anything about it."
+        return f"Got it - I've read {name}{pages_note}. Ask me anything about it.", str(stored.get("id") or "")
 
     # One photo's answer and the artifact it became, or a sentence saying why
     # not. Returned as words rather than raised so a burst with one bad photo

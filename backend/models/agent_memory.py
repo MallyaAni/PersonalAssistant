@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from pgvector.sqlalchemy import Vector
@@ -12,6 +12,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    LargeBinary,
 )
 from sqlalchemy.dialects.postgresql import JSON, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -519,5 +520,45 @@ class ConversationSummary(Base):
             "embedding_model": self.embedding_model,
             "embedding_version": self.embedding_version,
             "embedding_dimension": self.embedding_dimension,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class DocumentParseJob(Base):
+    """A document waiting for the parser, kept with its bytes until it is read.
+
+    The parser (Docling) lives on a machine that is not always on. Rather than
+    refuse an upload while it is away, the job holds everything needed to
+    finish later: the file, who it is for, the note that came with it, and the
+    conversation it belongs to, so the stored document can still be undone by
+    "forget that" in that conversation.
+    """
+
+    __tablename__ = "document_parse_jobs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    filename: Mapped[str] = mapped_column(String(500), nullable=False)
+    media_type: Mapped[str] = mapped_column(String(200), nullable=False)
+    content: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    note: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    source_conversation_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    document_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": str(self.id),
+            "user_id": self.user_id,
+            "filename": self.filename,
+            "media_type": self.media_type,
+            "status": self.status,
+            "attempts": self.attempts,
+            "last_error": self.last_error,
+            "document_id": str(self.document_id) if self.document_id else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }

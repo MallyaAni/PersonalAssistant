@@ -508,6 +508,10 @@ _previous_assistant_said: ContextVar[str] = ContextVar("previous_assistant_said"
 # resolver is told "they replied directly to this", which would be a lie
 # about a turn that merely followed one.
 _replying_to: ContextVar[str] = ContextVar("replying_to", default="")
+# The document a native reply pinned for this turn, or "". Set beside
+# _replying_to at each entry point; read where knowledge is retrieved so a
+# question about "this" is answered from this file alone.
+_active_document: ContextVar[str] = ContextVar("active_document", default="")
 
 
 # Which of the assistant's earlier messages this turn is answering.
@@ -2306,7 +2310,11 @@ class ConversationService:
         if getattr(self, "agent_memory", None) is not None:
             try:
                 found_knowledge = await self.agent_memory.knowledge.search(
-                    user_id, query, _KNOWLEDGE_TOP_K, query_embedding
+                    user_id,
+                    query,
+                    _KNOWLEDGE_TOP_K,
+                    query_embedding,
+                    document_id=_active_document.get() or None,
                 )
                 if found_knowledge:
                     context["knowledge"] = found_knowledge
@@ -2896,6 +2904,7 @@ class ConversationService:
             history,
         )
         _replying_to.set(str((metadata or {}).get("replying_to") or "").strip())
+        _active_document.set(str((metadata or {}).get("active_document_id") or "").strip())
         _previous_assistant_said.set(_answering(metadata, history))
         _turn_trace.set({"_started": time.monotonic()})
         _turn_speaker.set(_speaker_of(metadata))
@@ -3143,6 +3152,13 @@ class ConversationService:
     async def _forget_saved(self, user_id: str, receipt: dict[str, Any]) -> bool:
         kind = str(receipt.get("kind") or "")
         try:
+            # A document the person handed over: forgetting it removes the
+            # document and every chunk, so no later turn can answer from it.
+            if kind == "knowledge_document" and receipt.get("id"):
+                store = getattr(self, "agent_memory", None)
+                if store is None:
+                    return False
+                return bool(await store.knowledge.delete(user_id, str(receipt["id"])))
             if kind in ("semantic_fact", "episodic") and receipt.get("id"):
                 return bool(
                     await self.memory.delete_memory(
@@ -3358,6 +3374,7 @@ class ConversationService:
         current_followup.set(None)
         history = await self.repository.get_history(resolved_conversation_id, user_id, self.history_turn_limit)
         _replying_to.set(str((metadata or {}).get("replying_to") or "").strip())
+        _active_document.set(str((metadata or {}).get("active_document_id") or "").strip())
         _previous_assistant_said.set(_answering(metadata, history))
         context: dict[str, Any] = {"user_id": user_id, "query": query}
         await self._attach_group(context, metadata, user_id, query, None)

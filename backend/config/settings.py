@@ -240,6 +240,10 @@ class Settings(BaseSettings):
     DOCLING_BASE_URL: str = ""
     DOCLING_TIMEOUT_SECONDS: int = Field(default=300, ge=10, le=1800)
     DOCUMENT_UPLOAD_MAX_BYTES: int = Field(default=25 * 1024 * 1024, ge=1024)
+    # How often the durable parse queue retries documents that arrived while
+    # the parser was unreachable. Zero disables the loop.
+    DOCUMENT_PARSE_QUEUE_INTERVAL_SECONDS: int = Field(default=60, ge=0, le=3600)
+    DOCUMENT_PARSE_MAX_ATTEMPTS: int = Field(default=200, ge=1)
     EMBEDDING_MODEL: str = "text-embedding-nomic-embed-text-v1.5"
     EMBEDDING_MODEL_VERSION: str = "nomic-embed-text-v1.5"
     EMBEDDING_DIMENSION: int = Field(default=768, ge=1, le=2_000)

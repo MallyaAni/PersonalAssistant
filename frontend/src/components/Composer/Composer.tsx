@@ -196,6 +196,13 @@ const Composer: React.FC<ComposerProps> = ({
     onSendMessage('user', note ? `${note}\n\n📎 ${file.name}` : `📎 ${file.name}`)
     try {
       const stored = await uploadDocument(userId, file, note, conversationId)
+      if (stored.queued) {
+        onSendMessage(
+          'assistant',
+          `Got **${file.name}**. The reader isn't reachable right now, so I've kept it and will read it as soon as it's back.`,
+        )
+        return
+      }
       const pages = typeof stored.pages === 'number' && stored.pages > 1 ? ` (${stored.pages} pages)` : ''
       onSendMessage(
         'assistant',

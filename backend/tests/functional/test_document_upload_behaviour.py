@@ -59,6 +59,8 @@ async def test_an_uploaded_itinerary_answers_a_question_about_its_evening(itiner
             query = "what happens on the evening of day 1 of the amalfi tour?"
             found = await manager.knowledge.search(user_id, query, 6)
             assert found, "the itinerary question retrieved nothing"
+            # Phase 4: every chunk knows its page, so the reply can cite one.
+            assert all((item.get("extra_data") or {}).get("page") in (1, 2) for item in found), found
             context = {"knowledge": found}
             messages = [{"role": "system", "content": _build_system_prompt(context)}]
             messages.extend(turn_context_messages(context))
@@ -75,3 +77,38 @@ async def test_an_uploaded_itinerary_answers_a_question_about_its_evening(itiner
         "The reply says there is a dinner (in the hotel) on the evening of Day 1, "
         "and attributes this to the person's itinerary document.",
     ), text
+
+
+# Format breadth (Phase 3): a real Word file, built in-process, goes through
+# the same parser and store. The seeded fact is the proof - it either comes
+# back from the .docx or it does not.
+async def test_a_word_document_is_parsed_and_retrievable():
+    from backend.core.dependencies import get_agent_memory_manager, get_embedding_provider
+    from backend.database.session import AsyncSessionLocal
+    from backend.services.document_parser import parse_document
+    from backend.tests.functional.fixtures.make_docx import make_docx
+
+    if not settings.DOCLING_BASE_URL:
+        pytest.skip("DOCLING_BASE_URL is not set; document parsing is off here")
+    docx = make_docx(
+        [
+            "Retail shift policy, revision 7.",
+            "The policy owner is the operations desk on extension 4471.",
+            "Shifts under four hours carry no meal break.",
+        ]
+    )
+    parsed = await parse_document("shift-policy.docx", docx)
+    assert parsed.media_type.endswith("wordprocessingml.document")
+    assert "4471" in parsed.markdown, parsed.markdown[:300]
+
+    user_id = f"functional-docx-{uuid.uuid4().hex[:8]}"
+    async with AsyncSessionLocal() as session:
+        manager = get_agent_memory_manager(session, get_embedding_provider())
+        stored = await manager.knowledge.ingest(
+            user_id, "shift-policy.docx", parsed.markdown, "upload://shift-policy.docx", "uploaded_document"
+        )
+        try:
+            found = await manager.knowledge.search(user_id, "what extension is the policy owner on?", 6)
+            assert found and any("4471" in item.get("content", "") for item in found), found
+        finally:
+            await manager.knowledge.delete(user_id, stored["id"])

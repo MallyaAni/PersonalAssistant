@@ -10,6 +10,9 @@ class ChatRequest(BaseModel):
     user_id: str = Field(min_length=1, max_length=50)
     conversation_id: UUID | None = None
     active_image_artifact_id: UUID | None = None
+    # A reply to one document reads only that document, the way a reply to a
+    # picture pins the picture (docs/DOCUMENT_KNOWLEDGE_ARCHITECTURE.md).
+    active_document_id: UUID | None = None
     query: str = Field(min_length=1, max_length=10_000)
     metadata: dict[str, Any] = Field(default_factory=dict)
 

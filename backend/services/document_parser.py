@@ -44,6 +44,11 @@ class ParseError(Exception):
     """A document could not be parsed; str(exc) is safe to show the person."""
 
 
+class ParseUnavailable(ParseError):
+    """The parser itself is off or unreachable - the document is fine and can
+    be kept for later, which is what the durable queue does."""
+
+
 @dataclass(frozen=True)
 class ParsedDocument:
     markdown: str
@@ -77,7 +82,7 @@ async def parse_document(filename: str, content: bytes) -> ParsedDocument:
         return ParsedDocument(markdown=text, pages=1, media_type=media_type)
     base = settings.DOCLING_BASE_URL.rstrip("/")
     if not base:
-        raise ParseError(
+        raise ParseUnavailable(
             "Document parsing is not switched on here yet, so I can only take "
             "plain text for now."
         )
@@ -96,7 +101,7 @@ async def parse_document(filename: str, content: bytes) -> ParsedDocument:
             payload = response.json()
     except httpx.HTTPError as exc:
         logger.warning("Docling unreachable or failed for %s", filename, exc_info=True)
-        raise ParseError(
+        raise ParseUnavailable(
             "The document parser is not reachable right now; I will not be able "
             "to read that file until it is back."
         ) from exc

@@ -900,7 +900,7 @@ export async function uploadDocument(
     const detail = await response.json().catch(() => ({}))
     throw new Error(apiErrorMessage(detail, response.status))
   }
-  return await response.json() as { id: string; title?: string; pages?: number; chunk_count?: number }
+  return await response.json() as { id?: string; title?: string; pages?: number; chunk_count?: number; queued?: boolean; job_id?: string }
 }
 
 // Ingest an uploaded text document into the user's knowledge store so it is

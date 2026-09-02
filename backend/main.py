@@ -16,6 +16,7 @@ from backend.core.dependencies import (
 )
 from backend.core.logging_config import setup_logging
 from backend.core.telemetry import configure_telemetry
+from backend.services.document_parse_queue import DocumentParseQueue
 from backend.services.image_embedding_reconciler import ImageEmbeddingReconciler
 
 setup_logging("DEBUG" if settings.DEBUG else "INFO")
@@ -32,9 +33,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         settings.VISION_EMBEDDING_RECONCILE_INTERVAL_SECONDS,
     )
     reconciler.start()
+    # Documents that arrived while the parser was away are read when it is
+    # back (docs/DOCUMENT_KNOWLEDGE_ARCHITECTURE.md). Idle unless
+    # DOCLING_BASE_URL is set.
+    parse_queue = DocumentParseQueue(settings.DOCUMENT_PARSE_QUEUE_INTERVAL_SECONDS)
+    parse_queue.start()
     try:
         yield
     finally:
+        await parse_queue.stop()
         await reconciler.stop()
 
 

@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from backend.core.auth import authorize_path_user
 from backend.core.dependencies import (
+    DependencyScheduledTasks,
     DependencyAgentMemoryManager,
     DependencyMemoryOperationsService,
     DependencyMemoryReembeddingService,
@@ -349,22 +350,33 @@ async def ingest_knowledge(
 # A document file, not text: parsed through Docling into Markdown, then stored
 # by the same ingest as anything else. The reply then answers from it, cited,
 # because the store is the one the per-turn retrieval already reads.
-@router.post("/{user_id}/agent/knowledge/document", status_code=201)
+@router.post("/{user_id}/agent/knowledge/document", status_code=201, response_model=None)
 async def ingest_document(
     user_id: UserId,
     manager: DependencyAgentMemoryManager,
+    changes: DependencyScheduledTasks,
     document: Annotated[UploadFile, File()],
     note: Annotated[str, Form()] = "",
     source_conversation_id: Annotated[str | None, Form()] = None,
 ) -> dict[str, Any]:
     from backend.api.v1.vision import _read_bounded_upload
     from backend.config.settings import settings
-    from backend.services.document_parser import ParseError, parse_document
+    from backend.services.document_parse_queue import enqueue_document
+    from backend.services.document_parser import ParseError, ParseUnavailable, classify, parse_document
 
     filename = (document.filename or "document").rsplit("/", 1)[-1]
     content = await _read_bounded_upload(document, settings.DOCUMENT_UPLOAD_MAX_BYTES)
     try:
         parsed = await parse_document(filename, content)
+    except ParseUnavailable as exc:
+        # The file is fine; the parser is away. Keep it and finish later
+        # (document_parse_queue), telling the caller it is queued, not lost.
+        if not settings.DOCLING_BASE_URL:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
+        job = await enqueue_document(
+            manager.session, user_id, filename, classify(filename, content), content, note, source_conversation_id
+        )
+        return {"queued": True, "job_id": job["id"], "title": filename, "detail": str(exc)}
     except ParseError as exc:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
     body = parsed.markdown if not note.strip() else f"{note.strip()}\n\n{parsed.markdown}"
@@ -379,6 +391,16 @@ async def ingest_document(
     )
     stored["pages"] = parsed.pages
     stored["media_type"] = parsed.media_type
+    # On the record for "forget that": the same undo ledger a saved memory
+    # uses, tied to the conversation the document arrived in.
+    await changes.record_change(
+        user_id,
+        "memory",
+        "save",
+        None,
+        {"kind": "knowledge_document", "id": stored["id"], "title": filename, "undoable": True},
+        conversation_id=source_conversation_id,
+    )
     return stored
 
 

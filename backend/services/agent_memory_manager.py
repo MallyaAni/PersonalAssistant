@@ -27,6 +27,7 @@ from backend.models.discovery_familiar import DiscoveryFamiliarItem
 from backend.models.discovery_run import DiscoveryRun, DiscoverySchedule
 from backend.models.discovery_source import DiscoverySeenItem, DiscoverySource
 from backend.models.discovery_subscriber import DiscoverySubscriber
+from backend.services.document_parser import PAGE_BREAK
 
 
 # Normalize text so equivalent values share the same lookup key.
@@ -553,6 +554,20 @@ class KnowledgeStore(_VectorStore):
             chunks.append(current)
         return chunks
 
+    # Chunks with the page each came from, when the text carries page breaks
+    # (the parser marks them with PAGE_BREAK). A chunk never spans a break, so
+    # a citation can name one page; text without breaks is a single page and
+    # chunks exactly as before.
+    @classmethod
+    def _paged_chunks(cls, content: str, chunk_size: int = 1_000) -> list[tuple[str, int]]:
+        if PAGE_BREAK not in content:
+            return [(chunk, 1) for chunk in cls._chunks(content, chunk_size)]
+        paged: list[tuple[str, int]] = []
+        for number, page in enumerate(content.split(PAGE_BREAK), start=1):
+            if page.strip():
+                paged.extend((chunk, number) for chunk in cls._chunks(page, chunk_size))
+        return paged
+
     # Store a document and embed each of its text chunks.
     async def ingest(
         self,
@@ -596,10 +611,10 @@ class KnowledgeStore(_VectorStore):
         )
         self.session.add(document)
         await self.session.flush()
-        chunks = self._chunks(content)
-        embeddings = await self._embed_texts(chunks)
-        for position, (chunk, embedding) in enumerate(
-            zip(chunks, embeddings, strict=True)
+        paged = self._paged_chunks(content)
+        embeddings = await self._embed_texts([chunk for chunk, _ in paged])
+        for position, ((chunk, page), embedding) in enumerate(
+            zip(paged, embeddings, strict=True)
         ):
             self.session.add(
                 KnowledgeChunk(
@@ -608,7 +623,7 @@ class KnowledgeStore(_VectorStore):
                     position=position,
                     content=chunk,
                     embedding=embedding,
-                    extra_data={},
+                    extra_data={"page": page},
                     **self._embedding_metadata(embedding),
                 )
             )
@@ -642,9 +657,16 @@ class KnowledgeStore(_VectorStore):
         query: str,
         top_k: int,
         query_embedding: list[float] | None = None,
+        document_id: str | None = None,
     ) -> list[dict[str, Any]]:
         embedding = await self._resolve_query_embedding(query, query_embedding)
         distance = KnowledgeChunk.embedding.cosine_distance(embedding)
+        # A reply to one document reads only that document: the way a reply
+        # to a picture pins the picture, this pins the file the question is
+        # about, so a question about "this" is answered from this.
+        scope = (
+            [KnowledgeChunk.document_id == uuid.UUID(document_id)] if document_id else []
+        )
         rows = (
             await self.session.execute(
                 select(
@@ -658,6 +680,7 @@ class KnowledgeStore(_VectorStore):
                     KnowledgeChunk.user_id == user_id,
                     KnowledgeDocument.user_id == user_id,
                     KnowledgeDocument.status == "active",
+                    *scope,
                     *self._current_embedding_predicates(KnowledgeChunk, embedding),
                     distance <= self.retrieval_policy.max_cosine_distance,
                 )
