@@ -26,9 +26,10 @@ async def _session():
 # The pre-deploy gate runs the unit suite against the live database BEFORE
 # deploy.sh applies migrations, so on the deploy that ships this table the
 # table does not exist yet. A skip there is the environment saying "not
-# migrated here"; the post-deploy run proves the behaviour for real.
-@pytest.fixture(autouse=True)
-async def _table_present():
+# migrated here"; the post-deploy run proves the behaviour for real. Awaited
+# at the top of each test rather than an async fixture, which pytest-asyncio
+# does not await under this suite's configuration.
+async def _require_table() -> None:
     try:
         async with await _session() as session:
             await session.execute(text("select 1 from document_parse_jobs limit 1"))
@@ -56,6 +57,7 @@ async def _status(job_id: str) -> DocumentParseJob:
 
 
 async def test_a_queued_document_lands_when_the_parser_answers():
+    await _require_table()
     user_id = f"queue-{uuid.uuid4().hex[:8]}"
     try:
         async with await _session() as session:
@@ -75,6 +77,7 @@ async def test_a_queued_document_lands_when_the_parser_answers():
 
 
 async def test_an_unreadable_file_is_failed_with_the_parsers_sentence():
+    await _require_table()
     user_id = f"queue-{uuid.uuid4().hex[:8]}"
     try:
         async with await _session() as session:
@@ -93,6 +96,7 @@ async def test_an_unreadable_file_is_failed_with_the_parsers_sentence():
 
 
 async def test_an_absent_parser_keeps_the_job_pending_and_counts_the_attempt():
+    await _require_table()
     user_id = f"queue-{uuid.uuid4().hex[:8]}"
     try:
         async with await _session() as session:
