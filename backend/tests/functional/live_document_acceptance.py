@@ -87,10 +87,12 @@ async def main() -> int:
 
         forget = await chat(client, token, user, conversation, "forget that document")
         print("   forget reply:", forget[:160].replace("\n", " "))
-        r = await client.get(f"{BASE}/api/v1/memory/{user}/agent/knowledge/search", headers=headers, params={"query": "Pompeii excursion", "top_k": 3}, timeout=60)
-        hits = (r.json().get("chunks") or []) if r.status_code == 200 else []
-        (ok if not hits else bad)(f"after forgetting, the document is gone (hits={len(hits)})")
-        if hits:
+        # The proof is the record, not a search miss: a search can come back
+        # empty for other reasons (the first four runs passed this way while
+        # the document rows survived, 2026-09-02). The document must be gone.
+        r = await client.get(f"{BASE}/api/v1/memory/{user}/agent/knowledge/{doc_id}", headers=headers, timeout=60)
+        (ok if r.status_code == 404 else bad)(f"after forgetting, the document row is gone (GET -> {r.status_code})")
+        if r.status_code != 404:
             # leave nothing behind for the throwaway user
             await client.delete(f"{BASE}/api/v1/memory/{user}/agent/knowledge/{doc_id}", headers=headers, timeout=60)
     print(f"\nRESULT: {passed} passed, {failed} failed")

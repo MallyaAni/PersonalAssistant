@@ -442,6 +442,20 @@ async def search_knowledge(
 
 
 # Delete one user-owned knowledge document and its chunks.
+# One stored document by id, or 404: the check that "forget that document"
+# actually removed it, and the panel's way to show what is held.
+@router.get("/{user_id}/agent/knowledge/{document_id}")
+async def get_knowledge_document(
+    user_id: UserId,
+    document_id: uuid.UUID,
+    manager: DependencyAgentMemoryManager,
+) -> dict[str, Any]:
+    document = await manager.knowledge.get(user_id, str(document_id))
+    if document is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No such document")
+    return document
+
+
 @router.delete("/{user_id}/agent/knowledge/{document_id}")
 async def delete_knowledge(
     user_id: UserId,

@@ -697,6 +697,23 @@ class KnowledgeStore(_VectorStore):
             results.append(_retrieval(item, float(score)))
         return results
 
+    # One user-owned document with its chunks, or None.
+    async def get(self, user_id: str, document_id: str) -> dict[str, Any] | None:
+        try:
+            wanted = uuid.UUID(document_id)
+        except ValueError:
+            return None
+        document = (
+            await self.session.execute(
+                select(KnowledgeDocument).where(
+                    KnowledgeDocument.user_id == user_id, KnowledgeDocument.id == wanted
+                )
+            )
+        ).scalar_one_or_none()
+        if document is None:
+            return None
+        return await self._document_with_chunks(document)
+
     # Delete one user-owned knowledge document and its chunks.
     async def delete(self, user_id: str, document_id: str) -> bool:
         result = await self.session.execute(
