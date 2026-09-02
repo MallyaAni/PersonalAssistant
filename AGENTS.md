@@ -151,6 +151,16 @@ If functional validation cannot be performed, do not label the behavior verified
   `docker compose up -d --build` by hand skips all of it; a build shipped
   that way carried a seven-test regression for hours.
 
+- **A new column on a widely queried model refuses the deploy before it can
+  migrate.** `scripts/deploy.sh` runs the unit gate against the live database
+  *before* `alembic upgrade`. A column every query selects
+  (`knowledge_documents.about_until`, 2026-09-02) fails every test that loads
+  that table with `UndefinedColumnError`, and a column-presence skip in the
+  new test does not help the others. Additive migrations (nullable columns,
+  an index) are safe under the running build; apply them ahead of the deploy
+  from a container carrying the new tree, or deploy the migration in its own
+  step first. `--skip-gate` is the last resort and is the operator's decision.
+
 Each of these has cost real time or real data here. They are recorded because
 they are not discoverable from the code alone.
 
