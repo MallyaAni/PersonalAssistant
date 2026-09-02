@@ -710,6 +710,10 @@ def _place_owner(user_id: str) -> str:
 # its source in the words.
 _PROFILE_KINDS = frozenset({"preferred_name", "response_style", "discovery_locality"})
 _FACT_CONTENT_FIELDS = {"semantic_fact": "content", "episodic": "content", "knowledge": "content"}
+# How many document passages to retrieve per turn. The store caps this at its
+# own max_results; kept small so a relevant document grounds the reply without
+# flooding the prompt.
+_KNOWLEDGE_TOP_K = 6
 
 
 # (owner user_id, the candidate as that owner stores it), for one candidate.
@@ -2290,6 +2294,24 @@ class ConversationService:
             ]
         if image_matches:
             yield {"event": "image_matches", "data": {"artifacts": image_matches}}
+
+        # Documents this person gave the assistant are consulted every turn,
+        # reusing the query embedding the turn already computed. The store's
+        # cosine-distance policy means an unrelated turn retrieves nothing and
+        # adds nothing; a relevant one grounds the reply in what the document
+        # says, cited by title. A retrieval failure never costs the turn.
+        if self.agent_memory is not None:
+            try:
+                found_knowledge = await self.agent_memory.knowledge.search(
+                    user_id, query, _KNOWLEDGE_TOP_K, query_embedding
+                )
+                if found_knowledge:
+                    context["knowledge"] = found_knowledge
+            except Exception:
+                logger.warning(
+                    "Knowledge retrieval failed; answering without documents",
+                    exc_info=True,
+                )
 
         # The model asked to look back before answering. Enrich silently -
         # no interface event exists for this yet - and never let a recall
