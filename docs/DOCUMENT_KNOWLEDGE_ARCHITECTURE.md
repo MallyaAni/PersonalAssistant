@@ -54,6 +54,15 @@ the desktop being off (a durable queue); answering never depends on it.
    owner: a `user_id` for a person, a `group:` id for a room. Content-hash
    dedupe means re-uploading the same bytes is free.
 
+   What the document *says* that is worth remembering goes to memory as well
+   (`backend/services/document_facts.py`, after the upload, in the background):
+   a structured digest reads the document into one plain headline sentence,
+   the sharer's own declarative words plus that headline are given to the same
+   memory classifier a spoken turn gets, and the same attribution rule decides
+   the owners - the sharer's store and the room's, never another member's on
+   the sharer's word. The classifier keeps a plan stated short and plain and
+   refuses a paragraph of detail, which is why the digest is one sentence.
+
 4. **Retrieve.** NEW: when a turn asks something the documents cover, the reply
    consults `KnowledgeStore.search` and grounds its answer in the chunks it
    finds, citing the document and page. Today the reply recalls past turns,

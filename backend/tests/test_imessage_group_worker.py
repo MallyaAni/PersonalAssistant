@@ -692,7 +692,7 @@ async def test_a_room_pdf_is_a_document_turn_for_the_group(monkeypatch):
     seen: list[tuple] = []
     photos: list[tuple] = []
 
-    async def document_turn(user_id, caption, documents):
+    async def document_turn(user_id, caption, documents, **_):
         seen.append((user_id, caption, len(documents)))
         return TurnResult("Got it - I've read Itinerary.pdf (2 pages).", (), document_id="doc-1")
 
@@ -720,7 +720,7 @@ async def test_an_unaddressed_room_pdf_is_read_silently(monkeypatch):
     worker, conversed, _ = _worker(bridge, monkeypatch, ACCOUNTS, {}, group=GROUP)
     seen: list[tuple] = []
 
-    async def document_turn(user_id, caption, documents):
+    async def document_turn(user_id, caption, documents, **_):
         seen.append((user_id, len(documents)))
         return TurnResult(
             "Got it - I've read Itinerary.pdf (2 pages).", (), document_id="doc-1", read_titles=("Itinerary.pdf",)
@@ -754,7 +754,7 @@ async def test_a_room_document_is_also_the_sharers_own(monkeypatch):
     worker, _, _ = _worker(bridge, monkeypatch, ACCOUNTS, {}, group=GROUP)
     owners: list[str] = []
 
-    async def document_turn(user_id, caption, documents):
+    async def document_turn(user_id, caption, documents, **_):
         owners.append(user_id)
         return TurnResult("Got it - I've read Itinerary.pdf (2 pages).", (), document_id="doc-1", read_titles=("Itinerary.pdf",))
 

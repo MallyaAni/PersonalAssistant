@@ -1,13 +1,16 @@
+import json
 import uuid
 from datetime import UTC, datetime
 from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Path, Query, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Path, Query, UploadFile, status
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from backend.core.auth import authorize_path_user
 from backend.core.dependencies import (
+    TracerDependency,
+    DependencyConversationService,
     DependencyScheduledTasks,
     DependencyAgentMemoryManager,
     DependencyMemoryOperationsService,
@@ -355,9 +358,17 @@ async def ingest_document(
     user_id: UserId,
     manager: DependencyAgentMemoryManager,
     changes: DependencyScheduledTasks,
+    service: DependencyConversationService,
+    tracer: TracerDependency,
+    background: BackgroundTasks,
     document: Annotated[UploadFile, File()],
     note: Annotated[str, Form()] = "",
     source_conversation_id: Annotated[str | None, Form()] = None,
+    # Room context for attribution, as the worker knows it: who shared, and
+    # who is there. Absent one-to-one.
+    speaker_user_id: Annotated[str | None, Form()] = None,
+    speaker_name: Annotated[str | None, Form()] = None,
+    members_json: Annotated[str | None, Form()] = None,
 ) -> dict[str, Any]:
     from backend.api.v1.vision import _read_bounded_upload
     from backend.config.settings import settings
@@ -391,6 +402,21 @@ async def ingest_document(
     )
     stored["pages"] = parsed.pages
     stored["media_type"] = parsed.media_type
+    # What the document says that is worth remembering, into memory with the
+    # same attribution a spoken fact gets - after the response, never
+    # delaying or failing the upload.
+    from backend.services.document_facts import propose_document_facts
+
+    room: dict[str, Any] | None = None
+    if speaker_user_id:
+        try:
+            members = json.loads(members_json) if members_json else []
+        except ValueError:
+            members = []
+        room = {"speaker_user_id": speaker_user_id, "speaker_name": speaker_name or "", "members": members}
+    background.add_task(
+        propose_document_facts, service, tracer, user_id, source_conversation_id, filename, parsed.markdown, note, room
+    )
     # On the record for "forget that": the same undo ledger a saved memory
     # uses, tied to the conversation the document arrived in.
     await changes.record_change(

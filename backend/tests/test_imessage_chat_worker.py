@@ -1267,7 +1267,7 @@ async def test_a_pdf_attachment_goes_to_the_document_turn(monkeypatch):
     document_turns: list[tuple[str, str, int]] = []
     photo_turns: list[str] = []
 
-    async def document_turn(user_id, caption, documents):
+    async def document_turn(user_id, caption, documents, **_):
         document_turns.append((user_id, caption, len(documents)))
         return TurnResult("Got it - I've read Itinerary.pdf (2 pages).", (), document_id="doc-123")
 

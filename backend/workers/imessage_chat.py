@@ -467,7 +467,7 @@ class IMessageChatWorker:
         # confirmation bubble is sent only when the assistant was addressed,
         # so a casual share does not draw a reply nobody asked for.
         if documents:
-            turn = await self._document_turn(group.user_id, text, documents)
+            turn = await self._document_turn(group.user_id, text, documents, room=room)
             # The sharer's own copy: sharing a document is their own act, so
             # it is theirs as well as the room's - the same rule a stated fact
             # follows - and "when's my trip?" then works one-to-one later.
@@ -1420,14 +1420,14 @@ class IMessageChatWorker:
     # backend to parse and store as knowledge, and acknowledged by name. Later
     # turns answer from it because the per-turn retrieval reads that store.
     async def _document_turn(
-        self, user_id: str, caption: str, documents: list[dict]
+        self, user_id: str, caption: str, documents: list[dict], *, room: dict | None = None
     ) -> "TurnResult":
         conversation = await self._stored_conversation(user_id) or str(uuid.uuid4())
         replies: list[str] = []
         stored_id = ""
         read_titles: list[str] = []
         for attachment in documents[:_MAX_DOCUMENTS_PER_MESSAGE]:
-            reply, document_id, title = await self._ingest_document(user_id, caption, attachment, conversation)
+            reply, document_id, title = await self._ingest_document(user_id, caption, attachment, conversation, room=room)
             replies.append(reply)
             stored_id = document_id or stored_id
             if document_id and title:
@@ -1448,7 +1448,7 @@ class IMessageChatWorker:
     # One document stored, or a sentence saying why not. Words rather than an
     # exception, so one unreadable file in a burst does not lose the others.
     async def _ingest_document(
-        self, user_id: str, caption: str, attachment: dict, conversation: str
+        self, user_id: str, caption: str, attachment: dict, conversation: str, *, room: dict | None = None
     ) -> tuple[str, str, str]:
         fetched = await self._fetch_inbound_attachment(str(attachment.get("attachment_id") or ""))
         if fetched is None:
@@ -1462,7 +1462,21 @@ class IMessageChatWorker:
             async with httpx.AsyncClient(timeout=_DOCUMENT_TIMEOUT_SECONDS) as client:
                 response = await client.post(
                     f"{self.base_url}/api/v1/memory/{user_id}/agent/knowledge/document",
-                    data={"note": caption, "source_conversation_id": conversation},
+                    data={
+                        "note": caption,
+                        "source_conversation_id": conversation,
+                        # Who shared and who is there, so what the document
+                        # says can be remembered with the right owners.
+                        **(
+                            {
+                                "speaker_user_id": str(room.get("speaker_user_id") or ""),
+                                "speaker_name": str(room.get("speaker_name") or ""),
+                                "members_json": json.dumps(list(room.get("members") or [])),
+                            }
+                            if room
+                            else {}
+                        ),
+                    },
                     files={"document": (name, content, media_type)},
                     headers={"Authorization": f"Bearer {token}"},
                 )

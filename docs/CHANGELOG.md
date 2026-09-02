@@ -2,6 +2,22 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-02 - What a shared document says is remembered, with the sharer's attribution
+
+After a document is stored, a structured digest writes one first-person
+sentence stating the durable fact the sharer's words and the document
+together establish ("We are going on the Amalfi Choral Tour, October 11 to
+15, staying at the Grand Hotel of Salerno"), and that sentence alone goes
+through the memory classifier and the attribution rule a spoken turn gets:
+the sharer's own store and the room's, never another member's on the
+sharer's word. In the background after the upload; a failure costs the
+facts, never the document. The shape was measured: the classifier keeps a
+plan stated as one short first-person sentence and refuses the same content
+as a paragraph or in the document's voice (0/6 shapes), which is why the
+digest is a sentence. Gate: test_document_facts_behaviour 2/2 across three
+runs on the deployed image (an itinerary becomes a trip fact; a recipe yields
+no plan).
+
 ## 2026-09-02 - A shared document is the referent, and the sharer keeps their own copy
 
 Live in the Groupie room, "Scout whats on evening of day 1?" asked ten
