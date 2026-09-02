@@ -332,7 +332,7 @@ class IMessageChatWorker:
         if message.get("chat_identifier"):
             # A room's message: the bridge already established it was
             # addressed to this account; the worker establishes the room.
-            return await self._handle_room_message(message, guid, text, reply_to, attachments)
+            return await self._handle_room_message(message, guid, text, reply_to, attachments, documents)
         user_id = await self._account_for(str(message.get("sender") or ""))
         if user_id is None:
             # A stranger's row must not replay forever; it is finished.
@@ -414,7 +414,13 @@ class IMessageChatWorker:
     # (ADR 0016), the turn runs as the group with the speaker attached, and
     # the reply goes back into the chat.
     async def _handle_room_message(
-        self, message: dict, guid: str, text: str, reply_to: str, attachments: list[dict]
+        self,
+        message: dict,
+        guid: str,
+        text: str,
+        reply_to: str,
+        attachments: list[dict],
+        documents: list[dict] | None = None,
     ) -> int:
         chat_guid = str(message.get("chat_guid") or reply_to)
         chat_name = str(message.get("chat_name") or "")
@@ -452,6 +458,18 @@ class IMessageChatWorker:
             "addressed_by": str(message.get("addressed_by") or ""),
             "assistant_name": str(message.get("assistant_name") or ""),
         }
+        # A document shared in the room is read into the room's own knowledge
+        # whether or not the assistant was named: like observed text, it is
+        # context the room will ask about later ("Scout look above"). The
+        # confirmation bubble is sent only when the assistant was addressed,
+        # so a casual share does not draw a reply nobody asked for.
+        stored_reply: str | None = None
+        if documents:
+            turn = await self._document_turn(group.user_id, text, documents)
+            stored_reply = turn.reply
+            if room["addressed_by"]:
+                await self._deliver(reply_to, turn, user_id=group.user_id, room=room)
+                return 1
         if not room["addressed_by"]:
             # Not for the assistant: read for context (and memory), never
             # answered. The operator's decision, 2026-08-28: the whole room
@@ -464,6 +482,9 @@ class IMessageChatWorker:
         pinned = await self._artifact_for_bubble(reply_guid)
         answering = str(message.get("reply_to_text") or "").strip() or await self._said_in_bubble(reply_guid)
         status: list[str] = []
+        # A document shared in the room is read into the room's own knowledge
+        # (the group is the owner), exactly as a document sent one-to-one is
+        # read into the sender's. Before the photo branch, as in that path.
         if attachments:
             turn = await self._with_ack(
                 self._photo_turn(group.user_id, text, attachments), reply_to, status

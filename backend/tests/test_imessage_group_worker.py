@@ -679,3 +679,52 @@ async def test_an_address_nobody_vouched_for_never_reaches_the_mac(monkeypatch):
     assert "labrisabali.com/whats-on" in sent
     assert "maps.google.com/?q=La+Brisa+Canggu" in sent
     assert "Map link:" not in sent
+
+
+# A document shared in the room is read into the room's own knowledge: the
+# group is the owner, and the confirmation goes to the room.
+@pytest.mark.asyncio
+async def test_a_room_pdf_is_a_document_turn_for_the_group(monkeypatch):
+    message = _room_message("g1", "5550100", "Scout here's the itinerary", addressed_by="name")
+    message["attachments"] = [{"attachment_id": "a1", "media_type": "application/pdf", "name": "Itinerary.pdf"}]
+    bridge = _Bridge({"messages": [message], "cursor": 5})
+    worker, conversed, _ = _worker(bridge, monkeypatch, ACCOUNTS, {}, group=GROUP)
+    seen: list[tuple] = []
+    photos: list[tuple] = []
+
+    async def document_turn(user_id, caption, documents):
+        seen.append((user_id, caption, len(documents)))
+        return TurnResult("Got it - I've read Itinerary.pdf (2 pages).", (), document_id="doc-1")
+
+    async def photo_turn(user_id, caption, attachments):
+        photos.append((user_id, caption))
+        return TurnResult("should not happen")
+
+    monkeypatch.setattr(worker, "_document_turn", document_turn)
+    monkeypatch.setattr(worker, "_photo_turn", photo_turn)
+    assert await worker.tick() == 1
+    assert seen == [("group:abc", "Scout here's the itinerary", 1)]
+    assert photos == []
+    assert conversed == []
+    assert bridge.sent == [{"to": ROOM_GUID, "body": "Got it - I've read Itinerary.pdf (2 pages)."}]
+
+
+# A document shared without naming the assistant is still read into the
+# room's knowledge - it is context, like observed text - but draws no reply.
+@pytest.mark.asyncio
+async def test_an_unaddressed_room_pdf_is_read_silently(monkeypatch):
+    message = _room_message("g1", "5550100", "here's the itinerary, what do you think?", addressed_by="")
+    message["attachments"] = [{"attachment_id": "a1", "media_type": "application/pdf", "name": "Itinerary.pdf"}]
+    bridge = _Bridge({"messages": [message], "cursor": 5})
+    worker, conversed, _ = _worker(bridge, monkeypatch, ACCOUNTS, {}, group=GROUP)
+    seen: list[tuple] = []
+
+    async def document_turn(user_id, caption, documents):
+        seen.append((user_id, len(documents)))
+        return TurnResult("Got it - I've read Itinerary.pdf (2 pages).", (), document_id="doc-1")
+
+    monkeypatch.setattr(worker, "_document_turn", document_turn)
+    await worker.tick()
+    assert seen == [("group:abc", 1)]
+    assert conversed == []
+    assert bridge.sent == []
