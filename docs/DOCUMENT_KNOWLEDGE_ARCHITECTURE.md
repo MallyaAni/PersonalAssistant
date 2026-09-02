@@ -1,7 +1,9 @@
 # Document knowledge for AniOS
 
-Status: BUILT; Phases 1-3 VERIFIED, Phase 4 unit-verified with live acceptance
-pending (2026-09-02). This describes the capability as built. Sections marked EXISTS are already built and VERIFIED; sections marked
+Status: LIVE (deployed f3dca29, 2026-09-02). Phases 1-4 VERIFIED in the deployed
+image, including a live acceptance through the real API; the operator's own
+iMessage run in the Groupie room is the last confirmation. This describes the
+capability as built. Sections marked EXISTS are already built and VERIFIED; sections marked
 NEW are the work. Written in the memory-overview shape: numbered stages, the
 stores each touches, and where the person stays in control.
 
@@ -87,7 +89,7 @@ the desktop being off (a durable queue); answering never depends on it.
    is off is parsed when it wakes. The drop's test matrix (DOCX with tables and
    tracked changes, legacy DOC, ODT, RTF, PPTX with notes, scanned OCR, 100+
    page) is the breadth check.
-4. **Control and citation.** BUILT 2026-09-02, unit-verified (a document pin scopes retrieval; the confirming iMessage bubble pins the document; `forget that` deletes a stored document via the undo ledger; every chunk carries its page and the citation names it). Live acceptance in the Groupie chat pending. Reply-to-document scoping, forget, and citations
+4. **Control and citation.** VERIFIED LIVE 2026-09-02 (`live_document_acceptance`: the deployed API cited the itinerary by name and page, answered a pinned question from the document alone, and removed it on "forget that document"; queue tests 12/12 x3 against the real table). Unit-verified (a document pin scopes retrieval; the confirming iMessage bubble pins the document; `forget that` deletes a stored document via the undo ledger; every chunk carries its page and the citation names it). Live acceptance in the Groupie chat pending. Reply-to-document scoping, forget, and citations
    surfaced in the reply so a person can see which page an answer came from.
 
 ## Hosting and availability

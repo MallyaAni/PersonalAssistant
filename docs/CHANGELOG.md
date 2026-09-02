@@ -16,7 +16,10 @@ Verified: Phase 1 gate 3/3 in the deployed image; the upload gate 3/3 across
 three runs through the real Docling (the operator's itinerary, two pages,
 cited Day-1 answer; a Word file with a seeded fact retrieved); migration
 20260901_0015 builds from an empty schema; 195 unit tests green; frontend
-typecheck clean. Live acceptance in the Groupie chat is the remaining step.
+typecheck clean. Deployed as f3dca29 on 2026-09-02 (full gate green; migration 20260901_0015 applied) and
+verified live through the real API: a page-cited answer from the itinerary, a
+pinned question answered from the document alone, and the document gone after
+"forget that document" (5/5). The operator's iMessage run is the last confirmation.
 
 ## 2026-09-02 - The interest catalogue no longer suppresses the facts beside it
 
