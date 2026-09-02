@@ -721,11 +721,14 @@ the functional test prints a real PDF and reads it back through Docling.
 *What would change it:* editing an existing document in place, which is an
 MCP question, not a renderer one (ADR 0020).
 
-**Retention: designed, not built.** Documents have no age today: the file
-stays until "forget that document" or a newer version. The design (recorded
-2026-09-02, unbuilt) treats a document's three lives separately - the file
-is never deleted on a date; its weight in retrieval retires after the date
-the document is about, plus a grace period, to an `archived` status that
-default search skips and a question about the past still reaches; and its
-facts split into durable (the hotel, who went) and dated (the 8:30
-departure), the latter carrying the memory expiry that already exists.
+**Retention: three lives, each on its own (built 2026-09-02).** The file is
+never deleted on a date. Its weight in retrieval retires after the event:
+the digest reports the last date the document is about, an hourly pass
+archives it thirty days later, and archived documents answer only when
+nothing current does or when pinned - the reply is told they are past. Its
+facts split: the digest marks dated statements (a departure time) and those
+are saved with an expiry on the same day, through memory's existing purge;
+durable ones (the hotel, who went) stay. *What would change it:* a class of
+documents whose date the digest cannot read reliably (measured on the
+itinerary and a recipe, three reps each), or a need to archive by use rather
+than by date.

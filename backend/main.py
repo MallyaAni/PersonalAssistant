@@ -17,6 +17,7 @@ from backend.core.dependencies import (
 from backend.core.logging_config import setup_logging
 from backend.core.telemetry import configure_telemetry
 from backend.services.document_parse_queue import DocumentParseQueue
+from backend.services.document_retention import DocumentArchiver
 from backend.services.image_embedding_reconciler import ImageEmbeddingReconciler
 
 setup_logging("DEBUG" if settings.DEBUG else "INFO")
@@ -38,9 +39,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # DOCLING_BASE_URL is set.
     parse_queue = DocumentParseQueue(settings.DOCUMENT_PARSE_QUEUE_INTERVAL_SECONDS)
     parse_queue.start()
+    archiver = DocumentArchiver(settings.KNOWLEDGE_ARCHIVE_INTERVAL_SECONDS)
+    archiver.start()
     try:
         yield
     finally:
+        await archiver.stop()
         await parse_queue.stop()
         await reconciler.stop()
 

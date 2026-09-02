@@ -4,10 +4,10 @@ import hashlib
 import json
 import re
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import delete, func, or_, select
+from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.config.settings import settings
@@ -680,6 +680,7 @@ class KnowledgeStore(_VectorStore):
         top_k: int,
         query_embedding: list[float] | None = None,
         document_id: str | None = None,
+        statuses: tuple[str, ...] = ("active",),
     ) -> list[dict[str, Any]]:
         embedding = await self._resolve_query_embedding(query, query_embedding)
         distance = KnowledgeChunk.embedding.cosine_distance(embedding)
@@ -701,7 +702,10 @@ class KnowledgeStore(_VectorStore):
                 .where(
                     KnowledgeChunk.user_id == user_id,
                     KnowledgeDocument.user_id == user_id,
-                    KnowledgeDocument.status == "active",
+                    # Active by default. An archived document (its dates are
+                    # past) is read only when the caller asks - nothing
+                    # current answered, or the person pinned it.
+                    KnowledgeDocument.status.in_(statuses),
                     *scope,
                     *self._current_embedding_predicates(KnowledgeChunk, embedding),
                     distance <= self.retrieval_policy.max_cosine_distance,
@@ -716,6 +720,40 @@ class KnowledgeStore(_VectorStore):
             item["document"] = document.to_dict()
             results.append(_retrieval(item, float(score)))
         return results
+
+    # Record the last date a document is about, once the digest has read it.
+    # None clears it: an undated document never archives.
+    async def set_about_until(self, user_id: str, document_id: str, about_until: date | None) -> bool:
+        document = (
+            await self.session.execute(
+                select(KnowledgeDocument).where(
+                    KnowledgeDocument.user_id == user_id,
+                    KnowledgeDocument.id == uuid.UUID(document_id),
+                )
+            )
+        ).scalar_one_or_none()
+        if document is None:
+            return False
+        document.about_until = about_until
+        await self.session.commit()
+        return True
+
+    # Retire every active document whose dates are more than `grace_days`
+    # past: status archived, the moment recorded, nothing deleted. All users
+    # at once - this is the nightly pass, not a turn. Returns how many.
+    async def archive_past(self, grace_days: int, today: date | None = None) -> int:
+        cutoff = (today or datetime.now(UTC).date()) - timedelta(days=grace_days)
+        result = await self.session.execute(
+            update(KnowledgeDocument)
+            .where(
+                KnowledgeDocument.status == "active",
+                KnowledgeDocument.about_until.is_not(None),
+                KnowledgeDocument.about_until < cutoff,
+            )
+            .values(status="archived", archived_at=datetime.now(UTC))
+        )
+        await self.session.commit()
+        return int(result.rowcount or 0)
 
     # One user-owned document with its chunks, or None.
     async def get(self, user_id: str, document_id: str) -> dict[str, Any] | None:

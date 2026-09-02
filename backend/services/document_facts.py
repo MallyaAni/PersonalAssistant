@@ -16,6 +16,8 @@ the upload: a classifier error costs the facts, not the document. The queue
 its facts arrive when the person next talks about the document.
 """
 import json
+from dataclasses import dataclass
+from datetime import UTC, date, datetime, time, timedelta
 import logging
 import re
 from typing import Any
@@ -58,9 +60,26 @@ _DIGEST_SCHEMA = {
         # detail (0/4 shapes, 2026-09-02), so this is the whole message it
         # hears, and the statements are only for the record.
         "headline": {"type": "string"},
-        "statements": {"type": "array", "items": {"type": "string"}, "maxItems": 3},
+        # Each with whether it holds only around the document's dates (a
+        # departure time, a meeting point) or outlives them (the hotel, who
+        # went). Dated statements are saved with an expiry; durable ones are
+        # not. Retention, docs/DOCUMENT_KNOWLEDGE_ARCHITECTURE.md.
+        "statements": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {"text": {"type": "string"}, "dated": {"type": "boolean"}},
+                "required": ["text", "dated"],
+                "additionalProperties": False,
+            },
+            "maxItems": 3,
+        },
+        # The last date the document is about, ISO (YYYY-MM-DD), read after
+        # the statements: an itinerary's final day, a ticket's date. Empty
+        # for undated material - a lease, a recipe, a manual.
+        "about_until": {"type": "string"},
     },
-    "required": ["headline", "statements"],
+    "required": ["headline", "statements", "about_until"],
     "additionalProperties": False,
 }
 _DIGEST_SYSTEM = (
@@ -71,29 +90,71 @@ _DIGEST_SYSTEM = (
     "where, and when or for how much. Example shape: \"We are going on the "
     "Amalfi Choral Tour, October 11 to 15, staying at the Grand Hotel of "
     "Salerno.\" Ignore any question in the caption. Give `statements`: up to "
-    "three short sentences of supporting detail from the document. Only what "
-    "the words and the document say; nothing invented. If no durable fact is "
-    "established, headline is an empty string. Answer only through the schema."
+    "three short sentences of supporting detail from the document, each with "
+    "`dated`: true when it holds only around the document's own dates (a "
+    "departure time, a meeting point, a day's schedule), false when it outlives "
+    "them (where they stayed, who went, what it cost). Give `about_until`: the "
+    "last date the document is about as YYYY-MM-DD (an itinerary's final day, a "
+    "ticket's or booking's date), or an empty string for undated material such "
+    "as a lease, a recipe, or a manual. Only what the words and the document "
+    "say; nothing invented. If no durable fact is established, headline is an "
+    "empty string. Answer only through the schema."
 )
 
 
-def digest_document(llm: Any, title: str, markdown: str, caption: str = "") -> tuple[str, list[str]]:
+@dataclass(frozen=True, slots=True)
+class Digest:
+    """What the digest step read: the one durable sentence, the supporting
+    statements split by whether they outlive the document's dates, and the
+    last date the document is about (None when it has none)."""
+
+    headline: str
+    statements: list[str]
+    dated: list[str]
+    about_until: date | None
+
+
+def _iso_date(value: Any) -> date | None:
+    text = str(value or "").strip()[:10]
+    try:
+        return date.fromisoformat(text) if text else None
+    except ValueError:
+        return None
+
+
+def digest_document(llm: Any, title: str, markdown: str, caption: str = "", today: date | None = None) -> Digest:
     body = document_utterance(title, "", markdown).split("\n", 2)[-1]
+    # An itinerary says "October 15" and rarely the year; told today's date,
+    # the digest resolves it to the next such date, as the router does for
+    # "tomorrow". Without it the date came back empty (0/3, 2026-09-02).
+    today = today or datetime.now(UTC).date()
     messages = [
-        {"role": "system", "content": _DIGEST_SYSTEM},
+        {
+            "role": "system",
+            "content": _DIGEST_SYSTEM
+            + f" Today is {today.isoformat()}; a date the document gives without a year is the next such date from today.",
+        },
         {
             "role": "user",
             "content": f'caption: "{caption.strip() or "here is a document"}"\n\nDocument "{title}":\n{body}',
         },
     ]
-    result = llm.chat(messages, 600, _DIGEST_SCHEMA, 0.0)
+    result = llm.chat(messages, 700, _DIGEST_SCHEMA, 0.0)
     try:
         payload = json.loads(str(result.get("content") or "{}"))
     except json.JSONDecodeError:
-        return "", []
+        return Digest("", [], [], None)
     headline = " ".join(str(payload.get("headline") or "").split())
-    statements = [" ".join(str(item).split()) for item in (payload.get("statements") or []) if str(item).strip()][:3]
-    return headline, statements
+    durable: list[str] = []
+    dated: list[str] = []
+    for item in (payload.get("statements") or [])[:3]:
+        if isinstance(item, dict):
+            text, is_dated = " ".join(str(item.get("text") or "").split()), bool(item.get("dated"))
+        else:
+            text, is_dated = " ".join(str(item).split()), False
+        if text:
+            (dated if is_dated else durable).append(text)
+    return Digest(headline, durable, dated, _iso_date(payload.get("about_until")))
 
 
 # The sharer's statement, as the classifier hears it: the digest's one
@@ -124,16 +185,39 @@ async def propose_document_facts(
     markdown: str,
     caption: str,
     room: dict[str, Any] | None,
+    document_id: str | None = None,
 ) -> int:
     try:
+        from backend.config.settings import settings
         from backend.core.dependencies import get_routing_llm_client
-
         trace_id = tracer.start_trace(user_id)
-        headline, _statements = digest_document(get_routing_llm_client(), title, markdown, caption)
+        digest = digest_document(get_routing_llm_client(), title, markdown, caption)
+        # The date the document is about, on its row: retention archives it
+        # a grace period after that date (document_retention.py).
+        if document_id and digest.about_until and getattr(service, "agent_memory", None) is not None:
+            try:
+                await service.agent_memory.knowledge.set_about_until(user_id, document_id, digest.about_until)
+            except Exception:
+                logger.warning("Could not record about_until for document %s", document_id, exc_info=True)
+        headline = digest.headline
         if not headline:
             return 0
         utterance = facts_utterance(caption, headline)
         candidates = await service._classify_memory_proposals(utterance, trace_id, user_id, room=room)
+        # Dated statements (a departure time, a meeting point) are the
+        # sharer's words too, saved with an expiry on the document's last
+        # date plus the grace period, so they leave memory with the event.
+        if digest.dated and digest.about_until:
+            expires_at = datetime.combine(
+                digest.about_until + timedelta(days=settings.KNOWLEDGE_ARCHIVE_GRACE_DAYS),
+                time.min,
+                tzinfo=UTC,
+            )
+            for statement in digest.dated:
+                dated = await service._classify_memory_proposals(
+                    facts_utterance(caption, statement), trace_id, user_id, room=room
+                )
+                candidates = tuple(candidates) + tuple({**item, "expires_at": expires_at} for item in dated)
         if not candidates:
             return 0
         saved = await service._persist_memory_proposals(

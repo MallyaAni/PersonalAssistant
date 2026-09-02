@@ -2,6 +2,23 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-02 - A document has three lives: the file, its weight in retrieval, its facts
+
+Documents had no age. Now the digest step also reads the last date a
+document is about and marks each supporting statement dated or durable;
+an hourly pass archives a document thirty days after its last date (kept,
+not deleted - migration 0017 adds `about_until` and `archived_at`);
+retrieval reads active documents first and archived ones only when nothing
+current answers or when the document is pinned, and the reply is told a
+passage is past; dated statements are saved as the sharer's words with an
+expiry on the same day, durable ones as before. The digest is told today's
+date: an itinerary says "October 15" and rarely the year, and without it the
+model assumed 2025 (0/3); with it, 3/3 on the year-less fixture and the
+real itinerary's last day, October 17, 2026. Tests: the digest on a fake
+model and on the real one (the itinerary is dated in October 2026 with a
+dated statement, the recipe is undated; three reps), and the archive pass
+and status-scoped search against the real database and embedder. ADR 0021.
+
 ## 2026-09-02 - A set of tasks is picked whole, and a change that did not happen is never reported as done
 
 The deploy sweep's "delete the paused ones" journey failed with the reply

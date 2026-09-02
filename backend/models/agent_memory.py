@@ -1,9 +1,10 @@
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, date
 from typing import Any
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
+    Date,
     Boolean,
     DateTime,
     ForeignKey,
@@ -375,6 +376,13 @@ class KnowledgeDocument(Base):
     source_conversation_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), nullable=True
     )
+    # The last date the document is about (an itinerary's final day, a
+    # ticket's date), read by the digest step; None for undated material (a
+    # lease, a recipe). After it, plus a grace period, the document is
+    # archived: kept, reachable when nothing current answers or when it is
+    # pinned, but no longer competing with this week's documents.
+    about_until: Mapped[date | None] = mapped_column(Date, nullable=True)
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     source_trace_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), nullable=True
     )
@@ -396,6 +404,8 @@ class KnowledgeDocument(Base):
             "purpose": self.purpose,
             "status": self.status,
             "approval_state": self.approval_state,
+            "about_until": self.about_until.isoformat() if self.about_until else None,
+            "archived_at": self.archived_at.isoformat() if self.archived_at else None,
             "source_conversation_id": (
                 str(self.source_conversation_id)
                 if self.source_conversation_id

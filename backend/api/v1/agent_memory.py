@@ -432,7 +432,8 @@ async def ingest_document(
             members = []
         room = {"speaker_user_id": speaker_user_id, "speaker_name": speaker_name or "", "members": members}
     background.add_task(
-        propose_document_facts, service, tracer, user_id, source_conversation_id, filename, parsed.markdown, note, room
+        propose_document_facts, service, tracer, user_id, source_conversation_id, filename, parsed.markdown, note, room,
+        document_id=str(stored.get("id") or "") or None,
     )
     # The share leaves a line in the conversation it was made in, so the next
     # "what's on day 1?" resolves to this document rather than to whatever was

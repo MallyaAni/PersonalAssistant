@@ -26,7 +26,8 @@ _ITINERARY = (
 async def test_a_shared_itinerary_becomes_a_fact_about_the_trip(llm):
     # Step one: the document is read into the one sentence worth remembering.
     caption = "we are going to do this trip and here's the itinerary. what do you think?"
-    headline, statements = digest_document(get_routing_llm_client(), "Itinerary Amalfi Choral Tour.pdf", _ITINERARY, caption)
+    digest = digest_document(get_routing_llm_client(), "Itinerary Amalfi Choral Tour.pdf", _ITINERARY, caption)
+    headline = digest.headline
     assert headline, "the digest gave no headline for a dated itinerary"
     assert any(k in headline.casefold() for k in ("october", "salerno", "amalfi", "tour")), headline
     # Step two: heard as the sharer's own short statement, the classifier keeps it.
@@ -43,10 +44,29 @@ async def test_a_shared_itinerary_becomes_a_fact_about_the_trip(llm):
 
 
 async def test_a_document_with_no_plan_proposes_no_plan(llm):
-    headline, _ = digest_document(
+    headline = digest_document(
         get_routing_llm_client(), "recipe.html", "Feed the starter, Clementine, twice a day. Bake at 230C.", "here's that sourdough recipe"
-    )
+    ).headline
     utterance = facts_utterance("here's that sourdough recipe", headline)
     result = await MemoryProposalAgent(get_llm_client()).propose(utterance)
     text = " ".join(str(p.get("content") or "") for p in result.proposals).casefold()
     assert "going to" not in text and "trip" not in text, result.proposals
+
+
+# Retention reads the same digest: the itinerary's last date is in October
+# 2026 and at least one statement is dated (a departure, a day's schedule);
+# the recipe has no date at all. Three reps: a judgement, held below its
+# measured rate rather than assumed.
+async def test_the_digest_dates_an_itinerary_and_not_a_recipe(llm):
+    from datetime import date
+
+    from backend.core.dependencies import get_routing_llm_client
+
+    hits = 0
+    for _ in range(3):
+        digest = digest_document(get_routing_llm_client(), "Itinerary Amalfi Choral Tour.pdf", _ITINERARY, "we are going to do this trip")
+        if digest.about_until and date(2026, 10, 12) <= digest.about_until <= date(2026, 10, 20) and digest.dated:
+            hits += 1
+    assert hits >= 2, f"dated the itinerary {hits}/3"
+    recipe = digest_document(get_routing_llm_client(), "Sourdough.pdf", "# Sourdough\n\nMix 500g flour, 350g water, 100g starter, 10g salt. Bulk ferment 5 hours, shape, proof overnight, bake at 250C.", "here's that sourdough recipe")
+    assert recipe.about_until is None, recipe

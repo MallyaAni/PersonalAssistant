@@ -2374,15 +2374,27 @@ class ConversationService:
                 if restated and restated.casefold() != query.strip().casefold():
                     probes.append((restated, None))
                 pinned = _active_document.get() or None
-                merged: dict[str, dict[str, Any]] = {}
-                for text, vector in probes:
-                    for item in await self.agent_memory.knowledge.search(
-                        user_id, text, _KNOWLEDGE_TOP_K, vector, document_id=pinned
-                    ):
-                        key = str(item.get("id"))
-                        kept = merged.get(key)
-                        if kept is None or _distance_of(item) < _distance_of(kept):
-                            merged[key] = item
+
+                async def _probe(statuses: tuple[str, ...]) -> dict[str, dict[str, Any]]:
+                    found: dict[str, dict[str, Any]] = {}
+                    for text, vector in probes:
+                        for item in await self.agent_memory.knowledge.search(
+                            user_id, text, _KNOWLEDGE_TOP_K, vector, document_id=pinned, statuses=statuses
+                        ):
+                            key = str(item.get("id"))
+                            kept = found.get(key)
+                            if kept is None or _distance_of(item) < _distance_of(kept):
+                                found[key] = item
+                    return found
+
+                # Current documents first. An archived one - its dates are
+                # past - answers only when nothing current does ("what hotel
+                # did we stay at in Amalfi" a year on), or when the person
+                # pinned it by replying to its bubble. Retention, in
+                # docs/DOCUMENT_KNOWLEDGE_ARCHITECTURE.md.
+                merged = await _probe(("active", "archived") if pinned else ("active",))
+                if not merged and not pinned:
+                    merged = await _probe(("archived",))
                 if merged:
                     context["knowledge"] = sorted(merged.values(), key=_distance_of)[:_KNOWLEDGE_TOP_K]
             except Exception:
@@ -4142,6 +4154,10 @@ class ConversationService:
         expires_at = None
         if candidate.get("is_transient"):
             expires_at = datetime.now(UTC) + timedelta(days=TRANSIENT_FACT_DAYS)
+        # A fact that holds only around a document's dates (a departure time
+        # read from an itinerary) arrives with the day it stops mattering.
+        if isinstance(candidate.get("expires_at"), datetime):
+            expires_at = candidate["expires_at"]
         memory = await self.memory.save_semantic_memory(
             user_id,
             candidate["content"],

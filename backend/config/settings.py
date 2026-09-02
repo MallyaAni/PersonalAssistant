@@ -262,6 +262,13 @@ class Settings(BaseSettings):
     # otherwise, so a looser gate here costs nothing but a few extra
     # passages. Precedent: recall turns 0.45, history search 0.6.
     KNOWLEDGE_MAX_COSINE_DISTANCE: float = Field(default=0.5, ge=0, le=2)
+    # Retention for document knowledge: a document whose last date (read by
+    # the digest step) is this many days past is archived - kept, reachable
+    # when nothing current answers or when pinned, out of default retrieval.
+    # The file is never deleted on a date. Dated facts saved from a document
+    # expire on the same day.
+    KNOWLEDGE_ARCHIVE_GRACE_DAYS: int = Field(default=30, ge=0, le=3650)
+    KNOWLEDGE_ARCHIVE_INTERVAL_SECONDS: int = Field(default=3600, ge=0, le=86400)
     MEMORY_SEMANTIC_MAX_RESULTS: int = Field(default=5, ge=1, le=20)
     # Searching the user's own past turns, not only the facts a classifier
     # promoted out of them. An account with fourteen conversations had zero

@@ -184,6 +184,36 @@ an existing .docx in place is the later step, if it is wanted.
   facts pass (its facts come when someone next talks about it); on the web,
   "forget that document" works in the conversation the upload named.
 
+## Retention (built 2026-09-02)
+
+A document has three lives, and each is treated on its own:
+
+1. **The file is never deleted on a date.** "What hotel did we stay at in
+   Amalfi" is a real question two years later. Deletion stays a human act:
+   "forget that document", or the memory page.
+2. **Its weight in retrieval retires after the event.** The digest step that
+   already reads a shared document also reports `about_until`, the last date
+   it is about (an itinerary's final day, a ticket's date; empty for a lease,
+   a recipe, a manual). `KNOWLEDGE_ARCHIVE_GRACE_DAYS` (30) after that date
+   an hourly pass (`document_retention.py`, beside the parse queue) marks the
+   document `archived` and records when. Retrieval reads active documents
+   first; an archived one answers only when nothing current does, or when the
+   person pinned it by replying to its bubble - so last year's plan stops
+   competing with this week's without becoming unreachable. The reply is told
+   a passage is archived and its last date, and answers about it as past.
+3. **Its facts split into durable and dated.** The digest marks each
+   supporting statement `dated` (a departure time, a meeting point, a day's
+   schedule) or not (where they stayed, who went). The headline and durable
+   statements are saved as before; dated statements are classified as the
+   sharer's own words and saved with `expires_at` on the last date plus the
+   grace period, so they leave through memory's existing purge.
+
+Edge cases: an undated document never archives; a superseded document keeps
+the status it had; a document that lands from the queue is not digested (no
+speaker to attribute to) and so carries no date until someone talks about
+it; a document shared in a room is dated once and the sharer's copy shares
+the row. A deleted document takes its chunks; archiving deletes nothing.
+
 ## Hosting and availability
 
 Docling parsing stays on the desktop (its GPU is the one heavy part; the queue
