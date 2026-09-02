@@ -233,6 +233,13 @@ class Settings(BaseSettings):
     EMBEDDING_INFERENCE_ADAPTER: Literal["", "openai_compatible"] = ""
     # Semantic memory embeddings use their own replaceable role configuration.
     EMBEDDING_BASE_URL: str = ""
+    # Document parsing (docs/DOCUMENT_KNOWLEDGE_ARCHITECTURE.md). Docling turns
+    # a PDF, Word or PowerPoint file into Markdown before it is chunked and
+    # embedded. Empty disables document uploads with a clear message rather
+    # than a connection error; the parser is bursty and lives where a GPU is.
+    DOCLING_BASE_URL: str = ""
+    DOCLING_TIMEOUT_SECONDS: int = Field(default=300, ge=10, le=1800)
+    DOCUMENT_UPLOAD_MAX_BYTES: int = Field(default=25 * 1024 * 1024, ge=1024)
     EMBEDDING_MODEL: str = "text-embedding-nomic-embed-text-v1.5"
     EMBEDDING_MODEL_VERSION: str = "nomic-embed-text-v1.5"
     EMBEDDING_DIMENSION: int = Field(default=768, ge=1, le=2_000)

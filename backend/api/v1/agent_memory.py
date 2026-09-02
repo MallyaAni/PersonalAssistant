@@ -2,7 +2,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Path, Query, UploadFile, status
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -344,6 +344,42 @@ async def ingest_knowledge(
         str(body.source_conversation_id) if body.source_conversation_id else None,
         str(body.source_trace_id) if body.source_trace_id else None,
     )
+
+
+# A document file, not text: parsed through Docling into Markdown, then stored
+# by the same ingest as anything else. The reply then answers from it, cited,
+# because the store is the one the per-turn retrieval already reads.
+@router.post("/{user_id}/agent/knowledge/document", status_code=201)
+async def ingest_document(
+    user_id: UserId,
+    manager: DependencyAgentMemoryManager,
+    document: Annotated[UploadFile, File()],
+    note: Annotated[str, Form()] = "",
+    source_conversation_id: Annotated[str | None, Form()] = None,
+) -> dict[str, Any]:
+    from backend.api.v1.vision import _read_bounded_upload
+    from backend.config.settings import settings
+    from backend.services.document_parser import ParseError, parse_document
+
+    filename = (document.filename or "document").rsplit("/", 1)[-1]
+    content = await _read_bounded_upload(document, settings.DOCUMENT_UPLOAD_MAX_BYTES)
+    try:
+        parsed = await parse_document(filename, content)
+    except ParseError as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
+    body = parsed.markdown if not note.strip() else f"{note.strip()}\n\n{parsed.markdown}"
+    stored = await manager.knowledge.ingest(
+        user_id,
+        filename,
+        body,
+        f"upload://{filename}",
+        "uploaded_document",
+        source_conversation_id,
+        None,
+    )
+    stored["pages"] = parsed.pages
+    stored["media_type"] = parsed.media_type
+    return stored
 
 
 # Search embedded knowledge chunks by meaning.
