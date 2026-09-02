@@ -3,6 +3,21 @@
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
 <<<<<<< HEAD
+## 2026-09-02 - A document shared in a room is read into the room's knowledge
+
+The first real test dropped the itinerary into the Groupie room with "here's
+the itinerary, what do you think?" - not naming the assistant - and it
+answered "I don't see any itinerary shared in the thread yet". Two gaps: the
+document turn existed only for one-to-one conversations, and the room
+handler observed unaddressed text and returned before any attachment was
+considered. Now a document shared in a room is read into the room's own
+knowledge whether or not the assistant is named (it is context, like observed
+chatter), and the "Got it" confirmation is sent only when the assistant was
+addressed. Deployed as 61435af with the full gate green and the post-deploy
+chain 5/5 through the real API; unit-tested with a room-PDF case and an
+unaddressed-share case. The operator's own re-drop in Groupie is the live
+confirmation.
+
 ## 2026-09-02 - A deck stops waiting for a quiet machine, and plans its slides together
 
 A live deck was watched taking 12m32s for seven slides: 7m09s of that was the
