@@ -164,3 +164,35 @@ async def test_a_documents_passage_is_found_for_the_persons_own_shorthand():
                 await manager.knowledge.delete(user_id, stored["id"])
     except (ConnectionError, OSError) as exc:
         pytest.skip(f"database or embedding runtime unreachable: {type(exc).__name__}")
+
+
+# A new version of the same document replaces the old one for retrieval: the
+# older copy is superseded, not mixed in, and not lost.
+async def test_a_new_version_of_a_document_supersedes_the_old_one():
+    from backend.core.dependencies import get_agent_memory_manager, get_embedding_provider
+    from backend.database.session import AsyncSessionLocal
+
+    user_id = f"functional-version-{uuid.uuid4().hex[:8]}"
+    source = "upload://itinerary-draft.pdf"
+    try:
+        async with AsyncSessionLocal() as session:
+            manager = get_agent_memory_manager(session, get_embedding_provider())
+            first = await manager.knowledge.ingest(
+                user_id, "itinerary-draft.pdf", "## Day 1\n\nDinner in the hotel at 7:30 p.m.", source, "uploaded_document"
+            )
+            second = await manager.knowledge.ingest(
+                user_id, "itinerary-draft.pdf", "## Day 1\n\nDinner in the hotel at 8:00 p.m. (moved)", source, "uploaded_document"
+            )
+            try:
+                assert first["id"] != second["id"]
+                old = await manager.knowledge.get(user_id, first["id"])
+                assert old is not None and old["status"] == "superseded", old
+                found = await manager.knowledge.search(user_id, "what time is dinner on day 1?", 6)
+                assert found and all(item["document"]["id"] == second["id"] for item in found), [
+                    (i["document"]["id"], i["content"][:40]) for i in found
+                ]
+            finally:
+                await manager.knowledge.delete(user_id, first["id"])
+                await manager.knowledge.delete(user_id, second["id"])
+    except (ConnectionError, OSError) as exc:
+        pytest.skip(f"database or embedding runtime unreachable: {type(exc).__name__}")

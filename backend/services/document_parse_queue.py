@@ -54,9 +54,32 @@ async def enqueue_document(
     return job.to_dict()
 
 
+# Whether the parser answers at all. A pass that finds it down does not
+# count against any job: an overnight desktop must not burn attempts.
+async def parser_reachable() -> bool:
+    base = settings.DOCLING_BASE_URL.rstrip("/")
+    if not base:
+        return False
+    try:
+        import httpx
+
+        async with httpx.AsyncClient(timeout=8) as client:
+            return (await client.get(f"{base}/health")).status_code == 200
+    except Exception:
+        return False
+
+
+# How many failed attempts a job gets while the parser IS reachable: a
+# timeout or an error on a reachable parser is about the file, and three
+# tries is enough to know.
+REACHABLE_ATTEMPTS = 3
+
+
 # One pass over the pending jobs, oldest first. Returns how many landed.
-async def process_pending(parse=parse_document, limit: int = 20) -> int:
+async def process_pending(parse=parse_document, limit: int = 20, reachable=parser_reachable) -> int:
     landed = 0
+    if not await reachable():
+        return 0
     async with AsyncSessionLocal() as session:
         rows = (
             await session.execute(
@@ -76,12 +99,15 @@ async def process_pending(parse=parse_document, limit: int = 20) -> int:
             try:
                 parsed = await parse(job.filename, job.content)
             except ParseUnavailable as exc:
+                # The parser answered its health check moments ago, so this is
+                # the file (a timeout on a huge scan, a crash mid-parse), not
+                # an absent parser: a few tries, then it is failed with the
+                # sentence the person can be told.
                 job.last_error = str(exc)
-                if job.attempts >= settings.DOCUMENT_PARSE_MAX_ATTEMPTS:
+                if job.attempts >= REACHABLE_ATTEMPTS:
                     job.status = "failed"
                 await session.commit()
-                # The parser is away for everyone; no point trying the rest now.
-                break
+                continue
             except ParseError as exc:
                 job.status = "failed"
                 job.last_error = str(exc)

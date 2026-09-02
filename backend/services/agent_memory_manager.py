@@ -582,6 +582,8 @@ class KnowledgeStore(_VectorStore):
         source_trace_id: str | None = None,
     ) -> dict[str, Any]:
         content_hash = hashlib.sha256(content.encode()).hexdigest()
+        # A title is a column of 500; a filename can be longer.
+        title = (title or "document").strip()[:500]
         await transaction_advisory_lock(
             self.session,
             "knowledge_document",
@@ -598,6 +600,24 @@ class KnowledgeStore(_VectorStore):
         ).scalar_one_or_none()
         if existing is not None:
             return await self._document_with_chunks(existing)
+        # A new version of a document the person already gave (same source,
+        # different bytes) replaces the old one: the older copy is marked
+        # superseded so retrieval - which reads only active documents - never
+        # mixes two versions of one itinerary. It is not deleted; "forget"
+        # and the record still know it.
+        if source_uri:
+            older = (
+                await self.session.execute(
+                    select(KnowledgeDocument).where(
+                        KnowledgeDocument.user_id == user_id,
+                        KnowledgeDocument.source_uri == source_uri,
+                        KnowledgeDocument.status == "active",
+                        KnowledgeDocument.content_hash != content_hash,
+                    )
+                )
+            ).scalars().all()
+            for previous in older:
+                previous.status = "superseded"
         document = KnowledgeDocument(
             user_id=user_id,
             title=title,

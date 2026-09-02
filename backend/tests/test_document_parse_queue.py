@@ -18,6 +18,14 @@ from backend.services.document_parser import ParsedDocument, ParseError, ParseUn
 pytestmark = pytest.mark.asyncio
 
 
+async def _up():
+    return True
+
+
+async def _down():
+    return False
+
+
 async def _session():
     from backend.database.session import AsyncSessionLocal
     return AsyncSessionLocal()
@@ -66,7 +74,7 @@ async def test_a_queued_document_lands_when_the_parser_answers():
         async def parser(filename, content):
             return ParsedDocument(markdown="The settling tank was cleaned each spring.", pages=1, media_type="application/pdf")
 
-        landed = await process_pending(parse=parser)
+        landed = await process_pending(parse=parser, reachable=_up)
         assert landed >= 1
         row = await _status(job["id"])
         assert row.status == "done" and row.document_id is not None and row.content == b""
@@ -86,7 +94,7 @@ async def test_an_unreadable_file_is_failed_with_the_parsers_sentence():
         async def parser(filename, content):
             raise ParseError('I could not get any readable text out of "bad.pdf".')
 
-        await process_pending(parse=parser)
+        await process_pending(parse=parser, reachable=_up)
         row = await _status(job["id"])
         assert row.status == "failed" and "readable text" in (row.last_error or "")
     except (ConnectionError, OSError) as exc:
@@ -95,7 +103,26 @@ async def test_an_unreadable_file_is_failed_with_the_parsers_sentence():
         await _cleanup(user_id)
 
 
-async def test_an_absent_parser_keeps_the_job_pending_and_counts_the_attempt():
+async def test_an_absent_parser_leaves_every_job_untouched():
+    await _require_table()
+    user_id = f"queue-{uuid.uuid4().hex[:8]}"
+    try:
+        async with await _session() as session:
+            job = await enqueue_document(session, user_id, "later.pdf", "application/pdf", b"%PDF-1.7 x", "", None)
+
+        async def parser(filename, content):
+            raise AssertionError("must not parse while the parser is down")
+
+        assert await process_pending(parse=parser, reachable=_down) == 0
+        row = await _status(job["id"])
+        assert row.status == "pending" and row.attempts == 0
+    except (ConnectionError, OSError) as exc:
+        pytest.skip(f"database unreachable: {type(exc).__name__}")
+    finally:
+        await _cleanup(user_id)
+
+
+async def test_a_reachable_parser_that_keeps_failing_fails_the_job_after_three_tries():
     await _require_table()
     user_id = f"queue-{uuid.uuid4().hex[:8]}"
     try:
@@ -105,9 +132,10 @@ async def test_an_absent_parser_keeps_the_job_pending_and_counts_the_attempt():
         async def parser(filename, content):
             raise ParseUnavailable("The document parser is not reachable right now.")
 
-        await process_pending(parse=parser)
+        for _ in range(3):
+            await process_pending(parse=parser, reachable=_up)
         row = await _status(job["id"])
-        assert row.status == "pending" and row.attempts >= 1 and "not reachable" in (row.last_error or "")
+        assert row.status == "failed" and row.attempts == 3 and "not reachable" in (row.last_error or "")
     except (ConnectionError, OSError) as exc:
         pytest.skip(f"database unreachable: {type(exc).__name__}")
     finally:
