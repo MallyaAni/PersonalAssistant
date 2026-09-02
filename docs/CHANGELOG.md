@@ -2,6 +2,22 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-02 - The architecture page carries the document-knowledge decisions
+
+`docs/ML_SYSTEM_DESIGN.md` gains section 13 (document knowledge: where
+documents live and why not a second store, Docling on the desktop with the
+durable queue, page-aware chunks and supersede, the measured 0.5 gate, the
+share as the referent, facts into memory with attribution, writing back
+through the Word builder and Gotenberg's LibreOffice route, and the
+retention design that is not built), a row in the retrieval-threshold table,
+and seven tried-and-rejected rows (RAGFlow, Docling on the Spark, one
+timeout number, embedding-distance dedupe, document voice as a proposal,
+Gotenberg's Chromium route, a Microsoft 365 MCP). A new canonical view,
+`docs/diagrams/document-knowledge.mmd`, is rendered into
+`docs/architecture.html` with its own section and navigation entry, and the
+page's ML section carries the new text. Diagram impact: UPDATED -
+document-knowledge (new).
+
 ## 2026-09-02 - The assistant writes the PDF it offered
 
 In the Amalfi group chat the assistant offered to put the revised itinerary

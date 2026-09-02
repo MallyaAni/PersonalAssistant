@@ -398,6 +398,7 @@ Re-measure all of them after any embedding change.
 | Gate | Value | How it was set |
 | --- | --- | --- |
 | Semantic memory (text-text) | 0.35 | The baseline; explicitly *not* inherited by other spaces. |
+| Document passages (knowledge store) | 0.5, top 6, two probes | Measured 2026-09-02 on the operator's itinerary: "whats on evening of day 1?" sat at 0.460 from the Day 1 chunk (0 results at 0.35); the same question naming the document sat at 0.332. Passages are longer and more varied than memory facts, and the reply answers only from the passages it is shown and abstains otherwise, so a looser gate costs a few extra passages, never a wrong answer. Each turn probes twice - the words typed and the follow-up resolver's restatement - and keeps the nearer distance per chunk; a pinned document (a reply to its bubble) scopes the search to that document. Section 13. |
 | Passive recall of past turns | 0.45, top 3 | At 0.35 it answered 1 of 5 questions, 0.40 four, 0.45 all five, 0.50 no more while returning twice the turns; useful recalls sit 0.25-0.44 and the curve flattens after 0.45. |
 | Active history search | 0.6, top 12 (of 40 reranked) | Looser by design: the person pointed at something not in view. Misses log the nearest rejected distance so this becomes measured. |
 | Image recall (cross-modal) | 0.96 ceiling + 0.006 cluster delta | The modality gap puts text-image similarity an order of magnitude below text-text; correct matches landed 0.91-0.954, irrelevant queries 0.961+. True-match clusters span ~0.004 and gap to the rest by ~0.007+; a best-vs-runner-up margin was tried first and rejected genuine matches once a user owned two relevant images. Images live in their own vector column because every unrelated text memory would outrank every matching image (0.73 text-text vs 0.08 text-image). |
@@ -588,6 +589,13 @@ Scout's ranking has its own labelled harness with floors
 | Google Custom Search JSON API as a free rung | Closed to new customers, ends January 2027 | Brave, then Tavily |
 | DuckDuckGo as a rung | No official web-results API; the HTML endpoint is scraping that breaks without notice | Not built on |
 | FAISS as the vector store | 439 vectors in 22 MB; top-10 in 0.5 ms without the index, 0.2 ms at 20k with it; FAISS would duplicate the store without the owner filter or the transaction | pgvector HNSW in the same database (section 5) |
+| RAGFlow (the uploaded Specialized-Services stack) as the document store | Its own Elasticsearch/MinIO/Redis/MySQL beside ours, a tenant with no embedding model, a build that crashed the desktop (XMP + a 24 GB WSL), and answers that would have lived outside the owner filter and the encryption | Docling for parsing only; passages in the same pgvector space as memory (section 13) |
+| Docling on the Spark | The parser wants a GPU and is bursty; the Spark's memory is spoken for by the reply model | Docling on the desktop, a durable queue on the Spark for the hours it is off |
+| One timeout number for the parser client | The desktop drops connection attempts while Docling is stopped, so an upload waited out the kernel's ~2 minutes of retries before saying "queued" | A health probe before the inline parse (8 s at worst) and a 10 s connect timeout beside the 300 s read |
+| Embedding distance to collapse two facts from one turn | Two paraphrases of Jen's trivia habit sat at 0.278 apart while an unrelated fact sat at 0.136 - the space cannot make this call | A deterministic predicate key (subject normalised away); one statement, one fact |
+| A paragraph or document voice as a memory proposal | The classifier keeps one short first-person sentence and refuses paragraphs and third-person document text | A digest step writes the headline as one first-person sentence; the facts pass reads that |
+| Gotenberg's Chromium route for PDFs | `500` on every page: `chrome_crashpad_handler: --database is required` under the desktop's Docker | The Word file built here, printed by Gotenberg's LibreOffice route (measured 2026-09-02) |
+| A Microsoft 365 / Graph MCP to write documents | Puts the file in a tenant the household does not have, needs consent and tokens, to answer "send me that as a PDF" | A local writer and the existing artifact store (ADR 0020) |
 
 ## 12. Traps specific to serving
 
@@ -619,3 +627,105 @@ Each cost real time; the full operational list is in
   while the engine ran it on. The boot log's `non-default args` line is the
   effective configuration; diff it against the flag table in section 1, in
   both directions, after every change to the serving script.
+
+## 13. Document knowledge: reading files into retrieval, and writing them back
+
+The retrieval-augmented part of the system, built 2026-09-01/02 after the
+uploaded RAG stack was evaluated and retired
+([DOCUMENT_KNOWLEDGE_ARCHITECTURE.md](DOCUMENT_KNOWLEDGE_ARCHITECTURE.md)
+carries the stage-by-stage design; the canonical diagram is
+[document-knowledge.svg](diagrams/document-knowledge.svg)). Each decision
+below is the options considered, what was measured, the choice, and what
+would change it.
+
+**Where documents live: the same pgvector space as memory, not a second
+store.** The candidate was RAGFlow, arriving with its own Elasticsearch,
+MinIO, Redis and MySQL, its own tenant model, and no embedding model
+configured for that tenant - and a build that took the desktop down
+(section 11). A second store would have held passages outside the owner
+filter, the field encryption, the backups, and the transaction that every
+other vector here sits in (section 5). So a document becomes rows in the
+knowledge store: one `knowledge_documents` row per file (title, source URI,
+content hash, status), one chunk row per passage with a 768-d nomic vector -
+the same model and scheme signature as every memory vector, so a swap
+degrades to "not rebuilt" rather than to noise. *What would change it:*
+documents at a scale where HNSW build time matters (section 5's FAISS
+numbers apply unchanged), or a need for hybrid lexical search that pgvector
+does not give.
+
+**Parsing: Docling on the desktop, everything else on the Spark.** The
+parser wants a GPU and works in bursts; the Spark's memory is the reply
+model's (section 2). Docling runs where the RTX 5080 is, behind
+`DOCLING_BASE_URL`, and turns PDF, Word and PowerPoint into Markdown with a
+page-break placeholder so every chunk knows its page. Plain text never
+leaves the Spark. Because the desktop is off for hours at a time, a document
+that arrives then is kept whole in `document_parse_jobs` and parsed when the
+parser answers again; each pass probes `/health` first and leaves every job
+untouched while it is down, so an overnight desktop burns no attempts, while
+a reachable parser that fails on a file three times fails that job with its
+own sentence. Measured 2026-09-02: the desktop *drops* connection attempts
+while the container is stopped rather than refusing them, so an upload
+handed straight to the parser waited out the kernel's ~2 minutes of SYN
+retries before "queued" came back; the route now probes first (8 s at
+worst, milliseconds when up) and the client connects in 10 s or gives up
+while still reading for the configured 300 s.
+
+**Chunking: by page, then by size.** Chunks never cross a page boundary and
+carry `{"page": n}`; the reply is told the document and the page it used and
+is asked to name both. Dedupe is a content hash per owner (the same bytes
+again return the existing row); a new version of the same file (same source
+URI, different hash) marks the older copy `superseded` - kept, not searched -
+so two versions of one itinerary never mix.
+
+**The gate: 0.5, measured, not inherited.** Section 6 has the row. Memory's
+0.35 returned nothing for "whats on evening of day 1?" against the Day 1
+chunk at 0.460; the reply answers only from the passages it is shown and
+abstains otherwise, which is what makes a looser gate safe. Six passages a
+turn, two probes (the typed words and the follow-up resolver's restatement)
+merged by nearest distance, scoped to one document when the person replied
+to its bubble.
+
+**The share is the referent.** A shared file leaves a line in the
+conversation ('shared a document: "<name>"') on every surface - the room
+observes it, web and API uploads record it - and with that line in history
+the router answers questions about the document from what is on hand rather
+than searching the web (measured 3/3 on the three routing cases).
+"Forget that document" routes to undo and the ledger returns the newest
+*document* receipt rather than the memory receipt its facts pass wrote
+seconds later.
+
+**What a document says, into memory, with attribution.** A digest step
+(one call, grammar-constrained) writes a first-person headline and the
+statements worth keeping, and the ordinary memory-proposal classifier judges
+them - because that classifier keeps one short first-person sentence and
+refuses paragraphs and document voice (measured; section 11). In a room the
+facts go to the speaker's store and the room's, never to another member;
+the sharer gets their own copy. Two candidates from one turn with the same
+predicate are saved once by a deterministic key, because the embedding space
+put paraphrases 0.278 apart and an unrelated fact 0.136 apart.
+
+**Writing back: the Word file here, the PDF printed beside the parser.** The
+assistant offered a PDF it could not make (2026-09-02); rather than suppress
+the offer, `create_document` makes it true. The body is the Markdown the
+assistant writes anyway; a `.docx` is built from the standard library, and a
+PDF is that file printed by Gotenberg's LibreOffice route on the desktop -
+one source for both formats. Gotenberg's Chromium route was measured first
+and cannot start there (section 11). The renderer is probed before a PDF is
+attempted; when the desktop is off the person gets the Word file and is told
+the PDF returns with it. The file is an artifact of kind `document` in the
+same store as pictures (bytes under an opaque key, hash and size on the
+row), a card on the web, an attachment under its title in iMessage, and the
+bridge lets a PDF or a Word file out proven by its first bytes under the
+picture cap. Routing measured 12/12 (three asks, one non-ask, three reps);
+the functional test prints a real PDF and reads it back through Docling.
+*What would change it:* editing an existing document in place, which is an
+MCP question, not a renderer one (ADR 0020).
+
+**Retention: designed, not built.** Documents have no age today: the file
+stays until "forget that document" or a newer version. The design (recorded
+2026-09-02, unbuilt) treats a document's three lives separately - the file
+is never deleted on a date; its weight in retrieval retires after the date
+the document is about, plus a grace period, to an `archived` status that
+default search skips and a question about the past still reaches; and its
+facts split into durable (the hotel, who went) and dated (the 8:30
+departure), the latter carrying the memory expiry that already exists.

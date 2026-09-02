@@ -1,0 +1,36 @@
+---
+title: Document Knowledge - reading files into retrieval, writing them back
+---
+flowchart TB
+    Share([A file shared in iMessage,<br/>the web, or the API]) --> Classify[Type proven by first bytes<br/>text stays here]
+    Classify -->|PDF · Word · PowerPoint| Probe{Parser<br/>answering?}
+    Probe -->|yes| Docling[Docling on the desktop GPU<br/>Markdown with page breaks]
+    Probe -->|no| Queue[(Durable parse queue<br/>health-gated passes,<br/>no attempts burned while down)]
+    Queue -. when the desktop returns .-> Docling
+    Docling --> Ingest[Page-aware chunks · content hash<br/>same bytes reuse · new version supersedes]
+    Ingest --> Store[(Knowledge store in pgvector<br/>the memory space, 768-d nomic<br/>owner-scoped, encrypted, backed up)]
+    Ingest --> Facts[Digest to first-person statements<br/>memory classifier decides]
+    Facts --> Memory[(Speaker's memory + the room's<br/>never another member's)]
+
+    Ask([A question, or a reply<br/>to the document's bubble]) --> Search[Two probes, distance 0.5, top 6<br/>pinned document scopes the search]
+    Search -. reads .-> Store
+    Search --> Reply[Reply cites document and page<br/>abstains outside the passages]
+    Ask -. "shared a document" line<br/>keeps the file the referent .-> Search
+
+    Forget([Forget that document]) --> Undo[Undo ledger: newest<br/>document receipt] --> Store
+
+    Want([Put that in a PDF]) --> Writer[create_document<br/>Word file built here]
+    Writer -->|PDF asked, renderer up| Print[Gotenberg LibreOffice route<br/>on the desktop prints the Word file]
+    Writer -->|renderer away| Docx[Word file, and the reply says so]
+    Print --> Artifact[(Artifact store, kind document<br/>opaque key, hash, size)]
+    Docx --> Artifact
+    Artifact --> Out[Web card to save ·<br/>iMessage attachment under its title,<br/>bridge proves PDF/Word by first bytes]
+
+    classDef person fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
+    classDef step fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
+    classDef store fill:#eef7ee,stroke:#5f9562,color:#183b1b;
+    classDef desktop fill:#fff4e5,stroke:#d08a2a,color:#4a2f00;
+    class Share,Ask,Forget,Want person;
+    class Classify,Probe,Ingest,Facts,Search,Reply,Undo,Writer,Docx,Out step;
+    class Queue,Store,Memory,Artifact store;
+    class Docling,Print desktop;
