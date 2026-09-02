@@ -2,6 +2,14 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-02 - A written document does not print its title twice
+
+The reply's first heading is often the title again, and the live PDF opened
+with it twice. A leading heading that only repeats the title is dropped; a
+different first heading is kept. The writer's tests now read the Word body
+out of the zip rather than the deflated bytes, which had made two earlier
+assertions vacuous.
+
 ## 2026-09-02 - A written document carries links as words and drops image tags
 
 A reply can carry Markdown a printed page cannot render: a link would have

@@ -17,6 +17,11 @@ from backend.services.document_writer import (
     write_document,
 )
 
+def _word_body(content: bytes) -> str:
+    with zipfile.ZipFile(io.BytesIO(content)) as archive:
+        return archive.read("word/document.xml").decode("utf-8")
+
+
 BODY = """# Revised itinerary
 
 Day 1 (Sun, Oct 11) - Arrival
@@ -83,5 +88,16 @@ def test_links_become_words_and_image_tags_are_dropped():
     assert blocks[0].text == "See the tour site (https://example.com/tour) for details."
     assert blocks[1].text == "map of Salerno"
     assert [b.text for b in blocks[2:]] == ["Tickets at the box office (https://example.com/box)"]
-    document = render_docx("t", body).decode("latin-1", errors="ignore")
+    document = _word_body(render_docx("t", body))
     assert "![" not in document and "](" not in document
+    assert "the tour site (https://example.com/tour)" in document
+
+
+def test_a_leading_heading_that_repeats_the_title_is_not_printed_twice():
+    body = "# Relaxed Saturday in Old Town Alexandria\n\nA gentle day by the water.\n\n## Morning\n- 10:30 breakfast"
+    document = _word_body(render_docx("Relaxed Saturday in Old Town Alexandria", body))
+    assert document.count("Relaxed Saturday in Old Town Alexandria") == 1
+    assert "A gentle day by the water." in document and "Morning" in document
+    # A different first heading is kept.
+    other = _word_body(render_docx("Weekend plan", body))
+    assert other.count("Relaxed Saturday in Old Town Alexandria") == 1 and "Weekend plan" in other

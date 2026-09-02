@@ -205,10 +205,20 @@ def _paragraph(text: str, *, size_half_points: int | None = None, bold: bool = F
     return f"<w:p>{ppr}{body}</w:p>"
 
 
+def _without_repeated_title(title: str, blocks: list[_Block]) -> list[_Block]:
+    """The body without a leading heading that only repeats the title: the
+    reply's own first line is often the title again, and the live PDF opened
+    with it twice (2026-09-02)."""
+    if blocks and blocks[0].level and not blocks[0].bullet:
+        if " ".join(blocks[0].text.split()).casefold().strip(" :.") == " ".join(title.split()).casefold().strip(" :."):
+            return blocks[1:]
+    return blocks
+
+
 def render_docx(title: str, markdown: str) -> bytes:
     """The body as a Word document, built from the standard library."""
     paragraphs = [_paragraph(title, size_half_points=36, bold=True)]
-    for block in _blocks(markdown):
+    for block in _without_repeated_title(title, _blocks(markdown)):
         if block.bullet:
             paragraphs.append(_paragraph(block.text, bullet=True))
         elif block.level:
