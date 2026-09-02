@@ -4,9 +4,6 @@ import pytest
 
 from backend.services.document_parser import ParseError, classify, parse_document
 
-pytestmark = pytest.mark.asyncio
-
-
 def test_a_pdf_is_recognised_by_its_bytes_not_its_name():
     assert classify("notes.pdf", b"%PDF-1.7 ...") == "application/pdf"
 
@@ -27,6 +24,7 @@ def test_an_unknown_suffix_says_what_is_accepted():
         classify("data.csv", b"a,b\n1,2\n")
 
 
+@pytest.mark.asyncio
 async def test_plain_text_passes_through_without_docling():
     parsed = await parse_document("notes.txt", b"  hello world  \n")
     assert parsed.markdown == "hello world"
@@ -34,6 +32,7 @@ async def test_plain_text_passes_through_without_docling():
     assert parsed.media_type == "text/plain"
 
 
+@pytest.mark.asyncio
 async def test_empty_text_is_refused():
     with pytest.raises(ParseError, match="looks empty"):
         await parse_document("blank.txt", b"   \n")
