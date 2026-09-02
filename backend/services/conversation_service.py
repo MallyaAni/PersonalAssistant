@@ -512,6 +512,9 @@ _replying_to: ContextVar[str] = ContextVar("replying_to", default="")
 # _replying_to at each entry point; read where knowledge is retrieved so a
 # question about "this" is answered from this file alone.
 _active_document: ContextVar[str] = ContextVar("active_document", default="")
+# The turn's own words, for a decision made deep in a tool path: "forget
+# that document" must take back the document, not whatever change came last.
+_turn_query: ContextVar[str] = ContextVar("turn_query", default="")
 
 
 # Which of the assistant's earlier messages this turn is answering.
@@ -2954,6 +2957,7 @@ class ConversationService:
         )
         _replying_to.set(str((metadata or {}).get("replying_to") or "").strip())
         _active_document.set(str((metadata or {}).get("active_document_id") or "").strip())
+        _turn_query.set(str(query or "").strip())
         _previous_assistant_said.set(_answering(metadata, history))
         _turn_trace.set({"_started": time.monotonic()})
         _turn_speaker.set(_speaker_of(metadata))
@@ -3424,6 +3428,7 @@ class ConversationService:
         history = await self.repository.get_history(resolved_conversation_id, user_id, self.history_turn_limit)
         _replying_to.set(str((metadata or {}).get("replying_to") or "").strip())
         _active_document.set(str((metadata or {}).get("active_document_id") or "").strip())
+        _turn_query.set(str(query or "").strip())
         _previous_assistant_said.set(_answering(metadata, history))
         context: dict[str, Any] = {"user_id": user_id, "query": query}
         await self._attach_group(context, metadata, user_id, query, None)
@@ -3813,8 +3818,20 @@ class ConversationService:
     # resumes, Scout's schedule returns to what it was (or to none). The
     # undo is itself recorded, so the record says what happened, but it is
     # never undoable - "undo" twice walks back two changes.
+    # Words in the request that name a stored document as the thing to take
+    # back. A share is followed seconds later by the memory receipt its facts
+    # pass writes, so "the latest change" alone would undo the fact and keep
+    # the document (found 2026-09-02).
+    _DOCUMENT_WORDS = ("document", "file", "pdf", "attachment", "upload", "the doc")
+
     async def _undo_last_change(self, user_id: str) -> dict[str, Any]:
-        change = await self.scheduled_tasks.latest_undoable(user_id, _turn_conversation.get())
+        words = _turn_query.get().casefold()
+        wants_document = any(word in words for word in self._DOCUMENT_WORDS)
+        change = await self.scheduled_tasks.latest_undoable(
+            user_id,
+            _turn_conversation.get(),
+            receipt_kind="knowledge_document" if wants_document else None,
+        )
         if change is None:
             return {"kind": "nothing_to_undo"}
         before, after = change.get("before"), change.get("after")

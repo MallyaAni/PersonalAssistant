@@ -240,7 +240,10 @@ class ScheduledTaskRepository:
     # conversation given, only changes made in that conversation count: an
     # "undo" never reaches into another thread's reminders (deploy #16).
     async def latest_undoable(
-        self, user_id: str, conversation_id: str | None = None
+        self,
+        user_id: str,
+        conversation_id: str | None = None,
+        receipt_kind: str | None = None,
     ) -> dict[str, Any] | None:
         conditions = [
             ScheduledTaskChange.user_id == user_id,
@@ -250,14 +253,27 @@ class ScheduledTaskRepository:
         scoped = _uuid_or_none(conversation_id)
         if scoped is not None:
             conditions.append(ScheduledTaskChange.conversation_id == scoped)
+        # The newest change of any kind, or - when the person named what to
+        # take back ("forget that document") - the newest whose receipt is of
+        # that kind. A document share is followed seconds later by the memory
+        # receipt its facts pass writes, so "the latest change" alone would
+        # undo the fact and leave the document (2026-09-02). The receipt is
+        # stored sealed, so the kind is read after decryption, over a short
+        # window of recent changes.
         result = await self.session.execute(
             select(ScheduledTaskChange)
             .where(*conditions)
             .order_by(ScheduledTaskChange.created_at.desc())
-            .limit(1)
+            .limit(10 if receipt_kind else 1)
         )
-        change = result.scalar_one_or_none()
-        return _change_dict(change) if change else None
+        for change in result.scalars().all():
+            entry = _change_dict(change)
+            if receipt_kind is None:
+                return entry
+            after = entry.get("after") if isinstance(entry.get("after"), dict) else {}
+            if str(after.get("kind") or "") == receipt_kind:
+                return entry
+        return None
 
     async def mark_undone(self, user_id: str, change_id: str) -> bool:
         result = await self.session.execute(

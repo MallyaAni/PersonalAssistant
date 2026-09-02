@@ -2,6 +2,18 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-02 - "Forget that document" takes back the document, not the newest change
+
+A share is followed seconds later by the memory receipt its facts pass
+writes, so the undo path's "newest change" would have removed the fact and
+kept the document. When the request names a document ("forget that
+document", "drop the file"), the ledger now returns the newest change whose
+receipt is a knowledge_document; plain "forget that" keeps its meaning.
+Proven against the real ledger (a memory receipt written after a document
+receipt, and the document is the one found) and in unit tests; together with
+the re-upload supersede and the health-gated parse queue, this closes the
+edge cases found before adding a document writer.
+
 ## 2026-09-02 - Two bugs the first real room test surfaced: "forget that document" now forgets, and one statement is one fact
 
 "Forget that document" was answered with a polite sentence and no undo: the
