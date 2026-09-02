@@ -223,14 +223,15 @@ class TurnResult:
 
     reply: str
     images: tuple[TurnImage, ...] = field(default=())
-    # The knowledge document this turn stored, if it was a document turn, so
-    # the bubble that confirms it can be replied to and pin the document.
-    document_id: str = ""
     # Every address this turn's sources actually carried, read off the
     # stream. The wall in `_deliver` holds the reply to them: a bridge that
     # trusts its caller's rules has no rules, and on 2026-08-29 a reply full
     # of invented links reached a phone.
     allowed_urls: frozenset[str] = field(default=frozenset())
+    # The knowledge document this turn stored, if it was a document turn, so
+    # the bubble that confirms it can be replied to and pin the document.
+    # Last on purpose: callers build TurnResult positionally.
+    document_id: str = ""
 
 
 class BackendUnavailable(Exception):
