@@ -200,7 +200,11 @@ A document has three lives, and each is treated on its own:
    first; an archived one answers only when nothing current does, or when the
    person pinned it by replying to its bubble - so last year's plan stops
    competing with this week's without becoming unreachable. The reply is told
-   a passage is archived and its last date, and answers about it as past.
+   a passage is archived and its last date, that it is the plan they had (the
+   hotel it names is where they were booked), and answers about it as past.
+   Measured 2026-09-02: told only "answer as past", the reply found the
+   archived itinerary and declined ("a plan is not a record of where you
+   actually stayed"); told it is the plan they had, 3/3 name the hotel.
 3. **Its facts split into durable and dated.** The digest marks each
    supporting statement `dated` (a departure time, a meeting point, a day's
    schedule) or not (where they stayed, who went). The headline and durable

@@ -196,3 +196,36 @@ async def test_a_new_version_of_a_document_supersedes_the_old_one():
                 await manager.knowledge.delete(user_id, second["id"])
     except (ConnectionError, OSError) as exc:
         pytest.skip(f"database or embedding runtime unreachable: {type(exc).__name__}")
+
+
+# An archived document answers a question about the past from what it
+# arranged. Live on 2026-09-02 the reply found the archived itinerary and
+# still declined ("an itinerary wouldn't contain a record of where you
+# actually stayed"); the passage is told it is the plan they had. Three
+# reps on the real reply model.
+_ARCHIVED_PASSAGE = {
+    "content": "Day 1: Sun., October 11 - Arrivals throughout the day - Grand Hotel of Salerno 6:00 p.m. - Orientation 7:30 p.m. - Dinner in Hotel (included)",
+    "extra_data": {"page": 1},
+    "document": {"title": "Itinerary Amalfi Choral Tour.pdf", "source_uri": "upload://Itinerary.pdf", "status": "archived", "about_until": "2026-10-17"},
+}
+
+
+async def test_an_archived_itinerary_answers_where_they_stayed_as_past(llm):
+    from backend.agents.graph import _build_system_prompt, turn_context_messages
+    from backend.tests.functional.semantic import states
+
+    context = {"knowledge": [_ARCHIVED_PASSAGE]}
+    messages = [{"role": "system", "content": _build_system_prompt(context)}]
+    messages.extend(turn_context_messages(context))
+    messages.append({"role": "user", "content": "which hotel did we stay at in Salerno on the choral tour?"})
+    hits = 0
+    for _ in range(3):
+        text = str(llm.chat(messages, 400, None, 0.0)["content"]).strip()
+        named = "grand hotel" in text.lower() and "salerno" in text.lower()
+        past = states(text, "the reply speaks about the stay or the tour as something in the past, or gives its date")
+        declined = states(text, "the reply refuses to say which hotel, or says it cannot tell from the document")
+        if named and past and not declined:
+            hits += 1
+        else:
+            print("MISS:", text[:200].replace("\n", " "))
+    assert hits >= 2, f"{hits}/3 named the Grand Hotel of Salerno as where they stayed, in the past"

@@ -2,6 +2,16 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-02 - An archived itinerary answers where they stayed
+
+The retention live check found the archived itinerary and the reply still
+declined: "an itinerary wouldn't contain a record of where you actually
+stayed". The archived-passage instruction now says the passage is the plan
+they had - the hotel it names is where they were booked - to be answered in
+the past tense with its date, not declined for being a plan. Held on the
+real reply model, three reps, in the document-knowledge functional file; the
+live check now demands the hotel's name and no refusal.
+
 ## 2026-09-02 - A document has three lives: the file, its weight in retrieval, its facts
 
 Documents had no age. Now the digest step also reads the last date a
