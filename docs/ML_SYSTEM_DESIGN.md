@@ -183,9 +183,35 @@ inherited from the DSpark reference command, not measured here, against vLLM
 defaults of 128 and 2,048 - the flag table in section 1 says why they hold
 up (admission control for a household on a decoder where each extra
 sequence is nearly free: 85.7 to 383.5 tok/s aggregate at 1 to 6, zero
-preemptions in 1,511 requests) and which measurement would move them. Redis
-prioritises a foreground chat over background deck microtasks; nothing
+preemptions in 1,511 requests) and which measurement would move them. Nothing
 moves a model between hosts at request time.
+
+**Foreground priority, and its bound.** Redis gives a foreground chat priority
+over background work (`MODEL_GATE_*`). Priority with no bound is starvation,
+though, and it was: `background()` waited for a moment with *zero* interactive
+requests in flight, which is instant on a quiet machine and never on a busy
+one. On 2026-09-02 a deck spent 7m09s on one outline call while chat ran at
+17-27 calls a minute and this engine reported `Waiting: 0 reqs` at 0.5% KV
+usage — nothing was queued, the deck was declining to start. Background work
+now yields for `MODEL_GATE_MAX_WAIT_SECONDS` (20 s, a judgement) and then joins
+the batch, which is what `--max-num-seqs 6` exists to share.
+
+**What a deck costs the foreground**, measured 2026-09-02 with short chat
+probes running throughout, one 6-slide deck per arm:
+
+| Arm | Chat median | Chat p95 | Deck |
+| --- | --- | --- | --- |
+| No deck running | 0.17 s | 0.24 s | — |
+| Deck at concurrency 2 | 0.26 s | 0.39 s | 80.4 s |
+| Deck at concurrency 4 | 0.27 s | 0.40 s | 66.5 s |
+
+This is the measurement the flag table asks for at line `--max-num-seqs`
+("per-stream latency with a deck running"), taken at 2 and 4 rather than 8 and
+12. Two readings decide `PRESENTATION_SLIDE_CONCURRENCY`: almost the whole
+foreground cost is a deck running *at all* rather than how wide it is, and
+widening from 2 to 4 buys the deck 17% for about 10 ms of chat median. Four of
+six sequence slots is what makes this a tradeoff at all, so re-take it if
+`--max-num-seqs` moves.
 
 **Prefix caching: on, and the prompt is laid out for it.** At an 11.7k-token
 prefix, first token is 5,909 ms cold and ~512 ms warm; the cache commits

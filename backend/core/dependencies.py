@@ -502,6 +502,7 @@ def get_model_execution_gate() -> ModelExecutionGate:
         settings.MODEL_GATE_ENABLED,
         settings.MODEL_GATE_LEASE_SECONDS,
         settings.MODEL_GATE_POLL_SECONDS,
+        settings.MODEL_GATE_MAX_WAIT_SECONDS,
     )
 
 
@@ -544,7 +545,7 @@ def get_presentation_agent(llm: PresentationLlmDependency) -> PresentationAgent:
     )
 
 
-# Build the presentation planner with lower-priority per-slide model leases.
+# Build the presentation planner with one lower-priority lease for the deck.
 def get_background_presentation_agent() -> PresentationAgent:
     return PresentationAgent(
         LLMPresentationProvider(
@@ -555,6 +556,11 @@ def get_background_presentation_agent() -> PresentationAgent:
             model_gate=get_model_execution_gate(),
             background=True,
             research=get_deck_research(),
+            slide_concurrency=settings.PRESENTATION_SLIDE_CONCURRENCY,
+            # The builder, not the client it returns: this function makes a new
+            # client on every call, which is exactly what a concurrent worker
+            # needs to escape the per-instance request lock.
+            llm_factory=get_presentation_llm_client,
         )
     )
 

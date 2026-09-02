@@ -7,6 +7,49 @@ was checked by running it, not by reading it. The seven image scenarios can
 be re-run any time with `python -m backend.cli.exercise_image_scenarios`
 inside the backend container.
 
+## 2026-09-02 — decks plan their slides together, and background work stops starving (NOT DEPLOYED)
+
+Traced from a live deck that took 12m32s for seven slides while the inference
+engine sat at `Waiting: 0 reqs`, 0.5% KV. Three things were serialising it and
+all three are addressed; the full reasoning and numbers are in the CHANGELOG
+entry of the same date.
+
+- **`backend/core/model_gate.py`** — `background()` waited for *zero*
+  interactive requests before starting, which never happens under sustained
+  chat (17-27 calls/min when measured). It now yields for
+  `MODEL_GATE_MAX_WAIT_SECONDS` (20 s) then proceeds; a held lease is renewed
+  so a whole deck does not outlive it; Redis keys are namespaced so a test
+  cannot stall the live scheduler.
+- **`backend/presentations/provider.py`** — slide calls are scheduled together
+  (`PRESENTATION_SLIDE_CONCURRENCY`, 4) and consumed in outline order, and the
+  background lease is taken once per deck rather than once per call.
+- **The trap that would have made it a no-op**: `LLMClient` serialises its own
+  requests through a per-instance lock guarding the `reasoning_effort` latch,
+  so each concurrent worker gets its own client from `llm_factory`. Without a
+  factory the provider plans one slide at a time rather than pretending. The
+  lock itself was deliberately not touched — every other caller relies on it.
+
+Measured on the deployed stack, one 6-slide deck per arm: concurrency 1
+130.65 s, 2 75.66 s, 4 50.30 s, 8 51.89 s (four is the knee). Two further
+1-vs-4 runs gave 1.86x and 1.46x. Foreground cost with chat probes running:
+no deck 0.17 s median / 0.24 s p95; deck at 2, 0.26/0.39; deck at 4,
+0.27/0.40 — so almost all of the cost is a deck running at all, not its width.
+
+Verified: 10 new unit tests green (5 gate, 5 fan-out), deck functional suite
+6/6 against the real model in 4m47s including new `create_progress` coverage,
+2,387 unit tests green in the container. The two failures in that run are the
+documented environment leak (`AUTH_COOKIE_SECURE`, `LLM_BASE_URL` from the real
+container env) and pass when those are neutralised — not regressions.
+
+**Next atomic task: deploy it.** Nothing is deployed; the measurements above
+were taken by running the new code inside `anios_backend` via the `docker cp`
+overlay, which does not affect the running server. Before `bash
+scripts/deploy.sh`, check `git status --porcelain` in the Spark's `~/anios` —
+deploy.sh builds from that working tree, and opencode edits in it. Two live
+values to confirm reached the containers afterwards, since a `.env` entry beats
+a compose default: `docker compose exec -T presentation-worker printenv | grep
+-E 'PRESENTATION_SLIDE_CONCURRENCY|MODEL_GATE_MAX_WAIT_SECONDS'`.
+
 ## 2026-09-01 — links are hyperlinks on every surface (deployed 2ee4c4a)
 
 Chat replies and digests pasted bare long URLs: the listing wrote `Map:

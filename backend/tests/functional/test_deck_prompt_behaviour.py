@@ -24,6 +24,21 @@ def _provider(llm):
     return LLMPresentationProvider(llm, max_tokens=1_024)
 
 
+def _progressive_provider(llm):
+    from backend.core.dependencies import get_llm_client
+
+    # The path the worker actually runs, and the one nothing here covered: a
+    # deck is built by `create_progress`, not `create`. The factory is what
+    # makes the slide calls concurrent - one client serialises its own requests,
+    # so without it this would pass while proving only the sequential path.
+    return LLMPresentationProvider(
+        llm,
+        max_tokens=1_024,
+        slide_concurrency=4,
+        llm_factory=get_llm_client,
+    )
+
+
 async def test_a_deck_has_distinct_slides_that_advance(llm):
     deck = await _provider(llm).create("a short deck about the water cycle, 4 slides")
 
@@ -34,6 +49,30 @@ async def test_a_deck_has_distinct_slides_that_advance(llm):
     # the failure this model reaches for when it runs out of material.
     assert len(set(titles)) == len(titles), titles
     assert all(titles), "every slide needs a title"
+
+
+async def test_a_progressive_deck_arrives_in_order_and_stays_distinct(llm):
+    drafts = [
+        draft
+        async for draft in _progressive_provider(llm).create_progress(
+            "a deck about the water cycle, 4 slides"
+        )
+    ]
+
+    assert drafts, "a deck with no drafts never reaches the person waiting"
+    # Each draft is the one before it plus a slide. Planning the slides
+    # concurrently changes when answers arrive and must not change this: it is
+    # what the person watches while they wait.
+    counts = [len(draft.specification.slides) for draft in drafts]
+    assert counts == list(range(1, len(drafts) + 1)), counts
+    final = drafts[-1].specification
+    titles = [slide.title.strip().casefold() for slide in final.slides]
+    assert all(titles), titles
+    # The failure a fan-out would introduce is a slide planned against the wrong
+    # outline entry, and what that looks like from outside is a repeated slide.
+    assert len(set(titles)) == len(titles), titles
+    thin = [slide.title for slide in final.slides[1:] if len(slide.elements) < 2]
+    assert not thin, thin
 
 
 async def test_every_slide_carries_content_not_just_a_heading(llm):

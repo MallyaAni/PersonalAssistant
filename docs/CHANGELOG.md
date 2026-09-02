@@ -2,6 +2,60 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-02 - A deck stops waiting for a quiet machine, and plans its slides together
+
+A live deck was watched taking 12m32s for seven slides: 7m09s of that was the
+single outline call, and the inference engine reported `Waiting: 0 reqs` at
+0.5% KV usage throughout. Nothing was queued. Two separate mechanisms were
+each serialising the deck, and a third would have undone the fix for both.
+
+`ModelExecutionGate.background()` waited for a moment with *zero* interactive
+requests in flight before starting. That is instant on a quiet machine and
+never on a busy one - chat was running at 17-27 calls a minute - so the rule
+that was meant to give chat priority was starving the deck outright. It now
+yields for `MODEL_GATE_MAX_WAIT_SECONDS` (20 s) and then takes its lease
+anyway; the exclusivity between two background tasks is unchanged, and a held
+lease is renewed so work outliving one lease is not evicted mid-run. This is
+the same correction `interactive()` needed once before, applied to the other
+half of the class.
+
+The slide calls then ran one at a time, though nothing made them sequential:
+each is built from the outline alone - its own entry plus the titles and beats
+of earlier ones, all read from `outline.slides`, never from an earlier answer.
+They are now scheduled together and consumed in outline order, so each draft is
+still a growing prefix of the same deck. The lease is taken once for the deck
+rather than once per call, because an exclusive lease per call serialises the
+fan-out straight back into a queue.
+
+The third mechanism was the one that would have made this a change with no
+effect: `OpenAICompatibleInferenceProvider` serialises its own requests through
+a per-instance `threading.Lock`, which guards the "engine rejected
+reasoning_effort, omit it from now on" latch. A shared client would have turned
+the fan-out back into a queue while looking like it worked, so each concurrent
+worker is built its own client from a factory, and a provider with no factory
+plans one slide at a time rather than pretending otherwise. The lock itself was
+left alone: it is load-bearing for every other caller in the system.
+
+Measured on the two-Spark DeepSeek deployment, one 6-slide deck per arm,
+research off: concurrency 1 took 130.65 s, 2 took 75.66 s (1.73x), 4 took
+50.30 s (2.60x), 8 took 51.89 s (2.52x) - four is the knee, and eight bought
+nothing. Two further 1-vs-4 runs measured 1.86x and 1.46x, so the range is
+1.5-2.6x with a median near 1.9x. What it costs the foreground, with chat
+probes running throughout: no deck, median 0.17 s / p95 0.24 s; a deck at 2,
+0.26 s / 0.39 s; a deck at 4, 0.27 s / 0.40 s. Nearly all of that cost is a
+deck running at all rather than how wide it is, which is what justifies 4 of
+the engine's 6 sequence slots; it is the per-stream measurement
+`docs/ML_SYSTEM_DESIGN.md` had listed as missing against `--max-num-seqs`.
+
+Verified: 5 new gate tests and 5 new fan-out tests green, including that the
+deck takes exactly one lease for five model calls and that two background tasks
+still never run together; the deck functional suite 6/6 against the real model
+in 4m47s, with a new test covering `create_progress` - the path the worker
+actually runs, which had no live coverage at all before this; 2,387 unit tests
+green in the deployed container, the two failures being the documented
+in-container environment leak (`AUTH_COOKIE_SECURE`, `LLM_BASE_URL`) and
+passing once those are neutralised. Not yet deployed.
+
 ## 2026-09-02 - Documents become knowledge: upload, parse, cite, pin, forget (Phases 2-4 of document knowledge)
 
 A PDF, Word or PowerPoint file attached on the web chat or sent by iMessage

@@ -388,6 +388,8 @@ services:
       - ARTIFACT_STORAGE_ROOT=/app/data/artifacts
       - PRESENTATION_RENDERER_BASE_URL=http://presentation-renderer:8002
       - PRESENTATION_REQUIRE_OFFICE_VALIDATION=true
+      # Slide calls read the outline, never each other, so they run together.
+      - PRESENTATION_SLIDE_CONCURRENCY=${PRESENTATION_SLIDE_CONCURRENCY:-4}
     extra_hosts: *spark-hosts
     volumes:
       # The image embedder's weights, 374 MB of ONNX. data/ is in
@@ -547,6 +549,8 @@ services:
       - ARTIFACT_STORAGE_ROOT=/app/data/artifacts
       - PRESENTATION_RENDERER_BASE_URL=http://presentation-renderer:8002
       - PRESENTATION_REQUIRE_OFFICE_VALIDATION=true
+      # Slide calls read the outline, never each other, so they run together.
+      - PRESENTATION_SLIDE_CONCURRENCY=${PRESENTATION_SLIDE_CONCURRENCY:-4}
       # Deck grounding runs in this process, not the API, because the durable
       # worker is what plans a deck. Without these the worker's search provider
       # is silently disabled and every figure comes from recollection again.
@@ -594,6 +598,10 @@ services:
       - MODEL_GATE_ENABLED=true
       - MODEL_GATE_LEASE_SECONDS=${MODEL_GATE_LEASE_SECONDS:-300}
       - MODEL_GATE_POLL_SECONDS=${MODEL_GATE_POLL_SECONDS:-0.1}
+      # How long background work gives way before going anyway. Unbounded, this
+      # is starvation rather than priority: a deck waited 7m09s on one call
+      # while chat ran and the engine sat idle.
+      - MODEL_GATE_MAX_WAIT_SECONDS=${MODEL_GATE_MAX_WAIT_SECONDS:-20}
     extra_hosts: *spark-hosts
     volumes:
       # The ONNX weights: the image embedder and the discovery cross-encoder.
@@ -963,6 +971,8 @@ services:
       - ARTIFACT_STORAGE_ROOT=/app/data/artifacts
       - PRESENTATION_RENDERER_BASE_URL=http://presentation-renderer:8002
       - PRESENTATION_REQUIRE_OFFICE_VALIDATION=true
+      # Slide calls read the outline, never each other, so they run together.
+      - PRESENTATION_SLIDE_CONCURRENCY=${PRESENTATION_SLIDE_CONCURRENCY:-4}
       - PRESENTATION_RESEARCH_ENABLED=${PRESENTATION_RESEARCH_ENABLED:-true}
       # Opt-in web search. Empty disables it: routing still runs and logs its
       # decision, but no query is ever sent.
@@ -1009,6 +1019,10 @@ services:
       - MODEL_GATE_ENABLED=true
       - MODEL_GATE_LEASE_SECONDS=${MODEL_GATE_LEASE_SECONDS:-300}
       - MODEL_GATE_POLL_SECONDS=${MODEL_GATE_POLL_SECONDS:-0.1}
+      # How long background work gives way before going anyway. Unbounded, this
+      # is starvation rather than priority: a deck waited 7m09s on one call
+      # while chat ran and the engine sat idle.
+      - MODEL_GATE_MAX_WAIT_SECONDS=${MODEL_GATE_MAX_WAIT_SECONDS:-20}
     extra_hosts: *spark-hosts
     volumes:
       # The image embedder's weights, 374 MB of ONNX. data/ is in

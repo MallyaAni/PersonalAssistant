@@ -625,6 +625,39 @@ class Settings(BaseSettings):
         ge=256,
         le=4_096,
     )
+    # How many slide calls a progressive deck may have in flight at once.
+    #
+    # The outline fixes every slide's title, purpose and layout, and each slide
+    # call is told what came before from the *outline* rather than from earlier
+    # answers, so the calls never depended on each other - they were sequential
+    # only because they were written as a loop. One deck measured on 2026-09-02
+    # spent 44-64 s per slide with the engine near idle, which is a slide a
+    # minute for a deck nobody can use until the last one lands.
+    #
+    # Each concurrent worker gets its own inference client, because one client
+    # serialises its own requests through a per-instance lock (see the comment
+    # on PresentationProvider's factory). Raising this spends more of the
+    # serving engine's batch on one deck; the ceiling is deliberately low
+    # because a deck is background work and chat is not.
+    #
+    # Measured here 2026-09-02 on the two-Spark DeepSeek deployment, one
+    # 6-slide deck per arm, research off: concurrency 1 took 130.65 s, 2 took
+    # 75.66 s (1.73x), 4 took 50.30 s (2.60x), 8 took 51.89 s (2.52x). Four is
+    # the knee - eight bought nothing and would take more of the batch from
+    # chat. Two further 1-vs-4 runs measured 1.86x and 1.46x, so the honest
+    # range is 1.5-2.6x with a median near 1.9x; the spread is other traffic on
+    # the same deployment. What would change it: a serving change that raises
+    # concurrent decode throughput, or an outline pass that stops being serial.
+    #
+    # Four rather than two because of what it costs the foreground, measured
+    # the same day with short chat probes running throughout: no deck, median
+    # 0.17 s / p95 0.24 s; a deck at 2, median 0.26 s / p95 0.39 s, deck 80.4 s;
+    # a deck at 4, median 0.27 s / p95 0.40 s, deck 66.5 s. Going from two to
+    # four costs chat about 10 ms of median and buys the deck 17%. Nearly all
+    # of the foreground cost is a deck running *at all*, not how wide it is -
+    # which is the number to re-take if `--max-num-seqs` (6) ever changes,
+    # since four slots of six is what makes this a real tradeoff.
+    PRESENTATION_SLIDE_CONCURRENCY: int = Field(default=4, ge=1, le=8)
     PRESENTATION_REQUIRE_OFFICE_VALIDATION: bool = False
     PRESENTATION_JOB_POLL_SECONDS: float = Field(default=0.5, ge=0.1, le=30)
     PRESENTATION_JOB_LEASE_SECONDS: float = Field(default=300, ge=30, le=3_600)
@@ -644,6 +677,28 @@ class Settings(BaseSettings):
     MODEL_GATE_ENABLED: bool = False
     MODEL_GATE_LEASE_SECONDS: float = Field(default=300, ge=30, le=900)
     MODEL_GATE_POLL_SECONDS: float = Field(default=0.1, ge=0.05, le=2)
+    # How long background work yields to interactive work before going anyway.
+    #
+    # Without a bound this is not a priority, it is starvation: `background()`
+    # waited for a moment with *zero* interactive requests in flight, and on
+    # 2026-09-02 a deck spent 7m09s on its outline call while chat ran at 17-27
+    # calls a minute. At that rate the quiet moment never arrives, and the job
+    # a person is watching makes no progress at all while the machine looks
+    # idle - vLLM reported `Waiting: 0 reqs` and 0.5% KV cache throughout.
+    #
+    # Yielding is still the common case: a quiet machine acquires on the first
+    # poll and nothing changes. This only decides how long a starved background
+    # task waits before joining the batch, which the serving engine is
+    # configured to handle - see the module docstring in core/model_gate.py.
+    #
+    # What proceeding anyway costs the foreground, measured 2026-09-02 with
+    # short chat probes running throughout: median 0.17 s -> 0.26 s and p95
+    # 0.24 s -> 0.39 s while a deck runs. That is the price of a deck making
+    # progress at all, and it is paid only while one is running. Twenty seconds
+    # is a judgement, not a measurement: long enough that a normal burst of
+    # chat still goes first, short enough that a person watching a progress bar
+    # sees it move. Lower it if background work still reads as stalled.
+    MODEL_GATE_MAX_WAIT_SECONDS: float = Field(default=20.0, ge=0.0, le=600)
     IMAGE_MAX_UPLOAD_BYTES: int = Field(
         default=10 * 1024 * 1024,
         ge=1024,

@@ -3,6 +3,7 @@ import json
 import re
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Callable
+from contextlib import asynccontextmanager
 from typing import Any
 
 from pydantic import BaseModel
@@ -22,6 +23,7 @@ from backend.presentations.editing import SlideEdit
 from backend.presentations.planner import (
     DeckDraft,
     DeckOutline,
+    DeckOutlineSlide,
     DeckPlan,
     PlannedSlide,
     compile_deck_plan,
@@ -258,6 +260,8 @@ class LLMPresentationProvider(PresentationProvider):
         model_gate: ModelExecutionGate | None = None,
         background: bool = False,
         research: DeckResearch | None = None,
+        slide_concurrency: int = 1,
+        llm_factory: Callable[[], LLMClient] | None = None,
     ) -> None:
         self.llm = llm
         self.max_tokens = max_tokens
@@ -265,6 +269,13 @@ class LLMPresentationProvider(PresentationProvider):
         self.revision_max_tokens = revision_max_tokens
         self.model_gate = model_gate
         self.background = background
+        self.slide_concurrency = slide_concurrency
+        # An inference client serialises its own requests through a per-instance
+        # lock, which exists so the "engine rejected reasoning_effort, omit it
+        # from now on" latch stays coherent. So concurrency needs a client each,
+        # not a shared one: without a factory the fan-out would queue on that
+        # lock and look like a scheduling win while changing nothing.
+        self.llm_factory = llm_factory
         # Absent, the deck is planned from the model's recollection alone, which
         # is what produced invented statistics. The contract still forbids
         # unsupported figures, so an ungrounded deck degrades to plainer slides
@@ -330,75 +341,145 @@ class LLMPresentationProvider(PresentationProvider):
             },
             {"role": "user", "content": prompt},
         ]
-        outline = await self._validated_reply(
-            outline_messages,
-            DeckOutline,
-            max_tokens=min(self.plan_max_tokens, 1_024),
-            expected_slide_count=expected_slides,
-        )
-        if not isinstance(outline, DeckOutline):
-            raise TypeError("Presentation provider returned the wrong outline")
-        planned_slides: list[PlannedSlide] = []
-        for index, outlined_slide in enumerate(outline.slides, start=1):
-            slide_messages = [
-                {
-                    "role": "system",
-                    "content": (
-                        slide_content_preamble(
-                            index, len(outline.slides), outline.title
-                        )
-                        + rendered_sources
-                    ),
-                },
-                {
-                    "role": "user",
-                    "content": json.dumps(
-                        {
-                            "brief": prompt,
-                            "narrative": outline.narrative,
-                            "through_line": outline.through_line,
-                            # What came before, so this slide follows rather
-                            # than restates. Titles and beats only: sending the
-                            # earlier content would grow every later request.
-                            "already_covered": [
-                                {"title": earlier.title, "beat": earlier.beat}
-                                for earlier in outline.slides[: index - 1]
-                            ],
-                            "slide": outlined_slide.model_dump(mode="json"),
-                        },
-                        ensure_ascii=False,
-                    ),
-                },
+        # One lease for the whole deck rather than one per call. Taken per call,
+        # the exclusive background lease serialised the fan-out straight back
+        # into a queue, and every slide paid the wait for a quiet machine again.
+        async with self._deck_lease():
+            outline = await self._validated_reply(
+                outline_messages,
+                DeckOutline,
+                max_tokens=min(self.plan_max_tokens, 1_024),
+                expected_slide_count=expected_slides,
+                lease=False,
+            )
+            if not isinstance(outline, DeckOutline):
+                raise TypeError("Presentation provider returned the wrong outline")
+            # Every slide call reads the outline and nothing else - what came
+            # before is quoted from `outline.slides`, never from an earlier
+            # answer - so the calls were only ever sequential because they were
+            # written as a loop. They are scheduled together and consumed in
+            # order, which keeps each draft a growing prefix of the same deck.
+            pool = self._slide_client_pool(len(outline.slides))
+            tasks = [
+                asyncio.create_task(
+                    self._plan_one_slide(
+                        prompt, outline, rendered_sources, index, outlined, pool
+                    )
+                )
+                for index, outlined in enumerate(outline.slides, start=1)
             ]
+            planned_slides: list[PlannedSlide] = []
+            try:
+                for outlined_slide, task in zip(outline.slides, tasks, strict=True):
+                    planned = await task
+                    planned_slides.append(
+                        planned.model_copy(
+                            update={
+                                "title": outlined_slide.title,
+                                "purpose": outlined_slide.purpose,
+                                # The outline owns the deck's shape because it
+                                # chose with every slide in view. If the slide
+                                # pass did not supply what that layout needs,
+                                # compilation degrades it to bullets rather than
+                                # rendering an empty panel.
+                                "layout": outlined_slide.layout,
+                            }
+                        )
+                    )
+                    specification = compile_deck_plan(
+                        DeckPlan(
+                            title=outline.title,
+                            subtitle=outline.subtitle,
+                            slides=planned_slides,
+                        )
+                    )
+                    yield DeckDraft(specification, len(outline.slides))
+            finally:
+                # A failed or abandoned deck must not leave slide calls running
+                # against the model with nobody waiting for their answers.
+                for task in tasks:
+                    task.cancel()
+                await asyncio.gather(*tasks, return_exceptions=True)
+
+    # Plan one slide's content from the outline alone, on a client of its own.
+    async def _plan_one_slide(
+        self,
+        prompt: str,
+        outline: DeckOutline,
+        rendered_sources: str,
+        index: int,
+        outlined_slide: DeckOutlineSlide,
+        pool: "asyncio.Queue[LLMClient]",
+    ) -> PlannedSlide:
+        slide_messages = [
+            {
+                "role": "system",
+                "content": (
+                    slide_content_preamble(index, len(outline.slides), outline.title)
+                    + rendered_sources
+                ),
+            },
+            {
+                "role": "user",
+                "content": json.dumps(
+                    {
+                        "brief": prompt,
+                        "narrative": outline.narrative,
+                        "through_line": outline.through_line,
+                        # What came before, so this slide follows rather than
+                        # restates. Titles and beats only: sending the earlier
+                        # content would grow every later request.
+                        "already_covered": [
+                            {"title": earlier.title, "beat": earlier.beat}
+                            for earlier in outline.slides[: index - 1]
+                        ],
+                        "slide": outlined_slide.model_dump(mode="json"),
+                    },
+                    ensure_ascii=False,
+                ),
+            },
+        ]
+        # Checking a client out of the pool is what bounds the fan-out: the pool
+        # holds one client per permitted worker, so a slide waits for a free
+        # client rather than for a separate semaphore that could disagree.
+        client = await pool.get()
+        try:
             planned = await self._validated_reply(
                 slide_messages,
                 PlannedSlide,
                 max_tokens=self.revision_max_tokens,
                 required_layout=outlined_slide.layout,
+                llm=client,
+                lease=False,
             )
-            if not isinstance(planned, PlannedSlide):
-                raise TypeError("Presentation provider returned the wrong slide")
-            planned_slides.append(
-                planned.model_copy(
-                    update={
-                        "title": outlined_slide.title,
-                        "purpose": outlined_slide.purpose,
-                        # The outline owns the deck's shape because it chose
-                        # with every slide in view. If the slide pass did not
-                        # supply what that layout needs, compilation degrades it
-                        # to bullets rather than rendering an empty panel.
-                        "layout": outlined_slide.layout,
-                    }
-                )
-            )
-            specification = compile_deck_plan(
-                DeckPlan(
-                    title=outline.title,
-                    subtitle=outline.subtitle,
-                    slides=planned_slides,
-                )
-            )
-            yield DeckDraft(specification, len(outline.slides))
+        finally:
+            pool.put_nowait(client)
+        if not isinstance(planned, PlannedSlide):
+            raise TypeError("Presentation provider returned the wrong slide")
+        return planned
+
+    # Build one inference client per permitted concurrent slide worker.
+    def _slide_client_pool(self, slide_count: int) -> "asyncio.Queue[LLMClient]":
+        # Without a factory there is one client, and one client means one
+        # request at a time however many workers ask - so the pool says so
+        # rather than fanning out into that client's own lock.
+        wanted = max(1, min(self.slide_concurrency, slide_count))
+        clients = [self.llm]
+        if self.llm_factory is not None:
+            clients.extend(self.llm_factory() for _ in range(wanted - 1))
+        pool: asyncio.Queue[LLMClient] = asyncio.Queue()
+        for client in clients:
+            pool.put_nowait(client)
+        return pool
+
+    # Hold the background lease across a deck's model work, when there is one.
+    @asynccontextmanager
+    async def _deck_lease(self) -> AsyncIterator[None]:
+        if self.model_gate is None or not self.background:
+            yield
+            return
+        async with self.model_gate.background():
+            yield
 
     # Ask for one replacement slide while preserving its stable slide identifier.
     # Plan one additional slide that fits an existing deck.
@@ -516,20 +597,26 @@ class LLMPresentationProvider(PresentationProvider):
             | None
         ) = None,
         required_layout: str | None = None,
+        llm: LLMClient | None = None,
+        lease: bool = True,
     ) -> DeckOutline | DeckPlan | SlideEdit | PlannedSlide:
         schema = _response_schema(response_type, expected_slide_count, required_layout)
+        client = llm or self.llm
         for attempt in range(2):
-            if self.model_gate is not None and self.background:
+            # `lease=False` says the caller already holds the deck's lease. The
+            # Redis lock is not reentrant, so acquiring again here would wait on
+            # a lock this same call stack is holding, which never clears.
+            if lease and self.model_gate is not None and self.background:
                 async with self.model_gate.background():
                     result = await asyncio.to_thread(
-                        self.llm.chat,
+                        client.chat,
                         messages,
                         max_tokens or self.max_tokens,
                         schema,
                     )
             else:
                 result = await asyncio.to_thread(
-                    self.llm.chat,
+                    client.chat,
                     messages,
                     max_tokens or self.max_tokens,
                     schema,
