@@ -3827,11 +3827,14 @@ class ConversationService:
     async def _undo_last_change(self, user_id: str) -> dict[str, Any]:
         words = _turn_query.get().casefold()
         wants_document = any(word in words for word in self._DOCUMENT_WORDS)
-        change = await self.scheduled_tasks.latest_undoable(
-            user_id,
-            _turn_conversation.get(),
-            receipt_kind="knowledge_document" if wants_document else None,
-        )
+        # The kind is passed only when the words ask for it, so every caller
+        # and test double that knows the two-argument form keeps working.
+        if wants_document:
+            change = await self.scheduled_tasks.latest_undoable(
+                user_id, _turn_conversation.get(), receipt_kind="knowledge_document"
+            )
+        else:
+            change = await self.scheduled_tasks.latest_undoable(user_id, _turn_conversation.get())
         if change is None:
             return {"kind": "nothing_to_undo"}
         before, after = change.get("before"), change.get("after")
