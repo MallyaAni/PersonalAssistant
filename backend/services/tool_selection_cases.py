@@ -488,6 +488,12 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
     SelectionCase(
         "push tomorrow's reminder to friday", MANAGE_TASKS, "task_reschedule"
     ),
+    # Real phrasings (ani.mallya, 2026-09): a set is a valid selection, and
+    # "delete the paused ones" was read as a list until the tool described
+    # sets. The router must still choose manage_tasks for a plural request.
+    SelectionCase("delete the paused ones", MANAGE_TASKS, "task_change"),
+    SelectionCase("pause all the weather ones", MANAGE_TASKS, "task_change"),
+    SelectionCase("cancel the morning reminders", MANAGE_TASKS, "task_change"),
     # --- skills -------------------------------------------------------------
     SelectionCase(
         "when i say standup, summarise my unread messages into three bullets",

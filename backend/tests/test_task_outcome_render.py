@@ -80,3 +80,34 @@ def test_a_listed_task_with_no_next_run_is_listed_without_one():
     )
     assert '"stretch" - every weekday at 9:00 AM (paused)' in text
     assert "next " not in text
+
+
+def test_several_cancelled_tasks_are_all_named():
+    # A set cancelled at once ("delete the paused ones") records every task it
+    # touched; the reply needs each name, not a count.
+    text = _render_task_outcome(
+        {
+            "kind": "cancelled",
+            "tasks": [
+                {
+                    "instruction": "call the bank",
+                    "cadence": "once",
+                    "hour": 9,
+                    "minute": 0,
+                    "enabled": False,
+                    "timezone": "America/New_York",
+                    "on_date": "2026-09-03",
+                },
+                {
+                    "instruction": "water the plants",
+                    "cadence": "daily",
+                    "hour": 8,
+                    "minute": 0,
+                    "enabled": False,
+                    "timezone": "America/New_York",
+                },
+            ],
+        }
+    )
+    assert '"call the bank"' in text
+    assert '"water the plants"' in text

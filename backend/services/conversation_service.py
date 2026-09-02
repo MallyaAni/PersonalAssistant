@@ -3726,38 +3726,53 @@ class ConversationService:
             return await self._undo_last_change(user_id)
         if not tasks:
             return {"kind": "none"}
-        from backend.tasks.picker import pick_task
+        from backend.tasks.picker import pick_many_tasks
 
         picker_llm = (
             self.main_action_selector.llm
             if self.main_action_selector is not None
             else self.llm
         )
-        chosen = await pick_task(
+        chosen = await pick_many_tasks(
             picker_llm, action.which, tasks, hint=_previous_assistant_said.get()
         )
         _trace("picker", {"which": action.which, "hint": _previous_assistant_said.get()[:160], "chosen": chosen})
-        if chosen is None:
+        if not chosen:
             return {"kind": "not_found", "tasks": tasks, "requested": action.which}
-        before = next(item for item in tasks if item["id"] == chosen)
+        by_id = {item["id"]: item for item in tasks}
+        selected = [by_id[cid] for cid in chosen if cid in by_id]
+        if not selected:
+            return {"kind": "not_found", "tasks": tasks, "requested": action.which}
         if action.operation == "cancel":
-            await self.scheduled_tasks.delete_owned(user_id, chosen)
-            await self.scheduled_tasks.record_change(
-                user_id, "task", "cancel", before, None, task_id=chosen, conversation_id=_turn_conversation.get())
-            return {"kind": "cancelled", "task": before}
-        if action.operation == "reschedule":
-            outcome = await self._reschedule_task(user_id, chosen, action, before)
-            if outcome.get("kind") == "rescheduled":
+            for before in selected:
+                await self.scheduled_tasks.delete_owned(user_id, before["id"])
                 await self.scheduled_tasks.record_change(
-                    user_id, "task", "reschedule", before, outcome["task"], task_id=chosen, conversation_id=_turn_conversation.get())
-            return outcome
-        await self.scheduled_tasks.set_enabled(
-            user_id, chosen, action.operation == "resume"
-        )
-        task = await self.scheduled_tasks.get_owned(user_id, chosen) or before
-        await self.scheduled_tasks.record_change(
-            user_id, "task", action.operation, before, task, task_id=chosen, conversation_id=_turn_conversation.get())
-        return {"kind": f"{action.operation}d", "task": task}
+                    user_id, "task", "cancel", before, None, task_id=before["id"], conversation_id=_turn_conversation.get())
+            return {"kind": "cancelled", "tasks": selected}
+        if action.operation == "reschedule":
+            moved: list[dict[str, Any]] = []
+            first_failure: dict[str, Any] | None = None
+            for before in selected:
+                outcome = await self._reschedule_task(user_id, before["id"], action, before)
+                if outcome.get("kind") == "rescheduled":
+                    await self.scheduled_tasks.record_change(
+                        user_id, "task", "reschedule", before, outcome["task"], task_id=before["id"], conversation_id=_turn_conversation.get())
+                    moved.append(outcome["task"])
+                elif first_failure is None:
+                    first_failure = outcome
+            if moved:
+                return {"kind": "rescheduled", "tasks": moved}
+            # No task moved; report what stopped it (a missing place, an
+            # invalid cadence) rather than claiming a move that never happened.
+            return {**(first_failure or {}), "kind": first_failure.get("kind") if first_failure else "not_found", "tasks": selected}
+        for before in selected:
+            await self.scheduled_tasks.set_enabled(
+                user_id, before["id"], action.operation == "resume"
+            )
+            task = await self.scheduled_tasks.get_owned(user_id, before["id"]) or before
+            await self.scheduled_tasks.record_change(
+                user_id, "task", action.operation, before, task, task_id=before["id"], conversation_id=_turn_conversation.get())
+        return {"kind": f"{action.operation}d", "tasks": selected}
 
     # Put back what the most recent change replaced: a cancelled reminder is
     # re-created from its snapshot, a moved one moves back, a paused one

@@ -2,7 +2,6 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
-<<<<<<< HEAD
 ## 2026-09-02 - A document shared in a room is read into the room's knowledge
 
 The first real test dropped the itinerary into the Groupie room with "here's
@@ -17,6 +16,23 @@ addressed. Deployed as 61435af with the full gate green and the post-deploy
 chain 5/5 through the real API; unit-tested with a room-PDF case and an
 unaddressed-share case. The operator's own re-drop in Groupie is the live
 confirmation.
+
+## 2026-09-02 - manage_tasks acts on a set of tasks at once
+
+"delete the paused ones" (a real utterance) was read by the router as a
+`list` with an empty `which`, and the picker behind it returned exactly one
+id - so a request for a set could not be carried out in one turn and only
+one task of a set could ever be changed. The tool description now says a
+selection may be one task or several ("the paused ones", "all the weather
+ones"), and the picker gained `pick_many` (its own prompt `tasks/pick_many`,
+pinned by `test_task_multi_selection_behaviour.py`) which returns every id
+the words cover. `_manage_tasks` applies cancel/pause/resume/reschedule to
+each chosen task and records a change per task; the reply prompt and render
+name each one touched. Verified: router reads all set phrasings as the
+right operation with `which` populated; matrix 0.9072 PASS with
+manage_tasks 18/18 (task_change 5/5 including three new set cases); picker
+functional test 3/3 on the real model; 68 task/coverage unit tests green;
+sweep journey "delete the paused ones" asserts both paused rows are gone.
 
 ## 2026-09-02 - A deck stops waiting for a quiet machine, and plans its slides together
 

@@ -38,9 +38,11 @@ _SCHEMA: dict[str, Any] = {
         "which": {
             "type": "string",
             "description": (
-                "Which task, in the person's words, when cancelling, pausing, "
-                "resuming or rescheduling - 'the weather one', 'the Friday "
-                "reminder', 'the tesla one'. Empty for list."
+                "Which task or tasks, in the person's words, when cancelling, "
+                "pausing, resuming or rescheduling - 'the weather one', 'the "
+                "Friday reminder', 'the tesla one', or a set such as 'the "
+                "paused ones', 'all the weather ones', 'the morning reminders'. "
+                "Empty for list."
             ),
         },
         # Reschedule carries the new timing itself. It used to be advertised as
@@ -104,8 +106,10 @@ TOOL = BuiltinTool(
         "it - a time or a date appearing in a message is not enough, and is "
         "usually part of whatever else is being discussed. "
         "list: what they have scheduled. cancel, pause, resume: stop or "
-        "restart one they name. reschedule: move one to a new time, carrying "
-        "that time - 'change the tesla reminder to 5 minutes from now'. "
+        "restart the task or tasks they name - one ('the weather one') or a "
+        "set ('the paused ones', 'all the weather ones'). reschedule: move "
+        "one to a new time, carrying that time - 'change the tesla reminder "
+        "to 5 minutes from now'. "
         "Rescheduling is a single call; never answer as though a reminder "
         "moved without making it. undo: put back the most recent change the "
         "assistant made - a reminder, Scout's schedule, or a fact it just "

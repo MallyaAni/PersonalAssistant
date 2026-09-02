@@ -75,6 +75,15 @@ async def pick_task(
     return await pick_one(llm, which, tasks, describe_task, hint=hint)
 
 
+# Every task `which` refers to - one or several. "Delete the paused ones"
+# names a set, so a picker that returned only one id would leave the rest
+# scheduled. See pick_many.
+async def pick_many_tasks(
+    llm: LLMClient, which: str, tasks: list[dict[str, Any]], hint: str = ""
+) -> list[str]:
+    return await pick_many(llm, which, tasks, describe_task, hint=hint)
+
+
 # The skill `which` refers to, described by name and what it does.
 async def pick_skill(
     llm: LLMClient, which: str, skills: list[dict[str, Any]]
@@ -105,3 +114,77 @@ def _chosen(message: dict[str, Any], offered: set[str]) -> str | None:
         return None
     item_id = arguments.get("item_id") if isinstance(arguments, dict) else None
     return str(item_id) if item_id in offered else None
+
+
+# The ids `which` refers to - possibly several ("the paused ones", "all the
+# weather ones") - or an empty list when none of them does. One id is a
+# valid answer; so is an empty one. A single `pick_one` cannot cancel a set:
+# "delete the paused ones" (a real utterance) named several tasks and only
+# one could ever be chosen, so the rest were silently kept.
+async def pick_many(
+    llm: LLMClient,
+    which: str,
+    items: list[dict[str, Any]],
+    describe: Callable[[dict[str, Any]], str],
+    hint: str = "",
+) -> list[str]:
+    if not items:
+        return []
+    ids = [str(item["id"]) for item in items]
+    tool = {
+        "type": "function",
+        "function": {
+            "name": "pick_items",
+            "description": (
+                "Name every item the person's words cover, or none when what "
+                "they mean is not among the items. Their words may name one "
+                "item or several."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "item_ids": {
+                        "type": "array",
+                        "items": {"type": "string", "enum": ids},
+                    }
+                },
+                "required": ["item_ids"],
+                "additionalProperties": False,
+            },
+        },
+    }
+    listing = "\n".join(f"- id {item['id']}: {describe(item)}" for item in items)
+    # What the assistant said just before is what "this", "that" and "it"
+    # point at, exactly as in pick_one.
+    said = f"What the assistant said just before: {hint.strip()[:600]}\n\n" if hint.strip() else ""
+    messages = [
+        {"role": "system", "content": load("tasks/pick_many")},
+        {
+            "role": "user",
+            "content": f"{said}Items:\n{listing}\n\nThe person said: {which}",
+        },
+    ]
+    try:
+        message = await asyncio.to_thread(llm.chat_with_tools, messages, [tool], 64)
+    except Exception:
+        return []
+    return _chosen_many(message, set(ids))
+
+
+# The ids a pick_items call named, in the order given, when each was offered.
+def _chosen_many(message: dict[str, Any], offered: set[str]) -> list[str]:
+    calls = message.get("tool_calls")
+    if not isinstance(calls, list) or not calls:
+        return []
+    function = calls[0].get("function") if isinstance(calls[0], dict) else None
+    if not isinstance(function, dict):
+        return []
+    raw = function.get("arguments")
+    try:
+        arguments = json.loads(raw) if isinstance(raw, str) else raw
+    except ValueError:
+        return []
+    item_ids = arguments.get("item_ids") if isinstance(arguments, dict) else None
+    if not isinstance(item_ids, list):
+        return []
+    return [str(item_id) for item_id in item_ids if str(item_id) in offered]
