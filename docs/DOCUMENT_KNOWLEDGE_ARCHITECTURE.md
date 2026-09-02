@@ -186,6 +186,12 @@ document and the reply says why. Routing measured 2026-09-02 on the real
 router (three phrasings); the editor's tests hold every non-body part
 byte-identical; the live acceptance shares a Word file, revises it in chat,
 and checks the returned file's styles against the original's.
+Live on the seventeenth deploy (2026-09-02): "revise it so day 1 has a 6pm
+orientation..." right after the Word share was routed straight to the edit
+(the file is the referent), and the updated file came back with its styles
+part byte-identical and the revised body; the explicit "update the file"
+ask produced it too. 7/8 checks, the eighth being the script's expectation
+of chat text first.
 
 ### Stage 8 - Google Drive as a read-only source (2026-09-02, awaiting consent)
 
@@ -274,6 +280,11 @@ A document has three lives, and each is treated on its own:
    Measured 2026-09-02: told only "answer as past", the reply found the
    archived itinerary and declined ("a plan is not a record of where you
    actually stayed"); told it is the plan they had, 3/3 name the hotel.
+   Live, the same question is routed to the transcript search, which finds
+   only the share; the history block then said "say you could not find it"
+   and the reply declined twice with the passages beside it. The history
+   block now defers to document passages retrieved in the same turn (3/3
+   with both blocks and the real archived chunks).
 3. **Its facts split into durable and dated.** The digest marks each
    supporting statement `dated` (a departure time, a meeting point, a day's
    schedule) or not (where they stayed, who went). The headline and durable

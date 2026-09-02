@@ -731,7 +731,9 @@ PER_TOOL_ACCURACY_FLOORS: dict[str, float] = {
     # evaluate_tool_selection's collector); held below so one wobble on a
     # small router does not fail a deploy that changed nothing about files.
     CREATE_DOCUMENT: 0.66,
-    # Measured with the tool on 2026-09-02 (three phrasings, three reps).
+    # Measured 9/9 on 2026-09-02 with the tool (three phrasings, three reps,
+    # evaluate_tool_selection's collector), beside create_document's 9/9 and
+    # the non-ask's 3/3 in the same run; held below for the same reason.
     EDIT_DOCUMENT: 0.66,
     DELEGATE_PRESENTATION: 0.50,
     # Set on 2026-08-23 when these were first measured at all. Task routing is

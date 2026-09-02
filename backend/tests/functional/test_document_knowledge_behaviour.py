@@ -229,3 +229,38 @@ async def test_an_archived_itinerary_answers_where_they_stayed_as_past(llm):
         else:
             print("MISS:", text[:200].replace("\n", " "))
     assert hits >= 2, f"{hits}/3 named the Grand Hotel of Salerno as where they stayed, in the past"
+
+
+# The live shape of the failure: the router sent the question to the
+# transcript search, which found only the share, and the reply obeyed that
+# block's "say you could not find it" with the hotel's name in the document
+# passages beside it (2026-09-02, the retention live check, twice). Both
+# blocks present, the real archived chunks, three reps.
+_REAL_ARCHIVED_CHUNKS = [
+    {"content": "we are going to do this trip\n\n## Day 1: Sun., October 11\n\nArrivals throughout the day - Grand Hotel of Salerno 6:00 p.m. - Orientation 7:30 p.m. - Dinner in Hotel (included)\n\n## Day 2: Mon., October 12\n\nExcursion - 8:30 a.m. departure Pompeii and/or Paestum", "extra_data": {"page": 1}, "document": {"title": "Itinerary Amalfi Choral Tour.pdf", "source_uri": "upload://Itinerary Amalfi Choral Tour.pdf", "status": "archived", "about_until": "2026-10-17"}},
+    {"content": "## Day 5: Thurs., October 15\n\nMorning - Independent: Boat trip along the coast (on your own) or other adventure 9:00 a.m.", "extra_data": {"page": 2}, "document": {"title": "Itinerary Amalfi Choral Tour.pdf", "source_uri": "upload://Itinerary Amalfi Choral Tour.pdf", "status": "archived", "about_until": "2026-10-17"}},
+    {"content": "Dinner after the concert in Naples (included)\n\nReturn to Salerno after dinner", "extra_data": {"page": 2}, "document": {"title": "Itinerary Amalfi Choral Tour.pdf", "source_uri": "upload://Itinerary Amalfi Choral Tour.pdf", "status": "archived", "about_until": "2026-10-17"}},
+]
+_SHARE_EXCERPT = [{"when": "2026-09-02 18:20 (today)", "you_said": 'shared a document: "Itinerary Amalfi Choral Tour.pdf"', "assistant_said": "Got it - I've read the itinerary."}]
+
+
+async def test_a_history_search_that_found_only_the_share_does_not_hide_the_document(llm):
+    from backend.agents.graph import _build_system_prompt, turn_context_messages
+    from backend.tests.functional.semantic import states
+
+    context = {"knowledge": _REAL_ARCHIVED_CHUNKS, "history_search": _SHARE_EXCERPT}
+    messages = [{"role": "system", "content": _build_system_prompt(context)}]
+    messages.append({"role": "user", "content": 'shared a document: "Itinerary Amalfi Choral Tour.pdf"'})
+    messages.append({"role": "assistant", "content": "Got it - I've read the itinerary."})
+    messages.extend(turn_context_messages(context))
+    messages.append({"role": "user", "content": "which hotel did we stay at in Salerno on the choral tour?"})
+    hits = 0
+    for _ in range(3):
+        text = str(llm.chat(messages, 400, None, 0.0)["content"]).strip()
+        named = "grand hotel" in text.lower()
+        declined = states(text, "the reply refuses to say which hotel, or says it cannot find or see it")
+        if named and not declined:
+            hits += 1
+        else:
+            print("MISS:", text[:220].replace("\n", " "))
+    assert hits >= 2, f"{hits}/3 named the hotel with a history search beside the passages"

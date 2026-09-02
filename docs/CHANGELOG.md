@@ -2,6 +2,20 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-02 - A history search that finds only the share no longer hides the document
+
+The retention live check declined twice on "which hotel did we stay at in
+Salerno on the choral tour?" while the isolated reply named the hotel 3/3.
+The kept turn's trace showed why: the router sent the question to the
+transcript search, which found only the share line, and the reply obeyed
+that block's "say you could not find it" with the hotel's name in the
+document passages retrieved beside it. With document passages present, the
+history block now says to answer from them before saying it could not find
+it, and the document block says the passages count even when a history
+search found nothing. Held on the real reply model with both blocks and the
+real archived chunks, three reps. The edit tool's routing floor comment
+carries its 9/9 measurement; the design doc records the edit's live result.
+
 ## 2026-09-02 - Google Drive as a read-only document source, awaiting the operator's consent
 
 The fourth next step. A folder in Drive is listed every 15 minutes with a
