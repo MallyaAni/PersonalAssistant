@@ -2,6 +2,29 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-02 - Two bugs the first real room test surfaced: "forget that document" now forgets, and one statement is one fact
+
+"Forget that document" was answered with a polite sentence and no undo: the
+router decides undo from the manage_tasks description, which named a
+reminder, Scout's schedule, or a fact just saved - not a document. One clause
+names a document it was given; measured with the real router over a
+shared-document history, no action 3/3 became manage_tasks undo 3/3, and a
+routing case pins it. The undo path (a knowledge_document receipt ->
+KnowledgeStore.delete) is unit-proven, a GET-by-id route exists so the live
+acceptance proves deletion by the row being gone (its earlier "gone" check
+was a false pass at the old cutoff).
+
+"JenOS please remember that I am female" was saved to each owner twice -
+"Jenos is female" and "User is female" - because the classifier reproducibly
+proposes both phrasings of one statement in a room. Candidates from one turn
+that state the same predicate (the subject - "the user", "I", or the
+speaker's name - normalised away) are now saved once, keeping the named
+phrasing. Deterministic on purpose: the embedder puts the duplicate pair
+0.278 apart and two different facts about the same person 0.136 apart, so no
+vector threshold could tell them apart. Proven 3/3 against the real
+classifier; 6 unit tests. Attribution was already right: her fact went to her
+store and the room's, never to another member's.
+
 ## 2026-09-02 - What a shared document says is remembered, with the sharer's attribution
 
 After a document is stored, a structured digest writes one first-person

@@ -857,6 +857,40 @@ def _stated_window(
 
 # The retrieval distance an excerpt carries, for merging and ordering; an
 # excerpt without one sorts last rather than first.
+_GENERIC_SUBJECTS = ("the user", "user", "i am", "i'm", "i", "me", "my")
+
+
+# Whether a fact starts with a generic subject ("The user is…") rather than
+# a name.
+def _generic_subject(text: str) -> bool:
+    lowered = text.strip().casefold()
+    return any(lowered == s or lowered.startswith(s + " ") or lowered.startswith(s + "'") for s in _GENERIC_SUBJECTS)
+
+
+# The fact with its subject normalised away: "The user is female." and
+# "Ani is female" both become "is female" when Ani is speaking, so they
+# compare equal; "Ani is a dentist" does not.
+def _predicate_key(text: str, speaker_name: str = "") -> str:
+    lowered = " ".join(text.casefold().split())
+    subjects = list(_GENERIC_SUBJECTS)
+    name = speaker_name.strip().casefold()
+    if name:
+        subjects.append(name)
+        first = name.split(" ")[0]
+        if first and first != name:
+            subjects.append(first)
+    for subject in sorted(subjects, key=len, reverse=True):
+        for form in (subject + "'s ", subject + " "):
+            if lowered.startswith(form):
+                lowered = lowered[len(form):]
+                break
+        else:
+            continue
+        break
+    lowered = re.sub(r"[^a-z0-9 ]+", "", lowered)
+    return " ".join(lowered.split())
+
+
 def _distance_of(item: dict[str, Any]) -> float:
     try:
         return float((item.get("retrieval") or {}).get("cosine_distance", 1.0))
@@ -4111,6 +4145,38 @@ class ConversationService:
     # audited or deleted, same as any other memory record. A single bad
     # candidate is dropped rather than raised, so it costs one save, never the
     # turn's answer or every other save alongside it.
+    # Two fact candidates from one turn that say the same thing are one fact.
+    # The classifier reproducibly proposes both "The user is female." and
+    # "<name> is female" for a single statement in a room (2026-09-02), and
+    # every owner got both. Judged deterministically: the predicate with its
+    # subject normalised away, because the embedder cannot tell this apart -
+    # measured, the pair sits 0.278 apart while "Ani is female" and "Ani is a
+    # dentist" sit 0.136. The named phrasing is kept over the generic one.
+    async def _without_same_turn_duplicates(
+        self, candidates: tuple[dict[str, Any], ...], speaker_name: str = ""
+    ) -> tuple[dict[str, Any], ...]:
+        if len(candidates) < 2:
+            return candidates
+        kept: list[dict[str, Any]] = []
+        by_predicate: dict[str, int] = {}
+        for candidate in candidates:
+            field = _FACT_CONTENT_FIELDS.get(str(candidate.get("kind") or ""))
+            text = str(candidate.get(field) or "").strip() if field else ""
+            key = _predicate_key(text, speaker_name) if text else ""
+            if not key:
+                kept.append(candidate)
+                continue
+            seen_at = by_predicate.get(key)
+            if seen_at is None:
+                by_predicate[key] = len(kept)
+                kept.append(candidate)
+                continue
+            # Same predicate: keep the named phrasing, drop the generic one.
+            if _generic_subject(str(kept[seen_at].get(field) or "")) and not _generic_subject(text):
+                kept[seen_at] = candidate
+            logger.info("memory_same_turn_duplicate_dropped", extra={"content": text[:80]})
+        return tuple(kept)
+
     async def _persist_memory_proposals(
         self,
         user_id: str,
@@ -4120,6 +4186,9 @@ class ConversationService:
         room: dict[str, Any] | None = None,
     ) -> tuple[dict[str, Any], ...]:
         saved: list[dict[str, Any]] = []
+        candidates = await self._without_same_turn_duplicates(
+            candidates, str((room or {}).get("speaker_name") or "")
+        )
         for candidate in candidates:
             kind = candidate.get("kind")
             saver = self._memory_proposal_savers.get(str(kind))
