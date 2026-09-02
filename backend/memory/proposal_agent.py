@@ -167,13 +167,13 @@ class MemoryProposalAgent:
         # dinner" produced no proposal at all 3 times in 6 - the group's plan
         # lost because a member liked Thai food (2026-08-28, deploy #20).
         catalogue = (
-            "The user already follows these Scout interests: "
+            "The user has these Scout interest labels: "
             + ", ".join(f'"{label}"' for label in known_interests)
-            + ". Reuse an existing label exactly when a new phrase means the same "
-            "interest or a narrower form of it. This list is about interest "
-            "labels only: it never means a fact, plan, decision or event is "
-            "already known, so a statement worth remembering is still captured "
-            "in its own field even when it mentions one of these interests. "
+            + ". When a new phrase means one of these labels, or a narrower form "
+            "of it, reuse that label. These are labels for interests only: they say "
+            "nothing about whether any fact, plan, decision or event is already "
+            "known, so a statement worth remembering is still captured in its own "
+            "field even when it mentions one of these labels. "
             if known_interests
             else ""
         )

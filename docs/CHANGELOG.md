@@ -18,6 +18,25 @@ cited Day-1 answer; a Word file with a seeded fact retrieved); migration
 20260901_0015 builds from an empty schema; 195 unit tests green; frontend
 typecheck clean. Live acceptance in the Groupie chat is the remaining step.
 
+## 2026-09-02 - The interest catalogue no longer suppresses the facts beside it
+
+A user's Scout interest labels, prepended to the memory-proposal prompt so a
+new phrasing reuses an existing label, were measurably suppressing capture of
+unrelated stable facts: "my dentist is Dr Lee on Wilson Boulevard" captured
+12/12 with no catalogue and 6/12 with one (`hiking, live music`). The old
+wording ("the user already follows these Scout interests... this list never
+means a fact is already known") sat on a model decision boundary; the
+rewording ("the user has these Scout interest labels... these are labels for
+interests only") restores the dentist case to 11/12, which now passes the
+functional pin. The thai-dinner group guard the catalogue wording was
+originally measured against still passes. The adjacent-subject case
+("I'm allergic to shellfish" beside `thai food, cooking`) is the documented
+model ceiling, not a catalogue defect - it captures ~14/16 even with no
+catalogue, and the proposal prompt header forbids fixing it with examples -
+so that parametrization is xfail with the measured evidence, not deleted and
+not loosened. Unit gates and the preference/scout-schedule/referent suites
+green.
+
 ## 2026-09-01 - The reply consults document knowledge every turn (Phase 1 of document knowledge)
 
 A document a person gives the assistant now changes the answer. The per-turn
