@@ -58,6 +58,11 @@ compose=(docker compose -f "$root/docker-compose.yml" --profile test)
 # that reached a person, and a measured cost.
 targets=(
     "backend/tests/functional/test_tool_selection_matrix_behaviour.py"
+    # Document knowledge changes the answer (Phase 1). Needs only the model,
+    # the database and the embedding service - all on the Spark - so it
+    # belongs in every deploy. The document-upload test is NOT here: it needs
+    # Docling on the desktop, which is not always on; run it by hand.
+    "backend/tests/functional/test_document_knowledge_behaviour.py"
     "backend/tests/functional/test_diagram_generation_behaviour.py"
     "backend/tests/functional/test_saying_yes_behaviour.py"
     "backend/tests/functional/test_burst_readiness_behaviour.py"
