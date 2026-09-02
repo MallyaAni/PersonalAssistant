@@ -98,8 +98,9 @@ paragraphs, bullets, bold.
   in a zip); headings are sized bold paragraphs, bullets hang, bold survives.
   No renderer, so it never waits on anything.
 - **Kept as an artifact** of kind `document` in the visual-artifact store:
-  bytes under an opaque key, hash and size on the row, served by the
-  owned-artifact content route. The web shows a card with the file to save;
+  bytes under an opaque key (the store's extension allowlist admits `pdf` and
+  `docx`; a new kind has to be admitted there as well as in the repository),
+  hash and size on the row, served by the owned-artifact content route. The web shows a card with the file to save;
   the iMessage worker attaches it under its title (`Amalfi itinerary.pdf`),
   and the bridge lets a PDF or a Word file out, proven by its first bytes,
   under the same size cap as a picture.

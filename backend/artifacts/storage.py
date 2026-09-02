@@ -9,7 +9,11 @@ from backend.artifacts.types import StoredBinary
 from backend.core.crypto import get_field_cipher
 from backend.core.interfaces import BinaryArtifactStore
 
-_ALLOWED_EXTENSIONS = {"jpg", "png", "pptx", "webp"}
+# Pictures, decks, and the two document types the assistant writes. A kind
+# that stores bytes must be admitted here as well as in the artifact
+# repository: the first live "put that in a PDF" (2026-09-02) reached this
+# line and was refused after everything above it had passed.
+_ALLOWED_EXTENSIONS = {"jpg", "png", "pptx", "webp", "pdf", "docx"}
 
 
 # Write bytes to a temporary file and atomically replace the final path.
