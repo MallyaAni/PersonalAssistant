@@ -105,6 +105,34 @@ the desktop being off (a durable queue); answering never depends on it.
 4. **Control and citation.** VERIFIED LIVE 2026-09-02 (`live_document_acceptance`: the deployed API cited the itinerary by name and page, answered a pinned question from the document alone, and removed it on "forget that document"; queue tests 12/12 x3 against the real table). Unit-verified (a document pin scopes retrieval; the confirming iMessage bubble pins the document; `forget that` deletes a stored document via the undo ledger; every chunk carries its page and the citation names it). Live acceptance in the Groupie chat pending. Reply-to-document scoping, forget, and citations
    surfaced in the reply so a person can see which page an answer came from.
 
+## Edge cases, as built (2026-09-02)
+
+- **Same bytes again** - one row; the content hash returns the existing
+  document.
+- **A new version of the same document** (same source, different bytes) - the
+  older active copy is marked `superseded`; retrieval reads active rows only,
+  so two versions of one itinerary never mix. Nothing is deleted.
+- **Parser off when a document arrives** - the upload is kept in
+  `document_parse_jobs`; each queue pass probes the parser's health first and
+  leaves every job untouched while it is down (an overnight desktop burns no
+  attempts). A reachable parser that fails on a file three times fails that
+  job with the parser's own sentence.
+- **"Forget that document"** - routes to undo (the affordance names a
+  document it was given), and the undo targets the newest *document* receipt
+  when the words name one - a share is followed seconds later by the memory
+  receipt its facts pass writes, and "newest change" alone would have removed
+  the fact and kept the document.
+- **One statement, one fact** - two candidates from one turn with the same
+  predicate (subject normalised away) are saved once; the embedder cannot make
+  this call (measured), so it is deterministic.
+- **The share is the referent everywhere** - rooms observe the share line into
+  the thread; web and API uploads record the same line in their conversation;
+  with it in history the router answers document questions from what is on
+  hand rather than the web (measured 3/3).
+- **Not built, on purpose** - a document that lands from the queue gets no
+  facts pass (its facts come when someone next talks about it); on the web,
+  "forget that document" works in the conversation the upload named.
+
 ## Hosting and availability
 
 Docling parsing stays on the desktop (its GPU is the one heavy part; the queue
