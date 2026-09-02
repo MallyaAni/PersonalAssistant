@@ -32,6 +32,7 @@ from backend.core.dependencies import (
 from backend.services.main_action_selector import (
     CreateDiagramAction,
     CreateDocumentAction,
+    EditDocumentAction,
     DelegateAction,
     DiscussImageAction,
     EditImageAction,
@@ -66,6 +67,7 @@ _ACTION_TOOL = {
     ShowImageAction: "show_image",
     CreateDiagramAction: "create_diagram",
     CreateDocumentAction: "create_document",
+    EditDocumentAction: "edit_document",
     DelegateAction: "delegate_to_presentation_agent",
     DiscussImageAction: "discuss_image",
     ToolboxAction: "mcp_tool",

@@ -935,6 +935,10 @@ services:
       # message; set DOCLING_BASE_URL in .env to turn them on.
       - DOCLING_BASE_URL=${DOCLING_BASE_URL:-}
       - GOTENBERG_BASE_URL=${GOTENBERG_BASE_URL:-}
+      - DOCLING_PICTURE_API_URL=${DOCLING_PICTURE_API_URL:-}
+      - GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID:-}
+      - GOOGLE_OAUTH_CLIENT_SECRET=${GOOGLE_OAUTH_CLIENT_SECRET:-}
+      - GOOGLE_DRIVE_FOLDER_ID=${GOOGLE_DRIVE_FOLDER_ID:-}
       - EMBEDDING_MODEL=text-embedding-nomic-embed-text-v1.5
       # The reranker rides beside the embedder: it re-scores what the vector
       # search retrieved. It was wired into the test container only for a

@@ -64,7 +64,7 @@ async def test_a_document_past_its_date_is_archived_and_leaves_the_default_searc
             # Asked for, the archived one is still there - nothing was deleted.
             past = await store.search(user_id, "which hotel in Salerno?", 6, statuses=("archived",))
             assert past and all(item["document"]["id"] == old["id"] for item in past)
-            assert len(await store.get(user_id, old["id"])["chunks"]) >= 1
+            assert len((await store.get(user_id, old["id"]))["chunks"]) >= 1
         finally:
             for doc in (old, new):
                 await store.delete(user_id, doc["id"])

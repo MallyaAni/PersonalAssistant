@@ -320,6 +320,26 @@ class SQLAlchemyArtifactRepository(
         )
         return [artifact.to_dict() for artifact in result.scalars().all()]
 
+    # The Word file kept when a knowledge document was shared, with its
+    # private storage key, or None: an edit in place needs the bytes.
+    async def original_for_document(self, user_id: str, document_id: str) -> dict[str, Any] | None:
+        artifact = await self.session.scalar(
+            select(VisualArtifact)
+            .where(
+                VisualArtifact.user_id == user_id,
+                VisualArtifact.kind == "document",
+                VisualArtifact.status == "ready",
+                VisualArtifact.extra_data["original_of"].astext == document_id,
+            )
+            .order_by(VisualArtifact.created_at.desc())
+            .limit(1)
+        )
+        if artifact is None:
+            return None
+        payload = artifact.to_dict()
+        payload["_storage_key"] = artifact.storage_key
+        return payload
+
     # List recent user-owned artifacts across conversations, newest first.
     async def list_for_user(
         self,

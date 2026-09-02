@@ -29,6 +29,7 @@ from dataclasses import dataclass
 SEARCH = "search_web"
 GENERATE_IMAGE = "generate_image"
 CREATE_DOCUMENT = "create_document"
+EDIT_DOCUMENT = "edit_document"
 EDIT_IMAGE = "edit_image"
 SHOW_IMAGE = "show_image"
 # Talking about the picture in view - its own tool since 2026-08-27, so an
@@ -59,6 +60,7 @@ TOOL_NAMES: tuple[str, ...] = (
     SEARCH_CREDITS,
     CREATE_DIAGRAM,
     CREATE_DOCUMENT,
+    EDIT_DOCUMENT,
     DELEGATE_PRESENTATION,
     # The four newest built-ins were missing here, which is why no case could
     # be labelled with them: `test_every_case_is_labelled_with_a_tool_that_exists`
@@ -681,6 +683,10 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
     SelectionCase("put that in a PDF", CREATE_DOCUMENT, "document_file", history=_ITINERARY_WRITTEN_HISTORY),
     SelectionCase("can you make that a word document?", CREATE_DOCUMENT, "document_file", history=_ITINERARY_WRITTEN_HISTORY),
     SelectionCase("create a pdf of the revised itinerary so I can send it to Jen", CREATE_DOCUMENT, "document_file", history=_ITINERARY_WRITTEN_HISTORY),
+    # The file they shared, updated in its own style: the original, not a new document.
+    SelectionCase("update the itinerary file with this plan and send me the docx", EDIT_DOCUMENT, "document_file", history=_SHARED_DOCUMENT_HISTORY + _ITINERARY_WRITTEN_HISTORY),
+    SelectionCase("put these changes into the original document", EDIT_DOCUMENT, "document_file", history=_SHARED_DOCUMENT_HISTORY + _ITINERARY_WRITTEN_HISTORY),
+    SelectionCase("can you revise the doc I sent so it matches this and give it back to me?", EDIT_DOCUMENT, "document_file", history=_SHARED_DOCUMENT_HISTORY + _ITINERARY_WRITTEN_HISTORY),
     # Words about the plan stay words: a shorter version in the chat is not a file.
     SelectionCase("give me a two-line summary of that plan", NO_TOOL, "document_file", history=_ITINERARY_WRITTEN_HISTORY),
 )
@@ -725,6 +731,8 @@ PER_TOOL_ACCURACY_FLOORS: dict[str, float] = {
     # evaluate_tool_selection's collector); held below so one wobble on a
     # small router does not fail a deploy that changed nothing about files.
     CREATE_DOCUMENT: 0.66,
+    # Measured with the tool on 2026-09-02 (three phrasings, three reps).
+    EDIT_DOCUMENT: 0.66,
     DELEGATE_PRESENTATION: 0.50,
     # Set on 2026-08-23 when these were first measured at all. Task routing is
     # held higher than the image tools because its failure is silent: a

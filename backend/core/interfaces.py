@@ -140,7 +140,15 @@ class ArtifactRepository(ABC):
     async def delete_all_owned(self, user_id: str) -> tuple[int, list[str]]: ...
 
 
-class BinaryArtifactRepository(ArtifactRepository):
+# The Word file kept when a document was shared, for editing in place; a
+# repository that keeps none answers None. Not abstract, so doubles that
+# know nothing of originals keep working.
+class OriginalDocumentRepository(ABC):
+    async def original_for_document(self, user_id: str, document_id: str) -> dict[str, Any] | None:
+        return None
+
+
+class BinaryArtifactRepository(ArtifactRepository, OriginalDocumentRepository):
     # Persist a pending generated or uploaded image before binary work begins.
     @abstractmethod
     async def create_binary_pending(

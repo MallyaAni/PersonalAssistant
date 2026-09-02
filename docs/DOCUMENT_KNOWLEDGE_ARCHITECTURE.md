@@ -78,6 +78,20 @@ the desktop being off (a durable queue); answering never depends on it.
    them and remove any of it - documents are their memory, on the same terms as
    the rest.
 
+### Pictures inside a document (2026-09-02)
+
+Docling sends each picture above `DOCLING_PICTURE_AREA_THRESHOLD` (5% of the
+page) to the household's vision model on spark2 (`DOCLING_PICTURE_API_URL`,
+the desktop reaches it by LAN) with a facts-only prompt, and the caption
+comes back inline. The parser turns it into one marked passage - "[Picture:
+a bar chart of tickets sold per week, headed Meeting point: Piazza Tasso,
+8:30 a.m.]" - so a citation reads as a description, not as the document's
+words; an undescribed picture's placeholder is dropped. Measured 2026-09-02:
+the itinerary's logo (under the threshold) is skipped; a drawn chart printed
+to PDF comes back described in ~5 s; one picture cost 17 s on the itinerary
+with the threshold at zero. Scanned text was already OCR'd; this adds what a
+map, a chart, or a photo says.
+
 ### Stage 6 - Writing (2026-09-02)
 
 The mirror of stage 1. When the person asks for what the assistant just wrote
@@ -94,9 +108,12 @@ paragraphs, bullets, bold.
   (crashpad, measured 2026-09-02), so it is not used. The renderer is probed
   first; when it is away the person gets the Word file and is told the PDF
   comes back with the desktop.
-- **Word**: built here from the standard library (a .docx is three XML parts
-  in a zip); headings are sized bold paragraphs, bullets hang, bold survives.
-  No renderer, so it never waits on anything.
+- **Word**: built here from the standard library, in the writer's own
+  template: a styles part (one face, sized headings with space above them,
+  hanging bullets), a footer with the page number, A4 with 2 cm margins, a
+  title block. Links in the reply become "text (url)", image tags their alt
+  text; a leading heading that repeats the title is not printed twice. No
+  renderer, so it never waits on anything.
 - **Kept as an artifact** of kind `document` in the visual-artifact store:
   bytes under an opaque key (the store's extension allowlist admits `pdf` and
   `docx`; a new kind has to be admitted there as well as in the repository),
@@ -148,6 +165,58 @@ an existing .docx in place is the later step, if it is wanted.
    one non-ask, three reps); the PDF and the Word file read back through
    Docling with every day present (2/2); worker, bridge, and writer unit
    tests; sweep journey "plan as a pdf" walks it after every deploy.
+
+### Stage 7 - Editing a shared Word file in place (2026-09-02)
+
+"Update the itinerary file with this and send me the docx" is a different
+ask from a new document: the person wants their file back with its look.
+When a Word file is shared (inline or through the queue) it is also kept
+whole as an artifact of kind `document` whose metadata names the knowledge
+document it is the original of (`document_originals.py`); a PDF is a print
+and is not kept. The router's `edit_document` (title, format, the revised
+text - or the previous reply) finds the pinned document, else the newest
+shared in the conversation, and `document_editor.py` rewrites only the body
+of `word/document.xml`: every other part is copied byte for byte (styles,
+numbering, headers and footers with their pictures, fonts), the section
+properties stay, and the new paragraphs use the original's own style ids -
+its Title, its heading 1-3, its List Paragraph with its numbering - so Word
+renders them as the author set them up. A PDF asked for is the edited file
+printed by LibreOffice; with no Word original on hand the writer makes a new
+document and the reply says why. Routing measured 2026-09-02 on the real
+router (three phrasings); the editor's tests hold every non-body part
+byte-identical; the live acceptance shares a Word file, revises it in chat,
+and checks the returned file's styles against the original's.
+
+### Stage 8 - Google Drive as a read-only source (2026-09-02, awaiting consent)
+
+The household's files that live in Drive reach knowledge without being
+shared one by one. A folder the operator names is listed every
+`GOOGLE_DRIVE_SYNC_INTERVAL_SECONDS` (15 min) with a read-only scope; every
+new or changed file (by md5, or modified time for Google-native files) goes
+through the durable parse queue like a shared file - so Docling reads it when
+the desktop is on, the digest dates it, the picture pass describes it, and a
+Word original is kept for editing. Google Docs export as Word, Sheets and
+Slides as PDF; ordinary files download as they are; anything the parser
+cannot read is remembered and not fetched again. Nothing is written to
+Drive. State (file id, checksum) lives beside the token file, no migration.
+
+**The operator's three steps** (the only part that needs a person):
+
+1. In Google Cloud, create a *Desktop* OAuth client and put its id and secret
+   in `.env` as `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET`.
+2. Where a browser is at hand, `python -m backend.cli.google_connect`, open
+   the URL, consent (Drive read-only), paste the code: it writes
+   `GOOGLE_TOKEN_PATH` (`data/google/token.json`, mode 600). Copy the file to
+   the Spark's `data/google/` if it was made elsewhere.
+3. Set `GOOGLE_DRIVE_FOLDER_ID` (the id in the folder's URL) and restart the
+   backend. The source starts on its own; `google_drive_queued` in the log
+   counts what it handed to the queue.
+
+Tested against a fake Drive (queue new, skip unchanged, requeue changed,
+export a Doc as Word, skip an image, refresh an expired token); the real API
+is exercised live after consent. Calendar is not read yet: the dates a
+document is about come from the document itself, and a calendar consumer
+(Scout's travel mode, retention) is a design of its own.
 
 ## Edge cases, as built (2026-09-02)
 

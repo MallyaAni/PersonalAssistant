@@ -72,6 +72,7 @@ from backend.services.main_action_selector import (
     CreateDiagramAction,
     CreateDocumentAction,
     DelegateAction,
+    EditDocumentAction,
     EditImageAction,
     GenerateImageAction,
     MainAction,
@@ -3077,6 +3078,10 @@ class ConversationService:
         history: list[dict[str, Any]],
         active_image_artifact_id: str | None,
     ) -> AsyncGenerator[ChatStreamEvent, None] | None:
+        if isinstance(action, EditDocumentAction) and self.document_artifacts:
+            return self._process_document_edit(
+                user_id, asked, action, conversation_id, trace_id, metadata
+            )
         if isinstance(action, CreateDocumentAction) and self.document_artifacts:
             return self._process_document_request(
                 user_id, asked, action, conversation_id, trace_id, metadata
@@ -4754,6 +4759,7 @@ class ConversationService:
         conversation_id: str,
         trace_id: str,
         metadata: dict[str, Any],
+        note: str = "",
     ) -> AsyncGenerator[ChatStreamEvent, None]:
         if self.document_artifacts is None:
             raise RuntimeError("Document artifact service is not configured")
@@ -4811,7 +4817,7 @@ class ConversationService:
             yield {"event": "done", "data": {}}
             return
         name = "PDF" if written.format == "pdf" else "Word document"
-        response_text = f'Here is "{title}" as a {name}.'
+        response_text = f'Here is "{title}" as a {name}.' + note
         if written.format != action.format:
             response_text += (
                 " The PDF renderer is off right now, so this is the Word version; "
@@ -4831,6 +4837,92 @@ class ConversationService:
             "document_writing",
             {"status": "completed", "artifact_id": artifact_id, "format": written.format},
         )
+        yield {"event": "delta", "data": {"content": response_text}}
+        yield {"event": "artifact_ready", "data": artifact}
+        yield {"event": "done", "data": {}}
+
+    # Rewrite the Word file the person shared with the revised text, its own
+    # look kept, and hand it back. The file is the pinned document, else the
+    # newest shared in this conversation. With no Word original on hand (a
+    # PDF was shared, or nothing) a new document is written instead and the
+    # reply says why - a plan they can send beats a refusal.
+    async def _process_document_edit(
+        self,
+        user_id: str,
+        query: str,
+        action: EditDocumentAction,
+        conversation_id: str,
+        trace_id: str,
+        metadata: dict[str, Any],
+    ) -> AsyncGenerator[ChatStreamEvent, None]:
+        from backend.services.document_originals import original_bytes
+
+        document: dict[str, Any] | None = None
+        original: tuple[dict[str, Any], bytes] | None = None
+        knowledge = getattr(getattr(self, "agent_memory", None), "knowledge", None)
+        if knowledge is not None:
+            try:
+                pinned = _active_document.get() or None
+                document = (
+                    await knowledge.get(user_id, pinned) if pinned else await knowledge.latest_in_conversation(user_id, conversation_id)
+                )
+                if document and self.image_artifacts is not None and self.document_artifacts is not None:
+                    original = await original_bytes(self.image_artifacts, self.document_artifacts.store, user_id, str(document["id"]))
+            except Exception:
+                logger.warning("Could not find a Word original to edit", exc_info=True)
+                original = None
+        if original is None:
+            # Fall back to a new document, and say so once it is made.
+            fallback = CreateDocumentAction(title=action.title, format=action.format, body_markdown=action.body_markdown)
+            why = (
+                f' The file I have ("{document["title"]}") is a PDF, which cannot be edited in place, so this is a new document with the changes.'
+                if document else " I have no Word file from this conversation to edit, so this is a new document with the changes."
+            )
+            async for event in self._process_document_request(user_id, query, fallback, conversation_id, trace_id, metadata, note=why):
+                yield event
+            return
+        history = await self.repository.get_history(conversation_id, user_id, self.history_turn_limit)
+        body = action.body_markdown.strip() or _previous_reply(history)
+        title = action.title.strip() or str(document["title"])
+        if not body:
+            response_text = "Tell me what the file should now say, or ask right after I have written the revised text."
+            await self._persist_completed_turn(user_id, conversation_id, query, response_text, trace_id, history, metadata)
+            yield {"event": "delta", "data": {"content": response_text}}
+            yield {"event": "done", "data": {}}
+            return
+        pending = await self.document_artifacts.begin(user_id, conversation_id, trace_id, title, action.format)
+        artifact_id = str(pending["id"])
+        yield {"event": "artifact_started", "data": {"id": artifact_id, "kind": "document", "status": "pending"}}
+        self.tracer.log_step(trace_id, "document_editing", {"status": "started", "format": action.format, "document": str(document["id"])})
+        try:
+            artifact, written = await self.document_artifacts.edit(
+                artifact_id, user_id, original[1], title, body, action.format, str(document["id"])
+            )
+        except asyncio.CancelledError:
+            with CancelScope(shield=True):
+                await self.document_artifacts.fail(artifact_id, user_id, error_code="cancelled")
+            raise
+        except Exception as exc:
+            logger.warning("Document editing failed for trace %s: %s", trace_id, exc, exc_info=True)
+            await self.document_artifacts.fail(artifact_id, user_id)
+            response_text = f"I couldn't update that file: {str(exc)[:160] or 'the file could not be rewritten.'}"
+            await self._persist_completed_turn(
+                user_id, conversation_id, query, response_text, trace_id, history,
+                {**metadata, "artifact_ids": [artifact_id], "artifact_status": "failed"},
+            )
+            yield {"event": "delta", "data": {"content": response_text}}
+            yield {"event": "artifact_error", "data": {"id": artifact_id, "message": "Unable to update the file."}}
+            yield {"event": "done", "data": {}}
+            return
+        name = "PDF" if written.format == "pdf" else "Word document"
+        response_text = f'Here is "{title}" updated, as a {name}, in the original\'s own style.'
+        if written.format != action.format:
+            response_text += " The PDF renderer is off right now, so this is the Word version; ask again later for the PDF."
+        await self._persist_completed_turn(
+            user_id, conversation_id, query, response_text, trace_id, history,
+            {**metadata, "artifact_ids": [artifact_id], "artifact_status": "ready"},
+        )
+        self.tracer.log_step(trace_id, "document_editing", {"status": "completed", "artifact_id": artifact_id, "format": written.format})
         yield {"event": "delta", "data": {"content": response_text}}
         yield {"event": "artifact_ready", "data": artifact}
         yield {"event": "done", "data": {}}

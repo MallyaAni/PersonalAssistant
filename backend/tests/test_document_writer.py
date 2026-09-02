@@ -47,8 +47,17 @@ def test_the_word_file_is_a_real_docx_with_the_words_in_it():
         assert {"[Content_Types].xml", "_rels/.rels", "word/document.xml"} <= names
         document = archive.read("word/document.xml").decode("utf-8")
     assert "Amalfi itinerary" in document
-    assert "• Arrive Salerno, " in document and "<w:b/>" in document
+    assert 'w:pStyle w:val="ListBullet"' in document and "Arrive Salerno, " in document and "<w:b/>" in document
     assert "7:30pm dinner at the hotel" in document
+    with zipfile.ZipFile(io.BytesIO(content)) as archive:
+        styles = archive.read("word/styles.xml").decode("utf-8")
+        footer = archive.read("word/footer1.xml").decode("utf-8")
+        rels = archive.read("word/_rels/document.xml.rels").decode("utf-8")
+    # The template: one face, styled headings, a page number in the footer, margins on the section.
+    assert 'w:ascii="Calibri"' in styles and 'w:styleId="Heading2"' in styles and 'w:styleId="Title"' in styles
+    assert " PAGE " in footer and 'Target="footer1.xml"' in rels
+    assert "<w:footerReference" in document and "<w:pgMar" in document
+    assert 'w:pStyle w:val="Title"' in document and 'w:pStyle w:val="Heading1"' in document
 
 
 def test_only_a_pdf_needs_the_renderer():

@@ -101,3 +101,24 @@ async def test_the_plan_asked_for_as_a_file_routes_to_create_document(asked, exp
     assert isinstance(action, CreateDocumentAction), f"routed to {type(action).__name__} for {asked!r}"
     assert action.format == expected_format
     assert action.title.strip()
+
+
+# The file they shared, updated in its own style, is a different ask from a
+# new document: the router tells them apart on the real routing model.
+_SHARED_THEN_REVISED = [
+    {"query": 'shared a document: "Itinerary Amalfi Choral Tour.docx"', "response": ""},
+    {"query": "Scout whats on evening of day 1?", "response": "Evening of day 1 (Sun, Oct 11): orientation at 6:00pm, then dinner at the hotel in Salerno."},
+    *_PLAN_HISTORY,
+]
+
+
+@pytest.mark.parametrize(
+    "asked",
+    ["update the itinerary file with this plan and send me the docx", "put these changes into the original document"],
+)
+async def test_updating_the_shared_file_routes_to_edit_document(asked):
+    from backend.tools.actions import EditDocumentAction
+
+    action = await _selector().select("document_editing_eval", asked, _SHARED_THEN_REVISED, None)
+    assert isinstance(action, EditDocumentAction), f"routed to {type(action).__name__} for {asked!r}"
+    assert action.format == "docx"

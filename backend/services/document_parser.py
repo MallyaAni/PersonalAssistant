@@ -13,6 +13,9 @@ traceback, and the caller decides whether to queue or to apologise.
 import logging
 from dataclasses import dataclass
 
+import json
+import re
+
 import httpx
 
 from backend.config.settings import settings
@@ -92,6 +95,44 @@ def needs_parser(media_type: str) -> bool:
     return not media_type.startswith("text/")
 
 
+# Docling's marker for a picture in its Markdown; with description on, the
+# caption follows it as a paragraph.
+PICTURE_PLACEHOLDER = "<!-- image -->"
+PICTURE_PROMPT = (
+    "Describe what this picture shows in one or two factual sentences, "
+    "including any text, names, numbers, or places in it. No opinions."
+)
+_PICTURE = re.compile(r"<!-- image -->\s*\n\s*\n(?P<caption>[^\n]+)")
+
+
+def _picture_options() -> dict[str, str]:
+    """Docling's form fields for describing pictures through the vision
+    model, or nothing when the describer is off."""
+    url = settings.DOCLING_PICTURE_API_URL.strip()
+    if not url:
+        return {}
+    api = {
+        "url": url,
+        "params": {"model": settings.DOCLING_PICTURE_MODEL, "max_tokens": 160},
+        "prompt": PICTURE_PROMPT,
+        "timeout": settings.DOCLING_PICTURE_TIMEOUT_SECONDS,
+        "concurrency": 1,
+    }
+    return {
+        "do_picture_description": "true",
+        "picture_description_api": json.dumps(api),
+        "picture_description_area_threshold": str(settings.DOCLING_PICTURE_AREA_THRESHOLD),
+    }
+
+
+def mark_pictures(markdown: str) -> str:
+    """A described picture becomes one marked passage - "[Picture: ...]" -
+    so a citation of it reads as a description, not as the document's own
+    words; an undescribed picture's placeholder is dropped."""
+    marked = _PICTURE.sub(lambda m: f"[Picture: {m.group('caption').strip()}]", markdown)
+    return marked.replace(PICTURE_PLACEHOLDER, "").strip()
+
+
 async def parse_document(filename: str, content: bytes) -> ParsedDocument:
     media_type = classify(filename, content)
     if media_type.startswith("text/"):
@@ -120,6 +161,7 @@ async def parse_document(filename: str, content: bytes) -> ParsedDocument:
                     "to_formats": "md",
                     "do_ocr": "true",
                     "md_page_break_placeholder": PAGE_BREAK,
+                    **_picture_options(),
                 },
             )
             response.raise_for_status()
@@ -127,7 +169,7 @@ async def parse_document(filename: str, content: bytes) -> ParsedDocument:
     except httpx.HTTPError as exc:
         logger.warning("Docling unreachable or failed for %s", filename, exc_info=True)
         raise ParseUnavailable(PARSER_AWAY) from exc
-    markdown = str(((payload.get("document") or {}).get("md_content")) or "").strip()
+    markdown = mark_pictures(str(((payload.get("document") or {}).get("md_content")) or "").strip())
     if payload.get("status") not in (None, "success") or not markdown:
         raise ParseError(f'I could not get any readable text out of "{filename}".')
     pages = markdown.count(PAGE_BREAK) + 1

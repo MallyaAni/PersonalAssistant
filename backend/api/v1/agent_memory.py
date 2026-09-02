@@ -10,6 +10,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from backend.core.auth import authorize_path_user
 from backend.core.dependencies import (
+    ArtifactRepositoryDependency,
+    BinaryArtifactStoreDependency,
     TracerDependency,
     DependencyConversationService,
     DependencyScheduledTasks,
@@ -364,6 +366,8 @@ async def ingest_document(
     service: DependencyConversationService,
     tracer: TracerDependency,
     background: BackgroundTasks,
+    artifacts: ArtifactRepositoryDependency,
+    artifact_store: BinaryArtifactStoreDependency,
     document: Annotated[UploadFile, File()],
     note: Annotated[str, Form()] = "",
     source_conversation_id: Annotated[str | None, Form()] = None,
@@ -419,6 +423,13 @@ async def ingest_document(
     )
     stored["pages"] = parsed.pages
     stored["media_type"] = parsed.media_type
+    # A Word file is also kept whole, so "update the file" can rewrite it in
+    # its own style later (document_originals.py). Never fails the share.
+    from backend.services.document_originals import keep_original
+
+    await keep_original(
+        artifacts, artifact_store, user_id, source_conversation_id, None, str(stored.get("id") or ""), filename, content
+    )
     # What the document says that is worth remembering, into memory with the
     # same attribution a spoken fact gets - after the response, never
     # delaying or failing the upload.

@@ -97,6 +97,21 @@ class CreateDocumentAction:
 
 
 @dataclass(frozen=True, slots=True)
+class EditDocumentAction:
+    """Rewrite the Word file the person shared with revised text, its look kept.
+
+    `body_markdown` empty means the previous reply is the revised text. The
+    file is the pinned document, else the newest one shared in the
+    conversation; when only a PDF was shared a new document is written
+    instead and the reply says why.
+    """
+
+    title: str
+    format: str
+    body_markdown: str = ""
+
+
+@dataclass(frozen=True, slots=True)
 class DelegateAction:
     """The model decided this turn belongs to a specialist agent."""
 
@@ -198,6 +213,7 @@ MainAction = (
     | DiscussImageAction
     | CreateDiagramAction
     | CreateDocumentAction
+    | EditDocumentAction
     | DelegateAction
     | ScheduleTaskAction
     | ManageTasksAction

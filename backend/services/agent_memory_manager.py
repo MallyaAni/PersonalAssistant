@@ -721,6 +721,25 @@ class KnowledgeStore(_VectorStore):
             results.append(_retrieval(item, float(score)))
         return results
 
+    # The newest active document shared in a conversation, or None: what
+    # "the file" means when nothing is pinned.
+    async def latest_in_conversation(self, user_id: str, conversation_id: str) -> dict[str, Any] | None:
+        try:
+            key = uuid.UUID(str(conversation_id))
+        except (TypeError, ValueError):
+            return None
+        document = await self.session.scalar(
+            select(KnowledgeDocument)
+            .where(
+                KnowledgeDocument.user_id == user_id,
+                KnowledgeDocument.source_conversation_id == key,
+                KnowledgeDocument.status.in_(("active", "archived")),
+            )
+            .order_by(KnowledgeDocument.created_at.desc())
+            .limit(1)
+        )
+        return document.to_dict() if document else None
+
     # Record the last date a document is about, once the digest has read it.
     # None clears it: an undated document never archives.
     async def set_about_until(self, user_id: str, document_id: str, about_until: date | None) -> bool:

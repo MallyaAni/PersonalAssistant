@@ -138,6 +138,20 @@ async def process_pending(parse=parse_document, limit: int = 20, reachable=parse
             job.content = b""
             await session.commit()
             landed += 1
+            # The Word original is kept beside the landed document, as the
+            # inline share keeps it (document_originals.py).
+            try:
+                from backend.artifacts.storage import LocalBinaryArtifactStore
+                from backend.services.artifact_repository import SQLAlchemyArtifactRepository
+                from backend.services.document_originals import keep_original
+
+                await keep_original(
+                    SQLAlchemyArtifactRepository(session), LocalBinaryArtifactStore(settings.ARTIFACT_STORAGE_ROOT),
+                    job.user_id, str(job.source_conversation_id) if job.source_conversation_id else None, None,
+                    stored["id"], job.filename, job.content,
+                )
+            except Exception:
+                logger.warning("Could not keep the Word original from the queue", exc_info=True)
             logger.info("document_parse_queue_landed", extra={"user": job.user_id, "title": job.filename})
     return landed
 

@@ -66,3 +66,26 @@ async def test_a_pdf_asked_for_without_a_renderer_is_stored_as_word_and_says_so(
     assert written.format == "docx", "the Word file stands in when the renderer is away"
     assert artifact["metadata"]["asked_format"] == "pdf" and artifact["metadata"]["format"] == "docx"
     assert (await store.read(artifact["_storage_key"])).startswith(b"PK\x03\x04")
+
+
+@pytest.mark.asyncio
+async def test_an_edit_keeps_the_originals_parts_and_records_what_it_edited(monkeypatch, tmp_path):
+    import io
+    import zipfile
+
+    from backend.config.settings import settings
+    from backend.services.document_writer import render_docx
+
+    monkeypatch.setattr(settings, "GOTENBERG_BASE_URL", "")
+    store = LocalBinaryArtifactStore(tmp_path)
+    repository = _Repository()
+    service = DocumentArtifactService(repository, store)  # type: ignore[arg-type]
+    original = render_docx("Choral Tour", "# Choral Tour\n\n- Day 1: arrive")
+    pending = await service.begin("ani", "22222222-2222-2222-2222-222222222222", "33333333-3333-3333-3333-333333333333", "Choral Tour (revised)", "pdf")
+    artifact, written = await service.edit(pending["id"], "ani", original, "Choral Tour (revised)", "## Day 1\n- Arrive Salerno at 6pm", "pdf", "doc-1")
+    # No renderer: the Word file stands in, and the record says what was asked and what was edited.
+    assert written.format == "docx" and artifact["metadata"]["asked_format"] == "pdf" and artifact["metadata"]["edited_from"] == "doc-1"
+    edited = await store.read(artifact["_storage_key"])
+    with zipfile.ZipFile(io.BytesIO(original)) as a, zipfile.ZipFile(io.BytesIO(edited)) as b:
+        assert a.read("word/styles.xml") == b.read("word/styles.xml")
+        assert "Arrive Salerno at 6pm" in b.read("word/document.xml").decode("utf-8")

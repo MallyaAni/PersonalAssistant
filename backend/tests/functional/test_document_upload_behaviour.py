@@ -112,3 +112,43 @@ async def test_a_word_document_is_parsed_and_retrievable():
             assert found and any("4471" in item.get("content", "") for item in found), found
         finally:
             await manager.knowledge.delete(user_id, stored["id"])
+
+
+# A picture inside a document is read by the household's vision model through
+# Docling and lands as one marked passage. The PDF is made here: a drawn
+# chart with words on it, printed to PDF by Gotenberg's LibreOffice route,
+# so the picture fills the page and clears the area threshold. Needs the
+# desktop (Docling, Gotenberg) and spark2's vision model; skips otherwise.
+async def test_a_picture_in_a_document_becomes_a_described_passage():
+    import io
+
+    import httpx
+
+    from backend.services.document_parser import parse_document
+
+    if not settings.DOCLING_BASE_URL or not settings.GOTENBERG_BASE_URL:
+        pytest.skip("the desktop's Docling and Gotenberg are needed")
+    if not settings.DOCLING_PICTURE_API_URL:
+        pytest.skip("DOCLING_PICTURE_API_URL is not set; pictures stay placeholders here")
+    from PIL import Image, ImageDraw
+
+    image = Image.new("RGB", (1400, 1000), "white")
+    draw = ImageDraw.Draw(image)
+    for i, height in enumerate((300, 520, 760, 640)):
+        draw.rectangle((120 + i * 300, 900 - height, 320 + i * 300, 900), fill=(40, 90, 200))
+    draw.text((120, 60), "Meeting point: Piazza Tasso, 8:30 a.m.", fill="black")
+    draw.text((120, 120), "Concert tickets sold per week", fill="black")
+    png = io.BytesIO(); image.save(png, format="PNG")
+    async with httpx.AsyncClient(timeout=180) as client:
+        printed = await client.post(
+            f"{settings.GOTENBERG_BASE_URL.rstrip('/')}/forms/libreoffice/convert",
+            files={"files": ("chart.png", png.getvalue(), "image/png")},
+        )
+    assert printed.status_code == 200 and printed.content.startswith(b"%PDF-"), printed.text[:200]
+    parsed = await parse_document("chart.pdf", printed.content)
+    text = parsed.markdown
+    assert "[Picture:" in text, text[:400]
+    caption = text[text.index("[Picture:") : text.index("]", text.index("[Picture:")) + 1]
+    assert len(caption) > 40, caption
+    low = caption.lower()
+    assert any(w in low for w in ("chart", "bar", "graph", "piazza", "tasso", "8:30", "ticket", "blue")), caption

@@ -10,12 +10,15 @@ from __future__ import annotations
 from typing import Any
 
 from backend.core.interfaces import BinaryArtifactRepository, BinaryArtifactStore
+from backend.services.document_editor import edit_docx
 from backend.services.document_writer import (
+    DOCUMENT_FORMATS,
     DOCX,
     PDF,
     WriterUnavailable,
     WrittenDocument,
     needs_renderer,
+    print_docx,
     renderer_reachable,
     write_document,
 )
@@ -65,6 +68,38 @@ class DocumentArtifactService:
             0,
             0,
             {"format": written.format, "title": title, "asked_format": fmt},
+        )
+        return artifact, written
+
+    # Someone's Word file rewritten in place with the revised text, kept as
+    # a new artifact: the original's styles, header and page setup survive
+    # (document_editor.py). A PDF asked for is that edited file printed; when
+    # the renderer is away the Word file is what they get, and the reply
+    # says so.
+    async def edit(
+        self, artifact_id: str, user_id: str, original: bytes, title: str, markdown: str, fmt: str, edited_from: str
+    ) -> tuple[dict[str, Any], WrittenDocument]:
+        edited = edit_docx(original, title, markdown)
+        chosen = fmt
+        content = edited
+        if needs_renderer(fmt):
+            if await renderer_reachable():
+                try:
+                    content = await print_docx(edited)
+                except WriterUnavailable:
+                    chosen, content = DOCX, edited
+            else:
+                chosen = DOCX
+        written = WrittenDocument(content, DOCUMENT_FORMATS[chosen], chosen, chosen)
+        stored = await self.store.write(user_id, artifact_id, written.extension, written.content)
+        artifact = await self.repository.mark_binary_ready(
+            artifact_id,
+            user_id,
+            stored,
+            written.media_type,
+            0,
+            0,
+            {"format": written.format, "title": title, "asked_format": fmt, "edited_from": edited_from},
         )
         return artifact, written
 

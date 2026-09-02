@@ -34,3 +34,8 @@ that was for a file to send.
   general file-sending endpoint.
 - A document the assistant wrote can be shared back and read through the
   parse path, which is how its content is verified in the gate.
+- 2026-09-02, later the same day: editing a shared Word file in place is
+  built locally (`document_editor.py`): the original is kept whole, only the
+  body is rewritten in its own styles. Microsoft 365 remains not integrated;
+  Graph has no Word editing API, so it would add a cloud round trip and take
+  nothing off this work.

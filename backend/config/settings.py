@@ -239,6 +239,16 @@ class Settings(BaseSettings):
     # than a connection error; the parser is bursty and lives where a GPU is.
     DOCLING_BASE_URL: str = ""
     DOCLING_TIMEOUT_SECONDS: int = Field(default=300, ge=10, le=1800)
+    # Pictures inside a document, described by the household's own vision
+    # model through Docling (an OpenAI-compatible chat endpoint the DESKTOP can
+    # reach - the LAN address, not a compose name). Empty leaves pictures as
+    # placeholders. Only pictures above the area share are described, so a
+    # logo or a thumbnail does not become a paragraph of noise; measured
+    # 2026-09-02: one picture, 17 s, on spark2's Qwen3-VL-8B.
+    DOCLING_PICTURE_API_URL: str = ""
+    DOCLING_PICTURE_MODEL: str = "qwen3-vl-8b"
+    DOCLING_PICTURE_AREA_THRESHOLD: float = Field(default=0.05, ge=0, le=1)
+    DOCLING_PICTURE_TIMEOUT_SECONDS: int = Field(default=90, ge=10, le=600)
     DOCUMENT_UPLOAD_MAX_BYTES: int = Field(default=25 * 1024 * 1024, ge=1024)
     # Document writing (the mirror of parsing): Gotenberg prints the
     # assistant's words to a PDF. Empty means PDFs are answered as Word files,
@@ -269,6 +279,15 @@ class Settings(BaseSettings):
     # expire on the same day.
     KNOWLEDGE_ARCHIVE_GRACE_DAYS: int = Field(default=30, ge=0, le=3650)
     KNOWLEDGE_ARCHIVE_INTERVAL_SECONDS: int = Field(default=3600, ge=0, le=86400)
+    # Google Drive as a read-only document source (docs/DOCUMENT_KNOWLEDGE_ARCHITECTURE.md,
+    # stage 8). A Desktop OAuth client's id and secret, the token file the
+    # connect CLI writes, and the folder to watch. Idle unless all are set.
+    GOOGLE_OAUTH_CLIENT_ID: str = ""
+    GOOGLE_OAUTH_CLIENT_SECRET: str = ""
+    GOOGLE_TOKEN_PATH: str = "data/google/token.json"
+    GOOGLE_DRIVE_FOLDER_ID: str = ""
+    GOOGLE_DRIVE_USER_ID: str = ""
+    GOOGLE_DRIVE_SYNC_INTERVAL_SECONDS: int = Field(default=900, ge=0, le=86400)
     MEMORY_SEMANTIC_MAX_RESULTS: int = Field(default=5, ge=1, le=20)
     # Searching the user's own past turns, not only the facts a classifier
     # promoted out of them. An account with fourteen conversations had zero

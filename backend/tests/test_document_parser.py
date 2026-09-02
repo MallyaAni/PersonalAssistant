@@ -82,3 +82,25 @@ async def test_the_parser_client_connects_fast_and_reads_long(monkeypatch):
     assert isinstance(timeout, httpx.Timeout)
     assert timeout.connect == PARSER_CONNECT_SECONDS <= 10
     assert timeout.read == settings.DOCLING_TIMEOUT_SECONDS
+
+
+def test_a_described_picture_is_one_marked_passage_and_a_bare_placeholder_is_dropped():
+    from backend.services.document_parser import mark_pictures
+
+    md = "12:30 p.m. - Bus departs for Naples\n\n<!-- image -->\n\nThis image is a promotional graphic for the festival, a striped dome against a blue sky.\n\n## Day 2\n\n<!-- image -->\n\n## Day 3"
+    marked = mark_pictures(md)
+    assert "[Picture: This image is a promotional graphic for the festival, a striped dome against a blue sky.]" in marked
+    assert "<!-- image -->" not in marked
+    assert "## Day 2" in marked and "## Day 3" in marked
+
+
+def test_picture_options_are_off_without_a_describer(monkeypatch):
+    from backend.config.settings import settings
+    from backend.services.document_parser import _picture_options
+
+    monkeypatch.setattr(settings, "DOCLING_PICTURE_API_URL", "")
+    assert _picture_options() == {}
+    monkeypatch.setattr(settings, "DOCLING_PICTURE_API_URL", "http://172.16.8.5:8001/v1/chat/completions")
+    options = _picture_options()
+    assert options["do_picture_description"] == "true"
+    assert "qwen3-vl-8b" in options["picture_description_api"] and options["picture_description_area_threshold"] == "0.05"

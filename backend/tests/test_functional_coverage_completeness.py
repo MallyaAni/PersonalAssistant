@@ -26,6 +26,7 @@ INTERNET_TOOLS = ("search_web", "get_weather", "search_credits")
 # Capabilities the sweep cannot walk as a guest turn, with the reason and
 # where they are proven instead.
 JOURNEY_EXEMPT = {
+    "Edits to a shared file": "needs a Word file shared in the conversation; the sweep uploads nothing - walked by the live acceptance (scripts kept on the Spark) and the router functional test",
     "Presentations": "a deck build runs minutes in the presentation worker; frontend/e2e/presentations.spec.ts walks it",
 }
 

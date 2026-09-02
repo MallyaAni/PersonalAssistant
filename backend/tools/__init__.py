@@ -11,6 +11,7 @@ same router alongside these.
 from .actions import (
     CreateDiagramAction,
     CreateDocumentAction,
+    EditDocumentAction,
     DelegateAction,
     DiscussImageAction,
     EditImageAction,
@@ -59,6 +60,7 @@ __all__ = [
     "BuiltinTool",
     "CreateDiagramAction",
     "CreateDocumentAction",
+    "EditDocumentAction",
     "DelegateAction",
     "DiscussImageAction",
     "EditImageAction",

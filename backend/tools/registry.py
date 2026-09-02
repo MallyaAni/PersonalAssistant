@@ -15,6 +15,7 @@ from . import (
     create_diagram,
     create_document,
     discuss_image,
+    edit_document,
     edit_image,
     generate_image,
     manage_skills,
@@ -30,6 +31,7 @@ from .actions import (
     CreateDiagramAction,
     CreateDocumentAction,
     DelegateAction,
+    EditDocumentAction,
     DiscussImageAction,
     EditImageAction,
     GenerateImageAction,
@@ -66,6 +68,7 @@ _MODULES: tuple[ModuleType, ...] = (
     discuss_image,
     create_diagram,
     create_document,
+    edit_document,
     presentation,
     search_history,
     schedule_task,
@@ -213,6 +216,7 @@ _ROW_FOR_ACTION: dict[type, BuiltinTool] = {
     DiscussImageAction: discuss_image.TOOL,
     CreateDiagramAction: create_diagram.TOOL,
     CreateDocumentAction: create_document.TOOL,
+    EditDocumentAction: edit_document.TOOL,
     DelegateAction: presentation.TOOL,
     RecallHistoryAction: search_history.TOOL,
     ScheduleTaskAction: schedule_task.TOOL,
@@ -237,7 +241,7 @@ def _detail(action: MainAction) -> str:
         return action.query
     if isinstance(action, CreateDiagramAction | DelegateAction):
         return action.subject
-    if isinstance(action, CreateDocumentAction):
+    if isinstance(action, CreateDocumentAction | EditDocumentAction):
         return f"{action.title} ({action.format})"
     if isinstance(action, ScoutScheduleAction) and action.operation == "show":
         return "show"

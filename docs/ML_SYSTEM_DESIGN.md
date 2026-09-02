@@ -704,6 +704,26 @@ the sharer gets their own copy. Two candidates from one turn with the same
 predicate are saved once by a deterministic key, because the embedding space
 put paraphrases 0.278 apart and an unrelated fact 0.136 apart.
 
+**Pictures in documents: the household's vision model, above a size, as a
+marked passage (2026-09-02).** Docling describes each picture above 5% of
+the page through spark2's Qwen3-VL-8B (an OpenAI-compatible endpoint the
+desktop reaches by LAN) with a facts-only prompt; the parser writes it as
+"[Picture: ...]" so a citation reads as a description. Below the threshold
+(a logo) nothing is sent: a caption is a lossy, sometimes invented sentence,
+and every one is a vision call of some seconds - 17 s for the itinerary's
+one picture. Page images are not embedded as vectors: a different retrieval
+design, heavier, unnecessary at this scale. *What would change it:* a
+document class whose captions mislead (measured, not assumed), or a VLM
+whose calls are cheap enough to describe everything.
+
+**Editing a shared Word file in place (2026-09-02).** The file is kept
+whole beside its knowledge document; an edit rewrites only the body of
+`word/document.xml` in the original's own style ids and copies every other
+part byte for byte, so fonts, colours, header, logo, and page setup survive.
+A Microsoft 365 integration was considered and not taken (ADR 0020): Graph
+has no Word editing API - the file is downloaded, edited, and uploaded -
+which this does on the box without a tenant.
+
 **Writing back: the Word file here, the PDF printed beside the parser.** The
 assistant offered a PDF it could not make (2026-09-02); rather than suppress
 the offer, `create_document` makes it true. The body is the Markdown the

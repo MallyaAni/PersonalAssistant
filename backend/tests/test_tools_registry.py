@@ -39,6 +39,7 @@ def test_every_builtin_row_is_complete():
         "discuss_image",
         "create_diagram",
         "create_document",
+        "edit_document",
         "delegate_to_presentation_agent",
         "search_history",
         "schedule_task",

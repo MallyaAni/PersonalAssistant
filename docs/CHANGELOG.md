@@ -2,6 +2,38 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-02 - Google Drive as a read-only document source, awaiting the operator's consent
+
+The fourth next step. A folder in Drive is listed every 15 minutes with a
+read-only scope and every new or changed file goes through the durable parse
+queue like a shared file (Docs export as Word, Sheets and Slides as PDF);
+nothing is written to Drive; state lives beside the token file, no
+migration. `python -m backend.cli.google_connect` does the one-time consent
+and writes the token. Unit-tested against a fake Drive (queue, skip, requeue,
+export, refresh); the real API cannot be exercised until the operator's
+consent, and the design doc lists the three steps.
+
+## 2026-09-02 - Pictures are read, the writer has a template, and a shared Word file can be updated in its own style
+
+Three of the four next steps the operator chose. (1) Pictures inside a
+document are described by spark2's vision model through Docling
+(`DOCLING_PICTURE_API_URL`; above 5% of the page; facts-only prompt) and
+land as one "[Picture: ...]" passage; a drawn chart printed to PDF comes
+back described, the itinerary's logo is skipped. (2) The writer's Word file
+has a template: a styles part, a footer with the page number, A4 margins, a
+title block; the printed PDF and the Word file read back through Docling.
+(3) A Word file someone shares is kept whole beside its knowledge document
+(inline and from the queue; a PDF is not), and `edit_document` rewrites
+only its body in the original's own styles - every other part byte for
+byte - and hands the file back, printed to PDF on request; with no Word
+original the writer makes a new document and says why. Routing cases for
+the edit ask (three phrasings), the editor's part-preservation tests, the
+originals' keep-and-read tests, the service's edit test, and a router
+functional test; the live acceptance shares a Word file, revises it in
+chat, and compares the returned styles with the original's. Design doc
+(pictures, stage 6 template, stage 7), ML design section 13, the
+architecture page, ADR 0020 note.
+
 ## 2026-09-02 - A written document does not print its title twice
 
 The reply's first heading is often the title again, and the live PDF opened

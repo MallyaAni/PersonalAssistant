@@ -18,6 +18,7 @@ from backend.core.logging_config import setup_logging
 from backend.core.telemetry import configure_telemetry
 from backend.services.document_parse_queue import DocumentParseQueue
 from backend.services.document_retention import DocumentArchiver
+from backend.services.google_drive_source import DriveSync
 from backend.services.image_embedding_reconciler import ImageEmbeddingReconciler
 
 setup_logging("DEBUG" if settings.DEBUG else "INFO")
@@ -41,9 +42,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     parse_queue.start()
     archiver = DocumentArchiver(settings.KNOWLEDGE_ARCHIVE_INTERVAL_SECONDS)
     archiver.start()
+    drive_sync = DriveSync(settings.GOOGLE_DRIVE_SYNC_INTERVAL_SECONDS)
+    drive_sync.start()
     try:
         yield
     finally:
+        await drive_sync.stop()
         await archiver.stop()
         await parse_queue.stop()
         await reconciler.stop()
