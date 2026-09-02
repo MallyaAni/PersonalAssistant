@@ -233,6 +233,14 @@ _CANCELLED_HISTORY = (
 _MOVED_SCOUT_HISTORY = (
     ("run scout daily at 3pm", "Done - Scout's sweep is now scheduled for daily at 3:00 PM."),
 )
+# A document just shared and read into knowledge, for "forget that document".
+_SHARED_DOCUMENT_HISTORY = (
+    ('shared a document: "Itinerary Amalfi Choral Tour.pdf"', ""),
+    (
+        "Scout whats on evening of day 1?",
+        "Evening of day 1 (Sun, Oct 11): orientation at 6:00pm, then dinner at the hotel in Salerno.",
+    ),
+)
 # A memory just saved, for "forget that".
 _SAVED_HISTORY = (
     ("my dentist is Dr Lee on Wilson Boulevard", "Noted - saved: your dentist is Dr Lee on Wilson Boulevard."),
@@ -648,6 +656,8 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
     SelectionCase("never mind, put the stretch reminder back", MANAGE_TASKS, "task_undo", history=_CANCELLED_HISTORY),
     SelectionCase("undo that", MANAGE_TASKS, "task_undo", history=_MOVED_SCOUT_HISTORY),
     SelectionCase("forget that", MANAGE_TASKS, "task_undo", history=_SAVED_HISTORY),
+    # A document just shared and read: forgetting it is the same undo.
+    SelectionCase("forget that document", MANAGE_TASKS, "task_undo", history=_SHARED_DOCUMENT_HISTORY),
     SelectionCase("actually don't remember that", MANAGE_TASKS, "task_undo", history=_SAVED_HISTORY),
 )
 
