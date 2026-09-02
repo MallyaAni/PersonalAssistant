@@ -1239,3 +1239,87 @@ async def test_an_ordinary_message_carries_no_reply(monkeypatch):
     await worker.tick()
 
     assert seen == [""]
+
+
+# A document attachment is read, not looked at: it routes to the document
+# turn, and the confirming bubble can pin the document for a later reply.
+@pytest.mark.asyncio
+async def test_a_pdf_attachment_goes_to_the_document_turn(monkeypatch):
+    message = {
+        "guid": "g20",
+        "sender": "7372025933",
+        "reply_to": "+17372025933",
+        "text": "here's the itinerary",
+        "sent_at": "2026-09-01T23:00:00Z",
+        "attachments": [
+            {
+                "attachment_id": "att-doc-1",
+                "media_type": "application/pdf",
+                "name": "Itinerary.pdf",
+                "bytes": 150000,
+            }
+        ],
+    }
+    bridge = _Bridge({"messages": [message], "cursor": 60})
+    worker, _ = _worker(
+        bridge, monkeypatch, accounts={"7372025933": "ani.mallya"}, replies={}
+    )
+    document_turns: list[tuple[str, str, int]] = []
+    photo_turns: list[str] = []
+
+    async def document_turn(user_id, caption, documents):
+        document_turns.append((user_id, caption, len(documents)))
+        return TurnResult("Got it - I've read Itinerary.pdf (2 pages).", (), document_id="doc-123")
+
+    async def photo_turn(user_id, caption, attachments):
+        photo_turns.append(user_id)
+        return TurnResult("should not happen")
+
+    monkeypatch.setattr(worker, "_document_turn", document_turn)
+    monkeypatch.setattr(worker, "_photo_turn", photo_turn)
+
+    answered = await worker.tick()
+
+    assert answered == 1
+    assert document_turns == [("ani.mallya", "here's the itinerary", 1)]
+    assert photo_turns == []
+    assert bridge.sent == [
+        {"to": "+17372025933", "body": "Got it - I've read Itinerary.pdf (2 pages)."}
+    ]
+
+
+@pytest.mark.asyncio
+async def test_a_document_pin_becomes_the_active_document_not_an_image(monkeypatch):
+    bridge = _Bridge({"messages": [], "cursor": 0})
+    worker, _ = _worker(bridge, monkeypatch, accounts={}, replies={})
+
+    async def stored_conversation(user_id):
+        return "conv-1"
+
+    async def stored_image(user_id):
+        return "img-should-be-ignored"
+
+    monkeypatch.setattr(worker, "_stored_conversation", stored_conversation)
+    monkeypatch.setattr(worker, "_stored_image", stored_image)
+
+    state = await worker._thread_state("ani.mallya", pinned="doc:doc-123")
+
+    assert state == {"conversation_id": "conv-1", "active_document_id": "doc-123"}
+
+
+@pytest.mark.asyncio
+async def test_an_unfetchable_document_is_reported_without_a_document_id(monkeypatch):
+    bridge = _Bridge({"messages": [], "cursor": 0})
+    worker, _ = _worker(bridge, monkeypatch, accounts={}, replies={})
+
+    async def fetch(attachment_id):
+        return None
+
+    monkeypatch.setattr(worker, "_fetch_inbound_attachment", fetch)
+
+    reply, document_id = await worker._ingest_document(
+        "ani.mallya", "", {"attachment_id": "att-x"}, "conv-1"
+    )
+
+    assert "couldn't open" in reply
+    assert document_id == ""
