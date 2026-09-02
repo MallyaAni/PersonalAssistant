@@ -19,6 +19,10 @@ model and on the real one (the itinerary is dated in October 2026 with a
 dated statement, the recipe is undated; three reps), and the archive pass
 and status-scoped search against the real database and embedder. ADR 0021.
 
+Deployed with `--skip-gate` on the operator's decision: the pre-migration
+unit gate cannot pass with the new columns (AGENTS.md, operational traps);
+the sweep, the post-deploy chain, and the retention live check ran after.
+
 ## 2026-09-02 - A set of tasks is picked whole, and a change that did not happen is never reported as done
 
 The deploy sweep's "delete the paused ones" journey failed with the reply
