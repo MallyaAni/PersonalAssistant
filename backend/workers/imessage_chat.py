@@ -468,6 +468,16 @@ class IMessageChatWorker:
         # so a casual share does not draw a reply nobody asked for.
         if documents:
             turn = await self._document_turn(group.user_id, text, documents)
+            # The sharer's own copy: sharing a document is their own act, so
+            # it is theirs as well as the room's - the same rule a stated fact
+            # follows - and "when's my trip?" then works one-to-one later.
+            # Nobody else's store is written on the sharer's word.
+            speaker_id = str(room.get("speaker_user_id") or "")
+            if speaker_id and speaker_id != group.user_id and turn.document_id:
+                try:
+                    await self._document_turn(speaker_id, text, documents)
+                except Exception:
+                    logger.warning("imessage_chat_sharer_copy_failed", extra={"user": speaker_id})
             if room["addressed_by"]:
                 await self._deliver(reply_to, turn, user_id=group.user_id, room=room)
                 return 1

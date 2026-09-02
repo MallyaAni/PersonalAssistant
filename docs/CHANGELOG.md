@@ -2,6 +2,23 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-02 - A shared document is the referent, and the sharer keeps their own copy
+
+Live in the Groupie room, "Scout whats on evening of day 1?" asked ten
+seconds after the itinerary was dropped was answered about trivia. Two
+structural causes, both fixed. A document shared without naming the
+assistant was read silently and so left no trace in the thread; the worker
+now observes 'shared a document: "<title>"' into the room, and the follow-up
+resolver then reads "day 1" as the itinerary (proven 3/3). The knowledge
+store used the memory cutoff (0.35), which rejected the person's own words at
+0.46 from the Day 1 passage; documents now have their own gate
+(KNOWLEDGE_MAX_COSINE_DISTANCE=0.5, measured) and the per-turn search probes
+the raw words and the resolver's completed reading, merged by best score
+(proven 3/3). And because sharing a document is the sharer's own act, a room
+share is also read into the sharer's own knowledge - never another member's -
+so "when's my trip?" works one-to-one later (unit-tested). Deployed with the
+eighth and ninth deploys of the day.
+
 ## 2026-09-02 - A document shared in a room is read into the room's knowledge
 
 The first real test dropped the itinerary into the Groupie room with "here's

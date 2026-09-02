@@ -30,7 +30,9 @@ the desktop being off (a durable queue); answering never depends on it.
 1. **Arrive.** A document attaches on any channel — iMessage one-to-one, an
    allowlisted room, or deep-matter. In a room the document is read whether or not the
    assistant is named - it is context, like observed chatter - and the
-   confirmation is sent only when it is addressed.com. Today the iMessage bridge accepts
+   confirmation is sent only when it is addressed. The share is observed into
+   the thread by name so it is what the next question means, and the sharer
+   keeps their own copy (sharing is their own act) - never another member's.com. Today the iMessage bridge accepts
    images only (`INBOUND_IMAGE_TYPES`); NEW: extend the allowlist to PDF, DOCX,
    PPTX, ODT, RTF, and common image scans, each gated by a magic-byte check the
    same way images are, with a per-type size cap. The turn is routed to a

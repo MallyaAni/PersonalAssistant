@@ -703,7 +703,8 @@ async def test_a_room_pdf_is_a_document_turn_for_the_group(monkeypatch):
     monkeypatch.setattr(worker, "_document_turn", document_turn)
     monkeypatch.setattr(worker, "_photo_turn", photo_turn)
     assert await worker.tick() == 1
-    assert seen == [("group:abc", "Scout here's the itinerary", 1)]
+    # The room's copy, then the sharer's own - never the other member's.
+    assert seen == [("group:abc", "Scout here's the itinerary", 1), ("u-ani", "Scout here's the itinerary", 1)]
     assert photos == []
     assert conversed == []
     assert bridge.sent == [{"to": ROOM_GUID, "body": "Got it - I've read Itinerary.pdf (2 pages)."}]
@@ -733,10 +734,33 @@ async def test_an_unaddressed_room_pdf_is_read_silently(monkeypatch):
     monkeypatch.setattr(worker, "_document_turn", document_turn)
     monkeypatch.setattr(worker, "_observe", observe)
     await worker.tick()
-    assert seen == [("group:abc", 1)]
+    assert seen == [("group:abc", 1), ("u-ani", 1)]
     assert conversed == []
     assert bridge.sent == []
     # The share is on the record by name - before the caption is observed as
     # ordinary room chatter - so "day 1" later means this file.
     assert observed[0] == ("group:abc", 'shared a document: "Itinerary.pdf"'), observed
     assert ("group:abc", "here's the itinerary, what do you think?") in observed, observed
+
+
+# The sharer keeps their own copy: a document dropped in the room is read
+# into the room's knowledge and into the sharer's, never into the other
+# member's - the same rule a stated fact follows.
+@pytest.mark.asyncio
+async def test_a_room_document_is_also_the_sharers_own(monkeypatch):
+    message = _room_message("g1", "5550100", "Scout here's the itinerary", addressed_by="name")
+    message["attachments"] = [{"attachment_id": "a1", "media_type": "application/pdf", "name": "Itinerary.pdf"}]
+    bridge = _Bridge({"messages": [message], "cursor": 5})
+    worker, _, _ = _worker(bridge, monkeypatch, ACCOUNTS, {}, group=GROUP)
+    owners: list[str] = []
+
+    async def document_turn(user_id, caption, documents):
+        owners.append(user_id)
+        return TurnResult("Got it - I've read Itinerary.pdf (2 pages).", (), document_id="doc-1", read_titles=("Itinerary.pdf",))
+
+    monkeypatch.setattr(worker, "_document_turn", document_turn)
+    assert await worker.tick() == 1
+    assert owners[0] == "group:abc"
+    assert ACCOUNTS["5550100"] in owners[1:], owners
+    assert len(owners) == 2, owners
+    assert bridge.sent == [{"to": ROOM_GUID, "body": "Got it - I've read Itinerary.pdf (2 pages)."}]
