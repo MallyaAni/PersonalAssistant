@@ -2,6 +2,19 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-01 - The reply consults document knowledge every turn (Phase 1 of document knowledge)
+
+A document a person gives the assistant now changes the answer. The per-turn
+reply searches the native `KnowledgeStore` (pgvector, Nomic) reusing the query
+embedding it already computed, and `graph.py` renders any relevant passages as
+a cited, safety-framed block beside web-search and history-recall evidence.
+Before this the reply recalled past turns, semantic memory and images but never
+documents. Verified 9/9 across three runs in the backend container
+(`test_document_knowledge_behaviour.py`): a seeded fact is answered from the
+document and attributed to it; an absent fact is declined, not invented; an
+ingested document is retrieved by a question about it. Design:
+`docs/DOCUMENT_KNOWLEDGE_ARCHITECTURE.md`.
+
 ## 2026-09-01 — the rolling digest keeps the artifact a working thread is on
 
 A long coding thread can outlive the ten-turn history window, and the durable

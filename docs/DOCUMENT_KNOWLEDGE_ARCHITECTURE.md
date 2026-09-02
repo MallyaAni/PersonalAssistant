@@ -75,7 +75,7 @@ the desktop being off (a durable queue); answering never depends on it.
 
 ## Build order (each phase ends in something the assistant can do)
 
-1. **Retrieval wiring.** Make the reply consult the existing `KnowledgeStore`
+1. **Retrieval wiring.** VERIFIED 2026-09-01 (9/9 across three container runs, `test_document_knowledge_behaviour.py`). Make the reply consult the existing `KnowledgeStore`
    per turn. Anything already ingested becomes answerable, cited. No desktop
    dependency, no new infrastructure - it proves the "documents feed the answer"
    half against knowledge that is already there. Smallest change, most value.
