@@ -19,11 +19,26 @@ def test_the_tool_is_offered_parses_and_counts_as_automation():
     action = parse_builtin(
         "manage_check_ins",
         {"mode": "once", "subject": "the interview", "question": "How did the interview go?", "after_days": 2, "hour": 18},
-        "x",
+        "check in with me on Friday about how the interview went",
     )
     assert action == ManageCheckInsAction(
         mode="once", subject="the interview", question="How did the interview go?", after_days=2, hour=18, kind="following_up"
     )
+
+
+def test_a_statement_about_their_day_is_no_action_whatever_the_model_chose():
+    # Routed to the tool 3/3 right after "from now on, check in on me…" on
+    # the real router (2026-09-02); the words decide in code.
+    assert parse_builtin("manage_check_ins", {"mode": "once", "subject": "the offer on the car"}, "I put an offer in on a car this morning") is None
+    assert parse_builtin("manage_check_ins", {"mode": "on"}, "we're heading to National Harbor on Saturday") is None
+    for asked in (
+        "check in with me on Friday about how the interview went",
+        "from now on, check in on me about the things I mention",
+        "stop checking in on me",
+        "can you follow up with me next week about how the move went?",
+        "what check-ins do you have waiting for me?",
+    ):
+        assert parse_builtin("manage_check_ins", {"mode": "status"}, asked) is not None, asked
 
 
 def test_a_bad_mode_or_an_empty_once_is_no_action_and_kinds_are_held_to_ours():

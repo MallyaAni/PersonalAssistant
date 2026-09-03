@@ -165,6 +165,10 @@ def parse_builtin(
     module = _BY_NAME.get(name)
     if module is None:
         return NOT_BUILTIN
+    # A parser that wants the message itself gets it: some decisions are
+    # made on the words the person wrote, in code, whatever the model chose.
+    if getattr(module, "PARSE_READS_MESSAGE", False):
+        return module.parse(arguments, fallback_query)
     return module.parse(arguments)
 
 

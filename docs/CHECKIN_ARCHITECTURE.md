@@ -31,6 +31,13 @@ directly:
 | `once` | "check in with me on Friday about how the interview went" | one check-in is armed for the named thing, through the same `arm_check_in` and under the same limits (three waiting, no duplicate subject, a civil hour, never wellbeing in a room); the habit stays as it was |
 | `status` | "what are you going to ask me about?" | on or off, and what is waiting |
 
+The tool acts only on an ask. Its parser reads the message and returns no
+action unless the words contain one (check in, follow up, keep tabs, ask
+me, stop checking): a statement about the person's day, even right after
+they asked for check-ins, is left to the judgement. Decided in code because
+the router sent exactly that statement to the tool 3/3 after the
+description said not to (2026-09-02).
+
 The outcome travels in the same record a scheduled task uses, rendered by
 `graph._render_check_in_outcome`, so the reply says what is now set rather
 than guessing - and says it as what it is to the person ("I'll ask on

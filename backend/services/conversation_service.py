@@ -3691,10 +3691,15 @@ class ConversationService:
             # six weeks out, at a civil hour.
             after_days = MIN_DAYS if action.after_days is None else max(MIN_DAYS, min(MAX_DAYS, action.after_days))
             hour = 18 if action.hour is None else max(FIRST_HOUR, min(LAST_HOUR, action.hour))
+            # A question that does not name the thing ("How did it go?") is
+            # vague by the time it fires days later; the written form names
+            # it ("Ask how the interview went.").
+            subject_words = {word for word in action.subject.lower().split() if len(word) > 3}
+            names_it = any(word in action.question.lower() for word in subject_words)
             check_in = CheckIn(
                 kind=action.kind or FOLLOWING_UP,
                 subject=action.subject[:80],
-                question=action.question[:160],
+                question=action.question[:160] if names_it else "",
                 after_days=after_days,
                 hour=hour,
             )

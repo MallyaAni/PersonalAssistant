@@ -702,6 +702,20 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
     SelectionCase("can you follow up with me next week about how the move went?", MANAGE_CHECK_INS, "check_ins"),
     SelectionCase("remind me Friday at 9 to call the dentist", SCHEDULE_TASK, "check_ins"),
     SelectionCase("I put an offer in on a car this morning", NO_TOOL, "check_ins"),
+    # Live in the sweep (2026-09-02): the same mention, right after "from now
+    # on, check in on me about the things I mention", was routed to the tool.
+    # A statement about their day is not a request in any conversation.
+    SelectionCase(
+        "I put an offer in on a car this morning",
+        NO_TOOL,
+        "check_ins",
+        history=(
+            (
+                "from now on, check in on me about the things I mention",
+                "Got it - from here I'll come back to the things you mention, like how a trip went.",
+            ),
+        ),
+    ),
 
 )
 

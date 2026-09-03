@@ -162,7 +162,9 @@ JOURNEYS = [
     Journey("a check-in asked for by name", "check in with me on Friday about how the interview went", ("Check-ins", "Skill"),
             holds=("The reply says it will ask about the interview later, on Friday or in a few days.",),
             does_not_hold=("The reply calls it a task, a reminder, or an automation.",),
-            sql_holds=("select count(*) >= 1 from scheduled_tasks where user_id = :u and kind = 'checkin:following_up' and instruction ilike '%interview%'",)),
+            # The subject and instruction are encrypted at rest, so the row is
+            # proven by kind and by landing in the future, not by its words.
+            sql_holds=("select count(*) >= 1 from scheduled_tasks where user_id = :u and kind = 'checkin:following_up' and enabled and next_run_at > now()",)),
     Journey("stop checking in on me", "stop checking in on me", ("Check-ins", "Skill"),
             holds=("The reply says check-ins are off or that it will stop.",),
             sql_holds=("select not coalesce((preferences->>'check_ins')::boolean, true) from user_profiles where user_id = :u",
@@ -312,6 +314,8 @@ JOURNEYS = [
     # actually holds is the armed task below; the route never decides it.
     Journey("group: a shared plan arms a check-in in the room",
             "we put an offer in on a car this morning", (None, "Past conversations"), as_group=True,
+            # Check-ins are off until asked (2026-09-02); the room asks first.
+            before=("from now on, check in on us about the plans we make",),
             does_not_hold=("The reply says it has scheduled, set, or armed anything.",),
             sql_holds=("select count(*) >= 1 from scheduled_tasks where user_id = :g and kind like 'checkin:%'",)),
     Journey("group: how someone feels is never armed in the room",
@@ -632,7 +636,16 @@ class Sweep:
                         if earlier_result.get("error"):
                             setup_problems.append(f"setup turn failed ({earlier[:40]!r}): {earlier_result['error']}")
                     for earlier in journey.before:
-                        earlier_result = await self._turn(client, earlier, None, conversation_id)
+                        # A room journey's earlier turns are the room's own,
+                        # so what they set up (check-ins on, 2026-09-02) is
+                        # set up for the group, not the sweep's one-to-one self.
+                        earlier_result = await self._turn(
+                            client,
+                            earlier,
+                            self._room() if journey.as_group else None,
+                            conversation_id,
+                            who="group" if journey.as_group else "user",
+                        )
                         if earlier_result.get("error"):
                             setup_problems.append(f"setup turn failed ({earlier[:40]!r}): {earlier_result['error']}")
                     for earlier in journey.observed_before:

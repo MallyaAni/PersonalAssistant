@@ -1,5 +1,6 @@
 """manage_check_ins: check-ins on request - turned on, turned off, armed once
 for one named thing, or listed. Off for everyone until they ask."""
+import re
 from typing import Any
 
 from backend.core.checkin import FIRST_HOUR, FOLLOWING_UP, KINDS, LAST_HOUR, MAX_DAYS, MIN_DAYS
@@ -9,6 +10,19 @@ from .base import BuiltinTool
 
 NAME = "manage_check_ins"
 MODES = ("on", "off", "once", "status")
+PARSE_READS_MESSAGE = True
+
+# What a request for check-ins sounds like. A statement about the person's
+# day ("I put an offer in on a car this morning") carries none of these, and
+# the router sent exactly that to this tool 3/3 right after they had asked
+# for check-ins, whatever the description said (measured 2026-09-02). So
+# the words decide, in code: no ask, no action, and the judgement that
+# handles mentions runs as it would have.
+_ASKS = re.compile(
+    r"check[- ]?ins?\b|check (?:in )?on (?:me|us)|follow[- ]?up|keep tabs|ask (?:me|us)\b"
+    r"|stop checking|checking (?:in|on)|remind me to tell you|see how i",
+    re.IGNORECASE,
+)
 
 _SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -64,8 +78,11 @@ TOOL = BuiltinTool(
         "up with, or asked later about something ('check in with me Friday "
         "about the interview', 'from now on follow up on things I mention'), "
         "when they ask for that to stop, or when they ask what check-ins are "
-        "waiting. Not for reminders they phrase as reminders, and not for "
-        "something merely mentioned in passing."
+        "waiting. Not for reminders they phrase as reminders. Not for a "
+        "statement about their day ('I put an offer in on a car this morning') "
+        "- that is not a request, even in a conversation where they just "
+        "asked for check-ins; the assistant decides on its own whether to "
+        "come back to it."
     ),
     schema=_SCHEMA,
     waiting=(
@@ -78,9 +95,11 @@ TOOL = BuiltinTool(
 # The call as an action, or nothing when the mode is not one of ours or a
 # once has no subject to come back to. Numbers outside the check-in bounds
 # are clamped later by the same code that clamps the judgement's.
-def parse(arguments: dict[str, Any]) -> ManageCheckInsAction | None:
+def parse(arguments: dict[str, Any], message: str = "") -> ManageCheckInsAction | None:
     mode = str(arguments.get("mode") or "").strip().lower()
     if mode not in MODES:
+        return None
+    if message and not _ASKS.search(message):
         return None
     subject = " ".join(str(arguments.get("subject") or "").split())
     question = " ".join(str(arguments.get("question") or "").split())

@@ -2,6 +2,28 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-02 - The check-in journeys, corrected by the first live sweep
+
+The twenty-fourth deploy's sweep ran the four new check-in journeys and
+three read red for reasons the code did not have. The by-name journey had
+armed its check-in (Friday, 6 PM) but looked for the word "interview" in
+columns that are encrypted at rest; it now proves the row by kind and by
+landing in the future. The room journey never opted the room in: a
+journey's earlier turns went as the sweep's one-to-one self even for a
+room journey, so the group's own switch stayed off; they now go as the
+room. And the opt-in journey showed a real routing wobble: the same "I put
+an offer in on a car this morning", right after "from now on, check in on
+me about the things I mention", was routed to the check-ins tool instead
+of the judgement - and still was, 3/3, after the tool's description said a
+statement about their day is not a request. So the words decide in code:
+`manage_check_ins.parse` reads the message (the registry now hands a
+parser the message when it asks for it) and takes no action unless it
+contains an ask - check in, follow up, keep tabs, ask me, stop checking -
+whatever the model chose. Measured after: the mention stays with the
+judgement 3/3, the four asks reach the tool 12/12. A once whose question
+does not name the thing ("How did it go?") gets the written form ("Ask how
+the interview went.") so it still makes sense days later.
+
 ## 2026-09-02 - A camera photo too big for the bridge is shrunk on the Mac, and a refusal is explained
 
 Hampton sent a 26 MB JPEG from a camera. The Mac's bridge caps what it
