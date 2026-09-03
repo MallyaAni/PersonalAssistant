@@ -389,3 +389,21 @@ async def test_recent_history_reaches_the_decision_prompt():
     sent = llm.messages[-1]["content"]
     assert "I'm in Raleigh, NC" in sent
     assert "any events tonight?" in sent
+
+
+# A bare "yes" with no conversation at all has nothing to accept, and the
+# decision is made in code: the model is never asked. Asked, it chose a
+# history search for the word "yes" once in four runs (a deploy gate,
+# 2026-09-02). A message with content of its own is still routed normally.
+@pytest.mark.asyncio
+async def test_a_bare_yes_with_no_conversation_never_reaches_the_model():
+    selector, _ = _selector(_tool_call("search_history", {"query": "yes"}), llm=FailingLLM())
+    assert await selector.select("yes_user", "yes", [], None) is None
+    assert await selector.select("yes_user", "Sure!", [], None) is None
+
+
+@pytest.mark.asyncio
+async def test_a_yes_with_its_own_instruction_and_no_conversation_is_still_routed():
+    selector, llm = _selector(_tool_call("search_history", {"query": "parking near the venue"}))
+    action = await selector.select("yes_user", "yes, and find parking too", [], None)
+    assert action is not None and llm.messages, "the model decides a message with content of its own"

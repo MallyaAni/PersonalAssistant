@@ -376,7 +376,16 @@ class MainActionSelector:
         # Deliberately narrow: only a message with no content of its own can
         # reach this. "Yes, and find parking too" carries its own instruction
         # and is routed normally, whatever was offered before it.
-        if is_bare_acceptance(query) and resolution is not None and not resolution.accepts_offer:
+        #
+        # With no conversation at all there is nothing to accept either. The
+        # referent resolver has nothing to read then, so the rule above never
+        # fired, and the router judged a bare "yes" on its own: once in four
+        # runs (a deploy gate, 2026-09-02) it chose a history search for the
+        # word "yes". Decided here for the same reason as the case above.
+        if is_bare_acceptance(query) and (
+            (resolution is None and not history)
+            or (resolution is not None and not resolution.accepts_offer)
+        ):
             logger.info(
                 "A bare acceptance follows nothing that was offered; taking no tool"
             )

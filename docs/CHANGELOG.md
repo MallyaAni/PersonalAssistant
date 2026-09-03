@@ -2,6 +2,17 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-02 - A bare "yes" with no conversation takes no tool, in code
+
+The rule that a message which is nothing but assent takes no tool when
+nothing was offered never covered an empty conversation: the referent
+resolver has nothing to read then, so the router judged the word "yes" on
+its own, and once in four runs (a deploy gate) it chose a history search
+for it. The same rule now covers no history at all
+(`main_action_selector.select`), so the functional test that pins it is no
+longer a single model judgement, and a new person's first "yes" is answered
+in words.
+
 ## 2026-09-02 - A phone photo fits the vision model, and a photo failure says what it is
 
 Caroline sent a picture from her iPhone and was told "I hit a problem". The
