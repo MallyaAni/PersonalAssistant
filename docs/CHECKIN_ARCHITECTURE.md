@@ -183,7 +183,7 @@ week deserves its check-in back.
 
 | Part | State |
 | --- | --- |
-| Off until asked; the Check-ins skill and `manage_check_ins` (on, off, once, status) | Built 2026-09-02, pinned by `test_manage_check_ins_tool.py`, `functional/test_check_in_request_behaviour.py`, and the sweep journeys |
+| Off until asked; the Check-ins skill and `manage_check_ins` (on, off, once, status) | Deployed 2026-09-03 (eb1f83fa), pinned by `test_manage_check_ins_tool.py`, `functional/test_check_in_request_behaviour.py`, and the sweep journeys |
 | The judgement and its prompt | Built, pinned by `functional/test_check_in_proposal_behaviour.py` |
 | What a firing actually says | Built, pinned by `functional/test_check_in_message_behaviour.py`, which also holds the router to choosing no tool for a firing |
 | The limits | Built, pinned by `test_checkin_arming.py` |

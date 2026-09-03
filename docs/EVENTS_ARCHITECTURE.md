@@ -94,10 +94,10 @@ links were by commission.
 | Code-rendered listing | Deployed 2026-08-29 (cabfdecd) | `backend/core/events_listing.py` |
 | The listing is the reply on a flagged events turn | Deployed 2026-08-29 (cabfdecd) | `backend/services/conversation_service.py` |
 | One-tap Google Calendar link per event | Deployed 2026-08-29 | `backend/core/events_listing.py` |
-| Year-less dates resolve to the next such day | Built 2026-09-03, not yet deployed | `backend/core/dates.py`, `test_dates.py` |
-| Extractor reads the whole result (2,500 chars) | Built 2026-09-03; with the parser fix, 9 events kept from the same results (1 before), 2/2 runs | `backend/core/event_extraction.py`, `backend/cli/measure_events_extraction.py` |
-| Listing held to the asked calendar window | Built 2026-09-03 | `backend/core/event_window.py`, `backend/core/events_listing.py` |
-| A later search round keeps the place | Built 2026-09-03 | `backend/services/conversation_service.py`, `test_search_keeps_the_place.py` |
+| Year-less dates resolve to the next such day | Deployed 2026-09-03 (eb1f83fa) | `backend/core/dates.py`, `test_dates.py` |
+| Extractor reads the whole result (2,500 chars) | Deployed 2026-09-03 (eb1f83fa); with the parser fix, 9 events kept from the same results (1 before), 2/2 runs | `backend/core/event_extraction.py`, `backend/cli/measure_events_extraction.py` |
+| Listing held to the asked calendar window | Deployed 2026-09-03 (eb1f83fa) | `backend/core/event_window.py`, `backend/core/events_listing.py` |
+| A later search round keeps the place | Deployed 2026-09-03 (eb1f83fa) | `backend/services/conversation_service.py`, `test_search_keeps_the_place.py` |
 | "Remind me about the second one" | Works with no new machinery — measured | `functional/test_act_on_a_listed_event_behaviour.py` |
 | `.ics` attached into the iMessage thread | **Not built** | needs `TurnResult` to carry a non-image file; would reuse `backend/discovery/calendar.py` |
 | Booking through a bounded browser tool | **Not built** | as an MCP server behind the existing boundary — see [ADR 0018](adr/0018-an-outside-agent-enters-as-a-tool-or-not-at-all.md) |
