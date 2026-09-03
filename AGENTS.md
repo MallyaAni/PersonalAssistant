@@ -584,6 +584,21 @@ can still be stale UI.
   something the prompt lacks, capture the prompt (`ANIOS_TRACE_PROMPTS`) and
   read `backend/memory/coordinator.py` before touching any framing.
 
+- **`deploy.sh` pulls into the shared checkout, and the other agent's
+  uncommitted work blocks the pull without stopping the deploy.** On
+  2026-09-02 three queued deploys each hit "Your local changes would be
+  overwritten by merge", then went on to rebuild and verify the *old*
+  commit and print `DONE: 0`. Deploy from a clean clone instead:
+  `~/deploy/anios` on the Spark (the directory name gives compose the same
+  project, `anios`, so it recreates the running containers; `data` and
+  `secrets` are symlinks to the shared checkout's). Never stash or move the
+  other agent's files to get a pull through.
+- **Docker's build log says `DONE` on every layer.** A waiter that greps a
+  deploy log for the bare word fires mid-build, and the next deploy in the
+  chain collides with the one still building. Key waiters and pollers on
+  the chain's own marker, `<nth> DONE: <code>`, never on `DONE`, `refused`,
+  or `failed` alone (test names contain those words too).
+
 ## Documentation ownership
 
 - `README.md`: stable overview, entry points, and documentation map.
