@@ -99,5 +99,17 @@ async def main() -> int:
     return 1 if failed else 0
 
 
+# A transport failure names its step and still prints a RESULT line: a bare
+# traceback's tail told the deploy chain nothing about which call died
+# (2026-09-02, the chat right after an upload on a reused connection).
+async def _guarded() -> int:
+    try:
+        return await main()
+    except Exception as exc:
+        bad(f"the run died: {type(exc).__name__}: {str(exc)[:160] or 'no message'}")
+        print(f"\nRESULT: {passed} passed, {failed} failed")
+        return 1
+
+
 if __name__ == "__main__":
-    sys.exit(asyncio.run(main()))
+    sys.exit(asyncio.run(_guarded()))

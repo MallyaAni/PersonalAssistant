@@ -4,7 +4,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Path, Query, UploadFile, status
+from fastapi import Response, APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Path, Query, UploadFile, status
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -368,6 +368,7 @@ async def ingest_document(
     background: BackgroundTasks,
     artifacts: ArtifactRepositoryDependency,
     artifact_store: BinaryArtifactStoreDependency,
+    response: Response,
     document: Annotated[UploadFile, File()],
     note: Annotated[str, Form()] = "",
     source_conversation_id: Annotated[str | None, Form()] = None,
@@ -446,6 +447,13 @@ async def ingest_document(
         propose_document_facts, service, tracer, user_id, source_conversation_id, filename, parsed.markdown, note, room,
         document_id=str(stored.get("id") or "") or None,
     )
+    # The facts pass runs after this response on the request's own session,
+    # and it holds this HTTP connection until it is done (that is how a
+    # background task keeps its session alive). A client that reuses the
+    # connection for its next request sees it dropped - the live acceptance
+    # did, on the chat right after an upload (2026-09-02). Say so: the client
+    # reconnects, which the worker and the web already do.
+    response.headers["Connection"] = "close"
     # The share leaves a line in the conversation it was made in, so the next
     # "what's on day 1?" resolves to this document rather than to whatever was
     # said before it, and the router knows a document is on hand. The iMessage

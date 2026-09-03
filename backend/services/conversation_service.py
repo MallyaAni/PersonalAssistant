@@ -2398,6 +2398,25 @@ class ConversationService:
                     merged = await _probe(("archived",))
                 if merged:
                     context["knowledge"] = sorted(merged.values(), key=_distance_of)[:_KNOWLEDGE_TOP_K]
+                # On the turn's record, so explain_turn shows what the reply
+                # was handed: a live decline with the answer in the store
+                # was untraceable without it (2026-09-02).
+                _trace(
+                    "knowledge",
+                    {
+                        "pinned": pinned,
+                        "probes": len(probes),
+                        "passages": [
+                            {
+                                "document": str((item.get("document") or {}).get("title") or "")[:60],
+                                "status": (item.get("document") or {}).get("status"),
+                                "page": (item.get("extra_data") or {}).get("page"),
+                                "distance": round(_distance_of(item), 3),
+                            }
+                            for item in (context.get("knowledge") or [])
+                        ],
+                    },
+                )
             except Exception:
                 logger.warning(
                     "Knowledge retrieval failed; answering without documents",

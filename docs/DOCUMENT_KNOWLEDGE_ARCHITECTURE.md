@@ -285,6 +285,11 @@ A document has three lives, and each is treated on its own:
    and the reply declined twice with the passages beside it. The history
    block now defers to document passages retrieved in the same turn (3/3
    with both blocks and the real archived chunks).
+   **Open (2026-09-02, evening):** live the same question still declines
+   intermittently, even pinned, with the Day 1 passage handed to the reply
+   at 0.317; earlier declines are recalled across conversations and repeated.
+   The trace now records the passages and, with `ANIOS_TRACE_PROMPTS=1`, the
+   rendered prompt; the next kept failure is the next step.
 3. **Its facts split into durable and dated.** The digest marks each
    supporting statement `dated` (a departure time, a meeting point, a day's
    schedule) or not (where they stayed, who went). The headline and durable

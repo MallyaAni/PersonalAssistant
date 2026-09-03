@@ -103,3 +103,25 @@ def test_plain_text_is_read_without_asking_the_parser(monkeypatch):
             assert response.json().get("queued") is not True
         finally:
             client.delete(f"/api/v1/memory/{user_id}/agent")
+
+
+def test_an_upload_response_tells_the_client_to_reconnect(monkeypatch):
+    # The facts pass runs after the response on the request's session and
+    # holds the connection meanwhile; a client reusing it for its next request
+    # saw it dropped (the live acceptance, 2026-09-02).
+    import backend.services.document_parse_queue as queue
+    from backend.config.settings import settings
+
+    monkeypatch.setattr(settings, "DOCLING_BASE_URL", "")
+    user_id = f"reconnect-{uuid.uuid4().hex[:8]}"
+    with TestClient(app, headers=_bearer(user_id)) as client:
+        try:
+            response = client.post(
+                f"/api/v1/memory/{user_id}/agent/knowledge/document",
+                files={"document": ("notes.txt", b"Day 1: welcome dinner.", "text/plain")},
+                data={"note": "", "source_conversation_id": str(uuid.uuid4())},
+            )
+            assert response.status_code == 201, response.text
+            assert response.headers.get("connection", "").lower() == "close"
+        finally:
+            client.delete(f"/api/v1/memory/{user_id}/agent")

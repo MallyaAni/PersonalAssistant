@@ -128,6 +128,11 @@ def assemble(state: ReplyState) -> dict[str, Any]:
     # blocks. Measured at 16.5x on a 34k-token conversation.
     messages.extend(turn_context_messages(context))
     messages.append({"role": "user", "content": state["query"]})
+    # Off unless ANIOS_TRACE_PROMPTS is set: the exact messages the reply model
+    # reads, written under data/prompt_captures/, for a live turn that
+    # answers differently from its isolated twin (an archived itinerary's
+    # hotel, 2026-09-02). A debug instrument, never on by default.
+    _capture_prompt(messages, str(state.get("user_id") or context.get("user_id") or "unknown"))
     return {"prompt_messages": messages}
 
 
@@ -154,3 +159,20 @@ def generate(state: ReplyState) -> dict[str, Any]:
         # instead of vanishing.
         emit("delta", content=chunk)
     return {"reply": "".join(chunks)}
+
+
+def _capture_prompt(messages: list[dict[str, str]], user: str) -> None:
+    import json
+    import os
+    import time
+    from pathlib import Path
+
+    if not os.environ.get("ANIOS_TRACE_PROMPTS"):
+        return
+    try:
+        folder = Path("data/prompt_captures")
+        folder.mkdir(parents=True, exist_ok=True)
+        path = folder / f"{time.strftime('%Y%m%dT%H%M%S')}-{user[:40].replace('/', '_')}.json"
+        path.write_text(json.dumps(messages, default=str, indent=1))
+    except Exception:  # a capture must never cost the reply
+        pass
