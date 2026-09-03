@@ -1,112 +1,71 @@
-"""What the model says about a plan that has already happened.
-
-The turn this replays went to a real group chat on 2026-08-29. A reminder had
-been set the previous evening - "Done! Reminder set for tonight at 9:00 PM -
-you and Jenos are both on the ice-cream run" - and it fired that night. The
-next afternoon, asked something unrelated about Jen, the assistant answered
-"She's still getting her triple chocolate tonight either way."
-
-Nothing was hallucinated. The words "tonight at 9:00 PM" were sitting in the
-history, and the history carried no times at all, so a sentence from last
-night was indistinguishable from one said a minute ago. The fix is that every
-stored turn is now dated where it is rendered
-(`backend/services/transcript.py`), and the current time is already in front
-of the model. This test is the part a structural test cannot reach: whether
-the model, given the dates, actually uses them.
+"""The reply knows what day it is. On 2026-09-03 a scheduled chess tip in a
+group ended "have fun at trivia later!" the morning after their Wednesday
+trivia, because the only time fact in the prompt was a bare date and the
+recalled memory said "today". The prompt now carries the weekday and the
+local time, a recalled memory carries the day it was noted, and a memory is
+saved with its relative words written as dates. These send the real prompts
+to the real reply model.
 """
-
-from __future__ import annotations
-
-from datetime import UTC, datetime
+from datetime import datetime
 from zoneinfo import ZoneInfo
 
 import pytest
 
-from backend.agents.graph import _build_system_prompt
-from backend.agents.reply.nodes import assemble
+from backend.agents.graph import _build_system_prompt, _build_turn_context
+from backend.tests.functional.semantic import states
 
 pytestmark = pytest.mark.asyncio
 
-EAST = "America/New_York"
-
-# The room as it stood: the plan made on Friday evening, and the run itself.
-YESTERDAY = [
-    {
-        "query": "remind me and jenos to grab ice cream tonight at 9",
-        "response": "Done! Reminder set for tonight at 9:00 PM - you and Jenos are both on the ice-cream run.",
-        "created_at": "2026-08-28T23:17:03+00:00",
-        "metadata": {"group": {"speaker_name": "Ani"}},
-    },
-    {
-        "query": "this is Jen. I am a HUGE chocolate fan, always the most chocolate possible",
-        "response": "Got it, Jen - noted: you are a full-send chocolate person. Darkest triple-chocolate anything.",
-        "created_at": "2026-08-29T04:26:13+00:00",
-        "metadata": {"group": {"speaker_name": "Jenos"}},
-    },
-]
-
-# Saturday afternoon, the moment the wrong answer was actually sent. Frozen,
-# not read from the clock: this test asserts about "tonight", and a test whose
-# meaning depends on the day it runs is not a test.
-NOW = datetime(2026, 8, 29, 18, 10, tzinfo=UTC)
-LOCAL_NOW = NOW.astimezone(ZoneInfo(EAST))
+THURSDAY_MORNING = datetime(2026, 9, 3, 9, 0, tzinfo=ZoneInfo("America/New_York"))
 
 
-def _reply(llm, query: str, history: list[dict]) -> str:
-    context = {
+def _context(memory: str) -> dict:
+    return {
         "channel": "imessage_group",
-        "query": query,
-        "timezone": EAST,
-        "place": "Arlington, Virginia",
-        # A datetime, which is what the production context carries - a string
-        # here would be silently ignored and the real clock used instead.
-        "local_now": LOCAL_NOW,
+        "scheduled_task": True,
+        "local_now": THURSDAY_MORNING,
+        "timezone": "America/New_York",
+        "semantic": [{"content": memory, "created_at": "2026-09-02T09:23:08"}],
     }
-    state = {
-        "history": history,
-        "system_prompt": _build_system_prompt(context, now=LOCAL_NOW),
-        "query": query,
-        "context": context,
-    }
-    messages = assemble(state)["prompt_messages"]
-    # The clock has to actually be in front of the model, or the two tests
-    # below are measuring nothing.
-    assert any("2026-08-29" in str(message.get("content")) for message in messages), messages
-    return str(llm.chat(messages, 400, None, 0.0)["content"]).strip()
 
 
-async def test_last_nights_plan_is_not_described_as_tonights(llm):
-    answer = _reply(llm, "Ani: what is Jen getting again?", YESTERDAY)
-    print(f"\n--- answer ---\n{answer}\n")
-    lowered = answer.casefold()
-    # The exact sentence that was sent: "She's still getting her triple
-    # chocolate tonight either way."
-    assert "chocolate" in lowered, answer
-    assert "tonight" not in lowered, answer
+def _reply(llm, context: dict, asked: str) -> str:
+    system = _build_system_prompt(context)
+    turn_context = _build_turn_context(context, include_save_state=False)
+    result = llm.chat(
+        [
+            {"role": "system", "content": system},
+            {"role": "user", "content": f"{turn_context}\n\n{asked}"},
+        ],
+        300,
+        None,
+        0.0,
+    )
+    return str(result["content"])
 
 
-async def test_a_plan_made_today_may_still_be_called_tonight(llm):
-    # The other half, and the reason this is not just a banned word: a plan
-    # made this morning for 9pm today IS tonight, and a model too timid to
-    # say so has been made worse, not better.
-    today = [
-        {
-            "query": "remind us to grab ice cream at 9 tonight",
-            "response": "Done! Reminder set for tonight at 9:00 PM.",
-            "created_at": "2026-08-29T13:40:00+00:00",
-            "metadata": {"group": {"speaker_name": "Ani"}},
-        }
-    ]
-    answer = _reply(llm, "Ani: when are we going again?", today)
-    print(f"\n--- answer ---\n{answer}\n")
-    assert "9" in answer, answer
-    assert "tomorrow" not in answer.casefold(), answer
+@pytest.mark.parametrize(
+    "memory",
+    [
+        "Ani and Jenos are going to trivia at Courthouse Social on Wednesday 2 September 2026; they go often. (said by Ani)",
+        # The wording as it was saved before the fix: the noted day and the
+        # weekday line alone must be enough.
+        "Ani and Jenos are going to trivia at Courthouse Social today; they go often. (said by Ani)",
+    ],
+)
+async def test_a_chess_tip_the_morning_after_trivia_does_not_wish_them_fun_at_trivia_later(llm, memory):
+    text = _reply(llm, _context(memory), "send me a random beginner-friendly chess tip")
+    assert states(text, "the reply gives a chess tip"), text
+    assert not states(
+        text,
+        "the reply says or implies trivia is happening later today, tonight, or soon",
+    ), text
 
 
-async def test_the_model_can_say_which_day_an_old_turn_was(llm):
-    # The narrowest possible probe: does the stamp reach the model at all and
-    # can it read it? If this fails, the two above are testing nothing.
-    answer = _reply(llm, "Ani: what day did I set that ice cream reminder?", YESTERDAY)
-    print(f"\n--- answer ---\n{answer}\n")
-    lowered = answer.casefold()
-    assert "friday" in lowered or "28" in lowered or "yesterday" in lowered, answer
+async def test_asked_when_trivia_is_the_reply_knows_it_was_yesterday(llm):
+    memory = "Ani and Jenos are going to trivia at Courthouse Social on Wednesday 2 September 2026; they go often. (said by Ani)"
+    context = _context(memory)
+    context["scheduled_task"] = False
+    text = _reply(llm, context, "when is trivia?")
+    assert states(text, "the reply says trivia was yesterday or on Wednesday 2 September, already past"), text
+    assert not states(text, "the reply says trivia is today or later today"), text

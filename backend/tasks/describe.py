@@ -53,5 +53,13 @@ def next_run_phrase(task: dict[str, Any]) -> str:
 
 # One line: what it does and when.
 def describe_task(task: dict[str, Any]) -> str:
-    state = "" if task.get("enabled", True) else " (paused)"
+    # A one-off that has fired is disabled by the runner; described as
+    # "(paused)" it read as still waiting - "the trivia reminder's still
+    # sitting there at 6pm today", the morning after it fired (2026-09-03).
+    if task.get("enabled", True):
+        state = ""
+    elif str(task.get("cadence") or "") == "once" and task.get("next_run_at") is None:
+        state = " (done - it has fired)"
+    else:
+        state = " (paused)"
     return f'"{task["instruction"]}" - {schedule_phrase(task)}{state}'

@@ -45,6 +45,7 @@ from backend.discovery.schedule import Cadence
 from backend.discovery.service import DiscoveryProfileService
 from backend.mcp.invocation import MCPInvocationError
 from backend.memory.coordinator import MemoryCoordinatorAgent
+from backend.core.relative_days import absolutize_days, has_relative_day
 from backend.core.checkin import (
     FIRST_HOUR,
     FOLLOWING_UP,
@@ -1288,6 +1289,21 @@ class ConversationService:
     # the router to resolve "tomorrow at 9" against - or None when no zone
     # is known, in which case the router is told nothing rather than UTC,
     # which would be wrong by hours in a way it could not detect.
+    # The moment, on the person's own clock (UTC when no zone is known).
+    async def _speaker_now(self, user_id: str) -> datetime:
+        from zoneinfo import ZoneInfo
+
+        zone = ""
+        if self.discovery_profile is not None:
+            try:
+                zone = str(await self._primary_timezone(user_id) or "")
+            except Exception:
+                zone = ""
+        try:
+            return datetime.now(ZoneInfo(zone)) if zone else datetime.now(UTC)
+        except Exception:
+            return datetime.now(UTC)
+
     async def _local_now(self, user_id: str) -> str | None:
         if self.discovery_profile is None:
             return None
@@ -4343,9 +4359,16 @@ class ConversationService:
         # read from an itinerary) arrives with the day it stops mattering.
         if isinstance(candidate.get("expires_at"), datetime):
             expires_at = candidate["expires_at"]
+        # "Going to trivia today" is true on the day it was said and false
+        # every day after; recalled the next morning it read as today's plan
+        # (the group chat, 2026-09-03). The date it meant is written in, in
+        # the speaker's own calendar, so the memory stays true.
+        content = str(candidate["content"])
+        if has_relative_day(content):
+            content = absolutize_days(content, await self._speaker_now(user_id))
         memory = await self.memory.save_semantic_memory(
             user_id,
-            candidate["content"],
+            content,
             {"source": "chat_auto_save"},
             expires_at=expires_at,
             **preference,

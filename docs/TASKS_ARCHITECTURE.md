@@ -295,3 +295,20 @@ against the real reply model: silence at 200 of 1,000 credits, the number at
 The first such task: the operator's "message me each morning if search
 credits are below 100", which reads the internet server's `search_credits`
 tool - the key's own usage from the provider, offered to operators only.
+
+## Time facts, after the trivia morning (2026-09-03)
+
+The morning after the group's Wednesday trivia, the daily chess tip wished
+them "fun at trivia later", and asked about it the reply said the reminder
+was "still sitting there at 6pm today". Three rules now hold, in code:
+
+- The system prompt states the date, the weekday and the local time in the
+  person's zone, not the date alone (`graph._build_system_prompt`).
+- A memory is saved with its relative day words written as the dates they
+  meant (`backend/core/relative_days.py`), and every recalled memory carries
+  the day it was noted (`graph._dated_memory`).
+- A one-off task that has fired is described as "(done - it has fired)",
+  never "(paused)" (`backend/tasks/describe.py`).
+
+Pinned by `test_relative_days.py`, `test_task_describe.py`, and
+`functional/test_time_awareness_behaviour.py` on the real reply model.

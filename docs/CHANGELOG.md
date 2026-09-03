@@ -2,6 +2,34 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-03 - Time awareness: the weekday and the clock in the prompt, memories that carry their date, a fired reminder that reads as done
+
+The morning after the group's Wednesday trivia, the scheduled chess tip
+ended "have fun at trivia later!", and asked about it the reply said the
+trivia reminder was "still sitting there at 6pm today". Three causes, each
+now a rule in code:
+
+- **The prompt said only "Today's date is 2026-09-03".** No weekday, no
+  clock - so nothing to weigh "later" or "Wednesdays" against. It now says
+  the date, the weekday, and the local time in the person's zone
+  (`graph._build_system_prompt`).
+- **A memory was saved with the word "today" in it** ("going to trivia at
+  Courthouse Social today; they go often", noted Wednesday, never expiring)
+  and recalled without its date. Relative day words are now written as the
+  dates they meant when a memory is saved, in the speaker's own calendar
+  (`backend/core/relative_days.py`: today, tonight, tomorrow, yesterday,
+  this weekend), and every recalled memory carries the day it was noted
+  ("(noted Wed 2 Sep 2026)"), so the reply can tell a plan from a past
+  one even for memories saved before this change.
+- **A one-off reminder that had fired was described as "(paused)"**
+  (`tasks/describe.py`); it now reads "(done - it has fired)".
+
+Pinned by `test_relative_days.py`, `test_task_describe.py`, and
+`functional/test_time_awareness_behaviour.py`, which sends the real prompt
+to the real model: a chess tip the morning after trivia must not wish them
+fun at trivia later, with the memory in either wording, and "when is
+trivia?" on Thursday answers that it was Wednesday.
+
 ## 2026-09-03 - Events in the area this week: why one New York event came back, and the four fixes
 
 The operator asked "what are the most fun events happening in the area this

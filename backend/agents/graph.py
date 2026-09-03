@@ -729,6 +729,22 @@ def _render_scout_schedule_outcomes(outcomes: list[dict[str, Any]]) -> str:
     return "".join(_render_scout_schedule_outcome(outcome) for outcome in outcomes)
 
 
+# A recalled memory with the day it was noted, so the reply can weigh it
+# against today's date: "going to trivia today" noted on a Wednesday is not
+# a plan for Thursday. Without the day, the model had no way to tell.
+def _dated_memory(memory: dict[str, Any]) -> str:
+    content = str(memory.get("content") or "")
+    noted = memory.get("created_at")
+    if isinstance(noted, str):
+        try:
+            noted = datetime.fromisoformat(noted)
+        except ValueError:
+            noted = None
+    if isinstance(noted, datetime):
+        return f"{content} (noted {noted:%a %-d %b %Y})"
+    return content
+
+
 def _build_system_prompt(
     context_data: dict[str, Any],
     now: datetime | None = None,
@@ -739,7 +755,15 @@ def _build_system_prompt(
     # eastern US every evening, and the reply called "tomorrow" "today".
     local_now = context_data.get("local_now")
     clock = now or (local_now if isinstance(local_now, datetime) else None) or datetime.now(UTC)
-    today = clock.strftime("%Y-%m-%d")
+    # The weekday and the clock ride with the date. Given "2026-09-03" alone,
+    # the reply wished a group "fun at trivia later" the morning after their
+    # Wednesday trivia (2026-09-03): a date is not enough to know it is
+    # Thursday, and "later" needs the time.
+    zone = str(context_data.get("timezone") or "").strip()
+    today = (
+        f"{clock:%Y-%m-%d} ({clock:%A}); the local time is {clock:%-I:%M %p}"
+        + (f" {zone}" if zone else "")
+    )
     # The wording lives in `prompts/reply/system.md` so it can be tuned
     # without opening this file; the header there records what each block is
     # for and which failure it prevents. The rendered blocks below are still
@@ -776,7 +800,7 @@ def _build_system_prompt(
     memory_contents: list[str] = []
     for memory_type in ("episodic", "semantic"):
         memory_contents.extend(
-            memory.get("content")
+            _dated_memory(memory)
             for memory in (context_data.get(memory_type) or [])[:5]
             if memory.get("content")
         )
