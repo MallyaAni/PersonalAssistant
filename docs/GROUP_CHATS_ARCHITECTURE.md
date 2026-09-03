@@ -288,3 +288,14 @@ Unit: `test_imessage_bridge.py` (rooms: 19 cases), `test_imessage_group_worker.p
 | Pending-question trigger | not built - needs a scoped expectation for one member's next otherwise-unaddressed message |
 | Positive tapback trigger | candidate built 2026-08-29; bridge/worker/API 179/179 focused tests on the Mac (178 passed plus one expected macOS-only skip on Linux), readiness 33/33 and offered-search routing 1/1 on the real model; live Mac acceptance and deploy pending |
 | Manual acceptance on the Mac | 2026-08-28 in the operator's group "Groupie" (`chat308729799386740866`, both members approved): @mention forwarded, group provisioned, answered in the chat in 22 s; tap-and-hold reply forwarded and answered (late - the burst judge's fault, fixed); the weather answer was for "Here, Somalia" (fixed: the tool refuses a non-place, a room runs on the speaker's place). Re-test after deploy dd3cc92e: mention, thread reply, "thanks!" |
+
+## Whose clock a room runs on (2026-09-03)
+
+A room has no home of its own. A spoken turn runs on its speaker's place
+and zone (`_place_owner`), and the room block already shows each member's
+non-sensitive home ("lives around ..."). A scheduled firing in the room has
+no speaker, so it ran on UTC - the group's morning chess tip wished the
+members fun at trivia "later", the morning after. The task runner now
+sends the zone the task was set in with every firing, and a turn whose
+owner has no place runs on that zone (`_turn_zone` in
+`conversation_service`; `test_group_firing_zone.py`).
