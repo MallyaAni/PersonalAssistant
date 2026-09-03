@@ -2,6 +2,21 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-03 - A search about "here" is held to the person's place, whoever wrote the query
+
+Live on the twenty-seventh, the Raleigh probe's question ran as "local
+events this week 2026-09-03", "what are the missing origin for the events
+query", "local events this week my city" - three rounds, none naming a
+place, under the deploy's own sweep load. The first query is the router's
+and the later ones another model's; each can leave the place out. For a
+question whose answer depends on where the person is (what's on, events,
+near me, tonight, this weekend, the weather, restaurants...), every round's
+query is now held to the person's saved place in code: when it names no
+part of it, the city and region are appended (`_hold_to_place`; pinned in
+`test_search_keeps_the_place.py`). A question not about here, or a person
+with no saved place, is left alone - and the no-place case asks for the
+city, as of this morning.
+
 ## 2026-09-03 - Results judged off the subject are not typed into a listing
 
 Live on the twenty-sixth, a probe account in Raleigh asked for this week's

@@ -411,6 +411,35 @@ async def _rerank_web_results(
 
 
 
+# Questions whose answer depends on where the person is. A search for one
+# of these that names no place finds what is on anywhere - which is nowhere.
+_PLACE_BOUND = re.compile(
+    r"\b(what'?s on|events?|happening|going on|things to do|near me|nearby|around here|"
+    r"in the area|in my area|my city|tonight|this weekend|this week|open now|"
+    r"restaurants?|bars?|brunch|weather|traffic|drive time)\b",
+    re.IGNORECASE,
+)
+
+
+# A search for a place-bound question is held to the person's place: when
+# the query names no part of it, the city and region are appended. The
+# router writes the first query and can leave the place out - it did, for a
+# Raleigh account under load ("local events this week 2026-09-03") on
+# 2026-09-03 - and a later round is another model's guess. Decided in code
+# for every round, whoever wrote the query. A question that is not about
+# here, or a place unknown, is left alone.
+def _hold_to_place(query: str, question: str, place: str) -> str:
+    if not query or not place or not _PLACE_BOUND.search(question or ""):
+        return query
+    parts = [part.strip() for part in place.split(",") if part.strip()]
+    if not parts:
+        return query
+    lowered = query.casefold()
+    if any(part.casefold() in lowered for part in parts[:2]):
+        return query
+    return f"{query} {' '.join(parts[:2])}".strip()
+
+
 # A later search round that dropped the place the first one carried gets it
 # back: the city (the label's first part) and its region, as the first query
 # had them. A query that never had the place, or a place unknown, is left
@@ -2799,7 +2828,9 @@ class ConversationService:
                 home = found_home[0] if found_home else ""
             except Exception:
                 home = ""
-
+        # The first query is held to the place before it is ever sent.
+        first_query = _hold_to_place(first_query, question, home)
+        current = first_query
         first_round: list[dict[str, Any]] = []
         for round_number in range(max(1, settings.SEARCH_MAX_ROUNDS)):
             tried.append(current)
@@ -2855,7 +2886,7 @@ class ConversationService:
             # Virginia this week" searched without Arlington on 2026-09-02
             # and a New York page won the listing. If the first query named
             # the place and this one does not, the place goes back on.
-            better = _keep_the_place(better, first_query, home)
+            better = _hold_to_place(_keep_the_place(better, first_query, home), question, home)
             screened = self.search_privacy.sanitize(better)
             if not screened.allowed:
                 logger.info(
