@@ -52,10 +52,14 @@ def render_listing(
     # an Arlington "this week" listing on 2026-09-02 because nothing checked.
     # When nothing falls inside it, the nearest few after it are shown under
     # a heading that says so, rather than a shrug.
-    candidates = list(extraction.events)
+    # Too far to go to is not a listing, whatever the date. The model that
+    # writes each line judges it, knowing where the person is; with no place
+    # known nothing is marked far and nothing is dropped here.
+    candidates = [event for event in extraction.events if event.near]
+    far_away = len(extraction.events) - len(candidates)
     outside = 0
     outside_note = ""
-    if window is not None:
+    if window is not None and candidates:
         inside = [event for event in candidates if window.holds(event.day)]
         outside = len(candidates) - len(inside)
         if inside:
@@ -66,7 +70,7 @@ def render_listing(
                 key=lambda event: (event.day, event.name),
             )[:3]
             candidates = later
-            outside = len(extraction.events) - len(later)
+            outside = len(candidates) - len(later)
             if later:
                 outside_note = f"Nothing I can date {window.label}; the nearest after it:"
     by_fit = sorted(candidates, key=lambda event: event.source_rank)[:kept]
@@ -89,9 +93,10 @@ def render_listing(
         lines.extend(_event_lines(event, calendar_base_url))
     tail = _dropped_line(
         extraction,
-        len(extraction.events) - len(events) - outside,
+        len(candidates) - len(events) - outside,
         outside=outside,
         window=window,
+        far_away=far_away,
     )
     if tail:
         lines.extend(["", tail])
@@ -183,8 +188,11 @@ def _dropped_line(
     over_limit: int,
     outside: int = 0,
     window: Window | None = None,
+    far_away: int = 0,
 ) -> str:
     parts: list[str] = []
+    if far_away > 0:
+        parts.append(f"{far_away} too far from you to be worth the trip")
     if outside > 0 and window is not None:
         parts.append(f"{outside} on other days than {window.label}")
     if extraction.undated:

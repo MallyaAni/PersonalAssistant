@@ -70,7 +70,15 @@ rule in code with a test:
    week, next week, next weekend, in the person's calendar). Events on
    other days are counted, not listed; with nothing inside, the nearest
    few after it are shown under a line that says so.
-4. **A later search round keeps the place** the first query carried
+4. **An event too far away is not a listing.** The model that writes each
+   event's line is told where the person is and marks `near`; the listing
+   drops the rest and says how many ("3 too far from you to be worth the
+   trip"). A listing led with a paddle in Colonial Heights, two hours from
+   Arlington, because nothing in this path knew what "near" meant.
+5. **The query asks for what they like.** `compose` is handed the person's
+   interests and the prompt spends them on a request about things to do and
+   on nothing else.
+6. **A later search round keeps the place** the first query carried
    (`conversation_service._keep_the_place`), so "another angle" cannot
    find what is on anywhere.
 
@@ -101,6 +109,8 @@ links were by commission.
 | Off-subject results are never typed into a listing | Deployed 2026-09-03 (ca16b0ab) | `conversation_service`, `test_events_listing_wiring.py` |
 | A drifted second round: the first round ranked alone and used when on subject | Deployed 2026-09-03 (ca16b0ab) | `conversation_service._research`, `test_events_listing_wiring.py` |
 | A search about here is held to the saved place, every round (time words alone do not count, since the thirtieth) | Deployed 2026-09-03 (e4f68ba8, corrected 6dd2d7f5); live: a Fed question searched without a place, an events question with "Raleigh NC" | `conversation_service._hold_to_place`, `test_search_keeps_the_place.py` |
+| An event too far to go to is counted, not listed | Built 2026-09-03, not deployed | `core/event_extraction.py` (`near`), `core/events_listing.py`, `prompts/search/event_lines.md` |
+| The search query carries what the person likes, for a things-to-do request only | Built 2026-09-03, not deployed | `services/search_planner.py`, `prompts/search/compose.md`, `functional/test_search_compose_behaviour.py` |
 | "Remind me about the second one" | Works with no new machinery — measured | `functional/test_act_on_a_listed_event_behaviour.py` |
 | `.ics` attached into the iMessage thread | **Not built** | needs `TurnResult` to carry a non-image file; would reuse `backend/discovery/calendar.py` |
 | Booking through a bounded browser tool | **Not built** | as an MCP server behind the existing boundary — see [ADR 0018](adr/0018-an-outside-agent-enters-as-a-tool-or-not-at-all.md) |

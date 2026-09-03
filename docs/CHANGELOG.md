@@ -2,6 +2,49 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-03 - Things to do: an event two hours away is not a recommendation, and the query now asks for what you like
+
+The operator asked whether weak "things to do in the area" answers were the
+router's fault. They were not: the router chose web search every time and
+named the place. Two causes, both downstream, both now decided properly.
+
+**Distance.** The reply that prompted the question led with "Paddle In Your
+Park, Lakeview Park, Colonial Heights" - two hours south of Arlington. No
+part of the events path knew how far anything was; the ranker biases toward
+local but the listing kept whatever was typed. The model that already
+writes each event's one line is now told where the person is and marks
+`near` on each event, and the listing drops the rest and counts them ("3
+too far from you to be worth the trip"). Judged by a model because "is
+Colonial Heights near Arlington" is a question about the world.
+
+**The query never asked for what they like.** `SearchPlanner.compose` saw
+the message and the recent turns and nothing else, so "fun things to do
+here" was searched generically and returned a civic meeting and a paddle.
+It is now handed the person's interests, and the prompt spends them on a
+request about things to do and on nothing else - a question about a price
+or a fact is searched exactly as asked. The one targeted query of the day,
+"DC events this weekend salsa bachata karaoke board games", happened only
+because the conversation had mentioned those things.
+
+Real-model tests both ways for the query, unit tests for the distance rule,
+336 tests across the touched suites. Documented in ML_SYSTEM_DESIGN 12b.
+
+## 2026-09-03 - The reranker was blamed for our own query
+
+Measured on the deployed `qwen3-reranker-0.6b`, which has been serving
+nothing (`RERANKER_BASE_URL` is unset) since ranking moved to the main
+model on 2026-08-25 after it "put a festival at Snowshoe, West Virginia
+second". Re-run against the same shape of case: asked "what events are
+happening in Arlington Virginia this weekend?" it ranks the two Arlington
+events first and Snowshoe **last**. Append the app's own "(asked from
+Arlington, Virginia)" suffix and Snowshoe climbs to third; ask "what's on
+in the area this week" with no place in the question at all and Snowshoe
+comes **first**. The model ranks well when the place is in the question and
+badly when it is appended or missing - which is how `_rerank_question`
+builds it. The 2026-08-25 verdict measured our query construction, not the
+model. Recorded in ML_SYSTEM_DESIGN 12b with the numbers; nothing changed
+in the ranking path yet, and the container still holds memory for no work.
+
 ## 2026-09-03 - The router keeps a catalogue, not a list
 
 The operator asked how Claude handles a tool set that grows, and to build it

@@ -174,3 +174,24 @@ def test_nothing_inside_the_window_shows_the_nearest_after_it_and_says_so():
     text = render_listing(Extraction((later,)), NOW, window=window)
     assert text.startswith("Nothing I can date today; the nearest after it:")
     assert later.name in text
+
+
+# An event too far to go to is not a listing, whatever its date. The reply
+# on 2026-09-03 led with a paddle in Colonial Heights, two hours from the
+# person in Arlington, because nothing in this path knew how far that was.
+def test_an_event_too_far_away_is_counted_not_listed():
+    from backend.core.event_window import window_for
+
+    near = _lawn()
+    far = _potato(name="Paddle In Your Park", area="Colonial Heights", near=False)
+    text = render_listing(Extraction((near, far)), NOW, window=window_for("what's on this week?", NOW))
+    assert near.name in text
+    assert "Paddle In Your Park" not in text
+    assert "1 too far from you" in text
+
+
+def test_with_no_place_known_nothing_is_marked_far_and_nothing_is_dropped():
+    # `near` defaults true, which is what an unknown place leaves it at.
+    text = render_listing(Extraction((_lawn(), _potato())), NOW)
+    assert _lawn().name in text and _potato().name in text
+    assert "too far" not in text

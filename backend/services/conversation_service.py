@@ -2624,10 +2624,21 @@ class ConversationService:
                 # whole round trip - which on this host stalls every other
                 # turn and the iMessage worker, because that worker answers
                 # serially behind the same loop.
+                # Their interests travel with the question; the prompt
+                # spends them only on a request about things to do.
+                likes: tuple[str, ...] = ()
+                try:
+                    known_interests = await self._known_interests(
+                        str(context.get("user_id") or "")
+                    )
+                    likes = tuple(_interests_for(query, known_interests, limit=6))
+                except Exception:
+                    likes = ()
                 composed = await asyncio.to_thread(
                     self.search_planner.compose,
                     query,
                     _planner_history(history, str(context.get("timezone") or "")),
+                    likes,
                 )
                 if composed:
                     chosen_query = composed
@@ -2989,7 +3000,7 @@ class ConversationService:
                     # The same `known` the ranker used, so the one line the
                     # model writes per event is written for this person rather
                     # than for a generic reader.
-                    found = await extract_events(self.llm, gathered, known=known)
+                    found = await extract_events(self.llm, gathered, known=known, place=place)
                 except Exception:
                     logger.warning("Event extraction failed; keeping the prose listing", exc_info=True)
                     found = None

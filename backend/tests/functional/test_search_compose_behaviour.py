@@ -98,3 +98,35 @@ async def test_the_next_round_of_a_trip_is_the_return_leg_from_the_airport_peopl
     # flight to Amalfi, which has no airport.
     assert "naples" in lowered or "salerno" in lowered, proposed
     assert "to amalfi" not in lowered and "rome-amalfi" not in lowered, proposed
+
+
+# What the person likes belongs in a search for things to do, and nowhere
+# else. Live on 2026-09-03 a generic "fun events in the area this week"
+# returned a civic meeting and a paddle two hours away, while the same
+# question in a conversation that had mentioned salsa produced "DC events
+# this weekend salsa bachata karaoke board games" - the day's one targeted
+# query. These send the real prompt to the real model.
+LIKES = ("salsa dancing", "live music", "board games", "trivia nights", "hiking")
+
+
+async def test_a_things_to_do_query_carries_what_they_like(llm):
+    composed = SearchPlanner(llm).compose(
+        "what are the most fun events happening in the area this week?", [], LIKES
+    )
+    lowered = composed.lower()
+    assert any(
+        word in lowered
+        for word in ("salsa", "live music", "music", "board game", "trivia", "hiking")
+    ), composed
+
+
+async def test_an_unrelated_question_is_searched_as_asked(llm):
+    for question in (
+        "how much does a PS5 cost right now?",
+        "is it safe to take ibuprofen with coffee?",
+    ):
+        composed = SearchPlanner(llm).compose(question, [], LIKES)
+        lowered = composed.lower()
+        assert not any(
+            word in lowered for word in ("salsa", "board game", "trivia", "hiking")
+        ), (question, composed)

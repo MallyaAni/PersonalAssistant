@@ -26,6 +26,12 @@ person, so they can tell at a glance whether it is for them.
 
 Return one entry per event, using the number in brackets as `index`.
 
+Each `near`: whether this event is close enough that someone living where
+this person lives would actually go - the same city, or a neighbouring one
+they could reach in well under an hour. A place a couple of hours away is
+not near, however good the event. Say `true` when you cannot tell: a listing
+that drops something real is worse than one that keeps something distant.
+
 Each `what` line:
 
 - Under twenty words, in your own words.

@@ -134,6 +134,12 @@ class ListedEvent:
     # ones to drop by date alone threw that judgement away - a Tuesday craft
     # fair displacing a Saturday salsa night purely on the calendar.
     source_rank: int = 999
+    # Whether this is close enough to where the person is to be worth
+    # listing. Judged by the model that already writes each event's line,
+    # because "is Colonial Heights near Arlington" is a question about the
+    # world, not a string comparison - and a listing with no notion of
+    # distance led with an event two hours away (2026-09-03).
+    near: bool = True
 
     # Where the person would go to check it. Never model-authored.
     @property
@@ -165,6 +171,7 @@ async def extract_events(
     results: list[dict[str, Any]],
     now: datetime | None = None,
     known: tuple[str, ...] = (),
+    place: str = "",
 ) -> Extraction:
     usable = [item for item in (results or []) if isinstance(item, dict)][:MAX_RESULTS_READ]
     if not usable or llm is None:
@@ -194,7 +201,7 @@ async def extract_events(
     # other only the book club - so two people asking the same question got
     # different facts and the dropped-count stopped being true. Separating the
     # two passes makes that impossible rather than discouraged.
-    return await describe_for(llm, found, known, moment)
+    return await describe_for(llm, found, known, moment, place)
 
 
 # The model's records, checked against the results they name. Split out from
@@ -396,8 +403,9 @@ _LINES_SCHEMA: dict[str, Any] = {
                 "properties": {
                     "index": {"type": "integer"},
                     "what": {"type": "string"},
+                    "near": {"type": "boolean"},
                 },
-                "required": ["index", "what"],
+                "required": ["index", "what", "near"],
                 "additionalProperties": False,
             },
         }
@@ -420,9 +428,12 @@ async def describe_for(
     found: Extraction,
     known: tuple[str, ...] = (),
     now: datetime | None = None,
+    place: str = "",
 ) -> Extraction:
     facts = [str(item).strip()[:160] for item in known if str(item).strip()][:8]
-    if not found.events or not facts or llm is None:
+    # The place alone is reason enough to make this call: without it the
+    # listing has no idea how far away anything is.
+    if not found.events or (not facts and not place) or llm is None:
         return found
     listing = "\n".join(
         f"[{index}] {event.name} at {event.venue}"
@@ -431,7 +442,9 @@ async def describe_for(
         + f" ({event.what})"
         for index, event in enumerate(found.events, start=1)
     )
-    about = "\n".join(f"- {fact}" for fact in facts)
+    about = "\n".join(f"- {fact}" for fact in facts) or "- nothing in particular is known about them"
+    if place:
+        about = f"- they are in {place}\n{about}"
     try:
         messages = [
             {"role": "system", "content": load("search/event_lines")},
@@ -453,19 +466,25 @@ async def describe_for(
             payload = json.loads(payload)
         except ValueError:
             return found
+    far: set[int] = set()
     for row in (payload or {}).get("lines", []) if isinstance(payload, dict) else []:
         if not isinstance(row, dict):
             continue
         index = _index(row.get("index"), len(found.events))
+        if index is None:
+            continue
         line = _own_words(row.get("what"))
-        if index is not None and line:
+        if line:
             written[index] = line
-    if not written:
+        # Only a place makes "near" meaningful; with none, everything stays.
+        if place and row.get("near") is False:
+            far.add(index)
+    if not written and not far:
         return found
     return replace(
         found,
         events=tuple(
-            replace(event, what=written.get(index, event.what))
+            replace(event, what=written.get(index, event.what), near=index not in far)
             for index, event in enumerate(found.events, start=1)
         ),
     )

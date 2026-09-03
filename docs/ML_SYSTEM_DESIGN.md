@@ -628,6 +628,58 @@ Each cost real time; the full operational list is in
   effective configuration; diff it against the flag table in section 1, in
   both directions, after every change to the serving script.
 
+## 12b. What's on near me: why the answers were weak, and what decides them now
+
+Written 2026-09-03 after the operator's own question - "what are the most
+fun events happening in the area this week?" - returned one event in New
+York, then a paddle in Colonial Heights, two hours south. The router was
+never the problem: it chose web search every time and named the place. Six
+things downstream were, and each is now decided in code or by a model that
+is given what it needs.
+
+| What was wrong | What decides it now |
+| --- | --- |
+| A date without a year read as no date, so 10 of 12 extracted events were dropped as undated | `core/dates.py` resolves a year-less date to the next such day |
+| The extractor read 700 characters of each result; ARLnow's page holds a dozen events in 2,300 | It reads the whole result (2,500, the search's own bound). Measured on the same results: 1 kept before, 9 after |
+| "This week" was never enforced; a listing led with an event eleven days out | `core/event_window.py` reads the words and `render_listing(window=...)` holds the list to them |
+| A model-written second search round dropped the place | `_hold_to_place` puts the city back on every round of a place-bound question |
+| Results the ranker judged off-subject were still typed into a listing | The listing renders only when the results were on subject; otherwise the flag stands alone |
+| Nothing knew how far away an event was | The model that writes each event's line is told where the person is and marks `near`; the listing drops the rest and counts them ("3 too far from you") |
+
+And the query itself. `SearchPlanner.compose` saw the message and the recent
+turns, never what the person likes, so "fun things to do here" was searched
+generically. It is now handed their interests, and `prompts/search/compose.md`
+spends them on a request about things to do and on nothing else - the one
+targeted query of that day, "DC events this weekend salsa bachata karaoke
+board games", happened only because the conversation had mentioned those
+things. Section 7's rule still holds for the reply prompt: a standing
+interest list there bends unrelated answers. A search for what to do is
+where interests belong.
+
+### The deployed reranker: a prompt problem, not a model problem
+
+`docs/ML_SYSTEM_DESIGN.md` and `prompts/search/rank.md` record that the
+0.6B cross-encoder was tried for result ranking on 2026-08-25 and "put a
+festival at Snowshoe, West Virginia second" for an Arlington question, so
+ranking moved to the main model. Re-measured 2026-09-03 against the same
+shape of case, on the deployed `qwen3-reranker-0.6b`:
+
+| Query as sent | Top three |
+| --- | --- |
+| "what events are happening in Arlington Virginia this weekend?" | Clarendon Day (Arlington), Rosslyn Jazz (Arlington), Bali roundup - Snowshoe **last** |
+| the same, plus the app's "(asked from Arlington, Virginia)" suffix | Clarendon Day, Rosslyn Jazz, **Snowshoe third** |
+| "what are the most fun events happening in the area this week?" | **Snowshoe first**, Bali second, county board third |
+| the area question plus the place suffix | Clarendon Day, **Snowshoe second**, Rosslyn third |
+
+The model ranks correctly when the place is *in* the question and badly when
+it is appended as a parenthetical or missing entirely - which is exactly how
+`_rerank_question` builds it. The verdict of 2026-08-25 measured our own
+query construction, not the model. Two consequences, neither yet acted on:
+the reranker is worth re-measuring properly with the place inside the
+question, and `RERANKER_BASE_URL` is currently unset, so the container on
+spark1 holds its share of memory and serves nothing.
+
+
 ## 13. Document knowledge: reading files into retrieval, and writing them back
 
 The retrieval-augmented part of the system, built 2026-09-01/02 after the

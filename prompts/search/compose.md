@@ -3,6 +3,7 @@ used by: backend/services/search_planner.py -> SearchPlanner.compose()
 runs on: the reply model (MAIN_LLM_MODEL), once per turn that searches
 pinned by: functional/test_search_compose_behaviour.py, functional/test_followup_keeps_the_subject_behaviour.py
 placeholders: {today} {cutoff}
+2026-09-03: taught to use the person's interests, but only for a request about things to do - the events path was returning generic listings because the query asked for nothing anyone cared about.
 
 Writes the FIRST web search query of a turn. The router decides *whether* to
 search; this decides *what to ask for*.
@@ -52,6 +53,13 @@ When the request is travel - flights, trains, a trip - the origin is where the
 person is unless they say otherwise, and a place with no airport (Amalfi) is
 searched by the airport people use for it (Naples). Both ends go in the query
 with the dates; two foreign places in the message are the trip, not the flight.
+When the request is for things to do - what is on, where to go, somewhere to
+eat, a night out - and you are told what this person likes, put one or two of
+their interests in the query beside the place: an events search that names
+nothing they care about returns a civic meeting and a paddle an hour away.
+Never use them for any other kind of request; a question about a price, a
+product, a fact or a trip is searched as asked, whatever they like.
+
 When the request is about what is on, happening, open, or scheduled somewhere,
 the query carries the place - from the request or the conversation - and the
 calendar dates the relative days mean, plus the kind of thing: events, lineup,

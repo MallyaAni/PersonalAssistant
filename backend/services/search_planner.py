@@ -123,16 +123,31 @@ class SearchPlanner:
 
     # One query for this turn, or nothing when the model cannot improve on
     # what the router already chose.
-    def compose(self, question: str, history: list[dict[str, Any]]) -> str:
+    def compose(
+        self, question: str, history: list[dict[str, Any]], likes: tuple[str, ...] = ()
+    ) -> str:
         recent = [
             f"{turn.get('role', 'user')}: {str(turn.get('content') or '')[:400]}"
             for turn in history[-4:]
         ]
         context = "\n".join(recent)
         asked = f"Conversation so far:\n{context}\n\n" if context else ""
+        # What they like, for the one kind of question where it belongs in
+        # the query itself: "fun things to do here" searched generically
+        # returns a paddle two hours away, while the same question asked in a
+        # conversation that happened to mention salsa produced "DC events
+        # this weekend salsa bachata karaoke board games" - the only targeted
+        # query of the day (2026-09-03). The prompt decides when to use them;
+        # a list of interests must not bend a question about a PS5's price.
+        about = (
+            "\n\nWhat this person likes, for a request about things to do: "
+            + ", ".join(likes)
+            if likes
+            else ""
+        )
         return self._ask(
             self._dated(_COMPOSE),
-            f"{asked}Their message: {question}",
+            f"{asked}Their message: {question}{about}",
             "compose a search query",
         )
 
