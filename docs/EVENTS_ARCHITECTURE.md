@@ -98,8 +98,8 @@ links were by commission.
 | Extractor reads the whole result (2,500 chars) | Deployed 2026-09-03 (eb1f83fa); with the parser fix, 9 events kept from the same results (1 before), 2/2 runs | `backend/core/event_extraction.py`, `backend/cli/measure_events_extraction.py` |
 | Listing held to the asked calendar window | Deployed 2026-09-03 (eb1f83fa) | `backend/core/event_window.py`, `backend/core/events_listing.py` |
 | A later search round keeps the place | Deployed 2026-09-03 (eb1f83fa) | `backend/services/conversation_service.py`, `test_search_keeps_the_place.py` |
-| Off-subject results are never typed into a listing | Built 2026-09-03 (bd1b2a36), not yet deployed | `conversation_service`, `test_events_listing_wiring.py` |
-| A drifted second round: the first round ranked alone and used when on subject | Built 2026-09-03 (fbe4fb86), not yet deployed | `conversation_service._research`, `test_events_listing_wiring.py` |
+| Off-subject results are never typed into a listing | Deployed 2026-09-03 (ca16b0ab) | `conversation_service`, `test_events_listing_wiring.py` |
+| A drifted second round: the first round ranked alone and used when on subject | Deployed 2026-09-03 (ca16b0ab) | `conversation_service._research`, `test_events_listing_wiring.py` |
 | "Remind me about the second one" | Works with no new machinery — measured | `functional/test_act_on_a_listed_event_behaviour.py` |
 | `.ics` attached into the iMessage thread | **Not built** | needs `TurnResult` to carry a non-image file; would reuse `backend/discovery/calendar.py` |
 | Booking through a bounded browser tool | **Not built** | as an MCP server behind the existing boundary — see [ADR 0018](adr/0018-an-outside-agent-enters-as-a-tool-or-not-at-all.md) |
