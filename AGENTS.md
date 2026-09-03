@@ -571,6 +571,19 @@ can still be stale UI.
   then `launchctl bootstrap gui/$(id -u) <plist>`, and check with
   `launchctl print ... | grep IMESSAGE_BRIDGE_`. (2026-08-28, first group send.)
 
+- **The memory coordinator rebuilds the reply context; a key set during
+  retrieval can vanish before the prompt.** `ConversationService.process`
+  fills `context` (document passages, history search, images) and then
+  rebinds it to what `prepare_context` returns - a copy in which every store
+  the plan chose is searched again and assigned outright. On 2026-09-02 that
+  replaced an archived itinerary's passages with an active-only search, so
+  the turn trace listed three passages the prompt never held and the reply
+  invented a hotel. The plan is a model judgement, which made it
+  intermittent. `knowledge` is now kept when non-empty; `entities`,
+  `working`, and `summaries` are still assigned outright. When a trace shows
+  something the prompt lacks, capture the prompt (`ANIOS_TRACE_PROMPTS`) and
+  read `backend/memory/coordinator.py` before touching any framing.
+
 ## Documentation ownership
 
 - `README.md`: stable overview, entry points, and documentation map.
