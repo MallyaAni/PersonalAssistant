@@ -61,7 +61,14 @@ class Settings(BaseSettings):
     # Anthropic's own guidance (standard calling under ten tools, search
     # above it, accuracy falling away past thirty to fifty).
     ROUTING_TOOL_SEARCH_ENABLED: bool = False
-    ROUTING_TOOL_SEARCH_THRESHOLD: int = Field(default=10, ge=4, le=60)
+    # Measured 2026-09-03 on the 108 labelled cases, one pass each way:
+    # identical totals (87/96 on the categories both runs covered), four
+    # categories better and four worse, which at two to five cases each is
+    # noise. So the catalogue neither helps nor hurts at today's twenty-odd
+    # tools, and it costs a round trip when it fires. The threshold sits at
+    # the bottom of Anthropic's own cliff instead of at their switch-on
+    # advice: it should start earning its keep as the list grows, not now.
+    ROUTING_TOOL_SEARCH_THRESHOLD: int = Field(default=30, ge=4, le=60)
     ROUTING_TOOL_SEARCH_RESULTS: int = Field(default=5, ge=1, le=20)
     # How many tool decisions one turn may make.
     #

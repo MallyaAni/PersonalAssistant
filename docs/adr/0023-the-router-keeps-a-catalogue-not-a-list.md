@@ -64,6 +64,14 @@ tool references, which the caller expands.
   go in the user content, so the cached prompt prefix stays byte-identical -
   the same property Anthropic preserves by keeping deferred tools out of the
   system-prompt prefix.
+- **Measured, and the threshold set by the result.** One pass over the 108
+  labelled cases each way, 2026-09-03: identical totals (87/96 across the
+  29 categories both runs covered), four categories better with the
+  catalogue and four worse, which at two to five cases apiece is noise. It
+  neither helps nor hurts at twenty-odd tools and costs a round trip when it
+  fires, so the threshold is 30 rather than Anthropic's switch-on advice of
+  10 - the mechanism waits for the list to grow into it. Re-measure with
+  three passes before turning it on by default.
 - **Off until measured.** `ROUTING_TOOL_SEARCH_ENABLED` defaults to false.
   The 108 labelled selection cases are run both ways on the real model; the
   per-tool floors decide whether it ships.

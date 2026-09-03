@@ -2,6 +2,21 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-03 - The tool catalogue, measured: a wash at today's size, so it waits for the list to grow
+
+One pass over the 108 labelled selection cases with the catalogue off and
+on. The totals are identical - 87 of 96 across the 29 categories both runs
+covered - with four categories better and four worse, which at two to five
+cases each is noise rather than signal. So deferred loading neither helps
+nor hurts a router choosing among twenty-odd tools, and it costs an extra
+round trip on the turns where it fires.
+
+The threshold moves from 10 to 30 as a result: at the bottom of the range
+where Anthropic measured selection accuracy falling away, rather than at
+their switch-on advice. The mechanism is built, tested and idle, and starts
+earning its keep when a person's skills and connected servers push the list
+past thirty. Recorded in ADR 0023 with the numbers.
+
 ## 2026-09-03 - What gets good results, measured: place, then the days, then what they like
 
 Four ways of building the same question, one live search and extraction
