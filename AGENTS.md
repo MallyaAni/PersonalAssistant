@@ -201,13 +201,17 @@ ds4-server and 400s on every vLLM request, and a reasoning model under a small
 `max_tokens` returns an empty string rather than a short answer.
 
 **Never decide a model swap from published benchmarks.** They describe
-unquantised weights, and the DeepSeek deployed here is a **2-bit** quantisation
-— 86.7 GB for ~284B parameters. Aggregators also disagree with the models' own
-cards; one reported a 35-point LiveCodeBench lead that the official figures
-reverse. Measure it with `evaluate_reply_quality` against
-`backend/services/reply_quality_cases.py`, and capture everything from the
-incumbent *before* offloading it, because one 128 GB box holds one large model
-and a challenger can only be measured in the space the incumbent vacates.
+unquantised weights, and the DeepSeek deployed here is the **official FP8**
+checkpoint — ~156 GB for ~284B parameters, tensor-parallel across both DGX
+Sparks (vLLM, port 8000, model id `deepseek-v4-flash`). The earlier 2-bit
+IQ2_XXS GGUF served by `ds4-server` is retired; `docs/MODEL_EVALUATION.md` and
+`docs/ML_SYSTEM_DESIGN.md` are the source of truth for what actually runs.
+Aggregators also disagree with the models' own cards; one reported a 35-point
+LiveCodeBench lead that the official figures reverse. Measure it with
+`evaluate_reply_quality` against `backend/services/reply_quality_cases.py`, and
+capture everything from the incumbent *before* offloading it, because memory is
+tight on both Sparks and a challenger can only be measured in the space the
+incumbent vacates.
 
 **`.env` beats the compose default, so raising a default may change nothing.**
 Compose writes `KEY=${KEY:-new_default}`, and a `KEY=old_value` still sitting in

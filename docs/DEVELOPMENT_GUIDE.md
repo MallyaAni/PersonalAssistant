@@ -562,46 +562,33 @@ attempted.
 - NVIDIA's own vLLM container for this hardware requires `--enforce-eager`:
   the sm_121 architecture has no full CUDA graph support yet, costing
   roughly 20-30% throughput versus an architecture that has it. Quantize to
-  FP4/INT4 to fit larger models in the 128 GB unified pool; two Sparks can
-  pool 256 GB over a QSFP link for tensor parallelism via Ray, but only one
-  unit is on hand.
-- **DeepSeek-V4-Flash-0731 is installed and serving on the Spark**, port
-  `8888`, model id `deepseek-v4-flash`. Not vLLM — this quantization is a
-  custom asymmetric GGUF vLLM cannot read, served by `ds4-server`
-  ("DwarfStar 4", C/CUDA) from
-  [MiaAI-Lab/DeepSeek-v4-Flash-One-DGX-Spark](https://github.com/MiaAI-Lab/DeepSeek-v4-Flash-One-DGX-Spark).
-  Two things about it are easy to get wrong a second time:
-  - **It binds `127.0.0.1` only by default** (`ds4-serve` / `ds4-server`'s
-    `--host` flag, default `127.0.0.1`) — unreachable from the
-    `anios_backend` container, which needs the LAN interface directly, not a
-    Windows-side tunnel (that only helps this dev machine, not the
-    container). Must be launched with `--host 0.0.0.0`. Confirmed the failure
-    mode looks like an ordinary connection error
-    (`httpx.ConnectError: ... actively refused it`) with nothing in the
-    server's own log to suggest a binding problem — check `ss -tlnp | grep
-    8888` on the Spark first, not the client side, when this model stops
-    responding.
-  - **Nothing supervises it across a reboot** by design (no systemd unit is
-    installed; the README says to bring your own supervision). Fixed with a
-    user crontab `@reboot` entry (`crontab -l` on the Spark) rather than a
-    systemd unit, since `animallya96` does not have passwordless `sudo`.
-  - Relaunch by hand if both of the above ever need redoing:
-    `DS4_SRC_DIR=$HOME/code/ds4 DS4_GGUF_DIR=$HOME/gguf
-    $HOME/.local/bin/ds4-serve --host 0.0.0.0 --port 8888 -c 131072`. Context
-    is 131072 (not the model's native 1M) — deliberately conservative for a
-    first install on new hardware, not a hard limit; log is
-    `~/ds4-server.log`.
-  - Measured, cold single-turn decode throughput: **~5.7 tokens/sec**. Real
-    and slow enough to matter — treat any role this serves as async/batch,
-    not a synchronous chat path, until sustained-load numbers say otherwise.
-  - The `/v1/models` response carries an unusual, unrelated
-    `base_instructions` field containing a full Codex CLI system prompt —
-    an intentional compatibility feature (a "Codex model catalog" the
-    installer drops so OpenAI's Codex CLI can self-configure against this
-    server) confirmed harmless for AniOS: a direct
-    `/v1/chat/completions` call was checked and carries no such leakage, and
-    AniOS's own `LLMClient` only ever reads `.content` from a completion, not
-    the models-list metadata.
+  FP4/INT4 to fit larger models in the 128 GB unified pool; two Sparks pool
+  256 GB over a QSFP link for tensor parallelism (TP=2), which is how the
+  ~156 GB FP8 DeepSeek fits.
+- **DeepSeek-V4-Flash-0731 is installed and serving on the Sparks**, port
+  `8000`, model id `deepseek-v4-flash`, served by **vLLM**
+  (`ghcr.io/anemll/dspark-vllm-gx10:0.1.1`) tensor-parallel across spark1 and
+  spark2 (`--tensor-parallel-size 2`, `--nnodes 2`, `--moe-backend
+  flashinfer_b12x`, `--kv-cache-dtype nvfp4_ds_mla`, `--max-model-len 1048576`)
+  from the official **FP8** checkpoint (~156 GB). The earlier 2-bit IQ2_XXS
+  GGUF served by `ds4-server` ("DwarfStar 4", C/CUDA, port 8888) is **retired**
+  — that quantization is a custom asymmetric GGUF vLLM cannot read, and it is
+  no longer what runs. The serving profile, per-flag provenance, and runtime
+  traps are in `docs/MODEL_EVALUATION.md` and `docs/ML_SYSTEM_DESIGN.md`.
+  Two things about the current engine are easy to get wrong a second time:
+  - **It resolves by IP, not by the `.local` name, from inside containers.**
+    `animallya-spark1.local` resolves to unroutable link-local IPv6 inside
+    Docker, so the compose `x-spark-hosts` anchor pins both Sparks by IP
+    (spark1 = 172.16.8.3, spark2 = 172.16.8.5). Verify a migration by
+    exercising the dependency from inside a container, never by curling
+    `/health` (which touches no dependency).
+  - **A rebuilt backend container needs a gateway restart.** The gateway
+    resolves the `backend` hostname once at startup; after any
+    `docker compose up -d backend` run `docker compose restart gateway` or
+    every request through `deep-matter.com` 502s while both containers report
+    healthy. (The upstream now uses Docker's embedded DNS via a variable, so
+    this only bites on the rare path that bypasses it — check the gateway log
+    before suspecting the backend.)
 - Migration ideas live in `ROADMAP.md`, Milestone 9.
 
 ### Qualify local models by role

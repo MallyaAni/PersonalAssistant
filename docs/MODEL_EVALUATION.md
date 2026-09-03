@@ -1,5 +1,21 @@
 # Comparing candidate models for AniOS
 
+## Current state, 2026-09-03: official FP8 across both Sparks
+
+The deployed reply model is **DeepSeek-V4-Flash-0731 at the official FP8
+checkpoint (~156 GB, `quant_method: fp8`), served by vLLM**
+(`ghcr.io/anemll/dspark-vllm-gx10:0.1.1`) tensor-parallel across spark1 and
+spark2 (`--tensor-parallel-size 2`, `--nnodes 2`, `--moe-backend
+flashinfer_b12x`, `--kv-cache-dtype nvfp4_ds_mla`, `--max-model-len 1048576`),
+model id `deepseek-v4-flash`, port 8000. `docs/ML_SYSTEM_DESIGN.md` is the
+canonical serving record; this file is the decision history that produced it.
+
+The sections below that describe a **2-bit IQ2_XXS GGUF on one Spark under
+`ds4-server`** are **historical** — that deployment was retired when the
+second Spark arrived. A reader should not take "the deployed DeepSeek is a
+2-bit quantisation" from those sections as current. The migration decision
+("Choosing the main LLM", 2026-08-22/23) is the record of the change.
+
 ## Decision, 2026-08-20: DeepSeek stays
 
 Qwen3.8-27B answers better and cannot be served fast enough here to matter.
