@@ -199,7 +199,15 @@ class TaskRunner:
             "user_id": user_id,
             "query": _asked(task),
             "conversation_id": task["conversation_id"],
-            "metadata": {"channel": task["channel"], "scheduled_task": True},
+            # The zone the task was set in rides along: a group's firing has
+            # no speaker to borrow a clock from, and a room has no home of its
+            # own, so without this a group's chess tip ran on UTC and wished
+            # them fun at trivia "later" the morning after (2026-09-03).
+            "metadata": {
+                "channel": task["channel"],
+                "scheduled_task": True,
+                **({"timezone": str(task["timezone"])} if task.get("timezone") else {}),
+            },
         }
         collected: list[str] = []
         images: list[TurnImage] = []

@@ -69,3 +69,19 @@ async def test_asked_when_trivia_is_the_reply_knows_it_was_yesterday(llm):
     text = _reply(llm, context, "when is trivia?")
     assert states(text, "the reply says trivia was yesterday or on Wednesday 2 September, already past"), text
     assert not states(text, "the reply says trivia is today or later today"), text
+
+
+# No saved place means no zone. The operator's rule (2026-09-03): the time
+# comes from where the person is, and when that is not known, ask for it -
+# but only when the answer turns on it.
+async def test_with_no_known_place_a_tonight_question_asks_for_the_city(llm):
+    context = {"channel": "imessage", "local_now": None, "timezone": ""}
+    text = _reply(llm, context, "anything fun going on tonight?")
+    assert states(text, "the reply asks which city or where the person is"), text
+
+
+async def test_with_no_known_place_a_question_that_does_not_need_it_is_just_answered(llm):
+    context = {"channel": "imessage", "local_now": None, "timezone": ""}
+    text = _reply(llm, context, "what's a good opening for a beginner in chess?")
+    assert states(text, "the reply answers the chess question"), text
+    assert not states(text, "the reply asks where the person is or what city they are in"), text

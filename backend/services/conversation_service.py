@@ -721,6 +721,9 @@ _turn_conversation: ContextVar[str | None] = ContextVar("_turn_conversation", de
 # for a one-to-one turn. Set at the top of `process_request` from the
 # worker's metadata and read wherever "here" or "now" is resolved.
 _turn_speaker: ContextVar[str | None] = ContextVar("_turn_speaker", default=None)
+# The zone a scheduled firing was set in, from its metadata: the clock a
+# group's firing runs on, since a room has no home and a firing no speaker.
+_turn_zone: ContextVar[str] = ContextVar("_turn_zone", default="")
 
 
 # The speaker's user id from a group turn's metadata, or None.
@@ -3087,6 +3090,7 @@ class ConversationService:
         _previous_assistant_said.set(_answering(metadata, history))
         _turn_trace.set({"_started": time.monotonic()})
         _turn_speaker.set(_speaker_of(metadata))
+        _turn_zone.set(str((metadata or {}).get("timezone") or "").strip())
         _turn_conversation.set(resolved_conversation_id)
         current_followup.set(None)
         account_charged_this_turn.set(False)
@@ -3560,6 +3564,7 @@ class ConversationService:
         trace_id = self.tracer.start_trace(user_id)
         _turn_trace.set({"_started": time.monotonic()})
         _turn_speaker.set(_speaker_of(metadata))
+        _turn_zone.set(str((metadata or {}).get("timezone") or "").strip())
         _turn_conversation.set(resolved_conversation_id)
         current_followup.set(None)
         history = await self.repository.get_history(resolved_conversation_id, user_id, self.history_turn_limit)
@@ -4247,6 +4252,9 @@ class ConversationService:
                 continue
             where = ", ".join(part for part in (label, region) if part)
             return where, zone
+        # No place of their own, but a firing's zone: the clock without the map.
+        if _turn_zone.get():
+            return "", _turn_zone.get()
         return None
 
     # In a group the clock is the speaker's: the room has no zone of its own,
@@ -4265,7 +4273,8 @@ class ConversationService:
             zone = str(getattr(locality, "timezone", "") or "")
             if zone:
                 return zone
-        return None
+        # No place of their own: a firing runs on the zone it was set in.
+        return _turn_zone.get() or None
 
     # Save a classified person/organization relationship, when agent memory is wired.
     async def _save_entity_proposal(

@@ -2,6 +2,7 @@ name: welcome/system
 used by: backend/services/welcome_service.py -> build_welcome()
 runs on: the reply model (MAIN_LLM_MODEL) — once per approved account
 pinned by: functional/test_welcome_message_behaviour.py
+2026-09-03: asks which city they are in - ten of twelve accounts had no place, so every time-dependent answer ran on UTC (the operator's rule: time from their location; ask when unknown).
 placeholders: {display_name} {agents} {capabilities}
 
 The introduction a newly approved person receives, unprompted, as their first
@@ -69,6 +70,9 @@ Give one concrete example of a message they could send, written exactly as they 
 
 Do not mention where their conversations are stored, or privacy, hardware, servers, machines, or the cloud at all - none of it belongs in a hello.
 
+They have not told you where they live yet, and where they are is what makes
+times, the weather and what's-on answers fit their day. Ask, in one friendly
+sentence, which city they're in - as part of the hello, not as a form.
 Close with a cheerful invitation to try something.
 
 Between 60 and 110 words. Short paragraphs, no headers, no bullet points, no numbered lists, no markdown. One emoji is welcome; two is too many. Do not describe how you work, name any model or software, or mention agents, tools, or capabilities as concepts. Do not use the word "anything". Return only the message itself - no preamble, no sign-off naming yourself as an assistant, no quotation marks around it.

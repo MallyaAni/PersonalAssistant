@@ -27,6 +27,8 @@ business and is tested where the selector is.
 
 import pytest
 
+from backend.tests.functional.semantic import states
+
 from backend.core.prompts import render
 
 pytestmark = [pytest.mark.functional, pytest.mark.asyncio]
@@ -220,3 +222,11 @@ async def test_the_welcome_is_a_warm_hello_not_a_cautionary_briefing(llm) -> Non
         "The message is warm, upbeat and welcoming in tone, like a friendly "
         "hello, and contains no warnings, caveats or cautions.",
     ), text
+
+
+# The operator's rule (2026-09-03): time comes from where the person is, and
+# a new account has no place yet - ten of twelve accounts had none, so every
+# time-dependent answer ran on UTC. The hello asks which city they're in.
+async def test_the_welcome_asks_which_city_they_are_in(llm) -> None:
+    text = _welcome(llm, "Caroline", REAL_AGENTS, REAL_CAPABILITIES)
+    assert states(text, "the message asks which city the person is in, or where they live or are based"), text

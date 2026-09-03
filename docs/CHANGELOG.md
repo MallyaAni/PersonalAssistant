@@ -30,6 +30,22 @@ to the real model: a chess tip the morning after trivia must not wish them
 fun at trivia later, with the memory in either wording, and "when is
 trivia?" on Thursday answers that it was Wednesday.
 
+And the location half, the operator's rule: the time comes from where the
+person is, and when that is not known the assistant asks. Ten of twelve
+accounts had no saved place on 2026-09-03, so every one of them had been
+running on UTC. The prompt now says plainly that the city and zone are not
+known and asks which city they're in when the answer turns on local time
+or place (tonight, this weekend, what's on, the weather, a reminder), and
+otherwise answers without mentioning it; the welcome message asks the same
+in one sentence. Pinned on the real model by the time-awareness test's two
+no-place cases and the welcome test.
+
+A group's scheduled firing had no clock at all: a spoken group turn runs on
+its speaker's place, but a firing has no speaker and a room no home of its
+own, so the group's chess tip ran on UTC. The task runner now sends the
+zone the task was set in with the firing, and the turn runs on it when the
+owner has no place (`test_group_firing_zone.py`, `test_task_runner.py`).
+
 ## 2026-09-03 - Events in the area this week: why one New York event came back, and the four fixes
 
 The operator asked "what are the most fun events happening in the area this

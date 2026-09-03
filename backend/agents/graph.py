@@ -760,10 +760,20 @@ def _build_system_prompt(
     # Wednesday trivia (2026-09-03): a date is not enough to know it is
     # Thursday, and "later" needs the time.
     zone = str(context_data.get("timezone") or "").strip()
-    today = (
-        f"{clock:%Y-%m-%d} ({clock:%A}); the local time is {clock:%-I:%M %p}"
-        + (f" {zone}" if zone else "")
-    )
+    if zone:
+        today = f"{clock:%Y-%m-%d} ({clock:%A}); the local time is {clock:%-I:%M %p} {zone}"
+    else:
+        # No saved place means no zone: the clock here is UTC, which is a
+        # day ahead of the eastern US every evening. Ten of twelve accounts
+        # had no place on 2026-09-03. The rule the operator set: when the
+        # answer turns on their local time or where they are, ask first.
+        today = (
+            f"{clock:%Y-%m-%d} ({clock:%A}) in UTC. The person's city and time zone "
+            "are not known. When the answer depends on their local time or on where "
+            "they are - tonight, this weekend, what's on, the weather, a reminder at a "
+            "time - ask which city they're in before answering, in one friendly "
+            "sentence; otherwise answer without mentioning it"
+        )
     # The wording lives in `prompts/reply/system.md` so it can be tuned
     # without opening this file; the header there records what each block is
     # for and which failure it prevents. The rendered blocks below are still
