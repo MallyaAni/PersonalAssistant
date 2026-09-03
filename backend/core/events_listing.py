@@ -24,6 +24,7 @@ from __future__ import annotations
 from datetime import UTC, date, datetime, time
 
 from backend.core.event_extraction import Extraction, ListedEvent
+from backend.core.event_window import Window
 from backend.core.links import calendar_link, ics_link, maps_search, youtube_search
 
 # Longer than a phone shows at a glance, and past the point where a listing
@@ -38,6 +39,7 @@ def render_listing(
     now: datetime | None = None,
     limit: int = MAX_LISTED,
     calendar_base_url: str | None = None,
+    window: Window | None = None,
 ) -> str:
     # Which events survive the cut is decided by fit, and only then are the
     # survivors put in date order for reading. Taking the earliest N instead -
@@ -45,7 +47,29 @@ def render_listing(
     # per-person judgement on it, and a Tuesday craft fair displaces a Saturday
     # salsa night on the calendar alone.
     kept = max(1, limit)
-    by_fit = sorted(extraction.events, key=lambda event: event.source_rank)[:kept]
+    # "This week" means this week. Events outside the window the question
+    # named are counted, not listed - a momo crawl a week on Sunday headed
+    # an Arlington "this week" listing on 2026-09-02 because nothing checked.
+    # When nothing falls inside it, the nearest few after it are shown under
+    # a heading that says so, rather than a shrug.
+    candidates = list(extraction.events)
+    outside = 0
+    outside_note = ""
+    if window is not None:
+        inside = [event for event in candidates if window.holds(event.day)]
+        outside = len(candidates) - len(inside)
+        if inside:
+            candidates = inside
+        else:
+            later = sorted(
+                (event for event in candidates if event.day is not None and event.day > window.end),
+                key=lambda event: (event.day, event.name),
+            )[:3]
+            candidates = later
+            outside = len(extraction.events) - len(later)
+            if later:
+                outside_note = f"Nothing I can date {window.label}; the nearest after it:"
+    by_fit = sorted(candidates, key=lambda event: event.source_rank)[:kept]
     events = sorted(
         by_fit,
         key=lambda event: (event.starts_at or datetime.max.replace(tzinfo=UTC), event.name),
@@ -53,7 +77,7 @@ def render_listing(
     if not events:
         return ""
     moment = now or datetime.now(UTC)
-    lines: list[str] = []
+    lines: list[str] = [outside_note] if outside_note else []
     current: date | None = None
     for event in events:
         day = event.day
@@ -63,7 +87,12 @@ def render_listing(
                 lines.append("")
             lines.append(_day_heading(day, moment))
         lines.extend(_event_lines(event, calendar_base_url))
-    tail = _dropped_line(extraction, len(extraction.events) - len(events))
+    tail = _dropped_line(
+        extraction,
+        len(extraction.events) - len(events) - outside,
+        outside=outside,
+        window=window,
+    )
     if tail:
         lines.extend(["", tail])
     lines.extend(["", "Tap Add on any of them, or tell me which one and I'll set a reminder."])
@@ -149,8 +178,15 @@ def _price(event: ListedEvent) -> str:
 
 # What did not make the listing, and why. Silence here would read as "that is
 # everything there is", which is the failure this whole path exists to end.
-def _dropped_line(extraction: Extraction, over_limit: int) -> str:
+def _dropped_line(
+    extraction: Extraction,
+    over_limit: int,
+    outside: int = 0,
+    window: Window | None = None,
+) -> str:
     parts: list[str] = []
+    if outside > 0 and window is not None:
+        parts.append(f"{outside} on other days than {window.label}")
     if extraction.undated:
         parts.append(f"{extraction.undated} more that never said when")
     if extraction.opening_hours:

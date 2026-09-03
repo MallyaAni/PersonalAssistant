@@ -41,10 +41,16 @@ from backend.discovery.events import clean_text
 
 logger = logging.getLogger(__name__)
 
-MAX_EVENTS = 12
+MAX_EVENTS = 16
 MAX_RESULTS_READ = 10
-_MAX_TOKENS = 1_400
-_CONTENT_CHARS = 700
+_MAX_TOKENS = 2_000
+# What the extractor reads of each result. It was 700 characters, which
+# on 2026-09-02 cut ARLnow's events page - 2,300 characters holding a dozen
+# dated Arlington events - to its first two, while a New York page's one
+# event survived whole; the listing for "events in the area this week" was
+# that one event. The search already bounds a result at SEARCH_RESULT_CHARS
+# (2,500), so reading it all costs at most ten results of that.
+_CONTENT_CHARS = 2_500
 _WHAT_WORDS = 24
 
 _WEEKDAYS = {

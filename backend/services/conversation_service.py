@@ -409,6 +409,25 @@ async def _rerank_web_results(
     return ordered[:keep]
 
 
+
+# A later search round that dropped the place the first one carried gets it
+# back: the city (the label's first part) and its region, as the first query
+# had them. A query that never had the place, or a place unknown, is left
+# alone - this corrects a drift, it does not invent a locality.
+def _keep_the_place(proposed: str, first_query: str, place: str) -> str:
+    if not proposed or not place:
+        return proposed
+    parts = [part.strip() for part in place.split(",") if part.strip()]
+    if not parts:
+        return proposed
+    city = parts[0]
+    if city.casefold() not in first_query.casefold():
+        return proposed
+    if city.casefold() in proposed.casefold():
+        return proposed
+    return f"{proposed} {' '.join(parts[:2])}".strip()
+
+
 # The question the reranker judges results against: what was asked, and
 # where from when the person's place is known - a bias toward the local,
 # never a filter, so a genuinely better far-away result can still surface.
@@ -2658,11 +2677,20 @@ class ConversationService:
                             # base lets the listing offer a native .ics link,
                             # which needs this machine's address rather than
                             # the origin the page was served from.
+                            from backend.core.event_window import window_for
+
+                            local_now = context.get("local_now")
                             listing = render_listing(
                                 found,
-                                context.get("local_now"),
+                                local_now,
                                 calendar_base_url=calendar_base_url(
                                     settings.DISCOVERY_CALENDAR_BASE_URL
+                                ),
+                                # "This week" is held to this week, in the
+                                # person's own calendar, by the words asked.
+                                window=window_for(
+                                    research_question,
+                                    local_now if isinstance(local_now, datetime) else datetime.now(UTC),
                                 ),
                             )
                         if listing:
@@ -2739,6 +2767,14 @@ class ConversationService:
         tried: list[str] = []
         succeeded = False
         current = first_query
+        # Where the person is, once, so a later round can be held to it.
+        home = ""
+        if user_id:
+            try:
+                found_home = await self._primary_place(user_id)
+                home = found_home[0] if found_home else ""
+            except Exception:
+                home = ""
 
         for round_number in range(max(1, settings.SEARCH_MAX_ROUNDS)):
             tried.append(current)
@@ -2786,6 +2822,12 @@ class ConversationService:
             # Every outbound query is screened, not just the first: a refined
             # one is written by a model and can reintroduce what the original
             # had minimized away.
+            # A second angle on "what's on here" that leaves the place out
+            # finds what is on anywhere: the round after "events Arlington
+            # Virginia this week" searched without Arlington on 2026-09-02
+            # and a New York page won the listing. If the first query named
+            # the place and this one does not, the place goes back on.
+            better = _keep_the_place(better, first_query, home)
             screened = self.search_privacy.sanitize(better)
             if not screened.allowed:
                 logger.info(

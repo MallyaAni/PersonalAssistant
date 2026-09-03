@@ -5,7 +5,7 @@ answer hides - a short list that reads as "that is everything", when really
 four things turned up and none of them said when.
 """
 
-from datetime import UTC, datetime, time
+from datetime import UTC, datetime, time, timedelta
 
 from backend.core.event_extraction import Extraction, ListedEvent
 from backend.core.events_listing import render_listing, render_nothing_found
@@ -149,3 +149,28 @@ def test_an_empty_extraction_that_dropped_things_can_still_explain_itself():
     said = render_nothing_found(Extraction(undated=4))
     assert "4 more that never said when" in said
     assert render_nothing_found(Extraction()) == ""
+
+
+# The listing is held to the window the question named. A momo crawl a week
+# on Sunday headed an Arlington "this week" listing on 2026-09-02 because
+# nothing between the search and the reader checked the dates.
+def test_events_outside_the_asked_window_are_counted_not_listed():
+    from backend.core.event_window import window_for
+
+    window = window_for("what's on this week?", NOW)
+    near = _lawn()
+    far = _potato(name="Momo Crawl", starts_at=NOW + timedelta(days=11), start_time=None)
+    text = render_listing(Extraction((near, far)), NOW, window=window)
+    assert near.name in text
+    assert "Momo Crawl" not in text
+    assert "1 on other days than this week" in text
+
+
+def test_nothing_inside_the_window_shows_the_nearest_after_it_and_says_so():
+    from backend.core.event_window import window_for
+
+    window = window_for("anything fun tonight?", NOW)
+    later = _potato(starts_at=NOW + timedelta(days=3), start_time=None)
+    text = render_listing(Extraction((later,)), NOW, window=window)
+    assert text.startswith("Nothing I can date today; the nearest after it:")
+    assert later.name in text

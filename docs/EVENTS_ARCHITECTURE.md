@@ -49,6 +49,31 @@ stripped of URL-shaped text, and links are attached afterwards from records.
    which is the exact turn that failed. The iMessage worker applies it again at
    the send boundary.
 
+## What the first American question showed (2026-09-03)
+
+The path above was built on Canggu listings. The operator's first real
+question from Arlington - "the most fun events happening in the area this
+week?" - returned one event, in New York, a week on Sunday. The search had
+returned the right pages; the losses were in this path, and each is now a
+rule in code with a test:
+
+1. **A date without a year is a date.** American calendars write "Saturday,
+   September 5", "Sep 5", "9/5"; `stated_date` resolves such a date to the
+   next such day given today (`backend/core/dates.py`). Before, ten of
+   twelve extracted records were dropped as undated.
+2. **The extractor reads the whole result** (2,500 characters, the search's
+   own bound) rather than a 700-character head that held two of ARLnow's
+   dozen events. Measured on the same results: 1 kept at 700, 5 at 2,500
+   with the old parser (`backend/cli/measure_events_extraction.py`).
+3. **The listing is held to the window the words named**
+   (`backend/core/event_window.py`: today, tomorrow, this weekend, this
+   week, next week, next weekend, in the person's calendar). Events on
+   other days are counted, not listed; with nothing inside, the nearest
+   few after it are shown under a line that says so.
+4. **A later search round keeps the place** the first query carried
+   (`conversation_service._keep_the_place`), so "another angle" cannot
+   find what is on anywhere.
+
 ## What the reader is told about what is missing
 
 The count of dropped events is part of the listing, not a footnote: "Not
@@ -69,6 +94,10 @@ links were by commission.
 | Code-rendered listing | Deployed 2026-08-29 (cabfdecd) | `backend/core/events_listing.py` |
 | The listing is the reply on a flagged events turn | Deployed 2026-08-29 (cabfdecd) | `backend/services/conversation_service.py` |
 | One-tap Google Calendar link per event | Deployed 2026-08-29 | `backend/core/events_listing.py` |
+| Year-less dates resolve to the next such day | Built 2026-09-03, not yet deployed | `backend/core/dates.py`, `test_dates.py` |
+| Extractor reads the whole result (2,500 chars) | Built 2026-09-03, measured 1 -> 5 kept | `backend/core/event_extraction.py`, `backend/cli/measure_events_extraction.py` |
+| Listing held to the asked calendar window | Built 2026-09-03 | `backend/core/event_window.py`, `backend/core/events_listing.py` |
+| A later search round keeps the place | Built 2026-09-03 | `backend/services/conversation_service.py`, `test_search_keeps_the_place.py` |
 | "Remind me about the second one" | Works with no new machinery — measured | `functional/test_act_on_a_listed_event_behaviour.py` |
 | `.ics` attached into the iMessage thread | **Not built** | needs `TurnResult` to carry a non-image file; would reuse `backend/discovery/calendar.py` |
 | Booking through a bounded browser tool | **Not built** | as an MCP server behind the existing boundary — see [ADR 0018](adr/0018-an-outside-agent-enters-as-a-tool-or-not-at-all.md) |

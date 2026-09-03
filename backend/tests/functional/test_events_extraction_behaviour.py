@@ -173,3 +173,49 @@ async def test_knowing_the_reader_cannot_change_a_single_fact(llm):
     for event in list(for_ani.events) + list(for_jen.events):
         assert states(event.when_text, MIXED_EVIDENCE), event
         assert not URL_IN_TEXT.findall(event.what), event
+
+
+# The other half of the 2026-09-02 Arlington listing: American calendars
+# write "Saturday, September 5" and "Fri, Sep 5 · 7:00 PM" without a year,
+# and every such event used to be dropped as undated. The snippets below
+# are the shape ARLnow, Patch and Eventbrite really return; the model must
+# quote the phrases and the code must date them within the week asked.
+US_NOW = datetime(2026, 9, 2, 20, 0, tzinfo=UTC)
+US_RESULTS = [
+    {
+        "url": "https://www.arlnow.com/events",
+        "title": "Events | ARLnow",
+        "content": (
+            "## September 4, 2026  Lawn Games Social - 3351 Fairfax Dr Arlington, Virginia 22201  "
+            "Chimney Swift Evening Birdwatching - 2909 16th St S Arlington, Virginia  "
+            "## September 9, 2026  Storytime - 3351 Fairfax Dr Arlington, Virginia 22201"
+        ),
+    },
+    {
+        "url": "https://patch.com/virginia/arlington-va/calendar",
+        "title": "Arlington Events Calendar - Arlington, VA Patch",
+        "content": (
+            "#### Saturday, September 5   Blithe Spirit 8:00 pm    Little Theatre of Alexandria, 600 Wolfe St, Alexandria  "
+            "Courthaus Comedy Bunker 12: D. Lo 7:00 pm    Courthaus Social, 2300 Clarendon Blvd, Arlington  "
+            "#### Sunday, September 6   Art Night - Try the Pottery Wheel, BYOB 6:00 pm    Art House 7, 5537 Lee Hwy, Arlington"
+        ),
+    },
+    {
+        "url": "https://www.eventbrite.com/d/va--arlington/events",
+        "title": "Arlington, VA Events, Calendar & Tickets | Eventbrite",
+        "content": (
+            "### Salsa Night at Clarendon Ballroom  Fri, Sep 5 · 8:00 PM  Clarendon Ballroom, 3185 Wilson Blvd, Arlington  From $10.00  "
+            "### Health IT Summit 2026  Today • 8:00 AM  Bethesda Marriott"
+        ),
+    },
+]
+
+
+async def test_american_calendar_dates_without_a_year_are_kept_and_dated(llm):
+    found = await extract_events(get_routing_llm_client(), US_RESULTS, US_NOW)
+    dated = {event.name.casefold(): event.day.isoformat() for event in found.events if event.day is not None}
+    assert len(dated) >= 4, (dated, found.undated, found.unsourced)
+    for name, day in dated.items():
+        assert day.startswith("2026-09"), (name, day)
+    week = [day for day in dated.values() if "2026-09-04" <= day <= "2026-09-06"]
+    assert len(week) >= 3, dated

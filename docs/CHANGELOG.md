@@ -2,6 +2,40 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-03 - Events in the area this week: why one New York event came back, and the four fixes
+
+The operator asked "what are the most fun events happening in the area this
+week?" from Arlington and got one event: a momo crawl in Jackson Heights,
+New York, on 13 September, after 92 seconds. Traced end to end. The search
+was not the problem - Tavily returned ARLnow, Patch's Arlington calendar,
+Arlington Magazine, Eventbrite and the county's own listing, every one
+local. The losses were downstream, and each is now decided in code:
+
+- **The extractor read 700 characters of each result.** ARLnow's page is
+  2,300 characters holding a dozen dated events; the head held two. It now
+  reads the whole result (`_CONTENT_CHARS` 2,500, the search's own bound).
+  Measured on the same live results with the old date parser: 1 event kept
+  at 700, 5 at 2,500 (`backend/cli/measure_events_extraction.py`).
+- **The date parser required a year.** "Saturday, September 5", "Sep 5",
+  "Sunday, Sep 13", "9/5" - the way every American calendar writes a date -
+  read as "no date", and ten of twelve extracted records were dropped as
+  undated. `backend/core/dates.py::stated_date` now resolves a year-less
+  date to the next such day given today (`test_dates.py`; the real-model
+  extraction test gains an ARLnow/Patch/Eventbrite case).
+- **A second search round could drop the place.** The round after "events
+  Arlington Virginia this week" is model-written; when it leaves the city
+  out, `_keep_the_place` puts it back (`test_search_keeps_the_place.py`).
+- **The listing had no calendar window.** "This week" showed 13 September.
+  `backend/core/event_window.py` reads today, tomorrow, this weekend, this
+  week, next week and next weekend from the words, in the person's own
+  calendar, and `render_listing` holds the list to it: events on other days
+  are counted ("3 on other days than this week"), and when nothing falls
+  inside, the nearest few after it are shown under a line that says so
+  (`test_event_window.py`, `test_events_listing.py`).
+
+The 92 seconds were the deploy's own sweep loading the model at the same
+time as the question. Not deployed: the operator's rule is to ask first.
+
 ## 2026-09-02 - The check-in journeys, corrected by the first live sweep
 
 The twenty-fourth deploy's sweep ran the four new check-in journeys and

@@ -79,14 +79,69 @@ _MONTH_NUMBERS = {
 # rather than claiming a start nobody published.
 def extract_explicit_date(text: str, now: datetime | None = None) -> datetime | None:
     moment = now or datetime.now(UTC)
-    parsed = stated_date(text)
+    parsed = stated_date(text, moment)
     if parsed is None or parsed.date() < moment.date():
         return None
     return parsed
 
 
-# Parse the first explicit calendar date without deciding whether it is current.
-def stated_date(text: str) -> datetime | None:
+# Date forms that state the day and month but not the year - which is how
+# event calendars write them: Patch's "Saturday, September 5", Eventbrite's
+# "Fri, Sep 5 · 7:00 PM", ARLnow's "September 9", a "9/5" on a flyer. The
+# year is the one that puts the day on or after today (the next such day),
+# which is the same reading every person gives a poster. Until 2026-09-02
+# these all read as "no date", and ten of twelve extracted Arlington events
+# were dropped as undated from a listing for "events this week".
+_YEARLESS_PATTERNS: tuple[re.Pattern[str], ...] = (
+    # September 5  /  Sept. 5th  /  Sep 5
+    re.compile(
+        rf"\b(?P<mon>{MONTH_STEMS})[a-z]*\.?\s+(?P<d>\d{{1,2}})(?:st|nd|rd|th)?\b(?!\s*,?\s*20\d{{2}})",
+        re.IGNORECASE,
+    ),
+    # 5 September  /  5th Sept
+    re.compile(
+        rf"\b(?P<d>\d{{1,2}})(?:st|nd|rd|th)?\s+(?P<mon>{MONTH_STEMS})[a-z]*\.?\b(?!,?\s+20\d{{2}})",
+        re.IGNORECASE,
+    ),
+    # 9/5  /  9/5/2026  (month first, as the sources here write it)
+    re.compile(r"\b(?P<m>\d{1,2})/(?P<d>\d{1,2})(?:/(?P<y>20\d{2}))?\b"),
+)
+
+
+# Parse the first explicit calendar date without deciding whether it is
+# current. A date written without its year resolves against `now` to the
+# next such day; with no `now`, only year-bearing dates are read.
+def stated_date(text: str, now: datetime | None = None) -> datetime | None:
+    dated = _with_year(text)
+    if dated is not None or now is None:
+        return dated
+    for pattern in _YEARLESS_PATTERNS:
+        match = pattern.search(text)
+        if match is None:
+            continue
+        groups = match.groupdict()
+        if groups.get("m") is not None:
+            month_number: int | None = int(groups["m"])
+        else:
+            month_number = _month_number((groups.get("mon") or "").lower())
+        if month_number is None or not 1 <= month_number <= 12:
+            continue
+        day = int(groups["d"])
+        year = int(groups["y"]) if groups.get("y") else now.year
+        try:
+            parsed = datetime(year, month_number, day, tzinfo=UTC)
+        except ValueError:
+            continue
+        if not groups.get("y") and parsed.date() < now.date():
+            try:
+                parsed = datetime(year + 1, month_number, day, tzinfo=UTC)
+            except ValueError:
+                continue
+        return parsed
+    return None
+
+
+def _with_year(text: str) -> datetime | None:
     for pattern in _DATE_PATTERNS:
         match = pattern.search(text)
         if match is None:
