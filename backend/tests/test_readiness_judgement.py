@@ -99,3 +99,27 @@ def test_unreadable_answers_fail_open():
             )
         }
     ) == Readiness(False, True, "x" * 160)
+
+
+# A tapback is complete whatever the model says about it: one reaction on
+# one bubble, nothing more coming. The model still decides whether it
+# accepts an offer.
+@pytest.mark.asyncio
+async def test_a_tapback_is_complete_even_when_the_model_calls_it_ambiguous():
+    import json
+
+    from backend.services.readiness import judge_readiness
+
+    class Ambiguous:
+        def chat(self, messages, max_tokens=256, schema=None, temperature=None):
+            return {"content": json.dumps({"complete": False, "needs_reply": False, "accepts_offer": False, "reason": "ambiguous"})}
+
+    verdict = await judge_readiness(Ambiguous(), "Which sounds better to you, Thai or pizza?", ["❤️"], addressed_by="tapback")
+    assert verdict.complete is True and verdict.accepts_offer is False
+
+    class Accepts:
+        def chat(self, messages, max_tokens=256, schema=None, temperature=None):
+            return {"content": json.dumps({"complete": False, "needs_reply": False, "accepts_offer": True, "reason": "yes"})}
+
+    verdict = await judge_readiness(Accepts(), "Want me to find a few good Thai places?", ["👍"], addressed_by="tapback")
+    assert verdict.complete is True and verdict.accepts_offer is True and verdict.needs_reply is True

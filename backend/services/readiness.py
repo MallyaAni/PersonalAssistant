@@ -98,7 +98,19 @@ async def judge_readiness(
     except Exception:
         logger.warning("Readiness judgement failed; answering the person", exc_info=True)
         return FAIL_OPEN
-    return parse_readiness(answer)
+    verdict = parse_readiness(answer)
+    # A tapback is complete by its nature: it is one reaction on one bubble
+    # and nothing more is coming. Whether it accepts an offer is the model's
+    # call; whether the burst is finished is not - asked, the model called a
+    # heart on "Thai or pizza?" ambiguous once in three runs (2026-09-03).
+    if addressed_by == "tapback" and not verdict.complete:
+        return Readiness(
+            complete=True,
+            needs_reply=verdict.needs_reply or verdict.accepts_offer,
+            reason=verdict.reason,
+            accepts_offer=verdict.accepts_offer,
+        )
+    return verdict
 
 
 # The model's answer as a Readiness; unreadable answers fail open.

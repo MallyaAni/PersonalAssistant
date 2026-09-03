@@ -2,6 +2,16 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-03 - A tapback is complete by its nature, not by judgement
+
+The twenty-ninth's gate refused on a readiness judgement: a heart tapback on
+"Which sounds better to you, Thai or pizza?" was called "ambiguous" - once
+in three runs, unrelated to the change being deployed. A tapback is one
+reaction on one bubble and nothing more is coming, so its completeness is
+now decided in code (`services/readiness.py`); whether it accepts an offer
+stays the model's call. Unit test added; the real-model readiness test is
+no longer a single judgement on that point.
+
 ## 2026-09-03 - A search about "here" is held to the person's place, whoever wrote the query
 
 Live on the twenty-seventh, the Raleigh probe's question ran as "local
