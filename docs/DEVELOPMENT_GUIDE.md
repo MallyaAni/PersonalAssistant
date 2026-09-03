@@ -1895,3 +1895,30 @@ Every implementation handoff should state:
 - remaining blockers and the next atomic task.
 
 Rewrite [NEXT_SESSION.md](NEXT_SESSION.md) with the latest evidence. Append to [CHANGELOG.md](CHANGELOG.md) only when a meaningful change has passed functional validation.
+
+## Why a deploy takes an hour, measured 2026-09-03
+
+Four deploys that day each took 56 minutes in `deploy.sh` plus about three
+in the post-deploy chain. Where it goes:
+
+| Stage | Time | What it is |
+| --- | --- | --- |
+| `gate.sh --unit` | ~2 min | 2,513 unit tests, no model |
+| `gate.sh` | ~20 min | four functional files against the real models; `test_tool_selection_matrix_behaviour` runs the whole 108-case routing matrix and dominates |
+| build and restart | the remainder | image build, migrations, `up -d`, verify |
+| `sweep_journeys` | ~15 min | 47 journeys, each a live turn, run one after another, plus a retry pass for any gap |
+
+Every expensive part is model-bound, and the model is now the FP8 checkpoint
+tensor-parallel across both Sparks, sharing itself with live traffic and with
+any measurement running at the time. Four things would cut it, in order of
+what they return:
+
+1. **Run the routing matrix when routing changed, not on every deploy.** It
+   is the single biggest item and most deploys do not touch the selector.
+   Nightly plus change-triggered keeps the coverage and buys back ~15 min.
+2. **Run the sweep's journeys concurrently.** They are independent per
+   account and the bottleneck is round trips, not compute; vLLM batches.
+3. **Build while the gate runs.** They are independent and currently serial.
+4. **Do not measure against the same model during a deploy.** Several of
+   that day's slow turns (37 s routing, 92 s for an events question) were
+   the deploy's own sweep and a probe competing for the same endpoint.

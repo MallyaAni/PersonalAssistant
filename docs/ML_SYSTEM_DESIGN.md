@@ -671,6 +671,26 @@ shape of case, on the deployed `qwen3-reranker-0.6b`:
 | "what are the most fun events happening in the area this week?" | **Snowshoe first**, Bali second, county board third |
 | the area question plus the place suffix | Clarendon Day, **Snowshoe second**, Rosslyn third |
 
+### Where the reranker actually runs
+
+There are two consumers and one fallback, and they fail differently:
+
+| Caller | What it ranks | When it is absent |
+| --- | --- | --- |
+| `core/reranker.py`, from `conversation_service` | Candidates for a "what did we say about..." recall - the most-used tool in the system (46 turns in seven days) | Returns None; the caller keeps its cosine order |
+| `embeddings/service_reranker.py` → `get_cross_encoder()` → `PrecisionRanker` in `discovery/runner.py` | The second half of Scout's cascade: each (interest, candidate) pair read properly after the embedding shortlist | `is_enabled()` is false and the sweep keeps the embedding order, silently |
+| `embeddings/cross_encoder.py` (local ONNX) | The same contract, from weights on disk | Disables itself when the weights are missing |
+
+Both service paths are switched by one setting, `RERANKER_BASE_URL`, which
+`docker-compose.yml` supplies per service. On 2026-09-03 it reached
+`backend`, `functional-tests` and `local-capabilities` - **but not
+`discovery-worker`**, the service that actually runs the sweeps. So Scout's
+precision half had been off wherever it mattered, with nothing in any log
+to say so, because absence is a design state here rather than an error. The
+two environment lines were added that day; the sweep's ranking should be
+re-measured with `evaluate_discovery_ranking` before and after, since this
+turns a stage back on rather than changing one.
+
 The model ranks correctly when the place is *in* the question and badly when
 it is appended as a parenthetical or missing entirely - which is exactly how
 `_rerank_question` builds it. The verdict of 2026-08-25 measured our own
