@@ -95,7 +95,7 @@ links were by commission.
 | The listing is the reply on a flagged events turn | Deployed 2026-08-29 (cabfdecd) | `backend/services/conversation_service.py` |
 | One-tap Google Calendar link per event | Deployed 2026-08-29 | `backend/core/events_listing.py` |
 | Year-less dates resolve to the next such day | Built 2026-09-03, not yet deployed | `backend/core/dates.py`, `test_dates.py` |
-| Extractor reads the whole result (2,500 chars) | Built 2026-09-03, measured 1 -> 5 kept | `backend/core/event_extraction.py`, `backend/cli/measure_events_extraction.py` |
+| Extractor reads the whole result (2,500 chars) | Built 2026-09-03; with the parser fix, 9 events kept from the same results (1 before), 2/2 runs | `backend/core/event_extraction.py`, `backend/cli/measure_events_extraction.py` |
 | Listing held to the asked calendar window | Built 2026-09-03 | `backend/core/event_window.py`, `backend/core/events_listing.py` |
 | A later search round keeps the place | Built 2026-09-03 | `backend/services/conversation_service.py`, `test_search_keeps_the_place.py` |
 | "Remind me about the second one" | Works with no new machinery — measured | `functional/test_act_on_a_listed_event_behaviour.py` |

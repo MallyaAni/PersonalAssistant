@@ -33,8 +33,11 @@ local. The losses were downstream, and each is now decided in code:
   inside, the nearest few after it are shown under a line that says so
   (`test_event_window.py`, `test_events_listing.py`).
 
-The 92 seconds were the deploy's own sweep loading the model at the same
-time as the question. Not deployed: the operator's rule is to ask first.
+Measured together on the same live Arlington results, two runs on the real
+model: 9 dated events kept each time (1 before), of which 4 and 6 fall
+inside "this week" and the rest are counted as other days. The 92 seconds
+were the deploy's own sweep loading the model at the same time as the
+question. Not deployed: the operator's rule is to ask first.
 
 ## 2026-09-02 - The check-in journeys, corrected by the first live sweep
 
