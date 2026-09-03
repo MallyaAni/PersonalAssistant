@@ -656,6 +656,14 @@ services:
       - INFERENCE_ADAPTER=${INFERENCE_ADAPTER:-openai_compatible}
       - INFERENCE_PROVIDER_NAME=vllm
       - EMBEDDING_BASE_URL=http://vllm-embedding:8000
+      # Scout's cascade has two halves: an embedding shortlist and a
+      # cross-encoder that reads each pair. The second was silently off in
+      # this worker - the service that actually runs the sweeps - because
+      # only the backend and two others were handed the endpoint, and
+      # PrecisionRanker treats a missing URL as absence and keeps the
+      # embedding order (2026-09-03).
+      - RERANKER_BASE_URL=${RERANKER_BASE_URL:-http://vllm-reranker:8000}
+      - RERANKER_MODEL=${RERANKER_MODEL:-qwen3-reranker-0.6b}
       - EMBEDDING_MODEL=${EMBEDDING_MODEL:-text-embedding-nomic-embed-text-v1.5}
       # Egress stays off unless the operator turns it on deliberately.
       - DISCOVERY_EGRESS_ENABLED=${DISCOVERY_EGRESS_ENABLED:-false}
