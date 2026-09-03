@@ -619,10 +619,55 @@ def _render_task_outcome(outcome: dict[str, Any]) -> str:
             "this turn. Say the tasks are unchanged, list the ones above, and ask "
             "which they meant. Never say one was deleted or changed.\n"
         )
+    lines.extend(_render_check_in_outcome(outcome))
     for key in ("reason", "requested"):
         if outcome.get(key):
             lines.append(f"- {key}: {outcome[key]}\n")
     return "".join(lines) + "\n"
+
+
+# The check-in kinds, in the same record. A check-in is described as what it
+# is to the person - "I'll ask on Friday" - never as a task or an automation,
+# and turning the habit on or off is reported in a line, not a list of rules.
+_REFUSALS = {
+    "too_many_waiting": "three check-ins are already waiting (listed above); nothing new was set. Offer to drop one.",
+    "already_armed": "one about this is already waiting; nothing new was set. Say so.",
+    "wellbeing_cooldown": "a check on how they are doing was asked within the last week; nothing new was set. Say so kindly.",
+    "sensitive_in_room": "how someone is doing is not asked in a group chat; nothing was set. Offer to do it one-to-one.",
+    "no_timezone": "their place is not known, so the local day cannot be worked out; nothing was set. Ask where they are.",
+}
+
+
+def _render_check_in_outcome(outcome: dict[str, Any]) -> list[str]:
+    kind = str(outcome.get("kind") or "")
+    if not kind.startswith("check_in"):
+        return []
+    waiting = [str(item) for item in outcome.get("waiting") or [] if item]
+    listed = ("; waiting now: " + ", ".join(waiting)) if waiting else ""
+    if kind == "check_ins_on":
+        state = "were already on" if outcome.get("already") else "are now on"
+        return [
+            f"- Check-ins {state}: from here the assistant may come back on its own to things "
+            f"they mention - how a trip went, how they are after a hard week{listed}. Say so in "
+            "one warm line; do not list rules or call it an automation.\n"
+        ]
+    if kind == "check_ins_off":
+        dropped = int(outcome.get("dropped") or 0)
+        gone = f" and the {dropped} waiting one{'s' if dropped != 1 else ''} dropped" if dropped else ""
+        return [f"- Check-ins are now off{gone}. Say so in one line; nothing else changes.\n"]
+    if kind == "check_ins_status":
+        state = "on" if outcome.get("enabled") else "off (they can ask to turn them on)"
+        return [f"- Check-ins are {state}{listed or '; nothing is waiting'}. Report exactly that.\n"]
+    if kind == "check_in_armed":
+        return [
+            f"- A check-in about {outcome.get('subject') or 'that'} is set (the task above says when). "
+            "Say in one line that you'll ask then, in their words; do not call it a task, a reminder, "
+            "or an automation.\n"
+        ]
+    if kind == "check_in_refused":
+        why = _REFUSALS.get(str(outcome.get("reason") or ""), "it could not be set; say so plainly.")
+        return [f"- Not set: {why}\n"]
+    return []
 
 
 # Every outcome this turn recorded, in order. Two are rendered as two

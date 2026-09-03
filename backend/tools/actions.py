@@ -224,3 +224,18 @@ MainAction = (
     | ToolboxAction
     | None
 )
+
+
+@dataclass(frozen=True, slots=True)
+class ManageCheckInsAction:
+    """The model decided this turn is about check-ins: the person asking to be
+    asked later how something went, to have that habit on or off, or to hear
+    what is waiting. Off for everyone until asked (the operator's rule,
+    2026-09-02: people did not like being checked on unasked)."""
+
+    mode: str  # on, off, once, status
+    subject: str = ""
+    question: str = ""
+    after_days: int | None = None
+    hour: int | None = None
+    kind: str = "following_up"

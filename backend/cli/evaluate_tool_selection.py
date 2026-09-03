@@ -40,6 +40,7 @@ from backend.services.main_action_selector import (
     MainActionSelector,
     ManageSkillsAction,
     ManageTasksAction,
+    ManageCheckInsAction,
     ScoutScheduleAction,
     SaveSkillAction,
     ScheduleTaskAction,
@@ -77,6 +78,7 @@ _ACTION_TOOL = {
     # being counted as successes for `none`.
     ScheduleTaskAction: "schedule_task",
     ManageTasksAction: "manage_tasks",
+    ManageCheckInsAction: "manage_check_ins",
     ScoutScheduleAction: "scout_schedule",
     SaveSkillAction: "save_skill",
     ManageSkillsAction: "manage_skills",

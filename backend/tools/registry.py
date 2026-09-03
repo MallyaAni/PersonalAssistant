@@ -20,6 +20,7 @@ from . import (
     generate_image,
     manage_skills,
     manage_tasks,
+    manage_check_ins,
     presentation,
     save_skill,
     schedule_task,
@@ -38,6 +39,7 @@ from .actions import (
     MainAction,
     ManageSkillsAction,
     ManageTasksAction,
+    ManageCheckInsAction,
     RecallHistoryAction,
     SaveSkillAction,
     ScheduleTaskAction,
@@ -73,6 +75,7 @@ _MODULES: tuple[ModuleType, ...] = (
     search_history,
     schedule_task,
     manage_tasks,
+    manage_check_ins,
     scout_schedule,
     save_skill,
     manage_skills,
@@ -96,6 +99,7 @@ AUTOMATION_TOOLS: frozenset[str] = frozenset(
     (
         schedule_task.NAME,
         manage_tasks.NAME,
+        manage_check_ins.NAME,
         scout_schedule.NAME,
         save_skill.NAME,
         manage_skills.NAME,
@@ -221,6 +225,7 @@ _ROW_FOR_ACTION: dict[type, BuiltinTool] = {
     RecallHistoryAction: search_history.TOOL,
     ScheduleTaskAction: schedule_task.TOOL,
     ManageTasksAction: manage_tasks.TOOL,
+    ManageCheckInsAction: manage_check_ins.TOOL,
     ScoutScheduleAction: scout_schedule.TOOL,
     SaveSkillAction: save_skill.TOOL,
     ManageSkillsAction: manage_skills.TOOL,
@@ -249,6 +254,8 @@ def _detail(action: MainAction) -> str:
         return f"{action.cadence} at {action.hour:02d}:{action.minute:02d}"
     if isinstance(action, ManageTasksAction | ManageSkillsAction):
         return action.operation
+    if isinstance(action, ManageCheckInsAction):
+        return f"{action.mode} {action.subject}".strip()
     if isinstance(action, SaveSkillAction):
         return action.name
     return ""

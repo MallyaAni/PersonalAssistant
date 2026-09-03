@@ -19,6 +19,11 @@ selector makes one decision per turn. Asked to move a reminder, the model
 replied that it had, and nothing had changed in the database. The rule about
 never claiming an unrecorded change is below because of that turn.
 
+2026-09-02: check-in kinds share this record (check_ins_on/off/status,
+check_in_armed/refused); their per-kind lines are rendered by
+graph._render_check_in_outcome and pinned by
+functional/test_check_in_request_behaviour.py.
+
 ===== PROMPT BELOW — everything under this line is sent to the model =====
 
 This turn's message was a request about scheduled tasks, and the

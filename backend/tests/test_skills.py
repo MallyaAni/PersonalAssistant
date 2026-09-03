@@ -26,6 +26,8 @@ def test_slugs_are_stable_keys():
 def test_shipped_packs_load_and_a_bodyless_pack_is_skipped(tmp_path: Path):
     shipped = load_packs()
     assert "quick-brief" in shipped
+    # The check-ins pack: off for everyone until asked, so the ask must reach it.
+    assert "check-ins" in shipped and "manage_check_ins" in shipped["check-ins"].instruction
     assert shipped["quick-brief"].description
     assert shipped["quick-brief"].as_skill()["source"] == "pack"
 

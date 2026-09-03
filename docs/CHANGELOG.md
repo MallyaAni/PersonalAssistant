@@ -2,6 +2,23 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-02 - Check-ins are off until asked, and asking is a skill
+
+People did not like the assistant checking on them unasked, so the check-in
+judgement no longer runs for anyone who has not asked for it. The switch is
+a profile preference (`preferences.check_ins`), read before the judgement
+starts; unreadable means off. Asking is a skill: the shipped pack
+`skills/check-ins.md` reaches a new `manage_check_ins` tool with four modes -
+on, off (which also drops what is waiting), once for one thing by name
+("check in with me Friday about the interview", through the same
+`arm_check_in` and limits), and status. The outcome rides the scheduled-task
+record so the reply says what is now set, in the person's terms. Pinned by
+`test_manage_check_ins_tool.py`, `functional/test_check_in_request_behaviour.py`
+(router modes and reply wording on the real models), routing cases in the
+`check_ins` family with a measured floor, and four sweep journeys: nothing
+armed while off, armed once asked, one by name, stop. ADR 0022; the
+architecture page and the check-in design doc carry the rule.
+
 ## 2026-09-02 - The memory coordinator no longer overwrites the passages a turn already found
 
 The archived-itinerary check kept failing after every framing fix: the turn

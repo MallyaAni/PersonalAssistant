@@ -8,6 +8,38 @@ The short version: a check-in is an ordinary one-off scheduled task. The only
 new thing is the judgement that decides to arm one. The decision and its
 reasoning are [ADR 0019](adr/0019-a-check-in-is-a-scheduled-task.md).
 
+## Off until asked (2026-09-02)
+
+People did not like being checked on unasked, so nothing here runs for
+anyone who has not asked for it. The switch is one preference on the
+person's profile (`preferences.check_ins`, visible and clearable like any
+other), read by `conversation_service._check_ins_enabled` before the
+judgement is even started; an unreadable profile counts as off, because the
+safe mistake is to stay quiet. A room has its own switch under the group's
+id, so a member can ask for check-ins in the room without changing their
+own.
+
+Asking is a skill. The shipped pack `skills/check-ins.md` ("Check-ins") is
+offered to everyone and reaches the `manage_check_ins` tool
+(`backend/tools/manage_check_ins.py`), which the router can also choose
+directly:
+
+| Mode | The ask | What happens |
+| --- | --- | --- |
+| `on` | "from now on, check in on me about the things I mention" | the preference is set; from the next turn the judgement runs as described below |
+| `off` | "stop checking in on me" | the preference is cleared and every waiting check-in is dropped - stop means stop, not "after these" |
+| `once` | "check in with me on Friday about how the interview went" | one check-in is armed for the named thing, through the same `arm_check_in` and under the same limits (three waiting, no duplicate subject, a civil hour, never wellbeing in a room); the habit stays as it was |
+| `status` | "what are you going to ask me about?" | on or off, and what is waiting |
+
+The outcome travels in the same record a scheduled task uses, rendered by
+`graph._render_check_in_outcome`, so the reply says what is now set rather
+than guessing - and says it as what it is to the person ("I'll ask on
+Friday"), never as a task or an automation. Pinned by
+`test_manage_check_ins_tool.py` (the gate, the modes, the limits),
+`functional/test_check_in_request_behaviour.py` (the router and the reply
+on the real models), and the sweep's four check-in journeys (nothing armed
+while off, armed once asked, one by name, stop).
+
 ## Why it works this way
 
 The operator asked for this on 2026-08-30: "it would be nice to have the agent
@@ -30,7 +62,8 @@ reads what they merely mentioned.
 ## The path, step by step
 
 1. **The turn runs as usual.** Nothing about the reply changes, and nothing
-   here can change it.
+   here can change it. Nothing below runs unless the person has asked for
+   check-ins (the section above).
 2. **A judgement runs alongside the memory proposal**
    (`backend/core/checkin.py`, started as a task in
    `conversation_service._arm_check_in` so the two calls overlap and the turn
@@ -143,6 +176,7 @@ week deserves its check-in back.
 
 | Part | State |
 | --- | --- |
+| Off until asked; the Check-ins skill and `manage_check_ins` (on, off, once, status) | Built 2026-09-02, pinned by `test_manage_check_ins_tool.py`, `functional/test_check_in_request_behaviour.py`, and the sweep journeys |
 | The judgement and its prompt | Built, pinned by `functional/test_check_in_proposal_behaviour.py` |
 | What a firing actually says | Built, pinned by `functional/test_check_in_message_behaviour.py`, which also holds the router to choosing no tool for a firing |
 | The limits | Built, pinned by `test_checkin_arming.py` |

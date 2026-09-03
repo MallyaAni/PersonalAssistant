@@ -279,6 +279,13 @@ delete-all.
 
 ### Scout, third shape - check-ins it arms itself ([design](CHECKIN_ARCHITECTURE.md), [ADR](adr/0019-a-check-in-is-a-scheduled-task.md))
 
+0. Nothing here happens until you ask for it. People did not like being
+   checked on unasked, so check-ins are off for everyone by default; "from
+   now on, check in on me about the things I mention" turns them on, "stop
+   checking in on me" turns them off and drops what is waiting, and "check
+   in with me Friday about the interview" sets one without turning the habit
+   on. That ask is a skill (`skills/check-ins.md`) backed by the
+   `manage_check_ins` tool.
 1. You mention something in passing - "we're heading to National Harbor on
    Saturday evening", or that you have been feeling awful all week. You are
    not asking for anything, so the router never sees it.
@@ -293,10 +300,11 @@ delete-all.
 
 *Stored:* the same task rows, with a kind. *The model decides:* whether
 something was mentioned worth following up, what to call it, and roughly when.
-*Code decides:* at most three waiting, one wellbeing check a week, never the
-same subject twice, never in a group room, never without a timezone, and the
-day and hour bounds. *You control:* list, pause and cancel them in the same
-words as any other automation.
+*Code decides:* whether you asked for them at all, at most three waiting, one
+wellbeing check a week, never the same subject twice, never in a group room,
+never without a timezone, and the day and hour bounds. *You control:* on, off,
+one by name, and list, pause and cancel them in the same words as any other
+automation.
 
 *Stored:* tasks, runs, taught skills. *The model decides:* that this is a
 scheduling request, the self-contained instruction, cadence fields, which

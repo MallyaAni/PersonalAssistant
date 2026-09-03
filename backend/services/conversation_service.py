@@ -45,7 +45,15 @@ from backend.discovery.schedule import Cadence
 from backend.discovery.service import DiscoveryProfileService
 from backend.mcp.invocation import MCPInvocationError
 from backend.memory.coordinator import MemoryCoordinatorAgent
-from backend.core.checkin import propose_check_in
+from backend.core.checkin import (
+    FIRST_HOUR,
+    FOLLOWING_UP,
+    LAST_HOUR,
+    MAX_DAYS,
+    MIN_DAYS,
+    CheckIn,
+    propose_check_in,
+)
 from backend.memory.proposal_agent import MemoryProposalAgent
 from backend.models.schemas import ChatStreamEvent
 from backend.search.budgeted import (
@@ -83,6 +91,7 @@ from backend.services.main_action_selector import (
     RecallHistoryAction,
     SaveSkillAction,
     ScheduleTaskAction,
+    ManageCheckInsAction,
     SearchAction,
     ShowImageAction,
     ToolboxAction,
@@ -3214,7 +3223,8 @@ class ConversationService:
             # One creation per turn: a second identical scout_schedule step
             # once overwrote "weekly on Sundays" with the router's default day.
             creates=lambda item: isinstance(item, ScheduleTaskAction)
-            or (isinstance(item, ScoutScheduleAction) and item.operation == "set"),
+            or (isinstance(item, ScoutScheduleAction) and item.operation == "set")
+            or (isinstance(item, ManageCheckInsAction) and item.mode == "once"),
             max_steps=settings.TURN_MAX_STEPS if steppable else 1,
             budget_seconds=settings.TURN_STEP_BUDGET_SECONDS,
         )
@@ -3250,6 +3260,8 @@ class ConversationService:
             and self.scheduled_tasks is not None
         ):
             return "task", await self._apply_task_action(user_id, action, metadata)
+        if isinstance(action, ManageCheckInsAction) and self.scheduled_tasks is not None:
+            return "task", await self._apply_check_ins(user_id, action, metadata)
         if isinstance(action, ScoutScheduleAction) and self.discovery_runs is not None:
             return "scout", await self._apply_scout_schedule(user_id, action)
         return None
@@ -3607,6 +3619,88 @@ class ConversationService:
     # Everything here is best-effort by design: a check-in is a courtesy,
     # and a turn that fails to arm one is a turn that is merely ordinary.
     # Nothing it does can change the reply.
+    # Whether this person (or this room) asked to be checked in on. Off for
+    # everyone until they ask: people did not like the assistant checking on
+    # them unasked (the operator's rule, 2026-09-02). Read from the profile's
+    # preferences, where the answer is visible and clearable; any failure to
+    # read is "off", because the safe mistake is to stay quiet.
+    async def _check_ins_enabled(self, user_id: str) -> bool:
+        if self.memory is None:
+            return False
+        try:
+            profile = await self.memory.get_user_profile(user_id)
+        except Exception:
+            logger.warning("check_ins_preference_unreadable", exc_info=True)
+            return False
+        preferences = (profile or {}).get("preferences") or {}
+        return preferences.get("check_ins") is True
+
+    async def _set_check_ins(self, user_id: str, enabled: bool) -> None:
+        profile = await self.memory.get_user_profile(user_id)
+        preferences = dict((profile or {}).get("preferences") or {})
+        preferences["check_ins"] = enabled
+        await self.memory.upsert_user_profile(user_id, (profile or {}).get("name"), preferences)
+
+    # The check-in tool: on, off, once, status. Reported through the same
+    # outcome record a scheduled task uses, so the reply model is told what
+    # is now set rather than left to guess. Turning them off also drops what
+    # is waiting: "stop checking in on me" means stop, not "after these".
+    async def _apply_check_ins(
+        self, user_id: str, action: ManageCheckInsAction, metadata: dict[str, Any]
+    ) -> dict[str, Any]:
+        if self.memory is None:
+            return {"kind": "unavailable"}
+        try:
+            waiting = list(await waiting_subjects(self.scheduled_tasks, user_id))
+            if action.mode == "status":
+                return {
+                    "kind": "check_ins_status",
+                    "enabled": await self._check_ins_enabled(user_id),
+                    "waiting": waiting,
+                }
+            if action.mode == "on":
+                already = await self._check_ins_enabled(user_id)
+                if not already:
+                    await self._set_check_ins(user_id, True)
+                return {"kind": "check_ins_on", "already": already, "waiting": waiting}
+            if action.mode == "off":
+                await self._set_check_ins(user_id, False)
+                dropped = 0
+                for subject in waiting:
+                    if await stand_down(self.scheduled_tasks, user_id, subject):
+                        dropped += 1
+                return {"kind": "check_ins_off", "dropped": dropped}
+            timezone = str(await self._primary_timezone(user_id) or "") if self.discovery_profile is not None else ""
+            requested = f"a check-in about {action.subject}"
+            if not timezone:
+                return {"kind": "needs_place", "requested": requested}
+            # The person's numbers are suggestions inside the same bounds the
+            # judgement's are held to: no earlier than today, no later than
+            # six weeks out, at a civil hour.
+            after_days = MIN_DAYS if action.after_days is None else max(MIN_DAYS, min(MAX_DAYS, action.after_days))
+            hour = 18 if action.hour is None else max(FIRST_HOUR, min(LAST_HOUR, action.hour))
+            check_in = CheckIn(
+                kind=action.kind or FOLLOWING_UP,
+                subject=action.subject[:80],
+                question=action.question[:160],
+                after_days=after_days,
+                hour=hour,
+            )
+            armed = await arm_check_in(
+                self.scheduled_tasks,
+                user_id,
+                check_in,
+                timezone,
+                str(metadata.get("channel") or "web"),
+                in_group=str(metadata.get("channel") or "") == "imessage_group",
+            )
+            if armed.armed:
+                return {"kind": "check_in_armed", "task": armed.task, "subject": check_in.subject}
+            return {"kind": "check_in_refused", "reason": armed.reason, "requested": requested, "waiting": waiting}
+        except Exception as exc:
+            logger.warning("check_ins_action_failed: %s: %s", type(exc).__name__, str(exc)[:200])
+            return {"kind": "failed"}
+
     async def _arm_check_in(
         self,
         query: str,
@@ -3616,6 +3710,9 @@ class ConversationService:
         timezone: str = "",
     ) -> None:
         if self.check_in_llm is None or self.scheduled_tasks is None:
+            return
+        if not await self._check_ins_enabled(user_id):
+            _trace("check_in", "off")
             return
         try:
             # The turn has already resolved the person's zone for its own

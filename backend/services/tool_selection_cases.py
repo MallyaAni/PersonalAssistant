@@ -42,6 +42,7 @@ CREATE_DIAGRAM = "create_diagram"
 DELEGATE_PRESENTATION = "delegate_to_presentation_agent"
 SCHEDULE_TASK = "schedule_task"
 MANAGE_TASKS = "manage_tasks"
+MANAGE_CHECK_INS = "manage_check_ins"
 # Scout's own sweep cadence, its own tool since 2026-08-26 so the router
 # chooses between two named things rather than reading a sweep change as a
 # task reschedule (the measured failure in backend/tools/manage_tasks.py).
@@ -68,6 +69,7 @@ TOOL_NAMES: tuple[str, ...] = (
     # skill tools were unmeasurable by construction rather than by oversight.
     SCHEDULE_TASK,
     MANAGE_TASKS,
+    MANAGE_CHECK_INS,
     SCOUT_SCHEDULE,
     SAVE_SKILL,
     MANAGE_SKILLS,
@@ -689,6 +691,18 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
     SelectionCase("can you revise the doc I sent so it matches this and give it back to me?", EDIT_DOCUMENT, "document_file", history=_SHARED_DOCUMENT_HISTORY + _ITINERARY_WRITTEN_HISTORY),
     # Words about the plan stay words: a shorter version in the chat is not a file.
     SelectionCase("give me a two-line summary of that plan", NO_TOOL, "document_file", history=_ITINERARY_WRITTEN_HISTORY),
+    # 2026-09-02: check-ins are off for everyone until asked (people did not
+    # like being checked on unasked), so the ask has to reach the tool: one
+    # thing by name, the habit from now on, and stopping. A reminder phrased
+    # as a reminder stays a reminder, and a passing mention is nobody's
+    # request - the judgement behind the habit handles that, not the router.
+    SelectionCase("check in with me on Friday about how the interview went", MANAGE_CHECK_INS, "check_ins"),
+    SelectionCase("from now on, check in on me about the things I mention", MANAGE_CHECK_INS, "check_ins"),
+    SelectionCase("stop checking in on me", MANAGE_CHECK_INS, "check_ins"),
+    SelectionCase("can you follow up with me next week about how the move went?", MANAGE_CHECK_INS, "check_ins"),
+    SelectionCase("remind me Friday at 9 to call the dentist", SCHEDULE_TASK, "check_ins"),
+    SelectionCase("I put an offer in on a car this morning", NO_TOOL, "check_ins"),
+
 )
 
 # Set from the measured baseline once, deliberately low enough to catch a
@@ -742,6 +756,10 @@ PER_TOOL_ACCURACY_FLOORS: dict[str, float] = {
     # arrives, where a misrouted diagram is obvious in the reply.
     SCHEDULE_TASK: 0.80,
     MANAGE_TASKS: 0.80,
+    # Measured 12/12 on 2026-09-02 (four phrasings x 3, measure_selection_family
+    # --category check_ins; the reminder and the passing mention held 3/3 each).
+    # Pinned at the siblings' level, below the measurement.
+    MANAGE_CHECK_INS: 0.80,
     # Measured 18/18 on 2026-08-26 with the tool (evaluate_tool_selection,
     # 3 reps); held at the task tools' level rather than at 1.0 so a single
     # unstable rep cannot fail an honest run.

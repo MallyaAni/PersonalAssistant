@@ -44,6 +44,7 @@ def test_every_builtin_row_is_complete():
         "search_history",
         "schedule_task",
         "manage_tasks",
+        "manage_check_ins",
         "scout_schedule",
         "save_skill",
         "manage_skills",

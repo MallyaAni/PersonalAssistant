@@ -468,6 +468,7 @@ authorization, persistence, provider policy, and execution.</p>
 <p class="eyebrow">Scheduling, learned workflows, unattended turns, and delivery</p>
 <h2>Tasks &amp; skills</h2>
 <p class="change"><span class="tag">focus</span>How a request becomes a durable task or reusable skill and later runs safely.</p>
+<p class="change"><span class="tag">2026-09-02</span>Check-ins are off until asked. People did not like the assistant coming back to things they had only mentioned, so the judgement that arms a check-in runs only for a person whose profile says <code>check_ins</code> is on. Asking is a skill: the shipped <code>skills/check-ins.md</code> pack reaches the <code>manage_check_ins</code> tool with four modes - on, off (which also drops what is waiting), once for one thing by name under the same limits as the judgement, and status. The outcome rides the scheduled-task record, so the reply says what is now set in the person&#39;s terms. ADR 0022; the sweep proves the off state as well as the on.</p>
 <div class="diagram-tools">
 <a href="diagrams/scheduled-tasks-subsystem.svg" target="_blank" rel="noreferrer">Open full-size SVG</a>
 <a href="diagrams/scheduled-tasks-subsystem.mmd">View Mermaid source</a>

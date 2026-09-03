@@ -142,13 +142,31 @@ JOURNEYS = [
     # before reaching its real assertion. An offer on a car names no place to
     # look up the weather for and no company to search, takes no tool 3/3, and
     # arms a check-in 3/3.
-    Journey("something mentioned in passing arms a check-in",
+    # 2026-09-02: check-ins are off for everyone until asked (people did not
+    # like being checked on unasked), so the same mention must arm nothing
+    # first, arm one once the person has asked, and stop when they say so.
+    # The three run in this order on the sweep's one account.
+    Journey("a mention arms nothing while check-ins are off",
             "I put an offer in on a car this morning", (None,),
             holds=("The reply responds to the news like a friend would.",),
+            sql_holds=("select count(*) = 0 from scheduled_tasks where user_id = :u and kind like 'checkin:%'",)),
+    Journey("something mentioned in passing arms a check-in once they asked for them",
+            "I put an offer in on a car this morning", (None,),
+            before=("from now on, check in on me about the things I mention",),
+            holds=("The reply responds to the news like a friend would.",),
             does_not_hold=("The reply says it has scheduled, set, or armed anything.",),
-            sql_holds=("select count(*) >= 1 from scheduled_tasks where user_id = :u and kind like 'checkin:%'",
+            sql_holds=("select coalesce((preferences->>'check_ins')::boolean, false) from user_profiles where user_id = :u",
+                       "select count(*) >= 1 from scheduled_tasks where user_id = :u and kind like 'checkin:%'",
                        "select count(*) <= 3 from scheduled_tasks where user_id = :u and kind like 'checkin:%' and enabled",
                        "select count(*) = 0 from scheduled_tasks where user_id = :u and kind like 'checkin:%' and next_run_at <= now()")),
+    Journey("a check-in asked for by name", "check in with me on Friday about how the interview went", ("Check-ins", "Skill"),
+            holds=("The reply says it will ask about the interview later, on Friday or in a few days.",),
+            does_not_hold=("The reply calls it a task, a reminder, or an automation.",),
+            sql_holds=("select count(*) >= 1 from scheduled_tasks where user_id = :u and kind = 'checkin:following_up' and instruction ilike '%interview%'",)),
+    Journey("stop checking in on me", "stop checking in on me", ("Check-ins", "Skill"),
+            holds=("The reply says check-ins are off or that it will stop.",),
+            sql_holds=("select not coalesce((preferences->>'check_ins')::boolean, true) from user_profiles where user_id = :u",
+                       "select count(*) = 0 from scheduled_tasks where user_id = :u and kind like 'checkin:%' and enabled")),
     Journey("directions", "how long will it take me to drive to Dulles airport at 5pm?", ("Web search", None),
             holds=("The reply gives an estimate with a caveat about live traffic, or says it cannot check live traffic.",),
             does_not_hold=("The reply states an exact minute figure as the certain current travel time.",)),
