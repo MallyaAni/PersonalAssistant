@@ -138,3 +138,67 @@ def test_unsupported_reason_is_inferred_from_item_uncertainty() -> None:
     )
 
     assert decision.unsupported_reason == "model_uncertain"
+
+
+# A phone photo is scaled to fit the model before it is encoded; a small one
+# is untouched; bytes the library cannot read pass through for the server
+# to judge. Caroline's 4032x3024 photo was 16,809 tokens against a 16,384
+# context on 2026-09-02, and the reply was "I hit a problem".
+def _image_bytes(size, mode="RGB", fmt="JPEG"):
+    import io
+
+    from PIL import Image
+
+    buffer = io.BytesIO()
+    Image.new(mode, size, "gray").save(buffer, format=fmt)
+    return buffer.getvalue()
+
+
+def test_a_phone_photo_is_scaled_to_fit_the_model():
+    import io
+
+    from PIL import Image
+
+    from backend.vision.lm_studio import MAX_IMAGE_PIXELS, MAX_IMAGE_SIDE, fit_for_model
+
+    fitted, mime = fit_for_model(_image_bytes((4032, 3024)), "image/jpeg")
+    with Image.open(io.BytesIO(fitted)) as image:
+        assert image.size[0] * image.size[1] <= MAX_IMAGE_PIXELS
+        assert max(image.size) <= MAX_IMAGE_SIDE
+        assert abs(image.size[0] / image.size[1] - 4032 / 3024) < 0.01
+    assert mime == "image/jpeg"
+
+
+def test_a_small_picture_and_unreadable_bytes_pass_through():
+    from backend.vision.lm_studio import fit_for_model
+
+    small = _image_bytes((640, 480), fmt="PNG")
+    assert fit_for_model(small, "image/png") == (small, "image/png")
+    assert fit_for_model(b"not an image", "image/heic") == (b"not an image", "image/heic")
+
+
+def test_transparency_survives_the_fit_as_png():
+    import io
+
+    from PIL import Image
+
+    from backend.vision.lm_studio import fit_for_model
+
+    fitted, mime = fit_for_model(_image_bytes((3000, 3000), mode="RGBA", fmt="PNG"), "image/png")
+    assert mime == "image/png"
+    with Image.open(io.BytesIO(fitted)) as image:
+        assert image.mode == "RGBA" and image.size[0] * image.size[1] <= 2_000_000
+
+
+def test_a_format_the_server_may_not_read_is_re_encoded_even_when_small():
+    import io
+
+    from PIL import Image
+
+    from backend.vision.lm_studio import fit_for_model
+
+    # TIFF stands in for a phone's HEIC: readable here, not a web format.
+    fitted, mime = fit_for_model(_image_bytes((400, 300), fmt="TIFF"), "image/jpeg")
+    assert mime == "image/jpeg"
+    with Image.open(io.BytesIO(fitted)) as image:
+        assert image.format == "JPEG" and image.size == (400, 300)

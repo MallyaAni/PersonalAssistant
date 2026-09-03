@@ -38,6 +38,7 @@ class _Bridge:
 class _Redis:
     def __init__(self) -> None:
         self.store: dict[str, str] = {}
+        self.sets: dict[str, set[str]] = {}
 
     async def get(self, key: str):
         return self.store.get(key)
@@ -47,6 +48,19 @@ class _Redis:
             return None
         self.store[key] = value
         return True
+
+    async def delete(self, key: str):
+        self.store.pop(key, None)
+
+    async def sadd(self, key: str, member: str):
+        self.sets.setdefault(key, set()).add(member)
+
+    async def srem(self, key: str, member: str):
+        self.sets.get(key, set()).discard(member)
+
+    async def smembers(self, key: str):
+        return set(self.sets.get(key, set()))
+
 
 
 def _worker(bridge: _Bridge, monkeypatch, accounts: dict, replies: dict):
@@ -1379,3 +1393,160 @@ async def test_a_document_artifact_event_becomes_a_named_attachment(monkeypatch)
     assert images[0].artifact_id == "doc-2"
     assert images[0].filename == "Amalfi itinerary revised.pdf"
     assert images[0].data_base64 is None  # fetched afterwards through the owned-artifact route
+
+
+# A photo the backend refused is told apart from the vision model being
+# away. Caroline's phone photo on 2026-09-02 overflowed the model's context:
+# the route said 502, the worker said "I hit a problem", and nothing was
+# retried. Now a refusal (422/413) gets a line that says what to change,
+# and an absent model parks the whole message so the photo is fetched and
+# answered again when it is back.
+def _tiny_jpeg_b64() -> str:
+    import base64
+    import io
+
+    from PIL import Image
+
+    buffer = io.BytesIO()
+    Image.new("RGB", (32, 32), "white").save(buffer, format="JPEG")
+    return base64.b64encode(buffer.getvalue()).decode()
+
+
+class _StatusClient:
+    """An httpx client whose post answers one fixed status."""
+
+    def __init__(self, code: int) -> None:
+        self.code = code
+
+    def __call__(self, *args, **kwargs):
+        return self
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *exc):
+        return False
+
+    async def post(self, url, **kwargs):
+        import httpx
+
+        request = httpx.Request("POST", url)
+        if self.code == 0:
+            raise httpx.ConnectError("down", request=request)
+        return httpx.Response(self.code, request=request, json={"detail": "x"})
+
+
+async def _photo_worker(monkeypatch, code: int):
+    from backend.workers import imessage_chat
+
+    bridge = _Bridge({"messages": [], "cursor": 0})
+    worker, _ = _worker(bridge, monkeypatch, {"5550100": "u-ani"}, {})
+
+    async def fetched(attachment_id: str):
+        return ("image/jpeg", "photo.jpg", _tiny_jpeg_b64())
+
+    monkeypatch.setattr(worker, "_fetch_inbound_attachment", fetched)
+    monkeypatch.setattr(imessage_chat.httpx, "AsyncClient", _StatusClient(code))
+    return worker
+
+
+@pytest.mark.asyncio
+async def test_a_refused_photo_gets_the_line_that_says_what_to_change(monkeypatch):
+    from backend.workers.imessage_chat import _OVERSIZED_PHOTO_REPLY, _UNREADABLE_PHOTO_REPLY
+
+    worker = await _photo_worker(monkeypatch, 422)
+    reply, artifact = await worker._analyze_photo("u-ani", "what is this?", {"attachment_id": "att-1"}, "conv-1")
+    assert (reply, artifact) == (_UNREADABLE_PHOTO_REPLY, "")
+    worker = await _photo_worker(monkeypatch, 413)
+    reply, _ = await worker._analyze_photo("u-ani", "", {"attachment_id": "att-1"}, "conv-1")
+    assert reply == _OVERSIZED_PHOTO_REPLY
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("code", [502, 503, 0])
+async def test_an_absent_model_parks_the_photo_instead_of_apologising(monkeypatch, code):
+    from backend.workers.imessage_chat import BackendUnavailable
+
+    worker = await _photo_worker(monkeypatch, code)
+    with pytest.raises(BackendUnavailable):
+        await worker._analyze_photo("u-ani", "what is this?", {"attachment_id": "att-1"}, "conv-1")
+
+
+@pytest.mark.asyncio
+async def test_a_parked_photo_message_is_kept_whole_for_the_retry(monkeypatch):
+    from backend.workers.imessage_chat import BackendUnavailable
+
+    message = _message("g-photo", "5550100", "what is this?")
+    message["attachments"] = [{"attachment_id": "att-1", "media_type": "image/jpeg", "name": "photo.jpg"}]
+    bridge = _Bridge({"messages": [message], "cursor": 3})
+    worker, conversed = _worker(bridge, monkeypatch, {"5550100": "u-ani"}, {})
+
+    async def photo_turn(user_id, caption, attachments):
+        raise BackendUnavailable("vision model away")
+
+    monkeypatch.setattr(worker, "_photo_turn", photo_turn)
+    assert await worker.tick() == 0
+    assert bridge.sent == [], "no apology: the answer comes when the model is back"
+    (record,) = await worker._parked()
+    assert record["guid"] == "g-photo" and record["message"]["attachments"][0]["attachment_id"] == "att-1"
+    assert not await worker._already_seen("g-photo")
+
+
+
+# A turn that ended in a failure line is replayed once when the worker next
+# starts - a deploy - and answered if it now can be, without the person
+# resending; a replay that fails again says nothing more.
+async def _ready(*args, **kwargs):
+    return {"complete": True, "needs_reply": True, "accepts_offer": False, "available": True}
+
+
+def _restarted(worker, monkeypatch, replies: dict):
+    """A fresh worker on the same Redis, as a deploy leaves one."""
+    restarted, _ = _worker(_Bridge({"messages": [], "cursor": 3}), monkeypatch, {"5550100": "u-ani"}, replies)
+    restarted.redis = worker.redis
+    monkeypatch.setattr(restarted, "_readiness", _ready)
+    return restarted
+
+
+@pytest.mark.asyncio
+async def test_a_failed_turn_is_replayed_after_a_restart_and_answered(monkeypatch):
+    from backend.workers.imessage_chat import _FAILED_KEY
+
+    bridge = _Bridge({"messages": [_message("g-fail", "5550100", "what is this?")], "cursor": 3})
+    worker, _ = _worker(bridge, monkeypatch, {"5550100": "u-ani"}, {})
+    monkeypatch.setattr(worker, "_readiness", _ready)
+
+    async def failing(user_id, text, active_image=None, **_):
+        return TurnResult(_FAILURE_REPLY, (), failed=True)
+
+    monkeypatch.setattr(worker, "_converse", failing)
+    assert await worker.tick() == 1
+    assert [s["body"] for s in bridge.sent] == [_FAILURE_REPLY]
+    assert _FAILED_KEY in worker.redis.store and await worker._already_seen("g-fail")
+
+    # The next start, same Redis, the backend fixed: the message is answered.
+    restarted = _restarted(worker, monkeypatch, {"what is this?": "It's a bar cart - add a plant and two glasses."})
+    assert await restarted.tick() == 1
+    assert [s["body"] for s in restarted.invoke_tool.sent] == ["It's a bar cart - add a plant and two glasses."]
+    assert _FAILED_KEY not in worker.redis.store
+    assert await restarted.tick() == 0, "replayed once, not on every poll"
+
+
+@pytest.mark.asyncio
+async def test_a_replay_that_fails_again_says_nothing_more(monkeypatch):
+    from backend.workers.imessage_chat import _FAILED_KEY
+
+    bridge = _Bridge({"messages": [_message("g-fail", "5550100", "what is this?")], "cursor": 3})
+    worker, _ = _worker(bridge, monkeypatch, {"5550100": "u-ani"}, {})
+    monkeypatch.setattr(worker, "_readiness", _ready)
+
+    async def failing(user_id, text, active_image=None, **_):
+        return TurnResult(_FAILURE_REPLY, (), failed=True)
+
+    monkeypatch.setattr(worker, "_converse", failing)
+    await worker.tick()
+    restarted = _restarted(worker, monkeypatch, {})
+    monkeypatch.setattr(restarted, "_converse", failing)
+    assert await restarted.tick() == 0
+    assert restarted.invoke_tool.sent == []
+    assert _FAILED_KEY not in worker.redis.store, "not recorded again from a replay"

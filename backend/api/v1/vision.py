@@ -33,6 +33,23 @@ from backend.services.vision_analysis_service import (
 
 logger = logging.getLogger(__name__)
 
+
+# Whether a vision failure was the model rejecting the input (final) rather
+# than being unreachable (transient): the cause chain carries the upstream
+# HTTP status when there was one.
+def _upstream_refused(exc: BaseException) -> bool:
+    import httpx
+
+    seen: set[int] = set()
+    cause: BaseException | None = exc
+    while cause is not None and id(cause) not in seen:
+        seen.add(id(cause))
+        if isinstance(cause, httpx.HTTPStatusError):
+            return 400 <= cause.response.status_code < 500
+        cause = cause.__cause__ or cause.__context__
+    return False
+
+
 router = APIRouter(prefix="/vision", tags=["vision"])
 
 
@@ -153,6 +170,22 @@ async def analyze_image_upload(
         ) from exc
     except VisionAnalysisError as exc:
         logger.exception("Vision analysis failed", extra={"trace_id": trace_id})
+        # Two different failures hid behind one 502. The model refusing the
+        # picture itself (a 4xx from it: too many tokens, bytes it cannot
+        # decode) is final - sending the same picture again gets the same
+        # answer - and callers must be told so they say what is wrong with
+        # the picture rather than retrying forever. The model being away
+        # (a connection error, a timeout, its own 5xx) is transient, and the
+        # iMessage worker parks such a turn to answer when it is back.
+        if _upstream_refused(exc):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail={
+                    "message": "The vision model could not read this image.",
+                    "artifact_id": exc.artifact_id,
+                    "reason": "unreadable",
+                },
+            ) from exc
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail={

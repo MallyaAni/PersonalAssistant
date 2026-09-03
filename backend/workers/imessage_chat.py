@@ -80,6 +80,11 @@ _ROOM_ALERT_KEY = "imessage:chat:room_alert:{digest}"
 # every poll until they answer or the window closes. Nothing addressed to the
 # assistant is lost to a restart (operator's question, 2026-08-28).
 _PARKED_KEY = "imessage:chat:parked"
+# Turns that ended in a failure line, kept a day for one replay after the
+# next start; a bounded list, newest last.
+_FAILED_KEY = "imessage:chat:failed"
+_FAILED_TTL_SECONDS = 24 * 3600
+_FAILED_MAX = 200
 _SEEN_TTL_SECONDS = 3 * 24 * 3600
 _BUBBLE_TTL_SECONDS = 7 * 24 * 3600
 _MAX_OUTGOING_BUBBLES = 100
@@ -195,6 +200,43 @@ _CHAT_TIMEOUT_SECONDS = 300.0
 # greeting is fixed: a model composing an apology afresh would vary it for
 # no reason and could vary it into something wrong.
 _FAILURE_REPLY = "I hit a problem answering that. Give me a minute and try again."
+# Said instead when the picture itself is the problem (the backend answered
+# 422: the vision model could not read it, or the validator refused it) or
+# when it is over the upload cap (413). Sending the same picture again would
+# get the same answer, so the line says what to change.
+_UNREADABLE_PHOTO_REPLY = (
+    "I couldn't read that picture - it may be in a format I can't open. "
+    "Could you send it as a screenshot?"
+)
+_OVERSIZED_PHOTO_REPLY = (
+    "That picture is too big for me to take in. Could you send a smaller "
+    "one, or a screenshot?"
+)
+# Said once when a parked turn's window closes without an answer, in place
+# of a line that reads as if the person did something wrong.
+_GAVE_UP_REPLY = "I couldn't get to that one in time - could you send it again?"
+
+
+# Said when the bridge could not hand over the photo (still on its way down
+# from iCloud, or refused). Counted as a failure so the turn is replayed
+# after the next start; Hampton's 20:03 photo on 2026-09-02 got this line
+# four seconds after he sent it.
+_PHOTO_NOT_READY_REPLY = (
+    "That photo hasn't finished downloading on my end yet - send it again in a minute?"
+)
+_FAILURE_LINES = frozenset(
+    {_FAILURE_REPLY, _UNREADABLE_PHOTO_REPLY, _OVERSIZED_PHOTO_REPLY, _PHOTO_NOT_READY_REPLY}
+)
+
+
+# What to say for a photo the backend refused: the status names the class.
+def _photo_failure_reply(exc: BaseException) -> str:
+    if isinstance(exc, httpx.HTTPStatusError):
+        if exc.response.status_code == 422:
+            return _UNREADABLE_PHOTO_REPLY
+        if exc.response.status_code == 413:
+            return _OVERSIZED_PHOTO_REPLY
+    return _FAILURE_REPLY
 
 # A slow turn's one bubble, drawn from a small curated set - the same trick
 # terminals use with their whimsical status words. Curated rather than
@@ -251,6 +293,10 @@ class TurnResult:
     # Titles a document turn read, so a silent room share can still be
     # observed into the thread by name.
     read_titles: tuple[str, ...] = field(default=())
+    # True when the reply is one of the failure lines rather than an answer:
+    # recorded so the turn is replayed once after the next deploy.
+    failed: bool = False
+
 
 
 class BackendUnavailable(Exception):
@@ -280,6 +326,10 @@ class IMessageChatWorker:
         self.invoke_tool = invoke_tool
         self.base_url = (base_url or settings.IMESSAGE_CHAT_BASE_URL).rstrip("/")
         self.redis = redis or Redis.from_url(settings.REDIS_URL, decode_responses=True)
+        # Set while recorded failures are replayed after a start: failure
+        # lines are held back then, and nothing is re-recorded.
+        self._replaying = False
+        self._replayed_on_start = False
 
     # One poll: read what arrived, answer what maps to an account, advance
     # the cursor. Returns how many messages were answered, for the log line.
@@ -296,6 +346,7 @@ class IMessageChatWorker:
         # during a restart is answered before anyone who asked after it.
         answered = await self._handle_tapbacks()
         answered += await self._retry_parked()
+        answered += await self._replay_failed_once()
         try:
             answer = await self.invoke_tool(
                 settings.IMESSAGE_CHAT_READ_TOOL,
@@ -374,9 +425,16 @@ class IMessageChatWorker:
                 self._document_turn(user_id, text, documents), reply_to, status
             )
         elif attachments:
-            turn = await self._with_ack(
-                self._photo_turn(user_id, text, attachments), reply_to, status
-            )
+            # Parked whole - the message, not its words - so the retry fetches
+            # the photo again and answers it, instead of answering the caption
+            # alone with the picture gone (a text-only retry did exactly that).
+            try:
+                turn = await self._with_ack(
+                    self._photo_turn(user_id, text, attachments), reply_to, status
+                )
+            except BackendUnavailable:
+                await self._park(guid, user_id, reply_to, text, pinned=pinned, message=message)
+                return 0
         else:
             # Judged by meaning before a reply: unfinished fragments wait for
             # the rest, a closing "thanks!" gets no reply, and a finished
@@ -404,6 +462,13 @@ class IMessageChatWorker:
             # that follow, exactly as focusing it would.
             await self._remember_image(user_id, pinned)
         answered = 0
+        if turn.failed:
+            await self._record_failed(message, user_id)
+            if self._replaying:
+                # Failed again on the replay: nothing more is said, and the
+                # message is closed rather than left for a third attempt.
+                await self._mark_seen(guid)
+                return 0
         try:
             await self._deliver(reply_to, turn, user_id=user_id)
             answered = 1
@@ -531,9 +596,13 @@ class IMessageChatWorker:
         # (the group is the owner), exactly as a document sent one-to-one is
         # read into the sender's. Before the photo branch, as in that path.
         if attachments:
-            turn = await self._with_ack(
-                self._photo_turn(group.user_id, text, attachments), reply_to, status
-            )
+            try:
+                turn = await self._with_ack(
+                    self._photo_turn(group.user_id, text, attachments), reply_to, status
+                )
+            except BackendUnavailable:
+                await self._park(guid, group.user_id, reply_to, text, pinned=pinned, room=room, message=message)
+                return 0
         else:
             burst = await self._collect(
                 group.user_id, reply_to, guid, text, in_group=True, room=room, addressed_by=room["addressed_by"]
@@ -559,6 +628,11 @@ class IMessageChatWorker:
         if pinned:
             await self._remember_image(group.user_id, pinned)
         answered = 0
+        if turn.failed:
+            await self._record_failed(message, group.user_id)
+            if self._replaying:
+                await self._mark_seen(guid)
+                return 0
         try:
             await self._deliver(reply_to, turn, user_id=group.user_id, room=room)
             answered = 1
@@ -1023,6 +1097,77 @@ class IMessageChatWorker:
                 logger.warning("imessage_chat_burst_reply_failed: %s: %s", type(exc).__name__, str(exc)[:200])
         return answered
 
+    # A turn that ended in a failure line is written down with its message,
+    # and replayed once when the worker next starts - which is what a deploy
+    # does. The fix a final failure needs arrives as code, and the person
+    # who hit it should get their answer without anyone noticing on their
+    # behalf and without being asked to send it again (Caroline's photo,
+    # 2026-09-02). A replay that fails again is dropped in silence: they
+    # already have the failure line, and a second one says nothing new.
+    async def _record_failed(self, message: dict, user_id: str) -> None:
+        if self._replaying:
+            return
+        records = await self._failed()
+        guid = str(message.get("guid") or "")
+        records = [item for item in records if item.get("guid") != guid] + [
+            {"guid": guid, "user_id": user_id, "message": dict(message), "at": time.time()}
+        ]
+        try:
+            await self.redis.set(_FAILED_KEY, json.dumps(records[-_FAILED_MAX:]), ex=_FAILED_TTL_SECONDS)
+        except Exception:
+            return
+        logger.warning("imessage_chat_turn_failed_recorded", extra={"guid": guid[:12], "user": user_id})
+
+    async def _failed(self) -> list[dict]:
+        try:
+            stored = await self.redis.get(_FAILED_KEY)
+        except Exception:
+            return []
+        if not stored:
+            return []
+        try:
+            records = json.loads(stored)
+        except ValueError:
+            return []
+        return [item for item in records if isinstance(item, dict)]
+
+    # Once per worker start: every recorded failure younger than the replay
+    # window goes through the whole message path again, unseen, with the
+    # failure lines held back. Returns how many were answered this time.
+    async def _replay_failed_once(self) -> int:
+        if self._replayed_on_start:
+            return 0
+        self._replayed_on_start = True
+        records = await self._failed()
+        if not records:
+            return 0
+        try:
+            await self.redis.delete(_FAILED_KEY)
+        except Exception:
+            pass
+        window = settings.IMESSAGE_CHAT_REPLAY_HOURS * 3600
+        answered = 0
+        for record in records:
+            message = record.get("message")
+            guid = str(record.get("guid") or "")
+            if not isinstance(message, dict) or not guid:
+                continue
+            if time.time() - float(record.get("at") or 0) > window:
+                continue
+            try:
+                await self.redis.delete(_SEEN_KEY.format(guid=guid))
+            except Exception:
+                pass
+            self._replaying = True
+            try:
+                answered += await self._handle_message(dict(message))
+            except Exception as exc:
+                logger.warning("imessage_chat_replay_failed: %s: %s", type(exc).__name__, str(exc)[:200])
+            finally:
+                self._replaying = False
+            logger.warning("imessage_chat_replayed", extra={"guid": guid[:12], "answered": answered})
+        return answered
+
     # Park one turn (or, before a room could be resolved, one message) for
     # retry. Not marked seen: the guid stays open until it is answered or
     # given up on. Re-parking a guid replaces its record and keeps its clock.
@@ -1099,7 +1244,7 @@ class IMessageChatWorker:
             await self._save_parked([item for item in await self._parked() if item.get("guid") != guid])
             if age > window:
                 try:
-                    await self._deliver(reply_to, TurnResult(_FAILURE_REPLY, ()))
+                    await self._deliver(reply_to, TurnResult(_GAVE_UP_REPLY, ()))
                 except Exception:
                     logger.warning("imessage_chat_parked_apology_failed")
                 await self._mark_seen(guid)
@@ -1172,6 +1317,10 @@ class IMessageChatWorker:
         user_id: str = "",
         room: dict | None = None,
     ) -> None:
+        # A replayed turn that failed again says nothing: the person already
+        # has the failure line from the first time.
+        if turn.failed and self._replaying:
+            return
         # The second wall. The backend fences the reply as it is written;
         # this checks again with what came over the wire, so an address
         # nobody vouched for cannot reach the Mac even if that fence were
@@ -1389,10 +1538,10 @@ class IMessageChatWorker:
                 # Nobody answered at all: the caller parks the turn and asks
                 # again next poll rather than apologising for a restart.
                 raise BackendUnavailable(str(exc)[:200]) from exc
-            return TurnResult(_FAILURE_REPLY, ())
+            return TurnResult(_FAILURE_REPLY, (), failed=True)
         reply = "".join(collected).strip()
         carried = tuple(image for image in images if image.data_base64)
-        return TurnResult(reply or _FAILURE_REPLY, carried, allowed_urls(seen_urls))
+        return TurnResult(reply or _FAILURE_REPLY, carried, allowed_urls(seen_urls), failed=not reply)
 
     # What the thread already established: its conversation id and, when a
     # photo was sent recently, the picture-in-view a follow-up text edits.
@@ -1443,7 +1592,8 @@ class IMessageChatWorker:
         if remembered:
             await self._remember_conversation(user_id, conversation)
             await self._remember_image(user_id, remembered)
-        return TurnResult("\n\n".join(replies) or _FAILURE_REPLY, ())
+        failed = not replies or any(reply in _FAILURE_LINES for reply in replies)
+        return TurnResult("\n\n".join(replies) or _FAILURE_REPLY, (), failed=failed)
 
     # A document sent as an attachment: fetched from the bridge, handed to the
     # backend to parse and store as knowledge, and acknowledged by name. Later
@@ -1546,11 +1696,7 @@ class IMessageChatWorker:
             # Most often the photo is still on its way down from iCloud - the
             # bridge cannot yet see the file - and the honest reply says so
             # rather than blaming the picture.
-            return (
-                "That photo hasn't finished downloading on my end yet - "
-                "send it again in a minute?",
-                "",
-            )
+            return _PHOTO_NOT_READY_REPLY, ""
         media_type, name, data = fetched
         try:
             content, media_type = await asyncio.to_thread(
@@ -1592,7 +1738,13 @@ class IMessageChatWorker:
                 str(exc)[:200],
                 extra={"user": user_id},
             )
-            return _FAILURE_REPLY, ""
+            # The backend (or the vision model behind it) being away is the
+            # same event as for a text turn: the message is parked whole and
+            # answered when it is back, rather than apologised for. A picture
+            # the model refused is final, and the line says what to change.
+            if _is_unavailable(exc):
+                raise BackendUnavailable(str(exc)[:200]) from exc
+            return _photo_failure_reply(exc), ""
         artifact_id = str((result.get("artifact") or {}).get("id") or "")
         reply = str(result.get("analysis") or "").strip()
         return reply or _FAILURE_REPLY, artifact_id

@@ -2,6 +2,42 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-02 - A phone photo fits the vision model, and a photo failure says what it is
+
+Caroline sent a picture from her iPhone and was told "I hit a problem". The
+photo was 4032x3024, and the vision model on spark2 (Qwen3-VL-8B, served
+with a 16,384-token context) turns a picture into about one token per 32x32
+pixels: hers alone was some 12,000, and with the inspection prompt 16,809 -
+a 400 from the server, a 502 from the vision route, and the generic line to
+her. Nothing about describing a picture needs that many pixels, so the
+provider now fits every image to the model before encoding it
+(`backend/vision/lm_studio.py::fit_for_model`: at most 2 megapixels and
+2048 on a side, orientation applied first; unit tests, and
+`functional/test_vision_upload_size_behaviour.py` sends a phone-sized photo
+to the real model).
+
+The failure handling behind it was one line for two different things. The
+vision route now answers 422 when the model refused the picture (a 4xx
+from it: final, so the worker tells the person what to change - "I couldn't
+read that picture… send it as a screenshot?", or the size line on a 413)
+and 502 only when the model is away; the iMessage worker treats that like
+any backend outage: the photo message is parked whole, the person is told
+after a minute that the answer is coming, the picture is fetched and
+answered again when the model is back, and the give-up line after the
+retry window now says "I couldn't get to that one in time - could you send
+it again?" rather than implying they did something wrong. Text turns
+already worked this way; photo turns did not.
+
+And the case a retry window cannot cover: a failure that needs a code change
+(hers did). The worker now writes every turn that ended in a failure line
+into a day-long ledger with its message, and on its next start - which is
+what a deploy is - replays each once through the whole message path, unseen,
+delivering the answer if it now succeeds and saying nothing if it fails
+again. Caroline's photo was seeded into that ledger from the Mac's Messages
+database, so the deploy carrying the fit answers her without anyone checking;
+anyone who hits a bug from here is answered the same way. `TurnResult.failed`
+marks the failure lines; `IMESSAGE_CHAT_REPLAY_HOURS` bounds the replay.
+
 ## 2026-09-02 - Check-ins are off until asked, and asking is a skill
 
 People did not like the assistant checking on them unasked, so the check-in

@@ -450,7 +450,7 @@ async def test_a_room_photo_is_a_vision_turn_for_the_group(monkeypatch):
 
 # --- Nothing addressed to the assistant is lost to a restart ---
 
-from backend.workers.imessage_chat import _PARKED_KEY, BackendUnavailable, _FAILURE_REPLY as _APOLOGY, _PARKED_NOTICE
+from backend.workers.imessage_chat import _PARKED_KEY, BackendUnavailable, _GAVE_UP_REPLY as _APOLOGY, _PARKED_NOTICE
 
 
 def _flaky_worker(bridge, monkeypatch, accounts, replies, *, group=None, down: list):
@@ -507,7 +507,7 @@ async def test_a_parked_turn_gets_one_notice_after_a_minute(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_a_turn_parked_past_the_window_gets_the_apology_once(monkeypatch):
+async def test_a_turn_parked_past_the_window_gets_the_apology_once_and_it_names_the_cause(monkeypatch):
     monkeypatch.setattr(settings, "IMESSAGE_CHAT_RETRY_MINUTES", 0.0001)
     down = [True]
     direct = {"guid": "d1", "sender": "5550100", "reply_to": "+15550100", "text": "hi", "sent_at": "2026-08-28T20:00:00Z"}

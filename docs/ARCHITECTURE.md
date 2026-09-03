@@ -364,7 +364,10 @@ task and skill.
    answer, digests, and reminders post back into the chat.
 
 *Stored:* durable state only through the normal chat path; the bridge and
-worker keep a cursor, seen IDs, pending bursts, parked turns,
+worker keep a cursor, seen IDs, pending bursts, parked turns, a day of
+turns that ended in a failure line (replayed once when the worker next
+starts - which a deploy is - so the fix a failure needed answers the people
+who hit it, without anyone noticing on their behalf),
 bubble-to-artifact maps, and the bounded recent-outgoing-bubble ledger in
 Redis. *Never lost to a restart:* the cursor
 moves only after a poll is handled and chat.db is the ledger, so a message

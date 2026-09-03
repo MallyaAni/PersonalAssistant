@@ -556,6 +556,10 @@ class Settings(BaseSettings):
     # "give me a minute" bubble after the notice delay; only then the apology.
     IMESSAGE_CHAT_RETRY_MINUTES: float = Field(default=10.0, gt=0, le=180)
     IMESSAGE_CHAT_RETRY_NOTICE_SECONDS: float = Field(default=60.0, ge=0, le=3600)
+    # How far back a turn that failed with a final error is replayed, once,
+    # when the worker starts after a deploy - the fix that a failure needed
+    # arrives as a deploy, and nobody should have to notice and resend.
+    IMESSAGE_CHAT_REPLAY_HOURS: float = Field(default=24.0, ge=0, le=168)
     # Where the operator is told, once a day per chat, that the assistant
     # was added to a group it must stay silent in (a participant is not an
     # approved user). Empty means nobody is told.

@@ -16,6 +16,59 @@ from backend.artifacts.types import (
 from backend.core.interfaces import VisionProvider
 
 
+# A full-size phone photo is more than the model can hold: a 4032x3024 JPEG
+# became about 12,000 image tokens on Qwen3-VL (one token per 32x32 pixels)
+# and, with the inspection prompt, 16,809 against a 16,384 context - a 400
+# from the server and "I hit a problem" to the person (Caroline, 2026-09-02).
+# Nothing about describing a picture needs that many pixels, so anything
+# over the cap is scaled down here, once, before it is encoded; orientation
+# is applied first because re-encoding drops the EXIF that carried it.
+# Bytes the image library cannot read (HEIC without a decoder, a broken
+# file) are sent as they are and the server says what it thinks.
+MAX_IMAGE_PIXELS = 2_000_000
+MAX_IMAGE_SIDE = 2048
+_WEB_FORMATS = frozenset({"JPEG", "PNG", "WEBP", "GIF"})
+
+
+def fit_for_model(content: bytes, mime_type: str) -> tuple[bytes, str]:
+    try:
+        import io
+
+        from PIL import Image, ImageOps
+
+        with Image.open(io.BytesIO(content)) as opened:
+            # exif_transpose returns a copy even when nothing was rotated,
+            # so "unchanged" is judged by the tag, not by identity.
+            rotated = opened.getexif().get(0x0112, 1) not in (1, None)
+            # A phone's HEIC (Caroline's was one) reaches here labelled as
+            # whatever the worker guessed; the server may not decode it at
+            # all. Anything that is not a web format is re-encoded even
+            # when it is small enough.
+            foreign = (opened.format or "").upper() not in _WEB_FORMATS
+            image = ImageOps.exif_transpose(opened) or opened
+            width, height = image.size
+            scale = min(
+                1.0,
+                (MAX_IMAGE_PIXELS / float(width * height)) ** 0.5,
+                MAX_IMAGE_SIDE / float(max(width, height)),
+            )
+            if scale >= 1.0 and not rotated and not foreign:
+                return content, mime_type
+            if scale < 1.0:
+                image = image.resize(
+                    (max(1, int(width * scale)), max(1, int(height * scale))),
+                    Image.LANCZOS,
+                )
+            out = io.BytesIO()
+            if image.mode in ("RGBA", "LA", "P"):
+                image.convert("RGBA").save(out, format="PNG", optimize=True)
+                return out.getvalue(), "image/png"
+            image.convert("RGB").save(out, format="JPEG", quality=90)
+            return out.getvalue(), "image/jpeg"
+    except Exception:
+        return content, mime_type
+
+
 class OpenAICompatibleVisionProvider(VisionProvider):
     # Configure the local OpenAI-compatible vision-language endpoint.
     def __init__(
@@ -41,6 +94,7 @@ class OpenAICompatibleVisionProvider(VisionProvider):
         content: bytes,
         mime_type: str,
     ) -> dict[str, Any]:
+        content, mime_type = fit_for_model(content, mime_type)
         encoded = base64.b64encode(content).decode("ascii")
         return {
             "role": "user",
