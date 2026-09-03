@@ -100,6 +100,7 @@ links were by commission.
 | A later search round keeps the place | Deployed 2026-09-03 (eb1f83fa) | `backend/services/conversation_service.py`, `test_search_keeps_the_place.py` |
 | Off-subject results are never typed into a listing | Deployed 2026-09-03 (ca16b0ab) | `conversation_service`, `test_events_listing_wiring.py` |
 | A drifted second round: the first round ranked alone and used when on subject | Deployed 2026-09-03 (ca16b0ab) | `conversation_service._research`, `test_events_listing_wiring.py` |
+| A search about here is held to the saved place, every round | Built 2026-09-03 (ebc2e314), deploying in the twenty-eighth | `conversation_service._hold_to_place`, `test_search_keeps_the_place.py` |
 | "Remind me about the second one" | Works with no new machinery — measured | `functional/test_act_on_a_listed_event_behaviour.py` |
 | `.ics` attached into the iMessage thread | **Not built** | needs `TurnResult` to carry a non-image file; would reuse `backend/discovery/calendar.py` |
 | Booking through a bounded browser tool | **Not built** | as an MCP server behind the existing boundary — see [ADR 0018](adr/0018-an-outside-agent-enters-as-a-tool-or-not-at-all.md) |
