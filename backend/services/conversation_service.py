@@ -444,6 +444,40 @@ def _hold_to_place(query: str, question: str, place: str) -> str:
     return f"{query} {' '.join(parts[:2])}".strip()
 
 
+# A search for what is on gets the calendar days it means, written out.
+#
+# Measured 2026-09-03 on the operator's own profile and place, one live
+# search and extraction per row:
+#
+#   as asked, no place, no dates    1 result,  0 usable events
+#   + place                         8 results, 4 dated, 0 inside the week
+#   + place + the dates             8 results, 5 dated, 5 inside the week
+#   + place + dates + interests     8 results, 16 dated, 8 inside the week
+#
+# The dates are what make "this week" mean anything to a source: with a
+# month alone ("September 2026") the pages that came back listed things
+# weeks out. `prompts/search/compose.md` already asks for them and the model
+# still wrote the month, so this is the same structural correction the place
+# gets rather than another sentence in the prompt.
+def _hold_to_dates(query: str, question: str, now: datetime) -> str:
+    from backend.core.event_window import window_for
+
+    window = window_for(question, now)
+    if not query or window is None or not _PLACE_BOUND.search(question or ""):
+        return query
+    # A query that already names a day is left alone; two date ranges are
+    # worse than one.
+    if re.search(r"\b\d{1,2}\s*[-–]\s*\d{1,2}\b|\b\d{4}-\d{2}-\d{2}\b", query):
+        return query
+    if window.start == window.end:
+        span = f"{window.start:%B %-d %Y}"
+    elif window.start.month == window.end.month:
+        span = f"{window.start:%B} {window.start.day}-{window.end.day} {window.end.year}"
+    else:
+        span = f"{window.start:%B %-d} - {window.end:%B %-d %Y}"
+    return f"{query} {span}".strip()
+
+
 # A later search round that dropped the place the first one carried gets it
 # back: the city (the label's first part) and its region, as the first query
 # had them. A query that never had the place, or a place unknown, is left
@@ -2845,6 +2879,7 @@ class ConversationService:
                 home = ""
         # The first query is held to the place before it is ever sent.
         first_query = _hold_to_place(first_query, question, home)
+        first_query = _hold_to_dates(first_query, question, datetime.now(UTC))
         current = first_query
         first_round: list[dict[str, Any]] = []
         for round_number in range(max(1, settings.SEARCH_MAX_ROUNDS)):
@@ -2902,6 +2937,7 @@ class ConversationService:
             # and a New York page won the listing. If the first query named
             # the place and this one does not, the place goes back on.
             better = _hold_to_place(_keep_the_place(better, first_query, home), question, home)
+            better = _hold_to_dates(better, question, datetime.now(UTC))
             screened = self.search_privacy.sanitize(better)
             if not screened.allowed:
                 logger.info(

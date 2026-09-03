@@ -656,6 +656,30 @@ things. Section 7's rule still holds for the reply prompt: a standing
 interest list there bends unrelated answers. A search for what to do is
 where interests belong.
 
+### What actually gets a person good results, measured
+
+One live search and extraction per row, the operator's own place and stored
+interests, 2026-09-03. Scored on what survives to a listing.
+
+| Query built from | results | dated | near | inside the week | in Arlington | matched an interest |
+| --- | --- | --- | --- | --- | --- | --- |
+| the message alone | 1 | 0 | 0 | 0 | 0 | 0 |
+| + place | 8 | 4 | 4 | 0 | 4 | 0 |
+| + place + the calendar days | 8 | 5 | 5 | 5 | 5 | 3 |
+| + place + days + interests | 8 | 16 | 14 | 8 | 11 | 4 |
+
+Each thing known adds, and the two that were missing added the most. The
+calendar days are what make "this week" mean anything to a source: with a
+month alone the pages returned things weeks out, which is why the first row
+of the table is a listing with nothing in it. Interests roughly tripled the
+dated events and were the only way anything matched what the person
+actually likes.
+
+Both are now structural rather than prompt instructions - `_hold_to_place`
+and `_hold_to_dates` in `conversation_service`, and the interests handed to
+`SearchPlanner.compose` - because `prompts/search/compose.md` already asked
+for the dates and the model wrote the month anyway.
+
 ### The deployed reranker: a prompt problem, not a model problem
 
 `docs/ML_SYSTEM_DESIGN.md` and `prompts/search/rank.md` record that the

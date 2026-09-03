@@ -2,6 +2,23 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-03 - What gets good results, measured: place, then the days, then what they like
+
+Four ways of building the same question, one live search and extraction
+each, against the operator's real place and interests. The message alone
+returned one result and no usable events. Adding the place gave four dated
+events and none inside the week asked. Adding the calendar days gave five,
+all inside it. Adding interests gave sixteen dated, fourteen near, eight
+inside the week and four matching something they like.
+
+So the days matter as much as the place: with a month alone ("September
+2026") the sources return things weeks out, which is exactly the listing
+that started this. `prompts/search/compose.md` already asked for the dates
+and the model wrote the month, so the query now gets them in code -
+`_hold_to_dates`, beside `_hold_to_place`, on every round of a place-bound
+question - and the interests are handed to the query writer. Recorded with
+the table in ML_SYSTEM_DESIGN 12b.
+
 ## 2026-09-03 - Things to do: an event two hours away is not a recommendation, and the query now asks for what you like
 
 The operator asked whether weak "things to do in the area" answers were the
