@@ -77,6 +77,14 @@ _TEMPLATES: dict[tuple[str, str], str] = {
     ("calendar.google.com", "/calendar/render"): "text",
 }
 
+# The application's own .ics builder route, matched by path alone because the
+# host varies (the tunnel or a LAN address). It carries the event title in
+# `title`, so a fence can ground it against the evidence exactly like a search
+# template — which is what makes the native calendar link safe to say.
+_APP_PATH_TEMPLATES: dict[str, str] = {
+    "/api/v1/discovery/ics/event": "title",
+}
+
 
 # One URL reduced to what makes two of them the same address: scheme and
 # host lowercased, "www." dropped, a trailing slash and sentence punctuation
@@ -97,10 +105,13 @@ def canonical(url: str) -> str:
     return f"{host}{path}{query}"
 
 
-# Whether a URL is one of the shapes code can build at all.
+# Whether a URL is one of the shapes code can build at all. Our own .ics
+# builder is matched by path alone, because its host varies (tunnel or LAN).
 def _is_template(url: str) -> bool:
     parts = urlsplit((url or "").strip().rstrip(_TRAILING))
-    return (parts.netloc.lower(), parts.path.rstrip("/") or "/") in _TEMPLATES
+    if (parts.netloc.lower(), parts.path.rstrip("/") or "/") in _TEMPLATES:
+        return True
+    return parts.path.rstrip("/") in _APP_PATH_TEMPLATES
 
 
 # Whether a template URL is grounded in what this turn actually saw: every
@@ -111,7 +122,7 @@ def template_is_grounded(url: str, evidence: str) -> bool:
     parts = urlsplit((url or "").strip().rstrip(_TRAILING))
     host = parts.netloc.lower()
     key = (host, parts.path.rstrip("/") or "/")
-    name = _TEMPLATES.get(key)
+    name = _TEMPLATES.get(key) or _APP_PATH_TEMPLATES.get(parts.path.rstrip("/"))
     if name is None:
         return False
     values = parse_qs(parts.query).get(name) or []
@@ -314,3 +325,31 @@ def calendar_link(
     if details:
         fields["details"] = " ".join(details.split())
     return "https://calendar.google.com/calendar/render?action=TEMPLATE&" + urlencode(fields)
+
+
+# A native .ics file served from this application, the "Add to iMessage
+# calendar" counterpart to the Google prefill above. The route builds the
+# file from these same fields, so the link and the calendar entry can never
+# disagree. Carries the title in `title`, which is what lets the link fence
+# ground it against the evidence like any other template.
+def ics_link(
+    base: str,
+    title: str,
+    starts_at: datetime | None,
+    ends_at: datetime | None = None,
+    location: str = "",
+    url: str = "",
+    summary: str = "",
+) -> str:
+    fields = {"title": " ".join((title or "").split())}
+    if starts_at is not None:
+        fields["start"] = starts_at.strftime("%Y%m%dT%H%M%SZ")
+        if ends_at is not None:
+            fields["end"] = ends_at.strftime("%Y%m%dT%H%M%SZ")
+    if location:
+        fields["location"] = " ".join(location.split())
+    if url:
+        fields["url"] = url
+    if summary:
+        fields["summary"] = " ".join(summary.split())
+    return f"{base.rstrip('/')}/ics/event?" + urlencode(fields)

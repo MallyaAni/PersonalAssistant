@@ -144,8 +144,8 @@ class DigestDelivery:
         self,
         user_id: str,
         selected: tuple[RankedCandidate, ...],
-        # Unused: a digest no longer carries a calendar file or link. Kept so
-        # existing callers keep working until they are updated.
+        # The base address of this user's calendar files, so a bubble can carry
+        # the "Add to iMessage calendar" link a dated find now gets.
         calendar_base_url: str | None = None,
         timezone: str = "America/New_York",
         run_id: str | None = None,
@@ -159,10 +159,10 @@ class DigestDelivery:
         # Arlington says nothing about one in Denver.
         locality: str | None = None,
     ) -> DeliveryReport:
-        # No attachment. A calendar file arriving unasked is friction on a
-        # phone, and the message is read in a few seconds either way — so a
-        # digest is now text plus the source's own link, which works from
-        # anywhere without this machine being reachable at all.
+        # Each dated find carries the two ways to add it to a calendar — a
+        # native .ics (the "Add to iMessage calendar" tap) and a Google
+        # prefill — attached by `write_bubbles` from the typed record, exactly
+        # like the source's own link.
         #
         # The writer is told two things about the person, both so the digest
         # can teach its own feedback loop: whether this is the first digest
@@ -187,6 +187,7 @@ class DigestDelivery:
             now=now,
             first_digest=first_digest,
             reactions=reactions,
+            calendar_base_url=calendar_base_url,
         )
         # What a retry would resend, and what settles the run when nothing is
         # worth sending. A retry sends one message rather than the burst: the

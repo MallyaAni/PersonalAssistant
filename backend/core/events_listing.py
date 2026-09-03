@@ -24,7 +24,7 @@ from __future__ import annotations
 from datetime import UTC, date, datetime, time
 
 from backend.core.event_extraction import Extraction, ListedEvent
-from backend.core.links import calendar_link, maps_search, youtube_search
+from backend.core.links import calendar_link, ics_link, maps_search, youtube_search
 
 # Longer than a phone shows at a glance, and past the point where a listing
 # stops being read. The rest is offered rather than printed.
@@ -37,6 +37,7 @@ def render_listing(
     extraction: Extraction,
     now: datetime | None = None,
     limit: int = MAX_LISTED,
+    calendar_base_url: str | None = None,
 ) -> str:
     # Which events survive the cut is decided by fit, and only then are the
     # survivors put in date order for reading. Taking the earliest N instead -
@@ -61,7 +62,7 @@ def render_listing(
             if lines:
                 lines.append("")
             lines.append(_day_heading(day, moment))
-        lines.extend(_event_lines(event))
+        lines.extend(_event_lines(event, calendar_base_url))
     tail = _dropped_line(extraction, len(extraction.events) - len(events))
     if tail:
         lines.extend(["", tail])
@@ -83,7 +84,7 @@ def _day_heading(day: date | None, now: datetime) -> str:
     return f"{day.strftime('%a')} {day.day} {day.strftime('%b')}"
 
 
-def _event_lines(event: ListedEvent) -> list[str]:
+def _event_lines(event: ListedEvent, calendar_base_url: str | None = None) -> list[str]:
     headline = event.name
     if event.artist and event.artist.casefold() not in event.name.casefold():
         headline = f"{headline} — {event.artist}"
@@ -102,7 +103,16 @@ def _event_lines(event: ListedEvent) -> list[str]:
     # place already filled in. The listing used to end by asking "want any of
     # these in your calendar?" and then have no way to do it, which is the
     # kind of offer that makes an assistant feel like a brochure.
-    lines.append(f"  [Add]({calendar_link(event.name, event.starts_at, location=subject)})")
+    #
+    # A native .ics is the "Add to iMessage calendar" mechanism, and the
+    # Google prefill is its web counterpart; both are grounded templates so
+    # the link fence keeps them. The native one needs a base to point at, so
+    # it is only offered where the caller can supply one.
+    lines.append(f"  [Add to Google calendar]({calendar_link(event.name, event.starts_at, location=subject)})")
+    if calendar_base_url:
+        lines.append(
+            f"  [Add to iMessage calendar]({ics_link(calendar_base_url, event.name, event.starts_at, location=subject)})"
+        )
     if event.artist:
         lines.append(f"  [Hear it]({youtube_search(event.artist)})")
     if event.source_url:

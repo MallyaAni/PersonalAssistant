@@ -2648,11 +2648,23 @@ class ConversationService:
                         listing = ""
                         if found is not None and found.events:
                             from backend.core.events_listing import render_listing
+                            from backend.discovery.reachability import (
+                                calendar_base_url,
+                            )
 
                             # The person's clock, so "Today" and "Tomorrow"
                             # mean their day rather than UTC's - which at 9 PM
-                            # eastern is already the next one.
-                            listing = render_listing(found, context.get("local_now"))
+                            # eastern is already the next one. The calendar
+                            # base lets the listing offer a native .ics link,
+                            # which needs this machine's address rather than
+                            # the origin the page was served from.
+                            listing = render_listing(
+                                found,
+                                context.get("local_now"),
+                                calendar_base_url=calendar_base_url(
+                                    settings.DISCOVERY_CALENDAR_BASE_URL
+                                ),
+                            )
                         if listing:
                             context["events_listing"] = listing
                             _trace(

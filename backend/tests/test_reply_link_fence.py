@@ -72,6 +72,22 @@ def test_a_youtube_search_is_a_template_but_a_watch_link_is_a_claim():
     )
 
 
+def test_the_native_ics_link_survives_when_its_title_came_from_the_evidence():
+    # The events listing's "Add to iMessage calendar" tap points at our own
+    # .ics builder route, which is grounded on the event title exactly like a
+    # search template. A grounded link survives the fence; an invented one
+    # does not, so the builder cannot be used to smuggle an invented event.
+    grounded = "Add to iMessage calendar: https://deep-matter.com/api/v1/discovery/ics/event?title=Sunday+Sessions"
+    fenced, dropped = fence_text(grounded, ALLOWED, EVIDENCE_TEXT)
+    assert "deep-matter.com/api/v1/discovery/ics/event" in fenced, fenced
+    assert dropped == []
+
+    invented = "Add to iMessage calendar: https://deep-matter.com/api/v1/discovery/ics/event?title=Made+Up+Festival"
+    fenced, dropped = fence_text(invented, ALLOWED, EVIDENCE_TEXT)
+    assert "ics/event" not in fenced, fenced
+    assert dropped == ["deep-matter.com"]
+
+
 def test_an_evidence_url_survives_however_the_sentence_punctuates_it():
     text = "It is listed here (https://labrisabali.com/whats-on), worth a look."
     fenced, dropped = fence_text(text, ALLOWED, EVIDENCE_TEXT)

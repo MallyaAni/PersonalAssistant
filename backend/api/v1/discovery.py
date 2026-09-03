@@ -1,6 +1,7 @@
 import asyncio
 import json
 from dataclasses import asdict
+from datetime import UTC, datetime
 from typing import Annotated, Literal
 from uuid import UUID
 
@@ -33,7 +34,7 @@ from backend.discovery.calendar import (
 from backend.discovery.delivery import describe_recipients
 from backend.discovery.digest import render_message
 from backend.discovery.errors import DiscoveryError, DiscoveryProfileLimitError
-from backend.discovery.events import MAX_URL_CHARS
+from backend.discovery.events import MAX_URL_CHARS, DiscoveredEvent
 from backend.discovery.locating import (
     COARSE_DECIMALS,
     LocationLookupError,
@@ -464,6 +465,60 @@ async def run_sweep(
 # the whole "add to calendar" mechanism: no CalDAV, no developer account, and no
 # write access to the user's calendar. Public by unguessable digest, like the
 # feed router, because the phone opening the link has no AniOS session.
+@calendar_router.get("/ics/event")
+async def build_event_calendar(
+    title: Annotated[str, Query(min_length=1, max_length=200)],
+    start: Annotated[str, Query(min_length=1, max_length=64)],
+    end: Annotated[str | None, Query(max_length=64)] = None,
+    location: str = "",
+    url: str = "",
+    summary: str = "",
+) -> Response:
+    # A calendar entry is built from the event's own fields, carried here so a
+    # transient listing event - one extracted from a search rather than stored
+    # by a sweep - can be added to a calendar the same way a stored one is.
+    # Public like the digest route above, because the phone opening it has no
+    # session; the values are the caller's own, so nothing is revealed.
+    try:
+        starts_at = datetime.fromisoformat(start.replace("Z", "+00:00"))
+        ends_at = (
+            datetime.fromisoformat(end.replace("Z", "+00:00")) if end else None
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+        ) from exc
+    if starts_at.tzinfo is None:
+        starts_at = starts_at.replace(tzinfo=UTC)
+    if ends_at is not None and ends_at.tzinfo is None:
+        ends_at = ends_at.replace(tzinfo=UTC)
+    event = DiscoveredEvent(
+        source_id="listing",
+        external_id=f"listing-{start}",
+        title=title.strip(),
+        starts_at=starts_at,
+        ends_at=ends_at,
+        place=location.strip() or None,
+        url=url.strip() or None,
+        summary=summary.strip() or None,
+    )
+    try:
+        body = build_vevent(event)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=str(exc)
+        ) from exc
+    return Response(
+        content=body,
+        media_type="text/calendar; charset=utf-8",
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="{calendar_filename(event)}"'
+            )
+        },
+    )
+
+
 @calendar_router.get("/{user_id}/calendar/{item_digest}.ics")
 async def download_event_calendar(
     user_id: UserId,

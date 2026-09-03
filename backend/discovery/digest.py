@@ -25,6 +25,7 @@ from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from backend.agents.scout.digesting import DigestWriter, Find
+from backend.core.links import calendar_link
 from backend.discovery.relevance import RankedCandidate
 
 # How many finds one digest sends.
@@ -86,6 +87,7 @@ async def write_bubbles(
     now: datetime | None = None,
     first_digest: bool = False,
     reactions: tuple[object, ...] = (),
+    calendar_base_url: str | None = None,
 ) -> tuple[Bubble, ...]:
     zone = _zone(timezone)
     moment = now or datetime.now(UTC)
@@ -113,7 +115,7 @@ async def write_bubbles(
         # this exists for must not depend on the runtime being up.
         bubbles = [
             Bubble(
-                text=_assembled_bubble(item, zone),
+                text=_assembled_bubble(item, zone, calendar_base_url=calendar_base_url),
                 item_digest=item.candidate.digest,
                 label=item.event.title,
             )
@@ -132,7 +134,9 @@ async def write_bubbles(
         # The model's words where it wrote them, the assembled line where it did
         # not. Which finds are sent is not the model's decision to make: it was
         # given the ones that qualified, and its job is wording, not selection.
-        text = written_by_index.get(position) or _assembled_bubble(item, zone)
+        text = written_by_index.get(position) or _assembled_bubble(
+            item, zone, calendar_base_url=calendar_base_url
+        )
         # The source's own link, from the typed record, never from the model.
         clean = _clean_url(item.event.url)
         if clean and clean not in text:
@@ -148,7 +152,11 @@ async def write_bubbles(
 
 
 # One find as its own message when there is no model to word it.
-def _assembled_bubble(item: RankedCandidate, zone: ZoneInfo) -> str:
+def _assembled_bubble(
+    item: RankedCandidate,
+    zone: ZoneInfo,
+    calendar_base_url: str | None = None,
+) -> str:
     event = item.event
     line = _bound(event.title, MAX_TITLE_CHARS)
     when = _format_when(event.starts_at, zone)
@@ -161,7 +169,32 @@ def _assembled_bubble(item: RankedCandidate, zone: ZoneInfo) -> str:
         parts.append(_bound(event.summary, MAX_SUMMARY_CHARS))
     if event.url:
         parts.append(_clean_url(event.url))
+    calendar_lines = _calendar_lines(item, calendar_base_url)
+    if calendar_lines:
+        parts.extend(calendar_lines)
     return "\n".join(parts)
+
+
+# The two ways to put a dated find into a calendar, attached from the typed
+# record rather than written by the model: a native .ics file (which is what
+# "Add to iMessage calendar" actually is) and a Google Calendar prefill. An
+# undated find gets neither — nobody said when it happens, and inventing a
+# time would put a confidently wrong appointment in someone's calendar.
+def _calendar_lines(
+    item: RankedCandidate,
+    calendar_base_url: str | None,
+) -> list[str]:
+    starts_at = item.event.starts_at
+    if starts_at is None or not calendar_base_url:
+        return []
+    lines = [
+        f"Add to iMessage calendar: {calendar_base_url.rstrip('/')}/{item.candidate.digest}.ics"
+    ]
+    google = calendar_link(
+        item.event.title, starts_at, location=item.event.place or ""
+    )
+    lines.append(f"Add to Google calendar: {google}")
+    return lines
 
 
 async def write_message(
@@ -170,6 +203,7 @@ async def write_message(
     timezone: str = "America/New_York",
     limit: int = MAX_EVENTS_IN_MESSAGE,
     now: datetime | None = None,
+    calendar_base_url: str | None = None,
 ) -> str | None:
     """Return the digest text, written by the model where one is available."""
     zone = _zone(timezone)
@@ -178,7 +212,13 @@ async def write_message(
     if not live:
         return None
     if writer is None:
-        return render_message(selected, timezone=timezone, limit=limit, now=now)
+        return render_message(
+            selected,
+            calendar_base_url=calendar_base_url,
+            timezone=timezone,
+            limit=limit,
+            now=now,
+        )
 
     # The facts, rendered here because the clock is not the model's to compute.
     kept = list(live)[:limit]
@@ -196,7 +236,13 @@ async def write_message(
     if written is None:
         # No model answer. The assembled shape is worse to read and always
         # arrives, which is the right way round for a weekly message.
-        return render_message(selected, timezone=timezone, limit=limit, now=now)
+        return render_message(
+            selected,
+            calendar_base_url=calendar_base_url,
+            timezone=timezone,
+            limit=limit,
+            now=now,
+        )
 
     lines = [written.greeting, ""]
     for line in written.lines:
@@ -208,6 +254,8 @@ async def write_message(
         clean = _clean_url(item.event.url)
         if clean:
             lines.append(f"  {clean}")
+        for calendar_line in _calendar_lines(item, calendar_base_url):
+            lines.append(f"  {calendar_line}")
         lines.append("")
     remaining = len(live) - len(written.lines)
     if remaining > 0:
@@ -240,7 +288,7 @@ def render_message(
     dated = [item for item in selected if item.event.starts_at is not None]
     undated = [item for item in selected if item.event.starts_at is None]
 
-    lines = _render_dated(dated, zone, limit)
+    lines = _render_dated(dated, zone, limit, calendar_base_url)
     mentions = _render_undated(undated)
     if lines and mentions:
         lines.append("")
@@ -290,6 +338,7 @@ def _render_dated(
     dated: list[RankedCandidate],
     zone: ZoneInfo,
     limit: int,
+    calendar_base_url: str | None = None,
 ) -> list[str]:
     if not dated:
         return []
@@ -313,6 +362,10 @@ def _render_dated(
         clean = _clean_url(event.url)
         if clean:
             lines.append(f"  {clean}")
+        # The two ways to add the find to a calendar, attached from the typed
+        # record like the source link above.
+        for calendar_line in _calendar_lines(item, calendar_base_url):
+            lines.append(f"  {calendar_line}")
     remaining = len(dated) - limit
     if remaining > 0:
         lines.extend(["", f"and {remaining} more"])

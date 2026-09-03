@@ -222,6 +222,52 @@ def test_an_unknown_digest_is_not_found():
         assert response.status_code == 404
 
 
+# A transient event extracted from a search is not stored by any sweep, so it
+# cannot be served by the digest-keyed route above. The listing's "Add to
+# iMessage calendar" tap needs a route that builds a file from the event's own
+# fields, carried in the URL, and it must work with no session just like the
+# stored-event route — the phone opening it has none.
+def test_a_transient_event_builds_a_calendar_file_without_any_session():
+    from backend.config.settings import settings
+
+    previous = settings.AUTH_REQUIRED
+    settings.AUTH_REQUIRED = True
+    try:
+        with TestClient(app) as client:
+            response = client.get(
+                "/api/v1/discovery/ics/event",
+                params={
+                    "title": "Sunday Sessions",
+                    "start": "20260830T160000Z",
+                    "end": "20260830T180000Z",
+                    "location": "The Lawn Batu Bolong",
+                    "url": "https://www.thelawncanggu.com/whats-on",
+                },
+            )
+            assert response.status_code == 200, response.text
+            assert response.headers["content-type"].startswith("text/calendar")
+            assert "Sunday-Sessions.ics" in response.headers["content-disposition"]
+            body = response.text
+            assert body.startswith("BEGIN:VCALENDAR")
+            assert "SUMMARY:Sunday Sessions" in body
+            assert "LOCATION:The Lawn Batu Bolong" in body
+            assert "20260830T160000Z" in body
+            assert body.rstrip().endswith("END:VCALENDAR")
+    finally:
+        settings.AUTH_REQUIRED = previous
+
+
+def test_a_transient_event_without_a_start_is_refused():
+    # A calendar entry without a start is not a calendar entry. The listing
+    # only offers the native link for dated events, so this is the route
+    # holding the line rather than the caller.
+    with TestClient(app) as client:
+        response = client.get(
+            "/api/v1/discovery/ics/event", params={"title": "Undated thing"}
+        )
+        assert response.status_code == 422
+
+
 def test_the_calendar_link_is_absolute_so_a_phone_can_open_it():
     # A relative path only resolves on the origin the page was served from and
     # fails silently when the same link is opened from a phone, which is where

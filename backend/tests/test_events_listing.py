@@ -61,12 +61,20 @@ def test_a_dropped_count_is_said_out_loud():
 def test_every_event_carries_a_one_tap_calendar_link():
     # The listing used to end by asking "want any of these in your calendar?"
     # and then have no way to do it. An offer an assistant cannot fulfil is
-    # worse than no offer.
-    text = render_listing(Extraction((_lawn(),)), NOW)
-    assert "[Add](https://calendar.google.com/calendar/render?action=TEMPLATE" in text
+    # worse than no offer. A dated event now carries both a Google prefill and
+    # a native .ics (the "Add to iMessage calendar" tap).
+    text = render_listing(
+        Extraction((_lawn(),)),
+        NOW,
+        calendar_base_url="https://deep-matter.com/api/v1/discovery",
+    )
+    assert "[Add to Google calendar](https://calendar.google.com/calendar/render?action=TEMPLATE" in text
     assert "text=Sunday+Sessions" in text
     assert "dates=20260830T160000Z" in text
     assert "location=The+Lawn+Batu+Bolong" in text
+    # The native .ics for a listing event points at the public builder route.
+    assert "[Add to iMessage calendar](https://deep-matter.com/api/v1/discovery/ics/event?" in text
+    assert "title=Sunday+Sessions" in text
     # And it is grounded, so the link fence keeps it.
     assert template_is_grounded(
         [
@@ -76,6 +84,15 @@ def test_every_event_carries_a_one_tap_calendar_link():
         ][0].rstrip(".,)"),
         EVIDENCE + " Sunday Sessions",
     )
+
+
+def test_a_listing_event_without_a_calendar_base_offers_only_google():
+    # Without a base to point a .ics at, the native link cannot be offered —
+    # a link to a bare route would resolve on the wrong origin. The Google
+    # prefill always works, so it always appears.
+    text = render_listing(Extraction((_lawn(),)), NOW)
+    assert "[Add to Google calendar](" in text
+    assert "[Add to iMessage calendar](" not in text
 
 
 def test_an_event_with_no_clock_time_gets_an_all_day_calendar_entry():

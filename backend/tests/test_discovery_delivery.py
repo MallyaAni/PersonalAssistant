@@ -95,12 +95,14 @@ def test_the_message_carries_a_local_time_and_the_source_link():
     assert "Jazz at the Green" in message
     # 2026-08-11T12:00Z is 08:00 in New York, not 12:00.
     assert "8:00am" in message
-    # The source's own link, which resolves from anywhere. No calendar file and
-    # no calendar link: an attachment nobody asked for is friction on a phone,
-    # and a link back to this machine only works on its network.
+    # The source's own link, which resolves from anywhere.
     assert "https://example.org/" in message
-    assert ".ics" not in message
-    assert "Add:" not in message
+    # A dated find now carries the two ways to add it to a calendar: a native
+    # .ics file (the "Add to iMessage calendar" tap) and a Google prefill,
+    # both attached from the typed record rather than written by a model.
+    assert "Add to iMessage calendar: https://example.org/api/v1/discovery/u/calendar/" in message
+    assert ".ics" in message
+    assert "Add to Google calendar: https://calendar.google.com/calendar/render" in message
 
 
 def test_an_unknown_timezone_falls_back_rather_than_failing():
