@@ -14,6 +14,14 @@ stands alone and nothing is listed (`conversation_service`,
 `test_events_listing_wiring.py`). Each search round's query is now logged,
 so a drift between rounds can be read from the log rather than reproduced.
 
+Reproduced through the provider: the first round's query alone ("fun events
+happening in Raleigh NC this week September 2026") returns Raleigh pages
+and the extractor keeps 8 dated events, 3 inside the week. The New York
+pages came from the second, model-written round, and the ranker judged the
+merged set off-subject. When that happens the first round - the query that
+carried the place - is now ranked on its own and used if it is on subject,
+so a drifted second round costs nothing more than itself.
+
 ## 2026-09-03 - Time awareness: the weekday and the clock in the prompt, memories that carry their date, a fired reminder that reads as done
 
 The morning after the group's Wednesday trivia, the scheduled chess tip

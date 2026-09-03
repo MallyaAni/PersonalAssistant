@@ -217,3 +217,68 @@ async def test_off_subject_results_are_not_typed_into_a_listing():
     assert "https://maps.google.com" not in answer, answer
     # The reply is the model's own, told the results were about something else.
     assert llm.streamed is True
+
+
+
+# A second, model-written round that drifts to another place does not cost
+# the first round its answer: judged on its own, the round that carried the
+# place is on subject and its listing is the reply (Raleigh, 2026-09-03).
+DRIFTED = [
+    {
+        "title": "Bread and Puppet at the Old Stone House",
+        "url": "https://www.brooklynvegan.com/puppets",
+        "content": "Bread and Puppet: The Upside Down World Circus, Old Stone House, Park Slope, Brooklyn. Friday September 18.",
+        "provider": "brave",
+    },
+]
+
+
+class DriftingSearch(EventsSearch):
+    def __init__(self) -> None:
+        self.calls = 0
+
+    async def search(self, query: str, max_results: int | None = None) -> SearchResults:
+        self.calls += 1
+        if self.calls == 1:
+            return await super().search(query, max_results)
+        return SearchResults(query=query, results=tuple(SearchResult(**item) for item in DRIFTED))
+
+
+class MixedIsOffSubjectLLM(EventsLLM):
+    """Says the results are off subject whenever Brooklyn is among them, and
+    proposes a second query when asked for one."""
+
+    def chat(self, messages, max_tokens=512, schema=None, temperature=None):
+        properties = set(((schema or {}).get("properties") or {}))
+        if "order" in properties:
+            text = " ".join(str(m.get("content") or "") for m in messages)
+            return {
+                "content": json.dumps(
+                    {"order": [1, 2], "events": True, "travel": False, "on_subject": "Brooklyn" not in text}
+                )
+            }
+        if "events" in properties:
+            return {"content": json.dumps(EXTRACTED)}
+        return {"content": "beach clubs Canggu September 2026"}
+
+
+@pytest.mark.asyncio
+async def test_a_drifted_second_round_does_not_cost_the_first_its_listing(monkeypatch):
+    from backend.config.settings import settings
+
+    monkeypatch.setattr(settings, "SEARCH_MAX_ROUNDS", 2)
+    monkeypatch.setattr(settings, "SEARCH_MIN_ROUNDS", 2)
+    llm = MixedIsOffSubjectLLM()
+    service = ConversationService(
+        memory=StubMemoryService(),
+        llm=llm,
+        repository=StubConversationRepository(),
+        tracer=StubTracer(),
+        search=DriftingSearch(),  # type: ignore[arg-type]
+        main_action_selector=StubMainActionSelector(  # type: ignore[arg-type]
+            SearchAction(query="what's on in Canggu this weekend")
+        ),
+    )
+    answer = await _reply(service)
+    assert "Sunday Sessions" in answer, answer
+    assert "Bread and Puppet" not in answer, answer

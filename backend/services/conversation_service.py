@@ -2800,11 +2800,14 @@ class ConversationService:
             except Exception:
                 home = ""
 
+        first_round: list[dict[str, Any]] = []
         for round_number in range(max(1, settings.SEARCH_MAX_ROUNDS)):
             tried.append(current)
             logger.info("Trace %s search round %d: %s", trace_id, round_number + 1, current[:160])
             found, ok = await self._load_search_context(current, trace_id, max_results)
             succeeded = succeeded or ok
+            if round_number == 0:
+                first_round = [item for item in found if isinstance(item, dict)]
             for item in found:
                 url = str(item.get("url") or "")
                 if url and url not in seen:
@@ -2908,6 +2911,36 @@ class ConversationService:
                 len(gathered),
                 verdict["events"],
             )
+            # A later round is model-written and can drift - a Raleigh
+            # question's second round brought New York pages, and the merged
+            # set was judged off the subject (2026-09-03). The first round
+            # carried the place; judged on its own, it is the answer when it
+            # is on subject, and the drifted round costs nothing more.
+            if not verdict["on_subject"] and first_round and len(first_round) < len(candidates):
+                retry = list(first_round)
+                again: dict[str, bool] = {"events": False, "travel": False, "on_subject": True}
+
+                async def rank_first(_question: str, _documents: list[str]) -> list[float] | None:
+                    ranking = await judge_results(self.llm, judged_question, place, retry, known=known)
+                    again["events"] = ranking.events
+                    again["travel"] = ranking.travel
+                    again["on_subject"] = ranking.on_subject
+                    return ranking.scores
+
+                ranked_first = await _rerank_web_results(
+                    rank_first,
+                    _rerank_question(question, place),
+                    retry,
+                    max(1, max_results or settings.SEARCH_MAX_RESULTS),
+                )
+                if again["on_subject"]:
+                    logger.info(
+                        "Trace %s first search round is on subject on its own; %d later results dropped",
+                        trace_id,
+                        len(candidates) - len(retry),
+                    )
+                    gathered = ranked_first
+                    verdict = again
             _results_were_events.set(verdict["events"])
             if verdict["events"]:
                 # Typed here, where the results and the ranker's verdict are
