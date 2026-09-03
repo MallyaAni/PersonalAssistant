@@ -238,6 +238,10 @@ grants over HTTP never widen it - and reading it is a separate switch:
 # Which rooms, by the identifier Messages shows (`chat` followed by digits;
 # the full `iMessage;+;chatNNN` guid is accepted too). Comma-separated.
 export IMESSAGE_BRIDGE_GROUPS="chat778899001122"
+# Or `auto` (alone or beside ids): any group with at least one allowlisted
+# member is read. Every message in such a room travels with
+# `sender_allowlisted`; the worker answers only approved people and reads
+# the rest as context. A stranger's attachments stay on the Mac.
 export IMESSAGE_BRIDGE_READ_GROUPS=true
 # This account's own addresses - the Apple ID email and/or number people
 # message it at. A mention is matched on these: Messages stores the
