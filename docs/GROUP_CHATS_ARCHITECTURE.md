@@ -81,6 +81,16 @@ rows. Everything the group owns lives under that `user_id`.
   row is finished silently and the operator gets one text per room per day
   (`OPERATOR_ALERT_PHONE`, dedup in Redis `imessage:chat:room_alert:{digest}`;
   nothing about the strangers is sent).
+- Admission at the bridge (2026-09-02): with `IMESSAGE_BRIDGE_GROUPS=auto`
+  the Mac reads any group whose every member is on its allowlist (the
+  environment's recipients plus the grants AniOS makes at approval), so a
+  room of approved people works the moment the account is added to it; a
+  room with one stranger in it is scanned past and nothing said there leaves
+  the Mac. Listed chat ids still count beside `auto`. The worker's own rule
+  stands on top: every participant must resolve to an approved account, or
+  the room is silent and the operator is told once. Approval in deep-matter
+  is therefore the only step: it grants the number on the bridge and makes
+  the person answerable in any room made of approved people.
 - Provisioning is automatic on the first addressed message when all resolve
   (`_group_for`: `ConversationGroupRepository.provision`, idempotent per chat;
   membership re-synced on every message; departed members are marked as left,

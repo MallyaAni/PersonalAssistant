@@ -1656,3 +1656,64 @@ def test_a_pdf_must_be_named_as_one():
     pdf = b"%PDF-1.4\n" + b"x" * 64
     with pytest.raises(BridgeError, match="must be named"):
         decode_attachment("payload.sh", "application/pdf", base64.b64encode(pdf).decode())
+
+
+# Auto rooms: with IMESSAGE_BRIDGE_GROUPS=auto the bridge reads any group
+# whose every member is on the allowlist, so a room of approved people works
+# the moment the account is added; a room with one stranger never leaves
+# the Mac. Listed ids still count (2026-09-02).
+def _auto_config(tmp_path, recipients, groups=()):
+    from dataclasses import replace
+
+    config = _incoming_config(tmp_path, recipients, groups=groups, read_groups=True, display_name="Scout")
+    return replace(config, groups_auto=True)
+
+
+def test_auto_mode_reads_a_room_whose_members_are_all_allowlisted(tmp_path):
+    from server import incoming_messages
+
+    people = ("+15550100", "+15550101")
+    config = _auto_config(tmp_path, people)
+    db = _chat_db(tmp_path)
+    _insert_incoming(db, "+15550100", "Scout, thai or pizza?", _ns_ago(30), chat_identifier="chat900", chat_name="Dinner", participants=people, guid="a-1")
+    _insert_incoming(db, "+15550101", "pizza", _ns_ago(20), chat_identifier="chat900", chat_name="Dinner", participants=people, guid="a-2")
+    result = incoming_messages(config, 0)
+    guids = [m["guid"] for m in result["messages"]]
+    assert guids == ["a-1", "a-2"], result
+    assert result["messages"][0]["addressed_by"] == "name" and not result["messages"][1].get("addressed_by")
+
+
+def test_auto_mode_never_forwards_a_room_with_a_stranger_in_it(tmp_path):
+    from server import incoming_messages
+
+    config = _auto_config(tmp_path, ("+15550100", "+15550101"))
+    db = _chat_db(tmp_path)
+    latest = _ns_ago(20)
+    _insert_incoming(db, "+15550100", "Scout, hi", _ns_ago(30), chat_identifier="chat901", chat_name="Mixed", participants=("+15550100", "+15550101", "+15550199"), guid="s-1")
+    _insert_incoming(db, "+15550199", "who is this?", latest, chat_identifier="chat901", chat_name="Mixed", participants=("+15550100", "+15550101", "+15550199"), guid="s-2")
+    result = incoming_messages(config, 0)
+    assert result["messages"] == []
+    # Scanned past, so the poll moves on and never stalls on the room.
+    assert result["cursor"] >= latest
+
+
+def test_auto_mode_keeps_a_listed_room_even_with_a_stranger(tmp_path):
+    from server import incoming_messages
+
+    config = _auto_config(tmp_path, ("+15550100",), groups=("chat902",))
+    db = _chat_db(tmp_path)
+    _insert_incoming(db, "+15550100", "Scout, hi", _ns_ago(30), chat_identifier="chat902", chat_name="Listed", participants=("+15550100", "+15550199"), guid="l-1")
+    result = incoming_messages(config, 0)
+    assert [m["guid"] for m in result["messages"]] == ["l-1"]
+
+
+def test_auto_is_parsed_beside_listed_ids(monkeypatch):
+    from server import BridgeConfig as Config
+
+    monkeypatch.setenv("IMESSAGE_BRIDGE_TOKEN", "t")
+    monkeypatch.setenv("IMESSAGE_BRIDGE_RECIPIENTS", "+15550100")
+    monkeypatch.setenv("IMESSAGE_BRIDGE_GROUPS", "auto, chat308729799386740866")
+    monkeypatch.setenv("IMESSAGE_BRIDGE_READ_GROUPS", "true")
+    monkeypatch.setenv("IMESSAGE_BRIDGE_DISPLAY_NAME", "Scout")
+    config = Config.from_environment()
+    assert config.groups_auto and "chat308729799386740866" in config.groups

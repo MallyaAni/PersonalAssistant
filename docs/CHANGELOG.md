@@ -2,6 +2,20 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-02 - A group of approved people works the moment the assistant is added
+
+The bridge read only groups whose chat ids were listed by hand in the Mac's
+environment, so a new group the assistant was added to was invisible until
+the plist was edited and the bridge re-bootstrapped. `IMESSAGE_BRIDGE_GROUPS`
+now accepts `auto`: any group whose every member is on the allowlist
+(environment recipients plus AniOS's grants at approval) is read, addressed
+and unaddressed alike; a room with one stranger is scanned past and nothing
+said in it leaves the Mac, for words and attachments both. Listed ids still
+count. The worker's rule on top is unchanged and tested: every participant
+must resolve to an approved account or the room stays silent and the
+operator is told once. Bridge tests cover a fully approved room in auto mode,
+a room with a stranger, and the parse of `auto` beside ids.
+
 ## 2026-09-02 - A ten-digit US number at sign-up is +1 and those digits
 
 Two people signed up on the evening of 2026-09-02 typing "+" and their

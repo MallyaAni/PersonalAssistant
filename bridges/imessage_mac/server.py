@@ -266,6 +266,12 @@ class BridgeConfig:
     # addressed to this Mac's account leaves it (see `_addressed_to_bot`).
     groups: frozenset[str] = frozenset()
     read_groups: bool = False
+    # "auto": read any group whose every member is on the allowlist (the
+    # environment's recipients plus AniOS's grants), so a room made of
+    # approved people works the moment this account is added to it, and a
+    # room with one stranger in it never leaves this Mac. Listed ids still
+    # count. Set with IMESSAGE_BRIDGE_GROUPS=auto (optionally beside ids).
+    groups_auto: bool = False
     # This account's own addresses (the Apple ID email, the number), as
     # people mention it: a mention stores the mentioned handle, not the
     # rendered name (`__kIMMentionConfirmedMention` → deep-matter@…, read
@@ -291,11 +297,11 @@ class BridgeConfig:
             raise BridgeError(
                 "Set IMESSAGE_BRIDGE_RECIPIENTS to the numbers this may message."
             )
+        raw_groups = [part.strip() for part in os.environ.get("IMESSAGE_BRIDGE_GROUPS", "").split(",") if part.strip()]
+        groups_auto = any(part.lower() == "auto" for part in raw_groups)
         groups = frozenset(
             identifier
-            for identifier in (
-                normalize_chat_target(part) for part in os.environ.get("IMESSAGE_BRIDGE_GROUPS", "").split(",")
-            )
+            for identifier in (normalize_chat_target(part) for part in raw_groups if part.lower() != "auto")
             if identifier
         )
         read_groups = os.environ.get("IMESSAGE_BRIDGE_READ_GROUPS", "").strip().lower() in {"1", "true", "yes"}
@@ -315,6 +321,7 @@ class BridgeConfig:
             allowed_recipients=allowed,
             groups=groups,
             read_groups=read_groups,
+            groups_auto=groups_auto,
             addresses=addresses,
             display_name=display_name,
             # Loopback by default: reaching this from another machine is a
@@ -1137,13 +1144,20 @@ def incoming_messages(
         # One-to-one rows always; rows from allowlisted rooms only when group
         # reading is on. With it off the query is the one it always was.
         group_ids = sorted(config.groups) if config.read_groups else []
-        room_clause = (
-            "AND (c.room_name IS NULL OR (c.style = 43 AND c.chat_identifier IN ("
-            + ",".join("?" for _ in group_ids)
-            + ")))"
-            if group_ids
-            else "AND c.room_name IS NULL"
-        )
+        auto_rooms = config.read_groups and config.groups_auto
+        if auto_rooms:
+            # Any room; which of them qualify is decided below, per room, by
+            # its members - and the rows of one that does not never leave.
+            room_clause = "AND (c.room_name IS NULL OR c.style = 43)"
+            group_ids = []
+        else:
+            room_clause = (
+                "AND (c.room_name IS NULL OR (c.style = 43 AND c.chat_identifier IN ("
+                + ",".join("?" for _ in group_ids)
+                + ")))"
+                if group_ids
+                else "AND c.room_name IS NULL"
+            )
         rows = connection.execute(
             f"""
             SELECT m.ROWID, m.guid, m.date, m.text, m.attributedBody, h.id,
@@ -1188,8 +1202,25 @@ def incoming_messages(
         connection.close()
 
     allowed = config.allowed_recipients | load_grants(config)
+    # A room qualifies when it is listed, or - in auto mode - when every
+    # member is allowlisted. Decided once per room per poll.
+    qualified_rooms = {
+        room: (
+            str(identifier or "") in config.groups
+            or (auto_rooms and bool(people) and all(person in allowed for person in people))
+        )
+        for room, people, identifier in (
+            (room, participants.get(room, []), next((r[9] for r in rows if int(r[7]) == room), ""))
+            for room in rooms
+        )
+    }
     messages: list[dict[str, object]] = []
     for rowid, guid, date, text, blob, handle, originator, chat_rowid, style, chat_identifier, chat_name in rows:
+        if int(style or 0) == 43 and not qualified_rooms.get(int(chat_rowid), False):
+            # A room with a stranger in it, or one not listed: scanned so the
+            # cursor moves on, and nothing said in it leaves this function.
+            cursor = max(cursor, int(date))
+            continue
         attached = listings.get(int(rowid), [])
         body = extract_body(text, blob)
         # A photo with no caption has no body but is still a message; a row is
@@ -1395,10 +1426,11 @@ def _owned_attachment(
     # A picture from an allowlisted room is read like a one-to-one one; the
     # sender is re-proved below either way.
     room_ids = sorted(config.groups) if config.read_groups else []
+    auto_rooms = config.read_groups and config.groups_auto
     try:
         row = connection.execute(
             """
-            SELECT a.filename, a.mime_type, a.transfer_name, h.id
+            SELECT a.filename, a.mime_type, a.transfer_name, h.id, c.ROWID, c.style, c.chat_identifier
             FROM attachment a
             JOIN message_attachment_join maj ON maj.attachment_id = a.ROWID
             JOIN message m ON m.ROWID = maj.message_id
@@ -1407,21 +1439,26 @@ def _owned_attachment(
             JOIN chat c ON c.ROWID = cmj.chat_id
             WHERE a.ROWID = ?
               AND m.is_from_me = 0
-              AND (c.room_name IS NULL OR (c.style = 43 AND c.chat_identifier IN ({rooms})))
+              AND (c.room_name IS NULL OR c.style = 43)
             LIMIT 1
-            """.replace(
-                "{rooms}",
-                ",".join("?" for _ in room_ids) if room_ids else "''",
-            ),
-            (rowid, *room_ids),
+            """,
+            (rowid,),
         ).fetchone()
+        if row is not None and int(row[5] or 0) == 43:
+            # The same admission as for words: listed, or every member allowlisted.
+            identifier = str(row[6] or "")
+            people = _participants(connection, int(row[4]))
+            allowed_now = config.allowed_recipients | load_grants(config)
+            admitted = identifier in room_ids or (auto_rooms and bool(people) and all(p in allowed_now for p in people))
+            if not admitted:
+                row = None
     except sqlite3.Error:
         return None
     finally:
         connection.close()
     if row is None:
         return None
-    filename, mime, transfer_name, handle = row
+    filename, mime, transfer_name, handle = row[0], row[1], row[2], row[3]
     if normalize_recipient(str(handle or "")) not in (
         config.allowed_recipients | load_grants(config)
     ):
@@ -1506,6 +1543,7 @@ def describe_incoming(config: BridgeConfig) -> dict[str, object]:
     groups_note = {
         "groups_readable": config.read_groups,
         "groups_allowlisted": len(config.groups),
+        "groups_auto": config.groups_auto,
         "mention_addresses": len(config.addresses),
     }
     return {
