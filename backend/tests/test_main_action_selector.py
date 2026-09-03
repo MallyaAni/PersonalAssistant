@@ -508,3 +508,66 @@ async def test_the_catalogue_is_not_used_for_a_restricted_later_step(monkeypatch
     )
     names = {tool["function"]["name"] for tool in llm.rounds[0]}
     assert FIND_TOOLS not in names and names <= set(AUTOMATION_TOOLS)
+
+
+# One decision, remembered while the things it depends on hold. The router
+# is a model: over two measured passes of the labelled cases, eight
+# categories answered differently the second time. A person feels that as
+# "try again" doing something else, and pays for it in latency twice.
+@pytest.fixture(autouse=True)
+def _forget_decisions():
+    from backend.services.main_action_selector import clear_decision_cache
+
+    clear_decision_cache()
+    yield
+    clear_decision_cache()
+
+
+@pytest.mark.asyncio
+async def test_the_same_question_is_decided_once(monkeypatch):
+    from backend.tools.actions import RecallHistoryAction
+
+    llm = SequencedLLM([_tool_call("search_history", {"query": "the Amalfi trip"})] * 3)
+    selector, _ = _selector({"content": "", "tool_calls": []}, llm=llm)
+    for _ in range(3):
+        action = await selector.select("ani", "what did we say about the Amalfi trip?", [], None)
+        assert isinstance(action, RecallHistoryAction), action
+    assert len(llm.rounds) == 1, "asked the model once for three identical turns"
+
+
+@pytest.mark.asyncio
+async def test_a_different_person_message_or_tool_set_is_decided_again(monkeypatch):
+    llm = SequencedLLM([_tool_call("search_history", {"query": "x"})] * 4)
+    selector, _ = _selector({"content": "", "tool_calls": []}, llm=llm)
+    await selector.select("ani", "what did we say about the trip?", [], None)
+    await selector.select("jen", "what did we say about the trip?", [], None)
+    await selector.select("ani", "what did we say about the car?", [], None)
+    await selector.select("ani", "what did we say about the trip?", [], "pic-1")
+    assert len(llm.rounds) == 4, "a different person, message or interface state is a new question"
+
+
+@pytest.mark.asyncio
+async def test_switching_the_cache_off_asks_every_time(monkeypatch):
+    from backend.config.settings import settings
+
+    monkeypatch.setattr(settings, "ROUTING_DECISION_CACHE_SECONDS", 0)
+    llm = SequencedLLM([_tool_call("search_history", {"query": "x"})] * 2)
+    selector, _ = _selector({"content": "", "tool_calls": []}, llm=llm)
+    await selector.select("ani", "what did we say?", [], None)
+    await selector.select("ani", "what did we say?", [], None)
+    assert len(llm.rounds) == 2
+
+
+@pytest.mark.asyncio
+async def test_a_stale_decision_is_not_reused(monkeypatch):
+    from backend.config.settings import settings
+
+    monkeypatch.setattr(settings, "ROUTING_DECISION_CACHE_SECONDS", 0.01)
+    llm = SequencedLLM([_tool_call("search_history", {"query": "x"})] * 2)
+    selector, _ = _selector({"content": "", "tool_calls": []}, llm=llm)
+    await selector.select("ani", "what did we say?", [], None)
+    import asyncio as _asyncio
+
+    await _asyncio.sleep(0.05)
+    await selector.select("ani", "what did we say?", [], None)
+    assert len(llm.rounds) == 2

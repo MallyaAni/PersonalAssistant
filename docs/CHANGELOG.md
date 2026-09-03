@@ -2,6 +2,32 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-03 - One routing decision, remembered while it stays true
+
+Two measured passes over the 108 labelled cases answered differently in
+eight categories: `edit_not_an_image` 2/2 then 0/2, `show` 3/5 then 5/5,
+`personal_memory` 2/4 then 3/4. Same code, same cases. A person feels that
+as "try again" doing something else, and pays for the second model call in
+latency either way.
+
+A routing decision is now kept against the things it depends on - who is
+asking, what they said, the conversation around it, what was on offer,
+whether a picture is in view, and the calendar day - and reused while all of
+those hold (`ROUTING_DECISION_CACHE_SECONDS`, five minutes, zero switches it
+off). The clock's minute is deliberately out of the key, because nothing the
+router decides changes between 2:01 and 2:02 and a key with the minute in it
+would never be reused; the day is in it, because "tomorrow" does change. A
+catalogue search is never remembered - it is half a decision, and replaying
+it would replay the search rather than its answer. In-process and
+short-lived: this is a guard against asking the same question twice in five
+minutes, not a record of what was decided. The turn trace is that.
+
+Not to be confused with the tool memory that already exists. That holds MCP
+tool descriptors (two rows, working, read by the orchestration service and
+the memory coordinator) plus preference and outcome tables that have never
+had a row, because nothing in a turn writes them - they are reachable only
+through the API.
+
 ## 2026-09-03 - The tool catalogue, measured: a wash at today's size, so it waits for the list to grow
 
 One pass over the 108 labelled selection cases with the catalogue off and

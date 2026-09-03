@@ -70,6 +70,13 @@ class Settings(BaseSettings):
     # advice: it should start earning its keep as the list grows, not now.
     ROUTING_TOOL_SEARCH_THRESHOLD: int = Field(default=30, ge=4, le=60)
     ROUTING_TOOL_SEARCH_RESULTS: int = Field(default=5, ge=1, le=20)
+    # How long one routing decision is reused for the same message, tools and
+    # day. "Try again" and a retry after a failure ask the model the same
+    # question a second time, and today it can answer differently: the same
+    # case flipped between two measured passes in eight categories. Zero
+    # switches it off.
+    ROUTING_DECISION_CACHE_SECONDS: float = Field(default=300.0, ge=0, le=3600)
+    ROUTING_DECISION_CACHE_MAX: int = Field(default=512, ge=16, le=8192)
     # How many tool decisions one turn may make.
     #
     # One was the ceiling on what a request could express, not a design: a

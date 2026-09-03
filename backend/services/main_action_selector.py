@@ -23,6 +23,9 @@ and reads the decision.
 import asyncio
 import json
 import logging
+from collections import OrderedDict
+import time
+import hashlib
 from typing import Any
 
 from backend.config.settings import settings
@@ -119,6 +122,63 @@ logger = logging.getLogger(__name__)
 
 # The wording lives in `prompts/routing/select_action.md`.
 _SYSTEM = load("routing/select_action")
+
+# One routing decision, remembered for as long as it stays true.
+#
+# The router is a model, and a model asked the same question twice can
+# answer differently: measured over two passes of the 108 labelled cases,
+# eight categories flipped. That is felt by a person as "try again" doing
+# something else, and it is paid for again in latency every time. So a
+# decision is kept against the things it actually depends on - who is
+# asking, what they said, the conversation it sits in, what was on offer,
+# whether a picture is in view, and the calendar day - and reused while all
+# of those hold. The clock's minute is deliberately not part of the key: a
+# decision that turned on the exact minute would never be reused, and
+# nothing the router decides changes between 2:01 and 2:02. The day is in
+# the key because "tomorrow" does change.
+#
+# In-process and short-lived by design. This is not a store of what the
+# assistant decided - the turn trace is that - it is a guard against asking
+# the same question twice in the same few minutes.
+_DECISIONS: OrderedDict[str, tuple[float, dict[str, Any]]] = OrderedDict()
+
+
+def _decision_key(
+    user_id: str, user_content: str, tools: list[dict[str, Any]], local_now: str | None
+) -> str:
+    names = sorted(tool["function"]["name"] for tool in tools)
+    day = str(local_now or "")[:10]
+    material = "\x1f".join((user_id, day, user_content, ",".join(names)))
+    return hashlib.sha256(material.encode("utf-8", "replace")).hexdigest()
+
+
+def _remembered_decision(key: str) -> dict[str, Any] | None:
+    if settings.ROUTING_DECISION_CACHE_SECONDS <= 0:
+        return None
+    found = _DECISIONS.get(key)
+    if found is None:
+        return None
+    kept_at, message = found
+    if time.monotonic() - kept_at > settings.ROUTING_DECISION_CACHE_SECONDS:
+        _DECISIONS.pop(key, None)
+        return None
+    _DECISIONS.move_to_end(key)
+    return message
+
+
+def _remember_decision(key: str, message: dict[str, Any]) -> None:
+    if settings.ROUTING_DECISION_CACHE_SECONDS <= 0:
+        return
+    _DECISIONS[key] = (time.monotonic(), message)
+    _DECISIONS.move_to_end(key)
+    while len(_DECISIONS) > settings.ROUTING_DECISION_CACHE_MAX:
+        _DECISIONS.popitem(last=False)
+
+
+# Forget every remembered decision. For tests, and for anything that changes
+# what a decision would be without changing its key - a redeployed prompt.
+def clear_decision_cache() -> None:
+    _DECISIONS.clear()
 
 # Recent turns given to the decision so it does not re-ask for something the
 # user already said earlier in this same conversation.
@@ -535,9 +595,22 @@ class MainActionSelector:
         if index:
             user_content += f"\n\n{index}"
 
-        message = await self._decide(user_content, tools)
+        key = _decision_key(user_id, user_content, tools, local_now)
+        message = _remembered_decision(key)
         if message is None:
-            return None
+            message = await self._decide(user_content, tools)
+            if message is None:
+                return None
+            # A catalogue search is half a decision; remembering it would
+            # replay the search rather than its answer.
+            if not any(
+                call.get("function", {}).get("name") == FIND_TOOLS
+                for call in (message.get("tool_calls") or [])
+                if isinstance(call, dict)
+            ):
+                _remember_decision(key, message)
+        else:
+            logger.info("Routing decision reused for an unchanged question")
         offered = {tool["function"]["name"] for tool in tools}
 
         # One search round, never two: the model says what it needs, the
