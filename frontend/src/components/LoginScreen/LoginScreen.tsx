@@ -194,12 +194,14 @@ const LoginScreen = ({ onAuthenticated }: LoginScreenProps) => {
                     onChange={event => setPhone(event.target.value)}
                     className="h-12 w-full rounded-xl border border-black/[0.14] bg-white pl-11 pr-3.5 text-base outline-none transition focus:border-[#0071e3] focus:ring-2 focus:ring-[#0071e3]/15"
                     maxLength={32}
-                    placeholder="+1 202 555 0100"
+                    placeholder="202 555 0100 or +1 202 555 0100"
                   />
                 </div>
                 <span className="block text-xs leading-5 text-[#6e6e73]">
-                  Include your country code. This is the number the assistant will
-                  recognise you by over iMessage once you are approved.
+                  A US number can be just its ten digits, with or without the +1.
+                  Outside the US, include your country code (+44 20 7946 0958).
+                  This is the number the assistant will recognise you by over
+                  iMessage once you are approved.
                 </span>
               </label>
               <label className="block space-y-1.5">

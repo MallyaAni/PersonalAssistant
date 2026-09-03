@@ -50,6 +50,11 @@ _DECORATION = re.compile(r"[\s\-().‐-―]")
 _INTERNATIONAL_PREFIX = "00"
 
 
+# A North American area code: [2-9] then two digits, followed by an exchange
+# that also starts [2-9]. Ten digits in that shape are a NANP number.
+_NANP_AREA = re.compile(r"^[2-9]\d{2}[2-9]\d{6}$")
+
+
 class InvalidPhoneNumber(ValueError):
     """The number cannot be stored, with a reason a person can act on."""
 
@@ -69,6 +74,18 @@ def to_e164(value: str) -> str:
     if cleaned.startswith(_INTERNATIONAL_PREFIX):
         cleaned = "+" + cleaned[len(_INTERNATIONAL_PREFIX) :]
 
+    # A North American number given the way people actually write it. Two
+    # sign-ups on 2026-09-02 typed "+" and their ten-digit US number, as the
+    # field's example invited, and were stored as Slovenia and the Seychelles;
+    # their welcome went nowhere and their own texts would have been refused.
+    # Ten digits with a valid area code, with or without a "+", is +1 and
+    # those digits; a number that already carries a country code is untouched.
+    bare = cleaned[1:] if cleaned.startswith("+") else cleaned
+    if not (set(bare) - _ASCII_DIGITS):
+        if len(bare) == 10 and _NANP_AREA.match(bare):
+            cleaned = "+1" + bare
+        elif len(bare) == 11 and bare.startswith("1") and _NANP_AREA.match(bare[1:]):
+            cleaned = "+" + bare
     if not cleaned.startswith("+"):
         raise InvalidPhoneNumber(
             "Include the country code, starting with + - for example "

@@ -2,6 +2,50 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-02 - A ten-digit US number at sign-up is +1 and those digits
+
+Two people signed up on the evening of 2026-09-02 typing "+" and their
+ten-digit US number, as the phone field's example invited, and were stored
+as Slovenia (+386...) and the Seychelles (+248...). The welcome the approval
+sends went to those numbers; the allowlist match strips to ten digits either
+way, so their own texts would still have reached AniOS, but nothing sent to
+them could. `to_e164` now treats ten digits in North American shape - with
+or without a "+" - as +1 and those digits; a number that already carries a
+country code is untouched. Unit-tested on both sign-ups' inputs and on a UK
+number. The two stored addresses were corrected and their welcomes re-sent
+through the welcome service on 2026-09-02 at 20:10 local; the Mac's Messages
+record shows the 20:00 sends to the bare-plus numbers undelivered (error 22)
+and the 20:10 sends to the +1 numbers delivered; the sign-up form's hint now says ten US digits are enough.
+
+## 2026-09-02 - Open: the archived itinerary's hotel, live
+
+Recorded as open, with the evidence. On the deployed build the question
+"which hotel did we stay at in Salerno on the choral tour?" is answered from
+the archived itinerary in isolation (3/3, with and without a history-search
+block beside the passages, over the real chunks) and intermittently live
+(1/2, then 0/3 on a kept user): even with the document pinned, the store
+hands the reply the Day 1 passage at distance 0.317 with "Grand Hotel of
+Salerno" in it, and the reply says the PDF lists no hotel; its own earlier
+declines are then recalled across conversations and repeated. Retrieval is
+proven; what differs in the live prompt is not visible from the trace. The
+turn trace now records the knowledge passages handed to the reply, and a
+prompt capture (`ANIOS_TRACE_PROMPTS=1`, off by default) stores the rendered
+prompt on the turn so the next kept failure shows exactly what the model
+read.
+
+## 2026-09-02 - An upload's response tells the client to reconnect
+
+The post-deploy live acceptance failed on the chat right after an upload
+with a bare transport error (the log's tail hid the call). Measured on the
+live build: the same flow fails on the connection reused from the upload and
+succeeds on a fresh one. The upload's facts pass runs as a background task on
+the request's own session and holds that HTTP connection until it finishes,
+which grew longer with the dated statements; a client reusing the connection
+for its next request sees it dropped. The upload response now carries
+`Connection: close`, so a reusing client reconnects, as the iMessage worker
+and the web already do per request. Unit test on the route; the acceptance
+stays as the regression check.
+
 ## 2026-09-02 - The task pickers hold over a crowded list; the sweep's first-run gap is elsewhere
 
 "delete the paused ones" gapped on its first run in three consecutive

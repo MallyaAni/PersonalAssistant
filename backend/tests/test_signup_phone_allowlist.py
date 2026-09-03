@@ -44,8 +44,11 @@ def test_international_numbers_reach_one_canonical_form(typed: str, expected: st
 # A bare national number is the case that must be refused, and the reason is
 # not pedantry: the same ten digits are a different person in another country.
 def test_a_number_without_a_country_code_is_refused():
+    # A bare number that is not in North American shape still needs its code;
+    # ten NANP digits are +1 and those digits (2026-09-02, two sign-ups).
     with pytest.raises(InvalidPhoneNumber, match="country code"):
-        to_e164("2025550100")
+        to_e164("0207946095")
+    assert to_e164("2025550100") == "+12025550100"
 
 
 @pytest.mark.parametrize("bad", ["", "   ", "+123", "+0123456789", "+1abc", "hello"])
