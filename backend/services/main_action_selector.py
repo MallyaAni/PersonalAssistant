@@ -43,6 +43,13 @@ from backend.services.followup import (
     is_bare_acceptance,
     resolve_followup,
 )
+from backend.tools.catalog import (
+    FIND_TOOLS,
+    Catalog,
+    catalog_block,
+    defer_tools,
+    loaded_block,
+)
 from backend.tools import (
     DRAFT_WITHHELD,
     UNATTENDED_WITHHELD,
@@ -464,6 +471,19 @@ class MainActionSelector:
                     {"schema_fingerprint": live.schema_fingerprint},
                     live,
                 )
+        # Everything past the most-used few becomes a one-line catalogue the
+        # model can search, rather than a schema it must read on every turn.
+        # The list this router is handed grows on its own - each skill a
+        # person teaches and each MCP server that is connected adds to it -
+        # and selection accuracy falls away as it does, which is the failure
+        # Anthropic's tool search exists to prevent. Off until measured.
+        catalogue = Catalog()
+        if (
+            only is None
+            and settings.ROUTING_TOOL_SEARCH_ENABLED
+            and len(tools) > settings.ROUTING_TOOL_SEARCH_THRESHOLD
+        ):
+            tools, catalogue = defer_tools(tools, bool(active_image_artifact_id))
         visual_state = (
             "A picture is currently selected and visible to the user."
             if active_image_artifact_id
@@ -495,12 +515,49 @@ class MainActionSelector:
                 "everything it asked for has been done. Never repeat something "
                 "already listed above."
             )
+        index = catalog_block(catalogue)
+        if index:
+            user_content += f"\n\n{index}"
+
+        message = await self._decide(user_content, tools)
+        if message is None:
+            return None
+        offered = {tool["function"]["name"] for tool in tools}
+
+        # One search round, never two: the model says what it needs, the
+        # catalogue answers with the few tools whose words match, and the
+        # decision is made again with those definitions in hand. A second
+        # search would be the same question asked twice.
+        call = self._extract_call(message, offered)
+        if call is not None and call[0] == FIND_TOOLS and len(catalogue):
+            needed = str(call[1].get("needed") or "").strip() or query
+            found = catalogue.search(needed, settings.ROUTING_TOOL_SEARCH_RESULTS)
+            names = tuple(entry.name for entry in found)
+            logger.info(
+                "Router searched the tool catalogue for %r: %s",
+                needed[:60],
+                ", ".join(names) or "nothing",
+            )
+            tools = [tool for tool in tools if tool["function"]["name"] != FIND_TOOLS]
+            tools.extend(entry.definition for entry in found)
+            message = await self._decide(
+                f"{user_content}\n\n{loaded_block(names)}", tools
+            )
+            if message is None:
+                return None
+            offered = {tool["function"]["name"] for tool in tools}
+        return self._parse(message, query, aliases, offered, offered_skills)
+
+    # One routing decision from the model, or None when it could not be had.
+    async def _decide(
+        self, user_content: str, tools: list[dict[str, Any]]
+    ) -> dict[str, Any] | None:
         messages: list[dict[str, Any]] = [
             {"role": "system", "content": _SYSTEM},
             {"role": "user", "content": user_content},
         ]
         try:
-            message = await asyncio.to_thread(
+            return await asyncio.to_thread(
                 self.llm.chat_with_tools,
                 messages,
                 tools,
@@ -509,9 +566,6 @@ class MainActionSelector:
         except Exception:
             logger.warning("Main action selection failed", exc_info=True)
             return None
-
-        offered = {tool["function"]["name"] for tool in tools}
-        return self._parse(message, query, aliases, offered, offered_skills)
 
     # Extract the tool name and parsed arguments from one native tool-call
     # message, refusing a name this round never actually offered -- a

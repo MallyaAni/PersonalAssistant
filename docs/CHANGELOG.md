@@ -2,6 +2,32 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-03 - The router keeps a catalogue, not a list
+
+The operator asked how Claude handles a tool set that grows, and to build it
+that way. Anthropic's answer is public and measured: keep the three to five
+most-used tools loaded, defer the rest, and let the model search a catalogue
+and load only what a turn needs. Their numbers - a five-server setup costs
+~55k tokens of definitions before any work is done, tool search cuts that by
+over 85%, and selection accuracy falls away past thirty to fifty tools -
+match the direction this repository was heading anyway: fourteen built-ins
+plus web search plus every MCP alias plus one tool per taught skill, growing
+on its own.
+
+Built as the client-side form their docs describe, because AniOS routes on
+its own model. `backend/tools/catalog.py` turns the turn's definitions into
+one-line entries (name, first sentence, argument names), keeps a core
+loaded that seven days of live usage chose - past conversations 46 turns,
+web search 36, manage scheduled tasks 25 - and offers `find_tools`. The
+model asks in plain words, BM25 over names, descriptions and argument names
+returns up to five, those definitions are added, and the decision is made
+once more. One search round, never two. The index and the loaded-tools note
+ride in the user content, so the cached system prefix stays byte-identical.
+
+Off by default (`ROUTING_TOOL_SEARCH_ENABLED`) until the 108 labelled
+selection cases are run both ways on the real model; the per-tool floors
+decide whether it ships. ADR 0023 records the decision and the sources.
+
 ## 2026-09-03 - A tapback is complete by its nature, not by judgement
 
 The twenty-ninth's gate refused on a readiness judgement: a heart tapback on

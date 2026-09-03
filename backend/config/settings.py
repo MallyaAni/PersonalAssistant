@@ -54,6 +54,15 @@ class Settings(BaseSettings):
     # site - the same limit-nobody-chose class as the reply cap that returned
     # one empty reply in six. Covers a tool call plus reasoning-model thinking.
     ROUTING_DECISION_MAX_TOKENS: int = Field(default=1_024, ge=64, le=8_192)
+    # The tool catalog (backend/tools/catalog.py): with more tools than
+    # ROUTING_TOOL_SEARCH_THRESHOLD, all but the most-used are replaced by a
+    # one-line index and fetched on demand through find_tools. Off until it
+    # is measured against the labelled cases both ways; the threshold follows
+    # Anthropic's own guidance (standard calling under ten tools, search
+    # above it, accuracy falling away past thirty to fifty).
+    ROUTING_TOOL_SEARCH_ENABLED: bool = False
+    ROUTING_TOOL_SEARCH_THRESHOLD: int = Field(default=10, ge=4, le=60)
+    ROUTING_TOOL_SEARCH_RESULTS: int = Field(default=5, ge=1, le=20)
     # How many tool decisions one turn may make.
     #
     # One was the ceiling on what a request could express, not a design: a

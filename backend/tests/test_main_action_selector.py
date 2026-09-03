@@ -407,3 +407,104 @@ async def test_a_yes_with_its_own_instruction_and_no_conversation_is_still_route
     selector, llm = _selector(_tool_call("search_history", {"query": "parking near the venue"}))
     action = await selector.select("yes_user", "yes, and find parking too", [], None)
     assert action is not None and llm.messages, "the model decides a message with content of its own"
+
+
+# The catalog path: with more tools than the threshold, the router is handed
+# the most-used few plus find_tools and a one-line index; when it asks for
+# something else, the catalog answers and the decision is made again with
+# those definitions in hand. The shape of Anthropic's tool search, on our
+# own model.
+class SequencedLLM(FixedToolLLM):
+    """Answers each call from a queue, recording the tools it was offered."""
+
+    def __init__(self, messages: list[dict]) -> None:
+        super().__init__(messages[0])
+        self.queue = list(messages)
+        self.rounds: list[list[dict]] = []
+        self.prompts: list[str] = []
+
+    def chat_with_tools(self, messages, tools, max_tokens=256):
+        self.rounds.append(list(tools))
+        self.prompts.append(str(messages[-1]["content"]))
+        return self.queue.pop(0) if self.queue else {"content": "", "tool_calls": []}
+
+
+def _catalogue_selector(monkeypatch, llm):
+    from backend.config.settings import settings
+
+    monkeypatch.setattr(settings, "ROUTING_TOOL_SEARCH_ENABLED", True)
+    monkeypatch.setattr(settings, "ROUTING_TOOL_SEARCH_THRESHOLD", 4)
+    selector, _ = _selector({"content": "", "tool_calls": []}, llm=llm)
+    return selector
+
+
+@pytest.mark.asyncio
+async def test_a_deferred_tool_is_found_through_the_catalogue_and_then_called(monkeypatch):
+    from backend.tools.actions import GenerateImageAction
+    from backend.tools.catalog import FIND_TOOLS
+
+    llm = SequencedLLM(
+        [
+            _tool_call(FIND_TOOLS, {"needed": "make a picture of a fox"}),
+            _tool_call("generate_image", {"prompt": "a fox wearing a green hat"}),
+        ]
+    )
+    action = await _catalogue_selector(monkeypatch, llm).select(
+        "image_user", "make a picture of a fox wearing a green hat", [], None
+    )
+    assert isinstance(action, GenerateImageAction), action
+
+    first, second = llm.rounds[0], llm.rounds[1]
+    first_names = {tool["function"]["name"] for tool in first}
+    second_names = {tool["function"]["name"] for tool in second}
+    # The first round is small, carries find_tools, and does not carry the
+    # deferred tool; the second carries the tool the search found.
+    assert FIND_TOOLS in first_names and "generate_image" not in first_names
+    assert "search_web" in first_names, first_names
+    assert "generate_image" in second_names and FIND_TOOLS not in second_names
+    assert len(second) < len(first) + 6, "only the few tools the search returned"
+    # The model is told what it can look for, and then what it was given.
+    assert "generate_image" in llm.prompts[0] and FIND_TOOLS in llm.prompts[0]
+    assert "now loaded" in llm.prompts[1]
+
+
+@pytest.mark.asyncio
+async def test_a_loaded_tool_is_called_without_any_search(monkeypatch):
+    from backend.tools.actions import RecallHistoryAction
+
+    llm = SequencedLLM([_tool_call("search_history", {"query": "the Amalfi trip"})])
+    action = await _catalogue_selector(monkeypatch, llm).select(
+        "history_user", "what did we say about the Amalfi trip?", [], None
+    )
+    assert isinstance(action, RecallHistoryAction)
+    assert len(llm.rounds) == 1, "no catalogue round for a tool that was loaded"
+
+
+@pytest.mark.asyncio
+async def test_a_search_that_finds_nothing_still_answers(monkeypatch):
+    from backend.tools.catalog import FIND_TOOLS
+
+    llm = SequencedLLM(
+        [
+            _tool_call(FIND_TOOLS, {"needed": "xylophone porcupine"}),
+            {"content": "", "tool_calls": []},
+        ]
+    )
+    action = await _catalogue_selector(monkeypatch, llm).select(
+        "quiet_user", "tell me a joke", [], None
+    )
+    assert action is None
+    assert "no catalogued tool" in llm.prompts[1].lower()
+
+
+@pytest.mark.asyncio
+async def test_the_catalogue_is_not_used_for_a_restricted_later_step(monkeypatch):
+    from backend.tools import AUTOMATION_TOOLS
+    from backend.tools.catalog import FIND_TOOLS
+
+    llm = SequencedLLM([{"content": "", "tool_calls": []}])
+    await _catalogue_selector(monkeypatch, llm).select(
+        "step_user", "and remind me at 6", [], None, only=AUTOMATION_TOOLS
+    )
+    names = {tool["function"]["name"] for tool in llm.rounds[0]}
+    assert FIND_TOOLS not in names and names <= set(AUTOMATION_TOOLS)
