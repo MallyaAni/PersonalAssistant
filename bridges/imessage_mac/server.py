@@ -1398,6 +1398,43 @@ def _heic_to_jpeg(source: Path, directory: Path) -> Path | None:
     return target
 
 
+# One picture at most `side` pixels on its longest edge, as a JPEG written
+# by the system's own tool, or None. A camera's original can be 26 MB
+# (Hampton's, 2026-09-02) against the 10 MB the bridge hands over, and a
+# refusal said "still downloading"; a photo that big is still a photo, so
+# it is shrunk here the way HEIC is converted, on a copy path.
+def _shrink_image(source: Path, directory: Path, side: int) -> Path | None:
+    target = directory / f"{source.stem}-{side}.jpeg"
+    try:
+        result = subprocess.run(
+            ["sips", "-Z", str(side), "-s", "format", "jpeg", str(source), "--out", str(target)],
+            capture_output=True,
+            timeout=60,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if result.returncode != 0 or not target.exists():
+        return None
+    return target
+
+
+# The longest edges tried, in turn, for a picture over the cap.
+_SHRINK_SIDES = (2048, 1600, 1200, 800)
+
+
+# The bytes of a picture over the cap, shrunk until it fits, or None.
+def _fit_under_cap(source: Path, directory: Path) -> bytes | None:
+    for side in _SHRINK_SIDES:
+        shrunk = _shrink_image(source, directory, side)
+        if shrunk is None:
+            return None
+        data = shrunk.read_bytes()
+        if len(data) <= MAX_INBOUND_ATTACHMENT_BYTES:
+            return data
+    return None
+
+
 # One attachment an allowlisted sender sent, as base64, or a refusal.
 #
 # The identifier alone is never a capability: the fetch re-proves, in one
@@ -1488,23 +1525,30 @@ def _owned_attachment(
 def _attachment_bytes(
     resolved: Path, media: str, name: str
 ) -> dict[str, object]:
-    if media in {"image/heic", "image/heif"}:
-        # Converted in a directory that is removed however this returns, so a
-        # failed fetch leaves nothing behind.
-        with tempfile.TemporaryDirectory(prefix="anios-attachment-") as directory:
+    # Converted or shrunk in a directory that is removed however this
+    # returns, so a failed fetch leaves nothing behind.
+    with tempfile.TemporaryDirectory(prefix="anios-attachment-") as directory:
+        source = resolved
+        if media in {"image/heic", "image/heif"}:
             converted = _heic_to_jpeg(resolved, Path(directory))
             if converted is None:
                 return {"error": "unreadable"}
-            data = converted.read_bytes()
-        media = "image/jpeg"
-        name = str(Path(name).stem) + ".jpeg"
-    else:
+            source = converted
+            media = "image/jpeg"
+            name = str(Path(name).stem) + ".jpeg"
         try:
-            data = resolved.read_bytes()
+            data = source.read_bytes()
         except OSError:
             return {"error": "unreadable"}
-    if len(data) > MAX_INBOUND_ATTACHMENT_BYTES:
-        return {"error": "too_large", "bytes": len(data)}
+        if len(data) > MAX_INBOUND_ATTACHMENT_BYTES:
+            if not media.startswith("image/"):
+                return {"error": "too_large", "bytes": len(data)}
+            fitted = _fit_under_cap(source, Path(directory))
+            if fitted is None:
+                return {"error": "too_large", "bytes": len(data)}
+            data = fitted
+            media = "image/jpeg"
+            name = str(Path(name).stem) + ".jpeg"
     # A document is proven by its first bytes, as an outbound attachment is:
     # the suffix chose the type, the content has to agree, or a renamed file
     # would be handed to the parser under a name it did not earn.

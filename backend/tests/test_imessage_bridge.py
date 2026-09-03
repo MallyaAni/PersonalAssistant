@@ -883,6 +883,7 @@ def test_the_first_cursor_starts_just_before_now(tmp_path):
 # capability — and honors file paths only inside the Messages store.
 
 # A real 1x1 PNG, used wherever tests need bytes that pass the magic check.
+_JPEG_SMALL = b"\xff\xd8\xff\xe0" + b"\x00" * 64 + b"\xff\xd9"
 _PNG_1PX = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8"
     "z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
@@ -1742,3 +1743,44 @@ def test_auto_is_parsed_beside_listed_ids(monkeypatch):
     monkeypatch.setenv("IMESSAGE_BRIDGE_DISPLAY_NAME", "Scout")
     config = Config.from_environment()
     assert config.groups_auto and "chat308729799386740866" in config.groups
+
+
+# A picture over the inbound cap is shrunk on the Mac, not refused: a camera
+# JPEG of 26 MB got "too_large" and the person was told it was still
+# downloading (2026-09-02). sips is not here, so the shrink is stood in for;
+# a non-image over the cap is still refused.
+def test_an_oversized_picture_is_shrunk_to_fit_not_refused(tmp_path, monkeypatch):
+    import server
+    from server import MAX_INBOUND_ATTACHMENT_BYTES, attachment_payload
+
+    config = _incoming_config(tmp_path, attachments=True)
+    message_id = _insert_incoming(config.incoming_db, "+15550100", "pic", _ns_ago(5))
+    photo = config.attachments_root / "DSCF0818.JPG"
+    photo.write_bytes(b"\xff\xd8" + b"\x00" * (MAX_INBOUND_ATTACHMENT_BYTES + 10))
+    attachment_id = _attach_file(config.incoming_db, message_id, photo, "image/jpeg", "DSCF0818.JPG")
+    asked: list[int] = []
+
+    def shrink(source, directory, side):
+        asked.append(side)
+        target = directory / f"{source.stem}-{side}.jpeg"
+        target.write_bytes(_JPEG_SMALL if side <= 1600 else b"\xff\xd8" + b"\x00" * (MAX_INBOUND_ATTACHMENT_BYTES + 1))
+        return target
+
+    monkeypatch.setattr(server, "_shrink_image", shrink)
+    payload = attachment_payload(config, str(attachment_id))
+    assert "error" not in payload, payload
+    assert payload["media_type"] == "image/jpeg" and payload["name"] == "DSCF0818.jpeg"
+    assert base64.b64decode(payload["data_base64"]) == _JPEG_SMALL
+    assert asked == [2048, 1600], "each longest edge in turn until it fits"
+
+
+def test_an_oversized_document_is_still_refused(tmp_path):
+    from server import MAX_INBOUND_ATTACHMENT_BYTES, attachment_payload
+
+    config = _incoming_config(tmp_path, attachments=True)
+    message_id = _insert_incoming(config.incoming_db, "+15550100", "doc", _ns_ago(5))
+    document = config.attachments_root / "big.pdf"
+    document.write_bytes(b"%PDF-1.4" + b"\x00" * (MAX_INBOUND_ATTACHMENT_BYTES + 10))
+    attachment_id = _attach_file(config.incoming_db, message_id, document, "application/pdf", "big.pdf")
+    payload = attachment_payload(config, str(attachment_id))
+    assert payload["error"] == "too_large"

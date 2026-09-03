@@ -229,6 +229,23 @@ _FAILURE_LINES = frozenset(
 )
 
 
+_UNSUPPORTED_FILE_REPLY = (
+    "I can't open that kind of file. A photo (JPEG, PNG, HEIC) or a PDF or "
+    "Word document works."
+)
+
+
+# What to say when the Mac refused to hand over the attachment.
+def _refusal_reply(reason: str) -> str:
+    if reason == "too_large":
+        return _OVERSIZED_PHOTO_REPLY
+    if reason == "unsupported_type":
+        return _UNSUPPORTED_FILE_REPLY
+    if reason == "unreadable":
+        return _UNREADABLE_PHOTO_REPLY
+    return _PHOTO_NOT_READY_REPLY
+
+
 # What to say for a photo the backend refused: the status names the class.
 def _photo_failure_reply(exc: BaseException) -> str:
     if isinstance(exc, httpx.HTTPStatusError):
@@ -1692,6 +1709,9 @@ class IMessageChatWorker:
         fetched = await self._fetch_inbound_attachment(
             str(attachment.get("attachment_id") or "")
         )
+        if isinstance(fetched, str):
+            # The bridge refused the file for a reason the person can act on.
+            return _refusal_reply(fetched.removeprefix("refused:")), ""
         if fetched is None:
             # Most often the photo is still on its way down from iCloud - the
             # bridge cannot yet see the file - and the honest reply says so
@@ -1757,12 +1777,14 @@ class IMessageChatWorker:
     # short backoff and retry; every other refusal is final.
     async def _fetch_inbound_attachment(
         self, attachment_id: str
-    ) -> tuple[str, str, str] | None:
+    ) -> "tuple[str, str, str] | str | None":
         if not attachment_id:
             return None
         for attempt in range(_FETCH_ATTEMPTS):
             outcome = await self._read_attachment_once(attachment_id)
             if outcome != "not_found":
+                if isinstance(outcome, str) and outcome.startswith("refused:"):
+                    return outcome
                 return outcome if isinstance(outcome, tuple) else None
             if attempt + 1 < _FETCH_ATTEMPTS:
                 await asyncio.sleep(_FETCH_RETRY_SECONDS * (attempt + 1))
@@ -1801,11 +1823,12 @@ class IMessageChatWorker:
             if payload.get("error") == "not_found":
                 return "not_found"
             if payload.get("error"):
-                logger.warning(
-                    "imessage_chat_attachment_refused",
-                    extra={"reason": str(payload["error"])},
-                )
-                return None
+                # The reason travels: "too_large" and "unsupported_type" are
+                # things the person can act on, and were being told "still
+                # downloading" (Hampton's 26 MB camera JPEG, 2026-09-02).
+                reason = str(payload["error"])
+                logger.warning("imessage_chat_attachment_refused: %s", reason, extra={"reason": reason})
+                return f"refused:{reason}"
             return (
                 str(payload["media_type"]),
                 str(payload.get("name") or "photo.jpeg"),

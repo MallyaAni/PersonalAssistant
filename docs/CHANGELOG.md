@@ -2,6 +2,22 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-02 - A camera photo too big for the bridge is shrunk on the Mac, and a refusal is explained
+
+Hampton sent a 26 MB JPEG from a camera. The Mac's bridge caps what it
+hands over at 10 MB and answered "too_large"; the worker turned every
+refusal into "That photo hasn't finished downloading" and he waited for a
+download that had finished. Two changes. The bridge now shrinks an
+oversized picture with `sips` (built into macOS, no dependency) until it
+fits, the way it already converts HEIC, so a big photo is a photo, not a
+refusal. And the worker carries the bridge's reason to the person:
+too large (only a non-image can be now), a file type it cannot open, or a
+file it could not read - each its own line - with "still downloading" kept
+for the one case it is true. The replay ledger answered Caroline at 23:04
+on the first deploy that carried the fit; Hampton's replay hit this
+refusal, was held back in silence as designed, and is re-seeded for the
+next start.
+
 ## 2026-09-02 - A bare "yes" with no conversation takes no tool, in code
 
 The rule that a message which is nothing but assent takes no tool when

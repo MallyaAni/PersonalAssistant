@@ -1550,3 +1550,26 @@ async def test_a_replay_that_fails_again_says_nothing_more(monkeypatch):
     assert await restarted.tick() == 0
     assert restarted.invoke_tool.sent == []
     assert _FAILED_KEY not in worker.redis.store, "not recorded again from a replay"
+
+
+
+# The Mac's refusal reason reaches the person as something they can act on.
+# Hampton's 26 MB camera JPEG was refused as too large and he was told it
+# was still downloading (2026-09-02).
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("reason", "expected"),
+    [("too_large", "_OVERSIZED_PHOTO_REPLY"), ("unsupported_type", "_UNSUPPORTED_FILE_REPLY"), ("unreadable", "_UNREADABLE_PHOTO_REPLY")],
+)
+async def test_a_refused_attachment_is_explained_by_its_reason(monkeypatch, reason, expected):
+    from backend.workers import imessage_chat
+
+    bridge = _Bridge({"messages": [], "cursor": 0})
+    worker, _ = _worker(bridge, monkeypatch, {"5550100": "u-ani"}, {})
+
+    async def refused_once(attachment_id: str):
+        return f"refused:{reason}"
+
+    monkeypatch.setattr(worker, "_read_attachment_once", refused_once)
+    reply, artifact = await worker._analyze_photo("u-ani", "what is this?", {"attachment_id": "att-1"}, "conv-1")
+    assert (reply, artifact) == (getattr(imessage_chat, expected), "")
