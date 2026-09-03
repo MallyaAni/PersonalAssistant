@@ -285,17 +285,16 @@ A document has three lives, and each is treated on its own:
    and the reply declined twice with the passages beside it. The history
    block now defers to document passages retrieved in the same turn (3/3
    with both blocks and the real archived chunks).
-   **Open (2026-09-02, evening):** live the same question still declines
-   intermittently, even pinned, with the Day 1 passage handed to the reply
-   at 0.317; earlier declines are recalled across conversations and repeated.
-   The trace now records the passages and, with `ANIOS_TRACE_PROMPTS=1`, the
-   rendered prompt; the next kept failure is the next step.
-3. **Its facts split into durable and dated.** The digest marks each
-   supporting statement `dated` (a departure time, a meeting point, a day's
-   schedule) or not (where they stayed, who went). The headline and durable
-   statements are saved as before; dated statements are classified as the
-   sharer's own words and saved with `expires_at` on the last date plus the
-   grace period, so they leave through memory's existing purge.
+   **Found (2026-09-02, late evening):** the passages were retrieved and
+   traced but never reached the prompt. The memory coordinator builds the
+   reply context from the turn's dict and, whenever its plan chose the
+   knowledge store, replaced `knowledge` with its own active-only search -
+   so an archived document's passages vanished between retrieval and the
+   prompt, and the reply invented "Hotel Plaza". The plan is a model
+   judgement, which is why it was intermittent. The coordinator now keeps a
+   non-empty `knowledge` and searches only when the turn found nothing
+   (`backend/memory/coordinator.py`). Live proof against the archived
+   itinerary follows the twenty-first deploy and is recorded here.
 
 Edge cases: an undated document never archives; a superseded document keeps
 the status it had; a document that lands from the queue is not digested (no

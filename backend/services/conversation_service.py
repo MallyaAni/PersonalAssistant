@@ -3488,6 +3488,11 @@ class ConversationService:
         context: dict[str, Any] = {"user_id": user_id, "query": query}
         await self._attach_group(context, metadata, user_id, query, None)
         room = context.get("group") if isinstance(context.get("group"), dict) else None
+        # A stranger's words in a room are context, not a memory of anyone's:
+        # the classifier is skipped when the speaker is not an approved account
+        # (the worker marks the room that way, 2026-09-02).
+        if room is not None and room.get("speaker_approved") is False:
+            return resolved_conversation_id
         candidates = await self._classify_memory_proposals(query, trace_id, user_id, room=room)
         await self._persist_memory_proposals(user_id, resolved_conversation_id, trace_id, candidates, room=room)
         _trace("observed", True)

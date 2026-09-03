@@ -1202,12 +1202,15 @@ def incoming_messages(
         connection.close()
 
     allowed = config.allowed_recipients | load_grants(config)
-    # A room qualifies when it is listed, or - in auto mode - when every
-    # member is allowlisted. Decided once per room per poll.
+    # A room qualifies when it is listed, or - in auto mode - when at least
+    # one member is allowlisted (the operator's rule, 2026-09-02 evening: the
+    # assistant reads the whole room for context and answers only approved
+    # people, so a stranger in the room does not silence it). A room with no
+    # allowlisted member at all is not read. Decided once per room per poll.
     qualified_rooms = {
         room: (
             str(identifier or "") in config.groups
-            or (auto_rooms and bool(people) and all(person in allowed for person in people))
+            or (auto_rooms and any(person in allowed for person in people))
         )
         for room, people, identifier in (
             (room, participants.get(room, []), next((r[9] for r in rows if int(r[7]) == room), ""))
@@ -1233,7 +1236,11 @@ def incoming_messages(
             break
         cursor = max(cursor, int(date))
         sender = normalize_recipient(str(handle or ""))
-        if sender not in allowed:
+        in_room = int(style or 0) == 43
+        # One-to-one: a stranger's words never leave. In a qualified room a
+        # stranger's words are the room's context and travel flagged, so the
+        # worker reads them and never answers them.
+        if sender not in allowed and not in_room:
             continue
         if not ready:
             # Old and still unreadable: presumed genuinely unreadable, skipped
@@ -1265,6 +1272,7 @@ def incoming_messages(
         message: dict[str, object] = {
             "guid": str(guid),
             "sender": sender,
+            "sender_allowlisted": sender in allowed,
             # A room is answered in the room: the reply address is the chat.
             "reply_to": chat_guid_for(str(chat_identifier)) if in_room else str(handle),
             "text": body or "",
@@ -1449,7 +1457,7 @@ def _owned_attachment(
             identifier = str(row[6] or "")
             people = _participants(connection, int(row[4]))
             allowed_now = config.allowed_recipients | load_grants(config)
-            admitted = identifier in room_ids or (auto_rooms and bool(people) and all(p in allowed_now for p in people))
+            admitted = identifier in room_ids or (auto_rooms and any(p in allowed_now for p in people))
             if not admitted:
                 row = None
     except sqlite3.Error:

@@ -1423,13 +1423,17 @@ def test_a_room_not_on_the_list_is_never_read(tmp_path):
     assert _room_messages(config) == []
 
 
-def test_a_room_sender_must_be_allowlisted(tmp_path):
+def test_a_room_strangers_words_are_forwarded_flagged_not_dropped(tmp_path):
+    # The operator's rule (2026-09-02 evening): the whole room is context and
+    # only approved people are answered, so a stranger's words in a listed
+    # room travel with sender_allowlisted false and the worker decides.
     config = _room_config(tmp_path)
     _insert_incoming(
         config.incoming_db, "+15550199", "Scout, hi", _ns_ago(5),
         chat_identifier=_ROOM, participants=(*_PEOPLE, "+15550199"),
     )
-    assert _room_messages(config) == []
+    (message,) = _room_messages(config)
+    assert message["sender_allowlisted"] is False and message["sender"] == "15550199"
 
 
 def test_a_room_tapback_rendered_as_text_is_skipped_even_with_the_name(tmp_path):
@@ -1683,7 +1687,10 @@ def test_auto_mode_reads_a_room_whose_members_are_all_allowlisted(tmp_path):
     assert result["messages"][0]["addressed_by"] == "name" and not result["messages"][1].get("addressed_by")
 
 
-def test_auto_mode_never_forwards_a_room_with_a_stranger_in_it(tmp_path):
+def test_auto_mode_reads_a_room_with_a_stranger_and_flags_who_is_allowlisted(tmp_path):
+    # The operator's rule (2026-09-02 evening): the whole room is context,
+    # only approved people are answered - so a stranger's words travel,
+    # flagged, and the worker decides. A room with no approved member is not read.
     from server import incoming_messages
 
     config = _auto_config(tmp_path, ("+15550100", "+15550101"))
@@ -1692,9 +1699,27 @@ def test_auto_mode_never_forwards_a_room_with_a_stranger_in_it(tmp_path):
     _insert_incoming(db, "+15550100", "Scout, hi", _ns_ago(30), chat_identifier="chat901", chat_name="Mixed", participants=("+15550100", "+15550101", "+15550199"), guid="s-1")
     _insert_incoming(db, "+15550199", "who is this?", latest, chat_identifier="chat901", chat_name="Mixed", participants=("+15550100", "+15550101", "+15550199"), guid="s-2")
     result = incoming_messages(config, 0)
-    assert result["messages"] == []
-    # Scanned past, so the poll moves on and never stalls on the room.
+    flags = {m["guid"]: m["sender_allowlisted"] for m in result["messages"]}
+    assert flags == {"s-1": True, "s-2": False}
     assert result["cursor"] >= latest
+
+
+def test_auto_mode_does_not_read_a_room_with_no_allowlisted_member(tmp_path):
+    from server import incoming_messages
+
+    config = _auto_config(tmp_path, ("+15550100",))
+    db = _chat_db(tmp_path)
+    _insert_incoming(db, "+15550198", "Scout, hi", _ns_ago(30), chat_identifier="chat903", chat_name="Strangers", participants=("+15550198", "+15550199"), guid="n-1")
+    assert incoming_messages(config, 0)["messages"] == []
+
+
+def test_a_one_to_one_stranger_is_still_filtered(tmp_path):
+    from server import incoming_messages
+
+    config = _auto_config(tmp_path, ("+15550100",))
+    db = _chat_db(tmp_path)
+    _insert_incoming(db, "+15550199", "hello?", _ns_ago(30), guid="o-1")
+    assert incoming_messages(config, 0)["messages"] == []
 
 
 def test_auto_mode_keeps_a_listed_room_even_with_a_stranger(tmp_path):

@@ -81,16 +81,21 @@ rows. Everything the group owns lives under that `user_id`.
   row is finished silently and the operator gets one text per room per day
   (`OPERATOR_ALERT_PHONE`, dedup in Redis `imessage:chat:room_alert:{digest}`;
   nothing about the strangers is sent).
-- Admission at the bridge (2026-09-02): with `IMESSAGE_BRIDGE_GROUPS=auto`
-  the Mac reads any group whose every member is on its allowlist (the
-  environment's recipients plus the grants AniOS makes at approval), so a
-  room of approved people works the moment the account is added to it; a
-  room with one stranger in it is scanned past and nothing said there leaves
-  the Mac. Listed chat ids still count beside `auto`. The worker's own rule
-  stands on top: every participant must resolve to an approved account, or
-  the room is silent and the operator is told once. Approval in deep-matter
-  is therefore the only step: it grants the number on the bridge and makes
-  the person answerable in any room made of approved people.
+- Admission (2026-09-02, the operator's rule): with `IMESSAGE_BRIDGE_GROUPS=auto`
+  the Mac reads any group with at least one allowlisted member (the
+  environment's recipients plus the grants AniOS makes at approval); a room
+  with nobody approved is not read. Inside a room every message travels,
+  flagged `sender_allowlisted`, so the assistant knows the whole room as
+  context; a stranger's attachments still do not leave the Mac. The worker
+  answers only a speaker who resolves to an approved account: a stranger's
+  words - even addressed - are observed into the room's conversation with
+  `speaker_approved: false`, which makes `observe` skip the memory
+  classifier, so nothing a stranger says becomes anyone's memory. The
+  operator is told once per room per day that unapproved people are present
+  and that only approved members are answered. Approval in deep-matter is
+  therefore the only step. Privacy note: a stranger's words are stored as
+  the room's conversation (encrypted at rest, owner-scoped to the group) and
+  nowhere else.
 - Provisioning is automatic on the first addressed message when all resolve
   (`_group_for`: `ConversationGroupRepository.provision`, idempotent per chat;
   membership re-synced on every message; departed members are marked as left,
@@ -236,8 +241,8 @@ Edge cases every suite must cover (the operator's standing instruction,
   good, thanks" → silence; a question fragment that ends mid-thought ("what
   about") → keep listening; a fragment arriving after the answer started → the
   next turn; two members bursting at once in one thread → two turns, not one.
-- Membership: an unapproved number added mid-conversation → silence from the
-  next message and one alert; a member leaving; two groups sharing members
+- Membership: an unapproved number added mid-conversation → their words are
+  read, not answered, and one alert; a member leaving; two groups sharing members
   (no cross-talk of memory); the speaker is the operator; a group of exactly
   two; the assistant addressed before provisioning completes twice (idempotent).
 - Memory: "Jen and I", "us", "she" after Jen is named, "my sister" who is not a

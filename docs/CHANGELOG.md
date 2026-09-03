@@ -2,19 +2,41 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
-## 2026-09-02 - A group of approved people works the moment the assistant is added
+## 2026-09-02 - The memory coordinator no longer overwrites the passages a turn already found
 
-The bridge read only groups whose chat ids were listed by hand in the Mac's
-environment, so a new group the assistant was added to was invisible until
-the plist was edited and the bridge re-bootstrapped. `IMESSAGE_BRIDGE_GROUPS`
-now accepts `auto`: any group whose every member is on the allowlist
-(environment recipients plus AniOS's grants at approval) is read, addressed
-and unaddressed alike; a room with one stranger is scanned past and nothing
-said in it leaves the Mac, for words and attachments both. Listed ids still
-count. The worker's rule on top is unchanged and tested: every participant
-must resolve to an approved account or the room stays silent and the
-operator is told once. Bridge tests cover a fully approved room in auto mode,
-a room with a stranger, and the parse of `auto` beside ids.
+The archived-itinerary check kept failing after every framing fix: the turn
+trace listed three passages, the captured prompt held none, and the reply
+invented "Hotel Plaza". The prompt capture (ANIOS_TRACE_PROMPTS, added the
+day before for exactly this) showed where they went. A turn's own document
+search fills `knowledge` (active first, archived when nothing current answers,
+pinned when replied to); the memory coordinator then builds the reply context
+from that dict and, whenever its plan chose the knowledge store, replaced
+`knowledge` with its own search - active documents only, three items - so an
+archived document's passages were retrieved, traced, and never shown. It also
+explains why the failure was intermittent: the plan is a model judgement, and
+the passages survived only on turns where it skipped that store. The
+coordinator now keeps a non-empty `knowledge` and searches only when the turn
+found nothing (`backend/memory/coordinator.py`; unit test in
+`test_memory_coordinator.py`). Live proof against the archived itinerary is
+recorded below once the twenty-first deploy carries it; the prompt capture is
+switched off in the same deploy.
+
+## 2026-09-02 - Groups: the whole room is context, only approved people are answered
+
+The bridge read only groups whose chat ids were listed by hand, and the
+worker silenced any room with an unapproved member. Both change, on the
+operator's rule. `IMESSAGE_BRIDGE_GROUPS=auto` reads any group with at least
+one allowlisted member (approval grants the number), every message in it
+travels flagged `sender_allowlisted`, and a stranger's attachments still stay
+on the Mac. The worker answers only a speaker who resolves to an approved
+account; a stranger's words are observed into the room's conversation with
+`speaker_approved: false`, which makes observe skip the memory classifier -
+nothing a stranger says becomes anyone's memory. The operator is told once
+per room per day and the wording says the room is read and only approved
+members answered. Bridge and worker suites cover a mixed room (approved
+member answered, stranger read and never answered, one alert), a room with
+nobody approved (not kept), a one-to-one stranger (still filtered), and the
+observe gate. The Mac's bridge was re-bootstrapped with the new mode.
 
 ## 2026-09-02 - A ten-digit US number at sign-up is +1 and those digits
 

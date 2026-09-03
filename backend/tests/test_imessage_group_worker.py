@@ -138,6 +138,7 @@ async def test_an_addressed_room_message_runs_as_the_group_and_answers_the_room(
     assert turn["room"] == {
         "chat_name": "Lunch crew",
         "speaker_user_id": "u-jen",
+        "speaker_approved": True,
         "members": ["u-ani", "u-jen"],
         "addressed_by": "name",
         "assistant_name": "Scout",
@@ -146,36 +147,58 @@ async def test_an_addressed_room_message_runs_as_the_group_and_answers_the_room(
 
 
 @pytest.mark.asyncio
-async def test_a_room_with_a_stranger_is_answered_nowhere_and_the_operator_is_told_once(monkeypatch):
+async def test_a_room_with_a_stranger_answers_approved_members_and_tells_the_operator_once(monkeypatch):
+    # The operator's rule (2026-09-02 evening): a stranger in the room does
+    # not silence it. The room is read in full; approved people are answered;
+    # the operator hears once, and nothing about the stranger is sent.
     monkeypatch.setattr(settings, "OPERATOR_ALERT_PHONE", "+15550000")
     messages = [
         _room_message("g1", "5550100", "Scout, hi", participants=("5550100", "5550101", "5550199")),
         _room_message("g2", "5550100", "Scout, hello?", participants=("5550100", "5550101", "5550199")),
     ]
     bridge = _Bridge({"messages": messages, "cursor": 5})
-    worker, conversed, provisioned = _worker(bridge, monkeypatch, ACCOUNTS, {}, group=GROUP)
-    assert await worker.tick() == 0
-    assert conversed == [] and provisioned == []
-    (alert,) = bridge.sent
-    assert alert["to"] == "+15550000"
-    assert "Lunch crew" in alert["body"] and "one person" in alert["body"]
-    assert "5550199" not in alert["body"]
-    # Both rows are finished, never replayed.
-    assert await worker._already_seen("g1") and await worker._already_seen("g2")
+    worker, conversed, provisioned = _worker(bridge, monkeypatch, ACCOUNTS, {"Scout, hi": "Hi Ani!", "Scout, hello?": "Still here."}, group=GROUP)
+    assert await worker.tick() == 2
+    assert [c["user_id"] for c in conversed] == ["group:abc", "group:abc"]
+    alerts = [s for s in bridge.sent if s["to"] == "+15550000"]
+    assert len(alerts) == 1, "one alert per room"
+    assert "Lunch crew" in alerts[0]["body"] and "one person" in alerts[0]["body"] and "approved members" in alerts[0]["body"]
+    assert "5550199" not in alerts[0]["body"]
+    replies = [s for s in bridge.sent if s["to"] != "+15550000"]
+    assert [r["body"] for r in replies] == ["Hi Ani!", "Still here."]
 
 
 @pytest.mark.asyncio
-async def test_no_operator_phone_means_no_alert_and_still_silence(monkeypatch):
+async def test_no_operator_phone_means_no_alert_and_approved_members_are_still_answered(monkeypatch):
     monkeypatch.setattr(settings, "OPERATOR_ALERT_PHONE", "")
     bridge = _Bridge({"messages": [_room_message("g1", "5550100", "Scout, hi", participants=("5550100", "5550199"))], "cursor": 5})
-    worker, conversed, _ = _worker(bridge, monkeypatch, ACCOUNTS, {}, group=GROUP)
-    assert await worker.tick() == 0
-    assert bridge.sent == [] and conversed == []
+    worker, conversed, _ = _worker(bridge, monkeypatch, ACCOUNTS, {"Scout, hi": "Hi Ani!"}, group=GROUP)
+    assert await worker.tick() == 1
+    assert [s["body"] for s in bridge.sent] == ["Hi Ani!"] and len(conversed) == 1
 
 
 @pytest.mark.asyncio
-async def test_a_room_whose_speaker_is_unknown_is_ignored(monkeypatch):
-    bridge = _Bridge({"messages": [_room_message("g1", "5550199", "Scout, hi")], "cursor": 5})
+async def test_a_strangers_words_are_read_for_context_and_never_answered(monkeypatch):
+    monkeypatch.setattr(settings, "OPERATOR_ALERT_PHONE", "")
+    bridge = _Bridge({"messages": [_room_message("g1", "5550199", "Scout, book me a table", participants=("5550100", "5550101", "5550199"))], "cursor": 5})
+    worker, conversed, provisioned = _worker(bridge, monkeypatch, ACCOUNTS, {}, group=GROUP)
+    observed: list[tuple] = []
+
+    async def observe(user_id, text, room):
+        observed.append((user_id, text, room["speaker_user_id"], room["speaker_approved"]))
+
+    monkeypatch.setattr(worker, "_observe", observe)
+    assert await worker.tick() == 0
+    assert conversed == [] and bridge.sent == []
+    # Read into the room as context, marked as an unapproved speaker so no memory is made of it.
+    assert observed == [("group:abc", "Scout, book me a table", "", False)]
+    assert await worker._already_seen("g1")
+
+
+@pytest.mark.asyncio
+async def test_a_room_with_nobody_approved_is_not_kept(monkeypatch):
+    monkeypatch.setattr(settings, "OPERATOR_ALERT_PHONE", "")
+    bridge = _Bridge({"messages": [_room_message("g1", "5550199", "Scout, hi", participants=("5550198", "5550199"))], "cursor": 5})
     worker, conversed, provisioned = _worker(bridge, monkeypatch, ACCOUNTS, {}, group=GROUP)
     assert await worker.tick() == 0
     assert conversed == [] and provisioned == [] and bridge.sent == []

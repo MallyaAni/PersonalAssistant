@@ -444,9 +444,6 @@ class IMessageChatWorker:
         chat_guid = str(message.get("chat_guid") or reply_to)
         chat_name = str(message.get("chat_name") or "")
         speaker = await self._account_for(str(message.get("sender") or ""))
-        if speaker is None:
-            await self._mark_seen(guid)
-            return 0
         members: list[str] = []
         strangers = 0
         for participant in message.get("participants") or []:
@@ -455,10 +452,16 @@ class IMessageChatWorker:
                 strangers += 1
             elif account not in members:
                 members.append(account)
-        if speaker not in members:
+        if speaker is not None and speaker not in members:
             members.append(speaker)
+        # The operator's rule (2026-09-02 evening): a stranger in the room
+        # does not silence it. The whole room is context; only approved
+        # people are answered. The operator is still told once, so they know
+        # who is being read and who is being answered.
         if strangers:
             await self._alert_operator_about_room(chat_guid, chat_name, strangers)
+        if not members:
+            # Nobody approved here at all: nothing to provision, nothing to keep.
             await self._mark_seen(guid)
             return 0
         group = await self._group_for(chat_guid, chat_name, tuple(members))
@@ -472,11 +475,20 @@ class IMessageChatWorker:
             return 0
         room = {
             "chat_name": chat_name,
-            "speaker_user_id": speaker,
+            "speaker_user_id": speaker or "",
+            "speaker_approved": speaker is not None,
             "members": list(group.members),
             "addressed_by": str(message.get("addressed_by") or ""),
             "assistant_name": str(message.get("assistant_name") or ""),
         }
+        if speaker is None:
+            # A stranger's words: read for the room's context, never answered,
+            # and never a memory of anyone's (observe skips the classifier
+            # for an unapproved speaker). Even an addressed one.
+            if text:
+                await self._observe(group.user_id, text, room)
+            await self._mark_seen(guid)
+            return 0
         # A document shared in the room is read into the room's own knowledge
         # whether or not the assistant was named: like observed text, it is
         # context the room will ask about later ("Scout look above"). The
@@ -654,7 +666,8 @@ class IMessageChatWorker:
                     "to": phone,
                     "body": (
                         f"I was added to {title}, but {people} in it aren't approved "
-                        "users, so I'm staying quiet there until they are."
+                        "users. I'll read the room for context and answer only "
+                        "approved members there."
                     ),
                 },
             )

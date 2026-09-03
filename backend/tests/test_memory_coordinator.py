@@ -498,3 +498,36 @@ async def test_conversation_service_obeys_coordinator_retrieval_plan() -> None:
     assert memory.semantic_calls == 0
     assert "episodic result" in llm.messages[0]["content"]
     assert [event["event"] for event in events] == ["start", "delta", "done"]
+
+
+# The turn's own document search (active first, archived when nothing current
+# answers) fills ``knowledge`` before the coordinator runs. The coordinator's
+# plan search reads active documents only and used to clobber it: an archived
+# itinerary's hotel was retrieved and never shown (kept turn, 2026-09-02).
+@pytest.mark.asyncio
+async def test_prepare_context_keeps_the_turns_own_document_passages() -> None:
+    stores = FakeStores()
+    coordinator = MemoryCoordinatorAgent(cast(Any, stores), cast(Any, FakeToolbox()))
+    query = "where are we staying in Positano?"
+    plan = await coordinator.plan("ani.mallya", query)
+    assert plan[0].use_knowledge
+    found = [{"content": "Hotel Poseidon, Positano, 12-14 May", "status": "archived"}]
+    context = await coordinator.prepare_context(
+        "ani.mallya",
+        "11111111-1111-4111-8111-111111111111",
+        query,
+        "22222222-2222-4222-8222-222222222222",
+        {"knowledge": list(found)},
+        plan,
+    )
+    assert context["knowledge"] == found
+    # And with nothing found, the plan's own search still runs.
+    context = await coordinator.prepare_context(
+        "ani.mallya",
+        "11111111-1111-4111-8111-111111111111",
+        query,
+        "22222222-2222-4222-8222-222222222222",
+        {"knowledge": []},
+        plan,
+    )
+    assert context["knowledge"] == [{"content": "knowledge"}]

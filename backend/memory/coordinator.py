@@ -222,9 +222,16 @@ class MemoryCoordinatorAgent:
                 user_id, query, 3, query_embedding
             )
         if plan.use_knowledge:
-            context["knowledge"] = await self.stores.knowledge.search(
-                user_id, query, 3, query_embedding
-            )
+            # The turn may already hold document passages from its own two-probe
+            # search (active first, archived when nothing current answers, pinned
+            # when replied to); this plan's search reads active documents only and
+            # clobbered them - an archived itinerary's hotel was retrieved and never
+            # shown, and the reply invented one (kept turn, 2026-09-02). Keep what
+            # the turn found; search only when it found nothing.
+            if not context.get("knowledge"):
+                context["knowledge"] = await self.stores.knowledge.search(
+                    user_id, query, 3, query_embedding
+                )
         summaries = []
         latest_summary = await self.stores.summaries.latest(user_id, conversation_id)
         if latest_summary is not None:
