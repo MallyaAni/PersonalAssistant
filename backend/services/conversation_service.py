@@ -2674,7 +2674,12 @@ class ConversationService:
                     _trace("search", f"ran:{len(search_results)}" + (" off-subject" if _results_off_subject.get() else ""))
                     # Events are presented the agreed way whatever route
                     # produced them - the What's on format for everyone.
-                    if _results_were_events.get():
+                    # Results the ranker judged to be about something else are
+                    # not an events answer either: typed into a listing they
+                    # read as one - a Raleigh question listed Brooklyn puppet
+                    # shows under "Nothing I can date this week" (2026-09-03).
+                    # The reply keeps the flag and the results go unlisted.
+                    if _results_were_events.get() and not _results_off_subject.get():
                         # When the events could be typed, the listing is
                         # written by code and the model is not asked for it -
                         # a model given raw snippets is how a venue's opening
@@ -2797,6 +2802,7 @@ class ConversationService:
 
         for round_number in range(max(1, settings.SEARCH_MAX_ROUNDS)):
             tried.append(current)
+            logger.info("Trace %s search round %d: %s", trace_id, round_number + 1, current[:160])
             found, ok = await self._load_search_context(current, trace_id, max_results)
             succeeded = succeeded or ok
             for item in found:

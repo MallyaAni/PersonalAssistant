@@ -192,3 +192,28 @@ async def test_a_turn_the_extraction_cannot_type_still_answers_from_the_model():
     # And the fence is still in front of it: the model's invented link is gone.
     assert "goo.gl" not in answer, answer
     assert "a listing the model wrote itself" in answer, answer
+
+
+# Results the ranker judged off the asked subject are not typed into a
+# listing: a Raleigh question listed Brooklyn puppet shows under "Nothing I
+# can date this week" on 2026-09-03, with the off-subject flag on top.
+class OffSubjectLLM(EventsLLM):
+    def chat(self, messages, max_tokens=512, schema=None, temperature=None):
+        properties = set(((schema or {}).get("properties") or {}))
+        if "order" in properties:
+            return {
+                "content": json.dumps(
+                    {"order": [1, 2], "events": True, "travel": False, "on_subject": False}
+                )
+            }
+        return super().chat(messages, max_tokens, schema, temperature)
+
+
+@pytest.mark.asyncio
+async def test_off_subject_results_are_not_typed_into_a_listing():
+    llm = OffSubjectLLM()
+    answer = await _reply(_service(llm))
+    assert "Sunday Sessions" not in answer, answer
+    assert "https://maps.google.com" not in answer, answer
+    # The reply is the model's own, told the results were about something else.
+    assert llm.streamed is True

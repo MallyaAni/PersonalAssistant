@@ -2,6 +2,18 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-03 - Results judged off the subject are not typed into a listing
+
+Live on the twenty-sixth, a probe account in Raleigh asked for this week's
+events; the search came back with New York pages, the ranker said so
+("off the asked subject"), the reply opened with that flag - and then the
+same results were typed into a listing anyway, so the answer was Brooklyn
+puppet shows under "Nothing I can date this week". The listing is now
+rendered only when the results were judged on subject; otherwise the flag
+stands alone and nothing is listed (`conversation_service`,
+`test_events_listing_wiring.py`). Each search round's query is now logged,
+so a drift between rounds can be read from the log rather than reproduced.
+
 ## 2026-09-03 - Time awareness: the weekday and the clock in the prompt, memories that carry their date, a fired reminder that reads as done
 
 The morning after the group's Wednesday trivia, the scheduled chess tip
