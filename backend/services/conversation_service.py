@@ -413,10 +413,14 @@ async def _rerank_web_results(
 
 # Questions whose answer depends on where the person is. A search for one
 # of these that names no place finds what is on anywhere - which is nowhere.
+# Time words alone ("this week", "tonight") are not in this list: "what did
+# the Fed decide this week?" got "Arlington Virginia" appended on the
+# first live run (2026-09-03), and a place on a question that has none of
+# its own skews the results toward local news.
 _PLACE_BOUND = re.compile(
     r"\b(what'?s on|events?|happening|going on|things to do|near me|nearby|around here|"
-    r"in the area|in my area|my city|tonight|this weekend|this week|open now|"
-    r"restaurants?|bars?|brunch|weather|traffic|drive time)\b",
+    r"in the area|in my area|my city|open now|restaurants?|bars?|brunch|weather|"
+    r"traffic|drive time)\b",
     re.IGNORECASE,
 )
 

@@ -35,3 +35,8 @@ def test_a_place_bound_query_without_the_place_gets_it():
 def test_a_question_not_about_here_and_an_unknown_place_are_left_alone():
     assert _hold_to_place("Federal Reserve meeting September 2026 decision", "what did the Fed decide?", "Raleigh, NC") == "Federal Reserve meeting September 2026 decision"
     assert _hold_to_place("local events this week", "what's on this week?", "") == "local events this week"
+    # Time words alone do not make a question about here.
+    assert _hold_to_place("Federal Reserve policy meeting decision this week September 2026", "what did the Fed decide this week?", "Courthouse, Virginia") == (
+        "Federal Reserve policy meeting decision this week September 2026"
+    )
+    assert _hold_to_place("PS5 price 2026", "what does a PS5 cost tonight?", "Raleigh, NC") == "PS5 price 2026"

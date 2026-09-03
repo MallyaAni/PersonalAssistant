@@ -17,6 +17,11 @@ part of it, the city and region are appended (`_hold_to_place`; pinned in
 with no saved place, is left alone - and the no-place case asks for the
 city, as of this morning.
 
+Corrected an hour later from the same run's log: time words alone ("this
+week", "tonight") no longer count as being about here - the harness's Fed
+question had "Arlington Virginia" appended - only words that name a place
+or a here (what's on, events, near me, restaurants, the weather...).
+
 ## 2026-09-03 - Results judged off the subject are not typed into a listing
 
 Live on the twenty-sixth, a probe account in Raleigh asked for this week's
