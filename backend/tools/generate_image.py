@@ -49,6 +49,7 @@ TOOL = BuiltinTool(
         "✨ Conjuring pixels…",
         "🖼️ Stretching a fresh canvas…",
     ),
+    family="pictures",
 )
 
 

@@ -43,6 +43,11 @@ from backend.services.followup import (
     is_bare_acceptance,
     resolve_followup,
 )
+from backend.tools.registry import (
+    core_tool_names,
+    picture_tool_names,
+    tool_families,
+)
 from backend.tools.catalog import (
     FIND_TOOLS,
     Catalog,
@@ -192,6 +197,7 @@ class MainActionSelector:
         tool_orchestration: MCPToolOrchestrationService | None,
         diagram_enabled: bool,
         presentation_enabled: bool,
+        embedder: Any | None = None,
     ) -> None:
         self.llm = llm
         self.mcp_invocation = mcp_invocation
@@ -200,6 +206,10 @@ class MainActionSelector:
         self.tool_orchestration = tool_orchestration
         self.diagram_enabled = diagram_enabled
         self.presentation_enabled = presentation_enabled
+        # Ranks the catalogue by meaning when the model described what it
+        # needed rather than naming it. Optional: without one the ranking is
+        # lexical, and the model's own naming is unaffected either way.
+        self.embedder = embedder
 
     # Resolve the live search_web schema, or omit the tool when it is unavailable.
     async def _search_tool_definition(self) -> dict[str, Any] | None:
@@ -483,7 +493,13 @@ class MainActionSelector:
             and settings.ROUTING_TOOL_SEARCH_ENABLED
             and len(tools) > settings.ROUTING_TOOL_SEARCH_THRESHOLD
         ):
-            tools, catalogue = defer_tools(tools, bool(active_image_artifact_id))
+            tools, catalogue = defer_tools(
+                tools,
+                core_tool_names(),
+                picture_tool_names(),
+                bool(active_image_artifact_id),
+                tool_families(),
+            )
         visual_state = (
             "A picture is currently selected and visible to the user."
             if active_image_artifact_id
@@ -530,12 +546,23 @@ class MainActionSelector:
         # search would be the same question asked twice.
         call = self._extract_call(message, offered)
         if call is not None and call[0] == FIND_TOOLS and len(catalogue):
-            needed = str(call[1].get("needed") or "").strip() or query
-            found = catalogue.search(needed, settings.ROUTING_TOOL_SEARCH_RESULTS)
+            # Named first: the whole index was in front of the model, so which
+            # tool it wants is its own judgement. The ranking below is only
+            # for a turn that described the need instead of naming it.
+            asked_for = call[1].get("names")
+            found = catalogue.named(asked_for) if isinstance(asked_for, list) else ()
+            if not found:
+                needed = str(call[1].get("needed") or "").strip() or query
+                found = catalogue.search(
+                    needed, settings.ROUTING_TOOL_SEARCH_RESULTS, self.embedder
+                )
+                how = f"described {needed[:60]!r}"
+            else:
+                how = "named them"
             names = tuple(entry.name for entry in found)
             logger.info(
-                "Router searched the tool catalogue for %r: %s",
-                needed[:60],
+                "Router asked the tool catalogue (%s): %s",
+                how,
                 ", ".join(names) or "nothing",
             )
             tools = [tool for tool in tools if tool["function"]["name"] != FIND_TOOLS]

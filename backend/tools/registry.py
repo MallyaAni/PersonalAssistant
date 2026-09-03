@@ -95,6 +95,22 @@ _BY_NAME: dict[str, ModuleType] = {module.NAME: module for module in _MODULES}
 # take my meds"), so the router calls schedule_task again and the person
 # receives a confirmation instead of their reminder - plus a second task,
 # then four. The cancel side is worse: it hard-deletes without asking.
+# What the tool catalogue needs, read off the rows rather than written out
+# again here: a name repeated in two places is a rename away from silently
+# meaning nothing. `search_web` is not a built-in row - it is assembled from
+# the live search server - so it is named once, where its constant already is.
+def core_tool_names() -> frozenset[str]:
+    return frozenset({SEARCH_TOOL} | {row.name for row in builtin_tools() if row.core})
+
+
+def picture_tool_names() -> frozenset[str]:
+    return frozenset(row.name for row in builtin_tools() if row.needs_picture)
+
+
+def tool_families() -> dict[str, str]:
+    return {row.name: row.family for row in builtin_tools() if row.family}
+
+
 AUTOMATION_TOOLS: frozenset[str] = frozenset(
     (
         schedule_task.NAME,

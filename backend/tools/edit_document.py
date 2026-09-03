@@ -48,6 +48,7 @@ TOOL = BuiltinTool(
         "✏️ Updating your file…",
         "📄 Rewriting the document in its own style…",
     ),
+    family="documents",
 )
 
 

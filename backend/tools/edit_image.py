@@ -72,6 +72,8 @@ TOOL = BuiltinTool(
         "🪄 Waving the retouch wand…",
         "🎛️ Tweaking the pixels…",
     ),
+    family="pictures",
+    needs_picture=True,
 )
 
 

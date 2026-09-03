@@ -79,6 +79,7 @@ TOOL = BuiltinTool(
         "🧭 Setting Scout's clock…",
         "🗓️ Moving the sweep to its new time…",
     ),
+    family="scheduling",
 )
 
 

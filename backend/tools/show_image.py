@@ -50,6 +50,8 @@ TOOL = BuiltinTool(
         "🗂️ Pulling that one back out…",
         "📎 Fetching it for you…",
     ),
+    family="pictures",
+    needs_picture=True,
 )
 
 

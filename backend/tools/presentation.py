@@ -16,6 +16,7 @@ TOOL = BuiltinTool(
         "📊 Calling in the deck crew…",
         "🎞️ Handing this to the slide specialist…",
     ),
+    family="presentations",
 )
 
 

@@ -445,7 +445,7 @@ async def test_a_deferred_tool_is_found_through_the_catalogue_and_then_called(mo
 
     llm = SequencedLLM(
         [
-            _tool_call(FIND_TOOLS, {"needed": "make a picture of a fox"}),
+            _tool_call(FIND_TOOLS, {"names": ["generate_image"]}),
             _tool_call("generate_image", {"prompt": "a fox wearing a green hat"}),
         ]
     )
@@ -462,7 +462,7 @@ async def test_a_deferred_tool_is_found_through_the_catalogue_and_then_called(mo
     assert FIND_TOOLS in first_names and "generate_image" not in first_names
     assert "search_web" in first_names, first_names
     assert "generate_image" in second_names and FIND_TOOLS not in second_names
-    assert len(second) < len(first) + 6, "only the few tools the search returned"
+    assert len(second) < len(first) + 6, "only the tools it asked for"
     # The model is told what it can look for, and then what it was given.
     assert "generate_image" in llm.prompts[0] and FIND_TOOLS in llm.prompts[0]
     assert "now loaded" in llm.prompts[1]

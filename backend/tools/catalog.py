@@ -1,40 +1,54 @@
 """The tool catalog: a cheap index in every decision, definitions on demand.
 
 Every tool the router could choose used to be sent in full on every turn -
-fifteen to twenty schemas, and growing with each skill a person teaches and
-each MCP server that is connected. Two things go wrong as that list grows,
-and Anthropic measured both for its own tool-search feature: the definitions
-crowd the context (a five-server setup costs about 55k tokens before any
-work is done), and selection accuracy falls away once a model is choosing
-among more than thirty to fifty tools.
+fourteen built-ins, web search, each MCP alias, and one per skill a person
+has taught. Two things go wrong as that list grows, and Anthropic measured
+both when building tool search for its own API: the definitions crowd the
+context (about 55k tokens for a five-server setup, cut by over 85%), and
+selection accuracy falls away once a model is choosing among more than
+thirty to fifty tools. OpenAI's deferred tool surfaces work the same way and
+add one instruction worth keeping: the namespace tells the model what to
+load, the description tells it how to use what it loaded.
 
-The answer there is the one used here: keep a handful of the most-used tools
-loaded, put a one-line index of everything else in front of the model, and
-let it fetch the full definitions of the few tools a turn actually needs
-through a search tool. Anthropic runs that search server-side; the same
-docs describe the client-side form, which is what this is - AniOS routes on
-its own model, so the catalog, the search and the expansion all live here.
+So: a one-line index grouped by family, a core that stays loaded, and a
+search that hands back the few definitions a turn needs. Anthropic runs that
+search server-side; their docs describe the client-side form, which is what
+this is, because AniOS routes on its own model.
 
-The ranking is BM25 over each tool's name, description and argument names,
-written out rather than pulled in as a dependency: the corpus is twenty
-short documents, and the whole of it fits in the function below.
+Two things this module deliberately does not do. It does not decide which
+tools are core or which need a picture - the rows say that themselves
+(`BuiltinTool.core`, `.needs_picture`, `.family`), because a set of tool
+names written out here would go stale the day a tool is renamed and nothing
+would fail loudly. And it does not rank on words alone: lexical matching
+misses the paraphrase people actually type ("get this to Jen by Friday"
+shares no word with "write a PDF"), so an embedding ranking runs beside BM25
+and the two are fused. The embedder is the one already deployed for memory;
+where it is missing or fails, BM25 alone still answers.
 """
 from __future__ import annotations
 
+import logging
 import math
 import re
-from collections import Counter
+from collections import Counter, OrderedDict
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Protocol
 
-# How many tools a search hands back by default. Anthropic's tool search
-# returns five; the same number is enough here, where the whole catalog is
-# an order of magnitude smaller than the thousands that feature is built for.
+logger = logging.getLogger(__name__)
+
+# How many tools a search hands back. Anthropic's returns five by default;
+# the same number suits a catalog an order of magnitude smaller than the
+# thousands that feature is built for.
 DEFAULT_LIMIT = 5
 
-# Words that carry no signal in a corpus of tool descriptions: every one of
-# them appears in most entries, so BM25's own IDF would discount them anyway.
-# Listed to keep short queries ("what is on tonight") from scoring on them.
+# Embeddings for tool text, kept between turns: the catalog is nearly the
+# same list every time, so the steady state is one query embedding per
+# search. Bounded because a person's skills come and go.
+_VECTORS: OrderedDict[str, list[float]] = OrderedDict()
+_VECTOR_CACHE_MAX = 512
+
+# Words that carry no signal in a corpus of tool descriptions: every entry
+# has them, so they only add noise to a short query.
 _STOP = frozenset(
     """a an the this that these those and or but if then than for to of in on at by with
     from into about as is are was were be been being it its their they them you your i me
@@ -50,6 +64,10 @@ def _terms(text: str) -> list[str]:
     return [word for word in _WORD.findall((text or "").lower()) if word not in _STOP]
 
 
+class Embedder(Protocol):
+    def embed_texts(self, texts: list[str]) -> list[list[float]]: ...
+
+
 @dataclass(frozen=True, slots=True)
 class CatalogEntry:
     """One tool as the catalog knows it: how it is named, what it is for."""
@@ -57,27 +75,31 @@ class CatalogEntry:
     name: str
     description: str
     arguments: tuple[str, ...] = ()
-    # The whole definition, handed back when the tool is discovered.
+    family: str = ""
     definition: dict[str, Any] = field(default_factory=dict, compare=False)
 
-    # The words a search matches on: the name (split on separators), the
-    # description, and the argument names. Anthropic's tool search reads the
-    # same four fields, which is why namespaced names ("document_", "image_")
-    # let one search pull a whole family.
-    def searchable(self) -> list[str]:
-        parts = [self.name.replace("_", " "), self.description, " ".join(self.arguments)]
-        return _terms(" ".join(parts))
+    # The text a search matches on: the name (split at its separators), the
+    # family, the description and the argument names. Anthropic's tool search
+    # reads the same fields, which is why a family prefix lets one search
+    # pull a whole group.
+    def searchable(self) -> str:
+        return " ".join(
+            (
+                self.name.replace("_", " ").replace("-", " "),
+                self.family,
+                self.description,
+                " ".join(self.arguments),
+            )
+        )
 
-    # The one line the model sees for a tool it has not loaded. The first
-    # sentence of the description is what a tool's author wrote to tell the
-    # model when to choose it, so it is the sentence worth spending.
+    # The one line the model sees for a tool it has not been handed. The
+    # first sentence is what the tool's author wrote to say when it applies,
+    # so it is the sentence worth spending.
     def index_line(self, width: int = 150) -> str:
         first = self.description.strip().split(". ")[0].strip().rstrip(".")
         return f"- {self.name}: {first[:width]}"
 
 
-# The catalog for one turn, built from the definitions the router would
-# otherwise have sent in full.
 @dataclass(frozen=True, slots=True)
 class Catalog:
     entries: tuple[CatalogEntry, ...] = ()
@@ -89,53 +111,145 @@ class Catalog:
         return tuple(entry.name for entry in self.entries)
 
     def by_name(self, name: str) -> CatalogEntry | None:
-        for entry in self.entries:
-            if entry.name == name:
-                return entry
-        return None
+        return next((entry for entry in self.entries if entry.name == name), None)
 
-    # The index, as the model sees it. Cheap by construction: one line each.
+    # The index, grouped by family so the model reads a short list of
+    # neighbourhoods rather than a flat wall - OpenAI's namespace guidance,
+    # and it is how a person thinks about them anyway.
     def index(self) -> str:
-        return "\n".join(entry.index_line() for entry in self.entries)
+        grouped: OrderedDict[str, list[CatalogEntry]] = OrderedDict()
+        for entry in self.entries:
+            grouped.setdefault(entry.family or "other", []).append(entry)
+        lines: list[str] = []
+        for family, entries in grouped.items():
+            lines.append(f"{family}:")
+            lines.extend(f"  {entry.index_line()}" for entry in entries)
+        return "\n".join(lines)
 
-    # The tools whose words best answer a query, best first.
-    #
-    # BM25 with the usual k1 and b. A tool scores on the terms it shares with
-    # the query, weighted by how rare each term is across the catalog, so
-    # "brief me on my morning" finds a "morning brief" skill without either
-    # side having to use the other's exact wording.
-    def search(self, query: str, limit: int = DEFAULT_LIMIT, k1: float = 1.5, b: float = 0.75) -> tuple[CatalogEntry, ...]:
-        wanted = _terms(query)
-        if not wanted or not self.entries:
+    # The tools the model asked for by name, in the catalogue's own order.
+    # This is the path that should carry most turns: the whole index is in
+    # front of the model, so which tool it needs is a judgement it can make
+    # itself - the repository's rule is that meaning is decided by a model,
+    # never by a pattern, and a lexical ranking deciding which tools the
+    # model may even see would be exactly that.
+    def named(self, names: list[str] | tuple[str, ...]) -> tuple[CatalogEntry, ...]:
+        wanted = {str(name).strip() for name in names if str(name).strip()}
+        if not wanted:
             return ()
-        documents = [entry.searchable() for entry in self.entries]
+        return tuple(entry for entry in self.entries if entry.name in wanted)
+
+    # The fallback, for a turn where the model described what it needed
+    # instead of naming it.
+    #
+    # Two rankings, interleaved rather than fused into one score. BM25
+    # catches the exact word a person used; the embedding catches a request
+    # that shares no word with the tool's description at all. Fusing them
+    # would let a spurious word match ("get this to Jen" scoring on
+    # get_weather) outrank the true meaning, and that is the ranking
+    # deciding what the model may see - which is the thing this repository
+    # does not do. Interleaving keeps the head of both rankings, and the
+    # model chooses from the shortlist. With no embedder, words answer alone.
+    def search(
+        self, query: str, limit: int = DEFAULT_LIMIT, embedder: Embedder | None = None
+    ) -> tuple[CatalogEntry, ...]:
+        if not query.strip() or not self.entries:
+            return ()
+        rankings = [self._lexical(query)]
+        if embedder is not None:
+            rankings.append(self._semantic(query, embedder))
+        shortlist: list[CatalogEntry] = []
+        seen: set[str] = set()
+        for position in range(max((len(ranking) for ranking in rankings), default=0)):
+            for ranking in rankings:
+                if position >= len(ranking):
+                    continue
+                entry = ranking[position]
+                if entry.name in seen:
+                    continue
+                seen.add(entry.name)
+                shortlist.append(entry)
+                if len(shortlist) >= max(1, limit):
+                    return tuple(shortlist)
+        return tuple(shortlist)
+
+    # BM25 over the catalog, written out rather than added as a dependency:
+    # twenty short documents, and the whole of it is the loop below.
+    def _lexical(self, query: str, k1: float = 1.5, b: float = 0.75) -> list[CatalogEntry]:
+        wanted = _terms(query)
+        if not wanted:
+            return []
+        documents = [_terms(entry.searchable()) for entry in self.entries]
         lengths = [len(document) for document in documents]
         average = (sum(lengths) / len(lengths)) or 1.0
         appears: Counter[str] = Counter()
         for document in documents:
             appears.update(set(document))
         scored: list[tuple[float, int, CatalogEntry]] = []
-        for position, (entry, document, length) in enumerate(zip(self.entries, documents, lengths, strict=True)):
+        for position, (entry, document, length) in enumerate(
+            zip(self.entries, documents, lengths, strict=True)
+        ):
             counts = Counter(document)
             score = 0.0
             for term in wanted:
                 frequency = counts.get(term, 0)
                 if not frequency:
                     continue
-                # +1 inside the log keeps a term that every tool carries from
+                # +1 inside the log keeps a term every tool carries from
                 # scoring negatively, which the textbook form allows.
                 idf = math.log(1 + (len(documents) - appears[term] + 0.5) / (appears[term] + 0.5))
                 score += idf * (frequency * (k1 + 1)) / (frequency + k1 * (1 - b + b * length / average))
             if score > 0:
-                # Position breaks ties in the catalog's own order, so a search
-                # is reproducible rather than dependent on sort stability.
                 scored.append((score, -position, entry))
         scored.sort(reverse=True)
-        return tuple(entry for _, _, entry in scored[: max(1, limit)])
+        return [entry for _, _, entry in scored]
+
+    # The same catalog ordered by meaning. Failure is not an error here: the
+    # lexical ranking already answered, and a search that waits on a slow
+    # embedder to say the same thing is worse than one that does not.
+    def _semantic(self, query: str, embedder: Embedder) -> list[CatalogEntry]:
+        texts = [entry.searchable() for entry in self.entries]
+        try:
+            missing = [text for text in texts if text not in _VECTORS]
+            if missing:
+                for text, vector in zip(missing, embedder.embed_texts(missing), strict=True):
+                    _VECTORS[text] = vector
+                while len(_VECTORS) > _VECTOR_CACHE_MAX:
+                    _VECTORS.popitem(last=False)
+            asked = embedder.embed_texts([query])[0]
+        except Exception:
+            logger.warning("Catalogue embedding unavailable; ranking on words alone", exc_info=True)
+            return []
+        scored = [
+            (_cosine(asked, _VECTORS[text]), -position, entry)
+            for position, (entry, text) in enumerate(zip(self.entries, texts, strict=True))
+        ]
+        scored.sort(reverse=True)
+        return [entry for _, _, entry in scored]
+
+
+# Drop the cached tool vectors. The cache is keyed on a tool's text, which
+# is right while one embedder answers for the life of a process; swap the
+# embedding model and the old vectors would be read as the new model's.
+def clear_vector_cache() -> None:
+    _VECTORS.clear()
+
+
+def _cosine(one: list[float], other: list[float]) -> float:
+    if not one or not other or len(one) != len(other):
+        return 0.0
+    dot = sum(a * b for a, b in zip(one, other, strict=True))
+    left = math.sqrt(sum(a * a for a in one))
+    right = math.sqrt(sum(b * b for b in other))
+    return dot / (left * right) if left and right else 0.0
 
 
 # The catalog for a set of tool definitions, in the order they were offered.
-def build_catalog(definitions: list[dict[str, Any]]) -> Catalog:
+# `families` names the family of any tool that has one; a skill or an MCP
+# alias has none of its own and is grouped by what it is.
+def build_catalog(
+    definitions: list[dict[str, Any]], families: dict[str, str] | None = None
+) -> Catalog:
+    known = families or {}
     entries: list[CatalogEntry] = []
     for definition in definitions:
         function = definition.get("function") if isinstance(definition, dict) else None
@@ -152,6 +266,7 @@ def build_catalog(definitions: list[dict[str, Any]]) -> Catalog:
                 name=name,
                 description=str(function.get("description") or ""),
                 arguments=arguments,
+                family=known.get(name) or ("skills" if name.startswith("skill__") else "other"),
                 definition=definition,
             )
         )
@@ -161,9 +276,8 @@ def build_catalog(definitions: list[dict[str, Any]]) -> Catalog:
 # The one tool that is never deferred: how the model asks for the rest.
 #
 # Named for what it does to the catalog rather than for what it finds, so it
-# cannot be confused with `search_web` (which searches the internet) or
-# `search_history` (which searches past conversations) - three tools whose
-# names would otherwise all begin with the same word.
+# cannot be confused with `search_web` (the internet) or `search_history`
+# (past conversations).
 FIND_TOOLS = "find_tools"
 
 FIND_TOOLS_DEFINITION: dict[str, Any] = {
@@ -171,71 +285,71 @@ FIND_TOOLS_DEFINITION: dict[str, Any] = {
     "function": {
         "name": FIND_TOOLS,
         "description": (
-            "Look up tools that are listed in the catalog but not yet loaded, "
+            "Look up tools that are listed in the catalogue but not yet loaded, "
             "and load them so they can be called. Use it when the message asks "
             "for something one of the catalogued tools does and that tool is "
-            "not already available on this turn. Describe what is needed in "
-            "plain words - 'make a picture', 'the person's morning brief', "
-            "'add this to their calendar' - rather than guessing a tool name."
+            "not already available on this turn. Name the tools you want from "
+            "the catalogue above; describe what you need in plain words only "
+            "when none of the names is obviously right."
         ),
         "parameters": {
             "type": "object",
             "properties": {
+                "names": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": (
+                        "The tools to load, named exactly as the catalogue lists them. "
+                        "Prefer this: you can read the catalogue."
+                    ),
+                },
                 "needed": {
                     "type": "string",
-                    "description": "What the turn needs a tool for, in a few words.",
-                }
+                    "description": (
+                        "What the turn needs a tool for, in a few words - used only "
+                        "when no name is given."
+                    ),
+                },
             },
-            "required": ["needed"],
             "additionalProperties": False,
         },
     },
 }
 
 
-# What the model is told about the tools it has not been handed. Kept to one
-# line each: the index is paid for on every turn, the definitions are not.
-def catalog_block(catalog: Catalog) -> str:
-    if not len(catalog):
-        return ""
-    return (
-        "Tools not loaded on this turn, one line each. To use one, call "
-        f"{FIND_TOOLS} with what you need in plain words; its full definition "
-        "is then available to call.\n" + catalog.index()
-    )
-
-
-# The tools that stay loaded whatever else is deferred, chosen by what this
-# system actually routes to. Seven days of live turns (2026-09-03): past
-# conversations 46, web search 36, manage scheduled tasks 25, then a long
-# tail of nine or fewer. Anthropic's guidance is the same shape - keep the
-# three to five most frequently used non-deferred so the common turn needs
-# no search at all.
-ALWAYS_LOADED = frozenset({"search_web", "search_history", "manage_tasks", "schedule_task"})
-
-# Tools that only make sense with a picture in view. Loaded when there is
-# one, deferred when there is not: the interface state already decides
-# whether they can be used, so it may as well decide whether they are shown.
-WITH_A_PICTURE = frozenset({"edit_image", "show_image", "discuss_image"})
-
-
 # The turn's tools, split into what is handed to the model and what is left
-# in the catalog for it to find.
+# in the catalog for it to find. Which names are core and which need a
+# picture is the caller's to say, read from the rows themselves.
 def defer_tools(
-    definitions: list[dict[str, Any]], picture_in_view: bool
+    definitions: list[dict[str, Any]],
+    core: frozenset[str],
+    picture_tools: frozenset[str],
+    picture_in_view: bool,
+    families: dict[str, str] | None = None,
 ) -> tuple[list[dict[str, Any]], Catalog]:
+    keep = core | (picture_tools if picture_in_view else frozenset())
     loaded: list[dict[str, Any]] = []
     deferred: list[dict[str, Any]] = []
-    keep = ALWAYS_LOADED | (WITH_A_PICTURE if picture_in_view else frozenset())
     for definition in definitions:
         function = definition.get("function") if isinstance(definition, dict) else None
         name = str((function or {}).get("name") or "")
         (loaded if name in keep else deferred).append(definition)
-    # Nothing to search for is not worth a search tool; hand back what came in.
+    # Nothing to search for is not worth a search tool.
     if not deferred:
         return definitions, Catalog()
     loaded.append(FIND_TOOLS_DEFINITION)
-    return loaded, build_catalog(deferred)
+    return loaded, build_catalog(deferred, families)
+
+
+# What the model is told about the tools it has not been handed.
+def catalog_block(catalog: Catalog) -> str:
+    if not len(catalog):
+        return ""
+    return (
+        "Tools not loaded on this turn, by family, one line each. To use one, "
+        f"call {FIND_TOOLS} with what you need in plain words; its full "
+        "definition is then available to call.\n" + catalog.index()
+    )
 
 
 # What the model is told once the tools it asked for have been loaded.

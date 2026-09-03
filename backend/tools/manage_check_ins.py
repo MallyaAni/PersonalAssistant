@@ -89,6 +89,7 @@ TOOL = BuiltinTool(
         "📝 Making a note to ask…",
         "🔔 Setting that up…",
     ),
+    family="scheduling",
 )
 
 

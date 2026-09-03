@@ -28,6 +28,21 @@ class BuiltinTool:
     description: str
     schema: dict[str, Any]
     waiting: tuple[str, ...] = ()
+    # What the catalogue needs to know about this tool, kept on the row for
+    # the same reason `label` and `description` are: a set of tool names
+    # written out in another module goes stale the day a tool is renamed,
+    # and nothing fails loudly when it does.
+    #
+    # `family` groups a tool with its siblings, so one catalogue search that
+    # matches "document" pulls the whole family - the namespacing both
+    # Anthropic and OpenAI recommend for a deferred tool set.
+    family: str = ""
+    # Loaded on every turn rather than catalogued. True for the few tools
+    # most turns actually use, measured rather than guessed.
+    core: bool = False
+    # Loaded only when a picture is in view. The interface state already
+    # decides whether these can be used at all.
+    needs_picture: bool = False
 
     # The same row as a capability line for the reply prompt's context.
     def as_capability(self) -> dict[str, str]:

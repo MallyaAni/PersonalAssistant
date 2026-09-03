@@ -27,6 +27,7 @@ TOOL = BuiltinTool(
         "🧭 Charting that out…",
         "🗺️ Drawing the map…",
     ),
+    family="diagrams",
 )
 
 

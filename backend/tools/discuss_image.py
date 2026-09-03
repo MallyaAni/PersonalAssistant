@@ -46,6 +46,8 @@ TOOL = BuiltinTool(
         "👀 Taking a look at the picture…",
         "🖼️ Looking it over…",
     ),
+    family="pictures",
+    needs_picture=True,
 )
 
 

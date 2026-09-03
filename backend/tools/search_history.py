@@ -63,6 +63,8 @@ TOOL = BuiltinTool(
         "🧠 Let me think back…",
         "📖 Checking what we said…",
     ),
+    family="memory",
+    core=True,
 )
 
 

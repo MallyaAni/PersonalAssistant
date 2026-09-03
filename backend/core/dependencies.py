@@ -1594,6 +1594,7 @@ def get_main_action_selector(
         tool_orchestration,
         diagram_enabled=diagram_artifacts is not None,
         presentation_enabled=presentation_jobs is not None,
+        embedder=get_embedding_provider(),
     )
 
 

@@ -49,6 +49,7 @@ TOOL = BuiltinTool(
         "📝 Writing it into the playbook…",
         "⚡ Wiring up a new skill…",
     ),
+    family="skills",
 )
 
 

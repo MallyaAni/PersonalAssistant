@@ -43,15 +43,23 @@ tool references, which the caller expands.
   tool definitions into one-line entries: name, first sentence, argument
   names. The index costs one line per tool per turn; the schemas cost
   nothing until they are needed.
-- **A core that stays loaded.** `ALWAYS_LOADED` is chosen by seven days of
-  live usage, not by taste: past conversations (46 turns), web search (36),
-  manage scheduled tasks (25), schedule task. Picture tools load only when a
-  picture is in view, because the interface state already decides whether
-  they can be used at all.
-- **One search round.** The model calls `find_tools` with what it needs in
-  plain words; BM25 over names, descriptions and argument names returns up
-  to five; those definitions are added and the decision is made again. Never
-  a second search: that is the same question asked twice.
+- **A core that stays loaded, named by the rows.** `BuiltinTool` carries
+  `core`, `needs_picture` and `family`; `registry.core_tool_names()` reads
+  them. Which tools are core was chosen by seven days of live usage, not by
+  taste - past conversations (46 turns), web search (36), manage scheduled
+  tasks (25), schedule task - but the fact lives on the tool, not in a set
+  of names in another module that a rename would silently break.
+- **The model names what it wants; words are the fallback.** The whole index
+  is in front of it, so `find_tools` takes `names` first. Only when it
+  describes a need instead ("something to get this to Jen") does a ranking
+  run, and then two rankings run: BM25 for the word a person used, the
+  deployed embedder for the request that shares no word with any
+  description. They are interleaved, not fused into one score - fusing let a
+  spurious word match ("get this to Jen" scoring on `get_weather`) outrank
+  the true meaning, and a ranking deciding what the model may see is the
+  pattern-decides-meaning that `AGENTS.md` forbids. The shortlist carries
+  the head of both; the model chooses.
+- **One search round.** Never a second: that is the same question asked twice.
 - **The system prefix never changes.** The index and the loaded-tools note
   go in the user content, so the cached prompt prefix stays byte-identical -
   the same property Anthropic preserves by keeping deferred tools out of the
@@ -67,7 +75,9 @@ tool references, which the caller expands.
 - One extra model call on the turns that need a tool outside the core. The
   common turns - a question, a search, a reminder, a recall - pay nothing.
 - BM25 is written out rather than added as a dependency: twenty short
-  documents, forty lines of code, and no wheel to keep current.
+  documents, forty lines of code, and no wheel to keep current. The
+  embedding half reuses the provider already deployed for memory, and a
+  missing or failing embedder costs nothing but the second ranking.
 - The catalogue makes tool descriptions load-bearing in a new way: the first
   sentence is what the model reads in the index. Anthropic's guidance on
   namespacing (`document_`, `image_`) and on keywords that match how people

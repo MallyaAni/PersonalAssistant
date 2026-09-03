@@ -48,6 +48,7 @@ TOOL = BuiltinTool(
         "🖨️ Putting that in a document…",
         "📎 Writing the file…",
     ),
+    family="documents",
 )
 
 

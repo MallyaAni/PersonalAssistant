@@ -73,6 +73,8 @@ TOOL = BuiltinTool(
         "⏰ Setting the alarm…",
         "🗓️ Finding a slot for it…",
     ),
+    family="scheduling",
+    core=True,
 )
 
 

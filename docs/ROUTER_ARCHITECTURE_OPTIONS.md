@@ -9,8 +9,9 @@ outside sources are linked at the end.
 - **One model call per turn, on the main model.** `MainActionSelector.select`
   sends the message, recent history, a clock line and ~15-20 tool
   definitions (the built-ins, web search, the person's skills, any MCP
-  aliases) to the reply model itself - DeepSeek V4 Flash on spark1, through
-  the reasoning injector - with `tool_choice: "auto"`, and reads back a
+  aliases) to the reply model itself - DeepSeek V4 Flash at the official FP8
+  checkpoint, served by vLLM tensor-parallel across both Sparks - with
+  `tool_choice: "auto"`, and reads back a
   native tool call or none. There is no separate routing model in the live
   environment (`ROUTING_LLM_MODEL` is unset, so it falls through to the main
   model).
@@ -130,11 +131,14 @@ Effort: weeks, and it needs a few thousand labelled turns. Risk: medium -
 the model is only as good as the corpus, and every new tool needs new
 examples.
 
-**D. Separate serving and hard timeouts for judgements.**
-Give the router and the small judgements their own endpoint and strict
-timeouts with deterministic fallbacks, so a busy minute cannot make routing
-take 37 s or time out into a fail-open default. Infra, not code: a small
-model on spark2, or a second vLLM instance with its own budget.
+**D. Hard timeouts for judgements, and a second endpoint only if one fits.**
+Strict timeouts with deterministic fallbacks, so a busy minute cannot make
+routing take 37 s or time out into a fail-open default. The timeouts are
+code and cost nothing. A *separate* endpoint is the part to be careful
+about: since 2026-09-03 the reply model is the official FP8 checkpoint
+tensor-parallel across **both** Sparks (~156 GB), with the vision model
+beside it on spark2, so there is no obvious headroom for a routing model
+today. Treat the second endpoint as blocked on memory, not as free.
 
 **E. Stop paying for flakes in the gate.**
 Turn single-shot judgement assertions into rate assertions (N samples, a

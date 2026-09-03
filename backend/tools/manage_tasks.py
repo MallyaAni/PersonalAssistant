@@ -126,6 +126,8 @@ TOOL = BuiltinTool(
         "🗂️ Flipping through your schedule…",
         "📋 Checking the task list…",
     ),
+    family="scheduling",
+    core=True,
 )
 
 

@@ -38,6 +38,7 @@ TOOL = BuiltinTool(
         "📚 Opening the playbook…",
         "🗂️ Looking through your skills…",
     ),
+    family="skills",
 )
 
 
