@@ -24,7 +24,10 @@ import argparse
 import asyncio
 from collections import defaultdict
 
+from typing import Any
+
 from backend.config.settings import settings
+from backend.core.evaluation_log import record
 from backend.core.dependencies import (
     get_mcp_invocation_service,
     get_routing_llm_client,
@@ -108,7 +111,7 @@ async def collect(
     selector: MainActionSelector,
     reps: int,
     cases: tuple[SelectionCase, ...] = SELECTION_CASES,
-) -> list[tuple[str, str, str]]:
+) -> list[tuple[str, str, str, str]]:
     observations: list[tuple[str, str, str]] = []
     for case in cases:
         history = [
@@ -139,17 +142,46 @@ async def collect(
                 )
             finally:
                 current_search_identity.reset(token)
-            observations.append((case.expected, tool_of(action), case.category))
+            observations.append((case.expected, tool_of(action), case.category, case.query))
     return observations
 
 
-# Print accuracy, the confusion matrix, and the worst individual cases.
-def report(observations: list[tuple[str, str, str]], reps: int) -> bool:
+# Which cases actually failed, and how consistently.
+#
+# The aggregate says "none -> search_history, 6". It does not say which six
+# questions, so the one thing a person needs to fix it - the wording that
+# misled the router - was the one thing the report left out. A case that fails
+# on every pass is a rule that is wrong; a case that fails on one of three is
+# the model's own variance, and those want different work.
+def failures(observations: list[tuple[str, str, str, str]], reps: int) -> list[dict[str, Any]]:
+    tally: dict[tuple[str, str, str], dict[str, int]] = defaultdict(lambda: defaultdict(int))
+    for expected, chosen, category, query in observations:
+        tally[(query, expected, category)][chosen] += 1
+    found = []
+    for (query, expected, category), chosen in tally.items():
+        missed = sum(count for name, count in chosen.items() if name != expected)
+        if not missed:
+            continue
+        found.append(
+            {
+                "query": query,
+                "expected": expected,
+                "category": category,
+                "missed": missed,
+                "of": sum(chosen.values()),
+                "chose": dict(sorted(chosen.items(), key=lambda kv: -kv[1])),
+            }
+        )
+    return sorted(found, key=lambda row: (-row["missed"], row["category"], row["query"]))
+
+
+# Print accuracy, the confusion matrix, and the individual cases that failed.
+def report(observations: list[tuple[str, str, str, str]], reps: int) -> bool:
     matrix: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
-    for expected, chosen, _ in observations:
+    for expected, chosen, _, _ in observations:
         matrix[expected][chosen] += 1
 
-    correct = sum(1 for e, c, _ in observations if e == c)
+    correct = sum(1 for e, c, _, _ in observations if e == c)
     total = len(observations)
     accuracy = correct / total if total else 0.0
 
@@ -178,17 +210,38 @@ def report(observations: list[tuple[str, str, str]], reps: int) -> bool:
         print("  (none)")
 
     by_category: dict[str, list[int]] = defaultdict(list)
-    for expected, chosen, category in observations:
+    for expected, chosen, category, _ in observations:
         by_category[category].append(int(expected == chosen))
     print("\nby category:")
     for category, hits in sorted(by_category.items()):
         print(f"  {category:24s} {sum(hits)}/{len(hits)}")
 
+    missed = failures(observations, reps)
+    print(f"\ncases that failed ({len(missed)}):")
+    for row in missed or []:
+        chose = ", ".join(f"{name} x{count}" for name, count in row["chose"].items())
+        print(f"  [{row['missed']}/{row['of']}] {row['category']}: {row['query'][:88]}")
+        print(f"      wanted {row['expected']}, chose {chose}")
+    if not missed:
+        print("  (none)")
+
+    record(
+        "tool-selection",
+        correct,
+        total,
+        reps=reps,
+        floor=ACCURACY_FLOOR,
+        scores={
+            category: (sum(hits), len(hits)) for category, hits in by_category.items()
+        },
+        notes=f"{len(SELECTION_CASES)} labelled cases, {len(missed)} failing",
+        extra={"failures": missed},
+    )
     return accuracy >= ACCURACY_FLOOR
 
 
 # Build the selector against the configured routing model and score the set.
-async def evaluate(reps: int) -> int:
+async def evaluate(reps: int, expected: str = "") -> int:
     invocation = get_mcp_invocation_service()
     if not invocation.can_auto_invoke(settings.SEARCH_MCP_SERVER_ID):
         print("Search server is not auto-invocable; the matrix would be incomplete.")
@@ -204,7 +257,17 @@ async def evaluate(reps: int) -> int:
         diagram_enabled=True,
         presentation_enabled=True,
     )
-    observations = await collect(selector, reps)
+    chosen = (
+        tuple(case for case in SELECTION_CASES if case.expected == expected)
+        if expected
+        else SELECTION_CASES
+    )
+    if expected and not chosen:
+        print(f"no cases are labelled {expected}")
+        return 2
+    if expected:
+        print(f"only the {len(chosen)} cases labelled {expected}\n")
+    observations = await collect(selector, reps, chosen)
     passed = report(observations, reps)
     print(f"\n{'PASS' if passed else 'FAIL'} against the recorded floor")
     return 0 if passed else 1
@@ -219,8 +282,13 @@ def main() -> int:
         default=3,
         help="passes per case; 3 or more to separate a bias from noise",
     )
+    parser.add_argument(
+        "--expected",
+        default="",
+        help="only cases labelled with this tool, for re-measuring one weakness",
+    )
     arguments = parser.parse_args()
-    return asyncio.run(evaluate(max(1, arguments.reps)))
+    return asyncio.run(evaluate(max(1, arguments.reps), arguments.expected.strip()))
 
 
 if __name__ == "__main__":

@@ -82,3 +82,12 @@ def test_a_store_that_cannot_be_written_does_not_fail_the_measurement(tmp_path: 
     blocked = tmp_path / "wall"
     blocked.write_text("this is a file, so it cannot hold a folder")
     assert evaluation_log.record("routing", 9, 9, root=blocked) is None
+
+
+def test_the_environment_can_say_which_commit_a_run_was_taken_on(tmp_path, monkeypatch):
+    # Measurements run inside the container, where the repository arrives
+    # without its history and git can say nothing. A run nobody can trace to
+    # a commit is a run that cannot be compared with the one before it.
+    monkeypatch.setenv("ANIOS_EVALUATION_COMMIT", "deadbee")
+    evaluation_log.record("routing", 9, 9, root=tmp_path)
+    assert evaluation_log.history("routing", root=tmp_path)[0].commit == "deadbee"

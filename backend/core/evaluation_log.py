@@ -75,8 +75,14 @@ class Run:
 
 
 # The commit a measurement was taken on, or "" where git cannot say. A run
-# whose commit is unknown is still worth keeping; it just cannot be blamed.
+# whose commit is unknown is still worth keeping; it just cannot be blamed -
+# and blaming one is the whole point, so the environment can say it. That
+# matters because measurements are taken inside the container, where the
+# repository is copied in without its history and git can say nothing.
 def _commit() -> str:
+    stated = os.getenv("ANIOS_EVALUATION_COMMIT", "").strip()
+    if stated:
+        return stated[:40]
     try:
         found = subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"],
