@@ -582,22 +582,19 @@ def _rerank_question(question: str, place: str) -> str:
 # job. Anything the question does not name keeps its old order behind those
 # that it does, so nothing is lost - only reordered.
 def _interests_for(question: str, interests: tuple[str, ...], limit: int = 8) -> list[str]:
-    """The person's interests that add something to this question's search.
+    """The interests this question is *about*, most relevant first.
 
-    This used to sort by *overlap* with the question, most overlap first, and
-    that is backwards for the one job it has. A search query is improved by
-    the words the question does not already contain. Asked "fun things to do
-    in the area this week" on 2026-09-04, it returned "exploring new things,
-    unique local events, hiking, dancing" - it had scored "exploring new
-    things" top because the question says "things" - while salsa, bachata,
-    swing dancing, live music, karaoke, breweries and board games, every one
-    of them a term that would have found a real Arlington evening, sorted to
-    the bottom and never reached the query. Four Colonial Heights listings
-    came back and the operator asked, fairly, how many times he had to say it
-    should be tailored to what it knows about him.
+    For the ranker's context, which wants what the person asked about: a
+    question naming salsa should carry salsa even when it was the ninth
+    interest saved.
 
-    So an interest whose words the question already carries is worth least,
-    not most, and the order is otherwise the person's own: strongest first.
+    Not for building a search query, and it was briefly used for that on
+    2026-09-04 with the sort inverted to suit. That broke this caller, which
+    is what `test_the_interests_sent_are_the_ones_the_question_is_about`
+    exists to notice, and it was the wrong repair anyway: the search path
+    should not pre-narrow twenty interests with word overlap before the model
+    that judges which ones fit has seen them. It passes all of them now, and
+    this went back to doing its own job.
     """
     from backend.core.grounding import bare_words
 
@@ -605,9 +602,8 @@ def _interests_for(question: str, interests: tuple[str, ...], limit: int = 8) ->
     scored: list[tuple[int, int, str]] = []
     for position, interest in enumerate(interests):
         words = {word for word in bare_words(str(interest)).split() if len(word) > 2}
-        # Positive, so an interest the question already says sorts last. It is
-        # not dropped: a question naming one of them is a question about it.
-        scored.append((len(asked & words), position, str(interest)))
+        # Negative so a higher overlap sorts first, position breaks ties.
+        scored.append((-len(asked & words), position, str(interest)))
     scored.sort()
     return [interest for _overlap, _position, interest in scored[:limit]]
 
@@ -753,6 +749,12 @@ _results_were_travel: ContextVar[bool] = ContextVar("results_were_travel", defau
 # subject than the one asked about - set by the research path, read where
 # the search state is rendered, so the reply discloses instead of answering.
 _results_off_subject: ContextVar[bool] = ContextVar("results_off_subject", default=False)
+# How this person likes to choose, as opposed to what they like - "exploring
+# new things" rather than "salsa". Set where the search is personalised and
+# read where the results are ranked and written up, because that is the only
+# place it can mean anything: a search engine has no way to prefer the
+# unfamiliar, and a ranker does.
+_how_they_choose: ContextVar[tuple[str, ...]] = ContextVar("how_they_choose", default=())
 
 
 # The words of one recalled memory item, whatever field the store put them in.
@@ -2767,17 +2769,27 @@ class ConversationService:
                 # And then put them in, rather than trusting that it did. The
                 # planner's prompt is told it may use them and on 2026-09-04
                 # it did not, for an account with twenty interests on file.
-                fitting: tuple[str, ...] = ()
+                # Two kinds, used in two places. `terms` name things a
+                # listing page says and go into the query. `disposition` is
+                # the operator's own correction, 2026-09-04: "exploring new
+                # things" was being dropped for making a poor search term, and
+                # it is not noise - it is part of who someone is. Some people
+                # are bored doing the same thing twice and some want their
+                # usual, and no search engine can express that. It is spent
+                # where the choosing happens instead.
+                terms: tuple[str, ...] = ()
+                disposition: tuple[str, ...] = ()
                 if likes:
                     try:
-                        fitting = await asyncio.to_thread(
+                        terms, disposition = await asyncio.to_thread(
                             self.search_planner.relevant_interests, query, likes
                         )
                     except Exception:
-                        fitting = ()
-                chosen_query = _hold_to_interests(chosen_query, fitting)
-                if fitting:
-                    _trace("personalized", list(fitting))
+                        terms, disposition = (), ()
+                chosen_query = _hold_to_interests(chosen_query, terms)
+                if terms or disposition:
+                    _trace("personalized", {"terms": list(terms), "as": list(disposition)})
+                _how_they_choose.set(disposition)
             outbound_query = _image_aware_search_query(chosen_query, image_matches)
             _trace("query", outbound_query[:200])
             screened = self.search_privacy.sanitize(outbound_query)
@@ -3139,7 +3151,12 @@ class ConversationService:
                     # The same `known` the ranker used, so the one line the
                     # model writes per event is written for this person rather
                     # than for a generic reader.
-                    found = await extract_events(self.llm, gathered, known=known, place=place)
+                    found = await extract_events(
+                        self.llm,
+                        gathered,
+                        known=known + _how_they_choose.get(),
+                        place=place,
+                    )
                 except Exception:
                     logger.warning("Event extraction failed; keeping the prose listing", exc_info=True)
                     found = None

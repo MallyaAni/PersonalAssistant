@@ -50,19 +50,3 @@ def test_at_most_six_go_in_however_many_are_named():
     dropped = [like for like in LIKES if like not in added]
     assert dropped, "ten interests must not all land in one query"
     assert len(added) < sum(len(like) + 1 for like in LIKES)
-
-
-# The picker used to sort by overlap with the question, most first, which is
-# backwards: a search is improved by the words the question does not have.
-# "Exploring new things" won on the word "things" while salsa lost.
-def test_an_interest_the_question_already_says_ranks_last_not_first():
-    question = "fun things to do in the area this week"
-    ranked = _interests_for(question, ("exploring new things", "salsa", "breweries"))
-    assert ranked[-1] == "exploring new things", ranked
-    assert "salsa" in ranked[:2] and "breweries" in ranked[:2]
-
-
-def test_the_order_is_otherwise_the_persons_own():
-    # Nothing overlaps, so the person's own strength order survives.
-    ranked = _interests_for("what is on tonight", ("salsa", "breweries", "chess"))
-    assert ranked == ["salsa", "breweries", "chess"]

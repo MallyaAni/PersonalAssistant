@@ -230,22 +230,36 @@ class SearchPlanner:
     # names the interests worth searching with, or none for a request that
     # has nothing to do with taste, and the caller puts whatever it named
     # into the query rather than hoping it already did.
-    def relevant_interests(self, question: str, likes: tuple[str, ...]) -> tuple[str, ...]:
+    def relevant_interests(
+        self, question: str, likes: tuple[str, ...]
+    ) -> tuple[tuple[str, ...], tuple[str, ...]]:
         if not likes or not question.strip():
-            return ()
+            return (), ()
         schema = {
             "type": "object",
             "properties": {
                 # The reading before the verdict: what kind of request this is
                 # first, then which interests belong in it.
                 "personal": {"type": "boolean"},
-                "interests": {
+                # What to search for, and how to choose among what comes back.
+                # Splitting them is the operator's correction, 2026-09-04:
+                # "exploring new things" was being treated as noise for making
+                # a poor query term, and it is not noise - it is a real
+                # preference about *selection*. Some people are bored doing the
+                # same thing twice and some want their usual, and a search
+                # engine cannot express that while a ranker can.
+                "terms": {
                     "type": "array",
                     "items": {"type": "string", "enum": list(likes)},
                     "maxItems": 6,
                 },
+                "preferences": {
+                    "type": "array",
+                    "items": {"type": "string", "enum": list(likes)},
+                    "maxItems": 4,
+                },
             },
-            "required": ["personal", "interests"],
+            "required": ["personal", "terms", "preferences"],
             "additionalProperties": False,
         }
         listed = "\n".join(f"- {like}" for like in likes)
@@ -261,22 +275,26 @@ class SearchPlanner:
             )
         except Exception:
             logger.warning("Could not judge which interests fit the request", exc_info=True)
-            return ()
+            return (), ()
         payload = answer.get("content") if isinstance(answer, dict) and "content" in answer else answer
         if isinstance(payload, str):
             try:
                 payload = json.loads(payload)
             except ValueError:
-                return ()
+                return (), ()
         if not isinstance(payload, dict) or not payload.get("personal"):
-            return ()
+            return (), ()
         known = {like.casefold(): like for like in likes}
-        chosen = [
-            known[str(item).casefold()]
-            for item in (payload.get("interests") or [])
-            if str(item).casefold() in known
-        ]
-        return tuple(dict.fromkeys(chosen))[:6]
+
+        def named(field: str, cap: int) -> tuple[str, ...]:
+            chosen = [
+                known[str(item).casefold()]
+                for item in (payload.get(field) or [])
+                if str(item).casefold() in known
+            ]
+            return tuple(dict.fromkeys(chosen))[:cap]
+
+        return named("terms", 6), named("preferences", 4)
 
     def _ask(self, system: str, user: str, what: str) -> str:
         try:
