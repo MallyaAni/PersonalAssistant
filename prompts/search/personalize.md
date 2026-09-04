@@ -1,7 +1,7 @@
 name: search/personalize
 used by: backend/services/search_planner.py -> SearchPlanner.relevant_interests()
 runs on: the reply model (MAIN_LLM_MODEL), once per turn that searches, only when interests are on file
-pinned by: functional/test_search_personalization_behaviour.py
+pinned by: functional/test_search_compose_behaviour.py::test_the_search_is_personalised_only_where_that_is_the_answer
 placeholders: none
 2026-09-04: added. The interests used to be advice inside search/compose, which "decides when to use them"; asked for fun things to do by an account with twenty interests on file, it decided not to and returned four listings two hours away. Whether a request depends on who is asking is now its own judgement, and the caller puts what this names into the query rather than hoping the composer did.
 
