@@ -64,13 +64,13 @@ def scored():
 
 # The gate: selection as a whole must not collapse.
 def test_tool_selection_accuracy_holds(scored):
-    correct = sum(1 for expected, chosen, _ in scored if expected == chosen)
+    correct = sum(1 for seen in scored if seen.expected == seen.chosen)
     accuracy = correct / len(scored)
 
     assert accuracy >= ACCURACY_FLOOR, (
         f"{correct}/{len(scored)}",
         sorted(
-            {(e, c) for e, c, _ in scored if e != c},
+            {(seen.expected, seen.chosen) for seen in scored if seen.expected != seen.chosen},
         ),
     )
 
@@ -81,7 +81,7 @@ def test_tool_selection_accuracy_holds(scored):
 def test_nothing_is_mistaken_for_an_image_edit(scored):
     stray = [
         (expected, category)
-        for expected, chosen, category in scored
+        for expected, chosen, category in ((s.expected, s.chosen, s.category) for s in scored)
         if chosen == EDIT_IMAGE and expected != EDIT_IMAGE
     ]
 
@@ -101,7 +101,7 @@ def test_nothing_is_mistaken_for_an_image_edit(scored):
     # held at the measured rate rather than at zero only so
     # the gate can run at all; treat any increase as a release blocker, and
     # closing it to zero as work that is owed.
-    at_risk = [row for row in scored if row[0] != EDIT_IMAGE]
+    at_risk = [seen for seen in scored if seen.expected != EDIT_IMAGE]
     assert at_risk
     assert len(stray) / len(at_risk) <= 0.12, (len(stray), len(at_risk), stray)
 
@@ -110,7 +110,7 @@ def test_nothing_is_mistaken_for_an_image_edit(scored):
 # under pressure abandons first, reaching for whichever tool is nearest.
 def test_turns_needing_no_tool_do_not_reach_for_one(scored):
     observed = [
-        (expected, chosen) for expected, chosen, _ in scored if expected == NO_TOOL
+        (seen.expected, seen.chosen) for seen in scored if seen.expected == NO_TOOL
     ]
     kept = sum(1 for _, chosen in observed if chosen == NO_TOOL)
 
@@ -132,7 +132,7 @@ def test_turns_needing_no_tool_do_not_reach_for_one(scored):
 # Preserve every smaller capability rather than letting no-tool accuracy hide it.
 def test_each_built_in_action_holds_its_measured_floor(scored):
     for expected, floor in PER_TOOL_ACCURACY_FLOORS.items():
-        observed = [chosen for wanted, chosen, _ in scored if wanted == expected]
+        observed = [seen.chosen for seen in scored if seen.expected == expected]
         kept = sum(1 for chosen in observed if chosen == expected)
 
         assert observed, f"the set must contain {expected} cases"
@@ -147,7 +147,7 @@ def test_each_built_in_action_holds_its_measured_floor(scored):
 # Bound the known high-cost confusion where diffusion imitates diagram labels.
 def test_diagrams_do_not_collapse_into_generated_images(scored):
     diagram_rows = [
-        chosen for expected, chosen, _ in scored if expected == "create_diagram"
+        seen.chosen for seen in scored if seen.expected == "create_diagram"
     ]
     mistaken = sum(1 for chosen in diagram_rows if chosen == GENERATE_IMAGE)
 
@@ -158,7 +158,7 @@ def test_diagrams_do_not_collapse_into_generated_images(scored):
 # Keep answers to a drafting question inside that writing task.
 def test_writing_followups_do_not_invoke_unrelated_tools(scored):
     observed = [
-        chosen for _, chosen, category in scored if category == "writing_followup"
+        seen.chosen for seen in scored if seen.category == "writing_followup"
     ]
 
     assert observed
