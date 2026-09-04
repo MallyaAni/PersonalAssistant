@@ -1,0 +1,176 @@
+{
+  "at": "2026-09-04T02:06:06+00:00",
+  "commit": "1ec3a777",
+  "extra": {
+    "cases": 114,
+    "model": "deepseek-v4-flash"
+  },
+  "floor": 0.7,
+  "name": "tool-selection",
+  "notes": "114 labelled cases, three passes, 342 observations. The first run whose passes are genuinely independent: before dbce9253 the routing cache answered passes two and three from memory. Dominant failure is over-triggering - 'no tool' scores 56/75, calling something when the turn should have been answered directly, most often search_history on a question about the person's own life (personal_memory 6/12).",
+  "reps": 3,
+  "right": 314,
+  "scores": [
+    {
+      "name": "agent_config",
+      "right": 24,
+      "total": 27
+    },
+    {
+      "name": "check_ins",
+      "right": 21,
+      "total": 21
+    },
+    {
+      "name": "creative_writing",
+      "right": 5,
+      "total": 6
+    },
+    {
+      "name": "credits",
+      "right": 9,
+      "total": 9
+    },
+    {
+      "name": "deck",
+      "right": 5,
+      "total": 6
+    },
+    {
+      "name": "diagram",
+      "right": 11,
+      "total": 12
+    },
+    {
+      "name": "document_file",
+      "right": 20,
+      "total": 21
+    },
+    {
+      "name": "edit",
+      "right": 12,
+      "total": 12
+    },
+    {
+      "name": "edit_not_an_image",
+      "right": 6,
+      "total": 6
+    },
+    {
+      "name": "firing",
+      "right": 9,
+      "total": 12
+    },
+    {
+      "name": "followup_subject",
+      "right": 6,
+      "total": 6
+    },
+    {
+      "name": "history",
+      "right": 9,
+      "total": 12
+    },
+    {
+      "name": "live_data",
+      "right": 26,
+      "total": 27
+    },
+    {
+      "name": "news",
+      "right": 3,
+      "total": 3
+    },
+    {
+      "name": "opinion_about_image",
+      "right": 9,
+      "total": 9
+    },
+    {
+      "name": "personal_memory",
+      "right": 6,
+      "total": 12
+    },
+    {
+      "name": "picture",
+      "right": 9,
+      "total": 9
+    },
+    {
+      "name": "picture_of_a_technical_subject",
+      "right": 6,
+      "total": 9
+    },
+    {
+      "name": "regenerate",
+      "right": 6,
+      "total": 6
+    },
+    {
+      "name": "role_holder",
+      "right": 3,
+      "total": 3
+    },
+    {
+      "name": "schedule_new",
+      "right": 9,
+      "total": 9
+    },
+    {
+      "name": "shared_document",
+      "right": 6,
+      "total": 6
+    },
+    {
+      "name": "show",
+      "right": 10,
+      "total": 15
+    },
+    {
+      "name": "skill_change",
+      "right": 3,
+      "total": 3
+    },
+    {
+      "name": "skill_list",
+      "right": 3,
+      "total": 3
+    },
+    {
+      "name": "skill_save",
+      "right": 3,
+      "total": 3
+    },
+    {
+      "name": "stable_knowledge",
+      "right": 6,
+      "total": 6
+    },
+    {
+      "name": "task_change",
+      "right": 15,
+      "total": 15
+    },
+    {
+      "name": "task_list",
+      "right": 6,
+      "total": 6
+    },
+    {
+      "name": "task_reschedule",
+      "right": 18,
+      "total": 18
+    },
+    {
+      "name": "task_undo",
+      "right": 18,
+      "total": 18
+    },
+    {
+      "name": "writing_followup",
+      "right": 12,
+      "total": 12
+    }
+  ],
+  "total": 342
+}
