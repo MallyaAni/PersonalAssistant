@@ -106,7 +106,8 @@ Model behavior is considered verified only when a functional test sends the real
 - [Agent instructions](AGENTS.md)
 - [Architecture](docs/ARCHITECTURE.md): start with Part I if you are new (what it is, the machines, a message's path, every subsystem step by step), Part II for every engineering decision and why, Part III for the implementation reference.
 - [ML system design](docs/ML_SYSTEM_DESIGN.md): the serving decisions - quantisation, KV cache, parallelism, context against memory, retrieval thresholds, decoding - each with what was measured, why, and what was tried and rejected.
-- [Agent catalog](docs/AGENT_CATALOG.md): every specialized agent, what its model decides, and where its prompt, card and diagram live.
+- [Agent catalog](docs/AGENT_CATALOG.md): every specialized agent, what its model decides, and where its prompt, card and diagram live - and which of them run an agentic loop.
+- [Tool catalog](docs/TOOL_CATALOG.md): every tool the router may call, what it does, what the model fills in, and when its definition is put in front of the router. Generated from the rows by `python -m backend.cli.generate_tool_catalog`; a test fails when the page and the code disagree.
 - [Canonical system diagram](docs/diagrams/anios-system.svg)
 - [Scalable inference target](docs/diagrams/inference-scaling-target.svg)
 - [Authentication and ownership](docs/diagrams/authentication-subsystem.svg)

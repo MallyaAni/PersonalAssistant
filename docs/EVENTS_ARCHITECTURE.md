@@ -75,9 +75,38 @@ rule in code with a test:
    drops the rest and says how many ("3 too far from you to be worth the
    trip"). A listing led with a paddle in Colonial Heights, two hours from
    Arlington, because nothing in this path knew what "near" meant.
-5. **The query asks for what they like.** `compose` is handed the person's
-   interests and the prompt spends them on a request about things to do and
-   on nothing else.
+
+   When *everything* found is too far the listing says so and names none of
+   them, because naming is recommending. It used to return "" for having
+   nothing to list, and the caller read that as "no typed listing available"
+   and asked the model to write one from the same raw results - so the
+   distance judgement ran, correctly marked all four far, and the fallback
+   put them back (2026-09-04). A genuinely empty extraction still returns "":
+   the prose fallback is right when there is nothing to be right about.
+5. **The query asks for what they like, and it is put there in code.**
+   `compose` is handed the person's interests, and being handed them is not
+   the same as using them: on 2026-09-04 the composer declined for an account
+   with twenty on file and the query went out generic. So whether a request
+   depends on who is asking, and which interests to search with, is now its
+   own judgement (`SearchPlanner.relevant_interests`,
+   `prompts/search/personalize.md`), and `_hold_to_interests` puts what it
+   named into the query the way `_hold_to_place` puts in the place. Measured
+   18/18 over three passes: requests about what to do personalise; a price, a
+   role-holder and a drive time take nothing.
+
+   Interests split two ways and are spent in two places. `terms` name what a
+   listing page will say - salsa, breweries, live music, farmers markets - and
+   go in the query. `disposition` says how the person likes to *choose*, which
+   is what "exploring new things" is: useless as a search word, because every
+   page matches it, and the difference between someone who is bored doing the
+   same thing twice and someone who wants their usual. It goes to the ranker
+   and the write-up, where choosing happens.
+
+   And the twenty are read as a person rather than a bag of tags
+   (`backend/core/persona.py`): seven rows about salsa, bachata, swing and
+   line dancing are one fact, and a flat list at equal strength cannot say so.
+   Rebuilt whenever the interests change, because the cache key is the
+   interests themselves.
 6. **A later search round keeps the place** the first query carried
    (`conversation_service._keep_the_place`), so "another angle" cannot
    find what is on anywhere.

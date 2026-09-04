@@ -1102,6 +1102,39 @@ Do not run the host Vite and the `frontend` container at the same time; they bot
 
 Starting Vite successfully is only a startup check. Open the application in a browser and inspect both the Console and Network panels before reporting frontend behavior verified.
 
+## Measuring, and keeping the measurement
+
+**Runs are kept.** `backend/core/evaluation_log.py` writes one JSON file per
+run under `docs/evals/runs/<name>/` - the totals, the commit, the number of
+passes, the score per category and, for the routing matrix, the individual
+cases that failed. `history()` reads them back and `compare()` says which
+categories moved. Files rather than a table because measurements are often
+taken in the probe clone, which has no database, and a measurement that
+cannot be filed where it is taken goes back into a code comment.
+
+Inside the container `git` has no history, so pass `ANIOS_EVALUATION_COMMIT`
+or the run cannot be traced to a commit, which is the whole point.
+
+**Repeat a judgement, and clear the routing cache between passes.** Every
+field of the decision cache's key is fixed inside an evaluation loop, so
+without `clear_decision_cache()` three passes are one observation read three
+times. `evaluate_tool_selection` and the functional conftest both do this now;
+anything new that samples a judgement must too.
+
+**Loops are measured as paths, not as decisions.**
+`backend/tests/functional/loops.py` walks the real `run_steps` against the
+real router with only `apply` scripted, and returns the trajectory: every step
+in order, the lines the model was shown before each decision, and which of the
+five stopping rules ended it. It can script a step to fail, which is how a
+loop that cannot see a failure gets caught reporting success. `repeat` walks
+the same loop several times and returns how often the claim held - loops
+compound, three steps at ninety percent each is seventy-three end to end, and
+a single pass cannot see that.
+
+**Gate on the weakest thing.** `PER_TOOL_ACCURACY_FLOORS` is compared per tool
+and a breach fails the run. It had never been checked before 2026-09-04, which
+is how a matrix printed PASS with its no-tool cases at 55/75.
+
 ## Builds, tests, and static checks
 
 Frontend build:

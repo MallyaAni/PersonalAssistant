@@ -51,6 +51,8 @@ python -m pytest backend/tests/functional -q     # real model, real MCP, real Co
 | Prompt | Drives |
 | --- | --- |
 | `search/compose.md` | The first web search query of a turn |
+| `search/personalize.md` | Whether a request depends on who is asking, and which of their interests to search with |
+| `memory/persona.md` | Twenty interests as a description of a person, so seven rows about dancing read as one fact |
 | `vision/observe.md` | The canonical description of an image; every later pass reads it instead of the pixels |
 | `vision/question.md` | Answering a direct question about an image |
 | `vision/reason.md` | Reasoning over what the vision pass saw, on the reply model |

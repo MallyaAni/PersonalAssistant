@@ -2,6 +2,150 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-04 - A search that should be tailored is tailored, in code
+
+The operator asked for "fun things to do in the area this week" and got four
+listings from Colonial Heights, two hours south of Arlington, with one thing
+in the whole reply he would have gone to. Traced end to end, every stage
+worked except the ones below.
+
+**The query carried none of his twenty interests.** It read `fun events things
+to do this weekend September 5-6 2026 Arlington Virginia Courthouse` - place
+carried, dates carried, and not one of salsa, bachata, east and west coast
+swing, line dancing, live music, karaoke, board games, chess, breweries,
+wineries, hiking, thrifting or farmers markets. The interests were *advice*:
+`prompts/search/compose.md` was handed them and "decides when to use them",
+and it decided not to. The place and the dates go in by code for exactly this
+reason, and interests now do too (`_hold_to_interests`).
+
+Which interests, and whether the request wants any, is its own judgement on
+the model (`prompts/search/personalize.md`), answering `personal` first and
+the interests second. Measured 18/18 over three passes: the three requests
+about what to do all personalise, and a PS5 price, a prime minister and a
+drive to Dulles take nothing, because a taste for dancing does not change
+what a console costs.
+
+**The shortlist in front of it chose by word overlap with the question**, most
+overlap first, which scored "exploring new things" top - the question said
+"things" - and sorted every specific, searchable interest to the bottom where
+the cap of six cut it off. The search path no longer pre-narrows: all of them
+go to the judge. `_interests_for` kept its old order for its real caller, the
+ranker's context, which wants the interests a question is *about*.
+
+**Interests come in two kinds.** "Exploring new things" was being discarded
+for making a poor query term, and it is not noise - it says how someone likes
+to *choose*. Some people are bored doing the same thing twice and some want
+their usual. `terms` go into the query; `disposition` goes where the choosing
+happens. Given a homebody's list the characterization writes "comfort beats
+novelty", which is the same field meaning the opposite thing.
+
+**Twenty tags are not twenty interests.** Seven of the operator's rows say
+"social dancer" and a flat list at equal strength cannot say so, which is why
+a query drew six near-arbitrary tags and why the reply prompt bans interests
+outright - a list can be included or excluded, never dosed.
+`backend/core/persona.py` characterizes them instead, rebuilt whenever the
+interests change because the cache key is the interests themselves. On the
+live model the twenty become "A social dancer at heart - salsa, bachata, and
+swing are their jam - who also loves a good hike, thrifting, and hitting up
+farmers markets and unique local events."
+
+**Everything too far is an answer, not an empty listing.** The distance
+judgement worked perfectly - 5/5 on the real events from that turn - and then
+`render_listing` had nothing left to list, returned "", and the caller read
+that as "no typed listing available" and asked the model to write one from
+the same raw results. The filter ran and the fallback undid it. It now says
+nothing is close enough and names none of them, because naming is
+recommending.
+
+Live after the deploy, the same question returns Chimney Swift Evening
+Birdwatching at 2909 16th St S, Arlington.
+
+Also: the outbound query is traced. It never was - the trace kept the
+*router's* query while the planner may rewrite it, so a bad search could not
+be told from a bad rewrite, which is why this took a day to find. The
+characterization is traced beside it, since a written profile a person cannot
+read keeps the compression and throws away the reason for it.
+
+## 2026-09-04 - Three things that were lying about how well routing works
+
+None of these changed a routing decision. All three changed what was known
+about them.
+
+**The routing decision cache never reused anything.** Its key was a hash of
+the whole assembled prompt, and the prompt opens with the clock to the
+minute. The comment above it said the minute was deliberately excluded; only
+a redundant `day` component was, while the full clock rode in through the
+body. So a decision was reusable only by a byte-identical message inside the
+same clock minute, and the retry it exists for lands a minute or two later.
+Every test that shipped with it passed because none set `local_now`, which
+production always does.
+
+**`--reps 3` was one pass read three times.** Every field of the cache key is
+fixed inside an evaluation loop - same user, same query, same tools, same
+stated clock - so passes two and three were cache reads. Every rate this CLI
+reported since the cache shipped was one observation wearing three coats. The
+same was true of any live test repeating a question to tell a behaviour from
+a coin flip.
+
+**The per-tool accuracy floors had never been compared to anything.** Eighteen
+entries, each with a dated measurement and an argument for its number, and
+`report()` checked the aggregate and returned. That is how a run printed PASS
+with its no-tool cases at 55/75 and six of them wrong on all three passes.
+
+With all three fixed, the honest measurement is 314/342 (91.8%) over 114
+cases and three passes. Every tool that *acts* is at or near the top -
+manage_tasks 57/57, scout_schedule 24/24, task_undo and task_reschedule 18/18,
+search_web 41/42 - and nearly the whole loss is on turns that should have
+taken no tool at all. Six cases fail three times out of three, so the failure
+is systematic rather than variance, and the matrix now names them.
+
+Runs are kept (`backend/core/evaluation_log.py`, `docs/evals/runs/`) with
+their per-category scores and the failing cases, so "did routing get worse
+this week" is a lookup rather than a re-run.
+
+## 2026-09-04 - Most of what choosing a tool cost was re-reading an unchanged catalogue
+
+`MainActionSelector.select` resolves `search_web`, `get_weather` and, for an
+operator, `search_credits` on every decision. Listing a server's tools opened
+a session per call, and for a stdio server that spawns the process, imports
+it, lists, and tears it down. The comment saying so also said why it was fine:
+"discovery is infrequent" - true when descriptor sync was the only caller,
+false since the router began resolving live schemas per turn.
+
+Measured in the deployed image: 1.0-1.1s per `resolve_tool` against a 1.8s
+routing call. Listings are now held for `MCP_TOOL_LIST_CACHE_SECONDS`
+(default 300), keyed on the server's identity, transport and allowlist so
+editing a server's configuration cannot read back the old catalogue.
+
+| | median routing decision | five varied asks |
+| --- | --- | --- |
+| before | 7.53 s | 32.1 s |
+| after | 3.23 s | 20.1 s |
+
+In production the same day, routing fell from a 9.9 s daily average to 5.9 s.
+
+## 2026-09-04 - An attempt that did not land says so
+
+Two places recorded a failure and then showed the model a record that read as
+success. In the history, a turn whose search failed, was refused, came back
+empty or came back about a different subject rendered exactly like one that
+worked. In the step loop it was worse: step lines described what a step was
+*for* and never what happened, so a failed step was listed under "Already
+done this turn" beneath an instruction never to repeat anything listed.
+
+Both carry the outcome now, read off the trace rather than the reply's words.
+Measured with three A/B probes at five passes an arm, it changed no routing
+decision - the record is truthful, and it is not yet shown to change an
+outcome (`docs/evals/runs/failure-visibility/`).
+
+A turn the person *rejected* now leaves a mark too. A tool that ran and
+returned the wrong content records a success; the person asking again is the
+only evidence, and it was discarded - which would also have taught a corpus
+built from outcomes that the turn went well. `redoes_previous` joins the
+follow-up reading, measured 30/30 over six cases and five passes, the
+negatives included: "and what about Saturday?", "make it shorter" and "now add
+that the sink is unusable" all read as the conversation continuing.
+
 ## 2026-09-03 - Recall reordering moves to the cross-encoder that was already there
 
 Measured on five recall questions over the same six turns, warm, both

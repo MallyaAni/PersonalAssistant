@@ -676,9 +676,62 @@ dated events and were the only way anything matched what the person
 actually likes.
 
 Both are now structural rather than prompt instructions - `_hold_to_place`
-and `_hold_to_dates` in `conversation_service`, and the interests handed to
-`SearchPlanner.compose` - because `prompts/search/compose.md` already asked
-for the dates and the model wrote the month anyway.
+and `_hold_to_dates` in `conversation_service` - because
+`prompts/search/compose.md` already asked for the dates and the model wrote
+the month anyway.
+
+**The interests were the exception, and it cost a day.** They were handed to
+`SearchPlanner.compose` as advice, and the prompt "decides when to use them".
+On 2026-09-04 it decided not to, for the same account whose twenty interests
+built the last row of that table, and the query that went out was `fun events
+things to do this weekend September 5-6 2026 Arlington Virginia Courthouse` -
+the place and days it had learned to carry, and none of the thing worth
+three of the four matched interests above. The answer was four listings from
+Colonial Heights. Being handed something is not using it, and the row above
+had already priced the difference at 0 matches against 4.
+
+So they are structural too now, in three pieces:
+
+| Piece | Decides | Where |
+| --- | --- | --- |
+| `SearchPlanner.relevant_interests` | Whether this request depends on who is asking, and which interests to search with | `prompts/search/personalize.md`, one model call, run beside `compose` rather than after it |
+| `_hold_to_interests` | That what it named reaches the query | `conversation_service`, the way `_hold_to_place` does |
+| `backend/core/persona.py` | What twenty tags *mean*, for the ranker and the write-up | `prompts/memory/persona.md`, cached on the interest set |
+
+The judgement is a model's because a gate made of question-words would have
+to anticipate every phrasing a request for a recommendation takes, and four
+such classifiers have been deleted here for failing exactly that. Measured
+18/18 over three passes: the three requests about what to do all personalise;
+a PS5 price, a prime minister and a drive to Dulles take nothing, because a
+taste for dancing does not change what a console costs.
+
+Two things fell out of it that are not about search at all.
+
+**Interests come in two kinds.** "Exploring new things" and "unique local
+events" make terrible query words - every page matches them and none is about
+them - and they are not noise. They say how someone likes to *choose*. Some
+people are bored doing the same thing twice and some want their usual, and no
+search engine can express that while a ranker can. `terms` go in the query;
+`disposition` goes where the choosing happens.
+
+**A flat list cannot be dosed.** Seven of the operator's twenty rows say
+"social dancer" and every one is at strength 2, so a query drew six
+near-arbitrary tags, five of them variations on dancing, and the reply prompt
+bans interests outright after a standing list "bent unrelated answers toward
+hiking". A characterization can be dosed where a list cannot. On the live
+model the twenty become *"A social dancer at heart - salsa, bachata, and swing
+are their jam - who also loves a good hike, thrifting, and hitting up farmers
+markets and unique local events."* Given a homebody's list instead - reading,
+gardening, jigsaw puzzles, the same neighbourhood cafe - it writes *"comfort
+beats novelty"*, which is the same field meaning the opposite thing.
+
+The literature agrees on the shape and names the gap: natural-language
+profiles are preferred over structured IDs because they keep the semantics and
+can be shown to people, and their central claim is *scrutability* - that
+someone can read their own profile, disagree, and correct it. Ours is traced
+and printed by `explain_turn`; showing it to the person and letting them edit
+it is not done. It also warns that profile quality is bounded by zero-shot
+prompting, which this is.
 
 ### The deployed reranker: a prompt problem, not a model problem
 
