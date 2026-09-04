@@ -3187,6 +3187,21 @@ class ConversationService:
             except Exception:
                 interests = ()
             if interests:
+                # Who they are first, then what this question is about.
+                #
+                # The list alone could not say that seven of twenty entries
+                # meant "social dancer", so whoever read it got six tags and
+                # no picture. The characterization is rebuilt only when the
+                # interests themselves change, so it costs one call per person
+                # per change rather than one per turn.
+                from backend.core.persona import characterize
+
+                try:
+                    described = await characterize(self.llm, tuple(interests))
+                except Exception:
+                    described = ""
+                if described:
+                    lines.append(f"who they are: {described}")
                 lines.append(
                     "interests: "
                     + ", ".join(_interests_for(str(context.get("query") or ""), interests))
