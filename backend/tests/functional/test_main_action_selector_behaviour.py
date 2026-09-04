@@ -582,3 +582,51 @@ async def test_try_again_after_a_search_that_found_nothing_searches_again(select
     ]
     searched = [isinstance(action, SearchAction) for action in decisions]
     assert all(searched), [type(action).__name__ for action in decisions]
+
+
+# A tool that ran and returned the wrong content records a success: the trace
+# says the search ran and found seven things, nothing errored anywhere, and
+# the only evidence the answer was useless is the person asking again. These
+# hold the resolver to telling that apart from the conversation simply
+# continuing - which is the harder half, since a rejection and a next
+# question look alike and mean opposite things.
+_ANSWERED = [
+    {
+        "query": "what's on in Arlington this weekend?",
+        "response": (
+            "Here's what I found: a jazz night at Blue Note, a rooftop party "
+            "in Brooklyn, and a food festival in Queens."
+        ),
+    }
+]
+_DRAFTED = [
+    {
+        "query": "write me a note to the landlord about the leak",
+        "response": "Here's a draft: Dear Mr Hale, I'm writing about the persistent leak...",
+    }
+]
+
+
+@pytest.mark.parametrize(
+    "message,history,rejected",
+    [
+        ("no, I meant the Arlington one", _ANSWERED, True),
+        ("try again", _ANSWERED, True),
+        ("those aren't right", _ANSWERED, True),
+        # The negatives. A next question is the conversation continuing, and a
+        # revision accepts what was made and asks for the next version of it.
+        ("and what about Saturday?", _ANSWERED, False),
+        ("make it shorter", _DRAFTED, False),
+        ("now add that the sink is unusable", _DRAFTED, False),
+    ],
+)
+async def test_the_resolver_tells_a_rejection_from_a_next_question(
+    llm, message, history, rejected
+):
+    from backend.services.followup import resolve_followup
+
+    # Three passes: a judgement that holds once is not a judgement yet.
+    for _ in range(3):
+        found = await resolve_followup(llm, message, history)
+        assert found is not None, message
+        assert found.redoes_previous is rejected, (message, found)

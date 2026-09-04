@@ -88,3 +88,15 @@ It is false in every other case, and these are the ones that get mistaken for of
 It is also false whenever this message says something of its own rather than simply assenting: a message that asks or requests anything carries its own instruction and does not need an offer.
 
 When in doubt, false. The cost of false is one clarifying reply; the cost of true is the assistant acting on something nobody asked for.
+
+And whether this message is asking again for what was already answered:
+
+redoes_previous: true only when this message asks for the *same* thing the previous turn already gave, because what came back was wrong, off the subject, or not what was wanted. "Try again", "no, I meant the Arlington one", "that's not what I asked", "can you redo that", "those aren't right" are all true when the assistant has just answered.
+
+It is false in every other case, and these are the ones that get mistaken for it:
+- A next question about the same subject. "And what about Saturday?" after a Friday answer is the conversation continuing, not the Friday answer being rejected.
+- A request to change or extend what was made: "make it shorter", "add Jen to it", "now do one for Sunday". The thing that was made was accepted; this asks for the next version of it.
+- A retry after something visibly failed or did not arrive - an error, a picture that never came, a search that found nothing. That failure is already recorded; this field is for the answer that arrived and was wrong anyway.
+- The first message of a conversation, or any message where the assistant has not just answered.
+
+When in doubt, false. The cost of false is a signal not collected. The cost of true is blaming a turn that was fine, and the record of what this assistant does well is built out of these.

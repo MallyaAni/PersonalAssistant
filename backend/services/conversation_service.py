@@ -3587,6 +3587,20 @@ class ConversationService:
         # told apart from a resolver that read "picture" or one that never ran.
         _followed = current_followup.get()
         _trace("followup", _followed.as_dict() if _followed else None)
+        # Recorded on its own key, not only inside the reading, because it is
+        # about the turn *before* this one. A tool that ran and returned the
+        # wrong content leaves no other mark: the trace says the search ran
+        # and found seven things, nothing errored, and the person asking again
+        # is the only evidence the answer was useless. Traced here, the pair
+        # is joinable - this turn says the previous one was rejected, and the
+        # previous one already carries the tool it chose and what it wrote.
+        #
+        # It must stay separate from `followup` for that: that key is written
+        # only when the reading adds something beyond the message, and "try
+        # again" restated as "try again" adds nothing while rejecting
+        # everything.
+        if _followed is not None and _followed.redoes_previous:
+            _trace("redoes_previous", True)
         # How long the decision took, in milliseconds: the iMessage waiting
         # bubble is timed against this (2026-08-27, "the filler comes late").
         started = (_turn_trace.get() or {}).get("_started")

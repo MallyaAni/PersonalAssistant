@@ -1,0 +1,26 @@
+{
+  "at": "2026-09-04T03:46:53+00:00",
+  "commit": "9e18aa19",
+  "extra": {
+    "field": "redoes_previous",
+    "model": "deepseek-v4-flash"
+  },
+  "floor": 0.9,
+  "name": "retry-detection",
+  "notes": "Six cases, five passes each, on deepseek-v4-flash through the follow-up resolver. Three rejections of an answer that arrived and was wrong ('no, I meant the Arlington one', 'try again', \"those aren't right\") and three that must not read as rejections ('and what about Saturday?', 'make it shorter', 'now add that the sink is unusable'). 30/30. The negatives are the harder half: a rejection and a next question look alike and mean opposite things.",
+  "reps": 5,
+  "right": 30,
+  "scores": [
+    {
+      "name": "rejection",
+      "right": 15,
+      "total": 15
+    },
+    {
+      "name": "next-question-or-revision",
+      "right": 15,
+      "total": 15
+    }
+  ],
+  "total": 30
+}

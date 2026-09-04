@@ -56,8 +56,17 @@ _SCHEMA: dict[str, Any] = {
         # Whether the assistant's own last message offered to do something
         # that this message accepts. See `Resolution.accepts_offer`.
         "accepts_offer": {"type": "boolean"},
+        # Whether this message is asking again for what the last one already
+        # answered. See `Resolution.redoes_previous`.
+        "redoes_previous": {"type": "boolean"},
     },
-    "required": ["refers_to", "self_contained", "subject", "accepts_offer"],
+    "required": [
+        "refers_to",
+        "self_contained",
+        "subject",
+        "accepts_offer",
+        "redoes_previous",
+    ],
     "additionalProperties": False,
 }
 _MAX_TOKENS = 220
@@ -89,6 +98,24 @@ class Resolution:
     # answer at all; this one runs inside every turn on every channel and
     # decides what may be done.
     accepts_offer: bool = False
+    # Whether this message is asking again for something the previous turn
+    # already answered - because the answer was wrong, off the subject, or
+    # not what was wanted.
+    #
+    # This is the only signal in the system for the failure that reaches
+    # people most. A tool that ran and returned the wrong content records a
+    # success: the trace says `ran:7` and nothing is wrong anywhere except in
+    # the answer. The person retrying is the evidence, and until now it was
+    # discarded - which also means a corpus built from outcomes would label
+    # that turn *successful* and train the next router to do it again.
+    #
+    # A judgement, so a model makes it: "try again", "no, I meant the
+    # Arlington one" and "that's not what I asked" share no words, and the
+    # four bounded classifiers this repository has deleted all died on
+    # phrasing their author did not anticipate. It is deliberately narrow -
+    # asking again for the *same* thing, not asking a next question - and
+    # false when in doubt, because a wrong true blames a turn that was fine.
+    redoes_previous: bool = False
 
     # Whether the reading adds anything beyond the message itself.
     def changes(self, query: str) -> bool:
@@ -101,6 +128,7 @@ class Resolution:
             "refers_to": self.refers_to,
             "subject": self.subject,
             "as": self.self_contained[:limit],
+            **({"redoes_previous": True} if self.redoes_previous else {}),
         }
 
 
@@ -298,7 +326,15 @@ def parse_resolution(answer: Any, query: str) -> Resolution | None:
     # Absent means false, which is the safe direction: the router withholds
     # every tool from a bare acceptance that accepts nothing, and an
     # unreadable answer should leave it answering in words rather than acting.
-    return Resolution(restated, refers_to, subject, bool(payload.get("accepts_offer")))
+    return Resolution(
+        restated,
+        refers_to,
+        subject,
+        bool(payload.get("accepts_offer")),
+        # Absent means false here too, and for the same reason in reverse: a
+        # missing field must not accuse a turn that was fine.
+        bool(payload.get("redoes_previous")),
+    )
 
 
 # One line for the router: the reading beside the person's own words.
