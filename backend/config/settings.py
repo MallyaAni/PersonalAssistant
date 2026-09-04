@@ -76,6 +76,15 @@ class Settings(BaseSettings):
     # case flipped between two measured passes in eight categories. Zero
     # switches it off.
     ROUTING_DECISION_CACHE_SECONDS: float = Field(default=300.0, ge=0, le=3600)
+    # How long a server's tool catalogue is held before it is read again.
+    # Listing opens a session per call, and for a stdio server that spawns the
+    # process. The router resolves two or three live schemas per decision, so
+    # without this every turn spawned the internet server two or three times:
+    # measured 2026-09-03 at 1.0-1.1s each against a 1.8s routing call, which
+    # is most of what choosing a tool cost. Staleness is bounded by this and,
+    # at the point of a call, by the fingerprint assertion that already runs.
+    # Zero switches it off.
+    MCP_TOOL_LIST_CACHE_SECONDS: float = Field(default=300.0, ge=0, le=3600)
     ROUTING_DECISION_CACHE_MAX: int = Field(default=512, ge=16, le=8192)
     # How many tool decisions one turn may make.
     #

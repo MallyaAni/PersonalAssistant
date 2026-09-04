@@ -1,6 +1,9 @@
 import logging
 from abc import ABC, abstractmethod
+from hashlib import sha256
+from time import monotonic
 
+from backend.config.settings import settings
 from backend.mcp.session import open_session
 from backend.mcp.types import MCPServerConfig, MCPTool
 
@@ -24,17 +27,61 @@ class MCPToolLister(ABC):
 class SessionMCPToolLister(MCPToolLister):
     """Lists tools over whichever transport a server is configured to use.
 
-    The connection is opened per call and closed immediately. Discovery is
-    infrequent, and holding a session open per configured server would be a
-    standing resource cost for no benefit at this stage.
+    The connection is opened per call and closed immediately, and for a stdio
+    server that means spawning the server process, importing it, listing, and
+    tearing it down.
+
+    That was written when the only caller was descriptor sync, and it says so:
+    "discovery is infrequent". It stopped being true when the router began
+    resolving live schemas per turn. `MainActionSelector.select` resolves
+    `search_web`, `get_weather` and, for an operator, `search_credits`, so
+    every routing decision spawned the internet server two or three times
+    before the model was asked anything. Measured 2026-09-03 in the deployed
+    image: 1.0-1.1s each, against a 1.8s routing call. Most of the time a turn
+    spent choosing a tool went on re-reading a catalogue that had not changed.
+
+    So a listing is now held for `MCP_TOOL_LIST_CACHE_SECONDS`. The cache is
+    keyed on what would change the answer - the server's identity and the
+    transport it is reached over - so editing a server's configuration does
+    not read back the old catalogue. Staleness is bounded by the TTL and, at
+    the point of an actual call, by the schema fingerprint the invocation
+    service already asserts. Zero switches it off.
     """
 
     # Bound how long a server may take to answer before it is abandoned.
     def __init__(self, timeout_seconds: float = 30.0) -> None:
         self.timeout_seconds = timeout_seconds
+        self._held: dict[str, tuple[float, list[MCPTool]]] = {}
+
+    # What identifies a catalogue: change any of it and the answer may differ.
+    @staticmethod
+    def _key(server: MCPServerConfig) -> str:
+        material = "\x1f".join(
+            str(part)
+            for part in (
+                server.server_id,
+                getattr(server, "transport", ""),
+                getattr(server, "url", ""),
+                getattr(server, "command", ""),
+                tuple(getattr(server, "args", ()) or ()),
+                tuple(sorted(getattr(server, "allowed_tools", ()) or ())),
+            )
+        )
+        return sha256(material.encode("utf-8", "replace")).hexdigest()
+
+    # Forget every held catalogue. For tests, and for anything that changes
+    # what a server would answer without changing its configuration.
+    def forget(self) -> None:
+        self._held.clear()
 
     # Connect over the configured transport and page through the catalogue.
     async def list_tools(self, server: MCPServerConfig) -> list[MCPTool]:
+        ttl = settings.MCP_TOOL_LIST_CACHE_SECONDS
+        key = self._key(server)
+        if ttl > 0:
+            found = self._held.get(key)
+            if found is not None and monotonic() - found[0] <= ttl:
+                return list(found[1])
         collected: list[MCPTool] = []
         async with open_session(server, self.timeout_seconds) as session:
             cursor: str | None = None
@@ -59,7 +106,10 @@ class SessionMCPToolLister(MCPToolLister):
                 cursor = page.nextCursor
                 if not cursor:
                     break
-        return _permitted(server, collected)
+        permitted = _permitted(server, collected)
+        if ttl > 0:
+            self._held[key] = (monotonic(), list(permitted))
+        return permitted
 
 
 # The catalogue narrowed to what the operator permits.

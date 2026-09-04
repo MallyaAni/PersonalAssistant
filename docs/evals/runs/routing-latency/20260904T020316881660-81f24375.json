@@ -1,0 +1,33 @@
+{
+  "at": "2026-09-04T02:03:16+00:00",
+  "commit": "81f24375",
+  "extra": {
+    "median_seconds": {
+      "cache_off": 7.53,
+      "cache_on": 3.23
+    },
+    "model": "deepseek-v4-flash",
+    "resolve_tool_seconds": [
+      1.74,
+      1.08,
+      1.09,
+      1.07,
+      1.0,
+      0.98,
+      1.11,
+      0.99,
+      1.0
+    ],
+    "total_seconds": {
+      "cache_off": 32.1,
+      "cache_on": 20.1
+    }
+  },
+  "floor": null,
+  "name": "routing-latency",
+  "notes": "Median time for one routing decision on the deployed image, five varied asks, routing-decision cache cleared each time so every pass is a real model call. MCP tool-listing cache off: median 7.53s, total 32.1s. On (300s TTL): median 3.23s, total 20.1s. The difference is the internet stdio server being spawned two or three times per decision to re-read a catalogue that had not changed: 1.0-1.1s per resolve_tool, against a 1.8s model call.",
+  "reps": 5,
+  "right": 5,
+  "scores": [],
+  "total": 5
+}
