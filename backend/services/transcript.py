@@ -106,13 +106,55 @@ def transcript_lines(
     for turn in history or []:
         said = str((turn or {}).get("query") or "").strip()
         answered = _answer_line(turn)
+        note = _attempt_note(turn)
         stamp = said_at(turn, zone)
         prefix = f"[{stamp}] " if stamp else ""
         if said:
             lines.append(f"{prefix}{speaker_label(turn)}: {said}")
-        if answered:
-            lines.append(f"{prefix}{assistant_label}: {answered}")
+        if answered or note:
+            spoken = " ".join(part for part in (answered, note) if part)
+            lines.append(f"{prefix}{assistant_label}: {spoken}")
     return lines
+
+
+# Whether this turn's tool ran and delivered, said in the history so that a
+# retry is visibly a retry.
+#
+# A turn whose search failed, was refused by a limit, came back empty, or came
+# back about a different subject reads exactly like one that worked: the
+# assistant's prose is there either way, and the failure lives only in the
+# trace nobody shows the model. So "try again" reaches a router that cannot
+# see there was anything to try again, and it decides the same way a second
+# time for the same reasons - which is what a person means when they say the
+# assistant keeps doing the wrong thing.
+#
+# Read off the trace the turn already writes rather than from the reply's
+# words, so it holds whatever language the reply happens to be in, and kept to
+# the outcome with no subject of its own: a note naming what was searched for
+# is the receipt that became the conversation's apparent subject on
+# 2026-08-30. The reply's own text still carries the subject.
+_SEARCH_OUTCOMES = {
+    "failed": "[the web search did not run]",
+    "limit": "[the web search was not allowed to run]",
+}
+
+
+def _attempt_note(turn: dict[str, Any] | None) -> str:
+    trace = ((turn or {}).get("metadata") or {}).get("trace")
+    if not isinstance(trace, dict):
+        return ""
+    search = str(trace.get("search") or "")
+    if search in _SEARCH_OUTCOMES:
+        return _SEARCH_OUTCOMES[search]
+    if not search.startswith("ran:"):
+        return ""
+    # "ran:0", or "ran:7 off-subject" when the ranker judged the results to be
+    # about something other than what was asked. Both are attempts that did
+    # not answer the question, and only the second has any results at all.
+    if "off-subject" in search:
+        return "[the web search came back about a different subject]"
+    ran, _, _ = search[len("ran:") :].partition(" ")
+    return "[the web search found nothing]" if ran == "0" else ""
 
 
 # What the assistant said, unless what it said was bookkeeping about something

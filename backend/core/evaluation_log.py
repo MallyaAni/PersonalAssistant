@@ -9,12 +9,16 @@ transfers; the platform does not, because the traces it would hold are real
 conversations and the deployment here is two machines in a house.
 
 So this is the same idea, local: one JSON file per run under
-`data/evaluations/<name>/`, holding what was measured, on which commit, over
-how many passes, and the score per category. `report()` reads them back.
+`docs/evals/runs/<name>/`, holding what was measured, on which commit, over
+how many passes, and the score per category. `history()` reads them back and
+`compare()` says which categories moved.
 
 Files rather than a table on purpose. Measurements are often run in the probe
 clone, which has no database, and a measurement that cannot be recorded where
-it is taken is a measurement that goes back into a comment.
+it is taken is a measurement that goes back into a comment. Beside the model
+comparisons in `docs/evals/results/` rather than under `data/`, which is not
+version-controlled: a run nobody else can see is not a run the next commit
+can be compared against.
 """
 from __future__ import annotations
 
@@ -29,8 +33,8 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
-# Where runs are kept. Under `data/` with the rest of what this system owns.
-ROOT = Path(os.getenv("ANIOS_EVALUATION_ROOT", "data/evaluations"))
+# Where runs are kept: versioned, so a score can be traced to a commit.
+ROOT = Path(os.getenv("ANIOS_EVALUATION_ROOT", "docs/evals/runs"))
 
 
 @dataclass(frozen=True, slots=True)

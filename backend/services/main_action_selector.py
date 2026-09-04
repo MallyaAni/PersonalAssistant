@@ -616,7 +616,8 @@ class MainActionSelector:
                 f"\n\nAlready done this turn:\n{done}\n\n"
                 "Call the next tool this message still needs, or no tool if "
                 "everything it asked for has been done. Never repeat something "
-                "already listed above."
+                "already listed above, unless the bracket after it says it "
+                "did not happen."
             )
         index = catalog_block(catalogue)
         if index:

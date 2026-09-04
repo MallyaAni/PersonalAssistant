@@ -85,12 +85,9 @@ async def _clean(tasks: ScheduledTaskRepository) -> None:
         await tasks.delete_owned(USER, row["id"])
 
 
-def _describe(action, kind: str) -> str:
-    described = describe_action(action)
-    if described is None:
-        return kind
-    label, detail = described
-    return f"{label}: {detail}" if detail else label
+# The real one. A copy of it here is how the line the model reads in a test
+# stops being the line it reads in production.
+from backend.services.conversation_service import _step_line as _describe
 
 
 # Drive the real loop with the real router and the real store.

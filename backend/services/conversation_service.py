@@ -181,12 +181,29 @@ def _image_description(match: dict[str, Any]) -> str:
 # `describe_action` returns a (label, detail) pair meant for a status chip;
 # joined here rather than passed through, because a Python tuple rendered into
 # a prompt is noise the model has to decode before it can use it.
-def _step_line(action: MainAction, kind: str) -> str:
+# What a step in this turn did, for the model deciding the next one.
+#
+# This used to describe the action alone - what the step was *for* - while the
+# outcome beside it, which already distinguishes a cancelled reminder from one
+# that was never found, went only to the trace. So a step that failed was
+# listed as done, under an instruction never to repeat anything listed, and
+# the turn moved on and told the person it had happened. That is the same
+# defect as an unmarked failed attempt in the history, one level down and
+# worse, because here the model is actively told not to try again.
+_STEP_FAILURES = {
+    "failed": "did not succeed",
+    "invalid": "was refused as invalid",
+    "not_found": "found nothing to act on",
+    "none": "had nothing to do",
+}
+
+
+def _step_line(action: MainAction, kind: str, outcome: dict[str, Any] | None = None) -> str:
     described = describe_action(action)
-    if described is None:
-        return kind
-    label, detail = described
-    return f"{label}: {detail}" if detail else label
+    label, detail = described if described is not None else (kind, "")
+    line = f"{label}: {detail}" if detail else label
+    went = _STEP_FAILURES.get(str((outcome or {}).get("kind") or ""))
+    return f"{line} [{went}]" if went else line
 
 
 def _planner_history(

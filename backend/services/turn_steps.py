@@ -57,7 +57,7 @@ async def run_steps(
     first: Any,
     apply: Callable[[Any], Awaitable[tuple[str, dict[str, Any]] | None]],
     decide: Callable[[list[str]], Awaitable[Any]],
-    describe: Callable[[Any, str], str],
+    describe: Callable[[Any, str, dict[str, Any] | None], str],
     creates: Callable[[Any], bool],
     max_steps: int = 1,
     budget_seconds: float = 45.0,
@@ -73,7 +73,7 @@ async def run_steps(
         if applied is None:
             break
         kind, outcome = applied
-        steps.append(Step(action, kind, outcome, describe(action, kind)))
+        steps.append(Step(action, kind, outcome, describe(action, kind, outcome)))
         seen.add(repr(action))
         if creates(action):
             created += 1

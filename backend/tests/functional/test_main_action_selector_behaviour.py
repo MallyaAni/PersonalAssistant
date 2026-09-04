@@ -559,3 +559,26 @@ async def test_writing_is_not_drawing_and_a_polite_request_is_still_a_request(
 ):
     action = await selector.select("functional_test_user", message, [], active_image)
     assert isinstance(action, expected) if expected is not type(None) else action is None, action
+
+
+# A retry only means "do that again, differently" if the model can see that
+# something was attempted and did not land. The failure was recorded in the
+# turn's trace and never shown, so the history read as a normal answered turn
+# and "try again" arrived looking like a fresh, already-answered question.
+# Now the attempt is marked; this asserts the model uses it.
+_EMPTY_SEARCH = [
+    {
+        "query": "what's on in Arlington this weekend?",
+        "response": "I looked but couldn't turn up much for that weekend.",
+        "metadata": {"trace": {"search": "ran:0"}},
+    }
+]
+
+
+async def test_try_again_after_a_search_that_found_nothing_searches_again(selector):
+    decisions = [
+        await selector.select("functional_test_user", "try again", _EMPTY_SEARCH, None)
+        for _ in range(3)
+    ]
+    searched = [isinstance(action, SearchAction) for action in decisions]
+    assert all(searched), [type(action).__name__ for action in decisions]
