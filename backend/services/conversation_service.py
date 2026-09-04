@@ -3202,6 +3202,15 @@ class ConversationService:
                     described = ""
                 if described:
                     lines.append(f"who they are: {described}")
+                    # Traced, so it can be read back. The literature's whole
+                    # argument for a written profile over a vector is that a
+                    # person can see it, disagree with it and correct it -
+                    # scrutability - and a description nobody can read is the
+                    # one benefit thrown away. This is the smallest version of
+                    # it: `explain_turn` now shows what the system thinks of
+                    # someone on the turn it used it. Showing it to the person
+                    # themselves, and letting them edit it, is the rest.
+                    _trace("who_they_are", described[:300])
                 lines.append(
                     "interests: "
                     + ", ".join(_interests_for(str(context.get("query") or ""), interests))

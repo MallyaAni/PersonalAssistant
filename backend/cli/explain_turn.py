@@ -55,6 +55,16 @@ async def explain(user_id: str, last: int, since: datetime | None) -> int:
         if trace.get("group"):
             g = trace["group"]
             print(f"   group: spoken by {g.get('speaker')} among {g.get('members')} members")
+        if trace.get("who_they_are"):
+            print(f"   who they are: {trace['who_they_are']}")
+        if trace.get("personalized"):
+            spent = trace["personalized"]
+            if isinstance(spent, dict):
+                print(f"   personalised: terms={spent.get('terms')} as={spent.get('as')}")
+            else:
+                print(f"   personalised: {spent}")
+        if trace.get("query"):
+            print(f"   searched: {trace['query']}")
         if trace.get("proposals_saved"):
             print(f"   memory saved: {', '.join(trace['proposals_saved'])}")
         if trace.get("outcomes"):
