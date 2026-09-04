@@ -522,6 +522,12 @@ def _hold_to_dates(query: str, question: str, now: datetime) -> str:
 # that I'd like" into "good vegan restaurants, San Francisco" - the taste and
 # the place both put into the query before it is searched, rather than hoped
 # for afterwards.
+# The shape `relevant_interests` returns, for the turn that has no interests
+# on file: awaited beside compose so the pair unpacks the same way either way.
+async def _nothing_personal() -> tuple[tuple[str, ...], tuple[str, ...]]:
+    return (), ()
+
+
 def _hold_to_interests(query: str, likes: tuple[str, ...]) -> str:
     if not query or not likes:
         return query
@@ -2758,12 +2764,32 @@ class ConversationService:
                     likes = tuple(known_interests)[:40]
                 except Exception:
                     likes = ()
-                composed = await asyncio.to_thread(
-                    self.search_planner.compose,
-                    query,
-                    _planner_history(history, str(context.get("timezone") or "")),
-                    likes[:8],
+                # Composed and personalised together: neither reads the
+                # other, and run in sequence they cost a search turn two model
+                # calls back to back. Measured 2026-09-04: compose ~1.7s and
+                # the interest judgement ~1.7s, which is 1.7s rather than 3.4s
+                # once they overlap - on the turn type the operator had just
+                # said was slow.
+                composed, judged = await asyncio.gather(
+                    asyncio.to_thread(
+                        self.search_planner.compose,
+                        query,
+                        _planner_history(history, str(context.get("timezone") or "")),
+                        likes[:8],
+                    ),
+                    asyncio.to_thread(
+                        self.search_planner.relevant_interests, query, likes
+                    )
+                    if likes
+                    else _nothing_personal(),
+                    return_exceptions=True,
                 )
+                if isinstance(composed, BaseException):
+                    logger.warning("Could not compose the query", exc_info=composed)
+                    composed = ""
+                if isinstance(judged, BaseException):
+                    logger.warning("Could not judge the interests", exc_info=judged)
+                    judged = ((), ())
                 if composed:
                     chosen_query = composed
                 # And then put them in, rather than trusting that it did. The
@@ -2777,15 +2803,7 @@ class ConversationService:
                 # are bored doing the same thing twice and some want their
                 # usual, and no search engine can express that. It is spent
                 # where the choosing happens instead.
-                terms: tuple[str, ...] = ()
-                disposition: tuple[str, ...] = ()
-                if likes:
-                    try:
-                        terms, disposition = await asyncio.to_thread(
-                            self.search_planner.relevant_interests, query, likes
-                        )
-                    except Exception:
-                        terms, disposition = (), ()
+                terms, disposition = judged
                 chosen_query = _hold_to_interests(chosen_query, terms)
                 if terms or disposition:
                     _trace("personalized", {"terms": list(terms), "as": list(disposition)})
