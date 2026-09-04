@@ -571,3 +571,41 @@ async def test_a_stale_decision_is_not_reused(monkeypatch):
     await _asyncio.sleep(0.05)
     await selector.select("ani", "what did we say?", [], None)
     assert len(llm.rounds) == 2
+
+
+# The clock the router is told reads to the minute, and the whole prompt is
+# what the key is taken from, so a decision kept "for the same message and
+# day" was in fact kept for the same message and *minute*. In production
+# local_now is always set, and the retry this cache exists for lands a minute
+# or two later, which is exactly when it stopped being reused.
+@pytest.mark.asyncio
+async def test_the_same_question_a_minute_later_is_still_decided_once():
+    llm = SequencedLLM([_tool_call("search_history", {"query": "the Amalfi trip"})] * 2)
+    selector, _ = _selector({"content": "", "tool_calls": []}, llm=llm)
+    for clock in ("Tuesday 2026-09-03 14:01", "Tuesday 2026-09-03 14:03"):
+        await selector.select(
+            "ani", "what did we say about the Amalfi trip?", [], None, local_now=clock
+        )
+    assert len(llm.rounds) == 1, "the minute must not be what a decision is keyed on"
+
+
+@pytest.mark.asyncio
+async def test_the_same_question_the_next_day_is_decided_again():
+    llm = SequencedLLM([_tool_call("manage_tasks", {"operation": "list"})] * 2)
+    selector, _ = _selector({"content": "", "tool_calls": []}, llm=llm)
+    for clock in ("Tuesday 2026-09-03 23:59", "Wednesday 2026-09-04 00:01"):
+        await selector.select("ani", "what is on for tomorrow?", [], None, local_now=clock)
+    assert len(llm.rounds) == 2, "'tomorrow' means something else after midnight"
+
+
+@pytest.mark.asyncio
+async def test_a_decision_that_wrote_the_time_into_its_arguments_is_not_reused():
+    call = _tool_call(
+        "schedule_task",
+        {"instruction": "remind me to stretch", "cadence": "once", "hour": 14, "minute": 6},
+    )
+    llm = SequencedLLM([call] * 2)
+    selector, _ = _selector({"content": "", "tool_calls": []}, llm=llm)
+    for clock in ("Tuesday 2026-09-03 14:01", "Tuesday 2026-09-03 14:04"):
+        await selector.select("ani", "remind me in five minutes", [], None, local_now=clock)
+    assert len(llm.rounds) == 2, "14:06 was right at 14:01 and wrong at 14:04"

@@ -134,8 +134,9 @@ _SYSTEM = load("routing/select_action")
 # whether a picture is in view, and the calendar day - and reused while all
 # of those hold. The clock's minute is deliberately not part of the key: a
 # decision that turned on the exact minute would never be reused, and
-# nothing the router decides changes between 2:01 and 2:02. The day is in
-# the key because "tomorrow" does change.
+# nothing the router *chooses* changes between 2:01 and 2:02. The day is in
+# the key because "tomorrow" does change. A decision that wrote the time into
+# its own arguments is not kept at all; see _reads_the_clock.
 #
 # In-process and short-lived by design. This is not a store of what the
 # assistant decided - the turn trace is that - it is a guard against asking
@@ -150,6 +151,28 @@ def _decision_key(
     day = str(local_now or "")[:10]
     material = "\x1f".join((user_id, day, user_content, ",".join(names)))
     return hashlib.sha256(material.encode("utf-8", "replace")).hexdigest()
+
+
+# Whether a decision resolved the current time into its own arguments, and so
+# stops being true as the clock moves. "Remind me in five minutes" answered at
+# 14:01 carries 14:06; replayed at 14:04 it is the wrong time. Read off the
+# schema the tool was offered under rather than a list of tool names, so
+# anything new that schedules by the clock is covered the day it is added.
+_CLOCK_ARGUMENTS = frozenset({"hour", "minute"})
+
+
+def _reads_the_clock(message: dict[str, Any], tools: list[dict[str, Any]]) -> bool:
+    schemas = {
+        tool["function"]["name"]: set(
+            (tool["function"].get("parameters") or {}).get("properties") or {}
+        )
+        for tool in tools
+    }
+    return any(
+        _CLOCK_ARGUMENTS & schemas.get(call.get("function", {}).get("name", ""), set())
+        for call in (message.get("tool_calls") or [])
+        if isinstance(call, dict)
+    )
 
 
 def _remembered_decision(key: str) -> dict[str, Any] | None:
@@ -576,16 +599,20 @@ class MainActionSelector:
         # "today" two years in the past, from its training era, and the task
         # fired at once. The person's own clock, when their zone is known.
         clock = f"Current date and time: {local_now}\n\n" if local_now else ""
-        user_content = (
-            f"{clock}Visual interface state: {visual_state}\n\n{message_text}"
-        )
+        # The body is everything the model reads except the clock line, and it
+        # is what the decision is keyed on. The prompt keeps the clock because
+        # the router cannot date "tomorrow" without it; the key drops it
+        # because it reads to the minute, and a key carrying the minute is a
+        # key that is never reused - which is what the retry this cache exists
+        # for looks like, a minute or two later.
+        body = f"Visual interface state: {visual_state}\n\n{message_text}"
         # Only ever appended, and omitted entirely when empty, so a first
         # decision is byte-for-byte the request it was before the loop
         # existed: the prompt-cache prefix and the recorded routing matrix
         # both stay valid, and step one is not a new measurement.
         if steps_taken:
             done = "\n".join(f"- {line}" for line in steps_taken)
-            user_content += (
+            body += (
                 f"\n\nAlready done this turn:\n{done}\n\n"
                 "Call the next tool this message still needs, or no tool if "
                 "everything it asked for has been done. Never repeat something "
@@ -593,21 +620,23 @@ class MainActionSelector:
             )
         index = catalog_block(catalogue)
         if index:
-            user_content += f"\n\n{index}"
+            body += f"\n\n{index}"
+        user_content = f"{clock}{body}"
 
-        key = _decision_key(user_id, user_content, tools, local_now)
+        key = _decision_key(user_id, body, tools, local_now)
         message = _remembered_decision(key)
         if message is None:
             message = await self._decide(user_content, tools)
             if message is None:
                 return None
             # A catalogue search is half a decision; remembering it would
-            # replay the search rather than its answer.
+            # replay the search rather than its answer. A decision that wrote
+            # a clock time into its arguments cannot outlive the clock it read.
             if not any(
                 call.get("function", {}).get("name") == FIND_TOOLS
                 for call in (message.get("tool_calls") or [])
                 if isinstance(call, dict)
-            ):
+            ) and not _reads_the_clock(message, tools):
                 _remember_decision(key, message)
         else:
             logger.info("Routing decision reused for an unchanged question")
