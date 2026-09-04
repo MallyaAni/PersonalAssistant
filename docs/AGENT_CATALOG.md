@@ -16,6 +16,30 @@ never is.** A prompt is the agent's judgement written out, and it differs per
 agent even when the calling code is identical. The domain package holds the
 machinery the agent drives.
 
+## Which agents loop
+
+An agentic loop is a component that decides, acts, sees what happened, and
+decides again. Exactly one exists today: the **turn step loop** in
+`backend/services/turn_steps.py`, which runs inside a conversation turn over
+the automation tools, at most three steps and forty-five seconds, drawn in
+[chat-orchestration](diagrams/chat-orchestration.mmd). None of the agents
+below loop; each is asked once and answers once.
+
+That is expected to change, and two rules keep it from going wrong twice.
+**`run_steps` is the loop.** An agent that wants one calls it rather than
+writing its own, because the loop's five stopping rules and its handling of a
+failed step each cost a real incident to discover, and a second private copy
+would rediscover them privately. **A step says what happened, not what it was
+for.** A loop that cannot see a step failed reports success; the outcome kinds
+are carried in the line the model reads next, and
+`backend/tests/functional/loops.py` is how a loop is held to that - the whole
+trajectory, an injected failure, and a rate over several passes rather than
+one lucky path.
+
+A new looping agent therefore also needs its loop drawn in its own
+`agent-<name>.mmd`, since a loop is a cross-component flow and not an
+implementation detail.
+
 ## Scout — standing work
 
 Scout is the scheduling agent: anything the person wants to happen on a

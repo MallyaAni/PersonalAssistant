@@ -33,6 +33,11 @@ flowchart TB
     ArtifactGate -->|no artifact needed| Context[Curated context]
     Visual --> VisualPolicy[DeepSeek V4 Flash<br/>visual-memory selection]
     VisualPolicy --> Context
+    Selector -->|schedule_task, manage_tasks,<br/>manage_check_ins, scout_schedule| Steps
+    Steps[Turn step loop · run_steps<br/>at most 3 steps, 45s of wall clock] --> Apply[Carry out one step<br/>outcome recorded: done, failed,<br/>invalid, not_found, none]
+    Apply -->|what was done and how it went,<br/>a failed step marked as not done| Selector
+    Apply -->|no next tool · a repeat · a second creation<br/>· the step ceiling · the clock| Memory
+
     Selector -->|search_web query,<br/>model-authored| Search[Privacy-screened internet search<br/>credit-accurate budget · a failed search<br/>becomes turn state the reply admits]
     Selector -->|search_history query| History[Transcript-store semantic search<br/>top 40 by vector, both voices, HNSW<br/>Qwen3 reranker cuts to 12, fail-soft]
     Selector -->|toolbox tool| MCP[Guarded MCP<br/>invocation]
@@ -58,6 +63,6 @@ flowchart TB
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef failure fill:#fff3cd,stroke:#b78b20,color:#4d3900;
     class User,UI interface;
-    class API,Selector,Search_Tool,Toolbox,Presentation,Progress,Diagram,Artifact,ImageAction,ImageArtifact,Memory,Visual,MCP,Search,History,Context,Inference,Persist,Stream,Proposal,FollowUp application;
+    class API,Selector,Search_Tool,Toolbox,Presentation,Progress,Diagram,Artifact,ImageAction,ImageArtifact,Memory,Visual,MCP,Search,History,Context,Inference,Persist,Stream,Proposal,FollowUp,Steps,Apply application;
     class Main,DiagramModel,Interest,ArtifactGate,VisualPolicy,Referent model;
     class Failure failure;
