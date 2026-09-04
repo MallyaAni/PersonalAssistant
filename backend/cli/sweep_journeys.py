@@ -286,7 +286,13 @@ JOURNEYS = [
             holds=("The reply says it forgot, removed, or will no longer remember what it had saved.",),
             sql_holds=(
                 "select exists(select 1 from scheduled_task_changes where user_id = :u and kind = 'memory' and operation = 'undo')",
-                "select coalesce((select undone_at is not null from scheduled_task_changes where user_id = :u and kind = 'memory' and operation = 'save' order by created_at desc limit 1), false)",
+                # That *a* save was undone, not that the newest one was. The
+                # newest is only this journey's fact when nothing saved after
+                # it, and in a full sweep earlier journeys do: this assertion
+                # paged falsely on deploys #8, #13 and #18, and the journey
+                # passes on its own every time. The undo row above already
+                # says an undo happened; this says it reached a saved fact.
+                "select exists(select 1 from scheduled_task_changes where user_id = :u and kind = 'memory' and operation = 'save' and undone_at is not null)",
             )),
     Journey("what did I tell you (memory referent)", "what did I tell you about my dentist?", ("Past conversations", None),
             before=("my dentist is Dr Lee on Wilson Boulevard",),
