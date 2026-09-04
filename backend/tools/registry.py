@@ -107,6 +107,13 @@ def picture_tool_names() -> frozenset[str]:
     return frozenset(row.name for row in builtin_tools() if row.needs_picture)
 
 
+# Which rows need a service wired before they exist, by name. Read by the
+# catalogue page, which must describe every tool this repository has rather
+# than only the ones the machine it runs on happens to have wired.
+def gated_tools() -> dict[str, str]:
+    return dict(_GATED)
+
+
 def tool_families() -> dict[str, str]:
     return {row.name: row.family for row in builtin_tools() if row.family}
 
