@@ -1,11 +1,50 @@
 # Next session
 
-Verified state as of 2026-08-25. `deep-matter.com` serves from spark1. The
+Verified state as of 2026-09-03. `deep-matter.com` serves from spark1. The
 Windows desktop is powered on again and holds the GPU for image work; when
 it is off, image requests get an honest "try again later". Everything below
 was checked by running it, not by reading it. The seven image scenarios can
 be re-run any time with `python -m backend.cli.exercise_image_scenarios`
 inside the backend container.
+
+## 2026-09-03 — model-serving docs corrected, and the Trading agent's first capability (NOT DEPLOYED)
+
+Three files still described the retired 2-bit ds4 GGUF as the deployed model:
+`AGENTS.md`, `docs/DEVELOPMENT_GUIDE.md`, and the top of
+`docs/MODEL_EVALUATION.md`. The running reply model is the **official FP8**
+DeepSeek-V4-Flash-0731 (~156 GB, `quant_method: fp8`), served by vLLM
+tensor-parallel across both Sparks, port 8000 — confirmed from the live
+container (`config.json`, `/v1/models`, the vLLM command line, and the
+retired ds4 port 8888 refusing connections). `ML_SYSTEM_DESIGN.md` already
+recorded this correctly; the three other docs now agree. Pushed as
+`ea3bfb0`.
+
+**Trading agent (Phase 1 of the personal trading analyst):** a new agent
+`backend/agents/trading/` with one prompt (`prompts/trading/autopsy.md`) that
+reads a person's own trade-history passages and names the behaviours that
+repeat, what they cost (only when a number is actually in the record), and a
+stop/start/keep plan. Card registered in `agents/registry.py`; a new
+`agent-trading.mmd`/`.svg` diagram pair registered in the renderer, the
+published page, and the catalog; a row in `AGENT_CATALOG.md`; functional
+proof `backend/tests/functional/test_trading_autopsy_behaviour.py` — 6/6
+against the real model (pattern must repeat, once-off is not a pattern, no
+invented amounts, real costs reported with source, plan has all three lists,
+every pattern carries evidence). Also fixed a pre-existing inconsistency the
+renderer surfaced: `document-knowledge` was rendered and cataloged but never
+in the published page or the renderer list; it is now registered and the
+full suite is 26/26 synchronized. Full unit suite green (2530 passed, 9
+skipped).
+
+**Next atomic task:** make the autopsy reachable in chat — a router tool
+(e.g. `analyze_trading`) so the assistant can act on "analyze my trading".
+Per AGENTS.md a new tool is not shipped until the router is measured choosing
+it, so that means a `TOOL_NAMES` entry, labelled cases in
+`backend/services/tool_selection_cases.py`, and `python -m
+backend.cli.evaluate_tool_selection` per-category comparison, then a sweep
+journey over HTTP. Broker statements (Schwab) are post-analysis only — not
+ingested yet. Free market data (yfinance-style Yahoo chart API, Alpha
+Vantage, TwelveData) is reachable from inside the backend container; that is
+the Phase 2 data layer. Nothing here is deployed.
 
 ## 2026-09-02 — decks plan their slides together, and background work stops starving (NOT DEPLOYED)
 

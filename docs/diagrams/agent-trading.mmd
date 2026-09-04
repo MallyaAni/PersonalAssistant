@@ -1,0 +1,33 @@
+---
+title: Trading - the personal autopsy
+---
+flowchart TB
+    Upload([Person shares a statement,<br/>journal or notes]) --> RAG[Document pipeline<br/>parse, chunk, embed]
+    RAG --> Store[(Person's knowledge store<br/>user-scoped chunks)]
+
+    Ask([Ask: analyze my trading]) --> Retrieve[Knowledge search<br/>top passages for the autopsy]
+    Retrieve --> Store
+    Retrieve --> Passages[Up to 12 passages<br/>from their own record]
+    Passages --> Autopsy[DeepSeek V4 Flash<br/>names behaviours that repeat]
+
+    Autopsy --> Patterns[patterns:<br/>what keeps happening]
+    Autopsy --> Costs[costs:<br/>only from stated numbers]
+    Autopsy --> Plan[plan:<br/>stop · start · keep]
+    Autopsy --> Unknowns[unknowns:<br/>what the record does not say]
+    Autopsy --> Reply([The post-mortem,<br/>shown to the person])
+
+    Card[Card reads the knowledge store:<br/>documents on record, ready state] -.-> Reply
+
+    Rule[The model decides nothing numeric.<br/>A cost needs a number in the record;<br/>a pattern needs to repeat]
+    Rule -.-> Autopsy
+
+    classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
+    classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
+    classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
+    classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
+    classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
+    class Upload,Ask,Reply interface;
+    class RAG,Retrieve,Passages application;
+    class Store data;
+    class Autopsy model;
+    class Rule warning;

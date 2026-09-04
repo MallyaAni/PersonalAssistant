@@ -184,6 +184,12 @@ const publishedDiagrams = [
     change: "How each memory category helps a turn and remains controllable.",
   },
   {
+    name: "document-knowledge",
+    title: "Document knowledge",
+    scope: "Uploads, parsing, chunks, retrieval, and quoted answers",
+    change: "How a shared PDF or Word file becomes cited answers and attributed memory.",
+  },
+  {
     name: "context-management",
     title: "Context management",
     scope: "Token accounting, dedup, cache-aware ordering, and the bounded digest",
@@ -248,6 +254,12 @@ const publishedDiagrams = [
     title: "Memory capture — what the model decides",
     scope: "Typed candidates against visible approval and no persistence authority",
     change: "Why nothing is remembered until a person approves it.",
+  },
+  {
+    name: "agent-trading",
+    title: "Trading — the personal autopsy",
+    scope: "A person's own history read as repeated behaviours, costs, and a plan",
+    change: "What their own trading record keeps doing, and what to stop, start, and keep.",
   },
   {
     name: "tool-memory-subsystem",

@@ -159,6 +159,35 @@ projects a Scout fact where applicable, in the same turn, before the reply is
 generated — no approval step gates the write. A per-candidate save failure is
 dropped and logged, costing only that one candidate.
 
+## Trading — the personal autopsy
+
+Reads a person's own trading history — uploaded statements, journals, notes —
+and names what repeats, what it has cost, and what to stop, start, and keep.
+
+| | |
+| --- | --- |
+| Registry id | `trading` |
+| Diagram | [agent-trading.svg](diagrams/agent-trading.svg) · [source](diagrams/agent-trading.mmd) |
+| Agent folder | `backend/agents/trading/` |
+| Domain package | `backend/memory/` (reads the person's knowledge store) |
+| Prompts | `prompts/trading/autopsy.md` — one |
+| Card | `agents/trading/card.py` |
+| Functional tests | `test_trading_autopsy_behaviour.py` |
+
+**What the model decides:** the behaviours that repeat in a person's record,
+which of their stated costs belong to which behaviour, and the stop/start/keep
+plan. **What is decided for it:** nothing numeric. A cost may only be stated
+when a number is actually present in the passages; a behaviour only counts as a
+pattern when it appears more than once. The numbers in the post-mortem come
+from the record, never from the model.
+
+**Why it is structured this way.** A single loss proves nothing; a behaviour
+that shows up again and again is what a person can change. The prompt is
+written to name the behaviour ("cut winners early", "added to a losing
+position"), not the person's character, because a post-mortem that reads as
+blame is one nobody acts on. It decides nothing for the person and trades
+nothing — it reports what their own record keeps doing.
+
 ## Not agents — model calls that route
 
 Both use a model and neither produces work, so neither has a folder or a card.
@@ -198,6 +227,7 @@ were truncated mid-JSON.
 | Deck | `provider.py` — plan, outline, slide, new slide, revision | caller | **default** | yes |
 | Diagram | `diagram.py` — Mermaid source | 2048 | 0.0 | yes |
 | Memory capture | `proposal_agent.py` — what to save (never a schedule: Scout's cadence has one writer, the `scout_schedule` tool); sees the assistant's previous reply only to resolve "this" | 1024 | 0.0 | yes |
+| Trading | `autopsy.py` — what a person's own history keeps doing, its costs, and the stop/start/keep plan | 1024 | 0.0 | yes |
 | *(not an agent)* | `agents/vision/memory.py` — select relevant offered visual memories | 128 | 0.0 | yes |
 | *(not an agent)* | `agents/vision/upload.py` — one structured primary image inspection | 512 | 0.0 | yes |
 | *(not an agent)* | optional specialist retry after `model_uncertain` | 512 | 0.0 | yes |
