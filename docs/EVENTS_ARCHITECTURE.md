@@ -107,7 +107,18 @@ rule in code with a test:
    line dancing are one fact, and a flat list at equal strength cannot say so.
    Rebuilt whenever the interests change, because the cache key is the
    interests themselves.
-6. **A later search round keeps the place** the first query carried
+6. **The query's place is the person's place, in code.** `_hold_to_place`
+   appends it, and the composer can put a second one in from the conversation:
+   a follow-up "try again" after an answer full of Colonial Heights searched
+   "Colonial Heights ... Courthouse Virginia" for a person in Courthouse, and
+   a query with two towns comes back from the wrong one (2026-09-04). Whether
+   a name in the query is a different location is a question about the world,
+   so it is a model judgement (`SearchPlanner.foreign_places`,
+   `prompts/search/place.md`); `_drop_foreign_places` strips what it names
+   and re-holds the person's own place. A prompt sentence alone did not fix
+   it - 2/3 still searched the wrong town - which is why the judgement is
+   structural.
+7. **A later search round keeps the place** the first query carried
    (`conversation_service._keep_the_place`), so "another angle" cannot
    find what is on anywhere.
 
@@ -140,6 +151,7 @@ links were by commission.
 | A search about here is held to the saved place, every round (time words alone do not count, since the thirtieth) | Deployed 2026-09-03 (e4f68ba8, corrected 6dd2d7f5); live: a Fed question searched without a place, an events question with "Raleigh NC" | `conversation_service._hold_to_place`, `test_search_keeps_the_place.py` |
 | An event too far to go to is counted, not listed | Built 2026-09-03, not deployed | `core/event_extraction.py` (`near`), `core/events_listing.py`, `prompts/search/event_lines.md` |
 | The search query carries what the person likes, for a things-to-do request only | Built 2026-09-03, not deployed | `services/search_planner.py`, `prompts/search/compose.md`, `functional/test_search_compose_behaviour.py` |
+| A place pulled from a previous answer is dropped; the query carries the person's own place | Built 2026-09-04, not deployed | `services/search_planner.py` (`foreign_places`), `prompts/search/place.md`, `services/conversation_service.py` (`_drop_foreign_places`) |
 | "Remind me about the second one" | Works with no new machinery — measured | `functional/test_act_on_a_listed_event_behaviour.py` |
 | `.ics` attached into the iMessage thread | **Not built** | needs `TurnResult` to carry a non-image file; would reuse `backend/discovery/calendar.py` |
 | Booking through a bounded browser tool | **Not built** | as an MCP server behind the existing boundary — see [ADR 0018](adr/0018-an-outside-agent-enters-as-a-tool-or-not-at-all.md) |

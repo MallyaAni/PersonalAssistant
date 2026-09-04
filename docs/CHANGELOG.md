@@ -2,6 +2,49 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-04 - A follow-up's query keeps the person's place, not the previous answer's
+
+The first bad "fun things to do in the area" answer shipped on pre-fix code
+(the distance filter was not yet built into the image). The retry ran on the
+fixed code and was still bad, and tracing it found a second, separate defect:
+"try again" searched **Colonial Heights** for a person in Courthouse. The
+composer had copied the town out of the previous answer - the history it is
+given includes the assistant's own listing, and a location there read as "the
+place the conversation is about". The query went out with two towns and came
+back from the wrong one; the near-filter then dropped most of what arrived and
+the listing had one event 25 miles away.
+
+A prompt sentence was tried first and measured: 2/3 of runs still searched the
+wrong town, because the model already had "the place comes from the request or
+the conversation" and the wrong part of the conversation was winning. So it is
+structural, like the place itself:
+
+- `prompts/search/place.md` + `SearchPlanner.foreign_places` name the place
+  names in a query that are a different location from where the person is.
+  Schema'd, bounded at six, greedy, and a failure leaves the query as
+  composed.
+- `_drop_foreign_places` (in `_research`, on the first query) strips what the
+  judgement names and re-holds the person's own place. One call per
+  place-bound search turn; later rounds are written from the first round's
+  now-clean results and `_keep_the_place` holds the place across them.
+- The person's own words are never foreign: the judgement's output is filtered
+  in code against the known city and region, so "Virginia" is not stripped
+  off a "Courthouse, Virginia" query.
+
+Verified on the real model: the place judgement named "Colonial Heights" and
+nothing of the person's own place on three passes, and the composed-then-
+stripped follow-up query carried Courthouse on every pass. Unit suite 2620
+passed, 9 skipped.
+
+Also fixed a test that could never pass: `test_the_search_is_personalised_only_where_that_is_the_answer`
+did `set(fitting) <= set(_LIKES)` where `fitting` is the *pair* of lists
+`relevant_interests` returns, so the subset check compared tuples to strings
+and was always false, and `bool(((), ()))` is truthy so even the non-personal
+branch failed. The 18/18 measurement claimed for `search/personalize` had no
+passing test behind it; the corrected test now runs the real model, three
+passes per case, and asserts each list is drawn from the person's own list and
+that a non-personal request takes nothing.
+
 ## 2026-09-04 - A search that should be tailored is tailored, in code
 
 The operator asked for "fun things to do in the area this week" and got four

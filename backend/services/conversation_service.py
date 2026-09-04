@@ -565,6 +565,29 @@ def _keep_the_place(proposed: str, first_query: str, place: str) -> str:
     return f"{proposed} {' '.join(parts[:2])}".strip()
 
 
+# A place-bound query is held to the person's own place in code, but compose
+# can put a second place in from a previous answer - a follow-up "try again"
+# after a listing full of Colonial Heights searched "Colonial Heights ...
+# Courthouse Virginia" for a person in Courthouse (2026-09-04), and a query
+# with two towns comes back from the wrong one. The model names the foreign
+# places; this drops them and re-holds the person's place. No model call when
+# the question is not place-bound, no known place, or the planner is absent.
+async def _drop_foreign_places(
+    planner: Any, query: str, question: str, home: str
+) -> str:
+    if not query or not home or planner is None or not _PLACE_BOUND.search(question or ""):
+        return query
+    try:
+        foreign = await asyncio.to_thread(planner.foreign_places, query, home)
+    except Exception:
+        return query
+    if not foreign:
+        return query
+    from backend.services.search_planner import strip_phrases
+
+    return _hold_to_place(strip_phrases(query, foreign), question, home)
+
+
 # The question the reranker judges results against: what was asked, and
 # where from when the person's place is known - a bias toward the local,
 # never a filter, so a genuinely better far-away result can still surface.
@@ -3013,6 +3036,12 @@ class ConversationService:
         # The first query is held to the place before it is ever sent.
         first_query = _hold_to_place(first_query, question, home)
         first_query = _hold_to_dates(first_query, question, datetime.now(UTC))
+        # And a place compose pulled out of a previous answer is dropped, so a
+        # query with two towns never goes out (2026-09-04). The person's own
+        # place is re-held afterwards.
+        first_query = await _drop_foreign_places(
+            self.search_planner, first_query, question, home
+        )
         current = first_query
         first_round: list[dict[str, Any]] = []
         for round_number in range(max(1, settings.SEARCH_MAX_ROUNDS)):

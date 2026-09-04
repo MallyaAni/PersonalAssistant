@@ -8,9 +8,11 @@ electric cars, twice, live. This sends the real compose prompt with the
 history it now receives and asserts the subject survives the follow-up.
 """
 
+import asyncio
+
 import pytest
 
-from backend.services.search_planner import SearchPlanner
+from backend.services.search_planner import SearchPlanner, strip_phrases
 
 pytestmark = pytest.mark.asyncio
 
@@ -168,7 +170,90 @@ async def test_the_search_is_personalised_only_where_that_is_the_answer(
     # Three passes: a judgement that holds once is not a judgement yet.
     for _ in range(3):
         fitting = await _asyncio.to_thread(planner.relevant_interests, question, _LIKES)
-        assert bool(fitting) is personal, (question, fitting)
+        terms, preferences = fitting
         if personal:
-            # Named from the person's own list, never invented.
-            assert set(fitting) <= set(_LIKES), fitting
+            # A judgement that nothing fits is still a judgement; what must
+            # hold is that anything named comes from the person's own list,
+            # never invented. The two lists are used in two places, so each is
+            # bounded by the list it was chosen from.
+            assert terms or preferences, (question, fitting)
+            assert set(terms) <= set(_LIKES), (question, fitting)
+            assert set(preferences) <= set(_LIKES), (question, fitting)
+        else:
+            # Nothing of theirs belongs in a query that has one right answer
+            # for everyone.
+            assert fitting == ((), ()), (question, fitting)
+
+
+# A follow-up re-asking a place-bound question copied the previous answer's
+# town into the query: "try again" after a listing of Colonial Heights events
+# searched "Colonial Heights ... Courthouse Virginia" for a person whose own
+# place is Courthouse (2026-09-04), so the retry came back from the wrong
+# town. The place judgement must name the foreign town, keep the person's own,
+# and the strip must take the town out of the query that goes out. Real
+# prompt, real model, three passes.
+_COLONIAL_HEIGHTS_ANSWER = (
+    "Sat 5 Sep\n"
+    "• Africa Fest\n"
+    "  White Bank Park, 400 White Bank Road, Colonial Heights\n"
+    "  A lively family reunion-style celebration of African culture — vibrant "
+    "music, dancing, and mouthwatering cuisine.\n"
+    "  11am–6pm · price not listed\n"
+    "\n"
+    "• Paddle In Your Park\n"
+    "  Lakeview Park, 503 Lake Avenue, Colonial Heights\n"
+    "  A relaxed, free paddle on the lake — all ages and skill levels welcome, "
+    "with gear provided.\n"
+    "  11am · free\n"
+    "\n"
+    "Not listed: 3 too far from you to be worth the trip; 10 more that never "
+    "said when."
+)
+
+_WRONG_PLACE_HISTORY = [
+    {
+        "role": "user",
+        "content": "what's are some fun things to do in the area this week?",
+    },
+    {"role": "assistant", "content": _COLONIAL_HEIGHTS_ANSWER},
+]
+
+
+async def test_the_place_judgement_names_a_previous_answers_town(llm):
+    planner = SearchPlanner(llm)
+    query = (
+        "line dancing hiking live music events Colonial Heights this weekend "
+        "unique local events farmers markets vintage shops Courthouse Virginia"
+    )
+    for _ in range(3):
+        foreign = await asyncio.to_thread(
+            planner.foreign_places, query, "Courthouse, Virginia"
+        )
+        named = " ".join(foreign).casefold()
+        # The previous answer's town is a different location and must go.
+        assert "colonial heights" in named, (foreign,)
+        # The person's own place is not foreign, whatever the model names.
+        assert "courthouse" not in named, (foreign,)
+        assert "virginia" not in named, (foreign,)
+        stripped = strip_phrases(query, foreign)
+        assert "colonial heights" not in stripped.casefold(), (foreign, stripped)
+        assert "courthouse" in stripped.casefold(), stripped
+
+
+async def test_a_followup_query_drops_the_previous_answers_town(llm):
+    from backend.services.conversation_service import _drop_foreign_places, _hold_to_place
+
+    planner = SearchPlanner(llm)
+    composed = planner.compose("try again", _WRONG_PLACE_HISTORY)
+    # The caller that actually sends the query (`_research`) holds the person's
+    # place in first, then drops what the judgement names and re-holds it - so
+    # the query that goes out carries their place and not the previous answer's
+    # town, whether compose wrote the wrong town, the right one, or none.
+    question = "what's are some fun things to do in the area this week?"
+    final = _hold_to_place(composed, question, "Courthouse, Virginia")
+    final = await _drop_foreign_places(
+        planner, final, question, "Courthouse, Virginia"
+    )
+    lowered = final.casefold()
+    assert "colonial heights" not in lowered, (composed, final)
+    assert "courthouse" in lowered, (composed, final)

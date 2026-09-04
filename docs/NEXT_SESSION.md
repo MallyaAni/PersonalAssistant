@@ -7,6 +7,26 @@ was checked by running it, not by reading it. The seven image scenarios can
 be re-run any time with `python -m backend.cli.exercise_image_scenarios`
 inside the backend container.
 
+## 2026-09-04 — the "try again" that still searched the wrong town (in working tree, NOT DEPLOYED)
+
+The first bad "fun things to do in the area" answer shipped on pre-fix code
+(the distance filter was not yet in the built image). The retry ran on the
+fixed code and was still bad: "try again" searched **Colonial Heights** for a
+person in Courthouse because `search/compose` copied the town out of the
+previous answer's listing. A prompt sentence was measured and failed 2/3, so
+the fix is structural (`prompts/search/place.md`, `foreign_places`,
+`_drop_foreign_places` in `_research`) — see the CHANGELOG entry of this date.
+
+Also fixed: `test_the_search_is_personalised_only_where_that_is_the_answer`
+could never pass (it compared the *pair* of lists `relevant_interests` returns
+against the flat interest set, and `bool(((), ()))` is truthy), so the "18/18
+measured" claim for `search/personalize` had no passing test behind it. The
+corrected test passes on the real model.
+
+Verified: unit suite 2620 passed / 9 skipped; `functional/test_search_compose_behaviour.py`
+13 passed against the real model. Not yet deployed — the deploy clone
+(`~/deploy/anios`) is at `b698485`; this fix is in the `~/anios` working tree.
+
 ## 2026-09-03 — model-serving docs corrected, and the Trading agent's first capability (NOT DEPLOYED)
 
 Three files still described the retired 2-bit ds4 GGUF as the deployed model:

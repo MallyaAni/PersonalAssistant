@@ -4,6 +4,12 @@ runs on: the reply model (MAIN_LLM_MODEL), once per turn that searches
 pinned by: functional/test_search_compose_behaviour.py, functional/test_followup_keeps_the_subject_behaviour.py
 placeholders: {today} {cutoff}
 2026-09-03: taught to use the person's interests, but only for a request about things to do - the events path was returning generic listings because the query asked for nothing anyone cared about.
+2026-09-04: a follow-up "try again" copied the previous answer's town into the
+query ("Colonial Heights" for a person in Courthouse). The place is not
+"fixed" here by another sentence - 2/3 of runs still wrote the wrong town -
+but structurally: `SearchPlanner.foreign_places` names the foreign places and
+the caller (`_drop_foreign_places`) strips them and re-holds the person's own.
+
 
 Writes the FIRST web search query of a turn. The router decides *whether* to
 search; this decides *what to ask for*.

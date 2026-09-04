@@ -15,12 +15,11 @@ the one that should say what it needs and whether it got it.
 
 import json
 import logging
-
-from backend.core.prompts import load
+import re
 from datetime import UTC, datetime
 from typing import Any
 
-from backend.core.prompts import render
+from backend.core.prompts import load, render
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +92,18 @@ def _bare(text: str) -> str:
         cleaned = cleaned.strip(quote)
     cleaned = cleaned.strip()[:_MAX_QUERY_CHARS]
     return "" if _is_prose(cleaned) else cleaned
+
+
+# Remove the given phrases from a query, then tidy the double spaces the gaps
+# leave. Never raises: an empty result is an empty query, which the caller
+# treats as "as composed" rather than a search for nothing.
+def strip_phrases(query: str, phrases) -> str:
+    out = query or ""
+    for phrase in phrases or ():
+        text = str(phrase).strip()
+        if text:
+            out = re.sub(re.escape(text), " ", out, flags=re.IGNORECASE)
+    return re.sub(r"\s{2,}", " ", out).strip()
 
 
 class SearchPlanner:
@@ -295,6 +306,80 @@ class SearchPlanner:
             return tuple(dict.fromkeys(chosen))[:cap]
 
         return named("terms", 6), named("preferences", 4)
+
+    # Which place names in a composed query are a location other than where
+    # the person is, so the caller can drop them.
+    #
+    # Compose is handed the conversation, and a previous answer full of one
+    # town can put that town into a follow-up's query even when the person's
+    # own place is on record - "try again" after a Colonial Heights listing
+    # searched "Colonial Heights ... Courthouse Virginia" for a person in
+    # Courthouse (2026-09-04). Whether a name is a different place is a
+    # question about the world, not a string comparison, so it is this model's
+    # judgement; the caller strips what this names and re-holds the person's
+    # own place. A failure here leaves the query as composed.
+    def foreign_places(self, query: str, place: str) -> tuple[str, ...]:
+        if not query or not place:
+            return ()
+        schema = {
+            "type": "object",
+            "properties": {
+                "places": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "maxItems": 6,
+                },
+            },
+            "required": ["places"],
+            "additionalProperties": False,
+        }
+        try:
+            answer = self.llm.chat(
+                [
+                    {"role": "system", "content": load("search/place")},
+                    {
+                        "role": "user",
+                        "content": (
+                            f"The person is in: {place}\n\nSearch query: {query}"
+                        ),
+                    },
+                ],
+                200,
+                schema,
+                0.0,
+            )
+        except Exception:
+            logger.warning(
+                "Could not judge which places in the query are foreign",
+                exc_info=True,
+            )
+            return ()
+        payload = (
+            answer.get("content")
+            if isinstance(answer, dict) and "content" in answer
+            else answer
+        )
+        if isinstance(payload, str):
+            try:
+                payload = json.loads(payload)
+            except ValueError:
+                return ()
+        if not isinstance(payload, dict):
+            return ()
+        # The person's own words - city and region - are not foreign, whatever
+        # the model names. A place sharing a word with them (their region) is
+        # part of where they are.
+        owned = {word.casefold() for word in re.findall(r"[A-Za-z]+", place)}
+        foreign: list[str] = []
+        for name in payload.get("places") or []:
+            text = str(name).strip()
+            if not text or len(text) < 2:
+                continue
+            if {word.casefold() for word in re.findall(r"[A-Za-z]+", text)} & owned:
+                continue
+            if text not in foreign:
+                foreign.append(text)
+        return tuple(foreign)[:6]
 
     def _ask(self, system: str, user: str, what: str) -> str:
         try:
