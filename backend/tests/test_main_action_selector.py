@@ -609,3 +609,23 @@ async def test_a_decision_that_wrote_the_time_into_its_arguments_is_not_reused()
     for clock in ("Tuesday 2026-09-03 14:01", "Tuesday 2026-09-03 14:04"):
         await selector.select("ani", "remind me in five minutes", [], None, local_now=clock)
     assert len(llm.rounds) == 2, "14:06 was right at 14:01 and wrong at 14:04"
+
+
+# A retry is often a complaint: the router picked the wrong tool and the
+# person asked again. Replaying the cached decision would reproduce the
+# mistake with confidence. It does not, because the conversation the message
+# sits in is part of what the decision is keyed on, and a retry that follows
+# a wrong answer carries that answer in its history.
+@pytest.mark.asyncio
+async def test_asking_again_after_a_wrong_answer_is_decided_again():
+    llm = SequencedLLM([_tool_call("search_history", {"query": "the trip"})] * 2)
+    selector, _ = _selector({"content": "", "tool_calls": []}, llm=llm)
+    clock = "Tuesday 2026-09-03 14:01"
+    await selector.select("ani", "what did we say about the trip?", [], None, local_now=clock)
+    answered = [
+        {"query": "what did we say about the trip?", "response": "Here is the weather instead."},
+    ]
+    await selector.select(
+        "ani", "what did we say about the trip?", answered, None, local_now=clock
+    )
+    assert len(llm.rounds) == 2, "the wrong answer is in the history, so this is a new question"
