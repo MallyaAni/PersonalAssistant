@@ -102,6 +102,23 @@ class SelectionCase:
     # Whether this is a scheduled instruction firing on its own, which the
     # router is told; a reminder firing calls no tool.
     unattended: bool = False
+    # What the arguments the model writes must carry through, and what their
+    # presence would mean it substituted.
+    #
+    # Choosing the right tool is most of the score and none of the complaints.
+    # A `search_web` that writes "events this week" and one that writes
+    # "Arlington VA events September 5-7" are the same cell in the matrix and
+    # opposite outcomes for the person - that is the Arlington week answered
+    # with New York events, and the matrix could not see it.
+    #
+    # Deliberately literal rather than judged. These check that a word already
+    # present in the turn survived into the arguments, which is shape, not
+    # meaning - the one thing AGENTS.md permits a pattern for. It also has to
+    # be literal to be worth anything: the strongest model here is the one
+    # writing the query, so asking it to grade its own query asks it to have
+    # the blind spot and see the blind spot at the same time.
+    carries: tuple[str, ...] = ()
+    avoids: tuple[str, ...] = ()
 
 
 _OUTFIT_HISTORY = (
@@ -232,6 +249,13 @@ _SHOW_HISTORY = (
         "Twelve contestants think they are headed to a luxury villa in Greece; instead most are banished to the wilderness and must earn their way in, competing for $100,000. Season 1 dropped October 20, 2023.",
     ),
 )
+# A conversation that named its place, for the queries that have to keep it.
+_ARLINGTON_HISTORY = (
+    (
+        "any good coffee near me in Arlington VA?",
+        "A few worth the walk: Northside Social on Wilson, Compass Coffee in Clarendon, and Bakeshop for the pastries.",
+    ),
+)
 # A change just made, for "undo that".
 _CANCELLED_HISTORY = (
     ("cancel the stretch reminder", "Done - the daily stretch reminder is cancelled."),
@@ -274,8 +298,44 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
     # 2026-08-26, found by sweep_journeys on the deployed build: routed to the
     # forecast tool once because of "at 5pm". Travel time is a search.
     SelectionCase("how long will it take me to drive to Dulles airport at 5pm?", SEARCH, "live_data"),
-    SelectionCase("does only one person win at the end?", SEARCH, "followup_subject", history=_SHOW_HISTORY),
-    SelectionCase("you mentioned there was only one season", SEARCH, "followup_subject", history=_SHOW_HISTORY),
+    SelectionCase("does only one person win at the end?", SEARCH, "followup_subject", history=_SHOW_HISTORY,
+                  carries=("Surviving Paradise",)),
+    SelectionCase("you mentioned there was only one season", SEARCH, "followup_subject", history=_SHOW_HISTORY,
+                  carries=("Surviving Paradise",)),
+    # --- what the query itself has to carry -------------------------------
+    #
+    # Each of these is a tool choice the router already gets right and a
+    # query it got wrong in production. They were invisible to the matrix,
+    # which scores the cell and not what is written into it.
+    #
+    # 2026-09-01: a week of Arlington events came back as New York ones. The
+    # router chose search_web correctly every time; the query it wrote did
+    # not name the place the conversation had been about.
+    SelectionCase(
+        "what's on this weekend?", SEARCH, "live_data",
+        history=_ARLINGTON_HISTORY,
+        carries=("Arlington",),
+    ),
+    # The same failure with the place in the message rather than the history,
+    # and the relative day that has to become a date the search can use.
+    SelectionCase(
+        "what's happening in Arlington VA on September 5?", SEARCH, "live_data",
+        carries=("Arlington", "September 5"),
+    ),
+    # A referential follow-up must copy the subject into the query rather
+    # than leaving the shorthand - the failure mode of 2026-08-31, when a
+    # thread about aqueducts came back named after a failed diagram attempt.
+    #
+    # It has to be a question that genuinely needs a live check, or the case
+    # tests nothing: the first version of it asked how Roman aqueducts were
+    # built, the router answered from knowledge 3/3, and it was right to -
+    # the prompt says in as many words that a finished era is not live. The
+    # label was wrong and the argument check found it on the first run.
+    SelectionCase(
+        "when is the next season out?", SEARCH, "followup_subject",
+        history=_SHOW_HISTORY,
+        carries=("Surviving Paradise",),
+    ),
     SelectionCase("is there traffic on 66 right now?", SEARCH, "live_data"),
     SelectionCase("how much does a Tesla Model 3 cost now", SEARCH, "live_data"),
     SelectionCase("what happened in the Nvidia earnings call", SEARCH, "news"),
@@ -726,6 +786,14 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
 # same trap `backend/vision/grounding_cases.py` records. Compare two models
 # with the CLI, which reports the matrix; use this only as a gate.
 ACCURACY_FLOOR = 0.70
+
+# What the arguments must carry, over the cases that state an expectation.
+# Set at 1.0 deliberately and not from a measurement: unlike a tool choice,
+# these are not judgements the model could reasonably differ on. The turn
+# said Arlington; the query either carries Arlington or it does not, and a
+# query that dropped it produced the New York answer. A floor below one here
+# would be a decision to ship some of those.
+ARGUMENT_FLOOR = 1.0
 
 # Preserve each built-in capability independently so a strong common class
 # cannot hide the collapse of a smaller, expensive one. These sit below the

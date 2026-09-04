@@ -6,7 +6,7 @@ mechanism built to stop one capability collapsing behind a good average had
 never once run, which is how a matrix whose no-tool cases scored 55/75 - six
 of them wrong on every pass - printed PASS.
 """
-from backend.cli.evaluate_tool_selection import report
+from backend.cli.evaluate_tool_selection import Observation, report
 from backend.services.tool_selection_cases import (
     PER_TOOL_ACCURACY_FLOORS,
     TOOL_NAMES,
@@ -16,11 +16,15 @@ NO_TOOL = "none"
 SEARCH = "search_web"
 
 
-def _observations(rows: list[tuple[str, str, int]]) -> list[tuple[str, str, str, str]]:
+def _observations(rows: list[tuple[str, str, int]]) -> list[Observation]:
     made = []
     for expected, chosen, count in rows:
         for index in range(count):
-            made.append((expected, chosen, "measured", f"case {expected} {index}"))
+            # arguments_held is None: these cases state no expectation of what
+            # the model writes, so the argument floor must not judge them.
+            made.append(
+                Observation(expected, chosen, "measured", f"case {expected} {index}", None, "")
+            )
     return made
 
 
@@ -52,7 +56,7 @@ def test_a_healthy_aggregate_no_longer_hides_a_collapsed_tool(capsys):
     # 400 right out of 500 is 0.80, comfortably over the 0.70 aggregate, while
     # no-tool is at zero. Before enforcement this printed PASS.
     observations = _observations([(NO_TOOL, SEARCH, 100), (SEARCH, SEARCH, 400)])
-    correct = sum(1 for expected, chosen, _, _ in observations if expected == chosen)
+    correct = sum(1 for seen in observations if seen.expected == seen.chosen)
     assert correct / len(observations) == 0.8
     assert report(observations, reps=1) is False
 
@@ -61,3 +65,20 @@ def test_every_floor_is_a_tool_the_matrix_can_report(capsys):
     # A floor keyed on a name the report never iterates is a floor that cannot
     # fire, which is the same failure one layer along.
     assert set(PER_TOOL_ACCURACY_FLOORS) <= set(TOOL_NAMES)
+
+
+def test_arguments_that_dropped_the_turns_own_words_fail_the_run(capsys):
+    # The gap this closes: the right cell, the wrong thing written into it.
+    # Every tool choice here is correct, so only the argument floor can fail.
+    held = Observation(SEARCH, SEARCH, "live_data", "what's on this weekend?", True, "Arlington VA events")
+    dropped = Observation(SEARCH, SEARCH, "live_data", "what's on this weekend?", False, "events this week")
+    assert report([held] * 9 + [dropped], reps=1) is False
+    printed = capsys.readouterr().out
+    assert "arguments: 9/10" in printed and "BREACH" in printed
+    # The failure names what was written, since that is the thing to fix.
+    assert "events this week" in printed
+
+
+def test_cases_stating_no_expectation_are_not_scored_as_passing(capsys):
+    report(_observations([(SEARCH, SEARCH, 10)]), reps=1)
+    assert "no case states what its arguments must carry" in capsys.readouterr().out

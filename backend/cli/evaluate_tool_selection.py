@@ -23,6 +23,7 @@ failure modes underneath were opposites, which a single number cannot show.
 import argparse
 import asyncio
 from collections import defaultdict
+from dataclasses import dataclass
 
 from typing import Any
 
@@ -60,6 +61,7 @@ from backend.services.tool_selection_cases import (
     SEARCH,
     SEARCH_CREDITS,
     ACCURACY_FLOOR,
+    ARGUMENT_FLOOR,
     PER_TOOL_ACCURACY_FLOORS,
     NO_TOOL,
     SELECTION_CASES,
@@ -107,12 +109,59 @@ def tool_of(action: object) -> str:
     return _ACTION_TOOL.get(type(action), NO_TOOL)
 
 
+@dataclass(frozen=True, slots=True)
+class Observation:
+    """One pass of one case: the tool wanted, the tool taken, and whether what
+    the model wrote for it carried the turn's own words through."""
+
+    expected: str
+    chosen: str
+    category: str
+    query: str
+    arguments_held: bool | None
+    written: str
+
+
+# Everything the model wrote for this call, as one searchable string. The
+# actions are frozen dataclasses of scalars, so their own fields are the
+# arguments - no per-tool list here that a new tool could fall off.
+def arguments_of(action: object) -> str:
+    if action is None:
+        return ""
+    if isinstance(action, ToolboxAction):
+        return " ".join(str(value) for value in action.plan.arguments.values())
+    fields = getattr(action, "__dataclass_fields__", None)
+    if not fields:
+        return ""
+    return " ".join(str(getattr(action, name, "")) for name in fields)
+
+
+# Whether the arguments carried through what the turn already contained.
+# None when the case asks nothing of them, so a case with no expectation is
+# neither a pass nor a failure and cannot flatter the score.
+def arguments_hold(case: SelectionCase, action: object) -> bool | None:
+    if not case.carries and not case.avoids:
+        return None
+    # A tool that should not have been called has no argument question to
+    # answer. Scoring it here counted one routing miss twice and printed the
+    # empty arguments of the call that never happened as though the model had
+    # written nothing into a call it made.
+    if tool_of(action) != case.expected:
+        return None
+    written = arguments_of(action).casefold()
+    if not written:
+        return False
+    if any(word.casefold() not in written for word in case.carries):
+        return False
+    return not any(word.casefold() in written for word in case.avoids)
+
+
 # Run every labelled case and return the chosen tool for each observation.
 async def collect(
     selector: MainActionSelector,
     reps: int,
     cases: tuple[SelectionCase, ...] = SELECTION_CASES,
-) -> list[tuple[str, str, str, str]]:
+) -> list[Observation]:
     observations: list[tuple[str, str, str]] = []
     for case in cases:
         history = [
@@ -143,7 +192,16 @@ async def collect(
                 )
             finally:
                 current_search_identity.reset(token)
-            observations.append((case.expected, tool_of(action), case.category, case.query))
+            observations.append(
+                Observation(
+                    case.expected,
+                    tool_of(action),
+                    case.category,
+                    case.query,
+                    arguments_hold(case, action),
+                    arguments_of(action)[:200],
+                )
+            )
     return observations
 
 
@@ -154,10 +212,10 @@ async def collect(
 # misled the router - was the one thing the report left out. A case that fails
 # on every pass is a rule that is wrong; a case that fails on one of three is
 # the model's own variance, and those want different work.
-def failures(observations: list[tuple[str, str, str, str]], reps: int) -> list[dict[str, Any]]:
+def failures(observations: list[Observation], reps: int) -> list[dict[str, Any]]:
     tally: dict[tuple[str, str, str], dict[str, int]] = defaultdict(lambda: defaultdict(int))
-    for expected, chosen, category, query in observations:
-        tally[(query, expected, category)][chosen] += 1
+    for seen in observations:
+        tally[(seen.query, seen.expected, seen.category)][seen.chosen] += 1
     found = []
     for (query, expected, category), chosen in tally.items():
         missed = sum(count for name, count in chosen.items() if name != expected)
@@ -177,12 +235,12 @@ def failures(observations: list[tuple[str, str, str, str]], reps: int) -> list[d
 
 
 # Print accuracy, the confusion matrix, and the individual cases that failed.
-def report(observations: list[tuple[str, str, str, str]], reps: int) -> bool:
+def report(observations: list[Observation], reps: int) -> bool:
     matrix: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
-    for expected, chosen, _, _ in observations:
-        matrix[expected][chosen] += 1
+    for seen in observations:
+        matrix[seen.expected][seen.chosen] += 1
 
-    correct = sum(1 for e, c, _, _ in observations if e == c)
+    correct = sum(1 for seen in observations if seen.expected == seen.chosen)
     total = len(observations)
     accuracy = correct / total if total else 0.0
 
@@ -211,8 +269,8 @@ def report(observations: list[tuple[str, str, str, str]], reps: int) -> bool:
         print("  (none)")
 
     by_category: dict[str, list[int]] = defaultdict(list)
-    for expected, chosen, category, _ in observations:
-        by_category[category].append(int(expected == chosen))
+    for seen in observations:
+        by_category[seen.category].append(int(seen.expected == seen.chosen))
     print("\nby category:")
     for category, hits in sorted(by_category.items()):
         print(f"  {category:24s} {sum(hits)}/{len(hits)}")
@@ -239,6 +297,26 @@ def report(observations: list[tuple[str, str, str, str]], reps: int) -> bool:
     if breached:
         print("\nfloors breached: " + "; ".join(breached))
 
+    # Right tool, wrong arguments. This is the whole of the gap between a
+    # matrix that says 91% and a person saying the answer was useless: the
+    # cell is correct and what was written into it is not. Scored only where
+    # a case states an expectation, so silence never flatters the number.
+    judged = [seen for seen in observations if seen.arguments_held is not None]
+    held = [seen for seen in judged if seen.arguments_held]
+    if judged:
+        rate = len(held) / len(judged)
+        print(
+            f"\narguments: {len(held)}/{len(judged)} carried the turn's own words"
+            f"  floor {ARGUMENT_FLOOR:.2f}  {'ok' if rate >= ARGUMENT_FLOOR else 'BREACH'}"
+        )
+        for seen in judged:
+            if not seen.arguments_held:
+                print(f"  {seen.category}: {seen.query[:70]}")
+                print(f"      wrote: {seen.written[:110]}")
+    else:
+        print("\narguments: no case states what its arguments must carry")
+    arguments_ok = (not judged) or (len(held) / len(judged)) >= ARGUMENT_FLOOR
+
     missed = failures(observations, reps)
     print(f"\ncases that failed ({len(missed)}):")
     for row in missed or []:
@@ -258,9 +336,22 @@ def report(observations: list[tuple[str, str, str, str]], reps: int) -> bool:
             category: (sum(hits), len(hits)) for category, hits in by_category.items()
         },
         notes=f"{len(SELECTION_CASES)} labelled cases, {len(missed)} failing",
-        extra={"failures": missed, "floors_breached": breached},
+        extra={
+            "failures": missed,
+            "floors_breached": breached,
+            "arguments": {
+                "held": len(held),
+                "judged": len(judged),
+                "floor": ARGUMENT_FLOOR,
+                "missed": [
+                    {"query": seen.query, "wrote": seen.written}
+                    for seen in judged
+                    if not seen.arguments_held
+                ],
+            },
+        },
     )
-    return accuracy >= ACCURACY_FLOOR and not breached
+    return accuracy >= ACCURACY_FLOOR and not breached and arguments_ok
 
 
 # Build the selector against the configured routing model and score the set.
