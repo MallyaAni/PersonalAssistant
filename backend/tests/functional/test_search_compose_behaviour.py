@@ -130,3 +130,45 @@ async def test_an_unrelated_question_is_searched_as_asked(llm):
         assert not any(
             word in lowered for word in ("salsa", "board game", "trivia", "hiking")
         ), (question, composed)
+
+
+# Whether a request depends on who is asking, and which of the person's own
+# tastes belong in the search for it. This is the judgement that was a prompt
+# suggestion until 2026-09-04, when it declined to use any of an account's
+# twenty interests and answered "fun things to do in the area" with four
+# listings from a town two hours away.
+_LIKES = (
+    "line dancing", "vintage shops/thrifting", "hiking", "dancing",
+    "unique local events", "farmers markets", "live music", "traveling",
+    "exploring new places", "east coast swing", "salsa", "west coast swing",
+    "chess", "swing dancing", "bachata", "board games", "karaoke",
+    "wineries", "breweries",
+)
+
+
+@pytest.mark.parametrize(
+    "question,personal",
+    [
+        ("what's are some fun things to do in the area this week?", True),
+        ("any good places to eat around here tonight?", True),
+        ("what should I do this weekend?", True),
+        # A taste for dancing does not change what a console costs.
+        ("how much does a PS5 cost now", False),
+        ("who is the prime minister of Canada", False),
+        ("how long to drive to Dulles at 5pm", False),
+    ],
+)
+async def test_the_search_is_personalised_only_where_that_is_the_answer(
+    llm, question, personal
+):
+    import asyncio as _asyncio
+
+    planner = SearchPlanner(llm)
+
+    # Three passes: a judgement that holds once is not a judgement yet.
+    for _ in range(3):
+        fitting = await _asyncio.to_thread(planner.relevant_interests, question, _LIKES)
+        assert bool(fitting) is personal, (question, fitting)
+        if personal:
+            # Named from the person's own list, never invented.
+            assert set(fitting) <= set(_LIKES), fitting

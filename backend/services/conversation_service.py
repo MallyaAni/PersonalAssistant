@@ -495,6 +495,52 @@ def _hold_to_dates(query: str, question: str, now: datetime) -> str:
     return f"{query} {span}".strip()
 
 
+# A search for something to do carries what this person likes, in code.
+#
+# The place is held into the query here, and the dates are, and the interests
+# were left to `prompts/search/compose.md`, which "decides when to use them".
+# On 2026-09-04 it decided not to: the query that ran was "fun events things
+# to do this weekend September 5-6 2026 Arlington Virginia Courthouse" for an
+# account with twenty interests on file - salsa, bachata, east and west coast
+# swing, line dancing, live music, karaoke, board games, chess, breweries,
+# wineries, hiking, thrifting, farmers markets - and not one of them was in
+# it. Four Colonial Heights listings came back, none of them anything he
+# would go to, and the reply had one recommendation in it.
+#
+# The measurement beside `_hold_to_dates` had already priced this: place and
+# dates alone give 5 dated events and 0 matching what the person likes; add
+# the interests and it is 16 dated, 8 inside the week, 4 of them matching.
+# The difference between a listing and a *recommendation* is these words, so
+# they go in the query rather than being suggested to a prompt - the same
+# correction the place got, for the same reason.
+#
+# Which interests, and whether any at all, is `SearchPlanner.relevant_interests`
+# - a judgement, made by a model, because "does this request depend on who is
+# asking" cannot be a list of question-words without missing a phrasing. This
+# function only guarantees that what it named reaches the query. That split is
+# what ChatGPT's Memory with Search does too: it rewrites "restaurants near me
+# that I'd like" into "good vegan restaurants, San Francisco" - the taste and
+# the place both put into the query before it is searched, rather than hoped
+# for afterwards.
+def _hold_to_interests(query: str, likes: tuple[str, ...]) -> str:
+    if not query or not likes:
+        return query
+    from backend.core.grounding import bare_words
+
+    carried = {word for word in bare_words(query).split() if len(word) > 2}
+    add: list[str] = []
+    for like in likes:
+        words = {word for word in bare_words(str(like)).split() if len(word) > 2}
+        # Nothing the query already says, and nothing that says nothing: an
+        # interest whose every word is already there adds no reach.
+        if words and not words <= carried:
+            add.append(str(like).strip())
+            carried |= words
+        if len(add) >= 6:
+            break
+    return f"{query} {' '.join(add)}".strip() if add else query
+
+
 # A later search round that dropped the place the first one carried gets it
 # back: the city (the label's first part) and its region, as the first query
 # had them. A query that never had the place, or a place unknown, is left
@@ -536,14 +582,32 @@ def _rerank_question(question: str, place: str) -> str:
 # job. Anything the question does not name keeps its old order behind those
 # that it does, so nothing is lost - only reordered.
 def _interests_for(question: str, interests: tuple[str, ...], limit: int = 8) -> list[str]:
+    """The person's interests that add something to this question's search.
+
+    This used to sort by *overlap* with the question, most overlap first, and
+    that is backwards for the one job it has. A search query is improved by
+    the words the question does not already contain. Asked "fun things to do
+    in the area this week" on 2026-09-04, it returned "exploring new things,
+    unique local events, hiking, dancing" - it had scored "exploring new
+    things" top because the question says "things" - while salsa, bachata,
+    swing dancing, live music, karaoke, breweries and board games, every one
+    of them a term that would have found a real Arlington evening, sorted to
+    the bottom and never reached the query. Four Colonial Heights listings
+    came back and the operator asked, fairly, how many times he had to say it
+    should be tailored to what it knows about him.
+
+    So an interest whose words the question already carries is worth least,
+    not most, and the order is otherwise the person's own: strongest first.
+    """
     from backend.core.grounding import bare_words
 
     asked = {word for word in bare_words(question).split() if len(word) > 2}
     scored: list[tuple[int, int, str]] = []
     for position, interest in enumerate(interests):
         words = {word for word in bare_words(str(interest)).split() if len(word) > 2}
-        # Negative so a higher overlap sorts first, position breaks ties.
-        scored.append((-len(asked & words), position, str(interest)))
+        # Positive, so an interest the question already says sorts last. It is
+        # not dropped: a question naming one of them is a question about it.
+        scored.append((len(asked & words), position, str(interest)))
     scored.sort()
     return [interest for _overlap, _position, interest in scored[:limit]]
 
@@ -2682,18 +2746,40 @@ class ConversationService:
                     known_interests = await self._known_interests(
                         str(context.get("user_id") or "")
                     )
-                    likes = tuple(_interests_for(query, known_interests, limit=6))
+                    # All of them, not a shortlist. Narrowing here with word
+                    # overlap put "exploring new things" and "unique local
+                    # events" in front of salsa, bachata, swing dancing,
+                    # karaoke and breweries, and the model that judges which
+                    # ones fit never saw the ones worth searching for. A
+                    # weaker chooser must not stand in front of a better one;
+                    # the cap is only so the list stays a list.
+                    likes = tuple(known_interests)[:40]
                 except Exception:
                     likes = ()
                 composed = await asyncio.to_thread(
                     self.search_planner.compose,
                     query,
                     _planner_history(history, str(context.get("timezone") or "")),
-                    likes,
+                    likes[:8],
                 )
                 if composed:
                     chosen_query = composed
+                # And then put them in, rather than trusting that it did. The
+                # planner's prompt is told it may use them and on 2026-09-04
+                # it did not, for an account with twenty interests on file.
+                fitting: tuple[str, ...] = ()
+                if likes:
+                    try:
+                        fitting = await asyncio.to_thread(
+                            self.search_planner.relevant_interests, query, likes
+                        )
+                    except Exception:
+                        fitting = ()
+                chosen_query = _hold_to_interests(chosen_query, fitting)
+                if fitting:
+                    _trace("personalized", list(fitting))
             outbound_query = _image_aware_search_query(chosen_query, image_matches)
+            _trace("query", outbound_query[:200])
             screened = self.search_privacy.sanitize(outbound_query)
             if not screened.allowed:
                 # Categories are logged, never the text that triggered them.

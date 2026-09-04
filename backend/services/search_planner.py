@@ -13,7 +13,10 @@ model is best at - and it is the model that has to use the results, so it is
 the one that should say what it needs and whether it got it.
 """
 
+import json
 import logging
+
+from backend.core.prompts import load
 from datetime import UTC, datetime
 from typing import Any
 
@@ -212,6 +215,69 @@ class SearchPlanner:
 
     # One bounded free-text call. A failure here costs the improvement, never
     # the turn: every caller falls back to what it already had.
+    # Which of this person's interests the request should actually be
+    # searched with, named by the model rather than gated by a word list.
+    #
+    # The interests used to be advice: `compose` was handed them and the
+    # prompt "decides when to use them". On 2026-09-04 it decided not to, for
+    # an account with twenty on file, and the answer was four listings in a
+    # town two hours away with nothing in it the person would go to. A gate
+    # made of question-words would have been the other failure - it would
+    # have to guess every phrasing a request for a recommendation can take,
+    # and this repository has deleted four of those.
+    #
+    # So the judgement is the model's and the guarantee is the caller's: it
+    # names the interests worth searching with, or none for a request that
+    # has nothing to do with taste, and the caller puts whatever it named
+    # into the query rather than hoping it already did.
+    def relevant_interests(self, question: str, likes: tuple[str, ...]) -> tuple[str, ...]:
+        if not likes or not question.strip():
+            return ()
+        schema = {
+            "type": "object",
+            "properties": {
+                # The reading before the verdict: what kind of request this is
+                # first, then which interests belong in it.
+                "personal": {"type": "boolean"},
+                "interests": {
+                    "type": "array",
+                    "items": {"type": "string", "enum": list(likes)},
+                    "maxItems": 6,
+                },
+            },
+            "required": ["personal", "interests"],
+            "additionalProperties": False,
+        }
+        listed = "\n".join(f"- {like}" for like in likes)
+        try:
+            answer = self.llm.chat(
+                [
+                    {"role": "system", "content": load("search/personalize")},
+                    {"role": "user", "content": f"Their request: {question}\n\nWhat they like:\n{listed}"},
+                ],
+                200,
+                schema,
+                0.0,
+            )
+        except Exception:
+            logger.warning("Could not judge which interests fit the request", exc_info=True)
+            return ()
+        payload = answer.get("content") if isinstance(answer, dict) and "content" in answer else answer
+        if isinstance(payload, str):
+            try:
+                payload = json.loads(payload)
+            except ValueError:
+                return ()
+        if not isinstance(payload, dict) or not payload.get("personal"):
+            return ()
+        known = {like.casefold(): like for like in likes}
+        chosen = [
+            known[str(item).casefold()]
+            for item in (payload.get("interests") or [])
+            if str(item).casefold() in known
+        ]
+        return tuple(dict.fromkeys(chosen))[:6]
+
     def _ask(self, system: str, user: str, what: str) -> str:
         try:
             reply = self.llm.chat(
