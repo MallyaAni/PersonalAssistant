@@ -338,6 +338,12 @@ class Settings(BaseSettings):
     # an ordering that already exists, so its absence is degradation, never
     # failure. Candidates are fetched wider than the final cut so the reranker
     # has something to disagree with.
+    # Which cross-encoder reorders recalled turns. "local" is the ONNX
+    # ms-marco model already deployed for Scout, on the CPU; "service" is the
+    # GPU-resident Qwen3 reranker. Measured 2026-09-03 over five recall
+    # questions: local 5/5 right at 39.6 ms, served 2/5 at 67.6 ms and 3.6 GB
+    # of memory. Local by default; the setting exists to switch back.
+    RECALL_RERANKER_SOURCE: Literal["local", "service"] = "local"
     RERANKER_BASE_URL: str = ""
     RERANKER_MODEL: str = "qwen3-reranker-0.6b"
     RERANKER_TIMEOUT_SECONDS: float = Field(default=8.0, gt=0, le=60)

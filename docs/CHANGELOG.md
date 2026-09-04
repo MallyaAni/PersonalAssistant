@@ -2,6 +2,31 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-03 - Recall reordering moves to the cross-encoder that was already there
+
+Measured on five recall questions over the same six turns, warm, both
+scorers on the live box:
+
+| | right | per query | memory |
+| --- | --- | --- | --- |
+| served Qwen3-Reranker-0.6B | 2/5 | 67.6 ms | ~3.6 GB resident |
+| local ms-marco MiniLM L6 (ONNX, CPU) | 5/5 | 39.6 ms | none |
+
+For "what did we say about the Amalfi trip?" the served model ranked the one
+turn that named the trip **last**, and a sentence about buying a couch
+second. The local encoder put the trip first in every case.
+
+So conversation recall now uses the same cross-encoder Scout does
+(`RECALL_RERANKER_SOURCE`, "local" by default, "service" switches back).
+`backend/embeddings/cross_encoder.py` already argued this in its own words -
+"a third resident GPU service would have to take VRAM from the model
+answering people" - and the served reranker was the third service. It has no
+other consumer, so the container can be retired and its memory returned.
+
+The cases are hand-labelled and few; the point is not the exact ratio but
+that the cheaper encoder was not worse. Re-measure with more before
+switching back.
+
 ## 2026-09-03 - One routing decision, remembered while it stays true
 
 Two measured passes over the 108 labelled cases answered differently in

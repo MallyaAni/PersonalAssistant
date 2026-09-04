@@ -701,7 +701,7 @@ There are two consumers and one fallback, and they fail differently:
 
 | Caller | What it ranks | When it is absent |
 | --- | --- | --- |
-| `core/reranker.py`, from `conversation_service` | Candidates for a "what did we say about..." recall - the most-used tool in the system (46 turns in seven days) | Returns None; the caller keeps its cosine order |
+| `core/reranker.py`, from `conversation_service` | Candidates for a "what did we say about..." recall - the most-used tool in the system (46 turns in seven days). Since 2026-09-03 this runs on the **local** ONNX cross-encoder, not the served model: measured 5/5 against 2/5, 39.6 ms against 67.6, and no GPU memory | Returns None; the caller keeps its cosine order |
 | `embeddings/service_reranker.py` → `get_cross_encoder()` → `PrecisionRanker` in `discovery/runner.py` | The second half of Scout's cascade: each (interest, candidate) pair read properly after the embedding shortlist | `is_enabled()` is false and the sweep keeps the embedding order, silently |
 | `embeddings/cross_encoder.py` (local ONNX) | The same contract, from weights on disk | Disables itself when the weights are missing |
 
