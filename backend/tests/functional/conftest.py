@@ -55,6 +55,20 @@ def pytest_runtest_makereport(item, call):
         )
 
 
+# A live test that asks the model the same thing several times is asking how
+# often it agrees with itself. The routing cache answers the second and third
+# ask from memory, so without this a repeated live assertion is one
+# observation wearing three coats - and repetition is exactly what these tests
+# use to tell a real behaviour from a coin flip.
+@pytest.fixture(autouse=True)
+def _forget_routing_decisions():
+    from backend.services.main_action_selector import clear_decision_cache
+
+    clear_decision_cache()
+    yield
+    clear_decision_cache()
+
+
 # Being *permitted* to call search is not the same as search resolving. The
 # selector catches MCPInvocationError and simply omits search_web from the
 # offer, so a stdio server that fails to spawn inside the test container makes

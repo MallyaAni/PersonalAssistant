@@ -30,6 +30,7 @@ from backend.core.dependencies import (
     get_routing_llm_client,
 )
 from backend.services.main_action_selector import (
+    clear_decision_cache,
     CreateDiagramAction,
     CreateDocumentAction,
     EditDocumentAction,
@@ -118,6 +119,14 @@ async def collect(
         # the withholding, not the choice.
         identity = SearchIdentity(user_id="tool_selection_eval", is_operator=case.operator)
         for _ in range(reps):
+            # The point of a repeated pass is to sample the model's own
+            # variance, and the routing cache answers an identical question
+            # from memory. Every field of its key is fixed here - same user,
+            # same query, same tools, same stated clock - so without this the
+            # second and third passes read back the first one's answer and
+            # every rate measured from this CLI is one observation wearing
+            # three coats. True since the cache shipped in 82d0e9b8.
+            clear_decision_cache()
             token = current_search_identity.set(identity)
             try:
                 action = await selector.select(
