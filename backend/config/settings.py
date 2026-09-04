@@ -342,20 +342,6 @@ class Settings(BaseSettings):
     # because the person explicitly pointed at something that is not in view.
     HISTORY_SEARCH_MAX_RESULTS: int = Field(default=12, ge=1, le=50)
     HISTORY_SEARCH_MAX_COSINE_DISTANCE: float = Field(default=0.6, ge=0, le=2)
-    # The cross-encoder second pass. Empty base URL switches the stage off and
-    # every consumer keeps its first-pass cosine ordering - reranking improves
-    # an ordering that already exists, so its absence is degradation, never
-    # failure. Candidates are fetched wider than the final cut so the reranker
-    # has something to disagree with.
-    # Which cross-encoder reorders recalled turns. "local" is the ONNX
-    # ms-marco model already deployed for Scout, on the CPU; "service" is the
-    # GPU-resident Qwen3 reranker. Measured 2026-09-03 over five recall
-    # questions: local 5/5 right at 39.6 ms, served 2/5 at 67.6 ms and 3.6 GB
-    # of memory. Local by default; the setting exists to switch back.
-    RECALL_RERANKER_SOURCE: Literal["local", "service"] = "local"
-    RERANKER_BASE_URL: str = ""
-    RERANKER_MODEL: str = "qwen3-reranker-0.6b"
-    RERANKER_TIMEOUT_SECONDS: float = Field(default=8.0, gt=0, le=60)
     HISTORY_RERANK_CANDIDATES: int = Field(default=40, ge=1, le=200)
     MEMORY_SEMANTIC_MAX_CONTENT_CHARS: int = Field(default=4_000, ge=100, le=50_000)
     CONVERSATION_HISTORY_TURNS: int = Field(default=10, ge=0, le=50)
@@ -670,7 +656,6 @@ class Settings(BaseSettings):
     # already runs, adapted back to log-odds so the attribution margin keeps
     # its meaning. A swap is judged by evaluate_discovery_ranking, never by
     # eyeballing, which is why both stay selectable.
-    DISCOVERY_RERANKER_SOURCE: Literal["local", "service"] = "local"
     DISCOVERY_PLACE_RESOLVER: Literal["", "nominatim"] = ""
     DISCOVERY_PLACE_RESOLVER_URL: str = "https://nominatim.openstreetmap.org/reverse"
     DISCOVERY_PLACE_RESOLVER_USER_AGENT: str = "AniOS/1.0 (local personal assistant)"

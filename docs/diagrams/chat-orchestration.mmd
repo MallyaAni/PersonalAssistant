@@ -39,7 +39,7 @@ flowchart TB
     Apply -->|no next tool · a repeat · a second creation<br/>· the step ceiling · the clock| Memory
 
     Selector -->|search_web query,<br/>model-authored| Search[Privacy-screened internet search<br/>credit-accurate budget · a failed search<br/>becomes turn state the reply admits]
-    Selector -->|search_history query| History[Transcript-store semantic search<br/>top 40 by vector, both voices, HNSW<br/>Qwen3 reranker cuts to 12, fail-soft]
+    Selector -->|search_history query| History[Transcript-store semantic search<br/>top 40 by vector, both voices, HNSW<br/>ONNX cross-encoder cuts to 12, fail-soft]
     Selector -->|toolbox tool| MCP[Guarded MCP<br/>invocation]
     MCP --> Context
     Search --> Context

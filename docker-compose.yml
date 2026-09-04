@@ -87,13 +87,13 @@ services:
       start_period: 3m
     restart: unless-stopped
 
-  # vllm-reranker was retired 2026-09-03. Recall reordering and Scout's
-  # precision ranking both run on the local ONNX cross-encoder, which
-  # measured 5/5 at 39.6ms against the served model's 2/5 at 67.6ms, and
-  # the container was holding 3.6 GB on a box already 12 GB into swap.
-  # RERANKER_BASE_URL is kept as a setting with no default host: setting
-  # it and RECALL_RERANKER_SOURCE=service is how a served reranker comes
-  # back, and Qwen3-VL-Reranker speaks the same /v2/rerank contract.
+  # vllm-reranker was retired 2026-09-03, along with every setting and code
+  # path that reached it. Recall reordering and Scout's precision ranking
+  # both run on the local ONNX cross-encoder, which measured 5/5 at 39.6ms
+  # against the served model's 2/5 at 67.6ms while the container held 3.6 GB
+  # on a box already 12 GB into swap. Serving a reranker again means adding
+  # a client, not flipping a switch - which is the honest cost, and better
+  # than a branch nobody exercises pretending otherwise.
   functional-tests:
     # The deploy gate. Never started by `docker compose up`: the profile keeps
     # it out of every ordinary command, and it only ever runs via
@@ -149,8 +149,6 @@ services:
       # host-published port .env names for the operator's shell: a functional
       # test that embeds (a member's memory found by relevance) needs this one.
       - EMBEDDING_BASE_URL=http://vllm-embedding:8000
-      - RERANKER_BASE_URL=${RERANKER_BASE_URL:-}
-      - RERANKER_MODEL=${RERANKER_MODEL:-qwen3-reranker-0.6b}
       - EMBEDDING_MODEL=${EMBEDDING_MODEL:-text-embedding-nomic-embed-text-v1.5}
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
@@ -303,8 +301,6 @@ services:
       # The reranker rides beside the embedder: it re-scores what the vector
       # search retrieved. It was wired into the test container only for a
       # day (2026-08-25) and fail-soft hid that the live stage was off.
-      - RERANKER_BASE_URL=${RERANKER_BASE_URL:-}
-      - RERANKER_MODEL=${RERANKER_MODEL:-qwen3-reranker-0.6b}
       - IMAGE_PROVIDER_BASE_URL=${IMAGE_PROVIDER_BASE_URL:-http://host.docker.internal:8188}
       # One FLUX.2 Klein checkpoint serves generation and editing alike, so
       # the model, text encoder and VAE are shared rather than per-role. The
@@ -606,8 +602,6 @@ services:
       # only the backend and two others were handed the endpoint, and
       # PrecisionRanker treats a missing URL as absence and keeps the
       # embedding order (2026-09-03).
-      - RERANKER_BASE_URL=${RERANKER_BASE_URL:-}
-      - RERANKER_MODEL=${RERANKER_MODEL:-qwen3-reranker-0.6b}
       - EMBEDDING_MODEL=${EMBEDDING_MODEL:-text-embedding-nomic-embed-text-v1.5}
       # Egress stays off unless the operator turns it on deliberately.
       - DISCOVERY_EGRESS_ENABLED=${DISCOVERY_EGRESS_ENABLED:-false}
@@ -678,7 +672,6 @@ services:
       # either service needs; both must agree, or a rehearsal orders finds
       # differently from the scheduled sweep that follows it.
       - DISCOVERY_CROSS_ENCODER_ENABLED=${DISCOVERY_CROSS_ENCODER_ENABLED:-true}
-      - DISCOVERY_RERANKER_SOURCE=${DISCOVERY_RERANKER_SOURCE:-local}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - GOOGLE_SEARCH_ENABLED=${GOOGLE_SEARCH_ENABLED:-false}
@@ -789,7 +782,6 @@ services:
       # either service needs; both must agree, or a rehearsal orders finds
       # differently from the scheduled sweep that follows it.
       - DISCOVERY_CROSS_ENCODER_ENABLED=${DISCOVERY_CROSS_ENCODER_ENABLED:-true}
-      - DISCOVERY_RERANKER_SOURCE=${DISCOVERY_RERANKER_SOURCE:-local}
       # Which server owns the Apple device, and what its send tool is called.
       # The worker had these and this did not, so a send from the API would
       # resolve the tool name to its code default - `send_message`, which the
@@ -896,8 +888,6 @@ services:
       # The reranker rides beside the embedder: it re-scores what the vector
       # search retrieved. It was wired into the test container only for a
       # day (2026-08-25) and fail-soft hid that the live stage was off.
-      - RERANKER_BASE_URL=${RERANKER_BASE_URL:-}
-      - RERANKER_MODEL=${RERANKER_MODEL:-qwen3-reranker-0.6b}
       # Points at the host ComfyUI install (E:/AI/ComfyUI), started with
       # --listen 0.0.0.0 so the container can reach it. To use the sibling
       # `comfyui` service instead, run `--profile comfyui` and set this to

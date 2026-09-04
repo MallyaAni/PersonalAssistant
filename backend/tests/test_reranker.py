@@ -79,11 +79,14 @@ async def test_a_single_candidate_is_never_sent_for_ranking():
     assert calls == []
 
 
-def test_an_empty_base_url_disables_the_stage():
-    from backend.core.reranker import reranker_enabled
+def test_a_host_without_the_model_files_keeps_its_first_pass_order():
+    from backend.core import reranker
 
-    # The default is off; a host that never configures a reranker keeps its
-    # first-pass ordering everywhere, with no request ever attempted.
-    assert reranker_enabled() is False or bool(
-        os.environ.get("RERANKER_BASE_URL")
-    )
+    # The stage turns on when the ONNX cross-encoder loads, not when a URL is
+    # configured - there is no service to point at since 2026-09-03. A host
+    # without the model files reranks nothing and fails nothing.
+    reranker._local_encoder.cache_clear()
+    try:
+        assert reranker.reranker_enabled() is (reranker._local_encoder() is not None)
+    finally:
+        reranker._local_encoder.cache_clear()

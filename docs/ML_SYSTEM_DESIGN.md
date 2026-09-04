@@ -579,7 +579,7 @@ Scout's ranking has its own labelled harness with floors
 | 0.90 utilisation | Refused on spark2, head hangs | 0.81, bounded by spark2 |
 | `--kv-cache-memory-bytes` on the reply model | Hard cap that ignores utilisation; four failed restarts | Banned there; kept on the VLM |
 | NVFP4 vision model | Wrong output on sm_121 (vLLM #50925) | AWQ |
-| Served Qwen3 reranker for Scout | Attribution 0.25 vs 0.50 local | In-process MiniLM, swap is a setting |
+| Served Qwen3 reranker for Scout | Attribution 0.25 vs 0.50 local | In-process MiniLM; the served path was deleted 2026-09-03 |
 | Sigmoid cross-encoder scores | 0.000 vs 0.001 separation | Raw log-odds, margin 1.0 |
 | Replacing the nomic embedders | Unmeasurable gain at n~500; alignment trap | Keep; Qwen3-VL pair named for the ramp |
 | Klein 4B as the editor | Preserves its reference, adds nothing | FLUX.1 Kontext for edits |
@@ -697,31 +697,38 @@ shape of case, on the deployed `qwen3-reranker-0.6b`:
 
 ### Where the reranker actually runs
 
-There are two consumers and one fallback, and they fail differently:
+There are two consumers and one implementation, since 2026-09-03:
 
 | Caller | What it ranks | When it is absent |
 | --- | --- | --- |
-| `core/reranker.py`, from `conversation_service` | Candidates for a "what did we say about..." recall - the most-used tool in the system (46 turns in seven days). Since 2026-09-03 this runs on the **local** ONNX cross-encoder, not the served model: measured 5/5 against 2/5, 39.6 ms against 67.6, and no GPU memory | Returns None; the caller keeps its cosine order |
-| `embeddings/service_reranker.py` → `get_cross_encoder()` → `PrecisionRanker` in `discovery/runner.py` | The second half of Scout's cascade: each (interest, candidate) pair read properly after the embedding shortlist | `is_enabled()` is false and the sweep keeps the embedding order, silently |
-| `embeddings/cross_encoder.py` (local ONNX) | The same contract, from weights on disk | Disables itself when the weights are missing |
+| `core/reranker.py`, from `conversation_service` | Candidates for a "what did we say about..." recall - the most-used tool in the system (46 turns in seven days) | Returns None; the caller keeps its cosine order |
+| `get_cross_encoder()` → `PrecisionRanker` in `discovery/runner.py` | The second half of Scout's cascade: each (interest, candidate) pair read properly after the embedding shortlist | `is_enabled()` is false and the sweep keeps the embedding order, silently |
+| `embeddings/cross_encoder.py` (local ONNX) | Both of the above, from weights on disk | Disables itself when the weights are missing |
 
-Both service paths are switched by one setting, `RERANKER_BASE_URL`, which
-`docker-compose.yml` supplies per service. On 2026-09-03 it reached
-`backend`, `functional-tests` and `local-capabilities` - **but not
-`discovery-worker`**, the service that actually runs the sweeps. So Scout's
-precision half had been off wherever it mattered, with nothing in any log
-to say so, because absence is a design state here rather than an error. The
-two environment lines were added that day; the sweep's ranking should be
-re-measured with `evaluate_discovery_ranking` before and after, since this
-turns a stage back on rather than changing one.
+The served Qwen3-Reranker-0.6B that used to sit behind both is gone, and so
+are `RERANKER_BASE_URL`, `RERANKER_MODEL`, `RECALL_RERANKER_SOURCE`,
+`DISCOVERY_RERANKER_SOURCE`, `RERANKER_TIMEOUT_SECONDS`, the
+`embeddings/service_reranker.py` client and the compose service. It lost
+both measurements it was given: attribution 0.25 against the local
+cross-encoder's 0.50 for Scout on 2026-08-25, and 2/5 right at 67.6 ms
+against 5/5 at 39.6 ms for recall on 2026-09-03, while holding 3.6 GB on a
+box already 12 GB into swap.
 
-The model ranks correctly when the place is *in* the question and badly when
-it is appended as a parenthetical or missing entirely - which is exactly how
-`_rerank_question` builds it. The verdict of 2026-08-25 measured our own
-query construction, not the model. Two consequences, neither yet acted on:
-the reranker is worth re-measuring properly with the place inside the
-question, and `RERANKER_BASE_URL` is currently unset, so the container on
-spark1 holds its share of memory and serves nothing.
+Deleting rather than keeping the switch is deliberate. The setting had
+already produced one silent outage of its own: `RERANKER_BASE_URL` reached
+`backend`, `functional-tests` and `local-capabilities` but **not
+`discovery-worker`**, the service that actually runs the sweeps, so Scout's
+precision half was off wherever it mattered with nothing in any log to say
+so - absence being a design state here rather than an error. A branch that
+nobody exercises is where that class of bug lives. Serving a reranker again
+means writing a client, which is the honest cost.
+
+One finding survives the removal and still applies to the local model: it
+ranks correctly when the place is *in* the question and badly when the place
+is appended as a parenthetical or missing entirely, which is how
+`_rerank_question` builds it. The 2026-08-25 verdict measured our own query
+construction as much as the model, and `_rerank_question` is worth fixing on
+that basis.
 
 
 ## 13. Document knowledge: reading files into retrieval, and writing them back

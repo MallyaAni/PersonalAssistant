@@ -26,7 +26,7 @@ flowchart TB
     subgraph LocalAI[Replaceable local AI and rendering]
         ModelGate[Redis model-priority gate]
         Inference[Provider-neutral<br/>inference adapters]
-        VLLM[vLLM on two DGX Sparks<br/>DeepSeek V4 Flash: every text role<br/>Qwen3-VL-8B: vision<br/>Nomic embeddings, Qwen3 reranker]
+        VLLM[vLLM on two DGX Sparks<br/>DeepSeek V4 Flash: every text role<br/>Qwen3-VL-8B: vision<br/>Nomic embeddings]
         Media[ComfyUI on the desktop: FLUX.2 Klein<br/>only while that machine is on<br/>PptxGenJS and LibreOffice]
         VisionEmbed[Nomic vision embedding<br/>ONNX on CPU]
     end

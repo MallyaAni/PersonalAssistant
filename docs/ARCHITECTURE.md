@@ -95,7 +95,7 @@ reply). The whole path is drawn in
 | Vision (looking at photos) | **Qwen3-VL-8B** | spark2 `:8001` | DeepSeek is text-only, so a second model must stay resident to read pixels. It sits on spark2 because that node has the headroom. |
 | Text embeddings | **nomic-embed-text-v1.5** (768-d) | spark1 `vllm-embedding` | Shares one vector space with the image embedder below, so a sentence can find a picture. That alignment is why the text embedder cannot be swapped alone. |
 | Image embeddings | **nomic-embed-vision-v1.5** (ONNX, CPU) | spark1, in-process | Aligned to the text model above; small enough to run without a GPU. |
-| Reranking (second opinion on retrieved candidates) | **Qwen3-Reranker-0.6B** | spark1 `vllm-reranker` | A cross-encoder reads query and candidate *together*, which is where retrieval precision comes from. Fail-soft: if it is down, the first-pass order stands. |
+| Reranking (second opinion on retrieved candidates) | **ms-marco-MiniLM-L6-v2**, ONNX | CPU, in-process | A cross-encoder reads query and candidate *together*, which is where retrieval precision comes from. Fail-soft: absent weights leave the first-pass order standing. The served Qwen3 reranker it replaced scored 2/5 against this model's 5/5 and held 3.6 GB (2026-09-03). |
 | Image generation and editing | **FLUX.2 Klein 9B** via ComfyUI (FLUX.1 Kontext for instruction edits) | Desktop | The only machine with a discrete GPU that is not full. Image work is available while the desktop is on, and honestly unavailable when it is not. |
 | Web search | Tavily, then Brave (Gemini grounding when a project carries it) | External | The one outbound boundary; queries are minimised and screened before they leave, and a repeated question inside 30 minutes is answered from the previous result rather than bought again. |
 
@@ -594,11 +594,15 @@ the bullets here are the architectural consequences.
   text/image/video space, Matryoshka output that keeps the 768-wide columns).
 - **A reranker, fail-soft, as the second opinion (2026-08-25).** A bi-encoder
   compares two vectors that never met; a cross-encoder reads query and
-  candidate together. Qwen3-Reranker-0.6B serves on spark1; history recall
-  fetches the top 40 by vector and lets the reranker cut them to 12; any
-  failure keeps the cosine order. The same swap was *measured* for Scout's
-  shortlist and rejected (attribution 0.25 against the local cross-encoder's
-  0.50), so Scout keeps its in-process MiniLM. The stage was also found wired
+  candidate together. History recall fetches the top 40 by vector and lets
+  the cross-encoder cut them to 12; any failure keeps the cosine order. It
+  ran on a served Qwen3-Reranker-0.6B until 2026-09-03. That model was
+  *measured* for Scout's shortlist first and rejected (attribution 0.25
+  against the local cross-encoder's 0.50), and then measured for recall and
+  rejected there too - 2/5 right at 67.6 ms against the local model's 5/5 at
+  39.6 ms, while holding 3.6 GB on a box already deep into swap. So both
+  callers run the same in-process MiniLM, and the service, its settings and
+  its client were deleted rather than left as a switch nobody sets. The stage was also found wired
   into the test container only, for a day - fail-soft had hidden that the live
   backend never had it; the lesson is recorded beside the fix.
 
@@ -768,7 +772,6 @@ the two data stores are published on the host's loopback only.
 | `db` | `pgvector/pgvector:pg16` | `127.0.0.1:5432` | PostgreSQL: every conversation, memory, artifact record, job, and account; pgvector HNSW indexes |
 | `redis` | `redis:7-alpine`, append-only | `127.0.0.1:6379` | Model-execution lease, login attempt windows, the iMessage cursor; never prompt or response text |
 | `vllm-embedding` | Pinned vLLM, `nomic-embed-text-v1.5` | host `8004` | 768-d text embeddings |
-| `vllm-reranker` | Pinned vLLM, `Qwen3-Reranker-0.6B` | host `8006` | `/v2/rerank` cross-encoder scoring for history recall |
 | `ds4-head` (systemd, not compose) | vLLM, DeepSeek-V4-Flash, tensor-parallel rank 0 | host `8000` | Every text role; rank 1 is `ds4-worker` on spark2 |
 | `anios-vlm` (systemd on **spark2**) | vLLM, Qwen3-VL-8B | spark2 `8001` | Vision |
 | ComfyUI (Docker on the **desktop**) | `docker/comfyui/`, host ComfyUI bind-mounted | desktop `8188` | FLUX.2 Klein generation and editing; only while the desktop is on |
@@ -810,7 +813,7 @@ A chat turn, in order:
 | Main supervisor route | `deepseek-v4-flash` (`ROUTING_LLM_MODEL`), native tool calling at temperature 0 | Sparks (`ds4-head`) | every chat turn before retrieval; selects one built-in/MCP action or an ordinary reply |
 | Query embedding | `text-embedding-nomic-embed-text-v1.5` (`EMBEDDING_MODEL`) | spark1 (`vllm-embedding`) | when personal semantic or agent-vector retrieval is selected; one vector is reused across stores and image recall |
 | Memory retrieval planning | none (deterministic) | CPU | every turn |
-| History search (`search_history`) | the embedder, then `qwen3-reranker-0.6b` (`RERANKER_MODEL`) | spark1 (`vllm-embedding`, `vllm-reranker`) | only when the router chose it: top 40 exchanges by vector, reranked to 12, filtered against the visible window; fail-soft to cosine order |
+| History search (`search_history`) | the embedder, then `ms-marco-MiniLM-L6-v2` (ONNX) | spark1 `vllm-embedding`, then in-process on CPU | only when the router chose it: top 40 exchanges by vector, reranked to 12, filtered against the visible window; fail-soft to cosine order |
 | Artifact modality gate / artifact-recall routing | `deepseek-v4-flash` structured decision | Sparks | once on an unselected turn, before any private pixel-vector or description-vector lookup |
 | Tool selection | the same native tool decision as the route | Sparks | every turn, with live MCP candidates included only when semantically shortlisted |
 | Response generation | `deepseek-v4-flash` (`MAIN_LLM_MODEL`), streamed | Sparks | ordinary non-delegated turns |
@@ -827,7 +830,7 @@ every stage degrades to the one before it rather than failing the sweep:
 | --- | --- | --- | --- |
 | Query and vector aiming | `deepseek-v4-flash` (`MAIN_LLM_MODEL`), grammar-constrained, greedy | Sparks | once per sweep; describes each interest so it is more than a two-word string |
 | Candidate and interest embedding | `text-embedding-nomic-embed-text-v1.5` (`EMBEDDING_MODEL`) | spark1 (`vllm-embedding`) | one batch per sweep, feeding novelty, familiarity, and recall ranking |
-| Precision ranking and attribution | `ms-marco-MiniLM-L6-v2` cross-encoder, ONNX (`DISCOVERY_RERANKER_SOURCE=local`; the served Qwen3 reranker is selectable and measured worse) | CPU, in-process | one forward pass per (interest, candidate) pair over the shortlist; absent weights disable it |
+| Precision ranking and attribution | `ms-marco-MiniLM-L6-v2` cross-encoder, ONNX | CPU, in-process | one forward pass per (interest, candidate) pair over the shortlist; absent weights disable it |
 | Shortlist ordering against memory | `deepseek-v4-flash` (`MAIN_LLM_MODEL`), grammar-constrained, greedy | Sparks | once per sweep, and only when approved facts exist |
 | Find naming and description | `deepseek-v4-flash` (`MAIN_LLM_MODEL`), grammar-constrained, greedy | Sparks | once per selected find, after selection rather than per candidate |
 
@@ -1264,7 +1267,7 @@ changing one role never silently moves another.
 | Diagram | `DIAGRAM_LLM_*` | DeepSeek | Diagram source generation |
 | Memory proposal | `MEMORY_PROPOSAL_LLM_*` | DeepSeek, grammar-constrained, temperature 0 | Classifying what a turn is worth remembering |
 | Text embedding | `EMBEDDING_*` | Nomic (`vllm-embedding`, spark1) | Semantic memory and retrieval vectors, both voices of every exchange |
-| Reranking | `RERANKER_*` | Qwen3-Reranker-0.6B (`vllm-reranker`, spark1, `/v2/rerank`) | History recall's second pass; empty `RERANKER_BASE_URL` switches the stage off |
+| Reranking | `DISCOVERY_CROSS_ENCODER_*` | ms-marco-MiniLM-L6-v2, ONNX, in-process | History recall's second pass and Scout's precision ranking, one model for both; absent weights switch the stage off |
 | Image generation / editing | `IMAGE_*` / `IMAGE_EDIT_*` | FLUX.2 Klein 9B / FLUX.1 Kontext via ComfyUI on the desktop | `generate_image`, `edit_image`, `show_image`, deck image enrichment |
 
 Each role falls back through the next-broader scope when unset

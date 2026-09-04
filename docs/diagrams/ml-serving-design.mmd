@@ -17,7 +17,6 @@ flowchart TB
         Fabric[RoCE fabric: two virtual NICs merged<br/>109 Gb/s per rail, MTU 9000<br/>addresses set by hand until netplan]
         VLM[spark2: Qwen3-VL-8B AWQ 4-bit<br/>utilisation 0.09, KV capped at 3 GiB<br/>NVFP4 rejected: wrong output on sm_121]
         Embed[spark1: nomic-embed-text 768-d<br/>utilisation 0.06 for 0.26 GiB of weights<br/>vectors in Postgres pgvector HNSW, not FAISS<br/>439 vectors · top-10 in 0.5 ms]
-        Rerank[spark1: Qwen3-Reranker-0.6B<br/>2048 context - quadratic mask, 4096 left 3 GiB free<br/>utilisation 0.03]
         Head <-->|tensor-parallel 2| Rank1
         Head --- Fabric --- Rank1
     end
@@ -40,7 +39,6 @@ flowchart TB
     Reply --> Head
     Head --> KV
     Prompt --> Embed --> Gates --> Second --> Prompt
-    Second --> Rerank
     Turn -.->|picture in view| VLM --> Reply
     Turn -.->|generate or edit| Flux
     Rejected -.-> Head
@@ -50,6 +48,6 @@ flowchart TB
     classDef note fill:#f1edff,stroke:#8872c6,color:#2e2450,stroke-width:1.5px;
     classDef warn fill:#fff4e5,stroke:#c98a2b,color:#4a3208,stroke-width:1.5px;
     class Turn,Route,Prompt,Reply step;
-    class Head,Rank1,KV,Fabric,VLM,Embed,Rerank,Flux infra;
+    class Head,Rank1,KV,Fabric,VLM,Embed,Flux infra;
     class Gates,Second note;
     class No warn;

@@ -450,12 +450,9 @@ def get_vision_embedding_provider() -> VisionEmbeddingProvider:
 def get_cross_encoder() -> RerankProvider | None:
     if not settings.DISCOVERY_CROSS_ENCODER_ENABLED:
         return None
-    # The served reranker and the local ONNX model answer the same contract,
-    # so which one scores a sweep is a deployment decision, not a code path.
-    if settings.DISCOVERY_RERANKER_SOURCE == "service":
-        from backend.embeddings.service_reranker import ServiceCrossEncoder
-
-        return ServiceCrossEncoder()
+    # One implementation since the served reranker was retired 2026-09-03: it
+    # scored 2/5 against the local model's 5/5 on recall and held 3.6 GB to
+    # do it. A second source is not kept as a switch nobody sets.
     return OnnxCrossEncoder(
         model_path=settings.DISCOVERY_CROSS_ENCODER_MODEL_PATH,
         tokenizer_path=settings.DISCOVERY_CROSS_ENCODER_TOKENIZER_PATH,

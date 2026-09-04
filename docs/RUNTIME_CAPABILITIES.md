@@ -24,8 +24,9 @@ $ curl -s http://localhost:8000/version
   `--tool-call-parser deepseek_v4 --enable-auto-tool-choice`,
   `--reasoning-parser deepseek_v4`, `--kv-cache-dtype nvfp4_ds_mla`,
   `--block-size 256`, `--max-num-seqs 6`, `--generation-config vllm`.
-- Embeddings and reranking are separate pooling servers (`nomic-embed-text-v1.5`
-  on `:8004`, `Qwen3-Reranker-0.6B` on `:8006`); vision is `qwen3-vl-8b` on
+- Embeddings are a separate pooling server (`nomic-embed-text-v1.5` on `:8004`);
+  reranking left vLLM for an in-process ONNX cross-encoder on 2026-09-03, and
+  the `:8006` server was retired with it. Vision is `qwen3-vl-8b` on
   spark2 `:8001`.
 
 Live prefix-cache hit rate at the time of the survey: **89.2%**

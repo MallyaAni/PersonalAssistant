@@ -17,7 +17,6 @@ flowchart TB
         Adapters[In-process provider-neutral<br/>inference adapters]
         VLLMMain[vLLM :8000 DeepSeek V4 Flash<br/>tensor-parallel rank 0, systemd<br/>every text role]
         VLLMEmbed[vLLM embedding :8004<br/>Nomic text embeddings]
-        VLLMRerank[vLLM reranker :8006<br/>Qwen3-Reranker-0.6B]
         Stores[(PostgreSQL and pgvector<br/>Redis, append-only<br/>both on host loopback only)]
         Tunnel[Cloudflare tunnel<br/>deep-matter.com, no LAN port opened]
     end
@@ -67,7 +66,6 @@ flowchart TB
     MCP --> Adapters
     Adapters --> VLLMMain
     Adapters --> VLLMEmbed
-    Adapters --> VLLMRerank
     Adapters --> VLM
     VLLMMain <-->|RoCE fabric| VLLMRank1
     Stores -.->|nightly dump| Mirror1
@@ -78,6 +76,6 @@ flowchart TB
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b,stroke-width:1.5px;
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450,stroke-width:1.5px;
     class User,Browser,Phone user;
-    class Gateway,Frontend,Backend,Discovery,Worker,Maintenance,MCP,Renderer,Adapters,VLLMMain,VLLMEmbed,VLLMRerank,VLLMRank1,VLM,Bridge,ComfyUI,Tunnel process;
+    class Gateway,Frontend,Backend,Discovery,Worker,Maintenance,MCP,Renderer,Adapters,VLLMMain,VLLMEmbed,VLLMRank1,VLM,Bridge,ComfyUI,Tunnel process;
     class Stores,Mirror1,Mirror2 data;
     class Integrations external;
