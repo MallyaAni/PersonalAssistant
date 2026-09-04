@@ -60,6 +60,7 @@ from backend.services.tool_selection_cases import (
     SEARCH,
     SEARCH_CREDITS,
     ACCURACY_FLOOR,
+    PER_TOOL_ACCURACY_FLOORS,
     NO_TOOL,
     SELECTION_CASES,
     TOOL_NAMES,
@@ -216,6 +217,28 @@ def report(observations: list[tuple[str, str, str, str]], reps: int) -> bool:
     for category, hits in sorted(by_category.items()):
         print(f"  {category:24s} {sum(hits)}/{len(hits)}")
 
+    # The per-tool floors were written with measured comments beside each one
+    # and never checked: report() compared the aggregate and nothing else. So
+    # the mechanism built to stop one capability's collapse hiding behind a
+    # good average has been dead since it was added, which is how a run whose
+    # no-tool cases score 55/75 - six of them wrong on every single pass -
+    # reported PASS. An average over eighteen tools cannot fail for one.
+    print("\nper-tool floors:")
+    breached: list[str] = []
+    for expected in TOOL_NAMES:
+        row = matrix.get(expected)
+        floor = PER_TOOL_ACCURACY_FLOORS.get(expected)
+        if not row or floor is None:
+            continue
+        seen = sum(row.values())
+        rate = row.get(expected, 0) / seen if seen else 0.0
+        held = rate >= floor
+        if not held:
+            breached.append(f"{expected} {rate:.2f} < {floor:.2f}")
+        print(f"  {expected:32s} {rate:.2f}  floor {floor:.2f}  {'ok' if held else 'BREACH'}")
+    if breached:
+        print("\nfloors breached: " + "; ".join(breached))
+
     missed = failures(observations, reps)
     print(f"\ncases that failed ({len(missed)}):")
     for row in missed or []:
@@ -235,9 +258,9 @@ def report(observations: list[tuple[str, str, str, str]], reps: int) -> bool:
             category: (sum(hits), len(hits)) for category, hits in by_category.items()
         },
         notes=f"{len(SELECTION_CASES)} labelled cases, {len(missed)} failing",
-        extra={"failures": missed},
+        extra={"failures": missed, "floors_breached": breached},
     )
-    return accuracy >= ACCURACY_FLOOR
+    return accuracy >= ACCURACY_FLOOR and not breached
 
 
 # Build the selector against the configured routing model and score the set.
