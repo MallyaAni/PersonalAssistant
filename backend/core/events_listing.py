@@ -79,6 +79,16 @@ def render_listing(
         key=lambda event: (event.starts_at or datetime.max.replace(tzinfo=UTC), event.name),
     )
     if not events:
+        # Everything found was real and every one of it was too far to go to.
+        # Returning "" here let the caller fall back to the model writing the
+        # listing itself, out of the same results - so the distance judgement
+        # ran, correctly marked all of them far, and was then thrown away.
+        # On 2026-09-04 that put a family festival and a lake paddle in
+        # Colonial Heights, two hours south, at the top of an Arlington
+        # "things to do this week". The filter had worked; the fallback undid
+        # it. Saying so is the answer, and the only one that is true.
+        if far_away and not candidates:
+            return _nothing_near_line(far_away, window)
         return ""
     moment = now or datetime.now(UTC)
     lines: list[str] = [outside_note] if outside_note else []
@@ -208,6 +218,20 @@ def _dropped_line(
     if not parts:
         return ""
     return "Not listed: " + "; ".join(parts) + ". Say the word and I'll dig into any of them."
+
+
+# Found things, all of them too far. Distinct from finding nothing, and worth
+# distinguishing out loud: "nothing near you" is a fact about where they live,
+# while "I found nothing" reads as a broken search, and the two want different
+# replies from the person.
+def _nothing_near_line(far_away: int, window: Window | None = None) -> str:
+    when = f" {window.label}" if window is not None else ""
+    listings = "listing" if far_away == 1 else "listings"
+    return (
+        f"Nothing{when} close enough to be worth the trip. I found {far_away} "
+        f"{listings}, but they are all a long way from you. Say the word and "
+        "I'll widen it or look at a particular one."
+    )
 
 
 # The listing with nothing in it - said out loud, because an empty answer that
