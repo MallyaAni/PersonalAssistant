@@ -7,6 +7,65 @@ was checked by running it, not by reading it. The seven image scenarios can
 be re-run any time with `python -m backend.cli.exercise_image_scenarios`
 inside the backend container.
 
+## 2026-09-05 (night) — the book is AI and software only; the desk (PUSHED, NOT DEPLOYED)
+
+Continues the entry below it. Commit `9a5aaac1` (merged as `4764b76b`).
+Another agent is committing to this repository; files are added by name.
+
+**The operator narrowed the book** to the AI-infrastructure and software
+names he watches. `universe.book_sides()` returns 90 of them (every
+overlay name plus the index's semiconductor, communications-equipment and
+software sub-industries; utilities that only carry the power theme via the
+index mapping are out), each tagged `ai` or `software`. The rest-of-
+universe release batch on spark1 was killed for it (it was eight parallel
+model calls against the assistant's own vLLM); the themed batch had
+finished (3,896 releases, 382 min) and its partition is copied to the
+desktop store (`edgar_tone/asof=2026-09-05`, 176 names).
+
+**The desk** (`backend/agents/trading/desk/`, `python -m
+backend.cli.market_desk --calibrate --brief SNDK`): fundamental, technical,
+sentiment, regime and risk modules, each an `Opinion` (score, stance,
+evidence) on the book's panel; a fixed grade rule (A+: bullish release and
+agreement; A: agreement; B: one voice; C: none or split) with size
+multipliers 1 / 0.75 / 0.5 / 0; `desk.calibrate` re-measures the grades.
+Measured on the 90 names, beta-adjusted, 20 sessions: A 73 bp (t 1.7),
+A+ 48 bp (t 0.9), B 22, C 18; the graded score's rank IC 0.032 (t 2.2)
+against the composite's 0.025 (t 1.8) on the same names; at 60 sessions
+the grades are monotone (148 / 138 / 106 / 79 bp) but weak. Today: 6 A+,
+11 A, 19 B, 54 C; book gross 0.30 (LRCX, NTAP, PANW, ANET, FN, AVGO,
+AAOI). SNDK is B (fundamentals bullish, technical and tone neutral), CRWV
+and IREN are C.
+
+**What the regime analyst measured.** Software and AI residual baskets
+were +0.19 correlated daily over the decade (+0.35 in 60-day windows, 7%
+of windows negative) and -0.37 in 2026, -0.52 in the latest window: the
+"inverse correlation" is a 2026 regime, so the analyst carries a novelty
+z-score on the six theme baskets' co-movement structure (today +4.8) and
+flags a change of shape rather than assuming one. Participation (20-day
+dollar volume against the year, AI basket median) gates everything: tone
+IC 0.033 (t 2.2) above the median vs -0.004 below; following the
+60-session AI-vs-software leader 0.086 (t 3.0) vs -0.007; the composite
+0.049 (t 2.3) vs -0.002 by software participation. After the top
+participation quintile the AI basket lags SPY by ~1.2% over 20 sessions,
+after the bottom it leads by 1.1%. So selection confidence is 0.5 below
+the median (rotation withheld) and exposure 0.75 in the top quintile.
+Today participation is at its two-year low (pct 0.00), confidence 0.5.
+
+**Beta-label model rows** (`sweep_beta.tsv`): lgbm alpha h20 0.008, +
+technical h20 0.010 / h60 0.016, + calendar 0.007, + macro 0.005, all
+t < 1. Chart CNN (plain residual) h20 -0.001, h5 -0.012 (t -2.2). Nothing
+learned beats the tone. `tape_h5`/`tape_h20` are running on the 5080
+(`E:\AgentWorkspace\tmp\sweep_tape.log`). Balance-sheet instants on the
+full universe: buybacks 0.002, asset growth -0.015 (t -1.7, growth names
+pay here), book-to-market 0.007; none entered the composite.
+
+**Next atomic task.** The desk's sentiment stance is coarse (the reader
+returns -1/0/1 per field, so ties leave SNDK neutral on a +1/+1 release):
+add `tone_pricing` and `tone_supply_constrained` as tie-breaks and
+re-measure with `--calibrate`. Then a functional test for a desk
+narrative prompt if one is added (none yet: the desk is numeric). Then the
+tape rows, then the intraday controls on the 90 names.
+
 ## 2026-09-05 (late) — beta was the signal; the calendar, the macro state, the tape (PUSHED, NOT DEPLOYED)
 
 Continues the three entries below it. Commits `bc20418d` → `02a51e00`.
