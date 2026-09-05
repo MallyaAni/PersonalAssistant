@@ -4,7 +4,7 @@ from typing import Any
 
 from .actions import RecallHistoryAction
 from .base import BuiltinTool, required_text
-from .contracts import EffectContract
+from .contracts import EffectContract, normalize_words
 
 NAME = "search_history"
 
@@ -69,7 +69,7 @@ TOOL = BuiltinTool(
     contract=EffectContract(
         effect="read",
         cost="fast",
-        idempotency=lambda action: " ".join(action.query.casefold().split()),
+        idempotency=lambda action: normalize_words(action.query),
     ),
 )
 

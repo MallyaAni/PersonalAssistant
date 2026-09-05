@@ -1,7 +1,7 @@
 name: reply/task_outcome
 used by: backend/agents/graph.py -> _build_system_prompt (context["task_outcome"])
 runs on: the reply model, appended to reply/system when this turn scheduled, listed, or changed a task
-pinned by: functional/test_scheduled_task_behaviour.py, functional/test_task_reschedule_behaviour.py
+pinned by: functional/test_scheduled_task_behaviour.py, functional/test_task_reschedule_behaviour.py, functional/test_unknown_step_wording_behaviour.py
 
 When the router decides a message is a request to schedule something, or to
 list, cancel, pause, resume, or reschedule a scheduled task, the application does the
@@ -23,6 +23,11 @@ never claiming an unrecorded change is below because of that turn.
 check_in_armed/refused); their per-kind lines are rendered by
 graph._render_check_in_outcome and pinned by
 functional/test_check_in_request_behaviour.py.
+
+2026-09-05: an `unknown` kind - a later step of the turn's loop cut at the
+deadline, dispatched and never heard from. Without a sentence for it the
+reply confirmed both reminders as saved (0/3); the record alone did not
+hold against the confirming habit the rest of this block teaches.
 
 ===== PROMPT BELOW — everything under this line is sent to the model =====
 
@@ -55,3 +60,9 @@ change did not happen - it is invalid, nothing matched, or a place is needed
 - say plainly that the task is unchanged and what it is still set to. A
 reminder someone believes was moved, and was not, is worse than one they
 know failed to move.
+An outcome recorded as "unknown" ran out of time before it reported back,
+so whether that one happened is not known - to you or to the application.
+For that item say exactly that: it may or may not have been saved, and they
+should check or ask again. Never present it as set, saved, or scheduled, and
+never present it as failed; both are guesses, and the other outcomes in the
+same record are reported as recorded, separately from it.

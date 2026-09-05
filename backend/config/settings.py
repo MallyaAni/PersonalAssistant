@@ -106,6 +106,15 @@ class Settings(BaseSettings):
     # cut "set reminders for 6pm and 8pm" to a single reminder; two copies
     # of the same reminder are still stopped, by their shared key.
     TURN_MAX_CREATES: int = Field(default=3, ge=1, le=5)
+    # Durable runs (backend/runs): an agent's loop hosted by the worker over
+    # leased rows. Off until an agent registers a kind of run to host.
+    AGENT_RUNS_ENABLED: bool = False
+    AGENT_RUN_POLL_SECONDS: float = Field(default=5.0, gt=0, le=300)
+    AGENT_RUN_LEASE_SECONDS: float = Field(default=300.0, gt=0, le=3_600)
+    AGENT_RUN_MAX_ATTEMPTS: int = Field(default=3, ge=1, le=10)
+    AGENT_RUN_APPROVAL_TTL_SECONDS: float = Field(default=86_400.0, gt=0, le=604_800)
+    AGENT_RUN_DEFAULT_BUDGET_SECONDS: float = Field(default=600.0, ge=10, le=7_200)
+    AGENT_RUN_DEFAULT_MAX_STEPS: int = Field(default=12, ge=1, le=100)
     ROUTING_LLM_REASONING_EFFORT: Literal[
         "none", "minimal", "low", "medium", "high", "xhigh"
     ] = "none"

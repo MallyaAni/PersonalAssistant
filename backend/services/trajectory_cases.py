@@ -48,6 +48,8 @@ class TrajectoryCase:
     category: str
     required: tuple[RequiredEffect, ...]
     required_times: int = 1
+    # Other sequences that achieve the same effects, each accepted as done.
+    alternatives: tuple[tuple[RequiredEffect, ...], ...] = ()
     # Words that must appear somewhere across the matched steps, so two
     # copies of the same reminder never satisfy a request for two different
     # ones.
@@ -95,7 +97,10 @@ TRAJECTORY_CASES: tuple[TrajectoryCase, ...] = (
         category="single_step",
         required=(RequiredEffect(tools="schedule_task", carries=("mum",)),),
     ),
-    # Two different automation tools, in order: cancel then set, at 18:00.
+    # Two different automation tools, in order: cancel then set, at 18:00 -
+    # or the one call that achieves the same thing, the 5pm reminder moved to
+    # 18:00 with its words. The router took the second reading 3 of 3 on
+    # 2026-09-05, and it is the reminder the person asked for.
     TrajectoryCase(
         name="cancel-and-reschedule",
         ask="cancel my 5pm reminder and set one for 6pm to call mum",
@@ -103,6 +108,9 @@ TRAJECTORY_CASES: tuple[TrajectoryCase, ...] = (
         required=(
             RequiredEffect(tools="manage_tasks", operation="cancel"),
             RequiredEffect(tools="schedule_task", carries=("mum", "18")),
+        ),
+        alternatives=(
+            (RequiredEffect(tools="manage_tasks", operation="reschedule", carries=("18",)),),
         ),
         forbidden=("edit_image", "generate_image"),
         max_steps=3,

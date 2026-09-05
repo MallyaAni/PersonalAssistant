@@ -609,6 +609,16 @@ def _render_task_outcome(outcome: dict[str, Any]) -> str:
         )
     if outcome.get("kind") == "nothing_to_undo":
         lines.append("- Nothing to undo: no recent change is on record. Say so; change nothing.\n")
+    if outcome.get("kind") == "unknown":
+        # A step cut at the turn's deadline: dispatched, outcome never seen.
+        # Neither "done" nor "not done" is true, and the reply must not pick
+        # the comfortable one.
+        lines.append(
+            "- Unknown: this step ran out of time before it reported back, so "
+            "whether it happened is NOT known. Say exactly that - it may or may "
+            "not have been saved - and suggest they check or ask again. Never "
+            "say it was done, and never say it failed.\n"
+        )
     if outcome.get("kind") == "not_found":
         # Stated as flatly as "nothing to undo" is: with the person's own
         # words and a "Done - paused" just before it in the thread, the reply

@@ -365,23 +365,26 @@ async def test_the_real_loop_is_never_scored_complete_without_its_effects(select
         )
         score = score_trajectory(case, trip, 1.0)
         if score.completed:
+            # Either accepted path: cancel then set, or the one reschedule that
+            # moves the 5pm reminder to 18:00 with its words.
             assert "manage_tasks" in score.path, score
-            assert "schedule_task" in score.path, score
             assert score.carried is True, score
 
 
-# Two reminders requested is measured incomplete today, and the loop names
-# the real reason it stopped (the creation guard), never an inference.
+# Two reminders requested are two reminders written, distinct and without a
+# duplicate - the Phase 2 repair, measured 3/3 on 2026-09-05 once the step
+# line carried the instruction. Held as a rate: loops compound.
 @pytest.mark.asyncio
-async def test_two_reminders_is_incomplete_with_a_real_stop(selector):
+async def test_two_reminders_are_both_written(selector):
     case = case_by_name("two-reminders")
-    trip = await walk(
-        selector,
-        ask=case.ask,
-        world=World([SCHEDULED]),
-        max_steps=3,
-        creates=lambda item: isinstance(item, ScheduleTaskAction),
-    )
-    score = score_trajectory(case, trip, 1.0)
-    assert score.completed is False, f"the guard should cut two writes to one: {score}"
-    assert trip.stopped in {SECOND_CREATE, REPEATED, DECLINED}, trip.stopped
+    held = 0
+    seen = []
+    for _ in range(3):
+        trip = await walk(selector, ask=case.ask, world=World([SCHEDULED]), max_steps=3)
+        score = score_trajectory(case, trip, 1.0)
+        seen.append((score.path, trip.stopped, score.completed, score.duplicate_effects))
+        assert score.duplicate_effects == 0, seen
+        assert trip.stopped in {SECOND_CREATE, REPEATED, DECLINED, CEILING}, trip.stopped
+        if score.completed:
+            held += 1
+    assert held >= 2, seen

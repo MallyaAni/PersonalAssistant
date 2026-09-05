@@ -18,9 +18,9 @@ from . import (
     edit_document,
     edit_image,
     generate_image,
+    manage_check_ins,
     manage_skills,
     manage_tasks,
-    manage_check_ins,
     presentation,
     save_skill,
     schedule_task,
@@ -32,14 +32,14 @@ from .actions import (
     CreateDiagramAction,
     CreateDocumentAction,
     DelegateAction,
-    EditDocumentAction,
     DiscussImageAction,
+    EditDocumentAction,
     EditImageAction,
     GenerateImageAction,
     MainAction,
+    ManageCheckInsAction,
     ManageSkillsAction,
     ManageTasksAction,
-    ManageCheckInsAction,
     RecallHistoryAction,
     SaveSkillAction,
     ScheduleTaskAction,
@@ -281,9 +281,25 @@ def _detail(action: MainAction) -> str:
         return f"{action.title} ({action.format})"
     if isinstance(action, ScoutScheduleAction) and action.operation == "show":
         return "show"
-    if isinstance(action, ScheduleTaskAction | ScoutScheduleAction):
+    if isinstance(action, ScoutScheduleAction):
         return f"{action.cadence} at {action.hour:02d}:{action.minute:02d}"
-    if isinstance(action, ManageTasksAction | ManageSkillsAction):
+    # The instruction rides with the time. This detail is the line the router
+    # reads back before its next decision, and without the words it could not
+    # tell which reminder was already set: asked for 6pm mum and 8pm gym it
+    # wrote "call mum" twice, at both times (measured 2026-09-05, 3 of 3).
+    if isinstance(action, ScheduleTaskAction):
+        return (
+            f"{action.cadence} at {action.hour:02d}:{action.minute:02d} - "
+            f"{action.instruction}"
+        )
+    if isinstance(action, ManageTasksAction):
+        parts = [action.operation]
+        if action.which:
+            parts.append(action.which)
+        if action.operation == "reschedule":
+            parts.append(f"to {action.hour:02d}:{action.minute:02d}")
+        return " ".join(parts)
+    if isinstance(action, ManageSkillsAction):
         return action.operation
     if isinstance(action, ManageCheckInsAction):
         return f"{action.mode} {action.subject}".strip()

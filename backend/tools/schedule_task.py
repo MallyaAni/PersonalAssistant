@@ -4,7 +4,7 @@ from typing import Any
 
 from .actions import ScheduleTaskAction
 from .base import BuiltinTool, required_text
-from .contracts import EffectContract
+from .contracts import EffectContract, normalize_words
 
 NAME = "schedule_task"
 
@@ -85,7 +85,7 @@ TOOL = BuiltinTool(
         # reminder worded twice is one.
         idempotency=lambda action: "|".join(
             (
-                " ".join(action.instruction.casefold().split()),
+                normalize_words(action.instruction),
                 action.cadence,
                 str(action.hour),
                 str(action.minute),

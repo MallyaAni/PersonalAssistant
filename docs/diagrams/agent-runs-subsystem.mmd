@@ -1,0 +1,30 @@
+---
+title: Durable runs - an agent's loop that outlives a turn
+---
+flowchart LR
+    Trigger([A turn that needs more than one turn<br/>a schedule · a repository event · an alert]) --> Create[AgentRunRepository.create<br/>principal · actor · kind · objective<br/>acceptance criteria · budget · allowance]
+    Create --> Runs[(agent_runs<br/>leased claim · cancel flag<br/>tenant_id carried)]
+    Worker[Discovery worker process<br/>run loop · AGENT_RUNS_ENABLED] -->|claim oldest · renew lease| Runs
+    Runs --> Controller[RunController<br/>run_steps over durable rows<br/>bound_first · resume from actions]
+    Worlds[(WORLDS registry<br/>kind -> RunWorld)] --> Controller
+    Controller -->|decide · apply · key · creates<br/>needs_approval · reconcile · verify| World[RunWorld<br/>the agent's judgement and effects]
+    World -->|next decision| Router[Routing model<br/>or the agent's own prompt]
+    Controller -->|record before the call<br/>close after it| Actions[(agent_run_actions<br/>tool · arguments · key · status<br/>dispatched · succeeded · failed · unknown)]
+    Actions -->|succeeded by key: replay outcome<br/>dispatched by key: reconcile, never retry blind| Controller
+    Controller -->|a step needing a person| Approvals[(agent_run_approvals<br/>tool + arguments hash · expiry<br/>pending · granted · denied · consumed)]
+    Approvals -->|granted, unexpired: spent by that call<br/>denied: the run fails| Controller
+    Controller --> Events[(agent_run_events<br/>the audit trail)]
+    Controller -->|acceptance met: completed<br/>else failed with the stop named<br/>cancel flag: cancelled| Runs
+    Person([Person<br/>web or iMessage]) -->|"/api/v1/runs · runs:read · runs:act<br/>list · inspect · cancel · approve"| API[Runs API]
+    API --> Runs
+    API --> Approvals
+    Contracts[Effect contracts<br/>backend/core/effects.py] -.->|later-step policy · keys · replay| World
+
+    classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
+    classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
+    classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
+    classDef store fill:#eef7ee,stroke:#5c9c5c,color:#173117;
+    class Trigger,Person interface;
+    class Create,Worker,Controller,World,API,Contracts application;
+    class Router model;
+    class Runs,Actions,Approvals,Events,Worlds store;

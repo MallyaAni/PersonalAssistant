@@ -148,6 +148,14 @@ class EffectContract:
 UNDECLARED = EffectContract()
 
 
+# The words of an argument as a key: case, spacing and trailing punctuation
+# do not make a different call. "Remind me about the pottery class." and
+# "Remind me about the pottery class" were two keys and so two reminders
+# (measured 2026-09-05).
+def normalize_words(text: object) -> str:
+    return " ".join(str(text or "").casefold().split()).rstrip(".,;:!?")
+
+
 # The contract an MCP server's classification implies for a tool that has
 # no contract of its own. Trust is not idempotency: a trusted server's call
 # changes something outside this system, a dropped response does not prove

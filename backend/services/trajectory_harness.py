@@ -52,8 +52,13 @@ from backend.services.main_action_selector import (
 )
 from backend.services.turn_steps import (
     DECLINED,
+    NEEDS_INPUT,
     SUCCEEDED,
+    UNAVAILABLE,
+    Act,
+    NeedsInput,
     Step,
+    Unavailable,
     run_steps,
     status_of,
 )
@@ -75,6 +80,8 @@ class Trajectory:
     steps: tuple[Step, ...]
     stopped: str
     shown: tuple[tuple[str, ...], ...] = ()
+    # What the stop carries: the tool that needed input, the router's reason.
+    detail: str = ""
 
     # The kind of action taken at each step, in order. The shape of the path.
     @property
@@ -167,11 +174,20 @@ async def walk(
             steps_taken=lines,
         )
 
-    first = await selector.select(
+    # The first decision typed, so a turn that took no tool says why: the
+    # router declining is a clean stop, a tool it could not fill in is not,
+    # and a failed router is not (2026-09-05: two "(none)" paths that a
+    # measurement could not tell apart).
+    opening = await selector.decide(
         user, ask, history or [], None, local_now=local_now, only=only
     )
-    if first is None:
+    if isinstance(opening, NeedsInput):
+        return Trajectory((), NEEDS_INPUT, (), detail=opening.tool)
+    if isinstance(opening, Unavailable):
+        return Trajectory((), UNAVAILABLE, (), detail=opening.reason)
+    if not isinstance(opening, Act):
         return Trajectory((), DECLINED, ())
+    first = opening.action
 
     from backend.services.conversation_service import _step_line
 
@@ -320,6 +336,13 @@ class TrajectoryScore:
     failed_steps: int
 
 
+# A case seen through one of its accepted sequences, for the matcher.
+class _WithRequired:
+    def __init__(self, case: Any, required: tuple[RequiredEffect, ...]) -> None:
+        self.required = required
+        self.required_times = case.required_times
+
+
 # Whether the trajectory achieved its required effects: the sequence matched
 # in order `required_times` over (each step satisfying its effect - tool,
 # operation, arguments, success), and the cover words present somewhere
@@ -350,12 +373,20 @@ def _required_passes(
 # right steps' arguments at all, and a right-words-wrong-tool turn and a
 # right-tool-wrong-words turn want different work.
 def _arg_carrying(case: Any, trajectory: Trajectory) -> bool | None:
+    sequences = (case.required, *getattr(case, "alternatives", ()))
     if case.honest_failure or not (
-        any(effect.carries for effect in case.required) or case.covers
+        any(effect.carries for sequence in sequences for effect in sequence) or case.covers
     ):
         return None
+    # Judged against whichever accepted sequence the path took; a path that
+    # carried its words by the alternative route carried them.
+    return any(_carried_by(case, sequence, trajectory) for sequence in sequences)
+
+
+# Whether the turn's words reached the arguments of one accepted sequence.
+def _carried_by(case: Any, required: tuple[RequiredEffect, ...], trajectory: Trajectory) -> bool:
     carried = True
-    for effect in case.required:
+    for effect in required:
         if not effect.carries:
             continue
         held_anywhere = any(
@@ -372,10 +403,7 @@ def _arg_carrying(case: Any, trajectory: Trajectory) -> bool | None:
         cover_steps = [
             step
             for step in trajectory.steps
-            if any(
-                tool_name(step.action) in effect.allowed
-                for effect in case.required
-            )
+            if any(tool_name(step.action) in effect.allowed for effect in required)
         ]
         union = " ".join(
             _arguments(step.action) for step in cover_steps
@@ -425,13 +453,23 @@ def score_trajectory(
             )
         )
     else:
-        passes, matched_steps = _required_passes(case, trajectory.steps)
-        completed = passes >= case.required_times
-        if completed and case.covers:
-            union = " ".join(
-                _arguments(step.action) for step in matched_steps
-            ).casefold()
-            completed = all(word.casefold() in union for word in case.covers)
+        # The stated sequence, or any alternative the case accepts as the same
+        # effects by another path - a single reschedule for "cancel the 5pm
+        # and set 6pm" is the reminder moved, which is what was asked.
+        completed = False
+        for sequence in (case.required, *getattr(case, "alternatives", ())):
+            passes, matched_steps = _required_passes(
+                _WithRequired(case, sequence), trajectory.steps
+            )
+            done = passes >= case.required_times
+            if done and case.covers:
+                union = " ".join(
+                    _arguments(step.action) for step in matched_steps
+                ).casefold()
+                done = all(word.casefold() in union for word in case.covers)
+            if done:
+                completed = True
+                break
 
     unauthorized = tuple(
         tool for tool in path if tool in set(case.forbidden)

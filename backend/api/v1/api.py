@@ -15,6 +15,7 @@ from backend.api.v1.agents import router as agents_router
 from backend.api.v1.artifacts import router as artifacts_router
 from backend.api.v1.auth import router as auth_router
 from backend.api.v1.automations import router as automations_router
+from backend.api.v1.runs import router as runs_router
 from backend.api.v1.conversations import router as conversations_router
 from backend.api.v1.discovery import calendar_router as discovery_calendar_router
 from backend.api.v1.discovery import feed_router as discovery_feed_router
@@ -51,6 +52,7 @@ router.include_router(vision_router)
 router.include_router(tools_router)
 router.include_router(presentations_router)
 router.include_router(admin_router)
+router.include_router(runs_router)
 router.include_router(agents_router)
 router.include_router(discovery_router)
 router.include_router(discovery_calendar_router)

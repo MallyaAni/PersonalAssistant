@@ -24,6 +24,7 @@ The self-contained [published architecture page](../architecture.html) includes 
 | iMessage bridge | How does a text from an allowlisted sender become a full-pipeline reply, and what never leaves the Mac? | [imessage-bridge.mmd](imessage-bridge.mmd) | [imessage-bridge.svg](imessage-bridge.svg) |
 | Group chats (a room is an account) | How does a message in an iMessage group reach Scout only when it was addressed to it, what may the room know about each member, whose memory does a fact said in the room land in, and how does the answer get back into the chat? | [group-chats-subsystem.mmd](group-chats-subsystem.mmd) | [group-chats-subsystem.svg](group-chats-subsystem.svg) |
 | Tasks and skills (Scout's second shape) | How does "remind me every weekday at 7" become a saved task, how does "morning brief" reach a taught skill by meaning, and how does a due task become a turn delivered back to the person? | [scheduled-tasks-subsystem.mmd](scheduled-tasks-subsystem.mmd) | [scheduled-tasks-subsystem.svg](scheduled-tasks-subsystem.svg) |
+| Durable runs | How does an agent's loop outlive a turn - claimed with a lease, resumed from its recorded actions without redoing an effect, parked for a person's approval, cancelled between steps, and completed only on evidence? | [agent-runs-subsystem.mmd](agent-runs-subsystem.mmd) | [agent-runs-subsystem.svg](agent-runs-subsystem.svg) |
 | Tool memory and execution | How does AniOS discover and safely invoke an MCP tool? | [tool-memory-subsystem.mmd](tool-memory-subsystem.mmd) | [tool-memory-subsystem.svg](tool-memory-subsystem.svg) |
 | Visual artifacts | How are diagrams, images, and image analysis produced and stored? | [visual-artifact-subsystem.mmd](visual-artifact-subsystem.mmd) | [visual-artifact-subsystem.svg](visual-artifact-subsystem.svg) |
 | Multimodal artifact reference and image editing | How do explicit selection, semantic image recall, lineage, and editing work today, and how will video/PDF join the contract? | [visual-memory-editing-target.mmd](visual-memory-editing-target.mmd) | [visual-memory-editing-target.svg](visual-memory-editing-target.svg) |
@@ -46,6 +47,7 @@ decide, and what is decided for it?**
 | Diagram | The Mermaid, within bounds it is asked for and the validator enforces. | [source](agent-diagram.mmd) | [view](agent-diagram.svg) |
 | Memory capture | What is worth offering to save. Whether it is saved is the user's. | [source](agent-memory.mmd) | [view](agent-memory.svg) |
 | Trading | What a person's own trading history keeps doing, and what to stop, start, and keep. What a cost may be stated as is decided for it: a number only when one is in the record. | [source](agent-trading.mmd) | [view](agent-trading.svg) |
+| Reviewer agent | How is one commit reviewed - fixed read stages through the read-only repo server, two model judgements, and an evidence check in code that drops a finding whose quoted line is not at that line? | [agent-review.mmd](agent-review.mmd) | [agent-review.svg](agent-review.svg) |
 
 ## Readability contract
 

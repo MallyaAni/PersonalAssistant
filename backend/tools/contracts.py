@@ -21,6 +21,7 @@ from backend.core.effects import (
     Retry,
     contract_for_classification,
     narrow,
+    normalize_words,
 )
 
 __all__ = [
@@ -38,4 +39,5 @@ __all__ = [
     "Retry",
     "contract_for_classification",
     "narrow",
+    "normalize_words",
 ]

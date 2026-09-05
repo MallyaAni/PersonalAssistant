@@ -276,6 +276,43 @@ failure that survives a correct prompt: asked for a state machine it returns
 every request is, run 6/6 in the functional tests. Everything else here is held
 by functional tests against the running model.
 
+## Reviewer — a read-only review of one commit
+
+The first agent to run on the durable-run runtime
+([RUNS_ARCHITECTURE.md](RUNS_ARCHITECTURE.md)). Given a commit, it reads
+the summary, the diff and the files worth reading in full - every read
+through the `repo` MCP server, which is rooted by environment at one
+repository and exposes nothing but reads - then writes findings and keeps
+only those whose quoted evidence is actually the cited line of a file it
+read. It changes nothing.
+
+| | |
+| --- | --- |
+| Registry id | `review` |
+| Run kind | `code_review` (`backend/workers/run_worker.py::WORLDS`) |
+| Diagram | [agent-review.svg](diagrams/agent-review.svg) · [source](diagrams/agent-review.mmd) |
+| Agent folder | `backend/agents/review/` |
+| Domain package | `backend/runs/` (the runtime) · `backend/mcp/servers/repo.py` (the window) |
+| Prompts | `prompts/review/choose_files.md` · `prompts/review/findings.md` |
+| Card | `agents/review/card.py` |
+| Functional tests | `test_code_review_behaviour.py` |
+| Entry point | `REPO_MCP_ROOT=<repo> python -m backend.cli.review_commit --commit <sha> --user <id>` |
+
+**What the model decides:** which changed files need reading in full, and
+what is wrong with the change - file, line, severity, and the line of code
+that shows it. **What is decided for it:** the order of the stages, that
+every read is a read, and whether a finding stands: `ReviewWorld._check`
+drops one that names a file the commit did not change or the review did not
+read, a line outside what was read, or evidence that is not that line, and
+records why. An injected instruction in the repository can change none of
+that, because the world has no other tools and the stages cannot be
+reordered; the prompts additionally frame repository text as material under
+review.
+
+**Not yet:** a trigger from chat or from a repository event (the CLI creates
+the run), a report artifact beyond the run's result, and the measured
+precision floor on a labelled corpus of diffs the plan calls for.
+
 ## Adding an agent
 
 1. `backend/agents/<name>/` with `prompts.py`, and `card.py` if it belongs in the

@@ -194,7 +194,7 @@ def test_the_api_returns_every_agent_for_a_user():
         assert response.status_code == 200
         payload = response.json()
         identifiers = {agent["id"] for agent in payload["agents"]}
-        assert identifiers == {"discovery", "presentation", "trading"}
+        assert identifiers == {"discovery", "presentation", "trading", "review"}
         for agent in payload["agents"]:
             # A card with no name or no explanation is not usable.
             assert agent["name"]

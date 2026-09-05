@@ -8,7 +8,7 @@ describes its interface rather than the product's capability, and reading
 it costs a session against that server.
 """
 
-from .contracts import EffectContract
+from .contracts import EffectContract, normalize_words
 
 SEARCH_TOOL = "search_web"
 WEATHER_TOOL = "get_weather"
@@ -21,7 +21,7 @@ SEARCH_CREDITS_TOOL = "search_credits"
 SEARCH_CONTRACT = EffectContract(
     effect="read",
     cost="slow",
-    idempotency=lambda action: " ".join(action.query.casefold().split()),
+    idempotency=lambda action: normalize_words(action.query),
 )
 WEATHER_CONTRACT = EffectContract(effect="read", cost="fast")
 SEARCH_CREDITS_CONTRACT = EffectContract(effect="read", cost="fast")

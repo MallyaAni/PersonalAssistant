@@ -60,37 +60,42 @@ from backend.services.trajectory_harness import (
     tool_name,
 )
 
-# Completion floor per category, one miss below what was measured on
-# 2026-09-05 with the corrected scorer (recorded under
-# docs/evals/runs/trajectories/). A floor that has never been seen to hold is
-# not a floor, so a category that measured at zero stays at zero until the
-# repair moves it:
+# Completion floor per category, one miss below what was measured (recorded
+# under docs/evals/runs/trajectories/). A floor that has never been seen to
+# hold is not a floor.
+#
+# 2026-09-05, corrected scorer, before the repair: single_step 3/3,
+# reference 3/3, partial_failure 3/3, mixed_tools 1/6, multiple_writes 0/3.
+# 2026-09-05, after Phase 2 (effect contracts, key-based repeats, a creation
+# allowance, and the step line carrying the instruction): mixed_tools 3/6
+# (cancel-and-reschedule 3/3 by the accepted reschedule path;
+# search-then-remind 0/3, the router choosing past-conversation search for
+# "what's on this weekend near me"), multiple_writes 3/3. Floors one miss
+# below those:
 #   single_step     3/3  -> 0.67
 #   reference       3/3  -> 0.67
 #   partial_failure 3/3  -> 0.67
-#   mixed_tools     1/6  -> 0.0   (the router does the first tool and stops)
-#   multiple_writes 0/3  -> 0.0   (the repeat guard cuts two writes to one)
+#   mixed_tools     3/6  -> 0.33
+#   multiple_writes 3/3  -> 0.67
 CATEGORY_COMPLETION_FLOORS: dict[str, float] = {
     "single_step": 0.67,
     "reference": 0.67,
     "partial_failure": 0.67,
-    "mixed_tools": 0.0,
-    "multiple_writes": 0.0,
+    "mixed_tools": 0.33,
+    "multiple_writes": 0.67,
 }
 
-# Argument-carrying floor per category, one miss below what was measured on
-# 2026-09-05 with the corrected scorer:
-#   single_step     3/3  -> 0.67
-#   reference       3/3  -> 0.67
-#   mixed_tools     1/6  -> 0.0   (only the one completed turn carried its words)
-#   multiple_writes 0/3  -> 0.0   (two writes never both happened)
-# Carrying is a separate gate from completion so "right tools, wrong words"
-# cannot hide behind a tool-count win.
+# Argument-carrying floor per category, one miss below what was measured.
+# 2026-09-05 after Phase 2: single_step 3/3, reference 3/3, multiple_writes
+# 3/3; mixed_tools measured 0/6 before the carried gate learned about a
+# case's alternative paths and is re-measured from zero. Carrying is a
+# separate gate from completion so "right tools, wrong words" cannot hide
+# behind a tool-count win.
 CATEGORY_CARRIED_FLOORS: dict[str, float] = {
     "single_step": 0.67,
     "reference": 0.67,
     "mixed_tools": 0.0,
-    "multiple_writes": 0.0,
+    "multiple_writes": 0.67,
 }
 
 

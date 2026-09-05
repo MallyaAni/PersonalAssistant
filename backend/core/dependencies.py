@@ -120,6 +120,7 @@ from backend.services.vision_analysis_service import VisionAnalysisService
 from backend.services.visual_search_grounding import VisualSearchGrounding
 from backend.skills.repository import SkillRepository
 from backend.tasks.repository import ScheduledTaskRepository
+from backend.runs.repository import AgentRunRepository
 from backend.vision.lm_studio import create_vision_provider
 
 logger = logging.getLogger(__name__)
@@ -1196,6 +1197,16 @@ def get_scheduled_task_repository(db: DbDependency) -> ScheduledTaskRepository:
 DependencyScheduledTasks = Annotated[
     ScheduledTaskRepository,
     Depends(get_scheduled_task_repository),
+]
+
+
+def get_agent_run_repository(db: DbDependency) -> AgentRunRepository:
+    return AgentRunRepository(db)
+
+
+DependencyAgentRuns = Annotated[
+    AgentRunRepository,
+    Depends(get_agent_run_repository),
 ]
 
 

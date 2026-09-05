@@ -4,7 +4,7 @@ from typing import Any
 
 from .actions import SaveSkillAction
 from .base import BuiltinTool, required_text
-from .contracts import EffectContract
+from .contracts import EffectContract, normalize_words
 
 NAME = "save_skill"
 
@@ -55,7 +55,7 @@ TOOL = BuiltinTool(
         effect="write",
         cost="fast",
         creates=True,
-        idempotency=lambda action: " ".join(action.name.casefold().split()),
+        idempotency=lambda action: normalize_words(action.name),
     ),
 )
 

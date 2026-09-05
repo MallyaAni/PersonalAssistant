@@ -2,6 +2,67 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-05 - Phase 2 closed on the measurement; Phase 3 (durable runs) and the first Phase 5 slice (the reviewer) built and unit-verified (NOT DEPLOYED)
+
+**Phase 2 closed.** The step line the router reads back now carries the
+instruction (`Scheduled tasks: once at 18:00 - remind me to call mum`,
+`Manage scheduled tasks: reschedule the 5pm reminder to 18:00`); every
+argument key is normalised through one helper (case, spacing, trailing
+punctuation); a case may accept alternative paths to the same effects; the
+harness types its first decision so a turn that took no tool says why.
+Measured on the real router (`evaluate_trajectories --reps 3`, recorded):
+**overall 15/18 (0.833)** from 10/18. multiple_writes 3/3 (from 0/3):
+both reminders written, distinct, no duplicate. mixed_tools 3/6:
+cancel-and-reschedule 3/3 by the accepted reschedule path;
+search-then-remind 0/3, where the router chose past-conversation search for
+"what's on this weekend near me" - a first-tool accuracy finding for the
+router track, not a loop defect. Floors raised one miss below:
+mixed_tools 0.33, multiple_writes 0.67 (completion and carried). The
+`unknown` outcome kind - a later step cut at the deadline - is rendered for
+the reply and the task-outcome prompt says what to do with it.
+
+**Phase 3, durable runs** (`docs/RUNS_ARCHITECTURE.md`): tables
+`agent_runs`, `agent_run_actions`, `agent_run_approvals`,
+`agent_run_events` (migration `20260905_0019`, applied to the live database
+after `scripts/backup-db.sh`); `backend/runs/` - repository on the lease
+pattern, `RunController` driving `run_steps` over durable rows (recorded
+before it runs, succeeded steps replayed by key, unheard-from steps
+reconciled never retried blind, approvals bound to the hash of one exact
+call and spent once, cancel honoured between steps, completion as the
+world's evidence), `RunWorld` contract with an `observe` hook;
+`backend/workers/run_worker.py` hosted in the discovery worker behind
+`AGENT_RUNS_ENABLED` (off); `/api/v1/runs/{user}` behind `runs:read` /
+`runs:act`. `run_steps` gained `Resume` for a picked-up run. Eleven tests in
+`test_agent_runs.py` drive the real schema with a scripted world: a worker
+killed after the effect and before the record closed does not redo it;
+killed before the effect with a world that cannot say, the run stops with
+`unknown_effect`; a no ends the run; an expired yes is refused; the router
+declining is not completion.
+
+**Phase 5, first slice - the reviewer** (`backend/agents/review/`,
+`docs/AGENT_CATALOG.md`): a read-only git MCP server
+(`backend/mcp/servers/repo.py`, rooted by `REPO_MCP_ROOT`, hash-only
+commits, relative paths, bounded output, stdin closed on every git call - the
+first spawn hung 20 s on `rev-parse` with the MCP pipe inherited); a world
+with fixed stages (summary, diff, chosen files, findings) and two prompts
+(`review/choose_files`, `review/findings`); an evidence check in code that
+drops any finding whose quoted line is not at that line of a file the review
+read; bounded retry of a failed step under a fresh key; a card, a CLI
+(`backend.cli.review_commit`), a diagram, a catalog entry, and a real-model
+functional test with a planted off-by-one and an injected comment addressed
+to the reviewer.
+
+**Verification state.** Unit: every new module's tests pass on this host
+(runs 11, repo server and evidence check 22, alternatives 6, registry
+updated). Diagram suite 29 synchronized. Functional on the real model: the
+loop suites passed except two expectations pinned to Phase 1's defect, now
+rewritten (`test_two_reminders_are_both_written`). The reviewer's end-to-end
+test and the unknown-wording test have **not passed yet**: the first attempt
+found the stdin hang (fixed), the second failed on the findings call and the
+wording test twice timed out, with the model at five concurrent requests and
+23 s for an eight-token reply. Both are UNVERIFIED until the model is quiet;
+the retry and the message-assembly fix that came out of them are in.
+
 ## 2026-09-05 - Phase 2 of the execution-boundary repair, first checkpoint (NOT DEPLOYED, partly verified)
 
 The loop's bounds are now structural, and the measurement says what still

@@ -4,7 +4,7 @@ from typing import Any
 
 from .actions import ManageTasksAction
 from .base import BuiltinTool
-from .contracts import EffectContract
+from .contracts import EffectContract, normalize_words
 
 NAME = "manage_tasks"
 
@@ -136,7 +136,7 @@ TOOL = BuiltinTool(
         idempotency=lambda action: "|".join(
             (
                 action.operation,
-                " ".join(action.which.casefold().split()),
+                normalize_words(action.which),
                 str(action.cadence or ""),
                 str(action.hour),
                 str(action.minute),

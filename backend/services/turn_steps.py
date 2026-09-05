@@ -196,6 +196,19 @@ class TurnResult:
         return tuple(step for step in self.steps if step.status == UNKNOWN_STATUS)
 
 
+@dataclass(frozen=True, slots=True)
+class Resume:
+    """Where a loop left off, for a run picked up after a restart: the lines
+    of what was already done (so the next decision sees them), the keys of
+    the effects that succeeded (so none is repeated), how many things were
+    created, and how many steps were taken against the ceiling."""
+
+    lines: tuple[str, ...] = ()
+    keys: frozenset[str] = frozenset()
+    created: int = 0
+    steps: int = 0
+
+
 # --------------------------------------------------------------------- loop
 
 
@@ -228,10 +241,15 @@ async def run_steps(
     key: Callable[[Any], str | None] | None = None,
     max_creates: int = 1,
     bound_first: bool = False,
+    resume: Resume | None = None,
 ) -> TurnResult:
     steps: list[Step] = []
-    seen: set[str] = set()
-    created = 0
+    # A resumed run carries what an earlier attempt already did: those steps
+    # count against the ceiling and the allowance, and their keys are seen.
+    taken_before = resume.steps if resume is not None else 0
+    prior_lines = list(resume.lines) if resume is not None else []
+    seen: set[str] = set(resume.keys) if resume is not None else set()
+    created = resume.created if resume is not None else 0
     started = monotonic()
 
     # How much of the budget is left, negative once it is spent.
@@ -275,7 +293,7 @@ async def run_steps(
         if creates(action) and status_of(outcome) != FAILED:
             created += 1
 
-        if len(steps) >= max(1, max_steps):
+        if taken_before + len(steps) >= max(1, max_steps):
             return TurnResult(tuple(steps), CEILING)
         if remaining() <= 0:
             logger.info("Turn step budget spent after %d step(s)", len(steps))
@@ -283,7 +301,7 @@ async def run_steps(
 
         try:
             async with asyncio.timeout(remaining()):
-                chosen = await decide([step.line for step in steps])
+                chosen = await decide(prior_lines + [step.line for step in steps])
         except TimeoutError:
             logger.info("Turn step budget spent while deciding step %d", len(steps) + 1)
             return TurnResult(tuple(steps), BUDGET)

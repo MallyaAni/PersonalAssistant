@@ -312,6 +312,12 @@ async def run() -> None:
         from backend.workers.task_runner import run_task_loop
 
         asyncio.create_task(run_task_loop())
+    # Durable runs poll on their own rhythm too, and only once an agent has
+    # registered a kind of run for this process to host.
+    if settings.AGENT_RUNS_ENABLED:
+        from backend.workers.run_worker import run_loop as run_agent_runs
+
+        asyncio.create_task(run_agent_runs())
     while True:
         await worker.enqueue_due()
         handled = await worker.run_once()

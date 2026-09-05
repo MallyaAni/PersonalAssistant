@@ -29,6 +29,10 @@ SCOPE_MEMORY_WRITE = "memory:write"
 SCOPE_TOOLS = "tools:invoke"
 SCOPE_VISION = "vision"
 SCOPE_PRESENTATIONS = "presentations"
+# Durable runs: see what an agent is doing for you, and stop or approve it.
+SCOPE_RUNS_READ = "runs:read"
+SCOPE_RUNS_ACT = "runs:act"
+SCOPE_RUNS = "runs"
 
 # Coarse group scopes an operator may grant instead of the fine-grained ones.
 SCOPE_MEMORY = "memory"
@@ -46,6 +50,9 @@ GRANTABLE_SCOPES = frozenset(
         SCOPE_TOOLS_GROUP,
         SCOPE_VISION,
         SCOPE_PRESENTATIONS,
+        SCOPE_RUNS_READ,
+        SCOPE_RUNS_ACT,
+        SCOPE_RUNS,
     }
 )
 

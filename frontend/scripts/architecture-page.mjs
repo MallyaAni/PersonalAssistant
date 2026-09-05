@@ -232,6 +232,12 @@ const publishedDiagrams = [
     change: "How a request becomes a durable task or reusable skill and later runs safely.",
   },
   {
+    name: "agent-runs-subsystem",
+    title: "Durable runs",
+    scope: "Leased runs, recorded actions, approvals, resume, cancel",
+    change: "How an agent's loop outlives a turn: claimed with a lease, resumed from its recorded actions without redoing an effect, parked for a person's approval, cancelled between steps, completed on evidence.",
+  },
+  {
     name: "agent-scout",
     title: "Scout — what the model decides",
     scope: "Aiming, ranking, and description against deterministic qualification",
@@ -260,6 +266,12 @@ const publishedDiagrams = [
     title: "Trading — the personal autopsy",
     scope: "A person's own history read as repeated behaviours, costs, and a plan",
     change: "What their own trading record keeps doing, and what to stop, start, and keep.",
+  },
+  {
+    name: "agent-review",
+    title: "Reviewer agent",
+    scope: "Read-only commit review as a durable run",
+    change: "How one commit is reviewed: fixed read stages through the repo MCP server, two model judgements, and an evidence check in code that drops any finding whose quoted line is not there.",
   },
   {
     name: "market-data",

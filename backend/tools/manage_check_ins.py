@@ -7,7 +7,7 @@ from backend.core.checkin import FIRST_HOUR, FOLLOWING_UP, KINDS, LAST_HOUR, MAX
 
 from .actions import ManageCheckInsAction
 from .base import BuiltinTool
-from .contracts import EffectContract
+from .contracts import EffectContract, normalize_words
 
 NAME = "manage_check_ins"
 MODES = ("on", "off", "once", "status")
@@ -99,7 +99,7 @@ TOOL = BuiltinTool(
         # status change a setting or read one.
         creates=lambda action: action.mode == "once",
         idempotency=lambda action: "|".join(
-            (action.mode, " ".join(action.subject.casefold().split()))
+            (action.mode, normalize_words(action.subject))
         ),
     ),
 )

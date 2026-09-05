@@ -28,6 +28,7 @@ from backend.agents.cards import (
 from backend.agents.deck import card as deck_card
 from backend.agents.scout import card as scout_card
 from backend.agents.trading import card as trading_card
+from backend.agents.review import card as review_card
 
 # Every agent the workspace shows, in the order it shows them. This tuple is the
 # whole registration mechanism, deliberately: a list that can be read in one
@@ -37,6 +38,7 @@ DESCRIBERS: tuple[AgentDescriber, ...] = (
     scout_card.describe,
     deck_card.describe,
     trading_card.describe,
+    review_card.describe,
 )
 
 # Re-exported so callers depend on `backend.agents` for agent shapes rather than

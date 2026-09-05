@@ -1,0 +1,27 @@
+---
+title: Reviewer - a read-only review of one commit, as a durable run
+---
+flowchart LR
+    Ask([Operator or a repository event<br/>review commit abc1234]) --> Run[(agent_runs<br/>kind code_review · objective · acceptance)]
+    Run --> Controller[RunController<br/>record before · replay by key · verify]
+    Controller --> World[ReviewWorld<br/>fixed stages, no reordering]
+    World -->|1 repo_show_commit<br/>2 repo_diff<br/>4 repo_read_file per chosen file| Boundary[MCP invocation boundary<br/>read_only · whole-schema validation<br/>nested screening · replay-safe reads]
+    Boundary --> Repo[repo MCP server<br/>REPO_MCP_ROOT from env, never an argument<br/>hash-only commits · relative paths · bounded output]
+    Repo --> Git[(git repository<br/>pinned commit)]
+    World -->|3 which files to read in full| Choose{Structured model<br/>review/choose_files}
+    World -->|5 what is wrong| Findings{Structured model<br/>review/findings<br/>file · line · evidence}
+    Findings --> Check[Evidence check in code<br/>file changed · file read · line exists<br/>quoted line is that line]
+    Check -->|kept| Report[Run result<br/>commit · files read · findings<br/>rejected with reasons · unknowns]
+    Check -->|rejected, with the reason| Report
+    Report --> Person([Person<br/>/api/v1/runs · Agents tab card])
+    Untrusted[Repository text is material under review<br/>a comment addressed to the reviewer is a fact about the code] -.-> Choose
+    Untrusted -.-> Findings
+
+    classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
+    classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
+    classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
+    classDef store fill:#eef7ee,stroke:#5c9c5c,color:#173117;
+    class Ask,Person interface;
+    class Controller,World,Boundary,Repo,Check,Report,Untrusted application;
+    class Choose,Findings model;
+    class Run,Git store;

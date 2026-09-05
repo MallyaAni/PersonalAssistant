@@ -202,6 +202,39 @@ the same calendar (`model.build_features` takes any (T, N, K) array).
 Second lever, cheap: batch several sessions per step with padding masks —
 the per-session Python loop keeps the 5080 at 10-13% utilisation.
 
+## 2026-09-05 — Phase 2 closed (15/18); Phase 3 built; the reviewer built; two functional tests wait on a quiet model (NOT DEPLOYED)
+
+Read `docs/CHANGELOG.md` (this date, second entry) for what was built and
+measured. Codex should review the Phase 3 controller (`backend/runs/`) and
+the reviewer world (`backend/agents/review/world.py`) before Phase 5 goes
+further.
+
+**VERIFIED:** trajectories 15/18 on the real router, recorded and floored;
+unit suites for runs, the repo server, the evidence check, the harness and
+the registry; the additive migration `20260905_0019` applied to the live
+database (backup first); 29 diagrams synchronized.
+**UNVERIFIED (blocked on model load, not on code):**
+`functional/test_code_review_behaviour.py` and
+`functional/test_unknown_step_wording_behaviour.py`. Run them alone when
+`curl http://172.16.8.3:8000/metrics | grep num_requests_running` is near
+zero, with `LLM_BASE_URL=http://172.16.8.3:8000 LLM_MODEL=deepseek-v4-flash
+PYTHONPATH=<checkout>` exported (the test suite skips `.env`). Sweep
+journeys and the routing matrix have not been run on this change. Nothing
+is deployed; `TURN_MAX_STEPS` is still 1 and `AGENT_RUNS_ENABLED` false.
+
+**Next atomic tasks, in order:**
+1. Pass the two functional tests above; if the reviewer misses the planted
+   defect, read the run's `agent_run_actions` rows (the CLI prints the
+   result) before touching the prompt.
+2. Configure the `repo` server in `.env`'s `MCP_SERVERS_JSON` and
+   `REPO_MCP_ROOT` on `discovery-worker` (compose allowlist too), review one
+   real commit of this repository with `backend.cli.review_commit`, compare
+   with Codex's review of the same commit.
+3. Raise `TURN_MAX_STEPS` to 3 in `.env` and read it back from the
+   container, only after the routing gate and a sweep pass on this tree.
+4. Phase 4 (`PersonContext`) and the router track (rate assertions, the
+   SetFit front) remain unstarted; Phase 6 and 7 too.
+
 ## 2026-09-05 — Phase 2 first checkpoint: bounds are structural, the step line is the next defect (NOT DEPLOYED)
 
 Committed as a checkpoint at the operator's request (usage ran out), with
