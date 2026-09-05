@@ -164,13 +164,22 @@ def evaluate_scores(
     top_fraction: float = 0.2,
     min_names: int = 20,
     exclude: tuple[str, ...] = (),
+    beta_adjusted: bool = True,
 ) -> HarnessReport:
-    """Return a HarnessReport for `scores` against residual forward returns."""
+    """Return a HarnessReport for `scores` against residual forward returns.
+
+    The residual is beta-adjusted by default (own minus beta times the
+    benchmark, beta known at t), so a ranking that merely tilts toward
+    high-beta names earns nothing from the market's drift. `beta_adjusted=
+    False` gives the plain difference the earlier tables used.
+    """
     if scores.shape != panel.adj_close.shape:
         raise ValueError("scores must have the panel's (sessions x tickers) shape")
     own_fwd = panel.forward_log_returns(horizon)
     market_fwd = own_fwd[:, panel.index(panel.benchmark)][:, None]
-    residual = own_fwd - market_fwd
+    residual = (
+        panel.forward_residual(horizon) if beta_adjusted else own_fwd - market_fwd
+    )
     simple_fwd = np.expm1(own_fwd)
     excluded = np.zeros(len(panel.tickers), dtype=bool)
     excluded[panel.index(panel.benchmark)] = True

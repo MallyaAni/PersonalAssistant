@@ -273,7 +273,9 @@ def main() -> None:
     panel = build_panel(
         store, learn, MARKET_BENCHMARK, themes, asof=args.asof, start=args.start
     )
-    table = args.data_dir / "models" / "sweep.tsv"
+    # Rows here are measured against the beta-adjusted residual; the earlier
+    # sweep.tsv (plain residual) and sweep_themed_only.tsv are kept as history.
+    table = args.data_dir / "models" / "sweep_beta.tsv"
     table.parent.mkdir(parents=True, exist_ok=True)
     if not table.exists():
         table.write_text("\t".join(COLUMNS) + "\n", encoding="utf-8")

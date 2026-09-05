@@ -20,7 +20,7 @@ import numpy as np
 from backend.config.settings import settings
 from backend.market import baselines, edgar, sizing
 from backend.market.harness import evaluate_scores
-from backend.market.model import load_edgar_features
+from backend.market.model import load_edgar_features, load_tone_features
 from backend.market.panel import build_panel
 from backend.market.store import MarketStore
 from backend.market.technical import TECHNICAL_NAMES, technical_features
@@ -44,7 +44,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--score",
         choices=("composite", "fundamental"),
         default="composite",
-        help="composite = fundamentals + 52-week-low trend + 21-EMA fade",
+        help="composite = fundamentals + 21-EMA fade + release tone where scored",
     )
     parser.add_argument("--top-fraction", type=float, default=0.2)
     parser.add_argument("--short-fraction", type=float, default=0.0)
@@ -80,16 +80,32 @@ def fundamental_blend(extra: np.ndarray) -> np.ndarray:
     )
 
 
-# Slow momentum with fast reversion, from what has measured real: the
-# fundamental blend, distance above the 52-week low (the long trend),
-# and extension above the 21 EMA as a fade (the short reversal).
-def composite_score(panel, extra: np.ndarray) -> np.ndarray:
-    """Return the (T, N) composite: fundamentals, 52-week-low trend, 21-EMA fade."""
+# What survives a beta-adjusted residual: the fundamental blend, extension
+# above the 21 EMA as a fade (the short reversal), and, where a name has
+# scored releases, what its company said about its outlook. The 52-week-
+# low leg of the first composite was beta and is gone.
+def composite_score(
+    panel, extra: np.ndarray, tone: np.ndarray | None = None
+) -> np.ndarray:
+    """Return the (T, N) composite: fundamentals, 21-EMA fade, release tone."""
     feats = technical_features(panel)
     idx = {n: i for i, n in enumerate(TECHNICAL_NAMES)}
-    low52 = feats[:, :, idx["low_52w_distance"]].astype(float)
     ext21 = feats[:, :, idx["ema21_distance"]].astype(float)
-    return baselines.rank_blend(fundamental_blend(extra), low52, -ext21)
+    legs = [fundamental_blend(extra), -ext21]
+    if tone is not None:
+        from backend.market import language
+
+        names = language.FEATURE_NAMES
+        has = tone[:, :, names.index("has_tone")] > 0
+        tone_blend = baselines.rank_blend(
+            tone[:, :, names.index("tone_guidance")].astype(float),
+            tone[:, :, names.index("tone_demand")].astype(float),
+            tone[:, :, names.index("tone_guidance_change")].astype(float),
+        )
+        # A name without a scored release keeps its rank from the other
+        # legs: the tone leg is the median where unknown.
+        legs.append(np.where(has, tone_blend, 0.5))
+    return baselines.rank_blend(*legs)
 
 
 # Run the report.
@@ -114,8 +130,11 @@ def main() -> None:
         if extra is None:
             raise SystemExit("no EDGAR layer in the store; run market_edgar --refresh")
         if args.score == "composite":
-            scores = composite_score(panel, extra)
-            source = "composite: fundamentals + 52w-low trend + 21-EMA fade"
+            tone = load_tone_features(store, panel, args.asof)
+            scores = composite_score(panel, extra, tone)
+            source = "composite: fundamentals + 21-EMA fade" + (
+                " + release tone" if tone is not None else ""
+            )
         else:
             scores = fundamental_blend(extra)
             source = "fundamental blend (EDGAR)"

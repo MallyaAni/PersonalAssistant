@@ -101,6 +101,27 @@ class Panel:
             out[:, column] = by_theme.get(theme, bench)
         return out
 
+    # Each name's rolling beta to the benchmark over `lookback` sessions,
+    # known at t (it reads sessions <= t). A name too young for the window
+    # gets beta 1: the market's own, which is the neutral assumption.
+    def rolling_beta(self, lookback: int = 120) -> np.ndarray:
+        """Return (T, N) rolling betas to the benchmark, 1 where unknown."""
+        from backend.market.alpha import _rolling_beta
+
+        beta = _rolling_beta(self.log_returns(), self.benchmark_returns(), lookback)
+        beta = np.where(np.isfinite(beta), beta, 1.0)
+        return np.clip(beta, 0.0, 3.0)
+
+    # The K-session forward residual return: own forward return minus
+    # beta times the benchmark's, with beta as known at t. This is what a
+    # ranking can be credited for; the plain difference paid high-beta
+    # names for the market's own drift.
+    def forward_residual(self, horizon: int, beta_lookback: int = 120) -> np.ndarray:
+        """Return (T, N) beta-adjusted forward residual log returns."""
+        own = self.forward_log_returns(horizon)
+        market = own[:, self.index(self.benchmark)][:, None]
+        return own - self.rolling_beta(beta_lookback) * market
+
     # The K-session forward log return from each session, NaN where the
     # future is not fully known or either end is missing.
     def forward_log_returns(self, horizon: int) -> np.ndarray:

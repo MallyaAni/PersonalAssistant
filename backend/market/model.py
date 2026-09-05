@@ -200,8 +200,7 @@ def build_features(
         blocks.append(market_extra)
     market = np.concatenate(blocks, axis=1).astype(np.float32)
 
-    own = panel.forward_log_returns(horizon)
-    residual = (own - own[:, bench][:, None]).astype(np.float32)
+    residual = panel.forward_residual(horizon).astype(np.float32)
     residual[:, bench] = np.nan
     if label == "residual":
         labels = residual
