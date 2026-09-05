@@ -74,7 +74,7 @@ def theme_fundamental_scores(panel, blend: np.ndarray) -> np.ndarray:
         if theme:
             by_theme.setdefault(theme, []).append(column)
     has = np.isfinite(blend)
-    for theme, members in by_theme.items():
+    for members in by_theme.values():
         median = theme_median(blend, has, members)
         out[:, members] = median[:, None]
     return out
@@ -117,7 +117,7 @@ def main() -> None:
         if len(members) < 3:
             continue
 
-        def med(feature: str, t: int = last) -> float:
+        def med(feature: str, t: int = last, members: list[int] = members) -> float:
             return float(
                 theme_median(
                     extra[:, :, names.index(feature)].astype(float), has, members
@@ -136,7 +136,8 @@ def main() -> None:
     rotation = theme_fundamental_scores(panel, blend)
     price_rotation = baselines.theme_momentum(panel, 20)
     print(
-        f"\nrotation controls through the harness, horizon {args.horizon}, {args.cost_bps:.0f} bps:"
+        f"\nrotation controls through the harness, horizon {args.horizon}, "
+        f"{args.cost_bps:.0f} bps:"
     )
     print(
         f"{'control':34} {'periods':>7} {'IC':>8} {'t':>7} {'hit':>6} "
