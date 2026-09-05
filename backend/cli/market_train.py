@@ -154,9 +154,10 @@ def main() -> None:
                 f"{t}={_fmt(ranks[panel.index(t)], width=5, digits=2)}" for t in focus
             )
         )
-        order = np.argsort(-np.nan_to_num(today, nan=-np.inf))
-        top = [panel.tickers[i] for i in order[:10] if np.isfinite(today[i])]
-        bottom = [panel.tickers[i] for i in order[::-1][:10] if np.isfinite(today[i])]
+        finite = np.flatnonzero(np.isfinite(today))
+        order = finite[np.argsort(-today[finite])]
+        top = [panel.tickers[i] for i in order[:10]]
+        bottom = [panel.tickers[i] for i in order[::-1][:10]]
         print(f"  top 10: {' '.join(top)}")
         print(f"  bottom 10: {' '.join(bottom)}")
 
