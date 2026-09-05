@@ -21,6 +21,9 @@ dependencies = [
     "resvg-py>=0.2",
     "python-multipart>=0.0.20",
     "numpy>=2.0.0",
+    # backend/market: browser-impersonating fetch and the parquet store.
+    "curl_cffi>=0.10.0",
+    "pyarrow>=17.0.0",
     "onnxruntime>=1.20.0",
     "tokenizers>=0.20.0,<1.0.0",
     # See requirements.txt: 2.0 removes mcp.server.fastmcp.
@@ -36,6 +39,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+research = [
+    # Training the market ranker; not part of the backend image.
+    "torch>=2.5.0",
+]
 dev = [
     "black>=24.0.0",
     "mypy>=1.8.0",

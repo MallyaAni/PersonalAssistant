@@ -83,6 +83,7 @@ Use this ownership map when selecting affected views:
 | Planned generated-image observation, visual references, source-aware editing, verification, or derived-data lifecycle | Visual memory and editing target | A future component, model dependency, store, or cross-subsystem flow is adopted into the current system |
 | Deck/slide specifications, presentation revisions, PowerPoint rendering, or Office validation | Presentations | An agent, renderer process, store, trust boundary, or cross-subsystem flow changes |
 | Repository context collection, LLM diagram candidates, candidate validation/rendering, or canonical review | Architecture maintenance | A maintainer process, model dependency, trust boundary, or canonical ownership flow changes |
+| Market universe, the Yahoo fetch, the as-of parquet store, the panel, baselines, window tensors, or the walk-forward harness | Market data | A data source, store, or model-training component is added or removed |
 | Browser state, frontend components, API client behavior, SSE parsing, or client rendering | Frontend | A major component or frontend/backend ownership flow changes |
 
 Internal refactors, bug fixes, styling, tests, and field-level implementation details do not trigger a diagram edit when those architectural relationships remain unchanged. The synchronization check still validates every registered pair, while visual inspection may stay limited to diagrams whose source changed.

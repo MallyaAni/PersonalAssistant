@@ -262,6 +262,12 @@ const publishedDiagrams = [
     change: "What their own trading record keeps doing, and what to stop, start, and keep.",
   },
   {
+    name: "market-data",
+    title: "Market data — the snapshot and what a model must beat",
+    scope: "Immutable as-of history, the aligned panel, baselines, and the walk-forward harness",
+    change: "How daily market history is fetched without being refused, kept reproducible, and measured before any model is trusted.",
+  },
+  {
     name: "tool-memory-subsystem",
     title: "Tool memory & MCP",
     scope: "Discovery, semantic selection, and safe invocation",

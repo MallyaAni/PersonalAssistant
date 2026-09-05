@@ -1,8 +1,11 @@
-"""Daily market data and the tensors a model learns stock structure from.
+"""Daily market data, and the measurements a model must beat.
 
-The reproducible daily snapshot (universe, Yahoo fetch, Postgres store,
-refresh/status) is the raw material; the window builder turns it into
-no-look-ahead tensors the stock-analysis research model will consume. The
-model is fed raw normalized price/volume, not hand-coded indicators — a
-neural network learns the structure report itself.
+The flow: `universe` names the cross-section; `yahoo` fetches each name's
+completed sessions and corporate actions; `store` keeps every fetch as an
+immutable as-of partition; `snapshot` runs and audits a refresh; `panel`
+aligns the stored histories onto one calendar; `baselines` and `harness`
+measure known cross-sectional effects on that panel out of sample; and
+`windows` turns the same panel into raw sequence tensors for a model. A
+model earns its place only by beating the baselines in the harness, net of
+costs, on the same panel.
 """

@@ -1,0 +1,36 @@
+---
+title: Market data - the snapshot, the panel, and what a model must beat
+---
+flowchart TB
+    Universe[Universe<br/>S&P 500 file + AI-infra overlay<br/>+ sector ETFs, with themes] --> Refresh[Snapshot refresh<br/>paced, per-ticker failures captured]
+    Yahoo[(Yahoo chart endpoint<br/>browser-impersonated TLS)] --> Refresh
+    Refresh --> Store[(As-of parquet store<br/>bars + corporate actions<br/>one immutable partition per fetch day)]
+    Refresh -.-> Drop[Live session dropped:<br/>only closed bars are stored]
+
+    Store --> Panel[Panel<br/>sessions x tickers, shared calendar<br/>theme baskets = equal-weight members]
+    Panel --> Baselines[Baselines<br/>momentum · relative strength<br/>theme momentum · rotation blend]
+    Panel --> Windows[Window tensors<br/>8 raw channels, forward labels,<br/>label end dates for purging]
+    Baselines --> Harness[Walk-forward harness<br/>rank IC vs residual return<br/>long-short net of cost, purged folds]
+    Windows --> Model[A learned ranker<br/>not yet built]
+    Model -.-> Harness
+    Harness --> Report([Baseline report<br/>the numbers a model must beat])
+
+    CLI[CLI: market_universe<br/>market_snapshot · market_baselines] -.-> Refresh
+    CLI -.-> Report
+
+    Rule[Reproducibility is a pinned as-of date.<br/>No partition is ever rewritten;<br/>no channel is a hand-coded signal]
+    Rule -.-> Store
+    Rule -.-> Windows
+
+    classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
+    classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
+    classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
+    classDef external fill:#fdf1e6,stroke:#c98a3d,color:#4a2c0a;
+    classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
+    classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
+    class CLI,Report interface;
+    class Universe,Refresh,Panel,Baselines,Windows,Harness application;
+    class Store data;
+    class Yahoo external;
+    class Model model;
+    class Rule,Drop warning;

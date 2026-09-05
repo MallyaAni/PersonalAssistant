@@ -37,6 +37,7 @@ const diagramNames = [
   "agent-diagram",
   "agent-memory",
   "agent-trading",
+  "market-data",
   "tool-memory-subsystem",
   "visual-artifact-subsystem",
   "visual-memory-editing-target",

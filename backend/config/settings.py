@@ -672,6 +672,8 @@ class Settings(BaseSettings):
     IMAGE_PROVIDER_POLL_SECONDS: float = Field(default=0.5, ge=0.1, le=10)
     IMAGE_MAX_CONCURRENCY: int = Field(default=1, ge=1, le=4)
     ARTIFACT_STORAGE_ROOT: str = "data/artifacts"
+    # Immutable as-of partitions of daily market history (backend/market/store.py).
+    MARKET_DATA_ROOT: str = "data/market"
     PRESENTATION_RENDERER_BASE_URL: str = "http://127.0.0.1:8002"
     PRESENTATION_RENDERER_TIMEOUT_SECONDS: float = Field(default=60.0, gt=0, le=600)
     PRESENTATION_MAX_OUTPUT_BYTES: int = Field(
