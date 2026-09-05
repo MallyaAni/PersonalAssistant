@@ -274,3 +274,43 @@ def tickers_with_role(
 def theme_map(universe: tuple[UniverseMember, ...]) -> dict[str, tuple[str, ...]]:
     """Return a mapping from ticker to its theme tags."""
     return {m.ticker: m.themes for m in universe}
+
+
+# The names the operator actually watches: the AI-infrastructure cluster and
+# software. Everything the S&P tags as a semiconductor, communications
+# equipment or software sub-industry, plus every overlay name. Plain
+# utilities and electrical equipment that only carry the power theme through
+# the index mapping stay out; they are not what the book trades.
+BOOK_SUB_INDUSTRIES: frozenset[str] = frozenset(
+    {
+        "Semiconductors",
+        "Semiconductor Materials & Equipment",
+        "Communications Equipment",
+        "Application Software",
+        "Systems Software",
+    }
+)
+AI_SIDE = "ai"
+SOFTWARE_SIDE = "software"
+_AI_THEMES = frozenset({AI_COMPUTE, MEMORY_STORAGE, NETWORKING, POWER_COOLING})
+
+
+# Ticker -> side ("ai" or "software") for the names the book trades. A name
+# is software when it carries the software theme and no AI-infrastructure
+# theme (a hyperscaler that also sells software, like MSFT, is software; a
+# chip name is AI). Benchmarks and everything else are left out.
+def book_sides(universe: tuple[UniverseMember, ...]) -> dict[str, str]:
+    """Return {ticker: "ai" | "software"} for the AI-and-software book."""
+    overlay = {m.ticker for m in OVERLAY}
+    sides: dict[str, str] = {}
+    for m in universe:
+        if m.role not in (FOCUS, MEMBER):
+            continue
+        if m.ticker not in overlay and m.sub_industry not in BOOK_SUB_INDUSTRIES:
+            continue
+        themes = set(m.themes)
+        if SOFTWARE in themes and not themes & _AI_THEMES:
+            sides[m.ticker] = SOFTWARE_SIDE
+        elif themes & (_AI_THEMES | {HYPERSCALER}):
+            sides[m.ticker] = AI_SIDE
+    return sides
