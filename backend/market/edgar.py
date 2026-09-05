@@ -71,6 +71,25 @@ FACT_TAGS: dict[str, tuple[str, ...]] = {
     "gross_profit": ("GrossProfit",),
 }
 
+# Balance-sheet facts are instants (a value at a date, no span). Shares
+# outstanding live in the dei taxonomy on the cover page; the us-gaap tag
+# is the balance-sheet count. Either serves for growth in the share count.
+INSTANT_TAGS: dict[str, tuple[tuple[str, str], ...]] = {
+    "assets": (("us-gaap", "Assets"), ("ifrs-full", "Assets")),
+    "equity": (
+        ("us-gaap", "StockholdersEquity"),
+        (
+            "us-gaap",
+            "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest",
+        ),
+        ("ifrs-full", "Equity"),
+    ),
+    "shares": (
+        ("dei", "EntityCommonStockSharesOutstanding"),
+        ("us-gaap", "CommonStockSharesOutstanding"),
+    ),
+}
+
 FEATURE_NAMES: tuple[str, ...] = (
     "sessions_since_earnings",
     "earnings_reaction",
@@ -87,6 +106,9 @@ FEATURE_NAMES: tuple[str, ...] = (
     "fundamentals_staleness",
     "has_fundamentals",
     "has_events",
+    "share_issuance",
+    "asset_growth",
+    "book_to_market",
 )
 FEATURE_COUNT = len(FEATURE_NAMES)
 
@@ -316,7 +338,35 @@ def parse_company_facts(payload: Mapping[str, Any]) -> list[QuarterFact]:
                     best_count = len(quarters)
                     chosen = _with_derived_fourth_quarters(quarters, years)
         out.extend(chosen)
+    out.extend(_instant_facts(facts_root))
     out.sort(key=lambda f: (f.name, f.end, f.filed))
+    return out
+
+
+# Instant facts (assets, equity, shares): the earliest-filed value at each
+# balance-sheet date, from the first taxonomy/tag pair with the most dates
+# on file. Stored as QuarterFact rows with start == end.
+def _instant_facts(facts_root: Mapping[str, Any]) -> list[QuarterFact]:
+    out: list[QuarterFact] = []
+    for name, pairs in INSTANT_TAGS.items():
+        best: dict[date, QuarterFact] = {}
+        for taxonomy, tag in pairs:
+            rows = _rows_for(facts_root, taxonomy, tag)
+            found: dict[date, QuarterFact] = {}
+            for row in rows:
+                if "start" in row and row.get("start"):
+                    continue
+                try:
+                    end = date.fromisoformat(row["end"])
+                    filed = date.fromisoformat(row["filed"])
+                    value = float(row["val"])
+                except (KeyError, TypeError, ValueError):
+                    continue
+                if end not in found or filed < found[end].filed:
+                    found[end] = QuarterFact(name, end, end, value, filed)
+            if len(found) > len(best):
+                best = found
+        out.extend(best.values())
     return out
 
 
@@ -558,6 +608,9 @@ def edgar_features(panel: Panel, records: Mapping[str, CompanyRecord]) -> np.nda
         capex, _ = _known_series(record.facts, "capex", panel.dates)
         ocf, _ = _known_series(record.facts, "operating_cash_flow", panel.dates)
         gp, _ = _known_series(record.facts, "gross_profit", panel.dates)
+        assets, _ = _known_series(record.facts, "assets", panel.dates)
+        equity, _ = _known_series(record.facts, "equity", panel.dates)
+        shares, _ = _known_series(record.facts, "shares", panel.dates)
         has = np.isfinite(rev[0])
         with np.errstate(divide="ignore", invalid="ignore"):
             yoy = np.log(rev[0] / rev[4])
@@ -572,6 +625,10 @@ def edgar_features(panel: Panel, records: Mapping[str, CompanyRecord]) -> np.nda
             capex_yoy = np.log(capex[0] / capex[4])
             ocf_rev = ocf[0] / rev[0]
             gross = gp[0] / rev[0]
+            issuance = np.log(shares[0] / shares[4])
+            asset_growth = np.log(assets[0] / assets[4])
+            market_cap = shares[0] * panel.close[:, column]
+            book_to_market = np.log(equity[0] / market_cap)
         staleness = np.where(
             np.isfinite(filed_at),
             np.minimum(np.arange(size) - np.nan_to_num(filed_at), NO_FACT_SESSIONS),
@@ -588,6 +645,9 @@ def edgar_features(panel: Panel, records: Mapping[str, CompanyRecord]) -> np.nda
             "capex_yoy": capex_yoy,
             "ocf_to_revenue": ocf_rev,
             "gross_margin": gross,
+            "share_issuance": issuance,
+            "asset_growth": asset_growth,
+            "book_to_market": book_to_market,
         }
         for key, series in values.items():
             clean = np.where(np.isfinite(series), series, 0.0)

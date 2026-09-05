@@ -54,7 +54,26 @@ def _facts_payload():
                         "USD": [fact("2025-01-01", "2025-03-31", 30, "2025-05-01")]
                     }
                 },
-            }
+                "Assets": {
+                    "units": {
+                        "USD": [
+                            {"end": "2024-03-31", "val": 1000, "filed": "2024-05-01"},
+                            {"end": "2025-03-31", "val": 1200, "filed": "2025-05-01"},
+                            {"end": "2024-03-31", "val": 999, "filed": "2025-05-01"},
+                        ]
+                    }
+                },
+            },
+            "dei": {
+                "EntityCommonStockSharesOutstanding": {
+                    "units": {
+                        "shares": [
+                            {"end": "2024-03-31", "val": 100, "filed": "2024-05-01"},
+                            {"end": "2025-03-31", "val": 110, "filed": "2025-05-01"},
+                        ]
+                    }
+                },
+            },
         }
     }
 
@@ -69,6 +88,17 @@ def test_company_facts_are_point_in_time_with_derived_fourth_quarter():
     assert q4.value == 470 - 100 - 110 - 120
     assert q4.filed == date(2025, 2, 15)
     assert q4.start == date(2024, 10, 1)
+
+
+# Instant facts keep the earliest filing per date and come back as
+# start == end rows; growth features read them four quarters apart.
+def test_instant_facts_and_growth_features():
+    facts = edgar.parse_company_facts(_facts_payload())
+    assets = {f.end: f for f in facts if f.name == "assets"}
+    assert assets[date(2024, 3, 31)].value == 1000  # not the 999 restatement
+    assert assets[date(2024, 3, 31)].start == date(2024, 3, 31)
+    shares = {f.end: f for f in facts if f.name == "shares"}
+    assert shares[date(2025, 3, 31)].value == 110
 
 
 # 8-K item 2.02 filings become events; anything else is ignored; a release
@@ -146,6 +176,13 @@ def test_features_are_point_in_time_and_filled():
     assert abs(feats[t_after, a, names.index("revenue_yoy")] - np.log(150 / 100)) < 1e-5
     assert abs(feats[t_after, a, names.index("revenue_qoq")] - np.log(150 / 140)) < 1e-5
     assert abs(feats[t_after, a, names.index("net_margin")] - 30 / 150) < 1e-5
+    # Growth in shares and assets, four quarters apart, from the instants.
+    assert (
+        abs(feats[t_after, a, names.index("share_issuance")] - np.log(110 / 100)) < 1e-5
+    )
+    assert (
+        abs(feats[t_after, a, names.index("asset_growth")] - np.log(1200 / 1000)) < 1e-5
+    )
     # Staleness counts sessions since the latest filing.
     assert feats[t_after, a, names.index("fundamentals_staleness")] == 0
     assert feats[t_after + 3, a, names.index("fundamentals_staleness")] == 3
