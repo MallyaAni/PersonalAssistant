@@ -53,6 +53,9 @@ def build_parser() -> argparse.ArgumentParser:
             "raw+edgar",
             "alpha+tone",
             "alpha+edgar+tone",
+            "alpha+edgar+technical",
+            "alpha+edgar+technical+tone",
+            "alpha+edgar+technical+intraday",
         ),
         default="raw",
     )

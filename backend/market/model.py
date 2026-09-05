@@ -156,7 +156,7 @@ def build_features(
     elif parts[0] != "raw":
         raise ValueError(f"unknown feature set {features!r}")
     extras = [p for p in parts[1:] if p]
-    if any(p not in ("edgar", "tone") for p in extras):
+    if any(p not in ("edgar", "tone", "technical", "intraday") for p in extras):
         raise ValueError(f"unknown feature set {features!r}")
     if extras:
         if extra is None:
@@ -827,6 +827,12 @@ def load_extra_features(store, panel, features, asof=None):
             array = load_edgar_features(store, panel, asof)
         elif part == "tone":
             array = load_tone_features(store, panel, asof)
+        elif part == "technical":
+            from backend.market.technical import technical_features
+
+            array = technical_features(panel)
+        elif part == "intraday":
+            array = load_intraday_features(store, panel, asof)
         else:
             raise ValueError(f"unknown feature layer {part!r}")
         if array is None:
@@ -837,3 +843,19 @@ def load_extra_features(store, panel, features, asof=None):
     if not arrays:
         return None
     return np.concatenate(arrays, axis=2)
+
+
+# The 15-minute feature array for a panel from stored Alpaca bars, or None.
+def load_intraday_features(store, panel, asof=None):
+    """Return alpaca.intraday_features(panel, bars) from stored frames, or None."""
+    from backend.market import alpaca
+
+    bars = {}
+    for ticker in panel.tickers:
+        frame = store.read_frame(alpaca.BARS_KIND, ticker, asof)
+        if frame is None:
+            continue
+        bars[ticker] = alpaca.bars_from_frame(frame[0])
+    if not bars:
+        return None
+    return alpaca.intraday_features(panel, bars)

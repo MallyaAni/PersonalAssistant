@@ -23,6 +23,7 @@ from backend.market.harness import evaluate_scores
 from backend.market.model import load_edgar_features
 from backend.market.panel import build_panel
 from backend.market.store import MarketStore
+from backend.market.technical import TECHNICAL_NAMES, technical_features
 from backend.market.universe import (
     FOCUS,
     MARKET_BENCHMARK,
@@ -38,6 +39,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Size a score into a book.")
     parser.add_argument(
         "--scores", type=Path, default=None, help="An .npz of saved scores."
+    )
+    parser.add_argument(
+        "--score",
+        choices=("composite", "fundamental"),
+        default="composite",
+        help="composite = fundamentals + 52-week-low trend + 21-EMA fade",
     )
     parser.add_argument("--top-fraction", type=float, default=0.2)
     parser.add_argument("--short-fraction", type=float, default=0.0)
@@ -73,6 +80,18 @@ def fundamental_blend(extra: np.ndarray) -> np.ndarray:
     )
 
 
+# Slow momentum with fast reversion, from what has measured real: the
+# fundamental blend, distance above the 52-week low (the long trend),
+# and extension above the 21 EMA as a fade (the short reversal).
+def composite_score(panel, extra: np.ndarray) -> np.ndarray:
+    """Return the (T, N) composite: fundamentals, 52-week-low trend, 21-EMA fade."""
+    feats = technical_features(panel)
+    idx = {n: i for i, n in enumerate(TECHNICAL_NAMES)}
+    low52 = feats[:, :, idx["low_52w_distance"]].astype(float)
+    ext21 = feats[:, :, idx["ema21_distance"]].astype(float)
+    return baselines.rank_blend(fundamental_blend(extra), low52, -ext21)
+
+
 # Run the report.
 def main() -> None:
     """Entry point: simulate the sized book and print today's positions."""
@@ -94,8 +113,12 @@ def main() -> None:
         extra = load_edgar_features(store, panel, args.asof)
         if extra is None:
             raise SystemExit("no EDGAR layer in the store; run market_edgar --refresh")
-        scores = fundamental_blend(extra)
-        source = "fundamental blend (EDGAR)"
+        if args.score == "composite":
+            scores = composite_score(panel, extra)
+            source = "composite: fundamentals + 52w-low trend + 21-EMA fade"
+        else:
+            scores = fundamental_blend(extra)
+            source = "fundamental blend (EDGAR)"
     config = sizing.SizingConfig(
         top_fraction=args.top_fraction,
         short_fraction=args.short_fraction,

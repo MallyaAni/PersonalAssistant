@@ -118,6 +118,19 @@ SWEEP: dict[str, TrainConfig] = {
     "master_edgar_h60": TrainConfig(
         features="alpha+edgar", label="rank", encoder="master", epochs=10, horizon=60
     ),
+    # With the trader's toolkit (EMAs, levels, candles, MACD family).
+    "lgbm_technical_h20": TrainConfig(
+        features="alpha+edgar+technical", label="rank", encoder="lgbm", horizon=20
+    ),
+    "mlp_technical_h20": TrainConfig(
+        features="alpha+edgar+technical", label="rank", encoder="mlp", horizon=20
+    ),
+    "lgbm_technical_h60": TrainConfig(
+        features="alpha+edgar+technical", label="rank", encoder="lgbm", horizon=60
+    ),
+    "mlp_technical_h60": TrainConfig(
+        features="alpha+edgar+technical", label="rank", encoder="mlp", horizon=60
+    ),
     "xsect_raw_rank": TrainConfig(features="raw", label="rank", encoder="xsect"),
     "mlp_raw_residual": TrainConfig(),
 }
