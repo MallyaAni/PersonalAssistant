@@ -7,6 +7,91 @@ was checked by running it, not by reading it. The seven image scenarios can
 be re-run any time with `python -m backend.cli.exercise_image_scenarios`
 inside the backend container.
 
+## 2026-09-05 — the market research system: measured end to end, and what the measurements say (PUSHED, NOT DEPLOYED)
+
+Everything below was produced by running the code. Commits `1e4970de` →
+`00ebf082` on main; the spark1 gate passed on `90b40e5c` (36 passed, 1
+skipped: the model test skips without torch, by design). The operator was
+asleep for the second half of this; nothing was asked, everything is here.
+
+**What exists now, all in `backend/market/` and `backend/cli/market_*`:**
+a Chrome-impersonating Yahoo fetch (Yahoo refuses by TLS fingerprint, not
+IP) with corporate actions and the live session dropped; an immutable
+as-of parquet store (`data/market/`, on this desktop and on spark1 at
+`~/deploy/anios/data/market`, 546 names since 2015); a 546-name universe
+(current S&P 500 with GICS tags + AI-infra/memory/networking/power/software
+overlay + 15 sector ETFs); the aligned panel with theme baskets; 8 raw
+channels and 31 causal multi-scale features (`alpha.py`); five baselines;
+a walk-forward harness (rank IC against residual return, purged folds,
+cost-charged long-short); a ranker with five encoders (mlp, gru, xsect =
+attention across names, master = market-gated MASTER-style, lgbm) with
+rank labels and seed ensembles; and a sweep CLI that appends one row per
+run to `data/market/models/sweep.tsv` beside momentum on the same
+sessions. 57 market tests, ruff/black clean.
+
+**Research (through September 2026).** The Qlib leaderboard's best daily
+rankers reach rank IC 0.05-0.067, rank ICIR ~0.45, on Chinese A-shares with
+158-360 engineered inputs at a one-day horizon; the gains come from wide
+inputs, market-gated attention within and across stocks (MASTER, AAAI-24;
+StockMamba 2026 +15% rank IC over MASTER; ACT 2026), rank-aware losses
+(LambdaRankIC 2026) and ensembling. Time-series foundation models
+(TimeGPT, Chronos-2, TimesFM-2.5, Moirai-2) were evaluated on US equities
+in June 2026: gains over a random walk "small and sparse". LightGBM remains
+the tabular reference every deep model is judged against.
+
+**Results, 532 ranked names, 2015-01-02..2026-09-04, 10 bps per unit
+traded, top/bottom 20%, all through the same harness:**
+
+| run | horizon | periods | rank IC | t | net Sharpe |
+| --- | --- | --- | --- | --- | --- |
+| momentum 12-1 (reference) | 10 | 213 | 0.015 | 0.95 | 0.15 |
+| mlp, raw channels | 10 | 213 | 0.015 | 1.01 | 0.12 |
+| gru, raw | 10 | 213 | -0.005 | -0.35 | -0.27 |
+| xsect, raw | 10 | 213 | 0.012 | 0.79 | -0.36 |
+| mlp, alpha, rank label | 10 | 213 | 0.018 | 1.30 | -0.26 |
+| lightgbm, alpha, rank label | 10 | 213 | 0.002 | 0.10 | -0.67 |
+| master, alpha, rank label | 10 | 213 | -0.005 | -0.29 | -0.70 |
+| lightgbm, alpha, rank label | 20 | 107 | 0.003 | 0.14 | -0.53 |
+| mlp, raw (spark1 GPU) | 20 | 107 | -0.006 | -0.30 | -0.51 |
+
+Nothing beats momentum at ten sessions, and momentum itself is nothing
+there. **The positive control explains why.** Run through the unchanged
+harness on the same panel:
+
+| known effect | horizon | periods | rank IC | t | Sharpe @0 bps | @10 bps |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1-day reversal | 1 | 2934 | 0.016 | 4.65 | 0.42 | -3.90 |
+| 5-day reversal | 5 | 586 | 0.024 | 3.16 | 0.66 | -0.04 |
+| 10-day reversal | 5 | 585 | 0.018 | 2.40 | 0.38 | -0.12 |
+| theme reversal (20d) | 10 | 291 | 0.030 | 2.07 | 0.14 | -0.07 |
+| theme momentum (60d) | 60 | 47 | 0.054 | 1.56 | 0.39 | 0.36 |
+
+The pipeline sees the effects the literature says are there. They live at
+one to five sessions (reversal, significant, eaten by cost at full
+rebalancing) and at one to three months (theme rotation persists, too few
+periods yet to be significant). At ten sessions the two cancel, and that is
+where every model was trained. **Structure exists; the label horizon was
+wrong.**
+
+**In flight at shutdown (results append to `sweep.tsv` on each machine):**
+desktop 5080: xsect alpha h10, then lgbm/mlp/xsect at h5 and lgbm/mlp/master
+at h60 (`E:\AgentWorkspace\tmp\sweep_desktop.log`). spark1, CPU only
+(`CUDA_VISIBLE_DEVICES=` — torch 2.14's AdamW touches the accelerator even
+for CPU tensors and the GB10 has no free memory beside vLLM): master h20,
+h5, and the 3-seed ensemble at h10 (`~/sweep_spark1_cpu2.log`,
+`~/deploy/anios/data/market/models/sweep.tsv`). Read both tables first.
+
+**Next atomic task.** Read the h5 and h60 rows. If a model beats the
+reversal control at h5 or the theme-momentum control at h60 net of cost,
+that is the model; build position sizing on it (volatility-targeted, theme
+exposure budget, turnover-aware so reversal is not traded at full
+rebalance). If nothing does, the next lever is information the price
+series does not hold: a scheduled DeepSeek pass turning earnings calls,
+hyperscaler capex guidance and memory-pricing news into dated features on
+the same calendar (`model.build_features` takes any (T, N, K) array).
+Second lever, cheap: batch several sessions per step with padding masks —
+the per-session Python loop keeps the 5080 at 10-13% utilisation.
+
 ## 2026-09-05 — Phase 1 evaluation made honest after codex review (PUSHED)
 
 Codex reviewed the Phase 1 baseline and showed four false positives: the
@@ -47,7 +132,7 @@ PASS. Verified: full unit suite **2635 passed / 9 skipped** via
 suite **25 passed** (one transient router-variance failure on the first
 batch run, passed alone and green on re-run).
 
-## 2026-09-05 — stock-analysis foundation, slice 1: the reproducible daily market snapshot (NOT DEPLOYED)
+## 2026-09-05 — stock-analysis foundation, slice 1 (SUPERSEDED by the market research entry above; kept as history)
 
 First slice of the deep-learning research system for the trading agent,
 built from the plan the operator endorsed (daily data, swing horizon,
