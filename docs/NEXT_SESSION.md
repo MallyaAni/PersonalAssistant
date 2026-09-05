@@ -7,6 +7,80 @@ was checked by running it, not by reading it. The seven image scenarios can
 be re-run any time with `python -m backend.cli.exercise_image_scenarios`
 inside the backend container.
 
+## 2026-09-05 (late) — beta was the signal; the calendar, the macro state, the tape (PUSHED, NOT DEPLOYED)
+
+Continues the three entries below it. Commits `bc20418d` → `02a51e00`.
+Another agent is committing to this repository and editing the security
+agent in this checkout; files are added by name only.
+
+**The correction that matters most (`9dbe052d`).** The harness scored
+rankings against own return minus the benchmark's, and the models trained
+on the same label. In a market that rose most years that pays high-beta
+names for the market's drift. Beta-adjusted (own minus 120-session rolling
+beta times the benchmark, beta known at t, now the default in
+`evaluate_scores` and the model label): distance above the 52-week low
+0.045 (t 2.8) → 0.005 (t 0.3); high volatility 0.037 → -0.017; the
+fundamental blend 0.026 → 0.021 (t 2.3); the 21-EMA fade 0.027 → 0.024
+(t 1.7, 20 sessions only); **the release-tone blend 0.063 → 0.044 (t 3.0)
+at 20 sessions and 0.076 (t 3.8) at 60**. The book's composite drops the
+52-week-low leg and adds the tone where a name has scored releases: rank
+IC 0.032 (t 3.1), book Sharpe 1.05 vs 0.84, max drawdown -6.8%. Sweep
+rows now go to `sweep_beta.tsv`; `sweep.tsv` (plain residual, full
+cross-section) and `sweep_themed_only.tsv` are history. The full-cross-
+section model rows measured on the plain residual before the change:
+lgbm alpha h10 0.001 / h5 -0.001 / h60 0.024; lgbm +edgar h20 0.003;
+lgbm +technical h20 0.019 (t 1.1) / h60 0.033 (t 1.2); mlp alpha h10
+-0.002 / h5 0.011; mlp +edgar h20 -0.005; mlp +technical h20 0.010;
+xsect alpha h10 0.008; lgbm +calendar h5 0.005 / h20 0.003. Nothing
+learned beats the tone blend or the composite; the remaining GPU rows
+(master, chart CNN h20/h5) append to `sweep.tsv` as the old process
+finishes, and every model row is due a re-run under the beta label
+(`--only ...` into `sweep_beta.tsv`).
+
+**The calendar** (`backend/market/calendar.py`, FOMC dates committed):
+over 94 decisions the index drifts up into the meeting (day -1 +24 bp, t
+1.9), high-vol minus low-vol names +41 bp (t 2.4) on the decision day, AI
+basket +32 bp (t 1.9) then -29 bp on day +2 and +32 bp on day +3. Quad
+witching -41 bp (t -3.1), monthly expiry -13 bp (t -2.2), the Russell day
+50% more volatile; turn of the month faint; December and January nothing.
+**The macro state** (`macro.py`: VIX level, change and ratio to realised,
+10-year yield and change, dollar, oil; series stored via `market_snapshot
+--tickers "^VIX,^TNX,DX-Y.NYB,CL=F"`). Both enter every gate's market
+vector and the "calendar"/"macro" feature layers.
+
+**Other documented anomalies as controls (plain residual, then beta):**
+low volatility and low beta are *negative* here (high vol +0.037 plain,
+-0.017 beta-adjusted: beta); illiquidity within the index +0.015 →
++0.021 (t 2.6), plausibly survivorship of small survivors; anti-lottery
+nothing. **Balance-sheet instants** (`02a51e00`): share issuance, asset
+growth and book-to-market are parsed point in time; the desktop EDGAR
+partition is being refetched to carry them (old one set aside as
+`old-asof=2026-09-05`), controls to follow.
+
+**The 15-minute tape.** Alpaca keys in `.env`; `market_intraday
+--refresh` running for the universe (~30 s a name). Preliminary on 198
+names, beta-adjusted, 20 sessions: bars above the 15-minute 9 EMA (5-day
+mean) IC 0.029 (t 1.6), trending tape 0.026 (t 1.5), calm tape 0.015 (t
+1.6, net Sharpe 0.58); at 5 sessions every strength measure is mildly
+negative (reversal). The tape encoder (`tape.py`, encoder "tape",
+`bc20418d`) recovers a planted intraday pattern in its test and runs
+(`tape_h5`, `tape_h20`) once the fetch completes.
+
+**Release batch:** ~90 of 109 themed names scored on spark1; the rest of
+the universe since 2020 is queued (`~/run_tone_rest.sh`). Tone frames on
+the desktop are a copy from the 51-name stage; copy again before
+measuring.
+
+**Next atomic task.** When the batch completes: copy `edgar_tone` from
+spark1, rerun the tone controls on all names (beta-adjusted), then
+`market_sweep --only lgbm_macro_h20,master_macro_h20 --device cuda` plus
+tone-inclusive runs, into `sweep_beta.tsv`. When the intraday fetch
+completes: the intraday controls on all names and `tape_h5,tape_h20`.
+When the EDGAR refetch completes: controls for share issuance, asset
+growth and book-to-market, and the CPU LightGBM rows under the beta label.
+Whatever beats the composite's 0.032 (t 3.1) beta-adjusted becomes the
+book's score.
+
 ## 2026-09-05 (afternoon) — the trader's toolkit measured, a measurement bug fixed, the tape arrives (PUSHED, NOT DEPLOYED)
 
 Continues the two entries below it. Commits `0fd59012` → `bc20418d`,
