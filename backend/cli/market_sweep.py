@@ -151,6 +151,26 @@ SWEEP: dict[str, TrainConfig] = {
     "tape_h20": TrainConfig(
         features="alpha+technical", label="rank", encoder="tape", horizon=20
     ),
+    # With the Fed calendar, which no earlier input carried.
+    "lgbm_calendar_h5": TrainConfig(
+        features="alpha+edgar+technical+calendar",
+        label="rank",
+        encoder="lgbm",
+        horizon=5,
+    ),
+    "lgbm_calendar_h20": TrainConfig(
+        features="alpha+edgar+technical+calendar",
+        label="rank",
+        encoder="lgbm",
+        horizon=20,
+    ),
+    "master_calendar_h5": TrainConfig(
+        features="alpha+technical+calendar",
+        label="rank",
+        encoder="master",
+        horizon=5,
+        epochs=10,
+    ),
     "xsect_raw_rank": TrainConfig(features="raw", label="rank", encoder="xsect"),
     "mlp_raw_residual": TrainConfig(),
 }

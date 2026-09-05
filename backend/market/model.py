@@ -160,7 +160,8 @@ def build_features(
     elif parts[0] != "raw":
         raise ValueError(f"unknown feature set {features!r}")
     extras = [p for p in parts[1:] if p]
-    if any(p not in ("edgar", "tone", "technical", "intraday") for p in extras):
+    layers = ("edgar", "tone", "technical", "intraday", "calendar")
+    if any(p not in layers for p in extras):
         raise ValueError(f"unknown feature set {features!r}")
     if extras:
         if extra is None:
@@ -191,9 +192,11 @@ def build_features(
         sq = np.where(known, channels * channels, 0.0).sum(axis=1)
         var = np.where(counts > 0, sq / np.maximum(counts, 1) - mean * mean, np.nan)
         std = np.sqrt(np.maximum(var, 0.0))
-    market = np.concatenate([channels[:, bench, :], mean, std], axis=1).astype(
-        np.float32
-    )
+    from backend.market.calendar import calendar_by_session
+
+    market = np.concatenate(
+        [channels[:, bench, :], mean, std, calendar_by_session(panel)], axis=1
+    ).astype(np.float32)
 
     own = panel.forward_log_returns(horizon)
     residual = (own - own[:, bench][:, None]).astype(np.float32)
@@ -1069,6 +1072,10 @@ def load_extra_features(store, panel, features, asof=None):
             array = technical_features(panel)
         elif part == "intraday":
             array = load_intraday_features(store, panel, asof)
+        elif part == "calendar":
+            from backend.market.calendar import calendar_features
+
+            array = calendar_features(panel)
         else:
             raise ValueError(f"unknown feature layer {part!r}")
         if array is None:
