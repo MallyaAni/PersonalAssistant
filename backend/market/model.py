@@ -628,7 +628,7 @@ def _lgbm_fold(
         )
     else:
         booster = lgb.train(params, fit_set, num_boost_round=600)
-    trees = int(booster.best_iteration or booster.num_trees())
+    trees = max(1, int(booster.best_iteration or booster.num_trees()))
     ics: list[float] = []
     for t in range(split, train.stop):
         cols = np.flatnonzero(labelled[t])

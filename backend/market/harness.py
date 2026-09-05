@@ -62,29 +62,31 @@ class HarnessReport:
     def count(self) -> int:
         return len(self.periods)
 
+    # ICs of periods where a correlation was defined: a period whose scores
+    # were constant has no rank correlation and is left out, not counted as
+    # zero and not allowed to turn the whole report into NaN.
+    @property
+    def defined_ics(self) -> np.ndarray:
+        ics = np.asarray([p.rank_ic for p in self.periods], dtype=float)
+        return ics[np.isfinite(ics)]
+
     @property
     def mean_ic(self) -> float:
-        return (
-            float(np.mean([p.rank_ic for p in self.periods]))
-            if self.periods
-            else float("nan")
-        )
+        ics = self.defined_ics
+        return float(ics.mean()) if len(ics) else float("nan")
 
     # The t-statistic of the mean IC: how many standard errors from zero.
     @property
     def ic_tstat(self) -> float:
-        ics = np.asarray([p.rank_ic for p in self.periods])
+        ics = self.defined_ics
         if len(ics) < 2 or ics.std(ddof=1) == 0:
             return float("nan")
         return float(ics.mean() / (ics.std(ddof=1) / math.sqrt(len(ics))))
 
     @property
     def ic_hit_rate(self) -> float:
-        return (
-            float(np.mean([p.rank_ic > 0 for p in self.periods]))
-            if self.periods
-            else float("nan")
-        )
+        ics = self.defined_ics
+        return float(np.mean(ics > 0)) if len(ics) else float("nan")
 
     @property
     def mean_net_return(self) -> float:
