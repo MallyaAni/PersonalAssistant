@@ -368,6 +368,47 @@ the same calendar (`model.build_features` takes any (T, N, K) array).
 Second lever, cheap: batch several sessions per step with padding masks —
 the per-session Python loop keeps the 5080 at 10-13% utilisation.
 
+## 2026-09-05 — Every flagged line accounted for: the security agent's judgement step (NOT DEPLOYED)
+
+See `docs/CHANGELOG.md`, this date, newest entry. Codex should review the
+judgement step (`backend/agents/security/prompts.py`, `SecurityWorld`
+in `backend/agents/security/world.py`, `prompts/security/judge_hits.md`).
+
+**VERIFIED on the real model:** `functional/test_security_review_behaviour.py`
+2/2 with the stage (log `scratchpad/sec_fn6.log` on the desktop). Before
+it, the planted case passed 3 of 5 attempts: the findings step left the
+hard-coded key out, silently. **VERIFIED (unit, this host):** security
+world 13, review check 23 + coverage suites (91 together), runs/drills/
+isolation/bounds/prompt/worker suites 400. Diagram `agent-security`
+re-rendered; the other SVGs restored unchanged.
+
+**What the stage does:** after the findings are checked, every flagged
+line no kept finding covers goes back to the model with six lines of code
+on each side for a verdict - a finding through the same evidence check, or
+a dismissal with a reason. Each verdict is bound to the hit it is about
+(`hit_for`), so the hit's identity is the world's and only the quote is the
+model's. The report carries `dismissed` and `unjudged` beside `findings`
+and `rejected`; a hit past `MAX_JUDGED_HITS` (12), unanswered, or whose
+judgement failed `MAX_JUDGEMENT_ATTEMPTS` (3) times is named unjudged.
+
+**Known and left:** the egress screen withholds `password` and `api_key`
+in any tool argument, so those words cannot be grep shapes; `secret_key`
+and `token=` stand in. The functional test's variance is the model's, at
+temperature zero under batching; the stage is what makes the property hold
+regardless.
+
+**Next atomic tasks, in order:**
+1. Configure on the Spark: the `repo` server in `.env`'s `MCP_SERVERS_JSON`,
+   `REPO_MCP_ROOT`, `SECURITY_AUTHORIZED_ASSETS`, then `AGENT_RUNS_ENABLED=true`
+   on `discovery-worker` once one hosted run has been watched end to end.
+   The serving image needs `git` (opencode's Dockerfile change is in flight).
+2. Compare the pilot review's findings on `7cdd4af4` with Codex's.
+3. Raise `TURN_MAX_STEPS` to 3 after the routing gate and a sweep pass.
+4. Phase 7 remainder: retention for run events, fair scheduling per
+   principal, a capacity test. The router track remains unstarted.
+5. Chat → run hand-off and approvals in chat (Phase 6 remainder).
+6. The gap audit the operator asked for, against `docs/AGENT_PLATFORM_PLAN.md`.
+
 ## 2026-09-05 — Security agent verified on the model (2 of 3 attempts); Refused decision; drill pollution fixed (NOT DEPLOYED)
 
 See `docs/CHANGELOG.md`, this date, newest entry. Codex should review the

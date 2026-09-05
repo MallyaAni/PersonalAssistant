@@ -13,15 +13,21 @@ import pytest
 
 from backend.agents.review.prompts import ReviewPrompts
 from backend.agents.review.world import ReadDiff, ReadFile, ShowCommit, WriteFindings
+from backend.agents.review.prompts import Finding
+from backend.agents.security.prompts import Judgement, render_hit
 from backend.agents.security.world import (
     DANGEROUS_CALL_SHAPES,
+    MAX_JUDGEMENT_ATTEMPTS,
     SECRET_SHAPES,
     GrepShape,
+    JudgeHits,
     SecurityWorld,
     asset_of,
+    covered,
+    hit_for,
 )
 from backend.config.settings import settings
-from backend.services.turn_steps import Act, Done, Refused
+from backend.services.turn_steps import Act, Done, Refused, Unavailable
 
 pytestmark = pytest.mark.asyncio
 
@@ -82,8 +88,21 @@ async def test_an_authorized_asset_follows_the_reviewers_stages_with_greps_befor
     shown = await world._findings_contents()
     assert "a.py" in shown
     assert any("aws_access_key" in value for key, value in shown.items() if key != "a.py")
+    # The findings left the flagged line out, so it goes to the judgement
+    # before the run is done; dismissed with a reason, the run completes and
+    # the report carries the dismissal.
     world.observe(WriteFindings("abcdef1"), "analysis", {"kind": "done", "findings": [], "rejected": [], "summary": "clean", "unknowns": []})
+    judged = await world.decide([])
+    assert judged == Act(JudgeHits("abcdef1"))
+    assert world.tool_name(judged.action) == "security_judge_hits"
+    world.observe(
+        JudgeHits("abcdef1"), "analysis",
+        {"kind": "done", "findings": [], "rejected": [], "dismissed": [{"path": "a.py", "line": 1, "reason": "a constant, not a key"}], "unjudged": []},
+    )
     assert isinstance(await world.decide([]), Done)
+    verification = await world.verify(None, {})
+    assert verification.evidence["dismissed"] == [{"path": "a.py", "line": 1, "reason": "a constant, not a key"}]
+    assert verification.evidence["unjudged"] == []
 
 
 async def test_a_grep_is_a_read_named_for_its_shape(monkeypatch):
@@ -95,3 +114,139 @@ async def test_a_grep_is_a_read_named_for_its_shape(monkeypatch):
     assert world.needs_approval(grep) is False
     assert world.creates(grep) is False
     assert world.tool_name(WriteFindings("abcdef1")) == "security_findings"
+
+
+# ------------------------------------------------- the judgement of hits
+
+
+# A world past its reads with one flagged line in a read file.
+async def _judging_world(monkeypatch, findings=()):
+    monkeypatch.setattr(settings, "SECURITY_AUTHORIZED_ASSETS", "anios")
+    world = _world("investigate asset: anios at abcdef1")
+    world.observe(ShowCommit("abcdef1"), "read", {"kind": "done", "payload": {"sha": "abcdef1", "files": [{"path": "a.py"}]}})
+    world.observe(ReadDiff("abcdef1"), "read", {"kind": "done", "payload": {"diff": "+x"}})
+    world.state.chosen = ["a.py"]
+    world.observe(
+        ReadFile("a.py", "abcdef1"), "read",
+        {"kind": "done", "payload": {"content": '    1| import os\n    2| KEY = "AKIAEXAMPLE"\n    3| \n    4| def f():\n    5|     return 1\n'}},
+    )
+    for name, pattern in {**SECRET_SHAPES, **DANGEROUS_CALL_SHAPES}.items():
+        world.observe(
+            GrepShape(name, pattern, "abcdef1"), "read",
+            {"kind": "done", "payload": {"matches": [{"path": "a.py", "line": 2, "text": 'KEY = "AKIAEXAMPLE"'}] if name == "aws_access_key" else []}},
+        )
+    world.observe(
+        WriteFindings("abcdef1"), "analysis",
+        {"kind": "done", "findings": [f.as_dict() for f in findings], "rejected": [], "summary": "s", "unknowns": []},
+    )
+    return world
+
+
+def test_a_hit_is_covered_by_a_finding_within_the_evidence_tolerance():
+    hit = {"path": "a.py", "line": 2}
+    assert covered(hit, (Finding("a.py", 3, "high", "t", "e", "x"),))
+    assert not covered(hit, (Finding("a.py", 9, "high", "t", "e", "x"),))
+    assert not covered(hit, (Finding("b.py", 2, "high", "t", "e", "x"),))
+
+
+async def test_a_hit_the_findings_covered_is_not_judged_again(monkeypatch):
+    world = await _judging_world(monkeypatch, (Finding("a.py", 2, "high", "key", "hard-coded key", 'KEY = "AKIAEXAMPLE"'),))
+    assert world.unaccounted_hits() == []
+    assert isinstance(await world.decide([]), Done)
+
+
+async def test_a_hit_reported_by_the_judgement_passes_the_evidence_check_and_joins_the_findings(monkeypatch):
+    world = await _judging_world(monkeypatch)
+    seen = []
+
+    async def judge(rendered):
+        seen.extend(rendered)
+        return [Judgement("a.py", 2, Finding("a.py", 2, "high", "Hard-coded key", "a live-looking key in source", "KEY = "), "")]
+
+    world.judge.judge = judge  # type: ignore[method-assign]
+    kind, outcome = await world.apply(JudgeHits("abcdef1"))
+    assert kind == "analysis"
+    # The flagged line was shown with the code around it, marked.
+    assert ">>    2| KEY" in seen[0]
+    assert "    1| import os" in seen[0]
+    assert outcome["findings"][0]["evidence"] == 'KEY = "AKIAEXAMPLE"'
+    assert outcome["dismissed"] == [] and outcome["unjudged"] == []
+    world.observe(JudgeHits("abcdef1"), "analysis", outcome)
+    assert [f.title for f in world.state.review.findings] == ["Hard-coded key"]
+    assert isinstance(await world.decide([]), Done)
+
+
+async def test_a_judgement_that_invents_its_evidence_is_rejected_not_kept(monkeypatch):
+    world = await _judging_world(monkeypatch)
+
+    async def judge(rendered):
+        return [Judgement("a.py", 2, Finding("a.py", 2, "high", "t", "explained here", "SECRET = 'nothing like it'"), "")]
+
+    world.judge.judge = judge  # type: ignore[method-assign]
+    _, outcome = await world.apply(JudgeHits("abcdef1"))
+    assert outcome["findings"] == []
+    assert "near" in outcome["rejected"][0]["rejected"]
+
+
+async def test_a_hit_the_judgement_did_not_answer_is_named_unjudged(monkeypatch):
+    world = await _judging_world(monkeypatch)
+
+    async def judge(rendered):
+        return []
+
+    world.judge.judge = judge  # type: ignore[method-assign]
+    _, outcome = await world.apply(JudgeHits("abcdef1"))
+    assert outcome["unjudged"] == [{"path": "a.py", "line": 2, "shape": "aws_access_key"}]
+
+
+async def test_a_judgement_that_keeps_failing_ends_with_the_hits_marked_unjudged(monkeypatch):
+    world = await _judging_world(monkeypatch)
+
+    async def judge(rendered):
+        return None
+
+    world.judge.judge = judge  # type: ignore[method-assign]
+    for _ in range(MAX_JUDGEMENT_ATTEMPTS):
+        decision = await world.decide([])
+        assert decision == Act(JudgeHits("abcdef1"))
+        kind, outcome = await world.apply(decision.action)
+        assert outcome["kind"] == "failed"
+        world.observe(decision.action, kind, outcome)
+    assert isinstance(await world.decide([]), Done)
+    verification = await world.verify(None, {})
+    assert verification.evidence["dismissed"] == []
+    assert verification.evidence["unjudged"] == [{"path": "a.py", "line": 2, "shape": "aws_access_key"}]
+
+
+def test_the_rendered_hit_marks_its_line_and_bounds_the_context():
+    lines = {n: f"line {n}" for n in range(1, 40)}
+    shown = render_hit({"shape": "eval", "path": "a.py", "line": 20}, lines)
+    assert shown.startswith("flagged as eval: a.py:20")
+    assert ">>   20| line 20" in shown
+    assert "line 14" in shown and "line 26" in shown
+    assert "line 13" not in shown and "line 27" not in shown
+
+
+# The judge's answer is about a line the world gave it, so a path written
+# the way the rendering names it, or a wrong line beside the right order,
+# still lands on that hit; an answer about nothing shown lands nowhere.
+def test_a_judgement_is_bound_to_the_hit_it_is_about():
+    shown = [{"path": "a.py", "line": 2, "shape": "aws_access_key"}, {"path": "b.py", "line": 9, "shape": "eval"}]
+    assert hit_for("a.py", 2, 1, shown, 2) is shown[0]
+    assert hit_for("b.py:9", 9, 0, shown, 2) is shown[1]
+    assert hit_for("a.py", 3, 0, shown, 2) is shown[0]
+    assert hit_for("a.py", 3, 0, shown, 1) is None
+    assert hit_for("zzz.py", 1, 5, shown, 2) is None
+
+
+async def test_a_reported_weakness_lands_at_its_hit_even_when_the_path_carries_the_line(monkeypatch):
+    world = await _judging_world(monkeypatch)
+
+    async def judge(rendered):
+        return [Judgement("a.py:2", 2, Finding("a.py:2", 2, "high", "Hard-coded key", "a key in source", 'KEY = "AKIAEXAMPLE"'), "")]
+
+    world.judge.judge = judge  # type: ignore[method-assign]
+    _, outcome = await world.apply(JudgeHits("abcdef1"))
+    assert outcome["rejected"] == []
+    assert (outcome["findings"][0]["file"], outcome["findings"][0]["line"]) == ("a.py", 2)
+    assert outcome["unjudged"] == []

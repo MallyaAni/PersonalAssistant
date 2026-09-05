@@ -277,7 +277,7 @@ const publishedDiagrams = [
     name: "agent-security",
     title: "Security agent",
     scope: "Scoped read-only investigation of a commit",
-    change: "How a commit of an authorized asset is investigated: scope checked before any read, shape searches by code, one model judgement over the flagged lines, and the evidence check.",
+    change: "How a commit of an authorized asset is investigated: scope checked before any read, shape searches by code, the model's findings over the flagged lines, a second verdict on any flagged line the findings left out, and the evidence check.",
   },
   {
     name: "market-data",

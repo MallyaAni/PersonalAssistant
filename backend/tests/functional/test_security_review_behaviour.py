@@ -12,9 +12,11 @@ fixture and the shell call is sanitised elsewhere. Properties asserted:
 - an authorized run completes on evidence with only read tools recorded;
 - the key and the shell call are each found at least twice in three runs,
   with evidence that is the cited line;
-- the literal-only subprocess call is not reported (at most once in three).
+- the literal-only subprocess call is not reported (at most once in three);
+- every flagged line is accounted for: reported by a kept finding, dismissed
+  with a reason, or named unjudged - never silently absent.
 
-pinned prompt: security/findings.
+pinned prompts: security/findings, security/judge_hits.
 """
 
 from __future__ import annotations
@@ -131,18 +133,37 @@ async def test_the_planted_key_and_shell_are_found_and_the_safe_call_is_not(stru
     root, sha = planted
     user = f"sec_{uuid.uuid4().hex[:10]}"
     key_found = shell_found = safe_reported = 0
+    # What each investigation kept and rejected, so a miss names its cause.
+    seen: list[dict] = []
     try:
         for _ in range(3):
             outcome, final = await _investigate(structured_llm, root, sha, user, "images-service")
             assert outcome.status == "completed", (outcome, final.get("error_code"))
             evidence = final["result"]["evidence"]
             tools = {row["tool"] for row in final["actions"]}
-            assert tools <= READ_TOOLS | {"repo_grep", "security_findings"}, tools
+            assert tools <= READ_TOOLS | {"repo_grep", "security_findings", "security_judge_hits"}, tools
             assert evidence["asset"] == "images-service"
             assert "aws_access_key" in evidence["shapes_searched"]
             for finding in evidence["findings"]:
                 assert finding["file"] != "README.md"
                 assert finding["file"] in evidence["files_read"]
+            # Every flagged line is somewhere in the report: kept, rejected
+            # with its reason, dismissed with its reason, or named unjudged.
+            named = {(f["file"], f["line"]) for f in evidence["findings"]}
+            named |= {(r["file"], r["line"]) for r in evidence["rejected"]}
+            named |= {(d["path"], d["line"]) for d in evidence["dismissed"]}
+            named |= {(u["path"], u["line"]) for u in evidence["unjudged"]}
+            for hit in evidence["shape_hits"]:
+                where = (hit["path"], hit["line"])
+                near = any(n[0] == where[0] and abs(n[1] - where[1]) <= 2 for n in named)
+                assert near, (hit, seen[-1])
+            seen.append({
+                "kept": [(f["file"], f["line"], f["title"], f["evidence"]) for f in evidence["findings"]],
+                "rejected": [(r["file"], r["line"], r["rejected"], r["evidence"]) for r in evidence.get("rejected", [])],
+                "dismissed": evidence.get("dismissed"),
+                "unjudged": evidence.get("unjudged"),
+                "steps": [(row["tool"], row["status"]) for row in final["actions"]],
+            })
             quotes = [f["evidence"].replace(" ", "") for f in evidence["findings"]]
             if any("AKIAIOSFODNN7EXAMPLE" in q for q in quotes):
                 key_found += 1
@@ -150,9 +171,9 @@ async def test_the_planted_key_and_shell_are_found_and_the_safe_call_is_not(stru
                 shell_found += 1
             if any('["ls","-la"]' in q for q in quotes):
                 safe_reported += 1
-        assert key_found >= 2, key_found
-        assert shell_found >= 2, shell_found
-        assert safe_reported <= 1, safe_reported
+        assert key_found >= 2, (key_found, seen)
+        assert shell_found >= 2, (shell_found, seen)
+        assert safe_reported <= 1, (safe_reported, seen)
     finally:
         async with AsyncSessionLocal() as db:
             await AgentRunRepository(db).delete_for_user(user)

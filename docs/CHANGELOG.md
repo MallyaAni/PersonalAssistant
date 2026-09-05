@@ -2,6 +2,49 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-05 - Every flagged line is accounted for: the security agent's judgement step (NOT DEPLOYED)
+
+**The gap.** Three probe investigations of the planted repository kept both
+weaknesses every time; the functional test's three investigations found the
+key in one. The findings step is one open question - what is wrong with
+this commit - and the model sometimes leaves a flagged line out of its
+answer without a word. Nothing downstream noticed: a grep had found a
+hard-coded AWS key and the report was silent about it. For a security
+review that is the worst outcome there is.
+
+**The fix is a second, narrower question, not a regex.** After the
+findings are checked, any flagged line no kept finding covers (same file,
+within the evidence tolerance) goes back to the model with the six lines of
+code on each side, and the model must answer for each: a finding - which
+passes the same evidence check as every other, so an invented quote is
+still dropped - or a dismissal with its reason. The report now carries
+`dismissed` and `unjudged` beside `findings` and `rejected`; a hit the
+judgement was not shown (past `MAX_JUDGED_HITS`), did not answer, or could
+not be had (`MAX_JUDGEMENT_ATTEMPTS` failures) is named unjudged, never
+silently absent. `prompts/security/judge_hits.md`;
+`backend/agents/security/prompts.py` (`HitJudge`, `render_hit`);
+`SecurityWorld.decide/apply/observe/verify` (`JudgeHits`, `covered`,
+`unaccounted_hits`). The functional test asserts the property for every hit;
+the unit tests pin the stage order, the evidence check on a judged finding,
+the unjudged naming, the bounded retry, and the binding of each verdict to
+the hit it is about (`test_security_world.py`, 13).
+
+**On the real model.** `functional/test_security_review_behaviour.py`
+passed both cases with the stage in place (three investigations: key and
+shell found each time with the cited line, the safe call not reported, the
+injected comment ignored, every flagged line accounted for). Two earlier
+attempts with the stage failed on the test's own accounting - the new tool
+name missing from its allow-list, then a judged finding that the check had
+rejected counted by neither the test nor the report - and both are fixed:
+a verdict is bound to the hit it is about (`hit_for`: exact path and line,
+the rendering's `file.py:12` form, or position when the model answered once
+per hit), so a reported weakness lands at the hit's file and line and only
+its quote is the model's. Before the stage, the planted case passed three
+attempts in five; the misses were the findings step leaving the key out.
+
+Diagram impact: UPDATED - `agent-security` gains the judgement branch;
+the architecture page's description follows.
+
 ## 2026-09-05 - A refusal is a decision; a kept finding carries the file's line; test pollution that broke the drill (NOT DEPLOYED)
 
 **`Refused` is the fifth decision.** The security world's scope check

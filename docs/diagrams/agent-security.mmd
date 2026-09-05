@@ -13,7 +13,10 @@ flowchart LR
     Hits --> Findings{Structured model<br/>security/findings<br/>judge each flagged line in its code}
     World --> Findings
     Findings --> Check[Evidence check in code<br/>quoted line is that line of a read file]
-    Check --> Report[Run result<br/>asset · shapes searched · hits<br/>findings · rejected · unknowns]
+    Check --> Left{Flagged line<br/>no finding covers?}
+    Left -->|yes| Judge{Structured model<br/>security/judge_hits<br/>report it, or dismiss with a reason}
+    Judge --> Check
+    Left -->|no| Report[Run result<br/>asset · shapes searched · hits<br/>findings · rejected · dismissed · unjudged]
     Report --> Person([Person<br/>/api/v1/runs · Agents tab card])
     Later[Later: alert enrichment, asset inventory,<br/>remediation tools with approval: always] -.-> World
 
@@ -23,7 +26,7 @@ flowchart LR
     classDef store fill:#eef7ee,stroke:#5c9c5c,color:#173117;
     classDef failure fill:#fff3cd,stroke:#b78b20,color:#4d3900;
     class Ask,Person interface;
-    class Controller,Scope,World,Boundary,Repo,Hits,Check,Report,Later application;
-    class Findings model;
+    class Controller,Scope,World,Boundary,Repo,Hits,Check,Left,Report,Later application;
+    class Findings,Judge model;
     class Run store;
     class Refused failure;

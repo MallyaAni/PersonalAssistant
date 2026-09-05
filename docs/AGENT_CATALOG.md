@@ -331,17 +331,21 @@ called.
 | Diagram | [agent-security.svg](diagrams/agent-security.svg) · [source](diagrams/agent-security.mmd) |
 | Agent folder | `backend/agents/security/` |
 | Domain package | `backend/runs/` · `backend/mcp/servers/repo.py` · the reviewer's stages in `backend/agents/review/world.py` |
-| Prompts | `prompts/security/findings.md` (the reviewer's `review/choose_files` for which files to read) |
+| Prompts | `prompts/security/findings.md`, `prompts/security/judge_hits.md` (the reviewer's `review/choose_files` for which files to read) |
 | Card | `agents/security/card.py` |
 | Functional tests | `test_security_review_behaviour.py` |
 | Entry point | `python -m backend.cli.review_commit --kind security_review --asset <name> --commit <sha> --user <id>` |
 
-**What the model decides:** which files to read in full, and whether each
-flagged line and each hunk is a weakness. **What is decided for it:** the
-scope, the stages, that every tool is a read, which shapes are searched
-(`SECRET_SHAPES`, `DANGEROUS_CALL_SHAPES` - shapes, never intent), and
-whether a finding stands (the reviewer's evidence check). The card reads
-`needs_setup` until an asset is authorized.
+**What the model decides:** which files to read in full, whether each
+flagged line and each hunk is a weakness, and - for any flagged line its
+findings left out - a verdict on that line with the code around it: a
+finding, checked like every other, or a dismissal with a reason
+(`security/judge_hits`). **What is decided for it:** the scope, the stages,
+that every tool is a read, which shapes are searched (`SECRET_SHAPES`,
+`DANGEROUS_CALL_SHAPES` - shapes, never intent), whether a finding stands
+(the reviewer's evidence check), and that every flagged line appears in the
+report as reported, dismissed or unjudged. The card reads `needs_setup`
+until an asset is authorized.
 
 **Not yet:** alert enrichment and an asset inventory beyond the repositories
 the repo server can be rooted at; remediation tools (they will carry
