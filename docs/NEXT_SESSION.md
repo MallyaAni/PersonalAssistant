@@ -9,7 +9,8 @@ inside the backend container.
 
 ## 2026-09-05 (night) — the book is AI and software only; the desk (PUSHED, NOT DEPLOYED)
 
-Continues the entry below it. Commit `9a5aaac1` (merged as `4764b76b`).
+Continues the entry below it. Commits `9a5aaac1` (merged as `4764b76b`)
+→ the technical switch.
 Another agent is committing to this repository; files are added by name.
 
 **The operator narrowed the book** to the AI-infrastructure and software
@@ -28,10 +29,10 @@ sentiment, regime and risk modules, each an `Opinion` (score, stance,
 evidence) on the book's panel; a fixed grade rule (A+: bullish release and
 agreement; A: agreement; B: one voice; C: none or split) with size
 multipliers 1 / 0.75 / 0.5 / 0; `desk.calibrate` re-measures the grades.
-Measured on the 90 names, beta-adjusted, 20 sessions: A 73 bp (t 1.7),
-A+ 48 bp (t 0.9), B 22, C 18; the graded score's rank IC 0.032 (t 2.2)
-against the composite's 0.025 (t 1.8) on the same names; at 60 sessions
-the grades are monotone (148 / 138 / 106 / 79 bp) but weak. Today: 6 A+,
+Measured on the 90 names, beta-adjusted: A+ 102 bp per 20 sessions (t
+2.0), A 26, B 24, C 15; at 60 sessions monotone, 283 / 173 / 105 / 59
+bp (A+ t 1.9); the graded score's rank IC 0.035 (t 2.3) at 20 against
+the composite's 0.025 (t 1.8) on the same names. Today: 6 A+,
 11 A, 19 B, 54 C; book gross 0.30 (LRCX, NTAP, PANW, ANET, FN, AVGO,
 AAOI). SNDK is B (fundamentals bullish, technical and tone neutral), CRWV
 and IREN are C.
@@ -50,6 +51,19 @@ participation quintile the AI basket lags SPY by ~1.2% over 20 sessions,
 after the bottom it leads by 1.1%. So selection confidence is 0.5 below
 the median (rotation withheld) and exposure 0.75 in the top quintile.
 Today participation is at its two-year low (pct 0.00), confidence 0.5.
+
+**The technical analyst switches playbook.** Over the decade the 21-EMA
+fade pays only while the AI basket's 60-session return is negative (IC
++0.082, t 2.5; -0.006 while rising), proximity to the 52-week high pays
+only while it is rising (+0.042, t 2.3), momentum 120/21 holds in both
+and is strongest in low participation (+0.074, t 2.6). The first build
+(momentum plus fade) lost through the rising basket of 2024-2025
+(-0.057 on 2024-2026); it now fades stretch in a falling theme and buys
+strength in a rising one. The operator's EMA slope and stack reads
+measured nothing over the decade and paid only in the low-correlation
+regime of 2026 (+0.066 to +0.072, t 2.0, 35 windows): cited as
+evidence, not scored, until that regime has history. Buying near the
+200 EMA lost in every regime (-0.023; -0.082 on 2024-2026).
 
 **Beta-label model rows** (`sweep_beta.tsv`): lgbm alpha h20 0.008, +
 technical h20 0.010 / h60 0.016, + calendar 0.007, + macro 0.005, all
@@ -441,20 +455,19 @@ in `backend/services/conversation_service.py`.
 flag existed, so a stored allergy is a preference until
 `backend.cli.classify_preferences` is run (it now asks the constraint
 question; dry run by default, `--apply` writes). The memory classifier
-captured "I use a wheelchair, so I need step-free access" as a fact in one
-run of three - an accessibility need is exactly the kind of constraint that
-matters, and that capture gap belongs to
-`functional/test_memory_capture_discipline.py`, not to the label. The
-paired-profile check lives in the functional test, not yet in an evaluator
-that records a rate under `docs/evals/runs/`.
+captured "I use a wheelchair, so I need step-free access" in one run of
+three during the functional run while the model was at capacity, and
+twelve of twelve across three phrasings when probed afterwards; the
+functional test now judges the label over what was captured, and the
+capture rate is the memory-capture discipline suite's property. The
+paired-profile property is also a recorded measurement:
+`python -m backend.cli.evaluate_constraints --reps 3` writes a run under
+`docs/evals/runs/constraint-ranking/`.
 
 **Next atomic tasks, in order:**
-1. Run `classify_preferences` on the Spark (dry run, read, then `--apply`)
-   so stored allergies and needs become constraints.
-2. Capture of accessibility needs: add the wheelchair sentence to the
-   memory-capture discipline suite and fix the prompt until it holds.
-3. The paired-profile evaluator as a recorded measurement.
-4. The deploy steps with the operator (see the previous sections).
+1. Run `classify_preferences --apply` on the Spark once the dry run below
+   has been read, so stored allergies and needs become constraints.
+2. The deploy steps with the operator (see the previous sections).
 
 ## 2026-09-05 — A run's approval can be answered from chat (NOT DEPLOYED)
 
