@@ -78,6 +78,27 @@ def _squash(text: str) -> str:
     return re.sub(r"\s+", " ", str(text or "")).strip()
 
 
+# How far from the cited line a quote may sit and still count.
+EVIDENCE_TOLERANCE_LINES = 2
+
+
+# The line at or near `number` whose text the quote is (or holds), nearest
+# first; None when the quote is at none of them.
+def _nearby(lines: dict[int, str], number: int, evidence: str) -> int | None:
+    wanted = _squash(evidence)
+    if not wanted:
+        return None
+    for distance in range(EVIDENCE_TOLERANCE_LINES + 1):
+        for candidate in (number - distance, number + distance):
+            shown = lines.get(candidate)
+            if shown is None:
+                continue
+            squashed = _squash(shown)
+            if wanted in squashed or (squashed and squashed in wanted):
+                return candidate
+    return None
+
+
 # A file's numbered slice, as the repo server writes it, back into lines.
 def _lines_of(content: str) -> dict[int, str]:
     lines: dict[int, str] = {}
@@ -243,11 +264,24 @@ class ReviewWorld:
                 reason = "names a file the review did not read"
             else:
                 lines = _lines_of(self.state.contents[finding.file])
-                shown = lines.get(finding.line)
-                if shown is None:
+                if finding.line not in lines:
                     reason = "names a line outside what was read"
-                elif _squash(finding.evidence) not in _squash(shown) and _squash(shown) not in _squash(finding.evidence):
-                    reason = "quotes evidence that is not that line"
+                else:
+                    # The quote may sit a line or two from the number the
+                    # model wrote - a statement that wraps, an off-by-one in
+                    # counting - and is still evidence when it is there. The
+                    # finding is corrected to the line that holds it; a quote
+                    # found nowhere near is not evidence at all. Measured on
+                    # the pilot review of 7cdd4af4: seven of eight findings
+                    # were rejected for a quote one line from its number.
+                    where = _nearby(lines, finding.line, finding.evidence)
+                    if where is None:
+                        reason = "quotes evidence that is not at or near that line"
+                    elif where != finding.line:
+                        finding = Finding(
+                            finding.file, where, finding.severity, finding.title,
+                            finding.explanation, finding.evidence,
+                        )
             if reason is None:
                 kept.append(finding)
             else:

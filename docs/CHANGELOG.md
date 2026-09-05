@@ -2,6 +2,26 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-05 - The pilot review completed; a process-kill drill; retention for runs (NOT DEPLOYED)
+
+**The reviewer reviewed this repository.** `review_commit --commit 7cdd4af4`
+completed on the live model: six files read, one finding kept, seven
+rejected. Several rejected findings were substantively right - the person
+context dropped a provenance timestamp when a store wrote it as an ISO
+string, which is now parsed - but were rejected for quoting a line one away
+from the number the model wrote. The evidence check now accepts a quote
+within two lines of the cited line and corrects the finding to the line that
+holds it; a quote found nowhere near is still dropped
+(`EVIDENCE_TOLERANCE_LINES`, pinned in `test_repo_server_and_review_check.py`).
+
+**Phase 7, two drills.** `test_run_drills.py` kills a real worker process
+mid-step - a child claims a run, lands two file effects and stalls; the test
+kills it, lets the lease lapse, resumes the run in another worker, and
+asserts each effect landed once and the run completed. And
+`backend/runs/retention.py` with `backend.cli.sweep_runs`: finished runs
+older than `AGENT_RUN_RETENTION_DAYS` (90) are deleted with their records,
+open runs never, and the sweep reports unless asked to apply.
+
 ## 2026-09-05 - The place-bound word list is gone; the security agent's first shape; the reviewer's two pilot defects (NOT DEPLOYED)
 
 **Meaning decided by a model, not a pattern.** `_PLACE_BOUND` - the word

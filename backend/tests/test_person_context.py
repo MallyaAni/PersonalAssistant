@@ -97,3 +97,12 @@ async def test_dispositions_ride_with_the_same_object():
     assert steered.search_terms() == ("hiking",)
     assert steered.as_trace()["dispositions"] == ["likes new things"]
     assert steered.as_trace()["may_leave"] == ["hiking"]
+
+
+async def test_a_preference_noted_as_an_iso_string_keeps_its_provenance():
+    person = await build_person_context(
+        "u",
+        PersonSources(memory=_Memory([{"id": "m1", "content": "vegetarian", "created_at": "2026-09-01T10:00:00+00:00"}])),
+    )
+    assert person.preferences[0].noted_at is not None
+    assert person.preferences[0].noted_at.year == 2026

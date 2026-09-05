@@ -169,7 +169,7 @@ def test_whitespace_does_not_decide_the_evidence():
     [
         ({"file": "other.py"}, "did not change"),
         ({"line": 9}, "outside what was read"),
-        ({"evidence": "return items[len(items) - 1]"}, "not that line"),
+        ({"evidence": "return items[len(items) - 1]"}, "near that line"),
     ],
 )
 def test_a_finding_without_evidence_in_the_code_is_rejected(overrides, reason):
@@ -219,3 +219,22 @@ async def test_a_failed_step_is_retried_under_a_fresh_key_then_given_up():
     decision = await world.decide([])
     assert isinstance(decision, Unavailable)
     assert "timed out" in decision.reason
+
+
+# A quote one or two lines from the number the model wrote is still evidence,
+# and the finding is corrected to the line that holds it; a quote found
+# nowhere near is not.
+def test_a_quote_within_two_lines_is_kept_and_corrected():
+    world = _world()
+    world.observe(
+        ReadFile("calc.py", "abcdef1"),
+        "read",
+        {"kind": "done", "payload": {"content": "    1| def last(items):\n    2|     total = 0\n    3|     return items[len(items)]\n    4| \n    5| x = 1\n"}},
+    )
+    kept, rejected = world._check(Review((_finding(line=2, evidence="return items[len(items)]"),), "", ()))
+    assert rejected == []
+    assert kept[0].line == 3
+    kept, rejected = world._check(Review((_finding(line=1, evidence="return items[len(items)]"),), "", ()))
+    assert kept[0].line == 3
+    _, rejected = world._check(Review((_finding(line=5, evidence="def last(items):"),), "", ()))
+    assert rejected and "near" in rejected[0]["rejected"]

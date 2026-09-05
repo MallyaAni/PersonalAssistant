@@ -142,6 +142,20 @@ class PersonSources:
     extra: dict[str, Any] = field(default_factory=dict)
 
 
+# When a record was noted, from a datetime or the ISO string a store's
+# `to_dict` writes; None for anything else. Dropping a string here lost the
+# provenance the object exists to carry (the reviewer's pilot, 2026-09-05).
+def _when(value: Any) -> datetime | None:
+    if isinstance(value, datetime):
+        return value
+    if isinstance(value, str) and value.strip():
+        try:
+            return datetime.fromisoformat(value.strip())
+        except ValueError:
+            return None
+    return None
+
+
 # The text of one memory record, as the ranker has always read it.
 def _memory_text(item: dict[str, Any]) -> str:
     for key in ("content", "value", "text"):
@@ -188,7 +202,7 @@ async def build_person_context(
                             "stated" if not item.get("inferred") else "inferred",
                             "memory_facts",
                             memory_id=str(item.get("id")) if item.get("id") else None,
-                            noted_at=item.get("created_at") if isinstance(item.get("created_at"), datetime) else None,
+                            noted_at=_when(item.get("created_at")),
                             may_leave=False,
                         )
                     )

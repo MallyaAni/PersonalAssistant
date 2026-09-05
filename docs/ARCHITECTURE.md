@@ -162,7 +162,10 @@ independently (`MAIN_LLM_*`, `ROUTING_LLM_*`, `VISION_*`, `EMBEDDING_*`,
   and what would change it, with a ledger of what was tried and rejected.
 - Part III is the implementation reference, section by section.
 - Sibling documents: [AGENT_CATALOG.md](AGENT_CATALOG.md) (every agent and
-  what its model decides), [TASKS_ARCHITECTURE.md](TASKS_ARCHITECTURE.md)
+  what its model decides), [RUNS_ARCHITECTURE.md](RUNS_ARCHITECTURE.md)
+  (durable runs: an agent's loop that outlives a turn, and the reviewer and
+  security agents that run on it), [AGENT_PLATFORM_PLAN.md](AGENT_PLATFORM_PLAN.md)
+  (the plan those came from), [TASKS_ARCHITECTURE.md](TASKS_ARCHITECTURE.md)
   (scheduled tasks and skills), [MODEL_EVALUATION.md](MODEL_EVALUATION.md)
   (how models are chosen here, with measurements), [SECURITY.md](SECURITY.md),
   [RESTORE.md](RESTORE.md), [DGX_MIGRATION.md](DGX_MIGRATION.md), and the

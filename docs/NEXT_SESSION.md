@@ -212,17 +212,18 @@ fixes (`backend/mcp/servers/repo.py` bounds, `turn_steps.py` key-before-step).
 9/9. **VERIFIED (unit, this host):** security world 4, API isolation 3,
 repo server + evidence check 23, loop bounds 15, search place suites, the
 coverage and prompt suites; 30 diagrams synchronized.
-**UNVERIFIED:** `functional/test_security_review_behaviour.py` (not run; the
-model is at six concurrent requests) and a completed pilot review of a real
-commit of this repository (`review_commit --commit 7cdd4af4 --user
-ani.mallya`; the second attempt was mid-run at this checkpoint). The local
+**VERIFIED on the live model:** the pilot review of `7cdd4af4` completed
+(run `2aeb5927-6526-4596-9d23-eca7c62d4bfe` for `ani.mallya`: six files
+read, one finding kept, seven rejected for a quote one line off - the
+evidence check now tolerates two lines). **UNVERIFIED:**
+`functional/test_security_review_behaviour.py` (running at this checkpoint
+against a model at six concurrent requests). The local
 `.env`'s internet server entry was behind the Spark's (17 of 23 forwarded
 names) and is refreshed; the deployment was never affected.
 
 **Next atomic tasks, in order:**
-1. Run the security functional test alone; read the pilot review's result
-   from its run row (`agent_runs` for `ani.mallya`) and compare with what
-   Codex says about `7cdd4af4`.
+1. Read the security functional test's result; compare the pilot review's
+   findings on `7cdd4af4` with Codex's on the same commit.
 2. Configure on the Spark: the `repo` server in `.env`'s `MCP_SERVERS_JSON`,
    `REPO_MCP_ROOT`, `SECURITY_AUTHORIZED_ASSETS`, then `AGENT_RUNS_ENABLED=true`
    on `discovery-worker` once one hosted run has been watched end to end.

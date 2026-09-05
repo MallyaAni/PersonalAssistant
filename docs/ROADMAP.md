@@ -996,3 +996,35 @@ The history below is kept as the evidence trail that led here.
   DeepSeek scored 0.8519 on the same set, so the model kept for routing is
   currently the weaker of the two at it, and is kept for latency rather than
   accuracy.
+
+## Milestone 10: agent platform — IN PROGRESS
+
+Goal: an agent that decides, acts, observes and decides again for as long as
+a job takes, under someone's authority, surviving a restart, completing on
+evidence, without a second boundary (plan: [AGENT_PLATFORM_PLAN.md](AGENT_PLATFORM_PLAN.md);
+runtime: [RUNS_ARCHITECTURE.md](RUNS_ARCHITECTURE.md)).
+
+Status as of 2026-09-05:
+
+- `VERIFIED`: effect contracts on every tool; the turn loop's bounds
+  structural (deadline after every decision, key-based repeats, a creation
+  allowance, typed decisions); trajectories 15/18 on the real router from
+  10/18, floors one miss below.
+- `VERIFIED`: durable runs - leased rows, a controller that records before
+  it runs, replays by key, reconciles rather than retries blind, binds
+  approvals to one exact call, honours cancel, completes on the world's
+  evidence; a process-kill drill; retention; a runs API with isolation
+  pinned.
+- `VERIFIED`: the reviewer (`code_review`) on the real model against a
+  planted defect and an injected instruction, and on a real commit of this
+  repository; the place-bound judgement 9/9.
+- `SCAFFOLDED`: the security agent (`security_review`) - scope refusal,
+  shape searches and the stages unit-verified; its real-model test recorded
+  in NEXT_SESSION.md.
+- `SCAFFOLDED`: one person context per turn with provenance and an egress
+  rule, wired into the search stage and the ranker; constraints as hard
+  filters and the paired-profile evaluator are `PLANNED`.
+- `PLANNED`: a chat turn that exceeds its budget creating a run; approvals
+  asked in chat; `TURN_MAX_STEPS` above 1 and `AGENT_RUNS_ENABLED` in the
+  deployment; the router track (rate assertions, a classifier in front);
+  fair scheduling per principal and a capacity test.
