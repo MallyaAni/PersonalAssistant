@@ -21,7 +21,7 @@ import numpy as np
 from backend.config.settings import settings
 from backend.market import baselines
 from backend.market.harness import HarnessReport, evaluate_scores
-from backend.market.model import TrainConfig, load_edgar_features, walk_forward
+from backend.market.model import TrainConfig, load_extra_features, walk_forward
 from backend.market.panel import build_panel
 from backend.market.store import MarketStore
 from backend.market.universe import (
@@ -212,12 +212,7 @@ def main() -> None:
         f"device={args.device}"
     )
     momentum_scores = baselines.momentum(panel)
-    extra = None
-    if any("edgar" in SWEEP[n].features for n in names):
-        extra = load_edgar_features(store, panel, args.asof)
-        if extra is None:
-            raise SystemExit("no EDGAR layer in the store; run market_edgar --refresh")
-        print(f"edgar features: {extra.shape[2]} per (session, name)")
+    extras: dict[str, np.ndarray | None] = {}
     for name in names:
         config = replace(SWEEP[name], device=args.device)
         started = time.time()
@@ -225,7 +220,14 @@ def main() -> None:
             f"\n=== {name}: {config.encoder} features={config.features} "
             f"label={config.label} h={config.horizon} seeds={config.seeds}"
         )
-        result = walk_forward(panel, config, log=print, extra=extra)
+        if config.features not in extras:
+            try:
+                extras[config.features] = load_extra_features(
+                    store, panel, config.features, args.asof
+                )
+            except ValueError as exc:
+                raise SystemExit(str(exc)) from exc
+        result = walk_forward(panel, config, log=print, extra=extras[config.features])
         report = evaluate_scores(
             result.scores, panel, config.horizon, cost_bps=args.cost_bps
         )

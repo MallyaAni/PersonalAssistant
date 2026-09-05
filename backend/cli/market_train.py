@@ -22,7 +22,7 @@ from backend.market import baselines
 from backend.market.harness import evaluate_scores
 from backend.market.model import (
     TrainConfig,
-    load_edgar_features,
+    load_extra_features,
     score_today,
     walk_forward,
 )
@@ -46,7 +46,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--features",
-        choices=("raw", "alpha", "alpha+edgar", "raw+edgar"),
+        choices=(
+            "raw",
+            "alpha",
+            "alpha+edgar",
+            "raw+edgar",
+            "alpha+tone",
+            "alpha+edgar+tone",
+        ),
         default="raw",
     )
     parser.add_argument("--label", choices=("residual", "rank"), default="residual")
@@ -118,11 +125,10 @@ def main() -> None:
         f"{len(panel.tickers)} tickers; encoder={config.encoder} "
         f"window={config.window_size} horizon={config.horizon} device={config.device}"
     )
-    extra = None
-    if "edgar" in config.features:
-        extra = load_edgar_features(store, panel, args.asof)
-        if extra is None:
-            raise SystemExit("no EDGAR layer in the store; run market_edgar --refresh")
+    try:
+        extra = load_extra_features(store, panel, config.features, args.asof)
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
     result = walk_forward(panel, config, log=print, extra=extra)
 
     # Baselines are measured only where the model was scored, so the rows

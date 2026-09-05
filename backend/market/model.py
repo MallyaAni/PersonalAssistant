@@ -155,12 +155,13 @@ def build_features(
         channels = np.concatenate([channels, alpha_features(panel)], axis=2)
     elif parts[0] != "raw":
         raise ValueError(f"unknown feature set {features!r}")
-    if "edgar" in parts[1:]:
-        if extra is None:
-            raise ValueError("edgar features requested but no extra array given")
-        channels = np.concatenate([channels, extra.astype(np.float32)], axis=2)
-    elif len(parts) > 1:
+    extras = [p for p in parts[1:] if p]
+    if any(p not in ("edgar", "tone") for p in extras):
         raise ValueError(f"unknown feature set {features!r}")
+    if extras:
+        if extra is None:
+            raise ValueError("extra features requested but no extra array given")
+        channels = np.concatenate([channels, extra.astype(np.float32)], axis=2)
     named = {
         "momentum_12_1": baselines.momentum(panel, momentum_length, momentum_skip),
         "relative_strength_20": baselines.relative_strength(panel, lookback),
@@ -797,3 +798,42 @@ def load_edgar_features(store, panel, asof=None):
     if not records:
         return None
     return edgar.edgar_features(panel, records)
+
+
+# The release-tone feature array for a panel from stored frames, or None.
+def load_tone_features(store, panel, asof=None):
+    """Return language.tone_features(panel, records) from stored frames, or None."""
+    from backend.market import language
+
+    records = {}
+    for ticker in panel.tickers:
+        frame = store.read_frame(language.TONE_KIND, ticker, asof)
+        if frame is None:
+            continue
+        records[ticker] = language.records_from_frame(frame[0])
+    if not records:
+        return None
+    return language.tone_features(panel, records)
+
+
+# The concatenated extra array a feature set names ("alpha+edgar+tone"),
+# or None when it names none. Raises when a named layer is not stored.
+def load_extra_features(store, panel, features, asof=None):
+    """Return the (T, N, K) extra array for the layers `features` names."""
+    parts = [p for p in features.split("+")[1:] if p]
+    arrays = []
+    for part in parts:
+        if part == "edgar":
+            array = load_edgar_features(store, panel, asof)
+        elif part == "tone":
+            array = load_tone_features(store, panel, asof)
+        else:
+            raise ValueError(f"unknown feature layer {part!r}")
+        if array is None:
+            raise ValueError(
+                f"no {part} layer in the store; run market_{part} --refresh"
+            )
+        arrays.append(array)
+    if not arrays:
+        return None
+    return np.concatenate(arrays, axis=2)

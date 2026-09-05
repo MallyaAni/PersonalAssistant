@@ -7,15 +7,24 @@ flowchart TB
     Refresh --> Store[(As-of parquet store<br/>bars + corporate actions<br/>one immutable partition per fetch day)]
     Refresh -.-> Drop[Live session dropped:<br/>only closed bars are stored]
 
+    Edgar[(SEC EDGAR<br/>8-K events, XBRL company facts,<br/>press-release exhibits)] --> Filings[EDGAR layer<br/>earliest-filed facts, derived Q4,<br/>reaction windows, point in time]
+    Filings --> Store
+    Filings --> Reader[Release reader<br/>DeepSeek V4 Flash scores what<br/>the company states: outlook, demand,<br/>pricing, capex, supply]
+    Reader --> Store
     Store --> Panel[Panel<br/>sessions x tickers, shared calendar<br/>theme baskets = equal-weight members]
-    Panel --> Baselines[Baselines<br/>momentum · relative strength<br/>theme momentum · rotation blend]
+    Store --> Extras[Filing features<br/>growth, margins, capex, drift,<br/>release tone, all dated by filing]
+    Extras --> Baselines
+    Extras --> Windows
+    Panel --> Book[Sizing<br/>inverse-vol, name and theme caps,<br/>vol target, full exits]
+    Book --> Report
+    Panel --> Baselines[Baselines<br/>momentum · relative strength<br/>theme momentum · fundamental blend]
     Panel --> Windows[Window tensors<br/>8 raw channels, forward labels,<br/>label end dates for purging]
     Baselines --> Harness[Walk-forward harness<br/>rank IC vs residual return<br/>long-short net of cost, purged folds]
-    Windows --> Model[A learned ranker<br/>not yet built]
+    Windows --> Model[Learned rankers<br/>mlp · gru · xsect · master · lgbm<br/>purged walk-forward, seed ensembles]
     Model -.-> Harness
-    Harness --> Report([Baseline report<br/>the numbers a model must beat])
+    Harness --> Report([Sweep table and book report<br/>every score on the same sessions, net of cost])
 
-    CLI[CLI: market_universe<br/>market_snapshot · market_baselines] -.-> Refresh
+    CLI[CLI: market_snapshot · market_edgar<br/>market_tone · market_sweep · market_book] -.-> Refresh
     CLI -.-> Report
 
     Rule[Reproducibility is a pinned as-of date.<br/>No partition is ever rewritten;<br/>no channel is a hand-coded signal]
@@ -29,8 +38,8 @@ flowchart TB
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
     class CLI,Report interface;
-    class Universe,Refresh,Panel,Baselines,Windows,Harness application;
+    class Universe,Refresh,Filings,Panel,Baselines,Windows,Harness,Extras,Book application;
     class Store data;
-    class Yahoo external;
-    class Model model;
+    class Yahoo,Edgar external;
+    class Model,Reader model;
     class Rule,Drop warning;
