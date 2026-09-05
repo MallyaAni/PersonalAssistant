@@ -17,6 +17,8 @@ from backend.config.settings import settings
 from backend.core.logging_config import get_logger
 from backend.database.session import AsyncSessionLocal
 from backend.runs.controller import RunController
+from backend.runs.delivery import RunDelivery
+from backend.runs.grants import Grant, grant_of
 from backend.runs.repository import AgentRunRepository
 from backend.runs.worlds import RunWorld, WorldFactory
 
@@ -59,6 +61,39 @@ WORLDS: dict[str, WorldFactory] = {
     "security_review": _security_review,
 }
 
+# What each kind may call, fixed here and enforced by the controller: the
+# read tools of the repo server and the kind's own analysis steps, nothing
+# else. A world that asks for anything outside its grant ends its run with
+# `unauthorized_tool`, whatever talked it into asking.
+GRANTS: dict[str, Grant] = {
+    "code_review": grant_of(
+        "repo_show_commit", "repo_diff", "repo_read_file", "review_findings"
+    ),
+    "security_review": grant_of(
+        "repo_show_commit", "repo_diff", "repo_read_file", "repo_grep",
+        "security_findings", "security_judge_hits",
+    ),
+}
+
+
+# The address a person enrolled for a channel, from the discovery
+# subscribers - the one place this system keeps who may be messaged where.
+async def _enrolled_address(user_id: str, channel: str) -> str | None:
+    from backend.discovery.subscribers import SubscriberRepository
+
+    async with AsyncSessionLocal() as db:
+        for subscriber in await SubscriberRepository(db).list_subscribers(user_id):
+            if subscriber.channel == channel and subscriber.active and subscriber.approved:
+                return subscriber.address
+    return None
+
+
+# The delivery the worker uses, on the discovery channels.
+def _delivery() -> RunDelivery:
+    from backend.core.dependencies import get_discovery_channels
+
+    return RunDelivery(get_discovery_channels(), _enrolled_address)
+
 
 class RunWorker:
     """Work the oldest claimable run to its next stop."""
@@ -67,8 +102,12 @@ class RunWorker:
         self,
         worlds: Mapping[str, WorldFactory] | None = None,
         worker_id: str | None = None,
+        grants: Mapping[str, Grant] | None = None,
+        delivery: RunDelivery | None = None,
     ) -> None:
         self.worlds = dict(worlds) if worlds is not None else WORLDS
+        self.grants = dict(grants) if grants is not None else GRANTS
+        self.delivery = delivery
         self.worker_id = worker_id or f"runs-{uuid.uuid4().hex[:8]}"
         self.controller = RunController(
             AsyncSessionLocal,
@@ -95,10 +134,20 @@ class RunWorker:
                 )
             logger.warning("run_kind_unknown", extra={"run_id": run["id"], "kind": run["kind"]})
             return True
+        grant = self.grants.get(str(run["kind"]))
+        if grant is None:
+            # A kind with a world but no grant would run unwalled; it does
+            # not run at all.
+            async with AsyncSessionLocal() as db:
+                await AgentRunRepository(db).finish(
+                    run["id"], "failed", error_code="no_grant", worker_id=self.worker_id
+                )
+            logger.warning("run_kind_ungranted", extra={"run_id": run["id"], "kind": run["kind"]})
+            return True
         stop = asyncio.Event()
         heartbeat = asyncio.create_task(self._renew(run["id"], stop))
         try:
-            outcome = await self.controller.execute(run, factory(run))
+            outcome = await self.controller.execute(run, factory(run), grant)
         except Exception:
             logger.warning("run_attempt_crashed", extra={"run_id": run["id"]}, exc_info=True)
             async with AsyncSessionLocal() as db:
@@ -118,7 +167,23 @@ class RunWorker:
             "run_attempt_finished",
             extra={"run_id": run["id"], "status": outcome.status, "stopped": outcome.stopped},
         )
+        await self._tell(run, outcome)
         return True
+
+    # The person hears how it ended, on the channel the run came from; a
+    # delivery that fails is an event on the run, never a failed run.
+    async def _tell(self, run: dict, outcome) -> None:
+        delivery = self.delivery
+        if delivery is None:
+            delivery = self.delivery = _delivery()
+        try:
+            async with AsyncSessionLocal() as db:
+                repo = AgentRunRepository(db)
+                current = await repo.get(run["id"])
+                summary = ((current or {}).get("result") or {}).get("summary") or outcome.stopped
+                await delivery.deliver(repo, current or run, outcome.status, str(summary))
+        except Exception:
+            logger.warning("run_delivery_error", extra={"run_id": run["id"]}, exc_info=True)
 
     # Hold the claim while the run works.
     async def _renew(self, run_id: str, stop: asyncio.Event) -> None:

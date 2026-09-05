@@ -138,3 +138,13 @@ Honest limits, so nobody reads the section above as more than it is.
   costs about a second rather than up to an hour. It is not backed up, because
   everything in it is either expiring or rebuildable — except that cursor, whose
   loss replays recent messages rather than destroying anything.
+
+## Durable runs under load
+
+`backend/tests/test_run_capacity.py` is the recovery-under-contention drill
+for `agent_runs`: twenty-four runs for six principals, three workers claiming
+from one table, every run completed once with every receipt present (29.4 s
+on the desktop through the tunnel, 2026-09-05). `test_run_drills.py` kills a
+worker process mid-step and resumes the run in another. A restore of the
+database mid-run is safe by the same guarantees: a `dispatched` row without
+an outcome is reconciled, never retried blind.

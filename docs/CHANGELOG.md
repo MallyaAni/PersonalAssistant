@@ -2,6 +2,51 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-05 - Runs hardened: a grant the controller enforces, fair claiming, delivery to the person, a capacity drill (NOT DEPLOYED)
+
+Four gaps from the platform plan's Phases 3, 7 and D8, checked against the
+code and closed.
+
+**A run calls only what it was granted.** The world named its own tools and
+nothing checked them: a prompt injection that talked a world into asking for
+a write would have met no wall but the world. Each kind now has a `Grant` -
+the tool names it may ever call - fixed in the worker's registry beside its
+world (`GRANTS`) and checked by the controller before any step is dispatched
+(`backend/runs/grants.py`). A step outside it is recorded as refused, the run
+fails with `unauthorized_tool` and is not retried; a kind with a world but no
+grant does not run (`no_grant`). The reviewer may call the repo server's
+three reads and its findings step; the security agent adds grep and its two
+analysis steps.
+
+**Claiming is fair across principals.** `claim_next` orders by how many runs
+the same principal already has running, then by age: a person with twenty
+queued runs no longer holds every worker while another waits.
+
+**The person hears how it ended.** `backend/runs/delivery.py`: after each
+attempt the worker sends a completed, failed or approval-waiting stop as a
+short summary - never the evidence - on the channel the run was asked from,
+to the address the person enrolled for it (the discovery subscribers, the
+one place who-may-be-messaged-where is kept). A web run is not pushed; the
+API and the card are its delivery. Every outcome is an event on the run
+(`delivered`, `delivery_skipped` with why, `delivery_failed` with the
+channel's error), and a failed delivery is never a failed run.
+
+**Every effect has a receipt, and the suite says so.** `effects_without_receipt`
+names any terminal step with no outcome, finish time or principal; the drills
+assert it is empty over what they made.
+
+**Capacity drill.** `test_run_capacity.py`: twenty-four runs for six
+principals through three concurrent workers on one table - every run
+completed, every effect once, no run held twice, no receipt missing, 29.4 s
+on the desktop through the tunnel. Recorded in `RUNS_ARCHITECTURE.md` and
+`RESTORE.md`.
+
+Unit: runs, drills, capacity and delivery 29 passed; the surrounding suites
+134. `RUNS_ARCHITECTURE.md` gains guarantees 7-9 and a corrected "Not yet".
+
+Diagram impact: UPDATED - `agent-runs-subsystem` gains the grant check,
+fair claiming and delivery.
+
 ## 2026-09-05 - Every flagged line is accounted for: the security agent's judgement step (NOT DEPLOYED)
 
 **The gap.** Three probe investigations of the planted repository kept both

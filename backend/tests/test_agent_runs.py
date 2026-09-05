@@ -25,6 +25,7 @@ import pytest
 
 from backend.database.session import AsyncSessionLocal
 from backend.runs.controller import RunController
+from backend.runs.grants import grant_of
 from backend.runs.repository import AgentRunRepository
 from backend.runs.worlds import Verification
 from backend.services.turn_steps import Act, Done, TurnResult
@@ -476,5 +477,157 @@ async def test_cancelling_a_parked_run_expires_its_pending_approval():
         after = await _get(user, run["id"])
         assert after["status"] == "cancelled"
         assert [row["status"] for row in after["approvals"]] == ["expired"]
+    finally:
+        await _clean(user)
+
+
+# ------------------------------------------------------------------ grants
+
+
+# The grant is the controller's wall, not the world's word: a step naming a
+# tool outside it is recorded as refused and ends the run, unretried, with
+# the effects before it intact and nothing after it landed.
+async def test_a_step_outside_the_grant_is_refused_and_ends_the_run():
+    user = _user()
+    try:
+        run = await _make_run(user)
+        claimed = await _claim("w1")
+        world = _world_with_replay(plan=["a", "b", "c"])
+        outcome = await RunController(AsyncSessionLocal, "w1").execute(claimed, world, grant_of("tool_a"))
+        assert outcome.status == "failed"
+        assert outcome.error_code == "unauthorized_tool"
+        assert world.effects == ["a"]
+        found = await _get(user, run["id"])
+        assert found["status"] == "failed"
+        assert [(row["tool"], row["status"]) for row in found["actions"]] == [("tool_a", "succeeded"), ("tool_b", "refused")]
+        assert "step_refused_by_grant" in [event["kind"] for event in found["events"]]
+        assert await _claim("w2") is None, "a grant violation is not retried"
+    finally:
+        await _clean(user)
+
+
+async def test_a_grant_that_covers_the_plan_changes_nothing():
+    user = _user()
+    try:
+        await _make_run(user)
+        claimed = await _claim("w1")
+        world = _world_with_replay(plan=["a", "b", "c"])
+        outcome = await RunController(AsyncSessionLocal, "w1").execute(claimed, world, grant_of("tool_a", "tool_b", "tool_c"))
+        assert outcome.status == "completed", outcome
+        assert world.effects == ["a", "b", "c"]
+    finally:
+        await _clean(user)
+
+
+# ---------------------------------------------------------------- fairness
+
+
+# A principal with a run already running waits behind one with none, and
+# only then does age decide: one person's queue does not hold every worker.
+async def test_claiming_is_fair_across_principals():
+    kind = f"fair_{uuid.uuid4().hex[:8]}"
+    busy_user, waiting_user = _user(), _user()
+    try:
+        async with AsyncSessionLocal() as db:
+            repo = AgentRunRepository(db)
+
+            async def make(user: str) -> dict[str, Any]:
+                return await repo.create(user, "agent:test", kind, "x", [], budget_seconds=10.0, max_steps=3, max_creates=1)
+
+            first = await make(busy_user)
+            second = await make(busy_user)
+            later = await make(waiting_user)
+            running = await repo.claim_next("w1", 60.0, kinds=(kind,))
+            assert running is not None and running["id"] == first["id"]
+            # The busy principal's second run was queued before the waiting
+            # principal's only run; the waiting principal still goes first.
+            fair = await repo.claim_next("w2", 60.0, kinds=(kind,))
+            assert fair is not None and fair["id"] == later["id"]
+            # Then the busy principal's, as the only one left.
+            last = await repo.claim_next("w3", 60.0, kinds=(kind,))
+            assert last is not None and last["id"] == second["id"]
+            assert await repo.claim_next("w4", 60.0, kinds=(kind,)) is None
+    finally:
+        await _clean(busy_user)
+        await _clean(waiting_user)
+
+
+# --------------------------------------------------------------- receipts
+
+
+# Every effect a run recorded carries its receipt - an outcome, a finish
+# time, a principal - including a refused one; the invariant the plan asks
+# the suite to hold.
+async def test_every_recorded_effect_has_a_receipt_and_a_principal():
+    user = _user()
+    try:
+        await _make_run(user)
+        claimed = await _claim("w1")
+        await RunController(AsyncSessionLocal, "w1").execute(claimed, _world_with_replay(plan=["a", "b", "c"]), grant_of("tool_a", "tool_b"))
+        async with AsyncSessionLocal() as db:
+            repo = AgentRunRepository(db)
+            assert await repo.effects_without_receipt([user]) == []
+            found = await repo.get_owned(user, claimed["id"])
+            assert len(found["actions"]) == 3  # a, b, and the refused c
+    finally:
+        await _clean(user)
+
+
+# ------------------------------------------------------------------ worker
+
+
+# A kind the worker has a world for but no grant for does not run at all.
+async def test_the_worker_refuses_a_kind_without_a_grant():
+    from backend.runs.delivery import RunDelivery
+    from backend.workers.run_worker import RunWorker
+
+    user = _user()
+    kind = f"ungranted_{uuid.uuid4().hex[:8]}"
+    try:
+        async with AsyncSessionLocal() as db:
+            run = await AgentRunRepository(db).create(user, "agent:test", kind, "x", [], budget_seconds=10.0, max_steps=3, max_creates=1)
+
+        async def no_address(user_id: str, channel: str) -> str | None:
+            return None
+
+        worker = RunWorker(
+            worlds={kind: lambda run: _world_with_replay(plan=["a"])},
+            grants={},
+            delivery=RunDelivery({}, no_address),
+            worker_id="w-ungranted",
+        )
+        assert await worker.run_once() is True
+        found = await _get(user, run["id"])
+        assert found["status"] == "failed" and found["error_code"] == "no_grant"
+        assert found["actions"] == []
+    finally:
+        await _clean(user)
+
+
+# A worker with a grant runs the kind and records how the person was told.
+async def test_the_worker_runs_a_granted_kind_and_records_the_delivery():
+    from backend.runs.delivery import RunDelivery
+    from backend.workers.run_worker import RunWorker
+
+    user = _user()
+    kind = f"granted_{uuid.uuid4().hex[:8]}"
+    try:
+        async with AsyncSessionLocal() as db:
+            run = await AgentRunRepository(db).create(user, "agent:test", kind, "x", [], budget_seconds=10.0, max_steps=3, max_creates=1)
+
+        async def no_address(user_id: str, channel: str) -> str | None:
+            return None
+
+        worker = RunWorker(
+            worlds={kind: lambda run: _world_with_replay(plan=["a"])},
+            grants={kind: grant_of("tool_a")},
+            delivery=RunDelivery({}, no_address),
+            worker_id="w-granted",
+        )
+        assert await worker.run_once() is True
+        found = await _get(user, run["id"])
+        assert found["status"] == "completed"
+        kinds = [event["kind"] for event in found["events"]]
+        assert "delivery_skipped" in kinds  # a web run: the API is the delivery
     finally:
         await _clean(user)

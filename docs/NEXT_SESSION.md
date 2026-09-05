@@ -368,6 +368,43 @@ the same calendar (`model.build_features` takes any (T, N, K) array).
 Second lever, cheap: batch several sessions per step with padding masks —
 the per-session Python loop keeps the 5080 at 10-13% utilisation.
 
+## 2026-09-05 — Runs hardened: grant, fair claiming, delivery, capacity drill (NOT DEPLOYED)
+
+See `docs/CHANGELOG.md`, this date, newest entry. Codex should review the
+grant enforcement (`backend/runs/grants.py`, `RunController._apply`,
+`run_worker.py::GRANTS`) and the delivery (`backend/runs/delivery.py`).
+
+**VERIFIED (unit, this host, real schema through the tunnel):** runs 19,
+drills 2, capacity 1 (24 runs / 3 workers / 29.4 s), delivery 6 = 29 passed;
+regression over isolation, review check, security world, loop bounds,
+discovery worker, boundaries and coverage 134 passed. Diagram
+`agent-runs-subsystem` re-rendered; others restored. **UNVERIFIED:** delivery
+on a real iMessage channel (the worker path is exercised with a null
+channel; the discovery digest uses the same channels).
+
+**Gap audit against `docs/AGENT_PLATFORM_PLAN.md`, what remains:**
+- Phase 3: a chat turn that exceeds its budget creating a run (needs a
+  conversation world over `_execute_step`); an approval answered from chat
+  or the phone (today: told, answered only via the runs API); an
+  idempotency key on `ScheduledTaskRepository.create` for the chat loop's
+  own writes.
+- Phase 4: hard `constraints` in `PersonContext` (filter, not rank) and the
+  paired-profile evaluator.
+- Phase 5: `repo_blame`; a labelled corpus of diffs beyond the planted
+  functional fixtures; runs created from a repository event.
+- Phase 6: enrichment tools (log query, alert fetch, CVE lookup through
+  `allowed_hosts`); remediation tools with `approval: always`.
+- Phase 7: the grant as a verifiable token (D8's second shape); redaction
+  short of deletion; the isolation numbers under concurrent load with chat
+  in the mix (the capacity drill is runs only).
+- Deploy (operator): Spark `.env` gets the `repo` server, `REPO_MCP_ROOT`,
+  `SECURITY_AUTHORIZED_ASSETS`, `AGENT_RUNS_ENABLED=true`; `git` in the
+  serving image; `TURN_MAX_STEPS=3` after the routing gate.
+
+**Next atomic tasks, in order:** the Phase 3 items above (chat → run
+hand-off first, then approvals in chat), then Phase 4's constraints, then
+the deploy steps with the operator.
+
 ## 2026-09-05 — Every flagged line accounted for: the security agent's judgement step (NOT DEPLOYED)
 
 See `docs/CHANGELOG.md`, this date, newest entry. Codex should review the

@@ -31,6 +31,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.runs.grants import Grant, GrantViolation
 from backend.runs.repository import AgentRunRepository
 from backend.runs.worlds import RunWorld, arguments_hash
 from backend.services.turn_steps import (
@@ -111,7 +112,9 @@ class RunController:
         self.approval_ttl_seconds = approval_ttl_seconds
 
     # One attempt: resume from the recorded actions, loop, verify, close.
-    async def execute(self, run: dict[str, Any], world: RunWorld) -> RunOutcome:
+    async def execute(
+        self, run: dict[str, Any], world: RunWorld, grant: Grant | None = None
+    ) -> RunOutcome:
         run_id = str(run["id"])
         async with self.sessions() as db:
             repo = AgentRunRepository(db)
@@ -137,7 +140,7 @@ class RunController:
             return await world.decide(lines)
 
         async def apply(action: Any) -> tuple[str, dict[str, Any]] | None:
-            return await self._apply(run, world, action, next(sequence))
+            return await self._apply(run, world, action, next(sequence), grant)
 
         try:
             if await self._cancelled(run_id):
@@ -168,6 +171,14 @@ class RunController:
             return RunOutcome("waiting_approval", "waiting for approval", 0)
         except ApprovalDeniedError:
             return await self._close(run_id, "failed", "approval denied", 0, "approval_denied")
+        except GrantViolation as violation:
+            # The world asked for a tool the run was never granted. The
+            # attempt is on record as a refused step; the run is over, and
+            # not retried, because trying again would ask the same world.
+            return await self._close(
+                run_id, "failed", REFUSED, 0, "unauthorized_tool",
+                summary=f"the run asked for {violation.tool}, which it was not granted",
+            )
 
         if result.stopped == DECLINED and result.detail == CANCELLED:
             return await self._close(run_id, CANCELLED, result.stopped, len(result.steps), "cancelled")
@@ -202,7 +213,12 @@ class RunController:
     # One step: reconcile or replay a prior row by key, gate on approval,
     # record, run, record.
     async def _apply(
-        self, run: dict[str, Any], world: RunWorld, action: Any, sequence: int
+        self,
+        run: dict[str, Any],
+        world: RunWorld,
+        action: Any,
+        sequence: int,
+        grant: Grant | None = None,
     ) -> tuple[str, dict[str, Any]] | None:
         run_id = str(run["id"])
         tool = world.tool_name(action)
@@ -210,6 +226,14 @@ class RunController:
         key = world.key(action)
         async with self.sessions() as db:
             repo = AgentRunRepository(db)
+            if grant is not None and not grant.allows(tool):
+                # Recorded as a refused step so the audit trail shows what
+                # was asked for, then the run is stopped by the caller.
+                row = await repo.dispatch_action(run_id, sequence, tool, arguments, idempotency_key=None, creates=False)
+                outcome = {"kind": "refused", "error": "outside the run's grant"}
+                await repo.finish_action(row["id"], "refused", outcome, f"{tool} refused: outside the run's grant")
+                await repo.record_event(run_id, "step_refused_by_grant", {"tool": tool})
+                raise GrantViolation(tool)
             prior = await repo.find_action(run_id, key) if key else None
             if prior is not None and prior["status"] == "succeeded":
                 await repo.record_event(run_id, "step_replayed", {"tool": tool, "sequence": prior["sequence"]})

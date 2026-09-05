@@ -14,8 +14,9 @@ from collections.abc import Iterable
 from datetime import UTC, datetime, timedelta
 from typing import Any, cast
 
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
 
 from backend.models.agent_run import (
     AgentRun,
@@ -219,13 +220,27 @@ class AgentRunRepository:
             conditions.append(AgentRun.kind.in_(tuple(kinds)))
         if user_id is not None:
             conditions.append(AgentRun.user_id == user_id)
+        # Fair across principals: a person with a run already running waits
+        # behind a person with none, and only then does age decide. One
+        # person queueing twenty runs does not hold every worker.
+        other = aliased(AgentRun)
+        busy = (
+            select(func.count(other.id))
+            .where(
+                other.user_id == AgentRun.user_id,
+                other.status == "running",
+                other.lease_expires_at >= moment,
+            )
+            .correlate(AgentRun)
+            .scalar_subquery()
+        )
         run = cast(
             AgentRun | None,
             await self.session.scalar(
                 select(AgentRun)
                 .where(*conditions)
-                .order_by(AgentRun.created_at.asc())
-                .with_for_update(skip_locked=True)
+                .order_by(busy.asc(), AgentRun.created_at.asc())
+                .with_for_update(skip_locked=True, of=AgentRun)
                 .limit(1)
             ),
         )
@@ -357,6 +372,32 @@ class AgentRunRepository:
             action.kind = kind
         action.finished_at = datetime.now(UTC)
         await self.session.commit()
+
+    # Every effect has a receipt: a step that reached a terminal status with
+    # no recorded outcome, or a step of a run with no principal, is a hole in
+    # the audit trail. Zero is the invariant; the suite asserts it over the
+    # rows it made.
+    async def effects_without_receipt(self, user_ids: Iterable[str]) -> list[dict[str, Any]]:
+        # The outcome column is encrypted at rest, so "empty" is judged
+        # after decryption, in Python, over the principals asked about.
+        rows = (
+            await self.session.execute(
+                select(AgentRunAction, AgentRun.user_id)
+                .join(AgentRun, AgentRun.id == AgentRunAction.run_id)
+                .where(
+                    AgentRunAction.status.in_(("succeeded", "failed", "refused", "unknown")),
+                    AgentRun.user_id.in_(tuple(user_ids)),
+                )
+            )
+        ).all()
+        holes = []
+        for action, user in rows:
+            outcome = str(action.outcome or "").strip()
+            if outcome in ("", "{}", "null") or action.finished_at is None or not str(user or "").strip():
+                holes.append(
+                    {"run_id": str(action.run_id), "sequence": action.sequence, "tool": action.tool, "status": action.status, "user_id": user}
+                )
+        return holes
 
     # -------------------------------------------------------------- approvals
 
