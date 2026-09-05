@@ -238,6 +238,10 @@ def _features_for(
 
 # Which (session, name) pairs have a complete window, complete baseline
 # ranks, a known market state, and (when required) a known label.
+# A fold needs at least this many labelled (session, name) cells to train.
+MIN_TRAIN_CELLS = 500
+
+
 def _eligible(
     features: Features,
     window_size: int,
@@ -931,6 +935,14 @@ def walk_forward(
                 f"train {panel.dates[train.start]}..{panel.dates[train.stop - 1]}, "
                 f"test {panel.dates[test.start]}..{panel.dates[test.stop - 1]}"
             )
+        # A fold whose training range has no labelled cell (the 15-minute
+        # tape starts in 2016, so the first fold of a tape run has none) is
+        # skipped rather than aborting the run.
+        if labelled[train.start : train.stop].sum() < MIN_TRAIN_CELLS:
+            if log:
+                log("    skipped: too few labelled training cells")
+            records.append(FoldResult(train, test, float("nan"), 0))
+            continue
         if config.encoder == "lgbm":
             val_ic, trees = _lgbm_fold(
                 features, config, train, test, labelled, scorable, scores, log
