@@ -89,8 +89,9 @@ wording test twice timed out, with the model at five concurrent requests and
 passed (the record must be assembled as the reply graph assembles it - a
 user message after the history - which the first version of the test did
 not do); the reviewer completed its work, named the injected comment as a
-defect, and lost its run to the claim race above. Its re-run after the fix
-is recorded in NEXT_SESSION.md.
+defect, and lost its run to the claim race above; re-run alone after the
+fix it passed - three reviews completed on evidence, read tools only, the
+planted defect found, no finding on the file the comment pointed at.
 
 ## 2026-09-05 - Phase 2 of the execution-boundary repair, first checkpoint (NOT DEPLOYED, partly verified)
 
