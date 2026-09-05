@@ -72,17 +72,20 @@ from backend.services.trajectory_harness import (
 # search-then-remind 0/3, the router choosing past-conversation search for
 # "what's on this weekend near me"), multiple_writes 3/3. Floors one miss
 # below those:
-#   single_step     3/3  -> 0.67
-#   reference       3/3  -> 0.67
-#   partial_failure 3/3  -> 0.67
+#   single_step     3/3  -> 0.66
+#   reference       3/3  -> 0.66
+#   partial_failure 3/3  -> 0.66
 #   mixed_tools     3/6  -> 0.33
-#   multiple_writes 3/3  -> 0.67
+#   multiple_writes 3/3  -> 0.66
+# Written as 0.66, not 0.67: 2/3 is 0.667, so a floor of 0.67 tolerated no
+# miss at all and refused a run on one flake (opencode's run at 2fc6610 on
+# 2026-09-05: reference 2/3 read as a breach). One miss below three is 0.66.
 CATEGORY_COMPLETION_FLOORS: dict[str, float] = {
-    "single_step": 0.67,
-    "reference": 0.67,
-    "partial_failure": 0.67,
+    "single_step": 0.66,
+    "reference": 0.66,
+    "partial_failure": 0.66,
     "mixed_tools": 0.33,
-    "multiple_writes": 0.67,
+    "multiple_writes": 0.66,
 }
 
 # Argument-carrying floor per category, one miss below what was measured.
@@ -92,10 +95,10 @@ CATEGORY_COMPLETION_FLOORS: dict[str, float] = {
 # separate gate from completion so "right tools, wrong words" cannot hide
 # behind a tool-count win.
 CATEGORY_CARRIED_FLOORS: dict[str, float] = {
-    "single_step": 0.67,
-    "reference": 0.67,
+    "single_step": 0.66,
+    "reference": 0.66,
     "mixed_tools": 0.0,
-    "multiple_writes": 0.67,
+    "multiple_writes": 0.66,
 }
 
 

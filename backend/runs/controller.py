@@ -39,6 +39,7 @@ from backend.services.turn_steps import (
     DECLINED,
     FAILED,
     NEEDS_INPUT,
+    REFUSED,
     REPEATED,
     SECOND_CREATE,
     SUCCEEDED,
@@ -91,6 +92,7 @@ _STOP_ERRORS = {
     NEEDS_INPUT: "needs_input",
     UNAVAILABLE: "router_unavailable",
     UNKNOWN: "unknown_effect",
+    REFUSED: "refused",
 }
 
 
@@ -328,4 +330,4 @@ def _status_name(outcome: dict[str, Any] | None) -> str:
 # The stop a non-action opening decision amounts to.
 def _stop_for(decision: Any) -> str:
     name = type(decision).__name__
-    return {"NeedsInput": NEEDS_INPUT, "Unavailable": UNAVAILABLE}.get(name, DECLINED)
+    return {"NeedsInput": NEEDS_INPUT, "Unavailable": UNAVAILABLE, "Refused": REFUSED}.get(name, DECLINED)

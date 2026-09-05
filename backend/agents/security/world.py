@@ -6,7 +6,7 @@ drops a finding whose quoted line is not there. Two things differ.
 
 **Scope is checked before anything is read.** A run names the asset it may
 investigate; the world refuses a run whose asset is not one the operator
-authorized (`SECURITY_AUTHORIZED_ASSETS`), with `Unavailable` and a reason,
+authorized (`SECURITY_AUTHORIZED_ASSETS`), with `Refused` and a reason,
 before a single tool is called. The repo server's root is set by
 environment, so even a run that got past this could read only that
 repository; this check is what makes "out of scope" a recorded refusal
@@ -29,7 +29,7 @@ from typing import Any
 from backend.agents.review.prompts import ReviewPrompts
 from backend.agents.review.world import ReviewWorld, WriteFindings
 from backend.config.settings import settings
-from backend.services.turn_steps import Act, Decision, Unavailable
+from backend.services.turn_steps import Act, Decision, Refused
 
 KIND = "security_review"
 
@@ -42,8 +42,11 @@ SECRET_SHAPES: dict[str, str] = {
     "github_token": "ghp_",
     "slack_token": "xox",
     "bearer_literal": "Bearer ",
-    "password_assignment": "password=",
-    "secret_assignment": "secret=",
+    # The egress screen withholds any argument carrying "password" or
+    # "api_key" as credential-shaped, so those words cannot be searched for
+    # through the boundary; these two shapes are the nearest it lets pass.
+    "secret_key_assignment": "secret_key",
+    "token_assignment": "token=",
 }
 DANGEROUS_CALL_SHAPES: dict[str, str] = {
     "shell_true": "shell=True",
@@ -91,9 +94,9 @@ class SecurityWorld(ReviewWorld):
     async def decide(self, lines: list[str]) -> Decision:
         allowed = authorized_assets()
         if not self.asset:
-            return Unavailable("the run names no asset to investigate")
+            return Refused("the run names no asset to investigate")
         if self.asset not in allowed:
-            return Unavailable(f"asset {self.asset} is not authorized for investigation")
+            return Refused(f"asset {self.asset} is not authorized for investigation")
         decision = await super().decide(lines)
         if isinstance(decision, Act) and isinstance(decision.action, WriteFindings):
             for name, pattern in {**SECRET_SHAPES, **DANGEROUS_CALL_SHAPES}.items():

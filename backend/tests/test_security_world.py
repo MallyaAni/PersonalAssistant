@@ -21,7 +21,7 @@ from backend.agents.security.world import (
     asset_of,
 )
 from backend.config.settings import settings
-from backend.services.turn_steps import Act, Done, Unavailable
+from backend.services.turn_steps import Act, Done, Refused
 
 pytestmark = pytest.mark.asyncio
 
@@ -44,13 +44,13 @@ def test_the_asset_is_read_from_the_objective():
 async def test_an_unauthorized_or_missing_asset_is_refused_before_any_read(monkeypatch):
     monkeypatch.setattr(settings, "SECURITY_AUTHORIZED_ASSETS", "anios")
     refused = await _world("investigate asset: other-repo at abcdef1").decide([])
-    assert isinstance(refused, Unavailable)
+    assert isinstance(refused, Refused)
     assert "other-repo" in refused.reason
     nothing = await _world("investigate abcdef1").decide([])
-    assert isinstance(nothing, Unavailable)
+    assert isinstance(nothing, Refused)
     monkeypatch.setattr(settings, "SECURITY_AUTHORIZED_ASSETS", "")
     none_allowed = await _world("investigate asset: anios at abcdef1").decide([])
-    assert isinstance(none_allowed, Unavailable)
+    assert isinstance(none_allowed, Refused)
 
 
 async def test_an_authorized_asset_follows_the_reviewers_stages_with_greps_before_findings(monkeypatch):

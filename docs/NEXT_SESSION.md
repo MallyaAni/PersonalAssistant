@@ -294,6 +294,51 @@ the same calendar (`model.build_features` takes any (T, N, K) array).
 Second lever, cheap: batch several sessions per step with padding masks —
 the per-session Python loop keeps the 5080 at 10-13% utilisation.
 
+## 2026-09-05 — Security agent verified on the model (2 of 3 attempts); Refused decision; drill pollution fixed (NOT DEPLOYED)
+
+See `docs/CHANGELOG.md`, this date, newest entry. Codex should review the
+`Refused` decision (`turn_steps.py`, `runs/controller.py`) and the evidence
+check's canonical-line change (`agents/review/world.py`).
+
+**VERIFIED on the real model:** `functional/test_security_review_behaviour.py`
+- the refusal case passed on both attempts; the planted case passed on its
+second attempt (three investigations, key and shell found each time, safe
+call not reported) and failed on the first with the assertion lost to a
+25-line log tail. A third full run was started at this checkpoint with the
+whole log kept (`scratchpad/sec_fn2.log` on the desktop); if it fails, the
+assertion is the thing to read first. **VERIFIED (unit, this host):** full
+suite 2850 passed / 8 failed before the fixes below; the drill, encryption,
+pool and runs suites 32 passed together after; review check 23, security
+world 4, loop bounds 25.
+
+**What was wrong and is fixed:** the security scope refusal was retryable
+(`Unavailable` → requeued) and is now `Refused`, final, `error_code=refused`;
+a kept finding's evidence was the model's quote, cut at the first embedded
+`"`, and is now the file's own line; two grep shapes (`password=`, `secret=`)
+were withheld by the egress screen on every run and are replaced by shapes
+it lets pass; `test_crypto.py` and `test_storage_encryption.py` blanked the
+encryption key on teardown and broke the process-kill drill in the full
+suite only.
+
+**Untracked and deliberately not committed:** fifteen trajectory run records
+under `docs/evals/runs/tool-selection/` from this session's measurements
+(the measurement of record is the one tracked file), and
+`backend/market/model.py`, which belongs to the other session.
+
+**Next atomic tasks, in order:**
+1. Read `sec_fn2.log`; if the planted case failed, fix the cause and re-run
+   before anything else. Then compare the pilot review's findings on
+   `7cdd4af4` with Codex's on the same commit.
+2. Configure on the Spark: the `repo` server in `.env`'s `MCP_SERVERS_JSON`,
+   `REPO_MCP_ROOT`, `SECURITY_AUTHORIZED_ASSETS`, then `AGENT_RUNS_ENABLED=true`
+   on `discovery-worker` once one hosted run has been watched end to end.
+   The serving image needs `git` (opencode's Dockerfile change is in flight).
+3. Raise `TURN_MAX_STEPS` to 3 after the routing gate and a sweep pass.
+4. Phase 7 remainder: retention for run events, fair scheduling per
+   principal, a capacity test. The router track remains unstarted.
+5. Chat → run hand-off and approvals in chat (Phase 6 remainder).
+6. The gap audit the operator asked for, against `docs/AGENT_PLATFORM_PLAN.md`.
+
 ## 2026-09-05 — Place judgement live (9/9); security agent's first shape; pilot defects fixed (NOT DEPLOYED)
 
 See `docs/CHANGELOG.md`, this date, newest entry. Codex should review the

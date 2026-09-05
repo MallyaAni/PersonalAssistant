@@ -277,10 +277,15 @@ class ReviewWorld:
                     where = _nearby(lines, finding.line, finding.evidence)
                     if where is None:
                         reason = "quotes evidence that is not at or near that line"
-                    elif where != finding.line:
+                    else:
+                        # The kept finding carries the line as the file has it,
+                        # not as the model quoted it: a model writing JSON stops
+                        # its quote at the first embedded double quote, and a
+                        # report that says `AWS_ACCESS_KEY_ID = ` shows nobody
+                        # the key (the security agent's probe, 2026-09-05).
                         finding = Finding(
                             finding.file, where, finding.severity, finding.title,
-                            finding.explanation, finding.evidence,
+                            finding.explanation, lines[where].strip(),
                         )
             if reason is None:
                 kept.append(finding)

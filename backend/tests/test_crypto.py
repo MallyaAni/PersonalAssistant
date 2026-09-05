@@ -95,6 +95,10 @@ def test_bytes_round_trip_and_passthrough():
 
 def test_encrypted_column_seals_on_bind_and_opens_on_result():
     column = EncryptedText()
+    # Restored, not blanked: a later test in the same process reads rows a
+    # child process sealed with the deployed key (the run drills), and a
+    # blanked key made that read fail only in the full suite.
+    previous = settings.ENCRYPTION_KEY
     settings.ENCRYPTION_KEY = _KEY
     reset_field_cipher()
     try:
@@ -106,5 +110,5 @@ def test_encrypted_column_seals_on_bind_and_opens_on_result():
         assert column.process_bind_param(None, dialect=None) is None
         assert column.process_result_value(None, dialect=None) is None
     finally:
-        settings.ENCRYPTION_KEY = ""
+        settings.ENCRYPTION_KEY = previous
         reset_field_cipher()

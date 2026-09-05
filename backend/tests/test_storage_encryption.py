@@ -15,12 +15,14 @@ _PNG = b"\x89PNG\r\n\x1a\n" + os.urandom(1024)
 
 @pytest.fixture
 def enable_encryption():
+    # Restored, not blanked, so later tests in the process keep the deployed key.
+    previous = settings.ENCRYPTION_KEY
     settings.ENCRYPTION_KEY = _KEY
     reset_field_cipher()
     try:
         yield
     finally:
-        settings.ENCRYPTION_KEY = ""
+        settings.ENCRYPTION_KEY = previous
         reset_field_cipher()
 
 
@@ -52,9 +54,16 @@ async def test_recorded_integrity_describes_the_plaintext(tmp_path, enable_encry
 
 @pytest.mark.asyncio
 async def test_storage_is_plaintext_when_encryption_is_disabled(tmp_path):
+    # Disabled here on purpose, and the deployed key put back afterwards.
+    previous = settings.ENCRYPTION_KEY
+    settings.ENCRYPTION_KEY = ""
     reset_field_cipher()
-    store = LocalBinaryArtifactStore(tmp_path)
+    try:
+        store = LocalBinaryArtifactStore(tmp_path)
 
-    stored = await store.write("ani.mallya", "artifact-3", "png", _PNG)
+        stored = await store.write("ani.mallya", "artifact-3", "png", _PNG)
 
-    assert (tmp_path / stored.storage_key).read_bytes() == _PNG
+        assert (tmp_path / stored.storage_key).read_bytes() == _PNG
+    finally:
+        settings.ENCRYPTION_KEY = previous
+        reset_field_cipher()

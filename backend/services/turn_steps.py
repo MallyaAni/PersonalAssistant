@@ -67,6 +67,7 @@ SECOND_CREATE = "the turn reached its creation allowance"
 NEEDS_INPUT = "the router needs something the message did not say"
 UNAVAILABLE = "the router could not decide"
 UNKNOWN = "a step was cut at the deadline with its outcome unknown"
+REFUSED = "the request was refused by policy"
 
 # Stops that mean the request was seen through to the router's own stop.
 # Everything else is a bound firing, and a caller judging completion must not
@@ -108,7 +109,16 @@ class Unavailable:
     reason: str
 
 
-Decision = Act | Done | NeedsInput | Unavailable
+@dataclass(frozen=True, slots=True)
+class Refused:
+    """The agent refuses the request on policy - out of scope, not
+    authorized - which is neither a failure to decide nor a clean stop, and
+    is never retried: asking again does not change the answer."""
+
+    reason: str
+
+
+Decision = Act | Done | NeedsInput | Unavailable | Refused
 
 
 # Read whatever a `decide` callback returned as a typed decision. A callback
@@ -116,7 +126,7 @@ Decision = Act | Done | NeedsInput | Unavailable
 # still understood, so the harness and every existing caller keep working
 # while they move over.
 def as_decision(value: Any) -> Decision:
-    if isinstance(value, Act | Done | NeedsInput | Unavailable):
+    if isinstance(value, Act | Done | NeedsInput | Unavailable | Refused):
         return value
     if value is None:
         return Done()
@@ -323,6 +333,9 @@ async def run_steps(
                 "Turn stopped: the router could not decide (%s)", decision.reason
             )
             return TurnResult(tuple(steps), UNAVAILABLE, decision.reason)
+        if isinstance(decision, Refused):
+            logger.info("Turn stopped: refused by policy (%s)", decision.reason)
+            return TurnResult(tuple(steps), REFUSED, decision.reason)
         action = decision.action
         if fingerprint(action) in seen:
             logger.info("Turn repeated an identical action; stopping")

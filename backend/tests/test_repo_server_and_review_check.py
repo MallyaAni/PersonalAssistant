@@ -164,6 +164,20 @@ def test_whitespace_does_not_decide_the_evidence():
     assert len(kept) == 1
 
 
+# A quote the model cut short at an embedded quote character is still the
+# line's, and the kept finding carries the whole line as the file has it.
+def test_a_kept_finding_carries_the_lines_own_text():
+    world = _world()
+    world.observe(
+        ReadFile("calc.py", "abcdef1"),
+        "read",
+        {"kind": "done", "payload": {"content": '    1| KEY = "AKIAEXAMPLE"\n    2|     return items[len(items)]\n'}},
+    )
+    kept, rejected = world._check(Review((_finding(line=1, evidence="KEY = "),), "", ()))
+    assert rejected == []
+    assert kept[0].evidence == 'KEY = "AKIAEXAMPLE"'
+
+
 @pytest.mark.parametrize(
     ("overrides", "reason"),
     [

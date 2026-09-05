@@ -341,3 +341,22 @@ async def test_a_key_that_moves_after_a_failure_does_not_make_the_retry_a_repeat
     assert applied == ["read", "read"]
     assert result.stopped == DECLINED
     assert [step.status for step in result.steps] == [FAILED, SUCCEEDED]
+
+
+# A refusal on policy is its own stop: not a clean one, and not a failure to
+# decide either - asking again does not change the answer.
+async def test_a_policy_refusal_is_its_own_stop():
+    from backend.services.turn_steps import REFUSED, Refused
+
+    world = _World()
+
+    async def decide(lines):
+        return Refused("asset not authorized")
+
+    result = await run_steps(
+        "first", apply=world.apply, decide=decide, describe=_describe,
+        creates=lambda a: False, max_steps=3, budget_seconds=5.0,
+    )
+    assert result.stopped == REFUSED
+    assert result.clean is False
+    assert result.detail == "asset not authorized"

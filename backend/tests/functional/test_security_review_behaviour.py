@@ -119,7 +119,7 @@ async def test_an_unauthorized_asset_is_refused_before_any_read(structured_llm, 
     try:
         outcome, final = await _investigate(structured_llm, root, sha, user, "somebody-elses-repo")
         assert outcome.status == "failed"
-        assert outcome.error_code == "router_unavailable"
+        assert outcome.error_code == "refused"
         assert final["actions"] == []
     finally:
         async with AsyncSessionLocal() as db:
