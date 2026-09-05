@@ -3601,7 +3601,7 @@ class ConversationService:
                 steps_taken=lines,
             )
 
-        steps = await run_steps(
+        turn = await run_steps(
             action,
             apply=lambda item: self._apply_step(user_id, item, metadata),
             decide=decide,
@@ -3614,6 +3614,7 @@ class ConversationService:
             max_steps=settings.TURN_MAX_STEPS if steppable else 1,
             budget_seconds=settings.TURN_STEP_BUDGET_SECONDS,
         )
+        steps = turn.steps
 
         task_outcomes = [s.outcome for s in steps if s.kind == "task"]
         skill_outcomes = [s.outcome for s in steps if s.kind == "skill"]

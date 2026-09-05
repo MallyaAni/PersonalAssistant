@@ -11,16 +11,26 @@ properties of the whole path, and this is the harness that measures them.
 Each labelled trajectory is walked against the real router and the real
 `run_steps` (only what a step does is scripted), then scored on:
 
-  * completion      - the required effect sequence happened, in order
+  * completion      - the required effects happened, each with the right
+                      tool, operation, arguments and a successful outcome
   * argument carry  - the turn's own words survived into the required steps
   * unauthorized    - a forbidden tool fired anywhere in the path
-  * duplicate       - more successful effects than the case allows
+  * duplicate       - a creating effect beyond the case's allowance, or
+                      identical to one already written
   * latency/cost    - wall time, decisions, and steps per trajectory
 
-Runs are recorded versioned under `docs/evals/runs/trajectories/` so a later
-change can answer "did that get better?" with `history()` and `compare()`.
-Floors are reported but not enforced until a baseline has been measured: a
-floor that has never been seen to hold is not a floor.
+This is a **component evaluation**: it measures how the router sequences
+decisions in a scripted world. Production narrows later steps to automation
+bookkeeping and real dispatch has real side effects; both are out of scope
+here and pinned separately (`test_a_later_step_cannot_reach_outside_the_
+bookkeeping_tools`). Say "component evaluation" when quoting a number.
+
+Runs are recorded versioned under `docs/evals/runs/trajectories/` with the
+full per-observation evidence and the model and case-set fingerprints, so a
+later change can answer "did that get better?" with `history()` and
+`compare()` without running both versions again. Completion floors are set
+one miss below what was measured; unauthorized actions and duplicates are
+enforced acceptance criteria, not numbers to eyeball.
 
 Use it after any change to the loop, the router, or the repeat guard. The
 `two-reminders` case is expected to measure incomplete today - the live
@@ -30,6 +40,7 @@ and Phase 3 of the execution-boundary repair are working.
 
 import argparse
 import asyncio
+import hashlib
 from collections import defaultdict
 from dataclasses import dataclass
 
@@ -44,13 +55,16 @@ from backend.services.trajectory_cases import TRAJECTORY_CASES, TrajectoryCase
 from backend.services.trajectory_harness import (
     Trajectory,
     TrajectoryScore,
+    _arguments,
     measure_once,
+    tool_name,
 )
 
-# A floor per category, one miss below what was measured on 2026-09-04 (the
-# Phase 1 baseline run, recorded under docs/evals/runs/trajectories/). A
-# floor that has never been seen to hold is not a floor, so the categories
-# that measured at zero are set to zero until the repair moves them:
+# Completion floor per category, one miss below what was measured on
+# 2026-09-05 with the corrected scorer (recorded under
+# docs/evals/runs/trajectories/). A floor that has never been seen to hold is
+# not a floor, so a category that measured at zero stays at zero until the
+# repair moves it:
 #   single_step     3/3  -> 0.67
 #   reference       3/3  -> 0.67
 #   partial_failure 3/3  -> 0.67
@@ -60,6 +74,21 @@ CATEGORY_COMPLETION_FLOORS: dict[str, float] = {
     "single_step": 0.67,
     "reference": 0.67,
     "partial_failure": 0.67,
+    "mixed_tools": 0.0,
+    "multiple_writes": 0.0,
+}
+
+# Argument-carrying floor per category, one miss below what was measured on
+# 2026-09-05 with the corrected scorer:
+#   single_step     3/3  -> 0.67
+#   reference       3/3  -> 0.67
+#   mixed_tools     1/6  -> 0.0   (only the one completed turn carried its words)
+#   multiple_writes 0/3  -> 0.0   (two writes never both happened)
+# Carrying is a separate gate from completion so "right tools, wrong words"
+# cannot hide behind a tool-count win.
+CATEGORY_CARRIED_FLOORS: dict[str, float] = {
+    "single_step": 0.67,
+    "reference": 0.67,
     "mixed_tools": 0.0,
     "multiple_writes": 0.0,
 }
@@ -88,27 +117,94 @@ async def collect(
     return observations
 
 
-# Print the per-category picture: completion, argument carrying, unauthorized
-# actions, duplicates, and cost, then the trajectories that failed. Returns
-# whether every measured rate holds its floor.
-def report(observations: list[TrajectoryObservation], reps: int) -> bool:
+# A stable fingerprint of the case set, so a run can say which cases produced
+# it without shipping the case texts inside every JSON.
+def _case_fingerprint() -> str:
+    material = "\x1f".join(
+        f"{case.name}:{case.category}:{case.ask}" for case in TRAJECTORY_CASES
+    )
+    return hashlib.sha256(material.encode("utf-8", "replace")).hexdigest()[:16]
+
+
+# Every step of one trajectory, as evidence a later comparison can read:
+# which tool, what outcome, and what the model actually wrote.
+def _step_evidence(trajectory: Trajectory) -> list[dict[str, object]]:
+    return [
+        {
+            "tool": tool_name(step.action),
+            "kind": step.kind,
+            "outcome": step.outcome,
+            "arguments": _arguments(step.action)[:160],
+            "line": step.line[:200],
+        }
+        for step in trajectory.steps
+    ]
+
+
+# Whether the measured set meets every acceptance criterion: completion floors
+# per category, carried floors per category, zero unauthorized actions, and
+# zero duplicate effects. Pure, so a test can pin it without running the
+# report. Returns the list of breaches; empty means the set is accepted.
+def acceptance(observations: list[TrajectoryObservation]) -> list[str]:
+    by_category: dict[str, list[TrajectoryObservation]] = defaultdict(list)
+    for seen in observations:
+        by_category[seen.case.category].append(seen)
+
+    breaches: list[str] = []
+    for category, group in sorted(by_category.items()):
+        completed = sum(1 for seen in group if seen.score.completed)
+        rate = completed / len(group)
+        floor = CATEGORY_COMPLETION_FLOORS.get(category)
+        if floor is not None and rate < floor:
+            breaches.append(f"{category} completion {rate:.2f} < {floor:.2f}")
+
+        judged = [seen for seen in group if seen.score.carried is not None]
+        carried_floor = CATEGORY_CARRIED_FLOORS.get(category)
+        if carried_floor is not None and judged:
+            carried_rate = (
+                sum(1 for seen in judged if seen.score.carried) / len(judged)
+            )
+            if carried_rate < carried_floor:
+                breaches.append(
+                    f"{category} carried {carried_rate:.2f} < {carried_floor:.2f}"
+                )
+
+        unauthorized = [
+            seen for seen in group if seen.score.unauthorized
+        ]
+        if unauthorized:
+            names = ", ".join(
+                ",".join(seen.score.unauthorized) for seen in unauthorized
+            )
+            breaches.append(f"{category} unauthorized x{len(unauthorized)}: {names}")
+        duplicated = [
+            seen for seen in group if seen.score.duplicate_effects > 0
+        ]
+        if duplicated:
+            breaches.append(f"{category} duplicates x{len(duplicated)}")
+    return breaches
+
+
+# Print the per-category picture and enforce the acceptance criteria:
+# completion floors, carried floors, zero unauthorized actions, and zero
+# duplicates. Any breach fails the gate; the numbers alone cannot.
+def report(
+    observations: list[TrajectoryObservation], reps: int, model: str = ""
+) -> bool:
     by_category: dict[str, list[TrajectoryObservation]] = defaultdict(list)
     for seen in observations:
         by_category[seen.case.category].append(seen)
 
     print(
         f"cases {len(TRAJECTORY_CASES)}  reps {reps}  "
-        f"observations {len(observations)}\n"
+        f"observations {len(observations)}  model {model}\n"
     )
 
-    breached: list[str] = []
     total_completed = 0
     for category, group in sorted(by_category.items()):
         completed = sum(1 for seen in group if seen.score.completed)
-        carried = [
-            seen for seen in group if seen.score.carried is not None
-        ]
-        carried_ok = sum(1 for seen in carried if seen.score.carried)
+        judged = [seen for seen in group if seen.score.carried is not None]
+        carried_ok = sum(1 for seen in judged if seen.score.carried)
         unauthorized = [
             seen for seen in group if seen.score.unauthorized
         ]
@@ -123,8 +219,16 @@ def report(observations: list[TrajectoryObservation], reps: int) -> bool:
         rate = completed / len(group)
         floor = CATEGORY_COMPLETION_FLOORS.get(category)
         held = floor is None or rate >= floor
-        if floor is not None and not held:
-            breached.append(f"{category} {rate:.2f} < {floor:.2f}")
+
+        carried_rate = (
+            carried_ok / len(judged) if judged else None
+        )
+        carried_floor = CATEGORY_CARRIED_FLOORS.get(category)
+        carried_held = (
+            carried_floor is None
+            or carried_rate is None
+            or carried_rate >= carried_floor
+        )
 
         print(f"[{category}]")
         floor_note = (
@@ -133,8 +237,14 @@ def report(observations: list[TrajectoryObservation], reps: int) -> bool:
             else ""
         )
         print(f"  completed      {completed}/{len(group)}{floor_note}")
-        if carried:
-            print(f"  carried        {carried_ok}/{len(carried)}")
+        if judged:
+            carry_note = ""
+            if carried_floor is not None:
+                carry_note = (
+                    f"  floor {carried_floor:.2f}  "
+                    f"{'ok' if carried_held else 'BREACH'}"
+                )
+            print(f"  carried        {carried_ok}/{len(judged)}{carry_note}")
         if unauthorized:
             names = ", ".join(
                 ",".join(seen.score.unauthorized) for seen in unauthorized
@@ -173,11 +283,13 @@ def report(observations: list[TrajectoryObservation], reps: int) -> bool:
     if not failed:
         print("  (none)")
 
-    if breached:
-        print("\nfloors breached: " + "; ".join(breached))
+    breaches = acceptance(observations)
+    if breaches:
+        print("\nacceptance breached: " + "; ".join(breaches))
 
-    # Every measurement is kept, so "did that get better" has an answer
-    # without running both versions again.
+    # Every measurement is kept - the scores, the failures, and the evidence
+    # each pass produced - so "did that get better" has an answer without
+    # running both versions again.
     record(
         "trajectories",
         total_completed,
@@ -192,22 +304,37 @@ def report(observations: list[TrajectoryObservation], reps: int) -> bool:
             for category, group in sorted(by_category.items())
         },
         notes=(
-            f"{len(TRAJECTORY_CASES)} labelled trajectories; "
-            f"{len(failed)} did not complete"
+            f"{len(TRAJECTORY_CASES)} labelled trajectories (component "
+            f"evaluation); {len(failed)} did not complete; "
+            f"{len(breaches)} acceptance breach(es)"
         ),
         extra={
-            "failures": [
+            "model": model,
+            "case_fingerprint": _case_fingerprint(),
+            "environment": "component evaluation: real router + run_steps, "
+            "scripted apply; production dispatch out of scope",
+            "floors_breached": breaches,
+            "observations": [
                 {
                     "name": seen.case.name,
+                    "category": seen.case.category,
                     "path": list(seen.score.path),
                     "stopped": seen.trajectory.stopped,
+                    "steps": seen.score.steps,
+                    "decisions": seen.score.decisions,
+                    "latency_ms": round(seen.score.latency_ms, 1),
+                    "completed": seen.score.completed,
+                    "carried": seen.score.carried,
+                    "unauthorized": list(seen.score.unauthorized),
+                    "duplicate_effects": seen.score.duplicate_effects,
+                    "failed_steps": seen.score.failed_steps,
+                    "evidence": _step_evidence(seen.trajectory),
                 }
-                for seen in failed
+                for seen in observations
             ],
-            "floors_breached": breached,
         },
     )
-    return not breached
+    return not breaches
 
 
 # Build the selector against the configured routing model and walk the set.
@@ -217,7 +344,8 @@ async def evaluate(reps: int) -> int:
         print("Search server is not auto-invocable; the matrix would be incomplete.")
         return 2
     llm = get_routing_llm_client()
-    print(f"model: {llm.base_url} {llm.model}\n")
+    model = f"{llm.base_url} {llm.model}"
+    print(f"model: {model}\n")
     selector = MainActionSelector(
         llm,
         invocation,
@@ -228,7 +356,7 @@ async def evaluate(reps: int) -> int:
         presentation_enabled=True,
     )
     observations = await collect(selector, reps)
-    passed = report(observations, reps)
+    passed = report(observations, reps, model)
     print(f"\n{'PASS' if passed else 'FAIL'} against the recorded floors")
     return 0 if passed else 1
 

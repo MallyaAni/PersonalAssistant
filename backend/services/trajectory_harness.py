@@ -9,9 +9,9 @@ path is where their bugs will live.
 Three things this gives a caller that a bare call does not:
 
   * **The trajectory.** Every step in order, the line the model was shown
-    before each decision, and why the loop stopped. `run_steps` has five
-    separate stopping rules and a caller that cannot tell them apart cannot
-    tell a healthy stop from a ceiling being hit.
+    before each decision, and why the loop stopped. `run_steps` has six
+    separate stopping rules and returns the one that actually fired, so a
+    caller never has to guess between a decline and a spent budget.
   * **Fault injection.** Make the second step fail and assert the loop
     recovers. Nothing could do this until step outcomes reached the model,
     and it is the case that matters most: a loop that cannot see a failure
@@ -23,15 +23,20 @@ Three things this gives a caller that a bare call does not:
 
 The deciding is the real router and the looping is the real `run_steps`.
 Only `apply` is stood in for, because `apply` is where a step touches the
-world, and a caller that reimplemented the loop would prove the
-reimplementation rather than the code that runs. This lives in `services`
-rather than under the tests so the trajectory evaluator and the functional
-suite drive the same code.
+world. That makes this a **component evaluation**: it measures how the router
+sequences decisions in a simulated world, not whether the production path can
+execute a particular sequence (production narrows later steps to automation
+bookkeeping, and this harness can offer any set - `test_a_later_step_cannot_
+reach_outside_the_bookkeeping_tools` in `test_turn_steps_behaviour.py` pins
+the production restriction). Say "component evaluation" when quoting a number
+from here.
 
 `score_trajectory` turns one trajectory into the metrics the trajectory
-evaluation is built on - completion, argument carrying, unauthorized tools,
-duplicate effects - so a measurement is a pure function a unit test can
-check before any model is asked.
+evaluation is built on. Completion is not "the right tools fired": a required
+effect matches only when the step used an allowed tool, carried the right
+operation and arguments, and its outcome was a success - so a failed reminder
+for the wrong task at the wrong time never counts as done, and a case that
+asks for two distinct reminders is only done when two distinct ones exist.
 """
 from __future__ import annotations
 
@@ -44,17 +49,12 @@ from backend.services.main_action_selector import (
     MainActionSelector,
     clear_decision_cache,
 )
-from backend.services.turn_steps import Step, run_steps
+from backend.services.turn_steps import (
+    DECLINED,
+    Step,
+    run_steps,
+)
 from backend.tools.registry import AUTOMATION_TOOLS
-
-# Why a loop stopped. Named, because `run_steps` has five stopping rules and
-# "it stopped" is not a result: a turn that ended because the router had
-# nothing left to do and a turn that ended against the ceiling look identical
-# from the outside and mean opposite things.
-DECLINED = "the router named no further tool"
-CEILING = "the step ceiling was reached"
-REPEATED = "the router repeated a step"
-UNAPPLIED = "the action was not one this loop carries out"
 
 
 @dataclass(frozen=True, slots=True)
@@ -115,7 +115,9 @@ class World:
 #
 # `only` defaults to the automation tools because that is the set the live
 # loop runs over; a caller testing a different agent's loop passes its own,
-# and `None` offers every tool so a mixed-tool trajectory can be measured.
+# and `None` offers every tool so a mixed-tool trajectory can be measured as
+# a component. `stopped` is the actual reason `run_steps` returned, never an
+# inference made here.
 async def walk(
     selector: MainActionSelector,
     *,
@@ -134,17 +136,13 @@ async def walk(
     clear_decision_cache()
     stage = world or World()
     shown: list[tuple[str, ...]] = []
-    declined = False
 
     async def decide(lines: list[str]) -> Any:
-        nonlocal declined
         shown.append(tuple(lines))
-        action = await selector.select(
+        return await selector.select(
             user, ask, history or [], None,
             local_now=local_now, only=only, steps_taken=lines,
         )
-        declined = action is None
-        return action
 
     first = await selector.select(
         user, ask, history or [], None, local_now=local_now, only=only
@@ -154,7 +152,7 @@ async def walk(
 
     from backend.services.conversation_service import _step_line
 
-    steps = await run_steps(
+    result = await run_steps(
         first,
         apply=stage.apply,
         decide=decide,
@@ -163,15 +161,7 @@ async def walk(
         max_steps=max_steps,
         budget_seconds=budget_seconds,
     )
-    if not steps:
-        stopped = UNAPPLIED
-    elif len(steps) >= max_steps:
-        stopped = CEILING
-    elif declined:
-        stopped = DECLINED
-    else:
-        stopped = REPEATED
-    return Trajectory(tuple(steps), stopped, tuple(shown))
+    return Trajectory(result.steps, result.stopped, tuple(shown))
 
 
 # Name the tool one decision resolved to, including the decision to use none.
@@ -218,8 +208,23 @@ def tool_name(action: object) -> str:
     return _ACTION_TOOL.get(type(action).__name__, "none")
 
 
-# Whether a step is a successful effect of the loop's kind: a step that was
-# applied and whose outcome does not say it failed to do what it was asked.
+# Everything the model wrote for this action as one searchable string. The
+# actions are frozen dataclasses of scalars, so their own fields are the
+# arguments - no per-tool list here that a new tool could fall off.
+def _arguments(action: object) -> str:
+    if action is None:
+        return ""
+    if type(action).__name__ == "ToolboxAction":
+        plan = getattr(action, "plan", None)
+        return " ".join(str(value) for value in getattr(plan, "arguments", {}).values())
+    fields = getattr(action, "__dataclass_fields__", None)
+    if not fields:
+        return ""
+    return " ".join(str(getattr(action, name, "")) for name in fields)
+
+
+# Whether a step is a successful effect: applied, and its outcome does not say
+# it failed to do what it was asked. A not-found cancel is not an effect.
 def _is_effect(step: Step) -> bool:
     kind = str((step.outcome or {}).get("kind") or "")
     return kind not in {"", "failed", "invalid", "not_found", "none"}
@@ -232,9 +237,49 @@ _CREATING_TOOLS = frozenset({"schedule_task", "scout_schedule"})
 
 
 @dataclass(frozen=True, slots=True)
+class RequiredEffect:
+    """One effect the turn must successfully produce to count as done.
+
+    `tools` is the tool name or set of names that satisfy it, `operation` a
+    value the action's `operation` field must equal when the tool has one,
+    `carries` words the action's arguments must contain, and `succeeds`
+    whether the step's outcome must be a success. Stated this way, completion
+    cannot pass on tool name alone: a failed reminder for the wrong task at
+    the wrong time matches nothing.
+    """
+
+    tools: frozenset[str] | str
+    operation: str | None = None
+    carries: tuple[str, ...] = ()
+    succeeds: bool = True
+
+    @property
+    def allowed(self) -> frozenset[str]:
+        return frozenset({self.tools}) if isinstance(self.tools, str) else self.tools
+
+
+# Whether one step satisfies one required effect, tool, operation, arguments
+# and outcome all together.
+def _matches(effect: RequiredEffect, step: Step) -> bool:
+    if tool_name(step.action) not in effect.allowed:
+        return False
+    if (
+        effect.operation is not None
+        and getattr(step.action, "operation", None) != effect.operation
+    ):
+        return False
+    if effect.carries:
+        written = _arguments(step.action).casefold()
+        if not all(word.casefold() in written for word in effect.carries):
+            return False
+    return not (effect.succeeds and not _is_effect(step))
+
+
+@dataclass(frozen=True, slots=True)
 class TrajectoryScore:
-    """One trajectory, measured. `completed` and `carried` are the gates;
-    the rest are recorded so a change can be compared, not floored by habit."""
+    """One trajectory, measured. `completed`, `unauthorized` and
+    `duplicate_effects` are the gates; the rest are recorded so a change can
+    be compared, not floored by habit."""
 
     path: tuple[str, ...]
     steps: int
@@ -247,49 +292,122 @@ class TrajectoryScore:
     failed_steps: int
 
 
+# Whether the trajectory achieved its required effects: the sequence matched
+# in order `required_times` over (each step satisfying its effect - tool,
+# operation, arguments, success), and the cover words present somewhere
+# across the matched steps so two copies of one reminder never satisfy a
+# request for two different ones. Returns the passes and the matched steps.
+def _required_passes(
+    case: Any, steps: tuple[Step, ...]
+) -> tuple[int, list[Step]]:
+    matched_steps: list[Step] = []
+    passes = 0
+    pos = 0
+    for step in steps:
+        if pos < len(case.required) and _matches(case.required[pos], step):
+            matched_steps.append(step)
+            pos += 1
+            if pos == len(case.required):
+                passes += 1
+                pos = 0
+                if passes >= case.required_times:
+                    break
+    return passes, matched_steps
+
+
+# The argument half of completion, reported separately so a failure can name
+# whether it lost on tools or on words. None when a case asks nothing of
+# arguments, so silence never flatters the number. Independent of success and
+# operation on purpose: this says whether the turn's own words got into the
+# right steps' arguments at all, and a right-words-wrong-tool turn and a
+# right-tool-wrong-words turn want different work.
+def _arg_carrying(case: Any, trajectory: Trajectory) -> bool | None:
+    if case.honest_failure or not (
+        any(effect.carries for effect in case.required) or case.covers
+    ):
+        return None
+    carried = True
+    for effect in case.required:
+        if not effect.carries:
+            continue
+        held_anywhere = any(
+            tool_name(step.action) in effect.allowed
+            and all(
+                word.casefold() in _arguments(step.action).casefold()
+                for word in effect.carries
+            )
+            for step in trajectory.steps
+        )
+        if not held_anywhere:
+            carried = False
+    if carried and case.covers:
+        cover_steps = [
+            step
+            for step in trajectory.steps
+            if any(
+                tool_name(step.action) in effect.allowed
+                for effect in case.required
+            )
+        ]
+        union = " ".join(
+            _arguments(step.action) for step in cover_steps
+        ).casefold()
+        carried = all(word.casefold() in union for word in case.covers)
+    return carried
+
+
+# Creating effects beyond the case's allowance, or identical to an earlier
+# one, are duplicates. Two different reminders requested and two copies of
+# the same one written are distinguished: the copies are identical, so the
+# second is flagged even though the count never exceeds the allowance.
+def _duplicates(case: Any, trajectory: Trajectory) -> int:
+    creates: list[str] = []
+    for step in trajectory.steps:
+        if tool_name(step.action) in _CREATING_TOOLS and _is_effect(step):
+            creates.append(_arguments(step.action))
+    duplicate_effects = 0
+    for index, args in enumerate(creates):
+        if index >= case.allowed_creates or args in creates[:index]:
+            duplicate_effects += 1
+    return duplicate_effects
+
+
 # Measure one trajectory against one case. Pure: given the steps, this is
 # deterministic, which is why a unit test can pin it without a model.
 def score_trajectory(
     case: Any, trajectory: Trajectory, latency_ms: float
 ) -> TrajectoryScore:
     path = tuple(tool_name(step.action) for step in trajectory.steps)
-    # The required effect sequence, matched in order, `required_times` over.
-    matches = 0
-    pos = 0
-    for step in trajectory.steps:
-        if pos < len(case.required) and case.required[pos](step):
-            pos += 1
-            if pos == len(case.required):
-                matches += 1
-                pos = 0
-                if matches >= case.required_times:
-                    break
-    completed = matches >= case.required_times
 
-    carried: bool | None = None
-    if case.carries:
-        matched_steps = [
-            step
-            for step in trajectory.steps
-            if any(predicate(step) for predicate in case.required)
-        ]
-        written = " ".join(
-            str(getattr(step.action, name, ""))
-            for step in matched_steps
-            for name in getattr(step.action, "__dataclass_fields__", {})
-        ).casefold()
-        carried = all(word.casefold() in written for word in case.carries)
+    if case.honest_failure:
+        # The world scripted the goal as unreachable, so "done" means the
+        # failure was seen and nothing was fabricated as a success: at least
+        # one step failed, no required effect succeeded, and nothing was
+        # created. A loop that reported the not-found cancel as done fails.
+        completed = (
+            len(trajectory.failed) >= 1
+            and not any(
+                _matches(effect, step)
+                for effect in case.required
+                for step in trajectory.steps
+            )
+            and not any(
+                tool_name(step.action) in _CREATING_TOOLS and _is_effect(step)
+                for step in trajectory.steps
+            )
+        )
+    else:
+        passes, matched_steps = _required_passes(case, trajectory.steps)
+        completed = passes >= case.required_times
+        if completed and case.covers:
+            union = " ".join(
+                _arguments(step.action) for step in matched_steps
+            ).casefold()
+            completed = all(word.casefold() in union for word in case.covers)
 
     unauthorized = tuple(
         tool for tool in path if tool in set(case.forbidden)
     )
-
-    effects = sum(
-        1
-        for step in trajectory.steps
-        if tool_name(step.action) in _CREATING_TOOLS and _is_effect(step)
-    )
-    duplicate_effects = max(0, effects - case.allowed_effects)
 
     return TrajectoryScore(
         path=path,
@@ -297,9 +415,9 @@ def score_trajectory(
         decisions=len(trajectory.shown) + 1,
         latency_ms=latency_ms,
         completed=completed,
-        carried=carried,
+        carried=_arg_carrying(case, trajectory),
         unauthorized=unauthorized,
-        duplicate_effects=duplicate_effects,
+        duplicate_effects=_duplicates(case, trajectory),
         failed_steps=len(trajectory.failed),
     )
 

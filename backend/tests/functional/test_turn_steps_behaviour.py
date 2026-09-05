@@ -29,8 +29,8 @@ from backend.core.dependencies import (
 from backend.database.session import AsyncSessionLocal
 from backend.discovery.schedule import Cadence
 from backend.services.main_action_selector import MainActionSelector
-from backend.tasks.repository import ScheduledTaskRepository
 from backend.services.turn_steps import run_steps
+from backend.tasks.repository import ScheduledTaskRepository
 from backend.tools import AUTOMATION_TOOLS, describe_action
 from backend.tools.actions import ManageTasksAction, ScheduleTaskAction
 
@@ -139,7 +139,8 @@ async def test_a_two_step_request_cancels_one_task_and_creates_another() -> None
             channel="imessage",
         )
 
-        steps = await _run(tasks, request, local_now, steps_max=3)
+        result = await _run(tasks, request, local_now, steps_max=3)
+        steps = result.steps
 
         remaining = await tasks.list_for_user(USER, enabled_only=False)
         tesla = [t for t in remaining if "tesla" in t["instruction"].lower()]
@@ -168,7 +169,8 @@ async def test_a_one_action_request_takes_exactly_one_step() -> None:
     async with AsyncSessionLocal() as session:
         tasks = ScheduledTaskRepository(session)
         await _clean(tasks)
-        steps = await _run(tasks, request, local_now, steps_max=3)
+        result = await _run(tasks, request, local_now, steps_max=3)
+        steps = result.steps
 
         rows = await tasks.list_for_user(USER, enabled_only=False)
         try:

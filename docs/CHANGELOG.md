@@ -2,6 +2,59 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-05 - Phase 1 evaluation made honest: completion measures outcomes, not tool names
+
+Codex review of the trajectory baseline found four false positives: the first
+scorer credited any step of the right *name* - a failed reminder for the wrong
+task at 3am "completed", two identical wrong reminders "completed" with zero
+duplicates, and a list-tasks call counted as "carrying" the move request it
+never made. Completion had to mean the requested effects happened, and every
+run had to record why it stopped. This makes the measurement match the claim:
+
+- `backend/services/trajectory_harness.py`: `RequiredEffect` now pairs each
+  required step with the operation, the argument words it must carry, and
+  whether it must have succeeded; the required sequence is matched in order
+  `required_times` over, and `covers` words must appear across the *matched*
+  steps, so two copies of one reminder never satisfy a request for two
+  different ones. `honest_failure` semantics for the scripted not-found case
+  (a failure seen, nothing fabricated as a success). A creating effect beyond
+  the case's allowance, or identical to an earlier one, is a duplicate.
+  `carried` is a diagnostic - whether the turn's own words reached the right
+  tools' arguments - independent of success and operation.
+- `backend/services/turn_steps.py`: `run_steps` returns a `TurnResult` with a
+  real, named stop reason (declined, ceiling, repeated, unapplied, budget,
+  second-create) instead of the harness guessing why a turn ended. The review
+  asked whether the two-write failure was the repeat guard or the model; the
+  recorded reason answers it - every `two-reminders` run stops on
+  `SECOND_CREATE`, the guard cutting the second write.
+- `backend/cli/evaluate_trajectories.py`: `acceptance()` is a pure gate
+  (completion and carrying floors, no unauthorized tool, no duplicate
+  effects) that fails the CLI, and each run persists per-observation evidence,
+  the model, a case fingerprint, and the commit (via `ANIOS_EVALUATION_COMMIT`).
+  Carrying floors added, one miss below the corrected measurement.
+- `backend/tests/functional/test_trajectory_evaluation_behaviour.py`: the four
+  review reproductions are pinned as regression tests - a failed reminder for
+  the wrong task does not complete, two identical wrong reminders are
+  duplicate effects, list-tasks does not complete or carry a move request, and
+  the real-model `cancel-and-reschedule` turns that the review probed score as
+  incomplete.
+
+Corrected baseline (2026-09-05, two runs after the scorer correction; runs
+pre-commit as `*-nocommit.json`):
+
+| category | measured | floor | what the paths show |
+| --- | --- | --- | --- |
+| single_step | 3/3 | 0.67 | the easy middle works |
+| reference | 3/3 | 0.67 | "the stretch reminder" resolves and is managed, not re-created |
+| partial_failure | 3/3 | 0.67 | a not-found step is seen, never reported as done |
+| mixed_tools | 0-1/6 | 0.0 | the router does the first tool and stops or repeats it - it never sequences to the second |
+| multiple_writes | 0/3 | 0.0 | two reminders become one: the repeat guard cuts the second write (SECOND_CREATE) |
+
+Overall completion 9-10/18 (0.500-0.556), now honest: every completed case
+achieved its required effects. The carried gate reports single_step 3/3,
+reference 3/3, mixed_tools 1/6 (only the one completed turn carried its
+words), multiple_writes 0/3 (two writes never both happened).
+
 ## 2026-09-05 - Phase 1 of the execution-boundary repair: a versioned trajectory baseline
 
 Before repairing the loop, measure it. The first-tool matrix scores one

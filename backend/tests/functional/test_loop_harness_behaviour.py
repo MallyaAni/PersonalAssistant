@@ -8,13 +8,8 @@ world.
 """
 import pytest
 
-from backend.services.trajectory_harness import (
-    CEILING,
-    DECLINED,
-    World,
-    repeat,
-    walk,
-)
+from backend.services.trajectory_harness import World, repeat, walk
+from backend.services.turn_steps import CEILING, DECLINED
 from backend.tools.actions import ScheduleTaskAction
 
 pytestmark = pytest.mark.asyncio

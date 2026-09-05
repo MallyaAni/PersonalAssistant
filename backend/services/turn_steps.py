@@ -36,6 +36,18 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+# Why a loop stopped. Named, because there are six separate stopping rules and
+# "it stopped" is not a result: a turn that ended because the router had
+# nothing left to do and a turn that ended against the wall clock look
+# identical from the outside and mean opposite things. The loop says which one
+# actually fired; nothing outside it should have to guess.
+DECLINED = "the router named no further tool"
+CEILING = "the step ceiling was reached"
+REPEATED = "the router repeated a step"
+UNAPPLIED = "the action was not one this loop carries out"
+BUDGET = "the wall clock ran out"
+SECOND_CREATE = "the turn tried to create a second thing"
+
 
 @dataclass(frozen=True, slots=True)
 class Step:
@@ -45,6 +57,17 @@ class Step:
     kind: str
     outcome: dict[str, Any]
     line: str
+
+
+# What a loop did and why it stopped. The steps alone cannot say why the loop
+# ended - a decline, the ceiling, a repeat, a second creation and a spent
+# budget all leave the same list - so the reason rides with them.
+@dataclass(frozen=True, slots=True)
+class TurnResult:
+    """The steps a loop carried out, and which rule stopped it."""
+
+    steps: tuple[Step, ...]
+    stopped: str
 
 
 # Run the decide/act cycle to a stop, and return what actually happened.
@@ -61,7 +84,7 @@ async def run_steps(
     creates: Callable[[Any], bool],
     max_steps: int = 1,
     budget_seconds: float = 45.0,
-) -> list[Step]:
+) -> TurnResult:
     steps: list[Step] = []
     seen: set[str] = set()
     created = 0
@@ -71,7 +94,7 @@ async def run_steps(
     while action is not None:
         applied = await apply(action)
         if applied is None:
-            break
+            return TurnResult(tuple(steps), UNAPPLIED)
         kind, outcome = applied
         steps.append(Step(action, kind, outcome, describe(action, kind, outcome)))
         seen.add(repr(action))
@@ -79,19 +102,19 @@ async def run_steps(
             created += 1
 
         if len(steps) >= max(1, max_steps):
-            break
+            return TurnResult(tuple(steps), CEILING)
         if monotonic() - started >= budget_seconds:
             logger.info("Turn step budget spent after %d step(s)", len(steps))
-            break
+            return TurnResult(tuple(steps), BUDGET)
 
         action = await decide([step.line for step in steps])
         if action is None:
-            break
+            return TurnResult(tuple(steps), DECLINED)
         if repr(action) in seen:
             logger.info("Turn repeated an identical action; stopping")
-            break
+            return TurnResult(tuple(steps), REPEATED)
         if creates(action) and created:
             logger.info("Turn tried to create a second thing; stopping")
-            break
+            return TurnResult(tuple(steps), SECOND_CREATE)
 
-    return steps
+    return TurnResult(tuple(steps), DECLINED)

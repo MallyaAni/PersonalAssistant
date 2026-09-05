@@ -4,8 +4,11 @@ The first-tool matrix measures one decision and cannot see a turn that needs
 two tools and stops after one, a failed step counted as done, or two
 legitimate writes cut to one by the repeat guard. This drives the real router
 through those shapes with the trajectory harness - only what a step *does* is
-scripted - and pins the scoring as a pure function, so a measurement is
-deterministic before any model is asked.
+scripted - and pins the corrected scoring as a pure function, so a measurement
+is deterministic before any model is asked. Completion requires the required
+effects to have succeeded with the right operation and arguments; a failed
+reminder for the wrong task at the wrong time, or two copies of one reminder
+for two requested, must not score as done.
 """
 import pytest
 
@@ -13,20 +16,28 @@ from backend.services.trajectory_cases import (
     TRAJECTORY_CASES,
     TrajectoryCase,
     case_by_name,
-    is_manage,
-    is_schedule,
-    is_search,
 )
 from backend.services.trajectory_harness import (
-    CEILING,
+    RequiredEffect,
     Trajectory,
     World,
     score_trajectory,
     tool_name,
     walk,
 )
-from backend.services.turn_steps import Step
-from backend.tools.actions import ManageTasksAction, ScheduleTaskAction, SearchAction
+from backend.services.turn_steps import (
+    CEILING,
+    DECLINED,
+    REPEATED,
+    SECOND_CREATE,
+    Step,
+    run_steps,
+)
+from backend.tools.actions import (
+    ManageTasksAction,
+    ScheduleTaskAction,
+    SearchAction,
+)
 
 WORKED = {"kind": "done"}
 SCHEDULED = {"kind": "scheduled"}
@@ -71,6 +82,55 @@ def _score(case: TrajectoryCase, steps):
     return score_trajectory(case, Trajectory(tuple(steps), CEILING, ()), 1.0)
 
 
+def _observation(case, steps):
+    from backend.cli.evaluate_trajectories import TrajectoryObservation
+
+    trip = Trajectory(tuple(steps), CEILING, ())
+    return TrajectoryObservation(case, trip, score_trajectory(case, trip, 1.0))
+
+
+# A step that satisfies one required effect, so a case can be shown winnable
+# by construction. The arguments are chosen to carry the effect's words.
+def _synthetic_step(effect: RequiredEffect):
+    tool = sorted(effect.allowed)[0]
+    carries = " ".join(effect.carries)
+    if tool == "manage_tasks":
+        operation = effect.operation or "cancel"
+        return _step(
+            ManageTasksAction(operation=operation, which=carries or "the reminder"),
+            WORKED,
+        )
+    if tool == "schedule_task":
+        return _step(
+            ScheduleTaskAction(
+                instruction=carries or "call mum", cadence="once", hour=18
+            ),
+            {"kind": "scheduled"},
+        )
+    if tool in {"search_web", "search_credits", "get_weather"}:
+        return _step(
+            SearchAction(carries or "pottery class courthouse virginia"), WORKED
+        )
+    raise AssertionError(f"no synthetic action for {effect}")
+
+
+# Rewrite one step's action so its arguments carry a cover word, so a case
+# that demands two different creations can be satisfied by construction.
+def _with_cover(step, word):
+    action = step.action
+    if isinstance(action, ScheduleTaskAction):
+        covered = ScheduleTaskAction(
+            instruction=word,
+            cadence=action.cadence,
+            hour=action.hour,
+            minute=action.minute,
+            weekday=action.weekday,
+            on_date=action.on_date,
+        )
+        return Step(covered, step.kind, step.outcome, step.line)
+    return step
+
+
 # The scoring is deterministic: given the steps, the metrics are what they
 # are. These pin the measurement before any model is asked.
 def test_the_tool_names_agree_with_the_matrix():
@@ -97,6 +157,7 @@ def test_a_mixed_tool_turn_completes_in_order():
     score = _score(case, [_step(_manage(), WORKED), _step(_schedule(), SCHEDULED)])
     assert score.path == ("manage_tasks", "schedule_task")
     assert score.completed is True
+    assert score.carried is True
     assert score.unauthorized == ()
     assert score.duplicate_effects == 0
 
@@ -119,7 +180,7 @@ def test_two_writes_count_only_when_both_happen():
         ],
     )
     assert both.completed is True
-    assert both.duplicate_effects == 0, "two writes were allowed for this case"
+    assert both.duplicate_effects == 0, "two different writes were allowed"
 
 
 def test_a_second_effect_beyond_the_allowance_is_a_duplicate():
@@ -136,12 +197,12 @@ def test_a_second_effect_beyond_the_allowance_is_a_duplicate():
 
 def test_a_forbidden_tool_is_recorded():
     case = case_by_name("move-the-stretch-reminder")
-    score = _score(
+    clean = _score(
         case,
         [_step(_manage(which="stretch reminder", operation="reschedule"), WORKED)],
     )
-    assert score.unauthorized == ()
-    assert score.carried is True, "the reference survived into the arguments"
+    assert clean.unauthorized == ()
+    assert clean.completed is True
     offending = _score(
         case,
         [
@@ -156,6 +217,7 @@ def test_a_failed_step_is_measured_not_counted_as_an_effect():
     case = case_by_name("cancel-nothing-found")
     score = _score(case, [_step(_manage(), FOUND_NOTHING)])
     assert score.failed_steps == 1
+    assert score.completed is True, "the failure was seen and nothing fabricated"
     assert score.duplicate_effects == 0
 
 
@@ -164,57 +226,122 @@ def test_the_search_then_remind_case_separates_the_two_tools():
     assert case.only is None, "this case offers every tool to measure the gap"
     score = _score(
         case,
-        [_step(_search(), WORKED), _step(_schedule(), SCHEDULED)],
+        [
+            _step(_search(), WORKED),
+            _step(_schedule(instruction="pottery class at 3pm"), SCHEDULED),
+        ],
     )
     assert score.completed is True
     assert score.carried is True
 
 
-# The real loop, the real router: a turn that needs two automation tools in
-# order. The rate is gated below a floor that was measured, not guessed.
+# The four false positives the first scorer had, pinned so they cannot return:
+# completion must require the successful outcome, the right operation, the
+# right arguments, and - for two requests - two different creations.
+def test_a_failed_reminder_for_the_wrong_task_is_not_complete():
+    case = case_by_name("cancel-and-reschedule")
+    score = _score(
+        case,
+        [
+            _step(_manage(), WORKED),
+            _step(
+                ScheduleTaskAction(instruction="tesla update", cadence="once", hour=3),
+                {"kind": "failed"},
+            ),
+        ],
+    )
+    assert score.completed is False, "a failed reminder is not a scheduled one"
+    assert score.carried is False
+
+
+def test_two_identical_reminders_do_not_satisfy_two_different_requests():
+    case = case_by_name("two-reminders")
+    score = _score(
+        case,
+        [
+            _step(_schedule(instruction="call mum", hour=18), SCHEDULED),
+            _step(_schedule(instruction="call mum", hour=18), SCHEDULED),
+        ],
+    )
+    assert score.completed is False, "two copies of one reminder are not two writes"
+    assert score.duplicate_effects == 1
+
+
+def test_listing_tasks_is_not_rescheduling_the_stretch_reminder():
+    case = case_by_name("move-the-stretch-reminder")
+    score = _score(
+        case,
+        [_step(_manage(which="stretch reminder", operation="list"), WORKED)],
+    )
+    assert score.completed is False, "listing is not rescheduling"
+
+
+def test_unauthorized_and_duplicates_fail_the_gate():
+    from backend.cli.evaluate_trajectories import acceptance
+
+    reference = case_by_name("move-the-stretch-reminder")
+    forbidden = _observation(
+        reference,
+        [
+            _step(_manage(which="stretch reminder", operation="reschedule"), WORKED),
+            _step(_schedule(), SCHEDULED),
+        ],
+    )
+    assert acceptance([forbidden]), "a forbidden tool must breach the gate"
+
+    single = case_by_name("one-reminder")
+    doubled = _observation(
+        single,
+        [
+            _step(_schedule(), SCHEDULED),
+            _step(_schedule(instruction="the gym", hour=20), SCHEDULED),
+        ],
+    )
+    assert acceptance([doubled]), "a duplicate effect must breach the gate"
+
+    clean = _observation(single, [_step(_schedule(), SCHEDULED)])
+    assert acceptance([clean]) == [], "a clean one-reminder must pass"
+
+
+# The stop the loop names is the stop that actually fired, never an inference.
 @pytest.mark.asyncio
-async def test_the_real_loop_completes_a_mixed_tool_turn_at_a_measured_rate(selector):
-    from backend.services.trajectory_harness import repeat
+async def test_the_loop_names_the_second_creation_as_its_stop():
+    stage = World([{"kind": "scheduled"}])
 
-    async def once():
-        return await walk(
-            selector,
-            ask=case_by_name("cancel-and-reschedule").ask,
-            world=World([WORKED]),
-            max_steps=3,
-        )
+    async def decide(lines):
+        return ScheduleTaskAction(instruction="the gym", cadence="once", hour=20)
 
-    rate = await repeat(once, lambda trip: len(trip) >= 2, reps=5)
-    assert rate.rate >= 0.8, str(rate)
+    first = ScheduleTaskAction(instruction="call mum", cadence="once", hour=18)
+    result = await run_steps(
+        first,
+        apply=stage.apply,
+        decide=decide,
+        describe=lambda action, kind, outcome: "scheduled",
+        creates=lambda item: isinstance(item, ScheduleTaskAction),
+        max_steps=3,
+    )
+    assert result.stopped == SECOND_CREATE
+    assert len(result.steps) == 1
 
 
-# Every case must be winnable in principle: its required predicates can match
-# the steps the case's own script could produce. This keeps a case from being
-# a measurement of something no loop could ever complete.
+# Every case must be winnable in principle: a synthetic run that satisfies
+# each required effect, `required_times` over, must complete it (cover words
+# included). This keeps a case from measuring something no loop could ever do.
 def test_every_case_has_a_winning_path_by_construction():
     for case in TRAJECTORY_CASES:
-        predicates = case.required
-        assert predicates, f"{case.name} requires nothing"
-        assert case.required_times >= 1, f"{case.name} times must be positive"
-        # A synthetic run of one step per required predicate per pass, in
-        # order, must satisfy the case - otherwise it is unsatisfiable.
-        synthetic = [
-            _step(_synthetic_action(p), {"kind": "done"})
-            for _ in range(case.required_times)
-            for p in predicates
-        ]
-        score = _score(case, synthetic)
+        assert case.required, f"{case.name} requires nothing"
+        if case.honest_failure:
+            continue  # a case with an unreachable goal is not winnable
+        steps = []
+        for i in range(case.required_times):
+            for effect in case.required:
+                step = _synthetic_step(effect)
+                if i < len(case.covers):
+                    step = _with_cover(step, case.covers[i])
+                steps.append(step)
+        score = _score(case, steps)
         assert score.completed, f"{case.name} cannot complete even by construction"
-
-
-def _synthetic_action(predicate):
-    if predicate is is_search:
-        return _search()
-    if predicate is is_manage:
-        return _manage()
-    if predicate is is_schedule:
-        return _schedule()
-    raise AssertionError(f"no synthetic action for {predicate}")
+        assert score.duplicate_effects == 0, f"{case.name} duplicates its own path"
 
 
 def test_tool_name_covers_every_automation_action():
@@ -224,3 +351,37 @@ def test_tool_name_covers_every_automation_action():
     )
     for action in actions:
         assert tool_name(action) in {"manage_tasks", "schedule_task"}
+
+
+# The real loop, the real router. The corrected scorer must never report a
+# trajectory complete unless its path actually holds the required successful
+# effects - the false positive this gate used to reward with `len(trip) >= 2`.
+@pytest.mark.asyncio
+async def test_the_real_loop_is_never_scored_complete_without_its_effects(selector):
+    case = case_by_name("cancel-and-reschedule")
+    for _ in range(3):
+        trip = await walk(
+            selector, ask=case.ask, world=World([WORKED]), max_steps=3
+        )
+        score = score_trajectory(case, trip, 1.0)
+        if score.completed:
+            assert "manage_tasks" in score.path, score
+            assert "schedule_task" in score.path, score
+            assert score.carried is True, score
+
+
+# Two reminders requested is measured incomplete today, and the loop names
+# the real reason it stopped (the creation guard), never an inference.
+@pytest.mark.asyncio
+async def test_two_reminders_is_incomplete_with_a_real_stop(selector):
+    case = case_by_name("two-reminders")
+    trip = await walk(
+        selector,
+        ask=case.ask,
+        world=World([SCHEDULED]),
+        max_steps=3,
+        creates=lambda item: isinstance(item, ScheduleTaskAction),
+    )
+    score = score_trajectory(case, trip, 1.0)
+    assert score.completed is False, f"the guard should cut two writes to one: {score}"
+    assert trip.stopped in {SECOND_CREATE, REPEATED, DECLINED}, trip.stopped

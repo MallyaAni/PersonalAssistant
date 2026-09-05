@@ -7,6 +7,46 @@ was checked by running it, not by reading it. The seven image scenarios can
 be re-run any time with `python -m backend.cli.exercise_image_scenarios`
 inside the backend container.
 
+## 2026-09-05 — Phase 1 evaluation made honest after codex review (PUSHED)
+
+Codex reviewed the Phase 1 baseline and showed four false positives: the
+first scorer credited any step of the right *name*, so a failed reminder for
+the wrong task "completed", two identical wrong reminders "completed" with
+zero duplicates, and list-tasks counted as "carrying" the move request it
+never made. The follow-up makes completion mean the requested effects
+happened, and records why a turn stopped. Verified:
+
+- `trajectory_harness.py`: `RequiredEffect` pairs each required step with the
+  operation, the argument words it must carry, and whether it must have
+  succeeded; the required sequence is matched in order `required_times` over,
+  and `covers` words must appear across the *matched* steps (two copies of one
+  reminder never satisfy a request for two). `honest_failure` semantics for
+  the scripted not-found case. Duplicate = a create beyond the allowance OR
+  identical to an earlier one. `carried` is a diagnostic, independent of
+  success.
+- `turn_steps.py`: `run_steps` returns a `TurnResult` with a real, named stop
+  reason (declined / ceiling / repeated / unapplied / budget / second-create).
+  The recorded reason answers the review's question directly: every
+  `two-reminders` run stops on `SECOND_CREATE` — the repeat guard, not the
+  model, is what cuts two writes to one.
+- `evaluate_trajectories.py`: `acceptance()` is a pure gate (completion and
+  carrying floors, no unauthorized tool, no duplicate effects) that fails the
+  CLI; runs persist per-observation evidence, the model, a case fingerprint,
+  and the commit (`ANIOS_EVALUATION_COMMIT`).
+- The four review reproductions are pinned as regression tests in
+  `test_trajectory_evaluation_behaviour.py`.
+
+Corrected baseline (2026-09-05, two runs, recorded pre-commit as
+`*-nocommit.json`): single_step 3/3, reference 3/3, partial_failure 3/3,
+mixed_tools 0–1/6 (router does the first tool and stops or repeats), and
+multiple_writes 0/3 (all `SECOND_CREATE`) — overall 9–10/18, now honest.
+Carried: single/reference 3/3, mixed_tools 1/6, multiple_writes 0/3. Floors
+in the CLI were then set one miss below these numbers and the gate re-run
+PASS. Verified: full unit suite **2635 passed / 9 skipped** via
+`bash scripts/gate.sh --unit`; trajectory + loop + turn-steps functional
+suite **25 passed** (one transient router-variance failure on the first
+batch run, passed alone and green on re-run).
+
 ## 2026-09-05 — stock-analysis foundation, slice 1: the reproducible daily market snapshot (NOT DEPLOYED)
 
 First slice of the deep-learning research system for the trading agent,
