@@ -87,7 +87,7 @@ class TrainConfig:
     validation_fraction: float = 0.1
     features: str = "raw"  # "raw" | "alpha" | "alpha+edgar" | "raw+edgar"
     label: str = "residual"  # "residual" | "rank"
-    encoder: str = "mlp"  # "mlp" | "gru" | "xsect" | "master" | "lgbm"
+    encoder: str = "mlp"  # mlp | gru | xsect | master | lgbm | chart_cnn
     hidden: int = 128
     dropout: float = 0.1
     heads: int = 4
@@ -100,6 +100,7 @@ class TrainConfig:
     patience: int = 3
     seeds: int = 1
     seed: int = 7
+    cnn_max_train_cells: int = 60_000
     device: str = "cpu"
 
 
@@ -665,6 +666,60 @@ def _lgbm_fold(
     return val_ic, trees
 
 
+# The chart-image CNN (Jiang, Kelly and Xiu 2023) on one fold: train on
+# the labelled cells of the fit range, early-stop on the validation tail,
+# score the test range's cells. Writes per-session standardised scores.
+def _chart_cnn_fold(
+    panel: Panel,
+    features: Features,
+    config: TrainConfig,
+    train: range,
+    test: range,
+    labelled: np.ndarray,
+    scorable: np.ndarray,
+    out: np.ndarray,
+    log: Callable[[str], None] | None,
+) -> tuple[float, int]:
+    from backend.market.chart_cnn import train_and_score
+
+    split = train.stop - max(1, int(len(train) * config.validation_fraction))
+    train_cells = np.argwhere(labelled[train.start : split])
+    train_cells[:, 0] += train.start
+    val_cells = np.argwhere(labelled[split : train.stop])
+    val_cells[:, 0] += split
+    test_cells = np.argwhere(scorable[test.start : test.stop])
+    test_cells[:, 0] += test.start
+    # The CNN reads a fixed 20-session image; cap the fit set so a fold
+    # renders in minutes, not hours, keeping every session represented.
+    rng = np.random.default_rng(config.seed)
+    if len(train_cells) > config.cnn_max_train_cells:
+        train_cells = train_cells[
+            rng.choice(len(train_cells), config.cnn_max_train_cells, replace=False)
+        ]
+    scores, acc, epochs_run = train_and_score(
+        panel,
+        features.labels,
+        train_cells,
+        val_cells,
+        test_cells,
+        device=config.device,
+        epochs=config.epochs,
+        seed=config.seed,
+        log=log,
+    )
+    by_session: dict[int, list[int]] = {}
+    for i, (t, _) in enumerate(test_cells):
+        by_session.setdefault(int(t), []).append(i)
+    for t, rows in by_session.items():
+        values = scores[rows]
+        known = np.isfinite(values)
+        if known.sum() < 2:
+            continue
+        cols = test_cells[rows, 1][known]
+        out[t, cols] = _standardise(values[known])
+    return acc, epochs_run
+
+
 # Run the whole walk-forward: train each fold on its purged range (one
 # model per seed, scores averaged), score its test range, assemble one
 # out-of-sample score matrix.
@@ -701,6 +756,12 @@ def walk_forward(
                 features, config, train, test, labelled, scorable, scores, log
             )
             records.append(FoldResult(train, test, val_ic, trees))
+            continue
+        if config.encoder == "chart_cnn":
+            acc, epochs_run = _chart_cnn_fold(
+                panel, features, config, train, test, labelled, scorable, scores, log
+            )
+            records.append(FoldResult(train, test, acc, epochs_run))
             continue
         fold_scores = np.full(
             (config.seeds,) + features.labels.shape, np.nan, dtype=np.float32

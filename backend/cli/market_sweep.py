@@ -131,6 +131,13 @@ SWEEP: dict[str, TrainConfig] = {
     "mlp_technical_h60": TrainConfig(
         features="alpha+edgar+technical", label="rank", encoder="mlp", horizon=60
     ),
+    # The chart-image CNN of Jiang, Kelly and Xiu (2023).
+    "chart_cnn_h20": TrainConfig(
+        features="raw", label="rank", encoder="chart_cnn", horizon=20, epochs=5
+    ),
+    "chart_cnn_h5": TrainConfig(
+        features="raw", label="rank", encoder="chart_cnn", horizon=5, epochs=5
+    ),
     "xsect_raw_rank": TrainConfig(features="raw", label="rank", encoder="xsect"),
     "mlp_raw_residual": TrainConfig(),
 }

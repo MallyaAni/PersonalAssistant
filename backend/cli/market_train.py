@@ -42,7 +42,9 @@ def build_parser() -> argparse.ArgumentParser:
     """Build the command-line parser for the training run."""
     parser = argparse.ArgumentParser(description="Train and measure the ranker.")
     parser.add_argument(
-        "--encoder", choices=("mlp", "gru", "xsect", "master", "lgbm"), default="mlp"
+        "--encoder",
+        choices=("mlp", "gru", "xsect", "master", "lgbm", "chart_cnn"),
+        default="mlp",
     )
     parser.add_argument(
         "--features",
