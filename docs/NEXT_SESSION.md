@@ -7,6 +7,98 @@ was checked by running it, not by reading it. The seven image scenarios can
 be re-run any time with `python -m backend.cli.exercise_image_scenarios`
 inside the backend container.
 
+## 2026-09-05 (afternoon) — the trader's toolkit measured, a measurement bug fixed, the tape arrives (PUSHED, NOT DEPLOYED)
+
+Continues the two entries below it. Commits `0fd59012` → `bc20418d`,
+gated on spark1. Every number was produced by running the code.
+
+**A bug in my own measurement, fixed in `dc8f8bdc`.** The two theme
+baselines fed to every model as features are NaN for untagged names (right
+as controls), and the model's eligibility mask requires every feature
+finite, so every learned model in the night's sweep trained and scored on
+~96 themed names while the momentum reference beside it used 532. The
+model rows in the previous entry's table are void as comparisons (kept as
+`data/market/models/sweep_themed_only.tsv`). Untagged names now carry the
+market series for those two inputs (506 eligible names per session); the
+sweep table has a `names` column. The controls, the fundamental blend, the
+technical features and the book were never affected. Re-measured so far on
+503 names (rank IC, 10 bps): lgbm alpha h10 0.001, h5 -0.001, h60 0.024 (t
+0.75); lgbm alpha+edgar h20 0.003; lgbm +technical h20 0.019 (t 1.12), h60
+0.033 (t 1.22); mlp alpha h10 -0.002. Remaining rows (mlp h5, mlp edgar,
+mlp technical, xsect, master, chart CNN h20/h5) append to `sweep.tsv` on
+the desktop as the run completes.
+
+**The trader's toolkit** (`backend/market/technical.py`, 33 features: EMA
+9/21/50/200 and SMA 200 distances and slopes, stack order, crossovers,
+weekly EMAs, 52-week high/low, candles, EMA spreads with slope-change
+"converging" flags, the normalised MACD family), each alone through the
+harness on 532 names since 2015:
+
+| feature as the ranking | h | rank IC | t | net Sharpe |
+| --- | --- | --- | --- | --- |
+| distance above the 52-week low | 20 | 0.041 | 2.60 | 1.05 |
+| distance above the 52-week low | 60 | 0.084 | 3.45 | 1.23 |
+| extension above the 21 EMA (a fade) | 5 | -0.022 | -2.79 | -0.94 |
+| 9/21 cross up within 5 days | 5 | -0.007 | -1.79 | -2.10 |
+| 50/200 golden cross within 5 days | 5 | -0.007 | -2.91 | -0.71 |
+| 21/50 converging (slope turning) | 20 | 0.011 | 0.94 | -0.05 |
+| candles, MACD family, trend stack | any | ~0 | | negative |
+
+The 52-week-low distance is positive in every sub-period (0.036, 0.025,
+0.030, 0.055) and in both full-history and later-listed names. EMAs carry
+information as levels price returns to, not as trend confirmation; the
+crosses lose; the slope-turning flags are small and positive at 20 days.
+
+**The composite** (fundamental blend + 52-week-low trend + 21-EMA fade,
+`market_book --score composite`, now the default): rank IC 0.047 (t 3.73),
+hit 0.65, net Sharpe 1.06 at h20; the book Sharpe 1.08 vs 0.92 benchmark,
+max drawdown -8%. SanDisk ranked 1.00 on it through its July pullback to
+the 200 EMA at $1,016 (the operator's example), the 21/50 convergence flag
+was on from 08-27 and the cross came 09-04 with the 12% day; across all
+names that flag raises P(>8% in 3 sessions) from 2.3% to 3.0%.
+
+**Rotation from filings** (`market_rotation`): each theme's median
+fundamental blend as every member's score has rank IC 0.049 (t 2.39, net
+Sharpe 0.48) at h20 while theme price momentum is -0.036 on the same
+sessions. As of 09-04: memory-storage revenue growth 35% and accelerating
+fastest, networking 32%, ai-compute 29%, software 19% flat, power-cooling
+10% decelerating.
+
+**The release reader, first reading** (51 themed names scored at the time,
+`edgar_tone` frames synced to the desktop): tone_guidance h20 IC 0.054 (t
+3.68) net Sharpe 0.74; guidance change 0.052 (t 3.93); tone blend
+(guidance, demand, change) 0.062 (t 4.24) net Sharpe 1.10; the fundamental
+blend on the same names 0.028 (t 1.35). Capex and supply commentary carry
+nothing alone. The strongest signal so far; a ~40-name cross-section, to be
+re-measured when the batch completes (74 of 109 themed names stored on
+spark1 at the time of writing; the rest of the universe since 2020 is
+queued behind it, `~/tone_rest.log`).
+
+**Alpaca 15-minute bars** (`backend/market/alpaca.py`, `market_intraday`;
+keys in `.env`): the free IEX feed serves 15-minute bars back to 2016.
+Ten session features (VWAP trend, first/last hour, reversal, bars above the
+15-minute 9 EMA, EMA crosses as chop, range position, volume front-load);
+SanDisk's 12% day reads as a clean trend day, its +5% day of 08-31 as chop
+(9 crosses). The universe fetch is running on the desktop
+(`E:\AgentWorkspace\tmp\intraday_refresh.log`, ~30 s per name, ~4 h).
+
+**The tape encoder** (`backend/market/tape.py`, encoder "tape"): the
+26-slot tape of each session (time-slotted, gaps flat with zero volume,
+relative to the open) for the last five sessions through 1-D convolutions,
+the daily window through an MLP, merged and attended across names. A
+planted intraday pattern is recovered out of sample in the test. Sweep
+runs `tape_h5` and `tape_h20` wait on the fetch. Torch encoders now train
+one padded batch per step (`1d001b71`).
+
+**Next atomic task.** When the fetch finishes: run
+`scratchpad/intraday_controls.py`-style controls (kept in the session
+scratchpad; re-derive from `alpaca.FEATURE_NAMES`) and `market_sweep
+--only tape_h5,tape_h20 --device cuda`. When the batch finishes: rerun the
+tone controls on all 109 names, then `market_sweep` with
+"alpha+edgar+technical+tone" for lgbm/mlp/xsect at h20, then put whichever
+score wins the harness into `market_book`. Then a point-in-time universe
+remains the honesty gap (survivorship).
+
 ## 2026-09-05 (day) — filings are the signal: the EDGAR layer, the book, and the release reader (PUSHED, NOT DEPLOYED)
 
 Continues the entry below it. Commits `96ee4e6f` (EDGAR layer), `2fc6610e`
@@ -220,6 +312,19 @@ evidence check now tolerates two lines). **UNVERIFIED:**
 against a model at six concurrent requests). The local
 `.env`'s internet server entry was behind the Spark's (17 of 23 forwarded
 names) and is refreshed; the deployment was never affected.
+
+**Opencode's state (checked 2026-09-05 afternoon):** nothing pushed since the
+Phase 1 scorer fix (`29c48ea3`). Its Spark checkout is behind `origin/main`
+with no unpushed commits and two uncommitted things: `Dockerfile` gains `git`
+in the *test* image for the repo-server tests (right, and it should commit
+it), and two trajectory runs recorded at `2fc6610` - the tree before the
+step-line fix - reading 9/18 and 9/18, i.e. the pre-repair baseline, not a
+regression. Its second run showed `reference` at 2/3 breaching a 0.67 floor:
+2/3 is 0.667, so that floor tolerated no miss; the floors for three-sample
+categories are 0.66 now. When reviews are hosted by `discovery-worker`, the
+*serving* image needs `git` too (the repo server shells out to it); that is
+the Dockerfile's runtime stage, left to opencode since the file is in flight
+there.
 
 **Next atomic tasks, in order:**
 1. Read the security functional test's result; compare the pilot review's
