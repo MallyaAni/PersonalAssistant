@@ -4,6 +4,7 @@ from typing import Any
 
 from .actions import CreateDiagramAction
 from .base import BuiltinTool, required_text, subject_schema
+from .contracts import EffectContract
 
 NAME = "create_diagram"
 
@@ -28,6 +29,7 @@ TOOL = BuiltinTool(
         "🗺️ Drawing the map…",
     ),
     family="diagrams",
+    contract=EffectContract(effect="write", cost="expensive", creates=True),
 )
 
 

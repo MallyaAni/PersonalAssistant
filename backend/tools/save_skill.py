@@ -4,6 +4,7 @@ from typing import Any
 
 from .actions import SaveSkillAction
 from .base import BuiltinTool, required_text
+from .contracts import EffectContract
 
 NAME = "save_skill"
 
@@ -50,6 +51,12 @@ TOOL = BuiltinTool(
         "⚡ Wiring up a new skill…",
     ),
     family="skills",
+    contract=EffectContract(
+        effect="write",
+        cost="fast",
+        creates=True,
+        idempotency=lambda action: " ".join(action.name.casefold().split()),
+    ),
 )
 
 

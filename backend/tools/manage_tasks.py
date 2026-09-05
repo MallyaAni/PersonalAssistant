@@ -4,6 +4,7 @@ from typing import Any
 
 from .actions import ManageTasksAction
 from .base import BuiltinTool
+from .contracts import EffectContract
 
 NAME = "manage_tasks"
 
@@ -128,6 +129,22 @@ TOOL = BuiltinTool(
     ),
     family="scheduling",
     core=True,
+    contract=EffectContract(
+        effect="write",
+        cost="fast",
+        reversible="scheduled_task",
+        idempotency=lambda action: "|".join(
+            (
+                action.operation,
+                " ".join(action.which.casefold().split()),
+                str(action.cadence or ""),
+                str(action.hour),
+                str(action.minute),
+                str(action.weekday if action.weekday is not None else ""),
+                str(action.on_date or ""),
+            )
+        ),
+    ),
 )
 
 

@@ -28,6 +28,7 @@ dependencies = [
     "tokenizers>=0.20.0,<1.0.0",
     # See requirements.txt: 2.0 removes mcp.server.fastmcp.
     "mcp>=1.0.0,<2.0.0",
+    "jsonschema>=4.20,<5",
     "cryptography>=42.0.0",
     "argon2-cffi>=23.1.0",
     "opentelemetry-api==1.42.1",

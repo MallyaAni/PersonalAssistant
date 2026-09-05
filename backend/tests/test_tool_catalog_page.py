@@ -49,7 +49,10 @@ def test_the_page_says_when_each_tool_is_put_in_front_of_the_router():
     for line in page.splitlines():
         for name in core_tool_names():
             if line.startswith(f"| `{name}`"):
-                assert line.rstrip().endswith("| always |"), line
+                # The `loaded` cell by position: tool, gist, arguments,
+                # loaded, effect.
+                cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+                assert cells[3] == "always", line
 
 
 def test_renaming_a_tool_changes_the_page():

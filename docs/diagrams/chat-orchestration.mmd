@@ -27,22 +27,24 @@ flowchart TB
     Referent -->|show: newest match re-streamed<br/>as artifact_started + artifact_ready| Stream
     Referent -->|ambiguous edit or absent| Stream
 
-    Selector -->|search_web, search_history, get_weather,<br/>search_credits, a toolbox tool, or neither| Memory[MemoryCoordinatorAgent<br/>personal memory retrieval]
+    Selector -->|neither| Memory[MemoryCoordinatorAgent<br/>personal memory retrieval]
     Memory --> ArtifactGate{DeepSeek V4 Flash<br/>artifact modality gate}
     ArtifactGate -->|image required| Visual[Owner-scoped pixel-vector lookup<br/>then description-vector fallback]
     ArtifactGate -->|no artifact needed| Context[Curated context]
     Visual --> VisualPolicy[DeepSeek V4 Flash<br/>visual-memory selection]
     VisualPolicy --> Context
-    Selector -->|schedule_task, manage_tasks,<br/>manage_check_ins, scout_schedule| Steps
-    Steps[Turn step loop · run_steps<br/>at most 3 steps, 45s of wall clock] --> Apply[Carry out one step<br/>outcome recorded: done, failed,<br/>invalid, not_found, none]
-    Apply -->|what was done and how it went,<br/>a failed step marked as not done| Selector
-    Apply -->|no next tool · a repeat · a second creation<br/>· the step ceiling · the clock| Memory
+    Selector -->|search_web, search_history, get_weather,<br/>search_credits, a toolbox tool, schedule_task,<br/>manage_tasks, manage_check_ins, scout_schedule,<br/>save_skill, manage_skills| Steps
+    Steps[Turn step loop · run_steps<br/>TURN_MAX_STEPS, TURN_STEP_BUDGET_SECONDS read<br/>before every decision and action,<br/>TURN_MAX_CREATES new things] --> Apply[Carry out one step · outcome recorded<br/>found, done, scheduled · failed, not_found,<br/>refused, blocked · unknown when cut at the deadline]
+    Apply -->|what was done and how it went;<br/>offered only tools whose effect contract<br/>allows a later step: a read or a write to<br/>this system's records, not expensive,<br/>no approval| Selector
+    Apply -->|no next tool · needs input · router failed<br/>· a repeat by key · the creation allowance<br/>· the step ceiling · the clock| Memory
+    Contracts[Effect contracts on every tool row<br/>effect · cost · key · creates · approval · retry] -.-> Steps
+    Contracts -.-> MCP
 
-    Selector -->|search_web query,<br/>model-authored| Personalize{DeepSeek V4 Flash<br/>does this depend on who is asking?<br/>which interests to search with}
+    Apply -->|search_web query,<br/>model-authored| Personalize{DeepSeek V4 Flash<br/>does this depend on who is asking?<br/>which interests to search with}
     Persona[Interests as a person<br/>seven dance rows are one fact<br/>cached on the interest set] -.-> Memory
     Personalize -->|terms held into the query in code,<br/>disposition kept for the ranking| Search[Privacy-screened internet search<br/>credit-accurate budget · a failed search<br/>becomes turn state the reply admits]
-    Selector -->|search_history query| History[Transcript-store semantic search<br/>top 40 by vector, both voices, HNSW<br/>ONNX cross-encoder cuts to 12, fail-soft]
-    Selector -->|toolbox tool| MCP[Guarded MCP<br/>invocation]
+    Apply -->|search_history query| History[Transcript-store semantic search<br/>top 40 by vector, both voices, HNSW<br/>ONNX cross-encoder cuts to 12, fail-soft]
+    Apply -->|toolbox tool| MCP[Guarded MCP invocation<br/>per-tool approval and replay policy<br/>whole-schema validation · nested screening]
     MCP --> Context
     Search --> Context
     History --> Context
@@ -65,7 +67,7 @@ flowchart TB
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef failure fill:#fff3cd,stroke:#b78b20,color:#4d3900;
     class User,UI interface;
-    class API,Selector,Search_Tool,Toolbox,Presentation,Progress,Diagram,Artifact,ImageAction,ImageArtifact,Memory,Visual,MCP,Search,History,Context,Inference,Persist,Stream,Proposal,FollowUp,Steps,Apply application;
+    class API,Selector,Search_Tool,Toolbox,Presentation,Progress,Diagram,Artifact,ImageAction,ImageArtifact,Memory,Visual,MCP,Search,History,Context,Inference,Persist,Stream,Proposal,FollowUp,Steps,Apply,Contracts application;
     class Persona application;
     class Main,DiagramModel,Interest,ArtifactGate,VisualPolicy,Referent,Personalize model;
     class Failure failure;

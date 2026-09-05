@@ -2,6 +2,58 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-05 - Phase 2 of the execution-boundary repair, first checkpoint (NOT DEPLOYED, partly verified)
+
+The loop's bounds are now structural, and the measurement says what still
+stands between the router and a two-step turn. Built and unit-verified:
+
+- `backend/core/effects.py` (re-exported as `backend/tools/contracts.py`): an
+  `EffectContract` on every built-in row and every internet tool - effect,
+  cost, natural key, creates, reversible, approval, retry. It replaces the
+  automation allowlist as the later-step rule (`later_step_tools`), the
+  trust-equals-replay-safe MCP rule, the creation lambda and the repr repeat
+  guard. A trusted server's tool is `mutate_external` unless the operator
+  declares it a `read`; `MCP_SERVERS_JSON` entries take a per-tool `tools`
+  object (`effect`, `retry`, `approval`, `idempotent`).
+- `backend/services/turn_steps.py`: typed decisions (`Act`, `Done`,
+  `NeedsInput`, `Unavailable`) so a failed router is never a clean stop; the
+  budget re-read after every decision and before every action, with the
+  in-flight later step cut at the deadline and recorded `unknown`; repeats
+  judged on the tool's key; a creation allowance (`TURN_MAX_CREATES`, 3)
+  instead of one creation per turn. The isolated deadline probe of 2026-09-04
+  (second action applied at 81 ms against a 20 ms budget) is now a test.
+- `MainActionSelector.decide` returns the typed decision (`select` keeps its
+  contract); the decision cache keys the full tool definitions, not names;
+  a later step is offered what the contracts allow with the budget left
+  (`later_step_seconds`, `excluding`), including the search and read-only
+  MCP tools.
+- The step loop moved inside the reply path (`_task_turn_context` called from
+  `_process_assistant_request` once the turn's context is built) with one
+  executor, `_execute_step`, covering search, history recall, the person's
+  own tools and the bookkeeping tools; a step's events are gathered and sent
+  after the loop. A firing still takes one step and is refused the automation
+  tools (three walls, unchanged).
+- MCP: whole-schema argument validation (`jsonschema`, new dependency),
+  recursive outbound screening of nested strings, per-tool approval and retry.
+- `Ranking.on_subject` is three-valued; only an explicit False is off-subject.
+- The trajectory harness measures the production later-step policy by
+  default; `TOOL_CATALOG.md` gains an effect column; the chat-orchestration
+  diagram shows the loop over every runnable action.
+
+Measured on the real router (`evaluate_trajectories --reps 3`, run recorded
+under `docs/evals/runs/trajectories/`): overall still 10/18. The paths moved
+and the numbers did not, and the evidence says why: `two-reminders` now
+takes two steps but the router wrote "Remind me to call mum" for both (at
+18:00 and again at 20:00), because the line it reads back - "Scheduled tasks:
+once at 18:00" - does not carry the instruction, so it cannot tell which
+reminder was done. `cancel-and-reschedule` reschedules the 5pm reminder in
+one `manage_tasks` call (a defensible reading the case does not accept) and
+then repeats it for the same reason. `search-then-remind` completed once
+with a near-duplicate (the same reminder with a trailing period, a different
+key), and twice took no tool on the first decision. One acceptance breach:
+that duplicate. Unit: the 29 focused suites plus 4 new test modules pass
+(366 + 147); the full suite's run was in progress at this checkpoint.
+
 ## 2026-09-05 - Phase 1 evaluation made honest: completion measures outcomes, not tool names
 
 Codex review of the trajectory baseline found four false positives: the first

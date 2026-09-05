@@ -4,6 +4,7 @@ from typing import Any
 
 from .actions import ManageSkillsAction
 from .base import BuiltinTool
+from .contracts import EffectContract
 
 NAME = "manage_skills"
 
@@ -39,6 +40,13 @@ TOOL = BuiltinTool(
         "🗂️ Looking through your skills…",
     ),
     family="skills",
+    contract=EffectContract(
+        effect="write",
+        cost="fast",
+        idempotency=lambda action: "|".join(
+            (action.operation, " ".join(action.which.casefold().split()))
+        ),
+    ),
 )
 
 

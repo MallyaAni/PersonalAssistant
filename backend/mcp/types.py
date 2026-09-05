@@ -5,6 +5,26 @@ from typing import Any
 
 
 @dataclass(frozen=True, slots=True)
+class ToolPolicy:
+    """What the operator declares about one tool on a server, beyond the
+    server's classification: what the call does (`read`, `write`, `send`,
+    `spend`, `mutate_external`), whether a dropped call may be replayed
+    (`replay_safe`, `once`, `never`), whether a person must say yes first
+    (`never`, `consequential`, `always`), and whether the server dedupes the
+    call by its arguments so a replay cannot double its effect.
+
+    An empty field inherits from the classification. Trust is not
+    idempotency: a `trusted` server's write is still a write, and this is
+    where a tool on such a server says it is in fact a read.
+    """
+
+    effect: str = ""
+    retry: str = ""
+    approval: str = ""
+    idempotent: bool = False
+
+
+@dataclass(frozen=True, slots=True)
 class MCPServerConfig:
     """One configured MCP server and the trust the operator assigns it.
 
@@ -63,6 +83,16 @@ class MCPServerConfig:
     # staying down until an operator edits the URL. Off by default: a server
     # with a stable address should fail loudly at that address, not be hunted.
     discover: bool = False
+    # Per-tool declarations, by tool name. Read through `policy_for`; a tool
+    # with none inherits everything from the classification.
+    tool_policies: tuple[tuple[str, ToolPolicy], ...] = ()
+
+    # The operator's declaration for one tool, or None when there is none.
+    def policy_for(self, tool_name: str) -> ToolPolicy | None:
+        for name, policy in self.tool_policies:
+            if name == tool_name:
+                return policy
+        return None
 
     # Reject a configuration that cannot be connected to, rather than failing
     # later with a confusing transport error.

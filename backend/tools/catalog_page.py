@@ -46,6 +46,14 @@ LEGEND = """
 - **Arguments** are what the model must fill in. A tool that takes a subject
   or an instruction is one the model has to state its reading of the request
   for, which is what makes a mistaken choice visible before the turn is spent.
+- **Effect** is the tool's own account of what it does to the world, read by
+  the loop's policy (`backend/core/effects.py`): `read` changes nothing,
+  `write` changes this system's records, `send` puts words in front of
+  another person, `spend` uses a budget that does not come back, and
+  `mutate_external` changes something outside. Then how long it takes -
+  `fast`, `slow`, `expensive` - and `creates` when a call makes a new thing.
+  A later step of a turn may start only a read or a write that is not
+  expensive; the rest are the turn's own request or nothing.
 """
 
 
@@ -61,6 +69,19 @@ def _loaded(row: BuiltinTool, core: frozenset[str], pictures: frozenset[str]) ->
 def _arguments(row: BuiltinTool) -> str:
     properties = (row.schema or {}).get("properties") or {}
     return ", ".join(f"`{name}`" for name in sorted(properties)) or "none"
+
+
+# The tool's contract in three words: what it does, how long it takes, and
+# whether it makes something new. `creates` for a tool whose operations
+# differ means some of them do.
+def _effect(row: BuiltinTool) -> str:
+    contract = row.contract
+    parts = [f"`{contract.effect}`", f"`{contract.cost}`"]
+    if contract.creates:
+        parts.append("`creates`")
+    if contract.approval != "never":
+        parts.append(f"`approval: {contract.approval}`")
+    return " · ".join(parts)
 
 
 # One sentence of the router's own account of the tool. The full text is the
@@ -87,17 +108,18 @@ def render() -> str:
         f"`{SEARCH_TOOL}` is not a built-in row. It is assembled from whichever "
         "search server is wired at the time, so it is always offered and never "
         "catalogued, and its arguments come from that server rather than from "
-        "this repository.\n"
+        "this repository. Its effect is a `read`, `slow`, keyed on the query, so "
+        "a later step of a turn may search when the budget has time for it.\n"
     )
     for family in sorted(families):
         parts.append(f"\n## {family.capitalize()}\n")
-        parts.append("| tool | what it does | arguments | loaded |")
-        parts.append("| --- | --- | --- | --- |")
+        parts.append("| tool | what it does | arguments | loaded | effect |")
+        parts.append("| --- | --- | --- | --- | --- |")
         for row in sorted(families[family], key=lambda item: item.name):
             note = f" *(needs the {gated[row.name]} service)*" if row.name in gated else ""
             parts.append(
                 f"| `{row.name}`{note} | {_gist(row)} | {_arguments(row)} "
-                f"| {_loaded(row, core, pictures)} |"
+                f"| {_loaded(row, core, pictures)} | {_effect(row)} |"
             )
         parts.append("")
     parts.append(

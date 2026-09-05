@@ -50,8 +50,13 @@ class Ranking:
     scores: list[float] | None
     events: bool = False
     travel: bool = False
-    # True unless the model says the results describe a different subject.
-    on_subject: bool = True
+    # True unless the model says the results describe a different subject;
+    # None when no judgement was made at all - the call failed, or the
+    # answer could not be read. A caller must not read None as either
+    # verdict: an unjudged ranking is neither off the subject nor a reason
+    # to personalise (2026-09-04 review: failure defaulted to True and so
+    # conflated "not evaluated" with "relevant").
+    on_subject: bool | None = True
 _MAX_TOKENS = 256
 _CONTENT_CHARS = 400
 
@@ -110,11 +115,11 @@ async def judge_results(
         answer = await asyncio.to_thread(llm.chat, messages, _MAX_TOKENS, _SCHEMA, 0.0)
     except Exception:
         logger.warning("Result ranking call failed; keeping provider order", exc_info=True)
-        return Ranking(None, False, False, True)
+        return Ranking(None, False, False, None)
     order = _parse_order(answer, len(results))
     events = _parse_flag(answer, "events")
     travel = _parse_flag(answer, "travel")
-    on_subject = _parse_flag(answer, "on_subject", default=True)
+    on_subject = _parse_flag(answer, "on_subject", default=None)
     if order is None:
         return Ranking(None, events, travel, on_subject)
     scores = [0.0] * len(results)
@@ -125,8 +130,9 @@ async def judge_results(
 
 # One of the model's verdicts; `default` when it is missing or unreadable,
 # so a flag that means "something is wrong" (on_subject false) is never
-# produced by a parse failure.
-def _parse_flag(answer: Any, name: str, default: bool = False) -> bool:
+# produced by a parse failure. A caller that must tell "unjudged" from a
+# verdict passes None as the default.
+def _parse_flag(answer: Any, name: str, default: bool | None = False) -> bool | None:
     import json
 
     payload = answer

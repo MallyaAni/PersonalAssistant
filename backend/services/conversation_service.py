@@ -7,7 +7,7 @@ import time
 import uuid
 from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import suppress
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
@@ -115,8 +115,16 @@ from backend.services.checkin_arming import (
     waiting_subjects,
 )
 from backend.tasks.repository import ScheduledTaskRepository
-from backend.services.turn_steps import run_steps
-from backend.tools import AUTOMATION_TOOLS, describe_action, waiting_line
+from backend.services.turn_steps import UNAPPLIED, Decision, run_steps
+from backend.core.effects import EffectContract
+from backend.tools import (
+    action_creates,
+    action_key,
+    describe_action,
+    waiting_line,
+)
+from backend.tools import discuss_image as discuss_image_tool
+from backend.tools import show_image as show_image_tool
 
 logger = logging.getLogger(__name__)
 
@@ -195,6 +203,14 @@ _STEP_FAILURES = {
     "invalid": "was refused as invalid",
     "not_found": "found nothing to act on",
     "none": "had nothing to do",
+    "unavailable": "could not run here",
+    "refused": "was refused",
+    "blocked": "was withheld by the privacy screen",
+    "needs_place": "needs to know where they are first",
+    "nothing": "found nothing",
+    # Cut at the deadline: dispatched, outcome never seen. Said plainly so
+    # the next decision does not repeat it as though it had not happened.
+    "unknown": "was cut at the deadline; whether it happened is unknown",
 }
 
 
@@ -203,7 +219,40 @@ def _step_line(action: MainAction, kind: str, outcome: dict[str, Any] | None = N
     label, detail = described if described is not None else (kind, "")
     line = f"{label}: {detail}" if detail else label
     went = _STEP_FAILURES.get(str((outcome or {}).get("kind") or ""))
-    return f"{line} [{went}]" if went else line
+    if went:
+        return f"{line} [{went}]"
+    # A read that found something says how much, so the next decision
+    # knows the evidence is in hand rather than searching again.
+    count = (outcome or {}).get("count")
+    if isinstance(count, int) and count > 0:
+        return f"{line} ({count} results)"
+    return line
+
+
+# Everything a step needs beyond its action: the turn's context to write
+# into, the words asked, the trace, the vector the turn already computed,
+# the recent history, where to raise events, the pictures retrieval matched,
+# and whether anyone is watching.
+@dataclass(frozen=True, slots=True)
+class _StepFrame:
+    context: dict[str, Any]
+    query: str
+    conversation_id: str
+    trace_id: str
+    query_embedding: list[float] | None
+    history: list[dict[str, Any]]
+    emit: Callable[[ChatStreamEvent], None]
+    image_matches: list[dict[str, Any]]
+    unattended: bool
+
+
+# Tools whose contracts allow a later step but which the loop's executor does
+# not carry out: showing a picture again streams an artifact from its own
+# branch, and discussing one runs nothing at all. Named off the rows so a
+# rename cannot leave a stale string here.
+_NOT_IN_LOOP: frozenset[str] = frozenset(
+    {show_image_tool.NAME, discuss_image_tool.NAME}
+)
 
 
 def _planner_history(
@@ -784,6 +833,12 @@ _results_off_subject: ContextVar[bool] = ContextVar("results_off_subject", defau
 # place it can mean anything: a search engine has no way to prefer the
 # unfamiliar, and a ranker does.
 _how_they_choose: ContextVar[tuple[str, ...]] = ContextVar("how_they_choose", default=())
+# The pictures retrieval matched this turn, kept for a search step: the
+# outbound query names what a recalled picture shows, and the step loop
+# runs after retrieval rather than inside it.
+_turn_image_matches: ContextVar[tuple[dict[str, Any], ...]] = ContextVar(
+    "turn_image_matches", default=()
+)
 
 
 # The words of one recalled memory item, whatever field the store put them in.
@@ -1033,18 +1088,6 @@ def _mark_turn(
         context["followup"] = resolved.as_dict(limit=600)
     if extra_context:
         context.update(extra_context)
-
-
-# The action the reply path can still execute itself, or None. Search and
-# the user's own tools survive to the assistant path; anything else that
-# reached it matched an action whose service is not wired, and is dropped
-# rather than carried into the reply as though it had run.
-def _runnable(action: MainAction) -> MainAction:
-    return (
-        action
-        if isinstance(action, SearchAction | ToolboxAction | RecallHistoryAction)
-        else None
-    )
 
 
 # The time window the model stated in its tool call, as timezone-aware
@@ -2295,40 +2338,6 @@ class ConversationService:
             },
         }
 
-    # Stream every optional retrieval and tool event into one prompt context.
-    async def _stream_optional_context(
-        self,
-        context: dict[str, Any],
-        user_id: str,
-        query: str,
-        conversation_id: str,
-        trace_id: str,
-        query_embedding: list[float] | None,
-        action: MainAction,
-        active_image_artifact_id: str | None = None,
-        history: list[dict[str, Any]] | None = None,
-    ) -> AsyncGenerator[ChatStreamEvent, None]:
-        async for event in self._stream_retrieved_context(
-            context,
-            user_id,
-            query,
-            trace_id,
-            query_embedding,
-            action,
-            active_image_artifact_id,
-            history=history,
-        ):
-            yield event
-        async for event in self._stream_tool_context(
-            context,
-            user_id,
-            query,
-            conversation_id,
-            trace_id,
-            action,
-        ):
-            yield event
-
     # Find stored images whose pixels match a semantically approved recall.
     async def _load_image_matches(
         self,
@@ -2649,18 +2658,11 @@ class ConversationService:
                     exc_info=True,
                 )
 
-        # The model asked to look back before answering. Enrich silently -
-        # no interface event exists for this yet - and never let a recall
-        # failure cost the turn it was meant to help.
-        if isinstance(action, RecallHistoryAction):
-            await self._recall_history_evidence(
-                context, user_id, action, history, query_embedding
-            )
-
-        async for event in self._stream_web_search(
-            context, query, action, image_matches, trace_id, history=history
-        ):
-            yield event
+        # The recall and the search that used to follow here are steps of
+        # the turn's loop now (`_execute_step`), run after retrieval with
+        # this same context. The pictures matched here are what a search
+        # step needs from retrieval, so they are kept for it.
+        _turn_image_matches.set(tuple(image_matches))
 
     # Search the transcript store for what the model asked to find, and put
     # the excerpts where the prompt renders them as the user's own record.
@@ -3128,7 +3130,13 @@ class ConversationService:
             except Exception:
                 place = ""
             candidates = list(gathered)
-            verdict: dict[str, bool] = {"events": False, "travel": False, "on_subject": True}
+            # `on_subject` is three-valued: True, False, or None for a ranking
+            # that was never judged. Only an explicit False is off the subject.
+            verdict: dict[str, bool | None] = {
+                "events": False,
+                "travel": False,
+                "on_subject": True,
+            }
             # The ranker sees what was actually searched beside what was
             # asked: a follow-up like "does only one person win?" names no
             # subject, and the query - which now carries it - does.
@@ -3160,9 +3168,17 @@ class ConversationService:
             # set was judged off the subject (2026-09-03). The first round
             # carried the place; judged on its own, it is the answer when it
             # is on subject, and the drifted round costs nothing more.
-            if not verdict["on_subject"] and first_round and len(first_round) < len(candidates):
+            if (
+                verdict["on_subject"] is False
+                and first_round
+                and len(first_round) < len(candidates)
+            ):
                 retry = list(first_round)
-                again: dict[str, bool] = {"events": False, "travel": False, "on_subject": True}
+                again: dict[str, bool | None] = {
+                    "events": False,
+                    "travel": False,
+                    "on_subject": True,
+                }
 
                 async def rank_first(_question: str, _documents: list[str]) -> list[float] | None:
                     ranking = await judge_results(self.llm, judged_question, place, retry, known=known)
@@ -3177,7 +3193,7 @@ class ConversationService:
                     retry,
                     max(1, max_results or settings.SEARCH_MAX_RESULTS),
                 )
-                if again["on_subject"]:
+                if again["on_subject"] is True:
                     logger.info(
                         "Trace %s first search round is on subject on its own; %d later results dropped",
                         trace_id,
@@ -3216,8 +3232,8 @@ class ConversationService:
                         found.dropped,
                     )
             _results_were_travel.set(verdict["travel"])
-            _results_off_subject.set(not verdict["on_subject"])
-            if not verdict["on_subject"]:
+            _results_off_subject.set(verdict["on_subject"] is False)
+            if verdict["on_subject"] is False:
                 logger.info("Trace %s: results judged off the asked subject", trace_id)
         return gathered, succeeded
 
@@ -3409,6 +3425,7 @@ class ConversationService:
         _results_were_events.set(False)
         _results_were_travel.set(False)
         _results_off_subject.set(False)
+        _turn_image_matches.set(())
         limit = await self._search_limit()
         if limit is not None:
             current_search_limit.set(limit)
@@ -3446,26 +3463,18 @@ class ConversationService:
                 yield event
             return
 
-        # Task and skill bookkeeping happens before the reply, and the
-        # ordinary reply path then reports it: the model words the
-        # confirmation from a record of what was actually saved, in the
-        # channel's own register.
-        task_context = await self._task_turn_context(
-            user_id,
-            action,
-            metadata or {},
-            skill_context,
-            query=query,
-            history=history,
-            unattended=bool((metadata or {}).get("scheduled_task")),
-        )
-
-        # Reached when a branch above matched the action but not the service
-        # behind it - a diagram routed with no diagram service configured, a
-        # deck with no job queue. The chosen action cannot run, so it is
-        # dropped rather than carried into the reply as though it had: search,
-        # history recall, and the user's own tools are the three that survive
-        # to here, because those are the ones the reply path can still execute.
+        # Everything the turn does before its reply - task and skill
+        # bookkeeping, the search, a recall, one of the person's own tools,
+        # and whatever further steps the request needs - runs as the step
+        # loop inside the reply path, once the turn's context is built, so
+        # a later step sees the same person a first step does. The reply
+        # then words its confirmation from a record of what actually
+        # happened, in the channel's own register.
+        #
+        # An action whose service is not wired here - a diagram with no
+        # diagram service, a deck with no queue - matched no branch above
+        # and is not one the loop's executor carries out either, so it is
+        # dropped rather than carried into the reply as though it had run.
         async for event in self._process_assistant_request(
             user_id,
             query,
@@ -3473,8 +3482,8 @@ class ConversationService:
             trace_id,
             metadata or {},
             active_image_artifact_id,
-            preselected_action=_runnable(action),
-            extra_context=task_context,
+            preselected_action=action,
+            extra_context=skill_context,
         ):
             yield event
 
@@ -3564,8 +3573,20 @@ class ConversationService:
             )
         return None
 
-    # The task outcome for the reply to report, or None for a turn that was
-    # not about tasks (or when no task store is wired).
+    # Run the turn's step loop and return what it did, as the records the
+    # reply reports from - or None for a turn that did nothing it can report.
+    #
+    # The first action is the one the router chose for the turn; each later
+    # step is decided again with the lines of what is already done, and is
+    # offered only the tools whose contracts allow a later step with the
+    # budget left (`later_step_tools`), less the two the executor here does
+    # not cover. Everything a step needs beyond its action - the turn's
+    # context, its trace, the events it raises - rides in a frame, so a step
+    # that searches sees the same person a first-step search would.
+    #
+    # Called with no context by the tests that drive the bookkeeping alone; a
+    # minimal one is built then, and a step that needs more is not one those
+    # tests take.
     async def _task_turn_context(
         self,
         user_id: str,
@@ -3575,21 +3596,42 @@ class ConversationService:
         query: str = "",
         history: list[dict[str, Any]] | None = None,
         unattended: bool = False,
+        *,
+        context: dict[str, Any] | None = None,
+        conversation_id: str = "",
+        trace_id: str = "",
+        query_embedding: list[float] | None = None,
+        emit: Callable[[ChatStreamEvent], None] | None = None,
     ) -> dict[str, Any] | None:
-        context: dict[str, Any] = dict(skill_context or {})
-        # The tools are withheld at selection; this is the second wall, so a
-        # malformed provider response naming one cannot delete a task.
-        if metadata.get("scheduled_task"):
-            return context or None
+        outcomes: dict[str, Any] = dict(skill_context or {})
+        # A fired task never loops, and is refused the tools that change what
+        # is scheduled or taught. They are withheld at selection (the first
+        # wall); the executor refuses them (the second, so a malformed
+        # provider response naming one cannot delete a task); and the loop
+        # takes one step (the third, so a reminder cannot reschedule itself
+        # however the routing goes).
+        unattended = unattended or bool(metadata.get("scheduled_task"))
+        frame = _StepFrame(
+            context=(
+                context if context is not None else {"user_id": user_id, "query": query}
+            ),
+            query=query,
+            conversation_id=conversation_id,
+            trace_id=trace_id,
+            query_embedding=query_embedding,
+            history=list(history or []),
+            emit=emit or (lambda event: None),
+            image_matches=list(_turn_image_matches.get() or []),
+            unattended=unattended,
+        )
+        selector = getattr(self, "main_action_selector", None)
+        steppable = not unattended and selector is not None
+        budget = float(settings.TURN_STEP_BUDGET_SECONDS)
+        loop_started = time.monotonic()
 
-        # A fired task never loops. The automation tools are already withheld
-        # at selection and `metadata["scheduled_task"]` already returned above;
-        # this is the third wall, so a reminder cannot reschedule itself no
-        # matter how the routing goes.
-        steppable = not unattended and self.main_action_selector is not None
-
-        async def decide(lines: list[str]) -> MainAction:
-            return await self.main_action_selector.select(
+        async def decide(lines: list[str]) -> Decision:
+            remaining = max(0.0, budget - (time.monotonic() - loop_started))
+            return await selector.decide(
                 user_id,
                 query,
                 history or [],
@@ -3597,22 +3639,21 @@ class ConversationService:
                 local_now=await self._local_now(user_id) if query else None,
                 zone=await self._primary_timezone(user_id) or "",
                 unattended=unattended,
-                only=AUTOMATION_TOOLS,
+                later_step_seconds=remaining,
+                excluding=_NOT_IN_LOOP,
                 steps_taken=lines,
             )
 
         turn = await run_steps(
             action,
-            apply=lambda item: self._apply_step(user_id, item, metadata),
+            apply=lambda item: self._execute_step(user_id, item, metadata, frame),
             decide=decide,
             describe=_step_line,
-            # One creation per turn: a second identical scout_schedule step
-            # once overwrote "weekly on Sundays" with the router's default day.
-            creates=lambda item: isinstance(item, ScheduleTaskAction)
-            or (isinstance(item, ScoutScheduleAction) and item.operation == "set")
-            or (isinstance(item, ManageCheckInsAction) and item.mode == "once"),
+            creates=lambda item: action_creates(item, self._toolbox_contract(item)),
             max_steps=settings.TURN_MAX_STEPS if steppable else 1,
-            budget_seconds=settings.TURN_STEP_BUDGET_SECONDS,
+            budget_seconds=budget,
+            key=lambda item: action_key(item, self._toolbox_contract(item)),
+            max_creates=settings.TURN_MAX_CREATES,
         )
         steps = turn.steps
 
@@ -3623,35 +3664,164 @@ class ConversationService:
             "outcomes",
             [f"{s.kind}:{(s.outcome or {}).get('kind', '')}" for s in steps if s.outcome],
         )
+        # Why the loop stopped, on the turn's record: a clean stop and a spent
+        # budget leave the same outcomes and mean opposite things. Only for a
+        # turn that took a step - a turn with no action has no loop to record.
+        if steps:
+            _trace(
+                "steps",
+                {
+                    "count": len(steps),
+                    "stopped": turn.stopped,
+                    "detail": turn.detail[:80],
+                },
+            )
         if task_outcomes:
-            context["task_outcomes"] = task_outcomes
+            outcomes["task_outcomes"] = task_outcomes
         if skill_outcomes:
-            context["skill_outcomes"] = skill_outcomes
+            outcomes["skill_outcomes"] = skill_outcomes
         if scout_outcomes:
-            context["scout_schedule_outcomes"] = scout_outcomes
-        return context or None
+            outcomes["scout_schedule_outcomes"] = scout_outcomes
+        return outcomes or None
 
-    # Carry out one bookkeeping action, or nothing when this action is not one
-    # of them. Returns which record it belongs in, so the caller can keep the
-    # two kinds apart without repeating the isinstance checks.
-    async def _apply_step(
-        self, user_id: str, action: MainAction, metadata: dict[str, Any]
+    # The contract of the MCP tool behind a toolbox action, or None for any
+    # other action - the registry reads a built-in's off its row.
+    def _toolbox_contract(self, action: MainAction) -> EffectContract | None:
+        if not isinstance(action, ToolboxAction):
+            return None
+        selector = getattr(self, "main_action_selector", None)
+        invocation = getattr(selector, "mcp_invocation", None)
+        if invocation is None:
+            return None
+        return invocation.contract_for(action.plan.server_id, action.plan.tool_name)
+
+    # Carry out one step of the turn, or nothing when this action is not one
+    # the loop runs. Returns which record it belongs in and what happened, in
+    # the outcome vocabulary `status_of` reads, so the caller can keep the
+    # kinds apart without repeating the isinstance checks.
+    async def _execute_step(
+        self,
+        user_id: str,
+        action: MainAction,
+        metadata: dict[str, Any],
+        frame: "_StepFrame",
     ) -> tuple[str, dict[str, Any]] | None:
-        if (
-            isinstance(action, SaveSkillAction | ManageSkillsAction)
-            and self.skills is not None
+        if isinstance(
+            action,
+            SaveSkillAction
+            | ManageSkillsAction
+            | ScheduleTaskAction
+            | ManageTasksAction
+            | ManageCheckInsAction
+            | ScoutScheduleAction,
         ):
-            return "skill", await self._apply_skill_action(user_id, action)
-        if (
-            isinstance(action, ScheduleTaskAction | ManageTasksAction)
-            and self.scheduled_tasks is not None
-        ):
-            return "task", await self._apply_task_action(user_id, action, metadata)
-        if isinstance(action, ManageCheckInsAction) and self.scheduled_tasks is not None:
-            return "task", await self._apply_check_ins(user_id, action, metadata)
-        if isinstance(action, ScoutScheduleAction) and self.discovery_runs is not None:
-            return "scout", await self._apply_scout_schedule(user_id, action)
+            # The second wall: nothing scheduled or taught changes on a firing.
+            if frame.unattended:
+                return None
+            if (
+                isinstance(action, SaveSkillAction | ManageSkillsAction)
+                and getattr(self, "skills", None) is not None
+            ):
+                return "skill", await self._apply_skill_action(user_id, action)
+            if (
+                isinstance(action, ScheduleTaskAction | ManageTasksAction)
+                and getattr(self, "scheduled_tasks", None) is not None
+            ):
+                return "task", await self._apply_task_action(user_id, action, metadata)
+            if (
+                isinstance(action, ManageCheckInsAction)
+                and getattr(self, "scheduled_tasks", None) is not None
+            ):
+                return "task", await self._apply_check_ins(user_id, action, metadata)
+            if (
+                isinstance(action, ScoutScheduleAction)
+                and getattr(self, "discovery_runs", None) is not None
+            ):
+                return "scout", await self._apply_scout_schedule(user_id, action)
+            return None
+        if isinstance(action, SearchAction):
+            return "search", await self._search_step(frame, action)
+        if isinstance(action, RecallHistoryAction):
+            return "recall", await self._recall_step(user_id, frame, action)
+        if isinstance(action, ToolboxAction):
+            return "tool", await self._toolbox_step(user_id, frame, action)
         return None
+
+    # The web search as a step: the same stage the turn always ran, its events
+    # raised through the frame, and what came of it read back off the context
+    # it wrote - found, nothing, failed, refused by the allowance, or blocked
+    # by the privacy screen.
+    async def _search_step(
+        self, frame: "_StepFrame", action: SearchAction
+    ) -> dict[str, Any]:
+        raised: list[ChatStreamEvent] = []
+        async for event in self._stream_web_search(
+            frame.context,
+            frame.query,
+            action,
+            frame.image_matches,
+            frame.trace_id,
+            history=frame.history,
+        ):
+            raised.append(event)
+            frame.emit(event)
+        if not raised:
+            return {"kind": "unavailable"}
+        if any(event.get("event") == "search_blocked" for event in raised):
+            return {"kind": "blocked"}
+        state = frame.context.get("search_state") or {}
+        if state.get("failed"):
+            return {"kind": "failed"}
+        if state and not state.get("ran"):
+            return {"kind": "refused"}
+        results = frame.context.get("search") or []
+        if results:
+            return {"kind": "found", "count": len(results), "query": action.query}
+        return {"kind": "nothing"}
+
+    # A search of past conversations as a step. Silent - no interface event
+    # exists for it - and a failure never costs the turn it was meant to help.
+    async def _recall_step(
+        self, user_id: str, frame: "_StepFrame", action: RecallHistoryAction
+    ) -> dict[str, Any]:
+        if getattr(self, "memory", None) is None:
+            return {"kind": "unavailable"}
+        await self._recall_history_evidence(
+            frame.context, user_id, action, frame.history, frame.query_embedding
+        )
+        found = frame.context.get("history_search") or []
+        if found:
+            return {"kind": "found", "count": len(found), "query": action.query}
+        return {"kind": "nothing"}
+
+    # One of the person's own tools as a step: the same lifecycle the turn
+    # always streamed, its outcome read off the finishing event.
+    async def _toolbox_step(
+        self, user_id: str, frame: "_StepFrame", action: ToolboxAction
+    ) -> dict[str, Any]:
+        raised: list[ChatStreamEvent] = []
+        async for event in self._stream_tool_context(
+            frame.context,
+            user_id,
+            frame.query,
+            frame.conversation_id,
+            frame.trace_id,
+            action,
+        ):
+            raised.append(event)
+            frame.emit(event)
+        finished = next(
+            (event for event in raised if event.get("event") == "tool_finished"), None
+        )
+        if finished is None:
+            return {"kind": "unavailable"}
+        status = str((finished.get("data") or {}).get("status") or "")
+        kind = {"succeeded": "done", "refused": "refused"}.get(status, "failed")
+        return {
+            "kind": kind,
+            "tool": action.plan.tool_name,
+            "server": action.plan.server_id,
+        }
 
     # Take back one automatic memory save from its receipt. Semantic and
     # episodic rows go by id; a name preference is cleared; a profile fact -
@@ -4944,11 +5114,10 @@ class ConversationService:
         # What the assistant should know about someone belongs in memory, which
         # is retrieved per question and only when it is relevant. Scout's
         # profile exists to steer a scheduled sweep, not conversation.
-        async for retrieval_event in self._stream_optional_context(
+        async for retrieval_event in self._stream_retrieved_context(
             context,
             user_id,
             query,
-            conversation_id,
             trace_id,
             query_embedding,
             preselected_action,
@@ -4956,6 +5125,32 @@ class ConversationService:
             history=history,
         ):
             yield retrieval_event
+
+        # The step loop: the routed action, then whatever further steps the
+        # request needs, each carried out here and recorded for the reply.
+        # Awaited from this generator's own context rather than run as a
+        # task, so what a step sets in a ContextVar lands where the reply
+        # reads it; the events a step raises are gathered and sent once the
+        # loop returns.
+        raised: list[ChatStreamEvent] = []
+        outcomes = await self._task_turn_context(
+            user_id,
+            preselected_action,
+            metadata,
+            extra_context,
+            query=query,
+            history=history,
+            unattended=bool(metadata.get("scheduled_task")),
+            context=context,
+            conversation_id=conversation_id,
+            trace_id=trace_id,
+            query_embedding=query_embedding,
+            emit=raised.append,
+        )
+        for step_event in raised:
+            yield step_event
+        if outcomes:
+            context.update(outcomes)
 
         if self.memory_coordinator is not None:
             context = await self.memory_coordinator.prepare_context(

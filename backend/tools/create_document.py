@@ -3,6 +3,7 @@ from typing import Any
 
 from .actions import CreateDocumentAction
 from .base import BuiltinTool, required_text
+from .contracts import EffectContract
 
 NAME = "create_document"
 
@@ -49,6 +50,7 @@ TOOL = BuiltinTool(
         "📎 Writing the file…",
     ),
     family="documents",
+    contract=EffectContract(effect="write", cost="expensive", creates=True),
 )
 
 

@@ -3,6 +3,7 @@ from typing import Any
 
 from .actions import EditDocumentAction
 from .base import BuiltinTool, required_text
+from .contracts import EffectContract
 
 NAME = "edit_document"
 
@@ -49,6 +50,7 @@ TOOL = BuiltinTool(
         "📄 Rewriting the document in its own style…",
     ),
     family="documents",
+    contract=EffectContract(effect="write", cost="expensive"),
 )
 
 

@@ -36,7 +36,6 @@ from backend.services.trajectory_harness import (
     RequiredEffect,
     World,
 )
-from backend.tools.registry import AUTOMATION_TOOLS
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,9 +56,10 @@ class TrajectoryCase:
     # failure was seen and nothing was fabricated as a success.
     honest_failure: bool = False
     history: tuple[tuple[str, str], ...] = ()
-    # None offers every tool (a component measurement); the automation set is
-    # what the live loop runs over.
-    only: frozenset[str] | None = AUTOMATION_TOOLS
+    # None offers what production offers: every tool on the first decision
+    # and, on a later one, the tools whose contracts allow a later step. A set
+    # names the tools for a component measurement of one agent's loop.
+    only: frozenset[str] | None = None
     # Scripted outcomes for the loop's steps; the last one repeats, and an
     # empty script means every step succeeds.
     world: tuple[dict[str, Any], ...] = ()

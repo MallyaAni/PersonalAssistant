@@ -4,6 +4,7 @@ from typing import Any
 
 from .actions import RecallHistoryAction
 from .base import BuiltinTool, required_text
+from .contracts import EffectContract
 
 NAME = "search_history"
 
@@ -65,6 +66,11 @@ TOOL = BuiltinTool(
     ),
     family="memory",
     core=True,
+    contract=EffectContract(
+        effect="read",
+        cost="fast",
+        idempotency=lambda action: " ".join(action.query.casefold().split()),
+    ),
 )
 
 

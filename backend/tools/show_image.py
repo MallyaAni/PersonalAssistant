@@ -13,6 +13,7 @@ from typing import Any
 
 from .actions import ShowImageAction
 from .base import BuiltinTool, required_text
+from .contracts import EffectContract
 
 NAME = "show_image"
 
@@ -52,6 +53,7 @@ TOOL = BuiltinTool(
     ),
     family="pictures",
     needs_picture=True,
+    contract=EffectContract(effect="read", cost="fast"),
 )
 
 

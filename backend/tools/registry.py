@@ -50,15 +50,19 @@ from .actions import (
     UseSkillAction,
 )
 from .base import BuiltinTool
+from .contracts import UNDECLARED, EffectContract
 from .search import (
     SEARCH_CAPABILITY,
+    SEARCH_CONTRACT,
     SEARCH_CREDITS_CAPABILITY,
+    SEARCH_CREDITS_CONTRACT,
     SEARCH_CREDITS_TOOL,
     SEARCH_CREDITS_WAITING,
     SEARCH_TOOL,
     SEARCH_WAITING,
     TOOLBOX_WAITING,
     WEATHER_CAPABILITY,
+    WEATHER_CONTRACT,
     WEATHER_TOOL,
     WEATHER_WAITING,
 )
@@ -286,3 +290,81 @@ def _detail(action: MainAction) -> str:
     if isinstance(action, SaveSkillAction):
         return action.name
     return ""
+
+
+# ------------------------------------------------------------------ policy
+#
+# The loop's policy questions, each answered off the tool's own contract so a
+# new tool is covered the day it declares one and a renamed one cannot fall
+# out of a set of names kept elsewhere.
+
+# The contract governing one action. A toolbox action's contract belongs to
+# its MCP tool and is looked up by the caller who knows the server; it is
+# passed in here so this module does not reach into the invocation service.
+def contract_for_action(
+    action: MainAction, toolbox_contract: EffectContract | None = None
+) -> EffectContract:
+    if action is None:
+        return UNDECLARED
+    if isinstance(action, SearchAction):
+        return SEARCH_CONTRACT
+    if isinstance(action, ToolboxAction):
+        if action.plan.tool_name == WEATHER_TOOL:
+            return WEATHER_CONTRACT
+        if action.plan.tool_name == SEARCH_CREDITS_TOOL:
+            return SEARCH_CREDITS_CONTRACT
+        return toolbox_contract or UNDECLARED
+    row = _ROW_FOR_ACTION.get(type(action))
+    return row.contract if row is not None else UNDECLARED
+
+
+# The natural key of one action, or None when its tool declares none. What a
+# repeat within a turn is compared on.
+def action_key(
+    action: MainAction, toolbox_contract: EffectContract | None = None
+) -> str | None:
+    if action is None:
+        return None
+    contract = contract_for_action(action, toolbox_contract)
+    key = contract.key(action)
+    if key is None:
+        return None
+    return f"{tool_name_of(action)}:{key}"
+
+
+# Whether carrying out this action would make a new thing.
+def action_creates(
+    action: MainAction, toolbox_contract: EffectContract | None = None
+) -> bool:
+    return contract_for_action(action, toolbox_contract).is_creation(action)
+
+
+# The tool name an action resolves to, for keys and step records.
+def tool_name_of(action: MainAction) -> str:
+    if isinstance(action, SearchAction):
+        return SEARCH_TOOL
+    if isinstance(action, ToolboxAction):
+        return action.plan.tool_name
+    if isinstance(action, UseSkillAction):
+        return f"skill:{action.skill_id}"
+    row = _ROW_FOR_ACTION.get(type(action)) if action is not None else None
+    return row.name if row is not None else ""
+
+
+# The built-in tools a later step may start with this much of the budget
+# left, read off every row's contract. The three internet tools are not rows
+# and are included by their own contracts.
+def later_step_tools(remaining_seconds: float) -> frozenset[str]:
+    names = {
+        row.name
+        for row in (module.TOOL for module in _MODULES)
+        if row.contract.allows_later_step(remaining_seconds)
+    }
+    for name, contract in (
+        (SEARCH_TOOL, SEARCH_CONTRACT),
+        (WEATHER_TOOL, WEATHER_CONTRACT),
+        (SEARCH_CREDITS_TOOL, SEARCH_CREDITS_CONTRACT),
+    ):
+        if contract.allows_later_step(remaining_seconds):
+            names.add(name)
+    return frozenset(names)

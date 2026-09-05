@@ -20,8 +20,15 @@ machinery the agent drives.
 
 An agentic loop is a component that decides, acts, sees what happened, and
 decides again. Exactly one exists today: the **turn step loop** in
-`backend/services/turn_steps.py`, which runs inside a conversation turn over
-the automation tools, at most three steps and forty-five seconds, drawn in
+`backend/services/turn_steps.py`, which runs inside a conversation turn - the
+routed action first (a search, a recall, one of the person's own tools, or a
+piece of bookkeeping), then whatever further steps the request needs, each
+offered only the tools whose effect contracts allow a later step with the
+budget left (`backend/core/effects.py`): a read, or a write to this system's
+own records, that is not expensive and needs no approval. At most
+`TURN_MAX_STEPS` steps, `TURN_STEP_BUDGET_SECONDS` of wall clock read before
+every decision and every action, and `TURN_MAX_CREATES` new things, with a
+repeat judged on each tool's own key. Drawn in
 [chat-orchestration](diagrams/chat-orchestration.mmd). None of the agents
 below loop; each is asked once and answers once.
 

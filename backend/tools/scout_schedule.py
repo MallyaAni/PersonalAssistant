@@ -11,6 +11,7 @@ from typing import Any
 
 from .actions import ScoutScheduleAction
 from .base import BuiltinTool
+from .contracts import EffectContract
 
 NAME = "scout_schedule"
 
@@ -80,6 +81,16 @@ TOOL = BuiltinTool(
         "🗓️ Moving the sweep to its new time…",
     ),
     family="scheduling",
+    contract=EffectContract(
+        effect="write",
+        cost="fast",
+        reversible="scout_schedule",
+        creates=lambda action: action.operation == "set",
+        # One sweep schedule per person: a second "set" in the same
+        # turn is the repeat that once overwrote "weekly on Sundays"
+        # with the router's default day, whatever its arguments.
+        idempotency=lambda action: f"scout_schedule:{action.operation}",
+    ),
 )
 
 

@@ -102,6 +102,10 @@ class Settings(BaseSettings):
     # because time is what starves the next sender: imessage_chat answers
     # serially and sends one acknowledgement bubble, then goes quiet.
     TURN_STEP_BUDGET_SECONDS: float = Field(default=45.0, ge=5.0, le=180.0)
+    # How many new things one turn may create. One was the first rule and it
+    # cut "set reminders for 6pm and 8pm" to a single reminder; two copies
+    # of the same reminder are still stopped, by their shared key.
+    TURN_MAX_CREATES: int = Field(default=3, ge=1, le=5)
     ROUTING_LLM_REASONING_EFFORT: Literal[
         "none", "minimal", "low", "medium", "high", "xhigh"
     ] = "none"

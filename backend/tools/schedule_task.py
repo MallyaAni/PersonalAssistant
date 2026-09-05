@@ -4,6 +4,7 @@ from typing import Any
 
 from .actions import ScheduleTaskAction
 from .base import BuiltinTool, required_text
+from .contracts import EffectContract
 
 NAME = "schedule_task"
 
@@ -75,6 +76,24 @@ TOOL = BuiltinTool(
     ),
     family="scheduling",
     core=True,
+    contract=EffectContract(
+        effect="write",
+        cost="fast",
+        creates=True,
+        reversible="scheduled_task",
+        # Two reminders with different words are two effects; the same
+        # reminder worded twice is one.
+        idempotency=lambda action: "|".join(
+            (
+                " ".join(action.instruction.casefold().split()),
+                action.cadence,
+                str(action.hour),
+                str(action.minute),
+                str(action.weekday),
+                str(action.on_date or ""),
+            )
+        ),
+    ),
 )
 
 

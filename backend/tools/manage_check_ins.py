@@ -7,6 +7,7 @@ from backend.core.checkin import FIRST_HOUR, FOLLOWING_UP, KINDS, LAST_HOUR, MAX
 
 from .actions import ManageCheckInsAction
 from .base import BuiltinTool
+from .contracts import EffectContract
 
 NAME = "manage_check_ins"
 MODES = ("on", "off", "once", "status")
@@ -90,6 +91,17 @@ TOOL = BuiltinTool(
         "🔔 Setting that up…",
     ),
     family="scheduling",
+    contract=EffectContract(
+        effect="write",
+        cost="fast",
+        reversible="scheduled_task",
+        # Only arming one check-in makes a new thing; on, off and
+        # status change a setting or read one.
+        creates=lambda action: action.mode == "once",
+        idempotency=lambda action: "|".join(
+            (action.mode, " ".join(action.subject.casefold().split()))
+        ),
+    ),
 )
 
 

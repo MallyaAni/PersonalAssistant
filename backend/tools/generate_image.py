@@ -4,6 +4,7 @@ from typing import Any
 
 from .actions import GenerateImageAction
 from .base import BuiltinTool, required_text
+from .contracts import EffectContract
 
 NAME = "generate_image"
 
@@ -50,6 +51,7 @@ TOOL = BuiltinTool(
         "🖼️ Stretching a fresh canvas…",
     ),
     family="pictures",
+    contract=EffectContract(effect="write", cost="expensive", creates=True),
 )
 
 

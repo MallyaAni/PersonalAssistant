@@ -4,6 +4,7 @@ from typing import Any
 
 from .actions import EditImageAction
 from .base import BuiltinTool, required_text
+from .contracts import EffectContract
 
 NAME = "edit_image"
 
@@ -74,6 +75,7 @@ TOOL = BuiltinTool(
     ),
     family="pictures",
     needs_picture=True,
+    contract=EffectContract(effect="write", cost="expensive", creates=True),
 )
 
 

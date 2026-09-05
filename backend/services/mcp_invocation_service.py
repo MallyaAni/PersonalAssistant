@@ -3,6 +3,7 @@ import logging
 from urllib.parse import urlsplit
 from typing import Any
 
+from backend.core.effects import EffectContract, contract_for_classification, narrow
 from backend.core.egress import OutboundPrivacyPolicy
 from backend.mcp.client import MCPToolLister
 from backend.mcp.inspection import inspect_untrusted_text
@@ -18,14 +19,27 @@ from backend.mcp.types import MCPServerConfig, MCPTool
 
 logger = logging.getLogger(__name__)
 
+
+# The natural key of a toolbox call the server dedupes by its arguments: the
+# arguments themselves, canonically serialised.
+def _arguments_key(action: Any) -> str | None:
+    plan = getattr(action, "plan", None)
+    arguments = getattr(plan, "arguments", None)
+    if not isinstance(arguments, dict):
+        return None
+    return json.dumps(arguments, sort_keys=True, default=str)
+
+
 # Classifications an operator may mark as safe to call without confirmation.
 # Anything else is consequential until a human says otherwise: a wrong read is
 # recoverable, a wrong write is not.
 _AUTO_INVOCABLE = frozenset({"trusted", "read_only"})
-# Only calls that can be replayed without effect are retried. This is the same
-# set as the auto-invocable one by design: a server the operator marked safe to
-# call without confirmation is a server whose calls are safe to repeat.
-_REPLAY_SAFE = _AUTO_INVOCABLE
+# Whether a dropped call may be replayed is a property of the tool, never of
+# the server's trust. It used to be this same set, which made a trusted
+# server's writes replay-safe: a lost response does not prove the write did
+# not happen, and a retry could do it twice. The per-tool contract decides
+# now (`contract_for`) - a read replays, a write does not unless the server
+# says it dedupes the call by its arguments.
 
 
 class MCPInvocationService:
@@ -76,35 +90,79 @@ class MCPInvocationService:
             ),
         }
 
-    # Screen every string argument, refusing the call if any cannot be sent.
+    # Screen every string argument, however deeply it is nested, refusing the
+    # call if any cannot be sent. Strings inside objects and arrays used to
+    # pass through unread (2026-09-04 review): a schema with a `payload`
+    # object was a hole the size of the object.
     def _screen_arguments(
         self, server_id: str, tool_name: str, arguments: dict[str, Any]
     ) -> dict[str, Any]:
-        screened: dict[str, Any] = {}
-        for name, value in arguments.items():
-            if not isinstance(value, str):
-                screened[name] = value
-                continue
-            if (server_id, tool_name, name) in self.addressing_fields:
-                screened[name] = value
-                continue
-            # An empty string discloses nothing, so it passes as it is. The
-            # egress policy reports "" as `empty` because for a search query
-            # that means there is nothing to search - but a tool argument is
-            # legitimately empty all the time: every attachment-only iMessage
-            # carries `body: ""`, and screening it withheld the picture while
-            # the "here's the image" bubble before it had already been sent.
-            if value == "":
-                screened[name] = value
-                continue
-            result = self.egress.sanitize(value)
-            if not result.allowed:
-                raise MCPInvocationError(
-                    "argument_withheld",
-                    f"{name}: {', '.join(result.categories)}",
+        return {
+            name: self._screen_value(server_id, tool_name, name, name, value)
+            for name, value in arguments.items()
+        }
+
+    # Screen one value: a string is judged, an object or array is walked, and
+    # anything else carries no words and passes. The addressing exemption is
+    # decided by the top-level field, so a `to` that is exempt stays exempt
+    # for every string under it and nothing else inherits it.
+    def _screen_value(
+        self, server_id: str, tool_name: str, field: str, path: str, value: Any
+    ) -> Any:
+        if isinstance(value, dict):
+            return {
+                key: self._screen_value(
+                    server_id, tool_name, field, f"{path}.{key}", item
                 )
-            screened[name] = result.query
-        return screened
+                for key, item in value.items()
+            }
+        if isinstance(value, list):
+            return [
+                self._screen_value(
+                    server_id, tool_name, field, f"{path}[{index}]", item
+                )
+                for index, item in enumerate(value)
+            ]
+        if not isinstance(value, str):
+            return value
+        if (server_id, tool_name, field) in self.addressing_fields:
+            return value
+        # An empty string discloses nothing, so it passes as it is. The
+        # egress policy reports "" as `empty` because for a search query
+        # that means there is nothing to search - but a tool argument is
+        # legitimately empty all the time: every attachment-only iMessage
+        # carries `body: ""`, and screening it withheld the picture while
+        # the "here's the image" bubble before it had already been sent.
+        if value == "":
+            return value
+        result = self.egress.sanitize(value)
+        if not result.allowed:
+            raise MCPInvocationError(
+                "argument_withheld",
+                f"{path}: {', '.join(result.categories)}",
+            )
+        return result.query
+
+    # What one tool on one server does to the world: the server's
+    # classification as the floor, narrowed by whatever the operator declared
+    # for the tool itself. An unknown server reads as untrusted.
+    def contract_for(self, server_id: str, tool_name: str) -> EffectContract:
+        server = self.servers.get(server_id)
+        classification = (
+            server.risk_classification if server is not None else "untrusted"
+        )
+        base = contract_for_classification(classification)
+        policy = server.policy_for(tool_name) if server is not None else None
+        if policy is None:
+            return base
+        declared = EffectContract(
+            effect=policy.effect or base.effect,
+            cost=base.cost,
+            idempotency=(_arguments_key if policy.idempotent else None),
+            approval=policy.approval or base.approval,
+            retry=policy.retry or None,
+        )
+        return narrow(base, declared)
 
     # Refuse any argument naming a host this server may not reach.
     #
@@ -195,10 +253,15 @@ class MCPInvocationService:
         if server is None or not server.enabled:
             raise MCPInvocationError("server_unavailable", server_id)
 
-        if server.risk_classification not in _AUTO_INVOCABLE and not confirmed:
+        # Approval is the tool's contract, with the server's classification as
+        # its floor: an untrusted server's tools are consequential, and a tool
+        # the operator marked `always` waits for a person on any server.
+        contract = self.contract_for(server_id, tool_name)
+        if contract.approval != "never" and not confirmed:
             raise MCPInvocationError(
                 "confirmation_required",
-                f"{server_id} is classified {server.risk_classification}",
+                f"{server_id}/{tool_name} needs approval ({contract.approval}; "
+                f"server classified {server.risk_classification})",
             )
 
         live = await self.resolve_tool(server_id, tool_name, expected_fingerprint)
@@ -213,10 +276,11 @@ class MCPInvocationService:
             tool_name,
             len(screened),
         )
-        # A replay-safe server may retry a dropped call; a write server may not,
-        # because a lost response does not prove the call did not execute.
+        # A replay-safe tool may retry a dropped call; a write may not, because
+        # a lost response does not prove the call did not execute. Decided by
+        # the tool's contract, never by the server's trust.
         attempts = (
-            self.retry.max_attempts if server.risk_classification in _REPLAY_SAFE else 1
+            self.retry.max_attempts if contract.retry_policy == "replay_safe" else 1
         )
 
         async def _call() -> ToolCallResult:

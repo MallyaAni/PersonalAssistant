@@ -11,6 +11,7 @@ from typing import Any
 
 from .actions import DiscussImageAction
 from .base import BuiltinTool
+from .contracts import EffectContract
 
 NAME = "discuss_image"
 
@@ -48,6 +49,7 @@ TOOL = BuiltinTool(
     ),
     family="pictures",
     needs_picture=True,
+    contract=EffectContract(effect="read", cost="fast"),
 )
 
 

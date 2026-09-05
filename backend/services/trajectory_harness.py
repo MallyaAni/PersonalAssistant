@@ -45,16 +45,27 @@ from dataclasses import dataclass, field
 from time import perf_counter
 from typing import Any
 
+from backend.config.settings import settings
 from backend.services.main_action_selector import (
     MainActionSelector,
     clear_decision_cache,
 )
 from backend.services.turn_steps import (
     DECLINED,
+    SUCCEEDED,
     Step,
     run_steps,
+    status_of,
 )
-from backend.tools.registry import AUTOMATION_TOOLS
+from backend.tools.registry import (
+    action_creates,
+    action_key,
+)
+
+# The two tools a later step may not be offered in production because the
+# turn's executor does not carry them out; kept in step with the service by
+# `test_the_harness_offers_what_production_offers`.
+NOT_IN_LOOP: frozenset[str] = frozenset({"show_image", "discuss_image"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,14 +86,12 @@ class Trajectory:
     def lines(self) -> tuple[str, ...]:
         return tuple(step.line for step in self.steps)
 
-    # The steps whose outcome says they did not do what they were asked.
+    # The steps whose outcome says they did not do what they were asked, read
+    # in the one vocabulary every applier writes (`status_of`).
     @property
     def failed(self) -> tuple[Step, ...]:
         return tuple(
-            step
-            for step in self.steps
-            if str((step.outcome or {}).get("kind") or "")
-            in {"failed", "invalid", "not_found", "none"}
+            step for step in self.steps if status_of(step.outcome) != SUCCEEDED
         )
 
     def __len__(self) -> int:
@@ -113,11 +122,14 @@ class World:
 
 # Run one loop against the real router and return the whole path.
 #
-# `only` defaults to the automation tools because that is the set the live
-# loop runs over; a caller testing a different agent's loop passes its own,
-# and `None` offers every tool so a mixed-tool trajectory can be measured as
-# a component. `stopped` is the actual reason `run_steps` returned, never an
-# inference made here.
+# With `only` left as None the loop is offered what production offers: every
+# tool on the first decision, and on each later one exactly the tools whose
+# contracts allow a later step with the budget left, less the two the turn's
+# executor does not run. A caller measuring one agent's loop passes `only` to
+# name its set instead. Repeats are judged on each tool's own key and
+# creations counted against the production allowance, as the live loop does.
+# `stopped` is the actual reason `run_steps` returned, never an inference
+# made here.
 async def walk(
     selector: MainActionSelector,
     *,
@@ -127,21 +139,32 @@ async def walk(
     history: list[dict[str, Any]] | None = None,
     local_now: str = "Tuesday 2026-09-03 14:00",
     max_steps: int = 3,
-    only: frozenset[str] | None = AUTOMATION_TOOLS,
+    only: frozenset[str] | None = None,
     budget_seconds: float = 60.0,
-    creates: Callable[[Any], bool] = lambda _: False,
+    creates: Callable[[Any], bool] | None = None,
+    max_creates: int | None = None,
 ) -> Trajectory:
     # Each pass must be the model's own answer rather than the previous
     # pass's, or repeating a trajectory measures nothing.
     clear_decision_cache()
     stage = world or World()
     shown: list[tuple[str, ...]] = []
+    started = perf_counter()
 
     async def decide(lines: list[str]) -> Any:
         shown.append(tuple(lines))
-        return await selector.select(
+        if only is not None:
+            return await selector.decide(
+                user, ask, history or [], None,
+                local_now=local_now, only=only, steps_taken=lines,
+            )
+        remaining = max(0.0, budget_seconds - (perf_counter() - started))
+        return await selector.decide(
             user, ask, history or [], None,
-            local_now=local_now, only=only, steps_taken=lines,
+            local_now=local_now,
+            later_step_seconds=remaining,
+            excluding=NOT_IN_LOOP,
+            steps_taken=lines,
         )
 
     first = await selector.select(
@@ -157,9 +180,13 @@ async def walk(
         apply=stage.apply,
         decide=decide,
         describe=_step_line,
-        creates=creates,
+        creates=creates if creates is not None else action_creates,
         max_steps=max_steps,
         budget_seconds=budget_seconds,
+        key=action_key,
+        max_creates=(
+            max_creates if max_creates is not None else settings.TURN_MAX_CREATES
+        ),
     )
     return Trajectory(result.steps, result.stopped, tuple(shown))
 
@@ -224,10 +251,11 @@ def _arguments(action: object) -> str:
 
 
 # Whether a step is a successful effect: applied, and its outcome does not say
-# it failed to do what it was asked. A not-found cancel is not an effect.
+# it failed to do what it was asked. A not-found cancel is not an effect, and
+# neither is a step cut at the deadline whose outcome nobody saw.
 def _is_effect(step: Step) -> bool:
     kind = str((step.outcome or {}).get("kind") or "")
-    return kind not in {"", "failed", "invalid", "not_found", "none"}
+    return bool(kind) and status_of(step.outcome) == SUCCEEDED
 
 
 # The tools that create something new in the world, so a repeat of one is the
@@ -441,7 +469,7 @@ async def measure_once(
         local_now=case.local_now,
         max_steps=case.max_steps,
         only=case.only,
-        creates=case.creates or (lambda _: False),
+        creates=case.creates,
     )
     elapsed_ms = (perf_counter() - started) * 1000.0
     return trip, score_trajectory(case, trip, elapsed_ms)

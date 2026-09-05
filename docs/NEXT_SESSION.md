@@ -92,6 +92,44 @@ the same calendar (`model.build_features` takes any (T, N, K) array).
 Second lever, cheap: batch several sessions per step with padding masks —
 the per-session Python loop keeps the 5080 at 10-13% utilisation.
 
+## 2026-09-05 — Phase 2 first checkpoint: bounds are structural, the step line is the next defect (NOT DEPLOYED)
+
+Committed as a checkpoint at the operator's request (usage ran out), with
+the verification state below. Codex should review this commit before the
+next step. The plan is `docs/AGENT_PLATFORM_PLAN.md`; this is its Phase 2.
+
+**VERIFIED (unit, this host, Postgres and Redis over the SSH tunnel):** the
+29 focused suites around the change and the four new modules
+(`test_turn_steps_bounds`, `test_effect_contracts`, `test_mcp_tool_contracts`,
+`test_routing_decisions`) - 366 + 147 passed. `test_tool_catalog_page` and
+`test_discuss_image_tool` updated for the new column and the removed
+`_runnable`. Diagram check: 27 synchronized.
+**UNVERIFIED:** the full unit suite was still running at checkpoint (read
+`docs/CHANGELOG.md` and re-run `pytest backend/tests --ignore=backend/tests/functional`;
+one pre-existing failure, `test_settings_reach_their_consumer[internet.py]`,
+is unrelated - HEAD's compose lacks the same keys). The sweep journeys and the
+routing matrix have not been run on this change. Nothing is deployed.
+**MEASURED:** `evaluate_trajectories --reps 3` on the real router: 10/18,
+unchanged; one acceptance breach (a duplicate in `search-then-remind`).
+
+**Next atomic task - make the step line say what was done.** The evidence
+in the run file is unambiguous: `_step_line` renders "Scheduled tasks: once at
+18:00" and "Manage scheduled tasks: reschedule", so the router cannot tell
+which reminder it already set and writes "call mum" twice (at 6pm and again
+at the gym's 8pm), and repeats a reschedule it cannot see it made. Fix
+`_detail` in `backend/tools/registry.py` to carry the instruction (`once at
+18:00 - remind me to call mum`) and `which`/the new time for `manage_tasks`;
+strip trailing punctuation in `schedule_task`'s key; then re-run the
+evaluation and expect `multiple_writes` to move. Two case questions for the
+operator: `cancel-and-reschedule` is answered by one `reschedule` call, which
+the case labels incomplete; and `search-then-remind` took no tool twice on
+the first decision - the harness should record the typed decision
+(`NeedsInput` is the likely reason: "saturday" has no time) rather than
+`(none)`.
+
+After that: `TURN_MAX_STEPS=3` in `.env` and the three compose services,
+read back from the container, only once the gate holds; then Phase 3.
+
 ## 2026-09-05 — Phase 1 evaluation made honest after codex review (PUSHED)
 
 Codex reviewed the Phase 1 baseline and showed four false positives: the

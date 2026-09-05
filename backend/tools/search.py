@@ -8,9 +8,23 @@ describes its interface rather than the product's capability, and reading
 it costs a session against that server.
 """
 
+from .contracts import EffectContract
+
 SEARCH_TOOL = "search_web"
 WEATHER_TOOL = "get_weather"
 SEARCH_CREDITS_TOOL = "search_credits"
+
+# What each internet tool does to the world. All three are reads, so a
+# dropped call may be replayed and a later step in a bounded loop may start
+# one - a search with time in hand, the two quick lookups always. A search
+# is keyed on its query so the same question is not bought twice in a turn.
+SEARCH_CONTRACT = EffectContract(
+    effect="read",
+    cost="slow",
+    idempotency=lambda action: " ".join(action.query.casefold().split()),
+)
+WEATHER_CONTRACT = EffectContract(effect="read", cost="fast")
+SEARCH_CREDITS_CONTRACT = EffectContract(effect="read", cost="fast")
 
 SEARCH_CAPABILITY: dict[str, str] = {
     "label": "Web search",

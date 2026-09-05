@@ -2,7 +2,38 @@
 
 import json
 
-from backend.mcp.types import MCPServerConfig
+from backend.mcp.types import MCPServerConfig, ToolPolicy
+
+_EFFECTS = {"read", "write", "send", "spend", "mutate_external"}
+_RETRIES = {"replay_safe", "once", "never"}
+_APPROVALS = {"never", "consequential", "always"}
+
+
+# Per-tool declarations from a server entry's `tools` object, keyed by tool
+# name. A value the policy vocabulary does not know is dropped rather than
+# read as something it is not; the tool then inherits from the classification.
+def _parse_tool_policies(raw: object) -> tuple[tuple[str, ToolPolicy], ...]:
+    if not isinstance(raw, dict):
+        return ()
+    parsed: list[tuple[str, ToolPolicy]] = []
+    for name, declared in raw.items():
+        if not isinstance(declared, dict) or not str(name).strip():
+            continue
+        effect = str(declared.get("effect", "")).strip()
+        retry = str(declared.get("retry", "")).strip()
+        approval = str(declared.get("approval", "")).strip()
+        parsed.append(
+            (
+                str(name).strip(),
+                ToolPolicy(
+                    effect=effect if effect in _EFFECTS else "",
+                    retry=retry if retry in _RETRIES else "",
+                    approval=approval if approval in _APPROVALS else "",
+                    idempotent=bool(declared.get("idempotent", False)),
+                ),
+            )
+        )
+    return tuple(parsed)
 
 
 # Build one server config from a raw JSON entry, or None when it is unusable.
@@ -34,6 +65,7 @@ def _parse_server_entry(entry: object) -> MCPServerConfig | None:
                 for host in entry.get("allowed_hosts", [])
                 if str(host).strip()
             ),
+            tool_policies=_parse_tool_policies(entry.get("tools")),
         )
     except ValueError:
         # A misconfigured transport is skipped rather than crashing discovery.

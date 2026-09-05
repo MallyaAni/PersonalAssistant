@@ -114,12 +114,21 @@ def assert_descriptor_is_current(live: MCPTool, expected_fingerprint: str) -> No
 
 
 # Check arguments against the tool's declared schema before any call is made.
-# Only the shape is enforced: required keys, unknown keys and primitive types.
-# A wrong tool usually cannot accept the right tool's arguments, so this is the
-# cheapest signal that similarity selected badly.
+#
+# The top-level shape is checked first and named in the reasons callers have
+# always seen - required keys, unknown keys, primitive types - because a wrong
+# tool usually cannot accept the right tool's arguments, and that is the
+# cheapest signal that similarity selected badly. Then the whole declared
+# contract is enforced: nested objects and arrays, enums, bounds, patterns,
+# and composition. A model that writes `{"count": -1}` against a schema with
+# `"minimum": 0`, or nests a string where an object belongs, is refused here
+# rather than at the server, where the refusal is the server's to word and
+# may not come at all (2026-09-04 review: only top-level primitive types were
+# checked).
 def validate_arguments(schema: dict[str, Any], arguments: dict[str, Any]) -> None:
     properties = schema.get("properties")
     if not isinstance(properties, dict):
+        _validate_deeply(schema, arguments)
         return
 
     required = schema.get("required")
@@ -152,3 +161,31 @@ def validate_arguments(schema: dict[str, Any], arguments: dict[str, Any]) -> Non
                 "argument_type",
                 f"{name} expected {declared}",
             )
+        # A bool is an int to Python and not to JSON Schema; the deep pass
+        # below would catch it, but the reason is clearer named here.
+        if declared in {"number", "integer"} and isinstance(value, bool):
+            raise MCPInvocationError("argument_type", f"{name} expected {declared}")
+    _validate_deeply(schema, arguments)
+
+
+# Enforce the whole declared schema, not only its top level.
+#
+# A schema the validator itself cannot read is refused too: a contract that
+# cannot be checked is not a contract this system can call against, and
+# guessing at it is how a nested field goes out unscreened.
+def _validate_deeply(schema: dict[str, Any], arguments: dict[str, Any]) -> None:
+    from jsonschema import Draft202012Validator, SchemaError
+    from jsonschema.exceptions import best_match
+
+    try:
+        Draft202012Validator.check_schema(schema)
+    except SchemaError as exc:
+        raise MCPInvocationError(
+            "schema_invalid", str(exc.message)[:200]
+        ) from exc
+    validator = Draft202012Validator(schema)
+    error = best_match(validator.iter_errors(arguments))
+    if error is None:
+        return
+    where = "/".join(str(part) for part in error.absolute_path) or "(root)"
+    raise MCPInvocationError("argument_schema", f"{where}: {str(error.message)[:200]}")

@@ -92,6 +92,8 @@ from backend.tools import (
     parse_builtin,
 )
 from backend.services.transcript import transcript_lines
+from backend.services.turn_steps import Act, Decision, Done, NeedsInput, Unavailable
+from backend.tools.registry import later_step_tools
 
 __all__ = [
     "BuiltinTool",
@@ -132,7 +134,11 @@ _SYSTEM = load("routing/select_action")
 # decision is kept against the things it actually depends on - who is
 # asking, what they said, the conversation it sits in, what was on offer,
 # whether a picture is in view, and the calendar day - and reused while all
-# of those hold. The clock's minute is deliberately not part of the key: a
+# of those hold. "What was on offer" is the full definition of every tool,
+# not its name: a schema that changed, a skill retaught with new words, or
+# an MCP alias that now points at a different server's tool is a different
+# offer, and a decision made against the old one must not be replayed
+# against it (2026-09-04 review). The clock's minute is deliberately not part of the key: a
 # decision that turned on the exact minute would never be reused, and
 # nothing the router *chooses* changes between 2:01 and 2:02. The day is in
 # the key because "tomorrow" does change. A decision that wrote the time into
@@ -147,9 +153,9 @@ _DECISIONS: OrderedDict[str, tuple[float, dict[str, Any]]] = OrderedDict()
 def _decision_key(
     user_id: str, user_content: str, tools: list[dict[str, Any]], local_now: str | None
 ) -> str:
-    names = sorted(tool["function"]["name"] for tool in tools)
+    definitions = json.dumps(tools, sort_keys=True, default=str)
     day = str(local_now or "")[:10]
-    material = "\x1f".join((user_id, day, user_content, ",".join(names)))
+    material = "\x1f".join((user_id, day, user_content, definitions))
     return hashlib.sha256(material.encode("utf-8", "replace")).hexdigest()
 
 
@@ -423,6 +429,10 @@ class MainActionSelector:
     # the model can decide by meaning that "brief me" is their morning brief;
     # a skill's own instruction is routed with `skills=[]` so it cannot pick
     # itself.
+    # The action for this turn, or None for a turn that takes no tool. Kept
+    # for every caller written before decisions were typed; `decide` is the
+    # same judgement with the reason for "no action" preserved, and a loop
+    # reads that one so a failed router is never a clean stop.
     async def select(
         self,
         user_id: str,
@@ -437,9 +447,56 @@ class MainActionSelector:
         steps_taken: list[str] | None = None,
         zone: str = "",
         replying_to: str = "",
-    ) -> MainAction:
+        later_step_seconds: float | None = None,
+        excluding: frozenset[str] | None = None,
+    ) ->MainAction:
+        decision = await self.decide(
+            user_id,
+            query,
+            history,
+            active_image_artifact_id,
+            query_embedding=query_embedding,
+            local_now=local_now,
+            skills=skills,
+            unattended=unattended,
+            only=only,
+            steps_taken=steps_taken,
+            zone=zone,
+            replying_to=replying_to,
+            later_step_seconds=later_step_seconds,
+            excluding=excluding,
+        )
+        return decision.action if isinstance(decision, Act) else None
+
+    # Decide what this turn needs: an action, nothing further, something the
+    # message did not say, or no decision at all because the router failed.
+    #
+    # `only` restricts a later step to named tools, in code. `later_step_seconds`
+    # is the same restriction read off the tools' own contracts: with that much
+    # budget left, a later step is offered every tool whose contract allows
+    # it - a read, or a write to this system's own records, that is not
+    # expensive and needs no approval - and nothing else, however the prompt
+    # is worded. The two compose: a caller may name a set and add what the
+    # contracts allow.
+    async def decide(
+        self,
+        user_id: str,
+        query: str,
+        history: list[dict[str, Any]],
+        active_image_artifact_id: str | None,
+        query_embedding: list[float] | None = None,
+        local_now: str | None = None,
+        skills: list[dict[str, Any]] | None = None,
+        unattended: bool = False,
+        only: frozenset[str] | None = None,
+        steps_taken: list[str] | None = None,
+        zone: str = "",
+        replying_to: str = "",
+        later_step_seconds: float | None = None,
+        excluding: frozenset[str] | None = None,
+    ) ->Decision:
         if not query.strip():
-            return None
+            return Done("an empty message")
 
         # The zone the history's timestamps are written in - the person's, or
         # in a group the speaker's. Empty stamps them UTC and says so.
@@ -489,24 +546,77 @@ class MainActionSelector:
             logger.info(
                 "A bare acceptance follows nothing that was offered; taking no tool"
             )
-            return None
+            return Done("a bare acceptance of nothing offered")
 
         tools: list[dict[str, Any]] = []
         aliases: dict[str, Any] = {}
         offered_skills: list[dict[str, Any]] = []
-        # A later step in the same turn is restricted to a named set, in code
-        # rather than by asking the prompt nicely. Same mechanism the unattended
-        # withholding already uses, and it means a second decision cannot start
-        # a ninety-second image generation or spend a search credit however the
-        # model happens to be prompted.
-        if only is not None:
+        # A later step in the same turn is restricted in code rather than by
+        # asking the prompt nicely - to a named set, to what the tools' own
+        # contracts allow with the budget left, or both. Same mechanism the
+        # unattended withholding already uses, and it means a second decision
+        # cannot start a ninety-second image generation or message somebody
+        # however the model happens to be prompted.
+        restricted = only is not None or later_step_seconds is not None
+        if restricted:
+            allowed: set[str] = set(only or ())
+            if later_step_seconds is not None:
+                allowed |= later_step_tools(later_step_seconds)
+            # What the caller cannot carry out as a step, whatever the
+            # contract says - a tool its executor does not cover.
+            allowed -= set(excluding or ())
             tools.extend(
                 self._builtin_definition(
                     builtin.name, builtin.description, builtin.schema
                 )
                 for builtin in self._available_builtins(unattended)
-                if builtin.name in only
+                if builtin.name in allowed and builtin.name not in withheld_now
             )
+            # The internet tools are not rows; each is offered when its own
+            # contract allows a later step, by the same definitions a first
+            # step sees.
+            if SEARCH_TOOL in allowed:
+                search_tool = await self._search_tool_definition()
+                if search_tool is not None:
+                    tools.append(search_tool)
+            if WEATHER_TOOL in allowed:
+                weather = await self._weather_tool_definition()
+                if weather is not None:
+                    definition, live = weather
+                    tools.append(definition)
+                    aliases[WEATHER_TOOL] = (
+                        {"schema_fingerprint": live.schema_fingerprint},
+                        live,
+                    )
+            if SEARCH_CREDITS_TOOL in allowed:
+                credits = await self._credits_tool_definition()
+                if credits is not None:
+                    definition, live = credits
+                    tools.append(definition)
+                    aliases[SEARCH_CREDITS_TOOL] = (
+                        {"schema_fingerprint": live.schema_fingerprint},
+                        live,
+                    )
+            # The person's own tools, by each one's contract: a read on a
+            # server the operator trusts may be a later step; a write or
+            # anything needing approval may not.
+            orchestration = self.tool_orchestration
+            if later_step_seconds is not None and orchestration is not None:
+                candidates = await orchestration.list_candidates(
+                    user_id, query, query_embedding=query_embedding
+                )
+                fitting = [
+                    item
+                    for item in candidates
+                    if self.mcp_invocation.contract_for(
+                        item[1].server_id, item[1].name
+                    ).allows_later_step(later_step_seconds)
+                ]
+                mcp_aliases = {
+                    f"mcp_tool_{index}": item for index, item in enumerate(fitting)
+                }
+                aliases.update(mcp_aliases)
+                tools.extend(MCPToolOrchestrationService.tool_definitions(mcp_aliases))
         else:
             # Offered even while an allowance is used up: the router's choice
             # is what tells a turn apart from one that never wanted a search.
@@ -572,7 +682,7 @@ class MainActionSelector:
         # Anthropic's tool search exists to prevent. Off until measured.
         catalogue = Catalog()
         if (
-            only is None
+            not restricted
             and settings.ROUTING_TOOL_SEARCH_ENABLED
             and len(tools) > settings.ROUTING_TOOL_SEARCH_THRESHOLD
         ):
@@ -629,7 +739,7 @@ class MainActionSelector:
         if message is None:
             message = await self._decide(user_content, tools)
             if message is None:
-                return None
+                return Unavailable("the routing model did not answer")
             # A catalogue search is half a decision; remembering it would
             # replay the search rather than its answer. A decision that wrote
             # a clock time into its arguments cannot outlive the clock it read.
@@ -674,7 +784,7 @@ class MainActionSelector:
                 f"{user_content}\n\n{loaded_block(names)}", tools
             )
             if message is None:
-                return None
+                return Unavailable("the routing model did not answer the loaded tools")
             offered = {tool["function"]["name"] for tool in tools}
         return self._parse(message, query, aliases, offered, offered_skills)
 
@@ -708,6 +818,16 @@ class MainActionSelector:
     def _extract_call(
         message: dict[str, Any], offered: set[str]
     ) -> tuple[str, dict[str, Any]] | None:
+        named = MainActionSelector._named_call(message)
+        if named is None or named[0] not in offered:
+            return None
+        return named
+
+    # The tool the message named and its parsed arguments, whether or not
+    # the tool was offered, so a caller can tell "named nothing" from "named
+    # something that was never on the list".
+    @staticmethod
+    def _named_call(message: dict[str, Any]) -> tuple[str, dict[str, Any]] | None:
         calls = message.get("tool_calls")
         if not calls or not isinstance(calls, list):
             return None
@@ -730,7 +850,7 @@ class MainActionSelector:
         call = calls[0]
         function = call.get("function") if isinstance(call, dict) else None
         name = function.get("name") if isinstance(function, dict) else None
-        if name not in offered:
+        if not isinstance(name, str) or not name:
             return None
         raw_arguments = (
             function.get("arguments") if isinstance(function, dict) else None
@@ -745,7 +865,11 @@ class MainActionSelector:
                 arguments = {}
         return str(name), arguments
 
-    # Convert one native tool-call message into a typed, application-owned action.
+    # Convert one native tool-call message into a typed, application-owned
+    # decision. Four things used to be the same None here - no call, a call
+    # to a tool never offered, a built-in the model could not fill in, and an
+    # alias that resolved to nothing - and a loop reading None as "finished"
+    # reported an incomplete turn as done. Each is now its own decision.
     def _parse(
         self,
         message: dict[str, Any],
@@ -753,28 +877,40 @@ class MainActionSelector:
         aliases: dict[str, tuple[dict[str, Any], MCPTool]],
         offered: set[str],
         skills: list[dict[str, Any]] | None = None,
-    ) -> MainAction:
-        extracted = self._extract_call(message, offered)
-        if extracted is None:
-            return None
-        name, arguments = extracted
+    ) -> Decision:
+        named = self._named_call(message)
+        if named is None:
+            return Done()
+        name, arguments = named
+        if name not in offered:
+            # A built-in is a fixed set of literals, so nothing stops a
+            # malformed provider response from naming one that was not on
+            # the list this turn; the provider's output is not trusted to
+            # have respected what it was given.
+            logger.warning("The model named a tool that was not offered: %s", name)
+            return Unavailable(f"named a tool that was not offered: {name}")
 
         builtin = parse_builtin(name, arguments, fallback_query)
         if builtin is not NOT_BUILTIN:
-            return builtin  # type: ignore[return-value]
+            if builtin is None:
+                # Ours, and the model left out what it needed: the reply asks.
+                return NeedsInput(name)
+            return Act(builtin)
         skill = parse_skill_call(name, skills or [])
         if skill is not None:
-            return skill
+            return Act(skill)
 
         selected = aliases.get(str(name))
         if selected is None:
-            return None
+            return Unavailable(f"a call that resolved to no tool: {name}")
         descriptor, live = selected
-        return ToolboxAction(
-            plan=MCPToolPlan(
-                server_id=live.server_id,
-                tool_name=live.name,
-                arguments=arguments,
-                expected_fingerprint=str(descriptor["schema_fingerprint"]),
+        return Act(
+            ToolboxAction(
+                plan=MCPToolPlan(
+                    server_id=live.server_id,
+                    tool_name=live.name,
+                    arguments=arguments,
+                    expected_fingerprint=str(descriptor["schema_fingerprint"]),
+                )
             )
         )

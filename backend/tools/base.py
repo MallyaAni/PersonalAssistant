@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 from typing import Any
 
+from .contracts import UNDECLARED, EffectContract
+
 
 @dataclass(frozen=True, slots=True)
 class BuiltinTool:
@@ -43,6 +45,12 @@ class BuiltinTool:
     # Loaded only when a picture is in view. The interface state already
     # decides whether these can be used at all.
     needs_picture: bool = False
+    # What the tool does to the world, read by the loop's policy: whether a
+    # later step may start it, what a repeat of it is compared on, whether
+    # it creates something, and whether a dropped call may be replayed. The
+    # default declares nothing and so is offered to no later step; every
+    # row here declares its own. See `contracts.py`.
+    contract: EffectContract = UNDECLARED
 
     # The same row as a capability line for the reply prompt's context.
     def as_capability(self) -> dict[str, str]:

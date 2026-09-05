@@ -4,6 +4,7 @@ from typing import Any
 
 from .actions import DelegateAction
 from .base import BuiltinTool, required_text, subject_schema
+from .contracts import EffectContract
 
 NAME = "delegate_to_presentation_agent"
 
@@ -17,6 +18,7 @@ TOOL = BuiltinTool(
         "🎞️ Handing this to the slide specialist…",
     ),
     family="presentations",
+    contract=EffectContract(effect="write", cost="expensive", creates=True),
 )
 
 

@@ -27,6 +27,9 @@ tokenizers>=0.20.0,<1.0.0
 # rebuilt after that release silently lost web search and both stdio servers
 # while the host venv kept working on 1.x and the tests still passed.
 mcp>=1.0.0,<2.0.0
+# Full JSON Schema validation of tool arguments before a call leaves
+# the machine (backend/mcp/invocation.py).
+jsonschema>=4.20,<5
 redis>=5.0.0
 google-adk==2.5.0
 argon2-cffi>=23.1.0
