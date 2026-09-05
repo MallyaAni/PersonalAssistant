@@ -305,6 +305,37 @@ def _session_inputs(
     return x, market
 
 
+# Gather several sessions into one padded batch: (B, Nmax, W, width)
+# inputs, (B, M) market vectors, a (B, Nmax) mask of real slots, and
+# (B, Nmax) labels. One forward pass per optimiser step instead of one
+# per session, which is what keeps a GPU busy.
+def _batch_inputs(
+    features: Features,
+    normalizer: Normalizer,
+    window_size: int,
+    sessions: np.ndarray,
+    eligible: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Return padded (inputs, market, mask, labels) for a batch of sessions."""
+    parts = []
+    for t in sessions:
+        cols = np.flatnonzero(eligible[t])
+        x, market = _session_inputs(features, normalizer, window_size, int(t), cols)
+        parts.append((x, market, features.labels[t, cols]))
+    widest = max(len(part[2]) for part in parts)
+    width = parts[0][0].shape[2]
+    x_out = np.zeros((len(parts), widest, window_size, width), dtype=np.float32)
+    market_out = np.stack([part[1] for part in parts]).astype(np.float32)
+    mask = np.zeros((len(parts), widest), dtype=bool)
+    y_out = np.zeros((len(parts), widest), dtype=np.float32)
+    for b, (x, _, y) in enumerate(parts):
+        n = len(y)
+        x_out[b, :n] = x
+        mask[b, :n] = True
+        y_out[b, :n] = y
+    return x_out, market_out, mask, y_out
+
+
 class Ranker(nn.Module):
     """Scores a session's names; MLP, GRU, cross-sectional or MASTER-style."""
 
@@ -366,26 +397,50 @@ class Ranker(nn.Module):
     # Forward pass over one session: x is (names, window_size, inputs) and
     # market is (market,) or None for the encoders that ignore it.
     def forward(
-        self, x: torch.Tensor, market: torch.Tensor | None = None
+        self,
+        x: torch.Tensor,
+        market: torch.Tensor | None = None,
+        mask: torch.Tensor | None = None,
     ) -> torch.Tensor:
-        """Return one score per name."""
-        if self.encoder_kind == "gru":
-            _, last = self.gru(x)
-            return self.body(last[-1]).squeeze(-1)
-        if self.encoder_kind == "xsect":
-            _, last = self.temporal(x)
-            mixed = self.cross(last[-1].unsqueeze(0))[0]
-            return self.body(mixed).squeeze(-1)
-        if self.encoder_kind == "master":
+        """Return one score per name.
+
+        `x` is one session, (names, window, inputs), or a padded batch of
+        sessions, (sessions, names, window, inputs), with `mask` (sessions,
+        names) True where a slot holds a real name. Scores come back as
+        (names,) or (sessions, names); padded slots carry garbage the
+        caller must slice off.
+        """
+        single = x.dim() == 3
+        if single:
+            x = x.unsqueeze(0)
+            if market is not None:
+                market = market.unsqueeze(0)
+        batch, names, window, width = x.shape
+        flat = x.reshape(batch * names, window, width)
+        padding = None if mask is None else ~mask
+        if self.encoder_kind == "mlp":
+            scores = self.body(flat).reshape(batch, names)
+        elif self.encoder_kind == "gru":
+            _, last = self.gru(flat)
+            scores = self.body(last[-1]).reshape(batch, names)
+        elif self.encoder_kind == "xsect":
+            _, last = self.temporal(flat)
+            tokens = last[-1].reshape(batch, names, -1)
+            mixed = self.cross(tokens, src_key_padding_mask=padding)
+            scores = self.body(mixed).squeeze(-1)
+        else:  # master
             if market is None:
                 raise ValueError("the master encoder needs the market vector")
-            gated = x * (2.0 * self.gate(market))[None, None, :]
+            gate = (2.0 * self.gate(market)).reshape(batch, 1, 1, width)
+            gated = (x * gate).reshape(batch * names, window, width)
             tokens = self.temporal(self.embed(gated) + self.position)
             weights = torch.softmax(self.pool(tokens).squeeze(-1), dim=1)
             pooled = (tokens * weights.unsqueeze(-1)).sum(dim=1)
-            mixed = self.cross(pooled.unsqueeze(0))[0]
-            return self.body(mixed).squeeze(-1)
-        return self.body(x).squeeze(-1)
+            mixed = self.cross(
+                pooled.reshape(batch, names, -1), src_key_padding_mask=padding
+            )
+            scores = self.body(mixed).squeeze(-1)
+        return scores[0] if single else scores
 
 
 # A stack of transformer encoder layers over a (batch, tokens, hidden) input.
@@ -500,18 +555,19 @@ def train_fold(
         for start in range(0, len(order), config.sessions_per_batch):
             batch = order[start : start + config.sessions_per_batch]
             optimizer.zero_grad()
+            x, market, mask, y = _batch_inputs(
+                features, normalizer, config.window_size, batch, eligible_labelled
+            )
+            scores = model(
+                torch.from_numpy(x).to(config.device),
+                torch.from_numpy(market).to(config.device),
+                torch.from_numpy(mask).to(config.device),
+            )
             losses = []
-            for t in batch:
-                cols = np.flatnonzero(eligible_labelled[t])
-                x, market = _session_inputs(
-                    features, normalizer, config.window_size, t, cols
-                )
-                scores = model(
-                    torch.from_numpy(x).to(config.device),
-                    torch.from_numpy(market).to(config.device),
-                )
-                y = torch.from_numpy(features.labels[t, cols]).to(config.device)
-                losses.append(session_loss(scores, y))
+            for b in range(len(batch)):
+                n = int(mask[b].sum())
+                y_b = torch.from_numpy(y[b, :n]).to(config.device)
+                losses.append(session_loss(scores[b, :n], y_b))
             loss = torch.stack(losses).mean()
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 1.0)
