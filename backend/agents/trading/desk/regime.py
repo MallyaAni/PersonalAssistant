@@ -66,6 +66,9 @@ class RegimeState:
     # How much of the sized book to carry (0.75 in a hype phase, else 1).
     exposure: float
     flags: tuple[str, ...]
+    # The AI basket's own 60-session log return (with the market): the
+    # technical analyst switches playbook on its sign.
+    ai_trend_60: float = float("nan")
 
 
 @dataclass(frozen=True)
@@ -74,6 +77,9 @@ class RegimeView:
 
     states: list[RegimeState]
     rotation: Opinion
+    # (T,) the AI basket's trailing 60-session return, for the technical
+    # analyst's switch.
+    ai_trend: np.ndarray | None = None
 
     # The state on the last session.
     def today(self) -> RegimeState:
@@ -198,6 +204,7 @@ def opine(panel: Panel, sides: dict[str, str]) -> RegimeView:
     bench = panel.benchmark_returns()
     bench = np.where(np.isfinite(bench), bench, 0.0)
     cum = np.cumsum(ai + bench)
+    ai_trend = baselines.trailing_sum((ai + bench)[:, None], ROTATION_SESSIONS)[:, 0]
     drawdown = np.array(
         [
             cum[t] - cum[max(0, t - PARTICIPATION_LONG) : t + 1].max()
@@ -248,12 +255,13 @@ def opine(panel: Panel, sides: dict[str, str]) -> RegimeView:
                 selection_confidence=confidence,
                 exposure=exposure,
                 flags=tuple(flags),
+                ai_trend_60=float(ai_trend[t]),
             )
         )
     rotation = Opinion(
         "rotation", rotation_scores, {"rotation_spread_60": rotation_scores}
     )
-    return RegimeView(states, rotation)
+    return RegimeView(states, rotation, ai_trend)
 
 
 # z-score of x[t] against the finite values of x before t (at least a year).

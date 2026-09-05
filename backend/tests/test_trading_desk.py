@@ -153,6 +153,29 @@ def test_risk_sizes_by_grade_and_exposure():
     assert risk.gross(sized) < sum(abs(s.position.weight) for s in sized)
 
 
+# The technical analyst switches playbook on the theme's trend: in a
+# rising theme the name nearest its 52-week high ranks first; in a falling
+# theme the most stretched name ranks last.
+def test_technical_analyst_switches_on_theme_trend():
+    from backend.agents.trading.desk import technical as analyst
+
+    t, n = 320, 4
+    themes = {f"N{i}": (AI_COMPUTE,) for i in range(n)}
+    returns = np.zeros((t, n))
+    # N0 climbs steadily to a fresh high and sits well above its 21 EMA.
+    returns[:, 0] = 0.004
+    returns[-10:, 0] = 0.03
+    # N1 is flat; N2 and N3 drift down.
+    returns[:, 2] = -0.001
+    returns[:, 3] = -0.002
+    panel = _panel(returns, themes)
+    rising = analyst.opine(panel, np.full(t, 0.1)).scores[-1, :n]
+    falling = analyst.opine(panel, np.full(t, -0.1)).scores[-1, :n]
+    assert np.nanargmax(rising) == 0
+    assert falling[0] < rising[0]
+    assert np.allclose(analyst.opine(panel).scores[-1, :n], falling, equal_nan=True)
+
+
 # The analysts have no view where their layer has no data.
 def test_analysts_withhold_without_data():
     from backend.agents.trading.desk import fundamental, sentiment

@@ -91,12 +91,12 @@ def run(store: MarketStore, asof: date | None = None) -> DeskReport:
     panel, sides = book_panel(store, asof)
     extra = load_edgar_features(store, panel, asof)
     tone = load_tone_features(store, panel, asof)
+    view = regime.opine(panel, sides)
     opinions = {
         fundamental.NAME: fundamental.opine(extra),
-        technical.NAME: technical.opine(panel),
+        technical.NAME: technical.opine(panel, view.ai_trend),
         sentiment.NAME: sentiment.opine(tone),
     }
-    view = regime.opine(panel, sides)
     graded = grading.grade(
         opinions[fundamental.NAME],
         opinions[technical.NAME],
