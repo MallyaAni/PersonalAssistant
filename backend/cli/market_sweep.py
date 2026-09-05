@@ -21,7 +21,12 @@ import numpy as np
 from backend.config.settings import settings
 from backend.market import baselines
 from backend.market.harness import HarnessReport, evaluate_scores
-from backend.market.model import TrainConfig, load_extra_features, walk_forward
+from backend.market.model import (
+    TrainConfig,
+    load_extra_features,
+    load_tape,
+    walk_forward,
+)
 from backend.market.panel import build_panel
 from backend.market.store import MarketStore
 from backend.market.universe import (
@@ -138,6 +143,14 @@ SWEEP: dict[str, TrainConfig] = {
     "chart_cnn_h5": TrainConfig(
         features="raw", label="rank", encoder="chart_cnn", horizon=5, epochs=5
     ),
+    # The tape: a sequence model over the last five sessions of 15-minute
+    # bars with the daily window as context, mixed across names.
+    "tape_h5": TrainConfig(
+        features="alpha+technical", label="rank", encoder="tape", horizon=5
+    ),
+    "tape_h20": TrainConfig(
+        features="alpha+technical", label="rank", encoder="tape", horizon=20
+    ),
     "xsect_raw_rank": TrainConfig(features="raw", label="rank", encoder="xsect"),
     "mlp_raw_residual": TrainConfig(),
 }
@@ -235,6 +248,13 @@ def main() -> None:
     )
     momentum_scores = baselines.momentum(panel)
     extras: dict[str, np.ndarray | None] = {}
+    tape = None
+    if any(SWEEP[n].encoder == "tape" for n in names):
+        tape = load_tape(store, panel, args.asof)
+        if tape is None:
+            raise SystemExit("no 15-minute bars in the store; run market_intraday")
+        covered = np.isfinite(tape).all(axis=(2, 3))
+        print(f"tape: {int(covered[-1].sum())} names with a full tape today")
     for name in names:
         config = replace(SWEEP[name], device=args.device)
         started = time.time()
@@ -249,7 +269,9 @@ def main() -> None:
                 )
             except ValueError as exc:
                 raise SystemExit(str(exc)) from exc
-        result = walk_forward(panel, config, log=print, extra=extras[config.features])
+        result = walk_forward(
+            panel, config, log=print, extra=extras[config.features], tape=tape
+        )
         report = evaluate_scores(
             result.scores, panel, config.horizon, cost_bps=args.cost_bps
         )

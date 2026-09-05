@@ -87,7 +87,7 @@ class TrainConfig:
     validation_fraction: float = 0.1
     features: str = "raw"  # "raw" | "alpha" | "alpha+edgar" | "raw+edgar"
     label: str = "residual"  # "residual" | "rank"
-    encoder: str = "mlp"  # mlp | gru | xsect | master | lgbm | chart_cnn
+    encoder: str = "mlp"  # mlp | gru | xsect | master | lgbm | chart_cnn | tape
     hidden: int = 128
     dropout: float = 0.1
     heads: int = 4
@@ -101,6 +101,7 @@ class TrainConfig:
     seeds: int = 1
     seed: int = 7
     cnn_max_train_cells: int = 60_000
+    tape_sessions: int = 5  # sessions of 15-minute bars the tape encoder reads
     device: str = "cpu"
 
 
@@ -130,6 +131,7 @@ class Features:
     ranks: np.ndarray  # (T, N, R) float32, NaN where unknown
     market: np.ndarray  # (T, M) float32 market-state vector, NaN where unknown
     labels: np.ndarray  # (T, N) float32 training label, NaN unknown
+    tape: np.ndarray | None = None  # (T, N, 26, 5) float32, NaN where absent
 
     @property
     def width(self) -> int:
@@ -148,6 +150,7 @@ def build_features(
     features: str = "raw",
     label: str = "residual",
     extra: np.ndarray | None = None,
+    tape: np.ndarray | None = None,
 ) -> Features:
     """Return channels, baseline ranks, market state and labels for a panel."""
     channels = channel_matrices(panel).astype(np.float32)
@@ -201,13 +204,18 @@ def build_features(
         labels = (baselines.percentile_rank(residual) - 0.5).astype(np.float32)
     else:
         raise ValueError(f"unknown label {label!r}")
-    return Features(channels=channels, ranks=ranks, market=market, labels=labels)
+    return Features(
+        channels=channels, ranks=ranks, market=market, labels=labels, tape=tape
+    )
 
 
 # The features a config asks for; `extra` is the (T, N, K) array an
 # "+edgar" feature set concatenates.
 def _features_for(
-    panel: Panel, config: TrainConfig, extra: np.ndarray | None = None
+    panel: Panel,
+    config: TrainConfig,
+    extra: np.ndarray | None = None,
+    tape: np.ndarray | None = None,
 ) -> Features:
     return build_features(
         panel,
@@ -218,13 +226,25 @@ def _features_for(
         features=config.features,
         label=config.label,
         extra=extra,
+        tape=tape,
     )
 
 
 # Which (session, name) pairs have a complete window, complete baseline
 # ranks, a known market state, and (when required) a known label.
-def _eligible(features: Features, window_size: int, need_label: bool) -> np.ndarray:
+def _eligible(
+    features: Features,
+    window_size: int,
+    need_label: bool,
+    tape_sessions: int = 0,
+) -> np.ndarray:
     known = np.isfinite(features.channels).all(axis=2)  # (T, N)
+    if tape_sessions and features.tape is not None:
+        tape_known = np.isfinite(features.tape).all(axis=(2, 3))
+        for offset in range(tape_sessions):
+            shifted = np.zeros_like(tape_known)
+            shifted[offset:] = tape_known[: tape_known.shape[0] - offset]
+            known &= shifted
     complete = np.ones_like(known)
     for offset in range(window_size):
         shifted = np.ones_like(known)
@@ -297,6 +317,7 @@ def _session_inputs(
 ) -> tuple[np.ndarray, np.ndarray]:
     """Return (windows, market) for the names `cols` on session `t`."""
     rows = np.arange(t - window_size + 1, t + 1)
+    _ = rows  # the tape, when present, is gathered by _tape_inputs
     window = features.channels[rows[:, None], cols[None, :]]  # (W, k, C)
     window = normalizer.apply(np.transpose(window, (1, 0, 2)))  # (k, W, C)
     ranks = np.repeat(features.ranks[t, cols][:, None, :], window_size, axis=1)
@@ -336,6 +357,36 @@ def _batch_inputs(
     return x_out, market_out, mask, y_out
 
 
+# The padded tape batch matching _batch_inputs, (B, Nmax, S*26, 5).
+def _batch_tape(
+    features: Features, tape_sessions: int, sessions: np.ndarray, eligible: np.ndarray
+) -> np.ndarray:
+    """Return the padded tape for a batch of sessions."""
+    parts = [
+        _tape_inputs(features, tape_sessions, int(t), np.flatnonzero(eligible[t]))
+        for t in sessions
+    ]
+    widest = max(len(part) for part in parts)
+    steps = parts[0].shape[1]
+    out = np.zeros((len(parts), widest, steps, 5), dtype=np.float32)
+    for b, part in enumerate(parts):
+        out[b, : len(part)] = part
+    return out
+
+
+# The tape of the last `steps_sessions` sessions for the names `cols` on
+# session `t`, as (k, steps_sessions * 26, 5), oldest bar first.
+def _tape_inputs(
+    features: Features, tape_sessions: int, t: int, cols: np.ndarray
+) -> np.ndarray:
+    """Return the concatenated tape of the last sessions for the given names."""
+    assert features.tape is not None
+    rows = np.arange(t - tape_sessions + 1, t + 1)
+    block = features.tape[rows[:, None], cols[None, :]]  # (S, k, 26, 5)
+    block = np.transpose(block, (1, 0, 2, 3))  # (k, S, 26, 5)
+    return block.reshape(len(cols), tape_sessions * block.shape[2], block.shape[3])
+
+
 class Ranker(nn.Module):
     """Scores a session's names; MLP, GRU, cross-sectional or MASTER-style."""
 
@@ -354,9 +405,11 @@ class Ranker(nn.Module):
         heads: int = 4,
         temporal_layers: int = 1,
         cross_layers: int = 2,
+        tape_steps: int = 0,
     ) -> None:
         super().__init__()
         self.encoder_kind = encoder
+        self.tape_steps = tape_steps
         if encoder in ("xsect", "master") and hidden % heads:
             raise ValueError("hidden must be divisible by heads")
         head = nn.Sequential(
@@ -383,6 +436,30 @@ class Ranker(nn.Module):
             self.temporal = nn.GRU(inputs, hidden, batch_first=True)
             self.cross = _transformer(hidden, heads, dropout, cross_layers)
             self.body = head
+        elif encoder == "tape":
+            # The tape: 1-D convolutions over K x 26 bars of five channels,
+            # pooled; the daily window through a small MLP; both mixed across
+            # the session's names by attention.
+            self.tape_conv = nn.Sequential(
+                nn.Conv1d(5, 32, kernel_size=5, padding=2),
+                nn.GELU(),
+                nn.MaxPool1d(2),
+                nn.Conv1d(32, 64, kernel_size=5, padding=2),
+                nn.GELU(),
+                nn.MaxPool1d(2),
+                nn.Conv1d(64, hidden, kernel_size=3, padding=1),
+                nn.GELU(),
+                nn.AdaptiveAvgPool1d(1),
+            )
+            self.daily = nn.Sequential(
+                nn.Flatten(),
+                nn.Linear(inputs * window_size, hidden),
+                nn.GELU(),
+                nn.Dropout(dropout),
+            )
+            self.merge = nn.Linear(2 * hidden, hidden)
+            self.cross = _transformer(hidden, heads, dropout, cross_layers)
+            self.body = head
         elif encoder == "master":
             self.gate = nn.Sequential(nn.Linear(market, inputs), nn.Sigmoid())
             self.embed = nn.Linear(inputs, hidden)
@@ -401,6 +478,7 @@ class Ranker(nn.Module):
         x: torch.Tensor,
         market: torch.Tensor | None = None,
         mask: torch.Tensor | None = None,
+        tape: torch.Tensor | None = None,
     ) -> torch.Tensor:
         """Return one score per name.
 
@@ -415,6 +493,8 @@ class Ranker(nn.Module):
             x = x.unsqueeze(0)
             if market is not None:
                 market = market.unsqueeze(0)
+            if tape is not None:
+                tape = tape.unsqueeze(0)
         batch, names, window, width = x.shape
         flat = x.reshape(batch * names, window, width)
         padding = None if mask is None else ~mask
@@ -423,6 +503,21 @@ class Ranker(nn.Module):
         elif self.encoder_kind == "gru":
             _, last = self.gru(flat)
             scores = self.body(last[-1]).reshape(batch, names)
+        elif self.encoder_kind == "tape":
+            if tape is None:
+                raise ValueError("the tape encoder needs the tape tensor")
+            # tape: (B, N, steps, 5) -> conv over steps
+            steps = tape.shape[2]
+            series = tape.reshape(batch * names, steps, 5).transpose(1, 2)
+            tape_embedding = self.tape_conv(series).squeeze(-1)
+            daily_embedding = self.daily(flat)
+            merged = torch.nn.functional.gelu(
+                self.merge(torch.cat([tape_embedding, daily_embedding], dim=1))
+            )
+            mixed = self.cross(
+                merged.reshape(batch, names, -1), src_key_padding_mask=padding
+            )
+            scores = self.body(mixed).squeeze(-1)
         elif self.encoder_kind == "xsect":
             _, last = self.temporal(flat)
             tokens = last[-1].reshape(batch, names, -1)
@@ -479,9 +574,16 @@ def _predict(
     device: str,
 ) -> np.ndarray:
     x, market = _session_inputs(features, normalizer, window_size, t, cols)
+    tape = None
+    if model.encoder_kind == "tape":
+        tape = torch.from_numpy(_tape_inputs(features, model.tape_steps, t, cols)).to(
+            device
+        )
     with torch.no_grad():
         scores = model(
-            torch.from_numpy(x).to(device), torch.from_numpy(market).to(device)
+            torch.from_numpy(x).to(device),
+            torch.from_numpy(market).to(device),
+            tape=tape,
         )
     return scores.cpu().numpy()
 
@@ -542,6 +644,7 @@ def train_fold(
         heads=config.heads,
         temporal_layers=config.temporal_layers,
         cross_layers=config.cross_layers,
+        tape_steps=config.tape_sessions if config.encoder == "tape" else 0,
     ).to(config.device)
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay
@@ -558,10 +661,18 @@ def train_fold(
             x, market, mask, y = _batch_inputs(
                 features, normalizer, config.window_size, batch, eligible_labelled
             )
+            tape_batch = None
+            if config.encoder == "tape":
+                tape_batch = torch.from_numpy(
+                    _batch_tape(
+                        features, config.tape_sessions, batch, eligible_labelled
+                    )
+                ).to(config.device)
             scores = model(
                 torch.from_numpy(x).to(config.device),
                 torch.from_numpy(market).to(config.device),
                 torch.from_numpy(mask).to(config.device),
+                tape=tape_batch,
             )
             losses = []
             for b in range(len(batch)):
@@ -786,11 +897,15 @@ def walk_forward(
     config: TrainConfig,
     log: Callable[[str], None] | None = None,
     extra: np.ndarray | None = None,
+    tape: np.ndarray | None = None,
 ) -> WalkForwardResult:
     """Return out-of-sample scores for the panel under purged walk-forward folds."""
-    features = _features_for(panel, config, extra)
-    labelled = _eligible(features, config.window_size, need_label=True)
-    scorable = _eligible(features, config.window_size, need_label=False)
+    features = _features_for(panel, config, extra, tape)
+    need_tape = config.tape_sessions if config.encoder == "tape" else 0
+    if need_tape and features.tape is None:
+        raise ValueError("the tape encoder needs the tape tensor; fetch 15-minute bars")
+    labelled = _eligible(features, config.window_size, True, need_tape)
+    scorable = _eligible(features, config.window_size, False, need_tape)
     folds = walk_forward_folds(
         len(panel.dates),
         config.train_size,
@@ -862,11 +977,13 @@ def score_today(
     config: TrainConfig,
     log: Callable[[str], None] | None = None,
     extra: np.ndarray | None = None,
+    tape: np.ndarray | None = None,
 ) -> np.ndarray:
     """Return scores for the last session from a model trained on all prior history."""
-    features = _features_for(panel, config, extra)
-    labelled = _eligible(features, config.window_size, need_label=True)
-    scorable = _eligible(features, config.window_size, need_label=False)
+    features = _features_for(panel, config, extra, tape)
+    need_tape = config.tape_sessions if config.encoder == "tape" else 0
+    labelled = _eligible(features, config.window_size, True, need_tape)
+    scorable = _eligible(features, config.window_size, False, need_tape)
     last = len(panel.dates) - 1
     stop = last - config.horizon - config.embargo
     train = range(max(0, stop - config.train_size), stop)
@@ -978,3 +1095,19 @@ def load_intraday_features(store, panel, asof=None):
     if not bars:
         return None
     return alpaca.intraday_features(panel, bars)
+
+
+# The tape tensor for a panel from stored 15-minute frames, or None.
+def load_tape(store, panel, asof=None):
+    """Return tape.tape_tensor(panel, bars) from stored bars_15m frames, or None."""
+    from backend.market import alpaca, tape
+
+    bars = {}
+    for ticker in panel.tickers:
+        frame = store.read_frame(alpaca.BARS_KIND, ticker, asof)
+        if frame is None:
+            continue
+        bars[ticker] = alpaca.bars_from_frame(frame[0])
+    if not bars:
+        return None
+    return tape.tape_tensor(panel, bars)
