@@ -458,3 +458,23 @@ async def test_a_claim_is_filtered_by_kind_and_user():
     finally:
         await _clean(user)
         await _clean(other)
+
+
+# Cancelling a run parked for approval expires the question it was waiting
+# on: a yes on a cancelled run must not read as a yes that did something.
+async def test_cancelling_a_parked_run_expires_its_pending_approval():
+    user = _user()
+    try:
+        run = await _make_run(user)
+        claimed = await _claim("w1")
+        world = _world_with_replay(plan=["a", "b"], approve={"b"})
+        assert (await RunController(AsyncSessionLocal, "w1").execute(claimed, world)).status == "waiting_approval"
+        (pending,) = (await _get(user, run["id"]))["approvals"]
+        async with AsyncSessionLocal() as db:
+            assert await AgentRunRepository(db).request_cancel(user, run["id"]) == "cancelled"
+            assert await AgentRunRepository(db).decide_approval(user, pending["id"], True) == "not_pending"
+        after = await _get(user, run["id"])
+        assert after["status"] == "cancelled"
+        assert [row["status"] for row in after["approvals"]] == ["expired"]
+    finally:
+        await _clean(user)

@@ -262,6 +262,18 @@ class AgentRunRepository:
             run.status = "cancelled"
             run.completed_at = datetime.now(UTC)
             run.error_code = "cancelled"
+            # A question the run was waiting on has no run to answer for any
+            # more; left pending it could still be granted, and a yes on a
+            # cancelled run reads as a yes that went nowhere.
+            for approval in (
+                await self.session.execute(
+                    select(AgentRunApproval).where(
+                        (AgentRunApproval.run_id == run.id)
+                        & (AgentRunApproval.status == "pending")
+                    )
+                )
+            ).scalars():
+                approval.status = "expired"
         await self.session.commit()
         await self.record_event(run_id, "cancel_requested", {"by": user_id})
         return "cancelled" if run.status == "cancelled" else "requested"

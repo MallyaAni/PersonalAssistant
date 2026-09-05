@@ -54,8 +54,14 @@ async def review(
                 max_creates=1,
             )
             run_id = created["id"]
+        # This process renews no lease, so it claims for the whole budget
+        # plus a margin: a review under a loaded model takes minutes, and a
+        # lease that lapsed mid-run let a hosting worker take the run.
         claimed = await repo.claim_next(
-            "review-cli", settings.AGENT_RUN_LEASE_SECONDS, kinds=(kind,), user_id=user_id
+            "review-cli",
+            float(settings.AGENT_RUN_DEFAULT_BUDGET_SECONDS) + 300.0,
+            kinds=(kind,),
+            user_id=user_id,
         )
     if claimed is None or claimed["id"] != run_id:
         print("could not claim the run (another worker holds it?)", file=sys.stderr)
