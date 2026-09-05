@@ -36,7 +36,12 @@ from backend.market.universe import (
 def build_parser() -> argparse.ArgumentParser:
     """Build the command-line parser for the training run."""
     parser = argparse.ArgumentParser(description="Train and measure the ranker.")
-    parser.add_argument("--encoder", choices=("mlp", "gru", "xsect"), default="mlp")
+    parser.add_argument(
+        "--encoder", choices=("mlp", "gru", "xsect", "master", "lgbm"), default="mlp"
+    )
+    parser.add_argument("--features", choices=("raw", "alpha"), default="raw")
+    parser.add_argument("--label", choices=("residual", "rank"), default="residual")
+    parser.add_argument("--seeds", type=int, default=1)
     parser.add_argument("--window-size", type=int, default=20)
     parser.add_argument("--horizon", type=int, default=10)
     parser.add_argument("--train-size", type=int, default=750)
@@ -84,6 +89,9 @@ def main() -> None:
         test_size=args.test_size,
         embargo=args.embargo,
         encoder=args.encoder,
+        features=args.features,
+        label=args.label,
+        seeds=args.seeds,
         hidden=args.hidden,
         epochs=args.epochs,
         seed=args.seed,
