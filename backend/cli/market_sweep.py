@@ -53,6 +53,26 @@ SWEEP: dict[str, TrainConfig] = {
     "master_alpha_rank_h5": TrainConfig(
         features="alpha", label="rank", encoder="master", epochs=10, horizon=5
     ),
+    # The horizons where the positive control found structure: five sessions
+    # (short-term reversal) and sixty (theme momentum persists).
+    "lgbm_alpha_rank_h5": TrainConfig(
+        features="alpha", label="rank", encoder="lgbm", horizon=5
+    ),
+    "mlp_alpha_rank_h5": TrainConfig(
+        features="alpha", label="rank", encoder="mlp", horizon=5
+    ),
+    "xsect_alpha_rank_h5": TrainConfig(
+        features="alpha", label="rank", encoder="xsect", horizon=5
+    ),
+    "lgbm_alpha_rank_h60": TrainConfig(
+        features="alpha", label="rank", encoder="lgbm", horizon=60
+    ),
+    "mlp_alpha_rank_h60": TrainConfig(
+        features="alpha", label="rank", encoder="mlp", horizon=60
+    ),
+    "master_alpha_rank_h60": TrainConfig(
+        features="alpha", label="rank", encoder="master", epochs=10, horizon=60
+    ),
     "xsect_raw_rank": TrainConfig(features="raw", label="rank", encoder="xsect"),
     "mlp_raw_residual": TrainConfig(),
 }
