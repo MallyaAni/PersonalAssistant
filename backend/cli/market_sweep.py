@@ -24,6 +24,7 @@ from backend.market.harness import HarnessReport, evaluate_scores
 from backend.market.model import (
     TrainConfig,
     load_extra_features,
+    load_market_extra,
     load_tape,
     walk_forward,
 )
@@ -171,6 +172,20 @@ SWEEP: dict[str, TrainConfig] = {
         horizon=5,
         epochs=10,
     ),
+    # With the calendar and the macro state (VIX, rates, dollar, oil).
+    "lgbm_macro_h20": TrainConfig(
+        features="alpha+edgar+technical+calendar+macro",
+        label="rank",
+        encoder="lgbm",
+        horizon=20,
+    ),
+    "master_macro_h20": TrainConfig(
+        features="alpha+technical+calendar+macro",
+        label="rank",
+        encoder="master",
+        horizon=20,
+        epochs=10,
+    ),
     "xsect_raw_rank": TrainConfig(features="raw", label="rank", encoder="xsect"),
     "mlp_raw_residual": TrainConfig(),
 }
@@ -268,6 +283,10 @@ def main() -> None:
     )
     momentum_scores = baselines.momentum(panel)
     extras: dict[str, np.ndarray | None] = {}
+    market_extra = load_market_extra(store, panel, args.asof)
+    print(
+        f"market state: {'macro on' if market_extra is not None else 'no macro series stored'}"
+    )
     tape = None
     if any(SWEEP[n].encoder == "tape" for n in names):
         tape = load_tape(store, panel, args.asof)
@@ -290,7 +309,12 @@ def main() -> None:
             except ValueError as exc:
                 raise SystemExit(str(exc)) from exc
         result = walk_forward(
-            panel, config, log=print, extra=extras[config.features], tape=tape
+            panel,
+            config,
+            log=print,
+            extra=extras[config.features],
+            tape=tape,
+            market_extra=market_extra,
         )
         report = evaluate_scores(
             result.scores, panel, config.horizon, cost_bps=args.cost_bps

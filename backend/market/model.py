@@ -151,6 +151,7 @@ def build_features(
     label: str = "residual",
     extra: np.ndarray | None = None,
     tape: np.ndarray | None = None,
+    market_extra: np.ndarray | None = None,
 ) -> Features:
     """Return channels, baseline ranks, market state and labels for a panel."""
     channels = channel_matrices(panel).astype(np.float32)
@@ -160,7 +161,7 @@ def build_features(
     elif parts[0] != "raw":
         raise ValueError(f"unknown feature set {features!r}")
     extras = [p for p in parts[1:] if p]
-    layers = ("edgar", "tone", "technical", "intraday", "calendar")
+    layers = ("edgar", "tone", "technical", "intraday", "calendar", "macro")
     if any(p not in layers for p in extras):
         raise ValueError(f"unknown feature set {features!r}")
     if extras:
@@ -194,9 +195,10 @@ def build_features(
         std = np.sqrt(np.maximum(var, 0.0))
     from backend.market.calendar import calendar_by_session
 
-    market = np.concatenate(
-        [channels[:, bench, :], mean, std, calendar_by_session(panel)], axis=1
-    ).astype(np.float32)
+    blocks = [channels[:, bench, :], mean, std, calendar_by_session(panel)]
+    if market_extra is not None:
+        blocks.append(market_extra)
+    market = np.concatenate(blocks, axis=1).astype(np.float32)
 
     own = panel.forward_log_returns(horizon)
     residual = (own - own[:, bench][:, None]).astype(np.float32)
@@ -219,6 +221,7 @@ def _features_for(
     config: TrainConfig,
     extra: np.ndarray | None = None,
     tape: np.ndarray | None = None,
+    market_extra: np.ndarray | None = None,
 ) -> Features:
     return build_features(
         panel,
@@ -230,6 +233,7 @@ def _features_for(
         label=config.label,
         extra=extra,
         tape=tape,
+        market_extra=market_extra,
     )
 
 
@@ -901,9 +905,10 @@ def walk_forward(
     log: Callable[[str], None] | None = None,
     extra: np.ndarray | None = None,
     tape: np.ndarray | None = None,
+    market_extra: np.ndarray | None = None,
 ) -> WalkForwardResult:
     """Return out-of-sample scores for the panel under purged walk-forward folds."""
-    features = _features_for(panel, config, extra, tape)
+    features = _features_for(panel, config, extra, tape, market_extra)
     need_tape = config.tape_sessions if config.encoder == "tape" else 0
     if need_tape and features.tape is None:
         raise ValueError("the tape encoder needs the tape tensor; fetch 15-minute bars")
@@ -981,9 +986,10 @@ def score_today(
     log: Callable[[str], None] | None = None,
     extra: np.ndarray | None = None,
     tape: np.ndarray | None = None,
+    market_extra: np.ndarray | None = None,
 ) -> np.ndarray:
     """Return scores for the last session from a model trained on all prior history."""
-    features = _features_for(panel, config, extra, tape)
+    features = _features_for(panel, config, extra, tape, market_extra)
     need_tape = config.tape_sessions if config.encoder == "tape" else 0
     labelled = _eligible(features, config.window_size, True, need_tape)
     scorable = _eligible(features, config.window_size, False, need_tape)
@@ -1076,6 +1082,10 @@ def load_extra_features(store, panel, features, asof=None):
             from backend.market.calendar import calendar_features
 
             array = calendar_features(panel)
+        elif part == "macro":
+            from backend.market.macro import macro_features
+
+            array = macro_features(store, panel, asof)
         else:
             raise ValueError(f"unknown feature layer {part!r}")
         if array is None:
@@ -1118,3 +1128,15 @@ def load_tape(store, panel, asof=None):
     if not bars:
         return None
     return tape.tape_tensor(panel, bars)
+
+
+# The per-session macro block for the market-state vector, or None when
+# the store holds none of the series.
+def load_market_extra(store, panel, asof=None):
+    """Return macro.macro_by_session(store, panel) with NaN filled by 0, or None."""
+    from backend.market.macro import macro_by_session
+
+    block = macro_by_session(store, panel, asof)
+    if not np.isfinite(block).any():
+        return None
+    return np.where(np.isfinite(block), block, 0.0).astype(np.float32)

@@ -48,6 +48,27 @@ def test_calendar_distances_and_windows():
     monday = dates.index(date(2025, 7, 14))
     assert feats[monday, names.index("fomc_decision_day")] == 1.0
     assert feats[0, names.index("sessions_since_fomc")] == calendar.FAR
+    # Options expiry: the third Friday of June 2025 is the 20th, a quad
+    # witching month; the Russell reconstitution is the fourth Friday.
+    opex = dates.index(date(2025, 6, 20))
+    assert feats[opex, names.index("opex_day")] == 1.0
+    assert feats[opex, names.index("quad_witching")] == 1.0
+    assert feats[opex - 1, names.index("opex_day")] == 0.0
+    assert feats[opex - 4, names.index("opex_week")] == 1.0  # Monday of that week
+    assert feats[opex - 5, names.index("opex_week")] == 0.0
+    assert (
+        feats[dates.index(date(2025, 6, 27)), names.index("russell_reconstitution")]
+        == 1.0
+    )
+    # Turn of the month: June's last session and July's first three.
+    assert feats[dates.index(date(2025, 6, 30)), names.index("turn_of_month")] == 1.0
+    assert feats[dates.index(date(2025, 6, 27)), names.index("turn_of_month")] == 0.0
+    assert feats[dates.index(date(2025, 7, 3)), names.index("turn_of_month")] == 1.0
+    assert feats[dates.index(date(2025, 7, 8)), names.index("turn_of_month")] == 0.0
+    assert (
+        feats[dates.index(date(2025, 6, 27)), names.index("month_end_sessions")] == 1.0
+    )
+    assert feats[dates.index(date(2025, 7, 15)), names.index("january")] == 0.0
     per_name = calendar.calendar_features(panel, [decision, sunday])
     assert per_name.shape == (len(dates), 2, calendar.CALENDAR_COUNT)
     assert np.array_equal(per_name[:, 0], per_name[:, 1])
