@@ -43,3 +43,7 @@ secrets/
 # pnpm's content-addressed package store. Created by an install in the
 # repository root; it is a cache of somebody else's tarballs, not source.
 .pnpm-store/
+
+# The committed research universe lives under a directory named data/; the
+# bare data/ rule above must not swallow it.
+!backend/market/data/

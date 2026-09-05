@@ -3,7 +3,7 @@
     python -m backend.cli.market_snapshot --refresh   # whole universe, today
     python -m backend.cli.market_snapshot --refresh --roles focus,benchmark
     python -m backend.cli.market_snapshot --status
-    python -m backend.cli.market_snapshot --refresh --roles focus,benchmark
+    python -m backend.cli.market_snapshot --refresh --asof 2026-09-04 --tickers CRWV
 
 `--refresh` fetches each ticker into one as-of partition, paced, printing a
 line per ticker as it lands; a refused ticker is reported and the command
