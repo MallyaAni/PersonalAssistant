@@ -3,7 +3,9 @@
 Reads the release-tone layer the DeepSeek reader produced from earnings
 press releases (guidance, demand, and the change in guidance tone from the
 prior release). This is the strongest signal on the book: beta-adjusted rank
-IC 0.048 at 20 sessions and 0.095 at 60 on the AI-and-software names. A name
+IC 0.035 (t 2.7) at 20 sessions and 0.071 (t 3.1) at 60 on the 90 names,
+with pricing tone added as a fourth field on 2026-09-05 because the reader
+returns -1/0/1 per field and three fields left too many names tied. A name
 with no scored release gets no view, not a neutral one, so its absence is
 visible to the grade.
 """
@@ -14,7 +16,7 @@ from backend.agents.trading.desk.opinions import Opinion
 from backend.market import baselines, language
 
 NAME = "sentiment"
-SCORED = ("tone_guidance", "tone_demand", "tone_guidance_change")
+SCORED = ("tone_guidance", "tone_demand", "tone_guidance_change", "tone_pricing")
 CITED = SCORED + (
     "tone_pricing",
     "tone_capex",
