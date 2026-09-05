@@ -73,6 +73,32 @@ SWEEP: dict[str, TrainConfig] = {
     "master_alpha_rank_h60": TrainConfig(
         features="alpha", label="rank", encoder="master", epochs=10, horizon=60
     ),
+    # Regularised ensembles at five sessions: the models could not keep the
+    # reversal their inputs hold; smaller nets, longer windows, more seeds.
+    "mlp_alpha_rank_h5_reg": TrainConfig(
+        features="alpha",
+        label="rank",
+        encoder="mlp",
+        horizon=5,
+        hidden=32,
+        dropout=0.3,
+        weight_decay=1e-2,
+        train_size=1250,
+        validation_fraction=0.2,
+        seeds=3,
+    ),
+    "xsect_alpha_rank_h5_reg": TrainConfig(
+        features="alpha",
+        label="rank",
+        encoder="xsect",
+        horizon=5,
+        hidden=32,
+        dropout=0.3,
+        weight_decay=1e-2,
+        train_size=1250,
+        validation_fraction=0.2,
+        seeds=3,
+    ),
     "xsect_raw_rank": TrainConfig(features="raw", label="rank", encoder="xsect"),
     "mlp_raw_residual": TrainConfig(),
 }
