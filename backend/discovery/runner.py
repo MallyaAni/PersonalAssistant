@@ -93,6 +93,25 @@ def _best_interest_label(
     return best_label
 
 
+# The interest a candidate is grouped under for the spread: its confident
+# attribution when it has one, the cosine-nearest interest otherwise.
+#
+# `precision.order` re-decides which interest a find matches and names it only
+# when the margin holds (the "near-tie is not a match" rule), so that
+# attribution is the handle to spread by. Raw cosine was the old handle, and
+# cosine clusters near-ties: a jazz soirée and a wine festival can both sit
+# a hair from Line Dancing, so every find grouped under one label and a digest
+# that should have had variety came back as eight of the same thing. A find
+# with no confident attribution is grouped by nearest cosine so the fallback
+# still has something to hold on to.
+def _spread_interest_of(
+    item: RankedCandidate, interest_vectors: dict[str, list[float]]
+) -> str | None:
+    if item.matched_interest:
+        return item.matched_interest
+    return _best_interest_label(item.candidate.embedding, interest_vectors)
+
+
 # Spread a ranked shortlist across the user's interests before the digest is
 # cut, quality first. The input is already ranked by the caller and has passed
 # eligibility, so this only reorders — the top find of each distinct interest
@@ -116,7 +135,7 @@ def _spread_by_interest(
     # in that same order.
     first_by_interest: dict[str, RankedCandidate] = {}
     for item in shortlist:
-        label = _best_interest_label(item.candidate.embedding, interest_vectors)
+        label = _spread_interest_of(item, interest_vectors)
         if label is not None and label not in first_by_interest:
             first_by_interest[label] = item
     leading = set(id(item) for item in first_by_interest.values())

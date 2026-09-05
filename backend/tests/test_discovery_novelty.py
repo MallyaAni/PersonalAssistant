@@ -72,6 +72,47 @@ def test_spread_puts_one_find_of_each_interest_first():
     ]
 
 
+def test_spread_groups_by_the_confident_attribution_not_the_cosine_nearest():
+    """Embeddings cluster, so the spread must not regroup by raw cosine.
+
+    A wine festival and a jazz soirée can both sit a hair from Line Dancing in
+    embedding space; the cross-encoder has already attributed each to its own
+    interest with a margin, and spreading by the cosine argmax instead would
+    collapse the whole digest to line dancing. Group by the attribution the
+    sweep made.
+    """
+    from backend.discovery.runner import (
+        RankedCandidate,
+        _best_interest_label,
+        _spread_by_interest,
+    )
+
+    vectors = {"line dancing": [1.0, 0.0], "jazz": [0.0, 1.0]}
+
+    def _candidate(title: str, vector: list[float]) -> ScoredCandidate:
+        return ScoredCandidate(
+            _event(title.replace(" ", "-"), title), vector
+        )
+
+    wine = _candidate("Wine festival", [0.9, 0.2])
+    jazz = _candidate("Jazz soirée", [0.9, 0.2])
+    # Both are cosine-nearest Line Dancing — the collapse the fix prevents.
+    assert _best_interest_label(wine.embedding, vectors) == "line dancing"
+    assert _best_interest_label(jazz.embedding, vectors) == "line dancing"
+
+    shortlist = (
+        RankedCandidate(wine, 0.9, "wine tasting"),
+        RankedCandidate(jazz, 0.8, "jazz"),
+    )
+    spread = _spread_by_interest(shortlist, vectors, 8, 3, now=_NOW)
+
+    # The confident attribution wins: one wine, one jazz, in rank order.
+    assert [item.matched_interest for item in spread] == [
+        "wine tasting",
+        "jazz",
+    ]
+
+
 # These tests are about novelty, so they state the setting they need. Reading it
 # from the deployment's own configuration made the suite pass or fail depending
 # on what an operator had switched off that afternoon — which it did.
