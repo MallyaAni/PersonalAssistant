@@ -68,7 +68,7 @@ evidence, not scored, until that regime has history. Buying near the
 **Beta-label model rows** (`sweep_beta.tsv`): lgbm alpha h20 0.008, +
 technical h20 0.010 / h60 0.016, + calendar 0.007, + macro 0.005, all
 t < 1. Chart CNN (plain residual) h20 -0.001, h5 -0.012 (t -2.2). Nothing
-learned beats the tone. `tape_h5`/`tape_h20` are running on the 5080
+learned beats the tone. The tape encoder (15-minute bars, `tape_h5`/`tape_h20`,
 (`E:\AgentWorkspace\tmp\sweep_tape.log`). Balance-sheet instants on the
 full universe: buybacks 0.002, asset growth -0.015 (t -1.7, growth names
 pay here), book-to-market 0.007; none entered the composite.
@@ -78,7 +78,8 @@ returns -1/0/1 per field, so ties leave SNDK neutral on a +1/+1 release):
 add `tone_pricing` and `tone_supply_constrained` as tie-breaks and
 re-measure with `--calibrate`. Then a functional test for a desk
 narrative prompt if one is added (none yet: the desk is numeric). Then the
-tape rows, then the intraday controls on the 90 names.
+intraday controls on the 90 names measured zero on every session feature;
+the 15-minute layer is closed unless a new idea comes with a number.
 
 ## 2026-09-05 (late) — beta was the signal; the calendar, the macro state, the tape (PUSHED, NOT DEPLOYED)
 
