@@ -127,6 +127,71 @@ class MarketStore:
         _write_atomically(pq, action_table, actions_path)
         return True
 
+    # Write a generic column frame (any kind, e.g. "edgar_events") into a
+    # partition, immutably. Columns are lists of equal length; dates, floats,
+    # ints, bools and strings are inferred by pyarrow. Returns False when the
+    # partition already holds this ticker for this kind.
+    def write_frame(
+        self,
+        kind: str,
+        asof: date,
+        ticker: str,
+        columns: dict[str, list],
+        metadata: dict[str, str] | None = None,
+    ) -> bool:
+        """Store one ticker's frame of `kind` as of a date; no-op if present."""
+        import pyarrow as pa
+        import pyarrow.parquet as pq
+
+        path = self._path(kind, asof, ticker)
+        if path.exists():
+            return False
+        path.parent.mkdir(parents=True, exist_ok=True)
+        table = pa.table({k: pa.array(v) for k, v in columns.items()})
+        if metadata:
+            table = table.replace_schema_metadata(
+                {k.encode(): v.encode() for k, v in metadata.items()}
+            )
+        _write_atomically(pq, table, path)
+        return True
+
+    # Whether a partition already holds a frame of `kind` for the ticker.
+    def has_frame(self, kind: str, asof: date, ticker: str) -> bool:
+        """Return True when the frame is already stored as of `asof`."""
+        return self._path(kind, asof, ticker).exists()
+
+    # Read a generic frame from the newest partition of `kind` on or before
+    # `asof` holding the ticker, or None. Returns (columns, metadata).
+    def read_frame(
+        self, kind: str, ticker: str, asof: date | None = None
+    ) -> tuple[dict[str, list], dict[str, str]] | None:
+        """Return (columns, metadata) of the ticker's newest frame of `kind`."""
+        import pyarrow.parquet as pq
+
+        resolved = self._latest_of_kind(kind, ticker, asof)
+        if resolved is None:
+            return None
+        table = pq.read_table(self._path(kind, resolved, ticker))
+        meta = {
+            k.decode(): v.decode() for k, v in (table.schema.metadata or {}).items()
+        }
+        return table.to_pydict(), meta
+
+    # The newest partition of a kind holding the ticker on or before asof.
+    def _latest_of_kind(self, kind: str, ticker: str, asof: date | None) -> date | None:
+        base = self.root / kind
+        if not base.exists():
+            return None
+        dates = sorted(
+            d
+            for d in (_partition_date(p.name) for p in base.iterdir() if p.is_dir())
+            if d and (asof is None or d <= asof)
+        )
+        for candidate in reversed(dates):
+            if self._path(kind, candidate, ticker).exists():
+                return candidate
+        return None
+
     # Every as-of date with at least one partition directory, oldest first.
     def asofs(self) -> list[date]:
         """Return the as-of dates present in the store, oldest first."""

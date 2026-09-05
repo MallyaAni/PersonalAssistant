@@ -85,7 +85,7 @@ class TrainConfig:
     test_size: int = 125
     embargo: int = 5
     validation_fraction: float = 0.1
-    features: str = "raw"  # "raw" | "alpha"
+    features: str = "raw"  # "raw" | "alpha" | "alpha+edgar" | "raw+edgar"
     label: str = "residual"  # "residual" | "rank"
     encoder: str = "mlp"  # "mlp" | "gru" | "xsect" | "master" | "lgbm"
     hidden: int = 128
@@ -146,12 +146,20 @@ def build_features(
     lookback: int = 20,
     features: str = "raw",
     label: str = "residual",
+    extra: np.ndarray | None = None,
 ) -> Features:
     """Return channels, baseline ranks, market state and labels for a panel."""
     channels = channel_matrices(panel).astype(np.float32)
-    if features == "alpha":
+    parts = features.split("+")
+    if parts[0] == "alpha":
         channels = np.concatenate([channels, alpha_features(panel)], axis=2)
-    elif features != "raw":
+    elif parts[0] != "raw":
+        raise ValueError(f"unknown feature set {features!r}")
+    if "edgar" in parts[1:]:
+        if extra is None:
+            raise ValueError("edgar features requested but no extra array given")
+        channels = np.concatenate([channels, extra.astype(np.float32)], axis=2)
+    elif len(parts) > 1:
         raise ValueError(f"unknown feature set {features!r}")
     named = {
         "momentum_12_1": baselines.momentum(panel, momentum_length, momentum_skip),
@@ -192,8 +200,11 @@ def build_features(
     return Features(channels=channels, ranks=ranks, market=market, labels=labels)
 
 
-# The features a config asks for.
-def _features_for(panel: Panel, config: TrainConfig) -> Features:
+# The features a config asks for; `extra` is the (T, N, K) array an
+# "+edgar" feature set concatenates.
+def _features_for(
+    panel: Panel, config: TrainConfig, extra: np.ndarray | None = None
+) -> Features:
     return build_features(
         panel,
         config.horizon,
@@ -202,6 +213,7 @@ def _features_for(panel: Panel, config: TrainConfig) -> Features:
         lookback=config.lookback,
         features=config.features,
         label=config.label,
+        extra=extra,
     )
 
 
@@ -659,9 +671,10 @@ def walk_forward(
     panel: Panel,
     config: TrainConfig,
     log: Callable[[str], None] | None = None,
+    extra: np.ndarray | None = None,
 ) -> WalkForwardResult:
     """Return out-of-sample scores for the panel under purged walk-forward folds."""
-    features = _features_for(panel, config)
+    features = _features_for(panel, config, extra)
     labelled = _eligible(features, config.window_size, need_label=True)
     scorable = _eligible(features, config.window_size, need_label=False)
     folds = walk_forward_folds(
@@ -725,10 +738,13 @@ def walk_forward(
 # final session: what the model says today. The training range ends
 # horizon + embargo sessions before the last one so no label is partial.
 def score_today(
-    panel: Panel, config: TrainConfig, log: Callable[[str], None] | None = None
+    panel: Panel,
+    config: TrainConfig,
+    log: Callable[[str], None] | None = None,
+    extra: np.ndarray | None = None,
 ) -> np.ndarray:
     """Return scores for the last session from a model trained on all prior history."""
-    features = _features_for(panel, config)
+    features = _features_for(panel, config, extra)
     labelled = _eligible(features, config.window_size, need_label=True)
     scorable = _eligible(features, config.window_size, need_label=False)
     last = len(panel.dates) - 1
@@ -752,3 +768,32 @@ def score_today(
         out,
     )
     return out[last]
+
+
+# The EDGAR feature array for a panel, from the store's newest frames, or
+# None when the store holds no EDGAR layer. Shared by the CLIs.
+def load_edgar_features(store, panel, asof=None):
+    """Return edgar_features(panel, records) from stored frames, or None."""
+    from datetime import datetime
+
+    from backend.market import edgar
+
+    records = {}
+    for ticker in panel.tickers:
+        events = store.read_frame("edgar_events", ticker, asof)
+        facts = store.read_frame("edgar_facts", ticker, asof)
+        if events is None or facts is None:
+            continue
+        columns, meta = events
+        records[ticker] = edgar.record_from_frames(
+            ticker,
+            int(meta.get("cik", "0")),
+            columns,
+            facts[0],
+            datetime.fromisoformat(
+                meta.get("source_time", "2000-01-01T00:00:00+00:00")
+            ),
+        )
+    if not records:
+        return None
+    return edgar.edgar_features(panel, records)

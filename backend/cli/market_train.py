@@ -20,7 +20,12 @@ import numpy as np
 from backend.config.settings import settings
 from backend.market import baselines
 from backend.market.harness import evaluate_scores
-from backend.market.model import TrainConfig, score_today, walk_forward
+from backend.market.model import (
+    TrainConfig,
+    load_edgar_features,
+    score_today,
+    walk_forward,
+)
 from backend.market.panel import build_panel
 from backend.market.store import MarketStore
 from backend.market.universe import (
@@ -39,7 +44,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--encoder", choices=("mlp", "gru", "xsect", "master", "lgbm"), default="mlp"
     )
-    parser.add_argument("--features", choices=("raw", "alpha"), default="raw")
+    parser.add_argument(
+        "--features",
+        choices=("raw", "alpha", "alpha+edgar", "raw+edgar"),
+        default="raw",
+    )
     parser.add_argument("--label", choices=("residual", "rank"), default="residual")
     parser.add_argument("--seeds", type=int, default=1)
     parser.add_argument("--window-size", type=int, default=20)
@@ -109,7 +118,12 @@ def main() -> None:
         f"{len(panel.tickers)} tickers; encoder={config.encoder} "
         f"window={config.window_size} horizon={config.horizon} device={config.device}"
     )
-    result = walk_forward(panel, config, log=print)
+    extra = None
+    if "edgar" in config.features:
+        extra = load_edgar_features(store, panel, args.asof)
+        if extra is None:
+            raise SystemExit("no EDGAR layer in the store; run market_edgar --refresh")
+    result = walk_forward(panel, config, log=print, extra=extra)
 
     # Baselines are measured only where the model was scored, so the rows
     # are comparable session for session.
@@ -152,7 +166,7 @@ def main() -> None:
     print(f"out-of-sample scores saved to {out_path}")
 
     if not args.no_today:
-        today = score_today(panel, config)
+        today = score_today(panel, config, extra=extra)
         ranks = baselines.percentile_rank(today[None, :])[0]
         focus = [t for t in tickers_with_role(universe, FOCUS) if t in panel.tickers]
         print(f"\nranker on {panel.dates[-1]} (percentile rank, 1 = strongest):")

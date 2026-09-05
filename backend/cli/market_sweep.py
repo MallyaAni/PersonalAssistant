@@ -21,7 +21,7 @@ import numpy as np
 from backend.config.settings import settings
 from backend.market import baselines
 from backend.market.harness import HarnessReport, evaluate_scores
-from backend.market.model import TrainConfig, walk_forward
+from backend.market.model import TrainConfig, load_edgar_features, walk_forward
 from backend.market.panel import build_panel
 from backend.market.store import MarketStore
 from backend.market.universe import (
@@ -98,6 +98,25 @@ SWEEP: dict[str, TrainConfig] = {
         train_size=1250,
         validation_fraction=0.2,
         seeds=3,
+    ),
+    # With the EDGAR layer: events, reaction, fundamentals, point in time.
+    "lgbm_edgar_h20": TrainConfig(
+        features="alpha+edgar", label="rank", encoder="lgbm", horizon=20
+    ),
+    "mlp_edgar_h20": TrainConfig(
+        features="alpha+edgar", label="rank", encoder="mlp", horizon=20
+    ),
+    "xsect_edgar_h20": TrainConfig(
+        features="alpha+edgar", label="rank", encoder="xsect", horizon=20
+    ),
+    "lgbm_edgar_h60": TrainConfig(
+        features="alpha+edgar", label="rank", encoder="lgbm", horizon=60
+    ),
+    "mlp_edgar_h60": TrainConfig(
+        features="alpha+edgar", label="rank", encoder="mlp", horizon=60
+    ),
+    "master_edgar_h60": TrainConfig(
+        features="alpha+edgar", label="rank", encoder="master", epochs=10, horizon=60
     ),
     "xsect_raw_rank": TrainConfig(features="raw", label="rank", encoder="xsect"),
     "mlp_raw_residual": TrainConfig(),
@@ -193,6 +212,12 @@ def main() -> None:
         f"device={args.device}"
     )
     momentum_scores = baselines.momentum(panel)
+    extra = None
+    if any("edgar" in SWEEP[n].features for n in names):
+        extra = load_edgar_features(store, panel, args.asof)
+        if extra is None:
+            raise SystemExit("no EDGAR layer in the store; run market_edgar --refresh")
+        print(f"edgar features: {extra.shape[2]} per (session, name)")
     for name in names:
         config = replace(SWEEP[name], device=args.device)
         started = time.time()
@@ -200,7 +225,7 @@ def main() -> None:
             f"\n=== {name}: {config.encoder} features={config.features} "
             f"label={config.label} h={config.horizon} seeds={config.seeds}"
         )
-        result = walk_forward(panel, config, log=print)
+        result = walk_forward(panel, config, log=print, extra=extra)
         report = evaluate_scores(
             result.scores, panel, config.horizon, cost_bps=args.cost_bps
         )
