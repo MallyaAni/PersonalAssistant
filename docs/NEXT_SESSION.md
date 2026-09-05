@@ -56,6 +56,9 @@ traded, top/bottom 20%, all through the same harness:**
 | lightgbm, alpha, rank | 5 | 425 | -0.003 | -0.21 | -0.92 |
 | mlp, alpha, rank | 5 | 425 | 0.017 | 1.59 | -0.10 |
 | xsect, alpha, rank | 5 | 425 | 0.013 | 1.01 | -0.30 |
+| master, alpha, rank (spark1, CPU) | 5 | 425 | 0.012 | 0.88 | -0.44 |
+| mlp, alpha, rank, 3 seeds, hidden 32, wd 1e-2, train 1250 | 5 | 325 | 0.018 | 1.32 | -0.68 |
+| xsect, alpha, rank, 3 seeds, hidden 32, wd 1e-2, train 1250 | 5 | 325 | 0.013 | 0.92 | -0.61 |
 | lightgbm, alpha, rank | 20 | 107 | 0.003 | 0.14 | -0.53 |
 | master, alpha, rank (spark1) | 20 | 107 | -0.014 | -0.64 | -0.73 |
 | mlp, raw (spark1) | 20 | 107 | -0.006 | -0.30 | -0.51 |
@@ -89,12 +92,12 @@ where every model was trained. **Structure exists; the label horizon was
 wrong.**
 
 **In flight at shutdown (results append to `sweep.tsv` on each machine):**
-desktop 5080: xsect alpha h10, then lgbm/mlp/xsect at h5 and lgbm/mlp/master
-at h60 (`E:\AgentWorkspace\tmp\sweep_desktop.log`). spark1, CPU only
+desktop 5080: done, every row above. spark1, CPU only
 (`CUDA_VISIBLE_DEVICES=` — torch 2.14's AdamW touches the accelerator even
 for CPU tensors and the GB10 has no free memory beside vLLM): master h20,
 h5, and the 3-seed ensemble at h10 (`~/sweep_spark1_cpu2.log`,
-`~/deploy/anios/data/market/models/sweep.tsv`). Read both tables first.
+`~/deploy/anios/data/market/models/sweep.tsv`): only the 3-seed master
+ensemble at h10 is still running there. Read that table first.
 
 **Next atomic task.** Read the h5 and h60 rows. If a model beats the
 reversal control at h5 or the theme-momentum control at h60 net of cost,
