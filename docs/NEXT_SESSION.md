@@ -69,7 +69,8 @@ evidence, not scored, until that regime has history. Buying near the
 technical h20 0.010 / h60 0.016, + calendar 0.007, + macro 0.005, all
 t < 1. Chart CNN (plain residual) h20 -0.001, h5 -0.012 (t -2.2). Nothing
 learned beats the tone. The tape encoder (15-minute bars, `tape_h5`/`tape_h20`,
-(`E:\AgentWorkspace\tmp\sweep_tape.log`). Balance-sheet instants on the
+beta label) measured 0.004 (t 0.4) and -0.004: nothing. Balance-sheet
+instants on the
 full universe: buybacks 0.002, asset growth -0.015 (t -1.7, growth names
 pay here), book-to-market 0.007; none entered the composite.
 
