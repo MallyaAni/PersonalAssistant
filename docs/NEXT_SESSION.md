@@ -7,6 +7,98 @@ was checked by running it, not by reading it. The seven image scenarios can
 be re-run any time with `python -m backend.cli.exercise_image_scenarios`
 inside the backend container.
 
+## 2026-09-05 (day) — filings are the signal: the EDGAR layer, the book, and the release reader (PUSHED, NOT DEPLOYED)
+
+Continues the entry below it. Commits `96ee4e6f` (EDGAR layer), `2fc6610e`
+(sizing), `67f1bf2f` (release reader); every one gated on spark1, the last
+with its functional test against the real DeepSeek. Every number here was
+produced by running the code.
+
+**The night's sweep, completed.** Fourteen price-only configurations and
+six with filing features, every encoder and horizon: nothing beats the
+plain controls. Full table in `data/market/models/sweep.tsv` on each
+machine; the six filing-feature rows: lgbm h20 0.013, mlp h20 0.008, xsect
+h20 -0.008, lgbm h60 -0.044, mlp h60 -0.014, master h60 -0.010 (rank IC).
+The models keep losing to a hand-built ranking of the same columns.
+
+**The EDGAR layer** (`backend/market/edgar.py`, `market_edgar --refresh`,
+546 names in 7 min, ETFs fail by design): 8-K item 2.02 events with
+acceptance timestamps (after the New York close → next session), XBRL
+company facts kept as the earliest-filed value per period (restatements
+never leak backwards), fourth quarters derived from the year, the tag with
+the most quarters chosen per fundamental. Fifteen point-in-time features:
+sessions since a release, the reaction-window residual return (the drift
+signal), revenue yoy / qoq / acceleration, EPS change, margins, capital
+intensity, staleness, presence indicators; neutral fills keep foreign
+filers in the cross-section. Stored as immutable `edgar_events` and
+`edgar_facts` frames (store.write_frame/read_frame).
+
+**The first cost-positive signal on this universe.** Controls through the
+unchanged harness, 532 names, 10 bps:
+
+| control | horizon | periods | rank IC | t | net Sharpe |
+| --- | --- | --- | --- | --- | --- |
+| post-earnings drift (recent) | 20 | 146 | 0.002 | 0.34 | -0.10 |
+| revenue yoy | 20 | 146 | 0.027 | 2.46 | 0.60 |
+| revenue qoq | 60 | 48 | 0.025 | 2.24 | 0.65 |
+| gross margin | 20 | 146 | 0.020 | 1.96 | 0.53 |
+| **fundamental blend** (yoy, qoq, gross margin, acceleration) | 20 | 146 | **0.029** | **3.07** | **0.66** |
+| fundamental blend | 60 | 48 | 0.039 | 2.63 | 0.71 |
+
+Post-earnings drift is absent (as the literature says for large caps since
+2015); fundamental growth is present. **Caveat, measured:** the blend's IC
+was 0.049 (t 2.94) in 2015-2018, 0.041 in 2019-2021, -0.002 in 2022-2024,
+0.007 (t 0.34) in 2025-2026. Part regime (the 2022 growth-to-value
+rotation), part survivorship (today's index over-represents the names that
+were growing a decade ago). It is the best signal on file and its recent
+evidence is thin; both are true.
+
+**Sizing** (`backend/market/sizing.py`, `market_book`): select the top
+fraction, inverse-volatility weights with a 10% volatility floor (a name
+pinned by a pending takeover read as 3% vol and would have taken the whole
+cap), name and theme caps with excess redistributed, a volatility target
+measured on the book's own trailing returns under the candidate weights
+(the diagonal estimate ignored market correlation and let realised vol
+reach 39%), and turnover control where an exit is always a full trade
+(skipping small sales let stale positions accumulate to 2.7x gross). Six
+tests including the two properties the report exposed. On the fundamental
+blend, long-only, 15% target, 10%/40% caps, 20-session rebalance, 10 bps:
+**Sharpe 1.02 vs benchmark 0.83, max drawdown -15%, turnover 16% per
+rebalance**; the tighter book (top 10%, 20% target) Sharpe 0.92, drawdown
+-27%. Today's book: SanDisk rank 1.00 and CoreWeave 0.82 enter at ~0.3%
+each — their realised volatility (137%, 102%) is seven times the median
+name's, which is the honest size at equal risk; IREN (rank 0.02, annual
+facts only as a foreign filer) is not selected.
+
+**The release reader** (`prompts/trading/release_tone.md`,
+`backend/agents/trading/release_tone.py`): DeepSeek scores what a company
+states about its outlook, demand, pricing, capex and supply constraint,
+bounded, greedy. Functional test 4/4 on the real model (raised outlook
+positive on all four; a cut negative; facts-only exactly 0 guidance;
+deterministic). A first-draft instruction returned zeros for text with
+explicit guidance — the prompt exists because of that.
+`backend/market/language.py` finds the EX-99.1 through the filing index
+page, stores `edgar_tone` frames, resumes from partials, and builds
+point-in-time tone features (scores + change vs the previous release).
+`market_tone --refresh` runs it; feature sets compose as
+"alpha+edgar+tone".
+
+**In flight:** the scoring batch for the 109 themed names, all years, on
+spark1 (`~/tone_themed.log`, frames under
+`~/deploy/anios/data/market/edgar_tone/asof=2026-09-05/`), ~4 hours at
+four threads (~3 s per release effective; ~7k tokens each). Then the rest
+of the universe since 2020 is the next batch. The desktop store has tone
+frames only for CRWV and SNDK.
+
+**Next atomic task.** When the batch has enough names: copy spark1's
+`edgar_tone` partition to the desktop store, run the tone columns as
+controls through `evaluate_scores` (guidance, guidance change, demand,
+capex, supply) at 20 and 60 sessions, then the blend plus tone, then the
+learned models on "alpha+edgar+tone". Anything that beats the fundamental
+blend's 0.029 / 0.66 row on the same sessions replaces it as the book's
+score in `market_book`. Then a point-in-time universe is the remaining
+honesty gap (survivorship); free sources do not give delisted prices.
+
 ## 2026-09-05 — the market research system: measured end to end, and what the measurements say (PUSHED, NOT DEPLOYED)
 
 Everything below was produced by running the code. Commits `1e4970de` →
