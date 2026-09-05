@@ -36,7 +36,7 @@ from backend.market.universe import (
 def build_parser() -> argparse.ArgumentParser:
     """Build the command-line parser for the training run."""
     parser = argparse.ArgumentParser(description="Train and measure the ranker.")
-    parser.add_argument("--encoder", choices=("mlp", "gru"), default="mlp")
+    parser.add_argument("--encoder", choices=("mlp", "gru", "xsect"), default="mlp")
     parser.add_argument("--window-size", type=int, default=20)
     parser.add_argument("--horizon", type=int, default=10)
     parser.add_argument("--train-size", type=int, default=750)

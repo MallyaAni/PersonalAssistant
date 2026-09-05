@@ -23,10 +23,14 @@ to `harness.evaluate_scores` — the same function, the same residual label,
 the same cost accounting the baselines were measured with. A model that
 does not beat the baseline rows there does not exist.
 
-Two encoders: a plain MLP over the flattened window, and a GRU over the
-sequence. The MLP is the honest first model; the GRU is the first thing to
-try when the MLP has found something. torch is imported here and nowhere
-else in the package, so the store, the panel and the baselines never need it.
+Three encoders. A plain MLP over the flattened window and a GRU over the
+sequence both score each name on its own. The cross-sectional encoder
+(`xsect`) is the shape the ranking literature converges on: a temporal
+encoder per name, then transformer attention *across every name on the
+same session*, so a score can depend on what the rest of the cross-section
+is doing — the relation a rotation model needs and a per-name model cannot
+express. torch is imported here and nowhere else in the package, so the
+store, the panel and the baselines never need it.
 """
 
 from collections.abc import Callable
@@ -199,10 +203,12 @@ def _gather(
 
 
 class Ranker(nn.Module):
-    """Scores one (window, ranks) input; MLP or GRU encoder."""
+    """Scores a session's (window, ranks) inputs; MLP, GRU or cross-sectional."""
 
     # `inputs` is the per-step width (channels + ranks); the MLP flattens
-    # window_size x inputs, the GRU reads the sequence.
+    # window_size x inputs, the GRU reads the sequence, and xsect reads the
+    # sequence per name and then attends across the names it was given
+    # together — which the training loop guarantees is one whole session.
     def __init__(
         self, inputs: int, window_size: int, encoder: str, hidden: int, dropout: float
     ) -> None:
@@ -227,15 +233,38 @@ class Ranker(nn.Module):
                 nn.GELU(),
                 nn.Linear(hidden // 2, 1),
             )
+        elif encoder == "xsect":
+            if hidden % 4:
+                raise ValueError("xsect needs hidden divisible by 4 heads")
+            self.temporal = nn.GRU(inputs, hidden, batch_first=True)
+            layer = nn.TransformerEncoderLayer(
+                d_model=hidden,
+                nhead=4,
+                dim_feedforward=hidden * 2,
+                dropout=dropout,
+                batch_first=True,
+            )
+            self.cross = nn.TransformerEncoder(layer, num_layers=2)
+            self.body = nn.Sequential(
+                nn.LayerNorm(hidden),
+                nn.Linear(hidden, hidden // 2),
+                nn.GELU(),
+                nn.Linear(hidden // 2, 1),
+            )
         else:
             raise ValueError(f"unknown encoder {encoder!r}")
 
-    # Forward pass over (batch, window_size, inputs).
+    # Forward pass over (names, window_size, inputs): one session's names.
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Return one score per row."""
+        """Return one score per name."""
         if self.encoder_kind == "gru":
             _, last = self.gru(x)
             return self.body(last[-1]).squeeze(-1)
+        if self.encoder_kind == "xsect":
+            _, last = self.temporal(x)
+            tokens = last[-1].unsqueeze(0)  # (1, names, hidden)
+            mixed = self.cross(tokens)[0]  # attention across the names
+            return self.body(mixed).squeeze(-1)
         return self.body(x).squeeze(-1)
 
 

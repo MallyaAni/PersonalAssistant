@@ -137,6 +137,31 @@ def test_ranker_finds_a_planted_signal_out_of_sample():
     assert abs(noise_report.mean_ic) < 0.08, noise_report.mean_ic
 
 
+# The cross-sectional encoder scores a session as a set: permuting the
+# names permutes the scores and changes nothing else, and removing a name
+# changes the others' scores (it really attends across the session).
+def test_xsect_encoder_is_permutation_equivariant_and_cross_sectional():
+    from backend.market.model import BASELINE_FEATURES, CHANNELS, Ranker
+
+    torch.manual_seed(0)
+    model = Ranker(CHANNELS + len(BASELINE_FEATURES), 5, "xsect", 32, 0.0).eval()
+    x = torch.randn(12, 5, CHANNELS + len(BASELINE_FEATURES))
+    with torch.no_grad():
+        scores = model(x)
+        perm = torch.randperm(12)
+        permuted = model(x[perm])
+        fewer = model(x[:6])
+    assert torch.allclose(permuted, scores[perm], atol=1e-5)
+    assert not torch.allclose(fewer, scores[:6], atol=1e-4)
+
+
+# The cross-sectional encoder trains end to end on the same folds.
+def test_xsect_encoder_runs():
+    config = replace(_CONFIG, encoder="xsect", epochs=2)
+    result = walk_forward(_panel(t=260, planted=False), config)
+    assert np.isfinite(result.scores).any()
+
+
 # The GRU encoder runs end to end on the same folds.
 def test_gru_encoder_runs():
     config = replace(_CONFIG, encoder="gru", epochs=2)
