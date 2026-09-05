@@ -30,6 +30,11 @@ COPY . .
 #
 # Keep these floors in step with pyproject's [project.optional-dependencies] dev.
 FROM base AS test
+# git is needed by the repo-server tests, which build a scratch repository
+# with two real commits to exercise the read-only window and the evidence
+# check; it is deliberately absent from the serving images.
+RUN apt-get update && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir "pytest>=8.0.0" "pytest-asyncio>=0.23.0"
 
 # `runtime` is LAST on purpose. BuildKit's default target is the final stage and
