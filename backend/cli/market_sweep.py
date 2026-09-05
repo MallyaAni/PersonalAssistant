@@ -284,9 +284,8 @@ def main() -> None:
     momentum_scores = baselines.momentum(panel)
     extras: dict[str, np.ndarray | None] = {}
     market_extra = load_market_extra(store, panel, args.asof)
-    print(
-        f"market state: {'macro on' if market_extra is not None else 'no macro series stored'}"
-    )
+    state = "macro on" if market_extra is not None else "no macro series stored"
+    print(f"market state: {state}")
     tape = None
     if any(SWEEP[n].encoder == "tape" for n in names):
         tape = load_tape(store, panel, args.asof)
