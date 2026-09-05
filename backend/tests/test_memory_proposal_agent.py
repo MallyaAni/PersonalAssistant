@@ -79,6 +79,7 @@ async def test_profile_and_general_facts_from_one_message_are_both_kept() -> Non
             "kind": "semantic_fact",
             "content": "My dog is called Biscuit.",
             "is_preference": False,
+            "is_constraint": False,
             "is_transient": False,
         },
     )
@@ -200,6 +201,7 @@ async def test_semantic_agent_maps_an_explicit_entity_relationship() -> None:
                     "kind": "semantic_fact",
                     "content": "My dog is called Biscuit.",
                     "is_preference": False,
+                    "is_constraint": False,
                     "is_transient": False,
                 },
             ),

@@ -56,10 +56,34 @@ def _security_review(run: dict) -> RunWorld:
     )
 
 
+def _chat_continuation(run: dict) -> RunWorld:
+    from backend.agents.chat.client import HttpStepClient
+    from backend.agents.chat.world import ChatContinuationWorld
+
+    return ChatContinuationWorld(run, HttpStepClient())
+
+
 WORLDS: dict[str, WorldFactory] = {
     "code_review": _code_review,
     "security_review": _security_review,
+    "chat_continuation": _chat_continuation,
 }
+
+
+# What a continuation of a chat turn may call: the built-in tools whose
+# contracts allow a later step with the run's whole budget in hand, and reads
+# through any MCP server (the world names a toolbox step by its effect).
+def _chat_grant() -> Grant:
+    from backend.tools import discuss_image as discuss_image_tool
+    from backend.tools import show_image as show_image_tool
+    from backend.tools.registry import later_step_tools
+
+    # The two picture tools the loop's executor does not carry out are not
+    # granted either, so the wall matches what the turn itself may do.
+    names = later_step_tools(float(settings.AGENT_RUN_DEFAULT_BUDGET_SECONDS)) - {
+        show_image_tool.NAME, discuss_image_tool.NAME,
+    }
+    return grant_of(*names, "mcp:read")
 
 # What each kind may call, fixed here and enforced by the controller: the
 # read tools of the repo server and the kind's own analysis steps, nothing
@@ -73,6 +97,7 @@ GRANTS: dict[str, Grant] = {
         "repo_show_commit", "repo_diff", "repo_read_file", "repo_grep",
         "security_findings", "security_judge_hits",
     ),
+    "chat_continuation": _chat_grant(),
 }
 
 

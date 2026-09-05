@@ -33,10 +33,11 @@ flowchart TB
     ArtifactGate -->|no artifact needed| Context[Curated context]
     Visual --> VisualPolicy[DeepSeek V4 Flash<br/>visual-memory selection]
     VisualPolicy --> Context
-    Selector -->|search_web, search_history, get_weather,<br/>search_credits, a toolbox tool, schedule_task,<br/>manage_tasks, manage_check_ins, scout_schedule,<br/>save_skill, manage_skills| Steps
+    Selector -->|search_web, search_history, get_weather,<br/>search_credits, a toolbox tool, schedule_task,<br/>manage_tasks, manage_check_ins, scout_schedule,<br/>save_skill, manage_skills, manage_runs| Steps
     Steps[Turn step loop · run_steps<br/>TURN_MAX_STEPS, TURN_STEP_BUDGET_SECONDS read<br/>before every decision and action,<br/>TURN_MAX_CREATES new things] --> Apply[Carry out one step · outcome recorded<br/>found, done, scheduled · failed, not_found,<br/>refused, blocked · unknown when cut at the deadline]
     Apply -->|what was done and how it went;<br/>offered only tools whose effect contract<br/>allows a later step: a read or a write to<br/>this system's records, not expensive,<br/>no approval| Selector
     Apply -->|no next tool · needs input · router failed<br/>· a repeat by key · the creation allowance<br/>· the step ceiling · the clock| Memory
+    Apply -->|the clock or the ceiling, work left,<br/>AGENT_RUNS_ENABLED| HandOff[(agent_runs · chat_continuation<br/>the words · the step lines · the channel<br/>finished by the run worker; reply says so)]
     Contracts[Effect contracts on every tool row<br/>effect · cost · key · creates · approval · retry] -.-> Steps
     Contracts -.-> MCP
 
@@ -67,6 +68,7 @@ flowchart TB
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef failure fill:#fff3cd,stroke:#b78b20,color:#4d3900;
     class User,UI interface;
+    class HandOff store;
     class API,Selector,Search_Tool,Toolbox,Presentation,Progress,Diagram,Artifact,ImageAction,ImageArtifact,Memory,Visual,MCP,Search,History,Context,Inference,Persist,Stream,Proposal,FollowUp,Steps,Apply,Contracts application;
     class Persona application;
     class Main,DiagramModel,Interest,ArtifactGate,VisualPolicy,Referent,Personalize model;

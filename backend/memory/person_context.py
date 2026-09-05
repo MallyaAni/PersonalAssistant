@@ -22,6 +22,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
+
+from backend.memory.purposes import CONSTRAINT_PURPOSE
 from typing import Any
 
 # How many interests the query composer is shown as advice - only so the
@@ -38,7 +40,8 @@ class Known:
     """One thing known about the person, with where it came from."""
 
     text: str
-    # "interest" (Scout's profile), "preference" (a stated fact), or
+    # "interest" (Scout's profile), "preference" (a stated fact),
+    # "constraint" (a hard limit a result must not cross), or
     # "disposition" (how they choose, decided this turn).
     kind: str
     # "stated" by the person, or "inferred" by a classifier.
@@ -69,6 +72,16 @@ class PersonContext:
     def interest_labels(self, limit: int = JUDGEMENT_INTERESTS) -> tuple[str, ...]:
         return tuple(item.text for item in self.interests[:limit])
 
+    # The hard constraints: preferences filed as limits. A result that
+    # violates one is filtered, not ranked down; none of them ever leaves.
+    @property
+    def constraints(self) -> tuple[Known, ...]:
+        return tuple(item for item in self.preferences if item.kind == "constraint")
+
+    # The constraints as short lines for a local judge.
+    def constraint_lines(self, limit: int = RANKING_LINES) -> tuple[str, ...]:
+        return tuple(item.text for item in self.constraints)[:limit]
+
     # What may be put into an outbound query: only entries allowed to leave.
     # A preference never comes back from here, whatever a caller asks.
     def search_terms(self, limit: int = JUDGEMENT_INTERESTS) -> tuple[str, ...]:
@@ -88,7 +101,10 @@ class PersonContext:
         labels = self.interest_labels()
         if labels:
             lines.append("interests: " + ", ".join(_interests_for(question, labels)))
-        lines.extend(item.text for item in self.preferences)
+        lines.extend(
+            (f"must: {item.text}" if item.kind == "constraint" else item.text)
+            for item in self.preferences
+        )
         return tuple(lines[:limit])
 
     # The same view with a disposition the turn decided added to it.
@@ -109,6 +125,7 @@ class PersonContext:
         return {
             "interests": len(self.interests),
             "preferences": len(self.preferences),
+            "constraints": len(self.constraints),
             "dispositions": list(self.dispositions),
             "may_leave": [item.text for item in (*self.interests, *self.preferences) if item.may_leave][:12],
             "local_only": [item.kind for item in (*self.interests, *self.preferences) if not item.may_leave],
@@ -198,7 +215,7 @@ async def build_person_context(
                     preferences.append(
                         Known(
                             text,
-                            "preference",
+                            "constraint" if str(item.get("purpose") or "") == CONSTRAINT_PURPOSE else "preference",
                             "stated" if not item.get("inferred") else "inferred",
                             "memory_facts",
                             memory_id=str(item.get("id")) if item.get("id") else None,

@@ -504,6 +504,10 @@ def _turn_kind(context_data: dict[str, Any]) -> str:
         blocks += "\n\n" + load("reply/scheduled_task")
     if _outcome_list(context_data, "task_outcome"):
         blocks += "\n\n" + load("reply/task_outcome")
+    if isinstance(context_data.get("handed_off"), dict) and context_data["handed_off"]:
+        blocks += "\n\n" + load("reply/handed_off")
+    if _outcome_list(context_data, "run_outcome") or context_data.get("runs_waiting"):
+        blocks += "\n\n" + load("reply/run_outcome")
     if context_data.get("skill"):
         blocks += "\n\n" + load("reply/skill_invoked")
     if _outcome_list(context_data, "skill_outcome"):
@@ -928,12 +932,74 @@ def _build_turn_context(
             _outcome_list(context_data, "scout_schedule_outcome")
         ),
         _render_skill_context(context_data),
+        _render_handed_off(context_data.get("handed_off") or {}),
+        _render_run_context(context_data),
         _render_group_turn_context(context_data),
         # Last on purpose: the model follows the last instruction on a subject,
         # and what the message is about outranks everything else here.
         _render_followup_reading(context_data),
     )
     return "".join(block for block in blocks if block)
+
+
+# What this turn did about background runs, and which are waiting on the
+# person, for the reply to report from and to mention.
+def _render_run_context(context_data: dict[str, Any]) -> str:
+    lines: list[str] = []
+    for outcome in _outcome_list(context_data, "run_outcome"):
+        kind = str(outcome.get("kind") or "")
+        chosen = outcome.get("chosen") if isinstance(outcome.get("chosen"), dict) else {}
+        step = str(chosen.get("summary") or "the step it asked about")
+        if kind == "run_approved":
+            lines.append(f"Background runs: approved - the {chosen.get('kind', 'run')} will go ahead with: {step}. Nothing has happened yet.\n")
+        elif kind == "run_denied":
+            lines.append(f"Background runs: denied - the {chosen.get('kind', 'run')} will not do: {step}; the run has stopped.\n")
+        elif kind == "runs_nothing_pending":
+            lines.append("Background runs: nothing was waiting for their answer.\n")
+        elif kind == "runs_not_pending":
+            lines.append(f"Background runs: that request is no longer waiting (it is {outcome.get('state', 'settled')}).\n")
+        elif kind == "runs_which":
+            lines.append(
+                "Background runs: NOTHING was approved or denied this turn. More than one run is "
+                "waiting and which one they meant was not settled, so no answer was recorded. "
+                "Ask which of the numbered runs below they mean; do not say either will go ahead.\n"
+            )
+        elif kind == "runs_status":
+            runs = outcome.get("runs") or []
+            lines.append("Background runs: status.\n")
+            for run in runs[:8]:
+                summary = f" - {run.get('summary')}" if run.get("summary") else ""
+                lines.append(f"- {run.get('kind')} ({run.get('status')}): {run.get('objective')}{summary}\n")
+            if not runs:
+                lines.append("- no runs\n")
+        elif kind in ("unavailable", "failed"):
+            lines.append("Background runs: the answer could not be recorded; say so plainly and do not claim it was.\n")
+    waiting = context_data.get("runs_waiting") or []
+    answered = {str(o.get("chosen", {}).get("approval_id")) for o in _outcome_list(context_data, "run_outcome") if isinstance(o.get("chosen"), dict)}
+    still = [view for view in waiting if str(view.get("approval_id")) not in answered]
+    if still:
+        lines.append("Runs waiting for their permission:\n")
+        for view in still:
+            lines.append(f"- {view.get('number')}. {view.get('kind')} wants to: {view.get('summary')} (for: {view.get('objective')})\n")
+    return "".join(lines) + ("\n" if lines else "")
+
+
+# The hand-off of a cut-short turn to a run, for the reply to report from:
+# the steps this turn completed, and that the rest continues.
+def _render_handed_off(handed: dict[str, Any]) -> str:
+    if not isinstance(handed, dict) or not handed:
+        return ""
+    lines = ["Handed off: the rest of this request continues as a background run.\n"]
+    done = [str(line) for line in handed.get("steps_done") or [] if str(line).strip()]
+    if done:
+        lines.append("Steps completed in this turn:\n")
+        lines.extend(f"- {line}\n" for line in done)
+    lines.append(f"Why the turn stopped: {handed.get('stopped', '')}\n")
+    lines.append(
+        "What remains: whatever the request still needs beyond the steps above; "
+        "the run decides and the person will be told.\n\n"
+    )
+    return "".join(lines)
 
 
 # The follow-up resolver's reading of the newest message, for the reply

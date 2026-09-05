@@ -368,6 +368,73 @@ the same calendar (`model.build_features` takes any (T, N, K) array).
 Second lever, cheap: batch several sessions per step with padding masks —
 the per-session Python loop keeps the 5080 at 10-13% utilisation.
 
+## 2026-09-05 — A hard constraint filters a result (NOT DEPLOYED)
+
+See `docs/CHANGELOG.md`, this date, newest entry. Codex should review
+`semantic_fact_is_constraint` in `backend/memory/proposal_agent.py`, the
+`violates` path in `backend/core/result_ranking.py`, and `_without_violators`
+in `backend/services/conversation_service.py`.
+
+**VERIFIED (unit):** `test_constraints.py` 7; regression 586 passed.
+**VERIFIED on the real models:** `functional/test_constraint_ranking_behaviour.py` 7/7 (ranking 3, classifier 4).
+
+**Known and left:** existing preference rows were classified before the
+flag existed, so a stored allergy is a preference until
+`backend.cli.classify_preferences` is run (it now asks the constraint
+question; dry run by default, `--apply` writes). The memory classifier
+captured "I use a wheelchair, so I need step-free access" as a fact in one
+run of three - an accessibility need is exactly the kind of constraint that
+matters, and that capture gap belongs to
+`functional/test_memory_capture_discipline.py`, not to the label. The
+paired-profile check lives in the functional test, not yet in an evaluator
+that records a rate under `docs/evals/runs/`.
+
+**Next atomic tasks, in order:**
+1. Run `classify_preferences` on the Spark (dry run, read, then `--apply`)
+   so stored allergies and needs become constraints.
+2. Capture of accessibility needs: add the wheelchair sentence to the
+   memory-capture discipline suite and fix the prompt until it holds.
+3. The paired-profile evaluator as a recorded measurement.
+4. The deploy steps with the operator (see the previous sections).
+
+## 2026-09-05 — A run's approval can be answered from chat (NOT DEPLOYED)
+
+See `docs/CHANGELOG.md`, this date, newest entry. Codex should review
+`backend/tools/manage_runs.py`, `backend/services/run_answers.py`, the
+`runs_waiting` context and `_render_run_context` in `backend/agents/graph.py`.
+
+**VERIFIED (unit, real schema):** `test_run_answers.py` 7; suites 428.
+**VERIFIED on the real models:** `functional/test_run_answers_behaviour.py` 6/6 (routing 4, with `MCP_SERVERS_JSON` exported; reply 2).
+
+**Known and left:** a yes by tapback or a phone reply outside a turn is
+still not an answer; `manage_runs` has no cancel mode (the runs API has
+cancel). The router's judgement that a bare "yes" answers a run rests on
+the history carrying the assistant's mention of the waiting run, which the
+turn context now makes it say.
+
+## 2026-09-05 — A cut-short chat turn hands the rest to a run (NOT DEPLOYED)
+
+See `docs/CHANGELOG.md`, this date, newest entry. Codex should review the
+hand-off (`ConversationService._hand_off`, `_create_continuation_run`), the
+step routes (`backend/api/v1/chat_steps.py`, `decide_step`/`apply_step`),
+and the world (`backend/agents/chat/world.py`).
+
+**VERIFIED (unit, this host, real schema):** `test_chat_continuation.py` 30;
+regression 498. **VERIFIED on the real model:** `functional/test_handed_off_wording_behaviour.py` passed (three replies, one property at a time).
+
+**UNVERIFIED and worth a session:** a live hand-off end to end - a real turn
+on deep-matter.com stopping on its budget, the run claimed by the worker,
+the two routes called through the gateway, the person told. It needs
+`AGENT_RUNS_ENABLED=true` on both `backend` and `discovery-worker` (compose
+carries it on both now) and `IMESSAGE_CHAT_BASE_URL` reachable from the
+worker (it is, for iMessage). `TURN_MAX_STEPS` is still 1 in the deployment,
+so no turn hands off until the routing gate lets it rise.
+
+**Next atomic tasks, in order:**
+1. Phase 4: hard `constraints` in `PersonContext` and the paired-profile
+   evaluator.
+2. The deploy steps with the operator (see the previous sections).
+
 ## 2026-09-05 — Runs hardened: grant, fair claiming, delivery, capacity drill (NOT DEPLOYED)
 
 See `docs/CHANGELOG.md`, this date, newest entry. Codex should review the

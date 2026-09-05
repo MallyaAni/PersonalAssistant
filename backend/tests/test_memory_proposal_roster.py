@@ -62,6 +62,7 @@ async def test_a_direct_turn_asks_one_question_and_is_unchanged():
             "kind": "semantic_fact",
             "content": "My dog is Biscuit",
             "is_preference": False,
+            "is_constraint": False,
             "is_transient": False,
         },
     )
@@ -84,6 +85,7 @@ async def test_a_failed_attribution_call_leaves_the_ordinary_proposals():
             "kind": "semantic_fact",
             "content": "I love hiking",
             "is_preference": False,
+            "is_constraint": False,
             "is_transient": False,
             "about": [],
         },

@@ -99,6 +99,16 @@ a kind nobody registered fails the run with `no_world` rather than guessing.
 - `/api/v1/runs/{user_id}`: list and inspect (`runs:read`), cancel and
   decide an approval (`runs:act`). Every route checks the session owns the
   user and holds the scope.
+- **The person can answer from chat.** Every turn's context lists the runs
+  waiting on the person's yes (`runs_waiting`), so the reply mentions them
+  and the next turn's router sees it in the history. A yes or a no is routed
+  by the router to the `manage_runs` tool row (`backend/tools/manage_runs.py`)
+  and carried out by `backend/services/run_answers.py`: one waiting run is
+  the one; several and a number from the list picks that one; several and no
+  number is a question back, never a guess from the words. The decision goes
+  through the same repository method the API uses, so a yes from chat binds
+  the same exact call. The reply is told what happened (`reply/run_outcome`)
+  and says the run will go ahead - never that the step is done.
 - **The person hears how it ended.** After each attempt the worker hands the
   run to `RunDelivery` (`backend/runs/delivery.py`): a completed, failed or
   approval-waiting stop is sent, as a short summary with no evidence in it,
@@ -117,17 +127,35 @@ a kind nobody registered fails the run with `no_world` rather than guessing.
   reviewer's stages under a scope check and with shape searches, refusing
   any asset not in `SECURITY_AUTHORIZED_ASSETS` before a tool is called.
 
-Both are created by `backend.cli.review_commit` today. A worker claims only
+- `chat_continuation` - a chat turn's unfinished work (`backend/agents/chat/`):
+  a turn whose step loop stopped on its wall clock or step ceiling with the
+  router still naming steps creates one, carrying the person's words, the
+  step lines the turn recorded and the turn's channel. The world asks the
+  same router for the next step, shown every step so far, and carries it out
+  through the same executor - over the API with a short-lived `chat` token
+  (`/api/v1/chat/{user_id}/steps/decide` and `/apply`), since the worker is
+  another process. Its grant is the built-in tools whose contracts allow a
+  later step plus reads through any MCP server (`mcp:read`); a step that
+  sends, spends or changes something outside this system parks the run for
+  the person's yes. Done when the router declines after its steps were
+  carried out; `needs_input` when the router needs something the message did
+  not say. The reply of the cut-short turn says the rest continues
+  (`reply/handed_off`), never that it is done.
+
+The reviews are created by `backend.cli.review_commit` today; the
+continuation by the turn itself, only while `AGENT_RUNS_ENABLED` is on in the
+API process (a promise nobody works is worse than none). A worker claims only
 the kinds it hosts (`claim_next(kinds=...)`), so hosts sharing the table
 never take each other's work.
 
 ## Not yet
 
-- A chat turn that exceeds its budget creating a run is Phase 3's remaining
-  slice and needs a conversation world.
-- Approvals are rows; a parked run tells the person it is waiting, but
-  nothing yet lets them answer from chat or the phone - the answer is the
-  runs API.
+- An approval can be answered from chat (`manage_runs`, below) or the runs
+  API; nothing yet lets a person answer by a tapback or a phone reply
+  outside a conversation turn.
+- A continuation carries the person's words and the step lines, not the
+  turn's retrieved context or history; a step that needed them is decided
+  afresh by the router from the words alone.
 - The grant is a set of tool names checked in this process, not a token
   another service could verify; that is D8's second shape.
 - Retention deletes finished runs with their actions, approvals and events

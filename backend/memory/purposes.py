@@ -11,5 +11,14 @@ VISUAL_ANALYSIS_PURPOSE = "visual_artifact_analysis"
 # Peru sits at 0.499 from the same memory.
 PREFERENCE_PURPOSE = "user_preference"
 
-# Purposes that describe a person's taste rather than a fact or an image.
-PREFERENCE_PURPOSES = (PREFERENCE_PURPOSE,)
+# Marks a hard constraint - an allergy or dietary restriction, an
+# accessibility need, a budget cap, something they must never be sent or
+# shown. A preference reorders results that already answer the question; a
+# constraint removes a result that violates it. The classifier that already
+# says whether a fact is a preference says whether it is this (D7 of the
+# platform plan, 2026-09-05).
+CONSTRAINT_PURPOSE = "user_constraint"
+
+# Purposes that describe a person's taste or limits rather than a fact or an
+# image: what a recommendation turn reads about them.
+PREFERENCE_PURPOSES = (PREFERENCE_PURPOSE, CONSTRAINT_PURPOSE)

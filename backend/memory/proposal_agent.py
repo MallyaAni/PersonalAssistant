@@ -53,6 +53,29 @@ class KnowledgeDecision(BaseModel):
     content: str = Field(min_length=1, max_length=10_000)
 
 
+# The flags that qualify a semantic fact, which the grammar must make the
+# model answer. Every field of the decision has a default, so the generated
+# schema requires nothing and the engine lets the model omit any key; it
+# omitted the constraint flag on every allergy it was shown (measured
+# 2026-09-05, 0 of 6) while setting the preference flag it had learned to
+# write. Required, the three are decided together, in the order declared:
+# preference, then constraint, then transient.
+FACT_FLAGS = (
+    "semantic_fact_is_preference",
+    "semantic_fact_is_constraint",
+    "semantic_fact_is_transient",
+)
+
+
+# The decision's JSON schema with the fact flags required.
+def decision_schema(model: type[BaseModel]) -> dict:
+    schema = model.model_json_schema()
+    present = [name for name in FACT_FLAGS if name in schema.get("properties", {})]
+    if present:
+        schema["required"] = sorted(set(schema.get("required") or []) | set(present))
+    return schema
+
+
 class MemoryProposalDecision(BaseModel):
     """The grammar-constrained semantic interpretation of one user message."""
 
@@ -95,6 +118,22 @@ class MemoryProposalDecision(BaseModel):
             "today or what they want on one particular day: a preference has to "
             "be true next month as well, or acting on it later acts on "
             "something that stopped being true."
+        ),
+    )
+    # Whether that fact is a hard limit rather than a taste. A preference
+    # ("prefers quiet places") reorders results that already answer the
+    # question; a constraint ("allergic to shellfish", "needs step-free
+    # access", "never more than $50") removes any result that violates it,
+    # however well it answers. The distinction is a judgement about the
+    # person's words, so it is made here, once, where the fact is read.
+    semantic_fact_is_constraint: bool = Field(
+        default=False,
+        description=(
+            "True when the fact is a hard limit a recommendation must never "
+            "cross: an allergy or dietary restriction, a medical or "
+            "accessibility need, a firm budget cap, a person or place they "
+            "must never be sent to or shown. False for a taste, a leaning, or "
+            "a preference that a better option could outweigh."
         ),
     )
     # Whether that fact is a temporary state rather than a durable trait.
@@ -218,13 +257,22 @@ class MemoryProposalAgent:
                         "false for a durable fact or preference. A transient "
                         "fact is stored with a short life so it stops shaping "
                         "recommendations after it stops being true. "
+                        "Set semantic_fact_is_constraint true when the fact is a "
+                        "hard limit a recommendation must never cross - an "
+                        "allergy or dietary restriction (\"allergic to shellfish\", "
+                        "\"vegetarian\"), a medical or accessibility need (\"uses a "
+                        "wheelchair\"), a firm budget cap (\"never more than $50 a "
+                        "night\"), or someone or somewhere they must never be sent "
+                        "to - and false for a taste or a leaning that a better "
+                        "option could outweigh (\"likes spicy food\", \"prefers the "
+                        "metro\"). A constraint is also a preference. "
                         "Return only the required JSON."
                     ),
                 },
                 {"role": "user", "content": self._utterance(query, previous_reply)},
             ],
             self.max_tokens,
-            MemoryProposalDecision.model_json_schema(),
+            decision_schema(MemoryProposalDecision),
             0,
         )
         decision = MemoryProposalDecision.model_validate(json.loads(result["content"]))
@@ -257,7 +305,7 @@ class MemoryProposalAgent:
                     {"role": "user", "content": self._utterance(query, previous_reply)},
                 ],
                 self.max_tokens,
-                GroupMemoryProposalDecision.model_json_schema(),
+                decision_schema(GroupMemoryProposalDecision),
                 0,
             )
             group_decision = GroupMemoryProposalDecision.model_validate(
@@ -416,7 +464,8 @@ class MemoryProposalAgent:
             return {
                 "kind": "semantic_fact",
                 "content": decision.semantic_fact.strip(),
-                "is_preference": bool(decision.semantic_fact_is_preference),
+                "is_preference": bool(decision.semantic_fact_is_preference) or bool(decision.semantic_fact_is_constraint),
+                "is_constraint": bool(decision.semantic_fact_is_constraint),
                 "is_transient": bool(decision.semantic_fact_is_transient),
             }
         if decision.episodic_event:

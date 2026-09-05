@@ -27,6 +27,7 @@ from . import (
     scout_schedule,
     search_history,
     show_image,
+    manage_runs,
 )
 from .actions import (
     CreateDiagramAction,
@@ -48,6 +49,7 @@ from .actions import (
     ShowImageAction,
     ToolboxAction,
     UseSkillAction,
+    ManageRunsAction,
 )
 from .base import BuiltinTool
 from .contracts import UNDECLARED, EffectContract
@@ -83,6 +85,7 @@ _MODULES: tuple[ModuleType, ...] = (
     scout_schedule,
     save_skill,
     manage_skills,
+    manage_runs,
 )
 
 # Rows whose availability depends on a service being wired, by name.
@@ -260,6 +263,7 @@ _ROW_FOR_ACTION: dict[type, BuiltinTool] = {
     ScoutScheduleAction: scout_schedule.TOOL,
     SaveSkillAction: save_skill.TOOL,
     ManageSkillsAction: manage_skills.TOOL,
+    ManageRunsAction: manage_runs.TOOL,
 }
 
 
@@ -303,6 +307,8 @@ def _detail(action: MainAction) -> str:
         return action.operation
     if isinstance(action, ManageCheckInsAction):
         return f"{action.mode} {action.subject}".strip()
+    if isinstance(action, ManageRunsAction):
+        return f"{action.mode} {action.which}".strip()
     if isinstance(action, SaveSkillAction):
         return action.name
     return ""

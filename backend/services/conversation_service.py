@@ -93,6 +93,7 @@ from backend.services.main_action_selector import (
     SaveSkillAction,
     ScheduleTaskAction,
     ManageCheckInsAction,
+    ManageRunsAction,
     SearchAction,
     ShowImageAction,
     ToolboxAction,
@@ -115,7 +116,8 @@ from backend.services.checkin_arming import (
     waiting_subjects,
 )
 from backend.tasks.repository import ScheduledTaskRepository
-from backend.services.turn_steps import UNAPPLIED, Decision, run_steps
+from backend.services.chat_steps import action_of, decision_view
+from backend.services.turn_steps import UNAPPLIED, Decision, run_steps, BUDGET, CEILING, Unavailable
 from backend.core.effects import EffectContract
 from backend.memory.person_context import (
     COMPOSER_INTERESTS,
@@ -205,6 +207,34 @@ def _image_description(match: dict[str, Any]) -> str:
 # the turn moved on and told the person it had happened. That is the same
 # defect as an unmarked failed attempt in the history, one level down and
 # worse, because here the model is actively told not to try again.
+# The run that finishes a cut-short turn: the person's words as its
+# objective, the turn's step lines as what it starts from, the turn's
+# channel so the person is told where they asked.
+async def _create_continuation_run(
+    user_id: str,
+    query: str,
+    lines: list[str],
+    conversation_id: str | None,
+    channel: str,
+) -> dict[str, Any] | None:
+    from backend.database.session import AsyncSessionLocal
+    from backend.runs.repository import AgentRunRepository
+
+    async with AsyncSessionLocal() as db:
+        return await AgentRunRepository(db).create(
+            user_id,
+            "channel:chat",
+            "chat_continuation",
+            query,
+            list(lines),
+            budget_seconds=float(settings.AGENT_RUN_DEFAULT_BUDGET_SECONDS),
+            max_steps=int(settings.AGENT_RUN_DEFAULT_MAX_STEPS),
+            max_creates=int(settings.TURN_MAX_CREATES),
+            conversation_id=conversation_id,
+            channel=channel if channel in ("web", "imessage", "imessage_group") else "web",
+        )
+
+
 _STEP_FAILURES = {
     "failed": "did not succeed",
     "invalid": "was refused as invalid",
@@ -454,6 +484,20 @@ SEARCH_UNAVAILABLE_EVIDENCE: dict[str, str] = {
 # with a festival in West Virginia (2026-08-25). Scores are recorded on each
 # result so a wrong order is diagnosable from the trace; every failure keeps
 # the providers' order.
+# The ordered results without those the ranker said violate a hard
+# constraint, named by their 1-based position in `candidates`; and how many
+# went. A filter, never a demotion: a result that violates an allergy is not
+# a worse answer, it is not an answer.
+def _without_violators(
+    ordered: list[dict[str, Any]], candidates: list[dict[str, Any]], violated: list[int]
+) -> tuple[list[dict[str, Any]], int]:
+    if not violated:
+        return ordered, 0
+    gone = [candidates[index - 1] for index in violated if 1 <= index <= len(candidates)]
+    kept = [item for item in ordered if not any(item is lost for lost in gone)]
+    return kept, len(ordered) - len(kept)
+
+
 async def _rerank_web_results(
     rerank_call: Any,
     question: str,
@@ -3159,11 +3203,21 @@ class ConversationService:
                 f"{question} (searched as: {first_query})" if first_query and first_query != question else question
             )
 
+            # The person's hard constraints, read off this turn's context.
+            # They stay on this machine: the ranker runs here, and a result
+            # that violates one is removed, not ranked down.
+            person = _turn_person.get()
+            constraints = person.constraint_lines() if person is not None else ()
+            violated: list[int] = []
+
             async def rank_call(_question: str, _documents: list[str]) -> list[float] | None:
-                ranking = await judge_results(self.llm, judged_question, place, candidates, known=known)
+                ranking = await judge_results(
+                    self.llm, judged_question, place, candidates, known=known, constraints=constraints
+                )
                 verdict["events"] = ranking.events
                 verdict["travel"] = ranking.travel
                 verdict["on_subject"] = ranking.on_subject
+                violated[:] = list(ranking.violates)
                 return ranking.scores
 
             gathered = await _rerank_web_results(
@@ -3172,6 +3226,11 @@ class ConversationService:
                 candidates,
                 max(1, max_results or settings.SEARCH_MAX_RESULTS),
             )
+            gathered, dropped = _without_violators(gathered, candidates, violated)
+            if dropped:
+                logger.info(
+                    "Trace %s dropped %d results that violate a hard constraint", trace_id, dropped
+                )
             logger.info(
                 "Trace %s ordered %d web results by usefulness (events=%s)",
                 trace_id,
@@ -3195,11 +3254,16 @@ class ConversationService:
                     "on_subject": True,
                 }
 
+                violated_first: list[int] = []
+
                 async def rank_first(_question: str, _documents: list[str]) -> list[float] | None:
-                    ranking = await judge_results(self.llm, judged_question, place, retry, known=known)
+                    ranking = await judge_results(
+                        self.llm, judged_question, place, retry, known=known, constraints=constraints
+                    )
                     again["events"] = ranking.events
                     again["travel"] = ranking.travel
                     again["on_subject"] = ranking.on_subject
+                    violated_first[:] = list(ranking.violates)
                     return ranking.scores
 
                 ranked_first = await _rerank_web_results(
@@ -3208,6 +3272,7 @@ class ConversationService:
                     retry,
                     max(1, max_results or settings.SEARCH_MAX_RESULTS),
                 )
+                ranked_first, _ = _without_violators(ranked_first, retry, violated_first)
                 if again["on_subject"] is True:
                     logger.info(
                         "Trace %s first search round is on subject on its own; %d later results dropped",
@@ -3662,10 +3727,22 @@ class ConversationService:
             max_creates=settings.TURN_MAX_CREATES,
         )
         steps = turn.steps
+        # A turn cut short by its wall clock or its step ceiling, with the
+        # router still naming work, hands the rest to a durable run: the
+        # same router, the same executor, in a worker with a budget of its
+        # own. The reply is told, so it reports the steps taken and says the
+        # rest is being finished - never that it is done.
+        if steppable and turn.stopped in (BUDGET, CEILING) and steps:
+            handed = await self._hand_off(
+                user_id, query, metadata, conversation_id, [s.line for s in steps], turn.stopped
+            )
+            if handed:
+                outcomes["handed_off"] = handed
 
         task_outcomes = [s.outcome for s in steps if s.kind == "task"]
         skill_outcomes = [s.outcome for s in steps if s.kind == "skill"]
         scout_outcomes = [s.outcome for s in steps if s.kind == "scout"]
+        run_outcomes = [s.outcome for s in steps if s.kind == "run"]
         _trace(
             "outcomes",
             [f"{s.kind}:{(s.outcome or {}).get('kind', '')}" for s in steps if s.outcome],
@@ -3688,7 +3765,119 @@ class ConversationService:
             outcomes["skill_outcomes"] = skill_outcomes
         if scout_outcomes:
             outcomes["scout_schedule_outcomes"] = scout_outcomes
+        if run_outcomes:
+            outcomes["run_outcomes"] = run_outcomes
         return outcomes or None
+
+    # The person's answer to a run, decided through the runs repository -
+    # the same method the API uses, so a yes from chat binds the same call.
+    async def _apply_runs_action(self, user_id: str, action: ManageRunsAction) -> dict[str, Any]:
+        if not settings.AGENT_RUNS_ENABLED:
+            return {"kind": "unavailable"}
+        from backend.database.session import AsyncSessionLocal
+        from backend.services.run_answers import answer
+
+        try:
+            return await answer(getattr(self, "run_sessions", None) or AsyncSessionLocal, user_id, action)
+        except Exception:
+            logger.warning("Answering a run failed", exc_info=True)
+            return {"kind": "failed"}
+
+    # The runs waiting on this person's yes, for the reply to mention and the
+    # next turn's router to see in the history; empty when runs are not hosted.
+    async def _runs_waiting(self, user_id: str) -> list[dict[str, Any]]:
+        if not settings.AGENT_RUNS_ENABLED:
+            return []
+        from backend.database.session import AsyncSessionLocal
+        from backend.runs.repository import AgentRunRepository
+        from backend.services.run_answers import waiting_for
+
+        try:
+            async with (getattr(self, "run_sessions", None) or AsyncSessionLocal)() as db:
+                return await waiting_for(AgentRunRepository(db), user_id)
+        except Exception:
+            logger.warning("Listing waiting runs failed", exc_info=True)
+            return []
+
+    # Create the run that finishes a cut-short turn, and say what was handed
+    # over. Only when runs are hosted: a promise nobody works is worse than
+    # none. Failure to create it is logged and the turn goes on without it.
+    async def _hand_off(
+        self,
+        user_id: str,
+        query: str,
+        metadata: dict[str, Any],
+        conversation_id: str,
+        lines: list[str],
+        stopped: str,
+    ) -> dict[str, Any] | None:
+        if not settings.AGENT_RUNS_ENABLED or not query.strip():
+            return None
+        creator = getattr(self, "run_creator", None) or _create_continuation_run
+        try:
+            run = await creator(
+                user_id,
+                query,
+                lines,
+                conversation_id or None,
+                str(metadata.get("channel") or "web"),
+            )
+        except Exception:
+            logger.warning("The hand-off to a run failed; the turn ends here", exc_info=True)
+            return None
+        if not run:
+            return None
+        return {"run_id": str(run.get("id") or ""), "steps_done": list(lines), "stopped": stopped}
+
+    # One step of this loop decided on request, for a run continuing a
+    # turn in another process: the router under the later-step policy for
+    # the time left, shown every step already taken.
+    async def decide_step(
+        self, user_id: str, query: str, lines: list[str], remaining_seconds: float
+    ) -> dict[str, Any]:
+        selector = getattr(self, "main_action_selector", None)
+        if selector is None:
+            return decision_view(Unavailable("no router in this process"))
+        decision = await selector.decide(
+            user_id,
+            query,
+            [],
+            None,
+            local_now=await self._local_now(user_id),
+            zone=await self._primary_timezone(user_id) or "",
+            unattended=False,
+            later_step_seconds=max(0.0, float(remaining_seconds)),
+            excluding=_NOT_IN_LOOP,
+            steps_taken=list(lines),
+        )
+        action = getattr(decision, "action", None)
+        return decision_view(decision, self._toolbox_contract(action) if action is not None else None)
+
+    # One step carried out on request, through the same executor the turn
+    # uses, with a frame of its own: the outcome in the vocabulary the loop
+    # reads, or `unavailable` for a call this loop does not carry out.
+    async def apply_step(
+        self, user_id: str, query: str, conversation_id: str | None, call: dict[str, Any]
+    ) -> dict[str, Any]:
+        action = action_of(call)
+        if action is None:
+            return {"kind": "", "outcome": {"kind": "invalid", "error": "the call names no action"}}
+        frame = _StepFrame(
+            context={"user_id": user_id, "query": query},
+            query=query,
+            conversation_id=str(conversation_id or ""),
+            trace_id=f"run-step-{uuid.uuid4().hex[:12]}",
+            query_embedding=None,
+            history=[],
+            emit=lambda event: None,
+            image_matches=[],
+            unattended=False,
+        )
+        applied = await self._execute_step(user_id, action, {}, frame)
+        if applied is None:
+            return {"kind": "", "outcome": {"kind": "unavailable", "error": "not a step this loop carries out"}}
+        kind, outcome = applied
+        return {"kind": kind, "outcome": outcome, "line": _step_line(action, kind, outcome)}
 
     # The model's judgement of whether the question depends on where the
     # person is, and which names in the query are elsewhere - one call per
@@ -3732,11 +3921,14 @@ class ConversationService:
             | ScheduleTaskAction
             | ManageTasksAction
             | ManageCheckInsAction
+            | ManageRunsAction
             | ScoutScheduleAction,
         ):
             # The second wall: nothing scheduled or taught changes on a firing.
             if frame.unattended:
                 return None
+            if isinstance(action, ManageRunsAction):
+                return "run", await self._apply_runs_action(user_id, action)
             if (
                 isinstance(action, SaveSkillAction | ManageSkillsAction)
                 and getattr(self, "skills", None) is not None
@@ -4866,12 +5058,16 @@ class ConversationService:
     ) -> bool:
         # A preference is stored as one, so a recommendation turn can find it
         # by kind. Nothing else about the row changes.
-        from backend.memory.purposes import PREFERENCE_PURPOSE
+        from backend.memory.purposes import CONSTRAINT_PURPOSE, PREFERENCE_PURPOSE
 
         # Passed only when it is one: the interface defaults to "user_explicit"
-        # and handing it None would overwrite that default with nothing.
+        # and handing it None would overwrite that default with nothing. A
+        # hard constraint is filed as its own purpose, so the person context
+        # can tell a limit from a taste without reading the words again.
         preference = (
-            {"purpose": PREFERENCE_PURPOSE} if candidate.get("is_preference") else {}
+            {"purpose": CONSTRAINT_PURPOSE}
+            if candidate.get("is_constraint")
+            else {"purpose": PREFERENCE_PURPOSE} if candidate.get("is_preference") else {}
         )
         # A transient fact describes how things are right now - "feeling tired
         # today" - and stops being true on its own. Stored with a short life
@@ -5170,6 +5366,11 @@ class ConversationService:
             yield step_event
         if outcomes:
             context.update(outcomes)
+        # Runs waiting on this person's yes, on every turn's record, so the
+        # reply can say so and a plain "yes" next turn has something to mean.
+        waiting_runs = await self._runs_waiting(user_id)
+        if waiting_runs:
+            context["runs_waiting"] = waiting_runs
 
         if self.memory_coordinator is not None:
             context = await self.memory_coordinator.prepare_context(

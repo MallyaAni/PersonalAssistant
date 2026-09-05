@@ -2,6 +2,169 @@
 
 This file is append-only history for meaningful, verified changes. It must not contain plans, active blockers, speculative work, or implementation-complete claims based only on source inspection.
 
+## 2026-09-05 - A hard constraint filters a result; a preference only reorders (NOT DEPLOYED)
+
+Phase 4's remaining slice (D7 `constraints`). Until now everything known
+about a person reached the result ranker as a tie-breaker, so a person
+allergic to shellfish could be handed an oyster bar ranked a little lower.
+
+**Tagged once, where the fact is read.** The memory classifier that already
+says whether a fact is a preference now says whether it is a hard limit
+(`semantic_fact_is_constraint`: an allergy or dietary restriction, an
+accessibility need, a firm budget cap, someone or somewhere never to be sent
+to), and the fact is filed under its own purpose (`user_constraint`,
+`backend/memory/purposes.py`), beside `user_preference`, so the person
+context can tell a limit from a taste without reading the words again.
+
+**Carried, never leaving.** `PersonContext.constraints` and
+`constraint_lines()`; a constraint is a preference of kind `constraint`,
+so it never comes back from `search_terms()`, and the ranking lines mark it
+`must:`.
+
+**Enforced as a filter.** `judge_results` takes `constraints` and its
+schema gains `violates`: the result numbers that cross one. The search path
+reads the turn's constraints off the person context, passes them to the
+ranker, and removes the violators from the ordered list by identity
+(`_without_violators`) - a filter, never a demotion, on both the first
+ranking and the on-subject retry. Without constraints given, a named
+violation is ignored: a filter that fires on nothing is a lost result.
+`prompts/search/rank.md` gains the constraints paragraph.
+
+**The grammar has to make the model answer.** Every field of the
+classifier's decision has a default, so the schema pydantic generates
+requires nothing and the engine lets the model omit any key. It omitted the
+new constraint flag on every allergy it was shown - six of six - while
+setting the preference flag it had learned to write. `decision_schema()`
+now requires the three fact flags (preference, constraint, transient), in
+the order declared, for both the direct and the group decision.
+
+**Stored facts can be relabelled.** `backend.cli.classify_preferences`
+asks the constraint question beside the preference one and files each row
+under constraint, preference or plain fact (`target_purpose`); dry run by
+default, `--apply` writes, image-derived rows untouched.
+
+**On the real models.** `functional/test_constraint_ranking_behaviour.py`
+7/7: for a shellfish allergy the ranker named the oyster bar and nothing
+else under `violates` (three of three); with no constraint it named nothing;
+a vegetarian profile lost the oyster bar and the ramen and kept the
+vegetarian cafe while an unconstrained profile lost nothing, and both got
+the same top answer to a factual question with nothing violated. The
+classifier, with the flags required, filed the allergy, the vegetarian
+diet and the wheelchair need as constraints and the quiet-restaurant
+leaning as a preference, judged over every fact it captured in three runs.
+
+Unit: `test_constraints.py` 7 (the purpose, the context's view and egress,
+the parsing of `violates`, the handing over, the ignore-without-constraints
+rule, the identity filter); regression over chat, runs, ranking, memory,
+prompts and catalogue suites 586 passed.
+
+Diagram impact: NONE (the person-context and ranking flows are unchanged in
+shape; the constraint travels the preference path).
+
+## 2026-09-05 - A run's approval can be answered from chat (NOT DEPLOYED)
+
+A run that is about to send, spend or change something outside this system
+parks on a pending approval. Until now the only answer was the runs API.
+
+**The tool row.** `manage_runs` (`backend/tools/manage_runs.py`): approve,
+deny, or status. The router chooses it when the conversation shows a run
+waiting for the person's permission and they answer, or when they ask what
+is running for them; its description says that a yes to the assistant's own
+question, with no run waiting, is not this. Effect `write`, fast, never a
+creation, keyed on the mode and the words.
+
+**The answer.** `backend/services/run_answers.py`: one waiting approval is
+the one; several and a number from the list they were shown picks that one;
+several and no number is a question back (`runs_which`), never a guess from
+the words; nothing waiting is said plainly. The decision goes through
+`AgentRunRepository.decide_approval`, the same method the API uses, so a yes
+from chat binds the same exact call and wakes the run the same way. Refused
+on a firing (the unattended wall) and while runs are not hosted.
+
+**Every turn knows what waits.** `runs_waiting` on the turn context lists
+the person's pending approvals (`pending_approvals_for_user`), numbered as
+shown, so the reply can mention them and the next turn's router sees it in
+the history. `prompts/reply/run_outcome.md` tells the reply model how to
+read the answer and the list: a yes means the run will go ahead, never that
+the step is done; an unsettled choice is asked, not picked.
+
+**On the real models.** `functional/test_run_answers_behaviour.py` 6/6:
+the router sent "yes, go ahead and send it" and "no, don't send that" to
+`manage_runs` with approve and deny (three of three each) when the history
+carried the assistant's mention of a waiting run, sent "what's running in
+the background for me right now?" to status, and left "yes please" alone
+when it answered the assistant's own question about searching; the reply,
+told a run was approved, said it would go ahead and not that it was done;
+told the choice was unsettled, it asked which. The unsettled case failed
+its first attempt - "Both are approved and will go ahead", over a record
+that said no answer was recorded - and the record now says outright that
+nothing was approved or denied, and the prompt that a run is approved only
+when the record says so, the person's yes alone approving nothing. The
+routing cases need `MCP_SERVERS_JSON` exported for the selector fixture;
+without it they skip, as every routing functional test does.
+
+Unit: `test_run_answers.py` 7 on the real schema (one waiting, a no, several
+with and without a number, status, the hosted gate, the rendering); the
+call round trip covers the new action; catalogue, coverage, contracts,
+routing, trajectories, prompts and chat API suites 428. `docs/TOOL_CATALOG.md`
+regenerated.
+
+Diagram impact: UPDATED - `chat-orchestration` lists the row;
+`agent-runs-subsystem` gains the chat answer into approvals.
+
+## 2026-09-05 - A cut-short chat turn hands the rest to a run (NOT DEPLOYED)
+
+Phase 3's remaining slice. A turn whose step loop stops on its wall clock or
+its step ceiling with the router still naming work no longer just ends:
+while runs are hosted (`AGENT_RUNS_ENABLED`, now read by the API too) it
+creates a `chat_continuation` run carrying the person's words, the step
+lines the turn recorded and the turn's channel, and the reply is told.
+
+**The run is the same loop in another process.** `backend/agents/chat/`:
+the world asks the same router for the next step, shown every step so far,
+and carries it out through the same executor - over the API, since the
+worker does not build the assistant. Two routes under the person's own
+authority and the `chat` scope (`/api/v1/chat/{user_id}/steps/decide` and
+`/apply`, `backend/api/v1/chat_steps.py`) expose one step of the loop; the
+action crosses as a plain call, its type and fields, and is rebuilt as the
+same dataclass (`backend/services/chat_steps.py`, every action type pinned
+to survive the trip). The worker mints a short-lived `chat` token for the
+run's principal (`HttpStepClient`), as the task runner does to fire a task.
+
+**What it may do.** Its grant is the built-in tools whose contracts allow a
+later step with the run's budget, minus the two picture tools the executor
+does not carry out, plus reads through any MCP server (`mcp:read` - a
+toolbox step is named at the grant by its effect, never by the server's
+tool). A step that sends, spends or changes something outside this system
+parks the run for the person's yes; a step outside the grant ends it
+(`unauthorized_tool`). Done when the router declines after its steps were
+carried out; `needs_input` when the router needs something the message did
+not say, and the delivery tells the person.
+
+**The reply says so.** `prompts/reply/handed_off.md`, appended when the turn
+context carries the hand-off, with the completed steps rendered as a record
+(`_render_handed_off`): answer from what was done, say the rest is being
+finished, never say it is done or guess what the remaining steps will find.
+
+**On the real model.** `functional/test_handed_off_wording_behaviour.py`
+passed: shown the record, the reply named the place the search found, said
+the weather part was being finished in the background, and stated no
+weather - three replies, judged one property at a time. The first attempt
+tallied zero with two right replies because the judge, told to describe the
+ramen and the weather, folded the weather into a property that asked only
+for the place; the judge now grades one property and is told to judge
+nothing beyond it.
+
+Unit: `test_chat_continuation.py` 30 (the call round trip for every action
+type, the decision view, the world against a scripted assistant on the real
+schema through the real controller, the grant on a toolbox read and write,
+needs-input, the hand-off's three cases, the reply block, the routes);
+regression over chat API, runs, drills, bounds, routing, trajectories,
+prompts, boundaries and the worker 498.
+
+Diagram impact: UPDATED - `chat-orchestration` gains the hand-off;
+`agent-runs-subsystem` gains the continuation's route to the API.
+
 ## 2026-09-05 - Runs hardened: a grant the controller enforces, fair claiming, delivery to the person, a capacity drill (NOT DEPLOYED)
 
 Four gaps from the platform plan's Phases 3, 7 and D8, checked against the

@@ -411,6 +411,24 @@ class AgentRunRepository:
         ).scalars()
         return [_approval_dict(approval) for approval in rows]
 
+    # Every approval still waiting on this person, oldest first, each with
+    # its run - what a chat turn lists and answers.
+    async def pending_approvals_for_user(self, user_id: str) -> list[tuple[dict[str, Any], dict[str, Any] | None]]:
+        moment = datetime.now(UTC)
+        rows = (
+            await self.session.execute(
+                select(AgentRunApproval, AgentRun)
+                .join(AgentRun, AgentRun.id == AgentRunApproval.run_id)
+                .where(
+                    AgentRunApproval.user_id == user_id,
+                    AgentRunApproval.status == "pending",
+                    AgentRunApproval.expires_at > moment,
+                )
+                .order_by(AgentRunApproval.requested_at.asc())
+            )
+        ).all()
+        return [(_approval_dict(approval), _run_dict(run) if run is not None else None) for approval, run in rows]
+
     async def request_approval(
         self,
         run_id: str,

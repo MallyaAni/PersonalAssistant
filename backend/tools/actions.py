@@ -199,6 +199,16 @@ class UseSkillAction:
 
 
 @dataclass(frozen=True, slots=True)
+class ManageRunsAction:
+    """The model decided this turn answers a background run waiting on the
+    person - a yes or a no to the step it asked about - or asks what is
+    running or waiting for them."""
+
+    mode: str  # approve, deny, status
+    which: str = ""
+
+
+@dataclass(frozen=True, slots=True)
 class ToolboxAction:
     """The model decided this turn should call one of the user's own tools."""
 
@@ -222,6 +232,7 @@ MainAction = (
     | ManageSkillsAction
     | UseSkillAction
     | ToolboxAction
+    | ManageRunsAction
     | None
 )
 

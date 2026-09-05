@@ -12,6 +12,7 @@ order, which is what it was anyway.
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -37,8 +38,11 @@ _SCHEMA: dict[str, Any] = {
         # disclosure instead of an answer (2026-08-26: a follow-up about one
         # show was searched, and answered, as another).
         "on_subject": {"type": "boolean"},
+        # The results that violate one of the person's hard constraints, by
+        # number; removed by the caller, never merely ranked down.
+        "violates": {"type": "array", "items": {"type": "integer"}},
     },
-    "required": ["order", "events", "travel", "on_subject"],
+    "required": ["order", "events", "travel", "on_subject", "violates"],
     "additionalProperties": False,
 }
 
@@ -57,6 +61,9 @@ class Ranking:
     # to personalise (2026-09-04 review: failure defaulted to True and so
     # conflated "not evaluated" with "relevant").
     on_subject: bool | None = True
+    # 1-based positions of results that violate a hard constraint; empty
+    # when none were given or none violated.
+    violates: tuple[int, ...] = ()
 _MAX_TOKENS = 256
 _CONTENT_CHARS = 400
 
@@ -83,6 +90,7 @@ async def judge_results(
     results: list[dict[str, Any]],
     now: datetime | None = None,
     known: tuple[str, ...] = (),
+    constraints: tuple[str, ...] = (),
 ) -> Ranking:
     if len(results) < 2:
         return Ranking(None, False, False, True)
@@ -98,6 +106,14 @@ async def judge_results(
         if facts
         else ""
     )
+    limits = [str(item).strip()[:160] for item in constraints if str(item).strip()][:8]
+    must = (
+        "Hard constraints the person has (a result that violates one is not an "
+        "answer for them, however well it fits the question - list its number "
+        "under violates):\n" + "\n".join(f"- {limit}" for limit in limits) + "\n"
+        if limits
+        else ""
+    )
     listing = "\n\n".join(
         f"[{index}] {str(item.get('title') or '')[:200]}\n{str(item.get('url') or '')[:200]}\n"
         f"{str(item.get('content') or '')[:_CONTENT_CHARS]}"
@@ -109,7 +125,7 @@ async def judge_results(
             {"role": "system", "content": load("search/rank")},
             {
                 "role": "user",
-                "content": f"Question: {question}\n{where}Today: {today}\n{about}\nResults:\n\n{listing}",
+                "content": f"Question: {question}\n{where}Today: {today}\n{about}{must}\nResults:\n\n{listing}",
             },
         ]
         answer = await asyncio.to_thread(llm.chat, messages, _MAX_TOKENS, _SCHEMA, 0.0)
@@ -120,12 +136,32 @@ async def judge_results(
     events = _parse_flag(answer, "events")
     travel = _parse_flag(answer, "travel")
     on_subject = _parse_flag(answer, "on_subject", default=None)
+    # Only with constraints given: a violation named against no constraint
+    # is a misread, and a filter that fires on nothing is a lost result.
+    violates = _parse_violates(answer, len(results)) if limits else ()
     if order is None:
-        return Ranking(None, events, travel, on_subject)
+        return Ranking(None, events, travel, on_subject, violates)
     scores = [0.0] * len(results)
     for position, index in enumerate(order):
         scores[index - 1] = float(len(results) - position)
-    return Ranking(scores, events, travel, on_subject)
+    return Ranking(scores, events, travel, on_subject, violates)
+
+
+# The result numbers the model says violate a constraint, each once and in
+# range; anything else is ignored rather than trusted.
+def _parse_violates(answer: Any, count: int) -> tuple[int, ...]:
+    try:
+        payload = json.loads(answer["content"]) if isinstance(answer, dict) else json.loads(str(answer))
+    except (ValueError, TypeError, KeyError):
+        return ()
+    raw = payload.get("violates") if isinstance(payload, dict) else None
+    if not isinstance(raw, list):
+        return ()
+    seen: list[int] = []
+    for item in raw:
+        if isinstance(item, int) and 1 <= item <= count and item not in seen:
+            seen.append(item)
+    return tuple(seen)
 
 
 # One of the model's verdicts; `default` when it is missing or unreadable,

@@ -107,7 +107,9 @@ class Settings(BaseSettings):
     # of the same reminder are still stopped, by their shared key.
     TURN_MAX_CREATES: int = Field(default=3, ge=1, le=5)
     # Durable runs (backend/runs): an agent's loop hosted by the worker over
-    # leased rows. Off until an agent registers a kind of run to host.
+    # leased rows. Read by the worker to host runs and by the API to hand a
+    # cut-short chat turn to one; on in both or in neither, since a run
+    # created where nothing hosts it is a promise nobody keeps.
     AGENT_RUNS_ENABLED: bool = False
     AGENT_RUN_POLL_SECONDS: float = Field(default=5.0, gt=0, le=300)
     AGENT_RUN_LEASE_SECONDS: float = Field(default=300.0, gt=0, le=3_600)

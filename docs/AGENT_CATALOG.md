@@ -29,8 +29,13 @@ own records, that is not expensive and needs no approval. At most
 `TURN_MAX_STEPS` steps, `TURN_STEP_BUDGET_SECONDS` of wall clock read before
 every decision and every action, and `TURN_MAX_CREATES` new things, with a
 repeat judged on each tool's own key. Drawn in
-[chat-orchestration](diagrams/chat-orchestration.mmd). None of the agents
-below loop; each is asked once and answers once.
+[chat-orchestration](diagrams/chat-orchestration.mmd). The same loop, run
+over durable rows by `RunController` ([RUNS_ARCHITECTURE.md](RUNS_ARCHITECTURE.md)),
+is how the Reviewer, the Security agent and a cut-short turn's
+continuation loop outside a turn: a turn that stops on its clock or its
+ceiling with work left hands the rest to a `chat_continuation` run, and its
+reply says so. Scout, Deck, Diagram and Memory capture do not loop; each is
+asked once and answers once.
 
 That is expected to change, and two rules keep it from going wrong twice.
 **`run_steps` is the loop.** An agent that wants one calls it rather than

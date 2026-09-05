@@ -2,7 +2,7 @@
 title: Durable runs - an agent's loop that outlives a turn
 ---
 flowchart LR
-    Trigger([A turn that needs more than one turn<br/>a schedule · a repository event · an alert]) --> Create[AgentRunRepository.create<br/>principal · actor · kind · objective<br/>acceptance criteria · budget · allowance]
+    Trigger([A turn cut short with work left<br/>a schedule · a repository event · an alert]) --> Create[AgentRunRepository.create<br/>principal · actor · kind · objective<br/>acceptance criteria · budget · allowance]
     Create --> Runs[(agent_runs<br/>leased claim · cancel flag<br/>tenant_id carried)]
     Worker[Discovery worker process<br/>run loop · AGENT_RUNS_ENABLED] -->|claim: fewest running per principal, then oldest<br/>renew lease| Runs
     Worker -->|after each attempt| Delivery[RunDelivery<br/>completed · failed · waiting_approval<br/>summary only, on the run's channel]
@@ -10,6 +10,7 @@ flowchart LR
     Delivery -->|delivered · delivery_skipped · delivery_failed| Events
     Runs --> Controller[RunController<br/>run_steps over durable rows<br/>bound_first · resume from actions]
     Worlds[(WORLDS + GRANTS registry<br/>kind -> RunWorld · kind -> tools it may call)] --> Controller
+    World -->|chat_continuation: decide · apply<br/>the chat steps routes · a short-lived chat token| API
     Controller -->|a step outside the grant:<br/>refused · unauthorized_tool · not retried| Actions
     Controller -->|decide · apply · key · creates<br/>needs_approval · reconcile · verify| World[RunWorld<br/>the agent's judgement and effects]
     World -->|next decision| Router[Routing model<br/>or the agent's own prompt]
@@ -20,6 +21,7 @@ flowchart LR
     Controller --> Events[(agent_run_events<br/>the audit trail)]
     Controller -->|acceptance met: completed<br/>else failed with the stop named<br/>cancel flag: cancelled| Runs
     Person([Person<br/>web or iMessage]) -->|"/api/v1/runs · runs:read · runs:act<br/>list · inspect · cancel · approve"| API[Runs API]
+    Person -->|"a yes or a no in chat · manage_runs<br/>routed by the model, bound to the same call"| Approvals
     API --> Runs
     API --> Approvals
     Contracts[Effect contracts<br/>backend/core/effects.py] -.->|later-step policy · keys · replay| World
