@@ -9,6 +9,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 RUN apt-get update && apt-get install -y \
     build-essential \
     libpq-dev \
+    # The repo MCP server (the reviewer's only window onto code) shells out
+    # to git, so every image - serving and test - carries it.
+    git \
     # Renders diagram flowcharts to PNG for channels with no browser to run
     # mermaid in - an iMessage bubble cannot execute JavaScript, and a
     # diagram's whole point is legible text a phone can see.
@@ -30,11 +33,8 @@ COPY . .
 #
 # Keep these floors in step with pyproject's [project.optional-dependencies] dev.
 FROM base AS test
-# git is needed by the repo-server tests, which build a scratch repository
-# with two real commits to exercise the read-only window and the evidence
-# check; it is deliberately absent from the serving images.
-RUN apt-get update && apt-get install -y --no-install-recommends git \
-    && rm -rf /var/lib/apt/lists/*
+# git already comes from the base stage (the repo MCP server needs it in
+# every image); only the test tooling is added here.
 RUN pip install --no-cache-dir "pytest>=8.0.0" "pytest-asyncio>=0.23.0"
 
 # `runtime` is LAST on purpose. BuildKit's default target is the final stage and
