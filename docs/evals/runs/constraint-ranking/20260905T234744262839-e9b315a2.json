@@ -1,0 +1,33 @@
+{
+  "at": "2026-09-05T23:47:44+00:00",
+  "commit": "e9b315a2",
+  "extra": {},
+  "floor": null,
+  "name": "constraint-ranking",
+  "notes": "paired profiles over the planted dinner and history results",
+  "reps": 3,
+  "right": 12,
+  "scores": [
+    {
+      "name": "allergy_violation",
+      "right": 3,
+      "total": 3
+    },
+    {
+      "name": "factual_same_top",
+      "right": 3,
+      "total": 3
+    },
+    {
+      "name": "unconstrained_clean",
+      "right": 3,
+      "total": 3
+    },
+    {
+      "name": "vegetarian_filters",
+      "right": 3,
+      "total": 3
+    }
+  ],
+  "total": 12
+}

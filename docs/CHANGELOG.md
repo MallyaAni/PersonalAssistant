@@ -41,7 +41,20 @@ the order declared, for both the direct and the group decision.
 **Stored facts can be relabelled.** `backend.cli.classify_preferences`
 asks the constraint question beside the preference one and files each row
 under constraint, preference or plain fact (`target_purpose`); dry run by
-default, `--apply` writes, image-derived rows untouched.
+default, `--apply` writes, image-derived rows untouched. Dry-run against
+the live database through the tunnel on 2026-09-05: 43 stored facts, none
+would change - no stored fact is a hard constraint by the model's
+judgement, and every preference label agrees.
+
+**The paired-profile property is a recorded measurement.**
+`python -m backend.cli.evaluate_constraints --reps 3` runs the four
+paired-profile cases against the real ranking model and records a run
+under `docs/evals/runs/constraint-ranking/` (first run 12/12 over three passes, every category 3/3; the floor is 0.66 from here), so the next
+change to `search/rank` is compared rather than re-argued. Accessibility
+capture, measured after the functional run: "I use a wheelchair, so I need
+step-free access" and two other phrasings captured twelve of twelve; the
+one-in-three seen during the functional run coincided with the model at
+capacity.
 
 **On the real models.** `functional/test_constraint_ranking_behaviour.py`
 7/7: for a shellfish allergy the ranker named the oyster bar and nothing

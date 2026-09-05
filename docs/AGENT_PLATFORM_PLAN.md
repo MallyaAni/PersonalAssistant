@@ -351,7 +351,7 @@ findings that mattered.
 | Trajectory completion, carrying, unauthorised tools, duplicate effects, cost, per category | `python -m backend.cli.evaluate_trajectories --reps 3` | `docs/evals/runs/trajectories/` |
 | First-tool selection per category | `python -m backend.cli.evaluate_tool_selection --reps 3` | `docs/evals/runs/tool-selection/` |
 | Routing latency | existing run | `docs/evals/runs/routing-latency/` |
-| Paired-profile personalisation | Phase 4 evaluator | `docs/evals/runs/` |
+| Paired-profile personalisation | `python -m backend.cli.evaluate_constraints --reps 3` | `docs/evals/runs/constraint-ranking/` |
 | Durability: kill-and-resume, cancel, approval expiry | Phase 3 functional suite | gate |
 | Every effect has a receipt and a principal | an invariant query in the unit suite | gate |
 
