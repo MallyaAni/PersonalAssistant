@@ -56,27 +56,35 @@ def relative_strength(panel: Panel, lookback: int = 20) -> np.ndarray:
 # Theme momentum: the trailing return of the name's own theme basket. Every
 # member of a theme gets the same score, so this ranks baskets, not names —
 # it is the pure rotation signal.
-def theme_momentum(panel: Panel, lookback: int = 20) -> np.ndarray:
+def theme_momentum(
+    panel: Panel, lookback: int = 20, untagged_as_market: bool = False
+) -> np.ndarray:
     """Score = trailing return of the ticker's primary theme basket."""
     theme_daily = panel.theme_return_matrix()
     scores = trailing_sum(theme_daily, lookback)
-    # A name with no theme has no rotation opinion.
-    for column, ticker in enumerate(panel.tickers):
-        if panel.primary_theme(ticker) is None:
-            scores[:, column] = np.nan
+    # As a control, a name with no theme has no rotation opinion. As a
+    # model input, it carries the market's series (which is what the
+    # theme matrix already holds for it) so the name stays eligible.
+    if not untagged_as_market:
+        for column, ticker in enumerate(panel.tickers):
+            if panel.primary_theme(ticker) is None:
+                scores[:, column] = np.nan
     return scores
 
 
 # Relative strength within the theme: the name's trailing return minus its
 # basket's. This is stock selection with rotation removed.
-def theme_relative_strength(panel: Panel, lookback: int = 20) -> np.ndarray:
+def theme_relative_strength(
+    panel: Panel, lookback: int = 20, untagged_as_market: bool = False
+) -> np.ndarray:
     """Score = own trailing return minus the primary theme basket's."""
     own = trailing_sum(panel.log_returns(), lookback)
     theme = trailing_sum(panel.theme_return_matrix(), lookback)
     scores = own - theme
-    for column, ticker in enumerate(panel.tickers):
-        if panel.primary_theme(ticker) is None:
-            scores[:, column] = np.nan
+    if not untagged_as_market:
+        for column, ticker in enumerate(panel.tickers):
+            if panel.primary_theme(ticker) is None:
+                scores[:, column] = np.nan
     return scores
 
 

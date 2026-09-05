@@ -193,7 +193,7 @@ def train_and_score(
     seed: int = 7,
     log: Callable[[str], None] | None = None,
 ) -> tuple[np.ndarray, float, int]:
-    """Fit the CNN on the train cells, early-stop on validation, score the test cells."""
+    """Fit on the train cells, early-stop on validation, score the test cells."""
     torch.manual_seed(seed)
     rng = np.random.default_rng(seed)
     train_images, train_keep = render_cells(panel, train_cells)

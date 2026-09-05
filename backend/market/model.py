@@ -166,9 +166,11 @@ def build_features(
     named = {
         "momentum_12_1": baselines.momentum(panel, momentum_length, momentum_skip),
         "relative_strength_20": baselines.relative_strength(panel, lookback),
-        "theme_momentum_20": baselines.theme_momentum(panel, lookback),
+        "theme_momentum_20": baselines.theme_momentum(
+            panel, lookback, untagged_as_market=True
+        ),
         "theme_relative_strength_20": baselines.theme_relative_strength(
-            panel, lookback
+            panel, lookback, untagged_as_market=True
         ),
     }
     ranks = np.stack(
