@@ -7,6 +7,67 @@ was checked by running it, not by reading it. The seven image scenarios can
 be re-run any time with `python -m backend.cli.exercise_image_scenarios`
 inside the backend container.
 
+## 2026-09-05 — stock-analysis foundation, slice 1: the reproducible daily market snapshot (NOT DEPLOYED)
+
+First slice of the deep-learning research system for the trading agent,
+built from the plan the operator endorsed (daily data, swing horizon,
+DeepSeek as a research component, measure before betting). The design answer
+to "wouldn't a neural network already learn the structure report?": **yes —
+so it is fed raw normalized price/volume sequences, not a hand-coded trend
+slope or volatility number.** The hand-coded sector report is a later
+baseline to beat, not the architecture.
+
+New `backend/market/` package:
+
+- **`universe.py`** — focus names (CRWV, IREN, SNDK), a comparison universe
+  across the themes money rotates between (software, ai-compute,
+  memory-storage, networking, power-cooling; overlapping baskets, not one
+  "AI" label), and benchmarks (SPY, QQQ, SMH).
+- **`yahoo.py`** — daily OHLCV + adjusted close from the free keyless Yahoo
+  chart endpoint, with a normal user agent. A 429 or any non-200 raises
+  `MarketDataUnavailable`; the parser is a pure function over the payload so
+  tests use a recorded fixture, never the network.
+- **`market_daily_bars` table** — one row per (ticker, session date, source)
+  with raw OHLCV, adjusted close, volume, source and retrieved_at, so
+  corrections are traceable. Migration `20260905_0018`, **applied to the
+  live DB** (backup taken first; head now `20260905_0018`).
+- **`repository.py`** — async upsert (rerunning a date refreshes, never
+  duplicates), latest-session, bars-for-range, delete-for (test cleanup).
+- **`snapshot.py`** — `refresh` (fetch + store, failures captured per ticker,
+  never fatal) and `status` (per-ticker missing/stale flags), plus
+  `daily_returns` computed **from adjusted close, so a split cannot
+  manufacture a return**.
+- **`windows.py`** — the model input: per ticker, windows of raw daily
+  channels (own log return, log volume, market-relative return vs the
+  benchmark) over the shared trading calendar, **structurally no look-ahead**
+  (a window ending at session t contains only <= t) with a separate K-day
+  forward-return label marked invalid wherever the future is not fully known.
+  Channels are emitted raw; z-scoring is a harness step fit on train only.
+- **`backend/cli/market_snapshot.py`** — `--refresh` and `--status`.
+
+Verified: 15 new tests (parser fixture, 429 handling, upsert idempotency,
+reproducibility, split-safety, stale/missing flags, window no-look-ahead and
+gap handling); full unit suite **2635 passed / 9 skipped** via
+`bash scripts/gate.sh --unit`. CLI verified live: `--status` reports every
+ticker MISSING; `--refresh` against the real source flagged each ticker
+FAILED with a clean message and exited 0 — **the rate-limited path is proven
+live**. The DeepSeek research model was checked as requested:
+`deepseek-v4-flash` is live on spark1 `172.16.8.3:8000` (`/v1/models`,
+max_model_len 1048576).
+
+**UNVERIFIED:** a successful real fetch+store. Yahoo is 429-throttling this
+network (host and backend container) all session; the parser is fixture-tested
+and the fetch+store path is gate-tested with a stubbed fetcher, but the
+real-network round trip has not landed rows yet.
+
+**Next atomic task:** when Yahoo's throttle clears, run
+`python -m backend.cli.market_snapshot --refresh` over the universe and
+confirm stored rows via `--status`. Then slice 2: the walk-forward harness
+with a relative-strength baseline (the thing the DNN must beat), and decide
+the training environment — **no torch/pandas/sklearn in the backend
+container today**, so training placement (a Spark, a new image, or the Mac)
+is a decision before any model can be trained.
+
 ## 2026-09-05 — Phase 1 of the execution-boundary repair: measured and pushed
 
 The trajectory baseline is built, measured, and on `main`
